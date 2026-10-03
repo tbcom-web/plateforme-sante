@@ -3,7 +3,8 @@ import type { SiteConfig } from '../../lib/types';
 
 const site: SiteConfig = {
   id: 'demo-podologue-lyon',
-  domaine: 'demo-podologue-lyon.pages.dev',
+  domaine: 'demo.webpodologue.fr',
+  demo: true,
   profession: {
     slug: 'podologue',
     libelle: 'Pédicure-podologue',

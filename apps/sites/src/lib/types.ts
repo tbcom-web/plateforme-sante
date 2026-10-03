@@ -27,6 +27,8 @@ export type Horaire = { jour: string; heures: string };
 export type SiteConfig = {
   id: string;
   domaine: string;
+  /** Site de démonstration : jamais indexé par les moteurs. */
+  demo?: boolean;
   profession: {
     slug: string;
     libelle: string;

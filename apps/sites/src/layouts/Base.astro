@@ -29,6 +29,7 @@ const allSchemas = [businessSchema(), personSchema(), ...schemas];
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {site.demo && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content={site.theme.couleur} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
