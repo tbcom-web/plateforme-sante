@@ -91,6 +91,8 @@ export type SiteConfig = {
   /** Message temporaire (congés, déménagement), déjà filtré sur sa date de fin */
   message: string;
   communes: string[];
+  /** URLs des photos ; vide = photo d'illustration par défaut */
+  photos: { accueil: string; cabinet: string[] };
 };
 
 export type PraticienPublic = {
@@ -108,6 +110,7 @@ export type PraticienPublic = {
   rdvUrl: string;
   presence: string;
   bio: string;
+  photo: string;
 };
 
 export type LieuPublic = {

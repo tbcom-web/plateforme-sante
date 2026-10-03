@@ -73,6 +73,9 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
   // Compétences
   if (d.soins.length === 0) bloquants.push('Choisir au moins une compétence.');
 
+  // Photos
+  if (!d.photos.accueil) conseils.push('Ajouter une photo du cabinet : un site avec de vraies photos inspire davantage confiance.');
+
   // Domicile
   if (d.domicile.actif && d.domicile.secteurs.length === 0) conseils.push('Préciser les secteurs des visites à domicile, sinon la mention sera générale.');
 

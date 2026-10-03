@@ -1,0 +1,16 @@
+---
+// Galerie du cabinet : affichée uniquement si le praticien a fourni des photos.
+import { site } from '../../lib/site';
+---
+{site.photos.cabinet.length > 0 && (
+  <ul class="galerie">
+    {site.photos.cabinet.map((src, i) => (
+      <li><img src={src} alt={`Le cabinet de ${site.cabinet.ville}, photo ${i + 1}`} loading="lazy" decoding="async" width="800" height="600" /></li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .galerie { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--rayon); background: var(--doux); }
+</style>

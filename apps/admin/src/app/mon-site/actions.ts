@@ -10,6 +10,9 @@ const t = (v: unknown, max = 200) => String(v ?? '').trim().slice(0, max);
 const liste = (v: unknown, max = 20, taille = 80) => (Array.isArray(v) ? v : []).map((x) => t(x, taille)).filter(Boolean).slice(0, max);
 const chiffres = (v: unknown, max: number) => t(v, max + 4).replace(/\D/g, '').slice(0, max);
 const url = (v: unknown) => { const s = t(v, 400); return /^https:\/\//.test(s) || s === '' ? s : ''; };
+// Seules les photos stockées dans le dossier « photos » du projet Supabase sont acceptées.
+const PREFIXE_PHOTOS = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/`;
+const photo = (v: unknown) => { const s = t(v, 400); return s.startsWith(PREFIXE_PHOTOS) ? s : ''; };
 const parmi = <T extends string>(v: unknown, valeurs: readonly T[], defaut: T): T => (valeurs.includes(v as T) ? (v as T) : defaut);
 
 // Normalise puis borne chaque champ (aucune donnée inattendue n'est enregistrée).
@@ -56,6 +59,7 @@ function nettoyer(brut: unknown): SiteDraft {
       rdvUrl: url(p.rdvUrl),
       presence: t(p.presence, 120),
       bio: t(p.bio, 1500),
+      photo: photo(p.photo),
     })),
     acces: {
       pmr: Boolean(d.acces.pmr),
@@ -72,6 +76,7 @@ function nettoyer(brut: unknown): SiteDraft {
       couleur: /^#[0-9a-f]{6}$/i.test(d.theme.couleur) ? d.theme.couleur : '#1f6a64',
       modele: parmi(d.theme.modele, ['proximite', 'premium'] as const, 'proximite'),
     },
+    photos: { accueil: photo(d.photos.accueil), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
     soins: d.soins.filter((s) => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 30),
   };
 }

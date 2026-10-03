@@ -3,6 +3,7 @@ import Gabarit from '../layouts/Gabarit.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import Praticiens from '../components/gabarit/Praticiens.astro';
 import Infos from '../components/gabarit/Infos.astro';
+import Galerie from '../components/gabarit/Galerie.astro';
 import { site } from '../lib/site';
 import { breadcrumbSchema } from '../lib/schema';
 import { titreCabinet, phraseAccueil, titrePraticiens, noms } from '../lib/textes';
@@ -20,6 +21,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
       <Breadcrumb items={crumbs} />
       <h1>{titreCabinet}</h1>
       <p class="chapo">{phraseAccueil}</p>
+      {site.photos.cabinet.length > 0 && <div class="galerie"><Galerie /></div>}
     </div>
   </section>
   <section class="section section--douce">
@@ -38,4 +40,5 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
 
 <style>
   .chapo { margin-top: 16px; }
+  .galerie { margin-top: 32px; }
 </style>

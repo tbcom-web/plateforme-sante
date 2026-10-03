@@ -40,6 +40,8 @@ export type PraticienDraft = {
   /** Jours de présence, si différents du cabinet (ex. « Vendredi et samedi ») */
   presence: string;
   bio: string;
+  /** URL publique du portrait (facultatif) */
+  photo: string;
 };
 
 export type LieuDraft = {
@@ -82,6 +84,8 @@ export type SiteDraft = {
   message: { texte: string; jusquAu: string };
   conventionnement: string;
   theme: { couleur: string; modele: Modele };
+  /** URLs publiques des photos (stockage Supabase) */
+  photos: { accueil: string; cabinet: string[] };
   /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
 };
@@ -147,7 +151,7 @@ export const horairesParDefaut = (): Horaire[] =>
 
 export const praticienVide = (statut: StatutPraticien = 'titulaire'): PraticienDraft => ({
   id: id(), prenom: '', nom: '', statut, numeroOrdre: '', rpps: '', inami: '', membreSsp: false, rcc: '',
-  diplome: '', ecole: '', formations: [], orientations: [], sports: [], rdvUrl: '', presence: '', bio: '',
+  diplome: '', ecole: '', formations: [], orientations: [], sports: [], rdvUrl: '', presence: '', bio: '', photo: '',
 });
 
 export const lieuVide = (): LieuDraft => ({
@@ -169,6 +173,7 @@ export const draftVide = (): SiteDraft => ({
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
   theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite' },
+  photos: { accueil: '', cabinet: [] },
   soins: [],
 });
 
@@ -187,6 +192,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       domicile: { ...vide.domicile, ...d.domicile },
       message: { ...vide.message, ...d.message },
       theme: { ...vide.theme, ...d.theme },
+      photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
       praticiens: Array.isArray(d.praticiens) && d.praticiens.length ? d.praticiens.map((p: any) => ({ ...praticienVide(), ...p })) : vide.praticiens,
       soins: Array.isArray(d.soins) ? d.soins : [],

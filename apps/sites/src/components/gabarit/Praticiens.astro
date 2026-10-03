@@ -7,7 +7,9 @@ const STATUTS: Record<string, string> = { titulaire: '', collaborateur: 'Collabo
 <div class="praticiens">
   {site.praticiens.map((p, i) => (
     <article class="praticien">
-      <div class="praticien__avatar" aria-hidden="true">{p.prenom[0]}{p.nom[0]}</div>
+      {p.photo
+        ? <img class="praticien__photo" src={p.photo} alt={`Portrait de ${p.prenom} ${p.nom}`} width="128" height="128" loading="lazy" />
+        : <div class="praticien__avatar" aria-hidden="true">{p.prenom[0]}{p.nom[0]}</div>}
       <h3>{p.prenom} {p.nom}</h3>
       <p class="praticien__titre">
         {p.titre} à {site.cabinet.ville}{STATUTS[p.statut] && ` — ${STATUTS[p.statut]}`}
@@ -34,6 +36,7 @@ const STATUTS: Record<string, string> = { titulaire: '', collaborateur: 'Collabo
   .praticiens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
   .praticien { background: #fff; border-radius: var(--rayon); padding: 28px; display: grid; gap: 6px; align-content: start; border: 1px solid var(--ligne); }
   .praticien__avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 1.2rem; margin-bottom: 10px; }
+  .praticien__photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
   h3 { font-size: 1.35rem; }
   p { margin: 0; }
   .praticien__titre { color: var(--encre-douce); }

@@ -18,10 +18,11 @@ import {
   type SiteDraft,
 } from '@plateforme/core';
 import Apercu from '@/components/Apercu';
+import Photo from '@/components/Photo';
 import type { SoinCatalogue } from '@/lib/sites';
 import { enregistrerSite } from './actions';
 
-const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Style'] as const;
+const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
 type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[] };
 
@@ -155,6 +156,7 @@ export default function Editeur({ siteId, initial, catalogue }: Props) {
                       </>
                     )}
                   </Grille>
+                  <Photo siteId={id} type={`portrait-${p.id}`} carre label="Portrait (facultatif)" valeur={p.photo} onChange={(u) => majPraticien(i, { photo: u })} />
                   <Zone label="Formations et DU (une par ligne)" value={p.formations.join('\n')} onChange={(v) => majPraticien(i, { formations: versListe(v, /\n/) })} />
                   {(d.profil === 'sport' || p.sports.length > 0) && (
                     <Champ large label="Sports suivis (séparés par des virgules)" value={p.sports.join(', ')} onChange={(v) => majPraticien(i, { sports: versListe(v) })} />
@@ -323,6 +325,24 @@ export default function Editeur({ siteId, initial, catalogue }: Props) {
 
           {etape === 6 && (
             <div className="grid gap-6">
+              <Photo siteId={id} type="accueil" label="Photo d’accueil (cabinet, salle de soins, façade)" valeur={d.photos.accueil} onChange={(u) => maj({ photos: { ...d.photos, accueil: u } })} />
+              <fieldset className="grid gap-3">
+                <legend className="text-sm font-medium">Photos du cabinet (galerie, 6 au maximum)</legend>
+                {[...d.photos.cabinet, ''].slice(0, 6).map((u, k) => (
+                  <Photo
+                    key={u || `nouvelle-${k}`}
+                    siteId={id}
+                    type="cabinet"
+                    label={`Photo ${k + 1}`}
+                    valeur={u}
+                    onChange={(n) => {
+                      const liste = [...d.photos.cabinet];
+                      if (n) liste[k] = n; else liste.splice(k, 1);
+                      maj({ photos: { ...d.photos, cabinet: liste.filter(Boolean) } });
+                    }}
+                  />
+                ))}
+              </fieldset>
               <fieldset>
                 <legend className="font-medium">Couleur du cabinet</legend>
                 <div className="mt-3 flex flex-wrap items-center gap-2">

@@ -93,6 +93,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     rdvUrl: p.rdvUrl || d.rdv.url,
     presence: p.presence,
     bio: p.bio,
+    photo: p.photo,
   }));
 
   const p1 = praticiens[0];
@@ -163,5 +164,6 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     domicile: d.domicile,
     message: messageActif ? d.message.texte : '',
     communes: d.cabinet.communes,
+    photos: d.photos,
   };
 }

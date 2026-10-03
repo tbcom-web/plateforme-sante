@@ -5,6 +5,7 @@ import FaqList from '../components/FaqList.astro';
 import Competences from '../components/gabarit/Competences.astro';
 import Praticiens from '../components/gabarit/Praticiens.astro';
 import Infos from '../components/gabarit/Infos.astro';
+import Galerie from '../components/gabarit/Galerie.astro';
 import { site } from '../lib/site';
 import { faqSchema } from '../lib/schema';
 import {
@@ -37,7 +38,7 @@ const metier = site.titreMetier.toLowerCase();
       </div>
     </div>
     <figure class="accueil__photo">
-      <img src="/photos/cabinet-lumiere.webp" alt={`Une salle de soins du cabinet de ${site.cabinet.ville}`} width="1200" height="1800" fetchpriority="high" />
+      <img src={site.photos.accueil || '/photos/cabinet-lumiere.webp'} alt={`Le cabinet de ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" />
     </figure>
   </section>
 
@@ -65,6 +66,15 @@ const metier = site.titreMetier.toLowerCase();
       <Praticiens />
     </div>
   </section>
+
+  {site.photos.cabinet.length > 0 && (
+    <section class="section">
+      <div class="cadre">
+        <h2>Le cabinet</h2>
+        <Galerie />
+      </div>
+    </section>
+  )}
 
   <section class="section" id="infos">
     <div class="cadre">
