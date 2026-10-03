@@ -25,7 +25,7 @@ export const GET: APIRoute = () => {
     ...site.articles.map((a) => `- [${a.titre}](${absUrl(`/actualites/${a.slug}`)}) : ${a.resume}`),
     '',
     '## Pages',
-    `- [Le cabinet et le parcours](${absUrl('/a-propos')})`,
+    `- [Le cabinet et les praticiens](${absUrl('/le-cabinet')})`,
     `- [Mentions légales](${absUrl('/mentions-legales')})`,
     '',
   ];

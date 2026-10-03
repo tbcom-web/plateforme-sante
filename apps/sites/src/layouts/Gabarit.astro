@@ -1,0 +1,196 @@
+---
+// Gabarit « Proximité » : mise en page commune à toutes les pages d'un site praticien.
+// Factuel et sobre, dans l'esprit des sites webpodologue, avec la couleur du cabinet.
+import '@fontsource-variable/inter';
+import Icone from '../components/Icone.astro';
+import Consent from '../components/Consent.astro';
+import { site, absUrl } from '../lib/site';
+import { buildTheme } from '@plateforme/core';
+import { businessSchema, personSchema } from '../lib/schema';
+import { titreMetierAffiche, telLien, itineraire, lienRdv, libelleRdv, titreCabinet, praticiens, lieu, titreCompetences } from '../lib/textes';
+
+interface Props {
+  title: string;
+  description: string;
+  path: string;
+  schemas?: object[];
+  noindex?: boolean;
+}
+
+const { title, description, path, schemas = [], noindex = false } = Astro.props;
+const canonical = absUrl(path);
+const theme = buildTheme(site.theme.couleur);
+const couleurs = `--accent:${theme['--brand-ink']};--accent-fonce:${theme['--brand-deep']};--accent-pale:${theme['--brand-soft']};--accent-tres-pale:${theme['--brand-softer']};--accent-ligne:${theme['--brand-line']}`;
+const allSchemas = [businessSchema(), personSchema(), ...schemas];
+const courant = Astro.url.pathname;
+const liens = [
+  { href: '/soins', label: titreCompetences.replace('Compétences du cabinet', 'Compétences') },
+  { href: '/le-cabinet', label: praticiens.length > 1 ? 'Les praticiens' : 'Le cabinet' },
+  ...(site.articles.length > 0 ? [{ href: '/actualites', label: 'Actualités' }] : []),
+  { href: '/#infos', label: 'Infos pratiques' },
+];
+---
+<!doctype html>
+<html lang="fr" style={couleurs}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {(site.demo || noindex) && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content={site.theme.couleur} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content={site.cabinet.nom} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
+    {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
+  </head>
+  <body>
+    <a class="evitement" href="#contenu">Aller au contenu</a>
+
+    {site.message && (
+      <div class="message" role="status"><Icone nom="lucide:info" />{site.message}</div>
+    )}
+
+    <header class="entete">
+      <div class="cadre entete__contenu">
+        <a class="marque" href="/" aria-label={`Accueil — ${titreCabinet}`}>
+          <span class="marque__icone"><Icone nom="healthicons:foot-outline" /></span>
+          <span>
+            <strong>{praticiens.length > 1 ? 'Cabinet de podologie' : `${praticiens[0].prenom} ${praticiens[0].nom}`}</strong>
+            <small>{titreMetierAffiche} · {site.cabinet.ville}</small>
+          </span>
+        </a>
+        <nav class="liens" aria-label="Navigation principale">
+          {liens.map((l) => (
+            <a href={l.href} aria-current={l.href !== '/#infos' && courant.startsWith(l.href) ? 'page' : undefined}>{l.label}</a>
+          ))}
+        </nav>
+        <a class="entete__tel" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+      </div>
+    </header>
+
+    <main id="contenu">
+      <slot />
+    </main>
+
+    <footer class="pied">
+      <div class="cadre pied__grille">
+        <div>
+          <p class="pied__titre">{titreCabinet}</p>
+          <p>{lieu.nom && <>{lieu.nom}<br /></>}{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}</p>
+          <p><a href={telLien}>{site.cabinet.telephone}</a></p>
+        </div>
+        <div>
+          <p class="pied__titre">{praticiens.length > 1 ? 'Praticiens' : 'Praticien'}</p>
+          <ul>
+            {praticiens.map((p) => (
+              <li><strong>{p.prenom} {p.nom}</strong> — {p.titre}{p.identifiants[0] && <><br /><small>{p.identifiants[0]}</small></>}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p class="pied__titre">Liens utiles</p>
+          <ul>
+            <li><a href="/mentions-legales">Mentions légales</a></li>
+            {site.pays === 'FR' && <li><a href="https://www.onpp.fr" rel="noopener" target="_blank">Ordre national des pédicures-podologues</a></li>}
+          </ul>
+        </div>
+      </div>
+    </footer>
+
+    <nav class="barre-mobile" aria-label="Accès rapide">
+      <a href={telLien}><Icone nom="lucide:phone" />Appeler</a>
+      <a href={lienRdv('barre-mobile')} class="barre-mobile__rdv"><Icone nom="lucide:calendar" />{site.rdvMode === 'telephone' ? 'Rendez-vous' : 'Rendez-vous'}</a>
+      <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:map-pin" />Itinéraire</a>
+    </nav>
+    <Consent />
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --fond: #ffffff;
+    --doux: var(--accent-tres-pale, #f3f7f6);
+    --encre: #17292a;
+    --encre-douce: #4d5f5f;
+    --ligne: #e1e8e7;
+    --rayon: 16px;
+    /* Alias pour les composants partagés (FAQ, consentement, fil d'Ariane) */
+    --bg: #fff; --line: var(--ligne); --radius: var(--rayon); --brand-ink: var(--accent); --ink-soft: var(--encre-douce);
+    --ink: var(--encre); --ink-mute: var(--encre-douce); --shadow: 0 10px 30px -12px rgb(23 41 42 / 0.3);
+    --brand-softer: var(--doux); --brand-soft: var(--accent-pale); --brand-line: var(--accent-ligne);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; color: var(--encre); background: var(--fond); font-size: 1.0625rem; line-height: 1.65; -webkit-font-smoothing: antialiased; padding-bottom: 80px; }
+  @media (min-width: 900px) { body { padding-bottom: 0; } }
+  img { display: block; max-width: 100%; }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:hover { color: var(--accent-fonce); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0; color: var(--encre); text-wrap: balance; }
+  h1 { font-size: clamp(2rem, 4.4vw, 3.1rem); font-weight: 700; letter-spacing: -0.03em; }
+  h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 650; margin-bottom: 24px; }
+  h3 { font-size: 1.15rem; font-weight: 650; }
+  p { margin: 0 0 1em; }
+  .cadre { width: min(1120px, 100% - 40px); margin-inline: auto; }
+  .section { padding-block: clamp(52px, 8vw, 92px); }
+  .section--douce { background: var(--doux); }
+  .sur { font-size: 0.8rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  .chapo { color: var(--encre-douce); font-size: 1.1rem; max-width: 60ch; }
+  .note { font-size: 0.86rem; color: var(--encre-douce); }
+  .evitement { position: absolute; left: -9999px; }
+  .evitement:focus { left: 16px; top: 16px; z-index: 99; background: #fff; padding: 8px 12px; }
+
+  .bouton, .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 12px; font: inherit; font-weight: 600; text-decoration: none; border: 0; cursor: pointer; }
+  .bouton--plein, .btn--primary { background: var(--accent); color: #fff; }
+  .bouton--plein:hover, .btn--primary:hover { background: var(--accent-fonce); color: #fff; }
+  .bouton--ligne, .btn--ghost { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .icone { width: 1.1em; height: 1.1em; }
+
+  .message { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 10px 20px; background: var(--accent); color: #fff; font-weight: 600; font-size: 0.95rem; text-align: center; }
+
+  .entete { position: sticky; top: 0; z-index: 30; background: rgb(255 255 255 / 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ligne); }
+  .entete__contenu { display: flex; align-items: center; gap: 24px; min-height: 68px; }
+  .marque { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--encre); margin-right: auto; line-height: 1.2; }
+  .marque strong { display: block; font-size: 1rem; }
+  .marque small { color: var(--encre-douce); font-size: 0.8rem; }
+  .marque__icone { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--accent-pale); color: var(--accent); font-size: 1.5rem; }
+  .liens { display: none; gap: 24px; font-size: 0.95rem; }
+  .liens a { color: var(--encre-douce); text-decoration: none; }
+  .liens a:hover, .liens a[aria-current='page'] { color: var(--accent); }
+  @media (min-width: 900px) { .liens { display: flex; } }
+  .entete__tel { display: none; align-items: center; gap: 8px; font-weight: 650; text-decoration: none; }
+  @media (min-width: 640px) { .entete__tel { display: inline-flex; } }
+
+  .breadcrumb { font-size: 0.88rem; color: var(--encre-douce); margin-bottom: 16px; }
+  .breadcrumb ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4em; padding: 0; margin: 0; }
+  .breadcrumb li:not(:last-child)::after { content: '›'; margin-left: 0.4em; }
+  .breadcrumb a { color: var(--encre-douce); }
+
+  .prose { max-width: 70ch; }
+  .prose h2 { font-size: 1.45rem; margin: 1.8em 0 0.6em; }
+  .prose ul, .prose ol { padding-left: 1.3em; }
+  .prose li { margin-bottom: 0.4em; }
+  .prose li::marker { color: var(--accent); }
+
+  .pied { background: var(--encre); color: #d3dede; padding-block: 48px 40px; font-size: 0.92rem; }
+  .pied a { color: #fff; }
+  .pied__grille { display: grid; gap: 28px; }
+  @media (min-width: 860px) { .pied__grille { grid-template-columns: repeat(3, 1fr); } }
+  .pied__titre { color: #fff; font-weight: 650; margin-bottom: 10px; }
+  .pied ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .pied small { color: #9fb2b1; }
+
+  .barre-mobile { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; padding: 8px; border-radius: 18px; background: rgb(255 255 255 / 0.96); backdrop-filter: blur(10px); box-shadow: 0 10px 30px -10px rgb(23 41 42 / 0.35); }
+  .barre-mobile a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+  .barre-mobile__rdv { background: var(--accent); color: #fff !important; }
+  @media (min-width: 900px) { .barre-mobile { display: none; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>

@@ -1,122 +1,94 @@
 ---
-import Base from '../layouts/Base.astro';
-import Decor from '../components/Decor.astro';
-import FaqList from '../components/FaqList.astro';
-import InfosPratiques from '../components/InfosPratiques.astro';
+import Gabarit from '../layouts/Gabarit.astro';
 import Icone from '../components/Icone.astro';
-import { iconeSoin, ICONE_SOIN_DEFAUT } from '@plateforme/core';
-import { site, nomPraticien, metierVille, rdvHref, telLien, dateFr } from '../lib/site';
+import FaqList from '../components/FaqList.astro';
+import Competences from '../components/gabarit/Competences.astro';
+import Praticiens from '../components/gabarit/Praticiens.astro';
+import Infos from '../components/gabarit/Infos.astro';
+import { site } from '../lib/site';
 import { faqSchema } from '../lib/schema';
+import {
+  titreMetierAffiche, titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, titreMetierPluriel,
+  lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU,
+} from '../lib/textes';
 
-const title = `${metierVille} ${site.cabinet.codePostal} – ${nomPraticien}`;
-const description = `${site.accroche.texte} Rendez-vous en ligne sur ${site.rdv.plateforme}.`;
-const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
+const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}, sur rendez-vous` : 'Sur rendez-vous';
+const lieuLigne = lieu.nom || (lieu.type !== 'cabinet' ? TYPES_LIEU[lieu.type] : '');
+
+const title = `${site.titreMetier} ${site.cabinet.ville} – ${noms}`;
+const description = `${titreCabinet}. ${phraseAccueil} ${site.soins.slice(0, 4).map((s) => s.titreCourt).join(', ')}.`;
+const metier = site.titreMetier.toLowerCase();
 ---
-<Base title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale)]}>
-  <section class="hero">
-    <div class="wrap hero__grid">
-      <div>
-        <span class="eyebrow">{site.profession.libelle} · {site.cabinet.quartier}</span>
-        <h1>{site.accroche.titre}</h1>
-        <p class="lead">{site.accroche.texte}</p>
-        <div class="hero__cta">
-          <a class="btn btn--primary" href={rdvHref('hero')}>Prendre rendez-vous</a>
-          <a class="btn btn--ghost" href={telLien}>{site.cabinet.telephone}</a>
-        </div>
-        <ul class="chips" aria-label="En bref">
-          {site.praticien.conventionnement && <li>{site.praticien.conventionnement}</li>}
-          {site.cabinet.pmr && <li>Accès PMR</li>}
-          <li>RDV en ligne 24h/24</li>
-        </ul>
+<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale)]}>
+  <section class="cadre accueil">
+    <div>
+      <p class="sur">{titreMetierAffiche} · {site.cabinet.ville}</p>
+      <h1>{titreCabinet}</h1>
+      <p class="chapo">{phraseAccueil}</p>
+      <ul class="essentiel">
+        <li><Icone nom="lucide:map-pin" /><span>{lieuLigne && <>{lieuLigne}<br /></>}{lieu.adresse}, {lieu.codePostal} {lieu.ville}</span></li>
+        <li><Icone nom="lucide:clock" /><span>{jours}</span></li>
+        {site.domicile.actif && <li><Icone nom="healthicons:home-outline" /><span>Visites à domicile{site.domicile.secteurs.length ? ` (${site.domicile.secteurs.length} secteurs)` : ''}</span></li>}
+      </ul>
+      <div class="actions">
+        <a class="bouton bouton--plein" href={site.praticiens.length > 1 ? '#praticiens' : lienRdv('accueil')}><Icone nom="lucide:calendar" />{libelleRdv}</a>
+        {site.rdvMode !== 'telephone' && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
       </div>
-      <Decor />
+    </div>
+    <figure class="accueil__photo">
+      <img src="/photos/cabinet-lumiere.webp" alt={`Une salle de soins du cabinet de ${site.cabinet.ville}`} width="1200" height="1800" fetchpriority="high" />
+    </figure>
+  </section>
+
+  <section class="section section--douce">
+    <div class="cadre">
+      <h2>Quand consulter un {metier} ?</h2>
+      <p class="chapo">
+        Le {metier} prend en charge les affections de la peau et des ongles du pied, ainsi que les douleurs du pied, de la
+        cheville, du genou, de la hanche ou du dos liées à la marche ou à la course. Une douleur régulière au talon, aux
+        orteils ou sous le pied, une verrue plantaire ou un ongle incarné sont autant de raisons de consulter.
+      </p>
     </div>
   </section>
 
-  <section class="section" aria-labelledby="soins-titre">
-    <div class="wrap">
-      <span class="eyebrow">Soins</span>
-      <h2 id="soins-titre">Les soins proposés au cabinet</h2>
-      <div class="grid grid--3 soins">
-        {site.soins.map((s) => (
-          <a class="card soin" href={`/soins/${s.slug}`}>
-            <span class="pastille"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
-            <h3>{s.titreCourt}</h3>
-            <p>{s.resume}</p>
-            <span class="soin__more" aria-hidden="true">En savoir plus →</span>
-          </a>
-        ))}
-      </div>
+  <section class="section" id="competences">
+    <div class="cadre">
+      <h2>{titreCompetences}</h2>
+      <Competences />
     </div>
   </section>
 
-  <section class="section section--alt" aria-labelledby="apropos-titre">
-    <div class="wrap apropos">
-      <div class="apropos__portrait" aria-hidden="true">
-        {site.praticien.photo ? <img src={site.praticien.photo} alt="" width="360" height="440" /> : (
-          <span>{site.praticien.prenom[0]}{site.praticien.nom[0]}</span>
-        )}
-      </div>
-      <div>
-        <span class="eyebrow">Votre {site.profession.libelle.toLowerCase()}</span>
-        <h2 id="apropos-titre">{nomPraticien}</h2>
-        <p class="lead">{site.praticien.parcours.split('\n\n')[0]}</p>
-        <a href="/a-propos">Découvrir le cabinet et mon parcours</a>
-      </div>
+  <section class="section section--douce" id="praticiens">
+    <div class="cadre">
+      <h2>{titrePraticiens}</h2>
+      <Praticiens />
     </div>
   </section>
 
-  {articles.length > 0 && (
-    <section class="section" aria-labelledby="conseils-titre">
-      <div class="wrap">
-        <span class="eyebrow">Conseils</span>
-        <h2 id="conseils-titre">Les derniers conseils</h2>
-        <div class="grid grid--3">
-          {articles.map((a) => (
-            <a class="card soin" href={`/actualites/${a.slug}`}>
-              <span class="tag">{a.theme} · {dateFr(a.date)}</span>
-              <h3>{a.titre}</h3>
-              <p>{a.resume}</p>
-            </a>
-          ))}
-        </div>
-      </div>
-    </section>
-  )}
+  <section class="section" id="infos">
+    <div class="cadre">
+      <h2>Informations pratiques</h2>
+      <Infos />
+    </div>
+  </section>
 
-  <InfosPratiques />
-
-  <section class="section" aria-labelledby="faq-titre">
-    <div class="wrap">
-      <span class="eyebrow">Questions fréquentes</span>
-      <h2 id="faq-titre">Vos questions</h2>
+  <section class="section section--douce">
+    <div class="cadre">
+      <h2>Questions fréquentes</h2>
       <FaqList items={site.faqGenerale} />
     </div>
   </section>
-</Base>
+</Gabarit>
 
 <style>
-  .hero { padding-block: clamp(40px, 7vw, 88px); background: linear-gradient(180deg, var(--brand-softer), var(--bg)); }
-  .hero__grid { display: grid; gap: 40px; align-items: center; }
-  @media (min-width: 900px) { .hero__grid { grid-template-columns: 1.15fr 0.85fr; } }
-  .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 24px; }
-  .chips { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; }
-  .chips li { font-size: 0.875rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-deep); }
-
-  .soin { display: flex; flex-direction: column; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
-  .soin:hover { border-color: var(--brand-line); transform: translateY(-2px); box-shadow: var(--shadow); color: inherit; }
-  .soin p { color: var(--ink-soft); font-size: 0.97rem; flex: 1; }
-  .soin__more { font-weight: 700; color: var(--brand-ink); font-size: 0.95rem; }
-  .tag { font-size: 0.8rem; font-weight: 700; color: var(--brand-ink); margin-bottom: 0.6rem; }
-
-  .apropos { display: grid; gap: 40px; align-items: center; }
-  @media (min-width: 900px) { .apropos { grid-template-columns: 0.7fr 1.3fr; } }
-  .apropos__portrait {
-    aspect-ratio: 4 / 5; max-width: 360px; width: 100%; margin-inline: auto;
-    border-radius: var(--radius-lg); overflow: hidden;
-    background: linear-gradient(160deg, var(--brand-soft), var(--brand-line));
-    display: grid; place-items: center;
-  }
-  .apropos__portrait span { font-family: var(--font-head); font-size: 5rem; font-weight: 700; color: var(--brand-ink); opacity: 0.7; }
-  .apropos__portrait img { width: 100%; height: 100%; object-fit: cover; }
+  .accueil { display: grid; gap: 40px; align-items: center; padding-block: clamp(36px, 6vw, 72px); }
+  @media (min-width: 900px) { .accueil { grid-template-columns: 1.15fr 0.85fr; } }
+  .chapo { margin: 18px 0 24px; }
+  .essentiel { list-style: none; padding: 0; margin: 0 0 28px; display: grid; gap: 12px; }
+  .essentiel li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.97rem; }
+  .essentiel :global(.icone) { color: var(--accent); font-size: 1.3rem; margin-top: 2px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .accueil__photo { margin: 0; }
+  .accueil__photo img { width: 100%; height: clamp(280px, 50vh, 500px); object-fit: cover; border-radius: 24px; }
 </style>

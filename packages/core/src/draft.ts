@@ -1,59 +1,211 @@
-// Brouillon de site édité par le praticien dans le back-office (colonne sites.config).
+// Brouillon de site édité dans le back-office (colonne sites.config), version 2.
+// Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
 import type { Horaire, SiteConfig } from './types';
+import type { Voix } from './lexique';
 
 export type MiseEnPage = SiteConfig['theme']['mise_en_page'];
 export type StyleImages = SiteConfig['theme']['style_images'];
 
+export type Pays = 'FR' | 'BE' | 'CH';
+export type Profil = 'proximite' | 'groupe' | 'sport' | 'prevention' | 'technique';
+export type Modele = 'proximite' | 'premium';
+export type StatutPraticien = 'titulaire' | 'collaborateur' | 'remplacant';
+export type TypeLieu = 'cabinet' | 'maison_sante' | 'pole_sante' | 'centre_medical';
+export type ModeRdv = 'en_ligne' | 'telephone' | 'les_deux';
+
+export type PraticienDraft = {
+  id: string;
+  prenom: string;
+  nom: string;
+  statut: StatutPraticien;
+  /** France : n° d'inscription au tableau de l'Ordre (9 chiffres) */
+  numeroOrdre: string;
+  /** France : RPPS (11 chiffres), facultatif */
+  rpps: string;
+  /** Belgique : n° INAMI (5-XXXXX-XX-XXX) */
+  inami: string;
+  /** Suisse : membre de la Société Suisse des Podologues */
+  membreSsp: boolean;
+  /** Suisse : n° RCC/ZSR */
+  rcc: string;
+  diplome: string;
+  ecole: string;
+  formations: string[];
+  /** Compétences mises en avant (slugs du catalogue) */
+  orientations: string[];
+  /** Sports suivis (profil sport) */
+  sports: string[];
+  /** Lien de RDV propre au praticien (sinon celui du cabinet) */
+  rdvUrl: string;
+  /** Jours de présence, si différents du cabinet (ex. « Vendredi et samedi ») */
+  presence: string;
+  bio: string;
+};
+
+export type LieuDraft = {
+  id: string;
+  type: TypeLieu;
+  /** Nom du lieu : « Maison de santé des Brotteaux » ; vide pour un cabinet simple */
+  nom: string;
+  adresse: string;
+  complement: string;
+  codePostal: string;
+  ville: string;
+  horaires: Horaire[];
+};
+
 export type SiteDraft = {
-  praticien: { prenom: string; nom: string; titre: string; rpps: string };
+  version: 2;
+  pays: Pays;
+  profil: Profil;
+  voix: Voix;
   cabinet: {
     nom: string;
-    adresse: string;
-    codePostal: string;
     ville: string;
     quartier: string;
     telephone: string;
-    pmr: boolean;
-    horaires: Horaire[];
+    email: string;
+    /** Communes voisines / secteurs, pour le référencement local */
+    communes: string[];
   };
-  rdv: { url: string; plateforme: string };
-  theme: SiteConfig['theme'];
-  /** Slugs des soins choisis dans le catalogue de la profession */
+  lieux: LieuDraft[];
+  praticiens: PraticienDraft[];
+  acces: {
+    pmr: boolean;
+    parking: string;
+    transports: string;
+    autres: string[];
+  };
+  rdv: { mode: ModeRdv; outil: string; url: string };
+  paiements: string[];
+  domicile: { actif: boolean; creneaux: string; secteurs: string[] };
+  message: { texte: string; jusquAu: string };
+  conventionnement: string;
+  theme: { couleur: string; modele: Modele };
+  /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
 };
 
 export const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
 
+export const PAYS: { value: Pays; label: string; titre: string; outilsRdv: string[]; paiements: string[] }[] = [
+  { value: 'FR', label: 'France', titre: 'Pédicure-podologue', outilsRdv: ['Doctolib', 'RdvDoc', 'Maiia', 'Autre'], paiements: ['Carte bancaire', 'Chèques', 'Espèces'] },
+  { value: 'BE', label: 'Belgique', titre: 'Podologue', outilsRdv: ['Rosa', 'Doctoranytime', 'Progenda', 'Autre'], paiements: ['Bancontact', 'Payconiq / QR code', 'Espèces', 'Virement'] },
+  { value: 'CH', label: 'Suisse', titre: 'Podologue ES', outilsRdv: ['OneDoc', 'Medicosearch', 'Autre'], paiements: ['Carte bancaire', 'TWINT', 'Espèces', 'Facture'] },
+];
+
+export const PROFILS: { value: Profil; label: string; description: string; voix: Voix; modele: Modele }[] = [
+  { value: 'proximite', label: 'Cabinet de proximité', description: 'Être trouvé facilement, avec les informations pratiques.', voix: 'tiers', modele: 'proximite' },
+  { value: 'groupe', label: 'Cabinet de groupe / maison de santé', description: 'Plusieurs praticiens, un RDV par praticien.', voix: 'nous', modele: 'proximite' },
+  { value: 'sport', label: 'Sport et posture', description: 'Podologie du sport, posturologie, analyse de la course.', voix: 'tiers', modele: 'premium' },
+  { value: 'prevention', label: 'Prévention et soins', description: 'Pied diabétique, seniors, visites à domicile.', voix: 'tiers', modele: 'proximite' },
+  { value: 'technique', label: 'Techniques et équipements', description: 'Laser, plateforme podométrique, approche moderne.', voix: 'nous', modele: 'premium' },
+];
+
+export const VOIX: { value: Voix; label: string; exemple: string }[] = [
+  { value: 'tiers', label: '3e personne', exemple: '« Camille Rousseau, pédicure-podologue, vous accueille… »' },
+  { value: 'nous', label: 'Nous', exemple: '« Nous vous accueillons au cabinet… »' },
+  { value: 'je', label: 'Je', exemple: '« Je vous accueille au cabinet… »' },
+];
+
+export const MODELES: { value: Modele; label: string; description: string }[] = [
+  { value: 'proximite', label: 'Proximité', description: 'Clair et factuel, centré sur les informations pratiques.' },
+  { value: 'premium', label: 'Médical premium', description: 'Photos, grande typographie, image haut de gamme.' },
+];
+
+export const TYPES_LIEU: { value: TypeLieu; label: string }[] = [
+  { value: 'cabinet', label: 'Cabinet libéral' },
+  { value: 'maison_sante', label: 'Maison de santé' },
+  { value: 'pole_sante', label: 'Pôle / espace de santé' },
+  { value: 'centre_medical', label: 'Centre médical' },
+];
+
+export const STATUTS: { value: StatutPraticien; label: string }[] = [
+  { value: 'titulaire', label: 'Titulaire' },
+  { value: 'collaborateur', label: 'Collaborateur·rice' },
+  { value: 'remplacant', label: 'Remplaçant·e' },
+];
+
+export const COULEURS_SUGGEREES = ['#1f6a64', '#2563a8', '#0b1c24', '#7b4fa0', '#b5583a', '#3d6b3a', '#b0802b'];
+
+// Conservés pour les anciens gabarits.
 export const MISES_EN_PAGE: { value: MiseEnPage; label: string; description: string }[] = [
   { value: 'sobre', label: 'Sobre', description: 'Épuré et professionnel' },
   { value: 'chaleureux', label: 'Chaleureux', description: 'Rond, doux et accueillant' },
   { value: 'premium', label: 'Premium', description: 'Élégant, typographie à empattements' },
 ];
-
 export const STYLES_IMAGES: { value: StyleImages; label: string }[] = [
   { value: 'organique', label: 'Formes organiques' },
   { value: 'lignes', label: 'Dessin au trait' },
   { value: 'minimal', label: 'Minimaliste' },
 ];
 
-export const COULEURS_SUGGEREES = ['#2f7d6d', '#2563a8', '#7b4fa0', '#c2553d', '#b0802b', '#3d6b3a', '#334155'];
+const id = () => Math.random().toString(36).slice(2, 10);
+
+export const horairesParDefaut = (): Horaire[] =>
+  JOURS.map((jour) => ({ jour, heures: jour === 'Samedi' || jour === 'Dimanche' ? 'Fermé' : '9h00–12h30, 14h00–19h00' }));
+
+export const praticienVide = (statut: StatutPraticien = 'titulaire'): PraticienDraft => ({
+  id: id(), prenom: '', nom: '', statut, numeroOrdre: '', rpps: '', inami: '', membreSsp: false, rcc: '',
+  diplome: '', ecole: '', formations: [], orientations: [], sports: [], rdvUrl: '', presence: '', bio: '',
+});
+
+export const lieuVide = (): LieuDraft => ({
+  id: id(), type: 'cabinet', nom: '', adresse: '', complement: '', codePostal: '', ville: '', horaires: horairesParDefaut(),
+});
 
 export const draftVide = (): SiteDraft => ({
-  praticien: { prenom: '', nom: '', titre: '', rpps: '' },
-  cabinet: {
-    nom: '',
-    adresse: '',
-    codePostal: '',
-    ville: '',
-    quartier: '',
-    telephone: '',
-    pmr: false,
-    horaires: JOURS.map((jour) => ({
-      jour,
-      heures: jour === 'Samedi' || jour === 'Dimanche' ? 'Fermé' : '9h00–12h30, 14h00–19h00',
-    })),
-  },
-  rdv: { url: '', plateforme: 'Doctolib' },
-  theme: { couleur: COULEURS_SUGGEREES[0], mise_en_page: 'chaleureux', style_images: 'organique' },
+  version: 2,
+  pays: 'FR',
+  profil: 'proximite',
+  voix: 'tiers',
+  cabinet: { nom: '', ville: '', quartier: '', telephone: '', email: '', communes: [] },
+  lieux: [lieuVide()],
+  praticiens: [praticienVide()],
+  acces: { pmr: false, parking: '', transports: '', autres: [] },
+  rdv: { mode: 'les_deux', outil: 'Doctolib', url: '' },
+  paiements: ['Carte bancaire', 'Chèques', 'Espèces'],
+  domicile: { actif: false, creneaux: '', secteurs: [] },
+  message: { texte: '', jusquAu: '' },
+  conventionnement: '',
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite' },
   soins: [],
 });
+
+/** Convertit un brouillon (v1 ou v2 partiel) en v2 complet. */
+export function normaliserDraft(brut: unknown): SiteDraft {
+  const vide = draftVide();
+  const d = (brut ?? {}) as Record<string, any>;
+
+  if (d.version === 2) {
+    return {
+      ...vide,
+      ...d,
+      cabinet: { ...vide.cabinet, ...d.cabinet },
+      acces: { ...vide.acces, ...d.acces },
+      rdv: { ...vide.rdv, ...d.rdv },
+      domicile: { ...vide.domicile, ...d.domicile },
+      message: { ...vide.message, ...d.message },
+      theme: { ...vide.theme, ...d.theme },
+      lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
+      praticiens: Array.isArray(d.praticiens) && d.praticiens.length ? d.praticiens.map((p: any) => ({ ...praticienVide(), ...p })) : vide.praticiens,
+      soins: Array.isArray(d.soins) ? d.soins : [],
+      version: 2,
+    };
+  }
+
+  // Version 1 : un praticien, un cabinet.
+  const p1 = d.praticien ?? {};
+  const c1 = d.cabinet ?? {};
+  const rpps = String(p1.rpps ?? '');
+  return {
+    ...vide,
+    cabinet: { ...vide.cabinet, nom: c1.nom ?? '', ville: c1.ville ?? '', quartier: c1.quartier ?? '', telephone: c1.telephone ?? '' },
+    lieux: [{ ...lieuVide(), adresse: c1.adresse ?? '', codePostal: c1.codePostal ?? '', ville: c1.ville ?? '', horaires: c1.horaires ?? horairesParDefaut() }],
+    praticiens: [{ ...praticienVide(), prenom: p1.prenom ?? '', nom: p1.nom ?? '', rpps: rpps.length === 11 ? rpps : '', numeroOrdre: rpps.length === 9 ? rpps : '' }],
+    acces: { ...vide.acces, pmr: Boolean(c1.pmr) },
+    rdv: { mode: d.rdv?.url ? 'les_deux' : 'telephone', outil: d.rdv?.plateforme || 'Doctolib', url: d.rdv?.url ?? '' },
+    theme: { couleur: d.theme?.couleur ?? vide.theme.couleur, modele: 'proximite' },
+    soins: Array.isArray(d.soins) ? d.soins : [],
+  };
+}

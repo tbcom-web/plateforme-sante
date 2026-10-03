@@ -1,0 +1,41 @@
+---
+import Gabarit from '../layouts/Gabarit.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import Praticiens from '../components/gabarit/Praticiens.astro';
+import Infos from '../components/gabarit/Infos.astro';
+import { site } from '../lib/site';
+import { breadcrumbSchema } from '../lib/schema';
+import { titreCabinet, phraseAccueil, titrePraticiens, noms } from '../lib/textes';
+
+const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le-cabinet' }];
+---
+<Gabarit
+  title={`Le cabinet – ${noms}, ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`}
+  description={`${titreCabinet}. ${phraseAccueil}`}
+  path="/le-cabinet"
+  schemas={[breadcrumbSchema(crumbs)]}
+>
+  <section class="section">
+    <div class="cadre">
+      <Breadcrumb items={crumbs} />
+      <h1>{titreCabinet}</h1>
+      <p class="chapo">{phraseAccueil}</p>
+    </div>
+  </section>
+  <section class="section section--douce">
+    <div class="cadre">
+      <h2>{titrePraticiens}</h2>
+      <Praticiens />
+    </div>
+  </section>
+  <section class="section" id="infos">
+    <div class="cadre">
+      <h2>Informations pratiques</h2>
+      <Infos />
+    </div>
+  </section>
+</Gabarit>
+
+<style>
+  .chapo { margin-top: 16px; }
+</style>

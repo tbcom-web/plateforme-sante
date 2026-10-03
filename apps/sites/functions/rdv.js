@@ -7,6 +7,8 @@ export async function onRequestGet({ request, env }) {
   const config = await env.ASSETS.fetch(new URL('/rdv-config.json', url)).then((r) => r.json());
 
   const source = (url.searchParams.get('src') ?? 'inconnu').slice(0, 64);
+  const index = Number.parseInt(url.searchParams.get('p') ?? '', 10);
+  const cible = (Number.isInteger(index) && config.praticiens?.[index]) || config.url;
   const ua = request.headers.get('user-agent') ?? '';
   const appareil = /mobile|android|iphone/i.test(ua) ? 'mobile' : 'ordinateur';
   const robot = /bot|crawler|spider|preview/i.test(ua);
@@ -14,13 +16,13 @@ export async function onRequestGet({ request, env }) {
   if (env.RDV_CLICKS && !robot) {
     env.RDV_CLICKS.writeDataPoint({
       indexes: [config.siteId],
-      blobs: [config.siteId, source, appareil],
+      blobs: [config.siteId, source, appareil, Number.isInteger(index) ? String(index) : ''],
       doubles: [1],
     });
   }
 
   return new Response(null, {
     status: 302,
-    headers: { Location: config.url, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
+    headers: { Location: cible, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
   });
 }

@@ -1,5 +1,5 @@
 ---
-import Base from '../../layouts/Base.astro';
+import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import { site, md, nomPraticien, dateFr, rdvHref } from '../../lib/site';
 import { articleSchema, breadcrumbSchema } from '../../lib/schema';
@@ -17,14 +17,14 @@ const crumbs = [
   { name: article.titre, path },
 ];
 ---
-<Base
+<Gabarit
   title={`${article.titre} | ${nomPraticien}`}
   description={article.resume}
   path={path}
   schemas={[articleSchema(article), breadcrumbSchema(crumbs)]}
 >
   <article class="section">
-    <div class="wrap">
+    <div class="cadre">
       <Breadcrumb items={crumbs} />
       <header class="head">
         <span class="tag">{article.theme}</span>
@@ -38,7 +38,7 @@ const crumbs = [
       </div>
     </div>
   </article>
-</Base>
+</Gabarit>
 
 <style>
   .head { max-width: 70ch; margin-bottom: 24px; }

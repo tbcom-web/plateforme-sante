@@ -1,5 +1,5 @@
 ---
-import Base from '../../layouts/Base.astro';
+import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import { site, nomPraticien, dateFr } from '../../lib/site';
 import { breadcrumbSchema } from '../../lib/schema';
@@ -7,7 +7,7 @@ import { breadcrumbSchema } from '../../lib/schema';
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Conseils', path: '/actualites' }];
 const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date));
 ---
-<Base
+<Gabarit
   title={`Conseils et actualités | ${nomPraticien}`}
   description={`Conseils pour prendre soin de vos pieds, par ${nomPraticien}, ${site.profession.libelle.toLowerCase()} à ${site.cabinet.ville}.`}
   path="/actualites"
@@ -15,10 +15,10 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
   noindex={articles.length === 0}
 >
   <section class="section">
-    <div class="wrap">
+    <div class="cadre">
       <Breadcrumb items={crumbs} />
       <h1>Conseils et actualités</h1>
-      {articles.length === 0 && <p class="lead">Les premiers conseils arrivent bientôt.</p>}
+      {articles.length === 0 && <p class="chapo">Les premiers conseils arrivent bientôt.</p>}
       <div class="liste">
         {articles.map((a) => (
           <a class="card item" href={`/actualites/${a.slug}`}>
@@ -30,7 +30,7 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
       </div>
     </div>
   </section>
-</Base>
+</Gabarit>
 
 <style>
   .liste { display: grid; gap: 16px; max-width: 820px; margin-top: 24px; }

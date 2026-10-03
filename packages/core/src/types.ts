@@ -75,4 +75,47 @@ export type SiteConfig = {
   articles: Article[];
   tracking: { ga4?: string; clarity?: string };
   mentions: { hebergeur: string; editeur: string; mediateur?: string };
+
+  // ---- Modèle v2 (référentiel webpodologue) ----
+  pays: 'FR' | 'BE' | 'CH';
+  voix: 'je' | 'nous' | 'tiers';
+  modele: 'proximite' | 'premium';
+  /** Titre professionnel selon le pays : « Pédicure-podologue », « Podologue », « Podologue ES » */
+  titreMetier: string;
+  praticiens: PraticienPublic[];
+  lieux: LieuPublic[];
+  accesDetail: { pmr: boolean; parking: string; transports: string; autres: string[] };
+  rdvMode: 'en_ligne' | 'telephone' | 'les_deux';
+  paiements: string[];
+  domicile: { actif: boolean; creneaux: string; secteurs: string[] };
+  /** Message temporaire (congés, déménagement), déjà filtré sur sa date de fin */
+  message: string;
+  communes: string[];
+};
+
+export type PraticienPublic = {
+  prenom: string;
+  nom: string;
+  statut: 'titulaire' | 'collaborateur' | 'remplacant';
+  titre: string;
+  /** Lignes d'identification prêtes à afficher (n° d'Ordre, RPPS, INAMI, SSP…) */
+  identifiants: string[];
+  diplome: string;
+  formations: string[];
+  /** Libellés des compétences mises en avant */
+  orientations: string[];
+  sports: string[];
+  rdvUrl: string;
+  presence: string;
+  bio: string;
+};
+
+export type LieuPublic = {
+  type: 'cabinet' | 'maison_sante' | 'pole_sante' | 'centre_medical';
+  nom: string;
+  adresse: string;
+  complement: string;
+  codePostal: string;
+  ville: string;
+  horaires: Horaire[];
 };

@@ -1,24 +1,34 @@
 ---
-import Base from '../layouts/Base.astro';
-import { site, nomPraticien, adresseComplete } from '../lib/site';
+import Gabarit from '../layouts/Gabarit.astro';
+import { site } from '../lib/site';
+import { noms, lieu, titreCabinet } from '../lib/textes';
 
 const mesure = site.tracking.ga4 || site.tracking.clarity;
+const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH: 'Société Suisse des Podologues (SSP)' }[site.pays];
 ---
-<Base title={`Mentions légales | ${site.cabinet.nom}`} description={`Mentions légales du site de ${nomPraticien}.`} path="/mentions-legales">
+<Gabarit title={`Mentions légales – ${titreCabinet}`} description={`Mentions légales du site de ${noms}.`} path="/mentions-legales">
   <section class="section">
-    <div class="wrap prose">
+    <div class="cadre prose">
       <h1>Mentions légales</h1>
 
       <h2>Éditeur du site</h2>
       <p>
-        {site.mentions.editeur}<br />
-        {adresseComplete}<br />
-        Téléphone : {site.cabinet.telephone}<br />
-        N° RPPS : {site.praticien.rpps}<br />
-        {site.praticien.ordre}<br />
-        {site.praticien.conventionnement}
+        {titreCabinet}<br />
+        {lieu.nom && <>{lieu.nom}<br /></>}
+        {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}, {lieu.codePostal} {lieu.ville}<br />
+        Téléphone : {site.cabinet.telephone}
+        {site.cabinet.email && <><br />E-mail : {site.cabinet.email}</>}
       </p>
-      <p>Directeur de la publication : {nomPraticien}.</p>
+      {site.praticiens.map((p) => (
+        <p>
+          <strong>{p.prenom} {p.nom}</strong>, {p.titre.toLowerCase()}<br />
+          {p.identifiants.map((id) => <>{id}<br /></>)}
+          {p.diplome}
+        </p>
+      ))}
+      <p>Directeur·rice de la publication : {site.praticiens[0].prenom} {site.praticiens[0].nom}.</p>
+      {site.praticien.conventionnement && <p>{site.praticien.conventionnement}.</p>}
+      <p>Instance professionnelle : {ordre}.</p>
 
       <h2>Hébergement</h2>
       <p>{site.mentions.hebergeur}</p>
@@ -26,25 +36,25 @@ const mesure = site.tracking.ga4 || site.tracking.clarity;
       <h2>Informations médicales</h2>
       <p>
         Les informations publiées sur ce site sont générales. Elles ne remplacent pas une consultation et ne permettent pas
-        d’établir un diagnostic. En cas d’urgence, composez le 15.
+        d’établir un diagnostic. En cas d’urgence, composez le {site.pays === 'FR' ? '15' : site.pays === 'BE' ? '112' : '144'}.
       </p>
 
       <h2>Données personnelles</h2>
       <p>
-        Ce site ne collecte aucune donnée de santé. La prise de rendez-vous se fait sur {site.rdv.plateforme}, qui dispose de
-        sa propre politique de confidentialité. Les clics vers la prise de rendez-vous sont comptés de façon anonyme, sans
-        cookie ni adresse IP.
+        Ce site ne collecte aucune donnée de santé.
+        {site.rdvMode !== 'telephone' && ` La prise de rendez-vous se fait sur ${site.rdv.plateforme}, qui dispose de sa propre politique de confidentialité.`}
+        Les clics vers la prise de rendez-vous sont comptés de façon anonyme, sans cookie ni adresse IP.
       </p>
       {mesure && (
         <p>
-          Avec votre accord, des outils de mesure d’audience (Google Analytics, Microsoft Clarity) sont utilisés. Vous
-          pouvez retirer votre consentement à tout moment via le lien « Gérer les cookies » en bas de page.
+          Avec votre accord, des outils de mesure d’audience (Google Analytics, Microsoft Clarity) sont utilisés. Vous pouvez
+          retirer votre consentement à tout moment via le lien « Gérer les cookies ».
         </p>
       )}
       <p>
         Vous disposez d’un droit d’accès, de rectification et de suppression de vos données, à exercer auprès de l’éditeur.
-        Vous pouvez également saisir la CNIL.
+        {site.pays === 'FR' && ' Vous pouvez également saisir la CNIL.'}
       </p>
     </div>
   </section>
-</Base>
+</Gabarit>

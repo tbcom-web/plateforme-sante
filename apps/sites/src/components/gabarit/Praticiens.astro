@@ -1,0 +1,48 @@
+---
+import { site } from '../../lib/site';
+import { lienRdv, rdvEnLigne } from '../../lib/textes';
+
+const STATUTS: Record<string, string> = { titulaire: '', collaborateur: 'Collaborateur·rice', remplacant: 'Remplaçant·e' };
+---
+<div class="praticiens">
+  {site.praticiens.map((p, i) => (
+    <article class="praticien">
+      <div class="praticien__avatar" aria-hidden="true">{p.prenom[0]}{p.nom[0]}</div>
+      <h3>{p.prenom} {p.nom}</h3>
+      <p class="praticien__titre">
+        {p.titre} à {site.cabinet.ville}{STATUTS[p.statut] && ` — ${STATUTS[p.statut]}`}
+      </p>
+      {p.identifiants.map((id) => <p class="praticien__id">{id}</p>)}
+      {p.diplome && <p class="praticien__diplome">{p.diplome}</p>}
+      {p.presence && <p class="praticien__diplome">Présent·e au cabinet : {p.presence}</p>}
+      {p.bio && <p class="praticien__bio">{p.bio}</p>}
+      {p.orientations.length > 0 && (
+        <ul class="praticien__orientations" aria-label="Orientations">{p.orientations.map((o) => <li>{o}</li>)}</ul>
+      )}
+      {p.sports.length > 0 && <p class="praticien__diplome">Sports suivis : {p.sports.join(', ')}</p>}
+      {p.formations.length > 0 && (
+        <ul class="praticien__formations">{p.formations.map((f) => <li>{f}</li>)}</ul>
+      )}
+      <a class="bouton bouton--plein" href={lienRdv(`praticien-${i}`, rdvEnLigne && site.praticiens.length > 1 ? i : undefined)}>
+        {rdvEnLigne ? (site.praticiens.length > 1 ? `Prendre rendez-vous avec ${p.prenom}` : 'Prendre rendez-vous') : 'Appeler le cabinet'}
+      </a>
+    </article>
+  ))}
+</div>
+
+<style>
+  .praticiens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .praticien { background: #fff; border-radius: var(--rayon); padding: 28px; display: grid; gap: 6px; align-content: start; border: 1px solid var(--ligne); }
+  .praticien__avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 1.2rem; margin-bottom: 10px; }
+  h3 { font-size: 1.35rem; }
+  p { margin: 0; }
+  .praticien__titre { color: var(--encre-douce); }
+  .praticien__id { font-size: 0.88rem; }
+  .praticien__id:first-of-type { margin-top: 8px; }
+  .praticien__diplome { font-size: 0.88rem; color: var(--encre-douce); }
+  .praticien__bio { margin-top: 8px; color: var(--encre-douce); }
+  .praticien__orientations { list-style: none; padding: 0; margin: 12px 0 4px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .praticien__orientations li { font-size: 0.82rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--accent-pale); color: var(--accent); }
+  .praticien__formations { margin: 6px 0 0; padding-left: 1.1em; font-size: 0.88rem; color: var(--encre-douce); }
+  .bouton { margin-top: 14px; }
+</style>

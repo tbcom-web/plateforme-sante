@@ -1,0 +1,27 @@
+---
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { iconeSoin, ICONE_SOIN_DEFAUT } from '@plateforme/core';
+---
+<ul class="competences">
+  {site.soins.map((s) => (
+    <li>
+      <a href={`/soins/${s.slug}`}>
+        <span class="competences__icone"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
+        <span class="competences__titre">{s.titreCourt}</span>
+        <span class="competences__texte">{s.resume}</span>
+        <span class="competences__lien">En savoir plus</span>
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .competences { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  a { display: grid; gap: 8px; height: 100%; padding: 24px; border-radius: var(--rayon); border: 1px solid var(--ligne); background: #fff; text-decoration: none; color: var(--encre); transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
+  a:hover { border-color: var(--accent); box-shadow: 0 10px 30px -18px rgb(23 41 42 / 0.4); transform: translateY(-2px); color: var(--encre); }
+  .competences__icone { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--accent-pale); color: var(--accent); font-size: 1.9rem; }
+  .competences__titre { font-weight: 650; font-size: 1.15rem; margin-top: 6px; }
+  .competences__texte { color: var(--encre-douce); font-size: 0.95rem; }
+  .competences__lien { color: var(--accent); font-weight: 600; font-size: 0.92rem; margin-top: auto; }
+</style>
