@@ -15,9 +15,12 @@ export type MonSite = {
 /** Site du praticien connecté (un seul par compte pour le MVP), ou un brouillon vide. */
 export async function getMonSite(): Promise<MonSite> {
   const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  // Filtre explicite sur le propriétaire : un admin voit tous les sites via RLS.
   const { data } = await supabase
     .from('sites')
     .select('id, statut, domaine, config, updated_at')
+    .eq('owner', auth.user?.id ?? '')
     .order('created_at')
     .limit(1)
     .maybeSingle();
@@ -52,13 +55,15 @@ export async function getCatalogue(profession = 'podologue'): Promise<SoinCatalo
 }
 
 /** Étapes restant à compléter avant de pouvoir publier. */
-export function manques(d: SiteDraft): string[] {
+export function manques(d: Partial<SiteDraft> | null | undefined): string[] {
+  const p = d?.praticien;
+  const c = d?.cabinet;
   const m: string[] = [];
-  if (!d.praticien.prenom || !d.praticien.nom) m.push('Votre nom');
-  if (!/^\d{11}$/.test(d.praticien.rpps)) m.push('Votre numéro RPPS (11 chiffres)');
-  if (!d.cabinet.adresse || !d.cabinet.ville || !d.cabinet.codePostal) m.push('L’adresse du cabinet');
-  if (!d.cabinet.telephone) m.push('Le téléphone du cabinet');
-  if (!/^https:\/\//.test(d.rdv.url)) m.push('Le lien de prise de rendez-vous');
-  if (d.soins.length === 0) m.push('Au moins un soin');
+  if (!p?.prenom || !p?.nom) m.push('Votre nom');
+  if (!/^\d{11}$/.test(p?.rpps ?? '')) m.push('Votre numéro RPPS (11 chiffres)');
+  if (!c?.adresse || !c?.ville || !c?.codePostal) m.push('L’adresse du cabinet');
+  if (!c?.telephone) m.push('Le téléphone du cabinet');
+  if (!/^https:\/\//.test(d?.rdv?.url ?? '')) m.push('Le lien de prise de rendez-vous');
+  if (!d?.soins?.length) m.push('Au moins un soin');
   return m;
 }
