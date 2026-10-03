@@ -40,7 +40,9 @@ jobs:
       - name: Préparer (slug du site)
         id: prep
         working-directory: apps/sites
-        run: echo "slug=$(node scripts/publication.mjs preparer "$SITE_ID")" >> "$GITHUB_OUTPUT"
+        run: |
+          slug=$(node scripts/publication.mjs preparer "$SITE_ID")
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
 
       - name: Construire le site
         run: npm run build -w apps/sites
