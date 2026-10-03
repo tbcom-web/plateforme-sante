@@ -29,6 +29,7 @@ const faits = [
 ].filter(Boolean);
 
 const ouvert = site.cabinet.horaires.filter((h) => /\d/.test(h.heures));
+const titreDoc = `${site.profession.libelle} à ${site.cabinet.ville} – ${nomPraticien} · Modèle Médical premium`;
 ---
 <!doctype html>
 <html lang="fr">
@@ -36,7 +37,7 @@ const ouvert = site.cabinet.horaires.filter((h) => /\d/.test(h.heures));
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>{site.profession.libelle} à {site.cabinet.ville} – {nomPraticien} · Modèle Médical premium</title>
+    <title>{titreDoc}</title>
     <link rel="preload" as="image" href="/photos/accueil-observation-marche.webp" fetchpriority="high" />
   </head>
   <body>
@@ -123,7 +124,7 @@ const ouvert = site.cabinet.horaires.filter((h) => /\d/.test(h.heures));
           <ul>
             <li><strong>Hygiène</strong> Instruments stérilisés après chaque patient</li>
             <li><strong>Accessibilité</strong> {site.cabinet.pmr ? 'Accès de plain-pied, PMR' : 'Nous contacter pour l’accès'}</li>
-            <li><strong>Ponctualité</strong> Des créneaux respectés, sans attente inutile</li>
+            <li><strong>Rendez-vous</strong> En ligne 24h/24 ou par téléphone</li>
           </ul>
         </div>
       </section>

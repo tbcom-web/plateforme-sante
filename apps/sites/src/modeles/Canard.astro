@@ -27,6 +27,7 @@ const etapes = [
 const bandeau = site.soins.map((s) => s.titreCourt);
 const mots = 'Chaque pas compte. Prenons-en soin.'.split(' ');
 const ouvert = site.cabinet.horaires.filter((h) => /\d/.test(h.heures));
+const titreDoc = `${site.profession.libelle} à ${site.cabinet.ville} – ${nomPraticien} · Modèle Vert canard`;
 ---
 <!doctype html>
 <html lang="fr" data-theme="clair">
@@ -34,7 +35,7 @@ const ouvert = site.cabinet.horaires.filter((h) => /\d/.test(h.heures));
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>{site.profession.libelle} à {site.cabinet.ville} – {nomPraticien} · Modèle Vert canard</title>
+    <title>{titreDoc}</title>
     <script is:inline>
       try {
         const t = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'sombre' : 'clair');

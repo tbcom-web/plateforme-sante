@@ -1,0 +1,320 @@
+---
+// Modèle « Proximité » : l'esprit des sites webpodologue (factuel, sobre, centré sur les infos pratiques),
+// en version moderne. Voix à la 3e personne, vocabulaire métier, aucune formule publicitaire.
+import '@fontsource-variable/inter';
+import Icone from '../components/Icone.astro';
+import { site, rdvHref, adresseComplete } from '../lib/site';
+import { iconeSoin, ICONE_SOIN_DEFAUT, mentionOrdre } from '@plateforme/core';
+
+// Données de démonstration propres à ce modèle (seront saisies dans le back-office).
+const cabinet = {
+  lieu: 'Maison de santé des Brotteaux',
+  complement: 'Entrée B, rez-de-chaussée',
+  parking: 'Parking gratuit sur place',
+  communes: ['Lyon 6e', 'Lyon 3e', 'Villeurbanne', 'Caluire-et-Cuire', 'Bron'],
+  paiements: ['Carte bancaire', 'Chèques', 'Espèces'],
+  rdvTelephone: true,
+  domicile: { actif: true, secteurs: ['69100 Villeurbanne', '69300 Caluire-et-Cuire', '69500 Bron'] },
+};
+
+const praticiens = [
+  {
+    nom: `${site.praticien.prenom} ${site.praticien.nom}`,
+    ordre: site.praticien.rpps,
+    diplome: 'Diplôme d’État de pédicure-podologue — IFPP de Lyon',
+    orientations: ['Podologie du sport', 'Podo-diabétologie'],
+    rdv: site.rdv.url,
+  },
+  {
+    nom: 'Julien Bernard',
+    ordre: '10000000001',
+    diplome: 'Diplôme d’État de pédicure-podologue — EEPP',
+    orientations: ['Podopédiatrie', 'Posturologie'],
+    rdv: site.rdv.url,
+  },
+];
+
+const titre = `Cabinet de pédicurie-podologie à ${site.cabinet.ville}`;
+const noms = praticiens.map((p) => p.nom).join(' et ');
+const telLien = `tel:${site.cabinet.telephone.replace(/\s/g, '')}`;
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresseComplete)}`;
+
+// Regroupe les jours consécutifs aux horaires identiques : « Lundi, Mardi : 9h00–19h00 ».
+const horaires = site.cabinet.horaires.reduce<{ jours: string[]; heures: string }[]>((acc, h) => {
+  const dernier = acc.at(-1);
+  if (dernier && dernier.heures === h.heures) dernier.jours.push(h.jour);
+  else acc.push({ jours: [h.jour], heures: h.heures });
+  return acc;
+}, []);
+const titreDoc = `${titre} – ${noms}, pédicures-podologues · Modèle Proximité`;
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{titreDoc}</title>
+  </head>
+  <body>
+    <header class="entete">
+      <div class="entete__contenu">
+        <a class="marque" href="#">
+          <span class="marque__icone"><Icone nom="healthicons:foot-outline" /></span>
+          <span>
+            <strong>Cabinet de podologie</strong>
+            <small>{site.cabinet.ville} · {site.cabinet.quartier}</small>
+          </span>
+        </a>
+        <nav class="liens" aria-label="Navigation principale">
+          <a href="#competences">Compétences</a>
+          <a href="#praticiens">Praticiens</a>
+          <a href="#infos">Infos pratiques</a>
+        </nav>
+        <a class="entete__tel" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="accueil">
+        <div class="accueil__texte">
+          <p class="sur">Pédicures-podologues · {site.cabinet.ville}</p>
+          <h1>{titre}</h1>
+          <p class="accueil__chapo">
+            {noms}, pédicures-podologues, accueillent leurs patients à la {cabinet.lieu}, à proximité de {cabinet.communes.slice(1, 4).join(', ')}.
+          </p>
+          <ul class="essentiel">
+            <li><Icone nom="lucide:map-pin" /><span>{cabinet.lieu}<br />{adresseComplete}</span></li>
+            <li><Icone nom="lucide:clock" /><span>Du lundi au vendredi, sur rendez-vous</span></li>
+            {cabinet.domicile.actif && <li><Icone nom="healthicons:home-outline" /><span>Visites à domicile</span></li>}
+          </ul>
+          <div class="actions">
+            <a class="bouton bouton--plein" href="#praticiens"><Icone nom="lucide:calendar" />Prendre rendez-vous</a>
+            <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+          </div>
+        </div>
+        <figure class="accueil__photo">
+          <img src="/photos/cabinet-lumiere.webp" alt="Une salle de soins du cabinet" width="1200" height="1800" />
+        </figure>
+      </section>
+
+      <section class="section section--douce">
+        <div class="cadre motif">
+          <h2>Quand consulter un pédicure-podologue ?</h2>
+          <p>
+            Le pédicure-podologue prend en charge les affections de la peau et des ongles du pied, ainsi que les douleurs du pied,
+            de la cheville, du genou, de la hanche ou du dos liées à la marche ou à la course. Une douleur régulière au talon, aux
+            orteils ou sous le pied, une verrue plantaire ou un ongle incarné sont autant de raisons de prendre rendez-vous.
+          </p>
+        </div>
+      </section>
+
+      <section id="competences" class="section">
+        <div class="cadre">
+          <h2>Nos compétences</h2>
+          <ul class="competences">
+            {site.soins.map((s) => (
+              <li>
+                <a href={`/soins/${s.slug}`}>
+                  <span class="competences__icone"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
+                  <span class="competences__titre">{s.titreCourt}</span>
+                  <span class="competences__texte">{s.resume}</span>
+                  <span class="competences__lien">En savoir plus</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section id="praticiens" class="section section--douce">
+        <div class="cadre">
+          <h2>Les praticiens</h2>
+          <div class="praticiens">
+            {praticiens.map((p) => (
+              <article class="praticien">
+                <div class="praticien__avatar" aria-hidden="true">{p.nom.split(' ').map((m) => m[0]).join('')}</div>
+                <h3>{p.nom}</h3>
+                <p class="praticien__titre">Pédicure-podologue à {site.cabinet.ville}</p>
+                <p class="praticien__ordre">{mentionOrdre(p.ordre)}</p>
+                <p class="praticien__diplome">{p.diplome}</p>
+                <ul class="praticien__orientations">{p.orientations.map((o) => <li>{o}</li>)}</ul>
+                <a class="bouton bouton--plein" href={rdvHref(`proximite-${p.ordre}`)}>
+                  Prendre rendez-vous avec {p.nom.split(' ')[0]}
+                </a>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="infos" class="section">
+        <div class="cadre">
+          <h2>Informations pratiques</h2>
+          <div class="infos">
+            <div class="info">
+              <h3><Icone nom="lucide:clock" />Horaires</h3>
+              <dl>
+                {horaires.map((h) => <><dt>{h.jours.join(', ')}</dt><dd>{h.heures}</dd></>)}
+              </dl>
+            </div>
+            <div class="info">
+              <h3><Icone nom="lucide:calendar-check" secours="lucide:calendar" />Prise de rendez-vous</h3>
+              <p>En ligne sur {site.rdv.plateforme}, pour chaque praticien.</p>
+              {cabinet.rdvTelephone && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
+            </div>
+            <div class="info">
+              <h3><Icone nom="lucide:map-pin" />Adresse</h3>
+              <p>{cabinet.lieu}<br />{site.cabinet.adresse}, {cabinet.complement}<br />{site.cabinet.codePostal} {site.cabinet.ville}</p>
+              <a href={mapsUrl} target="_blank" rel="noopener">Plan d’accès</a>
+            </div>
+            <div class="info">
+              <h3><Icone nom="healthicons:wheelchair-outline" />Accès</h3>
+              <ul>
+                <li>{cabinet.parking}</li>
+                {site.cabinet.pmr && <li>Accès facile pour les personnes à mobilité réduite</li>}
+                {site.cabinet.acces.slice(0, 2).map((a) => <li>{a}</li>)}
+              </ul>
+            </div>
+            {cabinet.domicile.actif && (
+              <div class="info">
+                <h3><Icone nom="healthicons:home-outline" />Visites à domicile</h3>
+                <p>Secteurs d’intervention :</p>
+                <ul>{cabinet.domicile.secteurs.map((s) => <li>{s}</li>)}</ul>
+              </div>
+            )}
+            <div class="info">
+              <h3><Icone nom="lucide:wallet" secours="lucide:credit-card" />Moyens de règlement acceptés</h3>
+              <ul class="pastilles">{cabinet.paiements.map((m) => <li>{m}</li>)}</ul>
+              {site.praticien.conventionnement && <p class="note">{site.praticien.conventionnement}.</p>}
+            </div>
+          </div>
+          <p class="communes">
+            Le cabinet accueille les patients de {cabinet.communes.join(', ')} et des communes alentour.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pied">
+      <div class="cadre pied__contenu">
+        <p><strong>{titre}</strong><br />{cabinet.lieu} · {adresseComplete} · {site.cabinet.telephone}</p>
+        <p>{praticiens.map((p) => `${p.nom} — ${mentionOrdre(p.ordre)}`).join(' · ')}</p>
+        <p class="note">Modèle « Proximité » — prototype</p>
+      </div>
+    </footer>
+
+    <nav class="barre-mobile" aria-label="Accès rapide">
+      <a href={telLien}><Icone nom="lucide:phone" />Appeler</a>
+      <a href="#praticiens" class="barre-mobile__rdv"><Icone nom="lucide:calendar" />Rendez-vous</a>
+      <a href={mapsUrl} target="_blank" rel="noopener"><Icone nom="lucide:map-pin" />Itinéraire</a>
+    </nav>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --fond: #ffffff;
+    --doux: #f3f7f6;
+    --encre: #16302d;
+    --encre-douce: #4f625f;
+    --accent: #1f6a64;
+    --accent-pale: #e1efed;
+    --ligne: #dfe7e5;
+    --rayon: 16px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; color: var(--encre); background: var(--fond); font-size: 1.0625rem; line-height: 1.65; -webkit-font-smoothing: antialiased; padding-bottom: 76px; }
+  @media (min-width: 900px) { body { padding-bottom: 0; } }
+  img { display: block; max-width: 100%; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0; color: var(--encre); }
+  h2 { font-size: clamp(1.7rem, 3vw, 2.3rem); font-weight: 650; margin-bottom: 28px; }
+  .cadre { width: min(1120px, 100% - 40px); margin-inline: auto; }
+  .section { padding-block: clamp(56px, 8vw, 96px); }
+  .section--douce { background: var(--doux); }
+  .sur { font-size: 0.8rem; font-weight: 650; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  .note { font-size: 0.85rem; color: var(--encre-douce); }
+
+  .bouton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 600; text-decoration: none; }
+  .bouton--plein { background: var(--accent); color: #fff; }
+  .bouton--plein:hover { background: #17524d; }
+  .bouton--ligne { color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .bouton .icone, .entete__tel .icone { width: 1.1em; height: 1.1em; }
+
+  /* En-tête */
+  .entete { position: sticky; top: 0; z-index: 30; background: rgb(255 255 255 / 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--ligne); }
+  .entete__contenu { width: min(1120px, 100% - 40px); margin-inline: auto; display: flex; align-items: center; gap: 24px; min-height: 68px; }
+  .marque { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--encre); margin-right: auto; line-height: 1.2; }
+  .marque strong { display: block; font-size: 1rem; }
+  .marque small { color: var(--encre-douce); font-size: 0.8rem; }
+  .marque__icone { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--accent-pale); color: var(--accent); font-size: 1.5rem; }
+  .liens { display: none; gap: 24px; font-size: 0.95rem; }
+  .liens a { color: var(--encre-douce); text-decoration: none; }
+  .liens a:hover { color: var(--accent); }
+  @media (min-width: 900px) { .liens { display: flex; } }
+  .entete__tel { display: none; align-items: center; gap: 8px; font-weight: 650; text-decoration: none; }
+  @media (min-width: 640px) { .entete__tel { display: inline-flex; } }
+
+  /* Accueil */
+  .accueil { width: min(1120px, 100% - 40px); margin-inline: auto; display: grid; gap: 40px; align-items: center; padding-block: clamp(36px, 6vw, 72px); }
+  @media (min-width: 900px) { .accueil { grid-template-columns: 1.15fr 0.85fr; } }
+  .accueil h1 { font-size: clamp(2rem, 4.4vw, 3.2rem); font-weight: 700; letter-spacing: -0.03em; }
+  .accueil__chapo { color: var(--encre-douce); font-size: 1.1rem; margin: 18px 0 24px; max-width: 54ch; }
+  .essentiel { list-style: none; padding: 0; margin: 0 0 28px; display: grid; gap: 12px; }
+  .essentiel li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.97rem; }
+  .essentiel .icone { color: var(--accent); font-size: 1.3rem; margin-top: 1px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .accueil__photo { margin: 0; }
+  .accueil__photo img { width: 100%; height: clamp(300px, 52vh, 520px); object-fit: cover; border-radius: 24px; }
+
+  .motif p { max-width: 74ch; color: var(--encre-douce); margin: 0; font-size: 1.05rem; }
+
+  /* Compétences */
+  .competences { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .competences a { display: grid; gap: 8px; height: 100%; padding: 24px; border-radius: var(--rayon); border: 1px solid var(--ligne); text-decoration: none; color: var(--encre); transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
+  .competences a:hover { border-color: var(--accent); box-shadow: 0 10px 30px -18px rgb(22 48 45 / 0.4); transform: translateY(-2px); }
+  .competences__icone { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--accent-pale); color: var(--accent); font-size: 1.9rem; }
+  .competences__titre { font-weight: 650; font-size: 1.15rem; margin-top: 6px; }
+  .competences__texte { color: var(--encre-douce); font-size: 0.95rem; }
+  .competences__lien { color: var(--accent); font-weight: 600; font-size: 0.92rem; margin-top: auto; }
+
+  /* Praticiens */
+  .praticiens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .praticien { background: #fff; border-radius: var(--rayon); padding: 28px; display: grid; gap: 6px; align-content: start; border: 1px solid var(--ligne); }
+  .praticien__avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 1.2rem; margin-bottom: 10px; }
+  .praticien h3 { font-size: 1.35rem; }
+  .praticien p { margin: 0; }
+  .praticien__titre { color: var(--encre-douce); }
+  .praticien__ordre { font-size: 0.88rem; margin-top: 8px !important; }
+  .praticien__diplome { font-size: 0.88rem; color: var(--encre-douce); }
+  .praticien__orientations { list-style: none; padding: 0; margin: 12px 0 18px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .praticien__orientations li { font-size: 0.82rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--accent-pale); color: var(--accent); }
+
+  /* Infos pratiques */
+  .infos { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .info { padding: 24px; border-radius: var(--rayon); background: var(--doux); }
+  .info h3 { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; margin-bottom: 12px; }
+  .info h3 .icone { color: var(--accent); font-size: 1.3rem; }
+  .info p { margin: 0 0 8px; color: var(--encre-douce); font-size: 0.97rem; }
+  .info ul { margin: 0; padding-left: 1.1em; color: var(--encre-douce); font-size: 0.97rem; }
+  .info dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 0.95rem; }
+  .info dt { font-weight: 600; }
+  .info dd { margin: 0; color: var(--encre-douce); text-align: right; }
+  .pastilles { list-style: none; padding: 0 !important; display: flex; flex-wrap: wrap; gap: 8px; }
+  .pastilles li { padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--ligne); font-size: 0.88rem; }
+  .communes { margin-top: 28px; color: var(--encre-douce); font-size: 0.95rem; }
+
+  .pied { background: var(--encre); color: #d6e2e0; padding-block: 40px; font-size: 0.9rem; }
+  .pied strong { color: #fff; }
+  .pied__contenu p { margin: 0 0 12px; }
+  .pied .note { color: #9fb3b0; }
+
+  /* Barre d'accès rapide mobile, comme sur les sites webpodologue */
+  .barre-mobile { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; padding: 8px; border-radius: 18px; background: rgb(255 255 255 / 0.95); backdrop-filter: blur(10px); box-shadow: 0 10px 30px -10px rgb(22 48 45 / 0.35); }
+  .barre-mobile a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+  .barre-mobile__rdv { background: var(--accent); color: #fff !important; }
+  @media (min-width: 900px) { .barre-mobile { display: none; } }
+</style>
