@@ -1,7 +1,7 @@
 # Référentiel des sites de praticiens — synthèse des réalisations webpodologue
 
-**Source** : analyse de 81 sites webpodologue le 2026-10-04 (détail par lot dans `analyse-sites/`).
-**Lecture** : 45 sites ont été lus, 36 sont hors ligne ou en maintenance.
+**Source** : analyse de 79 sites webpodologue le 2026-10-04 (détail par lot dans `analyse-sites/`).
+**Lecture** : 51 sites ont été lus, 28 sont hors ligne, en maintenance ou redirigés.
 
 ## 1. Constats clés
 
@@ -10,7 +10,7 @@
   - B (récent) : sections en tuiles, voix « nous », FAQ, actualités, mutuelle.
 - **Voix** : la 3e personne domine nettement. Le « nous » sert surtout aux titres et aux cabinets de groupe. Le « je » est rare (bios, blogs, un site entier).
 - **Parc vieillissant** :
-  - 36 sites sur 81 sont inaccessibles : DNS expiré, erreur serveur ou maintenance.
+  - 28 sites sur 79 sont inaccessibles : DNS expiré, erreur serveur, maintenance ou redirection.
   - 1 site est piraté (spam pharmaceutique).
   - Une mention est obsolète (Autolib).
   - **C'est un argument fort pour une plateforme maintenue centralement, et une liste de clients à relancer.**
