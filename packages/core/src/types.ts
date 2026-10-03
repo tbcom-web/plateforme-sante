@@ -92,7 +92,7 @@ export type SiteConfig = {
   message: string;
   communes: string[];
   /** URLs des photos ; vide = photo d'illustration par défaut */
-  photos: { accueil: string; cabinet: string[] };
+  photos: { accueil: string; panorama: string; cabinet: string[] };
 };
 
 export type PraticienPublic = {

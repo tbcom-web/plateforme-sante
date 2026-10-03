@@ -412,7 +412,7 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   domicile: { actif: true, creneaux: 'Le jeudi matin', secteurs: ['69100 Villeurbanne', '69300 Caluire-et-Cuire', '69500 Bron'] },
   message: '',
   communes: ['Lyon 6e', 'Lyon 3e', 'Villeurbanne', 'Caluire-et-Cuire', 'Bron'],
-  photos: { accueil: '', cabinet: [] },
+  photos: { accueil: '', panorama: '', cabinet: [] },
 };
 
 export default site;

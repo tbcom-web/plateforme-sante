@@ -326,6 +326,7 @@ export default function Editeur({ siteId, initial, catalogue }: Props) {
           {etape === 6 && (
             <div className="grid gap-6">
               <Photo siteId={id} type="accueil" label="Photo d’accueil (cabinet, salle de soins, façade)" valeur={d.photos.accueil} onChange={(u) => maj({ photos: { ...d.photos, accueil: u } })} />
+              <Photo siteId={id} type="panorama" label="Photo panoramique (bandeau pleine largeur : façade, rue, salle d’attente)" valeur={d.photos.panorama} onChange={(u) => maj({ photos: { ...d.photos, panorama: u } })} />
               <fieldset className="grid gap-3">
                 <legend className="text-sm font-medium">Photos du cabinet (galerie, 6 au maximum)</legend>
                 {[...d.photos.cabinet, ''].slice(0, 6).map((u, k) => (

@@ -1,0 +1,44 @@
+---
+// Liste éditoriale numérotée des compétences ; au survol (ordinateur), la photo du soin apparaît.
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { photoSoin } from '../../lib/visuels';
+import { iconeSoin, ICONE_SOIN_DEFAUT } from '@plateforme/core';
+---
+<ol class="expertises">
+  {site.soins.map((s, i) => (
+    <li class="apparait">
+      <a href={`/soins/${s.slug}`} class="expertise">
+        <span class="expertise__num">{String(i + 1).padStart(2, '0')}</span>
+        <span class="expertise__icone" aria-hidden="true"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
+        <img class="expertise__vignette" src={photoSoin(s.slug)} alt="" loading="lazy" width="320" height="240" />
+        <span class="expertise__titre">{s.titreCourt}</span>
+        <span class="expertise__resume">{s.resume}</span>
+        <span class="expertise__fleche" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 14 14 6M7 6h7v7" /></svg></span>
+      </a>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .expertises { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ligne); }
+  li { border-bottom: 1px solid var(--ligne); }
+  .expertise { position: relative; display: grid; grid-template-columns: 48px 1fr 44px; grid-template-areas: 'icone titre fleche' 'icone resume fleche'; column-gap: 16px; align-items: center; padding: 22px 0; text-decoration: none; color: var(--encre); }
+  .expertise__num { display: none; }
+  .expertise__icone { grid-area: icone; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: var(--accent-pale); color: var(--accent-vif); font-size: 1.6rem; }
+  .expertise__vignette { display: none; }
+  .expertise__titre { grid-area: titre; font-size: clamp(1.2rem, 2.4vw, 1.9rem); font-weight: 560; letter-spacing: -0.035em; line-height: 1.1; transition: transform 0.45s cubic-bezier(.2,.7,.2,1); }
+  .expertise__resume { grid-area: resume; font-size: 0.93rem; color: var(--encre-douce); margin-top: 4px; transition: opacity 0.3s; }
+  .expertise__fleche { grid-area: fleche; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--ligne); color: var(--encre); transition: background 0.3s, border-color 0.3s, color 0.3s; }
+  .expertise__fleche svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  .expertise:hover .expertise__fleche { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @media (min-width: 900px) {
+    .expertise { grid-template-columns: 56px 64px 1fr 1.05fr 56px; grid-template-areas: 'num icone titre resume fleche'; padding: 28px 0; }
+    .expertise__num { display: block; grid-area: num; font-size: 0.8rem; color: var(--encre-pale); font-variant-numeric: tabular-nums; }
+    .expertise__resume { margin: 0; max-width: 46ch; }
+    .expertise__vignette { display: block; position: absolute; z-index: 2; right: 110px; top: 50%; width: 230px; height: 165px; object-fit: cover; border-radius: 14px; opacity: 0; pointer-events: none; transform: translateY(-50%) scale(0.92) rotate(-2deg); transition: opacity 0.35s, transform 0.5s cubic-bezier(.2,.7,.2,1); box-shadow: var(--ombre); }
+    .expertise:hover .expertise__vignette { opacity: 1; transform: translateY(-50%) scale(1) rotate(-2deg); }
+    .expertise:hover .expertise__titre { transform: translateX(8px); }
+    .expertise:hover .expertise__resume { opacity: 0.2; }
+  }
+</style>

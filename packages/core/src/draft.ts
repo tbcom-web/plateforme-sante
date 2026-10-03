@@ -85,7 +85,7 @@ export type SiteDraft = {
   conventionnement: string;
   theme: { couleur: string; modele: Modele };
   /** URLs publiques des photos (stockage Supabase) */
-  photos: { accueil: string; cabinet: string[] };
+  photos: { accueil: string; panorama: string; cabinet: string[] };
   /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
 };
@@ -173,7 +173,7 @@ export const draftVide = (): SiteDraft => ({
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
   theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite' },
-  photos: { accueil: '', cabinet: [] },
+  photos: { accueil: '', panorama: '', cabinet: [] },
   soins: [],
 });
 

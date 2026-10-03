@@ -1,0 +1,40 @@
+---
+// Bandeau photo pleine largeur (photo panoramique du cabinet, sinon photo d'illustration).
+import { site } from '../../lib/site';
+import { photoPanorama } from '../../lib/visuels';
+import { lieu, TYPES_LIEU } from '../../lib/textes';
+
+const atouts = [
+  { titre: 'Hygiène', texte: 'Instruments stérilisés après chaque patient' },
+  site.accesDetail.pmr || site.accesDetail.parking
+    ? { titre: 'Accès', texte: [site.accesDetail.pmr && 'Accessible PMR', site.accesDetail.parking].filter(Boolean).join(' · ') }
+    : null,
+  { titre: 'Rendez-vous', texte: site.rdvMode === 'telephone' ? `Par téléphone au ${site.cabinet.telephone}` : `En ligne sur ${site.rdv.plateforme}, 24h/24` },
+  site.domicile.actif ? { titre: 'Domicile', texte: site.domicile.creneaux || 'Visites à domicile sur demande' } : null,
+].filter(Boolean) as { titre: string; texte: string }[];
+const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
+---
+<section class="panorama">
+  <img src={photoPanorama} alt="" loading="lazy" width="2000" height="1100" />
+  <div class="cadre panorama__texte apparait">
+    <p class="sur sur--clair">{lieuNom} · {site.cabinet.ville}</p>
+    <h2>Un cabinet calme et lumineux, pensé pour votre confort.</h2>
+    <ul>
+      {atouts.map((a) => <li><strong>{a.titre}</strong>{a.texte}</li>)}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .panorama { position: relative; min-height: clamp(520px, 78vh, 800px); display: grid; align-items: end; color: #fff; overflow: hidden; isolation: isolate; }
+  img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; animation: zoom linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  .panorama::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(10 25 27 / 0) 25%, rgb(10 25 27 / 0.82)); }
+  .panorama__texte { padding-block: clamp(48px, 8vw, 104px); }
+  h2 { color: #fff; max-width: 16ch; }
+  .sur--clair { color: rgb(255 255 255 / 0.8); }
+  ul { list-style: none; padding: 0; margin: 40px 0 0; display: grid; gap: 0; }
+  @media (min-width: 760px) { ul { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
+  li { display: grid; gap: 4px; padding: 18px 20px 0 0; border-top: 1px solid rgb(255 255 255 / 0.3); font-size: 0.93rem; color: rgb(255 255 255 / 0.82); }
+  strong { color: #fff; font-weight: 600; }
+  @keyframes zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+</style>

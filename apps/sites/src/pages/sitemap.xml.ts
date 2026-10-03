@@ -8,6 +8,7 @@ export const GET: APIRoute = () => {
     { path: '/soins' },
     ...site.soins.map((s) => ({ path: `/soins/${s.slug}` })),
     { path: '/le-cabinet' },
+    { path: '/acces' },
     ...(site.articles.length > 0 ? [{ path: '/actualites', lastmod: derniere }] : []),
     ...site.articles.map((a) => ({ path: `/actualites/${a.slug}`, lastmod: a.date })),
     { path: '/mentions-legales' },
