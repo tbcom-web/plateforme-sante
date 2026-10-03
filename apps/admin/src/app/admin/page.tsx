@@ -1,4 +1,4 @@
-import type { SiteDraft } from '@plateforme/core';
+import { normaliserDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { manques } from '@/lib/sites';
 import ActionsSite from './ActionsSite';
@@ -14,7 +14,7 @@ type Ligne = {
   published_at: string | null;
   publication_demandee_at: string | null;
   updated_at: string;
-  config: SiteDraft;
+  config: unknown;
   profiles: { email: string } | null;
 };
 
@@ -74,13 +74,14 @@ export default async function AdminSites() {
               <tr><td colSpan={6} className="px-4 py-8 text-center text-neutral-500">Aucun site pour le moment.</td></tr>
             )}
             {sites.map((s) => {
-              const p = s.config?.praticien;
+              const d = normaliserDraft(s.config);
+              const p = d.praticiens[0];
               const reste = manques(s.config);
               return (
                 <tr key={s.id} className="align-top">
                   <td className="px-4 py-3">
                     <p className="font-semibold">{[p?.prenom, p?.nom].filter(Boolean).join(' ') || '(sans nom)'}</p>
-                    <p className="text-neutral-500">{s.config?.cabinet?.ville || '—'} · {s.profiles?.email}</p>
+                    <p className="text-neutral-500">{d.cabinet.ville || '—'} · {d.pays} · {d.praticiens.length} prat. · {s.profiles?.email}</p>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PASTILLES[s.statut]}`}>{s.statut.replace('_', ' ')}</span>

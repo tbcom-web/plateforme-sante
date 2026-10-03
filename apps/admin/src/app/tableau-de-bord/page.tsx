@@ -27,7 +27,7 @@ export default async function TableauDeBord() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            Bonjour{site.draft.praticien.prenom ? ` ${site.draft.praticien.prenom}` : ''}
+            Bonjour{site.draft.praticiens[0]?.prenom ? ` ${site.draft.praticiens[0].prenom}` : ''}
           </h1>
           <p className="text-neutral-600">Voici l’état de votre site.</p>
         </div>
