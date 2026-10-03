@@ -1,0 +1,60 @@
+---
+import { site, adresseComplete, telLien, rdvHref } from '../lib/site';
+
+const { cabinet } = site;
+const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresseComplete)}`;
+---
+<section id="infos" class="section section--alt" aria-labelledby="infos-titre">
+  <div class="wrap">
+    <span class="eyebrow">Infos pratiques</span>
+    <h2 id="infos-titre">Venir au cabinet</h2>
+    <div class="grid grid--3 infos">
+      <div class="card">
+        <h3>Adresse et accès</h3>
+        <p>{cabinet.adresse}<br />{cabinet.codePostal} {cabinet.ville}</p>
+        <ul>
+          {cabinet.acces.map((a) => <li>{a}</li>)}
+          {cabinet.pmr && <li>Cabinet accessible aux personnes à mobilité réduite</li>}
+        </ul>
+        <a href={mapsUrl} rel="noopener" target="_blank">Itinéraire</a>
+      </div>
+      <div class="card">
+        <h3>Horaires</h3>
+        <table>
+          <tbody>
+            {cabinet.horaires.map((h) => (
+              <tr><th scope="row">{h.jour}</th><td>{h.heures}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Tarifs indicatifs</h3>
+        <table>
+          <tbody>
+            {cabinet.tarifs.map((t) => (
+              <tr><th scope="row">{t.acte}</th><td>{t.prix}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <p class="note">{site.praticien.conventionnement}.</p>
+      </div>
+    </div>
+    <div class="cta">
+      <a class="btn btn--primary" href={rdvHref('infos-pratiques')}>Prendre rendez-vous sur {site.rdv.plateforme}</a>
+      <a class="btn btn--ghost" href={telLien}>Appeler le {cabinet.telephone}</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .infos { margin-top: 8px; }
+  .card h3 { margin-bottom: 0.8em; }
+  ul { padding-left: 1.1em; margin: 0 0 1em; color: var(--ink-soft); font-size: 0.95rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  th { text-align: left; font-weight: 600; padding: 6px 12px 6px 0; vertical-align: top; }
+  td { color: var(--ink-soft); padding: 6px 0; text-align: right; }
+  tr + tr { border-top: 1px solid var(--line); }
+  .note { font-size: 0.875rem; color: var(--ink-mute); margin: 1em 0 0; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+</style>

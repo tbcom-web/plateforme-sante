@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, nomPraticien, adresseComplete } from '../lib/site';
+
+const mesure = site.tracking.ga4 || site.tracking.clarity;
+---
+<Base title={`Mentions légales | ${site.cabinet.nom}`} description={`Mentions légales du site de ${nomPraticien}.`} path="/mentions-legales">
+  <section class="section">
+    <div class="wrap prose">
+      <h1>Mentions légales</h1>
+
+      <h2>Éditeur du site</h2>
+      <p>
+        {site.mentions.editeur}<br />
+        {adresseComplete}<br />
+        Téléphone : {site.cabinet.telephone}<br />
+        N° RPPS : {site.praticien.rpps}<br />
+        {site.praticien.ordre}<br />
+        {site.praticien.conventionnement}
+      </p>
+      <p>Directeur de la publication : {nomPraticien}.</p>
+
+      <h2>Hébergement</h2>
+      <p>{site.mentions.hebergeur}</p>
+
+      <h2>Informations médicales</h2>
+      <p>
+        Les informations publiées sur ce site sont générales. Elles ne remplacent pas une consultation et ne permettent pas
+        d’établir un diagnostic. En cas d’urgence, composez le 15.
+      </p>
+
+      <h2>Données personnelles</h2>
+      <p>
+        Ce site ne collecte aucune donnée de santé. La prise de rendez-vous se fait sur {site.rdv.plateforme}, qui dispose de
+        sa propre politique de confidentialité. Les clics vers la prise de rendez-vous sont comptés de façon anonyme, sans
+        cookie ni adresse IP.
+      </p>
+      {mesure && (
+        <p>
+          Avec votre accord, des outils de mesure d’audience (Google Analytics, Microsoft Clarity) sont utilisés. Vous
+          pouvez retirer votre consentement à tout moment via le lien « Gérer les cookies » en bas de page.
+        </p>
+      )}
+      <p>
+        Vous disposez d’un droit d’accès, de rectification et de suppression de vos données, à exercer auprès de l’éditeur.
+        Vous pouvez également saisir la CNIL.
+      </p>
+    </div>
+  </section>
+</Base>

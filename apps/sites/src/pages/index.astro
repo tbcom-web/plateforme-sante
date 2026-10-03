@@ -1,0 +1,117 @@
+---
+import Base from '../layouts/Base.astro';
+import Decor from '../components/Decor.astro';
+import FaqList from '../components/FaqList.astro';
+import InfosPratiques from '../components/InfosPratiques.astro';
+import { site, nomPraticien, metierVille, rdvHref, telLien, dateFr } from '../lib/site';
+import { faqSchema } from '../lib/schema';
+
+const title = `${metierVille} ${site.cabinet.codePostal} – ${nomPraticien}`;
+const description = `${site.accroche.texte} Rendez-vous en ligne sur ${site.rdv.plateforme}.`;
+const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+---
+<Base title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale)]}>
+  <section class="hero">
+    <div class="wrap hero__grid">
+      <div>
+        <span class="eyebrow">{site.profession.libelle} · {site.cabinet.quartier}</span>
+        <h1>{site.accroche.titre}</h1>
+        <p class="lead">{site.accroche.texte}</p>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href={rdvHref('hero')}>Prendre rendez-vous</a>
+          <a class="btn btn--ghost" href={telLien}>{site.cabinet.telephone}</a>
+        </div>
+        <ul class="chips" aria-label="En bref">
+          <li>{site.praticien.conventionnement}</li>
+          {site.cabinet.pmr && <li>Accès PMR</li>}
+          <li>RDV en ligne 24h/24</li>
+        </ul>
+      </div>
+      <Decor />
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="soins-titre">
+    <div class="wrap">
+      <span class="eyebrow">Soins</span>
+      <h2 id="soins-titre">Les soins proposés au cabinet</h2>
+      <div class="grid grid--3 soins">
+        {site.soins.map((s) => (
+          <a class="card soin" href={`/soins/${s.slug}`}>
+            <h3>{s.titreCourt}</h3>
+            <p>{s.resume}</p>
+            <span class="soin__more" aria-hidden="true">En savoir plus →</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="apropos-titre">
+    <div class="wrap apropos">
+      <div class="apropos__portrait" aria-hidden="true">
+        {site.praticien.photo ? <img src={site.praticien.photo} alt="" width="360" height="440" /> : (
+          <span>{site.praticien.prenom[0]}{site.praticien.nom[0]}</span>
+        )}
+      </div>
+      <div>
+        <span class="eyebrow">Votre praticienne</span>
+        <h2 id="apropos-titre">{nomPraticien}</h2>
+        <p class="lead">{site.praticien.parcours.split('\n\n')[0]}</p>
+        <a href="/a-propos">Découvrir le cabinet et mon parcours</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="conseils-titre">
+    <div class="wrap">
+      <span class="eyebrow">Conseils</span>
+      <h2 id="conseils-titre">Les derniers conseils</h2>
+      <div class="grid grid--3">
+        {articles.map((a) => (
+          <a class="card soin" href={`/actualites/${a.slug}`}>
+            <span class="tag">{a.theme} · {dateFr(a.date)}</span>
+            <h3>{a.titre}</h3>
+            <p>{a.resume}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <InfosPratiques />
+
+  <section class="section" aria-labelledby="faq-titre">
+    <div class="wrap">
+      <span class="eyebrow">Questions fréquentes</span>
+      <h2 id="faq-titre">Vos questions</h2>
+      <FaqList items={site.faqGenerale} />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { padding-block: clamp(40px, 7vw, 88px); background: linear-gradient(180deg, var(--brand-softer), var(--bg)); }
+  .hero__grid { display: grid; gap: 40px; align-items: center; }
+  @media (min-width: 900px) { .hero__grid { grid-template-columns: 1.15fr 0.85fr; } }
+  .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 24px; }
+  .chips { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; }
+  .chips li { font-size: 0.875rem; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-deep); }
+
+  .soin { display: flex; flex-direction: column; text-decoration: none; color: inherit; transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s; }
+  .soin:hover { border-color: var(--brand-line); transform: translateY(-2px); box-shadow: var(--shadow); color: inherit; }
+  .soin p { color: var(--ink-soft); font-size: 0.97rem; flex: 1; }
+  .soin__more { font-weight: 700; color: var(--brand-ink); font-size: 0.95rem; }
+  .tag { font-size: 0.8rem; font-weight: 700; color: var(--brand-ink); margin-bottom: 0.6rem; }
+
+  .apropos { display: grid; gap: 40px; align-items: center; }
+  @media (min-width: 900px) { .apropos { grid-template-columns: 0.7fr 1.3fr; } }
+  .apropos__portrait {
+    aspect-ratio: 4 / 5; max-width: 360px; width: 100%; margin-inline: auto;
+    border-radius: var(--radius-lg); overflow: hidden;
+    background: linear-gradient(160deg, var(--brand-soft), var(--brand-line));
+    display: grid; place-items: center;
+  }
+  .apropos__portrait span { font-family: var(--font-head); font-size: 5rem; font-weight: 700; color: var(--brand-ink); opacity: 0.7; }
+  .apropos__portrait img { width: 100%; height: 100%; object-fit: cover; }
+</style>

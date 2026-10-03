@@ -1,0 +1,77 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import FaqList from '../../components/FaqList.astro';
+import { site, md, nomPraticien, rdvHref, telLien } from '../../lib/site';
+import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
+import type { Soin } from '../../lib/types';
+
+export function getStaticPaths() {
+  return site.soins.map((soin) => ({ params: { slug: soin.slug }, props: { soin } }));
+}
+
+const { soin } = Astro.props as { soin: Soin };
+const path = `/soins/${soin.slug}`;
+const crumbs = [
+  { name: 'Accueil', path: '/' },
+  { name: 'Soins', path: '/soins' },
+  { name: soin.titreCourt, path },
+];
+const autres = site.soins.filter((s) => s.slug !== soin.slug);
+---
+<Base
+  title={`${soin.titre} | ${nomPraticien}`}
+  description={soin.resume}
+  path={path}
+  schemas={[soinSchema(soin), faqSchema(soin.faq), breadcrumbSchema(crumbs)]}
+>
+  <article>
+    <header class="page-head">
+      <div class="wrap">
+        <Breadcrumb items={crumbs} />
+        <h1>{soin.titre}</h1>
+        <p class="lead">{soin.resume}</p>
+      </div>
+    </header>
+
+    <div class="wrap layout">
+      <div class="prose" set:html={md(soin.corps)} />
+      <aside class="aside">
+        <div class="card sticky">
+          <p class="aside__title">Prendre rendez-vous</p>
+          <p>{site.cabinet.nom}<br />{site.cabinet.quartier}</p>
+          <a class="btn btn--primary" href={rdvHref(`soin-${soin.slug}`)}>Réserver en ligne</a>
+          <a class="btn btn--ghost" href={telLien}>{site.cabinet.telephone}</a>
+        </div>
+      </aside>
+    </div>
+
+    <section class="section section--alt" aria-labelledby="faq-soin">
+      <div class="wrap">
+        <h2 id="faq-soin">Questions fréquentes : {soin.titreCourt.toLowerCase()}</h2>
+        <FaqList items={soin.faq} />
+      </div>
+    </section>
+  </article>
+
+  <section class="section" aria-labelledby="autres-soins">
+    <div class="wrap">
+      <h2 id="autres-soins">Autres soins au cabinet</h2>
+      <ul class="liens">
+        {autres.map((s) => <li><a href={`/soins/${s.slug}`}>{s.titreCourt}</a></li>)}
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page-head { padding-block: 40px 24px; background: linear-gradient(180deg, var(--brand-softer), var(--bg)); }
+  .layout { display: grid; gap: 40px; padding-block: 24px 72px; }
+  @media (min-width: 960px) { .layout { grid-template-columns: 1fr 320px; } }
+  .sticky { position: sticky; top: 96px; display: grid; gap: 12px; }
+  .aside__title { font-weight: 800; font-size: 1.1rem; margin: 0; }
+  .aside p { color: var(--ink-soft); font-size: 0.95rem; margin: 0; }
+  .liens { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; padding: 0; }
+  .liens a { display: inline-block; padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; font-weight: 600; }
+  .liens a:hover { background: var(--brand-soft); }
+</style>

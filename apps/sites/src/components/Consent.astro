@@ -1,0 +1,95 @@
+---
+// Bandeau cookies conforme CNIL : GA4 et Clarity ne se chargent qu'après acceptation.
+// Sans outil de mesure configuré, aucun bandeau n'est affiché (rien à consentir).
+import { site } from '../lib/site';
+
+const { ga4, clarity } = site.tracking;
+const actif = Boolean(ga4 || clarity);
+---
+{actif && (
+  <div class="consent" role="dialog" aria-modal="false" aria-labelledby="consent-titre" hidden data-ga4={ga4} data-clarity={clarity}>
+    <p id="consent-titre" class="consent__titre">Mesure d’audience</p>
+    <p>
+      Avec votre accord, ce site utilise Google Analytics et Microsoft Clarity pour comprendre comment il est consulté et
+      l’améliorer. Aucune donnée de santé n’est collectée. Vous pouvez changer d’avis à tout moment depuis le bas de page.
+    </p>
+    <div class="consent__actions">
+      <button type="button" class="btn btn--ghost" data-consent="refuse">Refuser</button>
+      <button type="button" class="btn btn--ghost" data-consent="accept">Accepter</button>
+    </div>
+  </div>
+)}
+
+<script>
+  const KEY = 'consent-mesure-v1';
+  const SIX_MOIS = 1000 * 60 * 60 * 24 * 182;
+  const box = document.querySelector<HTMLElement>('.consent');
+
+  const lire = (): 'accept' | 'refuse' | null => {
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY) ?? 'null');
+      return v && Date.now() - v.t < SIX_MOIS ? v.choix : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const charger = () => {
+    if (!box) return;
+    const { ga4, clarity } = box.dataset;
+    if (ga4) {
+      const w = window as any;
+      w.dataLayer = w.dataLayer || [];
+      w.gtag = function () { w.dataLayer.push(arguments); };
+      w.gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'granted' });
+      w.gtag('js', new Date());
+      w.gtag('config', ga4, { anonymize_ip: true });
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = `https://www.googletagmanager.com/gtag/js?id=${ga4}`;
+      document.head.appendChild(s);
+    }
+    if (clarity) {
+      const w = window as any;
+      w.clarity = w.clarity || function () { (w.clarity.q = w.clarity.q || []).push(arguments); };
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = `https://www.clarity.ms/tag/${clarity}`;
+      document.head.appendChild(s);
+    }
+  };
+
+  if (box) {
+    const choix = lire();
+    if (choix === 'accept') charger();
+    if (!choix) box.hidden = false;
+
+    box.querySelectorAll<HTMLButtonElement>('[data-consent]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const valeur = b.dataset.consent as 'accept' | 'refuse';
+        try { localStorage.setItem(KEY, JSON.stringify({ choix: valeur, t: Date.now() })); } catch {}
+        box.hidden = true;
+        if (valeur === 'accept') charger();
+      }),
+    );
+  }
+
+  document.querySelectorAll('[data-consent-open]').forEach((b) =>
+    b.addEventListener('click', () => {
+      try { localStorage.removeItem(KEY); } catch {}
+      if (box) box.hidden = false;
+    }),
+  );
+</script>
+
+<style>
+  .consent {
+    position: fixed; z-index: 50; left: 16px; right: 16px; bottom: 16px;
+    max-width: 520px; margin-left: auto;
+    background: var(--bg); color: var(--ink);
+    border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 20px 22px; font-size: 0.95rem;
+  }
+  .consent__titre { font-weight: 700; margin-bottom: 0.4em; }
+  .consent__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+</style>

@@ -1,0 +1,48 @@
+---
+import { site, nomPraticien, adresseComplete, telLien, rdvHref } from '../lib/site';
+const annee = new Date().getFullYear();
+---
+<footer class="footer">
+  <div class="wrap footer__grid">
+    <div>
+      <p class="footer__name">{site.cabinet.nom}</p>
+      <p>{nomPraticien}, {site.praticien.titre.toLowerCase()}<br />{site.cabinet.quartier}</p>
+      <a class="btn btn--primary" href={rdvHref('footer')}>Prendre rendez-vous</a>
+    </div>
+    <div>
+      <p class="footer__title">Contact</p>
+      <p>{adresseComplete}<br /><a href={telLien}>{site.cabinet.telephone}</a></p>
+    </div>
+    <div>
+      <p class="footer__title">Soins</p>
+      <ul>
+        {site.soins.map((s) => <li><a href={`/soins/${s.slug}`}>{s.titreCourt}</a></li>)}
+      </ul>
+    </div>
+  </div>
+  <div class="wrap footer__legal">
+    <span>© {annee} {nomPraticien} · RPPS {site.praticien.rpps}</span>
+    <span>
+      <a href="/mentions-legales">Mentions légales</a>
+      {(site.tracking.ga4 || site.tracking.clarity) && (
+        <> · <button type="button" class="linklike" data-consent-open>Gérer les cookies</button></>
+      )}
+    </span>
+  </div>
+</footer>
+
+<style>
+  .footer { background: var(--brand-deep); color: #e9f0ee; padding-top: 64px; margin-top: 0; }
+  .footer a { color: #fff; }
+  .footer__grid { display: grid; gap: 32px; padding-bottom: 40px; }
+  @media (min-width: 800px) { .footer__grid { grid-template-columns: 1.4fr 1fr 1fr; } }
+  .footer__name { font-family: var(--font-head); font-size: 1.25rem; font-weight: 700; color: #fff; }
+  .footer__title { font-weight: 700; color: #fff; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.08em; }
+  .footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+  .footer .btn--primary { background: #fff; color: var(--brand-deep); }
+  .footer__legal {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
+    border-top: 1px solid rgb(255 255 255 / 0.15); padding-block: 20px; font-size: 0.875rem; color: #c9d6d3;
+  }
+  .linklike { background: none; border: 0; padding: 0; font: inherit; color: #fff; text-decoration: underline; cursor: pointer; }
+</style>

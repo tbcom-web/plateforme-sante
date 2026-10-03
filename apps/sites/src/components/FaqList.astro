@@ -1,0 +1,24 @@
+---
+import type { Faq } from '../lib/types';
+interface Props { items: Faq[] }
+const { items } = Astro.props;
+---
+<div class="faq">
+  {items.map((f) => (
+    <details>
+      <summary><h3>{f.q}</h3></summary>
+      <p>{f.r}</p>
+    </details>
+  ))}
+</div>
+
+<style>
+  .faq { display: grid; gap: 12px; max-width: 820px; }
+  details { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 22px; }
+  summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; font-size: 1.5rem; line-height: 1; color: var(--brand-ink); transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  h3 { margin: 0; font-size: 1.05rem; font-family: var(--font-body); font-weight: 700; letter-spacing: 0; }
+  p { color: var(--ink-soft); padding-bottom: 8px; }
+</style>

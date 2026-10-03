@@ -1,0 +1,38 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { site, nomPraticien, metierVille } from '../../lib/site';
+import { breadcrumbSchema } from '../../lib/schema';
+
+const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Soins', path: '/soins' }];
+---
+<Base
+  title={`Soins proposés | ${nomPraticien}, ${metierVille}`}
+  description={`Les soins proposés au cabinet de ${nomPraticien}, ${metierVille.toLowerCase()} : ${site.soins.map((s) => s.titreCourt.toLowerCase()).join(', ')}.`}
+  path="/soins"
+  schemas={[breadcrumbSchema(crumbs)]}
+>
+  <section class="section">
+    <div class="wrap">
+      <Breadcrumb items={crumbs} />
+      <h1>Les soins proposés au cabinet</h1>
+      <p class="lead">Chaque prise en charge commence par un échange et un examen, pour vous proposer des soins adaptés.</p>
+      <div class="grid grid--2 liste">
+        {site.soins.map((s) => (
+          <a class="card item" href={`/soins/${s.slug}`}>
+            <h2>{s.titreCourt}</h2>
+            <p>{s.resume}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .liste { margin-top: 32px; }
+  .item { text-decoration: none; color: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+  .item:hover { border-color: var(--brand-line); box-shadow: var(--shadow); color: inherit; }
+  .item h2 { font-size: 1.3rem; color: var(--brand-ink); }
+  .item p { color: var(--ink-soft); margin: 0; }
+</style>

@@ -1,0 +1,12 @@
+{
+  "name": "plateforme-sante",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/sites",
+    "build": "npm run build -w apps/sites",
+    "preview": "npm run preview -w apps/sites"
+  }
+}

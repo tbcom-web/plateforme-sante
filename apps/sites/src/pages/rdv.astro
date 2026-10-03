@@ -1,0 +1,17 @@
+---
+// Repli statique (développement local). En production, la fonction Cloudflare
+// functions/rdv.js intercepte /rdv, compte le clic puis redirige.
+import { site } from '../lib/site';
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0;url=${site.rdv.url}`} />
+    <title>Redirection vers {site.rdv.plateforme}</title>
+  </head>
+  <body>
+    <p>Redirection vers <a href={site.rdv.url}>{site.rdv.plateforme}</a>…</p>
+  </body>
+</html>

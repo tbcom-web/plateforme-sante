@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { site, md, nomPraticien, dateFr, rdvHref } from '../../lib/site';
+import { articleSchema, breadcrumbSchema } from '../../lib/schema';
+import type { Article } from '../../lib/types';
+
+export function getStaticPaths() {
+  return site.articles.map((article) => ({ params: { slug: article.slug }, props: { article } }));
+}
+
+const { article } = Astro.props as { article: Article };
+const path = `/actualites/${article.slug}`;
+const crumbs = [
+  { name: 'Accueil', path: '/' },
+  { name: 'Conseils', path: '/actualites' },
+  { name: article.titre, path },
+];
+---
+<Base
+  title={`${article.titre} | ${nomPraticien}`}
+  description={article.resume}
+  path={path}
+  schemas={[articleSchema(article), breadcrumbSchema(crumbs)]}
+>
+  <article class="section">
+    <div class="wrap">
+      <Breadcrumb items={crumbs} />
+      <header class="head">
+        <span class="tag">{article.theme}</span>
+        <h1>{article.titre}</h1>
+        <p class="meta">Par <a href="/a-propos">{nomPraticien}</a>, {site.profession.libelle.toLowerCase()} · <time datetime={article.date}>{dateFr(article.date)}</time></p>
+      </header>
+      <div class="prose" set:html={md(article.corps)} />
+      <div class="card encart">
+        <p><strong>Une question sur vos pieds ?</strong> Je vous reçois au cabinet, {site.cabinet.quartier}.</p>
+        <a class="btn btn--primary" href={rdvHref(`article-${article.slug}`)}>Prendre rendez-vous</a>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .head { max-width: 70ch; margin-bottom: 24px; }
+  .tag { font-size: 0.8rem; font-weight: 700; color: var(--brand-ink); text-transform: uppercase; letter-spacing: 0.08em; }
+  .meta { color: var(--ink-mute); font-size: 0.95rem; }
+  .encart { max-width: 70ch; margin-top: 40px; background: var(--brand-softer); border-color: var(--brand-line); display: grid; gap: 12px; justify-items: start; }
+  .encart p { margin: 0; }
+</style>
