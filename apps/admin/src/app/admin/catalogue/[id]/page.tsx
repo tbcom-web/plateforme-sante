@@ -10,7 +10,7 @@ export default async function ModifierSoin({ params }: PageProps<'/admin/catalog
   const supabase = await createClient();
   const { data: soin } = await supabase
     .from('soins_catalogue')
-    .select('id, slug, titre_court, titre, resume, corps, faq')
+    .select('*')
     .eq('id', id)
     .maybeSingle();
   if (!soin) notFound();
@@ -20,7 +20,7 @@ export default async function ModifierSoin({ params }: PageProps<'/admin/catalog
       <Link href="/admin/catalogue" className="text-sm text-teal-800">← Catalogue</Link>
       <h1 className="mt-2 text-2xl font-bold">{soin.titre_court}</h1>
       <p className="text-sm text-neutral-500">Adresse de la page sur chaque site : /soins/{soin.slug}</p>
-      <EditeurSoin soin={soin} />
+      <EditeurSoin soin={{ ...soin, icone: soin.icone ?? '' }} />
     </div>
   );
 }

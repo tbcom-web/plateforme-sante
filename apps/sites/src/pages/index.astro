@@ -3,6 +3,8 @@ import Base from '../layouts/Base.astro';
 import Decor from '../components/Decor.astro';
 import FaqList from '../components/FaqList.astro';
 import InfosPratiques from '../components/InfosPratiques.astro';
+import Icone from '../components/Icone.astro';
+import { iconeSoin, ICONE_SOIN_DEFAUT } from '@plateforme/core';
 import { site, nomPraticien, metierVille, rdvHref, telLien, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
 
@@ -38,6 +40,7 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
       <div class="grid grid--3 soins">
         {site.soins.map((s) => (
           <a class="card soin" href={`/soins/${s.slug}`}>
+            <span class="pastille"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
             <h3>{s.titreCourt}</h3>
             <p>{s.resume}</p>
             <span class="soin__more" aria-hidden="true">En savoir plus →</span>

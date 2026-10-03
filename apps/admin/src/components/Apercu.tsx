@@ -1,4 +1,4 @@
-import { buildTheme, type SiteDraft } from '@plateforme/core';
+import { buildTheme, iconeSoin, urlIconeApi, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 // Aperçu miniature du site, calculé avec le même thème que le générateur de sites.
@@ -77,6 +77,8 @@ export default function Apercu({ draft, catalogue }: { draft: SiteDraft; catalog
             <div className="grid grid-cols-2 gap-2">
               {soins.slice(0, 6).map((s) => (
                 <div key={s.slug} className="border p-3" style={{ borderColor: '#e6e8e6', borderRadius: p.rayon, background: '#fff' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={urlIconeApi(iconeSoin(s.slug, s.icone))} alt="" width={20} height={20} className="mb-1.5" />
                   <p className="text-xs font-bold">{s.titre_court}</p>
                   <p className="mt-1 line-clamp-2 text-[11px] text-neutral-500">{s.resume}</p>
                 </div>

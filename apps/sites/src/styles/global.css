@@ -135,6 +135,19 @@ img, svg { max-width: 100%; display: block; }
   padding: 28px;
 }
 
+/* Pastille d'icône (cartes de soins) */
+.pastille {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: 34px;
+  margin-bottom: 16px;
+}
+
 .grid { display: grid; gap: 20px; }
 @media (min-width: 720px) {
   .grid--2 { grid-template-columns: repeat(2, 1fr); }

@@ -9,6 +9,8 @@ export type Soin = {
   /** Markdown */
   corps: string;
   faq: Faq[];
+  /** Icône "prefixe:nom" (voir JEUX_ICONES) ; défaut selon le slug */
+  icone?: string;
 };
 
 export type Article = {

@@ -3,6 +3,8 @@ import Base from '../../layouts/Base.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import { site, nomPraticien, metierVille } from '../../lib/site';
 import { breadcrumbSchema } from '../../lib/schema';
+import Icone from '../../components/Icone.astro';
+import { iconeSoin, ICONE_SOIN_DEFAUT } from '@plateforme/core';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Soins', path: '/soins' }];
 ---
@@ -20,6 +22,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Soins', path: '/soins' 
       <div class="grid grid--2 liste">
         {site.soins.map((s) => (
           <a class="card item" href={`/soins/${s.slug}`}>
+            <span class="pastille"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
             <h2>{s.titreCourt}</h2>
             <p>{s.resume}</p>
           </a>

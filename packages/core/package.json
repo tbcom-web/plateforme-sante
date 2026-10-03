@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./icones": "./src/icones.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

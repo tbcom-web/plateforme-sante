@@ -2,7 +2,7 @@ import 'server-only';
 import { draftVide, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
-export type SoinCatalogue = { slug: string; titre_court: string; resume: string };
+export type SoinCatalogue = { slug: string; titre_court: string; resume: string; icone?: string | null };
 
 export type MonSite = {
   id: string | null;
@@ -48,7 +48,7 @@ export async function getCatalogue(profession = 'podologue'): Promise<SoinCatalo
   const supabase = await createClient();
   const { data } = await supabase
     .from('soins_catalogue')
-    .select('slug, titre_court, resume')
+    .select('*')
     .eq('profession_slug', profession)
     .order('position');
   return data ?? [];

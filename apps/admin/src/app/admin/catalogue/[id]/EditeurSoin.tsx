@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react';
 import { enregistrerSoin, type ChampsSoin, type Resultat } from '../../actions';
+import SelecteurIcone from './SelecteurIcone';
 
-type Props = { soin: ChampsSoin & { id: string } };
+type Props = { soin: ChampsSoin & { id: string; slug: string } };
 
 const champ = 'w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20';
 
@@ -14,6 +15,7 @@ export default function EditeurSoin({ soin }: Props) {
     resume: soin.resume,
     corps: soin.corps,
     faq: soin.faq,
+    icone: soin.icone,
   });
   const [resultat, setResultat] = useState<Resultat>(null);
   const [enCours, demarrer] = useTransition();
@@ -31,6 +33,7 @@ export default function EditeurSoin({ soin }: Props) {
         <span className="font-medium">Titre court (menus, cartes)</span>
         <input className={champ} value={v.titre_court} onChange={(e) => maj('titre_court', e.target.value)} />
       </label>
+      <SelecteurIcone slug={soin.slug} valeur={v.icone} onChange={(n) => maj('icone', n)} />
       <label className="grid gap-1.5 text-sm">
         <span className="font-medium">Titre de la page (H1, balise title)</span>
         <input className={champ} value={v.titre} onChange={(e) => maj('titre', e.target.value)} />

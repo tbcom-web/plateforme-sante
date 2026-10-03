@@ -23,7 +23,7 @@ type LigneSite = {
   config: SiteDraft;
 };
 type LigneProfession = { slug: string; libelle: string; specialite_schema: string; ordre: string };
-type LigneSoin = { slug: string; titre_court: string; titre: string; resume: string; corps: string; faq: Faq[] };
+type LigneSoin = { slug: string; titre_court: string; titre: string; resume: string; corps: string; faq: Faq[]; icone: string | null };
 
 export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig> {
   const filtre = /^[0-9a-f-]{36}$/.test(siteId) ? `id=eq.${siteId}` : `slug=eq.${encodeURIComponent(siteId)}`;
@@ -47,6 +47,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       resume: perso(c.resume),
       corps: perso(c.corps),
       faq: c.faq.map((f) => ({ q: perso(f.q), r: perso(f.r) })),
+      icone: c.icone ?? undefined,
     }));
 
   const lieu = d.cabinet.quartier || ville;

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { exigerAdmin } from '@/lib/admin';
 import { declencherPublication } from '@/lib/publication';
 import { createClient } from '@/lib/supabase/server';
+import { iconeExiste } from '@plateforme/core/icones';
 
 export type Resultat = { ok: boolean; message: string } | null;
 
@@ -45,6 +46,8 @@ export type ChampsSoin = {
   resume: string;
   corps: string;
   faq: { q: string; r: string }[];
+  /** "prefixe:nom" d'un jeu intégré, ou vide pour l'icône par défaut */
+  icone: string;
 };
 
 export async function enregistrerSoin(id: string, champs: ChampsSoin): Promise<Resultat> {
@@ -60,7 +63,11 @@ export async function enregistrerSoin(id: string, champs: ChampsSoin): Promise<R
       .map((f) => ({ q: t(f.q, 300), r: t(f.r, 1500) }))
       .filter((f) => f.q && f.r)
       .slice(0, 12),
+    icone: t(champs.icone, 80) || null,
   };
+  if (valeurs.icone && !iconeExiste(valeurs.icone)) {
+    return { ok: false, message: 'Icône inconnue dans les jeux intégrés.' };
+  }
   if (!valeurs.titre_court || !valeurs.titre || !valeurs.resume || !valeurs.corps) {
     return { ok: false, message: 'Titre court, titre, résumé et texte sont obligatoires.' };
   }

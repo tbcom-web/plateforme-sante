@@ -1,0 +1,26 @@
+---
+// Icône des jeux intégrés (Healthicons, Lucide, Phosphor, Tabler), rendue en SVG au build.
+// Couleur : currentColor. Aucune requête externe.
+import { svgIcone } from '@plateforme/core/icones';
+
+interface Props {
+  /** "prefixe:nom", par ex. "healthicons:foot-outline" */
+  nom: string;
+  /** Icône de secours si `nom` est inconnu */
+  secours?: string;
+  taille?: string | number;
+  class?: string;
+  /** Texte alternatif ; vide = décoratif */
+  titre?: string;
+}
+
+const { nom, secours, taille, class: classe, titre } = Astro.props;
+const opts = { taille, classe: ['icone', classe].filter(Boolean).join(' '), titre };
+const svg = svgIcone(nom, opts) ?? (secours ? svgIcone(secours, opts) : null);
+if (!svg) console.warn(`[Icone] icône inconnue : ${nom}`);
+---
+{svg && <Fragment set:html={svg} />}
+
+<style is:global>
+  .icone { display: inline-block; flex: none; vertical-align: -0.125em; }
+</style>

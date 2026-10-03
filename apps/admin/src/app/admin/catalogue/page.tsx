@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { iconeSoin, urlIconeApi } from '@plateforme/core';
 
 export const metadata = { title: 'Super admin · Catalogue' };
 
-type Soin = { id: string; profession_slug: string; slug: string; titre_court: string; resume: string; faq: unknown[] };
+type Soin = { id: string; profession_slug: string; slug: string; titre_court: string; resume: string; faq: unknown[]; icone?: string | null };
 
 export default async function Catalogue() {
   const supabase = await createClient();
   const [{ data: soins }, { data: professions }] = await Promise.all([
-    supabase.from('soins_catalogue').select('id, profession_slug, slug, titre_court, resume, faq').order('position').returns<Soin[]>(),
+    supabase.from('soins_catalogue').select('*').order('position').returns<Soin[]>(),
     supabase.from('professions').select('slug, libelle, ordre'),
   ]);
 
@@ -27,7 +28,9 @@ export default async function Catalogue() {
             {(soins ?? []).filter((s) => s.profession_slug === p.slug).map((s) => (
               <li key={s.id}>
                 <Link href={`/admin/catalogue/${s.id}`} className="flex items-start justify-between gap-4 rounded-xl border border-black/5 bg-white p-4 hover:border-teal-700/40">
-                  <span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={urlIconeApi(iconeSoin(s.slug, s.icone))} alt="" width={28} height={28} className="mt-0.5 shrink-0" />
+                  <span className="flex-1">
                     <span className="block font-semibold">{s.titre_court}</span>
                     <span className="block text-sm text-neutral-600">{s.resume}</span>
                   </span>
