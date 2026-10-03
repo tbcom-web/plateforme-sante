@@ -1,0 +1,10 @@
+---
+// Modèle de design en conception, généré uniquement sur les sites de démo : /modeles/premium
+import Modele from '../../../modeles/Premium.astro';
+import { site } from '../../../lib/site';
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { vide: undefined } }] : [];
+}
+---
+<Modele />

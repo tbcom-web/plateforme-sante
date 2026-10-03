@@ -3,13 +3,10 @@
 import '@fontsource-variable/inter';
 import '@fontsource-variable/fraunces/full.css';
 import '@fontsource-variable/fraunces/full-italic.css';
-import CartePied from '../../components/CartePied.astro';
-import Illustration, { type NomIllustration } from '../../components/Illustration.astro';
-import { site, nomPraticien, rdvHref, telLien, adresseComplete } from '../../lib/site';
+import CartePied from '../components/CartePied.astro';
+import Illustration, { type NomIllustration } from '../components/Illustration.astro';
+import { site, nomPraticien, rdvHref, telLien, adresseComplete } from '../lib/site';
 
-export function getStaticPaths() {
-  return site.demo ? [{ params: { modele: 'canard' } }] : [];
-}
 
 const visuels: Record<string, NomIllustration> = {
   'bilan-podologique': 'marche',

@@ -1,0 +1,403 @@
+---
+// Modèle « Médical premium » : esprit clinique privée haut de gamme. Net, précis, lumineux.
+import '@fontsource-variable/inter';
+import CartePied from '../components/CartePied.astro';
+import { site, nomPraticien, rdvHref, telLien, adresseComplete } from '../lib/site';
+
+const photos: Record<string, string> = {
+  'bilan-podologique': '/photos/analyse-plateforme.webp',
+  'semelles-orthopediques': '/photos/chaussage.webp',
+  'soins-de-pedicurie': '/photos/examen-mains.webp',
+  'pied-diabetique': '/photos/soin-talon.webp',
+  'podologie-du-sport': '/photos/sport-course.webp',
+  'podologie-enfant': '/photos/enfant-pied.webp',
+};
+const photoSoin = (slug: string) => photos[slug] ?? '/photos/examen-mains.webp';
+
+const methode = [
+  { titre: 'Écoute', texte: 'Vos symptômes, vos activités, vos antécédents. Le temps nécessaire est pris.' },
+  { titre: 'Examen', texte: 'Analyse du pied, des appuis et de la marche, debout, allongé puis en mouvement.' },
+  { titre: 'Explication', texte: 'Ce qui se passe, pourquoi, et ce qui peut être fait — en termes clairs.' },
+  { titre: 'Suivi', texte: 'Soins, semelles sur mesure ou conseils : un plan adapté, réévalué dans le temps.' },
+];
+
+const faits = [
+  site.praticien.titre,
+  site.praticien.formations[1],
+  site.praticien.conventionnement,
+  site.cabinet.pmr ? 'Cabinet accessible PMR' : '',
+].filter(Boolean);
+
+const ouvert = site.cabinet.horaires.filter((h) => /\d/.test(h.heures));
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{site.profession.libelle} à {site.cabinet.ville} – {nomPraticien} · Modèle Médical premium</title>
+    <link rel="preload" as="image" href="/photos/accueil-observation-marche.webp" fetchpriority="high" />
+  </head>
+  <body>
+    <a class="evitement" href="#contenu">Aller au contenu</a>
+
+    <div class="infobarre">
+      <span>{adresseComplete}</span>
+      <span class="infobarre__sep" aria-hidden="true"></span>
+      <a href={telLien}>{site.cabinet.telephone}</a>
+    </div>
+
+    <header class="nav">
+      <a class="nav__marque" href="#" aria-label={`${nomPraticien}, accueil`}>
+        <span class="nav__nom">{site.praticien.prenom} <strong>{site.praticien.nom}</strong></span>
+        <span class="nav__metier">{site.profession.libelle}</span>
+      </a>
+      <nav class="nav__liens" aria-label="Navigation principale">
+        <a href="#expertises">Expertises</a>
+        <a href="#douleur">Où avez-vous mal ?</a>
+        <a href="#methode">Méthode</a>
+        <a href="#cabinet">Le cabinet</a>
+      </nav>
+      <a class="bouton bouton--sombre" href={rdvHref('premium-nav')}>Prendre rendez-vous</a>
+    </header>
+
+    <main id="contenu">
+      <section class="hero">
+        <div class="hero__texte">
+          <p class="etiquette">Cabinet de podologie — {site.cabinet.quartier}</p>
+          <h1>Le soin du pied,<br /><span class="clair">avec précision.</span></h1>
+          <p class="hero__chapo">{site.accroche.texte}</p>
+          <div class="hero__actions">
+            <a class="bouton bouton--sombre bouton--grand" href={rdvHref('premium-hero')}>
+              Prendre rendez-vous
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
+            </a>
+            <a class="lien-fleche" href="#expertises">Découvrir les expertises</a>
+          </div>
+        </div>
+        <figure class="hero__visuel">
+          <img src="/photos/accueil-observation-marche.webp" alt="Un praticien observe la marche d’une patiente lors d’un bilan" width="1200" height="1800" fetchpriority="high" />
+          <figcaption class="flottant flottant--haut">
+            <span class="pastille-vivante" aria-hidden="true"></span>
+            Réservation en ligne 24h/24 sur {site.rdv.plateforme}
+          </figcaption>
+          <div class="flottant flottant--bas" aria-hidden="true">
+            <span class="flottant__chiffre">45<small>min</small></span>
+            <span>pour un bilan<br />podologique complet</span>
+          </div>
+        </figure>
+      </section>
+
+      <ul class="faits" aria-label="En bref">
+        {faits.map((f) => <li>{f}</li>)}
+      </ul>
+
+      <section id="expertises" class="section">
+        <div class="entete">
+          <p class="etiquette">Expertises</p>
+          <h2>Six domaines de prise en charge,<br /><span class="clair">une même exigence.</span></h2>
+        </div>
+        <ol class="expertises">
+          {site.soins.map((s, i) => (
+            <li class="apparition">
+              <a href={`/soins/${s.slug}`} class="expertise">
+                <span class="expertise__num">{String(i + 1).padStart(2, '0')}</span>
+                <img class="expertise__vignette" src={photoSoin(s.slug)} alt="" loading="lazy" width="320" height="240" />
+                <span class="expertise__titre">{s.titreCourt}</span>
+                <span class="expertise__resume">{s.resume}</span>
+                <span class="expertise__fleche" aria-hidden="true">
+                  <svg viewBox="0 0 20 20"><path d="M6 14 14 6M7 6h7v7" /></svg>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="cabinet" class="bandeau-photo">
+        <img src="/photos/cabinet-lumiere.webp" alt="Une salle de soins claire et lumineuse" loading="lazy" width="1200" height="1800" />
+        <div class="bandeau-photo__texte">
+          <p class="etiquette etiquette--claire">Le cabinet</p>
+          <h2>Un lieu calme, lumineux, pensé pour votre confort.</h2>
+          <ul>
+            <li><strong>Hygiène</strong> Instruments stérilisés après chaque patient</li>
+            <li><strong>Accessibilité</strong> {site.cabinet.pmr ? 'Accès de plain-pied, PMR' : 'Nous contacter pour l’accès'}</li>
+            <li><strong>Ponctualité</strong> Des créneaux respectés, sans attente inutile</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="douleur" class="section section--grise apparition">
+        <CartePied soinsDisponibles={site.soins.map((s) => s.slug)} />
+      </section>
+
+      <section id="methode" class="section methode">
+        <div class="methode__photo apparition">
+          <img src="/photos/examen-mains.webp" alt="Examen clinique du pied, mains gantées" loading="lazy" width="1600" height="1286" />
+        </div>
+        <div>
+          <p class="etiquette">Méthode</p>
+          <h2>Une consultation <span class="clair">en quatre temps.</span></h2>
+          <ol class="etapes">
+            {methode.map((m, i) => (
+              <li class="apparition">
+                <span class="etapes__num">{i + 1}</span>
+                <div><h3>{m.titre}</h3><p>{m.texte}</p></div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section class="section praticien">
+        <div class="praticien__carte apparition">
+          <span class="praticien__monogramme">{site.praticien.prenom[0]}{site.praticien.nom[0]}</span>
+          <p class="praticien__nom">{nomPraticien}</p>
+          <p class="praticien__titre">{site.praticien.titre}</p>
+          <p class="praticien__rpps">RPPS {site.praticien.rpps}</p>
+        </div>
+        <div class="apparition">
+          <p class="etiquette">Votre praticienne</p>
+          <blockquote>{site.praticien.parcours.split('\n\n').at(-1)}</blockquote>
+          <dl class="parcours">
+            {site.praticien.formations.map((f) => <><dt>Formation</dt><dd>{f}</dd></>)}
+            <dt>Langues</dt><dd>{site.praticien.langues.join(', ')}</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="section infos">
+        <div class="infos__bloc apparition">
+          <p class="etiquette">Horaires</p>
+          <dl>{ouvert.map((h) => <><dt>{h.jour}</dt><dd>{h.heures}</dd></>)}</dl>
+        </div>
+        <div class="infos__bloc apparition">
+          <p class="etiquette">Accès</p>
+          <p class="infos__adresse">{adresseComplete}</p>
+          <ul>{site.cabinet.acces.map((a) => <li>{a}</li>)}</ul>
+        </div>
+        <div class="infos__bloc apparition">
+          <p class="etiquette">Tarifs indicatifs</p>
+          <dl>{site.cabinet.tarifs.map((t) => <><dt>{t.acte}</dt><dd>{t.prix}</dd></>)}</dl>
+        </div>
+      </section>
+
+      <section class="final">
+        <img src="/photos/soin-talon.webp" alt="" loading="lazy" width="1600" height="900" />
+        <div class="final__contenu">
+          <h2>Prenez rendez-vous<br /><span class="clair">en quelques secondes.</span></h2>
+          <div class="final__actions">
+            <a class="bouton bouton--clair bouton--grand" href={rdvHref('premium-final')}>Réserver sur {site.rdv.plateforme}</a>
+            <a class="bouton bouton--contour bouton--grand" href={telLien}>{site.cabinet.telephone}</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pied">
+      <span class="pied__nom">{site.praticien.prenom} <strong>{site.praticien.nom}</strong></span>
+      <span>{site.praticien.ordre} · RPPS {site.praticien.rpps}</span>
+      <span>Modèle « Médical premium » — prototype · Photos Unsplash</span>
+    </footer>
+
+    <script>
+      if (!CSS.supports('animation-timeline: view()')) {
+        const obs = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add('vu')), { threshold: 0.12 });
+        document.querySelectorAll('.apparition').forEach((el) => obs.observe(el));
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --blanc: #ffffff;
+    --fond: #ffffff;
+    --gris: #f4f5f4;
+    --surface: #ffffff;
+    --encre: #0b1c24;
+    --encre-douce: #5a6770;
+    --encre-pale: #8b969d;
+    --ligne: #e4e8e8;
+    --accent: #2b7c76;
+    --accent-pale: #e3f0ee;
+    --principal: #0b1c24;
+    --sur-principal: #ffffff;
+    --principal-texte: #2b7c76;
+    --police-titres: 'Inter Variable', system-ui, sans-serif;
+    --police-texte: 'Inter Variable', system-ui, sans-serif;
+    --rayon: 14px;
+    --rayon-grand: 22px;
+    --marge: clamp(20px, 5vw, 72px);
+    --doux: var(--accent-pale);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--fond); color: var(--encre); font-family: var(--police-texte); font-size: 1.0625rem; line-height: 1.6; font-feature-settings: 'ss01', 'cv11'; -webkit-font-smoothing: antialiased; }
+  img { display: block; max-width: 100%; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  .evitement { position: absolute; left: -9999px; }
+  .evitement:focus { left: 16px; top: 16px; z-index: 99; background: #fff; padding: 8px 12px; }
+
+  h1, h2, h3 { font-family: var(--police-titres); font-weight: 520; letter-spacing: -0.045em; line-height: 1; margin: 0; text-wrap: balance; }
+  h2 { font-size: clamp(2.1rem, 4.6vw, 3.9rem); }
+  .clair { color: var(--encre-pale); }
+  .etiquette { display: inline-flex; align-items: center; gap: 10px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--encre-douce); margin: 0 0 22px; }
+  .etiquette::before { content: ''; width: 18px; height: 1px; background: currentColor; }
+  .etiquette--claire { color: rgb(255 255 255 / 0.75); }
+
+  .bouton { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 0 22px; border-radius: 999px; font-weight: 550; font-size: 0.95rem; text-decoration: none; white-space: nowrap; transition: background 0.3s, transform 0.3s cubic-bezier(.2,.7,.2,1); }
+  .bouton svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .bouton:hover svg { transform: translateX(3px); }
+  .bouton--sombre { background: var(--encre); color: #fff; }
+  .bouton--sombre:hover { background: #1c3742; }
+  .bouton--clair { background: #fff; color: var(--encre); }
+  .bouton--contour { color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.45); }
+  .bouton--grand { min-height: 56px; padding: 0 28px; font-size: 1rem; }
+  .lien-fleche { font-weight: 550; text-decoration: none; border-bottom: 1px solid var(--ligne); padding-bottom: 3px; transition: border-color 0.3s; }
+  .lien-fleche:hover { border-color: var(--encre); }
+
+  /* Barre d'infos + navigation */
+  .infobarre { display: none; justify-content: center; align-items: center; gap: 16px; padding: 9px var(--marge); font-size: 0.8rem; color: var(--encre-douce); border-bottom: 1px solid var(--ligne); }
+  .infobarre a { text-decoration: none; }
+  .infobarre__sep { width: 3px; height: 3px; border-radius: 50%; background: var(--encre-pale); }
+  @media (min-width: 760px) { .infobarre { display: flex; } }
+  .nav { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 24px; padding: 14px var(--marge); background: rgb(255 255 255 / 0.85); backdrop-filter: blur(14px) saturate(1.6); border-bottom: 1px solid var(--ligne); }
+  .nav__marque { display: grid; text-decoration: none; line-height: 1.15; margin-right: auto; }
+  .nav__nom { font-size: 1.05rem; letter-spacing: -0.02em; }
+  .nav__nom strong { font-weight: 650; }
+  .nav__metier { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--encre-pale); }
+  .nav__liens { display: none; gap: 30px; font-size: 0.92rem; }
+  .nav__liens a { text-decoration: none; color: var(--encre-douce); transition: color 0.2s; }
+  .nav__liens a:hover { color: var(--encre); }
+  @media (min-width: 1000px) { .nav__liens { display: flex; } }
+  .nav .bouton { min-height: 42px; padding: 0 18px; font-size: 0.88rem; }
+
+  /* Hero */
+  .hero { display: grid; gap: clamp(32px, 5vw, 64px); align-items: center; padding: clamp(36px, 6vw, 80px) var(--marge) clamp(40px, 6vw, 72px); }
+  @media (min-width: 980px) { .hero { grid-template-columns: 1.05fr 0.95fr; } }
+  .hero h1 { font-size: clamp(2.9rem, 7.2vw, 6.4rem); letter-spacing: -0.055em; line-height: 0.95; }
+  .hero__chapo { max-width: 48ch; margin: 28px 0 36px; color: var(--encre-douce); font-size: 1.12rem; }
+  .hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; }
+  .hero__visuel { position: relative; margin: 0; }
+  .hero__visuel img { width: 100%; height: clamp(420px, 72svh, 720px); object-fit: cover; object-position: 50% 45%; border-radius: var(--rayon-grand); background: var(--gris); }
+  .flottant { position: absolute; display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-radius: 14px; background: rgb(255 255 255 / 0.82); backdrop-filter: blur(14px) saturate(1.5); box-shadow: 0 12px 40px -12px rgb(11 28 36 / 0.25); font-size: 0.86rem; line-height: 1.3; }
+  .flottant--haut { top: 20px; right: 20px; }
+  .flottant--bas { bottom: 20px; right: 20px; color: var(--encre-douce); }
+  @media (min-width: 980px) { .flottant--bas { right: auto; left: -32px; bottom: 48px; } }
+  .flottant__chiffre { font-size: 2.2rem; font-weight: 600; letter-spacing: -0.05em; color: var(--encre); line-height: 1; }
+  .flottant__chiffre small { font-size: 0.9rem; font-weight: 500; margin-left: 2px; letter-spacing: 0; }
+  .pastille-vivante { width: 8px; height: 8px; border-radius: 50%; background: #27a36b; box-shadow: 0 0 0 0 rgb(39 163 107 / 0.5); animation: pouls 2s infinite; }
+  @keyframes pouls { 70% { box-shadow: 0 0 0 9px rgb(39 163 107 / 0); } 100% { box-shadow: 0 0 0 0 rgb(39 163 107 / 0); } }
+
+  .faits { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 0 var(--marge); padding: 0; list-style: none; border-top: 1px solid var(--ligne); border-bottom: 1px solid var(--ligne); }
+  .faits li { padding: 22px 20px 22px 0; font-size: 0.92rem; color: var(--encre-douce); }
+  .faits li + li { border-top: 1px solid var(--ligne); }
+  @media (min-width: 760px) { .faits li + li { border-top: 0; border-left: 1px solid var(--ligne); padding-left: 20px; } }
+
+  /* Sections */
+  .section { padding: clamp(72px, 10vw, 136px) var(--marge); }
+  .section--grise { background: var(--gris); }
+  .entete { margin-bottom: clamp(32px, 5vw, 64px); }
+
+  /* Expertises : liste éditoriale avec vignettes */
+  .expertises { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ligne); }
+  .expertises li { border-bottom: 1px solid var(--ligne); }
+  .expertise { position: relative; display: grid; grid-template-columns: 44px 72px 1fr 44px; grid-template-areas: 'num vignette titre fleche' 'num vignette resume fleche'; column-gap: 16px; align-items: center; padding: 22px 0; text-decoration: none; }
+  .expertise__num { grid-area: num; font-size: 0.8rem; color: var(--encre-pale); font-variant-numeric: tabular-nums; }
+  .expertise__vignette { grid-area: vignette; width: 72px; height: 72px; object-fit: cover; border-radius: 10px; }
+  .expertise__titre { grid-area: titre; font-size: clamp(1.25rem, 2.4vw, 2rem); font-weight: 520; letter-spacing: -0.035em; line-height: 1.1; transition: transform 0.45s cubic-bezier(.2,.7,.2,1), color 0.3s; }
+  .expertise__resume { grid-area: resume; font-size: 0.92rem; color: var(--encre-douce); margin-top: 4px; }
+  .expertise__fleche { grid-area: fleche; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--ligne); transition: background 0.3s, border-color 0.3s, color 0.3s; }
+  .expertise__fleche svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  .expertise:hover .expertise__fleche { background: var(--encre); border-color: var(--encre); color: #fff; }
+  @media (min-width: 900px) {
+    .expertise { grid-template-columns: 64px 1fr 1.1fr 56px; grid-template-areas: 'num titre resume fleche'; padding: 30px 0; }
+    .expertise__resume { margin: 0; max-width: 46ch; }
+    .expertise__vignette { position: absolute; z-index: 2; right: 120px; top: 50%; width: 220px; height: 160px; opacity: 0; pointer-events: none; transform: translateY(-50%) scale(0.92) rotate(-2deg); transition: opacity 0.35s, transform 0.5s cubic-bezier(.2,.7,.2,1); box-shadow: 0 30px 60px -20px rgb(11 28 36 / 0.35); }
+    .expertise:hover .expertise__vignette { opacity: 1; transform: translateY(-50%) scale(1) rotate(-2deg); }
+    .expertise:hover .expertise__titre { transform: translateX(10px); }
+    .expertise:hover .expertise__resume { opacity: 0.25; }
+    .expertise__resume { transition: opacity 0.3s; }
+  }
+
+  /* Bandeau photo plein écran */
+  .bandeau-photo { position: relative; min-height: clamp(520px, 80vh, 820px); display: grid; align-items: end; color: #fff; overflow: hidden; }
+  .bandeau-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .bandeau-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(11 28 36 / 0) 30%, rgb(11 28 36 / 0.78)); }
+  .bandeau-photo__texte { position: relative; z-index: 1; padding: clamp(40px, 7vw, 96px) var(--marge); max-width: 1100px; }
+  .bandeau-photo h2 { max-width: 16ch; }
+  .bandeau-photo ul { list-style: none; padding: 0; margin: 40px 0 0; display: grid; gap: 0; }
+  @media (min-width: 760px) { .bandeau-photo ul { grid-template-columns: repeat(3, 1fr); } }
+  .bandeau-photo li { padding: 18px 20px 0 0; border-top: 1px solid rgb(255 255 255 / 0.3); font-size: 0.92rem; color: rgb(255 255 255 / 0.8); display: grid; gap: 4px; }
+  .bandeau-photo li strong { color: #fff; font-weight: 600; }
+
+  /* Méthode */
+  .methode { display: grid; gap: clamp(32px, 6vw, 96px); align-items: start; }
+  @media (min-width: 980px) { .methode { grid-template-columns: 0.9fr 1.1fr; } .methode__photo { position: sticky; top: 110px; } }
+  .methode__photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--rayon-grand); }
+  .etapes { list-style: none; padding: 0; margin: 48px 0 0; counter-reset: e; }
+  .etapes li { display: grid; grid-template-columns: 56px 1fr; gap: 20px; padding: 28px 0; border-top: 1px solid var(--ligne); }
+  .etapes__num { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 0.9rem; font-weight: 600; background: var(--accent-pale); color: var(--accent); }
+  .etapes h3 { font-size: 1.5rem; letter-spacing: -0.035em; margin-bottom: 6px; }
+  .etapes p { margin: 0; color: var(--encre-douce); max-width: 46ch; }
+
+  /* Praticien */
+  .praticien { display: grid; gap: clamp(32px, 6vw, 96px); align-items: center; background: var(--gris); }
+  @media (min-width: 980px) { .praticien { grid-template-columns: 0.7fr 1.3fr; } }
+  .praticien__carte { aspect-ratio: 4 / 5; border-radius: var(--rayon-grand); background: linear-gradient(160deg, #0f2a33, #0b1c24 60%); color: #fff; padding: 32px; display: grid; align-content: end; position: relative; overflow: hidden; max-width: 440px; }
+  .praticien__carte::before { content: ''; position: absolute; width: 140%; aspect-ratio: 1; right: -60%; top: -40%; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.1); box-shadow: 0 0 0 60px rgb(255 255 255 / 0.03), 0 0 0 120px rgb(255 255 255 / 0.02); }
+  .praticien__monogramme { position: absolute; top: 28px; left: 32px; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.1em; color: rgb(255 255 255 / 0.6); }
+  .praticien__nom { font-size: 1.8rem; font-weight: 550; letter-spacing: -0.04em; margin: 0; }
+  .praticien__titre, .praticien__rpps { margin: 4px 0 0; color: rgb(255 255 255 / 0.65); font-size: 0.9rem; }
+  .praticien blockquote { margin: 0 0 40px; font-size: clamp(1.5rem, 2.8vw, 2.3rem); font-weight: 450; letter-spacing: -0.035em; line-height: 1.2; }
+  .parcours { display: grid; grid-template-columns: 120px 1fr; margin: 0; }
+  .parcours dt, .parcours dd { padding: 14px 0; border-top: 1px solid var(--ligne); margin: 0; font-size: 0.92rem; }
+  .parcours dt { color: var(--encre-pale); }
+
+  /* Infos */
+  .infos { display: grid; gap: 40px; }
+  @media (min-width: 900px) { .infos { grid-template-columns: repeat(3, 1fr); } }
+  .infos dl { display: grid; grid-template-columns: 1fr auto; margin: 0; }
+  .infos dt, .infos dd { padding: 12px 0; border-top: 1px solid var(--ligne); margin: 0; font-size: 0.95rem; }
+  .infos dd { color: var(--encre-douce); text-align: right; padding-left: 16px; }
+  .infos__adresse { font-size: 1.3rem; letter-spacing: -0.025em; margin: 0 0 16px; }
+  .infos ul { list-style: none; padding: 0; margin: 0; }
+  .infos li { padding: 10px 0; border-top: 1px solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; }
+
+  /* Appel final */
+  .final { position: relative; margin: 0 var(--marge) var(--marge); border-radius: 28px; overflow: hidden; color: #fff; min-height: 460px; display: grid; align-items: center; }
+  .final img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .final::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(11 28 36 / 0.9), rgb(11 28 36 / 0.55)); }
+  .final__contenu { position: relative; z-index: 1; padding: clamp(36px, 7vw, 96px); }
+  .final .clair { color: rgb(255 255 255 / 0.55); }
+  .final__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 36px; }
+
+  .pied { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 32px var(--marge) 48px; font-size: 0.82rem; color: var(--encre-pale); }
+  .pied__nom { color: var(--encre); }
+
+  /* Carte du pied : déclinaison premium */
+  #douleur .carte-pied__choix button[aria-selected='true'] { background: var(--encre); border-color: var(--encre); }
+  #douleur .carte-pied__sur { font-family: var(--police-titres); font-weight: 520; letter-spacing: -0.045em; }
+  #douleur .carte-pied__fiche h3 { font-weight: 550; letter-spacing: -0.03em; }
+  #douleur .carte-pied__rdv { background: var(--encre); }
+  #douleur { --accent: #2b7c76; }
+
+  /* Apparitions */
+  @supports (animation-timeline: view()) {
+    .apparition { animation: monte linear both; animation-timeline: view(); animation-range: entry 0% cover 25%; }
+    .bandeau-photo img, .final img { animation: zoom linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  }
+  @supports not (animation-timeline: view()) {
+    .apparition { opacity: 0; transform: translateY(32px); transition: opacity 0.9s, transform 0.9s cubic-bezier(.2,.7,.2,1); }
+    .apparition.vu { opacity: 1; transform: none; }
+  }
+  @keyframes monte { from { opacity: 0; transform: translateY(36px); } }
+  @keyframes zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .apparition { opacity: 1 !important; transform: none !important; }
+  }
+</style>
