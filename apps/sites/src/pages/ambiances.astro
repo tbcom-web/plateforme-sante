@@ -1,0 +1,183 @@
+---
+// Planche de présentation des ambiances (outil interne et support commercial, non indexé).
+import '@fontsource-variable/inter';
+import '@fontsource-variable/nunito';
+import '@fontsource-variable/fraunces';
+import { AMBIANCES, variablesAmbiance } from '@plateforme/core';
+import Illustration, { type NomIllustration } from '../components/Illustration.astro';
+
+const illustrations: { nom: NomIllustration; legende: string }[] = [
+  { nom: 'pied', legende: 'Pied et posture' },
+  { nom: 'semelle', legende: 'Semelles orthopédiques' },
+  { nom: 'chaussure', legende: 'Podologie du sport' },
+  { nom: 'enfant', legende: 'Podologie de l’enfant' },
+  { nom: 'soin', legende: 'Soins de pédicurie' },
+  { nom: 'marche', legende: 'Analyse de la marche' },
+  { nom: 'diabete', legende: 'Pied diabétique' },
+  { nom: 'plante', legende: 'Le cabinet' },
+];
+
+const services: { nom: NomIllustration; titre: string; texte: string }[] = [
+  { nom: 'semelle', titre: 'Semelles orthopédiques', texte: 'Conçues sur mesure après un bilan complet de vos appuis.' },
+  { nom: 'chaussure', titre: 'Podologie du sport', texte: 'Analyse de la foulée et conseils pour courir sereinement.' },
+  { nom: 'enfant', titre: 'Podologie de l’enfant', texte: 'Un examen adapté pour accompagner la croissance.' },
+];
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Ambiances de sites · webpodologue</title>
+  </head>
+  <body>
+    <header class="intro">
+      <p class="sur">webpodologue · studio</p>
+      <h1>Cinq ambiances de cabinet</h1>
+      <p>Chaque ambiance associe une palette, une typographie, des formes et la même famille d’illustrations, recolorée. Toutes respectent un contraste AA.</p>
+      <nav aria-label="Ambiances">
+        {AMBIANCES.map((a) => <a href={`#${a.id}`} style={`--pastille:${a.couleurs.principal}`}>{a.nom}</a>)}
+      </nav>
+    </header>
+
+    {AMBIANCES.map((a) => (
+      <section id={a.id} class="ambiance" data-ambiance={a.id} style={variablesAmbiance(a)}>
+        <div class="entete">
+          <div>
+            <h2>{a.nom}</h2>
+            <p>{a.esprit} · {a.polices.nomTitres}{a.polices.nomTitres !== a.polices.nomTexte && ` + ${a.polices.nomTexte}`}</p>
+          </div>
+          <ul class="nuancier" aria-label={`Palette ${a.nom}`}>
+            {Object.entries(a.couleurs).map(([nom, c]) => (
+              <li><span style={`background:${c}`} /><small>{c}</small></li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="cadre">
+          <div class="barre"><i /><i /><i /><span>cabinet-martin-podologue.fr</span></div>
+          <div class="site">
+            <div class="nav">
+              <strong class="logo">Cabinet Martin</strong>
+              <span class="liens">Soins · Le cabinet · Conseils · Infos pratiques</span>
+              <span class="bouton">Prendre rendez-vous</span>
+            </div>
+
+            <div class="hero">
+              <div class="hero-texte">
+                <p class="eyebrow">Pédicure-podologue · Bordeaux Chartrons</p>
+                <h3>Prendre soin de vos pieds, à chaque pas</h3>
+                <p class="lead">Bilan podologique, semelles sur mesure, suivi du pied diabétique et podologie du sport, dans un cabinet pensé pour votre confort.</p>
+                <div class="actions">
+                  <span class="bouton">Prendre rendez-vous</span>
+                  <span class="bouton bouton--ligne">05 56 00 00 00</span>
+                </div>
+                <ul class="reperes">
+                  <li>Conventionné</li><li>Accès PMR</li><li>RDV en ligne 24h/24</li>
+                </ul>
+              </div>
+              <div class="hero-visuel"><Illustration nom="pied" /></div>
+            </div>
+
+            <div class="services">
+              {services.map((s) => (
+                <div class="carte">
+                  <div class="carte-visuel"><Illustration nom={s.nom} /></div>
+                  <h4>{s.titre}</h4>
+                  <p>{s.texte}</p>
+                  <span class="plus">En savoir plus →</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <ul class="galerie" aria-label="Illustrations">
+          {illustrations.map((i) => (
+            <li><Illustration nom={i.nom} /><small>{i.legende}</small></li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </body>
+</html>
+
+<style is:global>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: #ecebe7; color: #1c1c1a; }
+  .intro { max-width: 1180px; margin: 0 auto; padding: 56px 20px 24px; }
+  .intro h1 { font-family: 'Fraunces Variable', serif; font-weight: 450; font-size: clamp(2rem, 5vw, 3.4rem); letter-spacing: -0.02em; margin: 0.2em 0; }
+  .intro p { max-width: 62ch; color: #55524c; }
+  .sur { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.75rem; font-weight: 700; }
+  .intro nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .intro nav a { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: #fff; color: inherit; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+  .intro nav a::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: var(--pastille); }
+
+  .ambiance {
+    --ill-trait: var(--encre);
+    --ill-fond: var(--doux);
+    --ill-principal: var(--principal);
+    --ill-accent: var(--accent);
+    --ill-clair: var(--surface);
+    max-width: 1180px; margin: 0 auto; padding: 48px 20px;
+  }
+  .entete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 16px; }
+  .entete h2 { font-family: var(--police-titres); font-weight: var(--graisse-titres); letter-spacing: var(--interlettrage-titres); font-size: 1.8rem; margin: 0; color: var(--encre); }
+  .entete p { margin: 4px 0 0; color: #55524c; font-size: 0.9rem; }
+  .nuancier { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
+  .nuancier li { display: grid; justify-items: center; gap: 4px; }
+  .nuancier span { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.08); }
+  .nuancier small { font-size: 0.65rem; color: #77736c; font-family: ui-monospace, monospace; }
+
+  .cadre { border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px -30px rgb(30 30 20 / 0.35), 0 0 0 1px rgb(0 0 0 / 0.05); background: var(--fond); }
+  .barre { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: #f7f7f5; border-bottom: 1px solid #e7e5e0; }
+  .barre i { width: 10px; height: 10px; border-radius: 50%; background: #d8d6d0; }
+  .barre span { margin-left: 12px; font-size: 0.75rem; color: #8a867e; }
+
+  .site { font-family: var(--police-texte); color: var(--encre); background: var(--fond); }
+  .nav { display: flex; align-items: center; gap: 24px; padding: 18px clamp(20px, 4vw, 48px); border-bottom: 1px solid var(--ligne); }
+  .logo { font-family: var(--police-titres); font-weight: var(--graisse-titres); font-size: 1.2rem; letter-spacing: var(--interlettrage-titres); }
+  .liens { flex: 1; font-size: 0.85rem; color: var(--encre-douce); }
+  .bouton { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 22px; border-radius: var(--rayon-bouton); background: var(--principal); color: #fff; font-weight: 650; font-size: 0.92rem; white-space: nowrap; }
+  .bouton--ligne { background: transparent; color: var(--principal); box-shadow: inset 0 0 0 1.5px var(--principal); }
+
+  .hero { display: grid; gap: 32px; align-items: center; padding: clamp(32px, 6vw, 72px) clamp(20px, 4vw, 48px); }
+  @media (min-width: 860px) { .hero { grid-template-columns: 1.1fr 0.9fr; } }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; font-weight: 700; color: var(--principal); margin: 0 0 14px; }
+  .hero h3 { font-family: var(--police-titres); font-weight: var(--graisse-titres); letter-spacing: var(--interlettrage-titres); font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.05; margin: 0 0 18px; text-wrap: balance; }
+  .lead { color: var(--encre-douce); font-size: 1.05rem; line-height: 1.65; max-width: 52ch; margin: 0; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 28px 0 22px; }
+  .reperes { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
+  .reperes li { font-size: 0.8rem; font-weight: 600; padding: 6px 12px; border-radius: var(--rayon-bouton); background: var(--doux); color: var(--encre); }
+  .hero-visuel { max-width: 440px; width: 100%; justify-self: center; }
+
+  .services { display: grid; gap: 16px; padding: 0 clamp(20px, 4vw, 48px) clamp(32px, 5vw, 56px); }
+  @media (min-width: 760px) { .services { grid-template-columns: repeat(3, 1fr); } }
+  .carte { background: var(--surface); border: 1px solid var(--ligne); border-radius: var(--rayon); padding: 22px; }
+  .carte-visuel { width: 112px; margin: -6px 0 6px -10px; }
+  .carte h4 { font-family: var(--police-titres); font-weight: var(--graisse-titres); letter-spacing: var(--interlettrage-titres); font-size: 1.2rem; margin: 0 0 6px; }
+  .carte p { color: var(--encre-douce); font-size: 0.93rem; line-height: 1.55; margin: 0 0 12px; }
+  .plus { font-weight: 650; font-size: 0.88rem; color: var(--principal); }
+
+  .galerie { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 20px 0 0; }
+  .galerie li { background: var(--fond); border-radius: 12px; padding: 10px 10px 8px; display: grid; gap: 4px; }
+  .galerie small { font-size: 0.72rem; color: var(--encre-douce); text-align: center; font-family: var(--police-texte); }
+
+  /* Variantes de composition par ambiance */
+  [data-ambiance='zen'] .hero { text-align: center; grid-template-columns: 1fr; justify-items: center; }
+  [data-ambiance='zen'] .actions, [data-ambiance='zen'] .reperes { justify-content: center; }
+  [data-ambiance='zen'] .lead { margin-inline: auto; }
+  [data-ambiance='zen'] .hero-visuel { order: -1; max-width: 300px; }
+  [data-ambiance='nordique'] .eyebrow { color: var(--encre-douce); letter-spacing: 0.22em; }
+  [data-ambiance='nordique'] .liens { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.72rem; }
+  [data-ambiance='nordique'] .carte { border: 0; border-top: 1px solid var(--encre); border-radius: 0; background: transparent; padding-inline: 0; }
+  [data-ambiance='nordique'] .hero-visuel { background: var(--doux); padding: 24px; }
+  [data-ambiance='terracotta'] .hero-visuel { background: var(--doux); border-radius: var(--rayon-grand); padding: 40px 28px 24px; --ill-fond: var(--surface); }
+  [data-ambiance='terracotta'] h3 em, [data-ambiance='canard'] h3 em { font-style: italic; }
+  [data-ambiance='clinique'] .hero { background: linear-gradient(180deg, var(--surface), var(--fond)); }
+  [data-ambiance='clinique'] .carte { box-shadow: 0 1px 2px rgb(14 29 49 / 0.06), 0 8px 24px rgb(14 29 49 / 0.06); border-color: transparent; }
+  [data-ambiance='canard'] .nav { background: var(--principal); color: #fff; border: 0; }
+  [data-ambiance='canard'] .nav .liens { color: rgb(255 255 255 / 0.8); }
+  [data-ambiance='canard'] .nav .bouton { background: var(--accent); color: var(--encre); }
+</style>

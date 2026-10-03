@@ -1,0 +1,151 @@
+---
+// Famille d'illustrations podologie : même trait, mêmes formes, recolorées par l'ambiance.
+// Couleurs lues dans les variables CSS : --ill-trait, --ill-fond, --ill-principal, --ill-accent, --ill-clair.
+export type NomIllustration = 'pied' | 'semelle' | 'chaussure' | 'enfant' | 'soin' | 'marche' | 'diabete' | 'plante';
+
+interface Props {
+  nom: NomIllustration;
+  class?: string;
+  /** Texte alternatif ; vide = décoratif */
+  alt?: string;
+}
+
+const { nom, class: classe, alt = '' } = Astro.props;
+const id = `ill-${Math.random().toString(36).slice(2, 8)}`;
+const pas = `${id}-pas`;
+---
+<svg
+  class:list={['illustration', classe]}
+  viewBox="0 0 400 320"
+  role={alt ? 'img' : undefined}
+  aria-label={alt || undefined}
+  aria-hidden={alt ? undefined : 'true'}
+  fill="none"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <defs>
+    <!-- Empreinte de pied droit (vue de dessus), centrée sur 0,0, ~60 × 140 -->
+    <symbol id={pas} viewBox="-40 -70 80 155" overflow="visible">
+      <path d="M0 -40C17 -40 26 -24 26 -3C26 17 17 29 17 47C17 65 10 78 -3 78C-17 78 -23 66 -21 48C-19 31 -29 16 -27 -5C-25 -27 -16 -40 0 -40Z" />
+      <circle cx="-17" cy="-53" r="9" />
+      <circle cx="-1" cy="-58" r="6.8" />
+      <circle cx="12" cy="-55" r="6" />
+      <circle cx="22" cy="-48" r="5.2" />
+      <circle cx="29" cy="-39" r="4.4" />
+    </symbol>
+  </defs>
+
+  {nom === 'pied' && (
+    <g>
+      <path fill="var(--ill-fond)" d="M352 170c-6 78-86 124-170 116S30 230 36 150 108 22 196 28s162 64 156 142Z" />
+      <ellipse cx="236" cy="262" rx="130" ry="9" fill="var(--ill-trait)" opacity=".08" />
+      <path
+        fill="var(--ill-clair)"
+        stroke="var(--ill-trait)"
+        stroke-width="3"
+        d="M146 34C146 88 140 136 128 168C118 196 98 214 100 236C102 254 122 260 150 258C176 256 192 246 216 246C242 246 262 258 292 260C324 262 352 262 368 254C384 246 386 230 372 222C354 212 334 208 314 202C280 192 250 176 228 156C212 140 206 104 206 34"
+      />
+      <path stroke="var(--ill-principal)" stroke-width="6" d="M168 254C188 244 236 240 268 254" opacity=".9" />
+      <path stroke="var(--ill-trait)" stroke-width="2.4" opacity=".55" d="M342 212c6 10 8 26 4 40M318 206c4 8 6 18 4 28" />
+      <circle cx="180" cy="176" r="7" stroke="var(--ill-trait)" stroke-width="2.4" opacity=".55" />
+      <path stroke="var(--ill-trait)" stroke-width="2" opacity=".3" d="M150 46h52" />
+      <g stroke="var(--ill-principal)" stroke-width="3">
+        <path d="M296 54c0 30 6 52 20 70" />
+        <path fill="var(--ill-principal)" d="M298 68c-20-6-30-20-28-36 18 2 28 16 28 36ZM302 88c16-10 30-8 40 4-14 10-28 8-40-4ZM308 106c-18-2-28 6-32 20 16 2 28-4 32-20Z" />
+      </g>
+      <circle cx="96" cy="104" r="10" fill="var(--ill-accent)" />
+      <circle cx="120" cy="72" r="5" fill="var(--ill-accent)" opacity=".6" />
+    </g>
+  )}
+
+  {nom === 'semelle' && (
+    <g>
+      <rect x="70" y="30" width="260" height="260" rx="130" fill="var(--ill-fond)" />
+      <g transform="rotate(-14 200 160)">
+        <path fill="var(--ill-clair)" stroke="var(--ill-trait)" stroke-width="3" d="M200 44c40 0 64 34 64 80 0 40-16 64-16 96 0 36-18 62-50 62s-48-26-46-58c2-34-18-58-18-100 0-46 26-80 66-80Z" />
+        <path fill="var(--ill-accent)" opacity=".55" d="M150 150c18-6 22 22 20 48-2 20-14 30-24 28 4-26-8-54 4-76Z" />
+        <ellipse cx="200" cy="240" rx="26" ry="22" fill="var(--ill-principal)" opacity=".25" />
+        <ellipse cx="212" cy="100" rx="34" ry="24" fill="var(--ill-principal)" opacity=".18" />
+        <path stroke="var(--ill-trait)" stroke-width="2" stroke-dasharray="2 8" d="M200 62c30 0 48 28 48 62 0 34-14 58-14 94 0 28-14 46-34 46" opacity=".55" />
+      </g>
+      <path stroke="var(--ill-principal)" stroke-width="3" d="M300 70l14-14M314 86h20M296 52v-20" />
+    </g>
+  )}
+
+  {nom === 'chaussure' && (
+    <g>
+      <path fill="var(--ill-fond)" d="M60 226c-6-70 50-150 150-150s150 60 140 140-70 70-150 70-134 10-140-60Z" />
+      <path fill="var(--ill-clair)" stroke="var(--ill-trait)" stroke-width="3" d="M74 204c0-28 18-46 46-50l52-6c10-22 30-38 56-40h14c8 18 22 32 42 40 38 14 70 26 80 48 6 14 0 26-16 28H96c-14 0-22-8-22-20Z" />
+      <path fill="var(--ill-principal)" stroke="var(--ill-trait)" stroke-width="3" d="M70 222h296c2 14-8 24-22 24H92c-14 0-22-10-22-24Z" />
+      <path stroke="var(--ill-accent)" stroke-width="6" d="M120 196c50-6 110-26 160-56" />
+      <path stroke="var(--ill-trait)" stroke-width="2.5" d="M210 120l22 10M200 132l24 10M192 146l24 10" />
+      <path stroke="var(--ill-trait)" stroke-width="2" opacity=".35" d="M40 270h80M150 270h40" />
+    </g>
+  )}
+
+  {nom === 'enfant' && (
+    <g>
+      <circle cx="200" cy="160" r="128" fill="var(--ill-fond)" />
+      <use href={`#${pas}`} x="88" y="58" width="100" height="194" fill="var(--ill-principal)" transform="rotate(-8 138 155)" />
+      <use href={`#${pas}`} x="214" y="128" width="62" height="120" fill="var(--ill-accent)" transform="rotate(10 245 188)" />
+      <path fill="var(--ill-principal)" d="M268 92c-8-14-30-6-24 10 4 10 24 22 24 22s20-12 24-22c6-16-16-24-24-10Z" opacity=".9" />
+    </g>
+  )}
+
+  {nom === 'soin' && (
+    <g>
+      <path fill="var(--ill-fond)" d="M346 176c0 72-66 118-150 112S46 236 52 160 120 30 204 32s142 72 142 144Z" />
+      <use href={`#${pas}`} x="134" y="44" width="130" height="250" fill="var(--ill-clair)" stroke="var(--ill-trait)" stroke-width="2.2" transform="rotate(6 199 169)" />
+      <g fill="var(--ill-accent)">
+        <path d="M300 70l6 16 16 6-16 6-6 16-6-16-16-6 16-6Z" />
+        <path d="M96 118l4 10 10 4-10 4-4 10-4-10-10-4 10-4Z" />
+      </g>
+      <path fill="var(--ill-principal)" d="M300 196c0 14-10 22-20 22s-20-8-20-22c0-12 20-34 20-34s20 22 20 34Z" />
+    </g>
+  )}
+
+  {nom === 'marche' && (
+    <g>
+      <rect x="30" y="40" width="340" height="240" rx="120" fill="var(--ill-fond)" />
+      <path stroke="var(--ill-trait)" stroke-width="2" stroke-dasharray="3 10" opacity=".45" d="M56 214c70 0 110-40 170-50s96-14 130-40" />
+      <use href={`#${pas}`} x="68" y="186" width="36" height="70" fill="var(--ill-principal)" opacity=".45" transform="rotate(80 86 221)" />
+      <use href={`#${pas}`} x="124" y="150" width="36" height="70" fill="var(--ill-principal)" opacity=".6" transform="rotate(68 142 185)" />
+      <use href={`#${pas}`} x="182" y="146" width="36" height="70" fill="var(--ill-principal)" opacity=".75" transform="rotate(82 200 181)" />
+      <use href={`#${pas}`} x="238" y="114" width="36" height="70" fill="var(--ill-principal)" opacity=".9" transform="rotate(66 256 149)" />
+      <use href={`#${pas}`} x="294" y="100" width="36" height="70" fill="var(--ill-accent)" transform="rotate(76 312 135)" />
+      <path stroke="var(--ill-accent)" stroke-width="4" d="M330 70l24-8-6 24" />
+    </g>
+  )}
+
+  {nom === 'diabete' && (
+    <g>
+      <circle cx="200" cy="160" r="130" fill="var(--ill-fond)" />
+      <use href={`#${pas}`} x="104" y="50" width="120" height="230" fill="var(--ill-clair)" stroke="var(--ill-trait)" stroke-width="2.2" transform="rotate(-6 164 165)" />
+      <path fill="var(--ill-principal)" d="M268 112l52 18v40c0 34-22 58-52 70-30-12-52-36-52-70v-40Z" />
+      <path stroke="var(--ill-clair)" stroke-width="7" d="M246 172l16 16 30-34" />
+      <circle cx="132" cy="236" r="10" fill="var(--ill-accent)" />
+    </g>
+  )}
+
+  {nom === 'plante' && (
+    <g>
+      <path fill="var(--ill-fond)" d="M330 180c0 70-60 110-130 110S70 250 70 180 130 40 200 40s130 70 130 140Z" />
+      <path fill="var(--ill-accent)" stroke="var(--ill-trait)" stroke-width="3" d="M150 214h100l-12 70c-2 8-8 12-16 12h-44c-8 0-14-4-16-12Z" />
+      <path stroke="var(--ill-trait)" stroke-width="3" d="M200 214V120M200 168c-24-10-40-30-44-58M200 150c22-8 38-28 42-56" />
+      <g fill="var(--ill-principal)" stroke="var(--ill-trait)" stroke-width="2.5">
+        <path d="M156 110c-30-6-46-30-40-56 30 4 44 28 40 56Z" />
+        <path d="M242 94c28-10 52 0 62 22-28 12-50 2-62-22Z" />
+        <path d="M200 120c-14-24-10-50 10-66 14 24 10 50-10 66Z" />
+      </g>
+    </g>
+  )}
+</svg>
+
+<style>
+  .illustration {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+</style>
