@@ -58,9 +58,9 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const d = normaliserDraft(s.config);
   // Même contrôle que le back-office : un site incomplet n'est jamais publié (sauf site de test).
   const { bloquants } = controlerPublication(d);
-  if (bloquants.length && !s.test) throw new Error(`Publication refusée :
-- ${bloquants.join('
-- ')}`);
+  if (bloquants.length && !s.test) {
+    throw new Error(['Publication refusée :', ...bloquants.map((b) => `- ${b}`)].join('\n'));
+  }
   const lieu = d.lieux[0];
   const ville = d.cabinet.ville || lieu.ville;
   const perso = (t: string) => t.replaceAll('{ville}', ville);
