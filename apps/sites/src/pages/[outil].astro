@@ -1,10 +1,16 @@
 ---
 // Planche de présentation des ambiances (outil interne et support commercial, non indexé).
+// Générée uniquement sur les sites de démo : /ambiances.
 import '@fontsource-variable/inter';
 import '@fontsource-variable/nunito';
 import '@fontsource-variable/fraunces';
 import { AMBIANCES, variablesAmbiance } from '@plateforme/core';
 import Illustration, { type NomIllustration } from '../components/Illustration.astro';
+import { site } from '../lib/site';
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { outil: 'ambiances' } }] : [];
+}
 
 const illustrations: { nom: NomIllustration; legende: string }[] = [
   { nom: 'pied', legende: 'Pied et posture' },
