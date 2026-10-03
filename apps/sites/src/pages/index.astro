@@ -22,7 +22,7 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
           <a class="btn btn--ghost" href={telLien}>{site.cabinet.telephone}</a>
         </div>
         <ul class="chips" aria-label="En bref">
-          <li>{site.praticien.conventionnement}</li>
+          {site.praticien.conventionnement && <li>{site.praticien.conventionnement}</li>}
           {site.cabinet.pmr && <li>Accès PMR</li>}
           <li>RDV en ligne 24h/24</li>
         </ul>
@@ -55,7 +55,7 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
         )}
       </div>
       <div>
-        <span class="eyebrow">Votre praticienne</span>
+        <span class="eyebrow">Votre {site.profession.libelle.toLowerCase()}</span>
         <h2 id="apropos-titre">{nomPraticien}</h2>
         <p class="lead">{site.praticien.parcours.split('\n\n')[0]}</p>
         <a href="/a-propos">Découvrir le cabinet et mon parcours</a>

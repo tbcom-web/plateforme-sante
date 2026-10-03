@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import Shell from '@/components/Shell';
 import Apercu from '@/components/Apercu';
+import BoutonPublier from './BoutonPublier';
 import { getUser } from '@/lib/supabase/server';
 import { getCatalogue, getMonSite, manques } from '@/lib/sites';
 
@@ -62,13 +63,12 @@ export default async function TableauDeBord() {
               <p className="mt-4 text-sm text-teal-800">Toutes les informations sont renseignées.</p>
             )}
 
-            <button
-              disabled
-              className="mt-6 w-full rounded-lg border border-neutral-300 py-2.5 text-sm font-semibold text-neutral-500"
-              title="La publication arrive à la prochaine étape du développement"
-            >
-              Publier mon site (bientôt)
-            </button>
+            {site.domaine && site.statut === 'en_ligne' && (
+              <a href={`https://${site.domaine}`} target="_blank" rel="noopener" className="mt-4 inline-block text-sm font-semibold text-teal-800 underline underline-offset-4">
+                Voir mon site en ligne ↗
+              </a>
+            )}
+            <BoutonPublier pret={aFaire.length === 0} enLigne={site.statut === 'en_ligne'} />
           </section>
 
           <section className="rounded-2xl border border-black/5 bg-white p-6">

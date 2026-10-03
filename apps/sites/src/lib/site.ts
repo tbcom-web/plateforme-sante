@@ -1,13 +1,14 @@
 import { marked } from 'marked';
 import type { SiteConfig } from '@plateforme/core';
+import { chargerDepuisSupabase } from './supabase';
 
 const sites = import.meta.glob<SiteConfig>('../data/sites/*.ts', { eager: true, import: 'default' });
 
-const SITE_ID = process.env.SITE_ID ?? 'demo-podologue-lyon';
-const found = Object.entries(sites).find(([path]) => path.endsWith(`/${SITE_ID}.ts`));
-if (!found) throw new Error(`Site introuvable : ${SITE_ID}`);
+const SITE_ID = (import.meta.env.SITE_ID as string | undefined) ?? process.env.SITE_ID ?? 'demo-podologue-lyon';
+const local = Object.entries(sites).find(([path]) => path.endsWith(`/${SITE_ID}.ts`));
 
-export const site: SiteConfig = found[1];
+// Site décrit dans un fichier local (démos), sinon chargé depuis Supabase.
+export const site: SiteConfig = local ? local[1] : await chargerDepuisSupabase(SITE_ID);
 
 export const baseUrl = `https://${site.domaine}`;
 export const absUrl = (path: string) => new URL(path, baseUrl).toString();

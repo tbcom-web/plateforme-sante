@@ -22,13 +22,13 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/a-
         <div class="prose" set:html={md(site.praticien.parcours)} />
       </div>
       <aside class="card">
-        <h2>Formations</h2>
+        {site.praticien.formations.length > 0 && <h2>Formations</h2>}
         <ul>{site.praticien.formations.map((f) => <li>{f}</li>)}</ul>
         <h2>Informations professionnelles</h2>
         <dl>
           <dt>N° RPPS</dt><dd>{site.praticien.rpps}</dd>
           <dt>Ordre</dt><dd>{site.praticien.ordre}</dd>
-          <dt>Conventionnement</dt><dd>{site.praticien.conventionnement}</dd>
+          {site.praticien.conventionnement && <><dt>Conventionnement</dt><dd>{site.praticien.conventionnement}</dd></>}
           <dt>Langues</dt><dd>{site.praticien.langues.join(', ')}</dd>
         </dl>
       </aside>

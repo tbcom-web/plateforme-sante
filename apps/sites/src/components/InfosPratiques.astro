@@ -28,17 +28,19 @@ const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComp
           </tbody>
         </table>
       </div>
-      <div class="card">
-        <h3>Tarifs indicatifs</h3>
-        <table>
-          <tbody>
-            {cabinet.tarifs.map((t) => (
-              <tr><th scope="row">{t.acte}</th><td>{t.prix}</td></tr>
-            ))}
-          </tbody>
-        </table>
-        <p class="note">{site.praticien.conventionnement}.</p>
-      </div>
+      {cabinet.tarifs.length > 0 && (
+        <div class="card">
+          <h3>Tarifs indicatifs</h3>
+          <table>
+            <tbody>
+              {cabinet.tarifs.map((t) => (
+                <tr><th scope="row">{t.acte}</th><td>{t.prix}</td></tr>
+              ))}
+            </tbody>
+          </table>
+          {site.praticien.conventionnement && <p class="note">{site.praticien.conventionnement}.</p>}
+        </div>
+      )}
     </div>
     <div class="cta">
       <a class="btn btn--primary" href={rdvHref('infos-pratiques')}>Prendre rendez-vous sur {site.rdv.plateforme}</a>

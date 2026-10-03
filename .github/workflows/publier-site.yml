@@ -1,0 +1,58 @@
+name: publier-site
+
+# Déclenché par le bouton « Publier » du back-office (API GitHub workflow_dispatch).
+on:
+  workflow_dispatch:
+    inputs:
+      site_id:
+        description: Identifiant du site dans Supabase (uuid)
+        required: true
+        type: string
+
+# Une seule publication à la fois par site ; la plus récente gagne.
+concurrency:
+  group: publier-${{ inputs.site_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SITE_ID: ${{ inputs.site_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Préparer (slug du site)
+        id: prep
+        working-directory: apps/sites
+        run: echo "slug=$(node scripts/publication.mjs preparer "$SITE_ID")" >> "$GITHUB_OUTPUT"
+
+      - name: Construire le site
+        run: npm run build -w apps/sites
+
+      - name: Créer le projet Cloudflare Pages si besoin
+        working-directory: apps/sites
+        run: npx wrangler pages project create "${{ steps.prep.outputs.slug }}" --production-branch main || true
+
+      - name: Déployer sur Cloudflare Pages
+        working-directory: apps/sites
+        run: npx wrangler pages deploy dist --project-name "${{ steps.prep.outputs.slug }}" --branch main --commit-dirty=true
+
+      - name: Passer le site en ligne
+        working-directory: apps/sites
+        run: node scripts/publication.mjs terminer "$SITE_ID" "${{ steps.prep.outputs.slug }}.pages.dev"
