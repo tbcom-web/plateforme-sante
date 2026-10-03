@@ -1,5 +1,5 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
-import type { SiteConfig } from '../../lib/types';
+import type { SiteConfig } from '@plateforme/core';
 
 const site: SiteConfig = {
   id: 'demo-podologue-lyon',

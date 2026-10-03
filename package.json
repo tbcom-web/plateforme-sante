@@ -2,10 +2,12 @@
   "name": "plateforme-sante",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev": "npm run dev -w apps/sites",
+    "dev:admin": "npm run dev -w apps/admin",
     "build": "npm run build -w apps/sites",
     "preview": "npm run preview -w apps/sites"
   }

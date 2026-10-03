@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import { site, md, nomPraticien, dateFr, rdvHref } from '../../lib/site';
 import { articleSchema, breadcrumbSchema } from '../../lib/schema';
-import type { Article } from '../../lib/types';
+import type { Article } from '@plateforme/core';
 
 export function getStaticPaths() {
   return site.articles.map((article) => ({ params: { slug: article.slug }, props: { article } }));

@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import type { SiteConfig } from './types';
+import type { SiteConfig } from '@plateforme/core';
 
 const sites = import.meta.glob<SiteConfig>('../data/sites/*.ts', { eager: true, import: 'default' });
 

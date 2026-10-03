@@ -4,7 +4,7 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
 import FaqList from '../../components/FaqList.astro';
 import { site, md, nomPraticien, rdvHref, telLien } from '../../lib/site';
 import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
-import type { Soin } from '../../lib/types';
+import type { Soin } from '@plateforme/core';
 
 export function getStaticPaths() {
   return site.soins.map((soin) => ({ params: { slug: soin.slug }, props: { soin } }));

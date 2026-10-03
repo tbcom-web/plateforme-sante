@@ -1,6 +1,6 @@
 // Données structurées schema.org : lues par Google, Bing et les assistants IA.
 import { site, absUrl, nomPraticien, baseUrl } from './site';
-import type { Faq, Soin, Article } from './types';
+import type { Faq, Soin, Article } from '@plateforme/core';
 
 const businessId = `${baseUrl}/#cabinet`;
 const personId = `${baseUrl}/#praticien`;
