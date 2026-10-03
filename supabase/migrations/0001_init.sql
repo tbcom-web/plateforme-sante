@@ -139,3 +139,15 @@ $$;
 create trigger sites_protect_columns
   before update on public.sites
   for each row execute function public.protect_site_columns();
+
+-- ---------------------------------------------------------------------------
+-- Droits d'accès explicites à l'API (les tables ne sont pas exposées par défaut).
+-- Les visiteurs non connectés (anon) n'ont accès à rien ; RLS filtre ensuite ligne par ligne.
+-- ---------------------------------------------------------------------------
+grant usage on schema public to authenticated;
+grant select on public.profiles to authenticated;
+grant update (role) on public.profiles to authenticated;
+grant select on public.professions, public.soins_catalogue to authenticated;
+grant insert, update, delete on public.professions, public.soins_catalogue to authenticated;
+grant select, insert, update, delete on public.sites to authenticated;
+grant execute on function public.is_admin() to authenticated;
