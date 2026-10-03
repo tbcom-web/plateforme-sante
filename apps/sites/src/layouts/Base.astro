@@ -15,9 +15,11 @@ interface Props {
   description: string;
   path: string;
   schemas?: object[];
+  /** Page à ne pas indexer (ex. page vide). */
+  noindex?: boolean;
 }
 
-const { title, description, path, schemas = [] } = Astro.props;
+const { title, description, path, schemas = [], noindex = false } = Astro.props;
 const canonical = absUrl(path);
 const allSchemas = [businessSchema(), personSchema(), ...schemas];
 ---
@@ -29,7 +31,7 @@ const allSchemas = [businessSchema(), personSchema(), ...schemas];
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    {site.demo && <meta name="robots" content="noindex, nofollow" />}
+    {(site.demo || noindex) && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content={site.theme.couleur} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
@@ -49,6 +51,19 @@ const allSchemas = [businessSchema(), personSchema(), ...schemas];
     </main>
     <Footer />
     <a class="rdv-sticky btn btn--primary" href={rdvHref('mobile-sticky')}>Prendre rendez-vous</a>
+    <script>
+      // Le bouton flottant mobile se cache quand un autre bouton « Prendre RDV » est déjà visible.
+      const sticky = document.querySelector<HTMLElement>('.rdv-sticky');
+      const autres = document.querySelectorAll('main a[href^="/rdv"], footer a[href^="/rdv"]');
+      if (sticky && 'IntersectionObserver' in window) {
+        const visibles = new Set<Element>();
+        const obs = new IntersectionObserver((entrees) => {
+          entrees.forEach((e) => (e.isIntersecting ? visibles.add(e.target) : visibles.delete(e.target)));
+          sticky.classList.toggle('rdv-sticky--cache', visibles.size > 0);
+        });
+        autres.forEach((a) => obs.observe(a));
+      }
+    </script>
     <Consent />
   </body>
 </html>
@@ -56,16 +71,26 @@ const allSchemas = [businessSchema(), personSchema(), ...schemas];
 <style>
   .rdv-sticky {
     position: fixed;
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
+    left: 50%;
+    bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 40;
-    box-shadow: var(--shadow);
+    min-height: 44px;
+    padding: 0.55em 1.4em;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgb(16 24 22 / 0.18);
+    transform: translateX(-50%);
+    transition: transform 0.25s, opacity 0.25s;
+  }
+  .rdv-sticky--cache {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 140%);
   }
   @media (min-width: 900px) {
     .rdv-sticky { display: none; }
   }
   @media (max-width: 899px) {
-    :global(body) { padding-bottom: 88px; }
+    :global(body) { padding-bottom: 72px; }
   }
 </style>

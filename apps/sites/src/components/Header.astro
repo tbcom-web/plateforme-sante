@@ -5,7 +5,7 @@ const current = Astro.url.pathname;
 const liens = [
   { href: '/soins', label: 'Soins' },
   { href: '/a-propos', label: 'Le cabinet' },
-  { href: '/actualites', label: 'Conseils' },
+  ...(site.articles.length > 0 ? [{ href: '/actualites', label: 'Conseils' }] : []),
   { href: '/#infos', label: 'Infos pratiques' },
 ];
 ---

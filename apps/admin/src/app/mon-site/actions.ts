@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import type { SiteDraft } from '@plateforme/core';
+import { formaterTelephone, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string };
@@ -23,7 +23,7 @@ function nettoyer(d: SiteDraft): SiteDraft {
       codePostal: texte(d.cabinet?.codePostal, 5).replace(/\D/g, ''),
       ville: texte(d.cabinet?.ville, 80),
       quartier: texte(d.cabinet?.quartier, 120),
-      telephone: texte(d.cabinet?.telephone, 20),
+      telephone: formaterTelephone(texte(d.cabinet?.telephone, 20)),
       pmr: Boolean(d.cabinet?.pmr),
       horaires: (d.cabinet?.horaires ?? []).slice(0, 7).map((h) => ({ jour: texte(h.jour, 10), heures: texte(h.heures, 60) })),
     },

@@ -12,11 +12,13 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
   description={`Conseils pour prendre soin de vos pieds, par ${nomPraticien}, ${site.profession.libelle.toLowerCase()} à ${site.cabinet.ville}.`}
   path="/actualites"
   schemas={[breadcrumbSchema(crumbs)]}
+  noindex={articles.length === 0}
 >
   <section class="section">
     <div class="wrap">
       <Breadcrumb items={crumbs} />
       <h1>Conseils et actualités</h1>
+      {articles.length === 0 && <p class="lead">Les premiers conseils arrivent bientôt.</p>}
       <div class="liste">
         {articles.map((a) => (
           <a class="card item" href={`/actualites/${a.slug}`}>

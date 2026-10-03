@@ -1,6 +1,6 @@
 // Charge un site praticien depuis Supabase au moment du build et l'assemble en SiteConfig.
 // Nécessite SUPABASE_URL et SUPABASE_SECRET_KEY (jamais exposés au navigateur : le site est statique).
-import type { Faq, SiteConfig, SiteDraft, Soin } from '@plateforme/core';
+import { formaterTelephone, type Faq, type SiteConfig, type SiteDraft, type Soin } from '@plateforme/core';
 import { defautsProfession } from './defaults';
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
@@ -19,6 +19,7 @@ type LigneSite = {
   slug: string | null;
   profession_slug: string;
   domaine: string | null;
+  test: boolean;
   config: SiteDraft;
 };
 type LigneProfession = { slug: string; libelle: string; specialite_schema: string; ordre: string };
@@ -26,7 +27,7 @@ type LigneSoin = { slug: string; titre_court: string; titre: string; resume: str
 
 export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig> {
   const filtre = /^[0-9a-f-]{36}$/.test(siteId) ? `id=eq.${siteId}` : `slug=eq.${encodeURIComponent(siteId)}`;
-  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,config`);
+  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config`);
   if (!s) throw new Error(`Site introuvable dans Supabase : ${siteId}`);
 
   const [prof] = await lire<LigneProfession[]>(`professions?slug=eq.${s.profession_slug}`);
@@ -56,6 +57,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   return {
     id: s.id,
     domaine: s.domaine ?? `${s.slug ?? s.id}.pages.dev`,
+    demo: s.test,
     profession: { slug: prof.slug, libelle: prof.libelle, specialiteSchema: prof.specialite_schema },
     praticien: {
       prenom: d.praticien.prenom,
@@ -74,7 +76,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       codePostal: d.cabinet.codePostal,
       ville,
       quartier: lieu,
-      telephone: d.cabinet.telephone,
+      telephone: formaterTelephone(d.cabinet.telephone),
       acces: [],
       pmr: d.cabinet.pmr,
       horaires: d.cabinet.horaires,

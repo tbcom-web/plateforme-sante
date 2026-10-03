@@ -63,21 +63,23 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
     </div>
   </section>
 
-  <section class="section" aria-labelledby="conseils-titre">
-    <div class="wrap">
-      <span class="eyebrow">Conseils</span>
-      <h2 id="conseils-titre">Les derniers conseils</h2>
-      <div class="grid grid--3">
-        {articles.map((a) => (
-          <a class="card soin" href={`/actualites/${a.slug}`}>
-            <span class="tag">{a.theme} · {dateFr(a.date)}</span>
-            <h3>{a.titre}</h3>
-            <p>{a.resume}</p>
-          </a>
-        ))}
+  {articles.length > 0 && (
+    <section class="section" aria-labelledby="conseils-titre">
+      <div class="wrap">
+        <span class="eyebrow">Conseils</span>
+        <h2 id="conseils-titre">Les derniers conseils</h2>
+        <div class="grid grid--3">
+          {articles.map((a) => (
+            <a class="card soin" href={`/actualites/${a.slug}`}>
+              <span class="tag">{a.theme} · {dateFr(a.date)}</span>
+              <h3>{a.titre}</h3>
+              <p>{a.resume}</p>
+            </a>
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  )}
 
   <InfosPratiques />
 
