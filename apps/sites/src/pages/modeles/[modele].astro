@@ -1,0 +1,354 @@
+---
+// Modèle « Vert canard » nouvelle génération (prototype de design, sites de démo uniquement).
+import '@fontsource-variable/inter';
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/fraunces/full-italic.css';
+import CartePied from '../../components/CartePied.astro';
+import Illustration, { type NomIllustration } from '../../components/Illustration.astro';
+import { site, nomPraticien, rdvHref, telLien, adresseComplete } from '../../lib/site';
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { modele: 'canard' } }] : [];
+}
+
+const visuels: Record<string, NomIllustration> = {
+  'bilan-podologique': 'marche',
+  'semelles-orthopediques': 'semelle',
+  'soins-de-pedicurie': 'soin',
+  'pied-diabetique': 'diabete',
+  'podologie-du-sport': 'chaussure',
+  'podologie-enfant': 'enfant',
+};
+
+const etapes = [
+  { titre: 'On fait connaissance', texte: 'Vous me parlez de votre gêne, de vos activités et de vos antécédents. Rien n’est oublié.' },
+  { titre: 'J’examine vos pieds', texte: 'Debout, allongé, puis en marchant : j’observe la forme du pied, les appuis et la posture.' },
+  { titre: 'Je vous explique', texte: 'Vous repartez en comprenant ce qui se passe, avec des conseils concrets pour le quotidien.' },
+  { titre: 'On construit la suite', texte: 'Soins, semelles sur mesure ou simple suivi : la prise en charge est adaptée à vous.' },
+];
+
+const bandeau = site.soins.map((s) => s.titreCourt);
+const mots = 'Chaque pas compte. Prenons-en soin.'.split(' ');
+const ouvert = site.cabinet.horaires.filter((h) => /\d/.test(h.heures));
+---
+<!doctype html>
+<html lang="fr" data-theme="clair">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{site.profession.libelle} à {site.cabinet.ville} – {nomPraticien} · Modèle Vert canard</title>
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'sombre' : 'clair');
+        document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="evitement" href="#contenu">Aller au contenu</a>
+
+    <header class="nav">
+      <a class="nav__marque" href="#">
+        <span class="nav__sigle" aria-hidden="true">{site.praticien.prenom[0]}{site.praticien.nom[0]}</span>
+        <span>{nomPraticien}<small>{site.profession.libelle}</small></span>
+      </a>
+      <nav aria-label="Navigation principale" class="nav__liens">
+        <a href="#douleur">Où avez-vous mal ?</a>
+        <a href="#soins">Soins</a>
+        <a href="#consultation">La consultation</a>
+        <a href="#infos">Infos pratiques</a>
+      </nav>
+      <button type="button" class="nav__theme" data-theme-toggle aria-label="Passer en mode sombre">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" /></svg>
+      </button>
+      <a class="bouton bouton--clair" href={rdvHref('modele-nav')}>Prendre RDV</a>
+    </header>
+
+    <main id="contenu">
+      <section class="hero">
+        <div class="hero__fond" aria-hidden="true"></div>
+        <div class="hero__contenu">
+          <p class="sur">{site.profession.libelle} · {site.cabinet.quartier}</p>
+          <h1 class="hero__titre">
+            {mots.map((m, i) => <span class="mot" style={`--i:${i}`}>{m}</span>)}
+          </h1>
+          <div class="hero__bas">
+            <p class="hero__texte">{site.accroche.texte}</p>
+            <div class="hero__actions">
+              <a class="bouton bouton--laiton" href={rdvHref('modele-hero')}>Prendre rendez-vous en ligne</a>
+              <a class="bouton bouton--contour" href={telLien}>{site.cabinet.telephone}</a>
+            </div>
+          </div>
+          <ul class="hero__reperes" aria-label="En bref">
+            {site.praticien.conventionnement && <li>{site.praticien.conventionnement}</li>}
+            {site.cabinet.pmr && <li>Cabinet accessible PMR</li>}
+            <li>Réservation 24h/24 sur {site.rdv.plateforme}</li>
+          </ul>
+        </div>
+        <div class="hero__pied" aria-hidden="true"><Illustration nom="pied" /></div>
+      </section>
+
+      <div class="bandeau" aria-hidden="true">
+        <div class="bandeau__piste">
+          {[...bandeau, ...bandeau].map((b) => <span>{b}<i>✦</i></span>)}
+        </div>
+      </div>
+
+      <section id="douleur" class="section revele">
+        <CartePied soinsDisponibles={site.soins.map((s) => s.slug)} />
+      </section>
+
+      <section id="soins" class="section">
+        <div class="titre-section revele">
+          <p class="sur sur--sombre">Les soins</p>
+          <h2>Une prise en charge complète, de l’enfant au senior.</h2>
+        </div>
+        <div class="bento">
+          {site.soins.map((s, i) => (
+            <a class:list={['tuile', 'revele', { 'tuile--grande': i === 0 }]} href={`/soins/${s.slug}`}>
+              <span class="tuile__num">{String(i + 1).padStart(2, '0')}</span>
+              <div class="tuile__visuel"><Illustration nom={visuels[s.slug] ?? 'pied'} /></div>
+              <h3>{s.titreCourt}</h3>
+              <p>{s.resume}</p>
+              <span class="tuile__fleche" aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section id="consultation" class="section recit">
+        <div class="recit__titre">
+          <p class="sur sur--sombre">Votre première consultation</p>
+          <h2>Quatre temps, <em>sans précipitation.</em></h2>
+          <a class="bouton" href={rdvHref('modele-recit')}>Réserver un créneau</a>
+        </div>
+        <ol class="recit__etapes">
+          {etapes.map((e, i) => (
+            <li class="etape">
+              <span class="etape__num">{i + 1}</span>
+              <div>
+                <h3>{e.titre}</h3>
+                <p>{e.texte}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="section praticien revele">
+        <div class="praticien__portrait" aria-hidden="true">
+          <span>{site.praticien.prenom[0]}{site.praticien.nom[0]}</span>
+          <small>Photo du cabinet</small>
+        </div>
+        <div>
+          <p class="sur sur--sombre">Votre praticienne</p>
+          <blockquote>« {site.praticien.parcours.split('\n\n').at(-1)} »</blockquote>
+          <p class="praticien__nom">{nomPraticien} — {site.praticien.titre}</p>
+          <ul class="praticien__diplomes">
+            {site.praticien.formations.map((f) => <li>{f}</li>)}
+          </ul>
+        </div>
+      </section>
+
+      <section id="infos" class="section infos">
+        <div class="infos__grille">
+          <div class="infos__carte revele">
+            <h3>Le cabinet</h3>
+            <p>{adresseComplete}</p>
+            <ul>{site.cabinet.acces.map((a) => <li>{a}</li>)}</ul>
+          </div>
+          <div class="infos__carte revele">
+            <h3>Horaires</h3>
+            <dl>{ouvert.map((h) => <><dt>{h.jour}</dt><dd>{h.heures}</dd></>)}</dl>
+          </div>
+          <div class="infos__carte revele">
+            <h3>Tarifs indicatifs</h3>
+            <dl>{site.cabinet.tarifs.map((t) => <><dt>{t.acte}</dt><dd>{t.prix}</dd></>)}</dl>
+          </div>
+        </div>
+        <div class="appel revele">
+          <h2>Un rendez-vous en <em>deux minutes.</em></h2>
+          <a class="bouton bouton--laiton bouton--xl" href={rdvHref('modele-appel')}>Prendre rendez-vous</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="pied-page">
+      <p>{site.cabinet.nom} · {adresseComplete} · RPPS {site.praticien.rpps}</p>
+      <p>Modèle « Vert canard » — prototype de design</p>
+    </footer>
+
+    <script>
+      const racine = document.documentElement;
+      const bouton = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+      const maj = () => bouton?.setAttribute('aria-label', racine.dataset.theme === 'sombre' ? 'Passer en mode clair' : 'Passer en mode sombre');
+      maj();
+      bouton?.addEventListener('click', () => {
+        racine.dataset.theme = racine.dataset.theme === 'sombre' ? 'clair' : 'sombre';
+        try { localStorage.setItem('theme', racine.dataset.theme); } catch {}
+        maj();
+      });
+      // Repli pour les navigateurs sans animations liées au défilement.
+      if (!CSS.supports('animation-timeline: view()')) {
+        const obs = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add('vu')), { threshold: 0.15 });
+        document.querySelectorAll('.revele, .etape').forEach((el) => obs.observe(el));
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --fond: #f4f1e9; --surface: #fffdf7; --encre: #10302e; --encre-douce: #4a605d;
+    --principal: #1d5856; --sur-principal: #ffffff; --principal-texte: #1d5856;
+    --accent: #c19a5b; --laiton: #c9a467; --doux: #dde7e1; --ligne: #dcd6c8;
+    --canard: #133f3d; --canard-profond: #0b2a29; --creme: #f6efe2;
+    --police-titres: 'Fraunces Variable', Georgia, serif; --police-texte: 'Inter Variable', system-ui, sans-serif;
+    --rayon: 18px; --rayon-grand: 28px;
+    --ill-trait: var(--encre); --ill-fond: var(--doux); --ill-principal: var(--principal); --ill-accent: var(--accent); --ill-clair: var(--surface);
+    color-scheme: light;
+  }
+  [data-theme='sombre'] {
+    --fond: #0b1b1a; --surface: #11292727; --encre: #ecf2ee; --encre-douce: #a8bbb6;
+    --surface: #122826; --principal: #d2b07a; --sur-principal: #10302e; --principal-texte: #e0c48f;
+    --accent: #6fb3a6; --doux: #173431; --ligne: #24403d;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--fond); color: var(--encre); font-family: var(--police-texte); font-size: 1.0625rem; line-height: 1.65; -webkit-font-smoothing: antialiased; transition: background 0.4s, color 0.4s; }
+  h1, h2, h3 { font-family: var(--police-titres); font-weight: 400; letter-spacing: -0.025em; line-height: 1.02; margin: 0; font-variation-settings: 'SOFT' 50, 'WONK' 0; }
+  h2 { font-size: clamp(2.2rem, 5.2vw, 4.4rem); text-wrap: balance; }
+  h2 em, h1 em { font-style: italic; font-variation-settings: 'SOFT' 100, 'WONK' 1; color: var(--principal-texte); }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  .evitement { position: absolute; left: -9999px; }
+  .evitement:focus { left: 16px; top: 16px; z-index: 99; background: var(--surface); padding: 8px 12px; }
+
+  .sur { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--laiton); margin: 0 0 18px; }
+  .sur--sombre { color: var(--principal-texte); }
+  .section { width: min(1240px, 100% - 32px); margin-inline: auto; padding-block: clamp(72px, 11vw, 140px); }
+
+  .bouton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 26px; border-radius: 999px; font-weight: 650; text-decoration: none; background: var(--principal); color: var(--sur-principal); transition: transform 0.25s cubic-bezier(.2,.7,.2,1), background 0.25s; white-space: nowrap; }
+  .bouton:hover { transform: translateY(-2px); }
+  .bouton--laiton { background: var(--laiton); color: #10302e; }
+  .bouton--clair { background: var(--encre); color: var(--fond); min-height: 44px; padding: 0 20px; font-size: 0.92rem; }
+  .bouton--contour { background: transparent; color: var(--creme); box-shadow: inset 0 0 0 1.5px rgb(246 239 226 / 0.5); }
+  .bouton--xl { min-height: 64px; padding: 0 36px; font-size: 1.1rem; }
+
+  /* Navigation flottante */
+  .nav { position: fixed; z-index: 50; top: 14px; left: 50%; transform: translateX(-50%); width: min(1180px, 100% - 24px); display: flex; align-items: center; gap: 20px; padding: 8px 8px 8px 16px; border-radius: 999px; background: color-mix(in srgb, var(--fond) 72%, transparent); backdrop-filter: blur(16px) saturate(1.4); box-shadow: 0 0 0 1px color-mix(in srgb, var(--encre) 8%, transparent), 0 10px 30px -12px rgb(0 0 0 / 0.25); }
+  .nav__marque { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--police-titres); font-size: 1.05rem; line-height: 1.1; }
+  .nav__marque small { display: block; font-family: var(--police-texte); font-size: 0.72rem; color: var(--encre-douce); }
+  .nav__sigle { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--canard); color: var(--laiton); font-size: 0.85rem; font-weight: 600; }
+  .nav__liens { display: none; flex: 1; justify-content: center; gap: 26px; font-size: 0.92rem; }
+  .nav__liens a { text-decoration: none; color: var(--encre-douce); }
+  .nav__liens a:hover { color: var(--encre); }
+  @media (min-width: 980px) { .nav__liens { display: flex; } }
+  .nav__theme { margin-left: auto; width: 42px; height: 42px; border-radius: 50%; border: 0; background: transparent; color: var(--encre); cursor: pointer; }
+  @media (min-width: 980px) { .nav__theme { margin-left: 0; } }
+  .nav__theme svg { width: 20px; height: 20px; fill: currentColor; }
+  .nav .bouton--clair { display: none; }
+  @media (min-width: 560px) { .nav .bouton--clair { display: inline-flex; } }
+
+  /* Hero */
+  .hero { position: relative; margin: 10px; min-height: min(100svh - 20px, 900px); border-radius: 32px; overflow: hidden; color: var(--creme); display: grid; align-items: end; isolation: isolate; }
+  .hero__fond { position: absolute; inset: 0; z-index: -1; background:
+      radial-gradient(60% 70% at 85% 15%, #2f7a72 0%, transparent 60%),
+      radial-gradient(50% 60% at 10% 90%, #8a6a35 0%, transparent 55%),
+      radial-gradient(80% 80% at 40% 40%, #1a504d 0%, transparent 70%),
+      var(--canard-profond); }
+  .hero__fond::after { content: ''; position: absolute; inset: 0; opacity: 0.18; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"); }
+  .hero__contenu { position: relative; z-index: 2; padding: clamp(110px, 14vw, 160px) clamp(22px, 5vw, 72px) clamp(28px, 5vw, 64px); }
+  .hero__titre { font-size: clamp(3.2rem, 11vw, 9.6rem); line-height: 0.92; letter-spacing: -0.045em; max-width: 11ch; font-variation-settings: 'SOFT' 30, 'opsz' 144; }
+  .mot { display: inline-block; margin-right: 0.22em; opacity: 0; transform: translateY(0.5em); filter: blur(8px); animation: mot 0.9s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: calc(var(--i) * 90ms + 150ms); }
+  .mot:nth-child(4), .mot:nth-child(5) { font-style: italic; color: var(--laiton); font-variation-settings: 'SOFT' 100, 'WONK' 1, 'opsz' 144; }
+  @keyframes mot { to { opacity: 1; transform: none; filter: none; } }
+  .hero__bas { display: grid; gap: 28px; margin-top: clamp(28px, 4vw, 48px); max-width: 980px; }
+  @media (min-width: 900px) { .hero__bas { grid-template-columns: 1fr auto; align-items: end; } }
+  .hero__texte { margin: 0; max-width: 46ch; color: rgb(246 239 226 / 0.82); font-size: 1.1rem; }
+  .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .hero__reperes { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 36px 0 0; }
+  .hero__reperes li { font-size: 0.82rem; padding: 7px 14px; border-radius: 999px; background: rgb(246 239 226 / 0.1); box-shadow: inset 0 0 0 1px rgb(246 239 226 / 0.18); backdrop-filter: blur(6px); }
+  .hero__pied { position: absolute; z-index: 1; right: -4%; top: 12%; width: min(52vw, 640px); opacity: 0.16; --ill-trait: var(--creme); --ill-fond: transparent; --ill-clair: transparent; --ill-principal: var(--laiton); --ill-accent: var(--laiton); animation: flotte 9s ease-in-out infinite; }
+  @keyframes flotte { 50% { transform: translateY(-14px) rotate(-1.5deg); } }
+
+  /* Bandeau défilant */
+  .bandeau { overflow: hidden; padding-block: 26px; border-bottom: 1px solid var(--ligne); }
+  .bandeau__piste { display: flex; width: max-content; animation: defile 38s linear infinite; }
+  .bandeau span { font-family: var(--police-titres); font-style: italic; font-size: clamp(1.6rem, 3.4vw, 2.6rem); padding-right: 32px; white-space: nowrap; color: var(--encre); }
+  .bandeau i { font-style: normal; color: var(--accent); padding-left: 32px; font-size: 0.6em; vertical-align: middle; }
+  @keyframes defile { to { transform: translateX(-50%); } }
+
+  /* Bento */
+  .titre-section { max-width: 760px; margin-bottom: clamp(36px, 5vw, 64px); }
+  .bento { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 720px) { .bento { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1040px) { .bento { grid-template-columns: repeat(4, 1fr); } .tuile--grande { grid-column: span 2; grid-row: span 2; } }
+  .tuile { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 26px; border-radius: var(--rayon-grand); background: var(--surface); text-decoration: none; overflow: hidden; box-shadow: 0 0 0 1px var(--ligne); transition: transform 0.45s cubic-bezier(.2,.7,.2,1), box-shadow 0.45s; min-height: 280px; }
+  .tuile:hover { transform: translateY(-6px); box-shadow: 0 0 0 1px var(--ligne), 0 30px 50px -30px rgb(16 48 46 / 0.45); }
+  .tuile__num { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; color: var(--encre-douce); }
+  .tuile__visuel { width: 120px; margin: 4px 0 auto -8px; transition: transform 0.6s cubic-bezier(.2,.7,.2,1); }
+  .tuile:hover .tuile__visuel { transform: scale(1.06) rotate(-3deg); }
+  .tuile h3 { font-size: 1.55rem; }
+  .tuile p { margin: 0; color: var(--encre-douce); font-size: 0.95rem; }
+  .tuile__fleche { position: absolute; top: 22px; right: 22px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--doux); transition: transform 0.4s, background 0.4s; }
+  .tuile:hover .tuile__fleche { transform: rotate(-45deg); background: var(--laiton); color: #10302e; }
+  .tuile--grande { background: var(--canard); color: var(--creme); box-shadow: none; --ill-trait: var(--creme); --ill-fond: rgb(246 239 226 / 0.08); --ill-clair: #1f5551; --ill-principal: var(--laiton); --ill-accent: #8fc5bb; }
+  .tuile--grande .tuile__visuel { width: min(300px, 70%); margin: 10px auto auto; }
+  .tuile--grande h3 { font-size: clamp(2rem, 3.4vw, 2.8rem); }
+  .tuile--grande p, .tuile--grande .tuile__num { color: rgb(246 239 226 / 0.75); }
+  .tuile--grande .tuile__fleche { background: rgb(246 239 226 / 0.12); }
+
+  /* Récit au défilement */
+  .recit { display: grid; gap: 48px; }
+  @media (min-width: 960px) { .recit { grid-template-columns: 0.9fr 1.1fr; } .recit__titre { position: sticky; top: 120px; align-self: start; } }
+  .recit__titre .bouton { margin-top: 32px; }
+  .recit__etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+  .etape { display: grid; grid-template-columns: auto 1fr; gap: 22px; padding: 30px; border-radius: var(--rayon-grand); background: var(--surface); box-shadow: 0 0 0 1px var(--ligne); }
+  .etape__num { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-family: var(--police-titres); font-size: 1.6rem; background: var(--doux); color: var(--principal-texte); }
+  .etape h3 { font-size: 1.6rem; margin-bottom: 6px; }
+  .etape p { margin: 0; color: var(--encre-douce); }
+
+  /* Praticien */
+  .praticien { display: grid; gap: 48px; align-items: center; }
+  @media (min-width: 900px) { .praticien { grid-template-columns: 0.8fr 1.2fr; } }
+  .praticien__portrait { position: relative; aspect-ratio: 4 / 5; border-radius: 999px 999px 32px 32px; overflow: hidden; display: grid; place-items: center; background: radial-gradient(80% 60% at 50% 30%, #2b6d66, var(--canard-profond)); color: var(--laiton); max-width: 420px; width: 100%; justify-self: center; }
+  .praticien__portrait span { font-family: var(--police-titres); font-size: 6rem; font-style: italic; }
+  .praticien__portrait small { position: absolute; bottom: 20px; font-size: 0.75rem; color: rgb(246 239 226 / 0.6); letter-spacing: 0.1em; text-transform: uppercase; }
+  .praticien blockquote { margin: 0 0 24px; font-family: var(--police-titres); font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.2; letter-spacing: -0.02em; font-style: italic; font-variation-settings: 'SOFT' 100; }
+  .praticien__nom { font-weight: 650; margin: 0 0 12px; }
+  .praticien__diplomes { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .praticien__diplomes li { font-size: 0.85rem; padding: 6px 14px; border-radius: 999px; background: var(--doux); }
+
+  /* Infos + appel final */
+  .infos__grille { display: grid; gap: 14px; }
+  @media (min-width: 860px) { .infos__grille { grid-template-columns: repeat(3, 1fr); } }
+  .infos__carte { padding: 30px; border-radius: var(--rayon-grand); background: var(--surface); box-shadow: 0 0 0 1px var(--ligne); }
+  .infos__carte h3 { font-size: 1.5rem; margin-bottom: 14px; }
+  .infos__carte p, .infos__carte ul { color: var(--encre-douce); margin: 0 0 10px; padding-left: 0; list-style: none; }
+  .infos__carte dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 0.95rem; }
+  .infos__carte dt { font-weight: 600; }
+  .infos__carte dd { margin: 0; color: var(--encre-douce); text-align: right; }
+  .appel { margin-top: 14px; padding: clamp(40px, 7vw, 88px); border-radius: 32px; background: var(--canard); color: var(--creme); display: grid; gap: 28px; justify-items: start; }
+  @media (min-width: 900px) { .appel { grid-template-columns: 1fr auto; align-items: center; } }
+  .appel em { color: var(--laiton); }
+
+  .pied-page { width: min(1240px, 100% - 32px); margin: 0 auto; padding: 40px 0 60px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 0.85rem; color: var(--encre-douce); border-top: 1px solid var(--ligne); }
+
+  /* Apparitions au défilement */
+  @supports (animation-timeline: view()) {
+    .revele, .etape { animation: apparait linear both; animation-timeline: view(); animation-range: entry 0% cover 28%; }
+  }
+  @supports not (animation-timeline: view()) {
+    .revele, .etape { opacity: 0; transform: translateY(40px); transition: opacity 0.8s, transform 0.8s cubic-bezier(.2,.7,.2,1); }
+    .revele.vu, .etape.vu { opacity: 1; transform: none; }
+  }
+  @keyframes apparait { from { opacity: 0; transform: translateY(48px) scale(0.98); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .mot, .revele, .etape { opacity: 1 !important; transform: none !important; filter: none !important; }
+  }
+</style>

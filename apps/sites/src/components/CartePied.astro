@@ -1,0 +1,180 @@
+---
+// « Où avez-vous mal ? » : carte interactive de la plante du pied qui oriente vers le bon soin.
+// Accessible : chaque zone a son bouton HTML ; le dessin est synchronisé.
+import { rdvHref } from '../lib/site';
+
+type Zone = { id: string; nom: string; titre: string; texte: string; soins: { slug: string; label: string }[] };
+
+interface Props {
+  soinsDisponibles: string[];
+}
+const { soinsDisponibles } = Astro.props;
+
+const zones: Zone[] = [
+  {
+    id: 'orteils',
+    nom: 'Orteils et ongles',
+    titre: 'Ongle incarné, cor, durillon',
+    texte: 'Une gêne au bout des orteils ou autour de l’ongle se prend en charge au cabinet, avec des instruments stérilisés et des gestes adaptés à votre sensibilité.',
+    soins: [{ slug: 'soins-de-pedicurie', label: 'Soins de pédicurie' }],
+  },
+  {
+    id: 'avant-pied',
+    nom: 'Avant-pied',
+    titre: 'Douleur sous l’avant-pied',
+    texte: 'Une douleur sous la plante, à l’avant du pied, est fréquente chez les sportifs comme en chaussures de ville. Un bilan aide à en comprendre l’origine.',
+    soins: [
+      { slug: 'bilan-podologique', label: 'Bilan podologique' },
+      { slug: 'podologie-du-sport', label: 'Podologie du sport' },
+    ],
+  },
+  {
+    id: 'voute',
+    nom: 'Voûte plantaire',
+    titre: 'Pied plat, pied creux',
+    texte: 'La forme de la voûte influence la répartition des appuis. Après un bilan, des semelles sur mesure peuvent vous être proposées si elles sont utiles.',
+    soins: [
+      { slug: 'bilan-podologique', label: 'Bilan podologique' },
+      { slug: 'semelles-orthopediques', label: 'Semelles orthopédiques' },
+    ],
+  },
+  {
+    id: 'talon',
+    nom: 'Talon',
+    titre: 'Douleur au talon',
+    texte: 'Une douleur sous le talon, souvent ressentie au réveil, peut avoir plusieurs origines. Un examen permet d’orienter la prise en charge, en lien avec votre médecin si besoin.',
+    soins: [
+      { slug: 'bilan-podologique', label: 'Bilan podologique' },
+      { slug: 'semelles-orthopediques', label: 'Semelles orthopédiques' },
+    ],
+  },
+].map((z) => ({ ...z, soins: z.soins.filter((s) => soinsDisponibles.includes(s.slug)) }));
+---
+<div class="carte-pied" data-carte-pied>
+  <p class="carte-pied__sur">Où avez-vous mal ?</p>
+  <div class="carte-pied__dessin">
+    <svg viewBox="0 0 300 640" aria-hidden="true">
+      <defs>
+        <radialGradient id="cp-chaleur" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="var(--cp-actif)" stop-opacity=".9" />
+          <stop offset="1" stop-color="var(--cp-actif)" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <g class="cp-forme">
+        <path d="M150 170C206 166 244 196 244 250C244 296 222 318 214 360C206 402 212 450 206 500C200 560 176 602 144 602C110 602 88 572 88 524C88 480 100 450 98 410C96 366 62 330 60 268C58 206 98 172 150 170Z" />
+        <ellipse cx="98" cy="122" rx="30" ry="40" />
+        <ellipse cx="152" cy="100" rx="20" ry="23" />
+        <ellipse cx="190" cy="108" rx="17" ry="20" />
+        <ellipse cx="219" cy="129" rx="15" ry="17" />
+        <ellipse cx="241" cy="158" rx="13" ry="15" />
+      </g>
+      <g class="cp-zones">
+        <g data-zone="orteils"><ellipse cx="165" cy="120" rx="98" ry="58" /></g>
+        <g data-zone="avant-pied"><ellipse cx="152" cy="236" rx="80" ry="56" /></g>
+        <g data-zone="voute"><ellipse cx="112" cy="388" rx="40" ry="82" /></g>
+        <g data-zone="talon"><ellipse cx="146" cy="540" rx="58" ry="56" /></g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="carte-pied__panneau">
+    <div class="carte-pied__choix" role="tablist" aria-label="Zones du pied">
+      {zones.map((z, i) => (
+        <button type="button" role="tab" id={`cp-tab-${z.id}`} aria-controls={`cp-${z.id}`} aria-selected={i === 0 ? 'true' : 'false'} data-zone-btn={z.id}>
+          {z.nom}
+        </button>
+      ))}
+    </div>
+    {zones.map((z, i) => (
+      <div class="carte-pied__fiche" role="tabpanel" id={`cp-${z.id}`} aria-labelledby={`cp-tab-${z.id}`} hidden={i !== 0}>
+        <h3>{z.titre}</h3>
+        <p>{z.texte}</p>
+        <div class="carte-pied__liens">
+          {z.soins.map((s) => <a href={`/soins/${s.slug}`}>{s.label} →</a>)}
+        </div>
+        <a class="carte-pied__rdv" href={rdvHref(`carte-pied-${z.id}`)}>Prendre rendez-vous</a>
+      </div>
+    ))}
+    <p class="carte-pied__note">Ces informations sont générales et ne remplacent pas une consultation.</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-carte-pied]').forEach((carte) => {
+    const boutons = carte.querySelectorAll<HTMLButtonElement>('[data-zone-btn]');
+    const zones = carte.querySelectorAll<SVGGElement>('[data-zone]');
+    const choisir = (id: string, focus = false) => {
+      boutons.forEach((b) => {
+        const actif = b.dataset.zoneBtn === id;
+        b.setAttribute('aria-selected', String(actif));
+        b.tabIndex = actif ? 0 : -1;
+        if (actif && focus) b.focus();
+      });
+      carte.querySelectorAll<HTMLElement>('[role="tabpanel"]').forEach((p) => (p.hidden = p.id !== `cp-${id}`));
+      zones.forEach((z) => z.classList.toggle('actif', z.dataset.zone === id));
+    };
+    boutons.forEach((b, i) => {
+      b.addEventListener('click', () => choisir(b.dataset.zoneBtn!));
+      b.addEventListener('keydown', (e) => {
+        const dir = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+        if (!dir) return;
+        e.preventDefault();
+        const suivant = boutons[(i + dir + boutons.length) % boutons.length];
+        choisir(suivant.dataset.zoneBtn!, true);
+      });
+    });
+    zones.forEach((z) => {
+      z.addEventListener('click', () => choisir(z.dataset.zone!));
+      z.addEventListener('mouseenter', () => z.classList.add('survol'));
+      z.addEventListener('mouseleave', () => z.classList.remove('survol'));
+    });
+    choisir(boutons[0]?.dataset.zoneBtn ?? 'orteils');
+  });
+</script>
+
+<style>
+  .carte-pied {
+    --cp-actif: var(--accent);
+    display: grid;
+    gap: clamp(24px, 4vw, 56px);
+    align-items: center;
+  }
+  @media (min-width: 860px) {
+    .carte-pied { grid-template-columns: minmax(220px, 0.8fr) 1.2fr; grid-template-areas: 'dessin titre' 'dessin panneau'; }
+    .carte-pied__sur { grid-area: titre; align-self: end; }
+    .carte-pied__dessin { grid-area: dessin; }
+    .carte-pied__panneau { grid-area: panneau; align-self: start; }
+  }
+  .carte-pied__dessin { max-width: 300px; width: 46%; margin-inline: auto; }
+  @media (min-width: 860px) { .carte-pied__dessin { width: 100%; } }
+  .cp-forme > * { fill: var(--surface); stroke: var(--encre); stroke-width: 2.5; }
+  .cp-zones ellipse { fill: url(#cp-chaleur); opacity: 0; transition: opacity 0.35s; cursor: pointer; }
+  .cp-zones .survol ellipse { opacity: 0.35; }
+  .cp-zones .actif ellipse { opacity: 1; animation: cp-pulse 2.4s ease-in-out infinite; }
+  @keyframes cp-pulse { 50% { opacity: 0.6; } }
+
+  .carte-pied__sur { font-family: var(--police-titres); font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1; margin: 0; letter-spacing: -0.03em; text-align: center; }
+  @media (min-width: 860px) { .carte-pied__sur { text-align: left; } }
+  .carte-pied__choix { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .carte-pied__choix button {
+    font: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer;
+    padding: 10px 18px; border-radius: 999px; border: 1.5px solid var(--ligne);
+    background: transparent; color: var(--encre); transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .carte-pied__choix button:hover { border-color: var(--principal); }
+  .carte-pied__choix button[aria-selected='true'] { background: var(--principal); border-color: var(--principal); color: var(--sur-principal, #fff); }
+  .carte-pied__fiche { background: var(--surface); border: 1px solid var(--ligne); border-radius: var(--rayon-grand); padding: clamp(22px, 3vw, 34px); animation: cp-entree 0.45s cubic-bezier(.2, .7, .2, 1); }
+  @keyframes cp-entree { from { opacity: 0; transform: translateY(10px); } }
+  .carte-pied__fiche h3 { font-family: var(--police-titres); font-weight: 450; font-size: 1.6rem; margin: 0 0 10px; letter-spacing: -0.015em; }
+  .carte-pied__fiche p { color: var(--encre-douce); margin: 0 0 18px; }
+  .carte-pied__liens { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+  .carte-pied__liens a { color: var(--principal-texte, var(--principal)); font-weight: 650; text-underline-offset: 4px; }
+  .carte-pied__rdv {
+    display: inline-flex; align-items: center; min-height: 48px; padding: 0 24px; border-radius: 999px;
+    background: var(--principal); color: var(--sur-principal, #fff); font-weight: 650; text-decoration: none;
+  }
+  .carte-pied__note { font-size: 0.8rem; color: var(--encre-douce); margin-top: 14px; }
+  @media (prefers-reduced-motion: reduce) {
+    .cp-zones .actif ellipse, .carte-pied__fiche { animation: none; }
+  }
+</style>
