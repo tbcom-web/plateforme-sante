@@ -1,0 +1,56 @@
+---
+// Animation « coureur » : silhouette schématique en pleine foulée, lignes de vitesse et sol qui défile.
+// SVG + CSS uniquement (≈ 2 Ko). Décoratif : aria-hidden ; immobile si le visiteur réduit les mouvements.
+interface Props { fond?: 'sombre' | 'clair' }
+const { fond = 'sombre' } = Astro.props;
+---
+<svg class:list={['coureur', `coureur--${fond}`]} viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  <g class="vitesse">
+    <line x1="40" y1="95" x2="150" y2="95" style="--i:0" />
+    <line x1="10" y1="130" x2="140" y2="130" style="--i:1" />
+    <line x1="60" y1="165" x2="150" y2="165" style="--i:2" />
+    <line x1="20" y1="200" x2="130" y2="200" style="--i:3" />
+  </g>
+  <g class="sol"><line x1="0" y1="252" x2="420" y2="252" /></g>
+
+  <g class="corps">
+    <!-- jambe arrière puis bras arrière (plus pâles), corps, jambe et bras avant -->
+    <g class="jambe jambe--b"><line x1="200" y1="150" x2="200" y2="196" /><g class="tibia"><line x1="200" y1="196" x2="200" y2="242" /><line x1="200" y1="242" x2="214" y2="244" /></g></g>
+    <g class="bras bras--b"><line x1="214" y1="94" x2="214" y2="122" /><g class="avant-bras"><line x1="214" y1="122" x2="214" y2="146" /></g></g>
+    <line class="tronc" x1="200" y1="150" x2="216" y2="92" />
+    <circle class="tete" cx="223" cy="70" r="13" />
+    <g class="jambe jambe--a"><line x1="200" y1="150" x2="200" y2="196" /><g class="tibia"><line x1="200" y1="196" x2="200" y2="242" /><line x1="200" y1="242" x2="214" y2="244" /></g></g>
+    <g class="bras bras--a"><line x1="214" y1="94" x2="214" y2="122" /><g class="avant-bras"><line x1="214" y1="122" x2="214" y2="146" /></g></g>
+  </g>
+</svg>
+
+<style>
+  .coureur { display: block; width: 100%; height: 100%; --c: var(--accent-vif, #2f7d6d); --cycle: 0.62s; }
+  .coureur--sombre { --c: #7fe0c8; background: radial-gradient(ellipse at 55% 45%, #10262a 0%, #071214 75%); }
+  .coureur line, .coureur circle { stroke: var(--c); stroke-width: 9; stroke-linecap: round; fill: none; }
+  .tete { fill: var(--c) !important; stroke: none !important; }
+  .jambe--b line, .bras--b line { opacity: 0.45; }
+
+  .corps { animation: rebond calc(var(--cycle) / 2) ease-in-out infinite; }
+  @keyframes rebond { 50% { transform: translateY(-7px); } }
+
+  .jambe { transform-origin: 200px 150px; animation: cuisse var(--cycle) ease-in-out infinite; }
+  .jambe .tibia { transform-origin: 200px 196px; animation: genou var(--cycle) ease-in-out infinite; }
+  .jambe--b, .jambe--b .tibia { animation-delay: calc(var(--cycle) / -2); }
+  @keyframes cuisse { 0%, 100% { transform: rotate(-48deg); } 50% { transform: rotate(32deg); } }
+  @keyframes genou { 0%, 100% { transform: rotate(18deg); } 30% { transform: rotate(10deg); } 55% { transform: rotate(45deg); } 78% { transform: rotate(110deg); } }
+
+  .bras { transform-origin: 214px 94px; animation: epaule var(--cycle) ease-in-out infinite; }
+  .bras .avant-bras { transform-origin: 214px 122px; transform: rotate(-95deg); }
+  .bras--a { animation-delay: calc(var(--cycle) / -2); }
+  @keyframes epaule { 0%, 100% { transform: rotate(-40deg); } 50% { transform: rotate(45deg); } }
+
+  .vitesse line { stroke-width: 4; opacity: 0; animation: trait 0.9s linear infinite; animation-delay: calc(var(--i) * -0.22s); }
+  @keyframes trait { 0% { transform: translateX(60px); opacity: 0; } 30% { opacity: 0.55; } 100% { transform: translateX(-120px); opacity: 0; } }
+  .sol line { stroke-width: 4; stroke-dasharray: 2 26; opacity: 0.6; animation: sol 0.4s linear infinite; }
+  @keyframes sol { to { stroke-dashoffset: 28; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .coureur * { animation: none !important; }
+  }
+</style>

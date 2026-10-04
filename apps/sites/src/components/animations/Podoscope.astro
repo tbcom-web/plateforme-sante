@@ -1,0 +1,117 @@
+---
+// Animation « podoscope » : deux empreintes plantaires dessinées en points, colorées comme une carte
+// de pression (bleu → vert → jaune → rouge). Les points apparaissent par balayage, puis la pression
+// se déplace du talon vers l'avant-pied comme pendant le pas. Canvas, sans librairie (≈ 3 Ko).
+// Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
+interface Props { fond?: 'sombre' | 'clair' }
+const { fond = 'sombre' } = Astro.props;
+---
+<canvas class:list={['podoscope', `podoscope--${fond}`]} aria-hidden="true"></canvas>
+
+<script>
+  type Point = { x: number; y: number; d: number; zone: number; gauche: boolean };
+
+  // Forme d'un pied droit dans un repère 0..1 (largeur) × 0..1 (longueur, 0 = orteils).
+  function dansPied(x: number, y: number) {
+    const ell = (cx: number, cy: number, rx: number, ry: number) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+    const talon = ell(0.5, 0.82, 0.3, 0.17);
+    // Médio-pied : appui sur le bord externe seulement, la voûte (côté gros orteil) reste creuse.
+    const k = Math.sin(((y - 0.42) / 0.36) * Math.PI);
+    const voute = y > 0.42 && y < 0.78 && x > 0.3 + 0.3 * k && x < 0.8 - 0.04 * k;
+    const avant = ell(0.52, 0.36, 0.36, 0.16);
+    const orteils = [ell(0.3, 0.12, 0.1, 0.09), ell(0.47, 0.1, 0.07, 0.065), ell(0.6, 0.13, 0.06, 0.06), ell(0.71, 0.17, 0.055, 0.055), ell(0.8, 0.23, 0.05, 0.05)].some(Boolean);
+    return talon || voute || avant || orteils;
+  }
+  // Zone principale d'appui : 0 talon, 1 avant-pied, 2 orteils.
+  const zone = (y: number) => (y > 0.62 ? 0 : y > 0.22 ? 1 : 2);
+
+  function construire(l: number, h: number): Point[] {
+    const pied = Math.min(h * 0.86, l * 0.8);
+    const largeur = pied * 0.42;
+    const pas = Math.max(6, pied / 34);
+    const pts: Point[] = [];
+    for (const gauche of [true, false]) {
+      const ox = l / 2 + (gauche ? -largeur * 1.2 : largeur * 0.2);
+      const oy = (h - pied) / 2 + (gauche ? pied * 0.04 : -pied * 0.04);
+      for (let j = 0; j <= pied / pas; j++) {
+        for (let i = 0; i <= largeur / pas; i++) {
+          const u = i / (largeur / pas), v = j / (pied / pas);
+          const fx = gauche ? 1 - u : u; // le pied gauche est le miroir du droit
+          if (!dansPied(fx, v)) continue;
+          pts.push({ x: ox + i * pas, y: oy + j * pas, d: Math.random(), zone: zone(v), gauche });
+        }
+      }
+    }
+    return pts;
+  }
+
+  // Pression d'un point à l'instant t (cycle de pas de 2,4 s : talon → avant-pied → orteils).
+  function pression(p: Point, t: number, rayon: (p: Point) => number) {
+    const phase = ((t / 2400) + (p.gauche ? 0 : 0.5)) % 1;
+    const centre = phase < 0.35 ? 0 : phase < 0.75 ? 1 : 2;
+    const base = [0.55, 0.62, 0.38][p.zone];
+    const bonus = p.zone === centre ? 0.45 : p.zone === (centre + 2) % 3 ? 0.1 : 0;
+    return Math.min(1, base * rayon(p) + bonus * rayon(p));
+  }
+
+  function couleur(v: number) {
+    // bleu → cyan → vert → jaune → orange → rouge
+    const arrets = [[40, 90, 220], [20, 190, 230], [40, 200, 120], [250, 220, 60], [250, 140, 40], [230, 50, 60]];
+    const x = v * (arrets.length - 1), i = Math.min(arrets.length - 2, Math.floor(x)), f = x - i;
+    const c = arrets[i].map((a, k) => Math.round(a + (arrets[i + 1][k] - a) * f));
+    return `rgb(${c[0]} ${c[1]} ${c[2]})`;
+  }
+
+  document.querySelectorAll<HTMLCanvasElement>('canvas.podoscope').forEach((cv) => {
+    const ctx = cv.getContext('2d')!;
+    const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let pts: Point[] = [], l = 0, h = 0, debut = performance.now();
+    const ratio = Math.min(2, devicePixelRatio || 1);
+
+    function dimensionner() {
+      l = cv.clientWidth; h = cv.clientHeight;
+      cv.width = l * ratio; cv.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      pts = construire(l, h);
+    }
+    // Intensité locale : plus forte au centre de chaque zone (bords du pied plus froids).
+    const rayon = (p: Point) => 0.55 + 0.45 * Math.sin(p.d * Math.PI);
+
+    function dessiner(maintenant: number) {
+      const t = calme ? 900 : maintenant - debut;
+      ctx.clearRect(0, 0, l, h);
+      const balayage = calme ? 2 : Math.min(1.2, t / 1600); // apparition du haut vers le bas
+      const taille = Math.max(6, Math.min(h * 0.86, l * 0.8) / 34) * 0.34; // ≈ un tiers de l'écart entre points
+      for (const p of pts) {
+        const seuil = p.y / h;
+        if (seuil > balayage) continue;
+        const v = pression(p, t, rayon);
+        const apparition = Math.min(1, (balayage - seuil) * 6);
+        ctx.globalAlpha = (0.35 + 0.65 * v) * apparition;
+        ctx.fillStyle = couleur(v);
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = v > 0.7 ? taille * 2.2 : 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, taille * (0.6 + v * 0.7), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (!calme && visible) requestAnimationFrame(dessiner);
+    }
+
+    let visible = true;
+    new IntersectionObserver(([e]) => {
+      const etait = visible; visible = e.isIntersecting;
+      if (visible && !etait) requestAnimationFrame(dessiner);
+    }).observe(cv);
+    new ResizeObserver(dimensionner).observe(cv);
+    dimensionner();
+    requestAnimationFrame(dessiner);
+  });
+</script>
+
+<style>
+  .podoscope { display: block; width: 100%; height: 100%; }
+  .podoscope--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
+  .podoscope--clair { background: transparent; }
+</style>

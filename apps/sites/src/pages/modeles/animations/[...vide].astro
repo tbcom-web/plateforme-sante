@@ -1,0 +1,53 @@
+---
+// Planche des animations d'accueil en conception, générée uniquement sur les sites de démo : /modeles/animations
+import '@fontsource-variable/inter';
+import Podoscope from '../../../components/animations/Podoscope.astro';
+import Coureur from '../../../components/animations/Coureur.astro';
+import { site } from '../../../lib/site';
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { vide: undefined } }] : [];
+}
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Animations d'accueil</title>
+  </head>
+  <body>
+    <section class="scene">
+      <div class="scene__anim"><Podoscope /></div>
+      <div class="scene__texte">
+        <p class="sur">Pédicure-podologue · Lyon</p>
+        <h1>Cabinet de pédicurie-podologie <span>à Lyon</span></h1>
+        <p>Animation « podoscope » : empreintes plantaires en points, la pression suit le déroulé du pas.</p>
+      </div>
+    </section>
+    <section class="scene scene--inverse">
+      <div class="scene__anim"><Coureur /></div>
+      <div class="scene__texte">
+        <p class="sur">Podologie du sport</p>
+        <h1>Analyse de la foulée <span>et du geste sportif</span></h1>
+        <p>Animation « coureur » : silhouette schématique en pleine course.</p>
+      </div>
+    </section>
+    <section class="scene scene--clair">
+      <div class="scene__anim"><Podoscope fond="clair" /></div>
+      <div class="scene__anim"><Coureur fond="clair" /></div>
+    </section>
+  </body>
+</html>
+
+<style>
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: #071214; color: #e8f1ef; }
+  .scene { min-height: 100svh; display: grid; align-items: center; gap: 24px; padding: 40px clamp(20px, 5vw, 80px); }
+  @media (min-width: 900px) { .scene { grid-template-columns: 1fr 1fr; } .scene--inverse .scene__anim { order: 2; } }
+  .scene__anim { height: min(72svh, 640px); border-radius: 28px; overflow: hidden; }
+  .sur { font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: #7fe0c8; }
+  h1 { font-size: clamp(2.4rem, 5vw, 4.4rem); line-height: 1; letter-spacing: -0.045em; font-weight: 600; margin: 0 0 20px; }
+  h1 span { color: #8aa3a0; }
+  .scene--clair { background: #f6f3ee; --accent-vif: #b0583a; }
+</style>
