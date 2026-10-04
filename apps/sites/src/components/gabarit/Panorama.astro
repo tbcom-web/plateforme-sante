@@ -6,11 +6,12 @@ import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import Empreintes from '../dessins/Empreintes.astro';
 import { photoPanoramaAffichee, photoResponsive } from '../../lib/visuels';
-import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
+import { MENTION_ILLUSTRATIVE, resumeHygiene } from '@plateforme/core';
 import { lieu, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
 
 const atouts = [
-  { titre: 'Hygiène', texte: 'Instruments stérilisés après chaque patient' },
+  // Hygiène : mention précise si le cabinet a coché son matériel de stérilisation (rubrique « Matériel et hygiène »).
+  { titre: 'Hygiène', texte: resumeHygiene(site.equipements ?? []) || 'Instruments stérilisés après chaque patient' },
   site.accesDetail.pmr || site.accesDetail.parking
     ? { titre: 'Accès', texte: [site.accesDetail.pmr && 'Accessible PMR', site.accesDetail.parking].filter(Boolean).join(' · ') }
     : null,

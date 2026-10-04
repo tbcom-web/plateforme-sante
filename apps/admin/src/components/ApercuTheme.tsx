@@ -13,7 +13,7 @@ import '@fontsource/instrument-serif';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  couleursImportee, couleursMarque, initiales, jeuVisuel, PAYS, POLICES, rendreCase, SURFACES_CSS, svgAnimationFixe,
+  couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, PAYS, POLICES, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, visuelSoinJeu,
   type MarqueImportee, type ModeleManifeste, type Rendu, type SiteDraft,
 } from '@plateforme/core';
@@ -164,6 +164,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
               </div>
             ))}
           </div>
+          {faitEquipement(d.equipements ?? []) && <p className="ap-mono" style={{ margin: '14px 0 0', paddingTop: 12, borderTop: 'var(--filet) solid var(--ligne)', color: 'var(--encre-douce)' }}>{faitEquipement(d.equipements ?? [])}</p>}
         </div>
       </section>
     ),

@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { formaterTelephone, validerChoixLogo, GAMMES, normaliserDraft, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
+import { formaterTelephone, validerChoixLogo, GAMMES, normaliserDraft, nettoyerEquipements, nettoyerEquipementsAutres, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getMarquesImportees } from '@/lib/marques';
@@ -74,6 +74,9 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
     },
     rdv: { mode: parmi(d.rdv.mode, ['en_ligne', 'telephone', 'les_deux'] as const, 'les_deux'), outil: t(d.rdv.outil, 40) || 'Doctolib', url: url(d.rdv.url) },
     paiements: liste(d.paiements, 8, 40),
+    // Matériel et hygiène : identifiants du catalogue seulement, texte libre borné (300 caractères).
+    equipements: nettoyerEquipements(d.equipements),
+    equipementsAutres: nettoyerEquipementsAutres(d.equipementsAutres),
     domicile: { actif: Boolean(d.domicile.actif), creneaux: t(d.domicile.creneaux, 160), secteurs: liste(d.domicile.secteurs, 15) },
     message: { texte: t(d.message.texte, 240), jusquAu: /^\d{4}-\d{2}-\d{2}$/.test(d.message.jusquAu) ? d.message.jusquAu : '' },
     conventionnement: t(d.conventionnement, 160),

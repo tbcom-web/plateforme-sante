@@ -33,12 +33,13 @@ export const FICHES_CONSEILS: FicheConseil[] = [
   },
   {
     etape: 'Cabinet',
-    surLeSite: 'L’adresse sur toutes les pages, la page « Accès », la carte et le référencement local.',
+    surLeSite: 'L’adresse sur toutes les pages, la page « Accès », la carte et le référencement local ; le matériel sur la page « Le cabinet ».',
     points: [
       { titre: 'Adresse', conseil: 'L’adresse exacte, écrite comme sur la fiche Google du cabinet, avec le complément utile : étage, ascenseur, digicode.' },
       { titre: 'Quartier', conseil: 'Le nom usuel du quartier, que les patients comprennent (« quartier du Mourillon »). Il complète la ville, il ne la remplace jamais.' },
       { titre: 'Communes voisines', conseil: '5 à 10 communes d’où viennent réellement les patients : c’est le premier levier du référencement local.' },
       { titre: 'Accès', conseil: 'Stationnement, arrêt de bus ou de tram le plus proche, accès PMR : les questions que les patients posent au téléphone.' },
+      { titre: 'Matériel et hygiène', conseil: 'Cocher seulement le matériel réellement présent au cabinet. L’hygiène et la stérilisation (autoclave, sachets ouverts devant le patient, usage unique) rassurent les patients et distinguent le soin podologique ; le matériel d’examen et de fabrication des semelles est aussi rappelé sur les pages de soin concernées.' },
     ],
   },
   {

@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   controlerPublication,
+  CATEGORIES_EQUIPEMENTS,
+  EQUIPEMENTS,
+  EQUIPEMENTS_AUTRES_MAX,
   GAMMES,
   modeleIntegre,
   marquesLogo,
@@ -272,6 +275,43 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
                   <Champ large label="Stationnement" placeholder="Parking gratuit sur place" value={d.acces.parking} onChange={(v) => majAcces({ parking: v })} />
                   <Champ large label="Transports en commun" placeholder="Bus ligne 3, arrêt Mairie" value={d.acces.transports} onChange={(v) => majAcces({ transports: v })} />
                 </Grille>
+              </fieldset>
+              <fieldset className="grid gap-4 rounded-xl border border-neutral-200 p-4">
+                <legend className="px-1 font-semibold">Matériel et hygiène</legend>
+                <p className="text-sm text-neutral-600">Cochez seulement le matériel présent au cabinet. La phrase en gris est celle affichée aux patients, page « Le cabinet ».</p>
+                {CATEGORIES_EQUIPEMENTS.map((c) => (
+                  <fieldset key={c.value}>
+                    <legend className="mb-2 text-sm font-medium">{c.label}</legend>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {EQUIPEMENTS.filter((e) => e.categorie === c.value).map((e) => (
+                        <label key={e.id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm ${d.equipements.includes(e.id) ? 'border-teal-700 bg-teal-50' : 'border-neutral-200 hover:bg-neutral-50'}`}>
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 size-4 shrink-0 accent-teal-800"
+                            checked={d.equipements.includes(e.id)}
+                            onChange={(ev) => maj({ equipements: ev.target.checked ? [...d.equipements, e.id] : d.equipements.filter((x) => x !== e.id) })}
+                          />
+                          <span className="grid gap-0.5">
+                            <span className="font-medium">{e.libelle}</span>
+                            <span className="text-xs text-neutral-500">{e.phrase}</span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                ))}
+                <label className="grid gap-1.5 text-sm">
+                  <span className="font-medium">Autre matériel (facultatif)</span>
+                  <textarea
+                    rows={2}
+                    maxLength={EQUIPEMENTS_AUTRES_MAX}
+                    placeholder="Bac à ultrasons pour le nettoyage des instruments"
+                    className="w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20"
+                    value={d.equipementsAutres}
+                    onChange={(ev) => maj({ equipementsAutres: ev.target.value })}
+                  />
+                  <span className="text-xs text-neutral-500">Un élément par ligne, nom du matériel seulement (pas de marque ni de formule commerciale).</span>
+                </label>
               </fieldset>
             </div>
           )}

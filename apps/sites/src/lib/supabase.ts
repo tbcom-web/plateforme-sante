@@ -210,6 +210,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     accesDetail: d.acces,
     rdvMode: d.rdv.mode,
     paiements: d.paiements,
+    equipements: d.equipements,
+    equipementsAutres: d.equipementsAutres,
     domicile: d.domicile,
     message: messageActif ? d.message.texte : '',
     communes: d.cabinet.communes,

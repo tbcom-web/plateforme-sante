@@ -6,12 +6,15 @@ import Breadcrumb from '../components/Breadcrumb.astro';
 import Praticiens from '../components/gabarit/Praticiens.astro';
 import Infos from '../components/gabarit/Infos.astro';
 import Galerie from '../components/gabarit/Galerie.astro';
+import Materiel from '../components/gabarit/Materiel.astro';
 import Planche from '../components/dessins/Planche.astro';
 import Empreintes from '../components/dessins/Empreintes.astro';
 import { site } from '../lib/site';
 import { breadcrumbSchema } from '../lib/schema';
 import { titreCabinet, phraseAccueil, titrePraticiens, noms, titreMetierAffiche, localisation } from '../lib/textes';
 
+// Rubrique « Matériel et hygiène » : seulement si le praticien a coché du matériel (sinon rien n'apparaît).
+const materiel = (site.equipements?.length ?? 0) > 0 || Boolean(site.equipementsAutres?.trim());
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le-cabinet' }];
 ---
 <Gabarit
@@ -41,7 +44,16 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
       <Praticiens />
     </div>
   </section>
-  <section class="section" id="infos">
+  {materiel && (
+    <section class="section" id="materiel">
+      <div class="cadre">
+        <p class="sur sur--num">Le cabinet</p>
+        <h2>Matériel et hygiène</h2>
+        <Materiel />
+      </div>
+    </section>
+  )}
+  <section class:list={['section', { 'section--douce': materiel }]} id="infos">
     <div class="cadre">
       <p class="sur sur--num">Accès et horaires</p>
       <h2>Informations pratiques</h2>

@@ -19,7 +19,7 @@ import { site, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
 import { photoResponsive } from '../lib/visuels';
 import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien, lieu } from '../lib/textes';
-import { espacesFines } from '@plateforme/core';
+import { espacesFines, faitEquipement } from '@plateforme/core';
 
 const m = site.modele;
 const metier = site.titreMetier.toLowerCase();
@@ -33,6 +33,9 @@ const faits = [
   rdvEnLigne ? `Réservation en ligne sur ${site.rdv.plateforme}` : `Rendez-vous au ${site.cabinet.telephone}`,
   ouverts.length > 1 ? `Ouvert du ${ouverts[0]} au ${ouverts.at(-1)}` : '',
 ].filter(Boolean).slice(0, 4);
+// Matériel et hygiène : une ligne de plus quand le cabinet a coché la stérilisation (ex. « Stérilisation autoclave classe B »).
+const faitHygiene = faitEquipement(site.equipements ?? []);
+if (faitHygiene) faits.splice(Math.min(2, faits.length), 0, faitHygiene);
 const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 
 const title = `${site.titreMetier} ${site.cabinet.ville} – ${noms}`;

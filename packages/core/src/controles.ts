@@ -3,6 +3,7 @@
 // lien Doctolib vers une autre ville, tuiles vides.
 import type { SiteDraft } from './draft';
 import { verifierTexte, type NiveauConformite } from './lexique';
+import { EQUIPEMENTS } from './equipements';
 
 export type ResultatControle = {
   /** Empêchent la publication */
@@ -89,11 +90,18 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
   // Domicile
   if (d.domicile.actif && d.domicile.secteurs.length === 0) conseils.push('Préciser les secteurs des visites à domicile, sinon la mention sera générale.');
 
+  // Matériel et hygiène (non bloquant) : les patients regardent d'abord la stérilisation.
+  const hygiene = EQUIPEMENTS.filter((e) => e.categorie === 'hygiene').map((e) => e.id);
+  if (!(d.equipements ?? []).some((id) => hygiene.includes(id))) {
+    conseils.push('Matériel et hygiène : cocher le matériel de stérilisation et d’hygiène réellement présent au cabinet (autoclave, sachets individuels, usage unique…).');
+  }
+
   // Textes libres : placeholders et lexique
   const textes: [string, string][] = [
     ['Nom du cabinet', d.cabinet.nom],
     ['Message important', d.message.texte],
     ['Conventionnement', d.conventionnement],
+    ['Autre matériel', d.equipementsAutres ?? ''],
     ...d.praticiens.flatMap((p): [string, string][] => [[`Présentation de ${p.prenom || 'praticien'}`, p.bio]]),
   ];
   for (const [champ, texte] of textes) {

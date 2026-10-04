@@ -1,0 +1,63 @@
+---
+// Matériel et hygiène du cabinet : liste éditoriale (filets, numéros mono, catégories), pictos au trait.
+// Seul le matériel coché par le praticien apparaît ; phrases factuelles du catalogue (equipements.ts).
+import Icone from '../Icone.astro';
+import { equipementsParCategorie } from '@plateforme/core';
+import { site } from '../../lib/site';
+
+const groupes = equipementsParCategorie(site.equipements ?? []);
+const autres = (site.equipementsAutres ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+const deux = (n: number) => String(n).padStart(2, '0');
+let rang = 0;
+---
+<div class="materiel">
+  {groupes.map((g, i) => (
+    <section class="materiel__groupe" aria-labelledby={`materiel-${g.categorie.value}`}>
+      <p class="materiel__categorie mono" id={`materiel-${g.categorie.value}`}>
+        <span aria-hidden="true">{deux(i + 1)} —</span> {g.categorie.label}
+        <span class="materiel__compte" aria-hidden="true">{deux(g.equipements.length)}</span>
+      </p>
+      <ul class="materiel__liste">
+        {g.equipements.map((e) => (
+          <li>
+            <span class="materiel__num mono" aria-hidden="true">{deux(++rang)}</span>
+            <span class="materiel__picto" aria-hidden="true"><Icone nom={e.icone} secours="tabler:point" taille="22" /></span>
+            <span class="materiel__texte">
+              <span class="materiel__libelle">{e.libelle}</span>
+              <span class="materiel__phrase">{e.phrase}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+  {autres.length > 0 && (
+    <section class="materiel__groupe" aria-labelledby="materiel-autres">
+      <p class="materiel__categorie mono" id="materiel-autres"><span aria-hidden="true">{deux(groupes.length + 1)} —</span> Également au cabinet</p>
+      <ul class="materiel__liste materiel__liste--simple">
+        {autres.map((a) => (
+          <li>
+            <span class="materiel__num mono" aria-hidden="true">{deux(++rang)}</span>
+            <span class="materiel__libelle">{a}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</div>
+
+<style>
+  .materiel { display: grid; gap: clamp(28px, 4vw, 44px) clamp(28px, 4vw, 56px); grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); align-items: start; margin-top: 8px; }
+  .materiel__groupe { border-top: var(--filet-fort) solid var(--encre); }
+  .materiel__categorie { display: flex; align-items: baseline; gap: 8px; margin: 0; padding: 12px 0; color: var(--accent-vif); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); border-bottom: var(--filet) solid var(--ligne); }
+  .materiel__categorie span:first-child { font-weight: 400; }
+  .materiel__compte { margin-left: auto; color: var(--encre-pale); }
+  .materiel__liste { list-style: none; margin: 0; padding: 0; }
+  .materiel__liste li { display: grid; grid-template-columns: 2.2em 28px minmax(0, 1fr); gap: 4px 12px; align-items: start; padding: 14px 0; border-bottom: var(--filet) solid var(--ligne); }
+  .materiel__liste--simple li { grid-template-columns: 2.2em minmax(0, 1fr); align-items: baseline; }
+  .materiel__num { color: var(--encre-pale); padding-top: 3px; }
+  .materiel__picto { color: var(--accent-vif); display: grid; place-items: center; width: 28px; height: 28px; }
+  .materiel__texte { display: grid; gap: 4px; }
+  .materiel__libelle { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.05rem; letter-spacing: -0.015em; line-height: 1.25; color: var(--encre); }
+  .materiel__phrase { color: var(--encre-pale); font-size: 0.95rem; line-height: 1.55; }
+</style>

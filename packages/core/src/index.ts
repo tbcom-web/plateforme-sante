@@ -18,3 +18,4 @@ export * from './marques-importees';
 export * from './dessins';
 export * from './jeux';
 export * from './conseils';
+export * from './equipements';

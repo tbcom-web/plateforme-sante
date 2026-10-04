@@ -11,7 +11,7 @@ import { site, md } from '../../lib/site';
 import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
 import { visuelSoin, photoPraticienSoin } from '../../lib/visuels-soins';
 import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences, viaPlateforme } from '../../lib/textes';
-import { espacesFines } from '@plateforme/core';
+import { espacesFines, equipementsDuSoin } from '@plateforme/core';
 import type { Soin } from '@plateforme/core';
 
 export function getStaticPaths() {
@@ -30,6 +30,8 @@ const rang = site.soins.findIndex((s) => s.slug === soin.slug) + 1;
 const total = site.soins.length;
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
 const visuel = visuelSoin(soin.slug);
+// Matériel du cabinet utile à ce soin, seulement s'il a été coché (ex. « Examen sur plateforme de pression »).
+const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
 ---
 <Gabarit
   title={`${soin.titre} – ${noms}`}
@@ -51,7 +53,15 @@ const visuel = visuelSoin(soin.slug);
     </header>
 
     <div class="cadre corps">
-      <div class="prose" set:html={md(soin.corps)} />
+      <div>
+        <div class="prose" set:html={md(soin.corps)} />
+        {materiel.length > 0 && (
+          <div class="materiel-soin">
+            <p class="materiel-soin__titre mono"><a href="/le-cabinet#materiel">Matériel du cabinet</a></p>
+            <ul>{materiel.map((m) => <li>{m}</li>)}</ul>
+          </div>
+        )}
+      </div>
       <aside>
         <div class="encart">
           <p class="encart__titre mono">Rendez-vous</p>
@@ -104,6 +114,13 @@ const visuel = visuelSoin(soin.slug);
   @media (min-width: 960px) { .corps { grid-template-columns: 1fr 320px; } }
   .encart { position: sticky; top: 96px; display: grid; gap: 12px; padding: 18px 0 0; border-top: var(--filet-fort) solid var(--encre); }
   .encart__titre { margin: 0; color: var(--accent-vif); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  .materiel-soin { margin-top: 32px; max-width: 68ch; border-top: var(--filet-fort) solid var(--encre); }
+  .materiel-soin__titre { margin: 0; padding: 12px 0; text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); border-bottom: var(--filet) solid var(--ligne); }
+  .materiel-soin__titre a { color: var(--accent-vif); text-decoration: none; }
+  .materiel-soin__titre a:hover { text-decoration: underline; }
+  .materiel-soin ul { list-style: none; margin: 0; padding: 0; }
+  .materiel-soin li { padding: 10px 0 10px 18px; border-bottom: var(--filet) solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; position: relative; }
+  .materiel-soin li::before { content: ''; position: absolute; left: 2px; top: 1.15em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-vif); }
   .encart__lieu { margin: 0 0 6px; color: var(--encre-douce); font-size: 0.95rem; }
 
   .faq { display: grid; gap: 32px; }

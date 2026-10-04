@@ -100,6 +100,10 @@ export type SiteConfig = {
   accesDetail: { pmr: boolean; parking: string; transports: string; autres: string[] };
   rdvMode: 'en_ligne' | 'telephone' | 'les_deux';
   paiements: string[];
+  /** Matériel et hygiène : identifiants du catalogue EQUIPEMENTS ; absent = aucun (sites antérieurs) */
+  equipements?: string[];
+  /** Autre matériel, texte libre (une ligne par élément) */
+  equipementsAutres?: string;
   domicile: { actif: boolean; creneaux: string; secteurs: string[] };
   /** Message temporaire (congés, déménagement), déjà filtré sur sa date de fin */
   message: string;

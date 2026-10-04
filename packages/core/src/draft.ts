@@ -2,6 +2,7 @@
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
 import { MODELES_INTEGRES } from './modeles';
 import { specialiteDuProfil } from './packs';
+import { nettoyerEquipements, nettoyerEquipementsAutres } from './equipements';
 import type { Horaire, SiteConfig } from './types';
 import type { Voix } from './lexique';
 
@@ -83,6 +84,10 @@ export type SiteDraft = {
   };
   rdv: { mode: ModeRdv; outil: string; url: string };
   paiements: string[];
+  /** Matériel et hygiène : identifiants du catalogue EQUIPEMENTS (equipements.ts) */
+  equipements: string[];
+  /** Autre matériel, texte libre facultatif (une ligne par élément) */
+  equipementsAutres: string;
   domicile: { actif: boolean; creneaux: string; secteurs: string[] };
   message: { texte: string; jusquAu: string };
   conventionnement: string;
@@ -206,6 +211,8 @@ export const draftVide = (): SiteDraft => ({
   acces: { pmr: false, parking: '', transports: '', autres: [] },
   rdv: { mode: 'les_deux', outil: 'Doctolib', url: '' },
   paiements: ['Carte bancaire', 'Chèques', 'Espèces'],
+  equipements: [],
+  equipementsAutres: '',
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
@@ -237,6 +244,9 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
       praticiens: Array.isArray(d.praticiens) && d.praticiens.length ? d.praticiens.map((p: any) => ({ ...praticienVide(), ...p })) : vide.praticiens,
       soins: Array.isArray(d.soins) ? d.soins : [],
+      // Sites enregistrés avant la rubrique « Matériel et hygiène » : aucun équipement.
+      equipements: nettoyerEquipements(d.equipements),
+      equipementsAutres: nettoyerEquipementsAutres(d.equipementsAutres),
       perso: { textes: d.perso?.textes && typeof d.perso.textes === 'object' ? d.perso.textes : {} },
       version: 2,
     };
