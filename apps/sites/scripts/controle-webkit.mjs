@@ -25,7 +25,13 @@ import { readFile, stat, readdir, mkdir, writeFile } from 'node:fs/promises';
 import { join, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const args = Object.fromEntries(process.argv.slice(2).join(' ').split(/\s*--/).filter(Boolean).map((a) => { const [k, ...v] = a.split(' '); return [k, v.join(' ') || true]; }));
+// Arguments « --cle valeur » lus jeton par jeton : un chemin peut contenir « -- » (ex. C--Users…).
+const args = {};
+for (let i = 2, v = process.argv; i < v.length; i++) {
+  if (!v[i].startsWith('--')) continue;
+  const suivant = v[i + 1];
+  args[v[i].slice(2)] = suivant !== undefined && !suivant.startsWith('--') ? (i++, suivant) : true;
+}
 const racine = fileURLToPath(new URL('..', import.meta.url));
 const dist = resolve(args.dist || join(racine, 'dist'));
 const SEUIL = +(args.seuil || 4);
