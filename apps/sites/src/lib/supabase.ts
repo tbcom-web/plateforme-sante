@@ -33,6 +33,7 @@ type LigneSite = {
   test: boolean;
   config: unknown;
 };
+type LigneArticle = { slug: string; titre: string; resume: string; corps: string; theme: string; date_publication: string };
 type LigneProfession = { slug: string; libelle: string; specialite_schema: string; ordre: string };
 type LigneSoin = { slug: string; titre_court: string; titre: string; resume: string; corps: string; faq: Faq[]; icone?: string | null };
 
@@ -54,6 +55,11 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
 
   const [prof] = await lire<LigneProfession[]>(`professions?slug=eq.${s.profession_slug}`);
   const catalogue = await lire<LigneSoin[]>(`soins_catalogue?profession_slug=eq.${s.profession_slug}&order=position`);
+
+  // Articles du flux publiés par ce site (tolérant si le flux n'est pas encore installé).
+  const publies = await lire<{ article: LigneArticle | null }[]>(
+    `site_articles?site_id=eq.${s.id}&statut=eq.publie&select=article:articles_flux(slug,titre,resume,corps,theme,date_publication)`,
+  ).catch(() => []);
 
   const d = normaliserDraft(s.config);
   // Même contrôle que le back-office : un site incomplet n'est jamais publié (sauf site de test).
@@ -145,7 +151,10 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     },
     soins,
     faqGenerale: defauts.faq({ pmr: d.acces.pmr, plateforme: d.rdv.mode === 'telephone' ? 'téléphone' : d.rdv.outil }),
-    articles: [],
+    articles: publies
+      .map((p) => p.article)
+      .filter((a): a is LigneArticle => Boolean(a))
+      .map((a) => ({ slug: a.slug, titre: perso(a.titre), resume: perso(a.resume), corps: perso(a.corps), theme: a.theme, date: a.date_publication })),
     tracking: {},
     mentions: {
       editeur: `${noms}, ${titreMetier.toLowerCase()}${pluriel ? 's' : ''}`,

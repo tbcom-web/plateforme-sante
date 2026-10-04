@@ -76,6 +76,7 @@ function nettoyer(brut: unknown): SiteDraft {
       couleur: /^#[0-9a-f]{6}$/i.test(d.theme.couleur) ? d.theme.couleur : '#1f6a64',
       modele: parmi(d.theme.modele, ['proximite', 'premium'] as const, 'proximite'),
     },
+    flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },
     photos: { accueil: photo(d.photos.accueil), panorama: photo(d.photos.panorama), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
     soins: d.soins.filter((s) => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 30),
   };

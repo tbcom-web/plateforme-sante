@@ -11,6 +11,7 @@ import {
   praticienVide,
   PROFILS,
   STATUTS,
+  THEMES_FLUX,
   TYPES_LIEU,
   VOIX,
   type LieuDraft,
@@ -298,6 +299,7 @@ export default function Editeur({ siteId, initial, catalogue }: Props) {
           )}
 
           {etape === 5 && (
+            <div className="grid gap-8">
             <fieldset>
               <legend className="text-sm text-neutral-600">Chaque compétence cochée aura sa propre page, optimisée pour le référencement.</legend>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -321,6 +323,39 @@ export default function Editeur({ siteId, initial, catalogue }: Props) {
                 })}
               </div>
             </fieldset>
+            <fieldset className="grid gap-3 rounded-xl border border-neutral-200 p-4">
+              <legend className="px-1 font-semibold">Actualités : articles proposés par la plateforme</legend>
+              <Choix
+                legende="Publication des articles"
+                colonnes={2}
+                options={[
+                  { value: 'manuel', label: 'Je valide chaque article', description: 'Les articles vous sont proposés dans le tableau de bord.' },
+                  { value: 'auto', label: 'Publication automatique', description: 'Les articles des thèmes choisis sont publiés directement.' },
+                ]}
+                valeur={d.flux.mode}
+                onChange={(v) => maj({ flux: { ...d.flux, mode: v as SiteDraft['flux']['mode'] } })}
+              />
+              <div>
+                <p className="mb-2 text-sm font-medium">Thèmes suivis (aucun coché = tous)</p>
+                <div className="flex flex-wrap gap-2">
+                  {THEMES_FLUX.map((th) => {
+                    const actif = d.flux.themes.includes(th);
+                    return (
+                      <button
+                        key={th}
+                        type="button"
+                        aria-pressed={actif}
+                        onClick={() => maj({ flux: { ...d.flux, themes: actif ? d.flux.themes.filter((x) => x !== th) : [...d.flux.themes, th] } })}
+                        className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ${actif ? 'bg-teal-800 text-white ring-teal-800' : 'bg-white text-neutral-700 ring-neutral-300'}`}
+                      >
+                        {th}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </fieldset>
+            </div>
           )}
 
           {etape === 6 && (

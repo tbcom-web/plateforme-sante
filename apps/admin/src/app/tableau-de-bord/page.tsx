@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Shell from '@/components/Shell';
 import Apercu from '@/components/Apercu';
 import BoutonPublier from './BoutonPublier';
+import Propositions from './Propositions';
+import { getPropositions } from './flux';
 import { getUser } from '@/lib/supabase/server';
 import { getCatalogue, getMonSite, manques } from '@/lib/sites';
 
@@ -20,6 +22,7 @@ export default async function TableauDeBord() {
 
   const [site, catalogue] = await Promise.all([getMonSite(), getCatalogue()]);
   const aFaire = manques(site.draft);
+  const propositions = site.id ? await getPropositions(site.id) : [];
   const statut = STATUTS[site.statut];
 
   return (
@@ -70,6 +73,8 @@ export default async function TableauDeBord() {
             )}
             <BoutonPublier pret={aFaire.length === 0} enLigne={site.statut === 'en_ligne'} />
           </section>
+
+          {site.id && <Propositions items={propositions} />}
 
           <section className="rounded-2xl border border-black/5 bg-white p-6">
             <h2 className="font-semibold">Statistiques</h2>

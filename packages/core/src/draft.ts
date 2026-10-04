@@ -84,6 +84,8 @@ export type SiteDraft = {
   message: { texte: string; jusquAu: string };
   conventionnement: string;
   theme: { couleur: string; modele: Modele };
+  /** Réception des articles du flux de contenus */
+  flux: { mode: 'manuel' | 'auto'; themes: string[] };
   /** URLs publiques des photos (stockage Supabase) */
   photos: { accueil: string; panorama: string; cabinet: string[] };
   /** Slugs des compétences choisies dans le catalogue de la profession */
@@ -130,6 +132,9 @@ export const STATUTS: { value: StatutPraticien; label: string }[] = [
   { value: 'remplacant', label: 'Remplaçant·e' },
 ];
 
+/** Thèmes des articles du flux de contenus. */
+export const THEMES_FLUX = ['Prévention', 'Sport', 'Enfants', 'Diabète', 'Seniors', 'Saison', 'Actualité de la profession'] as const;
+
 export const COULEURS_SUGGEREES = ['#1f6a64', '#2563a8', '#0b1c24', '#7b4fa0', '#b5583a', '#3d6b3a', '#b0802b'];
 
 // Conservés pour les anciens gabarits.
@@ -174,6 +179,7 @@ export const draftVide = (): SiteDraft => ({
   conventionnement: '',
   theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite' },
   photos: { accueil: '', panorama: '', cabinet: [] },
+  flux: { mode: 'manuel', themes: [] },
   soins: [],
 });
 
@@ -192,6 +198,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       domicile: { ...vide.domicile, ...d.domicile },
       message: { ...vide.message, ...d.message },
       theme: { ...vide.theme, ...d.theme },
+      flux: { ...vide.flux, ...d.flux, themes: Array.isArray(d.flux?.themes) ? d.flux.themes : [] },
       photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
       praticiens: Array.isArray(d.praticiens) && d.praticiens.length ? d.praticiens.map((p: any) => ({ ...praticienVide(), ...p })) : vide.praticiens,
