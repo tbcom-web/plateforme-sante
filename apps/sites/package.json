@@ -9,7 +9,8 @@
     "check": "astro check",
     "controle:seo": "node scripts/controle-seo.mjs",
     "controle:charte": "node scripts/controle-charte.mjs",
-    "controle:agents": "node scripts/controle-agents.mjs"
+    "controle:agents": "node scripts/controle-agents.mjs",
+    "controle:webkit": "node scripts/controle-webkit.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.1.0",
@@ -21,6 +22,12 @@
     "@fontsource/instrument-serif": "^5.3.0",
     "@plateforme/core": "file:../../packages/core",
     "astro": "^5.0.0",
-    "marked": "^15.0.0"
+    "marked": "^15.0.0",
+    "subset-font": "^2.9.0"
+  },
+  "devDependencies": {
+    "pixelmatch": "^7.2.0",
+    "playwright": "^1.63.0",
+    "pngjs": "^7.0.0"
   }
 }

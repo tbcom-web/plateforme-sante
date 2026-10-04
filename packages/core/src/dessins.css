@@ -69,20 +69,22 @@
 .dessin .piece { fill: var(--d-accent); fill-opacity: 0.16; stroke: currentColor; stroke-width: var(--trait-fin); stroke-opacity: 0.6; }
 .dessin .piece--forte { fill-opacity: 0.36; }
 .dessin .piece-coque { fill: currentColor; fill-opacity: 0.12; stroke: currentColor; stroke-width: var(--trait-fin); stroke-opacity: 0.6; }
-.dessin .os-aplat { fill: var(--d-accent); fill-opacity: 0.1; stroke: none; }
-.dessin .os-aplat--arriere { fill-opacity: 0.05; }
+.dessin .os-aplat { fill: var(--d-accent); fill-opacity: calc(0.1 * var(--dessin-os-aplat, 1)); stroke: none; }
+.dessin .os-aplat--arriere { fill-opacity: calc(0.05 * var(--dessin-os-aplat, 1)); }
 .dessin .os--arriere { opacity: 0.32; }
-.dessin .os--plein { fill: var(--d-accent); fill-opacity: 0.18; }
+.dessin .os--plein { fill: var(--d-accent); fill-opacity: calc(0.18 * var(--dessin-os-aplat, 1)); }
 .dessin .filament { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
 .dessin .ongle-dessus--fin { stroke-width: var(--trait-fin); }
 .dessin .fin--leger { opacity: 0.35; }
 .dessin .canne--arriere { opacity: 0.55; }
 .dessin .anneau-site { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
-.dessin--sans-os .squelette { display: none; }
-/* Fond plan (sombre) : jamais d'os clairs (lecture « radio ») — contour fin teinté de l'accent, sans aplat */
-.surface-plan .dessin .squelette .os, .dessin.dessin--plan .squelette .os { stroke: var(--d-accent); opacity: 0.4; }
-.surface-plan .dessin .os-aplat, .dessin.dessin--plan .os-aplat { display: none; }
-.surface-plan .dessin .os--plein, .dessin.dessin--plan .os--plein, .surface-plan .dessin .os--teinte { fill: none; }
+.dessin .squelette { display: var(--dessin-squelette, inline); }
+/* Fond plan (sombre) : jamais d'os clairs (lecture « radio ») — contour fin teinté de l'accent, sans aplat. Réglé par des
+   VARIABLES posées par la surface (.surface-plan, charte.ts) : elles traversent <use> vers les fichiers /dessins/*.svg, ce que ne
+   font pas les sélecteurs de la page (et WebKit ignore les <style> d'un SVG externe : les styles y sont en attributs). */
+.dessin .squelette .os { stroke: var(--dessin-os, currentColor); }
+.dessin .squelette .os { opacity: var(--dessin-os-opacite, 0.55); }
+.dessin .squelette .os--arriere { opacity: calc(0.58 * var(--dessin-os-opacite, 0.55)); }
 /* Matériel du cabinet (svgEquipement) */
 .dessin .trait--fin { stroke-width: var(--trait-fin); }
 .dessin .eau { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
@@ -102,7 +104,7 @@
 /* Étiquettes : détourées par le fond, jamais posées sur un trait */
 .dessin .etiquette { paint-order: stroke; stroke: var(--d-fond); stroke-width: 3; stroke-linejoin: round; }
 .dessin .peau-seule { fill: var(--d-fond); stroke: none; }
-.dessin .os--teinte { fill: var(--d-accent); fill-opacity: 0.1; opacity: 0.7; }
+.dessin .os--teinte { fill: var(--d-accent); fill-opacity: calc(0.1 * var(--dessin-os-aplat, 1)); opacity: 0.7; }
 .dessin .canne { stroke-width: var(--trait-fort); }
 .dessin .ongle-dessus { stroke: var(--d-accent); stroke-width: var(--trait-normal); fill: var(--d-fond); }
 .dessin .ongle-pointe { stroke: var(--d-chaud); stroke-width: var(--trait-normal); }

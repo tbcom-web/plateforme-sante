@@ -12,7 +12,8 @@
     "./logos": "./src/logos.ts",
     "./dessins.css": "./src/dessins.css",
     "./foulee": "./src/foulee.ts",
-    "./pas": "./src/pas.ts"
+    "./pas": "./src/pas.ts",
+    "./fichiers-svg": "./src/fichiers-svg.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

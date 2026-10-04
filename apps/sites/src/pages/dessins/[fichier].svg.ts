@@ -4,35 +4,16 @@
 // (components/dessins/Dessin.astro, Empreintes.astro, gabarit/Materiel.astro) : le tracé
 // n'est plus recopié dans chaque page (HTML léger, fichier mis en cache d'une page à l'autre), et les couleurs
 // restent celles du site et de la surface, héritées à travers <use> (--dessin-*, --pression-*, accent de la gamme).
+// Styles EN LIGNE (core : fichiers-svg.ts) : WebKit (iPhone) ignore la feuille <style> d'un SVG externe référencé par <use>.
 import type { APIRoute, GetStaticPaths } from 'astro';
 import css from '@plateforme/core/dessins.css?raw';
+import { fichierSvg } from '@plateforme/core/fichiers-svg';
 import { DESSINS_PODOLOGIE, EQUIPEMENTS_DESSINES, symboleDessin, symboleEmpreintes, symboleEquipement, type NomDessin } from '@plateforme/core';
 import type { Appui } from '../../components/dessins/trame';
 
 const APPUIS: Appui[] = ['normal', 'creux', 'plat', 'avant', 'talon', 'reparti', 'enfant'];
 // Contour des empreintes : pointillés à la couleur du texte de la page
 const CSS_EMPREINTES = '.empreintes__contour{fill:none;stroke:currentColor;stroke-width:var(--pointille-leger-point);stroke-dasharray:var(--pointille);opacity:var(--pointille-leger-opacite)}';
-
-/**
- * Feuille réduite aux règles utiles au fichier : sans commentaires, sans animations ni règles d'apparition
- * (.pret, réservées au dessin posé dans la page) et sans les règles dont aucune classe n'apparaît dans le tracé.
- */
-function styleUtile(feuille: string, contenu: string): string {
-  const classes = new Set([...contenu.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(/\s+/)));
-  return feuille
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/@(?:keyframes|media)[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '')
-    .split('}')
-    .map((r) => r.trim())
-    .filter((r) => {
-      const selecteur = r.split('{')[0];
-      if (!r.includes('{') || selecteur.includes('.pret')) return false;
-      const utiles = [...selecteur.matchAll(/\.([\w-]+)/g)].map((m) => m[1]).filter((c) => c !== 'dessin');
-      return utiles.length === 0 || utiles.some((c) => classes.has(c));
-    })
-    .map((r) => `${r.replace(/\s+/g, ' ').replace(/\s*([{};:,>])\s*/g, '$1')}}`)
-    .join('');
-}
 
 export const getStaticPaths: GetStaticPaths = () => [
   ...DESSINS_PODOLOGIE.flatMap((nom) => [
@@ -47,6 +28,6 @@ export const getStaticPaths: GetStaticPaths = () => [
 ];
 
 export const GET: APIRoute = ({ props }) =>
-  new Response(`<svg xmlns="http://www.w3.org/2000/svg"><style>${styleUtile(props.style, props.contenu)}</style>${props.contenu}</svg>`, {
+  new Response(fichierSvg(props.contenu, props.style), {
     headers: { 'Content-Type': 'image/svg+xml; charset=utf-8' },
   });

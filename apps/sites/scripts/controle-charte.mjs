@@ -164,15 +164,34 @@ const anatomie = [];
   // Lecture profane : pas de pointillés sur la peau (registre pédagogique : jamais de contour en pointillés)
   for (const n of geo.DESSINS_PODOLOGIE) if (/class="pointille/.test(geo.svgDessin(n, { registre: 'pedagogique' }))) anatomie.push(`dessin « ${n} » (pédagogique) : contour en pointillés`);
 }
+// iPhone (WebKit) : la feuille <style> d'un document SVG externe référencé par <use> est ignorée. Les fichiers /dessins/*.svg portent
+// donc leurs styles en attributs (core : fichiers-svg.ts). Contrôle statique, toujours exécuté : sur les fichiers générés par le
+// dernier build (dist/dessins) s'il existe, et sur l'assemblage lui-même (un dessin de chaque famille passé par fichierSvg).
+const webkit = [];
+{
+  const sortieFs = join(tmpdir(), `controle-charte-fs-${process.pid}.mjs`);
+  await build({ stdin: { contents: "export { fichierSvg } from '@plateforme/core/fichiers-svg'; export { symboleDessin, symboleEquipement, symboleEmpreintes } from '@plateforme/core';", resolveDir: racine, loader: 'ts' }, bundle: true, format: 'esm', platform: 'node', outfile: sortieFs, logLevel: 'silent' });
+  const fs2 = await import(pathToFileURL(sortieFs).href);
+  rmSync(sortieFs, { force: true });
+  const feuille = readFileSync(join(racine, '../../packages/core/src/dessins.css'), 'utf8');
+  for (const [nom, svg] of [['talon', fs2.fichierSvg(fs2.symboleDessin('talon'), feuille)], ['materiel-podoscope', fs2.fichierSvg(fs2.symboleEquipement('podoscope'), feuille)]]) {
+    if (/<style[s>]/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : <style> (ignoré par WebKit)`);
+    if (nom === 'talon' && !/class="mono[^"]*"[^>]*style="[^"]*font-size/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : styles des étiquettes absents des attributs`);
+  }
+  const dossierDist = join(racine, 'dist/dessins');
+  let fichiersDist = [];
+  try { fichiersDist = readdirSync(dossierDist).filter((f) => f.endsWith('.svg')); } catch {}
+  for (const f of fichiersDist) if (/<style[s>]/.test(readFileSync(join(dossierDist, f), 'utf8'))) webkit.push(`dist/dessins/${f} : <style> dans un fichier référencé par <use> (ignoré par WebKit)`);
+}
 const inconnues = core.MODELES_INTEGRES.flatMap((m) => (m.gammes ?? []).filter((g) => !core.GAMMES.some((x) => x.id === g)).map((g) => `${m.id} : gamme inconnue « ${g} »`));
 
 if (defauts.length) {
   console.log(`✗ ${defauts.length} couleur(s) littérale(s) hors charte :`);
   for (const d of defauts) console.log(`  ${d}`);
 }
-for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins, ...bibliotheque, ...anatomie]) console.log(`✗ ${d}`);
-const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length;
+for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins, ...bibliotheque, ...anatomie, ...webkit]) console.log(`✗ ${d}`);
+const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length + webkit.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope).`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit).`);
 process.exit(total ? 1 : 0);
