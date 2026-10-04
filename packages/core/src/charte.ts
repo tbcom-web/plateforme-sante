@@ -183,7 +183,9 @@ export const COURBES = {
  * que les traits des dessins (TRAIT) car la marque est vue petite et sur tuile pleine : `trait.compact` et
  * `compactFin` pour le favicon, `moyen` pour l'en-tête, `normal` / `epais` (titres gras) pour la version
  * détaillée, `fin` pour les cotes, rayons et polygones ; `pointille` : épaisseur des points du contour
- * « podoscope » ; `appui` : rayon des points d'appui (talon, têtes métatarsiennes).
+ * « podoscope » ; `appui` : rayon des points d'appui (talon, têtes métatarsiennes) ; `trame.chaussure*` :
+ * pas de la trame de l'empeigne ; `profil` : aplat des os et fragments de l'épure (pied articulé) ;
+ * `rubans` : échelle, inclinaison, teinte adoucie et épaississement par niveau de la marque « Rubans ».
  */
 export const LOGO = {
   cadre: 48,
@@ -192,13 +194,26 @@ export const LOGO = {
   trait: { compact: 3, compactFin: 2, moyen: 1.7, normal: 1.1, epais: 1.4, fin: 0.7 },
   pointille: { moyen: 2.3, normal: 1.6, epais: 2 },
   appui: { grand: 2.6, moyen: 2, petit: 1.4 },
-  trame: { facteur: 2.4, facteurMoyen: 3.4, donnees: 1.8, donneesMoyen: 2.8, crantage: 1.9 },
+  trame: { facteur: 2.4, facteurMoyen: 3.4, donnees: 1.8, donneesMoyen: 2.8, crantage: 1.9, chaussure: 0.54, chaussureMoyen: 0.85 },
   marge: { tuile: 7, trait: 2, pied: 4 },
   rayonTuile: 0.6,
   rayonMax: 24,
   opaciteSecondaire: 0.45,
+  profil: { aplat: 0.28, fragment: 1.6 },
+  rubans: { echelle: 0.92, inclinaison: 38, adouci: 0.55, moyen: 1.25, compact: 1.6 },
   tailles: { horizontale: 42, empilee: 40, monogramme: 44, pied: 48 },
   nom: { taille: '1.04rem', tailleSerif: '1.32rem', tailleEmpilee: '0.98rem' },
+  /**
+   * Options typographiques du nom et de la ligne « métier · ville » (proposition, non activée : la valeur
+   * par défaut reste `courante`). Police inchangée : celle des titres du modèle pour le nom, la mono des
+   * données pour la ligne. `capitales` : nom en capitales grasses serrées, ligne en capitales très espacées ;
+   * `minuscules` : nom courant, ligne en minuscules très espacées.
+   */
+  typo: {
+    courante: { nom: { casse: 'none', interlettrage: '-0.02em' }, ligne: { casse: 'uppercase', interlettrage: 'var(--interlettrage-donnees)' } },
+    capitales: { nom: { casse: 'uppercase', interlettrage: '0.01em' }, ligne: { casse: 'uppercase', interlettrage: '0.28em' } },
+    minuscules: { nom: { casse: 'none', interlettrage: '-0.02em' }, ligne: { casse: 'lowercase', interlettrage: '0.3em' } },
+  },
 } as const;
 
 /** Mention obligatoire des représentations graphiques de données */

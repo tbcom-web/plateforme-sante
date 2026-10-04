@@ -30,10 +30,14 @@ export const MARQUES_PODOLOGIE = [
   { id: 'trajet', nom: 'Centre de pression', sens: 'Analyse du pas : trajet du centre de pression du talon au gros orteil, sur le contour du pied.' },
   { id: 'appuis', nom: 'Polygone d’appui', sens: 'Posturologie et stabilométrie : les deux pieds, le polygone d’appui et le centre de gravité, marqué d’un point.' },
   { id: 'voute', nom: 'Voûte plantaire', sens: 'Examen statique : l’arche interne vue de profil, cotée entre le sol et son sommet.' },
-  { id: 'anatomie', nom: 'Anatomie du pied', sens: 'Le squelette stylisé dans le contour de la plante : calcanéum, tarse, cinq rayons métatarsiens et phalanges, têtes métatarsiennes marquées comme zones d’appui.' },
+  { id: 'anatomie', nom: 'Pied articulé', sens: 'Le squelette du pied de profil : tibia, fibula, tarse, métatarsiens et phalanges, os en deux tons séparés par leurs articulations.' },
+  { id: 'anatomie-epure', nom: 'Pied articulé, épure', sens: 'Le pied de profil réduit à l’essentiel : quelques os en fragments posés à plat, un contour ouvert et les appuis plantaires en points.' },
+  { id: 'anatomie-plantaire', nom: 'Squelette plantaire', sens: 'Le squelette stylisé vu de dessous, dans le contour de la plante : calcanéum, tarse, cinq rayons métatarsiens et phalanges, têtes métatarsiennes marquées comme zones d’appui.' },
   { id: 'semelle-sport', nom: 'Semelle de course', sens: 'Podologie du sport : une semelle de course vue de dessous, crantage en lignes à l’avant-pied et en points au talon, renfort talon.' },
   { id: 'podoscope-data', nom: 'Relevé de pression', sens: 'Baropodométrie, version données : la plante en points colorés selon la pression (du bleu au rouge), avec une échelle graduée.' },
-  { id: 'chaussure-marathon', nom: 'Chaussure de course', sens: 'Analyse de la foulée et conseil de chaussage : une chaussure de course de profil, semelle intermédiaire et drop, deux lignes de vitesse.' },
+  { id: 'chaussure-marathon', nom: 'Chaussure de course', sens: 'Analyse de la foulée et conseil de chaussage : une chaussure de course inclinée en propulsion, semelle épaisse et fenêtre d’amorti, empeigne en trame de points.' },
+  { id: 'foulee', nom: 'Foulée', sens: 'Silhouette dynamique de la jambe et du pied, du genou au sol, zones d’appui mises en valeur sous la plante.' },
+  { id: 'rubans', nom: 'Rubans', sens: 'Lignes fluides qui suggèrent le pied et son mouvement : la voûte interne et le bord externe de la plante en pleins et déliés.' },
   { id: 'monogramme', nom: 'Monogramme', sens: 'Initiales du cabinet dans la police des titres, soulignées par une échelle de pression graduée.' },
 ] as const satisfies readonly MarqueLogo[];
 export type NomMarque = (typeof MARQUES_PODOLOGIE)[number]['id'];

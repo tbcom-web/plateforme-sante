@@ -11,7 +11,7 @@
 // Chaque marque a une version compacte, épaissie et simplifiée, lisible en 16 px (favicon).
 
 import { LOGO, NEUTRES, PLAN, POINTILLE, POLICES, TRAME } from './charte';
-import { CONTOUR, ORTEILS, OS, SEMELLE, SEMELLE_POINTS, TRAJET, largeurA } from './pied';
+import { CHAUSSURE, CONTOUR, JAMBE, ORTEILS, OS, PROFIL, RUBANS, dansPolygone, SEMELLE, SEMELLE_POINTS, TRAJET, largeurA, ruban } from './pied';
 import { trame } from './trame';
 import { ARRETS_PRESSION, PRESSION, universMetier, type MarqueLogo } from './univers';
 import { gamme } from './gammes';
@@ -154,6 +154,8 @@ type Ctx = {
   hPied: number;
   /** Côté utile (unités) */
   zone: number;
+  /** Couleur de la tuile (détails « en creux ») ; « none » au trait */
+  fond: string;
   /** Trait principal, secondaire (opacité), repère (signal), donnée de niveau v */
   p: string;
   r: string;
@@ -201,6 +203,19 @@ const segments = (s: readonly (readonly number[])[], k: number, w: number, coule
 
 const ellipse = ([cx, cy, rx, ry, a]: readonly number[], attributs: string) =>
   `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${cx} ${cy})" ${attributs}/>`;
+
+/** Pied de profil (PROFIL, repère 100 × 60) centré dans le cadre, sur la largeur d'une marque en forme de pied */
+function profil(c: Ctx) {
+  const s = c.hPied / PROFIL.largeur;
+  return { s, tr: `translate(${n(C - (PROFIL.largeur / 2) * s)} ${n(C - (PROFIL.haut + PROFIL.hauteur / 2) * s)}) scale(${n(s)})` };
+}
+
+/** Capsule (os long à bouts ronds) en contour fermé : [x1, y1, x2, y2, rayon] */
+function capsule([a, b, x, y, r]: readonly number[]): string {
+  const l = Math.hypot(x - a, y - b) || 1;
+  const [nx, ny] = [(-(y - b) / l) * r, ((x - a) / l) * r];
+  return `M${n(a + nx)} ${n(b + ny)}L${n(x + nx)} ${n(y + ny)}A${r} ${r} 0 0 0 ${n(x - nx)} ${n(y - ny)}L${n(a - nx)} ${n(b - ny)}A${r} ${r} 0 0 0 ${n(a + nx)} ${n(b + ny)}Z`;
+}
 
 const MARQUES: Record<string, (c: Ctx) => string> = {
   /** Relevé au podoscope : contour en pointillés, orteils, deux points d'appui */
@@ -282,8 +297,42 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     return solTrait + cote + arche + appuis;
   },
 
-  /** Anatomie : le squelette stylisé dans le contour (calcanéum, tarse, rayons métatarsiens, phalanges) */
+  /** Pied articulé : le squelette de profil (tibia, fibula, tarse, métatarsiens, phalanges), os en deux tons */
   anatomie(c) {
+    const { s, tr } = profil(c);
+    // Favicon : trois masses pleines (jambe, arrière-pied, avant-pied) séparées par les interlignes articulaires
+    if (c.compact) return `<g transform="${tr}"><path d="${PROFIL.masses.join(' ')}" fill="${c.p}"/></g>`;
+    // Deux tons : aplat adouci (le trait mêlé au fond) et contour franc à bouts ronds
+    const w = n((c.moyen ? T.normal : c.ep) / s);
+    const aplat = `fill="${c.p}" fill-opacity="${LOGO.profil.aplat}" stroke="${c.p}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+    const os = PROFIL.os.map((d) => `<path d="${d}" ${aplat}/>`).join('')
+      + (c.moyen ? `<path d="${PROFIL.bloc}" ${aplat}/>` : PROFIL.tarse.map((o) => ellipse(o, aplat)).join(''));
+    const rayons = (c.moyen ? PROFIL.rayons.principaux : PROFIL.rayons.os).map((r) => `<path d="${capsule(r)}" ${aplat}/>`).join('');
+    // Grand : quelques reflets discrets (repères en signal sur plan)
+    const reflets = c.moyen ? '' : `<path d="${PROFIL.reflets}" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${n(T.fin / s)}" stroke-linecap="round"/>`;
+    return `<g transform="${tr}">${os}${rayons}${reflets}</g>`;
+  },
+
+  /** Épure du pied articulé : fragments d'os posés à plat dans un contour ouvert, appuis plantaires en points */
+  'anatomie-epure'(c) {
+    const { s, tr } = profil(c);
+    const e = PROFIL.epure;
+    const frag = (f: number) => (c.compact ? T.compact : c.moyen ? T.moyen * LOGO.profil.fragment : c.ep * LOGO.profil.fragment) * f / s;
+    // Favicon : le contour et deux fragments (calcanéum, 1er métatarsien)
+    const choisis = c.compact ? [e.fragments[1], e.fragments[3]] : e.fragments;
+    const fragments = choisis.map(([a, b, x, y, f]) => `<path d="M${a} ${b}L${x} ${y}" stroke="${c.p}" stroke-width="${n(frag(f))}" stroke-linecap="round"/>`).join('');
+    const wc = (c.compact ? T.compactFin : c.moyen ? T.normal : T.fin) / s;
+    const contour = `<path d="${e.talon} ${e.dos}" fill="none" stroke="${c.compact ? c.p : c.r}" stroke-opacity="${c.compact ? 1 : c.os}" stroke-width="${n(wc)}" stroke-linecap="round"/>`;
+    if (c.compact) return `<g transform="${tr}">${contour}${fragments}</g>`;
+    // Appuis plantaires : points du podoscope, colorés par la pression en version données
+    const r = (c.moyen ? LOGO.pointille.moyen : LOGO.pointille.normal) / 2 / s;
+    const appuis = (c.moyen ? e.appuis.filter((_, i) => i % 2 === 0) : e.appuis)
+      .map(([x, v]) => `<circle cx="${x}" cy="${e.sol}" r="${n(r)}" fill="${c.d(v)}"/>`).join('');
+    return `<g transform="${tr}">${contour}${appuis}${fragments}</g>`;
+  },
+
+  /** Anatomie plantaire : le squelette vu de dessous, stylisé dans le contour (calcanéum, tarse, rayons métatarsiens, phalanges) */
+  'anatomie-plantaire'(c) {
     const { k, t } = placer(c.hPied, C, C);
     const m = OS.metatarsiens;
     // Favicon : le contour et trois rayons métatarsiens (1er, 3e, 5e), rien d'autre
@@ -360,26 +409,85 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     return `<g transform="${t}">${pointille(k, LOGO.pointille.normal, c.p, c.os)}${points}</g>${echelle}${graduations}`;
   },
 
-  /** Course à pied : chaussure de running de profil (semelle intermédiaire épaisse au talon, drop, pointe relevée) */
+  /** Course à pied : chaussure de running inclinée en propulsion (talon levé), empeigne en trame de points */
   'chaussure-marathon'(c) {
-    // Dessin dans un repère 100 × 50, pointe à droite ; la chaussure (x 14–98, lignes de vitesse dès x 2)
-    // occupe la largeur d'une marque en forme de pied
-    const [xa, xb] = c.compact ? [14, 98] : [2, 98];
-    const s = c.hPied / (xb - xa);
-    const x0 = C - ((xa + xb) / 2) * s;
-    const y0 = C - 27.5 * s;
-    const tr = `translate(${n(x0)} ${n(y0)}) scale(${n(s)})`;
-    const semelle = 'M22 41 C17 41 15 37 16 32 L19 31 C40 33 64 35 82 35 C89 35 94 33 97 31 C97 36 92 41 84 41 Z';
-    const tige = 'M19 31 C16 25 17 18 22 15 C26 17 30 18 34 16 L38 14 C50 18 66 24 80 27 C88 28.5 94 29.5 97 31';
+    const K = CHAUSSURE;
+    // Repère 100 × 50, pointe à droite, incliné autour de son centre ; largeur d'une marque en forme de pied
+    const s = c.hPied / 100;
+    const tr = `translate(${n(C - K.centre[0] * s)} ${n(C - K.centre[1] * s)}) scale(${n(s)}) rotate(${K.inclinaison} ${K.centre[0]} ${K.centre[1]})`;
+    const u = (w: number) => n(w / s);
+    // Favicon : la tige pleine et la ligne de semelle
     if (c.compact) {
-      return `<g transform="${tr}"><path d="${semelle}" fill="${c.p}"/><path d="${tige}" fill="none" stroke="${c.p}" stroke-width="${n(T.compact / s)}" stroke-linejoin="round" stroke-linecap="round"/></g>`;
+      return `<g transform="${tr}"><path d="${K.tige}" fill="${c.p}"/><path d="${K.ligne}" fill="none" stroke="${c.p}" stroke-width="${u(T.compact)}" stroke-linecap="round"/></g>`;
     }
-    const w = (c.moyen ? T.moyen : c.ep) / s;
-    // Lignes de vitesse : deux traits courts derrière le talon (pas plus)
-    const vitesse = `<path d="M3 22 H11 M6 28 H12" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${n((c.moyen ? T.normal : T.fin) / s)}" stroke-linecap="round"/>`;
-    const lacets = c.moyen ? '' : `<path d="M44 19.5 l3 -3.5 M51 22 l3 -3.5 M58 24.5 l3 -3.5" stroke="${c.p}" stroke-width="${n(T.fin / s)}" stroke-linecap="round"/>`;
-    return `<g transform="${tr}">${vitesse}<path d="${semelle}" fill="${c.d(1)}" fill-opacity="${n(c.os / 2)}" stroke="${c.p}" stroke-width="${n(w)}" stroke-linejoin="round"/>`
-      + `<path d="${tige}" fill="none" stroke="${c.p}" stroke-width="${n(w)}" stroke-linejoin="round" stroke-linecap="round"/>${lacets}</g>`;
+    // Tuile : silhouette claire, détails en creux (couleur de la tuile) ; au trait : contour monotrait arrondi
+    const plein = c.tuile;
+    const creux = plein ? c.fond : c.p;
+    const w = c.moyen ? T.moyen : c.ep;
+    const corps = plein
+      ? `fill="${c.p}" stroke="${c.fond}" stroke-width="${u(T.fin)}" stroke-linejoin="round"`
+      : `fill="${c.p}" fill-opacity="${n(LOGO.profil.aplat / 2)}" stroke="${c.p}" stroke-width="${u(w)}" stroke-linejoin="round"`;
+    const detail = (d: string, ep: number) => `<path d="${d}" fill="none" stroke="${creux}" stroke-width="${u(ep)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const fenetre = plein ? `<path d="${K.fenetre}" fill="${creux}"/>` : detail(K.fenetre, T.fin);
+    const lacets = (c.moyen ? K.lacets.slice(0, 3) : K.lacets).map(([a, b, x, y]) => `M${a} ${b}L${x} ${y}`).join('');
+    // Empeigne avant : trame hexagonale de points ; en version données, colorée du talon vers la pointe
+    const couleurX = (x: number) => (c.donnees ? c.n(Math.min(1, Math.max(0, (x - 10) / 86))) : creux);
+    const pas = TRAME.pas * (c.moyen ? LOGO.trame.chaussureMoyen : LOGO.trame.chaussure);
+    let trame = '';
+    for (let r = 0, y = 28; y <= 35; r++, y += pas * 0.866) {
+      for (let x = 62 + (r % 2 ? pas / 2 : 0); x <= 90; x += pas) {
+        if (dansPolygone(K.empeigne, x, y)) trame += `<circle cx="${n(x)}" cy="${n(y)}" r="${n(pas * TRAME.diametre.max * 0.42)}" fill="${couleurX(x)}"/>`;
+      }
+    }
+    // Crantage : encoches qui remontent du bord de la semelle ; colorées du talon vers la pointe en version données
+    const [p0, p1, p2] = K.crantage;
+    const yC = (x: number) => (x < p1[0] ? p0[1] + ((p1[1] - p0[1]) * (x - p0[0])) / (p1[0] - p0[0]) : p1[1] + ((p2[1] - p1[1]) * (x - p1[0])) / (p2[0] - p1[0]));
+    const pasC = c.moyen ? 11 : 7;
+    let crantage = '';
+    for (let x = p0[0] + pasC; x < p2[0]; x += pasC) {
+      crantage += `<path d="M${n(x)} ${n(yC(x) + 0.4)}L${n(x + 1)} ${n(yC(x) - 2.8)}" stroke="${c.donnees ? couleurX(x) : creux}" stroke-width="${u(c.moyen ? T.normal : T.fin * 1.4)}" stroke-linecap="round"/>`;
+    }
+    // Deux lignes de vitesse derrière le talon (repère signal sur plan)
+    const vitesse = `<path d="${K.vitesse}" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${u(c.moyen ? T.normal : T.fin * 1.4)}" stroke-linecap="round"/>`;
+    const renfort = c.moyen ? '' : detail(K.renfort, T.fin);
+    return `<g transform="${tr}">${vitesse}<path d="${K.semelle}" ${corps}/><path d="${K.tige}" ${corps}/>${fenetre}${renfort}`
+      + `${detail(lacets, c.moyen ? T.normal : T.fin * 1.4)}${trame}${crantage}</g>`;
+  },
+
+  /** Foulée : une jambe de profil, du genou au pied, en appui sur le sol ; zones d'appui de la plante en points */
+  foulee(c) {
+    const J = JAMBE;
+    const s = c.zone / 100;
+    const tr = `translate(${n(C - 50 * s)} ${n(C - 50 * s)}) scale(${n(s)})`;
+    const u = (w: number) => n(w / s);
+    const { y, x1, x2 } = J.sol;
+    if (c.compact) {
+      return `<g transform="${tr}"><path d="${J.silhouette}" fill="${c.p}"/><path d="M${x1 + 6} ${y + 2}H${x2 - 4}" stroke="${c.p}" stroke-width="${u(T.compactFin)}" stroke-linecap="round"/></g>`;
+    }
+    const [dx, dy, dr] = J.disque;
+    const disque = `<circle cx="${dx}" cy="${dy}" r="${dr}" fill="${c.p}" fill-opacity="${n(c.os / 3)}"/>`;
+    // Tuile : silhouette pleine ; au trait : la silhouette en contour, aplat adouci
+    const jambe = c.tuile
+      ? `<path d="${J.silhouette}" fill="${c.p}"/>`
+      : `<path d="${J.silhouette}" fill="${c.p}" fill-opacity="${LOGO.profil.aplat}" stroke="${c.p}" stroke-width="${u(c.moyen ? T.moyen : c.ep)}" stroke-linejoin="round"/>`;
+    // Sol en points du podoscope de part et d'autre du pied ; sous la plante, les zones d'appui en bandes
+    // (palette de pression en version données, sinon couleur des repères)
+    const [a0, , ] = J.appuis[0];
+    const b1 = J.appuis[J.appuis.length - 1][1];
+    const pts = c.moyen ? LOGO.pointille.moyen : LOGO.pointille.normal;
+    const sol = `<path d="M${x1} ${y}H${a0 - 6}M${b1 + 6} ${y}H${x2}" stroke="${c.r}" stroke-opacity="${POINTILLE.contour.opacite}" stroke-width="${u(pts)}" stroke-linecap="round" stroke-dasharray="0 ${u(POINTILLE.contour.ecart)}"/>`;
+    const appuis = (c.moyen ? [J.appuis[0], J.appuis[2]] : J.appuis).map(([xa, xb, v]) =>
+      `<path d="M${xa} ${y}H${xb}" stroke="${c.d(v)}" stroke-width="${u(c.moyen ? T.moyen * 1.3 : LOGO.appui.petit * 1.4)}" stroke-linecap="round"/>`).join('');
+    return `<g transform="${tr}">${disque}${sol}${jambe}${appuis}</g>`;
+  },
+
+  /** Rubans : bords de la plante (voûte interne, bord externe) et arc des orteils, en pleins et déliés */
+  rubans(c) {
+    const { t } = placer(c.hPied * LOGO.rubans.echelle, C, C);
+    const f = c.compact ? LOGO.rubans.compact : c.moyen ? LOGO.rubans.moyen : 1;
+    const couleurs = [`fill="${c.p}"`, `fill="${c.p}" fill-opacity="${c.compact ? 1 : LOGO.rubans.adouci}"`, `fill="${c.d(0.8)}"`];
+    const rubans = (c.compact ? RUBANS.slice(0, 2) : RUBANS).map((r, i) => `<path d="${ruban(r.points, r.epaisseurs, f)}" ${couleurs[i]}/>`).join('');
+    return `<g transform="rotate(${LOGO.rubans.inclinaison} ${C} ${C})"><g transform="${t}">${rubans}</g></g>`;
   },
 
   /** Initiales dans la police des titres, soulignées d'une échelle de pression graduée */
@@ -429,6 +537,7 @@ export function svgMarque(marque: string, couleurs: CouleursMarque, o: OptionsMa
     moyen,
     zone: LOGO.cadre - 2 * marge,
     hPied: LOGO.cadre - 2 * (tuile ? LOGO.marge.pied : LOGO.marge.trait),
+    fond: tuile ? (tr === 'plan' ? couleurs.plan ?? PLAN.fond : couleurs.accent) : 'none',
     p,
     r,
     d: donnees ? niveau : () => r,
