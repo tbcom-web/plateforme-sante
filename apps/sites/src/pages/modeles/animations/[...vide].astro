@@ -3,6 +3,9 @@
 import '@fontsource-variable/inter';
 import Podoscope from '../../../components/animations/Podoscope.astro';
 import Coureur from '../../../components/animations/Coureur.astro';
+import Trajectoire from '../../../components/animations/Trajectoire.astro';
+import PremiersPas from '../../../components/animations/PremiersPas.astro';
+import Semelle from '../../../components/animations/Semelle.astro';
 import { site } from '../../../lib/site';
 
 export function getStaticPaths() {
@@ -33,6 +36,18 @@ export function getStaticPaths() {
         <h1>Analyse de la foulée <span>et du geste sportif</span></h1>
         <p>Animation « coureur » : silhouette schématique en pleine course.</p>
       </div>
+    </section>
+    <section class="scene">
+      <div class="scene__anim"><Trajectoire /></div>
+      <div class="scene__texte"><p class="sur">Posture et biomécanique</p><h1>Analyse de la marche <span>et de la posture</span></h1><p>Animation « trajectoire » : le centre de pression se déplace du talon au gros orteil.</p></div>
+    </section>
+    <section class="scene scene--inverse">
+      <div class="scene__anim"><PremiersPas /></div>
+      <div class="scene__texte"><p class="sur">Podologie de l’enfant</p><h1>Premiers pas <span>et croissance</span></h1><p>Animation « premiers pas » : empreintes multicolores qui avancent.</p></div>
+    </section>
+    <section class="scene">
+      <div class="scene__anim"><Semelle /></div>
+      <div class="scene__texte"><p class="sur">Soins et prévention</p><h1>Soins de pédicurie <span>et semelles</span></h1><p>Animation « semelle » : semelles tracées en courbes de niveau.</p></div>
     </section>
     <section class="scene scene--clair">
       <div class="scene__anim"><Podoscope fond="clair" /></div>

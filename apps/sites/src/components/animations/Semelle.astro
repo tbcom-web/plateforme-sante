@@ -1,0 +1,41 @@
+---
+// Animation « semelle » (soins, prévention) : deux semelles dessinées en courbes de niveau, comme une
+// empreinte relevée, qui se tracent l'une après l'autre puis s'effacent. SVG + CSS uniquement.
+// Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
+import { CONTOUR } from './pied';
+
+interface Props { fond?: 'sombre' | 'clair' }
+const { fond = 'sombre' } = Astro.props;
+// Courbes concentriques : échelle autour du centre de la plante (47, 125) et couleur.
+const niveaux = [1, 0.82, 0.64, 0.47, 0.3].map((e, k) => ({ e, k, couleur: ['#7fd6e8', '#7fe0b5', '#d8e86f', '#f6b24d', '#ee6a5f'][k] }));
+const pieds = [
+  { transform: 'translate(176 36) scale(-1 1)', j: 0 },
+  { transform: 'translate(224 36)', j: 1 },
+];
+---
+<svg class:list={['semelle', `semelle--${fond}`]} viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  {pieds.map((p) => (
+    <g transform={p.transform}>
+      {niveaux.map((n) => (
+        <path
+          class="niveau"
+          d={CONTOUR}
+          pathLength="1"
+          transform={`translate(${47 * (1 - n.e)} ${125 * (1 - n.e)}) scale(${n.e})`}
+          style={`--k:${n.k};--j:${p.j};stroke:${n.couleur};stroke-width:${2.2 / n.e}`}
+        />
+      ))}
+    </g>
+  ))}
+</svg>
+
+<style>
+  .semelle { display: block; width: 100%; height: 100%; --cycle: 5s; }
+  .semelle--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
+  .niveau { fill: none; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1;
+    animation: niveau var(--cycle) ease-in-out infinite; animation-delay: calc(var(--j) * 0.5s + var(--k) * 0.22s); }
+  @keyframes niveau { 0% { stroke-dashoffset: 1; opacity: 1; } 35% { stroke-dashoffset: 0; } 75% { stroke-dashoffset: 0; opacity: 1; } 95%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .niveau { animation: none; stroke-dashoffset: 0; }
+  }
+</style>

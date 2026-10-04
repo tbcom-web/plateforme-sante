@@ -1,0 +1,45 @@
+---
+// Animation « premiers pas » (enfant) : petites empreintes multicolores qui apparaissent une à une
+// le long d'un chemin, puis s'effacent. SVG + CSS uniquement.
+// Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
+interface Props { fond?: 'sombre' | 'clair' }
+const { fond = 'sombre' } = Astro.props;
+const couleurs = ['#7fd6e8', '#7fe0b5', '#d8e86f', '#f6b24d', '#ee6a5f', '#c79bf2'];
+// Chemin en légère courbe, du bas à gauche vers le haut à droite ; pieds gauche et droit en alternance.
+const pas = Array.from({ length: 7 }, (_, i) => {
+  const t = i / 6;
+  const x = 70 + t * 250;
+  const y = 262 - t * 210 - Math.sin(t * Math.PI) * 26;
+  // Orientation = direction du chemin (dérivée de x et y), mesurée depuis la verticale.
+  const angle = (Math.atan2(250, 210 + Math.cos(t * Math.PI) * 26 * Math.PI) * 180) / Math.PI;
+  const gauche = i % 2 === 0;
+  const dx = gauche ? -22 : 22;
+  return { i, x: x + dx * Math.cos((angle * Math.PI) / 180), y: y + dx * Math.sin((angle * Math.PI) / 180), angle, gauche, couleur: couleurs[i % couleurs.length] };
+});
+---
+<svg class:list={['pas', `pas--${fond}`]} viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  {pas.map((p) => (
+    <g transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${p.angle.toFixed(1)}) scale(${p.gauche ? -1.8 : 1.8} 1.8)`}>
+      <g class="empreinte" style={`--i:${p.i};fill:${p.couleur}`}>
+        <ellipse cx="0" cy="-3" rx="7.5" ry="9" />
+        <ellipse cx="0.8" cy="10" rx="5.2" ry="6.2" />
+        <circle cx="-4.6" cy="-15" r="2.6" />
+        <circle cx="-0.6" cy="-16.6" r="2" />
+        <circle cx="2.8" cy="-15.6" r="1.8" />
+        <circle cx="5.6" cy="-13.4" r="1.6" />
+        <circle cx="7.6" cy="-10.6" r="1.4" />
+      </g>
+    </g>
+  ))}
+</svg>
+
+<style>
+  .pas { display: block; width: 100%; height: 100%; --cycle: 6s; }
+  .pas--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
+  .empreinte { opacity: 0; transform: scale(0.4); transform-box: fill-box; transform-origin: center;
+    animation: pas var(--cycle) cubic-bezier(.2,.8,.3,1.2) infinite; animation-delay: calc(var(--i) * 0.42s); }
+  @keyframes pas { 0% { opacity: 0; transform: scale(0.4); } 6% { opacity: 1; transform: scale(1); } 62% { opacity: 1; transform: scale(1); } 80%, 100% { opacity: 0; transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .empreinte { animation: none; opacity: 1; transform: none; }
+  }
+</style>

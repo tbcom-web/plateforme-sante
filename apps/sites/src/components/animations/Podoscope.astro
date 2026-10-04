@@ -18,8 +18,9 @@ const { fond = 'sombre' } = Astro.props;
     // Médio-pied : appui sur le bord externe seulement, la voûte (côté gros orteil) reste creuse.
     const k = Math.sin(((y - 0.42) / 0.36) * Math.PI);
     const voute = y > 0.42 && y < 0.78 && x > 0.3 + 0.3 * k && x < 0.8 - 0.04 * k;
-    const avant = ell(0.52, 0.36, 0.36, 0.16);
-    const orteils = [ell(0.3, 0.12, 0.1, 0.09), ell(0.47, 0.1, 0.07, 0.065), ell(0.6, 0.13, 0.06, 0.06), ell(0.71, 0.17, 0.055, 0.055), ell(0.8, 0.23, 0.05, 0.05)].some(Boolean);
+    const avant = ell(0.52, 0.39, 0.36, 0.15);
+    // Orteils séparés de l'avant-pied par une ligne sans appui (comme sur un vrai podoscope).
+    const orteils = [ell(0.28, 0.1, 0.11, 0.085), ell(0.47, 0.08, 0.065, 0.06), ell(0.6, 0.11, 0.055, 0.055), ell(0.71, 0.16, 0.05, 0.05), ell(0.8, 0.22, 0.045, 0.045)].some(Boolean);
     return talon || voute || avant || orteils;
   }
   // Zone principale d'appui : 0 talon, 1 avant-pied, 2 orteils.

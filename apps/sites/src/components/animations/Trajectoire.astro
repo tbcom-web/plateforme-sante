@@ -1,0 +1,52 @@
+---
+// Animation « trajectoire » (posture, biomécanique) : contours des deux pieds, le centre de pression
+// se dessine du talon au gros orteil, pied après pied, avec des zones d'appui qui s'allument.
+// SVG + CSS uniquement. Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
+import { CONTOUR, ORTEILS, TRAJET } from './pied';
+
+interface Props { fond?: 'sombre' | 'clair' }
+const { fond = 'sombre' } = Astro.props;
+const pieds = [
+  { cote: 'gauche', transform: 'translate(178 40) scale(-1 1)', delai: 0 },
+  { cote: 'droit', transform: 'translate(222 40)', delai: 1 },
+];
+---
+<svg class:list={['trajectoire', `trajectoire--${fond}`]} viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+  {pieds.map((p) => (
+    <g transform={p.transform} style={`--j:${p.delai}`}>
+      <path class="contour" d={CONTOUR} />
+      {ORTEILS.map(([cx, cy, rx, ry]) => <ellipse class="contour" cx={cx} cy={cy} rx={rx} ry={ry} />)}
+      <circle class="appui appui--talon" cx="47" cy="196" r="17" />
+      <circle class="appui appui--externe" cx="62" cy="135" r="12" />
+      <circle class="appui appui--avant" cx="36" cy="62" r="16" />
+      <circle class="appui appui--orteil" cx="26" cy="12" r="9" />
+      <path class="trajet" d={TRAJET} pathLength="1" />
+      <circle class="point" r="5" style={`offset-path: path('${TRAJET}')`} />
+    </g>
+  ))}
+</svg>
+
+<style>
+  .trajectoire { display: block; width: 100%; height: 100%; --c: var(--accent-pale, #8fe3cf); --cycle: 3.2s; }
+  .trajectoire--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
+  .contour { fill: none; stroke: var(--c); stroke-width: 1.6; opacity: 0.55; }
+  .trajet { fill: none; stroke: #ffd166; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1;
+    animation: trace var(--cycle) ease-in-out infinite; animation-delay: calc(var(--j) * var(--cycle) / 2); }
+  .point { fill: #fff; filter: drop-shadow(0 0 6px #ffd166); offset-distance: 0%; opacity: 0;
+    animation: avance var(--cycle) ease-in-out infinite; animation-delay: calc(var(--j) * var(--cycle) / 2); }
+  .appui { opacity: 0; animation: appui var(--cycle) ease-in-out infinite; }
+  .appui--talon { fill: #e8505b; animation-delay: calc(var(--j) * var(--cycle) / 2); }
+  .appui--externe { fill: #f6a04d; animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.1); }
+  .appui--avant { fill: #e8505b; animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.2); }
+  .appui--orteil { fill: #f6a04d; animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.3); }
+
+  @keyframes trace { 0% { stroke-dashoffset: 1; opacity: 1; } 45% { stroke-dashoffset: 0; opacity: 1; } 80% { stroke-dashoffset: 0; opacity: 0; } 100% { stroke-dashoffset: 1; opacity: 0; } }
+  @keyframes avance { 0% { offset-distance: 0%; opacity: 1; } 45% { offset-distance: 100%; opacity: 1; } 55%, 100% { offset-distance: 100%; opacity: 0; } }
+  @keyframes appui { 0% { opacity: 0; } 10% { opacity: 0.55; } 30% { opacity: 0.15; } 100% { opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trajectoire * { animation: none !important; }
+    .trajet { stroke-dashoffset: 0; }
+    .appui { opacity: 0.3; }
+  }
+</style>
