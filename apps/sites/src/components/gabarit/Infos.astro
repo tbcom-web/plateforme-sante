@@ -2,18 +2,13 @@
 // Informations pratiques : seules les tuiles renseignées sont affichées (jamais de tuile vide).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
-import { lieu, telLien, itineraire, horairesRegroupes, libelleJours, rdvEnLigne, TYPES_LIEU } from '../../lib/textes';
+import { lieu, telLien, itineraire, rdvEnLigne, TYPES_LIEU } from '../../lib/textes';
 
-const horaires = horairesRegroupes();
-const ouvert = lieu.horaires.some((h) => /\d/.test(h.heures));
-// Plages horaires en heures décimales, pour la frise graphique (aria-hidden : le texte reste la référence).
-const plages = (heures: string) =>
-  [...heures.matchAll(/(\d{1,2})\s*h\s*(\d{2})?\s*[–—-]\s*(\d{1,2})\s*h\s*(\d{2})?/g)].map((r) => [+r[1] + (+(r[2] ?? 0)) / 60, +r[3] + (+(r[4] ?? 0)) / 60]);
-const toutes = horaires.flatMap((h) => plages(h.heures)).flat();
-const debut = toutes.length ? Math.min(8, Math.floor(Math.min(...toutes))) : 8;
-const fin = toutes.length ? Math.max(20, Math.ceil(Math.max(...toutes))) : 20;
-const pos = (h: number) => `${(((h - debut) / (fin - debut)) * 100).toFixed(2)}%`;
-const reperes = Array.from({ length: Math.floor((fin - debut) / 4) + 1 }, (_, k) => debut + k * 4).filter((h) => h <= fin);
+// Horaires jour par jour, en clair (jours fermés en retrait, jour courant mis en évidence par le script).
+const horaires = lieu.horaires;
+const ouvert = horaires.some((h) => /\d/.test(h.heures));
+// Plages d'un jour (« 9h00–12h30, 14h00–19h00 » → deux lignes) ; vide = fermé.
+const plagesDuJour = (heures: string) => (/\d/.test(heures) ? heures.split(/\s*,\s*/) : []);
 const acces = [
   site.accesDetail.parking,
   site.accesDetail.pmr ? 'Accès facile pour les personnes à mobilité réduite' : '',
@@ -25,21 +20,17 @@ const acces = [
   {ouvert && (
     <div class="info info--horaires">
       <h3><Icone nom="lucide:clock" />Horaires</h3>
-      <div class="frise__ligne frise__ligne--axe" aria-hidden="true"><span></span><span class="frise__axe mono">{reperes.map((h) => <span style={`left:${pos(h)}`}>{h}h</span>)}</span></div>
-      <dl class="frise">
-        {horaires.map((h) => (
-          <div class="frise__ligne">
-            <dt>{libelleJours(h.jours)}</dt>
-            <dd>
-              <span class="frise__piste" aria-hidden="true">
-                {reperes.map((r) => <i class="frise__repere" style={`left:${pos(r)}`}></i>)}
-                {plages(h.heures).map(([a, b]) => <b style={`left:${pos(a)};width:calc(${pos(b)} - ${pos(a)})`}></b>)}
-              </span>
-              <span class="frise__heures">{h.heures}</span>
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <table class="horaires">
+        <tbody>
+          {horaires.map((h, i) => (
+            <tr class:list={{ ferme: plagesDuJour(h.heures).length === 0 }} data-jour={(i + 1) % 7}>
+              <th scope="row">{h.jour}</th>
+              <td>{plagesDuJour(h.heures).length ? plagesDuJour(h.heures).map((p) => <span>{p}</span>) : 'Fermé'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach((l) => l.classList.add('aujourdhui'));</script>
     </div>
   )}
   <div class="info">
@@ -85,24 +76,19 @@ const acces = [
 <style>
   .infos { display: grid; gap: 0 28px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); counter-reset: info; }
   .info { padding: 18px 0 22px; border-top: var(--filet-fort) solid var(--encre); }
-  .info--horaires { grid-column: 1 / -1; }
   h3 { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; margin-bottom: 12px; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; }
   h3::after { counter-increment: info; content: counter(info, decimal-leading-zero); margin-left: auto; font-family: var(--police-mono); font-size: 0.7rem; font-weight: 450; color: var(--encre-pale); }
   h3 :global(.icone) { color: var(--accent-vif); font-size: 1.15rem; }
   p { margin: 0 0 8px; color: var(--encre-douce); font-size: 0.95rem; }
   ul { margin: 0; padding-left: 1.1em; color: var(--encre-douce); font-size: 0.95rem; }
-  /* Frise des horaires : une piste par groupe de jours, plages d'ouverture en barres */
-  .frise { display: grid; gap: 0; margin: 0; }
-  .frise__ligne { display: grid; grid-template-columns: minmax(9em, 0.42fr) minmax(0, 1fr); align-items: center; column-gap: 18px; row-gap: 2px; padding: 9px 0; border-bottom: var(--filet) solid var(--ligne); font-size: 0.92rem; }
-  .frise__ligne--axe { padding: 0 0 4px; border-bottom: 0; }
-  .frise__axe { position: relative; height: 16px; color: var(--encre-pale); font-size: 0.64rem; }
-  .frise__axe span { position: absolute; translate: -50% 0; }
-  dt { grid-column: 1; grid-row: 1; font-weight: 600; }
-  dd { display: contents; }
-  .frise__heures { grid-column: 1; grid-row: 2; color: var(--encre-douce); font-family: var(--police-mono); font-size: 0.7rem; letter-spacing: 0.01em; }
-  .frise__piste { grid-column: 2; grid-row: 1 / span 2; position: relative; height: 10px; border-radius: 2px; background: color-mix(in srgb, var(--encre) 6%, transparent); }
-  .frise__piste b { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, var(--accent-vif), color-mix(in srgb, var(--accent-vif), var(--blanc) 25%)); }
-  .frise__repere { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ligne); }
+  /* Horaires : tableau simple, une ligne par jour */
+  .horaires { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  .horaires th, .horaires td { padding: 7px 0; border-bottom: var(--filet) solid var(--ligne); text-align: left; vertical-align: top; }
+  .horaires th { font-weight: 600; width: 40%; padding-right: 12px; }
+  .horaires td { color: var(--encre-douce); font-variant-numeric: tabular-nums; }
+  .horaires td span { display: block; white-space: nowrap; }
+  .horaires .ferme th, .horaires .ferme td { color: var(--encre-pale); font-weight: 400; }
+  .horaires .aujourdhui th, .horaires .aujourdhui td { color: var(--accent-vif); font-weight: 650; }
   .pastilles { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .pastilles li { padding: 5px 12px; border-radius: 999px; box-shadow: inset 0 0 0 var(--filet) var(--ligne); font-size: 0.85rem; color: var(--encre); }
   .communes { margin-top: 20px; padding-top: 16px; border-top: var(--filet) solid var(--ligne); font-size: 0.9rem; }
