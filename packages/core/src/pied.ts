@@ -193,16 +193,22 @@ export const ORTEILS: [number, number, number, number, number][] = EZ_PIED.ortei
  * baropodométrie, trame de pression) : jamais posée sur la peau.
  */
 /**
- * Empreinte corrigée (revue du 2026-10-04, correctif 2) : la trace de POD-SC-0007 mesure 0,33 × L à l'avant-pied et 0,76 × avant-pied
- * au talon ; elle est ramenée aux proportions de référence (avant-pied ≈ 0,37 × L, talon ≈ 0,62 × avant-pied) par un simple
- * étirement horizontal autour de l'axe du pied (avant-pied élargi, talon resserré), sans redessin. Contrôlé par controle:charte.
+ * Empreinte corrigée (revue du 2026-10-04, correctif 2 ; contre-revue N3) : la trace de POD-SC-0007 mesure 0,33 × L à l'avant-pied et
+ * 0,76 × avant-pied au talon ; elle est ramenée aux proportions de référence (avant-pied ≈ 0,37 × L, talon ≈ 0,62 × avant-pied) par
+ * un étirement horizontal limité à la bande des têtes (y < 76) et au talon, puis bornée à 1,5 u à l'intérieur du contour du pied
+ * réel (jamais de débord). Contrôlé par controle:charte (proportions, empreinte dans le pied).
  */
-const ETIREMENT_EMPREINTE = { avant: 1.128, talon: 0.924, axe: 48 };
+const ETIREMENT_EMPREINTE = { avant: 1.2, talon: 0.924, axe: 48, marge: 1.5 };
 const etirerEmpreinte = (x: number, y: number): P => {
-  const { avant, talon, axe } = ETIREMENT_EMPREINTE;
-  const t = Math.max(0, Math.min(1, (y - 105) / 55));
-  const k = avant + (talon - avant) * (t * t * (3 - 2 * t));
-  return [axe + (x - axe) * k, y];
+  const { avant, talon, axe, marge } = ETIREMENT_EMPREINTE;
+  // Avant-pied (bande sous les têtes, y < 76) élargi ; bord externe (76–150) inchangé ; talon resserré
+  const kAvant = 1 + (avant - 1) * (1 - Math.max(0, Math.min(1, (y - 72) / 8)));
+  const kTalon = 1 + (talon - 1) * Math.max(0, Math.min(1, (y - 150) / 25));
+  let nx = axe + (x - axe) * (y < 110 ? kAvant : kTalon);
+  // Bornée dans le contour du pied réel (marge de 1,5 u) : l'empreinte ne déborde jamais du pied
+  const l = largeurA(PLANTE, y);
+  if (l) nx = Math.max(l[0] + marge, Math.min(l[1] - marge, nx));
+  return [nx, y];
 };
 export const EMPREINTE = {
   contour: deformerChemin(EZ_EMPREINTE.contour, etirerEmpreinte),
@@ -212,6 +218,44 @@ export const EMPREINTE = {
   /** Tracé complet (trace + pulpes en ellipses) */
   trace: `${deformerChemin(EZ_EMPREINTE.contour, etirerEmpreinte)} ${EZ_EMPREINTE.pulpes.map(([cx, cy, rx, ry]) => `M${r2(cx - rx)},${cy} A${rx},${ry} 0 1 0 ${r2(cx + rx)},${cy} A${rx},${ry} 0 1 0 ${r2(cx - rx)},${cy} Z`).join(' ')}`,
 };
+/** Lissage d'un polygone fermé (Chaikin, `passes` coupes de coins) */
+export function chaikin(poly: P[], passes = 3): P[] {
+  let p = poly;
+  for (let k = 0; k < passes; k++) p = p.flatMap((a, i) => { const b = p[(i + 1) % p.length]; return [[0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]] as P[]; });
+  return p.map(([x, y]) => [r2(x), r2(y)] as P);
+}
+/** Partie d'un polygone comprise entre deux horizontales (Sutherland–Hodgman) */
+function entre(poly: P[], yMin: number, yMax: number): P[] {
+  const couper = (pts: P[], garde: (p: P) => boolean, y: number) => {
+    const out: P[] = [];
+    pts.forEach((a, i) => {
+      const b = pts[(i + 1) % pts.length];
+      if (garde(a)) out.push(a);
+      if (garde(a) !== garde(b)) out.push([a[0] + ((y - a[1]) / (b[1] - a[1])) * (b[0] - a[0]), y]);
+    });
+    return out;
+  };
+  return couper(couper(poly, (p) => p[1] >= yMin, yMin), (p) => p[1] <= yMax, yMax);
+}
+/**
+ * Empreintes des trois types de voûte, DÉRIVÉES de EMPREINTE (contre-revue N2 : jamais d'iso-lignes « Paint ») : normale = la trace ;
+ * creuse = la trace sans la bande externe entre l'avant-pied et le talon (extrémités arrondies) ; plate = la trace comblée au bord
+ * médial par une courbe convexe (voûte au sol). Zones fortes : ellipses sous le talon et les têtes métatarsiennes.
+ */
+export const EMPREINTES = (() => {
+  const poly = (EZ_EMPREINTE.polygone as P[]).map(([x, y]) => etirerEmpreinte(x, y).map(r2) as P);
+  const creux = [entre(poly, 0, 104), entre(poly, 162, 230)].map((p) => polyligne(chaikin(p, 3), true)).join(' ');
+  const pl = (y: number) => largeurA(PLANTE, y) ?? [48, 48];
+  const [ya, yb] = [84, 196];
+  const xm = (y: number) => { const t = (y - ya) / (yb - ya); return pl(ya)[0] + 2.5 + (pl(yb)[0] + 2.5 - pl(ya)[0] - 2.5) * t - 4 * Math.sin(Math.PI * t); };
+  const plat = chaikin(poly.map(([x, y]) => { const l = largeurA(poly, y); return y > ya && y < yb && l && x < l[1] - 7 ? [Math.max(pl(y)[0] + 1.5, xm(y)), y] as P : [x, y] as P; }), 3);
+  return {
+    normal: { contour: polyligne(chaikin(poly, 1), true), fort: [[48, 199, 12, 13], [21, 72, 8, 6.5], [45, 72, 9, 6]] as [number, number, number, number][] },
+    creux: { contour: creux, fort: [[48, 200, 11, 12], [21, 72, 9, 7], [79, 89, 4.5, 5]] as [number, number, number, number][] },
+    plat: { contour: polyligne(plat, true), fort: [[48, 197, 13, 14], [44, 74, 17, 8], [34, 140, 9, 20]] as [number, number, number, number][] },
+    avant: { contour: polyligne(chaikin(poly, 1), true), fort: [[21, 72, 10, 8], [42, 71, 8, 6.5]] as [number, number, number, number][] },
+  };
+})();
 /** Le point est-il dans une pulpe d'orteil de l'empreinte ? */
 export const dansPulpe = (x: number, y: number) => EMPREINTE.pulpes.some(([cx, cy, rx, ry]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1);
 /** Le point est-il dans la zone de contact (trace d'appui ou pulpe) ? */
@@ -295,7 +339,43 @@ export const OS = {
  */
 export const SOL_PROFIL = 62;
 export type Voute = 'normale' | 'creuse' | 'plate';
-const OS_PROFIL = EZ_PROFIL.os;
+/**
+ * Squelette du profil corrigé (contre-revue de l'illustrateur médical, N6), à partir de POD-AT-0008 :
+ *  - pente du calcanéum ≈ 18–20° (au lieu de ≈ 6°) : l'avant du calcanéum (calcanéo-cuboïdienne) remonte de ≈ 1,3 cm, la partie
+ *    postérieure est raccourcie de 8 % ; la colonne médiale et la jambe suivent (même déformation que l'arche) ;
+ *  - interlignes resserrés (naviculaire et cunéiforme compactés) et M1 allongé vers l'arrière : base à ≈ 0,53 L du talon, tête inchangée ;
+ *  - fibula avancée de ≈ 1 cm (≈ 2 cm derrière la malléole médiale) ;
+ *  - M2 et les 3 phalanges du 2e orteil ajoutés en arrière-plan (un orteil sans os à côté d'un hallux osseux se lit « orteil vide »).
+ */
+const PENTE = { haut: 6.5, debut: 6, sommet: 48, fin: 90 };
+const leveeCalcaneum = (x: number) => (x <= PENTE.debut || x >= PENTE.fin ? 0 : x < PENTE.sommet ? PENTE.haut * Math.sin(((x - PENTE.debut) / (PENTE.sommet - PENTE.debut)) * (Math.PI / 2)) : PENTE.haut * Math.cos(((x - PENTE.sommet) / (PENTE.fin - PENTE.sommet)) * (Math.PI / 2)) ** 1.2);
+const LEVEE_JAMBE = leveeCalcaneum(36);
+const lever = (jambe = false) => (x: number, y: number): P => [x, y - (jambe ? LEVEE_JAMBE : leveeCalcaneum(x))];
+const raccourcirCalcaneum = (x: number, y: number): P => [x < 44 ? 44 - (44 - x) * 0.92 : x, y];
+const compacter = (x: number, y: number): P => [x > 50 ? 50 + (x - 50) * 0.66 : x, y];
+const allongerM1 = (x: number, y: number): P => [x < 84 ? 84 - (84 - x) * 1.645 : x, y];
+const deplacer = (dx: number, dy: number) => (x: number, y: number): P => [x + dx, y + dy];
+const def = (d: string, ...fs: ((x: number, y: number) => P)[]) => fs.reduce((acc, f) => deformerChemin(acc, f), d);
+const EZ_OS = EZ_PROFIL.os;
+const M1_CORRIGE = def(EZ_OS.metatarsien1, allongerM1, lever());
+/** Capsule (os long à bouts ronds) entre a et b, demi-largeur r : polygone (pas d'arc, pour rester déformable) */
+const capsule = (a: P, b: P, r: number) => {
+  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+  const bout = (c: P, a0: number) => Array.from({ length: 7 }, (_, k) => { const t = a0 + (k / 6) * Math.PI; return [r2(c[0] + r * Math.cos(t)), r2(c[1] + r * Math.sin(t))] as P; });
+  return polyligne([...bout(b, ang - Math.PI / 2), ...bout(a, ang + Math.PI / 2)], true);
+};
+const OS_PROFIL = {
+  ...EZ_OS,
+  tibia: def(EZ_OS.tibia, lever(true)), tibiaTrait: def(EZ_OS.tibiaTrait, lever(true)),
+  fibula: def(EZ_OS.fibula, deplacer(3, 0), lever(true)), fibulaTrait: def(EZ_OS.fibulaTrait, deplacer(3, 0), lever(true)),
+  talus: def(EZ_OS.talus, lever(true)),
+  calcaneus: def(EZ_OS.calcaneus, raccourcirCalcaneum, lever()), calcaneusEpine: def(EZ_OS.calcaneusEpine, raccourcirCalcaneum, lever()),
+  naviculaire: def(EZ_OS.naviculaire, compacter, lever()), cuneiforme1: def(EZ_OS.cuneiforme1, compacter, lever()),
+  metatarsien1: M1_CORRIGE,
+  /** Arrière-plan : M2 (plus long que M1, un peu plus haut) et les 3 phalanges du 2e orteil */
+  metatarsien2: def(M1_CORRIGE, deplacer(3.6, -2.4)),
+  orteil2: [capsule([96.4, 48.8], [103.2, 48.2], 1.5), capsule([105, 48.4], [109.2, 49.2], 1.3), capsule([110.8, 49.8], [115.2, 51.4], 1.15)],
+};
 
 /** Déformation de l'arche (voûte normale, creuse, plate) : bosse entre l'appui du talon et la tête de M1 */
 const ARCHE = { debut: 16, fin: 80 };
@@ -338,6 +418,8 @@ export function piedDeProfil(voute: Voute = 'normale') {
      */
     os: [
       { nom: 'fibula', d: os(O.fibula), trait: os(O.fibulaTrait), ton: 1 },
+      { nom: 'metatarsien2', d: os(O.metatarsien2), trait: os(O.metatarsien2), ton: 1 },
+      ...O.orteil2.map((d, i) => ({ nom: `orteil2-${i + 1}`, d: os(d), trait: os(d), ton: 1 })),
       { nom: 'tibia', d: os(O.tibia), trait: os(O.tibiaTrait), ton: 0 },
       ...(['talus', 'calcaneus', 'naviculaire', 'cuneiforme1', 'metatarsien1'] as const).map((n) => ({ nom: n, d: os(O[n]), trait: os(O[n]), ton: 0 })),
       ...O.phalanges1.map((d, i) => ({ nom: `phalange${i + 1}`, d: os(d), trait: os(d), ton: 0 })),
@@ -395,7 +477,9 @@ export const PROFIL = {
     /** Appuis sur le sol : [x, niveau de pression 0–1] (talon, têtes métatarsiennes, pulpe de l'hallux ; rien sous l'arche) */
     appuis: [[6, 0.75], [12, 1], [18, 0.75], [77, 0.6], [83, 1], [89, 0.7], [111, 0.45], [117, 0.8]] as [number, number][],
     sol: SOL_PROFIL + 1.5,
-    os: [OS_LOGO.tibia.trait, OS_LOGO.fibula.trait, OS_LOGO.talus.trait, OS_LOGO.calcaneus.trait, OS_LOGO.naviculaire.trait, OS_LOGO.cuneiforme1.trait, OS_LOGO.metatarsien1.trait, ...OS_PROFIL.phalanges1],
+    /** Fibula (latérale) en arrière-plan, plus pâle */
+    arriere: [OS_LOGO.fibula.trait],
+    os: [OS_LOGO.tibia.trait, OS_LOGO.talus.trait, OS_LOGO.calcaneus.trait, OS_LOGO.naviculaire.trait, OS_LOGO.cuneiforme1.trait, OS_LOGO.metatarsien1.trait, ...OS_PROFIL.phalanges1],
     principaux: [OS_LOGO.tibia.trait, OS_LOGO.talus.trait, OS_LOGO.calcaneus.trait, OS_LOGO.metatarsien1.trait, ...OS_PROFIL.phalanges1],
     compact: [OS_LOGO.talus.plein, OS_LOGO.calcaneus.plein, OS_LOGO.naviculaire.plein, OS_LOGO.cuneiforme1.plein, OS_LOGO.metatarsien1.plein, ...OS_PROFIL.phalanges1],
   },

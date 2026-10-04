@@ -295,7 +295,7 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
       ...ORTEILS.map(([x, y, , ry]) => ({ p: g.pt(x, y - ry), k: 0 })), ...ORTEILS.map(([x, y, , ry]) => ({ p: d.pt(x, y - ry), k: 1 }))];
     const env = enveloppe(pts);
     const ponts = env.map((q, i) => [q, env[(i + 1) % env.length]] as const).filter(([u, v]) => u.k !== v.k).map(([u, v]) => `M${u.p.join(' ')} L${v.p.join(' ')}`).join(' ');
-    const poly = `<path d="${ponts}" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${T.fin}" stroke-dasharray="${POINTILLE.tiretCourt}"/>`;
+    const poly = `<path d="${ponts}" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${T.fin}"/>`; // trait continu fin, jamais de tirets
     // Centre de gravité : un simple point de donnée (aucune croix ni mire : motif exclu de la charte)
     const centre = `<circle cx="${n(C)}" cy="${n(C + c.zone * 0.08)}" r="${LOGO.appui.moyen}" fill="${c.d(1)}"/>`;
     return pied(g) + pied(d) + (c.moyen ? '' : poly) + centre;
@@ -344,7 +344,7 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     if (c.compact) return `<g transform="${tr}">${contour}${reduit(`<path d="${e.compact.join(' ')}" fill="${c.p}"/>`)}</g>`;
     // Os au trait seul, sans aplat : la colonne interne (tibia, talus, calcanéum, tarse, 1er rayon)
     const w = n((c.moyen ? T.normal : c.epais ? LOGO.profil.traitEpais : LOGO.profil.trait) / s / k);
-    const os = `<path d="${(c.moyen ? e.principaux : e.os).join(' ')}" fill="none" stroke="${c.p}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const os = `<path d="${e.arriere.join(' ')}" fill="none" stroke="${c.p}" stroke-opacity="${c.os}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/><path d="${(c.moyen ? e.principaux : e.os).join(' ')}" fill="none" stroke="${c.p}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
     // Appuis plantaires : points du podoscope, colorés par la pression en version données
     const r = (c.moyen ? LOGO.pointille.moyen : LOGO.pointille.normal) / 2 / s;
     const appuis = (c.moyen ? e.appuis.filter((_, i) => i % 2 === 0) : e.appuis)
@@ -494,7 +494,7 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     const jambe = c.tuile
       ? `<path d="${J.silhouette}" fill="${c.p}"/>`
       : `<path d="${J.silhouette}" fill="${c.p}" fill-opacity="${LOGO.profil.aplat}" stroke="${c.p}" stroke-width="${u(w)}" stroke-linejoin="round" stroke-linecap="round"/>`;
-    const details = c.moyen ? '' : `<path d="${J.details}" fill="none" stroke="${c.tuile ? c.fond : c.p}" stroke-opacity="${c.tuile ? 1 : c.os}" stroke-width="${u(T.fin)}" stroke-linecap="round"/>`;
+    const details = ''; // pas d'arc de malléole (lu « crochet » : contre-revue N6)
     // Sol en points du podoscope de part et d'autre des appuis ; sous la plante, les zones d'appui en bandes
     // (palette de pression en version données, sinon couleur des repères)
     const pts = c.moyen ? LOGO.pointille.moyen : LOGO.pointille.normal;

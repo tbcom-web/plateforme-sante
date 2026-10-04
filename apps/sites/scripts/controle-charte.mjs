@@ -114,7 +114,7 @@ const bibliotheque = [
 // Géométries partagées (packages/core/src/pied.ts, foulee.ts, pas.ts) chargées à part (sous-chemins du core).
 const sortieGeo = join(tmpdir(), `controle-charte-geo-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { PLANTE, EMPREINTE, SEMELLE_POINTS, SEMELLE_ELEMENTS, CONTOUR_PIED, piedDeProfil, largeurA, echantillonner, TRAJET_POINTS } from '@plateforme/core/pied'; export { poseCoureur, APPUI } from '@plateforme/core/foulee'; export { pressionPas, APPUI_MARCHE } from '@plateforme/core/pas'; export { SITES_MONOFILAMENT, svgDessin, DESSINS_PODOLOGIE, svgAnimationFixe } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { PLANTE, EMPREINTE, dansPolygone, SEMELLE_POINTS, SEMELLE_ELEMENTS, CONTOUR_PIED, piedDeProfil, largeurA, echantillonner, TRAJET_POINTS } from '@plateforme/core/pied'; export { poseCoureur, APPUI } from '@plateforme/core/foulee'; export { pressionPas, APPUI_MARCHE } from '@plateforme/core/pas'; export { SITES_MONOFILAMENT, svgDessin, DESSINS_PODOLOGIE, svgAnimationFixe } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortieGeo, logLevel: 'silent',
 });
 const geo = await import(pathToFileURL(sortieGeo).href);
@@ -159,6 +159,29 @@ const anatomie = [];
   const q = geo.poseCoureur(0, 100);
   if (!(q.brasGauche.main.x > q.brasDroit.main.x)) anatomie.push('coureur : bras du même côté que la jambe en avant');
   if (Math.abs(Math.max(q.droite.talon.y, q.droite.orteil.y)) > 0.5) anatomie.push('coureur : le pied d’appui ne touche pas le sol au contact');
+  // Empreinte entièrement dans le contour du pied réel (contre-revue N3)
+  const dansPied = ([x, y]) => geo.dansPolygone(geo.PLANTE, x, y) || geo.CONTOUR_PIED.polygonesOrteils.some((o) => geo.dansPolygone(o, x, y));
+  const hors = geo.EMPREINTE.polygone.filter((q) => !dansPied(q));
+  if (hors.length) anatomie.push(`EMPREINTE : ${hors.length} point(s) hors du contour du pied (ex. ${hors[0].join(', ')})`);
+  // Coureur : pas de saut d'angle du pied au décollement, aucun pied sous le tapis (contre-revue N1)
+  let saut = 0, sous = 0, prec = null;
+  for (let p = 0; p < 1; p += 0.002) {
+    const q = geo.poseCoureur(p, 100);
+    sous = Math.max(sous, q.droite.talon.y, q.droite.orteil.y, q.gauche.talon.y, q.gauche.orteil.y);
+    if (prec) saut = Math.max(saut, Math.hypot(q.droite.orteil.x - prec.x, q.droite.orteil.y - prec.y));
+    prec = q.droite.orteil;
+  }
+  if (sous > 0.5) anatomie.push(`coureur : pied sous le tapis de ${sous.toFixed(1)} % de L`);
+  if (saut > 3) anatomie.push(`coureur : saut du pied de ${saut.toFixed(1)} % de L entre deux images`);
+  // Podoscope : masque de contact (talon déchargé pendant la poussée, avant-pied et orteils non chargés à l'attaque du talon)
+  const A = geo.APPUI_MARCHE;
+  if (geo.pressionPas(48, 200, 1, 0.92 * A, geo.TRAJET_POINTS) > 0.02) anatomie.push('podoscope : talon chargé pendant la poussée sur l’hallux');
+  if (geo.pressionPas(22, 15, 1, 0.03 * A, geo.TRAJET_POINTS) > 0.02 || geo.pressionPas(42, 70, 1, 0.03 * A, geo.TRAJET_POINTS) > 0.02) anatomie.push('podoscope : avant-pied ou orteils chargés à l’attaque du talon');
+  // Lecture profane : ni zone colorée, ni point, ni anneau, ni trame posés sur la PEAU (dessins pédagogiques qui montrent le pied réel)
+  for (const n of ['soin', 'diabete', 'laser', 'verrue', 'talon', 'taping', 'ongle']) {
+    const svg = geo.svgDessin(n, { registre: 'pedagogique' });
+    if (/class="(zone|point|anneau|trame)/.test(svg)) anatomie.push(`dessin « ${n} » (pédagogique) : couleur ou point posé sur la peau`);
+  }
   // Podoscope : aucune pression en phase oscillante
   if (geo.pressionPas(48, 200, 1, (geo.APPUI_MARCHE + 1) / 2, geo.TRAJET_POINTS) !== 0) anatomie.push('podoscope : pression pendant la phase oscillante');
   // Lecture profane : pas de pointillés sur la peau (registre pédagogique : jamais de contour en pointillés)

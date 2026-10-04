@@ -94,6 +94,13 @@
 - Proportions comparées au réel chiffré, pas « à l'œil » (semelle L/l ≈ 2,6) [015, Paul].
 - Main + pied : à éviter (règle de Paul) ; objet seul, rond, médaillon [004].
 
+- Bande de K-taping dessinée HORS du contour de la peau, du mollet au talon et sous la plante = **attelle / orthèse** : la bande est DANS le contour (le contour de peau reste le bord extérieur), accent translucide, bouts arrondis, queue en Y sur le mollet [sites, contre-revue 2026-10-04].
+- Empreinte tirée d'iso-lignes d'un champ de pression = bords « Paint » (bosses, talon coupé à plat, avant-pied tronqué, forme en L) : dériver de l'empreinte de référence (coupe, comblement lissé), zones fortes en ellipses [sites, contre-revue].
+- Empreinte étirée sans borne = elle **déborde du pied** (bord externe vers M5, ≈ 5 mm) : étirer seulement la bande des têtes et borner dans le contour du pied ; contrôle automatique [sites, contre-revue].
+- Squelette sans les os des orteils 2–4 à côté d'un hallux osseux = « orteils vides » ; calcanéum presque horizontal (≈ 6°) = pied plat : pente 18–25° [sites, contre-revue].
+- Arc de malléole cutané laissé sur un dessin où les os sont visibles, décalé de l'os = **crochet / trombone** : l'arc seulement quand les os sont masqués [sites, contre-revue].
+- Toise d'âges à côté d'empreintes de même taille = « **le pied ne grandit pas** » : la toise va avec des pieds de tailles différentes, sinon des cotes de pas [sites, contre-revue].
+
 ## Texte
 - Un signe nommé (plaie, rougeur…) est suivi **au plan suivant** de sa mention d'orientation, film compris (qui part avant la fin n'a jamais l'orientation) [0004 S5b].
 - Un « Cherchez : » dont les mots entrent en décalé laisse le « : » seul : le texte entre d'un bloc, seules les images se décalent [0004 S5b].
@@ -136,6 +143,8 @@
 - Grands numéros d'étape 01–05 sur un conseil unique = « 5 conseils » attendus, déception [HTML-014 patient].
 - Voile de transparence au token `fond` sur une direction sombre = pied « radio » : le voile de transparence est toujours CLAIR (`blanc`), quel que soit le fond [HTML-014].
 - Texture de lavis trop marquée sur la peau = « marbrures / maladie » [style A].
+- Angle du pied recalculé à la bascule appui → oscillation = **saut de 28°** et orteil qui passe sous le tapis : la pose d'oscillation part de la dernière pose d'appui ; contrôle automatique (continuité, aucun pied sous le sol) [sites, coureur, contre-revue].
+- Pression de base répartie sur toute l'empreinte pendant l'appui = talon chargé pendant la poussée sur l'hallux, orteils chargés à l'attaque : masque de contact par phase (talon, avant-pied, orteils) ; contrôle automatique [sites, podoscope, contre-revue].
 
 ## Technique
 - Jambe/pied coupés par track matte, jamais par clip (liseré) ; remappage sans arrondi [os, 028].

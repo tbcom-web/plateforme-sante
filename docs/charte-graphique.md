@@ -124,7 +124,7 @@ partagés par l'image fixe et l'animation.
 9. **Ongle** : toujours l'hallux avec ses voisins ; repli proximal, lunule, replis et sillons latéraux ; ongle incarné : spicule relié
    à la lame, repli enflammé localisé.
 10. **Lecture profane** : pas de pointillés ni de couleur sur la peau (la pression se pose sur la vitre, le sol ou l'empreinte) ; pas
-    d'os clairs sur fond sombre (sur fond plan, os en contour fin teinté de l'accent, sans aplat) ; pas de jambe coupée nette (la coupe
+    d'os clairs sur fond sombre (sur fond plan, seuls calcanéum, aponévrose et M1-P1 restent, en contour fin teinté de l'accent, sans aplat : variables --dessin-os*, posées par .surface-plan) ; pas de jambe coupée nette (la coupe
     sort du cadre ou les os de la jambe s'estompent) ni de pied en l'air ; douleur = point creux.
 11. **Échelles** : pied d'un enfant de 1 an ≈ 0,5 × pied adulte ; pas de l'enfant ≈ 1,8–2 longueurs de pied, de l'adulte ≈ 2,5–3.
 

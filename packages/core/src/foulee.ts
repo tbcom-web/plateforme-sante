@@ -4,11 +4,12 @@
 // Courbes angulaires simplifiées d'après Novacheck (1998, « The biomechanics of running », course ≈ 3,2 m/s), cycle commencé au contact
 // du talon droit (p = 0) :
 //  - appui 0 → 0,38 du cycle (35–40 %), envol 0,38 → 0,5, puis appui gauche 0,5 → 0,88 et second envol ;
-//  - hanche (cuisse / verticale) : fléchie au contact (≈ 25°), extension maximale au décollement des orteils (≈ −20°), flexion
+//  - hanche (cuisse / verticale) : fléchie au contact (≈ 22°, tibia légèrement incliné vers l'avant), extension maximale au décollement des orteils (≈ −20°), flexion
 //    maximale en fin d'oscillation (≈ 38°) ;
-//  - genou : ≈ 20° au contact, flexion d'amortissement maximale EN APPUI vers 15 % (≈ 38°), presque tendu au décollement (≈ 18°),
+//  - genou : ≈ 24° au contact, flexion d'amortissement maximale EN APPUI vers 15 % (≈ 38°), presque tendu au décollement (≈ 18°),
 //    flexion maximale en oscillation (≈ 95°) vers 65 %, ré-extension avant le contact ;
-//  - pied : attaque du talon (pointe relevée), pied à plat de ≈ 8 % à 20 %, puis talon qui se lève jusqu'au décollement ; en
+//  - pied : attaque du talon (pointe relevée), pied à plat de ≈ 8 % à 20 % (flexion dorsale ≤ 25°), puis talon qui se lève
+//    jusqu'au décollement (flexion plantaire ≈ 14°), sans saut d'angle entre la fin de l'appui et l'oscillation ; en
 //    oscillation, cheville proche du neutre.
 // Le pied d'appui est FIXÉ au sol (point de contact sur la ligne du tapis) : la hauteur du bassin en découle ; pendant l'envol, le
 // bassin suit une parabole. Bras opposés aux jambes (le bras droit avance quand la jambe gauche avance), coude fléchi ≈ 90°.
@@ -38,11 +39,11 @@ function periodique(cles: [number, number][]) {
 }
 
 /** Cuisse par rapport à la verticale (°, avant positif) */
-export const hanche = periodique([[0, 25], [0.15, 8], [0.38, -20], [0.5, -8], [0.65, 18], [0.82, 38], [0.93, 30]]);
+export const hanche = periodique([[0, 22], [0.15, 15], [0.38, -20], [0.5, -8], [0.65, 18], [0.82, 38], [0.93, 30]]);
 /** Flexion du genou (°) */
-export const genou = periodique([[0, 20], [0.15, 38], [0.3, 26], [0.38, 18], [0.5, 50], [0.65, 95], [0.78, 75], [0.9, 28]]);
+export const genou = periodique([[0, 24], [0.15, 38], [0.3, 26], [0.38, 18], [0.5, 50], [0.65, 95], [0.78, 75], [0.9, 28]]);
 /** Inclinaison du pied en oscillation (°, pointe relevée positive, par rapport au tibia + 90°) */
-const chevilleOscillation = periodique([[0, 6], [0.38, -24], [0.5, -16], [0.65, -2], [0.85, 6]]);
+const chevilleOscillation = periodique([[0, 6], [0.38, -14], [0.5, -16], [0.65, -2], [0.85, 6]]);
 
 /** Pose d'une jambe à la phase p (0 = contact du talon), hanche en (0, 0), y vers le bas ; L = longueur de la jambe */
 function jambe(p: number, L: number): Omit<Jambe, 'hanche'> & { hanche: Pt } {
@@ -56,7 +57,7 @@ function jambe(p: number, L: number): Omit<Jambe, 'hanche'> & { hanche: Pt } {
   const appui = q < APPUI;
   if (appui) {
     const attaque = (b / RAD) + 6; // au contact : pointe relevée (cheville légèrement en flexion dorsale)
-    tangage = q < 0.08 ? attaque * (1 - q / 0.08) : q < 0.2 ? 0 : -34 * ((q - 0.2) / (APPUI - 0.2)) ** 1.3;
+    tangage = q < 0.08 ? attaque * (1 - q / 0.08) : q < 0.2 ? 0 : -52 * ((q - 0.2) / (APPUI - 0.2)) ** 1.3;
   } else tangage = (b / RAD) + chevilleOscillation(q);
   const f = tangage * RAD;
   // Pied : talon 0,07 L derrière et 0,06 L sous la cheville ; orteils 0,22 L devant (longueur du pied ≈ 0,29 L)

@@ -54,7 +54,7 @@
 .dessin .aponevrose { stroke: var(--d-accent); stroke-width: var(--trait-fin); }
 .dessin .ongle-coupe { stroke: var(--d-accent); stroke-width: var(--trait-normal); fill: var(--d-fond); }
 .dessin .tiret-fin { stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); opacity: 0.6; }
-.dessin .bande { stroke: var(--d-accent); opacity: 0.32; fill: none; }
+.dessin .bande { stroke: var(--d-accent); opacity: 0.45; fill: none; }
 .dessin .bande-motif { stroke: var(--d-accent); stroke-width: var(--trait-filet); stroke-dasharray: var(--tiret-court); opacity: 0.8; }
 .dessin .faisceau { fill: var(--d-accent); stroke: none; opacity: 0.22; }
 .dessin .faisceau-axe { stroke: var(--d-accent); stroke-width: var(--trait-fin); opacity: 0.8; }
@@ -77,6 +77,10 @@
 .dessin .ongle-dessus--fin { stroke-width: var(--trait-fin); }
 .dessin .fin--leger { opacity: 0.35; }
 .dessin .canne--arriere { opacity: 0.55; }
+.dessin .canne--avant { stroke-width: var(--trait-normal); }
+.dessin .trait--orteil { stroke-width: var(--trait-fin); opacity: 0.7; }
+.dessin .axe--plein { stroke-dasharray: none; opacity: 0.7; }
+.dessin .os--secondaire { display: var(--dessin-os-secondaires, inline); }
 .dessin .anneau-site { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
 .dessin .squelette { display: var(--dessin-squelette, inline); }
 /* Fond plan (sombre) : jamais d'os clairs (lecture « radio ») — contour fin teinté de l'accent, sans aplat. Réglé par des
@@ -116,7 +120,7 @@
 .dessin .zone--forte { opacity: 0.32; }
 .dessin .etiquette { font-family: var(--police-texte, inherit); font-size: var(--taille-donnees-dessin); fill: currentColor; opacity: 0.85; }
 .dessin .renvoi { stroke-width: var(--trait-filet); opacity: 0.6; }
-.dessin .ancre { fill: currentColor; stroke: none; }
+.dessin .ancre { fill: currentColor; stroke: none; opacity: 0.6; }
 .dessin--pedagogique .oscillation, .dessin--pedagogique .polygone, .dessin--pedagogique .force-courbe { stroke: var(--d-accent); }
 .dessin--pedagogique .papille { opacity: 0.8; }
 
