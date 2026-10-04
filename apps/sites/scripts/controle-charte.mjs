@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -91,15 +91,34 @@ const dessins = [
   ...core.DESSINS_PODOLOGIE.filter((n) => !core.PHOTOS_DESSINS[n]).map((n) => `dessin « ${n} » sans photo associée (PHOTOS_DESSINS)`),
   ...Object.entries(core.VISUELS_SOINS).filter(([, c]) => !core.DESSINS_PODOLOGIE.includes(c.dessin)).map(([s, c]) => `soin « ${s} » : dessin inconnu « ${c.dessin} »`),
 ];
+// Bibliothèque partagée (éléments repris d'ÉcranZen, packages/core/src/bibliotheque) : chaque forme, dans les deux registres, sans
+// couleur littérale (uniquement des variables de la charte), sans valeur invalide et d'un poids raisonnable pour le mobile ; chaque
+// jeton ÉcranZen a sa correspondance ; chaque déclinaison du catalogue pointe vers une forme existante. Les sources du module
+// (formes générées comprises) sont aussi contrôlées.
+const LIMITE_KO = 64;
+const litterales = (texte) => [HEX, FONCTION].flatMap((re) => [...texte.replace(/url\(#[^)]*\)/g, '').matchAll(re)].map((m) => m[0]));
+const dossierBib = join(racine, '../../packages/core/src/bibliotheque');
+const bibliotheque = [
+  ...core.jetonsSansCorrespondance().map((j) => `bibliothèque : jeton ÉcranZen « ${j} » sans correspondance dans la charte`),
+  ...core.FORMES_BIBLIOTHEQUE.flatMap((cle) => core.REGISTRES.flatMap((r) => {
+    const svg = core.svgForme(cle, { registre: r });
+    const l = litterales(svg), ko = Buffer.byteLength(svg) / 1024;
+    return [...(invalide(svg) ? [`bibliothèque « ${cle} » (${r}) : valeur invalide`] : []), ...(l.length ? [`bibliothèque « ${cle} » (${r}) : couleur littérale ${l[0]}`] : []),
+      ...(ko > LIMITE_KO ? [`bibliothèque « ${cle} » (${r}) : ${ko.toFixed(0)} ko (> ${LIMITE_KO} ko)`] : [])];
+  })),
+  ...core.BIBLIOTHEQUE.flatMap((e) => e.declinaisons.filter((d) => !core.FORMES_BIBLIOTHEQUE.includes(d.forme)).map((d) => `bibliothèque « ${e.id} » : forme inconnue « ${d.forme} »`)),
+  ...readdirSync(dossierBib).filter((f) => /\.ts$/.test(f)).flatMap((f) => readFileSync(join(dossierBib, f), 'utf8').split(/\r?\n/)
+    .flatMap((ligne, i) => (EXCEPTION_LIGNE.test(ligne) ? [] : litterales(ligne).map((c) => `packages/core/src/bibliotheque/${f}:${i + 1}  ${c}`)))),
+];
 const inconnues = core.MODELES_INTEGRES.flatMap((m) => (m.gammes ?? []).filter((g) => !core.GAMMES.some((x) => x.id === g)).map((g) => `${m.id} : gamme inconnue « ${g} »`));
 
 if (defauts.length) {
   console.log(`✗ ${defauts.length} couleur(s) littérale(s) hors charte :`);
   for (const d of defauts) console.log(`  ${d}`);
 }
-for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins]) console.log(`✗ ${d}`);
-const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length;
+for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins, ...bibliotheque]) console.log(`✗ ${d}`);
+const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length + bibliotheque.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel et ${core.ANIMATIONS.length} images fixes dans ${core.REGISTRES.length} registres.`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres.`);
 process.exit(total ? 1 : 0);

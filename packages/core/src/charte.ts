@@ -47,6 +47,21 @@ export const NEUTRES = {
   disponible: '#27a36b',
 } as const;
 
+/**
+ * Teintes anatomiques des illustrations de la bibliothèque partagée (bibliotheque/, éléments repris d'ÉcranZen), registre
+ * pédagogique : peau (claire, moyenne, ombre), ongle, os et tendon. Valeurs du thème « zen-doux » d'ÉcranZen, validées par
+ * Paul sur les atomes du studio (peau-1, peau-2, peau-ombre, ongle, os, tendon) : mêmes rendus sur les sites et en salle d'attente.
+ * Jamais posées sur un fond sombre en os clairs (lecture « radio ») : les os restent au trait, sur la peau ou un voile clair.
+ */
+export const ANATOMIE = {
+  peau: '#E9B793',
+  peauClair: '#F6D7C3',
+  peauOmbre: '#D9A383',
+  ongle: '#F9E4DC',
+  os: '#F5EFE3',
+  tendon: '#E6D3B3',
+} as const;
+
 /** Fonds « plan d'architecte » par défaut (cobalt) et couleur des lectures de données sur fond sombre */
 export const PLAN = { fond: '#123c8c', profond: '#0c2c6b', signal: '#6ff2c2' } as const;
 
@@ -237,6 +252,8 @@ export function variablesCharte(metier: string = UNIVERS.podologie.id): Record<s
   v['--nuit-rgb'] = canaux(NEUTRES.nuit);
   v['--blanc-rgb'] = canaux(NEUTRES.blanc);
   v['--papier-rgb'] = canaux(NEUTRES.papier);
+  // Teintes anatomiques de la bibliothèque (--peau, --peau-clair, --peau-ombre, --ongle, --os, --tendon)
+  for (const [k, c] of Object.entries(ANATOMIE)) v[`--${tiret(k)}`] = c;
   v['--plan'] = PLAN.fond;
   v['--plan-profond'] = PLAN.profond;
   v['--signal'] = PLAN.signal;

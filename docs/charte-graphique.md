@@ -92,6 +92,35 @@ Les animations en registre pédagogique affichent l'image calme du schéma corre
 
 `analyse`, `appuis`, `semelle` (vue de dessus en courbes d'appui et pied de profil posé sur la semelle : talonnette, soutien de voûte, avant-pied), `soin`, `diabete`, `sport`, `enfant` (le même pied à 1, 3, 6 et 10 ans, alignés au talon, pointure en regard), `equilibre` (stabilométrie : polygone d'appui, oscillations), `talon` (pied de profil, aponévrose plantaire et insertion calcanéenne), `ongle` (gros orteil vu de dessus, normal et incarné : le bord de l'ongle pénètre le repli enflammé), `laser` (faisceau étroit sur une zone de l'avant-pied), `senior` (polygone d'appui élargi par l'embout de la canne, oscillations, marche de profil avec la canne), `taping` (bandes sur le tendon d'Achille et la voûte), `verrue` (point d'appui précis, loupe : lignes de la peau interrompues), `voutes` (pied normal, creux, plat : profil et empreinte), `arriere-pied` (talon vu de dos : axes de la jambe et du calcanéum, normal, valgus, varus). Correspondance avec les soins : `VISUELS_SOINS` (`jeux.ts`).
 
+### Bibliothèque partagée (éléments repris d'ÉcranZen)
+
+`packages/core/src/bibliotheque/` : éléments validés du studio ÉcranZen, à côté des dessins ci-dessus (qui ne changent pas).
+`formes.ts` est **généré** par `node packages/core/scripts/extraire-ecranzen.mjs` depuis la géométrie du studio (lecture seule, mêmes
+tracés, aucun redessin) ; `catalogue.ts` décrit chaque élément au format du catalogue ÉcranZen (ID d'origine, statut, `valide_par`,
+version, source) ; `svgElement(id, { registre, vue, etat })` le dessine. Planche : `/modeles/bibliotheque` (sites de démo), avec la
+comparaison « actuel vs ÉcranZen ».
+
+Couleurs : chaque forme porte les jetons ÉcranZen (`--ez-peau-2`, `--ez-trait`…), reliés à la charte par `CORRESPONDANCE_JETONS`
+(`bibliotheque/rendu.ts`) :
+
+| Jeton ÉcranZen | Pédagogique (illustration à plat) | Relevé (dessin technique) |
+|---|---|---|
+| `trait` | `--dessin-trait` | `--dessin-trait` |
+| `fond`, `blanc` | `--dessin-fond`, `--blanc` | `--dessin-fond` |
+| `accent` | `--dessin-accent` | `--dessin-accent` |
+| `peau-1`, `peau-2`, `peau-ombre` | `--peau-clair`, `--peau`, `--peau-ombre` | fond ; ombre = trait 10 % |
+| `ongle`, `os`, `tendon` | `--ongle`, `--os`, `--tendon` | fond ; tendon = accent 22 % |
+| `chaussure`, `semelle-ardoise`, `neutre-clair` | mélanges du trait ou de l'encre | trait 8 à 16 % |
+| `semelle-moutarde`, `semelle-lavande`, `semelle-sarcelle-clair` | `--pression-3`, `--pression-1`, `--pression-2` (adoucis) | accent 12 à 45 % |
+| semelle orthopédique (`so-*`) | recouvrement `--pression-2`, coque `--pression-1`, élément `--pression-3`, talonnette encre | trait et accent légers |
+| chaussure de running (`ch-*`) | tige à l'accent du cabinet, mousse blanche, gomme encre | trait 8 à 50 % |
+| praticien (`pr-*`) | blouse blanche (encre 3 à 25 %), encolure et pied brodé à l'accent | trait 10 à 40 % |
+
+Les teintes anatomiques sont dans `ANATOMIE` (`charte.ts`, variables `--peau`, `--peau-clair`, `--peau-ombre`, `--ongle`, `--os`,
+`--tendon`) : valeurs du thème « zen-doux » validé dans ÉcranZen. Épaisseurs : `fin`, `normal`, `epais` d'ÉcranZen → `--trait-fin`,
+`--trait-normal`, `--trait-fort`, ramenés au repère 512 u des atomes. `controle:charte` vérifie chaque forme dans les deux
+registres (aucune couleur littérale, aucun jeton sans correspondance, ≤ 64 ko).
+
 ## Typographie
 
 | Rôle | Police | Règle |

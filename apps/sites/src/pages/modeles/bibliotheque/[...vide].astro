@@ -1,0 +1,89 @@
+---
+// Planche de la bibliothèque partagée (éléments repris d'ÉcranZen, packages/core/src/bibliotheque), générée uniquement sur les
+// sites de démo : /modeles/bibliotheque. Chaque déclinaison dans les deux registres (pédagogique, relevé), sur fond clair et sur
+// fond plan, puis en vignette de 240 px.
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+import { site } from '../../../lib/site';
+import '@plateforme/core/dessins.css';
+import { feuilleCharte, BIBLIOTHEQUE, svgForme, svgElement, svgDessin, GAMMES, variablesGamme, type NomDessin } from '@plateforme/core';
+const accent = Object.entries(variablesGamme(GAMMES[0])).map(([k, v]) => `${k}:${v}`).join(';');
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { vide: undefined } }] : [];
+}
+const lignes = BIBLIOTHEQUE.flatMap((e) => e.declinaisons.map((d) => ({ e, d, statut: d.statut ?? e.statut, version: d.version ?? e.version })));
+const fonds = [
+  { classe: '', registre: 'pedagogique', nom: 'pédagogique' },
+  { classe: 'sombre', registre: 'pedagogique', nom: 'pédagogique · plan' },
+  { classe: '', registre: 'releve', nom: 'relevé' },
+  { classe: 'sombre', registre: 'releve', nom: 'relevé · plan' },
+] as const;
+// Comparaison « actuel vs ÉcranZen » (pour l'arbitrage de Paul) : dessin actuel des sites (dessins.ts) à gauche, éléments ÉcranZen à droite.
+const comparaisons: { sujet: string; actuel: NomDessin; ecranzen: [string, { vue?: string; etat?: string }][] }[] = [
+  { sujet: 'Pied de profil', actuel: 'talon', ecranzen: [['POD-AT-0003', {}], ['POD-AT-0008', { etat: 'anatomie' }]] },
+  { sujet: 'Pied vu de dessous', actuel: 'appuis', ecranzen: [['POD-AT-0002', {}], ['POD-SC-0007', {}]] },
+  { sujet: 'Semelle orthopédique', actuel: 'semelle', ecranzen: [['POD-AT-0004', {}], ['POD-AT-0005', {}]] },
+  { sujet: 'Ongle incarné', actuel: 'ongle', ecranzen: [['POD-AT-0009', { etat: 'incarne' }], ['POD-AT-0010', { etat: 'incarne' }]] },
+];
+---
+<!doctype html>
+<html lang="fr" style={accent}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Bibliothèque partagée</title>
+    <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
+  </head>
+  <body>
+    <main>
+      <section id="comparaison">
+        <p class="entete"><b>Actuel vs ÉcranZen</b> · à gauche le dessin actuel des sites, à droite les éléments ÉcranZen · registres pédagogique puis relevé</p>
+        {comparaisons.map((c) => (
+          <div class="comparaison">
+            <p class="entete">{c.sujet}</p>
+            {(['pedagogique', 'releve'] as const).map((r) => (
+              <div class="rangee rangee--comparaison">
+                <figure><Fragment set:html={svgDessin(c.actuel, { registre: r })} /><figcaption>actuel · {c.actuel} · {r}</figcaption></figure>
+                {c.ecranzen.map(([id, o]) => (
+                  <figure><Fragment set:html={svgElement(id, { ...o, registre: r })} /><figcaption>ÉcranZen · {id}{o.etat ? ` · ${o.etat}` : ''} · {r}</figcaption></figure>
+                ))}
+              </div>
+            ))}
+          </div>
+        ))}
+      </section>
+      {lignes.map(({ e, d, statut, version }) => (
+        <section>
+          <p class="entete"><b>{e.id}</b> · {e.slug} · {d.vue} / {d.etat} · v{version} · {statut}{e.valide_par ? ` (${e.valide_par})` : ''}</p>
+          <div class="rangee">
+            {fonds.map((f) => (
+              <figure class={f.classe}><Fragment set:html={svgForme(d.forme, { registre: f.registre })} /><figcaption>{f.nom}</figcaption></figure>
+            ))}
+            <figure class="vignette"><Fragment set:html={svgForme(d.forme)} /><figcaption>240 px</figcaption></figure>
+          </div>
+        </section>
+      ))}
+    </main>
+  </body>
+</html>
+<style>
+  /* Planche de contrôle : valeurs de la charte (variables injectées dans <head>), accent de la gamme Canard. */
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: var(--doux-defaut); color: var(--encre); }
+  main { display: grid; gap: 16px; padding: 16px; }
+  section { background: var(--blanc); border-radius: 16px; padding: 12px; }
+  .entete { margin: 0 0 8px; font-family: var(--police-mono); font-size: var(--taille-donnees); color: var(--encre-pale); }
+  .rangee { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 240px; gap: 10px; align-items: start; }
+  figure { margin: 0; background: var(--blanc); border: var(--filet) solid var(--ligne); border-radius: 12px; padding: 10px; }
+  figure :global(svg) { display: block; width: 100%; height: auto; max-height: 340px; }
+  figcaption { font-family: var(--police-mono); font-size: var(--taille-donnees-petit); color: var(--encre-pale); margin-top: 6px; }
+  .rangee--comparaison { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 10px; }
+  .comparaison + .comparaison { border-top: var(--filet) solid var(--ligne); padding-top: 10px; }
+  .vignette { width: 240px; box-sizing: border-box; padding: 6px; }
+  .sombre { background: var(--plan); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-fond: var(--plan-profond);
+    background-image: linear-gradient(var(--quadrillage-sombre) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-sombre) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas) var(--quadrillage-pas); }
+  .sombre figcaption { color: var(--sur-sombre-doux); }
+  figure { min-width: 0; }
+  @media (max-width: 900px) { .rangee, .rangee--comparaison { grid-template-columns: repeat(2, minmax(0, 1fr)); } .vignette { width: auto; } main { padding: 8px; } }
+</style>
