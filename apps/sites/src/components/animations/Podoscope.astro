@@ -1,19 +1,26 @@
 ---
 // Animation « podoscope » : deux empreintes plantaires en trame hexagonale de points, colorées comme une
 // carte de pression. Même géométrie de pied (pied.ts), même trame et même palette que les dessins
-// (charte du core). Les points apparaissent par balayage, puis la pression se déplace du talon vers
-// l'avant-pied comme pendant le pas. Canvas, sans librairie.
-// Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
+// (charte du core). Le relevé s'affiche d'emblée en image fixe ; une fois la page chargée, la pression se
+// déplace comme pendant le pas (core : pas.ts) : talon → bord externe → têtes métatarsiennes → hallux ; un pied en
+// phase oscillante ne porte AUCUNE pression (il disparaît du relevé). Canvas, sans librairie.
+// Décoratif : aria-hidden ; image fixe seulement si le visiteur réduit les mouvements.
+// Performance (mobile) : aucun calcul avant le premier affichage, points pré-rendus (pas d'ombre portée
+// recalculée à chaque image), mouvement lancé quand le navigateur est libre après le chargement.
 // `releve` (accueil) : habillage « relevé de podoscope » — ligne de scan, légende graduée de la pression,
 // tracé du centre de pression de chaque pied et mention illustrative. Animations actives seulement à l'écran.
 import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
+import { pointsTrame } from '@plateforme/core/trame';
+import { TRAJET_POINTS } from '@plateforme/core/pied';
 interface Props { fond?: 'sombre' | 'clair'; releve?: boolean }
 const { fond = 'sombre', releve = false } = Astro.props;
 const NIVEAUX = ['Pic', 'Forte', 'Moyenne', 'Modérée', 'Faible'];
+// Empreinte (zone de contact, repère du pied) et trajet du centre de pression, calculés au build : le navigateur ne charge pas la géométrie.
+const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p.y, +p.v.toFixed(2)]), trajet: TRAJET_POINTS.map((p) => [+p.x.toFixed(1), +p.y.toFixed(1)]) });
 ---
 {releve ? (
   <div class="releve anime-visible" aria-hidden="true">
-    <canvas class:list={['podoscope', `podoscope--${fond}`, 'podoscope--cdp']}></canvas>
+    <canvas class:list={['podoscope', `podoscope--${fond}`, 'podoscope--cdp']} data-modele={modele}></canvas>
     <span class="releve__scan"></span>
     <span class="releve__legende mono">
       <span class="releve__echelle"></span>
@@ -23,35 +30,17 @@ const NIVEAUX = ['Pic', 'Forte', 'Moyenne', 'Modérée', 'Faible'];
     <span class="releve__mention mono">{MENTION_ILLUSTRATIVE}</span>
   </div>
 ) : (
-  <canvas class:list={['podoscope', `podoscope--${fond}`]} aria-hidden="true"></canvas>
+  <canvas class:list={['podoscope', `podoscope--${fond}`]} data-modele={modele} aria-hidden="true"></canvas>
 )}
 
 <script>
-  import { couleurPression, TRAME, TRAIT, CYCLES, DUREES } from '@plateforme/core/charte';
-  import { dansPlante, pression as pressionStatique } from '../dessins/trame';
+  import { couleurPression, TRAME, TRAIT, CYCLES } from '@plateforme/core/charte';
+  import { pressionPas, centrePas, PHASE_FIXE } from '@plateforme/core/pas';
 
-  type Point = { x: number; y: number; b: number; zone: number; gauche: boolean };
+  type Point = { x: number; y: number; px: number; py: number; b: number; gauche: boolean };
   const L = 92, H = 222; // repère du pied (pied.ts)
 
-  // Zone principale d'appui : 0 talon, 1 avant-pied, 2 orteils (repère du pied, orteils en haut).
-  const zone = (y: number) => (y > 150 ? 0 : y > 38 ? 1 : 2);
-
-  /** Points de la trame (repère du pied) pour un pied droit : contact au sol uniquement (voûte creuse). */
-  function trameDuPied() {
-    const pts: { x: number; y: number; b: number }[] = [];
-    const pas = TRAME.pas;
-    for (let rang = 0, y = 3; y <= H - 1; rang++, y += pas * 0.866) {
-      for (let x = 6 + (rang % 2 ? pas / 2 : 0); x <= L - 4; x += pas) {
-        if (!dansPlante(x, y)) continue;
-        const b = pressionStatique('normal', x, y);
-        if (b > 0) pts.push({ x, y, b });
-      }
-    }
-    return pts;
-  }
-  const MODELE = trameDuPied();
-
-  function construire(l: number, h: number) {
+  function construire(l: number, h: number, MODELE: { x: number; y: number; b: number }[]) {
     const hauteur = Math.min(h * 0.74, l * 0.62);
     const k = hauteur / H; // px par unité du pied
     const largeur = L * k;
@@ -61,68 +50,92 @@ const NIVEAUX = ['Pic', 'Forte', 'Moyenne', 'Modérée', 'Faible'];
       const oy = (h - hauteur) / 2 + (gauche ? hauteur * 0.04 : -hauteur * 0.04);
       for (const p of MODELE) {
         const x = gauche ? L - p.x : p.x; // le pied gauche est le miroir du droit
-        pts.push({ x: ox + x * k, y: oy + p.y * k, b: p.b, zone: zone(p.y), gauche });
+        pts.push({ x: ox + x * k, y: oy + p.y * k, px: p.x, py: p.y, b: p.b, gauche });
       }
     }
     return { pts, pasPx: TRAME.pas * k };
   }
 
-  // Pression d'un point à l'instant t (un cycle de pas : talon → avant-pied → orteils).
-  function pression(p: Point, t: number) {
-    const phase = ((t / CYCLES.pouls) + (p.gauche ? 0 : 0.5)) % 1;
-    const centre = phase < 0.35 ? 0 : phase < 0.75 ? 1 : 2;
-    const base = [0.55, 0.62, 0.38][p.zone];
-    const bonus = p.zone === centre ? 0.45 : p.zone === (centre + 2) % 3 ? 0.1 : 0;
-    const intensite = 0.55 + 0.45 * p.b; // relief du relevé statique (bords du pied plus froids)
-    return Math.min(1, (base + bonus) * intensite);
+  // Phase du pas de chaque pied (pied droit décalé d'un demi-cycle) à l'instant t ; le relevé fixe est pris à PHASE_FIXE.
+  const phase = (t: number, gauche: boolean) => PHASE_FIXE + t / CYCLES.pouls + (gauche ? 0 : 0.5);
+  const lireModele = (cv: HTMLCanvasElement) => {
+    const m = JSON.parse(cv.dataset.modele || '{"points":[],"trajet":[]}') as { points: [number, number, number][]; trajet: [number, number][] };
+    return { points: m.points.map(([x, y, b]) => ({ x, y, b })), trajet: m.trajet.map(([x, y]) => ({ x, y })) };
+  };
+
+  /** Niveaux de pression pré-rendus (couleur, diamètre et halo) : écart invisible à l'œil. */
+  const NIVEAUX_POINTS = 48;
+
+  /** Après le chargement de la page, quand le navigateur est libre (repli : court délai). */
+  function apresChargement(f: () => void) {
+    const libre = () => ('requestIdleCallback' in window ? requestIdleCallback(f, { timeout: 2000 }) : setTimeout(f, 300));
+    if (document.readyState === 'complete') libre();
+    else addEventListener('load', libre, { once: true });
   }
 
   document.querySelectorAll<HTMLCanvasElement>('canvas.podoscope').forEach((cv) => {
     const ctx = cv.getContext('2d')!;
     const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let pts: Point[] = [], pasPx = 6, l = 0, h = 0;
+    const modele = lireModele(cv);
     // Tracé du centre de pression (accueil) : barycentre des points pondérés par la pression, par pied.
     const cdp = cv.classList.contains('podoscope--cdp');
-    const signal = getComputedStyle(cv).getPropertyValue('--signal').trim() || 'white';
+    let signal = 'white';
     const traces: { x: number; y: number }[][] = [[], []];
-    const debut = performance.now();
+    let debut = 0;
     const ratio = Math.min(2, devicePixelRatio || 1);
     const { min, max } = TRAME.diametre;
+    let points: { image: HTMLCanvasElement; demi: number }[] = [];
+
+    // Un point par niveau de pression, dessiné une fois (l'ombre portée d'un canvas est coûteuse à chaque image).
+    // Le flou d'ombre s'exprime en pixels de l'écran (non transformé) : même rendu que le tracé direct.
+    function preparerPoints() {
+      points = [];
+      for (let n = 0; n <= NIVEAUX_POINTS; n++) {
+        const v = n / NIVEAUX_POINTS;
+        const rayon = ((pasPx * (min + (max - min) * v)) / 2) * ratio;
+        const flou = v > 0.7 ? (rayon / ratio) * 2.5 : 0;
+        const demi = Math.ceil(rayon + flou * 1.5 + 1);
+        const image = document.createElement('canvas');
+        image.width = image.height = demi * 2;
+        const c = image.getContext('2d')!;
+        c.fillStyle = couleurPression(v);
+        c.shadowColor = c.fillStyle;
+        c.shadowBlur = flou;
+        c.beginPath();
+        c.arc(demi, demi, rayon, 0, Math.PI * 2);
+        c.fill();
+        points.push({ image, demi: demi / ratio });
+      }
+    }
 
     function dimensionner() {
       l = cv.clientWidth; h = cv.clientHeight;
       cv.width = l * ratio; cv.height = h * ratio;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      ({ pts, pasPx } = construire(l, h));
+      ({ pts, pasPx } = construire(l, h, modele.points));
       traces[0] = []; traces[1] = [];
+      signal = getComputedStyle(cv).getPropertyValue('--signal').trim() || 'white';
+      preparerPoints();
     }
 
     function dessiner(maintenant: number) {
-      const t = calme ? DUREES.long : maintenant - debut;
+      const t = debut ? maintenant - debut : 0;
       ctx.clearRect(0, 0, l, h);
-      const balayage = calme ? 2 : Math.min(1.2, t / DUREES.trace); // apparition du haut vers le bas
       const somme = [[0, 0, 0], [0, 0, 0]];
       for (const p of pts) {
-        const seuil = p.y / h;
-        if (seuil > balayage) continue;
-        const v = pression(p, t);
+        const v = pressionPas(p.px, p.py, p.b, phase(t, p.gauche), modele.trajet);
+        if (v <= 0.02) continue; // pied en phase oscillante : aucune pression, aucun point
         if (cdp) { const k = p.gauche ? 0 : 1, w = v ** 3; somme[k][0] += p.x * w; somme[k][1] += p.y * w; somme[k][2] += w; }
-        const apparition = Math.min(1, (balayage - seuil) * 6);
-        const rayon = (pasPx * (min + (max - min) * v)) / 2;
-        ctx.globalAlpha = (0.35 + 0.65 * v) * apparition;
-        ctx.fillStyle = couleurPression(v);
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = v > 0.7 ? rayon * 2.5 : 0;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, rayon, 0, Math.PI * 2);
-        ctx.fill();
+        const point = points[Math.round(v * NIVEAUX_POINTS)];
+        ctx.globalAlpha = 0.35 + 0.65 * v;
+        ctx.drawImage(point.image, p.x - point.demi, p.y - point.demi, point.demi * 2, point.demi * 2);
       }
       ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
-      if (cdp && balayage >= 1) {
+      if (cdp && debut) {
         // Trajet du talon vers l'avant-pied : traîne courte, point au signal (lecture de données)
         somme.forEach(([sx, sy, sw], k) => {
-          if (!sw) return;
+          if (!sw || !centrePas(phase(t, k === 0), modele.trajet)) { traces[k] = []; return; }
           const trace = traces[k];
           trace.push({ x: sx / sw, y: sy / sw });
           if (trace.length > 46) trace.shift();
@@ -135,17 +148,25 @@ const NIVEAUX = ['Pic', 'Forte', 'Moyenne', 'Modérée', 'Faible'];
         });
         ctx.globalAlpha = 1;
       }
-      if (!calme && visible) requestAnimationFrame(dessiner);
     }
 
-    let visible = true;
-    new IntersectionObserver(([e]) => {
-      const etait = visible; visible = e.isIntersecting;
-      if (visible && !etait) requestAnimationFrame(dessiner);
+    // Boucle d'animation : seulement une fois lancée et tant que le bloc est à l'écran.
+    let visible = false, enCours = false;
+    const image = (maintenant: number) => {
+      dessiner(maintenant);
+      if (visible) requestAnimationFrame(image);
+      else enCours = false;
+    };
+    const relancer = () => {
+      if (debut && visible && !enCours) { enCours = true; requestAnimationFrame(image); }
+    };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; relancer(); }).observe(cv);
+    // Premier appel juste après la mise en page initiale : le relevé fixe figure dès le premier affichage.
+    new ResizeObserver(() => {
+      dimensionner();
+      if (!enCours) dessiner(performance.now());
     }).observe(cv);
-    new ResizeObserver(dimensionner).observe(cv);
-    dimensionner();
-    requestAnimationFrame(dessiner);
+    if (!calme) apresChargement(() => { debut = performance.now(); relancer(); });
   });
 </script>
 

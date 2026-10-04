@@ -238,3 +238,87 @@ ${lignes.join('\n')}
 writeFileSync(SORTIE, ts);
 for (const [id, e] of Object.entries(EL)) console.log(`  ${id.padEnd(30)} ${(Buffer.byteLength(e.corps) / 1024).toFixed(1).padStart(6)} ko`);
 console.log(`✓ ${Object.keys(EL).length} éléments → ${SORTIE} (${(Buffer.byteLength(ts) / 1024).toFixed(0)} ko) ; jetons : ${[...jetons].sort().join(', ')}`);
+
+// ———————————————————————————————————————— 5. Géométrie brute dans les repères des sites (bibliotheque/geometrie.ts)
+// Les dessins des sites (pied.ts, dessins.ts, logos.ts) réutilisent les MÊMES tracés que les atomes validés, ramenés dans leurs
+// repères (revue anatomique du 2026-10-04, « portage ÉcranZen recommandé ») :
+//   pied, semelle, empreinte (vues de dessus et de dessous, repère 92 × 222) : x = 48 + (X − 256) × 0,54 ; y = 3 + (Y − 56) × 0,54 ;
+//   profil médial (pied gauche vu de son côté interne, orteils à droite ; sol y 62) : x = −2 + (X − 56) × 0,3135 ; y = 62 − (440 − Y) × 0,3135.
+// Aucun redessin : seules les coordonnées changent (transformation affine), au centième d'unité.
+{
+  const SORTIE_GEO = join(ICI, '../src/bibliotheque/geometrie.ts');
+  const KP = 0.54, KF = 0.3135;
+  const XP = { m: [KP, 0, 0, KP], t: [48 - 256 * KP, 3 - 56 * KP] };
+  const XF = { m: [KF, 0, 0, KF], t: [-2 - 56 * KF, 62 - 440 * KF] };
+  const dP = (d) => T.versSvg(T.trace(d), XP, 2);
+  const dF = (d) => T.versSvg(T.trace(d), XF, 2);
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const pt = (xf, p) => T.appl(xf, p).map(r2);
+  const poly = (xf, d, n = 6) => T.trace(d).map((s) => T.echantillons(s, n).map((p) => pt(xf, p)));
+  // Pied (POD-AT-0001 / 0002), repère non miroité : pied droit vu de dessus, hallux à gauche (la vue de dessous = miroir)
+  const orteils = PIED.ORTEILS.map((o) => {
+    const s = PIED.orteilSegments(o), on = PIED.onglePaths(o);
+    return {
+      n: o.n, base: pt(XP, [o.bx, o.by]), bout: pt(XP, [o.tx, o.ty]), largeurBase: r2(o.wb * KP), largeurBout: r2(o.wt * KP), pivot: pt(XP, [o.px, o.py]),
+      peau: dP(PIED.orteilRemplissage(o)), contour: [s.gauche, s.pointe, s.droite].map(dP).join(' '),
+      ongle: dP(on.lame), lunule: on.lunule ? dP(on.lunule) : null, pliDorsal: dP(PIED.pliArticulaire(o, true)), pliPlantaire: dP(PIED.pliArticulaire(o, false)),
+      polygone: poly(XP, PIED.orteilRemplissage(o), 5)[0],
+    };
+  });
+  const pied = {
+    plante: dP(PIED.PLANTE), contourPlante: dP(PIED.CONTOUR_PLANTE), polygonePlante: poly(XP, PIED.PLANTE, 5)[0],
+    dos: dP(PIED.DOS_PIED), contourDos: dP(PIED.CONTOUR_DOS), jambe: dP(PIED.JAMBE), polygoneDos: poly(XP, PIED.DOS_PIED, 5)[0],
+    cheville: Object.fromEntries(Object.entries(PIED.CHEVILLE_TRAITS).map(([k, d]) => [k, dP(d)])), tendons: dP(PIED.TENDONS),
+    espaces: PIED.ESPACES.map((k) => dP(PIED.espacePath(k))), pliOrteils: dP(PIED.PLI_ORTEILS), coussinet: dP(PIED.COUSSINET_TALON),
+    voute: dP(PIED.ZONE_VOUTE), appuis: Object.fromEntries(Object.entries(PIED.APPUIS).map(([k, [x, y, w, h]]) => [k, [...pt(XP, [x, y]), r2(w * KP), r2(h * KP)]])),
+    orteils,
+  };
+  // Empreinte (trace d'appui de POD-SC-0007) : même repère que le pied (vue de dessus de la trace, hallux du pied droit à gauche)
+  const trace = SEMELLE.lisse(SEMELLE.TRACE_APPUI_POINTS, true);
+  const empreinte = {
+    points: SEMELLE.TRACE_APPUI_POINTS.map((p) => pt(XP, p)), contour: dP(trace), polygone: poly(XP, trace, 5)[0],
+    pulpes: PIED.ORTEILS.map((x) => [...pt(XP, [x.tx, x.ty + x.wt * 0.5]), r2(x.wt * 0.36 * KP), r2(x.wt * 0.42 * KP)]),
+  };
+  // Semelle (POD-AT-0004, repère dorsal du pied droit, comme le pied) et ses éléments
+  const V = SEMELLE.soutienVoute();
+  const semelle = {
+    points: SEMELLE.SEMELLE_POINTS.map((p) => pt(XP, p)), contour: dP(SEMELLE.semelleContourDorsal()), voute: dP(V.entier),
+    barre: dP(SEMELLE.elementAvantPied()), talonnette: dP(SEMELLE.talonnette()), coque: dP(SEMELLE.coqueDessous()),
+    limiteCoque: SEMELLE.LIMITE_COQUE.map((p) => pt(XP, p)),
+  };
+  // Profil médial (POD-AT-0003 + squelette POD-AT-0008) : jambe prolongée par ses tangentes jusqu'à Y −800 (hors de tout cadre)
+  const Y = -800, tg = (p, c) => [r2(p[0] + (p[0] - c[0]) * ((Y - p[1]) / (p[1] - c[1]))), Y];
+  const [gx, gy] = tg([48, -160], [52, -60]), [dx, dy] = tg([206, -160], [208, -60]);
+  const profil = {
+    corps: dF(PROFIL.PROFIL_CORPS + ` M48,-160 L${gx},${gy} L${dx},${dy} L206,-160 Z`),
+    contour: dF(PROFIL.PROFIL_CONTOUR + ` M48,-160 L${gx},${gy} M206,-160 L${dx},${dy}`),
+    plante: dF(PROFIL.PROFIL_PLANTE), hallux: dF(PROFIL.HALLUX), halluxContour: dF(PROFIL.HALLUX_CONTOUR), ongle: dF(PROFIL.ONGLE_HALLUX),
+    orteilsLateraux: PROFIL.ORTEILS_LATERAUX.map((o) => dF(o.d)), malleole: dF(PROFIL.MALLEOLE_ARC), ombreArche: dF(PROFIL.OMBRE_ARCHE),
+    pivotMtp: pt(XF, PROFIL.PIVOT_MTP), malleoleMediale: pt(XF, PROFIL.MALLEOLE),
+    appuis: Object.fromEntries(Object.entries(PROFIL.APPUIS_PROFIL).map(([k, [x, y, w, h]]) => [k, [...pt(XF, [x, y]), r2(w * KF), r2(h * KF)]])),
+    os: {
+      tibia: dF(JAMBE.TIBIA), tibiaTrait: dF(JAMBE.TIBIA_TRAIT), fibula: dF(JAMBE.FIBULA), fibulaTrait: dF(JAMBE.FIBULA_TRAIT),
+      talus: dF(JAMBE.TALUS), calcaneus: dF(JAMBE.CALCANEUS), calcaneusEpine: dF(JAMBE.CALCANEUS_EPINE), naviculaire: dF(JAMBE.NAVICULAIRE),
+      cuneiforme1: dF(JAMBE.CUNEIFORME_1), metatarsien1: dF(JAMBE.METATARSIEN_1), phalanges1: JAMBE.PHALANGES_1.map(dF),
+    },
+    tendon: dF(JAMBE.tendonBande()), aponevrose: dF(JAMBE.aponevrosePlantaire({ schema: 2 })),
+    semelle: { contour: dF(SEMELLE.silhouetteSemelleProfil()), recouvrement: dF(SEMELLE.recouvrementProfil()), coque: dF(SEMELLE.coqueProfil(true)), voute: dF(SEMELLE.vouteProfil()), releve: r2(SEMELLE.RELEVE * KF) },
+  };
+  for (const [nom, o] of Object.entries({ pied, empreinte, semelle, profil })) if (/NaN|undefined|Infinity/.test(JSON.stringify(o))) throw new Error(`géométrie ${nom} : valeur invalide`);
+  const tsGeo = `// GÉNÉRÉ par packages/core/scripts/extraire-ecranzen.mjs (section 5) depuis le studio ÉcranZen — ne pas éditer.
+// Tracés des atomes validés (POD-AT-0001/0002 pied, POD-SC-0007 empreinte, POD-AT-0004/0005 semelle, POD-AT-0003 profil médial,
+// POD-AT-0008 squelette, tendon et aponévrose), ramenés par une transformation affine dans les repères des dessins des sites :
+//   EZ_PIED, EZ_EMPREINTE, EZ_SEMELLE : repère du pied 92 × 222 (pied droit vu de dessus, hallux à gauche ; vue de dessous = miroir),
+//     x = 48 + (X − 256) × ${KP} ; y = 3 + (Y − 56) × ${KP} ;
+//   EZ_PROFIL : pied gauche vu de son côté interne, orteils à droite, sol y 62, x = −2 + (X − 56) × ${KF} ; y = 62 − (440 − Y) × ${KF}.
+// Polygones : contours échantillonnés (tests « dans la forme », mesures du contrôle de la charte).
+/* eslint-disable */
+type P = [number, number];
+export const EZ_PIED = ${JSON.stringify(pied)} as unknown as { plante: string; contourPlante: string; polygonePlante: P[]; dos: string; contourDos: string; jambe: string; polygoneDos: P[]; cheville: Record<string, string>; tendons: string; espaces: string[]; pliOrteils: string; coussinet: string; voute: string; appuis: Record<string, [number, number, number, number]>; orteils: { n: number; base: P; bout: P; largeurBase: number; largeurBout: number; pivot: P; peau: string; contour: string; ongle: string; lunule: string | null; pliDorsal: string; pliPlantaire: string; polygone: P[] }[] };
+export const EZ_EMPREINTE = ${JSON.stringify(empreinte)} as unknown as { points: P[]; contour: string; polygone: P[]; pulpes: [number, number, number, number][] };
+export const EZ_SEMELLE = ${JSON.stringify(semelle)} as unknown as { points: P[]; contour: string; voute: string; barre: string; talonnette: string; coque: string; limiteCoque: P[] };
+export const EZ_PROFIL = ${JSON.stringify(profil)} as unknown as { corps: string; contour: string; plante: string; hallux: string; halluxContour: string; ongle: string; orteilsLateraux: string[]; malleole: string; ombreArche: string; pivotMtp: P; malleoleMediale: P; appuis: Record<string, [number, number, number, number]>; os: { tibia: string; tibiaTrait: string; fibula: string; fibulaTrait: string; talus: string; calcaneus: string; calcaneusEpine: string; naviculaire: string; cuneiforme1: string; metatarsien1: string; phalanges1: string[] }; tendon: string; aponevrose: string; semelle: { contour: string; recouvrement: string; coque: string; voute: string; releve: number } };
+`;
+  writeFileSync(SORTIE_GEO, tsGeo);
+  console.log(`✓ géométrie → ${SORTIE_GEO} (${(Buffer.byteLength(tsGeo) / 1024).toFixed(0)} ko)`);
+}

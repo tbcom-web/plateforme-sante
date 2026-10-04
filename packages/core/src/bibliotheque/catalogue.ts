@@ -2,7 +2,8 @@
 // au FORMAT de son catalogue (studio/catalogue/schema.md : id, slug, niveau, titre, vue, professions, zones, sujets, statut, valide_par,
 // version…) pour garder simple la future fusion des deux bibliothèques. Chaque entrée garde l'ID ÉcranZen d'origine.
 //
-// Statut : celui du catalogue ÉcranZen au 2026-10-04 (assets.json). « valide » = atome validé par Paul dans le studio (même si le module
+// Statut : celui du catalogue ÉcranZen au 2026-10-04 (assets.json), sauf POD-AT-0008, POD-AT-0009, POD-AT-0010 et la semelle orthopédique
+// en couleur, validés par Paul pour les sites webpodologue le 2026-10-04 (décision côté sites : rien n'est écrit dans le studio ÉcranZen). « valide » = atome validé par Paul dans le studio (même si le module
 // de géométrie qui le produit garde « PROPOSÉ » dans son en-tête : c'est l'atome qui est validé, pas les ajouts proposés du module). Les éléments HTML
 // (semelle orthopédique, chaussure de running, praticien) ne sont pas encore au catalogue ÉcranZen : statut « brouillon », sans
 // valide_par. Ajouts propres aux sites : `declinaisons` (vue / état → forme de formes.ts), `usages_sites`, `limites`.
@@ -97,30 +98,30 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     id: 'POD-AT-0008', slug: 'squelette-pied-profil-medial', niveau: 'atome', titre: 'Anatomie du pied de profil : os, tendon calcanéen, aponévrose plantaire',
     description: 'POD-AT-0003 en transparence (voile de peau) : tibia, fibula, squelette du pied, tendon calcanéen fondu vers le haut, aponévrose plantaire schématisée ; variante avec épine calcanéenne.',
     professions: ['podologie'], zones: ['talon', 'calcaneus', 'aponevrose-plantaire', 'tendon-calcaneen'], sujets: ['talalgie', 'aponevrosite', 'epine-calcaneenne', 'anatomie'], tags: ['profil', 'transparence'],
-    vue: 'profil-medial', statut: 'reserve', valide_par: null, version: '0.3.0',
-    source: G('jambe-profil.mjs', 'modelePiedProfilMedialTendon({ epine }) + aponevrosePlantaire({ schema: 2 }) — éléments html/elements/pied-profil-anatomie(-epine).svg (HTML-014 v3, HTML-075)'),
+    vue: 'profil-medial', statut: 'valide', valide_par: PAUL, valide_le: '2026-10-04', version: '0.3.0',
+    source: G('jambe-profil.mjs', 'modelePiedProfilMedialTendon({ epine }) + aponevrosePlantaire({ schema: 2 }) — éléments html/elements/pied-profil-anatomie(-epine).svg (HTML-014 v3, HTML-075) — validé pour les sites webpodologue (Paul Tremblot, 2026-10-04 ; statut ÉcranZen inchangé)'),
     licence: LICENCE, compose_de: ['POD-AT-0003'],
     declinaisons: [d('profil-medial', 'anatomie', 'pied-profil-anatomie'), d('profil-medial', 'epine', 'pied-profil-anatomie-epine'), d('aponevrose', 'repos', 'aponevrose-plantaire')],
     usages_sites: ['Talalgie, douleur sous le talon au réveil (aponévrosite plantaire)', 'Épine calcanéenne', 'Tendon d’Achille'],
-    limites: ['Os au trait sur un voile clair, jamais os clairs sur fond sombre (lecture « radio ») : poser l’élément sur un fond clair, pas sur le fond plan', 'L’épine se montre comme une forme de l’os, sans rouge ni rond de douleur', 'ID réservé côté ÉcranZen : à faire valider (illustrateur médical + Paul) avant mise en production'],
+    limites: ['Os au trait sur un voile clair, jamais os clairs sur fond sombre (lecture « radio ») : poser l’élément sur un fond clair, pas sur le fond plan', 'L’épine se montre comme une forme de l’os, sans rouge ni rond de douleur'],
   },
   {
     id: 'POD-AT-0009', slug: 'hallux-dorsal', niveau: 'atome', titre: 'Gros orteil vu de dessus (ongle détaillé)',
     description: 'POD-AT-0001 agrandi ×3 autour de l’hallux : lame, bord libre, lunule, replis et sillons ; état « incarné » (spicule dans le repli épaissi, sans rouge).',
     professions: ['podologie'], zones: ['hallux', 'ongle'], sujets: ['ongle-incarne', 'coupe-ongles', 'orthonyxie'], tags: ['dorsal', 'zoom'],
-    vue: 'dorsale', statut: 'reserve', valide_par: null, version: '0.2.0', source: G('ongle.mjs', 'modeleHalluxDorsal(), ETATS_HALLUX_DORSAL'), licence: LICENCE, compose_de: ['POD-AT-0001'],
+    vue: 'dorsale', statut: 'valide', valide_par: PAUL, valide_le: '2026-10-04', version: '0.2.0', source: G('ongle.mjs', 'modeleHalluxDorsal(), ETATS_HALLUX_DORSAL — validé pour les sites webpodologue (Paul Tremblot, 2026-10-04 ; statut ÉcranZen inchangé)'), licence: LICENCE, compose_de: ['POD-AT-0001'],
     declinaisons: [d('dorsale', 'repos', 'hallux-dorsal'), d('dorsale', 'incarne', 'hallux-dorsal-incarne')],
     usages_sites: ['Ongle incarné', 'Coupe des ongles (couper droit)', 'Orthonyxie'],
-    limites: ['La douleur se montre par un rond creux posé par la page, jamais par du rouge sur la peau', 'Géométrie fondations-2 proposée : à valider avant production'],
+    limites: ['La douleur se montre par un rond creux posé par la page, jamais par du rouge sur la peau'],
   },
   {
     id: 'POD-AT-0010', slug: 'ongle-hallux-coupe-transversale', niveau: 'atome', titre: 'Ongle du gros orteil en coupe transversale',
     description: 'Coupe au milieu de la lame vue depuis l’arrière de l’orteil : lame bombée, lit, phalange, replis latéraux ; état « incarné ».',
     professions: ['podologie'], zones: ['ongle', 'hallux'], sujets: ['ongle-incarne', 'orthonyxie'], tags: ['coupe'],
-    vue: 'coupe-transversale', statut: 'reserve', valide_par: null, version: '0.3.0', source: G('ongle.mjs', 'modeleOngleCoupe(), ETATS_COUPE'), licence: LICENCE, compose_de: [],
+    vue: 'coupe-transversale', statut: 'valide', valide_par: PAUL, valide_le: '2026-10-04', version: '0.3.0', source: G('ongle.mjs', 'modeleOngleCoupe(), ETATS_COUPE — validé pour les sites webpodologue (Paul Tremblot, 2026-10-04 ; statut ÉcranZen inchangé)'), licence: LICENCE, compose_de: [],
     declinaisons: [d('coupe-transversale', 'repos', 'ongle-coupe'), d('coupe-transversale', 'incarne', 'ongle-coupe-incarne')],
     usages_sites: ['Ongle incarné : comprendre la courbure', 'Orthonyxie (redressement de la lame)'],
-    limites: ['Schéma de compréhension : toujours accompagné de la vue de dessus (lecture profane difficile seul)', 'À valider avant production'],
+    limites: ['Schéma de compréhension : toujours accompagné de la vue de dessus (lecture profane difficile seul)'],
   },
   {
     id: 'POD-AT-0004', slug: 'semelle-dorsal', niveau: 'atome', titre: 'Semelle orthopédique, vue de dessus et de dessous',
@@ -171,7 +172,7 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     id: 'EZ-HTML/semelle-ortho', slug: 'semelle-orthopedique', niveau: 'element-html', titre: 'Semelle orthopédique en couleur (dessus, dessous, profil)',
     description: 'Orthèse plantaire générique « sport » : recouvrement perforé, coque, talonnette, élément d’avant-pied ; neuve.',
     professions: ['podologie'], zones: ['plante'], sujets: ['orthese-plantaire', 'semelles', 'sport'], tags: ['semelle', 'flat'],
-    vue: 'dessus', statut: 'brouillon', valide_par: null, version: '2026-10-01', source: H('semelle-ortho/semelle-ortho.js — svg(vue, { modele: "sport", neuve: true })'), licence: LICENCE, compose_de: [],
+    vue: 'dessus', statut: 'valide', valide_par: PAUL, valide_le: '2026-10-04', version: '2026-10-01', source: H('semelle-ortho/semelle-ortho.js — svg(vue, { modele: "sport", neuve: true }) — validé pour les sites webpodologue (Paul Tremblot, 2026-10-04 ; statut ÉcranZen inchangé)'), licence: LICENCE, compose_de: [],
     declinaisons: [d('dessus', 'neuve', 'semelle-ortho-dessus'), d('dessous', 'neuve', 'semelle-ortho-dessous'), d('profil', 'neuve', 'semelle-ortho-profil')],
     usages_sites: ['Page « Semelles orthopédiques » : visuel principal', 'Podologie du sport'],
     limites: ['Aucun logo, texte ni combinaison de couleurs d’un fabricant (JURIDIQUE.md)', 'Vue 3/4 non reprise : 295 ko, trop lourde pour le mobile'],

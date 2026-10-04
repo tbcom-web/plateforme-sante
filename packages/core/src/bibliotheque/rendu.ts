@@ -107,15 +107,16 @@ export const FORMES_BIBLIOTHEQUE = Object.keys(FORMES);
 
 /**
  * SVG d'une forme de la bibliothèque (clé de FORMES). `registre` : « pedagogique » (défaut) ou « releve ».
- * `titre` : alternative textuelle (sinon aria-hidden). `classe` : classes ajoutées à la balise <svg>.
+ * `titre` : alternative textuelle (sinon aria-hidden). `classe` : classes ajoutées à la balise <svg>. `echelleTrait` : unités de la
+ * forme par unité d'affichage (forme posée dans un dessin : les traits gardent les graisses de la charte).
  */
-export function svgForme(cle: string, opts: { registre?: Registre; titre?: string; classe?: string; id?: string } = {}): string {
+export function svgForme(cle: string, opts: { registre?: Registre; titre?: string; classe?: string; id?: string; echelleTrait?: number } = {}): string {
   const f = FORMES[cle];
   if (!f) throw new Error(`bibliothèque : forme inconnue « ${cle} »`);
   const r = (opts.registre ?? 'pedagogique') === 'releve' ? 1 : 0;
   const vars: string[] = [];
   for (const j of JETONS_FORMES) {
-    if (j.startsWith('ep-')) vars.push(`--ez-${j}:${+(EPAISSEURS[j.slice(3)] * ECHELLE_TRAIT).toFixed(2)}`);
+    if (j.startsWith('ep-')) vars.push(`--ez-${j}:${+(EPAISSEURS[j.slice(3)] * (opts.echelleTrait ?? ECHELLE_TRAIT)).toFixed(2)}`);
     else if (CORRESPONDANCE_JETONS[j] && f.corps.includes(`--ez-${j})`)) vars.push(`--ez-${j}:${CORRESPONDANCE_JETONS[j][r]}`);
   }
   const corps = f.ids ? f.corps.split('EZID').join(opts.id ?? `ez${++compteur}`) : f.corps;

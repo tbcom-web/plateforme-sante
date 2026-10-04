@@ -1,7 +1,8 @@
 ---
 // Animation « coureur » (podologie du sport), façon laboratoire d'analyse du mouvement :
 // squelette vu de profil avec marqueurs articulaires, trajectoires des marqueurs (tapis de course),
-// angle du genou mesuré en direct et cadence. Cinématique simplifiée d'une foulée de course.
+// angle du genou mesuré en direct et cadence. Cinématique d'une foulée de course partagée avec l'image fixe
+// (core : foulee.ts, d'après Novacheck 1998) : appui ≈ 38 % du cycle, pied d'appui fixé au sol, bras opposés aux jambes.
 // Couleurs (palette de pression), traits, police des données et cadence viennent de la charte du core.
 // Canvas, sans librairie. Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
 // Registre « pedagogique » : schéma calme au trait (chaussure de course), sans canvas ni mouvement.
@@ -17,46 +18,19 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
 
 <script>
   import { PRESSION, NEUTRES, TRAIT, POINTILLE, POLICE_MONO, CYCLES, transparence } from '@plateforme/core/charte';
-  type Pt = { x: number; y: number };
+  import { poseCoureur, reculParCycle, APPUI, type Pt } from '@plateforme/core/foulee';
   const CYCLE = CYCLES.foulee / 1000; // secondes par cycle (2 pas) → cadence ≈ 167 pas/min
-  const RAD = Math.PI / 180;
-
-  // Angles en degrés selon la phase p (0..1) du cycle d'une jambe.
-  // Hanche : flexion avant positive (−15° en fin de poussée, 45° en fin d'oscillation).
-  const hanche = (p: number) => 15 + 30 * Math.sin(2 * Math.PI * p);
-  // Genou : flexion (≈25° en appui, ≈115° au milieu de l'oscillation).
-  const genou = (p: number) => 25 + 45 * (1 + Math.cos(2 * Math.PI * p));
-  // Cheville : légère variation autour de l'angle droit.
-  const cheville = (p: number) => 8 * Math.sin(2 * Math.PI * (p + 0.15));
-
-  function jambe(h: Pt, p: number, l: number) {
-    const a = hanche(p) * RAD;
-    const g: Pt = { x: h.x + Math.sin(a) * l * 0.48, y: h.y + Math.cos(a) * l * 0.48 };
-    const b = a - genou(p) * RAD; // tibia : le genou plie vers l'arrière
-    const c: Pt = { x: g.x + Math.sin(b) * l * 0.47, y: g.y + Math.cos(b) * l * 0.47 };
-    const f = b + cheville(p) * RAD; // pied : perpendiculaire au tibia, vers l'avant
-    const o: Pt = { x: c.x + Math.cos(f) * l * 0.17, y: c.y - Math.sin(f) * l * 0.17 };
-    return { g, c, o, angleGenou: genou(p) };
-  }
-
-  function bras(e: Pt, p: number, l: number) {
-    const a = -hanche(p) * 0.85 * RAD + 10 * RAD;
-    const coude: Pt = { x: e.x + Math.sin(a) * l * 0.3, y: e.y + Math.cos(a) * l * 0.3 };
-    const b = a + 95 * RAD;
-    const main: Pt = { x: coude.x + Math.sin(b) * l * 0.27, y: coude.y + Math.cos(b) * l * 0.27 };
-    return { coude, main };
-  }
 
   document.querySelectorAll<HTMLCanvasElement>('canvas.coureur').forEach((cv) => {
     const ctx = cv.getContext('2d')!;
     const sombre = cv.dataset.fond !== 'clair';
     const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const style = getComputedStyle(cv);
-    const accent = style.getPropertyValue('--accent-pale').trim() || style.getPropertyValue('--signal').trim() || PRESSION[1];
+    let accent = PRESSION[1];
     const encre = sombre ? NEUTRES.papier : NEUTRES.encre;
     const trait = (a: number) => transparence(sombre ? NEUTRES.blanc : NEUTRES.encre, a);
     const ratio = Math.min(2, devicePixelRatio || 1);
-    let l = 0, h = 0, debut = performance.now(), precedent = debut, visible = true;
+    // Image fixe au premier affichage ; mouvement lancé après le chargement de la page (debut > 0).
+    let l = 0, h = 0, debut = 0, precedent = 0, visible = false, enCours = false;
     // Traces des marqueurs (cheville, genou, orteil de la jambe droite), décalées comme sur un tapis.
     const traces: Record<string, Pt[]> = { cheville: [], genou: [], orteil: [] };
     // Marqueurs suivis : couleurs de la palette de pression (genou = pic, cheville = moyenne, orteil = modérée)
@@ -67,6 +41,9 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       cv.width = l * ratio; cv.height = h * ratio;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       for (const k in traces) traces[k] = [];
+      // Lecture des couleurs après la mise en page (aucun recalcul de style forcé avant le premier affichage)
+      const style = getComputedStyle(cv);
+      accent = style.getPropertyValue('--accent-pale').trim() || style.getPropertyValue('--signal').trim() || PRESSION[1];
     }
 
     function segment(a: Pt, b: Pt, largeur: number, couleur: string) {
@@ -80,19 +57,19 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
     }
 
     function dessiner(maintenant: number) {
-      const t = calme ? 0.1 : (maintenant - debut) / 1000;
+      const anime = debut > 0;
+      const t = anime ? 0.1 + (maintenant - debut) / 1000 : 0.1;
       const dt = Math.min(0.05, (maintenant - precedent) / 1000); precedent = maintenant;
       const p = (t / CYCLE) % 1;
       const taille = Math.min(h * 0.62, l * 0.9); // hauteur du squelette, tête comprise
       const L = taille * 0.5; // longueur de jambe
       const sol = h * 0.86;
-      const bassin: Pt = { x: l * 0.5, y: sol - L * 0.97 - 5 * Math.cos(4 * Math.PI * p) * (L / 120) };
-      const tronc = 8 * RAD; // inclinaison vers l'avant
-      const epaule: Pt = { x: bassin.x + Math.sin(tronc) * L * 0.62, y: bassin.y - Math.cos(tronc) * L * 0.62 };
-      const tete: Pt = { x: epaule.x + Math.sin(tronc) * L * 0.2, y: epaule.y - L * 0.2 };
-
-      const d = jambe(bassin, p, L), g = jambe(bassin, (p + 0.5) % 1, L);
-      const bd = bras(epaule, (p + 0.5) % 1, L), bg = bras(epaule, p, L);
+      const X = (q: Pt): Pt => ({ x: l * 0.5 + q.x, y: sol + q.y });
+      const pose = poseCoureur(p, L);
+      const [bassin, epaule, tete] = [X(pose.bassin), X(pose.epaule), X(pose.tete)];
+      const jambe = (j: typeof pose.droite) => ({ g: X(j.genou), c: X(j.cheville), t: X(j.talon), o: X(j.orteil) });
+      const d = jambe(pose.droite), g = jambe(pose.gauche);
+      const bd = { coude: X(pose.brasDroit.coude), main: X(pose.brasDroit.main) }, bg = { coude: X(pose.brasGauche.coude), main: X(pose.brasGauche.main) };
 
       ctx.clearRect(0, 0, l, h);
 
@@ -101,7 +78,7 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       const pas = Math.max(24, L / 4);
       for (let x = (l / 2) % pas; x < l; x += pas) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
       for (let y = sol % pas; y < h; y += pas) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(l, y); ctx.stroke(); }
-      const vitesse = (L * 1.9) / CYCLE; // défilement du tapis (px/s)
+      const vitesse = (reculParCycle(L) * L) / CYCLE; // défilement du tapis (px/s) : la vitesse du pied posé à plat
       // Sol du tapis en pointillés ronds, comme le contour d'un relevé de podoscope
       const tirets = [0, POINTILLE.contour.ecart * 2.5];
       ctx.strokeStyle = trait(0.35); ctx.lineWidth = TRAIT.fort; ctx.lineCap = 'round';
@@ -109,10 +86,10 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       ctx.beginPath(); ctx.moveTo(0, sol + 2); ctx.lineTo(l, sol + 2); ctx.stroke(); ctx.setLineDash([]);
 
       // Traces des marqueurs (elles reculent avec le tapis)
-      if (!calme) {
+      if (anime) {
         for (const k in traces) {
           const tr = traces[k];
-          for (const q of tr) q.x -= vitesse * dt * 0.55;
+          for (const q of tr) q.x -= vitesse * dt;
           tr.push({ ...(k === 'cheville' ? d.c : k === 'genou' ? d.g : d.o) });
           while (tr.length && tr[0].x < l * 0.04) tr.shift();
           ctx.strokeStyle = COULEURS[k]; ctx.lineWidth = TRAIT.normal;
@@ -128,9 +105,9 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       const pale = trait(0.33);
       const [arriere, avant] = [TRAIT.marque * 0.85, TRAIT.marque];
       segment(epaule, bg.coude, arriere, pale); segment(bg.coude, bg.main, arriere, pale);
-      segment(bassin, g.g, arriere, pale); segment(g.g, g.c, arriere, pale); segment(g.c, g.o, arriere, pale);
+      segment(bassin, g.g, arriere, pale); segment(g.g, g.c, arriere, pale); segment(g.c, g.t, arriere, pale); segment(g.t, g.o, arriere, pale); segment(g.o, g.c, arriere * 0.6, pale);
       segment(bassin, epaule, avant, accent);
-      segment(bassin, d.g, avant, accent); segment(d.g, d.c, avant, accent); segment(d.c, d.o, avant, accent);
+      segment(bassin, d.g, avant, accent); segment(d.g, d.c, avant, accent); segment(d.c, d.t, avant, accent); segment(d.t, d.o, avant, accent); segment(d.o, d.c, avant * 0.6, accent);
       segment(epaule, bd.coude, avant, accent); segment(bd.coude, bd.main, avant, accent);
       ctx.strokeStyle = accent; ctx.lineWidth = arriere; ctx.beginPath(); ctx.arc(tete.x, tete.y, L * 0.085, 0, Math.PI * 2); ctx.stroke();
 
@@ -149,26 +126,39 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       const police = Math.max(11, L / 11);
       ctx.font = `600 ${police}px ${POLICE_MONO}`;
       ctx.fillStyle = COULEURS.genou;
-      ctx.fillText(`${Math.round(180 - d.angleGenou)}°`, d.g.x + L * 0.16, d.g.y + 4);
+      ctx.fillText(`${Math.round(180 - pose.droite.angleGenou)}°`, d.g.x + L * 0.16, d.g.y + 4);
 
       // Lecture de laboratoire
       ctx.fillStyle = encre; ctx.globalAlpha = 0.75;
       ctx.font = `600 ${police * 0.85}px ${POLICE_MONO}`;
       ctx.fillText('ANALYSE DE LA FOULÉE', l * 0.06, h * 0.1);
       ctx.font = `400 ${police * 0.85}px ${POLICE_MONO}`;
-      ctx.fillText(`Cadence ${Math.round(120 / CYCLE)} pas/min`, l * 0.06, h * 0.1 + police * 1.4);
+      ctx.fillText(`Cadence ${Math.round(120 / CYCLE)} pas/min · appui ${Math.round(APPUI * 100)} %`, l * 0.06, h * 0.1 + police * 1.4);
       ctx.globalAlpha = 1;
 
-      if (!calme && visible) requestAnimationFrame(dessiner);
     }
 
-    new IntersectionObserver(([e]) => {
-      const etait = visible; visible = e.isIntersecting;
-      if (visible && !etait) { precedent = performance.now(); requestAnimationFrame(dessiner); }
+    // Boucle d'animation : seulement une fois lancée et tant que le bloc est à l'écran.
+    const image = (maintenant: number) => {
+      dessiner(maintenant);
+      if (visible) requestAnimationFrame(image);
+      else enCours = false;
+    };
+    const relancer = () => {
+      if (debut && visible && !enCours) { enCours = true; precedent = performance.now(); requestAnimationFrame(image); }
+    };
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; relancer(); }).observe(cv);
+    // Premier appel juste après la mise en page initiale : l'image fixe figure dès le premier affichage.
+    new ResizeObserver(() => {
+      dimensionner();
+      if (!enCours) dessiner(performance.now());
     }).observe(cv);
-    new ResizeObserver(dimensionner).observe(cv);
-    dimensionner();
-    requestAnimationFrame(dessiner);
+    if (!calme) {
+      const lancer = () => { debut = performance.now(); relancer(); };
+      const libre = () => ('requestIdleCallback' in window ? requestIdleCallback(lancer, { timeout: 2000 }) : setTimeout(lancer, 300));
+      if (document.readyState === 'complete') libre();
+      else addEventListener('load', libre, { once: true });
+    }
   });
 </script>
 

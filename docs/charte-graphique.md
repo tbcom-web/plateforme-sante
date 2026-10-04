@@ -90,11 +90,53 @@ Les animations en registre pédagogique affichent l'image calme du schéma corre
 
 ### Dessins de la podologie
 
-`analyse`, `appuis`, `semelle` (vue de dessus en courbes d'appui et pied de profil posé sur la semelle : talonnette, soutien de voûte, avant-pied), `soin`, `diabete`, `sport`, `enfant` (le même pied à 1, 3, 6 et 10 ans, alignés au talon, pointure en regard), `equilibre` (stabilométrie : polygone d'appui, oscillations), `talon` (pied de profil, aponévrose plantaire et insertion calcanéenne), `ongle` (gros orteil vu de dessus, normal et incarné : le bord de l'ongle pénètre le repli enflammé), `laser` (faisceau étroit sur une zone de l'avant-pied), `senior` (polygone d'appui élargi par l'embout de la canne, oscillations, marche de profil avec la canne), `taping` (bandes sur le tendon d'Achille et la voûte), `verrue` (point d'appui précis, loupe : lignes de la peau interrompues), `voutes` (pied normal, creux, plat : profil et empreinte), `arriere-pied` (talon vu de dos : axes de la jambe et du calcanéum, normal, valgus, varus). Correspondance avec les soins : `VISUELS_SOINS` (`jeux.ts`).
+`analyse`, `appuis`, `semelle` (éléments de la semelle orthopédique vue de dessus — talonnette, soutien de voûte, barre rétrocapitale derrière les têtes — et pied de profil posé sur la semelle de profil), `soin` (pied vu de dessus et médaillon de l'hallux avec ses voisins), `diabete` (3 sites du monofilament, filament plié en C), `sport`, `enfant` (le même pied à 1, 3, 6 et 10 ans, alignés au talon, pointure en regard), `equilibre` (stabilométrie : polygone d'appui, oscillations), `talon` (pied de profil, aponévrose plantaire et insertion calcanéenne), `ongle` (médaillons de l'hallux et de ses voisins, normal et incarné : repli latéral épaissi, spicule relié à la lame), `laser` (faisceau étroit sur une zone de l'avant-pied), `senior` (polygone d'appui élargi par l'embout de la canne, ≈ 15 cm en dehors et en avant du 5e orteil ; pied de profil et canne presque verticale qui sort du cadre), `taping` (bandes sur le tendon d'Achille et la voûte), `verrue` (point d'appui précis, loupe : lignes de la peau interrompues), `voutes` (pied normal, creux, plat : profil et empreinte), `arriere-pied` (talon vu de dos : axes de la jambe et du calcanéum, normal, valgus, varus). Correspondance avec les soins : `VISUELS_SOINS` (`jeux.ts`).
+
+### Une seule géométrie (refonte du 2026-10-04)
+
+Les dessins, animations et marques ne redessinent plus le pied « à l'œil » : `packages/core/src/pied.ts` reprend les atomes ÉcranZen
+validés par Paul (`bibliotheque/geometrie.ts`, généré par `extraire-ecranzen.mjs`, section 5) ramenés dans les repères des sites :
+`CONTOUR_PIED` (pied réel, POD-AT-0001/0002), `EMPREINTE` (zone de contact, POD-SC-0007 corrigée), `SEMELLE` et
+`SEMELLE_ELEMENTS` (POD-AT-0004), `SEMELLE_PROFIL` (POD-AT-0005), `piedDeProfil(voute)` (POD-AT-0003 + squelette POD-AT-0008 ;
+voûte normale, creuse, plate déformée sur la même géométrie), `PROFIL` (marques « anatomie »). Le médaillon de l'hallux (POD-AT-0009)
+est posé tel quel dans les dessins `soin` et `ongle`. La course (`foulee.ts`) et le pas au podoscope (`pas.ts`) sont des modèles
+partagés par l'image fixe et l'animation.
+
+### Règles anatomiques (revue de l'illustrateur médical, 2026-10-04)
+
+1. **Proportions adulte** : avant-pied 0,35–0,40 × L, talon 0,60–0,65 × avant-pied ; formule égyptienne, M2 le plus long, parabole
+   métatarsienne. **Enfant** : avant-pied ≈ 0,42 × L, voûte comblée jusqu'à 4–6 ans.
+2. **Empreinte et contour du pied** sont deux géométries distinctes (`EMPREINTE` pour les relevés seulement, `CONTOUR_PIED` pour le
+   pied réel). Vue de dessus et empreinte : l'hallux du pied droit est à gauche ; vue de dessous : à droite.
+3. **Profil de référence** : pied gauche vu côté interne, orteils à droite ; malléole médiale plus haute et plus en avant que la
+   latérale ; fibula chevauchant l'arrière du tibia ; colonne médiale au premier plan ; arche qui ne touche pas le sol (sauf pied
+   plat) ; coussinet talonnier 15–20 mm, têtes métatarsiennes ≈ 1,5 cm du sol ; hallux à 2 phalanges, autres orteils à 3.
+4. **Aponévrose** : du processus médial de la tubérosité calcanéenne jusqu'à la base de P1, enroulée sous la tête de M1, jamais au ras
+   de la peau.
+5. **Semelle** : L/l ≈ 2,6 ; élément rétrocapital derrière les têtes ; ne jamais mélanger pression et relief (le dessin `semelle`
+   montre les éléments, l'animation `semelle` le relief en courbes de niveau, le podoscope la pression).
+6. **Marche et course** : bras opposés aux jambes ; pied d'appui fixé au sol (appui 35–40 % du cycle en course) ; centre de gravité
+   au-dessus de l'appui ; centre de pression talon → bord externe → têtes métatarsiennes → hallux ; aucune pression en phase oscillante.
+7. **Canne** : côté opposé au membre douloureux, poignée au grand trochanter (ou tige qui sort du cadre), embout ≈ 15 cm en dehors et
+   un peu en avant du 5e orteil.
+8. **Monofilament 10 g** : 3 sites (pulpe de l'hallux, têtes de M1 et M5), filament perpendiculaire et plié en C. **Diapason** : sur
+   l'articulation interphalangienne dorsale de l'hallux.
+9. **Ongle** : toujours l'hallux avec ses voisins ; repli proximal, lunule, replis et sillons latéraux ; ongle incarné : spicule relié
+   à la lame, repli enflammé localisé.
+10. **Lecture profane** : pas de pointillés ni de couleur sur la peau (la pression se pose sur la vitre, le sol ou l'empreinte) ; pas
+    d'os clairs sur fond sombre (sur fond plan, os en contour fin teinté de l'accent, sans aplat) ; pas de jambe coupée nette (la coupe
+    sort du cadre ou les os de la jambe s'estompent) ni de pied en l'air ; douleur = point creux.
+11. **Échelles** : pied d'un enfant de 1 an ≈ 0,5 × pied adulte ; pas de l'enfant ≈ 1,8–2 longueurs de pied, de l'adulte ≈ 2,5–3.
+
+Contrôles automatiques (`controle:charte`, « un défaut vu deux fois = un contrôle ») : proportions de `CONTOUR_PIED` et de
+`EMPREINTE`, L/l de la semelle, barre rétrocapitale derrière les têtes M2–M4, arche du profil (normal hors sol, creux plus cambré,
+plat au sol), 3 sites du monofilament, appui du coureur 35–40 % et bras opposés, pied d'appui au sol, aucune pression en phase
+oscillante au podoscope, aucun contour en pointillés dans le registre pédagogique.
 
 ### Bibliothèque partagée (éléments repris d'ÉcranZen)
 
-`packages/core/src/bibliotheque/` : éléments validés du studio ÉcranZen, à côté des dessins ci-dessus (qui ne changent pas).
+`packages/core/src/bibliotheque/` : éléments validés du studio ÉcranZen. POD-AT-0008 (profil anatomique), POD-AT-0009 (médaillon de
+l'hallux), POD-AT-0010 (coupe de l'ongle) et la semelle orthopédique en couleur sont validés par Paul pour les sites (2026-10-04).
 `formes.ts` est **généré** par `node packages/core/scripts/extraire-ecranzen.mjs` depuis la géométrie du studio (lecture seule, mêmes
 tracés, aucun redessin) ; `catalogue.ts` décrit chaque élément au format du catalogue ÉcranZen (ID d'origine, statut, `valide_par`,
 version, source) ; `svgElement(id, { registre, vue, etat })` le dessine. Planche : `/modeles/bibliotheque` (sites de démo), avec la
@@ -207,4 +249,5 @@ Motifs signatures envisagés (non implémentés) :
 ## Contrôles
 
 - `npm run controle:charte` (`apps/sites`) : aucune couleur littérale (#hex, rgb(), hsl()) dans `src/components`, `src/layouts` et `src/pages`. La liste blanche est commentée dans le script et se limite aux anciens prototypes. Le contrôle vérifie aussi les contrastes AA de toutes les gammes et la validité des modèles intégrés, et que chaque dessin et chaque image fixe d'animation se dessine dans les deux registres, sans valeur invalide, en moins de 400 éléments, avec sa photo associée.
+- `npm run controle:charte` vérifie aussi les règles anatomiques ci-dessus (proportions, semelle, profil, monofilament, coureur, podoscope, pas de pointillés en pédagogique).
 - `npm run controle:seo` : le SEO doit rester identique sur les 5 modèles.

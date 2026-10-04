@@ -11,7 +11,7 @@
 // Chaque marque a une version compacte, épaissie et simplifiée, lisible en 16 px (favicon).
 
 import { LOGO, NEUTRES, PLAN, POINTILLE, POLICES, TRAME } from './charte';
-import { CHAUSSURE, CONTOUR, JAMBE, ORTEILS, OS, PROFIL, RUBANS, dansPolygone, SEMELLE, SEMELLE_POINTS, TRAJET, largeurA, ruban } from './pied';
+import { CHAUSSURE, CONTOUR, JAMBE, ORTEILS, OS, PLANTE, PROFIL, RUBANS, dansPolygone, SEMELLE, SEMELLE_POINTS, TRAJET, largeurA, ruban } from './pied';
 import { trame } from './trame';
 import { ARRETS_PRESSION, PRESSION, universMetier, type MarqueLogo } from './univers';
 import { gamme } from './gammes';
@@ -209,10 +209,20 @@ const segments = (s: readonly (readonly number[])[], k: number, w: number, coule
 const ellipse = ([cx, cy, rx, ry, a]: readonly number[], attributs: string) =>
   `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${cx} ${cy})" ${attributs}/>`;
 
-/** Pied de profil (PROFIL, repère 100 × 60) centré dans le cadre, sur la largeur d'une marque en forme de pied */
+/** Pied de profil (PROFIL : profil médial ÉcranZen, orteils à droite) centré dans le cadre, sur la largeur d'une marque en forme de pied */
 function profil(c: Ctx) {
   const s = c.hPied / PROFIL.largeur;
-  return { s, tr: `translate(${n(C - (PROFIL.largeur / 2) * s)} ${n(C - (PROFIL.haut + PROFIL.hauteur / 2) * s)}) scale(${n(s)})` };
+  return { s, tr: `translate(${n(C - (PROFIL.x0 + PROFIL.largeur / 2) * s)} ${n(C - (PROFIL.haut + PROFIL.hauteur / 2) * s)}) scale(${n(s)})` };
+}
+
+/** Enveloppe convexe de points étiquetés (pied 0 ou 1) */
+function enveloppe<T extends { p: [number, number] }>(points: T[]): T[] {
+  const p = [...points].sort((a, b) => a.p[0] - b.p[0] || a.p[1] - b.p[1]);
+  const x = (o: T, a: T, b: T) => (a.p[0] - o.p[0]) * (b.p[1] - o.p[1]) - (a.p[1] - o.p[1]) * (b.p[0] - o.p[0]);
+  const bas: T[] = [], haut: T[] = [];
+  for (const q of p) { while (bas.length > 1 && x(bas[bas.length - 2], bas[bas.length - 1], q) <= 0) bas.pop(); bas.push(q); }
+  for (const q of [...p].reverse()) { while (haut.length > 1 && x(haut[haut.length - 2], haut[haut.length - 1], q) <= 0) haut.pop(); haut.push(q); }
+  return [...bas.slice(0, -1), ...haut.slice(0, -1)];
 }
 
 /** Capsule (os long à bouts ronds) en contour fermé : [x1, y1, x2, y2, rayon] */
@@ -279,8 +289,13 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
       return plein(g) + plein(d);
     }
     const pied = (pl: typeof d) => `<g transform="${pl.t}"><path d="${CONTOUR}" fill="${c.p}" fill-opacity="${n(c.os / 3)}" stroke="${c.p}" stroke-width="${n(c.ep / pl.k)}" stroke-linejoin="round"/>${orteils(c.p)}</g>`;
-    const coins = [g.pt(47, 212), d.pt(47, 212), d.pt(76, 60), g.pt(76, 60)];
-    const poly = `<path d="M${coins.map((p) => p.join(' ')).join(' L')} Z" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${T.fin}" stroke-dasharray="${POINTILLE.tiretCourt}"/>`;
+    // Polygone de sustentation : enveloppe convexe des deux pieds ; on ne trace que les côtés qui relient un pied à l'autre (devant
+    // et derrière) — jamais de tirets posés sur la plante.
+    const pts = [...PLANTE.map(([x, y]) => ({ p: g.pt(x, y), k: 0 })), ...PLANTE.map(([x, y]) => ({ p: d.pt(x, y), k: 1 })),
+      ...ORTEILS.map(([x, y, , ry]) => ({ p: g.pt(x, y - ry), k: 0 })), ...ORTEILS.map(([x, y, , ry]) => ({ p: d.pt(x, y - ry), k: 1 }))];
+    const env = enveloppe(pts);
+    const ponts = env.map((q, i) => [q, env[(i + 1) % env.length]] as const).filter(([u, v]) => u.k !== v.k).map(([u, v]) => `M${u.p.join(' ')} L${v.p.join(' ')}`).join(' ');
+    const poly = `<path d="${ponts}" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${T.fin}" stroke-dasharray="${POINTILLE.tiretCourt}"/>`;
     // Centre de gravité : un simple point de donnée (aucune croix ni mire : motif exclu de la charte)
     const centre = `<circle cx="${n(C)}" cy="${n(C + c.zone * 0.08)}" r="${LOGO.appui.moyen}" fill="${c.d(1)}"/>`;
     return pied(g) + pied(d) + (c.moyen ? '' : poly) + centre;
@@ -311,7 +326,7 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     // se superposent, l'interligne articulaire est le trait lui-même
     const w = n((c.moyen ? T.normal : c.epais ? LOGO.profil.traitEpais : LOGO.profil.trait) / s);
     const os = (c.moyen ? PROFIL.principaux : PROFIL.os).map((o) =>
-      `<path d="${o.d}" fill="${c.p}" fill-opacity="${o.ton ? LOGO.profil.ombre : LOGO.profil.aplat}" stroke="${c.p}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
+      `<path d="${o.d}" fill="${c.p}" fill-opacity="${o.ton ? LOGO.profil.ombre : LOGO.profil.aplat}"/><path d="${o.trait}" fill="none" stroke="${c.p}" stroke-opacity="${o.ton ? 0.55 : 1}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`).join('');
     // Grand : quelques reflets discrets (repères en signal sur plan)
     const reflets = c.moyen ? '' : `<path d="${PROFIL.reflets}" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${n(T.fin / s)}" stroke-linecap="round"/>`;
     return `<g transform="${tr}">${os}${reflets}</g>`;
@@ -321,10 +336,10 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
   'anatomie-epure'(c) {
     const { s, tr } = profil(c);
     const e = PROFIL.epure;
-    const [dx, dy, k] = e.reduction;
+    const k = 1;
     const wc = (c.compact ? T.compactFin : c.moyen ? T.normal : T.fin) / s;
-    const contour = `<path d="${e.talon} ${e.dos}" fill="none" stroke="${c.compact ? c.p : c.r}" stroke-opacity="${c.compact ? 1 : c.os}" stroke-width="${n(wc)}" stroke-linecap="round"/>`;
-    const reduit = (contenu: string) => `<g transform="translate(${dx} ${dy}) scale(${k})">${contenu}</g>`;
+    const contour = `<path d="${e.contour}" fill="none" stroke="${c.compact ? c.p : c.r}" stroke-opacity="${c.compact ? 1 : c.os}" stroke-width="${n(wc)}" stroke-linecap="round"/>`;
+    const reduit = (contenu: string) => contenu;
     // Favicon : le contour et la colonne interne en plein (talus, calcanéum, tarse, 1er rayon)
     if (c.compact) return `<g transform="${tr}">${contour}${reduit(`<path d="${e.compact.join(' ')}" fill="${c.p}"/>`)}</g>`;
     // Os au trait seul, sans aplat : la colonne interne (tibia, talus, calcanéum, tarse, 1er rayon)
@@ -347,7 +362,7 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     const volume = (o: readonly number[]) => ellipse(o, `fill="${c.p}" fill-opacity="${c.os}"`);
     if (c.moyen) {
       // En-tête : le contour, le calcanéum, les cinq rayons prolongés d'une phalange par orteil
-      const orteil = OS.phalanges.map(([a, b]) => [a[0], a[1], b[2], b[3]]);
+      const orteil = OS.phalanges.map((p) => [p[0][0], p[0][1], p[p.length - 1][2], p[p.length - 1][3]]);
       return `<g transform="${t}">${trait(k, T.normal, c.p, c.os)}${volume(OS.calcaneum)}${segments(m, k, T.normal, c.p)}${segments(orteil, k, T.fin, c.p)}</g>`;
     }
     const contour = pointille(k, LOGO.pointille.normal, c.p, POINTILLE.contour.opacite);

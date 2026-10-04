@@ -62,8 +62,27 @@
 .dessin .semelle-profil { fill: var(--d-doux); fill-opacity: 0.35; stroke: var(--d-haut); stroke-width: var(--trait-normal); }
 .dessin .semelle-profil--pedago { fill: var(--d-accent); fill-opacity: 0.35; stroke: var(--d-accent); }
 .dessin .croissance { stroke-width: var(--trait-fin); opacity: calc(0.75 - var(--age, 0) * 0.12); }
-.dessin .corne { fill: var(--d-doux); stroke: none; opacity: 0.18; }
+.dessin .corne { fill: currentColor; stroke: none; opacity: 0.07; }
 .dessin .papille { fill: currentColor; stroke: none; }
+/* Refonte 2026-10-04 (géométrie ÉcranZen) : empreinte seule, pièces de semelle, os du profil, filament, canne en arrière-plan */
+.dessin .empreinte { fill: var(--d-accent); stroke: none; opacity: 0.3; }
+.dessin .piece { fill: var(--d-accent); fill-opacity: 0.16; stroke: currentColor; stroke-width: var(--trait-fin); stroke-opacity: 0.6; }
+.dessin .piece--forte { fill-opacity: 0.36; }
+.dessin .piece-coque { fill: currentColor; fill-opacity: 0.12; stroke: currentColor; stroke-width: var(--trait-fin); stroke-opacity: 0.6; }
+.dessin .os-aplat { fill: var(--d-accent); fill-opacity: 0.1; stroke: none; }
+.dessin .os-aplat--arriere { fill-opacity: 0.05; }
+.dessin .os--arriere { opacity: 0.32; }
+.dessin .os--plein { fill: var(--d-accent); fill-opacity: 0.18; }
+.dessin .filament { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+.dessin .ongle-dessus--fin { stroke-width: var(--trait-fin); }
+.dessin .fin--leger { opacity: 0.35; }
+.dessin .canne--arriere { opacity: 0.55; }
+.dessin .anneau-site { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+.dessin--sans-os .squelette { display: none; }
+/* Fond plan (sombre) : jamais d'os clairs (lecture « radio ») — contour fin teinté de l'accent, sans aplat */
+.surface-plan .dessin .squelette .os, .dessin.dessin--plan .squelette .os { stroke: var(--d-accent); opacity: 0.4; }
+.surface-plan .dessin .os-aplat, .dessin.dessin--plan .os-aplat { display: none; }
+.surface-plan .dessin .os--plein, .dessin.dessin--plan .os--plein, .surface-plan .dessin .os--teinte { fill: none; }
 /* Matériel du cabinet (svgEquipement) */
 .dessin .trait--fin { stroke-width: var(--trait-fin); }
 .dessin .eau { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
