@@ -34,8 +34,8 @@ export const SPECIALITES: PackVisuel[] = [
     animation: 'podoscope',
     photos: {
       accueil: '/photos/cabinet-lumiere.webp',
-      panorama: '/photos/examen-mains.webp',
-      diaporama: ['/photos/cabinet-lumiere.webp', '/photos/soin-talon.webp', '/photos/chaussage.webp', '/photos/analyse-plateforme.webp'],
+      panorama: '/photos/generale-parquet.webp',
+      diaporama: ['/photos/cabinet-lumiere.webp', '/photos/generale-pieds-nus.webp', '/photos/generale-pied-profil.webp', '/photos/examen-mains.webp', '/photos/generale-pied-sol.webp'],
     },
   },
   {
@@ -44,9 +44,9 @@ export const SPECIALITES: PackVisuel[] = [
     description: 'Course, foulée, prévention des blessures, semelles de sport.',
     animation: 'coureur',
     photos: {
-      accueil: '/photos/sport-course.webp',
-      panorama: '/photos/analyse-plateforme.webp',
-      diaporama: ['/photos/sport-course.webp', '/photos/accueil-observation-marche.webp', '/photos/analyse-plateforme.webp', '/photos/chaussage.webp'],
+      accueil: '/photos/sport-foulee-herbe.webp',
+      panorama: '/photos/sport-trail.webp',
+      diaporama: ['/photos/sport-foulee-herbe.webp', '/photos/sport-course.webp', '/photos/sport-trail.webp', '/photos/sport-chaussure.webp', '/photos/sport-lacage.webp'],
     },
   },
   {
@@ -56,8 +56,8 @@ export const SPECIALITES: PackVisuel[] = [
     animation: 'trajectoire',
     photos: {
       accueil: '/photos/analyse-plateforme.webp',
-      panorama: '/photos/accueil-observation-marche.webp',
-      diaporama: ['/photos/analyse-plateforme.webp', '/photos/accueil-observation-marche.webp', '/photos/chaussage.webp', '/photos/cabinet-lumiere.webp'],
+      panorama: '/photos/posture-marche-sable.webp',
+      diaporama: ['/photos/analyse-plateforme.webp', '/photos/posture-marche-sable.webp', '/photos/posture-empreintes.webp', '/photos/posture-escalier.webp', '/photos/posture-pieds-herbe.webp'],
     },
   },
   {
@@ -66,9 +66,9 @@ export const SPECIALITES: PackVisuel[] = [
     description: 'Croissance, marche, chaussage de l’enfant.',
     animation: 'premiers-pas',
     photos: {
-      accueil: '/photos/enfant-pied.webp',
-      panorama: '/photos/chaussage.webp',
-      diaporama: ['/photos/enfant-pied.webp', '/photos/chaussage.webp', '/photos/cabinet-lumiere.webp', '/photos/accueil-observation-marche.webp'],
+      accueil: '/photos/enfant-bebe.webp',
+      panorama: '/photos/enfant-chaussures.webp',
+      diaporama: ['/photos/enfant-bebe.webp', '/photos/enfant-pied.webp', '/photos/enfant-herbe.webp', '/photos/enfant-chaussons.webp', '/photos/enfant-baskets.webp'],
     },
   },
   {
@@ -79,7 +79,7 @@ export const SPECIALITES: PackVisuel[] = [
     photos: {
       accueil: '/photos/soin-talon.webp',
       panorama: '/photos/examen-mains.webp',
-      diaporama: ['/photos/soin-talon.webp', '/photos/examen-mains.webp', '/photos/cabinet-lumiere.webp', '/photos/chaussage.webp'],
+      diaporama: ['/photos/soin-talon.webp', '/photos/examen-mains.webp', '/photos/soins-pied-tenu.webp', '/photos/soins-bandages.webp', '/photos/generale-pied-profil.webp'],
     },
   },
 ];
