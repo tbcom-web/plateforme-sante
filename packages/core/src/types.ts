@@ -104,6 +104,8 @@ export type SiteConfig = {
   communes: string[];
   /** URLs des photos ; vide = photo d'illustration par défaut */
   photos: { accueil: string; panorama: string; cabinet: string[] };
+  /** Marque de logo importée par l'admin, quand le praticien l'a choisie (nettoyée, voir marques-importees.ts) */
+  marqueImportee?: import('./marques-importees').MarqueImportee;
   /** Textes personnalisés par le praticien (clés de personnalisation.ts) ; absents = texte standard */
   textes?: Record<string, string>;
   /** Pack visuel de la spécialité (photos par défaut) et animation d'accueil retenue (null = aucune) */

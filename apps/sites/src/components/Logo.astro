@@ -7,7 +7,7 @@
 import { site } from '../lib/site';
 import { titreMetierAffiche, titreCabinet, praticiens } from '../lib/textes';
 import {
-  svgMarque, traitementLogo, validerChoixLogo, initiales, LOGO, COULEURS_MARQUE_CSS,
+  svgMarque, traitementLogo, validerChoixLogo, initiales, LOGO, COULEURS_MARQUE_CSS, svgMarqueImportee, couleursImportee,
   type ChoixLogo, type ModeleManifeste,
 } from '@plateforme/core';
 
@@ -27,13 +27,17 @@ interface Props {
 }
 
 const p = Astro.props;
-const choix = p.choix ?? validerChoixLogo(site.theme.logo, site.profession.slug);
+// Marque importée par l'admin (choisie par le praticien) : rendue avec les mêmes rôles de couleur.
+const importee = site.marqueImportee && (p.choix?.marque ?? site.theme.logo?.marque) === site.marqueImportee.id ? site.marqueImportee : undefined;
+const choix = p.choix ?? (importee ? { marque: importee.id, disposition: validerChoixLogo(site.theme.logo, site.profession.slug).disposition } : validerChoixLogo(site.theme.logo, site.profession.slug));
 const m = p.modele ?? site.modele;
 const t = traitementLogo(m);
 const nom = p.nom ?? (praticiens.length > 1 ? 'Cabinet de podologie' : `${praticiens[0].prenom} ${praticiens[0].nom}`);
 const ligne = p.ligne ?? `${titreMetierAffiche} · ${site.cabinet.ville}`;
 const taille = p.taille ?? LOGO.tailles[choix.disposition];
-const svg = svgMarque(choix.marque, COULEURS_MARQUE_CSS, {
+const svg = importee
+  ? svgMarqueImportee(importee, couleursImportee(t.marque, COULEURS_MARQUE_CSS, t.rayon), taille)
+  : svgMarque(choix.marque, COULEURS_MARQUE_CSS, {
   traitement: t.marque,
   rayon: t.rayon,
   epais: t.epais,

@@ -13,6 +13,9 @@ import {
   initiales,
   DISPOSITIONS_LOGO,
   MODES_VISUELS,
+  svgMarqueImportee,
+  couleursImportee,
+  type MarqueImportee,
   lieuVide,
   PAYS,
   praticienVide,
@@ -36,11 +39,11 @@ import { enregistrerSite } from './actions';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
-type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[] };
+type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[] };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, initial, catalogue, modeles }: Props) {
+export default function Editeur({ siteId, initial, catalogue, modeles, marquesImportees }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -53,7 +56,9 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
   const traitement = traitementLogo(modeleCourant);
   const couleursLogo = couleursMarque(modeleCourant, { couleur: d.theme.couleur, gamme: d.theme.gamme || null });
   const sigle = initiales(d.cabinet.nom || `${d.praticiens[0]?.prenom ?? ''} ${d.praticiens[0]?.nom ?? ''}`).replace(/[^\p{L}]/gu, '');
+  const importee = (id: string) => marquesImportees.find((m) => m.id === id);
   const apercuMarque = (id: string) =>
+    importee(id) ? svgMarqueImportee(importee(id)!, couleursImportee(traitement.marque, couleursLogo, traitement.rayon), 48) :
     svgMarque(id, couleursLogo, { traitement: traitement.marque, rayon: traitement.rayon, epais: traitement.epais, taille: 48, initiales: sigle, police: traitement.police, graisse: traitement.graisse });
   const pays = PAYS.find((p) => p.value === d.pays) ?? PAYS[0];
 
@@ -436,7 +441,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                 <legend className="font-medium">Logo</legend>
                 <p className="mt-1 text-xs text-neutral-500">Marques dessinées selon la charte, rendues avec le style du modèle et vos couleurs.</p>
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {marquesLogo('podologie').map((m) => (
+                  {[...marquesLogo('podologie'), ...marquesImportees].map((m) => (
                     <button
                       key={m.id}
                       type="button"

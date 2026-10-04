@@ -9,6 +9,9 @@ import {
   fusionnerPack,
   fusionnerSpecialites,
   validerChoixLogo,
+  marquesLogo,
+  assainirMarque,
+  type MarqueImportee,
   validerPersonnalisation,
   type PersonnalisationPack,
   validerManifeste,
@@ -83,6 +86,16 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const [persoSecondaire] = d.theme.specialiteSecondaire
     ? await lire<PersonnalisationPack[]>(`packs_visuels?id=eq.${encodeURIComponent(d.theme.specialiteSecondaire)}&select=photos,animation`).catch(() => [])
     : [];
+  // Logo : marque dessinée par la charte, ou marque importée par l'admin (active, renettoyée).
+  const choixLogo = validerChoixLogo(d.theme.logo);
+  let marqueImportee: MarqueImportee | undefined;
+  if (d.theme.logo?.marque && !marquesLogo().some((m) => m.id === d.theme.logo.marque)) {
+    const [l] = await lire<{ id: string; nom: string; sens: string; view_box: string; contenu: string }[]>(
+      `marques_logo?id=eq.${encodeURIComponent(d.theme.logo.marque)}&actif=eq.true&select=id,nom,sens,view_box,contenu`,
+    ).catch(() => []);
+    if (l) marqueImportee = assainirMarque({ id: l.id, nom: l.nom, sens: l.sens, viewBox: l.view_box, contenu: l.contenu }) ?? undefined;
+  }
+  const logo = marqueImportee ? { marque: marqueImportee.id, disposition: choixLogo.disposition } : choixLogo;
   const visuelsSpecialite = d.theme.specialiteSecondaire ? fusionnerSpecialites(pack, fusionnerPack(packVisuel(d.theme.specialiteSecondaire), persoSecondaire)) : pack;
   // Même contrôle que le back-office : un site incomplet n'est jamais publié (sauf site de test).
   const { bloquants } = controlerPublication(d);
@@ -167,7 +180,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       tarifs: [],
     },
     rdv: { url: d.rdv.url, plateforme: d.rdv.outil },
-    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo: validerChoixLogo(d.theme.logo), modeVisuel: d.theme.modeVisuel, mise_en_page: 'sobre', style_images: 'minimal' },
+    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, modeVisuel: d.theme.modeVisuel, mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
       texte: `${titreMetier} à ${quartier} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
@@ -198,6 +211,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     communes: d.cabinet.communes,
     photos: d.photos,
     // Textes de l'éditeur visuel, revalidés (option « édition » requise pour les zones guidées).
+    marqueImportee,
     textes: validerPersonnalisation(d.perso.textes, Boolean(s.options?.edition)).textes,
     visuels: {
       specialite: pack.value,

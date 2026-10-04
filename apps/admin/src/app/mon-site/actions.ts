@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { formaterTelephone, validerChoixLogo, GAMMES, normaliserDraft, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
+import { getMarquesImportees } from '@/lib/marques';
 
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string };
 
@@ -17,7 +18,7 @@ const photo = (v: unknown) => { const s = t(v, 400); return s.startsWith(PREFIXE
 const parmi = <T extends string>(v: unknown, valeurs: readonly T[], defaut: T): T => (valeurs.includes(v as T) ? (v as T) : defaut);
 
 // Normalise puis borne chaque champ (aucune donnée inattendue n'est enregistrée).
-function nettoyer(brut: unknown, modeles: string[], edition: boolean): SiteDraft {
+function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImportees: string[] = []): SiteDraft {
   const d = normaliserDraft(brut);
   return {
     version: 2,
@@ -79,7 +80,8 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean): SiteDraft
       specialite: parmi(d.theme.specialite, SPECIALITES.map((s) => s.value), 'generale'),
       specialiteSecondaire: d.theme.specialiteSecondaire !== d.theme.specialite ? parmi(d.theme.specialiteSecondaire, ['', ...SPECIALITES.map((s) => s.value)], '') : '',
       gamme: parmi(d.theme.gamme, ['', ...GAMMES.map((g) => g.id)], ''),
-      logo: validerChoixLogo(d.theme.logo),
+      // Marque dessinée (validée) ou marque importée active.
+      logo: marquesImportees.includes(d.theme.logo?.marque) ? { marque: d.theme.logo.marque, disposition: validerChoixLogo(d.theme.logo).disposition } : validerChoixLogo(d.theme.logo),
       modeVisuel: parmi(d.theme.modeVisuel, ['mixte', 'photos', 'illustrations'] as const, 'mixte'),
       animation: Boolean(d.theme.animation),
     },
@@ -98,7 +100,7 @@ export async function enregistrerSite(id: string | null, draft: SiteDraft): Prom
 
   const { data: existant } = id ? await supabase.from('sites').select('options').eq('id', id).maybeSingle() : { data: null };
   const edition = Boolean((existant?.options as { edition?: boolean } | null)?.edition);
-  const config = nettoyer(draft, (await getModelesDisponibles()).map((m) => m.id), edition);
+  const config = nettoyer(draft, (await getModelesDisponibles()).map((m) => m.id), edition, (await getMarquesImportees()).map((m) => m.id));
   const requete = id
     ? supabase.from('sites').update({ config }).eq('id', id).select('id').single()
     : supabase.from('sites').insert({ profession_slug: 'podologue', config }).select('id').single();

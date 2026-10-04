@@ -1,6 +1,7 @@
 import { assainirMarque, marquesLogo, svgMarqueImportee } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { ActionsMarque, ImportMarque } from './ImportMarque';
+import Propagation from '@/components/Propagation';
 
 export const metadata = { title: 'Super admin · Logos' };
 
@@ -61,6 +62,7 @@ export default async function Logos() {
                 </span>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${l.actif ? 'bg-teal-100 text-teal-900' : 'bg-neutral-100 text-neutral-700'}`}>{l.actif ? 'Active' : 'Inactive'}</span>
                 <ActionsMarque id={l.id} actif={l.actif} />
+                {l.actif && <div className="w-full"><Propagation cible={{ marque: l.id }} libelle="cette marque" /></div>}
               </li>
             );
           })}

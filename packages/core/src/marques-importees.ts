@@ -110,3 +110,19 @@ export function svgMarqueImportee(m: MarqueImportee, couleurs: { trait: string; 
   const etiquette = titre ? ` role="img" aria-label="${titre.replace(/[<>&"]/g, '')}"` : ' aria-hidden="true"';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${taille}" height="${taille}"${etiquette} style="--marque-trait:${couleurs.trait};--marque-second:${couleurs.second}">${tuile}${m.contenu}</svg>`;
 }
+
+/**
+ * Couleurs d'une marque importée selon le traitement du modèle (comme les marques dessinées) :
+ * plein = trait clair sur tuile à la couleur du cabinet ; trait = couleur du cabinet sans tuile ;
+ * plan = repères « signal » sur tuile plan. Les couleurs sont des #hex ou des var(--…).
+ */
+export function couleursImportee(
+  traitement: string,
+  c: { accent: string; clair?: string; plan?: string; signal?: string },
+  rayon = 12,
+): { trait: string; second: string; fond?: string; rayon?: number } {
+  const adoucir = (couleur: string, part: number) => `color-mix(in srgb, ${couleur} ${part}%, transparent)`;
+  if (traitement === 'plan') return { trait: c.signal ?? c.accent, second: adoucir(c.clair ?? c.signal ?? c.accent, 70), fond: c.plan ?? c.accent, rayon };
+  if (traitement === 'plein') return { trait: c.clair ?? '#ffffff', second: adoucir(c.clair ?? '#ffffff', 65), fond: c.accent, rayon };
+  return { trait: c.accent, second: adoucir(c.accent, 45) };
+}
