@@ -199,7 +199,7 @@ export const LOGO = {
   rayonTuile: 0.6,
   rayonMax: 24,
   opaciteSecondaire: 0.45,
-  profil: { aplat: 0.28, fragment: 1.6 },
+  profil: { aplat: 0.28, ombre: 0.55, trait: 0.8, traitEpais: 1 },
   rubans: { echelle: 0.92, inclinaison: 38, adouci: 0.55, moyen: 1.25, compact: 1.6 },
   tailles: { horizontale: 42, empilee: 40, monogramme: 44, pied: 48 },
   nom: { taille: '1.04rem', tailleSerif: '1.32rem', tailleEmpilee: '0.98rem' },

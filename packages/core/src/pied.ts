@@ -111,64 +111,197 @@ export const OS = {
   ] as [number, number, number, number][][],
 };
 
+// ———————————————————————————————————————————————————— Squelette de profil (pied articulé)
+
 /**
- * Pied droit de PROFIL (vue externe, pointe à droite), squelette articulé : repère x 0–112, y −16–58,
- * sol en y = 58. Os en contours fermés séparés par un jour d'articulation assez large pour rester ouvert
- * sous le trait ; tibia et fibula coupés en haut (tracé ouvert). Trois découpages : `masses` (favicon,
- * trois volumes), `principaux` (en-tête), `os` (version détaillée, petits os du tarse en ellipses
- * [cx, cy, rx, ry, rotation°]) ; rayons en capsules [x1, y1, x2, y2, rayon] ; `reflets` (petits arcs) ;
- * `epure` (fragments d'os et contour ouvert).
+ * Tronçon de contour : chaîne de courbes de Bézier cubiques [x0, y0, (c1x, c1y, c2x, c2y, x, y)…].
+ * Deux os voisins réutilisent le MÊME tronçon (l'un dans un sens, l'autre dans l'autre) : leurs bords
+ * se touchent exactement et l'interligne articulaire est le trait lui-même, fin et continu.
+ */
+type Troncon = number[];
+
+const fx = (v: number) => +v.toFixed(2);
+/** Segment droit sous forme de cubique */
+const droit = (a: P, b: P): Troncon => [a[0], a[1], a[0] + (b[0] - a[0]) / 3, a[1] + (b[1] - a[1]) / 3, a[0] + (2 * (b[0] - a[0])) / 3, a[1] + (2 * (b[1] - a[1])) / 3, b[0], b[1]];
+/** Tronçon parcouru dans l'autre sens */
+const inverse = (t: Troncon): Troncon => {
+  const p: number[][] = [];
+  for (let i = 0; i < t.length; i += 2) p.push([t[i], t[i + 1]]);
+  return p.reverse().flat();
+};
+/** Arc de cercle (degrés, y vers le bas) en cubiques, par quarts de tour au plus */
+function arc(c: P, r: number, a0: number, a1: number): Troncon {
+  const nb = Math.max(1, Math.ceil(Math.abs(a1 - a0) / 90));
+  const pas = ((a1 - a0) / nb) * (Math.PI / 180);
+  const k = (4 / 3) * Math.tan(pas / 4) * r;
+  let a = (a0 * Math.PI) / 180;
+  const t: number[] = [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)];
+  for (let i = 0; i < nb; i++) {
+    const b = a + pas;
+    t.push(c[0] + r * Math.cos(a) - k * Math.sin(a), c[1] + r * Math.sin(a) + k * Math.cos(a), c[0] + r * Math.cos(b) + k * Math.sin(b), c[1] + r * Math.sin(b) - k * Math.cos(b), c[0] + r * Math.cos(b), c[1] + r * Math.sin(b));
+    a = b;
+  }
+  return t;
+}
+/** Contour d'un os à partir de tronçons qui s'enchaînent (fermé, ou ouvert pour un os coupé) */
+function contourOs(troncons: Troncon[], ferme = true): string {
+  let d = `M${fx(troncons[0][0])} ${fx(troncons[0][1])}`;
+  for (const t of troncons) for (let i = 2; i < t.length; i += 6) d += `C${fx(t[i])} ${fx(t[i + 1])} ${fx(t[i + 2])} ${fx(t[i + 3])} ${fx(t[i + 4])} ${fx(t[i + 5])}`;
+  return ferme ? `${d}Z` : d;
+}
+const debut = (t: Troncon): P => [t[0], t[1]];
+const fin = (t: Troncon): P => [t[t.length - 2], t[t.length - 1]];
+
+/**
+ * Os long (métatarsien, phalange) : une base (tronçon partagé avec l'os précédent, du dessus vers le
+ * dessous), une diaphyse effilée et une tête ronde de centre `tete` et de rayon `r`. Renvoie le contour et
+ * le cercle de la tête, sur lequel l'os suivant pose sa base concave (l'emboîtement).
+ */
+function osLong(base: Troncon, tete: P, r: number, taille: number) {
+  const [h, b] = [debut(base), fin(base)];
+  const m: P = [(h[0] + b[0]) / 2, (h[1] + b[1]) / 2];
+  const l = Math.hypot(tete[0] - m[0], tete[1] - m[1]);
+  const u: P = [(tete[0] - m[0]) / l, (tete[1] - m[1]) / l];
+  const v: P = [-u[1], u[0]]; // côté plantaire
+  const axe = (f: number, s: number, w: number): number[] => [m[0] + u[0] * l * f + s * v[0] * w, m[1] + u[1] * l * f + s * v[1] * w];
+  const a = (Math.atan2(u[1], u[0]) * 180) / Math.PI;
+  const tet = arc(tete, r, a + 90, a - 90);
+  const dessous: Troncon = [...b, ...axe(0.4, 1, taille), ...axe(0.8, 1, taille), ...debut(tet)];
+  const dessus: Troncon = [...fin(tet), ...axe(0.8, -1, taille), ...axe(0.4, -1, taille), ...h];
+  return { d: contourOs([base, dessous, tet, dessus]), tete, r, a };
+}
+/** Base concave d'un os posé sur la tête du précédent, orientée vers le centre de sa propre tête */
+function baseSur(prec: { tete: P; r: number }, vers: P, ouverture = 58): Troncon {
+  const a = (Math.atan2(vers[1] - prec.tete[1], vers[0] - prec.tete[0]) * 180) / Math.PI;
+  return arc(prec.tete, prec.r, a - ouverture, a + ouverture);
+}
+/** Rayon d'orteils : phalanges successives [centre de tête, rayon, demi-largeur de diaphyse] */
+function orteil(meta: { tete: P; r: number }, phalanges: [P, number, number][]): string[] {
+  let prec = meta;
+  return phalanges.map(([t, r, w]) => {
+    const o = osLong(baseSur(prec, t), t, r, w);
+    prec = o;
+    return o.d;
+  });
+}
+
+// Points d'articulation (repère du profil : x 0–120, y −14–58, sol en y = 58, pointe à droite)
+const A: P = [23, 21.5]; // arrière du dôme du talus
+const B: P = [47.5, 19.5]; // avant du dôme
+const N1: P = [53.5, 22.5]; // col du talus, dessus du naviculaire
+const N2: P = [55, 34.5]; // carrefour de Chopart (talus, calcanéum, naviculaire, cuboïde)
+const A0: P = [23.5, 30.5]; // arrière du talus sur le calcanéum
+const K1: P = [55.5, 48.5]; // bas de l'interligne calcanéo-cuboïdien
+const V1: P = [62.5, 21.8]; // dessus naviculaire / cunéiforme
+const Vm: P = [66, 29.5];
+const V2: P = [63.5, 37]; // bas du naviculaire
+const V3: P = [69.5, 39.5]; // cunéiforme latéral / cuboïde / base des métatarsiens latéraux
+const W1: P = [73, 23.5]; // base du 1er rayon
+const Wm: P = [73, 31.5];
+const K2: P = [67.5, 52]; // bas du cuboïde, base du 5e métatarsien
+
+const T = {
+  // Jambe (ouverte en haut)
+  tibiaArriere: [27, -14, 27, 0, 27.6, 9, 24.8, 15.2, 23.8, 17.4, 23.2, 19.4, ...A],
+  dome: [...A, 27, 16.4, 40, 14.4, ...B],
+  tibiaAvant: [...B, 47.8, 16, 45.4, 13.4, 43.2, 9.6, 41.6, 6, 41.6, 0, 41.6, -14],
+  fibula: [22.5, -14, 22.5, 0, 23.2, 8, 22.8, 13, 23.2, 18.5, 22.6, 24, 20.2, 27.6, 18.6, 29.6, 15.6, 29, 14.2, 25.4, 13, 21.5, 13.6, 15, 14.4, 9, 15, 2, 15, -14, 15, -14],
+  // Pied
+  col: [...B, 50.2, 20.8, 51.6, 21.8, ...N1],
+  teteTalus: [...N1, 58.8, 23.4, 60, 31.4, ...N2],
+  subtalaire: [...N2, 50, 35.2, 45, 32.2, 39, 32.6, 33, 33, 28, 34, ...A0],
+  talusArriere: [...A0, 21.6, 28.6, 21.4, 24, ...A],
+  calcaneumDessus: [...A0, 19, 31.8, 14.5, 28.4, 9, 28.4],
+  talon: [9, 28.4, 3.4, 28.4, 0.6, 33.6, 0.8, 41, 1, 48.6, 3.4, 55, 8.4, 57.2, 12, 58.6, 17, 58.2, 21, 56.2],
+  calcaneumDessous: [21, 56.2, 27, 53.8, 32, 52, 38, 51.2, 45, 50.4, 51, 50, ...K1],
+  calcaneoCuboidien: [...K1, 57.6, 45, 57.6, 39, ...N2],
+  naviculaireDessus: [...V1, 59.5, 21, 56, 21.6, ...N1],
+  naviculaireDessous: [...N2, 58, 35.8, 61, 37, ...V2],
+  naviculaireAvantBas: [...V2, 65.2, 35, 66.2, 32.4, ...Vm],
+  naviculaireAvantHaut: [...Vm, 65.8, 26.6, 64.8, 23.8, ...V1],
+  cuneiformeDessus: [...V1, 66.5, 21.6, 70, 22.4, ...W1],
+  cuneiformes: [...Wm, 71, 30.8, 68.6, 30, ...Vm],
+  baseM1: [...W1, 73.6, 26, 73.6, 28.8, ...Wm],
+  baseM2: [...Wm, 72.6, 34, 71.4, 36.8, ...V3],
+  cuboideDessus: [...V2, 65.4, 37.6, 67.6, 38.8, ...V3],
+  baseM5: [...V3, 70, 43, 69.4, 48, ...K2],
+  cuboideDessous: [...K2, 63.6, 53.4, 59.4, 51.8, ...K1],
+} satisfies Record<string, Troncon>;
+
+// Métatarsiens : 1er rayon (dessus), rayon médian, 5e (dessous, base large de la tubérosité)
+const M1 = osLong(T.baseM1, [95, 39], 4.8, 3.6);
+const M2 = osLong(T.baseM2, [89.5, 48], 4.4, 3);
+const M5 = osLong(T.baseM5, [82, 54.2], 3.8, 3.1);
+// En-tête : deux rayons seulement (cunéiformes d'un bloc), base du 1er sur toute la face des cunéiformes
+const M1bloc = osLong([...T.baseM1, ...T.baseM2.slice(2)], [95, 39.5], 4.9, 3.6);
+
+const OS_PROFIL = {
+  tibia: contourOs([T.tibiaArriere, T.dome, T.tibiaAvant], false),
+  fibula: contourOs([T.fibula], false),
+  talus: contourOs([T.dome, T.col, T.teteTalus, T.subtalaire, T.talusArriere]),
+  calcaneum: contourOs([T.calcaneumDessus, T.talon, T.calcaneumDessous, T.calcaneoCuboidien, T.subtalaire]),
+  naviculaire: contourOs([T.naviculaireDessus, T.teteTalus, T.naviculaireDessous, T.naviculaireAvantBas, T.naviculaireAvantHaut]),
+  cuneiformeMedial: contourOs([T.cuneiformeDessus, T.baseM1, T.cuneiformes, T.naviculaireAvantHaut]),
+  cuneiformeLateral: contourOs([inverse(T.cuneiformes), T.baseM2, inverse(T.cuboideDessus), T.naviculaireAvantBas]),
+  cuboide: contourOs([T.cuboideDessus, T.baseM5, T.cuboideDessous, T.calcaneoCuboidien, T.naviculaireDessous]),
+  /** En-tête : naviculaire, cunéiformes et cuboïde d'un bloc */
+  tarse: contourOs([T.naviculaireDessus, T.teteTalus, inverse(T.calcaneoCuboidien), inverse(T.cuboideDessous), inverse(T.baseM5), inverse(T.baseM2), inverse(T.baseM1), inverse(T.cuneiformeDessus)]),
+  orteil1: orteil(M1, [[[107, 43.6], 3.8, 3], [[116.5, 48.2], 3.2, 2.4]]),
+  orteil2: orteil(M2, [[[100, 50.8], 3.5, 2.6], [[108.5, 54.2], 2.9, 2.2]]),
+  orteil5: orteil(M5, [[[92, 55.6], 3, 2.4]]),
+  orteil1Bloc: orteil(M1bloc, [[[107, 43.8], 3.9, 3.1], [[116.5, 48.4], 3.2, 2.4]]),
+  orteil5Bloc: orteil(M5, [[[92, 55.6], 3, 2.4]]),
+};
+const O = OS_PROFIL;
+const ton = (t: number) => (d: string) => ({ d, ton: t });
+
+/**
+ * Pied droit de PROFIL (vue externe, pointe à droite), squelette articulé : repère x 0–120, y −14–58,
+ * sol en y = 58. Les os sont des contours fermés qui partagent leurs bords (tronçons communs) : talus
+ * emboîté sous le tibia et dans le naviculaire, calcanéum massif avec sa tubérosité, interligne de
+ * Chopart en S, cunéiformes et cuboïde, métatarsiens effilés à tête ronde, phalanges à base concave
+ * posées sur la tête précédente. Tibia et fibula coupés en haut (contour ouvert). Trois découpages :
+ * `masses` (favicon, trois volumes), `principaux` (en-tête), `os` (version détaillée). Chaque os porte
+ * un ton : 0 = aplat, 1 = ombre (os en arrière-plan). `reflets` : petits arcs (version détaillée).
  */
 export const PROFIL = {
   largeur: 120,
   haut: -14,
   hauteur: 72,
   sol: 58,
-  /** Favicon : jambe, arrière-pied (talus + calcanéum), avant-pied (tarse antérieur, métatarsiens, orteils) */
+  /** Favicon : jambe, arrière-pied (talus + calcanéum), avant-pied (tarse antérieur, rayons, orteils) */
   masses: [
-    'M15 -14 L15.5 13 C16 20 20 23 26 23 L36 23 C41 23 43 20 42.5 14 L42 -14 Z',
-    'M2 46 C2 37.5 7 33.5 14 34 C19 34.5 21 30 28 30 L45 30 C52 30 55.5 34.5 54.5 40 C53.5 46 47 51 39 54 C30 57.5 21 58.5 12.5 58.5 C5.5 58.5 2 54 2 46 Z',
-    'M64 31 C74 32.5 93 42 106 49 C116 54 117 58.5 111 58.5 L66 58.5 C61.5 58.5 60 55.5 60.5 51 L61 36 C61.3 32.5 62.5 31 64 31 Z',
+    'M15 -14 H42 V6 C42 10 45.6 13 47.5 18.4 C40 14.6 30 14.6 22.5 18.6 C19 20.4 15.6 19.6 15.2 15 Z',
+    'M1 42 C0.8 34 4 29 9.5 28.6 C15 28.2 18.5 27.6 22 25 C28 21 40 20.8 48.5 23.5 C53 25 55.5 29 55.5 34 L55.5 46.6 C54 50.2 49.5 50.8 44 51.4 C35 52.4 28 54 22 56.4 C16.5 58.6 9 59 5 56.2 C2.2 54 1 49 1 42 Z',
+    'M65 22.5 C72.5 22.5 79 25.5 87 31 C95 36.5 105 42.5 113.5 47 C119.5 50.5 120 56 114 57.6 C105 59 92 59 80 58.6 C73.5 58.3 69 56.4 65.6 53.4 C63.6 51.4 62.6 48 62.6 44 L62.8 27 C62.9 24 63.6 22.5 65 22.5 Z',
   ],
-  /** Os longs et grands os du tarse (contours ; tibia et fibula ouverts en haut) */
+  /** En-tête : jambe, talus, calcanéum, tarse antérieur d'un bloc, deux rayons et leurs orteils */
+  principaux: [
+    ...[O.tibia, O.talus, O.calcaneum, O.tarse, M1bloc.d, ...O.orteil1Bloc].map(ton(0)),
+    ...[O.fibula, M5.d, ...O.orteil5Bloc].map(ton(1)),
+  ],
+  /** Version détaillée : tous les os (les os d'arrière-plan en ombre) */
   os: [
-    'M25 -14 L25.5 13 C25.5 18.5 28.5 21 33.5 21 L38 21 C41.5 21 43 18.5 42.5 14 L41.5 -14', // tibia
-    'M14 -14 L14.5 16 C14.8 23 18.5 26.5 21.5 24 C22.8 22.8 22.5 19.5 22 16 L21.2 -14', // fibula
-    'M24 33 C24 28.5 28.5 26 34 26 L42 26 C48 26 52 28.5 53.5 32 C54.5 35 52.8 37.5 49.5 37.5 L28.5 38 C25.8 38 24 36 24 33 Z', // talus
-    'M2 47 C2 39.5 6.5 35.5 12.5 35.5 C18 35.5 21.5 39 25.5 41 C29.5 43 33 44 38 43.5 L43 43 C47 43 49.5 45.5 48.5 49.5 C47.5 53.5 43 56 38 56.5 C30 57.5 21 58.5 12.5 58.5 C6 58.5 2 54 2 47 Z', // calcanéum
+    ...[O.tibia, O.talus, O.calcaneum, O.naviculaire, O.cuneiformeMedial, M1.d, M5.d, ...O.orteil1, ...O.orteil5].map(ton(0)),
+    ...[O.fibula, O.cuneiformeLateral, O.cuboide, M2.d, ...O.orteil2].map(ton(1)),
   ],
-  /** En-tête : le tarse antérieur d'un seul bloc */
-  bloc: 'M65 28.5 C72 29 78.5 33.5 79 40 C79.5 45.5 75.5 50 69 50 L62.5 50 C59 50 57.5 47.5 58 44 L59.5 34.5 C60.2 30.5 62 28.5 65 28.5 Z',
-  /** Version détaillée : naviculaire, cunéiformes, cuboïde [cx, cy, rx, ry, rotation°] */
-  tarse: [
-    [62.5, 33.5, 4.2, 5.8, 8],
-    [74, 39, 3.8, 5.8, 25],
-    [58.5, 50, 4.6, 4.2, 0],
-  ] as [number, number, number, number, number][],
-  /** Rayons en capsules [x1, y1, x2, y2, rayon] : 1er et 5e métatarsiens, puis orteils */
-  rayons: {
-    principaux: [
-      [86, 45, 101, 51, 3.2], [77, 55.3, 96, 56.4, 2.3], [110, 54.4, 116, 56.2, 2.4],
-    ] as [number, number, number, number, number][],
-    os: [
-      [84.5, 44.5, 101, 51, 3.2], [69.5, 54.6, 96, 56.4, 2.4], [110, 54.4, 116, 56.2, 2.4], [102.5, 57.3, 104.5, 57.4, 1.6],
-    ] as [number, number, number, number, number][],
-  },
   /** Reflets discrets (version détaillée) : petits arcs dans le calcanéum, le talus et le tibia */
-  reflets: 'M8.5 43 C10 40.5 12.5 39.6 15.5 39.9 M31 29.5 C34 29.2 37.5 29.5 40.5 30.6 M37 -6 L37.3 11',
+  reflets: 'M5.5 40 C6.4 36 9 33.6 12.6 33.2 M31 20.4 C34.5 19.4 38.5 19.4 42 20.4 M36.5 -6 L36.8 8',
   /**
-   * Épure : contour de peau ouvert (arrière du talon, dos du pied), ligne d'appui plantaire,
-   * os réduits à cinq fragments [x1, y1, x2, y2, épaisseur relative] posés à plat.
+   * Épure : contour de peau ouvert (arrière du talon, dos du pied), ligne d'appui plantaire, et la
+   * colonne interne du même squelette au trait seul (sans aplat), réduite dans la peau (`reduction` :
+   * décalage x, y et échelle). `os` : version détaillée ; `principaux` : en-tête ; `compact` : favicon.
    */
   epure: {
-    talon: 'M10 -14 C10 2 12 17 8 26 C3 34 0 43 1.5 51 C3 56 7.5 58.5 13 58.5',
-    dos: 'M47 -14 C47 2 48 17 55 25 C66 34 90 43 106 49.5 C112 52.5 116 54.5 117 57',
-    /** Appuis plantaires sous le pied : [x, niveau de pression 0–1] (talon, voûte, avant-pied) */
-    appuis: [[16, 1], [30, 0.8], [46, 0.3], [60, 0.1], [74, 0.45], [88, 0.8], [102, 0.6]] as [number, number][],
+    talon: 'M13.5 -14 C13.5 2 14.5 14 12 22 C5.5 31 2 41 3 50 C4 55.5 8 58.5 13.5 58.5',
+    dos: 'M50 -14 C50 2 51 11 55.5 15.5 C61 20 70 19 80 24.5 C91 30.5 103 37.5 111 42.5 C115.5 45.5 117.5 51 116.5 58.5',
+    /** Appuis plantaires sous le pied : [x, niveau de pression 0–1] (talon, voûte, avant-pied, orteils) */
+    appuis: [[14, 1], [27, 0.8], [41, 0.3], [55, 0.1], [69, 0.45], [83, 0.8], [97, 1], [109, 0.6]] as [number, number][],
     sol: 58.5,
-    fragments: [
-      [32, -8, 32.5, 13, 1], [10, 47, 38, 45, 1.6], [58, 36, 70, 38, 1.25], [80, 44.5, 100, 51.5, 1], [107, 54.3, 113, 56, 0.8],
-    ] as [number, number, number, number, number][],
+    reduction: [9, 4.5, 0.84] as [number, number, number],
+    os: [O.tibia, O.talus, O.calcaneum, O.naviculaire, O.cuneiformeMedial, M1.d, ...O.orteil1],
+    principaux: [O.talus, O.calcaneum, M1bloc.d, ...O.orteil1Bloc],
+    compact: [O.talus, O.calcaneum, O.tarse, M1bloc.d, ...O.orteil1Bloc],
   },
 };
 
@@ -254,15 +387,19 @@ export const CHAUSSURE = {
 };
 
 /**
- * Jambe de profil, du genou au pied (repère 100 × 100, pointe à droite) : appui à plat, tibia incliné vers
- * l'avant (milieu d'appui, avant la propulsion). Silhouette pleine, sol, et zones d'appui
- * marquées en bandes sur le sol, sous la plante.
+ * Jambe de profil, du genou au pied (repère 100 × 100, pointe à droite), en fin d'appui : talon levé,
+ * appui sur l'avant-pied et les orteils, tibia incliné vers l'avant. Silhouette anatomique : crête
+ * tibiale rectiligne à l'avant (rotule et tubérosité tibiale sous la coupe du genou), galbe du
+ * gastrocnémien à l'arrière, tendon d'Achille, cheville fine, talon arrondi, voûte, avant-pied et orteils
+ * à plat. Contour ouvert au genou (coupe). Sol, zones d'appui en bandes sur le sol, sous la plante.
  */
 export const JAMBE = {
-  silhouette: 'M54 10 C59 6 67 6 71.5 9.5 C70 14 66 30 61 46 C58.5 54 56.5 59 56 63 C60 68 70 72 80 75 C86.5 77 90.5 79 90 81.8 C89.5 83.8 86.5 84.3 82.5 84.3 L47.5 84.3 C41.5 84.3 38.5 80.5 39.5 75.5 C40.5 71 43 66.5 43.5 61 C44 54 39 44 39.5 33 C40 23 47 15 54 10 Z',
-  /** Disque de fond, en retrait vers le haut et l'arrière : la jambe en sort par l'avant */
-  disque: [42, 42, 32] as [number, number, number],
-  sol: { y: 90, x1: 8, x2: 96 },
-  /** Zones d'appui en bandes sous la plante [x1, x2, niveau] : talon, médio-pied (bord externe), avant-pied */
-  appuis: [[43, 53, 1], [59, 66, 0.3], [72, 86, 0.8]] as [number, number, number][],
+  silhouette: 'M55.8 7.7 C57.6 9.4 57.8 12.8 56.6 15 C56.1 16 56.2 17.4 55.8 18.8 L41.5 61 C43.5 64.5 47 68 51.5 72.5 C55 76 58 78.5 60.5 79.6 C62 80.3 63 80.6 64.5 80.6 C67 80.6 69.4 81.8 69.6 83.6 C69.8 85 69 85.6 67.4 85.6 L56 85.6 C52.5 85.6 50.5 84.6 48.8 83 C44 78.5 39.5 75.6 35.5 74.4 C31.5 73.2 27.6 71 27 66.6 C26.5 63 28 60.6 29.4 58.6 C31.2 55.4 33.6 51.5 34.6 47.5 C35.4 44 35.2 40.5 34.2 36.5 C32.6 30.5 32 23 33.8 16.5 C35.2 11.5 37.6 7 40.2 4.3',
+  /** Détail (version détaillée) : la malléole externe, suggérée par un arc */
+  details: 'M36.8 56.2 C39.2 55.4 41 57.4 40.4 60',
+  /** Disque de fond, en retrait vers le haut et l'arrière : la jambe le traverse */
+  disque: [34, 34, 26] as [number, number, number],
+  sol: { y: 90, x1: 8, x2: 92 },
+  /** Zones d'appui en bandes sous la plante [x1, x2, niveau] : trace du talon (déjà levé), avant-pied, orteils */
+  appuis: [[27, 33, 0.15], [44, 52, 1], [58.5, 66, 0.6]] as [number, number, number][],
 };
