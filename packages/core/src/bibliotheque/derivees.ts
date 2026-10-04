@@ -12,8 +12,9 @@ function remplacer(corps: string, avant: string, apres: string): string {
  * `hallux-dorsal-incarne-sites` : dérivé de POD-AT-0009 (état incarné), retouche du spicule validée par Paul le 2026-10-05 (contre-revue
  * de l'illustrateur médical, N8). Le spicule n'est plus un triangle pointu détaché de la lame par un cran et peint par-dessus le repli
  * (lu « écharde ») : il PROLONGE l'arc latéral de la lame (même tracé, même trait, un seul contour avec la lame), bout arrondi, et son
- * bout est RECOUVERT par le repli latéral épaissi, peint après la lame (contour du repli continu). Le repli bombe un peu plus
- * (≈ 10 % de la largeur de la lame) sur le tiers distal.
+ * bout est RECOUVERT par le repli latéral épaissi, peint après la lame (contour du repli continu). Lecture patient à 240 px (revue de
+ * la session principale) : repli bombé de ≈ 22 % de la largeur de la lame, posé sur le bord de la lame qui plonge dessous, teinte
+ * localisée un peu plus sombre que la peau.
  */
 function halluxIncarneSites(): FormeEcranZen {
   const f = FORMES['hallux-dorsal-incarne'];
@@ -26,12 +27,17 @@ function halluxIncarneSites(): FormeEcranZen {
   c = c.split(avant).join(apres);
   // 2. Ancien spicule (triangle peint au-dessus du repli) supprimé
   c = remplacer(c, '<g><path d="M249,156 C249,156 250.5,149.4 253,147 C255.5,144.6 268,138 268,138 C268,138 261.5,147.7 260,151 C258.5,154.3 256.5,163 256.5,163 L249,156 Z" style="fill:var(--ez-ongle);stroke:var(--ez-trait);stroke-width:var(--ez-ep-fin)"/></g>', '');
-  // 3. Repli latéral épaissi : bombé renforcé côté externe (x > 272), bord interne inchangé ; il recouvre le bout du spicule
+  // 3. Repli latéral épaissi et enflammé, lisible à 240 px (lecture patient) : bord externe bombé de ≈ 22 % de la largeur de la lame sur
+  //    la moitié distale, bord interne avancé SUR la lame (le bord latéral de la lame plonge visiblement sous le repli), teinte
+  //    localisée un peu plus sombre que la peau (jeton « inflammation » : jamais un disque rouge vif ; accent léger en monochrome).
   const debut = c.indexOf('<g><path d="M269.8,128');
-  const fin = c.indexOf('</g>', debut);
-  const bosse = (y: number) => (y <= 128 || y >= 186 ? 0 : 3.6 * Math.sin((Math.PI * (y - 128)) / 58) ** 1.4);
-  const groupe = c.slice(debut, fin).replace(/(\d+(?:\.\d+)?),(\d+(?:\.\d+)?)/g, (m, x, y) => (+x > 272 ? `${Math.round((+x + bosse(+y)) * 10) / 10},${y}` : m));
-  c = c.slice(0, debut) + groupe + c.slice(fin);
+  const fin = c.indexOf('</g>', debut) + 4;
+  if (debut < 0) throw new Error('bibliothèque : repli latéral introuvable (forme dérivée)');
+  // Repli en lentille : il part du contour de l'hallux (y ≈ 128) et y revient (y ≈ 192) sans arête, bombe de ≈ 17 u (22 % de la lame)
+  // vers l'extérieur et avance de ≈ 6 u sur le bord de la lame, qui plonge dessous
+  const exterieur = 'M272,128 C290,133 303,149 300.5,166 C298.8,178 292,186 284.4,192';
+  const interieur = 'C277,186 262.5,180 255.6,170 C250.6,162 251.6,147 258.6,138.4 C262.6,133.4 267.4,130 272,128';
+  c = c.slice(0, debut) + `<g><path d="${exterieur} ${interieur} Z" style="fill:var(--ez-inflammation)"/><path d="${exterieur}" style="stroke:var(--ez-trait);stroke-width:var(--ez-ep-normal)"/><path d="M284.4,192 ${interieur}" style="stroke:var(--ez-trait);stroke-width:var(--ez-ep-fin);stroke-opacity:0.7"/></g>` + c.slice(fin);
   return { ...f, corps: c };
 }
 

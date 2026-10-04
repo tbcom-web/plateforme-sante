@@ -12,6 +12,8 @@ import { TRAIT } from '../charte';
 import type { Registre } from '../dessins';
 import { FORMES as FORMES_EZ, JETONS_FORMES } from './formes';
 import { FORMES_DERIVEES } from './derivees';
+/** Jetons propres aux formes dérivées (absents des formes ÉcranZen générées) */
+const JETONS_DERIVES = ['inflammation'] as const;
 
 /** Formes ÉcranZen (générées) et formes dérivées côté sites (derivees.ts) */
 const FORMES = { ...FORMES_EZ, ...FORMES_DERIVEES };
@@ -45,6 +47,8 @@ export const CORRESPONDANCE_JETONS: Record<string, readonly [string, string]> = 
   ongle: ['var(--ongle)', FD],
   os: ['var(--os)', FD],
   tendon: ['var(--tendon)', m(AC, 22, FD)],
+  // Repli enflammé (formes dérivées côté sites) : un peu plus sombre que la peau, localisé ; accent léger en monochrome
+  inflammation: [m('var(--peau-ombre)', 88, P(5)), m(AC, 24, FD)],
   // Objets de la géométrie (semelle POD-AT-0004/0005, sandale, chaussure TRV-AT-0009) : palette de données
   chaussure: [m(TR, 62, FD), m(TR, 12, FD)],
   'semelle-ardoise': [m(EN, 72, BL), m(TR, 16, FD)],
@@ -119,7 +123,7 @@ export function svgForme(cle: string, opts: { registre?: Registre; titre?: strin
   if (!f) throw new Error(`bibliothèque : forme inconnue « ${cle} »`);
   const r = (opts.registre ?? 'pedagogique') === 'releve' ? 1 : 0;
   const vars: string[] = [];
-  for (const j of JETONS_FORMES) {
+  for (const j of [...JETONS_FORMES, ...JETONS_DERIVES]) {
     if (j.startsWith('ep-')) vars.push(`--ez-${j}:${+(EPAISSEURS[j.slice(3)] * (opts.echelleTrait ?? ECHELLE_TRAIT)).toFixed(2)}`);
     else if (CORRESPONDANCE_JETONS[j] && f.corps.includes(`--ez-${j})`)) vars.push(`--ez-${j}:${CORRESPONDANCE_JETONS[j][r]}`);
   }
