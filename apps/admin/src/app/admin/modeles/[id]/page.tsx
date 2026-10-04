@@ -23,7 +23,7 @@ export default async function ModifierModele({ params }: PageProps<'/admin/model
         <Link href="/admin/modeles" className="text-sm text-teal-800">← Modèles</Link>
         <h1 className="mt-2 text-2xl font-bold">Modifier « {modele.nom} »</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-          {integre && !ligne && 'Modèle intégré : vos modifications créent une version qui le remplace, inactive tant que vous ne l’activez pas. '}
+          {integre && !ligne && 'Modèle intégré : « Enregistrer et appliquer » crée une version qui le remplace et republie les sites qui l’utilisent. '}
           {ligne && (ligne.actif ? 'Version active : ' : 'Version inactive : ')}
           {ligne && 'chaque enregistrement crée une nouvelle version. '}
           Le référencement n’est jamais touché : le modèle ne règle que la présentation.

@@ -35,7 +35,7 @@ import Apercu from '@/components/Apercu';
 import Photo from '@/components/Photo';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
-import { enregistrerSite } from './actions';
+import { enregistrerEtPublier, enregistrerSite } from './actions';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
@@ -75,6 +75,12 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
       setStatut(r);
       if (r.ok && r.id) setId(r.id);
       if (r.ok && suivante !== undefined) setEtape(suivante);
+    });
+  const publier = () =>
+    demarrer(async () => {
+      const r = await enregistrerEtPublier(id, d);
+      setStatut(r);
+      if (r.id) setId(r.id);
     });
 
   const derniere = etape === ETAPES.length - 1;
@@ -525,12 +531,20 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
             {derniere ? (
               <div className="flex gap-2">
                 <button type="submit" disabled={enCours} className="rounded-lg border border-teal-800 px-4 py-2.5 text-sm font-semibold text-teal-900 hover:bg-teal-50">Enregistrer</button>
-                <Link href="/tableau-de-bord" className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900">Terminer</Link>
+                <button type="button" disabled={enCours} onClick={publier} className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">Enregistrer et publier</button>
+                <Link href="/tableau-de-bord" className="rounded-lg px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Terminer</Link>
               </div>
             ) : (
-              <button type="submit" disabled={enCours} className="rounded-lg bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">
-                Enregistrer et continuer →
-              </button>
+              <div className="flex gap-2">
+                {id && (
+                  <button type="button" disabled={enCours} onClick={publier} className="rounded-lg border border-teal-800 px-4 py-2.5 text-sm font-semibold text-teal-900 hover:bg-teal-50 disabled:opacity-60">
+                    Enregistrer et publier
+                  </button>
+                )}
+                <button type="submit" disabled={enCours} className="rounded-lg bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">
+                  Enregistrer et continuer →
+                </button>
+              </div>
             )}
           </div>
         </form>

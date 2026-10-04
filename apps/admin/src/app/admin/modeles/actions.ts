@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { MODELES_INTEGRES, validerManifeste } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
+import { declencherPublications, sitesConcernes } from '@/lib/publication';
 import { createClient } from '@/lib/supabase/server';
 
 export type ResultatImport = { ok: boolean; message: string; erreurs?: string[] } | null;
@@ -55,8 +56,9 @@ export async function supprimerModele(id: string) {
 /**
  * Enregistre une fiche modifiée dans l'éditeur. La version est incrémentée automatiquement.
  * nouvelId : enregistre une copie sous un autre identifiant (duplication).
+ * appliquer : active la version et republie tout de suite les sites en ligne qui utilisent ce modèle.
  */
-export async function enregistrerModele(brut: unknown, nouvelId?: string): Promise<ResultatImport> {
+export async function enregistrerModele(brut: unknown, nouvelId?: string, appliquer = false): Promise<ResultatImport> {
   await exigerAdmin();
   const fiche = { ...(brut as Record<string, unknown>) };
   if (nouvelId) fiche.id = nouvelId;
@@ -73,12 +75,22 @@ export async function enregistrerModele(brut: unknown, nouvelId?: string): Promi
     nom: modele.nom,
     manifeste: modele,
     version: modele.version,
-    actif: existant?.actif ?? false,
+    actif: appliquer || (existant?.actif ?? false),
     updated_at: new Date().toISOString(),
   });
   if (error) return { ok: false, message: 'Enregistrement impossible. La migration 0010 a-t-elle été exécutée ?' };
   revalidatePath('/admin/modeles');
   revalidatePath(`/admin/modeles/${modele.id}`);
+  if (appliquer) {
+    const sites = await sitesConcernes({ modele: modele.id });
+    const r = await declencherPublications(sites.map((s) => s.id));
+    return {
+      ok: r.ok,
+      message: sites.length
+        ? `Version ${modele.version} active. ${r.message} (${sites.length} site${sites.length > 1 ? 's' : ''} en ligne, 2 à 3 minutes).`
+        : `Version ${modele.version} active. Aucun site en ligne n’utilise encore ce modèle.`,
+    };
+  }
   return {
     ok: true,
     message: existant?.actif

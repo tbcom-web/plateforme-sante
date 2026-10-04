@@ -164,10 +164,18 @@ export default function EditeurModele({ initial, integre, actif }: Props) {
           <button
             type="button"
             disabled={enCours || erreurs.length > 0}
-            onClick={() => demarrer(async () => setResultat(await enregistrerModele(m)))}
+            onClick={() => demarrer(async () => setResultat(await enregistrerModele(m, undefined, true)))}
             className="rounded-lg bg-teal-800 px-4 py-2.5 font-semibold text-white hover:bg-teal-900 disabled:opacity-50"
           >
-            {enCours ? 'Enregistrement…' : 'Enregistrer une nouvelle version'}
+            {enCours ? 'Enregistrement…' : 'Enregistrer et appliquer aux sites'}
+          </button>
+          <button
+            type="button"
+            disabled={enCours || erreurs.length > 0}
+            onClick={() => demarrer(async () => setResultat(await enregistrerModele(m)))}
+            className="rounded-lg px-4 py-2.5 font-semibold ring-1 ring-black/10 hover:bg-neutral-50 disabled:opacity-50"
+          >
+            Enregistrer sans appliquer (brouillon)
           </button>
           <button
             type="button"

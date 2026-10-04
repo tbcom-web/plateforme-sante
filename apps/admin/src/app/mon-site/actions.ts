@@ -5,6 +5,9 @@ import { formaterTelephone, validerChoixLogo, GAMMES, normaliserDraft, SPECIALIT
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getMarquesImportees } from '@/lib/marques';
+import { getRole } from '@/lib/admin';
+import { manques } from '@/lib/sites';
+import { declencherPublication } from '@/lib/publication';
 
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string };
 
@@ -110,5 +113,18 @@ export async function enregistrerSite(id: string | null, draft: SiteDraft): Prom
   if (error || !data) return { ok: false, message: 'Enregistrement impossible. Réessayez.' };
 
   revalidatePath('/tableau-de-bord');
-  return { ok: true, message: 'Enregistré', id: data.id };
+  return { ok: true, message: 'Enregistré (le site en ligne change après « Enregistrer et publier »)', id: data.id };
+}
+
+/** Enregistre puis republie le site : le site est statique, une modification n'est visible qu'après publication. */
+export async function enregistrerEtPublier(id: string | null, draft: SiteDraft): Promise<EtatEnregistrement> {
+  const r = await enregistrerSite(id, draft);
+  if (!r.ok || !r.id) return r;
+  // Le praticien ne publie qu'un site complet ; le super admin peut toujours republier.
+  const aFaire = manques(normaliserDraft(draft));
+  if (aFaire.length > 0 && (await getRole()) !== 'admin') {
+    return { ok: false, message: `Enregistré, mais pas encore publiable. Il manque : ${aFaire.join(', ')}.`, id: r.id };
+  }
+  const p = await declencherPublication(r.id);
+  return { ...p, message: p.ok ? 'Enregistré. Publication lancée : en ligne d’ici 2 à 3 minutes.' : `Enregistré, mais ${p.message}`, id: r.id };
 }
