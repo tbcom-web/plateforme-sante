@@ -10,6 +10,7 @@ type Ligne = {
   slug: string | null;
   statut: 'brouillon' | 'en_ligne' | 'suspendu';
   test: boolean;
+  options: { edition?: boolean } | null;
   domaine: string | null;
   published_at: string | null;
   publication_demandee_at: string | null;
@@ -31,7 +32,7 @@ export default async function AdminSites() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('sites')
-    .select('id, slug, statut, test, domaine, published_at, publication_demandee_at, updated_at, config, profiles(email)')
+    .select('id, slug, statut, test, options, domaine, published_at, publication_demandee_at, updated_at, config, profiles(email)')
     .order('updated_at', { ascending: false })
     .returns<Ligne[]>();
 
@@ -106,7 +107,7 @@ export default async function AdminSites() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <ActionsSite id={s.id} statut={s.statut} test={s.test} />
+                    <ActionsSite id={s.id} statut={s.statut} test={s.test} edition={Boolean((s.options as { edition?: boolean } | null)?.edition)} />
                   </td>
                 </tr>
               );

@@ -33,7 +33,7 @@ import { lieu, itineraire } from '../../lib/textes';
   .carte { position: relative; border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); min-height: 380px; display: grid; grid-template-columns: minmax(0, 1fr); }
   iframe, .carte__vide { width: 100%; height: 100%; min-height: 380px; border: 0; grid-area: 1 / 1; filter: saturate(0.85); }
   .carte__vide { display: grid; place-items: center; font-size: 3rem; color: var(--accent-vif); }
-  .carte__adresse { grid-area: 1 / 1; align-self: end; justify-self: start; margin: 16px; padding: 18px 20px; border-radius: 16px; background: rgb(255 255 255 / 0.92); backdrop-filter: blur(10px); box-shadow: var(--ombre); max-width: 300px; }
+  .carte__adresse { grid-area: 1 / 1; align-self: end; justify-self: start; margin: 16px; padding: 18px 20px; border-radius: 16px; background: rgb(var(--blanc-rgb) / 0.92); backdrop-filter: blur(10px); box-shadow: var(--ombre); max-width: 300px; }
   .carte__adresse p { margin: 0 0 12px; font-size: 0.93rem; color: var(--encre-douce); }
   .carte__cadre { grid-area: 1 / 1; z-index: 1; margin: 14px; pointer-events: none; color: var(--encre); opacity: 0.55;
     background:

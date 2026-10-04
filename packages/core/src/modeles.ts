@@ -4,6 +4,10 @@
 // et testées, et règle polices, arrondis et couleurs. Tout ce qui compte pour le référencement
 // (adresses des pages, title, description, H1, données structurées, sitemap, llms.txt, liens internes)
 // est produit par le moteur et ne dépend jamais du modèle : changer de modèle ne change pas le SEO.
+// Couche 5 de la charte graphique (voir charte.ts et docs/charte-graphique.md) : le modèle règle la mise
+// en page ; les invariants (traits, trame, mouvement…) viennent de la charte, les couleurs de la gamme.
+
+import { GAMMES } from './gammes';
 
 export const SECTIONS_ACCUEIL = ['faits', 'competences', 'panorama', 'praticiens', 'galerie', 'actualites', 'acces', 'faq'] as const;
 export type SectionAccueil = (typeof SECTIONS_ACCUEIL)[number];
@@ -45,6 +49,8 @@ export type ModeleManifeste = {
   animations: 'douces' | 'aucune';
   /** Couleur proposée au praticien quand il choisit ce modèle (#rrggbb), facultatif */
   couleurConseillee?: string;
+  /** Gammes de couleurs recommandées avec ce modèle (identifiants de GAMMES), facultatif */
+  gammes?: string[];
   jetons: {
     policeTitres: PoliceTitres;
     policeTexte: PoliceTexte;
@@ -84,6 +90,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'liste',
     pied: 'sombre',
     animations: 'douces',
+    gammes: ['canard', 'cobalt', 'ardoise', 'sauge'],
     jetons: { policeTitres: 'schibsted', policeTexte: 'inter', graisseTitres: 750, rayon: 18, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', fondDoux: '#eef1f4', motif: 'trame', signal: '#6ff2c2' },
   },
   {
@@ -96,6 +103,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'liste',
     pied: 'sombre',
     animations: 'douces',
+    gammes: ['encre', 'cobalt', 'ardoise'],
     jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 500, rayon: 14, boutons: 'arrondi', accent: 'encre', fond: '#ffffff', images: 'naturel', fondDoux: '#f4f5f4', motif: 'plan', plan: '#123c8c', signal: '#6ff2c2' },
   },
   {
@@ -108,6 +116,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'cartes',
     pied: 'sombre',
     animations: 'douces',
+    gammes: ['canard', 'prune', 'encre', 'sable'],
     jetons: { policeTitres: 'fraunces', policeTexte: 'inter', graisseTitres: 420, rayon: 6, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'contraste', fondDoux: '#f6f3ee', motif: 'courbes', signal: '#e9c98f' },
   },
   {
@@ -121,6 +130,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'accent',
     animations: 'douces',
     couleurConseillee: '#2f6f6a',
+    gammes: ['sauge', 'canard', 'sable'],
     jetons: { policeTitres: 'manrope', policeTexte: 'manrope', graisseTitres: 300, rayon: 30, boutons: 'pilule', accent: 'couleur', fond: '#fbfcfb', images: 'doux', fondDoux: '#eef4f1', motif: 'courbes', signal: '#bdf0da' },
   },
   {
@@ -134,6 +144,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'clair',
     animations: 'douces',
     couleurConseillee: '#b0583a',
+    gammes: ['terracotta', 'sable', 'prune'],
     jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', images: 'chaud', fondDoux: '#efe6dc', motif: 'plan', plan: '#3a1f17', signal: '#f2b880' },
   },
 ];
@@ -173,6 +184,9 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
   const animations = m.animations ?? 'douces';
   if (!parmi(animations, ['douces', 'aucune'])) e.push('« animations » : « douces » ou « aucune ».');
   if (m.couleurConseillee !== undefined && !HEX.test(m.couleurConseillee)) e.push('« couleurConseillee » : couleur au format #rrggbb.');
+  if (m.gammes !== undefined && (!Array.isArray(m.gammes) || m.gammes.some((g) => !GAMMES.some((x) => x.id === g)))) {
+    e.push(`« gammes » : liste parmi ${GAMMES.map((g) => g.id).join(', ')}.`);
+  }
   const j = m.jetons;
   if (!j) e.push('« jetons » : obligatoire.');
   else {
@@ -206,6 +220,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
       pied,
       animations,
       ...(v.couleurConseillee ? { couleurConseillee: v.couleurConseillee } : {}),
+      ...(v.gammes?.length ? { gammes: v.gammes } : {}),
       jetons: {
         policeTitres: v.jetons.policeTitres,
         policeTexte: v.jetons.policeTexte ?? 'inter',

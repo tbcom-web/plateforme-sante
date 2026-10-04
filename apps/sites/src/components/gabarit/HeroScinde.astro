@@ -44,18 +44,18 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   @media (min-width: 960px) { .accueil { grid-template-columns: 1.08fr 0.92fr; } }
   .chapo { margin: 26px 0 34px; }
   .actions { display: flex; flex-wrap: wrap; gap: 12px; }
-  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duree-court); }
   .bouton:hover .fleche { transform: translateX(3px); }
   .visuel { position: relative; margin: 0; }
   .visuel__anim { height: clamp(360px, 64vh, 640px); border-radius: var(--rayon-grand); overflow: hidden; }
   .visuel__anim :global(canvas), .visuel__anim :global(svg) { background: none !important; }
   .visuel img { width: 100%; height: clamp(360px, 64vh, 640px); object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }
-  .flottant { position: absolute; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 16px; background: rgb(255 255 255 / 0.86); backdrop-filter: blur(14px) saturate(1.5); box-shadow: var(--ombre); font-size: 0.86rem; line-height: 1.35; color: var(--encre); }
+  .flottant { position: absolute; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 16px; background: rgb(var(--blanc-rgb) / 0.86); backdrop-filter: blur(14px) saturate(1.5); box-shadow: var(--ombre); font-size: 0.86rem; line-height: 1.35; color: var(--encre); }
   .flottant--haut { top: 18px; right: 18px; }
   .flottant--bas { bottom: 18px; left: 18px; color: var(--encre-douce); }
   .flottant--bas :global(.icone) { color: var(--accent-vif); font-size: 1.3rem; }
   .flottant strong { color: var(--encre); }
   @media (min-width: 960px) { .flottant--bas { left: -28px; bottom: 44px; } }
-  .pastille { width: 8px; height: 8px; border-radius: 50%; background: #27a36b; box-shadow: 0 0 0 0 rgb(39 163 107 / 0.5); animation: pouls 2.2s infinite; }
-  @keyframes pouls { 70% { box-shadow: 0 0 0 9px rgb(39 163 107 / 0); } 100% { box-shadow: 0 0 0 0 rgb(39 163 107 / 0); } }
+  .pastille { width: 8px; height: 8px; border-radius: 50%; background: var(--disponible); box-shadow: 0 0 0 0 color-mix(in srgb, var(--disponible) 50%, transparent); animation: pouls var(--cycle-pouls) infinite; }
+  @keyframes pouls { 70% { box-shadow: 0 0 0 9px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 </style>

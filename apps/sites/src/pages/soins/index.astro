@@ -1,12 +1,16 @@
 ---
+// Liste des compétences : en-tête éditorial (filet, sur-titre indexé, planche technique) et grille bento
+// des soins illustrés par leurs dessins, comme à l'accueil.
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import Competences from '../../components/gabarit/Competences.astro';
+import Planche from '../../components/dessins/Planche.astro';
 import { site } from '../../lib/site';
 import { breadcrumbSchema } from '../../lib/schema';
 import { titreCompetences, titreCabinet } from '../../lib/textes';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }];
+const total = String(site.soins.length).padStart(2, '0');
 ---
 <Gabarit
   title={`${titreCompetences} – ${titreCabinet}`}
@@ -14,16 +18,24 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/
   path="/soins"
   schemas={[breadcrumbSchema(crumbs)]}
 >
-  <section class="section">
+  <section class="cadre tete-page">
+    <Breadcrumb items={crumbs} />
+    <div class="tete-page__grille">
+      <div>
+        <p class="sur sur--index"><b aria-hidden="true">{total} —</b> {site.cabinet.quartier || site.cabinet.ville}</p>
+        <h1>{titreCompetences}</h1>
+        <p class="chapo">Chaque prise en charge commence par un échange et un examen, afin de proposer des soins adaptés.</p>
+      </div>
+      <Planche nom="analyse" legende="Bilan" repere="Fig. 00" fond="plan" />
+    </div>
+  </section>
+  <section class="section section--serree">
     <div class="cadre">
-      <Breadcrumb items={crumbs} />
-      <h1>{titreCompetences}</h1>
-      <p class="chapo">Chaque prise en charge commence par un échange et un examen, afin de proposer des soins adaptés.</p>
       <Competences />
     </div>
   </section>
 </Gabarit>
 
 <style>
-  .chapo { margin: 16px 0 32px; }
+  .section--serree { padding-top: 0; }
 </style>

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { basculerTest, changerStatut, publierCommeAdmin, type Resultat } from './actions';
+import { basculerEdition, basculerTest, changerStatut, publierCommeAdmin, type Resultat } from './actions';
 
 type Statut = 'brouillon' | 'en_ligne' | 'suspendu';
 
-export default function ActionsSite({ id, statut, test }: { id: string; statut: Statut; test: boolean }) {
+export default function ActionsSite({ id, statut, test, edition }: { id: string; statut: Statut; test: boolean; edition: boolean }) {
   const [resultat, setResultat] = useState<Resultat>(null);
   const [enCours, demarrer] = useTransition();
   const lancer = (f: () => Promise<Resultat>) => demarrer(async () => setResultat(await f()));
@@ -30,6 +30,16 @@ export default function ActionsSite({ id, statut, test }: { id: string; statut: 
             onChange={(e) => lancer(() => basculerTest(id, e.target.checked))}
           />
           Test
+        </label>
+        <label className="flex items-center gap-1.5 text-xs" title="Option payante : textes guidés de l’éditeur visuel et ajout de pages">
+          <input
+            type="checkbox"
+            className="accent-amber-600"
+            checked={edition}
+            disabled={enCours}
+            onChange={(e) => lancer(() => basculerEdition(id, e.target.checked))}
+          />
+          Édition
         </label>
         <select
           aria-label="Statut"

@@ -1,0 +1,50 @@
+---
+// Planche technique : un dessin de la marque (ou le contenu du slot, par exemple des empreintes) dans un
+// cartouche éditorial — repères de cadrage, légende en mono, mention illustrative de la charte.
+// Sert aux en-têtes des pages internes pour qu'elles parlent le même langage que l'accueil. Décorative.
+import Dessin from './Dessin.astro';
+import type { NomDessin } from '../../lib/dessins';
+import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
+
+interface Props {
+  nom?: NomDessin;
+  /** Légende en haut à gauche (thème, soin…) */
+  legende?: string;
+  /** Repère en haut à droite (« Fig. 03 ») */
+  repere?: string;
+  /** Fond quadrillé clair, ou plan d'architecte sombre */
+  fond?: 'grille' | 'plan';
+  class?: string;
+}
+const { nom, legende = '', repere = '', fond = 'grille', class: classe } = Astro.props;
+---
+<figure class:list={['planche', `planche--${fond}`, fond === 'plan' ? 'surface-plan' : 'surface-grille', classe]} aria-hidden="true">
+  <span class="planche__haut mono"><span>{legende}</span><span>{repere}</span></span>
+  <span class="planche__dessin">{nom ? <Dessin nom={nom} /> : <slot />}</span>
+  <span class="planche__bas mono">{MENTION_ILLUSTRATIVE}</span>
+</figure>
+
+<style>
+  .planche { position: relative; display: grid; grid-template-rows: auto 1fr auto; margin: 0; padding: 14px 16px; border-radius: var(--rayon-grand); overflow: hidden; box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
+  .planche--plan { box-shadow: var(--ombre); }
+  .planche__haut, .planche__bas { display: flex; justify-content: space-between; gap: 12px; font-size: var(--taille-donnees-petit); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--encre-pale); }
+  .planche__haut { padding-bottom: 10px; border-bottom: var(--filet) solid var(--ligne); }
+  .planche__haut span:first-child { color: var(--accent-vif); }
+  .planche__bas { padding-top: 10px; border-top: var(--filet) solid var(--ligne); text-transform: none; letter-spacing: 0.02em; }
+  .planche--plan .planche__haut, .planche--plan .planche__bas { color: var(--sur-sombre-pale); border-color: var(--sur-sombre-filet); }
+  .planche--plan .planche__haut span:first-child { color: var(--signal); }
+  .planche__dessin { display: grid; place-items: center; min-height: 0; padding: clamp(16px, 3vw, 32px) clamp(8px, 2vw, 24px); color: var(--encre); }
+  .planche--plan .planche__dessin { color: var(--sur-sombre-doux); }
+  .planche__dessin :global(.dessin) { width: min(100%, 440px); }
+  .planche__dessin :global(.empreintes) { width: min(100%, 300px); }
+  /* Repères de cadrage aux quatre coins, comme sur une planche technique */
+  .planche::after {
+    content: ''; position: absolute; inset: 8px; pointer-events: none; opacity: 0.35; color: var(--encre);
+    background:
+      linear-gradient(currentColor, currentColor) 0 0 / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 0 0 / var(--filet) 10px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 0 / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 100% 0 / var(--filet) 10px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 100% / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 0 100% / var(--filet) 10px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 100% / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 100% 100% / var(--filet) 10px no-repeat;
+  }
+  .planche--plan::after { color: var(--blanc); }
+</style>

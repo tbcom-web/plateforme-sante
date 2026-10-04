@@ -1,9 +1,16 @@
-// Packs visuels par spécialité : photos par défaut et animation d'accueil.
+// Spécialités du praticien : couche 3 de la charte (sous l'univers métier, voir univers.ts).
 //
-// Le praticien choisit un style (modèle) et une spécialité. La spécialité fournit les visuels
-// (ses propres photos passent toujours en premier) ; le style leur applique un traitement
-// (teinte, contraste) pour garder une unité graphique avec un seul jeu de photos par spécialité.
-// Les photos par défaut ne montrent pas de visage, pour ne jamais passer pour le praticien.
+// Le praticien choisit une spécialité principale (et éventuellement une secondaire), une gamme de couleurs
+// et un modèle. La spécialité pilote les visuels : photos par défaut, vidéos (boucles courtes et muettes),
+// dessins prioritaires, animation d'accueil, soins mis en avant. Ses propres photos passent toujours en
+// premier ; le modèle leur applique un traitement de teinte pour garder l'unité graphique.
+// Règle de cohérence : toute ressource d'une spécialité respecte la charte (traitement du style, aucun visage,
+// mention illustrative sur les schémas).
+//
+// Historique : ce fichier s'appelait « packs visuels » ; `PackVisuel`, `SPECIALITES`, `packVisuel`,
+// `fusionnerPack`, `LIBELLES_ANIMATIONS` et `specialiteDuProfil` restent exportés à l'identique.
+
+import type { NomDessin } from './univers';
 
 export const ANIMATIONS = ['podoscope', 'coureur', 'trajectoire', 'premiers-pas', 'semelle'] as const;
 export type Animation = (typeof ANIMATIONS)[number];
@@ -17,16 +24,29 @@ export const LIBELLES_ANIMATIONS: Record<Animation, string> = {
   semelle: 'semelles tracées en courbes de niveau',
 };
 
-export type PackVisuel = {
+/** Vidéo d'une spécialité : boucle courte et muette, avec image d'attente (rendu prévu plus tard) */
+export type VideoSpecialite = { src: string; poster: string; usage: 'accueil' | 'panorama' };
+
+export type Specialite = {
   value: string;
   label: string;
   description: string;
   /** Animation d'accueil proposée (le praticien peut la désactiver) */
   animation: Animation | null;
   photos: { accueil: string; panorama: string; diaporama: string[] };
+  /** Vidéos facultatives (boucles muettes) */
+  videos?: VideoSpecialite[];
+  /** Dessins techniques à privilégier (illustrations, couvertures) */
+  dessins?: NomDessin[];
+  /** Slugs des soins du catalogue à présenter en premier */
+  soins?: string[];
+  /** Niveaux (1 à 5) de la palette de données à mettre en avant, facultatif */
+  accentsDonnees?: (1 | 2 | 3 | 4 | 5)[];
 };
+/** Ancien nom de la spécialité, conservé pour les imports existants */
+export type PackVisuel = Specialite;
 
-export const SPECIALITES: PackVisuel[] = [
+export const SPECIALITES: Specialite[] = [
   {
     value: 'generale',
     label: 'Podologie générale',
@@ -37,6 +57,8 @@ export const SPECIALITES: PackVisuel[] = [
       panorama: '/photos/generale-parquet.webp',
       diaporama: ['/photos/cabinet-lumiere.webp', '/photos/generale-pieds-nus.webp', '/photos/generale-pied-profil.webp', '/photos/examen-mains.webp', '/photos/generale-pied-sol.webp'],
     },
+    dessins: ['analyse', 'soin', 'semelle'],
+    soins: ['bilan-podologique', 'soins-de-pedicurie', 'semelles-orthopediques'],
   },
   {
     value: 'sport',
@@ -48,6 +70,9 @@ export const SPECIALITES: PackVisuel[] = [
       panorama: '/photos/sport-trail.webp',
       diaporama: ['/photos/sport-foulee-herbe.webp', '/photos/sport-course.webp', '/photos/sport-trail.webp', '/photos/sport-chaussure.webp', '/photos/sport-lacage.webp'],
     },
+    dessins: ['sport', 'appuis', 'analyse'],
+    soins: ['podologie-du-sport', 'semelles-orthopediques', 'k-taping', 'bilan-podologique'],
+    accentsDonnees: [4, 5],
   },
   {
     value: 'posture',
@@ -59,6 +84,8 @@ export const SPECIALITES: PackVisuel[] = [
       panorama: '/photos/posture-marche-sable.webp',
       diaporama: ['/photos/analyse-plateforme.webp', '/photos/posture-marche-sable.webp', '/photos/posture-empreintes.webp', '/photos/posture-escalier.webp', '/photos/posture-pieds-herbe.webp'],
     },
+    dessins: ['equilibre', 'analyse', 'semelle'],
+    soins: ['posturologie', 'bilan-podologique', 'semelles-orthopediques'],
   },
   {
     value: 'enfant',
@@ -70,6 +97,9 @@ export const SPECIALITES: PackVisuel[] = [
       panorama: '/photos/enfant-chaussures.webp',
       diaporama: ['/photos/enfant-bebe.webp', '/photos/enfant-pied.webp', '/photos/enfant-herbe.webp', '/photos/enfant-chaussons.webp', '/photos/enfant-baskets.webp'],
     },
+    dessins: ['enfant', 'analyse'],
+    soins: ['podologie-enfant', 'semelles-orthopediques', 'bilan-podologique'],
+    accentsDonnees: [1, 2],
   },
   {
     value: 'soins',
@@ -81,14 +111,41 @@ export const SPECIALITES: PackVisuel[] = [
       panorama: '/photos/examen-mains.webp',
       diaporama: ['/photos/soin-talon.webp', '/photos/examen-mains.webp', '/photos/soins-pied-tenu.webp', '/photos/soins-bandages.webp', '/photos/generale-pied-profil.webp'],
     },
+    dessins: ['soin', 'diabete', 'talon'],
+    soins: ['soins-de-pedicurie', 'pied-diabetique', 'podologie-du-senior', 'ongle-incarne'],
   },
 ];
 
 export const packVisuel = (value: string) => SPECIALITES.find((s) => s.value === value) ?? SPECIALITES[0];
+/** Spécialité d'un identifiant (alias explicite de packVisuel) */
+export const specialite = packVisuel;
 
 /** Spécialité proposée par défaut selon le profil de cabinet. */
 export const specialiteDuProfil = (profil: string) =>
   ({ sport: 'sport', technique: 'posture', prevention: 'soins' } as Record<string, string>)[profil] ?? 'generale';
+
+const unique = <T>(l: (T | undefined | null | false | '')[]) => [...new Set(l.filter(Boolean) as T[])];
+
+/**
+ * Spécialité principale + secondaire : la principale donne l'accueil (photo, animation, vidéo d'accueil,
+ * libellé) ; la secondaire complète les visuels (diaporama, vidéos, dessins, soins mis en avant).
+ */
+export function fusionnerSpecialites(principale: Specialite, secondaire?: Specialite | null): Specialite {
+  if (!secondaire || secondaire.value === principale.value) return principale;
+  const videos = [...(principale.videos ?? []), ...(secondaire.videos ?? []).filter((v) => v.usage !== 'accueil')];
+  return {
+    ...principale,
+    photos: {
+      accueil: principale.photos.accueil,
+      panorama: principale.photos.panorama || secondaire.photos.panorama,
+      diaporama: unique([...principale.photos.diaporama.slice(0, 3), ...secondaire.photos.diaporama.slice(0, 2), ...principale.photos.diaporama.slice(3)]),
+    },
+    ...(videos.length ? { videos } : {}),
+    dessins: unique([...(principale.dessins ?? []), ...(secondaire.dessins ?? [])]),
+    soins: unique([...(principale.soins ?? []), ...(secondaire.soins ?? [])]),
+    ...(principale.accentsDonnees ?? secondaire.accentsDonnees ? { accentsDonnees: principale.accentsDonnees ?? secondaire.accentsDonnees } : {}),
+  };
+}
 
 /** Personnalisation d'un pack par l'admin (table packs_visuels) ; les champs vides gardent le pack intégré. */
 export type PersonnalisationPack = {
@@ -97,7 +154,7 @@ export type PersonnalisationPack = {
   animation?: Animation | 'aucune' | null;
 };
 
-export function fusionnerPack(pack: PackVisuel, perso: PersonnalisationPack | null | undefined): PackVisuel {
+export function fusionnerPack(pack: Specialite, perso: PersonnalisationPack | null | undefined): Specialite {
   if (!perso) return pack;
   const p = perso.photos ?? {};
   const diaporama = (p.diaporama ?? []).filter(Boolean);

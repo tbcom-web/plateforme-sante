@@ -29,6 +29,20 @@ export async function basculerTest(siteId: string, test: boolean): Promise<Resul
     : { ok: true, message: test ? 'Marqué comme test : republiez pour appliquer.' : 'Site réel : republiez pour appliquer.' };
 }
 
+/** Active ou retire l'option payante « édition » (textes guidés de l'éditeur visuel, ajout de pages). */
+export async function basculerEdition(siteId: string, edition: boolean): Promise<Resultat> {
+  await exigerAdmin();
+  if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
+  const supabase = await createClient();
+  const { data } = await supabase.from('sites').select('options').eq('id', siteId).maybeSingle();
+  const options = { ...((data?.options as Record<string, unknown> | null) ?? {}), edition };
+  const { error } = await supabase.from('sites').update({ options }).eq('id', siteId);
+  revalidatePath('/admin');
+  return error
+    ? { ok: false, message: 'Modification impossible. La migration 0010 a-t-elle été exécutée ?' }
+    : { ok: true, message: edition ? 'Option « édition » activée.' : 'Option « édition » retirée : les textes personnalisés guidés ne seront plus publiés.' };
+}
+
 export async function changerStatut(siteId: string, statut: 'brouillon' | 'en_ligne' | 'suspendu'): Promise<Resultat> {
   await exigerAdmin();
   if (!UUID.test(siteId) || !['brouillon', 'en_ligne', 'suspendu'].includes(statut)) {

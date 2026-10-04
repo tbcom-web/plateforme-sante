@@ -2,32 +2,20 @@
 // et dimensionné selon la pression (bleu → vert d'eau → jaune → orange → rouge). Calculée au build,
 // sans script côté navigateur. Pour rester léger, les points d'un même niveau forment un seul tracé
 // (sous-chemins de longueur nulle à bouts ronds) : une dizaine de <path> par pied au lieu de centaines de cercles.
+// Palette, pas de la trame et diamètres des points viennent de la charte (packages/core).
 import { PLANTE, ORTEILS } from '../animations/pied';
+import { PRESSION, couleurPression, TRAME } from '@plateforme/core';
 
-/** Palette de pression de la marque, de la plus faible à la plus forte */
-export const PRESSION = ['#3e7bfa', '#22c3a6', '#ffc23d', '#ff7a2f', '#f0352f'] as const;
-const ARRETS = [0, 0.35, 0.6, 0.8, 1];
-
-const rvb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-/** Couleur de la palette continue pour une pression entre 0 et 1 */
-export function couleurPression(v: number): string {
-  const t = Math.max(0, Math.min(1, v));
-  for (let k = 1; k < ARRETS.length; k++) {
-    if (t <= ARRETS[k]) {
-      const u = (t - ARRETS[k - 1]) / (ARRETS[k] - ARRETS[k - 1]);
-      const [a, b] = [rvb(PRESSION[k - 1]), rvb(PRESSION[k])];
-      return `#${a.map((c, i) => Math.round(c + (b[i] - c) * u).toString(16).padStart(2, '0')).join('')}`;
-    }
-  }
-  return PRESSION[4];
-}
+/** Palette de pression (univers podologie de la charte), réexportée pour les composants */
+export { PRESSION, couleurPression };
 
 /** Profils d'appui illustratifs (sans valeur de mesure) */
 export type Appui = 'normal' | 'creux' | 'plat' | 'avant' | 'talon' | 'reparti' | 'enfant';
 
 const g = (x: number, y: number, cx: number, cy: number, s: number) => Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (2 * s * s));
 
-function dansPlante(x: number, y: number): boolean {
+/** Le point (repère du pied 92 × 222) est-il sur la plante ou un orteil ? */
+export function dansPlante(x: number, y: number): boolean {
   let dedans = false;
   for (let i = 0, j = PLANTE.length - 1; i < PLANTE.length; j = i++) {
     const [xi, yi] = PLANTE[i];
@@ -73,14 +61,14 @@ export function pression(appui: Appui, x: number, y: number): number {
 
 export type NiveauTrame = { k: number; couleur: string; epaisseur: number; d: string };
 
-const NIVEAUX = 9;
+const NIVEAUX = TRAME.niveaux;
 const memo = new Map<string, NiveauTrame[]>();
 
 /**
  * Points de la trame regroupés par niveau de pression. `pas` : écart entre deux points (repère du pied).
  * Rendu : <path d stroke={couleur} stroke-width={epaisseur} stroke-linecap="round" />.
  */
-export function trame(appui: Appui = 'normal', pas = 6.2): NiveauTrame[] {
+export function trame(appui: Appui = 'normal', pas: number = TRAME.pas): NiveauTrame[] {
   const cle = `${appui}-${pas}`;
   const deja = memo.get(cle);
   if (deja) return deja;
@@ -97,7 +85,7 @@ export function trame(appui: Appui = 'normal', pas = 6.2): NiveauTrame[] {
   const niveaux = traces
     .map((d, k) => {
       const v = (k + 0.5) / NIVEAUX;
-      return { k, couleur: couleurPression(v), epaisseur: +(pas * (0.3 + 0.5 * v)).toFixed(2), d };
+      return { k, couleur: couleurPression(v), epaisseur: +(pas * (TRAME.diametre.min + (TRAME.diametre.max - TRAME.diametre.min) * v)).toFixed(2), d };
     })
     .filter((n) => n.d);
   memo.set(cle, niveaux);

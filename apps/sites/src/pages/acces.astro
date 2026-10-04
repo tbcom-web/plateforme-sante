@@ -1,4 +1,6 @@
 ---
+// Plan d'accès : en-tête éditorial (filet, sur-titre indexé), carte et informations côte à côte comme à
+// l'accueil. Titres, textes et données structurées inchangés.
 import Gabarit from '../layouts/Gabarit.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import Carte from '../components/gabarit/Carte.astro';
@@ -15,20 +17,25 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path:
   path="/acces"
   schemas={[breadcrumbSchema(crumbs)]}
 >
-  <section class="section">
-    <div class="cadre">
-      <Breadcrumb items={crumbs} />
-      <p class="sur">Plan d’accès</p>
-      <h1>Venir au cabinet <span class="pale">à {site.cabinet.ville}</span></h1>
+  <section class="cadre tete-page">
+    <Breadcrumb items={crumbs} />
+    <div class="tete-page__grille tete-page__grille--simple">
+      <div>
+        <p class="sur sur--index"><b aria-hidden="true">{site.cabinet.codePostal} —</b> Plan d’accès</p>
+        <h1>Venir au cabinet <span class="pale">à {site.cabinet.ville}</span></h1>
+      </div>
       <p class="chapo">{lieu.nom ? `${lieu.nom}, ` : ''}{adresseLieu}.</p>
-      <div class="carte"><Carte /></div>
-      <Infos />
     </div>
+  </section>
+  <section class="section section--serree">
+    <div class="cadre acces"><Carte /><Infos /></div>
   </section>
 </Gabarit>
 
 <style>
-  .chapo { margin: 20px 0 36px; }
-  .carte { margin-bottom: 24px; }
-  .carte :global(.carte) { min-height: 460px; }
+  .section--serree { padding-top: 0; }
+  .tete-page__grille--simple .chapo { margin: 0; max-width: 40ch; }
+  .acces { display: grid; gap: 28px; }
+  .acces :global(.carte) { min-height: 460px; }
+  @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } }
 </style>

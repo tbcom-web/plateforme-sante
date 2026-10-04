@@ -7,9 +7,16 @@ const mesure = site.tracking.ga4 || site.tracking.clarity;
 const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH: 'Société Suisse des Podologues (SSP)' }[site.pays];
 ---
 <Gabarit title={`Mentions légales – ${titreCabinet}`} description={`Mentions légales du site de ${noms}.`} path="/mentions-legales">
-  <section class="section">
-    <div class="cadre prose">
-      <h1>Mentions légales</h1>
+  <section class="cadre tete-page">
+    <div class="tete-page__grille tete-page__grille--simple">
+      <div>
+        <p class="sur sur--index">Informations légales</p>
+        <h1>Mentions légales</h1>
+      </div>
+    </div>
+  </section>
+  <section class="section section--serree">
+    <div class="cadre prose mentions">
 
       <h2>Éditeur du site</h2>
       <p>
@@ -58,3 +65,12 @@ const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH:
     </div>
   </section>
 </Gabarit>
+
+<style>
+  /* Sobre : filets et numéros mono, comme les rubriques du pied de page. */
+  .section--serree { padding-top: 0; }
+  .mentions { counter-reset: rubrique; }
+  .mentions :global(h2) { counter-increment: rubrique; display: flex; align-items: baseline; gap: 14px; font-size: 1.35rem; margin: 2.2em 0 0.7em; padding-top: 14px; border-top: var(--filet) solid var(--ligne); }
+  .mentions :global(h2:first-child) { margin-top: 0; }
+  .mentions :global(h2)::before { content: counter(rubrique, decimal-leading-zero); font-family: var(--police-mono); font-size: var(--taille-donnees); font-weight: 450; letter-spacing: 0.04em; color: var(--accent-vif); }
+</style>

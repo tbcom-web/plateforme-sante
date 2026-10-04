@@ -1,6 +1,7 @@
 // Association des soins et des articles aux dessins techniques de la marque (components/dessins).
-
-export type NomDessin = 'analyse' | 'semelle' | 'soin' | 'diabete' | 'sport' | 'enfant' | 'equilibre' | 'talon' | 'appuis';
+// La liste des dessins appartient à l'univers métier (packages/core/src/univers.ts).
+import type { NomDessin } from '@plateforme/core';
+export type { NomDessin };
 
 /** Dessin de chaque soin du catalogue ; « analyse » par défaut */
 const DESSIN_SOIN: Record<string, NomDessin> = {

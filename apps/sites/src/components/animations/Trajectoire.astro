@@ -27,19 +27,20 @@ const pieds = [
 </svg>
 
 <style>
-  .trajectoire { display: block; width: 100%; height: 100%; --c: var(--accent-pale, #8fe3cf); --cycle: 3.2s; }
-  .trajectoire--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
+  /* Palette de pression, pointillés, traits et cycle : charte du core */
+  .trajectoire { display: block; width: 100%; height: 100%; --c: var(--accent-pale, var(--signal)); --cycle: var(--cycle-pas); }
+  .trajectoire--sombre { background: var(--fond-nuit); }
   /* Contour en pointillés ronds, dans l'esprit d'un relevé de podoscope */
-  .contour { fill: none; stroke: var(--c); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 0 5.5; opacity: 0.75; }
-  .trajet { fill: none; stroke: #ffd166; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1;
+  .contour { fill: none; stroke: var(--c); stroke-width: var(--pointille-point); stroke-linecap: round; stroke-dasharray: var(--pointille); opacity: var(--pointille-opacite); }
+  .trajet { fill: none; stroke: var(--pression-3); stroke-width: var(--trait-marque); stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1;
     animation: trace var(--cycle) ease-in-out infinite; animation-delay: calc(var(--j) * var(--cycle) / 2); }
-  .point { fill: #fff; filter: drop-shadow(0 0 6px #ffd166); offset-distance: 0%; opacity: 0;
+  .point { fill: var(--blanc); filter: drop-shadow(0 0 6px var(--pression-3)); offset-distance: 0%; opacity: 0;
     animation: avance var(--cycle) ease-in-out infinite; animation-delay: calc(var(--j) * var(--cycle) / 2); }
   .appui { opacity: 0; animation: appui var(--cycle) ease-in-out infinite; }
-  .appui--talon { fill: #e8505b; animation-delay: calc(var(--j) * var(--cycle) / 2); }
-  .appui--externe { fill: #f6a04d; animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.1); }
-  .appui--avant { fill: #e8505b; animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.2); }
-  .appui--orteil { fill: #f6a04d; animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.3); }
+  .appui--talon { fill: var(--pression-5); animation-delay: calc(var(--j) * var(--cycle) / 2); }
+  .appui--externe { fill: var(--pression-4); animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.1); }
+  .appui--avant { fill: var(--pression-5); animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.2); }
+  .appui--orteil { fill: var(--pression-4); animation-delay: calc(var(--j) * var(--cycle) / 2 + var(--cycle) * 0.3); }
 
   @keyframes trace { 0% { stroke-dashoffset: 1; opacity: 1; } 45% { stroke-dashoffset: 0; opacity: 1; } 80% { stroke-dashoffset: 0; opacity: 0; } 100% { stroke-dashoffset: 1; opacity: 0; } }
   @keyframes avance { 0% { offset-distance: 0%; opacity: 1; } 45% { offset-distance: 100%; opacity: 1; } 55%, 100% { offset-distance: 100%; opacity: 0; } }

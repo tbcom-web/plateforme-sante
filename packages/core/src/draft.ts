@@ -94,6 +94,8 @@ export type SiteDraft = {
   photos: { accueil: string; panorama: string; cabinet: string[] };
   /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
+  /** Textes personnalisés dans l'éditeur visuel (surcouche du standard, voir personnalisation.ts) */
+  perso: { textes: Record<string, string> };
 };
 
 export const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
@@ -183,6 +185,7 @@ export const draftVide = (): SiteDraft => ({
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],
+  perso: { textes: {} },
 });
 
 /** Convertit un brouillon (v1 ou v2 partiel) en v2 complet. */
@@ -205,6 +208,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
       praticiens: Array.isArray(d.praticiens) && d.praticiens.length ? d.praticiens.map((p: any) => ({ ...praticienVide(), ...p })) : vide.praticiens,
       soins: Array.isArray(d.soins) ? d.soins : [],
+      perso: { textes: d.perso?.textes && typeof d.perso.textes === 'object' ? d.perso.textes : {} },
       version: 2,
     };
   }

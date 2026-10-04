@@ -1,4 +1,4 @@
-import { MODELES_INTEGRES, POLICES_TEXTE, POLICES_TITRES, SECTIONS_ACCUEIL, validerManifeste } from '@plateforme/core';
+import { GAMMES, MODELES_INTEGRES, MOTIFS, POLICES_TEXTE, POLICES_TITRES, SECTIONS_ACCUEIL, TRAITEMENTS_IMAGES, validerManifeste } from '@plateforme/core';
 import { getModelesImportes } from '@/lib/modeles';
 import { ActionsModele, Import } from './Import';
 
@@ -71,7 +71,8 @@ export default async function Modeles() {
           <li><code>pied</code> : <code>sombre</code>, <code>accent</code> ou <code>clair</code> ; <code>animations</code> : <code>douces</code> ou <code>aucune</code> ; <code>couleurConseillee</code> : #rrggbb proposé au praticien.</li>
           <li><code>accueil.sections</code> : ordre parmi {SECTIONS_ACCUEIL.join(', ')} ; <code>competences</code> et <code>acces</code> obligatoires.</li>
           <li><code>competences</code> : <code>liste</code> ou <code>cartes</code>.</li>
-          <li><code>jetons</code> : <code>policeTitres</code> ({POLICES_TITRES.join(', ')}), <code>policeTexte</code> ({POLICES_TEXTE.join(', ')}), <code>graisseTitres</code> (300–800), <code>rayon</code> (0–40), <code>boutons</code> (pilule, arrondi, carre), <code>accent</code> (couleur, encre), <code>fond</code> et <code>fondDoux</code> (#rrggbb).</li>
+          <li><code>jetons</code> : <code>policeTitres</code> ({POLICES_TITRES.join(', ')}), <code>policeTexte</code> ({POLICES_TEXTE.join(', ')}), <code>graisseTitres</code> (300–800), <code>rayon</code> (0–40), <code>boutons</code> (pilule, arrondi, carre), <code>accent</code> (couleur, encre), <code>fond</code> et <code>fondDoux</code> (#rrggbb), <code>images</code> ({TRAITEMENTS_IMAGES.join(', ')}), <code>motif</code> ({MOTIFS.join(', ')}), <code>plan</code> (fond des surfaces sombres « plan d’architecte », #rrggbb) et <code>signal</code> (lectures de données sur fond sombre, #rrggbb). Police <code>schibsted</code> : grotesque des références « relevé de podoscope ».</li>
+          <li><code>gammes</code> (facultatif) : gammes de couleurs recommandées parmi {GAMMES.map((g) => g.id).join(', ')}. Traits, trame, typographie des données et mouvement viennent de la charte du core (<code>docs/charte-graphique.md</code>).</li>
         </ul>
       </details>
     </div>

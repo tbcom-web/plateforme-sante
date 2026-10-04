@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { formaterTelephone, normaliserDraft, SPECIALITES, type SiteDraft } from '@plateforme/core';
+import { formaterTelephone, normaliserDraft, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 
@@ -17,7 +17,7 @@ const photo = (v: unknown) => { const s = t(v, 400); return s.startsWith(PREFIXE
 const parmi = <T extends string>(v: unknown, valeurs: readonly T[], defaut: T): T => (valeurs.includes(v as T) ? (v as T) : defaut);
 
 // Normalise puis borne chaque champ (aucune donnée inattendue n'est enregistrée).
-function nettoyer(brut: unknown, modeles: string[]): SiteDraft {
+function nettoyer(brut: unknown, modeles: string[], edition: boolean): SiteDraft {
   const d = normaliserDraft(brut);
   return {
     version: 2,
@@ -82,6 +82,8 @@ function nettoyer(brut: unknown, modeles: string[]): SiteDraft {
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },
     photos: { accueil: photo(d.photos.accueil), panorama: photo(d.photos.panorama), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
     soins: d.soins.filter((s) => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 30),
+    // Textes de l'éditeur visuel : zones connues, longueurs bornées, lexique, option « édition » pour les zones guidées.
+    perso: { textes: validerPersonnalisation(d.perso.textes, edition).textes },
   };
 }
 
@@ -90,7 +92,9 @@ export async function enregistrerSite(id: string | null, draft: SiteDraft): Prom
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return { ok: false, message: 'Session expirée, reconnectez-vous.' };
 
-  const config = nettoyer(draft, (await getModelesDisponibles()).map((m) => m.id));
+  const { data: existant } = id ? await supabase.from('sites').select('options').eq('id', id).maybeSingle() : { data: null };
+  const edition = Boolean((existant?.options as { edition?: boolean } | null)?.edition);
+  const config = nettoyer(draft, (await getModelesDisponibles()).map((m) => m.id), edition);
   const requete = id
     ? supabase.from('sites').update({ config }).eq('id', id).select('id').single()
     : supabase.from('sites').insert({ profession_slug: 'podologue', config }).select('id').single();

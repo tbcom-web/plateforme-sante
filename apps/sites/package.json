@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "controle:seo": "node scripts/controle-seo.mjs"
+    "controle:seo": "node scripts/controle-seo.mjs",
+    "controle:charte": "node scripts/controle-charte.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.1.0",

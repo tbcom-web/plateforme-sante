@@ -1,12 +1,16 @@
 ---
+// Page d'un soin : même langage que l'accueil (en-tête éditorial à filet, sur-titre indexé, planche
+// technique du soin via lib/dessins.ts). Titres, textes et données structurées inchangés.
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import FaqList from '../../components/FaqList.astro';
-import Icone from '../../components/Icone.astro';
+import Planche from '../../components/dessins/Planche.astro';
+import Dessin from '../../components/dessins/Dessin.astro';
 import { site, md } from '../../lib/site';
 import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
-import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne } from '../../lib/textes';
-import { iconeSoin, ICONE_SOIN_DEFAUT, type Soin } from '@plateforme/core';
+import { dessinSoin } from '../../lib/dessins';
+import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences } from '../../lib/textes';
+import type { Soin } from '@plateforme/core';
 
 export function getStaticPaths() {
   return site.soins.map((soin) => ({ params: { slug: soin.slug }, props: { soin } }));
@@ -19,6 +23,9 @@ const crumbs = [
   { name: 'Compétences', path: '/soins' },
   { name: soin.titreCourt, path },
 ];
+const deux = (n: number) => String(n).padStart(2, '0');
+const rang = site.soins.findIndex((s) => s.slug === soin.slug) + 1;
+const total = site.soins.length;
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
 ---
 <Gabarit
@@ -28,14 +35,15 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
   schemas={[soinSchema(soin), ...(soin.faq.length ? [faqSchema(soin.faq)] : []), breadcrumbSchema(crumbs)]}
 >
   <article>
-    <header class="section section--douce entete-soin">
-      <div class="cadre">
-        <Breadcrumb items={crumbs} />
-        <div class="titre">
-          <span class="titre__icone"><Icone nom={iconeSoin(soin.slug, soin.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
+    <header class="cadre tete-page">
+      <Breadcrumb items={crumbs} />
+      <div class="tete-page__grille">
+        <div>
+          <p class="sur sur--index"><b aria-hidden="true">{deux(rang)} / {deux(total)} —</b> {titreCompetences}</p>
           <h1>{soin.titre}</h1>
+          <p class="chapo">{soin.resume}</p>
         </div>
-        <p class="chapo">{soin.resume}</p>
+        <Planche nom={dessinSoin(soin.slug)} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} />
       </div>
     </header>
 
@@ -43,8 +51,8 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
       <div class="prose" set:html={md(soin.corps)} />
       <aside>
         <div class="encart">
-          <p class="encart__titre">Rendez-vous</p>
-          <p>{lieu.nom || site.cabinet.nom}<br />{lieu.adresse}, {lieu.codePostal} {lieu.ville}</p>
+          <p class="encart__titre mono">Rendez-vous</p>
+          <p class="encart__lieu">{lieu.nom || site.cabinet.nom}<br />{lieu.adresse}, {lieu.codePostal} {lieu.ville}</p>
           <a class="bouton bouton--plein" href={site.praticiens.length > 1 && rdvEnLigne ? '/#praticiens' : lienRdv(`soin-${soin.slug}`)}>{libelleRdv}</a>
           {rdvEnLigne && <a class="bouton bouton--ligne" href={telLien}>{site.cabinet.telephone}</a>}
         </div>
@@ -53,8 +61,12 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
 
     {soin.faq.length > 0 && (
       <section class="section section--douce">
-        <div class="cadre">
-          <h2>Questions fréquentes</h2>
+        <div class="cadre faq">
+          <div class="faq__entete">
+            <p class="sur sur--num">{soin.titreCourt}</p>
+            <h2>Questions fréquentes</h2>
+            <p class="faq__compte mono" aria-hidden="true">{deux(soin.faq.length)} questions</p>
+          </div>
           <FaqList items={soin.faq} />
         </div>
       </section>
@@ -64,24 +76,42 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
   {autres.length > 0 && (
     <section class="section">
       <div class="cadre">
+        <p class="sur sur--num">{titreCompetences}</p>
         <h2>Autres compétences du cabinet</h2>
-        <ul class="autres">{autres.map((s) => <li><a href={`/soins/${s.slug}`}>{s.titreCourt}</a></li>)}</ul>
+        <ul class="autres">
+          {autres.map((s) => (
+            <li>
+              <a href={`/soins/${s.slug}`}>
+                <span class="autres__num mono" aria-hidden="true">{deux(site.soins.indexOf(s) + 1)}</span>
+                <span class="autres__dessin surface-grille" aria-hidden="true"><Dessin nom={dessinSoin(s.slug)} /></span>
+                <span class="autres__titre">{s.titreCourt}</span>
+                <span class="autres__fleche" aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   )}
 </Gabarit>
 
 <style>
-  .entete-soin { padding-block: 36px 32px; }
-  .titre { display: flex; align-items: center; gap: 16px; }
-  .titre__icone { display: grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 16px; background: #fff; color: var(--accent); font-size: 2rem; }
-  .chapo { margin-top: 14px; }
-  .corps { display: grid; gap: 40px; padding-block: 40px 72px; }
+  .corps { display: grid; gap: 40px; padding-block: 8px clamp(56px, 8vw, 96px); }
   @media (min-width: 960px) { .corps { grid-template-columns: 1fr 320px; } }
-  .encart { position: sticky; top: 96px; display: grid; gap: 12px; padding: 24px; border-radius: var(--rayon); border: 1px solid var(--ligne); }
-  .encart__titre { font-weight: 700; font-size: 1.1rem; margin: 0; }
-  .encart p { margin: 0; color: var(--encre-douce); font-size: 0.95rem; }
-  .autres { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; padding: 0; margin: 0; }
-  .autres a { display: inline-block; padding: 8px 16px; border: 1px solid var(--ligne); border-radius: 999px; text-decoration: none; font-weight: 600; }
-  .autres a:hover { background: var(--accent-pale); }
+  .encart { position: sticky; top: 96px; display: grid; gap: 12px; padding: 18px 0 0; border-top: var(--filet-fort) solid var(--encre); }
+  .encart__titre { margin: 0; color: var(--accent-vif); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  .encart__lieu { margin: 0 0 6px; color: var(--encre-douce); font-size: 0.95rem; }
+
+  .faq { display: grid; gap: 32px; }
+  .faq__compte { margin: 22px 0 0; padding-top: 14px; border-top: var(--filet) solid var(--ligne); color: var(--accent-vif); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  @media (min-width: 960px) { .faq { grid-template-columns: 0.8fr 1.2fr; align-items: start; } .faq__entete { position: sticky; top: 110px; } }
+
+  .autres { list-style: none; display: grid; gap: 0 28px; padding: 0; margin: 8px 0 0; border-top: var(--filet-fort) solid var(--encre); grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+  .autres li { border-bottom: var(--filet) solid var(--ligne); }
+  .autres a { display: grid; grid-template-columns: 2.2em 84px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 0; text-decoration: none; color: var(--encre); }
+  .autres__num { color: var(--encre-pale); }
+  .autres__dessin { display: grid; place-items: center; width: 84px; aspect-ratio: 4 / 3; padding: 4px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
+  .autres__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.1rem; letter-spacing: -0.02em; line-height: 1.15; }
+  .autres__fleche { color: var(--accent-vif); transition: transform var(--duree-court) var(--courbe-sortie); }
+  .autres a:hover .autres__fleche { transform: translateX(4px); }
 </style>

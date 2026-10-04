@@ -7,6 +7,7 @@ import {
   modeleIntegre,
   packVisuel,
   fusionnerPack,
+  validerPersonnalisation,
   type PersonnalisationPack,
   validerManifeste,
   normaliserDraft,
@@ -37,6 +38,8 @@ type LigneSite = {
   domaine: string | null;
   test: boolean;
   config: unknown;
+  /** Options payantes activées par l'admin (ex. { edition: true }) */
+  options?: { edition?: boolean } | null;
 };
 type LigneArticle = { slug: string; titre: string; resume: string; corps: string; theme: string; date_publication: string; image?: string; image_alt?: string };
 type LigneProfession = { slug: string; libelle: string; specialite_schema: string; ordre: string };
@@ -55,7 +58,7 @@ const enListe = (mots: string[]) =>
 
 export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig> {
   const filtre = /^[0-9a-f-]{36}$/.test(siteId) ? `id=eq.${siteId}` : `slug=eq.${encodeURIComponent(siteId)}`;
-  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config`);
+  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,options`);
   if (!s) throw new Error(`Site introuvable dans Supabase : ${siteId}`);
 
   const [prof] = await lire<LigneProfession[]>(`professions?slug=eq.${s.profession_slug}`);
@@ -186,6 +189,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     message: messageActif ? d.message.texte : '',
     communes: d.cabinet.communes,
     photos: d.photos,
+    // Textes de l'éditeur visuel, revalidés (option « édition » requise pour les zones guidées).
+    textes: validerPersonnalisation(d.perso.textes, Boolean(s.options?.edition)).textes,
     visuels: {
       specialite: pack.value,
       animation: d.theme.animation ? pack.animation : null,

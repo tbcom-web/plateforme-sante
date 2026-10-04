@@ -2,10 +2,11 @@
 // Dessins techniques de la marque : trait anatomique fin, contours en pointillés (relevé de podoscope),
 // trame hexagonale de points colorés par la pression (bleu → vert d'eau → jaune → orange → rouge).
 // Même géométrie de pied que les animations d'accueil.
-// Couleurs (surchargeables par le parent) : --dessin-trait, --dessin-accent, --dessin-fond.
+// Couleurs (surchargeables par le parent) : --dessin-trait, --dessin-accent, --dessin-fond ; le reste vient de la charte.
 // Les traits marqués « trace » se dessinent quand le bloc parent apparaît (.apparait.vu).
 import { CONTOUR, ORTEILS } from '../animations/pied';
-import { trame, PRESSION, type Appui } from './trame';
+import { trame, type Appui } from './trame';
+import { PRESSION, ARRETS_PRESSION, TRAIT } from '@plateforme/core';
 import type { NomDessin } from '../../lib/dessins';
 export type { NomDessin } from '../../lib/dessins';
 
@@ -48,7 +49,7 @@ const lacets = [[118, 82], [129, 88], [140, 94], [151, 99], [162, 104]];
       {ORTEILS.map(([cx, cy, rx, ry, r]) => <ellipse cx={cx} cy={cy} rx={rx} ry={ry} transform={`rotate(${r} ${cx} ${cy})`} />)}
     </symbol>
     <linearGradient id={degrade} x1="0" y1="1" x2="0" y2="0">
-      {PRESSION.map((c, k) => <stop offset={[0, 0.35, 0.6, 0.8, 1][k]} stop-color={c} />)}
+      {PRESSION.map((c, k) => <stop offset={ARRETS_PRESSION[k]} stop-color={c} />)}
     </linearGradient>
     <clipPath id={loupe}><circle cx={c2.x} cy={c2.y} r={c2.r - 1} /></clipPath>
   </defs>
@@ -104,7 +105,7 @@ const lacets = [[118, 82], [129, 88], [140, 94], [151, 99], [162, 104]];
       <g transform={piedDroit(40, 12)}>
         {[1, 0.8, 0.6, 0.42, 0.25].map((e, k) => (
           <path class="trace niveau" d={CONTOUR} pathLength="1" transform={`translate(${47 * (1 - e)} ${125 * (1 - e)}) scale(${e})`}
-            style={`--k:${k};stroke:${['var(--d-trait)', 'var(--d-bas)', 'var(--d-froid)', 'var(--d-doux)', 'var(--d-chaud)'][k]};stroke-width:${1.6 / e / E}`} />
+            style={`--k:${k};stroke:${['var(--d-trait)', 'var(--d-bas)', 'var(--d-froid)', 'var(--d-doux)', 'var(--d-chaud)'][k]};stroke-width:${TRAIT.normal / e / E}`} />
         ))}
       </g>
       <g class="profil">
@@ -252,61 +253,63 @@ const lacets = [[118, 82], [129, 88], [140, 94], [151, 99], [162, 104]];
 </svg>
 
 <style>
+  /* Toutes les valeurs viennent de la charte (packages/core/src/charte.ts) : traits, pointillés, palette
+     de données de l'univers (--pression-1 à 5), annotations mono, durées et courbes. */
   .dessin {
-    --d-trait: var(--dessin-trait, var(--encre, #102224)); --d-accent: var(--dessin-accent, var(--accent-vif, #2f7d6d)); --d-fond: var(--dessin-fond, #fff);
-    --d-bas: #3e7bfa; --d-froid: #22c3a6; --d-doux: #ffc23d; --d-haut: #ff7a2f; --d-chaud: #f0352f;
-    display: block; width: 100%; height: auto; color: var(--d-trait); stroke: currentColor; stroke-width: 1.5; }
-  .grille line { stroke-width: 0.6; opacity: 0.12; }
-  .pointille { stroke-width: 3.4; stroke-dasharray: 0 6.5; opacity: 0.8; }
-  .pointille--leger { stroke-width: 2.4; opacity: 0.35; }
-  .trait { stroke-width: 2.2; }
-  .axe { stroke: var(--d-accent); stroke-width: 1; stroke-dasharray: 4 5; }
+    --d-trait: var(--dessin-trait, var(--encre)); --d-accent: var(--dessin-accent, var(--accent-vif, var(--encre))); --d-fond: var(--dessin-fond, var(--blanc));
+    --d-bas: var(--pression-1); --d-froid: var(--pression-2); --d-doux: var(--pression-3); --d-haut: var(--pression-4); --d-chaud: var(--pression-5);
+    display: block; width: 100%; height: auto; color: var(--d-trait); stroke: currentColor; stroke-width: var(--trait-normal); }
+  .grille line { stroke-width: var(--trait-filet); opacity: 0.12; }
+  /* Contour « relevé de podoscope » : points ronds (longueur nulle, bouts ronds) */
+  .pointille { stroke-width: var(--pointille-point); stroke-dasharray: var(--pointille); opacity: var(--pointille-opacite); }
+  .pointille--leger { stroke-width: var(--pointille-leger-point); opacity: var(--pointille-leger-opacite); }
+  .trait { stroke-width: var(--trait-fort); }
+  .axe { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret); }
   .mire, .loupe { stroke: var(--d-accent); }
-  .loupe { stroke-width: 1.6; }
-  .liaison { stroke: var(--d-accent); stroke-width: 0.9; opacity: 0.7; }
+  .loupe { stroke-width: var(--trait-normal); }
+  .liaison { stroke: var(--d-accent); stroke-width: var(--trait-fin); opacity: 0.7; }
   .fond-loupe { fill: var(--d-fond); stroke: none; }
-  .fin { stroke-width: 1; opacity: 0.6; }
-  .cote { stroke-width: 1; opacity: 0.45; }
-  .guide { stroke-width: 0.8; stroke-dasharray: 2 3; opacity: 0.45; }
+  .fin { stroke-width: var(--trait-fin); opacity: 0.6; }
+  .cote { stroke-width: var(--trait-fin); opacity: 0.45; }
+  .guide { stroke-width: var(--trait-filet); stroke-dasharray: var(--tiret-court); opacity: 0.45; }
   .niveau { fill: none; }
   .ongle { stroke: var(--d-accent); }
-  .ongle-petit { stroke-width: 1.6; opacity: 0.55; }
-  .sillon { stroke: var(--d-accent); stroke-width: 1.1; stroke-dasharray: 2 3; }
-  .anneau { stroke: var(--d-accent); stroke-width: 1.2; stroke-dasharray: 2 3; opacity: 0.7; }
-  .anneau-chaud { stroke: var(--d-chaud); stroke-width: 1.2; stroke-dasharray: 2 2.5; }
-  .semelle { stroke: var(--d-accent); stroke-width: 1.8; }
-  .crampons { stroke-width: 3.4; stroke-dasharray: 5 2.6; stroke-linecap: butt; opacity: 0.8; }
-  .oeillet { stroke-width: 1; }
-  .lacet { stroke: var(--d-accent); stroke-width: 1.3; }
-  .sol { stroke-width: 1.2; }
-  .hachures line { stroke-width: 0.8; opacity: 0.3; }
-  .force { stroke: var(--d-chaud); stroke-width: 2; }
-  .force-fleche { stroke: var(--d-chaud); stroke-width: 2; }
-  .force-courbe { stroke: var(--d-accent); stroke-width: 1.4; }
-  .polygone { stroke: var(--d-accent); stroke-width: 1.2; stroke-dasharray: 5 5; }
-  .oscillation { stroke: var(--d-chaud); stroke-width: 1.4; }
-  .onde { stroke: var(--d-chaud); stroke-width: 1.4; stroke-dasharray: 3 4; }
+  .ongle-petit { stroke-width: var(--trait-normal); opacity: 0.55; }
+  .sillon { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); }
+  .anneau { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); opacity: 0.7; }
+  .anneau-chaud { stroke: var(--d-chaud); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); }
+  .semelle { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+  .crampons { stroke-width: var(--trait-marque); stroke-dasharray: var(--tiret); stroke-linecap: butt; opacity: 0.8; }
+  .oeillet { stroke-width: var(--trait-fin); }
+  .lacet { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+  .sol { stroke-width: var(--trait-fin); }
+  .hachures line { stroke-width: var(--trait-filet); opacity: 0.3; }
+  .force, .force-fleche { stroke: var(--d-chaud); stroke-width: var(--trait-fort); }
+  .force-courbe { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+  .polygone { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret); }
+  .oscillation { stroke: var(--d-chaud); stroke-width: var(--trait-normal); }
+  .onde { stroke: var(--d-chaud); stroke-width: var(--trait-normal); stroke-dasharray: var(--tiret); }
   .point { stroke: none; }
   .trame path { fill: none; }
   .piste { fill: currentColor; opacity: 0.1; stroke: none; }
   .barre { stroke: none; }
   .curseur { fill: currentColor; stroke: none; }
   .legende rect { stroke: none; }
-  .mono { font-family: var(--police-mono, 'JetBrains Mono Variable', ui-monospace, monospace); font-size: 7.5px; fill: currentColor; stroke: none; opacity: 0.75; letter-spacing: 0.02em; }
+  .mono { font-family: var(--police-mono); font-size: var(--taille-donnees-dessin); fill: currentColor; stroke: none; opacity: 0.75; letter-spacing: 0.02em; }
   .mono--accent { fill: var(--d-accent); opacity: 1; }
   .mono--chaud { fill: var(--d-chaud); opacity: 1; }
 
   /* Apparition : les traits se dessinent, les points s'allument (si le parent est animé). */
-  :global(.pret) .dessin .trace:not(.axe):not(.onde):not(.polygone) { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1); }
+  :global(.pret) .dessin .trace:not(.axe):not(.onde):not(.polygone) { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--duree-trace) var(--courbe-trace); }
   :global(.pret.vu) .dessin .trace:not(.axe):not(.onde):not(.polygone) { stroke-dashoffset: 0; }
-  :global(.pret) .dessin .point { opacity: 0; transform: scale(0.3); transform-box: fill-box; transform-origin: center; transition: opacity 0.4s, transform 0.5s cubic-bezier(.3,1.4,.5,1); transition-delay: calc(0.7s + var(--k, 0) * 0.08s); }
+  :global(.pret) .dessin .point { opacity: 0; transform: scale(0.3); transform-box: fill-box; transform-origin: center; transition: opacity var(--duree-court), transform var(--duree-moyen) var(--courbe-rebond); transition-delay: calc(var(--duree-long) + var(--k, 0) * var(--duree-decalage)); }
   :global(.pret.vu) .dessin .point { opacity: 1; transform: none; }
-  :global(.pret) .dessin .trame path { opacity: 0; transition: opacity 0.6s; transition-delay: calc(0.3s + var(--k, 0) * 0.12s); }
+  :global(.pret) .dessin .trame path { opacity: 0; transition: opacity var(--duree-moyen); transition-delay: calc(var(--duree-court) + var(--k, 0) * var(--duree-decalage)); }
   :global(.pret.vu) .dessin .trame path { opacity: 1; }
-  :global(.pret) .dessin .barre { transform: scaleX(0); transform-box: fill-box; transition: transform 1.1s cubic-bezier(.2,.7,.2,1) 0.9s; }
+  :global(.pret) .dessin .barre { transform: scaleX(0); transform-box: fill-box; transition: transform var(--duree-long) var(--courbe-sortie) var(--duree-long); }
   :global(.pret.vu) .dessin .barre { transform: none; }
-  .dessin--talon .onde { animation: onde 2.6s ease-out infinite; animation-delay: calc(var(--k) * 0.4s); transform-box: fill-box; transform-origin: center; }
-  .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 2s ease-out infinite; }
+  .dessin--talon .onde { animation: onde var(--cycle-pouls) ease-out infinite; animation-delay: calc(var(--k) * var(--cycle-pouls) / 6); transform-box: fill-box; transform-origin: center; }
+  .pulse { transform-box: fill-box; transform-origin: center; animation: pulse var(--cycle-pouls) ease-out infinite; }
   @keyframes onde { 0% { opacity: 0.9; } 100% { opacity: 0.15; } }
   @keyframes pulse { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.7); } }
   @media (prefers-reduced-motion: reduce) { .dessin * { animation: none !important; transition: none !important; } }

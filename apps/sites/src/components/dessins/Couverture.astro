@@ -3,6 +3,7 @@
 // d'architecte, dessin choisi selon le thème de l'article, repères et lectures en mono. Décorative.
 import Dessin from './Dessin.astro';
 import { dessinArticle } from '../../lib/dessins';
+import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
 
 interface Props {
   theme?: string;
@@ -17,16 +18,16 @@ const nom = dessinArticle(theme, titre);
 <span class:list={['couverture', 'surface-plan', classe]} aria-hidden="true">
   <span class="couverture__haut mono"><span>{theme || 'Conseils'}</span><span>Fig. {String(numero).padStart(2, '0')}</span></span>
   <span class="couverture__dessin"><Dessin nom={nom} /></span>
-  <span class="couverture__bas mono">Représentation illustrative</span>
+  <span class="couverture__bas mono">{MENTION_ILLUSTRATIVE}</span>
 </span>
 
 <style>
   .couverture { position: relative; display: grid; grid-template-rows: auto 1fr auto; aspect-ratio: 16 / 9; padding: 12px 14px; overflow: hidden; }
-  .couverture__haut, .couverture__bas { display: flex; justify-content: space-between; gap: 12px; font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(242 246 255 / 0.75); }
-  .couverture__haut { padding-bottom: 8px; border-bottom: 1px solid rgb(255 255 255 / 0.22); }
+  .couverture__haut, .couverture__bas { display: flex; justify-content: space-between; gap: 12px; font-size: var(--taille-donnees-petit); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--sur-sombre-doux); }
+  .couverture__haut { padding-bottom: 8px; border-bottom: var(--filet) solid var(--sur-sombre-filet); }
   .couverture__haut span:first-child { color: var(--signal); }
-  .couverture__bas { padding-top: 8px; border-top: 1px solid rgb(255 255 255 / 0.22); text-transform: none; letter-spacing: 0.02em; color: rgb(242 246 255 / 0.5); }
+  .couverture__bas { padding-top: 8px; border-top: var(--filet) solid var(--sur-sombre-filet); text-transform: none; letter-spacing: 0.02em; color: var(--sur-sombre-pale); }
   .couverture__dessin { display: grid; place-items: center; min-height: 0; padding: 6px 0; }
-  .couverture__dessin :global(.dessin) { height: 100%; width: auto; max-width: 100%; transition: transform 0.7s cubic-bezier(.2,.7,.2,1); }
+  .couverture__dessin :global(.dessin) { height: 100%; width: auto; max-width: 100%; transition: transform var(--duree-moyen) var(--courbe-sortie); }
   :global(a:hover) > .couverture .couverture__dessin :global(.dessin), :global(a:hover) .couverture .couverture__dessin :global(.dessin) { transform: scale(1.05); }
 </style>

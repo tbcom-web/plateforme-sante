@@ -18,18 +18,18 @@ const { items } = Astro.props;
 </div>
 
 <style>
-  .faq { display: grid; max-width: 820px; border-top: 1.5px solid var(--encre, var(--ink)); }
-  details { border-bottom: 1px solid var(--line); transition: background 0.3s; }
+  .faq { display: grid; max-width: 820px; border-top: var(--filet-fort) solid var(--encre); }
+  details { border-bottom: var(--filet) solid var(--ligne); transition: background var(--duree-court); }
   summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 2.6em minmax(0, 1fr) 34px; align-items: center; gap: 12px; padding: 20px 0; }
   summary::-webkit-details-marker { display: none; }
-  .faq__num { font-family: var(--police-mono, ui-monospace, monospace); font-size: 0.74rem; color: var(--encre-pale, var(--ink-mute)); letter-spacing: 0.04em; }
-  .faq__signe { position: relative; width: 34px; height: 34px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--line); transition: background 0.3s, box-shadow 0.3s, transform 0.35s cubic-bezier(.2,.7,.2,1); }
-  .faq__signe::before, .faq__signe::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 1.5px; background: var(--brand-ink); translate: -50% -50%; transition: background 0.3s; }
+  .faq__num { font-family: var(--police-mono); font-size: var(--taille-donnees); color: var(--encre-pale); letter-spacing: 0.04em; }
+  .faq__signe { position: relative; width: 34px; height: 34px; border-radius: 50%; box-shadow: inset 0 0 0 var(--filet) var(--ligne); transition: background var(--duree-court), box-shadow var(--duree-court), transform var(--duree-court) var(--courbe-sortie); }
+  .faq__signe::before, .faq__signe::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: var(--filet-fort); background: var(--accent-vif); translate: -50% -50%; transition: background var(--duree-court); }
   .faq__signe::after { rotate: 90deg; }
-  summary:hover .faq__signe { box-shadow: inset 0 0 0 1px var(--brand-ink); }
-  details[open] .faq__signe { transform: rotate(45deg); background: var(--brand-ink); box-shadow: none; }
-  details[open] .faq__signe::before, details[open] .faq__signe::after { background: #fff; }
-  h3 { margin: 0; font-size: 1.06rem; font-family: var(--police-texte, var(--font-body)); font-weight: 650; letter-spacing: -0.01em; line-height: 1.35; }
-  p { color: var(--ink-soft); margin: 0; padding: 0 46px 22px calc(2.6em + 12px); max-width: 68ch; }
+  summary:hover .faq__signe { box-shadow: inset 0 0 0 var(--filet) var(--accent-vif); }
+  details[open] .faq__signe { transform: rotate(45deg); background: var(--accent-vif); box-shadow: none; }
+  details[open] .faq__signe::before, details[open] .faq__signe::after { background: var(--blanc); }
+  h3 { margin: 0; font-size: 1.06rem; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; line-height: 1.35; }
+  p { color: var(--encre-douce); margin: 0; padding: 0 46px 22px calc(2.6em + 12px); max-width: 68ch; }
   @media (max-width: 560px) { p { padding-right: 0; } }
 </style>

@@ -7,18 +7,21 @@ import Trajectoire from '../../../components/animations/Trajectoire.astro';
 import PremiersPas from '../../../components/animations/PremiersPas.astro';
 import Semelle from '../../../components/animations/Semelle.astro';
 import { site } from '../../../lib/site';
+import { feuilleCharte, GAMMES, variablesGamme } from '@plateforme/core';
+const accent = Object.entries(variablesGamme(GAMMES[0])).map(([k, v]) => `${k}:${v}`).join(';');
 
 export function getStaticPaths() {
   return site.demo ? [{ params: { vide: undefined } }] : [];
 }
 ---
 <!doctype html>
-<html lang="fr">
+<html lang="fr" style={accent}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
     <title>Animations d'accueil</title>
+    <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
   </head>
   <body>
     <section class="scene">
@@ -57,12 +60,12 @@ export function getStaticPaths() {
 </html>
 
 <style>
-  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: #071214; color: #e8f1ef; }
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: var(--nuit); color: var(--papier); }
   .scene { min-height: 100svh; display: grid; align-items: center; gap: 24px; padding: 40px clamp(20px, 5vw, 80px); }
   @media (min-width: 900px) { .scene { grid-template-columns: 1fr 1fr; } .scene--inverse .scene__anim { order: 2; } }
   .scene__anim { height: min(72svh, 640px); border-radius: 28px; overflow: hidden; }
-  .sur { font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: #7fe0c8; }
+  .sur { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--signal); }
   h1 { font-size: clamp(2.4rem, 5vw, 4.4rem); line-height: 1; letter-spacing: -0.045em; font-weight: 600; margin: 0 0 20px; }
-  h1 span { color: #8aa3a0; }
-  .scene--clair { background: #f6f3ee; --accent-vif: #b0583a; }
+  h1 span { color: var(--sur-sombre-pale); }
+  .scene--clair { background: var(--doux-defaut); }
 </style>

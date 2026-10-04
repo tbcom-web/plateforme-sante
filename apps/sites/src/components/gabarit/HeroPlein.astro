@@ -40,28 +40,28 @@ const anime = site.visuels.animation !== null;
 </script>
 
 <style>
-  .plein { position: relative; min-height: 100svh; display: grid; place-items: center; text-align: center; color: #fff; overflow: hidden; isolation: isolate; background: #1d2b2a; }
+  .plein { position: relative; min-height: 100svh; display: grid; place-items: center; text-align: center; color: var(--blanc); overflow: hidden; isolation: isolate; background: var(--nuit-haut); }
   .plein__image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); will-change: transform; }
   .plein::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
-      linear-gradient(180deg, rgb(10 22 22 / calc(var(--voile, 0.4) * 0.9)) 0%, rgb(10 22 22 / calc(var(--voile, 0.4) * 0.6)) 50%, rgb(10 22 22 / calc(var(--voile, 0.4) * 1.2)) 100%); }
+      linear-gradient(180deg, rgb(var(--nuit-rgb) / calc(var(--voile, 0.4) * 0.9)) 0%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.4) * 0.6)) 50%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.4) * 1.2)) 100%); }
   .plein__contenu { display: grid; justify-items: center; padding-block: 140px 120px; }
   /* Accueil animé : titre aligné à gauche, animation à droite (en fond atténué sur mobile). */
   .plein--anime { text-align: left; place-items: center stretch; }
-  .plein--anime::after { background: linear-gradient(90deg, rgb(5 12 13 / 0.6) 0%, rgb(5 12 13 / 0) 60%); }
+  .plein--anime::after { background: linear-gradient(90deg, rgb(var(--nuit-rgb) / 0.6) 0%, rgb(var(--nuit-rgb) / 0) 60%); }
   .plein--anime .plein__contenu { justify-items: start; }
   .plein--anime .plein__actions { justify-content: flex-start; }
   .plein__anim { position: absolute; inset: 0; z-index: -2; opacity: 0.35; }
   .plein__anim :global(canvas), .plein__anim :global(svg) { background: none !important; }
   @media (min-width: 900px) { .plein__anim { left: 50%; opacity: 1; } }
-  .plein__sur { color: rgb(255 255 255 / 0.85); }
+  .plein__sur { color: var(--sur-sombre-doux); }
   .plein__sur::before { display: none; }
-  h1 { color: #fff; font-size: clamp(2.6rem, 6.6vw, 5.8rem); max-width: 16ch; line-height: 1; }
-  h1 .pale { color: rgb(255 255 255 / 0.78) !important; }
-  .plein__chapo { max-width: 54ch; margin: 26px 0 36px; font-size: 1.15rem; color: rgb(255 255 255 / 0.88); }
+  h1 { color: var(--blanc); font-size: clamp(2.6rem, 6.6vw, 5.8rem); max-width: 16ch; line-height: 1; }
+  h1 .pale { color: var(--sur-sombre-doux) !important; }
+  .plein__chapo { max-width: 54ch; margin: 26px 0 36px; font-size: 1.15rem; color: var(--sur-sombre-doux); }
   .plein__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duree-court); }
   .bouton:hover .fleche { transform: translateX(3px); }
-  .bouton--verre { color: #fff; background: rgb(255 255 255 / 0.14); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.4); backdrop-filter: blur(10px); }
-  .bouton--verre:hover { color: #fff; background: rgb(255 255 255 / 0.22); }
-  .plein__lieu { position: absolute; left: 0; right: 0; bottom: 28px; display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0; font-size: 0.88rem; color: rgb(255 255 255 / 0.78); }
+  .bouton--verre { color: var(--blanc); background: var(--sur-sombre-verre); box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); backdrop-filter: blur(10px); }
+  .bouton--verre:hover { color: var(--blanc); background: var(--sur-sombre-filet); }
+  .plein__lieu { position: absolute; left: 0; right: 0; bottom: 28px; display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0; font-size: 0.88rem; color: var(--sur-sombre-doux); }
 </style>

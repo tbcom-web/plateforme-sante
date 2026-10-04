@@ -70,6 +70,8 @@ export type SiteConfig = {
   rdv: { url: string; plateforme: string };
   theme: {
     couleur: string;
+    /** Gamme de couleurs choisie (identifiant de GAMMES) ; prioritaire sur la couleur libre, facultative */
+    gamme?: string;
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };
@@ -98,6 +100,8 @@ export type SiteConfig = {
   communes: string[];
   /** URLs des photos ; vide = photo d'illustration par défaut */
   photos: { accueil: string; panorama: string; cabinet: string[] };
+  /** Textes personnalisés par le praticien (clés de personnalisation.ts) ; absents = texte standard */
+  textes?: Record<string, string>;
   /** Pack visuel de la spécialité (photos par défaut) et animation d'accueil retenue (null = aucune) */
   visuels: { specialite: string; animation: import('./packs').Animation | null; photos: import('./packs').PackVisuel['photos'] };
 };

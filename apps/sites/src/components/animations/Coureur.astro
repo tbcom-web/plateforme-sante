@@ -2,6 +2,7 @@
 // Animation « coureur » (podologie du sport), façon laboratoire d'analyse du mouvement :
 // squelette vu de profil avec marqueurs articulaires, trajectoires des marqueurs (tapis de course),
 // angle du genou mesuré en direct et cadence. Cinématique simplifiée d'une foulée de course.
+// Couleurs (palette de pression), traits, police des données et cadence viennent de la charte du core.
 // Canvas, sans librairie. Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
 interface Props { fond?: 'sombre' | 'clair' }
 const { fond = 'sombre' } = Astro.props;
@@ -9,8 +10,9 @@ const { fond = 'sombre' } = Astro.props;
 <canvas class:list={['coureur', `coureur--${fond}`]} data-fond={fond} aria-hidden="true"></canvas>
 
 <script>
+  import { PRESSION, NEUTRES, TRAIT, POINTILLE, POLICE_MONO, CYCLES, transparence } from '@plateforme/core/charte';
   type Pt = { x: number; y: number };
-  const CYCLE = 0.72; // secondes par cycle (2 pas) → cadence ≈ 167 pas/min
+  const CYCLE = CYCLES.foulee / 1000; // secondes par cycle (2 pas) → cadence ≈ 167 pas/min
   const RAD = Math.PI / 180;
 
   // Angles en degrés selon la phase p (0..1) du cycle d'une jambe.
@@ -44,13 +46,15 @@ const { fond = 'sombre' } = Astro.props;
     const sombre = cv.dataset.fond !== 'clair';
     const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const style = getComputedStyle(cv);
-    const accent = style.getPropertyValue('--accent-pale').trim() || '#8fe3cf';
-    const encre = sombre ? '#e9f4f1' : '#102224';
+    const accent = style.getPropertyValue('--accent-pale').trim() || style.getPropertyValue('--signal').trim() || PRESSION[1];
+    const encre = sombre ? NEUTRES.papier : NEUTRES.encre;
+    const trait = (a: number) => transparence(sombre ? NEUTRES.blanc : NEUTRES.encre, a);
     const ratio = Math.min(2, devicePixelRatio || 1);
     let l = 0, h = 0, debut = performance.now(), precedent = debut, visible = true;
     // Traces des marqueurs (cheville, genou, orteil de la jambe droite), décalées comme sur un tapis.
     const traces: Record<string, Pt[]> = { cheville: [], genou: [], orteil: [] };
-    const COULEURS: Record<string, string> = { cheville: '#ffd166', genou: '#ee6a5f', orteil: '#7fd6e8' };
+    // Marqueurs suivis : couleurs de la palette de pression (genou = pic, cheville = moyenne, orteil = modérée)
+    const COULEURS: Record<string, string> = { cheville: PRESSION[2], genou: PRESSION[4], orteil: PRESSION[1] };
 
     function dimensionner() {
       l = cv.clientWidth; h = cv.clientHeight;
@@ -63,7 +67,7 @@ const { fond = 'sombre' } = Astro.props;
       ctx.strokeStyle = couleur; ctx.lineWidth = largeur; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
-    function marqueur(p: Pt, r: number, couleur = '#ffffff') {
+    function marqueur(p: Pt, r: number, couleur: string = NEUTRES.blanc) {
       ctx.fillStyle = couleur; ctx.shadowColor = couleur; ctx.shadowBlur = r * 2.5;
       ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
@@ -87,13 +91,15 @@ const { fond = 'sombre' } = Astro.props;
       ctx.clearRect(0, 0, l, h);
 
       // Grille du laboratoire et sol du tapis
-      ctx.strokeStyle = sombre ? 'rgb(255 255 255 / 0.05)' : 'rgb(16 34 36 / 0.06)'; ctx.lineWidth = 1;
+      ctx.strokeStyle = trait(0.06); ctx.lineWidth = TRAIT.fin;
       const pas = Math.max(24, L / 4);
       for (let x = (l / 2) % pas; x < l; x += pas) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
       for (let y = sol % pas; y < h; y += pas) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(l, y); ctx.stroke(); }
       const vitesse = (L * 1.9) / CYCLE; // défilement du tapis (px/s)
-      ctx.strokeStyle = sombre ? 'rgb(255 255 255 / 0.35)' : 'rgb(16 34 36 / 0.35)'; ctx.lineWidth = 2;
-      ctx.setLineDash([3, 14]); ctx.lineDashOffset = (t * vitesse) % 17;
+      // Sol du tapis en pointillés ronds, comme le contour d'un relevé de podoscope
+      const tirets = [0, POINTILLE.contour.ecart * 2.5];
+      ctx.strokeStyle = trait(0.35); ctx.lineWidth = TRAIT.fort; ctx.lineCap = 'round';
+      ctx.setLineDash(tirets); ctx.lineDashOffset = (t * vitesse) % tirets[1];
       ctx.beginPath(); ctx.moveTo(0, sol + 2); ctx.lineTo(l, sol + 2); ctx.stroke(); ctx.setLineDash([]);
 
       // Traces des marqueurs (elles reculent avec le tapis)
@@ -103,7 +109,7 @@ const { fond = 'sombre' } = Astro.props;
           for (const q of tr) q.x -= vitesse * dt * 0.55;
           tr.push({ ...(k === 'cheville' ? d.c : k === 'genou' ? d.g : d.o) });
           while (tr.length && tr[0].x < l * 0.04) tr.shift();
-          ctx.strokeStyle = COULEURS[k]; ctx.lineWidth = 1.6;
+          ctx.strokeStyle = COULEURS[k]; ctx.lineWidth = TRAIT.normal;
           for (let i = 1; i < tr.length; i++) {
             ctx.globalAlpha = (i / tr.length) * 0.8;
             ctx.beginPath(); ctx.moveTo(tr[i - 1].x, tr[i - 1].y); ctx.lineTo(tr[i].x, tr[i].y); ctx.stroke();
@@ -113,13 +119,14 @@ const { fond = 'sombre' } = Astro.props;
       }
 
       // Membres côté gauche (en retrait), puis tronc, puis côté droit
-      const pale = sombre ? 'rgb(233 244 241 / 0.35)' : 'rgb(16 34 36 / 0.3)';
-      segment(epaule, bg.coude, 3, pale); segment(bg.coude, bg.main, 3, pale);
-      segment(bassin, g.g, 3, pale); segment(g.g, g.c, 3, pale); segment(g.c, g.o, 3, pale);
-      segment(bassin, epaule, 3.5, accent);
-      segment(bassin, d.g, 3.5, accent); segment(d.g, d.c, 3.5, accent); segment(d.c, d.o, 3.5, accent);
-      segment(epaule, bd.coude, 3.5, accent); segment(bd.coude, bd.main, 3.5, accent);
-      ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(tete.x, tete.y, L * 0.085, 0, Math.PI * 2); ctx.stroke();
+      const pale = trait(0.33);
+      const [arriere, avant] = [TRAIT.marque * 0.85, TRAIT.marque];
+      segment(epaule, bg.coude, arriere, pale); segment(bg.coude, bg.main, arriere, pale);
+      segment(bassin, g.g, arriere, pale); segment(g.g, g.c, arriere, pale); segment(g.c, g.o, arriere, pale);
+      segment(bassin, epaule, avant, accent);
+      segment(bassin, d.g, avant, accent); segment(d.g, d.c, avant, accent); segment(d.c, d.o, avant, accent);
+      segment(epaule, bd.coude, avant, accent); segment(bd.coude, bd.main, avant, accent);
+      ctx.strokeStyle = accent; ctx.lineWidth = arriere; ctx.beginPath(); ctx.arc(tete.x, tete.y, L * 0.085, 0, Math.PI * 2); ctx.stroke();
 
       // Marqueurs articulaires
       for (const m of [g.g, g.c, g.o, bg.coude]) marqueur(m, 3, pale);
@@ -128,21 +135,21 @@ const { fond = 'sombre' } = Astro.props;
 
       // Angle du genou droit : arc et valeur
       const a1 = Math.atan2(bassin.y - d.g.y, bassin.x - d.g.x), a2 = Math.atan2(d.c.y - d.g.y, d.c.x - d.g.x);
-      ctx.strokeStyle = COULEURS.genou; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = COULEURS.genou; ctx.lineWidth = TRAIT.normal;
       let ecart = a2 - a1; // angle intérieur : le plus court chemin entre cuisse et tibia
       if (ecart > Math.PI) ecart -= 2 * Math.PI;
       if (ecart < -Math.PI) ecart += 2 * Math.PI;
       ctx.beginPath(); ctx.arc(d.g.x, d.g.y, L * 0.12, a1, a1 + ecart, ecart < 0); ctx.stroke();
       const police = Math.max(11, L / 11);
-      ctx.font = `600 ${police}px 'Inter Variable', system-ui, sans-serif`;
+      ctx.font = `600 ${police}px ${POLICE_MONO}`;
       ctx.fillStyle = COULEURS.genou;
       ctx.fillText(`${Math.round(180 - d.angleGenou)}°`, d.g.x + L * 0.16, d.g.y + 4);
 
       // Lecture de laboratoire
       ctx.fillStyle = encre; ctx.globalAlpha = 0.75;
-      ctx.font = `600 ${police * 0.85}px 'Inter Variable', system-ui, sans-serif`;
+      ctx.font = `600 ${police * 0.85}px ${POLICE_MONO}`;
       ctx.fillText('ANALYSE DE LA FOULÉE', l * 0.06, h * 0.1);
-      ctx.font = `400 ${police * 0.85}px 'Inter Variable', system-ui, sans-serif`;
+      ctx.font = `400 ${police * 0.85}px ${POLICE_MONO}`;
       ctx.fillText(`Cadence ${Math.round(120 / CYCLE)} pas/min`, l * 0.06, h * 0.1 + police * 1.4);
       ctx.globalAlpha = 1;
 
@@ -161,5 +168,5 @@ const { fond = 'sombre' } = Astro.props;
 
 <style>
   .coureur { display: block; width: 100%; height: 100%; }
-  .coureur--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
+  .coureur--sombre { background: var(--fond-nuit); }
 </style>

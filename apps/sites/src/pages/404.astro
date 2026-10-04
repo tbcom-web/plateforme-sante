@@ -1,12 +1,27 @@
 ---
+// Page introuvable : même langage que l'accueil (filet, sur-titre mono, relevé d'empreintes).
 import Gabarit from '../layouts/Gabarit.astro';
+import Planche from '../components/dessins/Planche.astro';
+import Empreintes from '../components/dessins/Empreintes.astro';
 ---
 <Gabarit title="Page introuvable" description="Cette page n’existe pas ou a été déplacée." path="/404">
-  <section class="section">
-    <div class="cadre">
-      <h1>Page introuvable</h1>
-      <p class="chapo">Cette page n’existe pas ou a été déplacée.</p>
-      <a class="btn btn--primary" href="/">Retour à l’accueil</a>
+  <section class="cadre tete-page">
+    <div class="tete-page__grille">
+      <div>
+        <p class="sur sur--index"><b aria-hidden="true">404 —</b> Erreur</p>
+        <h1>Page introuvable</h1>
+        <p class="chapo">Cette page n’existe pas ou a été déplacée.</p>
+        <a class="bouton bouton--plein retour" href="/">Retour à l’accueil</a>
+      </div>
+      <Planche legende="Aucun appui" repere="404" fond="plan" class="introuvable">
+        <Empreintes appui="reparti" legende={false} />
+      </Planche>
     </div>
   </section>
 </Gabarit>
+
+<style>
+  .retour { margin-top: 32px; }
+  .tete-page :global(.introuvable) { max-width: 420px; justify-self: end; }
+  @media (max-width: 959px) { .tete-page :global(.introuvable) { justify-self: stretch; max-width: none; } }
+</style>

@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./icones": "./src/icones.ts"
+    "./icones": "./src/icones.ts",
+    "./charte": "./src/charte.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

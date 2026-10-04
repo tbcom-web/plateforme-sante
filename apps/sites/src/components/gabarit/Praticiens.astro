@@ -15,7 +15,8 @@ const appui = (orientations: string[]): Appui => {
   if (/postur|équilibre|semelle/.test(t)) return 'reparti';
   return 'normal';
 };
-const PASTILLES = ['#3e7bfa', '#22c3a6', '#ffc23d', '#ff7a2f', '#f0352f'];
+// Pastilles des orientations : niveaux de la palette de données de l'univers (charte).
+const PASTILLES = [1, 2, 3, 4, 5].map((n) => `var(--donnee-${n})`);
 const seul = site.praticiens.length === 1;
 ---
 <div class:list={['praticiens', { 'praticiens--seul': seul }]}>
@@ -59,14 +60,14 @@ const seul = site.praticiens.length === 1;
 
 <style>
   .praticiens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
-  .praticien { container-type: inline-size; background: var(--fond); border-radius: var(--rayon-grand); padding: 14px; box-shadow: inset 0 0 0 1px var(--ligne), var(--ombre); }
+  .praticien { container-type: inline-size; background: var(--fond); border-radius: var(--rayon-grand); padding: 14px; box-shadow: inset 0 0 0 var(--filet) var(--ligne), var(--ombre); }
   .praticien > * { min-width: 0; }
   .praticien__portrait { position: relative; aspect-ratio: 4 / 3; border-radius: calc(var(--rayon-grand) * 0.7); overflow: hidden; }
   .praticien__photo { width: 100%; height: 100%; object-fit: cover; }
   .praticien__releve { position: absolute; inset: 0; display: grid; }
-  .praticien__repere { position: absolute; top: 14px; left: 16px; right: 16px; padding-bottom: 8px; border-bottom: 1px solid rgb(255 255 255 / 0.25); display: flex; justify-content: space-between; gap: 12px; color: var(--signal); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
-  .praticien__releve :global(.praticien__empreintes) { position: absolute; right: 6%; bottom: -14%; width: 52%; color: rgb(255 255 255 / 0.65); }
-  .praticien__initiales { position: absolute; left: 16px; bottom: 6px; font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(4.5rem, 22cqi, 7.5rem); line-height: 0.9; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: 1.2px rgb(242 246 255 / 0.85); }
+  .praticien__repere { position: absolute; top: 14px; left: 16px; right: 16px; padding-bottom: 8px; border-bottom: var(--filet) solid var(--sur-sombre-filet); display: flex; justify-content: space-between; gap: 12px; color: var(--signal); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
+  .praticien__releve :global(.praticien__empreintes) { position: absolute; right: 6%; bottom: -14%; width: 52%; color: var(--sur-sombre-doux); }
+  .praticien__initiales { position: absolute; left: 16px; bottom: 6px; font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(4.5rem, 22cqi, 7.5rem); line-height: 0.9; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: calc(var(--trait-fin) * 1.2px) var(--papier); }
   .praticien__texte { display: grid; gap: 6px; align-content: start; padding: 22px 12px 10px; }
   @container (min-width: 620px) {
     .praticien { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 8px; }
@@ -78,17 +79,17 @@ const seul = site.praticiens.length === 1;
   h3 { font-family: var(--police-titres); font-size: clamp(1.6rem, 6cqi, 2.2rem); letter-spacing: -0.04em; line-height: 1; }
   .praticien__titre { color: var(--encre-douce); }
   .praticien__orientations { list-style: none; padding: 0; margin: 10px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; }
-  .praticien__orientations li { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; padding: 6px 12px 6px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ligne); color: var(--encre); }
+  .praticien__orientations li { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; padding: 6px 12px 6px 10px; border-radius: 999px; box-shadow: inset 0 0 0 var(--filet) var(--ligne); color: var(--encre); }
   .praticien__orientations i { width: 8px; height: 8px; border-radius: 50%; }
   .praticien__bio { margin-top: 8px; color: var(--encre-douce); }
-  .praticien__fiche { display: grid; grid-template-columns: minmax(0, 1fr); margin: 14px 0 0; border-top: 1.5px solid var(--encre); }
+  .praticien__fiche { display: grid; grid-template-columns: minmax(0, 1fr); margin: 14px 0 0; border-top: var(--filet-fort) solid var(--encre); }
   .praticien__fiche dt { padding-top: 10px; color: var(--encre-pale); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.66rem; }
-  .praticien__fiche dd { margin: 2px 0 0; padding-bottom: 10px; border-bottom: 1px solid var(--ligne); font-size: 0.9rem; color: var(--encre-douce); }
+  .praticien__fiche dd { margin: 2px 0 0; padding-bottom: 10px; border-bottom: var(--filet) solid var(--ligne); font-size: 0.9rem; color: var(--encre-douce); }
   .praticien__fiche ul { margin: 0; padding-left: 1.1em; }
   .praticien__id { display: grid; gap: 2px; font-size: 0.84rem !important; }
   @container (min-width: 480px) {
     .praticien__fiche { grid-template-columns: 9.5em minmax(0, 1fr); }
-    .praticien__fiche dt { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--ligne); }
+    .praticien__fiche dt { padding: 11px 12px 11px 0; border-bottom: var(--filet) solid var(--ligne); }
     .praticien__fiche dd { margin: 0; padding: 10px 0; }
   }
   .bouton { margin-top: 16px; justify-self: start; white-space: normal; text-align: center; }

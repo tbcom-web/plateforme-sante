@@ -59,7 +59,8 @@ Au cabinet, je prends le temps d’écouter, d’examiner et d’expliquer. Chaq
     geo: { lat: 45.7696, lng: 4.8513 },
   },
   rdv: { url: 'https://www.doctolib.fr/', plateforme: 'Doctolib' },
-  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', mise_en_page: 'chaleureux', style_images: 'organique' },
+  // GAMME=… pour essayer une gamme de couleurs de la charte (sinon couleur libre conseillée par le modèle).
+  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', ...(process.env.GAMME ? { gamme: process.env.GAMME } : {}), mise_en_page: 'chaleureux', style_images: 'organique' },
   accroche: {
     titre: 'Prendre soin de vos pieds, à chaque étape de la vie',
     texte:

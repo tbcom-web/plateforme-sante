@@ -39,12 +39,12 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
 
 <style>
   .bento { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
-  .tuile.apparait.pret { transition-delay: calc(var(--i) * 60ms); }
-  a { position: relative; display: grid; height: 100%; grid-template-rows: auto 1fr; text-decoration: none; color: var(--encre); border-radius: var(--rayon-grand); background-color: var(--fond); box-shadow: inset 0 0 0 1px var(--ligne); overflow: hidden; transition: box-shadow 0.35s, transform 0.35s cubic-bezier(.2,.7,.2,1); }
-  a:hover { color: var(--encre); transform: translateY(-3px); box-shadow: inset 0 0 0 1px var(--accent-ligne), var(--ombre-profonde); }
+  .tuile.apparait.pret { transition-delay: calc(var(--i) * var(--duree-decalage)); }
+  a { position: relative; display: grid; height: 100%; grid-template-rows: auto 1fr; text-decoration: none; color: var(--encre); border-radius: var(--rayon-grand); background-color: var(--fond); box-shadow: inset 0 0 0 var(--filet) var(--ligne); overflow: hidden; transition: box-shadow var(--duree-court), transform var(--duree-court) var(--courbe-sortie); }
+  a:hover { color: var(--encre); transform: translateY(-3px); box-shadow: inset 0 0 0 var(--filet) var(--accent-ligne), var(--ombre-profonde); }
 
-  .tuile__visuel { position: relative; display: grid; place-items: center; padding: 18px 22px; aspect-ratio: 16 / 10; border-bottom: 1px solid var(--ligne); }
-  .tuile__visuel :global(.dessin) { width: min(100%, 360px); transition: transform 0.6s cubic-bezier(.2,.7,.2,1); }
+  .tuile__visuel { position: relative; display: grid; place-items: center; padding: 18px 22px; aspect-ratio: 16 / 10; border-bottom: var(--filet) solid var(--ligne); }
+  .tuile__visuel :global(.dessin) { width: min(100%, 360px); transition: transform var(--duree-moyen) var(--courbe-sortie); }
   .tuile:hover .tuile__visuel :global(.dessin) { transform: scale(1.035); }
   /* Repères de cadrage aux quatre coins, comme sur une planche technique */
   .tuile__visuel::after {
@@ -61,15 +61,15 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
   .tuile__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.32rem; line-height: 1.1; letter-spacing: -0.03em; }
   .tuile__texte { color: var(--encre-douce); font-size: 0.95rem; line-height: 1.55; }
   .tuile__lien { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
-  .tuile__lien svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .tuile__lien svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duree-court); }
   .tuile:hover .tuile__lien svg { transform: translateX(4px); }
 
   /* Tuile vedette : fond plan d'architecte, dessin clair, grand titre */
-  a.surface-plan { background-color: var(--plan); color: #f2f6ff; box-shadow: var(--ombre); }
-  a.surface-plan:hover { color: #f2f6ff; box-shadow: var(--ombre-profonde); }
-  .tuile--plan .tuile__visuel { border-bottom-color: rgb(255 255 255 / 0.14); color: #fff; }
+  a.surface-plan { background-color: var(--plan); color: var(--papier); box-shadow: var(--ombre); }
+  a.surface-plan:hover { color: var(--papier); box-shadow: var(--ombre-profonde); }
+  .tuile--plan .tuile__visuel { border-bottom-color: var(--sur-sombre-filet); color: var(--blanc); }
   .tuile--plan .tuile__num { color: var(--signal); }
-  .tuile--plan .tuile__texte { color: rgb(242 246 255 / 0.78); }
+  .tuile--plan .tuile__texte { color: var(--sur-sombre-doux); }
   .tuile--plan .tuile__lien { color: var(--signal); }
 
   @media (min-width: 640px) {
@@ -89,7 +89,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     .tuile--moyen a, .tuile--large a { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr); grid-template-rows: auto; }
     .tuile--large { grid-column: span 4; }
     .tuile--large a { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
-    .tuile--moyen .tuile__visuel, .tuile--large .tuile__visuel { aspect-ratio: auto; min-height: 220px; border-bottom: 0; border-right: 1px solid var(--ligne); }
+    .tuile--moyen .tuile__visuel, .tuile--large .tuile__visuel { aspect-ratio: auto; min-height: 220px; border-bottom: 0; border-right: var(--filet) solid var(--ligne); }
     .tuile--moyen .tuile__corps, .tuile--large .tuile__corps { align-content: center; }
     .tuile--large .tuile__titre { font-size: 1.7rem; }
     .tuile--petit .tuile__titre { font-size: 1.18rem; }

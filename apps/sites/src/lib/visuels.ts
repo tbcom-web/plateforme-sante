@@ -26,8 +26,8 @@ const pack = site.visuels.photos;
 export const photoAccueil = site.photos.accueil || pack.accueil;
 export const photoPanorama = site.photos.panorama || site.photos.cabinet[0] || pack.panorama;
 export const diaporama = [...new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet, ...pack.diaporama].filter(Boolean))].slice(0, 4);
-/** Fond sombre des accueils animés, teinté de la couleur du cabinet */
-export const fondAnime = 'radial-gradient(ellipse at 65% 45%, color-mix(in srgb, var(--accent-fonce) 45%, #050c0d) 0%, #050c0d 78%)';
+/** Fond sombre des accueils animés, teinté de la couleur du cabinet (variable de la charte) */
+export const fondAnime = 'var(--fond-anime)';
 export const photoFinale = site.photos.cabinet[1] || '/photos/chaussage.webp';
 
 /** Coordonnées du cabinet : saisies, sinon géocodées au build via Nominatim (OpenStreetMap). */

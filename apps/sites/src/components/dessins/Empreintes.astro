@@ -2,7 +2,8 @@
 // Paire d'empreintes en trame hexagonale de points (relevé de baropodométrie), avec ligne de scan
 // et légende graduée. Décoratif (aria-hidden) ; la ligne de scan ne tourne que lorsque le bloc est à l'écran.
 import { CONTOUR, ORTEILS } from '../animations/pied';
-import { trame, PRESSION, type Appui } from './trame';
+import { trame, type Appui } from './trame';
+import { PRESSION, ARRETS_PRESSION, TRAIT } from '@plateforme/core';
 
 interface Props {
   appui?: Appui;
@@ -14,17 +15,17 @@ interface Props {
 }
 const { appui = 'normal', legende = true, scan = true, class: classe } = Astro.props;
 const id = `e-${Math.random().toString(36).slice(2, 8)}`;
-const niveaux = trame(appui, 6.4);
+const niveaux = trame(appui);
 const largeur = legende ? 236 : 210;
 ---
 <svg class:list={['empreintes', classe, { 'empreintes--scan': scan }]} viewBox={`0 0 ${largeur} 236`} aria-hidden="true" fill="none" stroke-linecap="round">
   <defs>
     <linearGradient id={`${id}-g`} x1="0" y1="1" x2="0" y2="0">
-      {PRESSION.map((c, k) => <stop offset={[0, 0.35, 0.6, 0.8, 1][k]} stop-color={c} />)}
+      {PRESSION.map((c, k) => <stop offset={ARRETS_PRESSION[k]} stop-color={c} />)}
     </linearGradient>
     <linearGradient id={`${id}-s`} x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="var(--signal, #6ff2c2)" stop-opacity="0" />
-      <stop offset="1" stop-color="var(--signal, #6ff2c2)" stop-opacity="0.2" />
+      <stop offset="0" stop-color="var(--signal)" stop-opacity="0" />
+      <stop offset="1" stop-color="var(--signal)" stop-opacity="0.2" />
     </linearGradient>
   </defs>
   {[`translate(10 7) scale(-1 1) translate(-92 0)`, `translate(108 7)`].map((t) => (
@@ -37,7 +38,7 @@ const largeur = legende ? 236 : 210;
   {scan && (
     <g class="empreintes__scan">
       <rect x="0" y="-18" width="210" height="18" fill={`url(#${id}-s)`} />
-      <rect x="0" y="-0.6" width="210" height="0.9" fill="var(--signal, #6ff2c2)" />
+      <rect x="0" y={-TRAIT.fin / 2} width="210" height={TRAIT.fin} fill="var(--signal)" />
     </g>
   )}
   {legende && (
@@ -50,9 +51,9 @@ const largeur = legende ? 236 : 210;
 
 <style>
   .empreintes { display: block; width: 100%; height: auto; overflow: visible; }
-  .empreintes__contour { stroke: currentColor; stroke-width: 1.2; stroke-dasharray: 0 4.5; opacity: 0.5; }
-  .empreintes__graduation { stroke: currentColor; stroke-width: 1; opacity: 0.5; }
-  .empreintes__scan { animation: scan 5.5s cubic-bezier(.65,0,.35,1) infinite; animation-play-state: paused; }
+  .empreintes__contour { stroke: currentColor; stroke-width: var(--pointille-leger-point); stroke-dasharray: var(--pointille); opacity: var(--pointille-leger-opacite); }
+  .empreintes__graduation { stroke: currentColor; stroke-width: var(--trait-fin); opacity: 0.5; }
+  .empreintes__scan { animation: scan var(--cycle-releve) var(--courbe-entree-sortie) infinite; animation-play-state: paused; }
   :global(.en-vue) .empreintes__scan { animation-play-state: running; }
   @keyframes scan { 0% { transform: translateY(0); opacity: 0; } 8% { opacity: 1; } 70% { opacity: 1; } 78%, 100% { transform: translateY(236px); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .empreintes__scan { display: none; } }

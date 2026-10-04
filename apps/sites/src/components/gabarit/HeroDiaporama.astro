@@ -5,14 +5,15 @@ import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import { diaporama as diapos, fondAnime } from '../../lib/visuels';
+import { CYCLES } from '@plateforme/core';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
 
 const anime = site.visuels.animation !== null;
-const duree = 7; // secondes par photo
+const duree = CYCLES.diapo; // ms par photo (charte)
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 ---
-<section class:list={['hero', { 'hero--anime': anime }]} style={`--n:${diapos.length};--d:${duree}s;${anime ? `background:${fondAnime}` : ''}`}>
+<section class:list={['hero', { 'hero--anime': anime }]} style={`--n:${diapos.length};--d:${duree}ms;${anime ? `background:${fondAnime}` : ''}`}>
   {anime ? (
     <div class="hero__anim" aria-hidden="true"><AnimationAccueil /></div>
   ) : (
@@ -42,7 +43,7 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
 </section>
 
 <style>
-  .hero { position: relative; min-height: 100svh; display: grid; align-items: end; color: #fff; overflow: hidden; isolation: isolate; background: #13292a; }
+  .hero { position: relative; min-height: 100svh; display: grid; align-items: end; color: var(--blanc); overflow: hidden; isolation: isolate; background: var(--nuit-haut); }
   .hero__diapos { position: absolute; inset: 0; z-index: -2; }
   .hero__diapos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; animation: diapo calc(var(--n) * var(--d)) infinite; animation-delay: calc(var(--i) * var(--d)); }
   /* 4 photos : chacune visible un quart du cycle, avec un fondu d'entrée et de sortie. */
@@ -54,30 +55,30 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
     100% { opacity: 0; transform: scale(1); }
   }
   .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
-      linear-gradient(180deg, rgb(8 20 22 / var(--voile, 0.55)) 0%, rgb(8 20 22 / calc(var(--voile, 0.55) * 0.1)) 30%, rgb(8 20 22 / calc(var(--voile, 0.55) * 0.45)) 55%, rgb(8 20 22 / calc(var(--voile, 0.55) * 1.55)) 100%); }
+      linear-gradient(180deg, rgb(var(--nuit-rgb) / var(--voile, 0.55)) 0%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.55) * 0.1)) 30%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.55) * 0.45)) 55%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.55) * 1.55)) 100%); }
   .hero__contenu { padding-block: 140px clamp(80px, 12vh, 140px); }
   /* Accueil animé : l'animation occupe la droite, le titre reste à gauche (en fond atténué sur mobile). */
-  .hero--anime::after { background: linear-gradient(90deg, rgb(5 12 13 / 0.7) 0%, rgb(5 12 13 / 0) 60%); }
+  .hero--anime::after { background: linear-gradient(90deg, rgb(var(--nuit-rgb) / 0.7) 0%, rgb(var(--nuit-rgb) / 0) 60%); }
   .hero__anim { position: absolute; inset: 0; z-index: -2; opacity: 0.35; }
   .hero__anim :global(canvas), .hero__anim :global(svg) { background: none !important; }
   @media (min-width: 900px) { .hero__anim { left: 50%; opacity: 1; } }
-  .hero__sur { color: rgb(255 255 255 / 0.85); }
-  h1 { color: #fff; font-size: clamp(2.8rem, 7.4vw, 6.6rem); max-width: 14ch; line-height: 0.98; }
-  h1 .pale { color: rgb(255 255 255 / 0.72) !important; }
-  .hero__chapo { max-width: 52ch; margin: 26px 0 36px; font-size: 1.15rem; color: rgb(255 255 255 / 0.86); }
+  .hero__sur { color: var(--sur-sombre-doux); }
+  h1 { color: var(--blanc); font-size: clamp(2.8rem, 7.4vw, 6.6rem); max-width: 14ch; line-height: 0.98; }
+  h1 .pale { color: var(--sur-sombre-doux) !important; }
+  .hero__chapo { max-width: 52ch; margin: 26px 0 36px; font-size: 1.15rem; color: var(--sur-sombre-doux); }
   .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
-  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duree-court); }
   .bouton:hover .fleche { transform: translateX(3px); }
-  .bouton--verre { color: #fff; background: rgb(255 255 255 / 0.12); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35); backdrop-filter: blur(10px); }
-  .bouton--verre:hover { color: #fff; background: rgb(255 255 255 / 0.2); }
-  .hero__lieu { display: flex; align-items: center; gap: 8px; margin: 32px 0 0; font-size: 0.9rem; color: rgb(255 255 255 / 0.75); }
+  .bouton--verre { color: var(--blanc); background: var(--sur-sombre-verre); box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); backdrop-filter: blur(10px); }
+  .bouton--verre:hover { color: var(--blanc); background: var(--sur-sombre-filet); }
+  .hero__lieu { display: flex; align-items: center; gap: 8px; margin: 32px 0 0; font-size: 0.9rem; color: var(--sur-sombre-doux); }
   .hero__points { position: absolute; right: clamp(20px, 4vw, 56px); bottom: clamp(32px, 6vh, 56px); display: flex; gap: 8px; }
-  .hero__points span { width: 28px; height: 3px; border-radius: 2px; background: rgb(255 255 255 / 0.3); overflow: hidden; position: relative; }
-  .hero__points span::after { content: ''; position: absolute; inset: 0; background: #fff; transform: scaleX(0); transform-origin: left; animation: point calc(var(--n) * var(--d)) linear infinite; animation-delay: calc(var(--i) * var(--d)); }
+  .hero__points span { width: 28px; height: 3px; border-radius: 2px; background: var(--sur-sombre-filet); overflow: hidden; position: relative; }
+  .hero__points span::after { content: ''; position: absolute; inset: 0; background: var(--blanc); transform: scaleX(0); transform-origin: left; animation: point calc(var(--n) * var(--d)) linear infinite; animation-delay: calc(var(--i) * var(--d)); }
   @keyframes point { 0% { transform: scaleX(0); } 25% { transform: scaleX(1); } 25.01%, 100% { transform: scaleX(0); } }
-  .hero__suite { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; width: 44px; height: 44px; display: none; place-items: center; border-radius: 50%; color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.4); animation: rebond 2.4s ease-in-out infinite; }
+  .hero__suite { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; width: 44px; height: 44px; display: none; place-items: center; border-radius: 50%; color: var(--blanc); box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); animation: rebond var(--cycle-pouls) ease-in-out infinite; }
   @media (min-width: 900px) { .hero__suite { display: grid; } }
-  .hero__suite svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .hero__suite svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; stroke-linejoin: round; }
   @keyframes rebond { 50% { translate: -50% 6px; } }
   @media (prefers-reduced-motion: reduce) {
     .hero__diapos img { animation: none; }

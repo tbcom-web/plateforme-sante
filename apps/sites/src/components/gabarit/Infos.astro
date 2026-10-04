@@ -84,7 +84,7 @@ const acces = [
 
 <style>
   .infos { display: grid; gap: 0 28px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); counter-reset: info; }
-  .info { padding: 18px 0 22px; border-top: 1.5px solid var(--encre); }
+  .info { padding: 18px 0 22px; border-top: var(--filet-fort) solid var(--encre); }
   .info--horaires { grid-column: 1 / -1; }
   h3 { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; margin-bottom: 12px; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; }
   h3::after { counter-increment: info; content: counter(info, decimal-leading-zero); margin-left: auto; font-family: var(--police-mono); font-size: 0.7rem; font-weight: 450; color: var(--encre-pale); }
@@ -93,7 +93,7 @@ const acces = [
   ul { margin: 0; padding-left: 1.1em; color: var(--encre-douce); font-size: 0.95rem; }
   /* Frise des horaires : une piste par groupe de jours, plages d'ouverture en barres */
   .frise { display: grid; gap: 0; margin: 0; }
-  .frise__ligne { display: grid; grid-template-columns: minmax(9em, 0.42fr) minmax(0, 1fr); align-items: center; column-gap: 18px; row-gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--ligne); font-size: 0.92rem; }
+  .frise__ligne { display: grid; grid-template-columns: minmax(9em, 0.42fr) minmax(0, 1fr); align-items: center; column-gap: 18px; row-gap: 2px; padding: 9px 0; border-bottom: var(--filet) solid var(--ligne); font-size: 0.92rem; }
   .frise__ligne--axe { padding: 0 0 4px; border-bottom: 0; }
   .frise__axe { position: relative; height: 16px; color: var(--encre-pale); font-size: 0.64rem; }
   .frise__axe span { position: absolute; translate: -50% 0; }
@@ -101,9 +101,9 @@ const acces = [
   dd { display: contents; }
   .frise__heures { grid-column: 1; grid-row: 2; color: var(--encre-douce); font-family: var(--police-mono); font-size: 0.7rem; letter-spacing: 0.01em; }
   .frise__piste { grid-column: 2; grid-row: 1 / span 2; position: relative; height: 10px; border-radius: 2px; background: color-mix(in srgb, var(--encre) 6%, transparent); }
-  .frise__piste b { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, var(--accent-vif), color-mix(in srgb, var(--accent-vif), #fff 25%)); }
+  .frise__piste b { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, var(--accent-vif), color-mix(in srgb, var(--accent-vif), var(--blanc) 25%)); }
   .frise__repere { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ligne); }
   .pastilles { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .pastilles li { padding: 5px 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ligne); font-size: 0.85rem; color: var(--encre); }
-  .communes { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ligne); font-size: 0.9rem; }
+  .pastilles li { padding: 5px 12px; border-radius: 999px; box-shadow: inset 0 0 0 var(--filet) var(--ligne); font-size: 0.85rem; color: var(--encre); }
+  .communes { margin-top: 20px; padding-top: 16px; border-top: var(--filet) solid var(--ligne); font-size: 0.9rem; }
 </style>

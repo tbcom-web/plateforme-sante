@@ -4,19 +4,22 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import Dessin, { type NomDessin } from '../../../components/dessins/Dessin.astro';
 import { site } from '../../../lib/site';
+import { feuilleCharte, DESSINS_PODOLOGIE, GAMMES, variablesGamme } from '@plateforme/core';
+const accent = Object.entries(variablesGamme(GAMMES[0])).map(([k, v]) => `${k}:${v}`).join(';');
 
 export function getStaticPaths() {
   return site.demo ? [{ params: { vide: undefined } }] : [];
 }
-const noms: NomDessin[] = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'enfant', 'equilibre', 'talon', 'appuis'];
+const noms: NomDessin[] = [...DESSINS_PODOLOGIE];
 ---
 <!doctype html>
-<html lang="fr">
+<html lang="fr" style={accent}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
     <title>Dessins techniques</title>
+    <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
   </head>
   <body>
     <main>
@@ -30,10 +33,11 @@ const noms: NomDessin[] = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'en
   </body>
 </html>
 <style>
-  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: #f6f3ee; --accent-vif: #2f7d6d; --encre: #102224; }
+  /* Planche de contrôle : valeurs de la charte (variables injectées dans <head>), accent de la gamme Canard. */
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: var(--doux-defaut); }
   main { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; padding: 16px; }
-  figure { margin: 0; background: #fff; border-radius: 16px; padding: 18px; }
-  figcaption { font-size: 0.8rem; color: #8a9898; margin-top: 6px; }
-  .sombre { background: #123c8c; --dessin-trait: #f2f6ff; --dessin-accent: #6ff2c2; --dessin-fond: #0c2c6b;
-    background-image: linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px); background-size: 24px 24px; }
+  figure { margin: 0; background: var(--blanc); border-radius: 16px; padding: 18px; }
+  figcaption { font-family: var(--police-mono); font-size: var(--taille-donnees); color: var(--encre-pale); margin-top: 6px; }
+  .sombre { background: var(--plan); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-fond: var(--plan-profond);
+    background-image: linear-gradient(var(--quadrillage-sombre) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-sombre) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas) var(--quadrillage-pas); }
 </style>

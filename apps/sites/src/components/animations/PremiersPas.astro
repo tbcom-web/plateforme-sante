@@ -2,9 +2,12 @@
 // Animation « premiers pas » (enfant) : petites empreintes multicolores qui apparaissent une à une
 // le long d'un chemin, puis s'effacent. SVG + CSS uniquement.
 // Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
+// Couleurs : les cinq niveaux de la palette de pression (charte), du plus froid au plus chaud.
+import { PRESSION } from '@plateforme/core';
+
 interface Props { fond?: 'sombre' | 'clair' }
 const { fond = 'sombre' } = Astro.props;
-const couleurs = ['#7fd6e8', '#7fe0b5', '#d8e86f', '#f6b24d', '#ee6a5f', '#c79bf2'];
+const couleurs = PRESSION;
 // Chemin en légère courbe, du bas à gauche vers le haut à droite ; pieds gauche et droit en alternance.
 const pas = Array.from({ length: 7 }, (_, i) => {
   const t = i / 6;
@@ -34,10 +37,10 @@ const pas = Array.from({ length: 7 }, (_, i) => {
 </svg>
 
 <style>
-  .pas { display: block; width: 100%; height: 100%; --cycle: 6s; }
-  .pas--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
+  .pas { display: block; width: 100%; height: 100%; --cycle: var(--cycle-releve); }
+  .pas--sombre { background: var(--fond-nuit); }
   .empreinte { opacity: 0; transform: scale(0.4); transform-box: fill-box; transform-origin: center;
-    animation: pas var(--cycle) cubic-bezier(.2,.8,.3,1.2) infinite; animation-delay: calc(var(--i) * 0.42s); }
+    animation: pas var(--cycle) var(--courbe-rebond) infinite; animation-delay: calc(var(--i) * var(--cycle) / 14); }
   @keyframes pas { 0% { opacity: 0; transform: scale(0.4); } 6% { opacity: 1; transform: scale(1); } 62% { opacity: 1; transform: scale(1); } 80%, 100% { opacity: 0; transform: scale(1); } }
   @media (prefers-reduced-motion: reduce) {
     .empreinte { animation: none; opacity: 1; transform: none; }

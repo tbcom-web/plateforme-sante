@@ -22,20 +22,20 @@ import { dessinSoin } from '../../lib/dessins';
 </ol>
 
 <style>
-  .expertises { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--encre); }
-  li { position: relative; border-bottom: 1px solid var(--ligne); }
+  .expertises { list-style: none; margin: 0; padding: 0; border-top: var(--filet-fort) solid var(--encre); }
+  li { position: relative; border-bottom: var(--filet) solid var(--ligne); }
   /* Filet de pression qui se trace au survol */
-  li::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, #3e7bfa, #22c3a6 35%, #ffc23d 60%, #ff7a2f 80%, #f0352f); transform: scaleX(0); transform-origin: left; transition: transform 0.7s cubic-bezier(.2,.7,.2,1); }
+  li::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, var(--degrade-donnees)); transform: scaleX(0); transform-origin: left; transition: transform var(--duree-moyen) var(--courbe-sortie); }
   li:hover::after { transform: scaleX(1); }
   .expertise { position: relative; display: grid; grid-template-columns: 92px 1fr 40px; grid-template-areas: 'dessin titre fleche' 'dessin resume fleche'; column-gap: 16px; align-items: center; padding: 20px 0; text-decoration: none; color: var(--encre); }
   .expertise__num { display: none; }
-  .expertise__dessin { grid-area: dessin; display: grid; place-items: center; width: 92px; aspect-ratio: 4 / 3; padding: 6px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 1px var(--ligne); }
+  .expertise__dessin { grid-area: dessin; display: grid; place-items: center; width: 92px; aspect-ratio: 4 / 3; padding: 6px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
   .expertise__vignette { display: none; }
-  .expertise__titre { grid-area: titre; font-family: var(--police-titres); font-size: clamp(1.2rem, 2.4vw, 2rem); font-weight: var(--graisse-titres, 560); letter-spacing: -0.035em; line-height: 1.05; transition: transform 0.45s cubic-bezier(.2,.7,.2,1); }
-  .expertise__resume { grid-area: resume; font-size: 0.93rem; color: var(--encre-douce); margin-top: 4px; transition: opacity 0.3s; }
-  .expertise__fleche { grid-area: fleche; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--ligne); color: var(--encre); transition: background 0.3s, border-color 0.3s, color 0.3s; }
-  .expertise__fleche svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
-  .expertise:hover .expertise__fleche { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .expertise__titre { grid-area: titre; font-family: var(--police-titres); font-size: clamp(1.2rem, 2.4vw, 2rem); font-weight: var(--graisse-titres, 560); letter-spacing: -0.035em; line-height: 1.05; transition: transform var(--duree-moyen) var(--courbe-sortie); }
+  .expertise__resume { grid-area: resume; font-size: 0.93rem; color: var(--encre-douce); margin-top: 4px; transition: opacity var(--duree-court); }
+  .expertise__fleche { grid-area: fleche; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; border: var(--filet) solid var(--ligne); color: var(--encre); transition: background var(--duree-court), border-color var(--duree-court), color var(--duree-court); }
+  .expertise__fleche svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; }
+  .expertise:hover .expertise__fleche { background: var(--accent); border-color: var(--accent); color: var(--blanc); }
   @media (max-width: 520px) {
     .expertise { grid-template-columns: 76px 1fr; grid-template-areas: 'dessin titre' 'dessin resume'; }
     .expertise__dessin { width: 76px; }
@@ -46,7 +46,7 @@ import { dessinSoin } from '../../lib/dessins';
     .expertise__num { display: block; grid-area: num; color: var(--encre-pale); }
     .expertise__dessin { width: 148px; padding: 8px 10px; }
     .expertise__resume { margin: 0; max-width: 46ch; }
-    .expertise__vignette { display: block; position: absolute; z-index: 2; right: 110px; top: 50%; width: 230px; height: 165px; object-fit: cover; border-radius: var(--rayon); opacity: 0; pointer-events: none; transform: translateY(-50%) scale(0.92) rotate(-2deg); transition: opacity 0.35s, transform 0.5s cubic-bezier(.2,.7,.2,1); box-shadow: var(--ombre); }
+    .expertise__vignette { display: block; position: absolute; z-index: 2; right: 110px; top: 50%; width: 230px; height: 165px; object-fit: cover; border-radius: var(--rayon); opacity: 0; pointer-events: none; transform: translateY(-50%) scale(0.92) rotate(-2deg); transition: opacity var(--duree-court), transform var(--duree-moyen) var(--courbe-sortie); box-shadow: var(--ombre); }
     .expertise:hover .expertise__vignette { opacity: 1; transform: translateY(-50%) scale(1) rotate(-2deg); }
     .expertise:hover .expertise__titre { transform: translateX(8px); }
     .expertise:hover .expertise__resume { opacity: 0.2; }

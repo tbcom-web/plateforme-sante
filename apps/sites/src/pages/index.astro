@@ -142,21 +142,21 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
 </Gabarit>
 
 <style>
-  .faits { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-top: 1.5px solid var(--encre); border-bottom: 1px solid var(--ligne); margin-top: clamp(28px, 4vw, 48px); }
+  .faits { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-top: var(--filet-fort) solid var(--encre); border-bottom: var(--filet) solid var(--ligne); margin-top: clamp(28px, 4vw, 48px); }
   .faits li { display: grid; gap: 6px; padding: 18px 20px 20px 0; font-size: 0.93rem; color: var(--encre); font-weight: 500; }
   .faits__num { color: var(--accent-vif); font-weight: 450; }
-  .faits li + li { border-top: 1px solid var(--ligne); }
-  @media (min-width: 760px) { .faits li + li { border-top: 0; border-left: 1px solid var(--ligne); padding-left: 20px; } }
+  .faits li + li { border-top: var(--filet) solid var(--ligne); }
+  @media (min-width: 760px) { .faits li + li { border-top: 0; border-left: var(--filet) solid var(--ligne); padding-left: 20px; } }
 
   .articles { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
   .article { display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 10px; text-decoration: none; color: var(--encre); }
   .article:hover { color: var(--encre); }
-  .article__visuel { display: block; aspect-ratio: 16 / 9; border-radius: var(--rayon); overflow: hidden; margin-bottom: 8px; box-shadow: var(--ombre); transition: transform 0.45s cubic-bezier(.2,.7,.2,1), box-shadow 0.45s; }
-  .article__visuel img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(.2,.7,.2,1); }
+  .article__visuel { display: block; aspect-ratio: 16 / 9; border-radius: var(--rayon); overflow: hidden; margin-bottom: 8px; box-shadow: var(--ombre); transition: transform var(--duree-moyen) var(--courbe-sortie), box-shadow var(--duree-moyen); }
+  .article__visuel img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--duree-moyen) var(--courbe-sortie); }
   .article__visuel :global(.couverture) { height: 100%; }
   .article:hover .article__visuel { transform: translateY(-4px); box-shadow: var(--ombre-profonde); }
   .article:hover .article__visuel img { transform: scale(1.04); }
-  .article__meta { padding-top: 12px; border-top: 1.5px solid var(--encre); color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
+  .article__meta { padding-top: 12px; border-top: var(--filet-fort) solid var(--encre); color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
   .article__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(1.3rem, 2vw, 1.6rem); letter-spacing: -0.03em; line-height: 1.12; }
   .article__resume { color: var(--encre-douce); font-size: 0.95rem; }
   .article__lire { font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
@@ -173,7 +173,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
   @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } }
 
   .faq { display: grid; gap: 32px; }
-  .faq__contact { display: grid; gap: 6px; margin: 28px 0 0; padding-top: 16px; border-top: 1px solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; max-width: 30ch; }
+  .faq__contact { display: grid; gap: 6px; margin: 28px 0 0; padding-top: 16px; border-top: var(--filet) solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; max-width: 30ch; }
   .faq__contact .mono { color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
   @media (min-width: 960px) { .faq { grid-template-columns: 0.8fr 1.2fr; align-items: start; } .faq__entete { position: sticky; top: 110px; } }
 </style>

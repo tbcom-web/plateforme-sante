@@ -1,0 +1,237 @@
+---
+// Planche de la charte graphique, générée uniquement sur les sites de démo (noindex) : /modeles/charte
+// Tout ce qui est affiché est lu dans le core (charte.ts, univers.ts, gammes.ts) : la planche ne peut pas
+// diverger de la source.
+import '@fontsource-variable/inter';
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/manrope';
+import '@fontsource/instrument-serif/400.css';
+import '@fontsource-variable/schibsted-grotesk';
+import '@fontsource-variable/jetbrains-mono';
+import Dessin from '../../../components/dessins/Dessin.astro';
+import Empreintes from '../../../components/dessins/Empreintes.astro';
+import Couverture from '../../../components/dessins/Couverture.astro';
+import Planche from '../../../components/dessins/Planche.astro';
+import Podoscope from '../../../components/animations/Podoscope.astro';
+import { site } from '../../../lib/site';
+import {
+  feuilleCharte, NEUTRES, PLAN, TRAIT, POINTILLE, TRAME, POLICES, TYPO, DUREES, CYCLES, COURBES, MENTION_ILLUSTRATIVE,
+  UNIVERS, GAMMES, variablesGamme, contraste, interpoler, MODELES_INTEGRES, SPECIALITES,
+} from '@plateforme/core';
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { vide: undefined } }] : [];
+}
+const u = UNIVERS.podologie;
+const d = u.donnees;
+const style = (v: Record<string, string>) => Object.entries(v).map(([k, x]) => `${k}:${x}`).join(';');
+const degrade = Array.from({ length: 41 }, (_, i) => interpoler(d.couleurs, d.arrets, i / 40));
+const neutres = Object.entries(NEUTRES);
+const traits = Object.entries(TRAIT);
+const recommandees = (id: string) => MODELES_INTEGRES.filter((m) => m.gammes?.includes(id)).map((m) => m.nom);
+const ratio = (a: string, b: string) => contraste(a, b).toFixed(1);
+---
+<!doctype html>
+<html lang="fr" style={style(variablesGamme(GAMMES[0]))}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Charte graphique</title>
+    <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
+  </head>
+  <body>
+    <header class="bandeau cadre">
+      <span>Charte graphique · plateforme santé</span><span>Univers : {u.nom}</span>
+    </header>
+
+    <main class="cadre">
+      <section class="intro">
+        <p class="sur">01 — Cinq couches</p>
+        <h1>Une seule grammaire, <span>toutes les professions.</span></h1>
+        <ol class="couches">
+          <li><b>Charte</b><span>Invariants de marque : traits, trame, données en mono, mouvement, mention illustrative.</span><i>nous</i></li>
+          <li><b>Univers métier</b><span>{u.motif.nom} — {u.motif.sens}</span><i>nous</i></li>
+          <li><b>Spécialité</b><span>{SPECIALITES.map((s) => s.label).join(' · ')}</span><i>praticien</i></li>
+          <li><b>Gamme</b><span>{GAMMES.map((g) => g.nom).join(' · ')}</span><i>praticien</i></li>
+          <li><b>Modèle</b><span>{MODELES_INTEGRES.map((m) => m.nom).join(' · ')}</span><i>praticien</i></li>
+        </ol>
+      </section>
+
+      <section>
+        <p class="sur">02 — Palette de données · {d.grandeur}</p>
+        <div class="pression">
+          {d.couleurs.map((c, k) => (
+            <div class="pression__niveau">
+              <span class="pastille" style={`background:var(--donnee-${k + 1})`}></span>
+              <span class="mono">--pression-{k + 1}</span>
+              <strong>{d.libelles[k]}</strong>
+              <span class="mono">{c} · {d.arrets[k]}</span>
+            </div>
+          ))}
+        </div>
+        <div class="rampe">{degrade.map((c) => <span style={`background:${c}`}></span>)}</div>
+        <p class="note mono">couleurPression(v) : interpolation linéaire entre les arrêts {d.arrets.join(' / ')}. Usage : donnée mesurée ou illustrée uniquement (trame, légende, marqueurs) — jamais un bouton ni un texte.</p>
+      </section>
+
+      <section>
+        <p class="sur">03 — Neutres et fonds</p>
+        <div class="nuancier">
+          {neutres.map(([k, c]) => <div><span class="pastille pastille--grande" style={`background:${c}`}></span><span class="mono">{k}</span><span class="mono pale">{c}</span></div>)}
+          <div><span class="pastille pastille--grande" style={`background:${PLAN.fond}`}></span><span class="mono">plan (défaut)</span><span class="mono pale">{PLAN.fond}</span></div>
+          <div><span class="pastille pastille--grande" style={`background:${PLAN.signal}`}></span><span class="mono">signal (défaut)</span><span class="mono pale">{PLAN.signal}</span></div>
+        </div>
+        <div class="fonds">
+          <div class="fond fond--grille"><span class="mono">surface-grille · {TRAME.motif.pas}px</span></div>
+          <div class="fond surface-plan"><span class="mono">plan d'architecte · 24 / 120 px</span></div>
+          <div class="fond fond--nuit"><span class="mono">fond-nuit (animations)</span></div>
+        </div>
+      </section>
+
+      <section>
+        <p class="sur">04 — Gammes de couleurs, appliquées au même extrait</p>
+        <div class="gammes">
+          {GAMMES.map((g) => (
+            <article class="extrait" style={style(variablesGamme(g))}>
+              <div class="extrait__page">
+                <p class="extrait__sur mono">01 — {g.nom}</p>
+                <p class="extrait__titre">Une prise en charge <span>du pied, à tout âge.</span></p>
+                <p class="extrait__texte">Chaque consultation commence par un échange et un examen.</p>
+                <span class="extrait__bouton">Prendre rendez-vous</span>
+              </div>
+              <div class="extrait__plan">
+                <span class="mono">Relevé · {g.signal}</span>
+                <Empreintes appui="normal" scan={false} />
+              </div>
+              <p class="extrait__aa mono">
+                AA · bouton {ratio(NEUTRES.blanc, g.accent)}:1 · lien {ratio(g.accent, g.fond)}:1 · signal {ratio(g.signal, g.plan)}:1
+                <br />Modèles : {recommandees(g.id).join(', ') || '—'}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <p class="sur">05 — Traits et pointillés</p>
+        <svg class="traits" viewBox="0 0 520 170" aria-hidden="true" fill="none" stroke-linecap="round">
+          {traits.map(([k, w], i) => (
+            <g>
+              <line x1="120" x2="500" y1={16 + i * 22} y2={16 + i * 22} stroke="currentColor" stroke-width={w} />
+              <text x="0" y={20 + i * 22} class="mono-svg">{k} · {w}</text>
+            </g>
+          ))}
+          <line x1="120" x2="500" y1="128" y2="128" stroke="currentColor" stroke-width={POINTILLE.contour.point} stroke-dasharray={`0 ${POINTILLE.contour.ecart}`} />
+          <text x="0" y="132" class="mono-svg">pointillé · {POINTILLE.contour.point}/{POINTILLE.contour.ecart}</text>
+          <line x1="120" x2="300" y1="152" y2="152" stroke="currentColor" stroke-width={TRAIT.fin} stroke-dasharray={POINTILLE.tiret} />
+          <line x1="320" x2="500" y1="152" y2="152" stroke="currentColor" stroke-width={TRAIT.fin} stroke-dasharray={POINTILLE.tiretCourt} />
+          <text x="0" y="156" class="mono-svg">tirets · {POINTILLE.tiret} | {POINTILLE.tiretCourt}</text>
+        </svg>
+      </section>
+
+      <section>
+        <p class="sur">06 — Trame de pression · pas {TRAME.pas} · Ø {TRAME.diametre.min}–{TRAME.diametre.max} × pas</p>
+        <div class="trames">
+          {(['normal', 'creux', 'plat', 'avant'] as const).map((a) => (
+            <figure><Empreintes appui={a} scan={false} legende={false} /><figcaption class="mono">{a}</figcaption></figure>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <p class="sur">07 — Typographie</p>
+        <div class="typo">
+          {Object.entries(POLICES).map(([k, f]) => (
+            <div class="typo__ligne"><span class="mono">titres · {k}</span><span class="typo__exemple" style={`font-family:${f}`}>Cabinet de podologie</span></div>
+          ))}
+          <div class="typo__ligne"><span class="mono">texte · inter</span><span class="typo__texte">Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés.</span></div>
+          <div class="typo__ligne"><span class="mono">données · mono</span><span class="typo__donnees">01 — COMPÉTENCES · 167 pas/min · {MENTION_ILLUSTRATIVE}</span></div>
+        </div>
+        <p class="note mono">Échelle : {Object.entries(TYPO.echelle).map(([k, v]) => `${k} ${v}`).join(' · ')}</p>
+      </section>
+
+      <section>
+        <p class="sur">08 — Mouvement</p>
+        <div class="mouvement">
+          {Object.entries(COURBES).map(([k, c]) => (
+            <div class="mouvement__ligne"><span class="mono">{k}</span><span class="piste"><i style={`animation-timing-function:${c}`}></i></span></div>
+          ))}
+        </div>
+        <p class="note mono">Durées : {Object.entries(DUREES).map(([k, v]) => `${k} ${v} ms`).join(' · ')}<br />Cycles : {Object.entries(CYCLES).map(([k, v]) => `${k} ${v} ms`).join(' · ')}</p>
+      </section>
+
+      <section>
+        <p class="sur">09 — Exemples côte à côte</p>
+        <div class="exemples">
+          <Planche nom="analyse" legende="Bilan" repere="Fig. 01" />
+          <Planche nom="sport" legende="Sport" repere="Fig. 02" fond="plan" />
+          <div class="exemple"><Couverture theme="Diabète" titre="Le monofilament" numero={3} /></div>
+          <div class="exemple exemple--anim"><Podoscope /></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+
+<style>
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; color: var(--encre); background: var(--blanc); }
+  .cadre { width: min(1180px, 100% - 32px); margin-inline: auto; }
+  .mono { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: 0.02em; }
+  .pale { color: var(--encre-pale); }
+  .note { color: var(--encre-douce); margin-top: 14px; line-height: 1.6; }
+  .bandeau { display: flex; justify-content: space-between; gap: 16px; padding: 22px 0 12px; border-bottom: var(--filet-fort) solid var(--encre); font-family: var(--police-mono); font-size: var(--taille-donnees); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  section { padding-block: 44px; border-bottom: var(--filet) solid var(--ligne); }
+  .sur { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--accent-vif); margin: 0 0 20px; }
+  h1 { font-family: 'Schibsted Grotesk Variable', sans-serif; font-weight: 800; font-size: var(--taille-h1); letter-spacing: -0.045em; line-height: 0.95; margin: 0 0 28px; max-width: 16ch; }
+  h1 span { color: var(--encre-pale); }
+  .couches { list-style: none; padding: 0; margin: 0; border-top: var(--filet-fort) solid var(--encre); counter-reset: c; }
+  .couches li { counter-increment: c; display: grid; grid-template-columns: 2.5em 10em 1fr auto; gap: 12px; padding: 12px 0; border-bottom: var(--filet) solid var(--ligne); align-items: baseline; }
+  .couches li::before { content: counter(c, decimal-leading-zero); font-family: var(--police-mono); font-size: var(--taille-donnees); color: var(--encre-pale); }
+  .couches span { color: var(--encre-douce); font-size: 0.92rem; }
+  .couches i { font-style: normal; font-family: var(--police-mono); font-size: var(--taille-donnees-petit); text-transform: uppercase; color: var(--accent-vif); }
+  @media (max-width: 700px) { .couches li { grid-template-columns: 2.5em 1fr; } .couches span, .couches i { grid-column: 2; } }
+  .pression { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .pression__niveau { display: grid; gap: 6px; padding-top: 10px; border-top: var(--filet-fort) solid var(--encre); }
+  .pastille { width: 100%; height: 44px; border-radius: 4px; }
+  .pastille--grande { display: block; height: 56px; box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
+  .rampe { display: flex; height: 14px; margin-top: 18px; border-radius: 2px; overflow: hidden; }
+  .rampe span { flex: 1; }
+  .nuancier { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; }
+  .nuancier div { display: grid; gap: 4px; }
+  .fonds { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 22px; }
+  .fond { min-height: 140px; border-radius: 12px; padding: 12px; display: flex; align-items: end; box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
+  .fond--grille { background-image: linear-gradient(var(--quadrillage-clair-fin) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-clair-fin) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas-fin) var(--quadrillage-pas-fin); }
+  .fond.surface-plan { color: var(--signal); }
+  .fond--nuit { background: var(--fond-nuit); color: var(--sur-sombre-doux); }
+  .gammes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+  .extrait { display: grid; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 var(--filet) var(--ligne); background: var(--fond); }
+  .extrait__page { padding: 18px 18px 20px; background: var(--doux); display: grid; gap: 8px; justify-items: start; }
+  .extrait__sur { color: var(--accent-vif); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); margin: 0; }
+  .extrait__titre { font-family: 'Schibsted Grotesk Variable', sans-serif; font-weight: 750; font-size: 1.45rem; letter-spacing: -0.035em; line-height: 1.05; margin: 0; }
+  .extrait__titre span { color: var(--encre-pale); }
+  .extrait__texte { margin: 0; color: var(--encre-douce); font-size: 0.9rem; }
+  .extrait__bouton { margin-top: 6px; padding: 10px 16px; border-radius: 999px; background: var(--accent); color: var(--blanc); font-weight: 600; font-size: 0.85rem; }
+  .extrait__plan { display: grid; grid-template-columns: 1fr 120px; align-items: center; gap: 10px; padding: 12px 16px; background: var(--plan); color: var(--signal); }
+  .extrait__plan :global(.empreintes) { color: var(--sur-sombre-doux); }
+  .extrait__aa { margin: 0; padding: 10px 16px 12px; color: var(--encre-douce); font-size: var(--taille-donnees-petit); line-height: 1.6; }
+  .traits { width: 100%; max-width: 640px; color: var(--encre); }
+  .mono-svg { font-family: var(--police-mono); font-size: 10px; fill: var(--encre-douce); }
+  .trames { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+  .trames figure { margin: 0; color: var(--encre); }
+  .trames figcaption { color: var(--encre-pale); text-align: center; }
+  .typo { display: grid; border-top: var(--filet-fort) solid var(--encre); }
+  .typo__ligne { display: grid; grid-template-columns: 11em 1fr; gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: var(--filet) solid var(--ligne); }
+  .typo__exemple { font-size: clamp(1.6rem, 3.4vw, 2.6rem); letter-spacing: -0.035em; line-height: 1.05; }
+  .typo__donnees { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: var(--interlettrage-donnees); color: var(--accent-vif); }
+  @media (max-width: 700px) { .typo__ligne { grid-template-columns: 1fr; gap: 4px; } }
+  .mouvement { display: grid; gap: 10px; max-width: 640px; }
+  .mouvement__ligne { display: grid; grid-template-columns: 9em 1fr; gap: 12px; align-items: center; }
+  .piste { position: relative; height: 10px; border-radius: 2px; background: color-mix(in srgb, var(--encre) 6%, transparent); }
+  .piste i { position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-vif); animation: va var(--cycle-pas) infinite alternate; }
+  @keyframes va { to { left: calc(100% - 10px); } }
+  .exemples { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; align-items: stretch; }
+  .exemple { border-radius: var(--rayon-grand, 18px); overflow: hidden; }
+  .exemple :global(.couverture) { height: 100%; }
+  .exemple--anim { min-height: 280px; }
+  @media (prefers-reduced-motion: reduce) { .piste i { animation: none; } }
+</style>

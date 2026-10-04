@@ -1,12 +1,16 @@
 ---
+// Le cabinet : même langage que l'accueil (en-tête éditorial, relevé d'empreintes sur fond plan,
+// sur-titres numérotés). Titres, textes et données structurées inchangés.
 import Gabarit from '../layouts/Gabarit.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import Praticiens from '../components/gabarit/Praticiens.astro';
 import Infos from '../components/gabarit/Infos.astro';
 import Galerie from '../components/gabarit/Galerie.astro';
+import Planche from '../components/dessins/Planche.astro';
+import Empreintes from '../components/dessins/Empreintes.astro';
 import { site } from '../lib/site';
 import { breadcrumbSchema } from '../lib/schema';
-import { titreCabinet, phraseAccueil, titrePraticiens, noms } from '../lib/textes';
+import { titreCabinet, phraseAccueil, titrePraticiens, noms, titreMetierAffiche } from '../lib/textes';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le-cabinet' }];
 ---
@@ -16,22 +20,30 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
   path="/le-cabinet"
   schemas={[breadcrumbSchema(crumbs)]}
 >
-  <section class="section">
-    <div class="cadre">
-      <Breadcrumb items={crumbs} />
-      <h1>{titreCabinet}</h1>
-      <p class="chapo">{phraseAccueil}</p>
-      {site.photos.cabinet.length > 0 && <div class="galerie"><Galerie /></div>}
+  <section class="cadre tete-page">
+    <Breadcrumb items={crumbs} />
+    <div class="tete-page__grille">
+      <div>
+        <p class="sur sur--index"><b aria-hidden="true">{String(site.praticiens.length).padStart(2, '0')} —</b> {titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
+        <h1>{titreCabinet}</h1>
+        <p class="chapo">{phraseAccueil}</p>
+      </div>
+      <Planche legende={site.cabinet.ville} repere="Relevé" fond="plan" class="tete-page__releve">
+        <Empreintes appui="reparti" />
+      </Planche>
     </div>
+    {site.photos.cabinet.length > 0 && <div class="galerie"><Galerie /></div>}
   </section>
   <section class="section section--douce">
     <div class="cadre">
+      <p class="sur sur--num">{titreMetierAffiche}</p>
       <h2>{titrePraticiens}</h2>
       <Praticiens />
     </div>
   </section>
   <section class="section" id="infos">
     <div class="cadre">
+      <p class="sur sur--num">Accès et horaires</p>
       <h2>Informations pratiques</h2>
       <Infos />
     </div>
@@ -39,6 +51,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
 </Gabarit>
 
 <style>
-  .chapo { margin-top: 16px; }
   .galerie { margin-top: 32px; }
+  .tete-page :global(.tete-page__releve) { max-width: 460px; justify-self: end; }
+  @media (max-width: 959px) { .tete-page :global(.tete-page__releve) { justify-self: stretch; max-width: none; } }
 </style>

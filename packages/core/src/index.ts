@@ -8,3 +8,8 @@ export * from './lexique';
 export * from './controles';
 export * from './modeles';
 export * from './packs';
+export * from './personnalisation';
+export * from './couleurs';
+export * from './charte';
+export * from './univers';
+export * from './gammes';

@@ -26,15 +26,15 @@ const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
 </section>
 
 <style>
-  .panorama { position: relative; min-height: clamp(520px, 78vh, 800px); display: grid; align-items: end; color: #fff; overflow: hidden; isolation: isolate; }
+  .panorama { position: relative; min-height: clamp(520px, 78vh, 800px); display: grid; align-items: end; color: var(--blanc); overflow: hidden; isolation: isolate; }
   img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; animation: zoom linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
-  .panorama::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(10 25 27 / 0) 25%, rgb(10 25 27 / 0.82)); }
+  .panorama::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(var(--nuit-rgb) / 0) 25%, rgb(var(--nuit-rgb) / 0.82)); }
   .panorama__texte { padding-block: clamp(48px, 8vw, 104px); }
-  h2 { color: #fff; max-width: 16ch; }
-  .sur--clair { color: rgb(255 255 255 / 0.8); }
+  h2 { color: var(--blanc); max-width: 16ch; }
+  .sur--clair { color: var(--sur-sombre-doux); }
   ul { list-style: none; padding: 0; margin: 40px 0 0; display: grid; gap: 0; }
   @media (min-width: 760px) { ul { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
-  li { display: grid; gap: 4px; padding: 18px 20px 0 0; border-top: 1px solid rgb(255 255 255 / 0.3); font-size: 0.93rem; color: rgb(255 255 255 / 0.82); }
-  strong { color: #fff; font-weight: 600; }
+  li { display: grid; gap: 4px; padding: 18px 20px 0 0; border-top: var(--filet) solid var(--sur-sombre-filet); font-size: 0.93rem; color: var(--sur-sombre-doux); }
+  strong { color: var(--blanc); font-weight: 600; }
   @keyframes zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
 </style>
