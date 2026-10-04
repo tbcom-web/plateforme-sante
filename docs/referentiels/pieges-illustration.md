@@ -84,6 +84,8 @@
 - Pathologie jamais nommée à l'écran = on retient le conseil sans savoir à quoi il sert : le nom apparaît au moins une fois [ongle3d patients].
 - « Ongle droit » = aussi « ongle du pied droit » : écrire « Coupez droit », jamais « coupez l'ongle droit » [ongle3d brief].
 
+- Plusieurs aplats réunis dans un seul chemin SVG avec des sens de tracé opposés = trous (règle nonzero), invisibles sur fond blanc, visibles sur fond sombre : un tracé par forme [sites, refonte 2026-10-04].
+
 ## Anatomie
 - Calque de peau posé par-dessus un objet (repli sur la lame) : il couvre TOUTE la racine et reprend le contour qu'il cache, sinon l'objet paraît collé (« pansement ») et le contour s'interrompt [0018 7a].
 - Liste de présence d'abord (atlas de la même vue), formes ensuite [os de la jambe, Paul].
