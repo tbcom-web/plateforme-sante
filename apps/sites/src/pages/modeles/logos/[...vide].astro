@@ -42,6 +42,9 @@ const favicon = (marque: string, mod: ModeleManifeste, g?: string) =>
 const atelier = MODELES_INTEGRES.find((x) => x.id === 'atelier')!;
 const proximite = MODELES_INTEGRES.find((x) => x.id === 'proximite')!;
 const prestige = MODELES_INTEGRES.find((x) => x.id === 'prestige')!;
+const premium = MODELES_INTEGRES.find((x) => x.id === 'premium')!;
+// Tailles de contrôle : favicon, version compacte, en-tête, planche
+const TAILLES_CONTROLE = [16, LOGO.compact, LOGO.tailles.horizontale, 96];
 ---
 <!doctype html>
 <html lang="fr" style={theme(m, site.theme.gamme)}>
@@ -137,6 +140,29 @@ const prestige = MODELES_INTEGRES.find((x) => x.id === 'prestige')!;
         </div>
         <p class="note mono">En 16 px, chaque marque passe en version compacte (traits {LOGO.compact} px et moins : épaissis, sans pointillés ni annotations), toujours sur tuile pour rester visible sur les onglets clairs et sombres.</p>
       </section>
+
+      <section>
+        <p class="sur">05 — Niveaux de détail · {TAILLES_CONTROLE.join(' / ')} px, sur tuile pleine, au trait et sur fond plan</p>
+        <div class="niveaux">
+          {marques.map((q) => (
+            <div class="niveau">
+              <span class="mono pale">{q.id}</span>
+              {[proximite, premium, atelier].map((mod) => {
+                const t = traitementLogo(mod);
+                const col = couleursMarque(mod, { couleur: mod.couleurConseillee ?? site.theme.couleur });
+                return (
+                  <div class="niveau__ligne">
+                    {TAILLES_CONTROLE.map((px) => (
+                      <span class="favicon__px" style={`width:${px}px;height:${px}px`} set:html={svgMarque(q.id, col, { traitement: t.marque, rayon: t.rayon, epais: t.epais, taille: px, initiales: ini, police: t.police, graisse: t.graisse })} />
+                    ))}
+                    <span class="mono pale">{t.marque}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   </body>
 </html>
@@ -168,6 +194,9 @@ const prestige = MODELES_INTEGRES.find((x) => x.id === 'prestige')!;
   .favicon { display: grid; gap: 10px; padding: 12px; background: var(--doux); border-radius: 6px; }
   .favicon__ligne { display: flex; align-items: end; gap: 10px; }
   .favicon__px { display: block; flex: none; }
+  .niveaux { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+  .niveau { display: grid; gap: 10px; padding: 12px; background: var(--doux); border-radius: 6px; }
+  .niveau__ligne { display: flex; align-items: end; gap: 12px; }
   .favicon__px :global(svg) { display: block; width: 100%; height: 100%; }
   .onglets { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 22px; padding: 8px 8px 0; background: var(--encre); border-radius: 10px 10px 0 0; }
   .onglet { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px 8px 0 0; background: var(--encre-nuit-douce); color: var(--sur-sombre-doux); font-size: 0.78rem; }

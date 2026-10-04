@@ -10,8 +10,8 @@
 // passe soit en valeurs (#rrggbb : favicon, aperçus React de l'éditeur), soit en variables CSS (site).
 // Chaque marque a une version compacte, épaissie et simplifiée, lisible en 16 px (favicon).
 
-import { LOGO, NEUTRES, PLAN, POINTILLE, POLICES, TRAIT, TRAME } from './charte';
-import { CONTOUR, ORTEILS, TRAJET } from './pied';
+import { LOGO, NEUTRES, PLAN, POINTILLE, POLICES, TRAME } from './charte';
+import { CONTOUR, ORTEILS, OS, SEMELLE, SEMELLE_POINTS, TRAJET, largeurA } from './pied';
 import { trame } from './trame';
 import { ARRETS_PRESSION, PRESSION, universMetier, type MarqueLogo } from './univers';
 import { gamme } from './gammes';
@@ -148,6 +148,8 @@ type Ctx = {
   /** Niveau de détail : favicon, en-tête, planche */
   compact: boolean;
   moyen: boolean;
+  /** Marque sur tuile (plein ou plan) */
+  tuile: boolean;
   /** Hauteur d'une marque en forme de pied (unités) */
   hPied: number;
   /** Côté utile (unités) */
@@ -156,7 +158,11 @@ type Ctx = {
   p: string;
   r: string;
   d: (v: number) => string;
+  /** Couleurs de données : true si la marque les affiche ; n = niveau de la palette, toujours en couleur */
+  donnees: boolean;
+  n: (v: number) => string;
   os: number;
+  /** Trait principal du niveau de détail (LOGO.trait) */
   ep: number;
   epais: boolean;
   initiales: string;
@@ -166,6 +172,7 @@ type Ctx = {
 
 const C = LOGO.cadre / 2;
 const n = (x: number) => +x.toFixed(2);
+const T = LOGO.trait;
 
 /** Placement du pied (repère 92 × 222, boîte utile x 13–82, y 3–219) : centre, hauteur, symétrie */
 function placer(hauteur: number, cx: number, cy: number, miroir = false) {
@@ -182,19 +189,27 @@ const orteils = (fill: string) =>
   ORTEILS.map(([cx, cy, rx, ry, a]) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${cx} ${cy})" fill="${fill}"/>`).join('');
 
 /** Contour en pointillés ronds (relevé de podoscope), épaisseurs ramenées au repère du pied */
-const pointille = (k: number, point: number, couleur: string, opacite = 1) =>
-  `<path d="${CONTOUR}" fill="none" stroke="${couleur}" stroke-opacity="${opacite}" stroke-width="${n(point / k)}" stroke-linecap="round" stroke-dasharray="0 ${n(POINTILLE.contour.ecart / k)}"/>`;
+const pointille = (k: number, point: number, couleur: string, opacite = 1, d = CONTOUR) =>
+  `<path d="${d}" fill="none" stroke="${couleur}" stroke-opacity="${opacite}" stroke-width="${n(point / k)}" stroke-linecap="round" stroke-dasharray="0 ${n(POINTILLE.contour.ecart / k)}"/>`;
 
-const trait = (k: number, w: number, couleur: string, opacite = 1) =>
-  `<path d="${CONTOUR}" fill="none" stroke="${couleur}" stroke-opacity="${opacite}" stroke-width="${n(w / k)}" stroke-linejoin="round"/>`;
+const trait = (k: number, w: number, couleur: string, opacite = 1, d = CONTOUR) =>
+  `<path d="${d}" fill="none" stroke="${couleur}" stroke-opacity="${opacite}" stroke-width="${n(w / k)}" stroke-linejoin="round"/>`;
+
+/** Segments à bouts ronds, regroupés en un seul tracé : [x1, y1, x2, y2] */
+const segments = (s: readonly (readonly number[])[], k: number, w: number, couleur: string, opacite = 1) =>
+  `<path d="${s.map(([a, b, x, y]) => `M${n(a)} ${n(b)}L${n(x)} ${n(y)}`).join('')}" fill="none" stroke="${couleur}" stroke-opacity="${opacite}" stroke-width="${n(w / k)}" stroke-linecap="round"/>`;
+
+const ellipse = ([cx, cy, rx, ry, a]: readonly number[], attributs: string) =>
+  `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${cx} ${cy})" ${attributs}/>`;
 
 const MARQUES: Record<string, (c: Ctx) => string> = {
   /** Relevé au podoscope : contour en pointillés, orteils, deux points d'appui */
   empreinte(c) {
     const { k, t } = placer(c.hPied, C, C);
-    if (c.compact) return `<g transform="${t}">${trait(k, TRAIT.marque, c.p)}${orteils(c.p)}</g>`;
-    return `<g transform="${t}">${pointille(k, c.moyen ? TRAIT.marque : c.epais ? POINTILLE.contour.point : POINTILLE.leger.point, c.p)}${orteils(c.p)}`
-      + `<circle cx="47" cy="194" r="${n((c.moyen ? TRAIT.marque : TRAIT.fort) / k)}" fill="${c.d(1)}"/><circle cx="31" cy="62" r="${n(TRAIT.normal / k)}" fill="${c.d(0.8)}"/></g>`;
+    if (c.compact) return `<g transform="${t}">${trait(k, T.compact, c.p)}${orteils(c.p)}</g>`;
+    const point = c.moyen ? LOGO.pointille.moyen : c.epais ? LOGO.pointille.epais : LOGO.pointille.normal;
+    return `<g transform="${t}">${pointille(k, point, c.p)}${orteils(c.p)}`
+      + `<circle cx="47" cy="194" r="${n((c.moyen ? LOGO.appui.grand : LOGO.appui.moyen) / k)}" fill="${c.d(1)}"/><circle cx="31" cy="62" r="${n(LOGO.appui.petit / k)}" fill="${c.d(0.8)}"/></g>`;
   },
 
   /** Baropodométrie : trame hexagonale, taille des points selon la pression */
@@ -215,20 +230,21 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
   courbes(c) {
     const { k, t } = placer(c.hPied, C, C);
     const niveaux = c.compact || c.moyen ? [1, 0.45] : [1, 0.68, 0.36];
-    const w = c.compact ? TRAIT.marque : c.ep;
-    return `<g transform="${t}">${niveaux.map((e, i) =>
-      `<path d="${CONTOUR}" transform="translate(${n(47 * (1 - e))} ${n(124 * (1 - e))}) scale(${e})" fill="none" stroke="${c.d(0.2 + (0.75 * i) / (niveaux.length - 1))}" stroke-width="${n(w / k / e)}" stroke-linejoin="round"/>`,
-    ).join('')}</g>`;
+    // Les courbes intérieures sont plus fines que le contour : le relief se lit sans masse blanche
+    return `<g transform="${t}">${niveaux.map((e, i) => {
+      const w = c.compact ? (i ? T.compactFin : T.compact) : i ? T.fin : c.moyen ? T.normal : c.ep;
+      return `<path d="${CONTOUR}" transform="translate(${n(47 * (1 - e))} ${n(124 * (1 - e))}) scale(${e})" fill="none" stroke="${c.d(0.2 + (0.75 * i) / (niveaux.length - 1))}" stroke-width="${n(w / k / e)}" stroke-linejoin="round"/>`;
+    }).join('')}</g>`;
   },
 
   /** Analyse du pas : trajet du centre de pression sur le contour */
   trajet(c) {
     const { k, t } = placer(c.hPied, C, C);
-    const contour = c.compact ? trait(k, TRAIT.fort, c.p, c.os) : c.moyen ? trait(k, TRAIT.normal, c.p, c.os) : pointille(k, POINTILLE.leger.point, c.p, c.os);
-    const w = c.compact || c.moyen ? TRAIT.marque : TRAIT.fort;
+    const contour = c.compact ? trait(k, T.compactFin, c.p, c.os) : c.moyen ? trait(k, T.normal, c.p, c.os) : pointille(k, POINTILLE.leger.point, c.p, c.os);
+    const w = c.compact ? T.compact : T.moyen;
     const points = c.compact
-      ? `<circle cx="27" cy="18" r="${n(TRAIT.marque / k)}" fill="${c.p}"/>`
-      : `<circle cx="47" cy="202" r="${n(TRAIT.marque / k)}" fill="${c.d(1)}"/><circle cx="62" cy="132" r="${n(TRAIT.normal / k)}" fill="${c.d(0.45)}"/><circle cx="27" cy="18" r="${n(TRAIT.fort / k)}" fill="${c.d(0.8)}"/>`;
+      ? `<circle cx="27" cy="18" r="${n(LOGO.appui.grand / k)}" fill="${c.p}"/>`
+      : `<circle cx="47" cy="202" r="${n(LOGO.appui.grand / k)}" fill="${c.d(1)}"/><circle cx="62" cy="132" r="${n(LOGO.appui.petit / k)}" fill="${c.d(0.45)}"/><circle cx="27" cy="18" r="${n(LOGO.appui.moyen / k)}" fill="${c.d(0.8)}"/>`;
     return `<g transform="${t}">${contour}<path d="${TRAJET}" fill="none" stroke="${c.p}" stroke-width="${n(w / k)}" stroke-linecap="round"/>${points}</g>`;
   },
 
@@ -244,9 +260,9 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     }
     const pied = (pl: typeof d) => `<g transform="${pl.t}"><path d="${CONTOUR}" fill="${c.p}" fill-opacity="${n(c.os / 3)}" stroke="${c.p}" stroke-width="${n(c.ep / pl.k)}" stroke-linejoin="round"/>${orteils(c.p)}</g>`;
     const coins = [g.pt(47, 212), d.pt(47, 212), d.pt(76, 60), g.pt(76, 60)];
-    const poly = `<path d="M${coins.map((p) => p.join(' ')).join(' L')} Z" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${TRAIT.fin}" stroke-dasharray="${POINTILLE.tiretCourt}"/>`;
+    const poly = `<path d="M${coins.map((p) => p.join(' ')).join(' L')} Z" fill="none" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${T.fin}" stroke-dasharray="${POINTILLE.tiretCourt}"/>`;
     // Centre de gravité : un simple point de donnée (aucune croix ni mire : motif exclu de la charte)
-    const centre = `<circle cx="${n(C)}" cy="${n(C + c.zone * 0.08)}" r="${TRAIT.fort}" fill="${c.d(1)}"/>`;
+    const centre = `<circle cx="${n(C)}" cy="${n(C + c.zone * 0.08)}" r="${LOGO.appui.moyen}" fill="${c.d(1)}"/>`;
     return pied(g) + pied(d) + (c.moyen ? '' : poly) + centre;
   },
 
@@ -257,13 +273,113 @@ const MARQUES: Record<string, (c: Ctx) => string> = {
     const sol = C + z * 0.2;
     const h = z * 0.28;
     const [xa, xm, xb, xc] = [x0 + z * 0.08, x0 + z * 0.36, x0 + z * 0.8, x0 + z * 0.96];
-    const w = c.compact ? TRAIT.marque : c.ep;
+    const w = c.compact ? T.compact : c.ep;
     const arche = `<path d="M${n(xa)} ${n(sol)} C${n(xa + z * 0.1)} ${n(sol)} ${n(xm - z * 0.14)} ${n(sol - h)} ${n(xm)} ${n(sol - h)} C${n(xm + z * 0.24)} ${n(sol - h)} ${n(xb - z * 0.16)} ${n(sol)} ${n(xb)} ${n(sol)} L${n(xc)} ${n(sol)}" fill="none" stroke="${c.p}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-    const solTrait = `<path d="M${n(x0)} ${n(sol + w)}H${n(x0 + z)}" stroke="${c.p}" stroke-opacity="${c.compact ? 1 : c.os}" stroke-width="${c.compact ? TRAIT.fort : TRAIT.fin}"/>`;
+    const solTrait = `<path d="M${n(x0)} ${n(sol + w)}H${n(x0 + z)}" stroke="${c.p}" stroke-opacity="${c.compact ? 1 : c.os}" stroke-width="${c.compact ? T.compactFin : T.fin}"/>`;
     if (c.compact) return arche + solTrait;
-    const cote = c.moyen ? '' : `<path d="M${n(xm)} ${n(sol - h + w)}V${n(sol)}" stroke="${c.r}" stroke-width="${TRAIT.fin}" stroke-dasharray="${POINTILLE.tiretCourt}"/><path d="M${n(xm - 2.5)} ${n(sol)}H${n(xm + 2.5)}" stroke="${c.r}" stroke-width="${TRAIT.fin}"/>`;
-    const appuis = `<circle cx="${n(xa)}" cy="${n(sol)}" r="${TRAIT.marque * 0.8}" fill="${c.d(1)}"/><circle cx="${n(xb)}" cy="${n(sol)}" r="${TRAIT.marque * 0.7}" fill="${c.d(0.8)}"/>`;
+    const cote = c.moyen ? '' : `<path d="M${n(xm)} ${n(sol - h + w)}V${n(sol)}" stroke="${c.r}" stroke-width="${T.fin}" stroke-dasharray="${POINTILLE.tiretCourt}"/><path d="M${n(xm - 2.5)} ${n(sol)}H${n(xm + 2.5)}" stroke="${c.r}" stroke-width="${T.fin}"/>`;
+    const appuis = `<circle cx="${n(xa)}" cy="${n(sol)}" r="${LOGO.appui.grand}" fill="${c.d(1)}"/><circle cx="${n(xb)}" cy="${n(sol)}" r="${LOGO.appui.moyen}" fill="${c.d(0.8)}"/>`;
     return solTrait + cote + arche + appuis;
+  },
+
+  /** Anatomie : le squelette stylisé dans le contour (calcanéum, tarse, rayons métatarsiens, phalanges) */
+  anatomie(c) {
+    const { k, t } = placer(c.hPied, C, C);
+    const m = OS.metatarsiens;
+    // Favicon : le contour et trois rayons métatarsiens (1er, 3e, 5e), rien d'autre
+    if (c.compact) return `<g transform="${t}">${trait(k, T.compactFin, c.p)}${segments([m[0], m[2], m[4]], k, T.compactFin, c.p)}</g>`;
+    // Os courts en volumes estompés, rayons et phalanges en traits fins : une lecture d'ensemble, pas une planche
+    const volume = (o: readonly number[]) => ellipse(o, `fill="${c.p}" fill-opacity="${c.os}"`);
+    if (c.moyen) {
+      // En-tête : le contour, le calcanéum, les cinq rayons prolongés d'une phalange par orteil
+      const orteil = OS.phalanges.map(([a, b]) => [a[0], a[1], b[2], b[3]]);
+      return `<g transform="${t}">${trait(k, T.normal, c.p, c.os)}${volume(OS.calcaneum)}${segments(m, k, T.normal, c.p)}${segments(orteil, k, T.fin, c.p)}</g>`;
+    }
+    const contour = pointille(k, LOGO.pointille.normal, c.p, POINTILLE.contour.opacite);
+    const doigts = ORTEILS.map((o) => ellipse(o, `fill="none" stroke="${c.p}" stroke-opacity="${c.os}" stroke-width="${n(T.fin / k)}"`)).join('');
+    // Têtes du 1er et du 5e métatarsien : les deux appuis de l'avant-pied
+    const tetes = [0, 4].map((i) => `<circle cx="${m[i][2]}" cy="${m[i][3]}" r="${n(LOGO.appui.petit / k)}" fill="${c.d(i ? 0.6 : 1)}"/>`).join('');
+    return `<g transform="${t}">${contour}${doigts}${volume(OS.calcaneum)}${OS.tarse.map(volume).join('')}${segments(m, k, T.fin, c.p)}${segments(OS.phalanges.flat(), k, T.fin, c.p)}${tetes}</g>`;
+  },
+
+  /** Semelle de course vue de dessous : crantage de l'avant-pied en lignes, du talon en points, renfort talon */
+  'semelle-sport'(c) {
+    const { k, t } = placer(c.hPied, C, C);
+    // Crantage de l'avant-pied : lignes transversales, en retrait du bord
+    const pas = c.compact ? 30 : c.moyen ? 17 : 11;
+    const retrait = c.compact ? 12 : 9;
+    const lignes: number[][] = [];
+    for (let y = c.compact ? 34 : 20; y <= 96; y += pas) {
+      const l = largeurA(SEMELLE_POINTS, y);
+      if (l) lignes.push([l[0] + retrait, y, l[1] - retrait, y - (c.compact ? 0 : 4)]);
+    }
+    const renfort = `M30 202 C36 211 44 213 49 213 C56 213 63 209 67 201`;
+    if (c.compact) return `<g transform="${t}">${trait(k, T.compact, c.p, 1, SEMELLE)}${segments(lignes, k, T.compactFin, c.p)}</g>`;
+    // Crantage du talon : trame de points (hexagonale) dans la zone d'attaque
+    const pasT = TRAME.pas * (c.moyen ? LOGO.trame.facteurMoyen : LOGO.trame.crantage);
+    let points = '';
+    for (let r = 0, y = 158; y <= 200; r++, y += pasT * 0.866) {
+      for (let x = 20 + (r % 2 ? pasT / 2 : 0); x <= 80; x += pasT) {
+        const l = largeurA(SEMELLE_POINTS, y);
+        if (l && x > l[0] + retrait && x < l[1] - retrait) points += `M${n(x)} ${n(y)}h0`;
+      }
+    }
+    const talon = `<path d="${points}" stroke="${c.p}" stroke-width="${n((c.moyen ? LOGO.appui.moyen : LOGO.appui.petit) / k)}" stroke-linecap="round" fill="none"/>`;
+    const r = `<path d="${renfort}" fill="none" stroke="${c.d(1)}" stroke-width="${n((c.moyen ? T.moyen : c.ep) / k)}" stroke-linecap="round"/>`;
+    return `<g transform="${t}">${trait(k, c.ep, c.p, 1, SEMELLE)}${segments(lignes, k, c.moyen ? T.normal : T.fin, c.p)}${talon}${r}</g>`;
+  },
+
+  /** Relevé baropodométrique « données » : plante en points colorés par la pression, échelle graduée */
+  'podoscope-data'(c) {
+    // Sur tuile, la palette de pression ; au trait, monochrome (la pression se lit à l'opacité)
+    const couleur = (v: number) => (c.tuile || c.donnees ? c.n(v) : c.p);
+    const opacite = (v: number) => (c.tuile || c.donnees ? 1 : n(0.25 + 0.75 * v));
+    const decal = c.compact ? 0 : c.zone * 0.12;
+    const { k, t } = placer(c.hPied, C - decal, C);
+    if (c.compact) {
+      return `<g transform="${t}"><path d="${CONTOUR}" fill="${c.p}" fill-opacity="${c.os}"/>${orteils(c.p)}`
+        + `<ellipse cx="47" cy="192" rx="20" ry="22" fill="${couleur(1)}"/><ellipse cx="40" cy="60" rx="24" ry="16" fill="${couleur(0.75)}"/></g>`;
+    }
+    // Points de taille égale : la couleur porte la donnée (la trame, elle, la porte par la taille)
+    const pas = TRAME.pas * (c.moyen ? LOGO.trame.donneesMoyen : LOGO.trame.donnees);
+    const points = trame('normal', pas)
+      .map((v) => {
+        const p = (v.k + 0.5) / TRAME.niveaux;
+        return `<path d="${v.d}" stroke="${couleur(p)}" stroke-opacity="${opacite(p)}" stroke-width="${n(pas * TRAME.diametre.max)}" stroke-linecap="round" fill="none"/>`;
+      })
+      .join('');
+    // Échelle graduée : cinq cases, de la plus faible (bas) à la plus forte (haut)
+    const x = C + c.zone * 0.3;
+    const hc = c.zone * (c.moyen ? 0.11 : 0.09);
+    const lc = c.zone * 0.07;
+    const y0 = C + 2.5 * hc;
+    const echelle = [0.1, 0.35, 0.6, 0.8, 1].map((v, i) =>
+      `<rect x="${n(x - lc / 2)}" y="${n(y0 - (i + 1) * hc + T.fin / 2)}" width="${n(lc)}" height="${n(hc - T.fin)}" rx="${n(T.fin)}" fill="${couleur(v)}" fill-opacity="${opacite(v)}"/>`).join('');
+    const graduations = c.moyen ? '' : `<path d="${[0, 2.5, 5].map((i) => `M${n(x + lc / 2 + T.fin)} ${n(y0 - i * hc)}h${n(lc * 0.6)}`).join('')}" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${T.fin}"/>`;
+    // Contour du relevé : il garde la forme du pied lisible quand les points bleus se fondent dans la tuile
+    return `<g transform="${t}">${pointille(k, LOGO.pointille.normal, c.p, c.os)}${points}</g>${echelle}${graduations}`;
+  },
+
+  /** Course à pied : chaussure de running de profil (semelle intermédiaire épaisse au talon, drop, pointe relevée) */
+  'chaussure-marathon'(c) {
+    // Dessin dans un repère 100 × 50, pointe à droite ; la chaussure (x 14–98, lignes de vitesse dès x 2)
+    // occupe la largeur d'une marque en forme de pied
+    const [xa, xb] = c.compact ? [14, 98] : [2, 98];
+    const s = c.hPied / (xb - xa);
+    const x0 = C - ((xa + xb) / 2) * s;
+    const y0 = C - 27.5 * s;
+    const tr = `translate(${n(x0)} ${n(y0)}) scale(${n(s)})`;
+    const semelle = 'M22 41 C17 41 15 37 16 32 L19 31 C40 33 64 35 82 35 C89 35 94 33 97 31 C97 36 92 41 84 41 Z';
+    const tige = 'M19 31 C16 25 17 18 22 15 C26 17 30 18 34 16 L38 14 C50 18 66 24 80 27 C88 28.5 94 29.5 97 31';
+    if (c.compact) {
+      return `<g transform="${tr}"><path d="${semelle}" fill="${c.p}"/><path d="${tige}" fill="none" stroke="${c.p}" stroke-width="${n(T.compact / s)}" stroke-linejoin="round" stroke-linecap="round"/></g>`;
+    }
+    const w = (c.moyen ? T.moyen : c.ep) / s;
+    // Lignes de vitesse : deux traits courts derrière le talon (pas plus)
+    const vitesse = `<path d="M3 22 H11 M6 28 H12" stroke="${c.r}" stroke-opacity="${c.os}" stroke-width="${n((c.moyen ? T.normal : T.fin) / s)}" stroke-linecap="round"/>`;
+    const lacets = c.moyen ? '' : `<path d="M44 19.5 l3 -3.5 M51 22 l3 -3.5 M58 24.5 l3 -3.5" stroke="${c.p}" stroke-width="${n(T.fin / s)}" stroke-linecap="round"/>`;
+    return `<g transform="${tr}">${vitesse}<path d="${semelle}" fill="${c.d(1)}" fill-opacity="${n(c.os / 2)}" stroke="${c.p}" stroke-width="${n(w)}" stroke-linejoin="round"/>`
+      + `<path d="${tige}" fill="none" stroke="${c.p}" stroke-width="${n(w)}" stroke-linejoin="round" stroke-linecap="round"/>${lacets}</g>`;
   },
 
   /** Initiales dans la police des titres, soulignées d'une échelle de pression graduée */
@@ -306,16 +422,20 @@ export function svgMarque(marque: string, couleurs: CouleursMarque, o: OptionsMa
     return palette[i];
   };
   const donnees = o.donnees ?? tr === 'plan';
+  const moyen = !compact && o.taille !== undefined && o.taille <= LOGO.moyen;
   const ctx: Ctx = {
     compact,
-    moyen: !compact && o.taille !== undefined && o.taille <= LOGO.moyen,
+    tuile,
+    moyen,
     zone: LOGO.cadre - 2 * marge,
     hPied: LOGO.cadre - 2 * (tuile ? LOGO.marge.pied : LOGO.marge.trait),
     p,
     r,
     d: donnees ? niveau : () => r,
+    donnees,
+    n: niveau,
     os: LOGO.opaciteSecondaire,
-    ep: o.epais ? TRAIT.fort : TRAIT.normal,
+    ep: compact ? LOGO.trait.compact : moyen ? LOGO.trait.moyen : o.epais ? LOGO.trait.epais : LOGO.trait.normal,
     epais: !!o.epais,
     initiales: o.initiales ?? '',
     police: o.police ?? POLICES.inter,

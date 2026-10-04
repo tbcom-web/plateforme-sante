@@ -43,3 +43,70 @@ export const ORTEILS: [number, number, number, number, number][] = [
 
 /** Trajet du centre de pression pendant le pas : talon → bord externe → avant-pied → gros orteil */
 export const TRAJET = 'M47 202 C52 176 62 156 62 132 C62 106 52 82 40 62 C33 48 29 34 27 18';
+
+/** Le point est-il dans le polygone (points relevés, avant lissage) ? */
+export function dansPolygone(poly: P[], x: number, y: number): boolean {
+  let dedans = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) dedans = !dedans;
+  }
+  return dedans;
+}
+
+/** Bords gauche et droit du polygone sur une horizontale (premier et dernier croisement) */
+export function largeurA(poly: P[], y: number): [number, number] | null {
+  const xs: number[] = [];
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y) xs.push(((xj - xi) * (y - yi)) / (yj - yi) + xi);
+  }
+  return xs.length < 2 ? null : [Math.min(...xs), Math.max(...xs)];
+}
+
+/**
+ * Semelle de course vue de dessous (même repère que la plante) : le contour du pied élargi d'une marge,
+ * avec l'avant arrondi qui couvre les orteils et une taille moins creusée.
+ */
+export const SEMELLE_POINTS: P[] = [
+  [48, 220], [32, 215], [22, 203], [18, 186], [19, 168], [24, 152], // talon, bord interne
+  [29, 138], [31, 124], [29, 110], [24, 98], // cambrure
+  [17, 86], [12, 72], [11, 56], [13, 40], [18, 24], [26, 11], [37, 4], [50, 3], // avant-pied, bout
+  [62, 7], [72, 15], [80, 27], [84, 42], [85, 58], [84, 76], [81, 96], [77, 116], // bord externe
+  [75, 134], [75, 152], [77, 170], [77, 188], [73, 205], [62, 216],
+];
+export const SEMELLE = lisser(SEMELLE_POINTS);
+
+/**
+ * Squelette stylisé du pied droit (vue plantaire, même repère) : os du tarse en ellipses
+ * [cx, cy, rx, ry, rotation°], rayons métatarsiens et phalanges en segments [x1, y1, x2, y2],
+ * du 1er au 5e rayon. Têtes métatarsiennes = extrémité avant des métatarsiens.
+ */
+export const OS = {
+  calcaneum: [49, 189, 14, 21, -6] as [number, number, number, number, number],
+  tarse: [
+    [42, 158, 10, 8.5, -10], // talus
+    [39, 140, 6, 4.5, -15], // naviculaire
+    [64, 147, 6.5, 9, 4], // cuboïde
+    [36, 125, 4, 5, -6], // cunéiformes
+    [45, 124, 3.6, 5, 0],
+    [53, 126, 3.4, 5, 6],
+  ] as [number, number, number, number, number][],
+  metatarsiens: [
+    [37, 115, 30, 65],
+    [45, 115, 44, 56],
+    [52, 117, 54, 58],
+    [59, 121, 63, 63],
+    [66, 128, 72, 70],
+  ] as [number, number, number, number][],
+  /** Phalange proximale puis distale de chaque orteil */
+  phalanges: [
+    [[30, 58, 28, 35], [28, 30, 27, 9]],
+    [[44, 50, 45, 30], [45, 25, 45, 11]],
+    [[54, 52, 56, 33], [56, 28, 56, 15]],
+    [[63, 57, 66, 38], [66, 33, 66, 22]],
+    [[72, 64, 75, 46], [75, 41, 75, 32]],
+  ] as [number, number, number, number][][],
+};

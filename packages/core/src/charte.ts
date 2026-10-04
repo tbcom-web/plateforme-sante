@@ -173,18 +173,26 @@ export const COURBES = {
  * Logo du site (logos.ts) : la marque est dessinée dans un repère carré de `cadre` unités, avec les traits,
  * pointillés et la trame de la charte. Trois niveaux de détail selon la taille affichée : jusqu'à `compact` px
  * (favicon), version pleine et épaissie ; jusqu'à `moyen` px (en-tête, pied de page), version allégée
- * (points plus gros, sans annotations) ; au-delà, version détaillée. La trame des marques est plus lâche que celle du relevé (illisible à 48 px) :
+ * (points plus gros, sans annotations) ; au-delà, version détaillée. La trame des marques est plus lâche que celle du relevé (illisible à 48 px) ; `donnees` : points de taille égale du relevé « données », `crantage` : points du talon de la semelle de course ;
  * pas = TRAME.pas × facteur. `marge` : marge intérieure de la tuile, au trait, et marge verticale des marques
  * en forme de pied, étroites (unités). `rayonTuile` : arrondi de la
  * tuile = arrondi du modèle × rapport, plafonné à `rayonMax` (unités). `opaciteSecondaire` : traits
  * d'accompagnement (contour derrière une trame, axes). `tailles` : côté de la marque affichée (px).
  * `nom` : taille du nom du cabinet (la police et la graisse sont celles des titres du modèle).
+ * Graisses des marques (unités du cadre ; 1 unité ≈ 0,9 px en en-tête, 0,33 px en favicon 16 px), plus fines
+ * que les traits des dessins (TRAIT) car la marque est vue petite et sur tuile pleine : `trait.compact` et
+ * `compactFin` pour le favicon, `moyen` pour l'en-tête, `normal` / `epais` (titres gras) pour la version
+ * détaillée, `fin` pour les cotes, rayons et polygones ; `pointille` : épaisseur des points du contour
+ * « podoscope » ; `appui` : rayon des points d'appui (talon, têtes métatarsiennes).
  */
 export const LOGO = {
   cadre: 48,
   compact: 24,
   moyen: 56,
-  trame: { facteur: 2.4, facteurMoyen: 3.4 },
+  trait: { compact: 3, compactFin: 2, moyen: 1.7, normal: 1.1, epais: 1.4, fin: 0.7 },
+  pointille: { moyen: 2.3, normal: 1.6, epais: 2 },
+  appui: { grand: 2.6, moyen: 2, petit: 1.4 },
+  trame: { facteur: 2.4, facteurMoyen: 3.4, donnees: 1.8, donneesMoyen: 2.8, crantage: 1.9 },
   marge: { tuile: 7, trait: 2, pied: 4 },
   rayonTuile: 0.6,
   rayonMax: 24,
