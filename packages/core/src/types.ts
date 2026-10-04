@@ -79,7 +79,8 @@ export type SiteConfig = {
   // ---- Modèle v2 (référentiel webpodologue) ----
   pays: 'FR' | 'BE' | 'CH';
   voix: 'je' | 'nous' | 'tiers';
-  modele: 'proximite' | 'premium';
+  /** Fiche du modèle de présentation (n'influe jamais sur le SEO) */
+  modele: import('./modeles').ModeleManifeste;
   /** Titre professionnel selon le pays : « Pédicure-podologue », « Podologue », « Podologue ES » */
   titreMetier: string;
   praticiens: PraticienPublic[];

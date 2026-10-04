@@ -1,0 +1,78 @@
+---
+// Accueil immersif : diaporama plein écran (fondu enchaîné + zoom lent), titre posé sur l'image.
+// Sans JavaScript ; animations coupées si le visiteur réduit les mouvements.
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
+
+const photos = [site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].filter(Boolean);
+const defauts = ['/photos/cabinet-lumiere.webp', '/photos/chaussage.webp', '/photos/enfant-pied.webp', '/photos/sport-course.webp'];
+const diapos = [...new Set([...photos, ...defauts])].slice(0, 4);
+const duree = 7; // secondes par photo
+const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
+---
+<section class="hero" style={`--n:${diapos.length};--d:${duree}s`}>
+  <div class="hero__diapos" aria-hidden="true">
+    {diapos.map((src, i) => (
+      <img src={src} alt="" style={`--i:${i}`} width="2000" height="1300" fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+    ))}
+  </div>
+  <div class="cadre hero__contenu">
+    <p class="sur hero__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
+    <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
+    <p class="hero__chapo">{phraseAccueil}</p>
+    <div class="hero__actions">
+      <a class="bouton bouton--clair" href={rdvAccueil}>
+        {libelleRdv}
+        <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
+      </a>
+      <a class="bouton bouton--verre" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+    </div>
+    <p class="hero__lieu"><Icone nom="lucide:map-pin" />{lieu.nom || TYPES_LIEU[lieu.type]} · {lieu.adresse}, {lieu.ville}</p>
+  </div>
+  <div class="hero__points" aria-hidden="true">{diapos.map((_, i) => <span style={`--i:${i}`}></span>)}</div>
+  <a class="hero__suite" href="#competences" aria-label="Découvrir le cabinet">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
+  </a>
+</section>
+
+<style>
+  .hero { position: relative; min-height: 100svh; display: grid; align-items: end; color: #fff; overflow: hidden; isolation: isolate; background: #13292a; }
+  .hero__diapos { position: absolute; inset: 0; z-index: -2; }
+  .hero__diapos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; animation: diapo calc(var(--n) * var(--d)) infinite; animation-delay: calc(var(--i) * var(--d)); }
+  /* 4 photos : chacune visible un quart du cycle, avec un fondu d'entrée et de sortie. */
+  @keyframes diapo {
+    0% { opacity: 0; transform: scale(1.12); }
+    5% { opacity: 1; }
+    25% { opacity: 1; }
+    31% { opacity: 0; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1); }
+  }
+  .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
+      linear-gradient(180deg, rgb(8 20 22 / 0.55) 0%, rgb(8 20 22 / 0.05) 30%, rgb(8 20 22 / 0.25) 55%, rgb(8 20 22 / 0.86) 100%); }
+  .hero__contenu { padding-block: 140px clamp(80px, 12vh, 140px); }
+  .hero__sur { color: rgb(255 255 255 / 0.85); }
+  h1 { color: #fff; font-size: clamp(2.8rem, 7.4vw, 6.6rem); max-width: 14ch; line-height: 0.98; }
+  h1 .pale { color: rgb(255 255 255 / 0.72) !important; }
+  .hero__chapo { max-width: 52ch; margin: 26px 0 36px; font-size: 1.15rem; color: rgb(255 255 255 / 0.86); }
+  .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .bouton:hover .fleche { transform: translateX(3px); }
+  .bouton--verre { color: #fff; background: rgb(255 255 255 / 0.12); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35); backdrop-filter: blur(10px); }
+  .bouton--verre:hover { color: #fff; background: rgb(255 255 255 / 0.2); }
+  .hero__lieu { display: flex; align-items: center; gap: 8px; margin: 32px 0 0; font-size: 0.9rem; color: rgb(255 255 255 / 0.75); }
+  .hero__points { position: absolute; right: clamp(20px, 4vw, 56px); bottom: clamp(32px, 6vh, 56px); display: flex; gap: 8px; }
+  .hero__points span { width: 28px; height: 3px; border-radius: 2px; background: rgb(255 255 255 / 0.3); overflow: hidden; position: relative; }
+  .hero__points span::after { content: ''; position: absolute; inset: 0; background: #fff; transform: scaleX(0); transform-origin: left; animation: point calc(var(--n) * var(--d)) linear infinite; animation-delay: calc(var(--i) * var(--d)); }
+  @keyframes point { 0% { transform: scaleX(0); } 25% { transform: scaleX(1); } 25.01%, 100% { transform: scaleX(0); } }
+  .hero__suite { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; width: 44px; height: 44px; display: none; place-items: center; border-radius: 50%; color: #fff; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.4); animation: rebond 2.4s ease-in-out infinite; }
+  @media (min-width: 900px) { .hero__suite { display: grid; } }
+  .hero__suite svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes rebond { 50% { translate: -50% 6px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__diapos img { animation: none; }
+    .hero__diapos img:not(:first-child) { display: none; }
+    .hero__points { display: none; }
+  }
+</style>

@@ -1,7 +1,9 @@
 ---
 // Gabarit commun à toutes les pages d'un site praticien.
-// Deux variantes : « proximite » (couleur du cabinet, ton clair) et « premium » (encre profonde, éditorial).
+// La présentation suit la fiche du modèle (site.modele) ; tout ce qui sert le SEO est produit ici, quel que soit le modèle.
 import '@fontsource-variable/inter';
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/fraunces/full-italic.css';
 import Icone from '../components/Icone.astro';
 import Consent from '../components/Consent.astro';
 import { site, absUrl } from '../lib/site';
@@ -17,19 +19,28 @@ interface Props {
   path: string;
   schemas?: object[];
   noindex?: boolean;
+  /** Page à visuel plein écran : l'en-tête peut être transparent (selon le modèle) */
+  immersif?: boolean;
 }
 
-const { title, description, path, schemas = [], noindex = false } = Astro.props;
+const { title, description, path, schemas = [], noindex = false, immersif = false } = Astro.props;
 const canonical = absUrl(path);
 const theme = buildTheme(site.theme.couleur);
-const premium = site.modele === 'premium';
+const m = site.modele;
+const encre = m.jetons.accent === 'encre';
+const transparent = immersif && m.entete === 'transparent';
 const couleurs = [
-  `--accent:${premium ? '#0b1c24' : theme['--brand-ink']}`,
-  `--accent-fonce:${premium ? '#1c3742' : theme['--brand-deep']}`,
+  `--accent:${encre ? '#0b1c24' : theme['--brand-ink']}`,
+  `--accent-fonce:${encre ? '#1c3742' : theme['--brand-deep']}`,
   `--accent-vif:${theme['--brand-ink']}`,
   `--accent-pale:${theme['--brand-soft']}`,
   `--accent-tres-pale:${theme['--brand-softer']}`,
   `--accent-ligne:${theme['--brand-line']}`,
+  `--rayon:${m.jetons.rayon}px`,
+  `--rayon-grand:${Math.round(m.jetons.rayon * 1.3)}px`,
+  `--graisse-titres:${m.jetons.graisseTitres}`,
+  `--police-titres:${m.jetons.policeTitres === 'fraunces' ? "'Fraunces Variable', Georgia, serif" : "'Inter Variable', system-ui, sans-serif"}`,
+  ...(m.jetons.fondDoux ? [`--doux:${m.jetons.fondDoux}`] : []),
 ].join(';');
 const allSchemas = [businessSchema(), personSchema(), ...schemas];
 const courant = Astro.url.pathname;
@@ -43,7 +54,7 @@ const nomMarque = praticiens.length > 1 ? 'Cabinet de podologie' : `${praticiens
 const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? '/le-cabinet#praticiens' : null;
 ---
 <!doctype html>
-<html lang="fr" style={couleurs} data-modele={site.modele}>
+<html lang="fr" style={couleurs} data-modele={m.id} data-titres={m.jetons.policeTitres} class:list={[{ 'entete-transparent': transparent }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -67,12 +78,12 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
 
     {site.message && <div class="message" role="status"><Icone nom="lucide:info" />{site.message}</div>}
 
-    <div class="infobarre">
+    {!transparent && <div class="infobarre">
       <div class="cadre infobarre__contenu">
         <span><Icone nom="lucide:map-pin" />{lieu.nom ? `${lieu.nom} — ` : ''}{adresseLieu}</span>
         <a href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
       </div>
-    </div>
+    </div>}
 
     <header class="entete">
       <div class="cadre entete__contenu">
@@ -142,6 +153,17 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
     <Consent />
 
     <script>
+      // En-tête transparent sur visuel plein écran : opacité progressive au défilement.
+      if (document.documentElement.classList.contains('entete-transparent')) {
+        const racine = document.documentElement;
+        const maj = () => {
+          const o = Math.min(window.scrollY / 260, 1);
+          racine.style.setProperty('--opacite-entete', String(o));
+          racine.classList.toggle('entete-opaque', o > 0.55);
+        };
+        maj();
+        window.addEventListener('scroll', maj, { passive: true });
+      }
       // Apparition douce des sections au défilement (désactivée si l'utilisateur réduit les animations).
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
         const obs = new IntersectionObserver(
@@ -170,7 +192,7 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
     --ink: var(--encre); --ink-mute: var(--encre-douce); --shadow: var(--ombre);
     --brand-softer: var(--doux); --brand-soft: var(--accent-pale); --brand-line: var(--accent-ligne);
   }
-  [data-modele='premium'] { --doux: #f4f5f4; --encre: #0b1c24; --rayon: 14px; --rayon-grand: 22px; }
+  [data-modele='premium'] { --encre: #0b1c24; }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -180,11 +202,12 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
   a { color: var(--accent-vif); text-underline-offset: 3px; }
   a:hover { color: var(--accent-fonce); }
   :focus-visible { outline: 3px solid var(--accent-vif); outline-offset: 2px; border-radius: 4px; }
-  h1, h2, h3 { line-height: 1.05; letter-spacing: -0.035em; margin: 0; color: var(--encre); text-wrap: balance; font-weight: 600; }
+  h1, h2, h3 { line-height: 1.05; letter-spacing: -0.035em; margin: 0; color: var(--encre); text-wrap: balance; font-weight: var(--graisse-titres, 600); font-family: var(--police-titres); }
+  [data-titres='fraunces'] h1, [data-titres='fraunces'] h2 { letter-spacing: -0.025em; font-variation-settings: 'SOFT' 50, 'opsz' 144; }
+  [data-titres='fraunces'] .pale { font-style: italic; font-variation-settings: 'SOFT' 100, 'WONK' 1; color: var(--accent-vif); }
   h1 { font-size: clamp(2.4rem, 5.6vw, 4.6rem); letter-spacing: -0.05em; }
   h2 { font-size: clamp(1.9rem, 3.8vw, 3.1rem); margin-bottom: 20px; }
   h3 { font-size: 1.2rem; letter-spacing: -0.02em; line-height: 1.2; }
-  [data-modele='premium'] h1, [data-modele='premium'] h2 { font-weight: 520; }
   p { margin: 0 0 1em; }
   .cadre { width: min(1180px, 100% - 40px); margin-inline: auto; }
   .section { padding-block: clamp(64px, 9vw, 120px); }
@@ -218,7 +241,12 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
   .infobarre__contenu { display: flex; justify-content: space-between; gap: 20px; padding-block: 9px; }
   .infobarre span, .infobarre a { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
 
-  .entete { position: sticky; top: 0; z-index: 30; background: rgb(255 255 255 / 0.86); backdrop-filter: blur(16px) saturate(1.6); border-bottom: 1px solid var(--ligne); }
+  .entete { position: sticky; top: 0; z-index: 30; background: rgb(255 255 255 / 0.86); backdrop-filter: blur(16px) saturate(1.6); border-bottom: 1px solid var(--ligne); transition: color 0.3s, border-color 0.3s; }
+  .entete-transparent .entete { position: fixed; left: 0; right: 0; background: rgb(255 255 255 / calc(var(--opacite-entete, 0) * 0.9)); border-bottom-color: rgb(16 34 36 / calc(var(--opacite-entete, 0) * 0.1)); backdrop-filter: blur(calc(var(--opacite-entete, 0) * 16px)); }
+  .entete-transparent:not(.entete-opaque) .entete .marque, .entete-transparent:not(.entete-opaque) .entete .liens a { color: #fff; }
+  .entete-transparent:not(.entete-opaque) .entete .marque small { color: rgb(255 255 255 / 0.75); }
+  .entete-transparent:not(.entete-opaque) .entete .marque__icone { background: rgb(255 255 255 / 0.18); backdrop-filter: blur(6px); }
+  .entete-transparent:not(.entete-opaque) .entete__rdv { background: #fff; color: var(--encre); }
   .entete__contenu { display: flex; align-items: center; gap: 28px; min-height: 74px; }
   .marque { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--encre); margin-right: auto; line-height: 1.2; }
   .marque strong { display: block; font-size: 1.02rem; letter-spacing: -0.02em; }

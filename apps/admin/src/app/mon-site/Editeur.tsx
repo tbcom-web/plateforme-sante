@@ -6,7 +6,6 @@ import {
   controlerPublication,
   COULEURS_SUGGEREES,
   lieuVide,
-  MODELES,
   PAYS,
   praticienVide,
   PROFILS,
@@ -21,15 +20,16 @@ import {
 import Apercu from '@/components/Apercu';
 import Photo from '@/components/Photo';
 import type { SoinCatalogue } from '@/lib/sites';
+import type { ModeleDisponible } from '@/lib/modeles';
 import { enregistrerSite } from './actions';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
-type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[] };
+type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[] };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, initial, catalogue }: Props) {
+export default function Editeur({ siteId, initial, catalogue, modeles }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -402,7 +402,7 @@ export default function Editeur({ siteId, initial, catalogue }: Props) {
               </fieldset>
               <Choix
                 legende="Modèle"
-                options={MODELES.map((m) => ({ value: m.value, label: m.label + (m.value === 'premium' ? ' (bientôt)' : ''), description: m.description }))}
+                options={modeles.map((m) => ({ value: m.id, label: m.nom, description: m.description }))}
                 valeur={d.theme.modele}
                 onChange={(v) => maj({ theme: { ...d.theme, modele: v as SiteDraft['theme']['modele'] } })}
               />

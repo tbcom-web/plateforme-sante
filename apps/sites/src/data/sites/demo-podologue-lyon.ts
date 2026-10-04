@@ -1,5 +1,5 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
-import type { SiteConfig } from '@plateforme/core';
+import { modeleIntegre, type SiteConfig } from '@plateforme/core';
 
 const site: SiteConfig = {
   id: 'demo-podologue-lyon',
@@ -348,7 +348,8 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
 
   pays: 'FR',
   voix: 'tiers',
-  modele: 'proximite',
+  // Modèle affiché sur la démo (variable MODELE pour comparer les modèles en local).
+  modele: modeleIntegre(process.env.MODELE ?? 'prestige'),
   titreMetier: 'Pédicure-podologue',
   praticiens: [
     {

@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "controle:seo": "node scripts/controle-seo.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.1.0",

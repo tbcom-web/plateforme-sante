@@ -1,0 +1,56 @@
+---
+// Accueil « scindé » : titre à gauche, grande photo à droite avec badges.
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { photoAccueil } from '../../lib/visuels';
+import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
+
+const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
+const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}` : 'Sur rendez-vous';
+const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
+---
+<section class="cadre accueil">
+  <div>
+    <p class="sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
+    <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
+    <p class="chapo">{phraseAccueil}</p>
+    <div class="actions">
+      <a class="bouton bouton--plein" href={rdvAccueil}>
+        {libelleRdv}
+        <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
+      </a>
+      {rdvEnLigne && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
+    </div>
+  </div>
+  <figure class="visuel">
+    <img src={photoAccueil} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" />
+    <figcaption class="flottant flottant--haut">
+      <span class="pastille" aria-hidden="true"></span>
+      {rdvEnLigne ? 'Réservation en ligne 24h/24' : 'Rendez-vous par téléphone'}
+    </figcaption>
+    <div class="flottant flottant--bas">
+      <Icone nom="lucide:map-pin" />
+      <span><strong>{lieu.nom || TYPES_LIEU[lieu.type]}</strong><br />{jours}, sur rendez-vous</span>
+    </div>
+  </figure>
+</section>
+
+<style>
+  .accueil { display: grid; gap: clamp(32px, 5vw, 64px); align-items: center; padding-block: clamp(40px, 6vw, 88px) clamp(32px, 5vw, 56px); }
+  @media (min-width: 960px) { .accueil { grid-template-columns: 1.08fr 0.92fr; } }
+  .chapo { margin: 26px 0 34px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .bouton:hover .fleche { transform: translateX(3px); }
+  .visuel { position: relative; margin: 0; }
+  .visuel img { width: 100%; height: clamp(360px, 64vh, 640px); object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }
+  .flottant { position: absolute; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 16px; background: rgb(255 255 255 / 0.86); backdrop-filter: blur(14px) saturate(1.5); box-shadow: var(--ombre); font-size: 0.86rem; line-height: 1.35; color: var(--encre); }
+  .flottant--haut { top: 18px; right: 18px; }
+  .flottant--bas { bottom: 18px; left: 18px; color: var(--encre-douce); }
+  .flottant--bas :global(.icone) { color: var(--accent-vif); font-size: 1.3rem; }
+  .flottant strong { color: var(--encre); }
+  @media (min-width: 960px) { .flottant--bas { left: -28px; bottom: 44px; } }
+  .pastille { width: 8px; height: 8px; border-radius: 50%; background: #27a36b; box-shadow: 0 0 0 0 rgb(39 163 107 / 0.5); animation: pouls 2.2s infinite; }
+  @keyframes pouls { 70% { box-shadow: 0 0 0 9px rgb(39 163 107 / 0); } 100% { box-shadow: 0 0 0 0 rgb(39 163 107 / 0); } }
+</style>

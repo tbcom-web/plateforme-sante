@@ -8,7 +8,8 @@ export type StyleImages = SiteConfig['theme']['style_images'];
 
 export type Pays = 'FR' | 'BE' | 'CH';
 export type Profil = 'proximite' | 'groupe' | 'sport' | 'prevention' | 'technique';
-export type Modele = 'proximite' | 'premium';
+/** Identifiant d'un modèle de présentation (intégré ou importé par l'admin) */
+export type Modele = string;
 export type StatutPraticien = 'titulaire' | 'collaborateur' | 'remplacant';
 export type TypeLieu = 'cabinet' | 'maison_sante' | 'pole_sante' | 'centre_medical';
 export type ModeRdv = 'en_ligne' | 'telephone' | 'les_deux';
@@ -116,7 +117,8 @@ export const VOIX: { value: Voix; label: string; exemple: string }[] = [
 
 export const MODELES: { value: Modele; label: string; description: string }[] = [
   { value: 'proximite', label: 'Proximité', description: 'Clair et factuel, centré sur les informations pratiques.' },
-  { value: 'premium', label: 'Médical premium', description: 'Photos, grande typographie, image haut de gamme.' },
+  { value: 'premium', label: 'Médical premium', description: 'Bleu nuit et typographie fine, esprit clinique haut de gamme.' },
+  { value: 'prestige', label: 'Prestige', description: 'Diaporama plein écran, en-tête transparent, grands titres élégants.' },
 ];
 
 export const TYPES_LIEU: { value: TypeLieu; label: string }[] = [

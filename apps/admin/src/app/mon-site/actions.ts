@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { formaterTelephone, normaliserDraft, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { getModelesDisponibles } from '@/lib/modeles';
 
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string };
 
@@ -16,7 +17,7 @@ const photo = (v: unknown) => { const s = t(v, 400); return s.startsWith(PREFIXE
 const parmi = <T extends string>(v: unknown, valeurs: readonly T[], defaut: T): T => (valeurs.includes(v as T) ? (v as T) : defaut);
 
 // Normalise puis borne chaque champ (aucune donnée inattendue n'est enregistrée).
-function nettoyer(brut: unknown): SiteDraft {
+function nettoyer(brut: unknown, modeles: string[]): SiteDraft {
   const d = normaliserDraft(brut);
   return {
     version: 2,
@@ -74,7 +75,7 @@ function nettoyer(brut: unknown): SiteDraft {
     conventionnement: t(d.conventionnement, 160),
     theme: {
       couleur: /^#[0-9a-f]{6}$/i.test(d.theme.couleur) ? d.theme.couleur : '#1f6a64',
-      modele: parmi(d.theme.modele, ['proximite', 'premium'] as const, 'proximite'),
+      modele: parmi(d.theme.modele, modeles, 'proximite'),
     },
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },
     photos: { accueil: photo(d.photos.accueil), panorama: photo(d.photos.panorama), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
@@ -87,7 +88,7 @@ export async function enregistrerSite(id: string | null, draft: SiteDraft): Prom
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return { ok: false, message: 'Session expirée, reconnectez-vous.' };
 
-  const config = nettoyer(draft);
+  const config = nettoyer(draft, (await getModelesDisponibles()).map((m) => m.id));
   const requete = id
     ? supabase.from('sites').update({ config }).eq('id', id).select('id').single()
     : supabase.from('sites').insert({ profession_slug: 'podologue', config }).select('id').single();
