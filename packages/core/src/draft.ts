@@ -95,6 +95,8 @@ export type SiteDraft = {
     specialiteSecondaire: string;
     /** Gamme de couleurs de la charte ; '' = couleur libre (theme.couleur) */
     gamme: string;
+    /** Logo : marque de l'univers métier et disposition (voir logos.ts) */
+    logo: { marque: string; disposition: 'horizontale' | 'empilee' | 'monogramme' };
     animation: boolean;
   };
   /** Réception des articles du flux de contenus */
@@ -190,7 +192,7 @@ export const draftVide = (): SiteDraft => ({
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
-  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', animation: true },
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', logo: { marque: 'empreinte', disposition: 'horizontale' }, animation: true },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],

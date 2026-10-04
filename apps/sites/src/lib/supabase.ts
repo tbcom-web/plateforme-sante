@@ -8,6 +8,7 @@ import {
   packVisuel,
   fusionnerPack,
   fusionnerSpecialites,
+  validerChoixLogo,
   validerPersonnalisation,
   type PersonnalisationPack,
   validerManifeste,
@@ -166,7 +167,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       tarifs: [],
     },
     rdv: { url: d.rdv.url, plateforme: d.rdv.outil },
-    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
+    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo: validerChoixLogo(d.theme.logo), mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
       texte: `${titreMetier} à ${quartier} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,

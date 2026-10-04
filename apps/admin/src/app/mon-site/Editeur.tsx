@@ -6,6 +6,12 @@ import {
   controlerPublication,
   GAMMES,
   modeleIntegre,
+  marquesLogo,
+  svgMarque,
+  couleursMarque,
+  traitementLogo,
+  initiales,
+  DISPOSITIONS_LOGO,
   lieuVide,
   PAYS,
   praticienVide,
@@ -41,6 +47,13 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
   const [enCours, demarrer] = useTransition();
   const controle = useMemo(() => controlerPublication(d), [d]);
   const gammesConseillees = modeleIntegre(d.theme.modele).gammes ?? [];
+  // Aperçu des logos : rendu identique au site (traitement du modèle, couleurs de la gamme ou du cabinet).
+  const modeleCourant = modeleIntegre(d.theme.modele);
+  const traitement = traitementLogo(modeleCourant);
+  const couleursLogo = couleursMarque(modeleCourant, { couleur: d.theme.couleur, gamme: d.theme.gamme || null });
+  const sigle = initiales(d.cabinet.nom || `${d.praticiens[0]?.prenom ?? ''} ${d.praticiens[0]?.nom ?? ''}`).replace(/[^\p{L}]/gu, '');
+  const apercuMarque = (id: string) =>
+    svgMarque(id, couleursLogo, { traitement: traitement.marque, rayon: traitement.rayon, epais: traitement.epais, taille: 48, initiales: sigle, police: traitement.police, graisse: traitement.graisse });
   const pays = PAYS.find((p) => p.value === d.pays) ?? PAYS[0];
 
   const maj = (patch: Partial<SiteDraft>) => { setD((x) => ({ ...x, ...patch })); setStatut(null); };
@@ -411,6 +424,33 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                   Couleur personnalisée
                   <input type="color" value={d.theme.couleur} disabled={Boolean(d.theme.gamme)} onChange={(e) => maj({ theme: { ...d.theme, gamme: '', couleur: e.target.value } })} className="h-8 w-11 cursor-pointer rounded border border-neutral-300 disabled:opacity-40" />
                 </label>
+              </fieldset>
+              <fieldset>
+                <legend className="font-medium">Logo</legend>
+                <p className="mt-1 text-xs text-neutral-500">Marques dessinées selon la charte, rendues avec le style du modèle et vos couleurs.</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {marquesLogo('podologie').map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      title={m.sens}
+                      aria-pressed={d.theme.logo.marque === m.id}
+                      onClick={() => maj({ theme: { ...d.theme, logo: { ...d.theme.logo, marque: m.id } } })}
+                      className={`grid justify-items-center gap-2 rounded-xl border p-3 text-xs ${d.theme.logo.marque === m.id ? 'border-teal-700 bg-teal-50' : 'border-neutral-200 hover:bg-neutral-50'}`}
+                    >
+                      <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: apercuMarque(m.id) }} />
+                      <span className="font-semibold">{m.nom}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                  {DISPOSITIONS_LOGO.map((p) => (
+                    <label key={p.id} title={p.sens} className={`cursor-pointer rounded-full border px-3 py-1.5 ${d.theme.logo.disposition === p.id ? 'border-teal-700 bg-teal-50 font-semibold' : 'border-neutral-200'}`}>
+                      <input type="radio" className="sr-only" name="disposition-logo" checked={d.theme.logo.disposition === p.id} onChange={() => maj({ theme: { ...d.theme, logo: { ...d.theme.logo, disposition: p.id } } })} />
+                      {p.nom}
+                    </label>
+                  ))}
+                </div>
               </fieldset>
               <Choix
                 legende="Modèle"
