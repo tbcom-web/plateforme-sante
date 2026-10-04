@@ -14,3 +14,4 @@ export * from './charte';
 export * from './univers';
 export * from './gammes';
 export * from './logos';
+export * from './marques-importees';
