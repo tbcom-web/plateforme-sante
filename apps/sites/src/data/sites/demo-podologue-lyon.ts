@@ -1,6 +1,9 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
 import { modeleIntegre, type SiteConfig } from '@plateforme/core';
 
+// Modèle de la démo (variable MODELE), avec sa couleur conseillée.
+const modele = modeleIntegre(process.env.MODELE ?? 'prestige');
+
 const site: SiteConfig = {
   id: 'demo-podologue-lyon',
   domaine: 'demo.webpodologue.fr',
@@ -54,7 +57,7 @@ Au cabinet, je prends le temps d’écouter, d’examiner et d’expliquer. Chaq
     geo: { lat: 45.7696, lng: 4.8513 },
   },
   rdv: { url: 'https://www.doctolib.fr/', plateforme: 'Doctolib' },
-  theme: { couleur: '#2f7d6d', mise_en_page: 'chaleureux', style_images: 'organique' },
+  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', mise_en_page: 'chaleureux', style_images: 'organique' },
   accroche: {
     titre: 'Prendre soin de vos pieds, à chaque étape de la vie',
     texte:
@@ -349,7 +352,7 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   pays: 'FR',
   voix: 'tiers',
   // Modèle affiché sur la démo (variable MODELE pour comparer les modèles en local).
-  modele: modeleIntegre(process.env.MODELE ?? 'prestige'),
+  modele,
   titreMetier: 'Pédicure-podologue',
   praticiens: [
     {

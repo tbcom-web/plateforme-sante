@@ -1,0 +1,55 @@
+---
+// Accueil « plein » : une grande photo plein écran, titre centré, voile réglé par le modèle.
+// Léger effet de profondeur au défilement (coupé si le visiteur réduit les mouvements).
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { photoAccueil } from '../../lib/visuels';
+import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
+
+const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
+---
+<section class="plein">
+  <img class="plein__image" src={photoAccueil} alt="" width="2000" height="1300" fetchpriority="high" decoding="async" />
+  <div class="cadre plein__contenu">
+    <p class="sur plein__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
+    <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
+    <p class="plein__chapo">{phraseAccueil}</p>
+    <div class="plein__actions">
+      <a class="bouton bouton--clair" href={rdvAccueil}>
+        {libelleRdv}
+        <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
+      </a>
+      <a class="bouton bouton--verre" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+    </div>
+  </div>
+  <p class="plein__lieu"><Icone nom="lucide:map-pin" />{lieu.nom || TYPES_LIEU[lieu.type]} · {lieu.adresse}, {lieu.ville}</p>
+</section>
+
+<script>
+  const image = document.querySelector<HTMLElement>('.plein__image');
+  if (image && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const maj = () => { if (scrollY < innerHeight) image.style.transform = `translateY(${scrollY * 0.3}px) scale(1.06)`; };
+    maj();
+    addEventListener('scroll', maj, { passive: true });
+  }
+</script>
+
+<style>
+  .plein { position: relative; min-height: 100svh; display: grid; place-items: center; text-align: center; color: #fff; overflow: hidden; isolation: isolate; background: #1d2b2a; }
+  .plein__image { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; transform: scale(1.06); will-change: transform; }
+  .plein::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
+      linear-gradient(180deg, rgb(10 22 22 / calc(var(--voile, 0.4) * 0.9)) 0%, rgb(10 22 22 / calc(var(--voile, 0.4) * 0.6)) 50%, rgb(10 22 22 / calc(var(--voile, 0.4) * 1.2)) 100%); }
+  .plein__contenu { display: grid; justify-items: center; padding-block: 140px 120px; }
+  .plein__sur { color: rgb(255 255 255 / 0.85); }
+  .plein__sur::before { display: none; }
+  h1 { color: #fff; font-size: clamp(2.6rem, 6.6vw, 5.8rem); max-width: 16ch; line-height: 1; }
+  h1 .pale { color: rgb(255 255 255 / 0.78) !important; }
+  .plein__chapo { max-width: 54ch; margin: 26px 0 36px; font-size: 1.15rem; color: rgb(255 255 255 / 0.88); }
+  .plein__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+  .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .bouton:hover .fleche { transform: translateX(3px); }
+  .bouton--verre { color: #fff; background: rgb(255 255 255 / 0.14); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.4); backdrop-filter: blur(10px); }
+  .bouton--verre:hover { color: #fff; background: rgb(255 255 255 / 0.22); }
+  .plein__lieu { position: absolute; left: 0; right: 0; bottom: 28px; display: flex; justify-content: center; align-items: center; gap: 8px; margin: 0; font-size: 0.88rem; color: rgb(255 255 255 / 0.78); }
+</style>

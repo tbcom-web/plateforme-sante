@@ -1,3 +1,4 @@
+import { MODELES_INTEGRES } from './modeles';
 // Brouillon de site édité dans le back-office (colonne sites.config), version 2.
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
 import type { Horaire, SiteConfig } from './types';
@@ -115,11 +116,8 @@ export const VOIX: { value: Voix; label: string; exemple: string }[] = [
   { value: 'je', label: 'Je', exemple: '« Je vous accueille au cabinet… »' },
 ];
 
-export const MODELES: { value: Modele; label: string; description: string }[] = [
-  { value: 'proximite', label: 'Proximité', description: 'Clair et factuel, centré sur les informations pratiques.' },
-  { value: 'premium', label: 'Médical premium', description: 'Bleu nuit et typographie fine, esprit clinique haut de gamme.' },
-  { value: 'prestige', label: 'Prestige', description: 'Diaporama plein écran, en-tête transparent, grands titres élégants.' },
-];
+/** Modèles intégrés (les modèles importés par l'admin s'y ajoutent côté back-office). */
+export const MODELES: { value: Modele; label: string; description: string }[] = MODELES_INTEGRES.map((m) => ({ value: m.id, label: m.nom, description: m.description }));
 
 export const TYPES_LIEU: { value: TypeLieu; label: string }[] = [
   { value: 'cabinet', label: 'Cabinet libéral' },

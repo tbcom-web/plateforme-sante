@@ -5,7 +5,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-const modeles = process.argv.slice(2).length ? process.argv.slice(2) : ['proximite', 'premium', 'prestige'];
+const modeles = process.argv.slice(2).length ? process.argv.slice(2) : ['proximite', 'premium', 'prestige', 'zen', 'atelier'];
 const dist = new URL('../dist/', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
 
 const fichiers = (dossier) =>

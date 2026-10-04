@@ -2,7 +2,7 @@ import 'server-only';
 import { MODELES_INTEGRES, validerManifeste, type ModeleManifeste } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
-export type ModeleDisponible = { id: string; nom: string; description: string; source: 'integre' | 'importe' };
+export type ModeleDisponible = { id: string; nom: string; description: string; couleurConseillee?: string; source: 'integre' | 'importe' };
 export type LigneModele = { id: string; nom: string; manifeste: unknown; version: number; actif: boolean; updated_at: string };
 
 /** Toutes les fiches importées (admin), ou seulement les actives (praticiens, via RLS). */
@@ -22,10 +22,10 @@ export async function getModelesDisponibles(): Promise<ModeleDisponible[]> {
   }
   const liste: ModeleDisponible[] = MODELES_INTEGRES.map((m) => {
     const r = importes.get(m.id) ?? m;
-    return { id: r.id, nom: r.nom, description: r.description, source: importes.has(m.id) ? 'importe' : 'integre' };
+    return { id: r.id, nom: r.nom, description: r.description, couleurConseillee: r.couleurConseillee, source: importes.has(m.id) ? 'importe' : 'integre' };
   });
   for (const [id, m] of importes) {
-    if (!liste.some((x) => x.id === id)) liste.push({ id, nom: m.nom, description: m.description, source: 'importe' });
+    if (!liste.some((x) => x.id === id)) liste.push({ id, nom: m.nom, description: m.description, couleurConseillee: m.couleurConseillee, source: 'importe' });
   }
   return liste;
 }

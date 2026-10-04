@@ -404,7 +404,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                 legende="Modèle"
                 options={modeles.map((m) => ({ value: m.id, label: m.nom, description: m.description }))}
                 valeur={d.theme.modele}
-                onChange={(v) => maj({ theme: { ...d.theme, modele: v as SiteDraft['theme']['modele'] } })}
+                onChange={(v) => maj({ theme: { ...d.theme, modele: v, couleur: modeles.find((m) => m.id === v)?.couleurConseillee ?? d.theme.couleur } })}
               />
             </div>
           )}

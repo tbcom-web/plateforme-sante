@@ -1,4 +1,4 @@
-import { MODELES_INTEGRES, SECTIONS_ACCUEIL, validerManifeste } from '@plateforme/core';
+import { MODELES_INTEGRES, POLICES_TEXTE, POLICES_TITRES, SECTIONS_ACCUEIL, validerManifeste } from '@plateforme/core';
 import { getModelesImportes } from '@/lib/modeles';
 import { ActionsModele, Import } from './Import';
 
@@ -24,7 +24,7 @@ export default async function Modeles() {
 
       <section>
         <h2 className="mb-3 font-semibold">Modèles intégrés</h2>
-        <ul className="grid gap-2 sm:grid-cols-3">
+        <ul className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {MODELES_INTEGRES.map((m) => (
             <li key={m.id} className="rounded-xl border border-black/5 bg-white p-4 text-sm">
               <span className="block font-semibold">{m.nom}</span>
@@ -67,10 +67,11 @@ export default async function Modeles() {
         <ul className="mt-2 list-disc pl-5">
           <li><code>id</code> : 3 à 40 caractères (minuscules, chiffres, tirets) ; <code>version</code> : à augmenter à chaque mise à jour.</li>
           <li><code>entete</code> : <code>opaque</code> ou <code>transparent</code> (transparent sur l’image puis opaque au défilement).</li>
-          <li><code>accueil.hero</code> : <code>diaporama</code> ou <code>scinde</code>.</li>
+          <li><code>accueil.hero</code> : <code>diaporama</code>, <code>plein</code> (une grande photo) ou <code>scinde</code> ; <code>accueil.voile</code> : assombrissement de la photo, 0 à 90.</li>
+          <li><code>pied</code> : <code>sombre</code>, <code>accent</code> ou <code>clair</code> ; <code>animations</code> : <code>douces</code> ou <code>aucune</code> ; <code>couleurConseillee</code> : #rrggbb proposé au praticien.</li>
           <li><code>accueil.sections</code> : ordre parmi {SECTIONS_ACCUEIL.join(', ')} ; <code>competences</code> et <code>acces</code> obligatoires.</li>
           <li><code>competences</code> : <code>liste</code> ou <code>cartes</code>.</li>
-          <li><code>jetons</code> : <code>policeTitres</code> (inter, fraunces), <code>graisseTitres</code> (300–800), <code>rayon</code> (0–40), <code>accent</code> (couleur, encre), <code>fondDoux</code> (#rrggbb, facultatif).</li>
+          <li><code>jetons</code> : <code>policeTitres</code> ({POLICES_TITRES.join(', ')}), <code>policeTexte</code> ({POLICES_TEXTE.join(', ')}), <code>graisseTitres</code> (300–800), <code>rayon</code> (0–40), <code>boutons</code> (pilule, arrondi, carre), <code>accent</code> (couleur, encre), <code>fond</code> et <code>fondDoux</code> (#rrggbb).</li>
         </ul>
       </details>
     </div>

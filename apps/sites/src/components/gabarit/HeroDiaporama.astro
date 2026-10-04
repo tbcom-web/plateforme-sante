@@ -50,7 +50,7 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
     100% { opacity: 0; transform: scale(1); }
   }
   .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
-      linear-gradient(180deg, rgb(8 20 22 / 0.55) 0%, rgb(8 20 22 / 0.05) 30%, rgb(8 20 22 / 0.25) 55%, rgb(8 20 22 / 0.86) 100%); }
+      linear-gradient(180deg, rgb(8 20 22 / var(--voile, 0.55)) 0%, rgb(8 20 22 / calc(var(--voile, 0.55) * 0.1)) 30%, rgb(8 20 22 / calc(var(--voile, 0.55) * 0.45)) 55%, rgb(8 20 22 / calc(var(--voile, 0.55) * 1.55)) 100%); }
   .hero__contenu { padding-block: 140px clamp(80px, 12vh, 140px); }
   .hero__sur { color: rgb(255 255 255 / 0.85); }
   h1 { color: #fff; font-size: clamp(2.8rem, 7.4vw, 6.6rem); max-width: 14ch; line-height: 0.98; }

@@ -5,6 +5,7 @@ import Gabarit from '../layouts/Gabarit.astro';
 import FaqList from '../components/FaqList.astro';
 import HeroDiaporama from '../components/gabarit/HeroDiaporama.astro';
 import HeroScinde from '../components/gabarit/HeroScinde.astro';
+import HeroPlein from '../components/gabarit/HeroPlein.astro';
 import Expertises from '../components/gabarit/Expertises.astro';
 import Competences from '../components/gabarit/Competences.astro';
 import Praticiens from '../components/gabarit/Praticiens.astro';
@@ -31,8 +32,8 @@ const title = `${site.titreMetier} ${site.cabinet.ville} – ${noms}`;
 const description = `${titreCabinet}. ${phraseAccueil} ${site.soins.slice(0, 4).map((s) => s.titreCourt).join(', ')}.`;
 const douce = (s: string) => ['praticiens', 'faq'].includes(s);
 ---
-<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale)]} immersif={m.accueil.hero === 'diaporama'}>
-  {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : <HeroScinde />}
+<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale)]} immersif={m.accueil.hero !== 'scinde'}>
+  {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : <HeroScinde />}
 
   {m.accueil.sections.map((section) => (
     <>
