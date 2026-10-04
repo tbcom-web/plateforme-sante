@@ -4,7 +4,8 @@ import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   controlerPublication,
-  COULEURS_SUGGEREES,
+  GAMMES,
+  modeleIntegre,
   lieuVide,
   PAYS,
   praticienVide,
@@ -39,6 +40,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
   const [statut, setStatut] = useState<{ ok: boolean; message: string } | null>(null);
   const [enCours, demarrer] = useTransition();
   const controle = useMemo(() => controlerPublication(d), [d]);
+  const gammesConseillees = modeleIntegre(d.theme.modele).gammes ?? [];
   const pays = PAYS.find((p) => p.value === d.pays) ?? PAYS[0];
 
   const maj = (patch: Partial<SiteDraft>) => { setD((x) => ({ ...x, ...patch })); setStatut(null); };
@@ -383,25 +385,32 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                 ))}
               </fieldset>
               <fieldset>
-                <legend className="font-medium">Couleur du cabinet</legend>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {COULEURS_SUGGEREES.map((c) => (
+                <legend className="font-medium">Gamme de couleurs</legend>
+                <p className="mt-1 text-xs text-neutral-500">Palettes de la charte, contrastes vérifiés. Les gammes conseillées pour le modèle choisi sont en premier.</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {[...GAMMES].sort((a, b) => Number(gammesConseillees.includes(b.id)) - Number(gammesConseillees.includes(a.id))).map((g) => (
                     <button
-                      key={c}
+                      key={g.id}
                       type="button"
-                      aria-label={`Couleur ${c}`}
-                      aria-pressed={d.theme.couleur === c}
-                      onClick={() => maj({ theme: { ...d.theme, couleur: c } })}
-                      className={`size-9 rounded-full ring-offset-2 ${d.theme.couleur === c ? 'ring-2 ring-neutral-900' : ''}`}
-                      style={{ background: c }}
-                    />
+                      aria-pressed={d.theme.gamme === g.id}
+                      onClick={() => maj({ theme: { ...d.theme, gamme: g.id, couleur: g.accent } })}
+                      className={`flex items-center gap-3 rounded-xl border p-2.5 text-left text-sm ${d.theme.gamme === g.id ? 'border-teal-700 bg-teal-50' : 'border-neutral-200 hover:bg-neutral-50'}`}
+                    >
+                      <span className="flex overflow-hidden rounded-md ring-1 ring-black/10" aria-hidden="true">
+                        {[g.plan, g.accent, g.fondDoux, g.signal].map((c) => <span key={c} className="h-8 w-4" style={{ background: c }} />)}
+                      </span>
+                      <span>
+                        <span className="block font-semibold">{g.nom}</span>
+                        {gammesConseillees.includes(g.id) && <span className="text-xs text-teal-800">Conseillée</span>}
+                      </span>
+                    </button>
                   ))}
-                  <label className="ml-2 flex items-center gap-2 text-sm text-neutral-600">
-                    Autre
-                    <input type="color" value={d.theme.couleur} onChange={(e) => maj({ theme: { ...d.theme, couleur: e.target.value } })} className="h-9 w-12 cursor-pointer rounded border border-neutral-300" />
-                  </label>
                 </div>
-                <p className="mt-2 text-xs text-neutral-500">Les contrastes sont ajustés automatiquement pour rester lisibles.</p>
+                <label className="mt-3 flex items-center gap-2 text-sm text-neutral-600">
+                  <input type="radio" name="gamme-libre" checked={!d.theme.gamme} onChange={() => maj({ theme: { ...d.theme, gamme: '' } })} className="accent-teal-800" />
+                  Couleur personnalisée
+                  <input type="color" value={d.theme.couleur} disabled={Boolean(d.theme.gamme)} onChange={(e) => maj({ theme: { ...d.theme, gamme: '', couleur: e.target.value } })} className="h-8 w-11 cursor-pointer rounded border border-neutral-300 disabled:opacity-40" />
+                </label>
               </fieldset>
               <Choix
                 legende="Modèle"
@@ -415,6 +424,18 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                 valeur={d.theme.specialite}
                 onChange={(v) => maj({ theme: { ...d.theme, specialite: v } })}
               />
+              <label className="grid gap-1.5 text-sm">
+                <span className="font-medium">Spécialité secondaire (facultatif)</span>
+                <select
+                  value={d.theme.specialiteSecondaire}
+                  onChange={(e) => maj({ theme: { ...d.theme, specialiteSecondaire: e.target.value } })}
+                  className="rounded-lg border border-neutral-300 px-3 py-2"
+                >
+                  <option value="">Aucune</option>
+                  {SPECIALITES.filter((s) => s.value !== d.theme.specialite).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+                <span className="text-xs text-neutral-500">Complète les photos, illustrations et soins mis en avant ; l’accueil reste celui de la spécialité principale.</span>
+              </label>
               {SPECIALITES.find((s) => s.value === d.theme.specialite)?.animation && (
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" className="size-4 accent-teal-800" checked={d.theme.animation} onChange={(e) => maj({ theme: { ...d.theme, animation: e.target.checked } })} />

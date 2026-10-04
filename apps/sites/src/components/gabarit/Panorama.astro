@@ -14,12 +14,14 @@ const atouts = [
   site.domicile.actif ? { titre: 'Domicile', texte: site.domicile.creneaux || 'Visites à domicile sur demande' } : null,
 ].filter(Boolean) as { titre: string; texte: string }[];
 const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
+// Titre factuel (lieu d'exercice et ville), jamais de formule commerciale.
+const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
 ---
 <section class="panorama">
   <img src={photoPanorama} alt="" loading="lazy" width="2000" height="1100" {...zonePhoto('photos.panorama')} />
   <div class="cadre panorama__texte apparait">
-    <p class="sur sur--clair sur--num">{lieuNom} · {site.cabinet.ville}</p>
-    <h2 {...champ('panorama.titre')}>{texte('panorama.titre', 'Un cabinet calme et lumineux, pensé pour votre confort.')}</h2>
+    <p class="sur sur--clair sur--num">Le lieu d’exercice</p>
+    <h2 {...champ('panorama.titre')}>{texte('panorama.titre', titreStandard)}</h2>
     <ul>
       {atouts.map((a) => <li><strong>{a.titre}</strong>{a.texte}</li>)}
     </ul>

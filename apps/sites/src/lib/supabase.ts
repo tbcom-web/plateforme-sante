@@ -7,6 +7,7 @@ import {
   modeleIntegre,
   packVisuel,
   fusionnerPack,
+  fusionnerSpecialites,
   validerPersonnalisation,
   type PersonnalisationPack,
   validerManifeste,
@@ -77,6 +78,11 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   // Pack visuel de la spécialité, éventuellement personnalisé par l'admin (banque visuelle).
   const [persoPack] = await lire<PersonnalisationPack[]>(`packs_visuels?id=eq.${encodeURIComponent(d.theme.specialite)}&select=photos,animation`).catch(() => []);
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);
+  // Spécialité secondaire : complète les visuels de la principale (avec sa propre personnalisation admin).
+  const [persoSecondaire] = d.theme.specialiteSecondaire
+    ? await lire<PersonnalisationPack[]>(`packs_visuels?id=eq.${encodeURIComponent(d.theme.specialiteSecondaire)}&select=photos,animation`).catch(() => [])
+    : [];
+  const visuelsSpecialite = d.theme.specialiteSecondaire ? fusionnerSpecialites(pack, fusionnerPack(packVisuel(d.theme.specialiteSecondaire), persoSecondaire)) : pack;
   // Même contrôle que le back-office : un site incomplet n'est jamais publié (sauf site de test).
   const { bloquants } = controlerPublication(d);
   // L'aperçu de l'éditeur visuel (APERCU=1) montre aussi un brouillon incomplet ; il n'est jamais indexé.
@@ -160,7 +166,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       tarifs: [],
     },
     rdv: { url: d.rdv.url, plateforme: d.rdv.outil },
-    theme: { couleur: d.theme.couleur, mise_en_page: 'sobre', style_images: 'minimal' },
+    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
       texte: `${titreMetier} à ${quartier} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
@@ -195,7 +201,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     visuels: {
       specialite: pack.value,
       animation: d.theme.animation ? pack.animation : null,
-      photos: pack.photos,
+      photos: visuelsSpecialite.photos,
     },
   };
 }

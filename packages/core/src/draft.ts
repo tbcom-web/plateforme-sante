@@ -87,7 +87,16 @@ export type SiteDraft = {
   message: { texte: string; jusquAu: string };
   conventionnement: string;
   /** Style (modèle), spécialité (pack visuel) et animation d'accueil */
-  theme: { couleur: string; modele: Modele; specialite: string; animation: boolean };
+  theme: {
+    couleur: string;
+    modele: Modele;
+    specialite: string;
+    /** Spécialité secondaire : complète les visuels (diaporama, dessins, soins) ; '' = aucune */
+    specialiteSecondaire: string;
+    /** Gamme de couleurs de la charte ; '' = couleur libre (theme.couleur) */
+    gamme: string;
+    animation: boolean;
+  };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
   /** URLs publiques des photos (stockage Supabase) */
@@ -181,7 +190,7 @@ export const draftVide = (): SiteDraft => ({
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
-  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', animation: true },
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', animation: true },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],

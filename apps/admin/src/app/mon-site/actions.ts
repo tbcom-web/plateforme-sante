@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { formaterTelephone, normaliserDraft, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
+import { formaterTelephone, GAMMES, normaliserDraft, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 
@@ -77,6 +77,8 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean): SiteDraft
       couleur: /^#[0-9a-f]{6}$/i.test(d.theme.couleur) ? d.theme.couleur : '#1f6a64',
       modele: parmi(d.theme.modele, modeles, 'proximite'),
       specialite: parmi(d.theme.specialite, SPECIALITES.map((s) => s.value), 'generale'),
+      specialiteSecondaire: d.theme.specialiteSecondaire !== d.theme.specialite ? parmi(d.theme.specialiteSecondaire, ['', ...SPECIALITES.map((s) => s.value)], '') : '',
+      gamme: parmi(d.theme.gamme, ['', ...GAMMES.map((g) => g.id)], ''),
       animation: Boolean(d.theme.animation),
     },
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },
