@@ -10,6 +10,10 @@ import {
   packVisuel,
   fusionnerPack,
   fusionnerSpecialites,
+  jeuPhotosAutorise,
+  jeuPhotosDepuisLigne,
+  nettoyerPhotosJeu,
+  persoDuJeuPhotos,
   validerChoixLogo,
   marquesLogo,
   assainirMarque,
@@ -52,6 +56,7 @@ type LigneSite = {
 };
 type LigneArticle = { slug: string; titre: string; resume: string; corps: string; theme: string; date_publication: string; image?: string; image_alt?: string };
 type LigneProfession = { slug: string; libelle: string; specialite_schema: string; ordre: string };
+type LigneJeuPhotos = { id: string; nom: string; specialite: string; photos: unknown; source: string; site_id: string | null; actif: boolean };
 type LigneSoin = { slug: string; titre_court: string; titre: string; resume: string; corps: string; faq: Faq[]; icone?: string | null };
 
 const identifiants = (d: SiteDraft, p: SiteDraft['praticiens'][number], ordre: string): string[] => {
@@ -84,7 +89,17 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const [ligneModele] = await lire<{ manifeste: unknown }[]>(`modeles?id=eq.${encodeURIComponent(d.theme.modele)}&actif=eq.true&select=manifeste`).catch(() => []);
   const modele = (ligneModele && validerManifeste(ligneModele.manifeste).modele) || modeleIntegre(d.theme.modele);
   // Pack visuel de la spécialité, éventuellement personnalisé par l'admin (banque visuelle).
-  const [persoPack] = await lire<PersonnalisationPack[]>(`packs_visuels?id=eq.${encodeURIComponent(d.theme.specialite)}&select=photos,animation`).catch(() => []);
+  const [persoBanque] = await lire<PersonnalisationPack[]>(`packs_visuels?id=eq.${encodeURIComponent(d.theme.specialite)}&select=photos,animation`).catch(() => []);
+  // Jeu de photos affecté (tiré au hasard ou exclusif premium) : seulement s'il est actif et autorisé pour ce site
+  // (jeu partagé de sa spécialité, ou jeu exclusif de ce site), photos revérifiées ; ses photos passent devant.
+  const [ligneJeu] = /^[0-9a-f-]{36}$/.test(d.theme.jeuPhotos)
+    ? await lire<LigneJeuPhotos[]>(`jeux_photos?id=eq.${d.theme.jeuPhotos}&select=id,nom,specialite,photos,source,site_id,actif`).catch(() => [])
+    : [];
+  const jeuLu = ligneJeu ? jeuPhotosDepuisLigne(ligneJeu) : null;
+  const jeuPhotos = jeuLu && jeuPhotosAutorise(jeuLu, s.id, d.theme.specialite)
+    ? { ...jeuLu, photos: nettoyerPhotosJeu(jeuLu.photos, `${env('SUPABASE_URL')!.replace(/\/$/, '')}/storage/v1/object/public/photos/`, jeuLu.siteId) }
+    : null;
+  const persoPack = persoDuJeuPhotos(jeuPhotos, persoBanque);
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);
   // Spécialité secondaire : complète les visuels de la principale (avec sa propre personnalisation admin).
   const [persoSecondaire] = d.theme.specialiteSecondaire
@@ -202,6 +217,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     mentions: {
       editeur: `${noms}, ${titreMetier.toLowerCase()}${pluriel ? 's' : ''}`,
       hebergeur: 'Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis',
+      // Licence Adobe Stock : mention de la source, sans nom de fichier.
+      ...(jeuPhotos?.source === 'adobe' ? { creditPhotos: 'Photos : Adobe Stock' } : {}),
     },
 
     pays: d.pays,

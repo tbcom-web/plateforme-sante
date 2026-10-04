@@ -11,7 +11,7 @@ type Ligne = {
   slug: string | null;
   statut: 'brouillon' | 'en_ligne' | 'suspendu';
   test: boolean;
-  options: { edition?: boolean } | null;
+  options: { edition?: boolean; photosPremium?: boolean } | null;
   domaine: string | null;
   published_at: string | null;
   publication_demandee_at: string | null;
@@ -107,6 +107,7 @@ export default async function AdminSites() {
                     <span className="mt-1 flex gap-3 text-xs font-semibold">
                       <a href={`/mon-site?site=${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Formulaire</a>
                       <a href={`/edition/${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Édition visuelle</a>
+                      <a href={`/admin/sites/${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Photos{s.options?.photosPremium ? ' (premium)' : ''}</a>
                     </span>
                   </td>
                   <td className="px-4 py-3 text-neutral-600">

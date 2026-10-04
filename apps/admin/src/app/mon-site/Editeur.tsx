@@ -33,6 +33,7 @@ import {
   VOIX,
   type LieuDraft,
   type PraticienDraft,
+  type JeuPhotos,
   type SiteDraft,
 } from '@plateforme/core';
 import Apercu from '@/components/Apercu';
@@ -44,11 +45,11 @@ import { enregistrerEtPublier, enregistrerSite } from './actions';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
-type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[] };
+type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, initial, catalogue, modeles, marquesImportees }: Props) {
+export default function Editeur({ siteId, initial, catalogue, modeles, marquesImportees, jeuPhotos }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -620,7 +621,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
           ))}
         </div>
         {ongletAffiche === 'theme'
-          ? <ApercuTheme draft={d} modele={modeleCourant} catalogue={catalogue} marquesImportees={marquesImportees} />
+          ? <ApercuTheme draft={d} modele={modeleCourant} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
           : <Apercu draft={d} catalogue={catalogue} />}
       </div>
     </div>

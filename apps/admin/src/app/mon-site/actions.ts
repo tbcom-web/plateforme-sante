@@ -8,6 +8,7 @@ import { getMarquesImportees } from '@/lib/marques';
 import { getRole } from '@/lib/admin';
 import { manques } from '@/lib/sites';
 import { declencherPublication } from '@/lib/publication';
+import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
 
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string };
 
@@ -91,6 +92,8 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
       modeVisuel: parmi(d.theme.modeVisuel, ['mixte', 'photos', 'illustrations'] as const, 'mixte'),
       logoPerso: { url: photo(d.theme.logoPerso?.url), complet: d.theme.logoPerso?.complet !== false },
       animation: Boolean(d.theme.animation),
+      // Fixé par enregistrerSite (tirage au hasard) : jamais la valeur envoyée par le formulaire.
+      jeuPhotos: '',
     },
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },
     photos: { accueil: photo(d.photos.accueil), panorama: photo(d.photos.panorama), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
@@ -105,9 +108,12 @@ export async function enregistrerSite(id: string | null, draft: SiteDraft): Prom
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return { ok: false, message: 'Session expirée, reconnectez-vous.' };
 
-  const { data: existant } = id ? await supabase.from('sites').select('options').eq('id', id).maybeSingle() : { data: null };
+  const { data: existant } = id ? await supabase.from('sites').select('options, config').eq('id', id).maybeSingle() : { data: null };
   const edition = Boolean((existant?.options as { edition?: boolean } | null)?.edition);
   const config = nettoyer(draft, (await getModelesDisponibles()).map((m) => m.id), edition, (await getMarquesImportees()).map((m) => m.id));
+  // Jeu de photos : tiré au hasard à la création et quand la spécialité principale change (lib/jeux-photos.ts).
+  const ancien = existant ? normaliserDraft(existant.config).theme : null;
+  config.theme.jeuPhotos = await jeuPhotosAEnregistrer(supabase, id, ancien, config.theme.specialite);
   const requete = id
     ? supabase.from('sites').update({ config }).eq('id', id).select('id').single()
     : supabase.from('sites').insert({ profession_slug: 'podologue', config }).select('id').single();

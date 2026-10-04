@@ -152,6 +152,10 @@ export type PersonnalisationPack = {
   photos?: { accueil?: string; panorama?: string; diaporama?: string[] };
   /** null : animation du pack intégré ; 'aucune' : pas d'animation */
   animation?: Animation | 'aucune' | null;
+  /** Photo par soin (slug → URL), venue d'un jeu de photos ; appliquée par completerJeuVisuel (jeux-photos.ts) */
+  soins?: Record<string, string>;
+  /** Cadrage (CSS object-position) par URL de photo, venu d'un jeu de photos */
+  cadrages?: Record<string, string>;
 };
 
 export function fusionnerPack(pack: Specialite, perso: PersonnalisationPack | null | undefined): Specialite {

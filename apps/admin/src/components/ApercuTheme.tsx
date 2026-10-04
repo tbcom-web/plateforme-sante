@@ -13,13 +13,17 @@ import '@fontsource/instrument-serif';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, PAYS, POLICES, rendreCase, SURFACES_CSS, svgAnimationFixe,
+  completerJeuVisuel, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, visuelSoinJeu,
-  type MarqueImportee, type ModeleManifeste, type Rendu, type SiteDraft,
+  type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
-type Props = { draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[] };
+type Props = {
+  draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
+  /** Jeu de photos affecté au site (enregistré), appliqué tant que la spécialité correspond */
+  jeuPhotos?: JeuPhotos | null;
+};
 type Vue = 'accueil' | 'soin';
 type Appareil = 'bureau' | 'mobile';
 
@@ -52,7 +56,7 @@ function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false }: { rendu: 
   );
 }
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees }: Props) {
+export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos }: Props) {
   const [vue, setVue] = useState<Vue>('accueil');
   const [appareil, setAppareil] = useState<Appareil>('bureau');
   const boite = useRef<HTMLDivElement>(null);
@@ -76,7 +80,11 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const j = m.jetons;
   const filtre = FILTRES[j.images] ?? 'none';
   const mode = d.theme.modeVisuel;
-  const jeu = useMemo(() => jeuVisuel(d.theme.specialite, d.theme.specialiteSecondaire || null), [d.theme.specialite, d.theme.specialiteSecondaire]);
+  const jeu = useMemo(() => {
+    // Jeu de photos du site : un jeu partagé ne vaut que pour sa spécialité (un nouveau tirage suit l'enregistrement).
+    const perso = jeuPhotos && (jeuPhotos.siteId || jeuPhotos.specialite === d.theme.specialite) ? persoDuJeuPhotos(jeuPhotos) : null;
+    return completerJeuVisuel(jeuVisuel(d.theme.specialite, d.theme.specialiteSecondaire || null, perso), perso);
+  }, [d.theme.specialite, d.theme.specialiteSecondaire, jeuPhotos]);
 
   const style = useMemo(() => {
     const v: Record<string, string> = {

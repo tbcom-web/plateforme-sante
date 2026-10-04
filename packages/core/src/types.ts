@@ -88,7 +88,8 @@ export type SiteConfig = {
   faqGenerale: Faq[];
   articles: Article[];
   tracking: { ga4?: string; clarity?: string };
-  mentions: { hebergeur: string; editeur: string; mediateur?: string };
+  /** creditPhotos : mention des photos sous licence (ex. « Photos : Adobe Stock »), sans nom de fichier */
+  mentions: { hebergeur: string; editeur: string; mediateur?: string; creditPhotos?: string };
 
   // ---- Modèle v2 (référentiel webpodologue) ----
   pays: 'FR' | 'BE' | 'CH';

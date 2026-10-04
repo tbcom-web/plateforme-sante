@@ -50,6 +50,13 @@ const regles = {
       <h2>Hébergement</h2>
       <p>{site.mentions.hebergeur}</p>
 
+      {site.mentions.creditPhotos && (
+        <>
+          <h2>Crédits photos</h2>
+          <p>{site.mentions.creditPhotos}.</p>
+        </>
+      )}
+
       <h2>Informations médicales</h2>
       <p>
         Les informations publiées sur ce site sont générales. Elles ne remplacent pas une consultation et ne permettent pas

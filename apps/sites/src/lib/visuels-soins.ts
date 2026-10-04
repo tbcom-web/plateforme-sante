@@ -1,13 +1,16 @@
 // Visuels des soins : jeu visuel de la spécialité du site (packages/core/src/jeux.ts, source unique partagée
 // avec l'aperçu de l'admin). Chaque soin du catalogue a une photo (et son cadrage), un dessin technique et
 // une animation facultative ; une photo fournie par le praticien pour un soin passe toujours en premier.
-import { jeuVisuel, visuelSoinJeu, type NomDessin, type VisuelCase } from '@plateforme/core';
+import { completerJeuVisuel, jeuVisuel, visuelSoinJeu, type NomDessin, type VisuelCase } from '@plateforme/core';
 import { site } from './site';
 
 export type VisuelSoin = VisuelCase;
 
-/** Jeu visuel du site : spécialité principale, secondaire et personnalisations de l'admin */
-export const jeu = jeuVisuel(site.visuels.specialite, site.visuels.specialiteSecondaire, site.visuels.perso, site.visuels.persoSecondaire);
+/** Jeu visuel du site : spécialité principale, secondaire, personnalisations de l'admin et jeu de photos (photos par soin) */
+export const jeu = completerJeuVisuel(
+  jeuVisuel(site.visuels.specialite, site.visuels.specialiteSecondaire, site.visuels.perso, site.visuels.persoSecondaire),
+  site.visuels.perso,
+);
 
 /** Photos fournies par le praticien pour ses soins (facultatif, clé = slug du soin) */
 const photosPraticien = site.photos.soins ?? {};

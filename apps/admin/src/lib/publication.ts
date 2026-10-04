@@ -46,11 +46,11 @@ export async function declencherPublications(siteIds: string[]): Promise<Resulta
   return { ok: true, message: `${ids.length} site(s) en cours de republication (quelques minutes, 4 en parallèle).` };
 }
 
-export type Cible = { specialite?: string; modele?: string; marque?: string; tous?: boolean };
+export type Cible = { specialite?: string; modele?: string; marque?: string; jeuPhotos?: string; tous?: boolean };
 
 /**
  * Sites en ligne qui utilisent une ressource partagée : spécialité (photos et animation de la banque visuelle),
- * modèle, ou tous (changement de charte, de dessins, d'animations).
+ * modèle, jeu de photos (sites auxquels il est affecté), ou tous (changement de charte, de dessins, d'animations).
  */
 export async function sitesConcernes(cible: Cible): Promise<{ id: string; nom: string }[]> {
   const supabase = await createClient();
@@ -61,7 +61,8 @@ export async function sitesConcernes(cible: Cible): Promise<{ id: string; nom: s
       cible.tous ||
       (cible.specialite && (d.theme.specialite === cible.specialite || (d.theme as { specialiteSecondaire?: string }).specialiteSecondaire === cible.specialite)) ||
       (cible.modele && d.theme.modele === cible.modele) ||
-      (cible.marque && d.theme.logo?.marque === cible.marque),
+      (cible.marque && d.theme.logo?.marque === cible.marque) ||
+      (cible.jeuPhotos && d.theme.jeuPhotos === cible.jeuPhotos),
     )
     .map(({ id, d }) => ({ id, nom: d.cabinet.nom || d.praticiens[0]?.nom || id }));
 }

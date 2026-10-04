@@ -7,6 +7,7 @@ const cibleValide = (c: Cible): Cible => ({
   specialite: typeof c.specialite === 'string' && /^[a-z0-9-]{2,40}$/.test(c.specialite) ? c.specialite : undefined,
   modele: typeof c.modele === 'string' && /^[a-z0-9-]{2,40}$/.test(c.modele) ? c.modele : undefined,
   marque: typeof c.marque === 'string' && /^[a-z0-9-]{3,40}$/.test(c.marque) ? c.marque : undefined,
+  jeuPhotos: typeof c.jeuPhotos === 'string' && /^[0-9a-f-]{36}$/.test(c.jeuPhotos) ? c.jeuPhotos : undefined,
   tous: c.tous === true,
 });
 
@@ -21,7 +22,7 @@ export async function compterConcernes(cible: Cible) {
 export async function propager(cible: Cible) {
   await exigerAdmin();
   const c = cibleValide(cible);
-  if (!c.specialite && !c.modele && !c.marque && !c.tous) return { ok: false, message: 'Cible invalide.' };
+  if (!c.specialite && !c.modele && !c.marque && !c.jeuPhotos && !c.tous) return { ok: false, message: 'Cible invalide.' };
   const sites = await sitesConcernes(c);
   return declencherPublications(sites.map((s) => s.id));
 }

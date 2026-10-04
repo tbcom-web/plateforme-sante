@@ -107,6 +107,12 @@ export type SiteDraft = {
     /** Logo existant du cabinet (fichier envoyé) : remplace la marque générée ; complet = contient déjà le nom */
     logoPerso: { url: string; complet: boolean };
     animation: boolean;
+    /**
+     * Jeu de photos affecté (table jeux_photos, voir jeux-photos.ts) : tiré au hasard à la création du site et à
+     * chaque changement de spécialité principale, ou jeu exclusif posé par l'admin ; '' = photos intégrées.
+     * Jamais choisi par le praticien (contrôlé côté serveur et en base).
+     */
+    jeuPhotos: string;
   };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
@@ -216,7 +222,7 @@ export const draftVide = (): SiteDraft => ({
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
-  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'illustrations', logo: { marque: 'empreinte', disposition: 'horizontale' }, logoPerso: { url: '', complet: true }, animation: true },
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'illustrations', logo: { marque: 'empreinte', disposition: 'horizontale' }, logoPerso: { url: '', complet: true }, animation: true, jeuPhotos: '' },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],
@@ -238,7 +244,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       domicile: { ...vide.domicile, ...d.domicile },
       message: { ...vide.message, ...d.message },
       // Brouillon enregistré sans style visuel : il garde l'ancien défaut (mélange), seul un nouveau site part en illustrations.
-      theme: { ...vide.theme, modeVisuel: 'mixte', specialite: specialiteDuProfil(d.profil), ...d.theme },
+      theme: { ...vide.theme, modeVisuel: 'mixte', specialite: specialiteDuProfil(d.profil), ...d.theme, jeuPhotos: typeof d.theme?.jeuPhotos === 'string' ? d.theme.jeuPhotos : '' },
       flux: { ...vide.flux, ...d.flux, themes: Array.isArray(d.flux?.themes) ? d.flux.themes : [] },
       photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,

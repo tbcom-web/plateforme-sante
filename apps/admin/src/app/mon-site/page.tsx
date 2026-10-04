@@ -7,6 +7,7 @@ import { getCatalogue, getMonSite, getSiteParId } from '@/lib/sites';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getMarquesImportees } from '@/lib/marques';
 import { getRole } from '@/lib/admin';
+import { lireJeuPhotos } from '@/lib/jeux-photos';
 
 export const metadata = { title: 'Mon site' };
 
@@ -26,6 +27,8 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
     getMarquesImportees(),
   ]);
   if (!site) notFound();
+  // Jeu de photos affecté (aperçu seulement : le praticien ne le choisit pas)
+  const jeuPhotos = site.draft.theme.jeuPhotos ? await lireJeuPhotos(site.draft.theme.jeuPhotos) : null;
 
   return (
     <Shell email={user.email ?? ''}>
@@ -40,7 +43,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
           </span>
         </div>
       )}
-      <Editeur siteId={site.id} initial={site.draft} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} />
+      <Editeur siteId={site.id} initial={site.draft} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
     </Shell>
   );
 }
