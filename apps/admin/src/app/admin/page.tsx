@@ -104,7 +104,10 @@ export default async function AdminSites() {
                     {reste.length === 0 ? <span className="text-teal-800">Complet</span> : (
                       <span className="text-amber-800" title={reste.join(', ')}>{reste.length} manque(s)</span>
                     )}
-                    <a href={`/edition/${s.id}`} className="mt-1 block text-xs font-semibold text-teal-800 underline-offset-4 hover:underline">Édition visuelle</a>
+                    <span className="mt-1 flex gap-3 text-xs font-semibold">
+                      <a href={`/mon-site?site=${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Formulaire</a>
+                      <a href={`/edition/${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Édition visuelle</a>
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-neutral-600">
                     {date(s.published_at)}

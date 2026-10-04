@@ -13,6 +13,15 @@ export type MonSite = {
 };
 
 /** Site du praticien connecté (un seul par compte pour le MVP), ou un brouillon vide. */
+/** Site d'un client, pour l'admin (RLS : seul un admin lit les sites des autres). */
+export async function getSiteParId(id: string): Promise<MonSite | null> {
+  if (!/^[0-9a-f-]{36}$/.test(id)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from('sites').select('id, statut, domaine, config, updated_at').eq('id', id).maybeSingle();
+  if (!data) return null;
+  return { id: data.id, statut: data.statut, domaine: data.domaine, updatedAt: data.updated_at, draft: normaliserDraft(data.config) };
+}
+
 export async function getMonSite(): Promise<MonSite> {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();

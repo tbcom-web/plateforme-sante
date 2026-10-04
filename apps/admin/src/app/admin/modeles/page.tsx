@@ -31,6 +31,7 @@ export default async function Modeles() {
               <span className="block font-semibold">{m.nom}</span>
               <span className="block text-neutral-600">{m.description}</span>
               <code className="mt-2 block text-xs text-neutral-400">{m.id} · v{m.version}</code>
+              <a href={`/admin/modeles/${m.id}`} className="mt-2 inline-block rounded-lg bg-teal-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-900">Modifier</a>
               <div className="mt-3"><Propagation cible={{ modele: m.id }} libelle="ce modèle" /></div>
             </li>
           ))}
@@ -54,6 +55,7 @@ export default async function Modeles() {
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${l.actif ? 'bg-teal-100 text-teal-900' : 'bg-neutral-100 text-neutral-700'}`}>
                     {l.actif ? 'Actif' : 'Inactif'}
                   </span>
+                  <a href={`/admin/modeles/${l.id}`} className="rounded-lg bg-teal-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-900">Modifier</a>
                   <ActionsModele id={l.id} actif={l.actif} />
                 </span>
                 {l.actif && <div className="w-full"><Propagation cible={{ modele: l.id }} libelle="ce modèle" /></div>}

@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { validerManifeste } from '@plateforme/core';
+import { MODELES_INTEGRES, validerManifeste } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
 
@@ -50,4 +50,39 @@ export async function supprimerModele(id: string) {
   const supabase = await createClient();
   await supabase.from('modeles').delete().eq('id', id);
   revalidatePath('/admin/modeles');
+}
+
+/**
+ * Enregistre une fiche modifiée dans l'éditeur. La version est incrémentée automatiquement.
+ * nouvelId : enregistre une copie sous un autre identifiant (duplication).
+ */
+export async function enregistrerModele(brut: unknown, nouvelId?: string): Promise<ResultatImport> {
+  await exigerAdmin();
+  const fiche = { ...(brut as Record<string, unknown>) };
+  if (nouvelId) fiche.id = nouvelId;
+  const supabase = await createClient();
+  const { data: existant } = await supabase.from('modeles').select('version, actif').eq('id', String(fiche.id ?? '')).maybeSingle();
+  const integre = MODELES_INTEGRES.find((m) => m.id === fiche.id);
+  // Copie sous un nouvel identifiant : version 1 ; sinon, version suivante (base ou modèle intégré).
+  fiche.version = nouvelId && !existant ? 1 : Math.max(Number(fiche.version) || 1, existant?.version ?? 0, integre?.version ?? 0) + 1;
+  const { erreurs, modele } = validerManifeste(fiche);
+  if (!modele) return { ok: false, message: 'La fiche contient des erreurs.', erreurs };
+
+  const { error } = await supabase.from('modeles').upsert({
+    id: modele.id,
+    nom: modele.nom,
+    manifeste: modele,
+    version: modele.version,
+    actif: existant?.actif ?? false,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { ok: false, message: 'Enregistrement impossible. La migration 0010 a-t-elle été exécutée ?' };
+  revalidatePath('/admin/modeles');
+  revalidatePath(`/admin/modeles/${modele.id}`);
+  return {
+    ok: true,
+    message: existant?.actif
+      ? `Version ${modele.version} enregistrée (active). Appliquez-la aux sites avec le bouton ci-dessus.`
+      : `Version ${modele.version} enregistrée (inactive). Activez-la depuis la liste des modèles.`,
+  };
 }
