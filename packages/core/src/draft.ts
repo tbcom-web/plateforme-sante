@@ -99,6 +99,8 @@ export type SiteDraft = {
     modeVisuel: ModeVisuel;
     /** Logo : marque de l'univers métier et disposition (voir logos.ts) */
     logo: { marque: string; disposition: 'horizontale' | 'empilee' | 'monogramme' };
+    /** Logo existant du cabinet (fichier envoyé) : remplace la marque générée ; complet = contient déjà le nom */
+    logoPerso: { url: string; complet: boolean };
     animation: boolean;
   };
   /** Réception des articles du flux de contenus */
@@ -202,7 +204,7 @@ export const draftVide = (): SiteDraft => ({
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
-  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'mixte', logo: { marque: 'empreinte', disposition: 'horizontale' }, animation: true },
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'mixte', logo: { marque: 'empreinte', disposition: 'horizontale' }, logoPerso: { url: '', complet: true }, animation: true },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],

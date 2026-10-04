@@ -439,7 +439,24 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
               />
               <fieldset>
                 <legend className="font-medium">Logo</legend>
-                <p className="mt-1 text-xs text-neutral-500">Marques dessinées selon la charte, rendues avec le style du modèle et vos couleurs.</p>
+                <div className="mt-3 grid gap-2 rounded-xl border border-neutral-200 p-3">
+                  <Photo
+                    siteId={id}
+                    type="logo"
+                    largeurMax={800}
+                    label="J’ai déjà un logo (PNG, JPG ou WebP ; fond transparent conseillé)"
+                    valeur={d.theme.logoPerso.url}
+                    onChange={(u) => maj({ theme: { ...d.theme, logoPerso: { ...d.theme.logoPerso, url: u } } })}
+                  />
+                  {d.theme.logoPerso.url && (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="size-4 accent-teal-800" checked={d.theme.logoPerso.complet} onChange={(e) => maj({ theme: { ...d.theme, logoPerso: { ...d.theme.logoPerso, complet: e.target.checked } } })} />
+                      Mon logo contient déjà le nom du cabinet (sinon, le nom s’affiche à côté)
+                    </label>
+                  )}
+                  {d.theme.logoPerso.url && <p className="text-xs text-neutral-500">Votre logo remplace la marque ci-dessous ; celle-ci reste utilisée pour l’icône de l’onglet du navigateur.</p>}
+                </div>
+                <p className="mt-3 text-xs text-neutral-500">{d.theme.logoPerso.url ? 'Marque pour l’icône de l’onglet' : 'Ou choisissez une marque'}, dessinée selon la charte et rendue avec le style du modèle et vos couleurs.</p>
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {[...marquesLogo('podologie'), ...marquesImportees].map((m) => (
                     <button

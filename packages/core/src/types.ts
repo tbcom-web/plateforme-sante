@@ -74,6 +74,8 @@ export type SiteConfig = {
     gamme?: string;
     /** Logo : marque et disposition (logos.ts, validerChoixLogo) ; facultatif, valeur par défaut sinon */
     logo?: import('./logos').ChoixLogo;
+    /** Logo existant du cabinet, à la place de la marque générée (complet = le fichier contient le nom) */
+    logoPerso?: { url: string; complet: boolean };
     /** Style visuel : 'illustrations' | 'photos' | 'mixte' (par défaut) */
     modeVisuel?: import('./draft').ModeVisuel;
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
@@ -103,7 +105,7 @@ export type SiteConfig = {
   message: string;
   communes: string[];
   /** URLs des photos ; vide = photo d'illustration par défaut */
-  photos: { accueil: string; panorama: string; cabinet: string[] };
+  photos: { accueil: string; panorama: string; cabinet: string[]; /** Photos du praticien par soin (slug → URL), facultatif */ soins?: Record<string, string> };
   /** Marque de logo importée par l'admin, quand le praticien l'a choisie (nettoyée, voir marques-importees.ts) */
   marqueImportee?: import('./marques-importees').MarqueImportee;
   /** Textes personnalisés par le praticien (clés de personnalisation.ts) ; absents = texte standard */

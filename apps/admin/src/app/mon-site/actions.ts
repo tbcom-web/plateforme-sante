@@ -83,6 +83,7 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
       // Marque dessinée (validée) ou marque importée active.
       logo: marquesImportees.includes(d.theme.logo?.marque) ? { marque: d.theme.logo.marque, disposition: validerChoixLogo(d.theme.logo).disposition } : validerChoixLogo(d.theme.logo),
       modeVisuel: parmi(d.theme.modeVisuel, ['mixte', 'photos', 'illustrations'] as const, 'mixte'),
+      logoPerso: { url: photo(d.theme.logoPerso?.url), complet: d.theme.logoPerso?.complet !== false },
       animation: Boolean(d.theme.animation),
     },
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },

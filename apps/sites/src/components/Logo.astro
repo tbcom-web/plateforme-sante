@@ -47,17 +47,21 @@ const svg = importee
   graisse: t.graisse,
 });
 const href = p.href === undefined ? '/' : p.href;
+// Logo existant du cabinet (fichier envoyé par le praticien) : prioritaire, sauf démonstration d'une marque précise.
+const perso = !p.choix ? site.theme.logoPerso : undefined;
 const Element = href ? 'a' : 'span';
 const style = `--logo-taille:${taille}px;--logo-graisse:${t.graisse};--logo-nom:${choix.disposition === 'empilee' && !t.serif ? LOGO.nom.tailleEmpilee : t.tailleNom}`;
 ---
 <Element
-  class:list={['logo', `logo--${choix.disposition}`, `logo--${t.marque}`, { 'logo--clair': p.clair, 'logo--serif': t.serif }]}
+  class:list={['logo', perso ? 'logo--perso' : [`logo--${choix.disposition}`, `logo--${t.marque}`], { 'logo--clair': p.clair, 'logo--serif': t.serif }]}
   href={href ?? undefined}
   aria-label={href ? `Accueil — ${titreCabinet}` : undefined}
   style={style}
 >
-  <span class="logo__marque" set:html={svg} />
-  {choix.disposition !== 'monogramme' && (
+  {perso
+    ? <img class="logo__image" src={perso.url} alt={perso.complet ? titreCabinet : ''} height="48" decoding="async" />
+    : <span class="logo__marque" set:html={svg} />}
+  {(perso ? !perso.complet : choix.disposition !== 'monogramme') && (
     <span class="logo__texte">
       <strong>{nom}</strong>
       <small>{ligne}</small>
@@ -70,6 +74,10 @@ const style = `--logo-taille:${taille}px;--logo-graisse:${t.graisse};--logo-nom:
   .logo:hover { color: var(--encre); }
   .logo__marque { display: block; flex: none; width: var(--logo-taille); height: var(--logo-taille); }
   .logo__marque svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  /* Logo existant du cabinet : hauteur bornée, proportions conservées ; sur fond sombre, posé sur une pastille claire */
+  .logo__image { display: block; flex: none; width: auto; height: var(--logo-hauteur-perso, 44px); max-width: min(240px, 52vw); object-fit: contain; }
+  .pied .logo__image { --logo-hauteur-perso: 56px; }
+  :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo).logo--perso .logo__image { padding: 6px 10px; border-radius: var(--rayon); background: var(--blanc); box-sizing: content-box; }
   .logo__texte { display: grid; gap: 3px; min-width: 0; }
   .logo strong { font-family: var(--police-titres); font-weight: var(--logo-graisse); font-size: var(--logo-nom); letter-spacing: -0.02em; line-height: 1.05; }
   .logo--serif strong { letter-spacing: -0.01em; }
