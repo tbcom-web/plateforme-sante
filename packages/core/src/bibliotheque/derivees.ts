@@ -1,6 +1,7 @@
 // Formes DÉRIVÉES côté sites, à partir des formes ÉcranZen (formes.ts, généré, intouché). Le studio ÉcranZen et ses atomes ne sont pas
 // modifiés : chaque dérivée est une retouche documentée, validée par Paul, déclarée au catalogue comme déclinaison propre aux sites.
 import { FORMES, type FormeEcranZen } from './formes';
+import { FORMES_HALLUX_GROS_PLAN } from './hallux-gros-plan';
 
 /** Remplace un fragment exact du corps (erreur si le fragment a changé dans formes.ts : la retouche est à revoir) */
 function remplacer(corps: string, avant: string, apres: string): string {
@@ -59,4 +60,6 @@ function halluxIncarneSites(): FormeEcranZen {
 
 export const FORMES_DERIVEES: Record<string, FormeEcranZen> = {
   'hallux-dorsal-incarne-sites': halluxIncarneSites(),
+  // Gros plan de l'hallux, normal et incarné, dessiné de zéro pour les sites (2026-10-05, brouillon) : hallux-gros-plan.ts
+  ...FORMES_HALLUX_GROS_PLAN,
 };

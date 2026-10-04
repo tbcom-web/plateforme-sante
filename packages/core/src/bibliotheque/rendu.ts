@@ -13,7 +13,7 @@ import type { Registre } from '../dessins';
 import { FORMES as FORMES_EZ, JETONS_FORMES } from './formes';
 import { FORMES_DERIVEES } from './derivees';
 /** Jetons propres aux formes dérivées (absents des formes ÉcranZen générées) */
-const JETONS_DERIVES = ['inflammation'] as const;
+const JETONS_DERIVES = ['inflammation', 'rougeur'] as const;
 
 /** Formes ÉcranZen (générées) et formes dérivées côté sites (derivees.ts) */
 const FORMES = { ...FORMES_EZ, ...FORMES_DERIVEES };
@@ -49,6 +49,9 @@ export const CORRESPONDANCE_JETONS: Record<string, readonly [string, string]> = 
   tendon: ['var(--tendon)', m(AC, 22, FD)],
   // Repli enflammé (formes dérivées côté sites) : un peu plus sombre que la peau, localisé ; accent léger en monochrome
   inflammation: [m('var(--peau-ombre)', 88, P(5)), m(AC, 24, FD)],
+  // Rougeur fondue du repli de l'ongle incarné (hallux-gros-plan.ts, dégradé radial dont l'opacité décroît jusqu'à 0) : au centre un
+  // ton plus sombre et plus chaud que la peau, jamais un rouge vif ; en monochrome, l'accent mêlé au fond (faible intensité)
+  rougeur: [m('var(--peau-ombre)', 62, P(5)), m(AC, 62, FD)],
   // Objets de la géométrie (semelle POD-AT-0004/0005, sandale, chaussure TRV-AT-0009) : palette de données
   chaussure: [m(TR, 62, FD), m(TR, 12, FD)],
   'semelle-ardoise': [m(EN, 72, BL), m(TR, 16, FD)],

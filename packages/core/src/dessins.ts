@@ -21,6 +21,7 @@ import { TRAIT, TRAME, NEUTRES, PLAN, POINTILLE, POLICE_MONO, TYPO, CYCLES, tran
 import { pressionPas, PHASE_FIXE } from './pas';
 import { poseCoureur, reculParCycle, APPUI } from './foulee';
 import { svgForme } from './bibliotheque/rendu';
+import { HALLUX_GROS_PLAN, FLECHE_INCARNE } from './bibliotheque/hallux-gros-plan';
 import type { Animation } from './packs';
 
 /** Registre graphique d'un dessin : relevé de podoscope (données) ou schéma pédagogique (trait seul) */
@@ -287,6 +288,24 @@ const medaillonHallux = (cx: number, cy: number, r: number, etat: 'repos' | 'inc
   const l = (r * MED.vue) / MED.rayon;
   return element(etat === 'incarne' ? 'hallux-dorsal-incarne-sites' : 'hallux-dorsal', cx - l / 2, cy - l / 2, l, MED.vue, couleur);
 };
+/**
+ * Gros plan de l'hallux (bibliotheque/hallux-gros-plan.ts, normal ou incarné) dans une fenêtre aux coins arrondis de 112 × 158 posée
+ * en (x, y) : l'hallux occupe l'essentiel du cadre, 2e et 3e orteils esquissés au bord, l'avant-pied sort du cadre (bord découpé par
+ * la fenêtre, jamais un orteil isolé « coupé »). `id` : préfixe unique des identifiants internes (dégradé, découpes).
+ */
+function grosPlanHallux(etat: 'repos' | 'incarne', x: number, y: number, id: string, couleur = false): string {
+  const { largeur: l, hauteur: h, echelle } = HALLUX_GROS_PLAN;
+  const cle = etat === 'incarne' ? 'hallux-gros-plan-incarne' : 'hallux-gros-plan';
+  const svg = svgForme(cle, { registre: couleur ? 'pedagogique' : 'releve', echelleTrait: echelle, id }).replace('<svg ', `<svg x="${x}" y="${y}" width="${l}" height="${h}" stroke="none" `);
+  return `<clipPath id="${id}-fenetre"><rect x="${x}" y="${y}" width="${l}" height="${h}" rx="6"></rect></clipPath><g clip-path="url(#${id}-fenetre)">${svg}</g><rect class="cadre" x="${x}" y="${y}" width="${l}" height="${h}" rx="6"></rect>`;
+}
+/** Flèche fine « le bord de la lame appuie sur la peau » sur le gros plan incarné posé en (x, y) (registre pédagogique) */
+function flecheIncarne(x: number, y: number): string {
+  const [[ax, ay], [bx, by]] = [FLECHE_INCARNE.de, FLECHE_INCARNE.vers].map(([u, v]) => [x + u, y + v]);
+  const a = Math.atan2(by - ay, bx - ax), t = 4, o = 0.55;
+  const p = (k: number) => `${r1(bx - t * Math.cos(a + k * o))} ${r1(by - t * Math.sin(a + k * o))}`;
+  return `<path class="fleche" d="M${r1(ax)} ${r1(ay)} L${r1(bx - 2.4 * Math.cos(a))} ${r1(by - 2.4 * Math.sin(a))}"></path><path class="fleche-pointe" d="M${r1(bx)} ${r1(by)} L${p(1)} L${p(-1)} Z"></path>`;
+}
 /** Point du médaillon de l'hallux (repère de l'atome 512) → repère du dessin */
 const surMedaillon = (cx: number, cy: number, r: number, X: number, Y: number): P => [cx + ((X - MED.centre) * r) / MED.rayon, cy + ((Y - MED.centre) * r) / MED.rayon];
 
@@ -524,18 +543,18 @@ function corps(nom: NomDessin, c: Contexte): string {
     }
 
     case 'ongle': {
-      // Ongle incarné : l'hallux et ses voisins vus de dessus (POD-AT-0009), normal puis incarné — repli latéral épaissi qui couvre
-      // le bord de la lame, spicule relié à la lame ; aucune couleur sur la peau.
-      const r = 52, g = { x: 62, y: 100 }, d = { x: 178, y: 100 };
-      const [sx, sy] = surMedaillon(d.x, d.y, r, 284, 146);
+      // Ongle incarné (dessin refait le 2026-10-05, brouillon) : gros plan de l'hallux du pied droit vu de dessus, normal puis incarné,
+      // dans deux fenêtres côte à côte (bibliotheque/hallux-gros-plan.ts). Incarné : tout le bord latéral (côté du 2e orteil) bombe en
+      // courbe douce, la peau gonflée recouvre le bord de la lame (coin caché), rougeur fondue localisée sur le repli ; en monochrome,
+      // l'accent du cabinet, fondu. Pédagogique : une flèche fine, du bord de la lame vers la peau.
       const couleur = variante === 'ongle-couleur';
-      const gauche = variante === 'ongle-coupe' ? medaillonHallux(g.x, g.y, r, 'incarne') : medaillonHallux(g.x, g.y, r, 'repos', couleur);
-      const droite = variante === 'ongle-coupe' ? element('ongle-coupe-incarne', d.x - 56, d.y - 56, 112, 354) : medaillonHallux(d.x, d.y, r, 'incarne', couleur);
-      if (variante === 'ongle-coupe') return `<g>${gauche}${droite}${R ? `${mono(g.x, 34, 'INCARNÉ', 'mono--chaud', 'middle')}${mono(d.x, 34, 'COUPE', '', 'middle')}` : `${etiquette(g.x, 34, 'Ongle incarné', 'middle')}${etiquette(d.x, 34, 'Vu en coupe', 'middle')}`}</g>`;
-      return `<g>${gauche}${droite}${
+      const g = { x: 4, y: 18 }, d = { x: 124, y: 18 }, cg = g.x + HALLUX_GROS_PLAN.largeur / 2, cd = d.x + HALLUX_GROS_PLAN.largeur / 2;
+      if (variante === 'ongle-coupe')
+        return `<g>${grosPlanHallux('incarne', g.x, g.y, `${loupe}-g`)}${element('ongle-coupe-incarne', d.x, 41, 112, 354)}${R ? `${mono(cg, 12, 'INCARNÉ', 'mono--chaud', 'middle')}${mono(cd, 12, 'COUPE', '', 'middle')}` : `${etiquette(cg, 12, 'Ongle incarné', 'middle')}${etiquette(cd, 12, 'Vu en coupe', 'middle')}`}</g>`;
+      return `<g>${grosPlanHallux('repos', g.x, g.y, `${loupe}-g`, couleur)}${grosPlanHallux('incarne', d.x, d.y, `${loupe}-d`, couleur)}${
         R
-          ? `${mono(g.x, 34, 'NORMAL', '', 'middle')}${mono(d.x, 34, 'INCARNÉ', 'mono--chaud', 'middle')}<line class="trace fin" pathLength="1" x1="${r1(sx)}" y1="${r1(sy)}" x2="222" y2="166"></line>${mono(236, 176, 'repli latéral', '', 'end')}`
-          : `${etiquette(g.x, 34, 'Ongle normal', 'middle')}${etiquette(d.x, 34, 'Ongle incarné', 'middle')}${renvoi(sx, sy, 222, 166)}${etiquette(236, 177, 'Repli latéral épaissi', 'end')}`
+          ? `${mono(cg, 12, 'NORMAL', '', 'middle')}${mono(cd, 12, 'INCARNÉ', 'mono--chaud', 'middle')}`
+          : `${etiquette(cg, 12, 'Ongle normal', 'middle')}${etiquette(cd, 12, 'Ongle incarné', 'middle')}${flecheIncarne(d.x, d.y)}`
       }</g>`;
     }
 

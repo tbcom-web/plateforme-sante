@@ -119,6 +119,10 @@
 .dessin .zone { fill: var(--d-accent); stroke: none; opacity: 0.14; }
 .dessin .zone--forte { opacity: 0.32; }
 .dessin .etiquette { font-family: var(--police-texte, inherit); font-size: var(--taille-donnees-dessin); fill: currentColor; opacity: 0.85; }
+/* Fenêtre d'un gros plan (ongle incarné) et flèche fine de pression (bord de la lame → peau) */
+.dessin .cadre { fill: none; stroke-width: var(--trait-fin); opacity: 0.5; }
+.dessin .fleche { fill: none; stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+.dessin .fleche-pointe { fill: var(--d-accent); stroke: none; }
 .dessin .renvoi { stroke-width: var(--trait-filet); opacity: 0.6; }
 .dessin .ancre { fill: currentColor; stroke: none; opacity: 0.6; }
 .dessin--pedagogique .oscillation, .dessin--pedagogique .polygone, .dessin--pedagogique .force-courbe { stroke: var(--d-accent); }
