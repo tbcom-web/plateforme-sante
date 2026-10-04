@@ -57,16 +57,12 @@ const lacets = [[118, 82], [129, 88], [140, 94], [151, 99], [162, 104]];
   {nom === 'analyse' && (
     <g>
       <g class="grille">{[40, 80, 120, 160].map((y) => <line x1="16" x2="200" y1={y} y2={y} />)}</g>
-      <line class="trace axe" x1="120" y1="4" x2="120" y2="176" pathLength="1" />
-      <line class="trace axe" x1="36" y1="112" x2="204" y2="112" pathLength="1" />
       {[piedGauche(52, 12), piedDroit(126, 12)].map((t) => (
         <g transform={t}>
           <use href={`#${pied}`} class="pointille pointille--leger" />
           <g class="trame">{points('normal').map((n) => <path d={n.d} stroke={n.couleur} stroke-width={n.epaisseur} style={`--k:${n.k}`} />)}</g>
         </g>
       ))}
-      <circle class="trace mire" cx="120" cy="112" r="7" pathLength="1" />
-      <circle class="point" cx="120" cy="112" r="2.4" fill="var(--d-accent)" style="--k:8" />
       <g class="legende">
         <rect x="218" y="30" width="5" height="116" fill={`url(#${degrade})`} />
         {[30, 59, 88, 117, 146].map((y) => <line class="cote" x1="214" x2="217" y1={y} y2={y} />)}
