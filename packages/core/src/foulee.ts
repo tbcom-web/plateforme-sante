@@ -15,7 +15,20 @@
 // bassin suit une parabole. Bras opposés aux jambes (le bras droit avance quand la jambe gauche avance), coude fléchi ≈ 90°.
 
 export type Pt = { x: number; y: number };
-export type Jambe = { hanche: Pt; genou: Pt; cheville: Pt; talon: Pt; orteil: Pt; angleGenou: number; appui: boolean };
+/** Jambe : articulations, `talon` (dessous du talon), `mtp` (semelle sous les têtes métatarsiennes), `orteil` (bout de la chaussure),
+ *  `chaussure` (contour fermé du pied chaussé, à lisser) */
+export type Jambe = { hanche: Pt; genou: Pt; cheville: Pt; talon: Pt; mtp: Pt; orteil: Pt; chaussure: Pt[]; angleGenou: number; appui: boolean };
+
+/**
+ * Pied chaussé (chaussure de course, comme le dessin « sport ») dans le repère de la cheville, en longueurs de jambe : u vers l'avant,
+ * v vers le bas. Talon arrondi, semelle épaisse au talon (drop ≈ 8 mm), semelle sous les têtes, bout arrondi légèrement relevé, col
+ * sous la malléole. Longueur ≈ 0,33 L (≈ 15 % de la taille).
+ */
+const CHAUSSURE: [number, number][] = [
+  [-0.058, -0.022], [-0.088, 0.022], [-0.09, 0.06], [-0.072, 0.086], [-0.045, 0.094], [0.06, 0.09], [0.16, 0.086], [0.218, 0.08],
+  [0.244, 0.064], [0.238, 0.046], [0.2, 0.032], [0.12, 0.014], [0.05, -0.022], [0.012, -0.04],
+];
+const TALON_BAS = 4, MTP = 6, BOUT = 8;
 export type Pose = { bassin: Pt; epaule: Pt; tete: Pt; droite: Jambe; gauche: Jambe; brasDroit: { coude: Pt; main: Pt }; brasGauche: { coude: Pt; main: Pt } };
 
 /** Fin de l'appui (décollement des orteils), en fraction du cycle */
@@ -60,12 +73,13 @@ function jambe(p: number, L: number): Omit<Jambe, 'hanche'> & { hanche: Pt } {
     tangage = q < 0.08 ? attaque * (1 - q / 0.08) : q < 0.2 ? 0 : -52 * ((q - 0.2) / (APPUI - 0.2)) ** 1.3;
   } else tangage = (b / RAD) + chevilleOscillation(q);
   const f = tangage * RAD;
-  // Pied : talon 0,07 L derrière et 0,06 L sous la cheville ; orteils 0,22 L devant (longueur du pied ≈ 0,29 L)
+  // Pied chaussé posé par l'inclinaison f autour de la cheville
   const sur = (u: number, v: number): Pt => ({ x: c.x + Math.cos(f) * u + Math.sin(f) * v, y: c.y - Math.sin(f) * u + Math.cos(f) * v });
-  return { hanche: { x: 0, y: 0 }, genou: g, cheville: c, talon: sur(-0.07 * L, 0.06 * L), orteil: sur(0.22 * L, 0.06 * L), angleGenou: genou(q), appui };
+  const chaussure = CHAUSSURE.map(([u, v]) => sur(u * L, v * L));
+  return { hanche: { x: 0, y: 0 }, genou: g, cheville: c, talon: chaussure[TALON_BAS], mtp: chaussure[MTP], orteil: chaussure[BOUT], chaussure, angleGenou: genou(q), appui };
 }
-/** Point le plus bas d'une jambe (talon ou orteil) sous la hanche */
-const bas = (j: ReturnType<typeof jambe>) => Math.max(j.talon.y, j.orteil.y);
+/** Point le plus bas d'une jambe (tout le contour de la chaussure) sous la hanche */
+const bas = (j: ReturnType<typeof jambe>) => Math.max(...j.chaussure.map((q) => q.y));
 
 /** Hauteur de la hanche au-dessus du sol à la phase p (pied d'appui au sol ; parabole pendant l'envol) */
 export function hauteurBassin(p: number, L: number): number {
@@ -88,7 +102,7 @@ export function poseCoureur(p: number, L: number): Pose {
   const yb = -hauteurBassin(p, L);
   const place = (j: ReturnType<typeof jambe>): Jambe => {
     const t = (q: Pt) => ({ x: q.x, y: q.y + yb });
-    return { hanche: t(j.hanche), genou: t(j.genou), cheville: t(j.cheville), talon: t(j.talon), orteil: t(j.orteil), angleGenou: j.angleGenou, appui: j.appui };
+    return { hanche: t(j.hanche), genou: t(j.genou), cheville: t(j.cheville), talon: t(j.talon), mtp: t(j.mtp), orteil: t(j.orteil), chaussure: j.chaussure.map(t), angleGenou: j.angleGenou, appui: j.appui };
   };
   const droite = place(jambe(p, L)), gauche = place(jambe(p + 0.5, L));
   const bassin = { x: 0, y: yb };

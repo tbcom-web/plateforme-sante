@@ -285,7 +285,7 @@ function element(cle: string, x: number, y: number, l: number, largeurVue = 400,
 const MED = { centre: 256, rayon: 190, vue: 400, origine: 56 };
 const medaillonHallux = (cx: number, cy: number, r: number, etat: 'repos' | 'incarne', couleur = false) => {
   const l = (r * MED.vue) / MED.rayon;
-  return element(etat === 'incarne' ? 'hallux-dorsal-incarne' : 'hallux-dorsal', cx - l / 2, cy - l / 2, l, MED.vue, couleur);
+  return element(etat === 'incarne' ? 'hallux-dorsal-incarne-sites' : 'hallux-dorsal', cx - l / 2, cy - l / 2, l, MED.vue, couleur);
 };
 /** Point du médaillon de l'hallux (repère de l'atome 512) → repère du dessin */
 const surMedaillon = (cx: number, cy: number, r: number, X: number, Y: number): P => [cx + ((X - MED.centre) * r) / MED.rayon, cy + ((Y - MED.centre) * r) / MED.rayon];
@@ -528,22 +528,11 @@ function corps(nom: NomDessin, c: Contexte): string {
       // le bord de la lame, spicule relié à la lame ; aucune couleur sur la peau.
       const r = 52, g = { x: 62, y: 100 }, d = { x: 178, y: 100 };
       const [sx, sy] = surMedaillon(d.x, d.y, r, 284, 146);
-      // Repli latéral épaissi (contre-revue N8) : le contour latéral de l'hallux bombe de ≈ 10 % de la largeur de la lame sur le tiers
-      // distal, et le repli recouvre le bord de la lame et la pointe du spicule (qui prolonge la lame, sans encoche ni pointe visible).
-      const repli = (() => {
-        const xH = (y: number) => (y >= 166 ? 283 : 217 + Math.sqrt(Math.max(0, 66 ** 2 - (166 - y) ** 2)));
-        const bosse = (y: number) => (y <= 124 || y >= 194 ? 0 : 8 * Math.sin(Math.PI * (y < 146 ? (y - 124) / 44 : 0.5 + (y - 146) / 140)) ** 1.4);
-        const ys = Array.from({ length: 15 }, (_, k) => 124 + k * 5);
-        const ext: P[] = ys.map((y) => [xH(y) + bosse(y), y]);
-        const int: P[] = [...ys].reverse().filter((y) => y > 128 && y < 190).map((y) => [253 + 3 * Math.sin((Math.PI * (y - 128)) / 62), y]);
-        const sur = (pts: P[]) => pts.map(([X, Y]) => surMedaillon(d.x, d.y, r, X, Y));
-        return `<path class="peau-seule" d="${courbe(sur([...ext, ...int, ext[0]]))} Z"></path><path class="trait trait--moyen" d="${courbe(sur(ext))}"></path><path class="fin" d="${courbe(sur(int))}"></path>`;
-      })();
       const couleur = variante === 'ongle-couleur';
       const gauche = variante === 'ongle-coupe' ? medaillonHallux(g.x, g.y, r, 'incarne') : medaillonHallux(g.x, g.y, r, 'repos', couleur);
       const droite = variante === 'ongle-coupe' ? element('ongle-coupe-incarne', d.x - 56, d.y - 56, 112, 354) : medaillonHallux(d.x, d.y, r, 'incarne', couleur);
       if (variante === 'ongle-coupe') return `<g>${gauche}${droite}${R ? `${mono(g.x, 34, 'INCARNÉ', 'mono--chaud', 'middle')}${mono(d.x, 34, 'COUPE', '', 'middle')}` : `${etiquette(g.x, 34, 'Ongle incarné', 'middle')}${etiquette(d.x, 34, 'Vu en coupe', 'middle')}`}</g>`;
-      return `<g>${gauche}${droite}${variante === 'ongle-couleur' ? '' : repli}${
+      return `<g>${gauche}${droite}${
         R
           ? `${mono(g.x, 34, 'NORMAL', '', 'middle')}${mono(d.x, 34, 'INCARNÉ', 'mono--chaud', 'middle')}<line class="trace fin" pathLength="1" x1="${r1(sx)}" y1="${r1(sy)}" x2="222" y2="166"></line>${mono(236, 176, 'repli latéral', '', 'end')}`
           : `${etiquette(g.x, 34, 'Ongle normal', 'middle')}${etiquette(d.x, 34, 'Ongle incarné', 'middle')}${renvoi(sx, sy, 222, 166)}${etiquette(236, 177, 'Repli latéral épaissi', 'end')}`
@@ -776,8 +765,8 @@ function coureurFixe(): string {
   const X = (q: Pt): Pt => ({ x: l * 0.5 + q.x, y: sol + q.y });
   const pose = poseCoureur(p, L);
   const [bassin, epaule, tete] = [X(pose.bassin), X(pose.epaule), X(pose.tete)];
-  const d = { g: X(pose.droite.genou), c: X(pose.droite.cheville), t: X(pose.droite.talon), o: X(pose.droite.orteil) };
-  const g = { g: X(pose.gauche.genou), c: X(pose.gauche.cheville), t: X(pose.gauche.talon), o: X(pose.gauche.orteil) };
+  const d = { g: X(pose.droite.genou), c: X(pose.droite.cheville), t: X(pose.droite.talon), o: X(pose.droite.orteil), ch: pose.droite.chaussure.map(X) };
+  const g = { g: X(pose.gauche.genou), c: X(pose.gauche.cheville), t: X(pose.gauche.talon), o: X(pose.gauche.orteil), ch: pose.gauche.chaussure.map(X) };
   const bd = { coude: X(pose.brasDroit.coude), main: X(pose.brasDroit.main) }, bg = { coude: X(pose.brasGauche.coude), main: X(pose.brasGauche.main) };
   const COULEURS = { cheville: PRESSION[2], genou: PRESSION[4], orteil: PRESSION[1] };
   const trait = (a: number) => transparence(NEUTRES.blanc, a);
@@ -789,8 +778,8 @@ function coureurFixe(): string {
     const dd = `M${q(a, ra, 1)} L${q(b, rb, 1)} A${r1(rb)} ${r1(rb)} 0 0 0 ${q(b, rb, -1)} L${q(a, ra, -1)} A${r1(ra)} ${r1(ra)} 0 0 0 ${q(a, ra, 1)} Z`;
     return `<path d="${dd}" fill="${c}" fill-opacity="${opacite}" stroke="${c}" stroke-width="${TRAIT.fin}" stroke-opacity="${Math.min(1, opacite * 4)}"></path>`;
   };
-  /** Pied : triangle cheville → talon → orteils (chaussure de course) */
-  const pied = (j: typeof d, c: string, opacite: number) => `<path d="M${r1(j.c.x)} ${r1(j.c.y)} L${r1(j.t.x)} ${r1(j.t.y)} L${r1(j.o.x)} ${r1(j.o.y)} Z" fill="${c}" fill-opacity="${opacite}" stroke="${c}" stroke-width="${TRAIT.fin}" stroke-linejoin="round" stroke-opacity="${Math.min(1, opacite * 4)}"></path>`;
+  /** Pied chaussé (foulee.ts) : talon et bout arrondis, semelle épaisse */
+  const pied = (j: typeof d, c: string, opacite: number) => `<path d="${lisser(j.ch.map((q) => [r1(q.x), r1(q.y)] as P))}" fill="${c}" fill-opacity="${opacite}" stroke="${c}" stroke-width="${TRAIT.fin}" stroke-linejoin="round" stroke-opacity="${Math.min(1, opacite * 4)}"></path>`;
   // Marqueur réfléchissant : point plein et halo (le halo lumineux du canvas)
   const marq = (m: Pt, r: number, c: string = NEUTRES.blanc) => `<circle cx="${r1(m.x)}" cy="${r1(m.y)}" r="${r1(r * 2.2)}" fill="${c}" fill-opacity="0.18"></circle><circle cx="${r1(m.x)}" cy="${r1(m.y)}" r="${r}" fill="${c}"></circle>`;
   const pale = trait(0.33);

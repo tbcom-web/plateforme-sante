@@ -158,7 +158,7 @@ const anatomie = [];
   if (!dans(geo.APPUI, [0.35, 0.4])) anatomie.push(`coureur : appui ${geo.APPUI} du cycle (attendu 0,35–0,40)`);
   const q = geo.poseCoureur(0, 100);
   if (!(q.brasGauche.main.x > q.brasDroit.main.x)) anatomie.push('coureur : bras du même côté que la jambe en avant');
-  if (Math.abs(Math.max(q.droite.talon.y, q.droite.orteil.y)) > 0.5) anatomie.push('coureur : le pied d’appui ne touche pas le sol au contact');
+  if (Math.abs(Math.max(...q.droite.chaussure.map((r) => r.y))) > 0.5) anatomie.push('coureur : le pied d’appui ne touche pas le sol au contact');
   // Empreinte entièrement dans le contour du pied réel (contre-revue N3)
   const dansPied = ([x, y]) => geo.dansPolygone(geo.PLANTE, x, y) || geo.CONTOUR_PIED.polygonesOrteils.some((o) => geo.dansPolygone(o, x, y));
   const hors = geo.EMPREINTE.polygone.filter((q) => !dansPied(q));
@@ -167,7 +167,7 @@ const anatomie = [];
   let saut = 0, sous = 0, prec = null;
   for (let p = 0; p < 1; p += 0.002) {
     const q = geo.poseCoureur(p, 100);
-    sous = Math.max(sous, q.droite.talon.y, q.droite.orteil.y, q.gauche.talon.y, q.gauche.orteil.y);
+    sous = Math.max(sous, ...q.droite.chaussure.map((r) => r.y), ...q.gauche.chaussure.map((r) => r.y));
     if (prec) saut = Math.max(saut, Math.hypot(q.droite.orteil.x - prec.x, q.droite.orteil.y - prec.y));
     prec = q.droite.orteil;
   }

@@ -20,6 +20,10 @@ export interface DeclinaisonBibliotheque {
   /** Statut propre à la déclinaison s'il diffère de l'élément (état proposé après la validation de l'atome) */
   statut?: StatutBibliotheque;
   version?: string;
+  /** Déclinaison dérivée côté sites (bibliotheque/derivees.ts) : origine et validation */
+  source?: string;
+  valide_par?: string;
+  valide_le?: string;
 }
 
 export interface ElementBibliotheque {
@@ -110,7 +114,8 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     description: 'POD-AT-0001 agrandi ×3 autour de l’hallux : lame, bord libre, lunule, replis et sillons ; état « incarné » (spicule dans le repli épaissi, sans rouge).',
     professions: ['podologie'], zones: ['hallux', 'ongle'], sujets: ['ongle-incarne', 'coupe-ongles', 'orthonyxie'], tags: ['dorsal', 'zoom'],
     vue: 'dorsale', statut: 'valide', valide_par: PAUL, valide_le: '2026-10-04', version: '0.2.0', source: G('ongle.mjs', 'modeleHalluxDorsal(), ETATS_HALLUX_DORSAL — validé pour les sites webpodologue (Paul Tremblot, 2026-10-04 ; statut ÉcranZen inchangé)'), licence: LICENCE, compose_de: ['POD-AT-0001'],
-    declinaisons: [d('dorsale', 'repos', 'hallux-dorsal'), d('dorsale', 'incarne', 'hallux-dorsal-incarne')],
+    declinaisons: [d('dorsale', 'repos', 'hallux-dorsal'), d('dorsale', 'incarne', 'hallux-dorsal-incarne'),
+      d('dorsale', 'incarne-sites', 'hallux-dorsal-incarne-sites', { statut: 'valide', valide_par: PAUL, valide_le: '2026-10-05', source: 'dérivé de POD-AT-0009, retouche du spicule validée par Paul 2026-10-05 (spicule qui prolonge l’arc de la lame, bout arrondi recouvert par le repli latéral épaissi ; bibliotheque/derivees.ts)' })],
     usages_sites: ['Ongle incarné', 'Coupe des ongles (couper droit)', 'Orthonyxie'],
     limites: ['La douleur se montre par un rond creux posé par la page, jamais par du rouge sur la peau'],
   },

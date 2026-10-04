@@ -10,7 +10,11 @@
 // Aucune couleur littérale : uniquement des variables de la charte (packages/core/src/charte.ts) et des color-mix() entre elles.
 import { TRAIT } from '../charte';
 import type { Registre } from '../dessins';
-import { FORMES, JETONS_FORMES } from './formes';
+import { FORMES as FORMES_EZ, JETONS_FORMES } from './formes';
+import { FORMES_DERIVEES } from './derivees';
+
+/** Formes ÉcranZen (générées) et formes dérivées côté sites (derivees.ts) */
+const FORMES = { ...FORMES_EZ, ...FORMES_DERIVEES };
 
 const TR = 'var(--dessin-trait, var(--encre))';
 const FD = 'var(--dessin-fond, var(--blanc))';

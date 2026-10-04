@@ -50,6 +50,14 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       ctx.strokeStyle = couleur; ctx.lineWidth = largeur; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
+    /** Pied chaussé (foulee.ts) : contour lissé par les milieux des côtés, aplat léger et trait fin */
+    function chaussure(pts: Pt[], couleur: string) {
+      const m = (i: number) => { const a = pts[i % pts.length], b = pts[(i + 1) % pts.length]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+      ctx.beginPath(); const d0 = m(0); ctx.moveTo(d0.x, d0.y);
+      for (let i = 1; i <= pts.length; i++) { const p = pts[i % pts.length], q = m(i); ctx.quadraticCurveTo(p.x, p.y, q.x, q.y); }
+      ctx.closePath(); ctx.fillStyle = couleur; ctx.globalAlpha = 0.25; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = couleur; ctx.lineWidth = TRAIT.fin * 1.4; ctx.lineJoin = 'round'; ctx.stroke();
+    }
     function marqueur(p: Pt, r: number, couleur: string = NEUTRES.blanc) {
       ctx.fillStyle = couleur; ctx.shadowColor = couleur; ctx.shadowBlur = r * 2.5;
       ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
@@ -67,7 +75,7 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       const X = (q: Pt): Pt => ({ x: l * 0.5 + q.x, y: sol + q.y });
       const pose = poseCoureur(p, L);
       const [bassin, epaule, tete] = [X(pose.bassin), X(pose.epaule), X(pose.tete)];
-      const jambe = (j: typeof pose.droite) => ({ g: X(j.genou), c: X(j.cheville), t: X(j.talon), o: X(j.orteil) });
+      const jambe = (j: typeof pose.droite) => ({ g: X(j.genou), c: X(j.cheville), t: X(j.talon), o: X(j.orteil), ch: j.chaussure.map(X) });
       const d = jambe(pose.droite), g = jambe(pose.gauche);
       const bd = { coude: X(pose.brasDroit.coude), main: X(pose.brasDroit.main) }, bg = { coude: X(pose.brasGauche.coude), main: X(pose.brasGauche.main) };
 
@@ -105,9 +113,9 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       const pale = trait(0.33);
       const [arriere, avant] = [TRAIT.marque * 0.85, TRAIT.marque];
       segment(epaule, bg.coude, arriere, pale); segment(bg.coude, bg.main, arriere, pale);
-      segment(bassin, g.g, arriere, pale); segment(g.g, g.c, arriere, pale); segment(g.c, g.t, arriere, pale); segment(g.t, g.o, arriere, pale); segment(g.o, g.c, arriere * 0.6, pale);
+      segment(bassin, g.g, arriere, pale); segment(g.g, g.c, arriere, pale); chaussure(g.ch, pale);
       segment(bassin, epaule, avant, accent);
-      segment(bassin, d.g, avant, accent); segment(d.g, d.c, avant, accent); segment(d.c, d.t, avant, accent); segment(d.t, d.o, avant, accent); segment(d.o, d.c, avant * 0.6, accent);
+      segment(bassin, d.g, avant, accent); segment(d.g, d.c, avant, accent); chaussure(d.ch, accent);
       segment(epaule, bd.coude, avant, accent); segment(bd.coude, bd.main, avant, accent);
       ctx.strokeStyle = accent; ctx.lineWidth = arriere; ctx.beginPath(); ctx.arc(tete.x, tete.y, L * 0.085, 0, Math.PI * 2); ctx.stroke();
 
