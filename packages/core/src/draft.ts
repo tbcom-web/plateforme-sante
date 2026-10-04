@@ -95,6 +95,8 @@ export type SiteDraft = {
     specialiteSecondaire: string;
     /** Gamme de couleurs de la charte ; '' = couleur libre (theme.couleur) */
     gamme: string;
+    /** Style visuel : illustrations seules, photos seules ou mélange des deux */
+    modeVisuel: ModeVisuel;
     /** Logo : marque de l'univers métier et disposition (voir logos.ts) */
     logo: { marque: string; disposition: 'horizontale' | 'empilee' | 'monogramme' };
     animation: boolean;
@@ -108,6 +110,14 @@ export type SiteDraft = {
   /** Textes personnalisés dans l'éditeur visuel (surcouche du standard, voir personnalisation.ts) */
   perso: { textes: Record<string, string> };
 };
+
+/** Style visuel du site : illustrations techniques, photos, ou mélange (par défaut). */
+export type ModeVisuel = 'illustrations' | 'photos' | 'mixte';
+export const MODES_VISUELS: { value: ModeVisuel; label: string; description: string }[] = [
+  { value: 'mixte', label: 'Mélange', description: 'Photos et illustrations techniques, chacune là où elle parle le mieux.' },
+  { value: 'photos', label: 'Photos', description: 'Des photos partout : cabinet, soins, ambiance.' },
+  { value: 'illustrations', label: 'Illustrations', description: 'Dessins et animations techniques, sans photo d’illustration.' },
+];
 
 export const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
 
@@ -192,7 +202,7 @@ export const draftVide = (): SiteDraft => ({
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
-  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', logo: { marque: 'empreinte', disposition: 'horizontale' }, animation: true },
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'mixte', logo: { marque: 'empreinte', disposition: 'horizontale' }, animation: true },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],

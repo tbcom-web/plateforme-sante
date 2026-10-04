@@ -74,6 +74,8 @@ export type SiteConfig = {
     gamme?: string;
     /** Logo : marque et disposition (logos.ts, validerChoixLogo) ; facultatif, valeur par défaut sinon */
     logo?: import('./logos').ChoixLogo;
+    /** Style visuel : 'illustrations' | 'photos' | 'mixte' (par défaut) */
+    modeVisuel?: import('./draft').ModeVisuel;
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };

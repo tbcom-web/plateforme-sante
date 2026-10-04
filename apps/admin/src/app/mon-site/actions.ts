@@ -80,6 +80,7 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean): SiteDraft
       specialiteSecondaire: d.theme.specialiteSecondaire !== d.theme.specialite ? parmi(d.theme.specialiteSecondaire, ['', ...SPECIALITES.map((s) => s.value)], '') : '',
       gamme: parmi(d.theme.gamme, ['', ...GAMMES.map((g) => g.id)], ''),
       logo: validerChoixLogo(d.theme.logo),
+      modeVisuel: parmi(d.theme.modeVisuel, ['mixte', 'photos', 'illustrations'] as const, 'mixte'),
       animation: Boolean(d.theme.animation),
     },
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },

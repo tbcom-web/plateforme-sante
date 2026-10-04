@@ -12,6 +12,7 @@ import {
   traitementLogo,
   initiales,
   DISPOSITIONS_LOGO,
+  MODES_VISUELS,
   lieuVide,
   PAYS,
   praticienVide,
@@ -425,6 +426,12 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                   <input type="color" value={d.theme.couleur} disabled={Boolean(d.theme.gamme)} onChange={(e) => maj({ theme: { ...d.theme, gamme: '', couleur: e.target.value } })} className="h-8 w-11 cursor-pointer rounded border border-neutral-300 disabled:opacity-40" />
                 </label>
               </fieldset>
+              <Choix
+                legende="Style visuel du site"
+                options={MODES_VISUELS.map((m) => ({ value: m.value, label: m.label, description: m.description }))}
+                valeur={d.theme.modeVisuel}
+                onChange={(v) => maj({ theme: { ...d.theme, modeVisuel: v as SiteDraft['theme']['modeVisuel'] } })}
+              />
               <fieldset>
                 <legend className="font-medium">Logo</legend>
                 <p className="mt-1 text-xs text-neutral-500">Marques dessinées selon la charte, rendues avec le style du modèle et vos couleurs.</p>

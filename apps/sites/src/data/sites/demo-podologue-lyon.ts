@@ -60,8 +60,9 @@ Au cabinet, je prends le temps d’écouter, d’examiner et d’expliquer. Chaq
   },
   rdv: { url: 'https://www.doctolib.fr/', plateforme: 'Doctolib' },
   // GAMME=… pour essayer une gamme de couleurs de la charte (sinon couleur libre conseillée par le modèle).
+  // MODE_VISUEL=illustrations|photos|mixte pour essayer le style visuel.
   // MARQUE=… et DISPOSITION=… pour essayer un logo (logos.ts ; sinon logo par défaut).
-  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', ...(process.env.GAMME ? { gamme: process.env.GAMME } : {}), ...(process.env.MARQUE || process.env.DISPOSITION ? { logo: { marque: process.env.MARQUE ?? '', disposition: (process.env.DISPOSITION ?? 'horizontale') as 'horizontale' } } : {}), mise_en_page: 'chaleureux', style_images: 'organique' },
+  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', ...(process.env.GAMME ? { gamme: process.env.GAMME } : {}), ...(process.env.MARQUE || process.env.DISPOSITION ? { logo: { marque: process.env.MARQUE ?? '', disposition: (process.env.DISPOSITION ?? 'horizontale') as 'horizontale' } } : {}), modeVisuel: (process.env.MODE_VISUEL ?? 'mixte') as 'mixte', mise_en_page: 'chaleureux', style_images: 'organique' },
   accroche: {
     titre: 'Prendre soin de vos pieds, à chaque étape de la vie',
     texte:
