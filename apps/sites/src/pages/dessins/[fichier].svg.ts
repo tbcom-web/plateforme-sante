@@ -1,11 +1,12 @@
 // Dessins de la marque en fichiers SVG statiques, générés au build : /dessins/<nom>.svg (registre relevé),
-// /dessins/<nom>-pedagogique.svg et /dessins/empreintes-<appui>.svg. Les pages les référencent par
-// <svg><use href="/dessins/….svg#d"/></svg> (components/dessins/Dessin.astro, Empreintes.astro) : le tracé
+// /dessins/<nom>-pedagogique.svg, /dessins/empreintes-<appui>.svg et /dessins/materiel-<équipement>.svg
+// (et -pedagogique). Les pages les référencent par <svg><use href="/dessins/….svg#d"/></svg>
+// (components/dessins/Dessin.astro, Empreintes.astro, gabarit/Materiel.astro) : le tracé
 // n'est plus recopié dans chaque page (HTML léger, fichier mis en cache d'une page à l'autre), et les couleurs
 // restent celles du site et de la surface, héritées à travers <use> (--dessin-*, --pression-*, accent de la gamme).
 import type { APIRoute, GetStaticPaths } from 'astro';
 import css from '@plateforme/core/dessins.css?raw';
-import { DESSINS_PODOLOGIE, symboleDessin, symboleEmpreintes, type NomDessin } from '@plateforme/core';
+import { DESSINS_PODOLOGIE, EQUIPEMENTS_DESSINES, symboleDessin, symboleEmpreintes, symboleEquipement, type NomDessin } from '@plateforme/core';
 import type { Appui } from '../../components/dessins/trame';
 
 const APPUIS: Appui[] = ['normal', 'creux', 'plat', 'avant', 'talon', 'reparti', 'enfant'];
@@ -39,6 +40,10 @@ export const getStaticPaths: GetStaticPaths = () => [
     { params: { fichier: `${nom}-pedagogique` }, props: { contenu: symboleDessin(nom as NomDessin, { registre: 'pedagogique' }), style: css } },
   ]),
   ...APPUIS.map((a) => ({ params: { fichier: `empreintes-${a}` }, props: { contenu: symboleEmpreintes(a), style: CSS_EMPREINTES } })),
+  ...EQUIPEMENTS_DESSINES.flatMap((id) => [
+    { params: { fichier: `materiel-${id}` }, props: { contenu: symboleEquipement(id), style: css } },
+    { params: { fichier: `materiel-${id}-pedagogique` }, props: { contenu: symboleEquipement(id, { registre: 'pedagogique' }), style: css } },
+  ]),
 ];
 
 export const GET: APIRoute = ({ props }) =>

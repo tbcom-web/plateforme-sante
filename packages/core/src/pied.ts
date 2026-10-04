@@ -432,3 +432,61 @@ export const JAMBE = {
   /** Zones d'appui en bandes sous la plante [x1, x2, niveau] : trace du talon (déjà levé), avant-pied, orteils */
   appuis: [[27, 33, 0.15], [44, 52, 1], [58.5, 66, 0.6]] as [number, number, number][],
 };
+
+// ———————————————————————————————————————————————————— Pied et bas de jambe de profil (vue externe)
+
+/**
+ * Pied et bas de jambe de profil, talon à gauche, autour du squelette articulé (PROFIL.os, même repère :
+ * x 0–123, sol en y = 62, jambe coupée en y = −52). Une seule géométrie, réutilisée par tous les dessins de
+ * profil (talon, semelle, taping, voûtes, senior) : peau (mollet, tendon d'Achille, talon, plante, orteils,
+ * dos du pied, cou-de-pied, tibia), os, malléole externe, aponévrose plantaire. `voute` : hauteur de l'arche
+ * (normale, creuse, plate), qui déforme ensemble les os, la plante et l'aponévrose.
+ */
+export type Voute = 'normale' | 'creuse' | 'plate';
+export const SOL_PROFIL = 62;
+/** Contour de la peau (points relevés autour du squelette) ; `true` = point de la plante sous l'arche */
+const PEAU_PROFIL: [number, number, boolean?][] = [
+  [5, -52], [4, -38], [5.5, -22], [8.5, -6], [9.5, 8], [8, 18], [3.5, 28], [-0.5, 38], [-2, 48], [1, 56], [7, 60.6], [14, 62], // mollet, Achille, talon
+  [26, 62, true], [38, 60.6, true], [50, 58.6, true], [62, 58.4, true], [74, 59.6, true], [86, 61.4, true], // plante sous l'arche
+  [96, 62], [106, 62], [114, 61.8], [120, 60], [123.4, 55], [121.5, 50], [116.5, 46], [110, 42.5], // avant-pied, gros orteil
+  [102, 37], [94, 32], [84, 26], [74, 21], [64, 18], [56, 15.5], [51, 11], [48.5, 0], [47.5, -20], [47, -52], // dos du pied, tibia
+];
+
+export function piedDeProfil(voute: Voute = 'normale') {
+  const k = { normale: 0, creuse: -6, plate: 3.6 }[voute];
+  const creux = { normale: 1, creuse: 3.4, plate: 0.05 }[voute];
+  const bosse = (x: number) => Math.exp(-(((x - 58) / 20) ** 2));
+  // Os : orteils abaissés jusqu'au sol (pulpe en appui), arche relevée ou affaissée selon la voûte
+  const os = (x: number, y: number): P => [x, +(y + (x > 94 ? (x - 94) * 0.24 : 0) + (y < 60 ? k * bosse(x) : 0)).toFixed(2)];
+  const deformer = (d: string) => d.replace(/(-?\d+(?:\.\d+)?)[ ,](-?\d+(?:\.\d+)?)/g, (_, x, y) => os(+x, +y).join(' '));
+  const peau = PEAU_PROFIL.map(([x, y, sous]) => [x, +(sous ? SOL_PROFIL - (SOL_PROFIL - y) * creux : y < 40 ? y + k * bosse(x) : y).toFixed(2)] as P);
+  const n = peau.length;
+  const pt = (i: number) => peau[Math.max(0, Math.min(n - 1, i))];
+  let contour = `M${peau[0][0]} ${peau[0][1]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const [p0, p1, p2, p3] = [pt(i - 1), pt(i), pt(i + 1), pt(i + 2)];
+    contour += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)} ${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)} ${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0]} ${p2[1]}`;
+  }
+  return {
+    voute,
+    sol: SOL_PROFIL,
+    /** Peau : tracé ouvert (coupe de la jambe en haut) et forme fermée pour l'aplat */
+    contour,
+    peau: `${contour} Z`,
+    /** Os (ton 1 = os en arrière-plan) et fûts du tibia et de la fibula jusqu'à la coupe */
+    os: PROFIL.os.map((o) => ({ d: deformer(o.d), ton: o.ton })),
+    futs: 'M27 -52 L27 -14 M41.6 -52 L41.6 -14 M15 -52 L15 -14 M22.5 -52 L22.5 -14',
+    /** Relief de la malléole externe sous la peau */
+    malleole: 'M12.5 26 C12 19 23 18 24.5 24',
+    /** Aponévrose plantaire : de la tubérosité du calcanéum aux têtes métatarsiennes, en trois faisceaux */
+    aponevrose: [[92, 55], [97, 56.6], [102, 58]].map(([x, y]) => deformer(`M9 57 C24 58.4 44 56.6 58 55 C70 53.8 82 ${y - 1.4} ${x} ${y}`)).join(' '),
+    /** Insertion de l'aponévrose sur le calcanéum */
+    insertion: os(10, 56.5),
+    /** Pression illustrative sous la plante, du talon (x ≈ 0) aux orteils (x ≈ 123) */
+    appui: (x: number) => {
+      const g = (c: number, s: number) => Math.exp(-(((x - c) / s) ** 2));
+      const milieu = { normale: 0.28, creuse: 0, plate: 0.62 }[voute];
+      return Math.min(1, 0.95 * g(13, 9) + milieu * g(56, 22) * (x > 30 && x < 84 ? 1 : 0) + 0.9 * g(95, 9) + 0.55 * g(117, 5));
+    },
+  };
+}

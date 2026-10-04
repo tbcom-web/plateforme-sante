@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -81,6 +81,13 @@ const dessins = [
     const svg = core.svgAnimationFixe(a, { registre: r });
     return [...(invalide(svg) ? [`image fixe « ${a} » (${r}) : valeur invalide`] : []), ...(elements(svg) > LIMITE_ELEMENTS ? [`image fixe « ${a} » (${r}) : ${elements(svg)} éléments (> ${LIMITE_ELEMENTS})`] : [])];
   })),
+  ...core.EQUIPEMENTS_DESSINES.flatMap((id) => [
+    ...(core.EQUIPEMENTS.some((e) => e.id === id) ? [] : [`dessin de matériel « ${id} » absent du catalogue EQUIPEMENTS`]),
+    ...core.REGISTRES.flatMap((r) => {
+      const svg = core.svgEquipement(id, { registre: r });
+      return invalide(svg) || elements(svg) < 6 ? [`dessin de matériel « ${id} » (${r}) : vide ou invalide`] : [];
+    }),
+  ]),
   ...core.DESSINS_PODOLOGIE.filter((n) => !core.PHOTOS_DESSINS[n]).map((n) => `dessin « ${n} » sans photo associée (PHOTOS_DESSINS)`),
   ...Object.entries(core.VISUELS_SOINS).filter(([, c]) => !core.DESSINS_PODOLOGIE.includes(c.dessin)).map(([s, c]) => `soin « ${s} » : dessin inconnu « ${c.dessin} »`),
 ];
@@ -94,5 +101,5 @@ for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins]) c
 const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins et ${core.ANIMATIONS.length} images fixes dans ${core.REGISTRES.length} registres.`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel et ${core.ANIMATIONS.length} images fixes dans ${core.REGISTRES.length} registres.`);
 process.exit(total ? 1 : 0);

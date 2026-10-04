@@ -14,7 +14,7 @@
 //
 // svgAnimationFixe : image fixe et fidèle de chaque animation d'accueil, pour les aperçus (fond transparent,
 // l'appelant pose le fond sombre « plan ») ; en registre pédagogique, le schéma calme du même sujet.
-import { CONTOUR, ORTEILS, PLANTE, PLANTE_ENFANT, ORTEILS_ENFANT, TRAJET, SEMELLE, PROFIL, piedCroissance, dansPolygone, lisser, type P } from './pied';
+import { CONTOUR, ORTEILS, PLANTE, PLANTE_ENFANT, ORTEILS_ENFANT, TRAJET, SEMELLE, piedCroissance, piedDeProfil, dansPolygone, lisser, type P, type Voute } from './pied';
 import { trame, pointsTrame, grouperTrame, isolignes, dansPlante, pression, type Appui, type Champ } from './trame';
 import { PRESSION, ARRETS_PRESSION, couleurPression, type NomDessin } from './univers';
 import { TRAIT, TRAME, NEUTRES, PLAN, POINTILLE, POLICE_MONO, TYPO, transparence } from './charte';
@@ -240,14 +240,34 @@ function tangentes(a: { x: number; y: number; r: number }, b: { x: number; y: nu
 const SOL = 150;
 const LACETS = [[118, 82], [129, 88], [140, 94], [151, 99], [162, 104]];
 
-// Profil du pied (pied articulé, épure : peau ouverte, colonne interne du squelette) posé dans le dessin.
-const PF = { s: 1.62, x: 22, y: 52.7 };
-const profil: Affine = [PF.s, 0, 0, PF.s, PF.x, PF.y];
-const [RX, RY, RK] = PROFIL.epure.reduction;
-const osProfil: Affine = [PF.s * RK, 0, 0, PF.s * RK, PF.x + PF.s * RX, PF.y + PF.s * RY];
-const enProfil = (x: number, y: number) => appliquer(profil, x, y);
-/** Plante du pied de profil : talon, voûte (relevée), têtes métatarsiennes, pulpe des orteils */
-const PLANTE_PROFIL = 'M13.5 58.5 C24 58.5 32 57.6 40 55.4 C52 52.4 66 52.6 80 55.6 C90 57.8 104 58.6 116.5 58.5';
+// Pied et bas de jambe de profil (pied.ts : piedDeProfil) posés dans un dessin : aplat de peau, os (au trait,
+// légèrement teintés en registre pédagogique), contour de la peau, malléole, aponévrose et, en registre relevé,
+// bande de pression sous la plante (trame).
+function profilPose(voute: Voute, m: Affine, R: boolean, o: { os?: boolean; aponevrose?: boolean; appuis?: boolean; peau?: string } = {}): string {
+  const p = piedDeProfil(voute);
+  const t = (d: string) => transformer(d, m);
+  const e = Math.abs(m[0]);
+  const os = o.os === false ? '' : `<path class="os${R ? '' : ' os--teinte'}" d="${t(p.os.map((x) => x.d).join(' '))}"></path><path class="os" d="${t(p.futs)}"></path>`;
+  let appuis = '';
+  if (R && o.appuis) {
+    // Deux rangées de points sous la plante, colorées par la pression (talon, bord externe, avant-pied, orteils)
+    const pas = TRAME.pas * 0.8;
+    const pts = [];
+    for (let rang = 0; rang < 2; rang++) {
+      for (let x = 2 + (rang ? pas / 2 : 0); x <= 121; x += pas) {
+        const v = p.appui(x);
+        if (v > 0.1) pts.push({ x: r1(x), y: r1(p.sol + 2.6 + rang * pas * 0.866), v });
+      }
+    }
+    appuis = `<g class="trame">${grouperTrame(pts, pas).map((n) => `<path d="${poserTrame(n.d, m)}" stroke="${n.couleur}" stroke-width="${r1(n.epaisseur * e)}"></path>`).join('')}</g>`;
+  }
+  return `<path class="peau-seule${o.peau ? ` ${o.peau}` : ''}" d="${t(p.peau)}"></path>${os}<path class="trait" d="${t(p.contour)}"></path><path class="fin" d="${t(p.malleole)}"></path>${o.aponevrose ? `<path class="aponevrose" d="${t(p.aponevrose)}"></path>` : ''}${appuis}`;
+}
+/** Sol sous un pied de profil posé par `m` */
+const solProfil = (m: Affine, x1: number, x2: number, decalage = 0) => {
+  const y = r1(appliquer(m, 0, piedDeProfil().sol + decalage)[1]);
+  return `<line class="sol" x1="${x1}" y1="${y}" x2="${x2}" y2="${y}"></line>`;
+};
 
 /** Contexte d'un dessin : identifiants internes et registre */
 type Contexte = { pied: string; sil: string; degrade: string; loupe: string; R: boolean };
@@ -284,18 +304,17 @@ function corps(nom: NomDessin, c: Contexte): string {
             : `<path class="iso" d="${boucles.join(' ')}" style="--k:${k};stroke-opacity:${r1(0.35 + k * 0.15)};stroke-width:${r1(TRAIT.normal / 0.62)}"></path>`,
         )
         .join('');
-      const vue: Affine = [1.12, 0, 0, 1.12, 104, 80];
-      const ep = PROFIL.epure;
+      const vue: Affine = [0.86, 0, 0, 0.86, 128, 92];
       const sur = (x: number, y: number) => appliquer(vue, x, y);
-      // Semelle de profil : dessus qui épouse la plante (cuvette du talon, voûte comblée), dessous à plat
-      const dessus: P[] = [[3.6, 49], [4.6, 55], [9.5, 58.4], [16, 59], [26, 58.4], [38, 55.8], [50, 53.1], [60, 53.1], [72, 55.3], [84, 57.8], [98, 58.9], [110, 59.1]];
-      const semelle = `${courbe(dessus.map(([x, y]) => sur(x, y)))} L${sur(113, 61.6).map(r1).join(' ')} L${sur(9, 61.6).map(r1).join(' ')} C${sur(5, 61.6).map(r1).join(' ')} ${sur(3, 58).map(r1).join(' ')} ${sur(3.6, 49).map(r1).join(' ')} Z`;
-      const sol = r1(sur(0, 61.6)[1] + 1);
-      const reperes: [number, number, string][] = [[9, 61, 'Talonnette'], [54, 61, 'Soutien de voûte'], [94, 61, 'Avant-pied']];
-      return `<g><g transform="${piedDroit(16, 22, 0.62)}"><path class="${R ? 'semelle-bord' : 'trait peau'}" d="${SEMELLE}"></path>${courbes}</g><line class="sol" x1="98" y1="${sol}" x2="236" y2="${sol}"></line><path class="${R ? 'semelle-profil' : 'semelle-profil semelle-profil--pedago'}" d="${semelle}"></path><path class="trait peau" d="${transformer(`${ep.talon} ${ep.dos}`, vue)}"></path><path class="os os--leger" d="${transformer(ep.os.join(' '), [1.12 * RK, 0, 0, 1.12 * RK, 104 + 1.12 * RX, 80 + 1.12 * RY])}"></path><path class="trait" d="${transformer(PLANTE_PROFIL, vue)}"></path>${reperes
+      // Semelle de profil : le dessus épouse la plante (cuvette du talon, voûte comblée), le dessous est à plat
+      const plante = piedDeProfil();
+      const dessus: P[] = [[-4, 49], [-1.6, 57.4], [5, 62.2], [14, 62.4], [26, 62.4], [38, 61], [50, 59], [62, 58.8], [74, 60], [86, 61.8], [98, 62.4], [112, 62.3]];
+      const semelle = `${courbe(dessus.map(([x, y]) => sur(x, y)))} L${sur(115, 67).map(r1).join(' ')} L${sur(2, 67).map(r1).join(' ')} C${sur(-3.4, 67).map(r1).join(' ')} ${sur(-5, 61).map(r1).join(' ')} ${sur(-4, 49).map(r1).join(' ')} Z`;
+      const reperes: [number, number, string][] = [[1, 60, 'Talonnette'], [50, 61, 'Soutien de voûte'], [94, 63, 'Avant-pied']];
+      return `<g><g transform="${piedDroit(16, 22, 0.62)}"><path class="${R ? 'semelle-bord' : 'trait peau'}" d="${SEMELLE}"></path>${courbes}</g>${solProfil(vue, 110, 236, 67 - plante.sol)}${profilPose('normale', vue, R)}<path class="${R ? 'semelle-profil' : 'semelle-profil semelle-profil--pedago'}" d="${semelle}"></path>${reperes
         .map(([x, y, t], k) => {
           const [ax, ay] = sur(x, y);
-          const [lx, ly, ancre] = ([[100, 164, 'start'], [162, 176, 'middle'], [236, 164, 'end']] as const)[k];
+          const [lx, ly, ancre] = ([[112, 166, 'start'], [168, 177, 'middle'], [236, 166, 'end']] as const)[k];
           return `${renvoi(ax, ay, lx, ly - 8)}${R ? mono(lx, ly, t.toLowerCase(), k === 1 ? 'mono--accent' : '', ancre) : etiquette(lx, ly, t, ancre)}`;
         })
         .join('')}${R ? `${mono(16, 14, 'COURBES D’APPUI')}${mono(232, 22, 'semelle thermoformée', 'mono--accent', 'end')}` : ''}</g>`;
@@ -393,26 +412,41 @@ function corps(nom: NomDessin, c: Contexte): string {
     }
 
     case 'talon': {
-      // Douleur au talon : pied de profil (peau, colonne interne du squelette), aponévrose plantaire tendue du
-      // calcanéum aux têtes métatarsiennes, zone d'insertion sur la tubérosité du calcanéum.
-      const ep = PROFIL.epure;
-      const [ix, iy] = enProfil(16, 52.5);
-      const aponevrose = [[85, 49], [90, 51.5], [95, 54]].map(([x, y]) => transformer(`M14 54 C30 57 50 56 64 54.5 C72 53.4 78 ${y - 2} ${x} ${y}`, profil)).join(' ');
-      return `<g><line class="sol" x1="12" y1="${r1(enProfil(0, 58.5)[1] + 1.5)}" x2="232" y2="${r1(enProfil(0, 58.5)[1] + 1.5)}"></line><path class="trait${R ? '' : ' peau'}" d="${transformer(`${ep.talon} ${ep.dos}`, profil)}"></path><path class="trait" d="${transformer(PLANTE_PROFIL, profil)}"></path><path class="os" d="${transformer(ep.os.join(' '), osProfil)}"></path><path class="aponevrose" d="${aponevrose}"></path>${
+      // Douleur au talon : pied et bas de jambe de profil, squelette, aponévrose plantaire tendue de la
+      // tubérosité du calcanéum aux têtes métatarsiennes ; zone d'insertion sur le calcanéum.
+      const m: Affine = [1.28, 0, 0, 1.28, 40, 78];
+      const [ix, iy] = appliquer(m, ...piedDeProfil().insertion);
+      const [ax, ay] = appliquer(m, 56, 56);
+      return `<g>${solProfil(m, 12, 232)}${profilPose('normale', m, R, { aponevrose: true, appuis: true })}${
         R
-          ? `${trameDisque(ix, iy, 13, 3.4)}<line class="trace fin" pathLength="1" x1="${r1(ix + 4)}" y1="${r1(iy + 6)}" x2="70" y2="168"></line>${mono(72, 170, 'insertion calcanéenne')}${mono(232, 22, 'APONÉVROSE PLANTAIRE', '', 'end')}${mono(232, 32, 'mise en tension · appui talon', 'mono--accent', 'end')}`
-          : `<ellipse class="zone zone--forte" cx="${r1(ix)}" cy="${r1(iy)}" rx="11" ry="8"></ellipse>${renvoi(ix - 4, iy - 10, 30, 22)}${etiquette(20, 18, 'Calcanéum')}${renvoi(enProfil(55, 55.6)[0], enProfil(55, 55.6)[1], 112, 172)}${etiquette(116, 175, 'Aponévrose plantaire')}`
+          ? `${trameDisque(ix, iy, 11, 3.2)}<line class="trace fin" pathLength="1" x1="${r1(ix - 6)}" y1="${r1(iy + 6)}" x2="22" y2="170"></line>${mono(24, 178, 'insertion calcanéenne')}${mono(232, 22, 'APONÉVROSE PLANTAIRE', '', 'end')}${mono(232, 32, 'mise en tension · appui talon', 'mono--accent', 'end')}`
+          : `<ellipse class="zone zone--forte" cx="${r1(ix + 2)}" cy="${r1(iy)}" rx="10" ry="6"></ellipse>${renvoi(...appliquer(m, 20, 44), 16, 22)}${etiquette(12, 16, 'Calcanéum')}${renvoi(ax, ay, 150, 174)}${etiquette(154, 177, 'Aponévrose plantaire')}`
       }</g>`;
     }
 
     case 'ongle': {
-      // Ongle incarné : coupe transversale du gros orteil — tablette de l'ongle, lit, phalange, bourrelets
-      // latéraux ; à droite, le bord de l'ongle s'enfonce sous le bourrelet enflammé.
-      const garder = (x: number, y: number) => y > 68 && x > 164;
-      return `<g><path class="trait peau" d="M92 84 C88 79 82 78 76 81 C64 88 60 102 62 116 C66 138 94 152 128 152 C162 152 190 138 194 116 C197 98 194 80 184 72 C176 66 168 70 166 78"></path><path class="os" d="M100 122 C98 108 112 102 128 102 C144 102 158 108 156 122 C154 134 142 140 128 140 C114 140 102 134 100 122 Z"></path><path class="tiret-fin" d="M96 94 C112 84 146 82 162 90"></path><path class="ongle-coupe" d="M90 86 C104 70 150 66 166 78 C169 81 170 86 169 92 C166 87 162 84 158 82 C142 74 110 76 94 90 Z"></path>${
+      // Ongle incarné : le gros orteil vu de dessus, normal puis incarné — le bord de l'ongle s'enfonce dans le
+      // repli latéral, qui gonfle et s'enflamme.
+      const orteil = (x: number, incarne: boolean) => {
+        const peau = incarne
+          ? `M${x} 172 C${x} 130 ${x - 2} 92 ${x + 4} 66 C${x + 10} 40 ${x + 26} 32 ${x + 40} 32 C${x + 56} 32 ${x + 70} 42 ${x + 76} 62 C${x + 82} 82 ${x + 82} 104 ${x + 76} 120 C${x + 74} 140 ${x + 74} 156 ${x + 74} 172`
+          : `M${x} 172 C${x} 130 ${x - 2} 92 ${x + 4} 66 C${x + 10} 40 ${x + 26} 32 ${x + 38} 32 C${x + 52} 32 ${x + 66} 40 ${x + 72} 66 C${x + 78} 92 ${x + 76} 130 ${x + 76} 172`;
+        const ongle = `M${x + 12} 62 C${x + 14} 48 ${x + 24} 44 ${x + 38} 44 C${x + 52} 44 ${x + 62} 48 ${x + 64} 62 L${x + 64} 98 C${x + 64} 108 ${x + 58} 112 ${x + 50} 112 H${x + 26} C${x + 18} 112 ${x + 12} 108 ${x + 12} 98 Z`;
+        const replis = `M${x + 7} 64 C${x + 6} 80 ${x + 7} 98 ${x + 12} 114 M${x + 69} 64 C${x + 70} 80 ${x + 69} 98 ${x + 64} 114`;
+        const lunule = `M${x + 20} 106 C${x + 28} 98 ${x + 48} 98 ${x + 56} 106`;
+        const pli = `M${x + 20} 140 C${x + 30} 146 ${x + 46} 146 ${x + 56} 140`;
+        const inflammation = incarne
+          ? R
+            ? trameDisque(x + 70, 84, 13, 3.6, (px) => px > x + 63)
+            : `<path class="zone zone--forte" d="M${x + 64} 56 C${x + 74} 58 ${x + 80} 72 ${x + 80} 88 C${x + 80} 104 ${x + 74} 114 ${x + 64} 114 C${x + 68} 100 ${x + 68} 72 ${x + 64} 56 Z"></path>`
+          : '';
+        const pointe = incarne ? `<path class="ongle-pointe" d="M${x + 64} 78 L${x + 70} 90 L${x + 64} 92"></path>` : '';
+        return `<path class="trait peau" d="${peau}"></path>${inflammation}<path class="fin" d="${incarne ? `M${x + 7} 64 C${x + 6} 80 ${x + 7} 98 ${x + 12} 114` : replis}"></path><path class="ongle-dessus" d="${ongle}"></path>${pointe}<path class="fin" d="${lunule}"></path><path class="fin" d="${pli}"></path>`;
+      };
+      return `<g>${orteil(22, false)}${orteil(136, true)}${
         R
-          ? `${trameDisque(178, 86, 15, 3.6, garder)}${mono(16, 22, 'COUPE TRANSVERSALE · HALLUX')}<line class="trace fin" pathLength="1" x1="190" y1="98" x2="208" y2="126"></line>${mono(232, 138, 'bord latéral', '', 'end')}${mono(232, 148, 'bourrelet', 'mono--chaud', 'end')}`
-          : `<path class="zone zone--forte" d="M166 78 C168 70 176 66 184 72 C192 80 194 92 186 98 C180 102 172 100 170 92 C170 86 168 82 166 78 Z"></path>${renvoi(128, 74, 128, 40)}${etiquette(128, 34, 'Ongle', 'middle')}${renvoi(186, 76, 210, 46)}${etiquette(210, 40, 'Bourrelet', 'middle')}${renvoi(108, 90, 52, 56)}${etiquette(52, 50, 'Lit de l’ongle', 'middle')}${renvoi(128, 138, 128, 166)}${etiquette(132, 172, 'Phalange')}`
+          ? `${mono(60, 18, 'NORMAL', '', 'middle')}${mono(174, 18, 'INCARNÉ', 'mono--chaud', 'middle')}<line class="trace fin" pathLength="1" x1="214" y1="98" x2="226" y2="128"></line>${mono(232, 140, 'bord latéral', '', 'end')}`
+          : `${etiquette(60, 18, 'Ongle normal', 'middle')}${etiquette(174, 18, 'Ongle incarné', 'middle')}${renvoi(212, 100, 224, 132)}${etiquette(236, 144, 'Repli enflammé', 'end')}`
       }</g>`;
     }
 
@@ -435,38 +469,69 @@ function corps(nom: NomDessin, c: Contexte): string {
     }
 
     case 'senior': {
-      // Prévention des chutes : polygone d'appui et oscillations à l'arrêt ; à la marche, pas raccourcis
-      const tg = poser(40, 88, -6, 0.48, true), td = poser(84, 88, 6, 0.48);
-      const poly = enveloppe([...POINTS_PIED.map(([x, y]) => appliquer(tg, x, y)), ...POINTS_PIED.map(([x, y]) => appliquer(td, x, y))]);
-      const polygone = `M${poly.map(([x, y]) => `${r1(x)} ${r1(y)}`).join(' L')} Z`;
-      const pas = [0, 1, 2, 3].map((i) => poser(i % 2 ? 184 : 162, 140 - i * 32, 0, 0.27, i % 2 === 0));
-      const pied = (m: Affine, leger = false) => `<path class="${R ? (leger ? 'pointille pointille--leger' : 'pointille') : 'trait peau'}" d="${transformer(R ? PIED_TRACE : silhouette(), m)}"></path>`;
-      const talons = [0, 1, 2, 3].map((i) => 140 - i * 32 + 94 * 0.27);
-      return `<g>${R ? '' : `<path class="zone" d="${polygone}"></path>`}<path class="trace polygone" pathLength="1" d="${polygone}"></path>${pied(tg, true)}${pied(td, true)}<path class="trace oscillation" pathLength="1" d="${oscillations(62, 104, 10, 13, 24, 11)}"></path><line class="guide" x1="173" y1="176" x2="173" y2="10"></line>${pas
-        .map((m) => (R ? `${pied(m, true)}${grouperTrame(pointsTrame('normal', 12), 12).map((n) => `<path d="${poserTrame(n.d, m)}" stroke="${n.couleur}" stroke-width="${r1(n.epaisseur * 0.27)}"></path>`).join('')}` : pied(m)))
-        .join('')}<g>${talons
-        .map((y) => `<line class="cote" x1="212" x2="220" y1="${r1(y)}" y2="${r1(y)}"></line>`)
-        .join('')}<line class="cote" x1="216" x2="216" y1="${r1(talons[3])}" y2="${r1(talons[0])}"></line></g>${
-        R ? `${mono(16, 22, 'APPUI BIPODAL')}${mono(16, 172, 'oscillations · 30 s', 'mono--accent')}${mono(236, r1(talons[0] + 12), '0,38 m', '', 'end')}` : `${etiquette(16, 22, 'Polygone d’appui')}${etiquette(16, 174, 'Oscillations')}${etiquette(236, r1(talons[0] + 12), 'Pas raccourcis', 'end')}`
+      // Prévention des chutes : à l'arrêt, le polygone d'appui des deux pieds, élargi par l'embout de la canne ;
+      // à droite, la marche de profil avec la canne posée en avant, du côté opposé à la jambe qui avance.
+      const tg = poser(34, 92, -6, 0.44, true), td = poser(74, 92, 6, 0.44);
+      const canne: P = [104, 62];
+      const pointsPieds = [...POINTS_PIED.map(([x, y]) => appliquer(tg, x, y)), ...POINTS_PIED.map(([x, y]) => appliquer(td, x, y))];
+      const poly = enveloppe(pointsPieds), polyCanne = enveloppe([...pointsPieds, canne]);
+      const trace = (q: P[]) => `M${q.map(([x, y]) => `${r1(x)} ${r1(y)}`).join(' L')} Z`;
+      const pied = (m: Affine) => `<path class="${R ? 'pointille pointille--leger' : 'trait peau'}" d="${transformer(R ? PIED_TRACE : silhouette(), m)}"></path>`;
+      const m: Affine = [0.62, 0, 0, 0.62, 140, 122];
+      const [cx, cy] = appliquer(m, 128, 62);
+      return `<g>${R ? '' : `<path class="zone" d="${trace(polyCanne)}"></path>`}<path class="guide" d="${trace(poly)}"></path><path class="trace polygone" pathLength="1" d="${trace(polyCanne)}"></path>${pied(tg)}${pied(td)}<circle class="point" cx="${canne[0]}" cy="${canne[1]}" r="3.4" fill="${R ? 'var(--d-chaud)' : 'var(--d-accent)'}"></circle><path class="trace oscillation" pathLength="1" d="${oscillations(56, 98, 6, 9, 20, 11)}"></path>${solProfil(m, 124, 236)}${profilPose('normale', m, R, { appuis: true })}<path class="canne" d="M${r1(cx)} ${r1(cy)} L${r1(cx - 9)} 58 C${r1(cx - 10)} 50 ${r1(cx - 20)} 49 ${r1(cx - 22)} 55"></path><circle class="point" cx="${r1(cx)}" cy="${r1(cy)}" r="2.2" fill="${R ? 'var(--d-chaud)' : 'var(--d-accent)'}"></circle>${
+        R ? `${mono(16, 22, 'POLYGONE D’APPUI')}${mono(16, 32, '+ embout de canne', 'mono--accent')}${mono(16, 172, 'oscillations · 30 s')}` : `${etiquette(16, 22, 'Polygone d’appui')}${etiquette(16, 32, 'élargi par la canne')}${etiquette(16, 174, 'Oscillations')}`
       }</g>`;
     }
 
     case 'taping': {
-      // K-taping : pied de profil, une bande en étrier sous le talon et le long du tendon d'Achille,
-      // une seconde de la voûte vers l'avant de la cheville. Bandes à largeur constante, extrémités arrondies.
-      const ep = PROFIL.epure;
+      // K-taping : bandes à largeur constante sur le pied anatomique de profil — l'une du talon le long du
+      // tendon d'Achille, l'autre sous la voûte, de la tubérosité du calcanéum vers l'avant-pied.
+      const m: Affine = [1.28, 0, 0, 1.28, 40, 78];
       const bande = (pts: P[], largeur: number) => {
-        const d = courbe(pts.map(([x, y]) => enProfil(x, y)));
-        return `<path class="bande" d="${d}" style="stroke-width:${largeur}"></path>`;
+        const d = courbe(pts.map(([x, y]) => appliquer(m, x, y)));
+        return `<path class="bande" d="${d}" style="stroke-width:${largeur}"></path>${R ? `<path class="bande-motif" d="${d}"></path>` : ''}`;
       };
-      const achille: P[] = [[34, 56], [21, 56.2], [12, 53], [7.5, 45], [8, 36], [12.5, 27], [15.6, 16], [16, 2], [16, -11]];
-      const voute: P[] = [[24, 55.6], [40, 53.2], [54, 51], [68, 51.4], [82, 53.6], [92, 55.2]];
-      const motif = (pts: P[]) => (R ? `<path class="bande-motif" d="${courbe(pts.map(([x, y]) => enProfil(x, y)))}"></path>` : '');
-      return `<g><line class="sol" x1="12" y1="${r1(enProfil(0, 58.5)[1] + 1.5)}" x2="232" y2="${r1(enProfil(0, 58.5)[1] + 1.5)}"></line><path class="trait peau" d="${transformer(`${ep.talon} ${ep.dos}`, profil)}"></path><path class="trait" d="${transformer(PLANTE_PROFIL, profil)}"></path><path class="os os--leger" d="${transformer(ep.os.join(' '), osProfil)}"></path>${bande(achille, 9)}${motif(achille)}${bande(voute, 8)}${motif(voute)}${
+      const achille: P[] = [[30, 59.6], [18, 59.8], [9.6, 58], [3.6, 53], [1.6, 46], [4, 37], [8.6, 28], [12, 18], [13.2, 6], [12.4, -8], [10.8, -24]];
+      const voute: P[] = [[22, 59.6], [36, 58.2], [50, 56.4], [62, 56.2], [74, 57.4], [86, 59.2], [94, 59.8]];
+      const [bx, by] = appliquer(m, 11, 6), [vx, vy] = appliquer(m, 62, 56.2);
+      return `<g>${solProfil(m, 12, 232)}${profilPose('normale', m, R, { os: true })}${bande(achille, 9)}${bande(voute, 7)}${
         R
           ? `${mono(232, 22, 'K-TAPING', '', 'end')}${mono(232, 32, 'tendon d’Achille · voûte', 'mono--accent', 'end')}${mono(232, 42, 'tension 25 %', '', 'end')}`
-          : `${renvoi(enProfil(16, 4)[0] + 4, enProfil(16, 4)[1], 64, 30)}${etiquette(66, 30, 'Bande adhésive')}${renvoi(enProfil(60, 51.2)[0], enProfil(60, 51.2)[1] + 2, 150, 172)}${etiquette(154, 175, 'Soutien de la voûte')}`
+          : `${renvoi(bx + 4, by, 80, 24)}${etiquette(82, 26, 'Bande adhésive')}${renvoi(vx, vy + 3, 150, 172)}${etiquette(154, 175, 'Soutien de la voûte')}`
       }</g>`;
+    }
+
+    case 'voutes': {
+      // Pied normal, pied creux, pied plat : le même pied de profil (squelette, arche, aponévrose) et son
+      // empreinte au sol. L'arche se lit à la hauteur de la plante au-dessus du sol et à la largeur de l'empreinte.
+      const TYPES: [Voute, Appui, string][] = [['normale', 'normal', 'Pied normal'], ['creuse', 'creux', 'Pied creux'], ['plate', 'plat', 'Pied plat']];
+      return `<g>${TYPES.map(([v, a, nom], i) => {
+        const x0 = 8 + i * 78;
+        const m: Affine = [-0.56, 0, 0, 0.56, x0 + 70, 38];
+        const [, sy] = appliquer(m, 0, 62);
+        const e = 0.34;
+        return `<line class="sol" x1="${x0}" y1="${r1(sy)}" x2="${x0 + 72}" y2="${r1(sy)}"></line>${profilPose(v, m, R, { aponevrose: true, appuis: true })}<g transform="translate(${r1(x0 + 36 - 46 * e)} ${r1(sy + 6)}) scale(${e})">${R ? `${use('pointille pointille--leger')}${traceTrame(a)}` : zones(a)}</g>${R ? mono(x0 + 36, 174, nom.replace('Pied ', '').toUpperCase(), '', 'middle') : etiquette(x0 + 36, 174, nom, 'middle')}`;
+      }).join('')}</g>`;
+    }
+
+    case 'arriere-pied': {
+      // Arrière-pied vu de dos (bilan) : jambe, malléoles, talus et calcanéum ; axe de la jambe et axe du talon.
+      // Normal : axes alignés ; valgus : talon basculé vers l'extérieur (pied plat) ; varus : vers l'intérieur (pied creux).
+      const TYPES: [number, string, string][] = [[0, 'Normal', '0°'], [-12, 'Valgus', '12° valgus'], [10, 'Varus', '10° varus']];
+      return `<g>${TYPES.map(([angle, nom, mesure], i) => {
+        const x0 = 20 + i * 78;
+        const tourne = `rotate(${angle} ${x0 + 20} 112)`;
+        const jambe = `M${x0 + 7} 20 C${x0 + 6} 50 ${x0 + 9} 78 ${x0 + 10} 96 C${x0 + 10.5} 102 ${x0 + 7} 106 ${x0 + 8} 112 M${x0 + 33} 20 C${x0 + 34} 50 ${x0 + 31} 78 ${x0 + 30} 96 C${x0 + 29.5} 102 ${x0 + 33.5} 106 ${x0 + 32} 112`;
+        const talon = `M${x0 + 8} 112 C${x0 + 6} 120 ${x0 + 5} 132 ${x0 + 8} 140 C${x0 + 11} 147 ${x0 + 29} 147 ${x0 + 32} 140 C${x0 + 35} 132 ${x0 + 34} 120 ${x0 + 32} 112`;
+        const os = `M${x0 + 13} 20 V92 C${x0 + 13} 98 ${x0 + 10} 104 ${x0 + 11.5} 108 C${x0 + 14} 104 ${x0 + 16} 101 ${x0 + 20} 101 C${x0 + 24} 101 ${x0 + 25} 103 ${x0 + 26} 104 V20 M${x0 + 27.5} 20 C${x0 + 28} 60 ${x0 + 27} 90 ${x0 + 27.5} 100 C${x0 + 28} 106 ${x0 + 30} 110 ${x0 + 29} 113 C${x0 + 27} 112 ${x0 + 26} 108 ${x0 + 26} 104 M${x0 + 13} 106 C${x0 + 15} 103 ${x0 + 25} 103 ${x0 + 27} 106 C${x0 + 28} 110 ${x0 + 26} 113 ${x0 + 20} 113 C${x0 + 14} 113 ${x0 + 12} 110 ${x0 + 13} 106 Z`;
+        const calcaneum = `M${x0 + 12} 116 C${x0 + 12} 113 ${x0 + 28} 113 ${x0 + 28} 116 C${x0 + 30} 124 ${x0 + 30} 134 ${x0 + 26} 138 C${x0 + 22} 141 ${x0 + 18} 141 ${x0 + 14} 138 C${x0 + 10} 134 ${x0 + 10} 124 ${x0 + 12} 116 Z`;
+        const appuis = R
+          ? trameDisque(x0 + 20 - Math.sin((angle * Math.PI) / 180) * 30, 151, 6.5, 2.8)
+          : `<ellipse class="zone zone--forte" cx="${r1(x0 + 20 - Math.sin((angle * Math.PI) / 180) * 30)}" cy="151" rx="7" ry="2.4"></ellipse>`;
+        const peauJambe = `${jambe.replace(/ M[^M]*$/, '')} L${x0 + 32} 112 C${x0 + 33.5} 106 ${x0 + 29.5} 102 ${x0 + 30} 96 C${x0 + 31} 78 ${x0 + 34} 50 ${x0 + 33} 20 Z`;
+        return `<line class="sol" x1="${x0 - 2}" y1="148" x2="${x0 + 42}" y2="148"></line><path class="peau-seule" d="${peauJambe}"></path><g transform="${tourne}"><path class="peau-seule" d="${talon} Z"></path></g><path class="os${R ? '' : ' os--teinte'}" d="${os}"></path><g transform="${tourne}"><path class="os${R ? '' : ' os--teinte'}" d="${calcaneum}"></path><path class="trait" d="${talon}"></path><path class="axe" d="M${x0 + 20} 112 V150"></path></g><path class="trait" d="${jambe}"></path><path class="axe" d="M${x0 + 20} 22 V112"></path>${appuis}${R ? `${mono(x0 + 20, 12, nom.toUpperCase(), '', 'middle')}${mono(x0 + 20, 166, mesure, angle ? 'mono--accent' : '', 'middle')}` : etiquette(x0 + 20, 12, nom, 'middle')}`;
+      }).join('')}</g>`;
     }
 
     case 'verrue': {
@@ -803,4 +868,141 @@ export function svgAnimationFixe(animation: Animation, opts: { id?: string; regi
     : animation === 'premiers-pas' ? contenuPremiersPas(id)
     : contenuSemelle(id);
   return `<svg id="${echapper(id)}" class="animation-fixe animation-fixe--${animation}" ${F}>${contenu}</svg>`;
+}
+
+// ———————————————————————————————————————————————————— Matériel du cabinet (repère 120 × 90)
+// Une famille de dessins d'équipements, même trait et mêmes classes que les dessins de soins (dessins.css) :
+// contour au trait fort sur aplat clair, détails au trait fin, accent pour l'eau, la lumière, le flux ;
+// en registre « relevé », les écrans et empreintes portent la trame et la palette de pression. Pensés pour
+// être lus en petit (liste du matériel) : peu de détails, silhouettes franches, aucune annotation.
+
+/** Équipements du catalogue (equipements.ts) qui ont leur dessin */
+export const EQUIPEMENTS_DESSINES = [
+  'tapis-de-course', 'iontophorese', 'podoscope', 'plateforme-pression', 'autoclave-classe-b',
+  'fauteuil-soins', 'aspiration', 'scanner-3d', 'fraiseuse-numerique', 'monofilament-diapason',
+] as const;
+export type EquipementDessine = (typeof EQUIPEMENTS_DESSINES)[number];
+export const equipementDessine = (id: string): id is EquipementDessine => (EQUIPEMENTS_DESSINES as readonly string[]).includes(id);
+
+/** Trame d'un pied posée par une transformation (graisse des points mise à l'échelle) */
+const trameposee = (champ: Champ, pas: number, m: Affine, e: number) =>
+  `<g class="trame">${grouperTrame(pointsTrame(champ, pas), pas)
+    .map((n) => `<path d="${poserTrame(n.d, m)}" stroke="${n.couleur}" stroke-width="${r1(n.epaisseur * e)}"></path>`)
+    .join('')}</g>`;
+/** Pied vu de dessus, posé à plat sur un plateau vu en léger surplomb (raccourci en profondeur, cisaillé) */
+const surPlateau = (x: number, y: number, a: number, d: number, cisaille: number, gauche = false): Affine =>
+  gauche ? [-a, 0, cisaille * d, d, x + a * 92, y] : [a, 0, cisaille * d, d, x, y];
+
+function corpsEquipement(id: EquipementDessine, R: boolean, ident: string): string {
+  // Empreinte : trame (relevé) ou silhouette avec zones d'appui (pédagogique)
+  const empreinte = (m: Affine, e: number, appui: Appui = 'normal') =>
+    R ? trameposee(appui, TRAME.pas * 1.6, m, e) : `<path class="trait peau trait--fin" d="${transformer(silhouette(), m)}"></path><path class="zone zone--forte" d="${transformer(empreinte2(appui), m)}"></path>`;
+  const sol = (y = 84) => `<line class="cote" x1="4" y1="${y}" x2="116" y2="${y}"></line>`;
+  switch (id) {
+    case 'tapis-de-course':
+      // Tapis d'analyse de la marche : tapis, console, caméra sur trépied visant la foulée
+      return `${sol()}<path class="trait peau" d="M30 70 H104 Q109 70 109 75 Q109 80 104 80 H34 Q29 80 29 75 Q29 70 34 70 Z"></path><path class="fin" d="M34 72.6 H104"></path><circle class="fin" cx="35" cy="75" r="2.6"></circle><circle class="fin" cx="103" cy="75" r="2.6"></circle><path class="trait" d="M36 80 V84 M100 80 V84"></path><path class="trait" d="M104 70 L110 32"></path><path class="trait" d="M108 44 L86 46"></path><path class="trait peau" d="M100 22 L117 19 L118.6 30 L101.6 33 Z"></path>${
+        R
+          ? PRESSION.map((c, k) => `<path d="M${r1(103.5 + k * 2.8)} ${r1(29.4 - k * 0.5)} v-${2 + k * 1.1}" stroke="${c}" stroke-width="${TRAIT.fort}"></path>`).join('')
+          : '<path class="zone zone--forte" d="M102.6 23.6 L115.6 21.4 L116.6 28.6 L103.6 30.8 Z"></path>'
+      }<path class="trait" d="M8 84 L15 58 L22 84 M15 58 V84"></path><path class="trait peau" d="M8 50 H20 Q22 50 22 52 V56 Q22 58 20 58 H8 Q6 58 6 56 V52 Q6 50 8 50 Z"></path><path class="trait" d="M22 52 H25 V56 H22"></path><path class="guide" d="M26 54 L58 70 M26 54 L82 70"></path>${
+        R ? '<path class="faisceau" d="M26 54 L58 70 L82 70 Z"></path>' : ''
+      }`;
+
+    case 'iontophorese': {
+      // Iontophorèse (hydrophorèse) : deux bacs d'eau avec électrodes, reliés au générateur de faible courant
+      const bac = (x: number) =>
+        `<path class="trait peau" d="M${x} 58 L${x + 3} 77 Q${x + 3.4} 80 ${x + 6} 80 H${x + 38} Q${x + 40.6} 80 ${x + 41} 77 L${x + 44} 58"></path><path class="trait" d="M${x - 1} 58 H${x + 45}"></path><path class="eau" d="M${x + 4} 64 q4 -2 8 0 t8 0 t8 0 t8 0 t8 0"></path>${
+          R ? `<path class="eau eau--fine" d="M${x + 6} 69 q4 -1.6 8 0 t8 0 t8 0 t8 0"></path>` : `<path class="zone" d="M${x + 4} 64 q4 -2 8 0 t8 0 t8 0 t8 0 t8 0 L${x + 38} 77 Q${x + 38} 79 ${x + 36} 79 H${x + 8} Q${x + 6} 79 ${x + 6} 77 Z"></path>`
+        }<path class="fin" d="M${x + 9} 75 H${x + 35}"></path>`;
+      return `${sol()}${bac(6)}${bac(64)}<path class="trait" d="M28 58 C28 42 46 40 52 30 M86 58 C86 42 70 40 66 30"></path><path class="trait peau" d="M46 10 H74 Q77 10 77 13 V27 Q77 30 74 30 H46 Q43 30 43 27 V13 Q43 10 46 10 Z"></path><circle class="fin" cx="52" cy="20" r="4"></circle><path class="fin" d="M52 20 L54.6 17.4"></path>${
+        R ? PRESSION.slice(0, 4).map((c, k) => `<path d="M${61 + k * 3.4} 24 v-${3 + k * 1.6}" stroke="${c}" stroke-width="${TRAIT.fort}"></path>`).join('') : '<path class="zone zone--forte" d="M60 15 H72 V25 H60 Z"></path>'
+      }`;
+    }
+
+    case 'podoscope': {
+      // Podoscope : plateau de verre éclairé, miroir incliné en façade où se lit la plante des pieds
+      const d = 12 / 222, a = 0.12;
+      const reflet = (x: number, gauche: boolean): Affine => (gauche ? [-0.085, 0, 0, 0.085, x + 0.085 * 92, 55.4] : [0.085, 0, 0, 0.085, x, 55.4]);
+      return `${sol(82)}<path class="trait peau" d="M22 38 H98 L110 50 H34 Z"></path><path class="trait peau" d="M34 50 H110 V78 H34 Z"></path><path class="trait peau" d="M22 38 L34 50 V78 L22 66 Z"></path><path class="fin" d="M38 54 H106 V75 H38 Z"></path>${[
+        surPlateau(54, 38.6, a, d, 1, true), surPlateau(70, 38.6, a, d, 1),
+      ].map((m) => `<path class="trait trait--fin" d="${transformer(silhouette(), m)}"></path>`).join('')}${empreinte(reflet(58, true), 0.085)}${empreinte(reflet(76, false), 0.085)}<path class="trait" d="M36 78 V82 M108 78 V82"></path>`;
+    }
+
+    case 'plateforme-pression': {
+      // Plateforme de baropodométrie : tapis à capteurs, empreintes en pression, écran de lecture
+      const d = 15 / 222, a = 0.12;
+      const grille = R
+        ? `<path class="grille-capteurs" d="${Array.from({ length: 6 }, (_, j) => Array.from({ length: 14 }, (_, i) => `M${r1(18 + i * 5.6 + j * 2.9)} ${r1(52 + j * 2.6)}h0`).join('')).join('')}"></path>`
+        : '';
+      return `${sol(84)}<path class="trait peau" d="M12 50 H86 L102 66 H28 Z"></path><path class="trait peau" d="M28 66 H102 V70 H28 Z"></path>${grille}${empreinte(surPlateau(40, 50.4, a, d, 1, true), 0.12)}${empreinte(surPlateau(57, 50.4, a, d, 1), 0.12)}<path class="trait" d="M102 68 C110 68 112 60 106 52"></path><path class="trait peau" d="M88 14 H114 V36 H88 Z"></path><path class="trait" d="M84 40 H118 L114 36 H88 Z"></path>${
+        R
+          ? `${trameposee('normal', TRAME.pas * 2.2, [-0.075, 0, 0, 0.075, 99, 17], 0.075)}${trameposee('normal', TRAME.pas * 2.2, [0.075, 0, 0, 0.075, 102, 17], 0.075)}`
+          : `<path class="trait trait--fin" d="${transformer(silhouette(), [-0.075, 0, 0, 0.075, 99, 17])}"></path><path class="trait trait--fin" d="${transformer(silhouette(), [0.075, 0, 0, 0.075, 102, 17])}"></path>`
+      }`;
+    }
+
+    case 'autoclave-classe-b':
+      // Autoclave : cuve à hublot (plateaux d'instruments visibles), afficheur du cycle, impression de traçabilité
+      return `${sol(84)}<path class="trait peau" d="M18 18 H102 Q106 18 106 22 V74 Q106 78 102 78 H18 Q14 78 14 74 V22 Q14 18 18 18 Z"></path><circle class="trait peau" cx="44" cy="48" r="20"></circle><path class="fin" d="M30 44 H58 M28 52 H60"></path><path class="trait" d="M66 42 V54"></path><path class="trait peau" d="M76 26 H100 V38 H76 Z"></path>${
+        R ? PRESSION.map((c, k) => `<path d="M${79 + k * 4} 32 h2.6" stroke="${c}" stroke-width="${TRAIT.marque}"></path>`).join('') : '<path class="zone zone--forte" d="M78 28 H98 V36 H78 Z"></path>'
+      }<path class="fin" d="M78 46 H84 M88 46 H94"></path><path class="trait" d="M80 62 H96"></path><path class="trait peau" d="M83 62 V54 H93 V62"></path><path class="fin" d="M85.5 57 H90.5 M85.5 59.5 H89"></path><path class="trait" d="M22 78 V83 M98 78 V83"></path>`;
+
+    case 'fauteuil-soins':
+      // Fauteuil de soins : dossier incliné, assise, repose-jambes, colonne de réglage en hauteur
+      return `${sol(84)}<path class="trait peau" d="M14 14 Q13 10 17 9.5 L24 9 Q27 9 27 12 V13 Q27 16 24 16.2 L17 16.6 Q14 16.8 14 14 Z"></path><path class="trait peau" d="M17 24 Q15 19.5 20 18.5 L24 17.8 Q28 17.2 29.6 21.2 L42 55 Q43.5 59.4 39 60.4 L35 61.3 Q31 62.2 29.5 58.4 Z"></path><path class="trait peau" d="M38 57 H78 Q82 57 82 61 V62 Q82 66 78 66 H40 Q36 66 36 62 V61 Q36 57 38 57 Z"></path><path class="trait peau" d="M80 58 L104 65.4 Q108 66.6 107 70.4 Q106 74.2 102 73 L78 65.6 Z"></path><path class="trait" d="M104 73.4 L110 79 M44 48 H70 M62 48 V57 M55 66 V80 M65 66 V80 M38 84 H84"></path><path class="fin" d="M86 80 H94 V84"></path>${
+        R ? '<path class="guide" d="M30 10 A30 30 0 0 1 52 26"></path><path class="guide" d="M70 76 V64"></path>' : ''
+      }`;
+
+    case 'aspiration':
+      // Micromoteur avec aspiration : boîtier, pièce à main et fraise, buse d'aspiration au plus près de l'outil
+      return `${sol(84)}<path class="trait peau" d="M10 52 H42 Q45 52 45 55 V80 Q45 83 42 83 H10 Q7 83 7 80 V55 Q7 52 10 52 Z"></path><circle class="fin" cx="18" cy="64" r="4.4"></circle><path class="fin" d="M18 64 L20.8 61.2"></path><path class="fin" d="M28 60 H40 M28 66 H40 M28 72 H36"></path><path class="trait" d="M42 56 C58 54 60 46 68 42"></path><path class="tuyau" d="M42 62 C62 62 70 52 82 46"></path><path class="trait peau" d="M66 44 L96 22 Q99 20 100.6 22.2 Q102.2 24.4 99.4 26.6 L70 48 Q67 50 65.4 47.8 Q63.8 45.6 66 44 Z"></path><path class="trait" d="M100 24 L106 19.6"></path><circle class="trait" cx="107.6" cy="18.4" r="1.8"></circle><path class="trait peau" d="M82 46 L98 34 Q101 32 102.4 34.2 Q103.6 36.4 100.8 38.2 L86 49 Z"></path>${
+        R ? '<path class="faisceau-axe" d="M108 24 Q106 30 102 36"></path><path class="poussieres" d="M110 22h0 M111 27h0 M108 30h0 M105 33h0"></path>' : ''
+      }`;
+
+    case 'scanner-3d': {
+      // Scanner 3D : pied posé sur la vitre, barre de balayage ; la partie déjà relevée en maillage
+      const m: Affine = [0, 0.34, -0.34, 0, 98, 32.4]; // pied à l'horizontale, talon à gauche
+      const pied = transformer(silhouette(), m);
+      const maillage = `${Array.from({ length: 16 }, (_, k) => `M${r1(12 + k * 3.4)} 30 V66`).join(' ')} ${Array.from({ length: 11 }, (_, k) => `M10 ${r1(30 + k * 3.4)} H64`).join(' ')}`;
+      return `<defs><clipPath id="${ident}-pied"><path d="${pied}"></path></clipPath></defs><path class="trait peau" d="M10 22 H110 Q114 22 114 26 V70 Q114 74 110 74 H10 Q6 74 6 70 V26 Q6 22 10 22 Z"></path><path class="fin" d="M10 78 H110"></path><path class="trait peau" d="${pied}"></path><path class="maillage" clip-path="url(#${ident}-pied)" d="${maillage}"></path><path class="faisceau" d="M60 24 H68 V72 H60 Z"></path><path class="faisceau-axe" d="M64 24 V72"></path>${
+        R ? `<g clip-path="url(#${ident}-pied)">${trameposee('normal', TRAME.pas * 1.6, m, 0.34).replace('<g class="trame">', '<g class="trame trame--legere">')}</g>` : ''
+      }`;
+    }
+
+    case 'fraiseuse-numerique':
+      // Fraiseuse numérique (CFAO) : portique, broche et fraise usinant le dessus d'une semelle dans un bloc
+      return `${sol(84)}<path class="trait peau" d="M10 70 H110 V80 H10 Z"></path><path class="trait" d="M18 70 V18 M102 70 V18"></path><path class="trait peau" d="M14 14 H106 V22 H14 Z"></path><path class="trait peau" d="M54 22 H70 V38 H54 Z"></path><path class="trait peau" d="M58 38 H66 V50 H58 Z"></path><path class="trait" d="M62 50 V57"></path><path class="guide" d="M28 52 H92"></path><path class="trait peau" d="M28 70 V56 C34 54 38 60 46 61 C56 62 60 57 66 57 C74 57 80 62 92 63 V70 Z"></path>${
+        R ? '<path class="faisceau-axe" d="M30 56 C36 54 40 60 46 61 C56 62 60 57 62 57"></path>' : '<path class="zone" d="M28 52 H92 V63 C80 62 74 57 66 57 C60 57 56 62 46 61 C38 60 34 54 28 56 Z"></path>'
+      }<path class="trait" d="M14 80 V84 M106 80 V84"></path>`;
+
+    case 'monofilament-diapason':
+      // Monofilament (fil qui fléchit au contact de la peau) et diapason gradué (sensibilité vibratoire)
+      return `<path class="trait peau" d="M14 72 C30 66 52 66 64 70 V84 H14 Z"></path><path class="trait peau" d="M26 10 Q26 7 29 7 H33 Q36 7 36 10 V44 Q36 47 33 47 H29 Q26 47 26 44 Z"></path><path class="trait" d="M31 47 C31 58 36 64 44 68"></path><circle class="point" cx="44" cy="68" r="2.2" fill="${R ? 'var(--d-chaud)' : 'var(--d-accent)'}"></circle><path class="trait" d="M78 8 V46 Q78 56 87 56 Q96 56 96 46 V8 M87 56 V80"></path><circle class="trait peau" cx="87" cy="82" r="3"></circle><path class="trait peau" d="M75 14 H81 V22 H75 Z M93 14 H99 V22 H93 Z"></path>${
+        R ? '<path class="vibration" d="M72 30 Q70 34 72 38 M68 28 Q65 34 68 40 M102 30 Q104 34 102 38 M106 28 Q109 34 106 40"></path>' : ''
+      }`;
+  }
+  return '';
+}
+/** Zones d'appui fortes d'une empreinte (registre pédagogique) */
+const empreinte2 = (appui: Appui) => empreinte(appui).fort;
+
+/**
+ * Dessin d'un équipement du cabinet (<svg>…</svg>, repère 120 × 90), décoratif, dans le registre demandé ;
+ * chaîne vide si l'équipement n'a pas de dessin (l'appelant garde alors son icône au trait).
+ */
+export function svgEquipement(id: string, opts: { id?: string; classe?: string; registre?: Registre } = {}): string {
+  if (!equipementDessine(id)) return '';
+  const registre = opts.registre ?? 'releve';
+  const ident = opts.id ?? `m-${id}`;
+  const classes = ['dessin', 'dessin--materiel', `dessin--${registre}`, opts.classe].filter(Boolean).join(' ');
+  return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${corpsEquipement(id, registre === 'releve', ident)}</svg>`;
+}
+
+/** Équipement en symbole « d » pour un fichier statique (/dessins/materiel-<id>.svg), comme symboleDessin */
+export function symboleEquipement(id: EquipementDessine, opts: { registre?: Registre } = {}): string {
+  const svg = svgEquipement(id, { id: 'f', registre: opts.registre });
+  const classe = svg.match(/class="([^"]*)"/)?.[1] ?? 'dessin';
+  const interieur = svg.slice(svg.indexOf('>') + 1, svg.lastIndexOf('</svg>'));
+  return `<symbol id="d" viewBox="0 0 120 90" overflow="visible"><g class="${classe}" fill="none" stroke-linecap="round" stroke-linejoin="round">${interieur}</g></symbol>`;
 }

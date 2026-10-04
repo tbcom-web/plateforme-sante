@@ -74,6 +74,22 @@ export const EQUIPEMENTS: Equipement[] = [
     icone: 'tabler:list-check',
   },
   {
+    id: 'bac-ultrasons',
+    court: 'Nettoyage par ultrasons',
+    libelle: 'Bac de nettoyage à ultrasons',
+    categorie: 'hygiene',
+    phrase: 'Après la pré-désinfection, les instruments sont nettoyés dans un bac à ultrasons, avant d’être conditionnés puis stérilisés.',
+    icone: 'tabler:wave-sine',
+  },
+  {
+    id: 'thermosoudeuse',
+    court: 'Sachets thermosoudés',
+    libelle: 'Soudeuse de sachets de stérilisation',
+    categorie: 'hygiene',
+    phrase: 'Les instruments sont placés dans des sachets fermés par thermosoudage avant la stérilisation ; le sachet reste fermé jusqu’au moment du soin.',
+    icone: 'tabler:package',
+  },
+  {
     id: 'aspiration',
     court: 'Aspiration des poussières',
     libelle: 'Micromoteur avec aspiration',
@@ -134,6 +150,16 @@ export const EQUIPEMENTS: Equipement[] = [
     icone: 'tabler:wave-sine',
     dessin: 'diabete',
   },
+  {
+    id: 'stabilometrie',
+    libelle: 'Plateforme de stabilométrie',
+    categorie: 'examen',
+    phrase: 'Plateforme qui enregistre les petites oscillations du corps en position debout, pour l’examen de l’équilibre et de la posture.',
+    soins: ['posturologie', 'podologie-du-senior'],
+    mentionSoin: 'Examen de l’équilibre sur plateforme de stabilométrie',
+    icone: 'tabler:scale',
+    dessin: 'equilibre',
+  },
   // ---- Fabrication des semelles ----
   {
     id: 'scanner-3d',
@@ -185,6 +211,15 @@ export const EQUIPEMENTS: Equipement[] = [
     icone: 'tabler:flame',
     dessin: 'semelle',
   },
+  {
+    id: 'touret-poncage',
+    libelle: 'Touret de ponçage avec aspiration',
+    categorie: 'semelles',
+    phrase: 'Les semelles sont poncées et ajustées sur un touret équipé d’une captation des poussières.',
+    soins: ['semelles-orthopediques'],
+    icone: 'tabler:settings',
+    dessin: 'semelle',
+  },
   // ---- Soins ----
   {
     id: 'fauteuil-soins',
@@ -194,6 +229,30 @@ export const EQUIPEMENTS: Equipement[] = [
     icone: 'tabler:armchair',
   },
   {
+    id: 'lampe-loupe',
+    libelle: 'Lampe-loupe et éclairage de soin',
+    categorie: 'soins',
+    phrase: 'Un éclairage puissant et une loupe éclairante permettent des gestes précis pendant les soins.',
+    icone: 'tabler:zoom-in',
+  },
+  {
+    id: 'iontophorese',
+    libelle: 'Iontophorèse (hydrophorèse)',
+    categorie: 'soins',
+    phrase: 'Les pieds reposent dans deux bacs d’eau traversés par un courant électrique de faible intensité : une méthode utilisée pour la transpiration excessive des pieds, selon l’indication.',
+    icone: 'tabler:droplet',
+  },
+  {
+    id: 'cryotherapie',
+    libelle: 'Cryothérapie',
+    categorie: 'soins',
+    phrase: 'Application de froid très localisée, utilisée notamment pour certaines verrues, selon l’indication posée lors de l’examen.',
+    soins: ['verrues-plantaires'],
+    mentionSoin: 'Cryothérapie au cabinet, selon l’indication',
+    icone: 'tabler:snowflake',
+    dessin: 'verrue',
+  },
+  {
     id: 'laser',
     libelle: 'Laser',
     categorie: 'soins',
@@ -201,7 +260,7 @@ export const EQUIPEMENTS: Equipement[] = [
     soins: ['laser', 'verrues-plantaires'],
     mentionSoin: 'Laser au cabinet, selon l’indication',
     icone: 'tabler:sparkles',
-    dessin: 'soin',
+    dessin: 'laser',
   },
 ];
 

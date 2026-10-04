@@ -127,6 +127,8 @@ export const PHOTOS_DESSINS: Record<NomDessin, { photo: string; cadrage: string 
   senior: { photo: P('posture-escalier'), cadrage: '50% 60%' },
   taping: { photo: P('sport-course'), cadrage: '50% 62%' },
   verrue: { photo: P('generale-pieds-nus'), cadrage: '50% 40%' },
+  voutes: { photo: P('generale-pied-profil'), cadrage: '60% 55%' },
+  'arriere-pied': { photo: P('posture-pieds-herbe'), cadrage: '50% 72%' },
 };
 
 type Surcharges = {

@@ -1,8 +1,11 @@
 ---
-// Matériel et hygiène du cabinet : liste éditoriale (filets, numéros mono, catégories), pictos au trait.
+// Matériel et hygiène du cabinet : liste éditoriale (filets, numéros mono, catégories). Chaque équipement
+// dessiné par la charte (core : svgEquipement, EQUIPEMENTS_DESSINES) s'affiche en petit dessin au trait, servi
+// en fichier statique (/dessins/materiel-<id>.svg, posé par <use>) ; les autres gardent leur icône au trait.
 // Seul le matériel coché par le praticien apparaît ; phrases factuelles du catalogue (equipements.ts).
+import '@plateforme/core/dessins.css';
 import Icone from '../Icone.astro';
-import { equipementsParCategorie } from '@plateforme/core';
+import { equipementsParCategorie, equipementDessine } from '@plateforme/core';
 import { site } from '../../lib/site';
 
 const groupes = equipementsParCategorie(site.equipements ?? []);
@@ -21,7 +24,13 @@ let rang = 0;
         {g.equipements.map((e) => (
           <li>
             <span class="materiel__num mono" aria-hidden="true">{deux(++rang)}</span>
-            <span class="materiel__picto" aria-hidden="true"><Icone nom={e.icone} secours="tabler:point" taille="22" /></span>
+            <span class:list={['materiel__picto', { 'materiel__picto--dessin': equipementDessine(e.id) }]} aria-hidden="true">
+              {equipementDessine(e.id) ? (
+                <svg class="dessin dessin--materiel" viewBox="0 0 120 90"><use href={`/dessins/materiel-${e.id}.svg#d`} width="120" height="90" /></svg>
+              ) : (
+                <Icone nom={e.icone} secours="tabler:point" taille="22" />
+              )}
+            </span>
             <span class="materiel__texte">
               <span class="materiel__libelle">{e.libelle}</span>
               <span class="materiel__phrase">{e.phrase}</span>
@@ -53,10 +62,13 @@ let rang = 0;
   .materiel__categorie span:first-child { font-weight: 400; }
   .materiel__compte { margin-left: auto; color: var(--encre-pale); }
   .materiel__liste { list-style: none; margin: 0; padding: 0; }
-  .materiel__liste li { display: grid; grid-template-columns: 2.2em 28px minmax(0, 1fr); gap: 4px 12px; align-items: start; padding: 14px 0; border-bottom: var(--filet) solid var(--ligne); }
+  .materiel__liste li { display: grid; grid-template-columns: 2.2em 72px minmax(0, 1fr); gap: 4px 14px; align-items: start; padding: 14px 0; border-bottom: var(--filet) solid var(--ligne); }
   .materiel__liste--simple li { grid-template-columns: 2.2em minmax(0, 1fr); align-items: baseline; }
   .materiel__num { color: var(--encre-pale); padding-top: 3px; }
-  .materiel__picto { color: var(--accent-vif); display: grid; place-items: center; width: 28px; height: 28px; }
+  .materiel__picto { color: var(--accent-vif); display: grid; place-items: center; width: 72px; height: 28px; }
+  /* Dessin d'équipement : trait à l'encre, accent du cabinet (variables héritées à travers <use>) */
+  .materiel__picto--dessin { height: 54px; color: var(--encre); --dessin-trait: var(--encre); }
+  .materiel__picto--dessin svg { width: 72px; height: 54px; }
   .materiel__texte { display: grid; gap: 4px; }
   .materiel__libelle { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.05rem; letter-spacing: -0.015em; line-height: 1.25; color: var(--encre); }
   .materiel__phrase { color: var(--encre-pale); font-size: 0.95rem; line-height: 1.55; }
