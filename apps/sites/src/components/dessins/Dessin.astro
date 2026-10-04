@@ -1,21 +1,24 @@
 ---
 // Dessins techniques de la marque : trait anatomique fin, contours en pointillés (relevé de podoscope),
 // trame hexagonale de points colorés par la pression (bleu → vert d'eau → jaune → orange → rouge).
-// Le tracé est dans le core (packages/core/src/dessins.ts, svgDessin), partagé avec l'aperçu de l'admin ;
-// les styles sont dans packages/core/src/dessins.css. Ce composant n'en est qu'une enveloppe.
-// Couleurs (surchargeables par le parent) : --dessin-trait, --dessin-accent, --dessin-fond ; le reste vient de la charte.
-// Les traits marqués « trace » se dessinent quand le bloc parent apparaît (.apparait.vu).
+// Le tracé est dans le core (packages/core/src/dessins.ts, svgDessin), partagé avec l'aperçu de l'admin.
+// Sur le site, chaque dessin est un fichier statique généré au build (pages/dessins/[fichier].svg.ts) que ce
+// composant référence par <use> : la page ne recopie pas le tracé (HTML léger, fichier mis en cache), et le
+// dessin hérite des couleurs de la page — --dessin-trait, --dessin-accent, --dessin-fond (surchargeables par
+// le parent, par exemple .surface-plan), palette de pression et accent de la gamme.
+// Registre « pedagogique » : schéma au trait, sans trame ni lecture. Décoratif : aria-hidden.
 import '@plateforme/core/dessins.css';
-import { svgDessin, type NomDessin } from '@plateforme/core';
+import type { NomDessin, Registre } from '@plateforme/core';
 export type { NomDessin } from '@plateforme/core';
 
 interface Props {
   nom: NomDessin;
   class?: string;
+  /** « releve » (par défaut) ou « pedagogique » : schéma au trait, sans trame ni lecture */
+  registre?: Registre;
 }
 
-const { nom, class: classe } = Astro.props;
-// Identifiant unique par instance : plusieurs dessins identiques peuvent cohabiter dans une page.
-const id = `d-${Math.random().toString(36).slice(2, 8)}`;
+const { nom, class: classe, registre = 'releve' } = Astro.props;
+const fichier = `/dessins/${nom}${registre === 'pedagogique' ? '-pedagogique' : ''}.svg#d`;
 ---
-<Fragment set:html={svgDessin(nom, { id, classe })} />
+<svg class:list={['dessin', `dessin--${nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use href={fichier} width="240" height="180" /></svg>

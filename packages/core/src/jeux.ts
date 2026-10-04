@@ -94,15 +94,18 @@ export const VISUELS_SOINS: Record<string, VisuelCase> = {
   'podologie-enfant': kase(P('enfant-herbe'), 'enfant', 'premiers-pas', true),
   // Équilibre : trajet du centre de pression
   posturologie: kase(P('posture-marche-sable'), 'equilibre', 'trajectoire', true),
-  // Prévention des chutes : le dessin (polygone d'appui, oscillations) suffit
-  'podologie-du-senior': kase(P('posture-escalier'), 'equilibre', null, false),
+  // Prévention des chutes : polygone d'appui, oscillations et pas raccourcis
+  'podologie-du-senior': kase(P('posture-escalier'), 'senior', null, false),
   // Points d'appui sous l'avant-pied : relevé de podoscope
-  'verrues-plantaires': kase(P('generale-pieds-nus'), 'appuis', 'podoscope', true),
-  'ongle-incarne': kase(P('generale-pied-profil'), 'soin', null, true),
+  'verrues-plantaires': kase(P('generale-pieds-nus'), 'verrue', 'podoscope', true),
+  // Coupe de l'ongle et du bourrelet
+  'ongle-incarne': kase(P('generale-pied-profil'), 'ongle', null, true),
+  // Aponévrose plantaire et insertion sur le calcanéum
   'douleur-talon': kase(P('soin-talon'), 'talon', null, true),
-  laser: kase(P('generale-pied-sol'), 'soin', null, false),
-  // Bandes adhésives du sportif : coureur (la photo ne montre pas de bande)
-  'k-taping': kase(P('sport-course'), 'sport', 'coureur', false),
+  // Faisceau sur une zone précise de l'avant-pied
+  laser: kase(P('generale-pied-sol'), 'laser', null, false),
+  // Bandes adhésives posées sur la cheville (la photo ne montre pas de bande) : le dessin suffit
+  'k-taping': kase(P('sport-course'), 'taping', null, false),
 };
 
 /** Soin hors catalogue : dessin d'analyse, photo jamais montrée seule */
@@ -119,6 +122,11 @@ export const PHOTOS_DESSINS: Record<NomDessin, { photo: string; cadrage: string 
   equilibre: { photo: P('posture-escalier'), cadrage: '50% 60%' },
   talon: { photo: P('soin-talon'), cadrage: '50% 50%' },
   appuis: { photo: P('generale-pieds-nus'), cadrage: '50% 40%' },
+  ongle: { photo: P('generale-pied-profil'), cadrage: '60% 55%' },
+  laser: { photo: P('generale-pied-sol'), cadrage: '50% 55%' },
+  senior: { photo: P('posture-escalier'), cadrage: '50% 60%' },
+  taping: { photo: P('sport-course'), cadrage: '50% 62%' },
+  verrue: { photo: P('generale-pieds-nus'), cadrage: '50% 40%' },
 };
 
 type Surcharges = {

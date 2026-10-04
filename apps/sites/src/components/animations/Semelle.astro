@@ -1,42 +1,30 @@
 ---
-// Animation « semelle » (soins, prévention) : deux semelles dessinées en courbes de niveau, comme une
-// empreinte relevée, qui se tracent l'une après l'autre puis s'effacent. SVG + CSS uniquement.
-// Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
-import { CONTOUR } from './pied';
-import { PRESSION, TRAIT } from '@plateforme/core';
+// Animation « semelle » (soins, prévention) : deux semelles thermoformées en courbes d'appui — cuvette du
+// talon, soutien de voûte (côté interne), barre des têtes métatarsiennes, hallux — aux couleurs de la
+// palette de pression, qui se tracent du niveau faible au pic, pied après pied, puis s'effacent. Le tracé est
+// celui de l'image fixe (core : contenuSemelle) ; ce composant n'ajoute que le mouvement.
+// SVG + CSS, aucun script. Mouvement seulement quand le bloc est à l'écran (.en-vue, posée par Gabarit.astro
+// sur .anime-visible) ; sinon, ou si le visiteur réduit les mouvements : image fixe complète.
+// Registre « pedagogique » : schéma calme au trait, sans mouvement. Décoratif : aria-hidden.
+import { contenuSemelle, svgAnimationFixe, type Registre } from '@plateforme/core';
 
-interface Props { fond?: 'sombre' | 'clair' }
-const { fond = 'sombre' } = Astro.props;
-// Courbes concentriques : échelle autour du centre de la plante (47, 125) et niveau de la palette de pression.
-const niveaux = [1, 0.82, 0.64, 0.47, 0.3].map((e, k) => ({ e, k, couleur: PRESSION[k] }));
-const pieds = [
-  { transform: 'translate(176 36) scale(-1 1)', j: 0 },
-  { transform: 'translate(224 36)', j: 1 },
-];
+interface Props { fond?: 'sombre' | 'clair'; registre?: Registre }
+const { fond = 'sombre', registre = 'releve' } = Astro.props;
+// Identifiants internes (trame définie une fois, posée par <use>) : uniques par instance dans la page
+const id = `sm-${Math.random().toString(36).slice(2, 8)}`;
 ---
-<svg class:list={['semelle', `semelle--${fond}`]} viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-  {pieds.map((p) => (
-    <g transform={p.transform}>
-      {niveaux.map((n) => (
-        <path
-          class="niveau"
-          d={CONTOUR}
-          pathLength="1"
-          transform={`translate(${47 * (1 - n.e)} ${125 * (1 - n.e)}) scale(${n.e})`}
-          style={`--k:${n.k};--j:${p.j};stroke:${n.couleur};stroke-width:${TRAIT.fort / n.e}`}
-        />
-      ))}
-    </g>
-  ))}
-</svg>
+{registre === 'pedagogique' ? (
+  <Fragment set:html={svgAnimationFixe('semelle', { registre })} />
+) : (
+  <svg class:list={['semelle', `semelle--${fond}`, 'anime-visible']} viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid meet" fill="none" stroke-linecap="round" stroke-linejoin="round" set:html={contenuSemelle(id)} />
+)}
 
 <style>
   .semelle { display: block; width: 100%; height: 100%; --cycle: var(--cycle-releve); }
   .semelle--sombre { background: var(--fond-nuit); }
-  .niveau { fill: none; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1;
-    animation: niveau var(--cycle) ease-in-out infinite; animation-delay: calc(var(--j) * var(--duree-moyen) + var(--k) * var(--duree-decalage) * 3); }
-  @keyframes niveau { 0% { stroke-dashoffset: 1; opacity: 1; } 35% { stroke-dashoffset: 0; } 75% { stroke-dashoffset: 0; opacity: 1; } 95%, 100% { stroke-dashoffset: 0; opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) {
-    .niveau { animation: none; stroke-dashoffset: 0; }
+  .semelle--clair { --anim-trait: var(--dessin-trait, var(--encre)); --accent-pale: var(--dessin-accent, var(--accent-vif, var(--encre))); }
+  @media (prefers-reduced-motion: no-preference) {
+    .semelle.en-vue :global(.sm-courbe) { stroke-dasharray: 1; animation: sm-courbe var(--cycle) ease-in-out infinite backwards; animation-delay: calc(var(--j) * var(--duree-moyen) + var(--k) * var(--duree-decalage) * 3); }
   }
+  @keyframes sm-courbe { 0% { stroke-dashoffset: 1; opacity: 1; } 35% { stroke-dashoffset: 0; } 75% { stroke-dashoffset: 0; opacity: 1; } 95%, 100% { stroke-dashoffset: 0; opacity: 0; } }
 </style>

@@ -4,10 +4,16 @@
 // angle du genou mesuré en direct et cadence. Cinématique simplifiée d'une foulée de course.
 // Couleurs (palette de pression), traits, police des données et cadence viennent de la charte du core.
 // Canvas, sans librairie. Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
-interface Props { fond?: 'sombre' | 'clair' }
-const { fond = 'sombre' } = Astro.props;
+// Registre « pedagogique » : schéma calme au trait (chaussure de course), sans canvas ni mouvement.
+import { svgAnimationFixe, type Registre } from '@plateforme/core';
+interface Props { fond?: 'sombre' | 'clair'; registre?: Registre }
+const { fond = 'sombre', registre = 'releve' } = Astro.props;
 ---
-<canvas class:list={['coureur', `coureur--${fond}`]} data-fond={fond} aria-hidden="true"></canvas>
+{registre === 'pedagogique' ? (
+  <Fragment set:html={svgAnimationFixe('coureur', { registre })} />
+) : (
+  <canvas class:list={['coureur', `coureur--${fond}`]} data-fond={fond} aria-hidden="true"></canvas>
+)}
 
 <script>
   import { PRESSION, NEUTRES, TRAIT, POINTILLE, POLICE_MONO, CYCLES, transparence } from '@plateforme/core/charte';

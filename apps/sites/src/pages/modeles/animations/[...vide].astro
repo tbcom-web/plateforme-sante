@@ -1,13 +1,13 @@
 ---
-// Planche des animations d'accueil en conception, générée uniquement sur les sites de démo : /modeles/animations
+// Planche des animations d'accueil, générée uniquement sur les sites de démo : /modeles/animations
+// Chaque animation en mouvement (fond plan et fond clair), son image fixe (aperçus de l'admin, mouvement
+// réduit), son schéma calme du registre pédagogique et sa vignette de liste (~240 px).
 import '@fontsource-variable/inter';
-import Podoscope from '../../../components/animations/Podoscope.astro';
-import Coureur from '../../../components/animations/Coureur.astro';
-import Trajectoire from '../../../components/animations/Trajectoire.astro';
-import PremiersPas from '../../../components/animations/PremiersPas.astro';
-import Semelle from '../../../components/animations/Semelle.astro';
+import '@fontsource-variable/jetbrains-mono';
+import '@plateforme/core/dessins.css';
+import Animation from '../../../components/animations/Animation.astro';
 import { site } from '../../../lib/site';
-import { feuilleCharte, GAMMES, variablesGamme } from '@plateforme/core';
+import { feuilleCharte, GAMMES, variablesGamme, svgAnimationFixe, ANIMATIONS, LIBELLES_ANIMATIONS } from '@plateforme/core';
 const accent = Object.entries(variablesGamme(GAMMES[0])).map(([k, v]) => `${k}:${v}`).join(';');
 
 export function getStaticPaths() {
@@ -24,48 +24,39 @@ export function getStaticPaths() {
     <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
   </head>
   <body>
-    <section class="scene">
-      <div class="scene__anim"><Podoscope /></div>
-      <div class="scene__texte">
-        <p class="sur">Pédicure-podologue · Lyon</p>
-        <h1>Cabinet de pédicurie-podologie <span>à Lyon</span></h1>
-        <p>Animation « podoscope » : empreintes plantaires en points, la pression suit le déroulé du pas.</p>
-      </div>
-    </section>
-    <section class="scene scene--inverse">
-      <div class="scene__anim"><Coureur /></div>
-      <div class="scene__texte">
-        <p class="sur">Podologie du sport</p>
-        <h1>Analyse de la foulée <span>et du geste sportif</span></h1>
-        <p>Animation « coureur » : silhouette schématique en pleine course.</p>
-      </div>
-    </section>
-    <section class="scene">
-      <div class="scene__anim"><Trajectoire /></div>
-      <div class="scene__texte"><p class="sur">Posture et biomécanique</p><h1>Analyse de la marche <span>et de la posture</span></h1><p>Animation « trajectoire » : le centre de pression se déplace du talon au gros orteil.</p></div>
-    </section>
-    <section class="scene scene--inverse">
-      <div class="scene__anim"><PremiersPas /></div>
-      <div class="scene__texte"><p class="sur">Podologie de l’enfant</p><h1>Premiers pas <span>et croissance</span></h1><p>Animation « premiers pas » : empreintes multicolores qui avancent.</p></div>
-    </section>
-    <section class="scene">
-      <div class="scene__anim"><Semelle /></div>
-      <div class="scene__texte"><p class="sur">Soins et prévention</p><h1>Soins de pédicurie <span>et semelles</span></h1><p>Animation « semelle » : semelles tracées en courbes de niveau.</p></div>
-    </section>
-    <section class="scene scene--clair">
-      <div class="scene__anim"><Podoscope fond="clair" /></div>
-      <div class="scene__anim"><Coureur fond="clair" /></div>
-    </section>
+    <main>
+      {ANIMATIONS.map((a) => (
+        <section class="ligne">
+          <p class="titre">{a} · {LIBELLES_ANIMATIONS[a]}</p>
+          <div class="cases">
+            <figure class="case surface-plan"><div class="scene"><Animation nom={a} fond="clair" /></div><figcaption>en mouvement · fond plan</figcaption></figure>
+            <figure class="case case--claire"><div class="scene"><Animation nom={a} fond="clair" /></div><figcaption>en mouvement · fond clair</figcaption></figure>
+            <figure class="case surface-plan"><div class="scene" set:html={svgAnimationFixe(a, { id: `f-${a}` })} /><figcaption>image fixe</figcaption></figure>
+            <figure class="case case--claire"><div class="scene" set:html={svgAnimationFixe(a, { id: `p-${a}`, registre: 'pedagogique' })} /><figcaption>registre pédagogique</figcaption></figure>
+            <figure class="case case--vignette surface-plan"><div class="scene" set:html={svgAnimationFixe(a, { id: `v-${a}` })} /><figcaption>vignette 240 px</figcaption></figure>
+          </div>
+        </section>
+      ))}
+    </main>
+    <script is:inline>
+      // Planche seule (sans le gabarit) : même règle que Gabarit.astro, le mouvement ne tourne qu'à l'écran.
+      if ('IntersectionObserver' in window) {
+        const vue = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('en-vue', e.isIntersecting)));
+        document.querySelectorAll('.anime-visible').forEach((el) => vue.observe(el));
+      }
+    </script>
   </body>
 </html>
 
 <style>
-  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: var(--nuit); color: var(--papier); }
-  .scene { min-height: 100svh; display: grid; align-items: center; gap: 24px; padding: 40px clamp(20px, 5vw, 80px); }
-  @media (min-width: 900px) { .scene { grid-template-columns: 1fr 1fr; } .scene--inverse .scene__anim { order: 2; } }
-  .scene__anim { height: min(72svh, 640px); border-radius: 28px; overflow: hidden; }
-  .sur { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--signal); }
-  h1 { font-size: clamp(2.4rem, 5vw, 4.4rem); line-height: 1; letter-spacing: -0.045em; font-weight: 600; margin: 0 0 20px; }
-  h1 span { color: var(--sur-sombre-pale); }
-  .scene--clair { background: var(--doux-defaut); }
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: var(--doux-defaut); color: var(--encre); }
+  main { display: grid; gap: 28px; padding: 20px; }
+  .titre { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; margin: 0 0 10px; }
+  .cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+  .case { margin: 0; border-radius: 18px; overflow: hidden; }
+  .case--claire { background: var(--blanc); }
+  .case--vignette { width: 240px; }
+  .scene { aspect-ratio: 4 / 3; }
+  .scene :global(svg), .scene :global(canvas) { display: block; width: 100%; height: 100%; }
+  figcaption { font-family: var(--police-mono); font-size: var(--taille-donnees-petit); padding: 8px 12px; opacity: 0.7; }
 </style>

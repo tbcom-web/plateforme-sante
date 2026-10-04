@@ -62,6 +62,30 @@ Compatibilité : une couleur libre (`theme.couleur`) reste acceptée et utilisé
 - **Annotations** : en mono (`--police-mono`, `--taille-donnees-dessin` dans les SVG), courtes, avec des valeurs plausibles et illustratives.
 - **Mention illustrative** : `MENTION_ILLUSTRATIVE` (« Représentation illustrative, sans valeur de mesure ») apparaît sur les planches (`Planche.astro`), les couvertures d'articles et le pied de page.
 - **Filets éditoriaux** : `--filet-fort` (1,5 px) en tête de liste et sous les bandeaux, `--filet` (1 px) pour les séparations.
+- **Pied en silhouette** (registre pédagogique, croissance) : orteils intégrés au contour (`silhouette()` dans `dessins.ts`, tirée de `PLANTE` et `ORTEILS`), jamais d'orteils en cercles détachés. Les orteils détachés ne s'emploient que pour une empreinte (relevé au podoscope), où ils sont réels.
+- **Pied de l'enfant** : `PLANTE_ENFANT` et `ORTEILS_ENFANT` (`pied.ts`, tout-petit vers 1 an : plus large, voûte comblée par le coussinet graisseux, orteils ronds) et `piedCroissance(t)` pour les âges intermédiaires (même nombre de points que la plante adulte).
+- **Courbes de niveau** : `isolignes(champ, seuils)` (`trame.ts`, carrés marchants puis lissage). La semelle thermoformée (`courbesSemelle()`) a ses boucles propres — cuvette du talon, soutien de voûte côté interne, barre des têtes métatarsiennes, hallux — et jamais des copies réduites d'un même contour.
+
+### Deux registres
+
+Chaque dessin existe en deux registres (`svgDessin(nom, { registre })`, `svgAnimationFixe(animation, { registre })`, prop `registre` de `Dessin.astro` et des animations) :
+
+| Registre | Pour qui | Langage |
+|---|---|---|
+| `releve` (par défaut) | sites « techniques » | trame de points colorés par la pression, contours en pointillés, légende graduée, lectures en mono |
+| `pedagogique` | sites simples et rassurants | schéma de manuel : trait monochrome (`--dessin-trait`), aplat clair (`--dessin-fond`), un seul accent doux (`--dessin-accent`, zones à 14 % et 32 %), étiquettes courtes dans la police du texte reliées par un renvoi fin ; ni trame, ni lecture, ni légende, ni ligne de scan |
+
+Les animations en registre pédagogique affichent l'image calme du schéma correspondant (podoscope → analyse, coureur → sport, trajectoire → équilibre, premiers pas → enfant, semelle → semelle), sans mouvement. Le choix du registre par modèle n'est pas encore branché.
+
+### Poids des dessins (performance mobile)
+
+- Sur le site, un dessin n'est pas recopié dans la page : `pages/dessins/[fichier].svg.ts` produit au build un fichier par dessin et par registre (`/dessins/<nom>.svg`, `/dessins/<nom>-pedagogique.svg`) et un par profil d'empreintes (`/dessins/empreintes-<appui>.svg`), avec les seules règles de `dessins.css` utiles. `Dessin.astro` et `Empreintes.astro` les posent par `<svg><use href="…#d"/></svg>` : le fichier est mis en cache d'une page à l'autre et les couleurs (`--dessin-*`, `--pression-*`, accent de la gamme) restent héritées de la page à travers `<use>`.
+- Dans les animations (SVG + CSS, sans script), la trame partagée par plusieurs empreintes est définie une fois (`<defs>`) et posée par `<use>` ; mouvement en opacité ou tracé de trait seulement, uniquement à l'écran (`.anime-visible` → `.en-vue`), image fixe complète sinon. Moins de 400 éléments par animation (vérifié par `controle:charte`).
+- L'aperçu de l'admin garde `svgDessin` / `svgAnimationFixe` en ligne.
+
+### Dessins de la podologie
+
+`analyse`, `appuis`, `semelle` (vue de dessus en courbes d'appui et pied de profil posé sur la semelle : talonnette, soutien de voûte, avant-pied), `soin`, `diabete`, `sport`, `enfant` (le même pied à 1, 3, 6 et 10 ans, alignés au talon, pointure en regard), `equilibre` (stabilométrie : polygone d'appui, oscillations), `talon` (pied de profil, aponévrose plantaire et insertion calcanéenne), `ongle` (coupe transversale du gros orteil : tablette, lit, bourrelet enflammé), `laser` (faisceau étroit sur une zone de l'avant-pied), `senior` (polygone d'appui, oscillations, pas raccourcis), `taping` (bandes sur le tendon d'Achille et la voûte), `verrue` (point d'appui précis, loupe : lignes de la peau interrompues). Correspondance avec les soins : `VISUELS_SOINS` (`jeux.ts`).
 
 ## Typographie
 
@@ -148,5 +172,5 @@ Motifs signatures envisagés (non implémentés) :
 
 ## Contrôles
 
-- `npm run controle:charte` (`apps/sites`) : aucune couleur littérale (#hex, rgb(), hsl()) dans `src/components`, `src/layouts` et `src/pages`. La liste blanche est commentée dans le script et se limite aux anciens prototypes. Le contrôle vérifie aussi les contrastes AA de toutes les gammes et la validité des modèles intégrés.
+- `npm run controle:charte` (`apps/sites`) : aucune couleur littérale (#hex, rgb(), hsl()) dans `src/components`, `src/layouts` et `src/pages`. La liste blanche est commentée dans le script et se limite aux anciens prototypes. Le contrôle vérifie aussi les contrastes AA de toutes les gammes et la validité des modèles intégrés, et que chaque dessin et chaque image fixe d'animation se dessine dans les deux registres, sans valeur invalide, en moins de 400 éléments, avec sa photo associée.
 - `npm run controle:seo` : le SEO doit rester identique sur les 5 modèles.

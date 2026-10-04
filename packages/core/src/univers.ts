@@ -12,7 +12,7 @@ import { interpoler } from './couleurs';
 import { SPECIALITES, ANIMATIONS, type Animation, type Specialite } from './packs';
 
 /** Dessins techniques de la podologie (apps/sites/src/components/dessins/Dessin.astro) */
-export const DESSINS_PODOLOGIE = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'enfant', 'equilibre', 'talon', 'appuis'] as const;
+export const DESSINS_PODOLOGIE = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'enfant', 'equilibre', 'talon', 'appuis', 'ongle', 'laser', 'senior', 'taping', 'verrue'] as const;
 export type NomDessin = (typeof DESSINS_PODOLOGIE)[number];
 
 /**

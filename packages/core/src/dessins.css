@@ -34,7 +34,7 @@
 .dessin .force, .dessin .force-fleche { stroke: var(--d-chaud); stroke-width: var(--trait-fort); }
 .dessin .force-courbe { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
 .dessin .polygone { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret); }
-.dessin .oscillation { stroke: var(--d-chaud); stroke-width: var(--trait-normal); }
+.dessin .oscillation { stroke: var(--d-chaud); stroke-width: var(--trait-fin); }
 .dessin .onde { stroke: var(--d-chaud); stroke-width: var(--trait-normal); stroke-dasharray: var(--tiret); }
 .dessin .point { stroke: none; }
 .dessin .trame path { fill: none; }
@@ -45,6 +45,35 @@
 .dessin .mono { font-family: var(--police-mono); font-size: var(--taille-donnees-dessin); fill: currentColor; stroke: none; opacity: 0.75; letter-spacing: 0.02em; }
 .dessin .mono--accent { fill: var(--d-accent); opacity: 1; }
 .dessin .mono--chaud { fill: var(--d-chaud); opacity: 1; }
+
+/* Courbes d'appui de la semelle, os, aponévrose, bandes, faisceau, peau (dessins de soins) */
+.dessin .semelle-bord { stroke-width: var(--trait-fin); opacity: 0.5; }
+.dessin .iso { stroke: var(--d-accent); fill: none; }
+.dessin .os { stroke-width: var(--trait-fin); opacity: 0.55; }
+.dessin .os--leger { opacity: 0.3; }
+.dessin .aponevrose { stroke: var(--d-accent); stroke-width: var(--trait-fin); }
+.dessin .ongle-coupe { stroke: var(--d-accent); stroke-width: var(--trait-normal); fill: var(--d-fond); }
+.dessin .tiret-fin { stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); opacity: 0.6; }
+.dessin .bande { stroke: var(--d-accent); opacity: 0.32; fill: none; }
+.dessin .bande-motif { stroke: var(--d-accent); stroke-width: var(--trait-filet); stroke-dasharray: var(--tiret-court); opacity: 0.8; }
+.dessin .faisceau { fill: var(--d-accent); stroke: none; opacity: 0.22; }
+.dessin .faisceau-axe { stroke: var(--d-accent); stroke-width: var(--trait-fin); opacity: 0.8; }
+.dessin .dermato { stroke-width: var(--trait-filet); opacity: 0.45; }
+.dessin .semelle-profil { fill: var(--d-doux); fill-opacity: 0.35; stroke: var(--d-haut); stroke-width: var(--trait-normal); }
+.dessin .semelle-profil--pedago { fill: var(--d-accent); fill-opacity: 0.35; stroke: var(--d-accent); }
+.dessin .croissance { stroke-width: var(--trait-fin); opacity: calc(0.75 - var(--age, 0) * 0.12); }
+.dessin .corne { fill: var(--d-doux); stroke: none; opacity: 0.18; }
+.dessin .papille { fill: currentColor; stroke: none; }
+/* Registre pédagogique : trait monochrome, aplat clair, un seul accent doux, étiquettes simples */
+.dessin .peau { fill: var(--d-fond); }
+.dessin .trait--leger { stroke-width: var(--trait-normal); opacity: 0.35; }
+.dessin .zone { fill: var(--d-accent); stroke: none; opacity: 0.14; }
+.dessin .zone--forte { opacity: 0.32; }
+.dessin .etiquette { font-family: var(--police-texte, inherit); font-size: var(--taille-donnees-dessin); fill: currentColor; stroke: none; opacity: 0.85; }
+.dessin .renvoi { stroke-width: var(--trait-filet); opacity: 0.6; }
+.dessin .ancre { fill: currentColor; stroke: none; }
+.dessin--pedagogique .oscillation, .dessin--pedagogique .polygone, .dessin--pedagogique .force-courbe { stroke: var(--d-accent); }
+.dessin--pedagogique .papille { opacity: 0.8; }
 
 /* Apparition : les traits se dessinent, les points s'allument (si le parent est animé). */
 .pret .dessin .trace:not(.axe):not(.onde):not(.polygone) { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--duree-trace) var(--courbe-trace); }

@@ -41,6 +41,35 @@ export const ORTEILS: [number, number, number, number, number][] = [
   [75, 34, 4.2, 5.2, 24],
 ];
 
+/**
+ * Pied de tout-petit (vers 1 an), même repère et mêmes points que PLANTE (indice à indice, pour interpoler
+ * la croissance) : plus large, bord interne presque droit — le coussinet graisseux comble encore la voûte,
+ * ce qui est physiologique à cet âge — et orteils courts et ronds.
+ */
+export const PLANTE_ENFANT: P[] = [
+  [48, 219], [33, 214], [24, 203], [21, 188], [21, 170], [21, 152], // talon, plus étroit que l'avant-pied
+  [20, 138], [20, 124], [19, 110], [17, 98], // voûte comblée
+  [14, 86], [11, 72], [11, 58], [15, 46], [22, 39], // avant-pied large
+  [33, 36], [45, 36], [56, 38], [66, 42], [75, 48], [81, 56], // sous les orteils
+  [84, 68], [84, 82], [83, 98], [81, 116], [80, 134], [78, 152], [76, 170], [75, 188], [71, 204], [62, 215], // bord externe
+];
+export const ORTEILS_ENFANT: [number, number, number, number, number][] = [
+  [27, 21, 11, 12.5, -6],
+  [45, 19, 6.6, 7.4, 4],
+  [56, 22, 6, 6.8, 10],
+  [66, 28, 5.6, 6, 16],
+  [75, 36, 5, 5.2, 24],
+];
+
+/** Pied à un âge donné : interpolation entre le pied du tout-petit (t = 0) et le pied adulte (t = 1) */
+export function piedCroissance(t: number): { plante: P[]; orteils: [number, number, number, number, number][] } {
+  const m = (a: number, b: number) => +(a + (b - a) * t).toFixed(1);
+  return {
+    plante: PLANTE.map(([x, y], i) => [m(PLANTE_ENFANT[i][0], x), m(PLANTE_ENFANT[i][1], y)] as P),
+    orteils: ORTEILS.map((o, i) => o.map((v, k) => m(ORTEILS_ENFANT[i][k], v)) as [number, number, number, number, number]),
+  };
+}
+
 /** Trajet du centre de pression pendant le pas : talon → bord externe → avant-pied → gros orteil */
 export const TRAJET = 'M47 202 C52 176 62 156 62 132 C62 106 52 82 40 62 C33 48 29 34 27 18';
 

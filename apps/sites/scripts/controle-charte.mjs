@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -66,15 +66,33 @@ const gammes = core.GAMMES.flatMap(core.verifierGamme);
 const modeles = core.MODELES_INTEGRES.flatMap((m) => core.validerManifeste(m).erreurs.map((e) => `${m.id} : ${e}`));
 // Chaque marque de logo déclarée par un univers doit avoir son dessin (logos.ts)
 const marques = core.UNIVERS_LISTE.flatMap((u) => u.marques.filter((q) => !core.MARQUES_DESSINEES.includes(q.id)).map((q) => `${u.id} : marque de logo « ${q.id} » sans dessin`));
+// Dessins et images fixes des animations : chacun se dessine dans les deux registres (relevé, pédagogique),
+// sans valeur invalide ; une animation reste légère (moins de 400 éléments SVG) ; chaque dessin a sa photo
+// associée et chaque soin du catalogue pointe vers un dessin existant.
+const LIMITE_ELEMENTS = 400;
+const elements = (svg) => (svg.match(/<(?!\/)[a-z]/gi) || []).length;
+const invalide = (svg) => /NaN|undefined|Infinity/.test(svg);
+const dessins = [
+  ...core.DESSINS_PODOLOGIE.flatMap((n) => core.REGISTRES.flatMap((r) => {
+    const svg = core.svgDessin(n, { registre: r });
+    return [...(invalide(svg) ? [`dessin « ${n} » (${r}) : valeur invalide`] : []), ...(elements(svg) < 8 ? [`dessin « ${n} » (${r}) : vide`] : [])];
+  })),
+  ...core.ANIMATIONS.flatMap((a) => core.REGISTRES.flatMap((r) => {
+    const svg = core.svgAnimationFixe(a, { registre: r });
+    return [...(invalide(svg) ? [`image fixe « ${a} » (${r}) : valeur invalide`] : []), ...(elements(svg) > LIMITE_ELEMENTS ? [`image fixe « ${a} » (${r}) : ${elements(svg)} éléments (> ${LIMITE_ELEMENTS})`] : [])];
+  })),
+  ...core.DESSINS_PODOLOGIE.filter((n) => !core.PHOTOS_DESSINS[n]).map((n) => `dessin « ${n} » sans photo associée (PHOTOS_DESSINS)`),
+  ...Object.entries(core.VISUELS_SOINS).filter(([, c]) => !core.DESSINS_PODOLOGIE.includes(c.dessin)).map(([s, c]) => `soin « ${s} » : dessin inconnu « ${c.dessin} »`),
+];
 const inconnues = core.MODELES_INTEGRES.flatMap((m) => (m.gammes ?? []).filter((g) => !core.GAMMES.some((x) => x.id === g)).map((g) => `${m.id} : gamme inconnue « ${g} »`));
 
 if (defauts.length) {
   console.log(`✗ ${defauts.length} couleur(s) littérale(s) hors charte :`);
   for (const d of defauts) console.log(`  ${d}`);
 }
-for (const d of [...gammes, ...modeles, ...inconnues, ...marques]) console.log(`✗ ${d}`);
-const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length;
+for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins]) console.log(`✗ ${d}`);
+const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées.`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins et ${core.ANIMATIONS.length} images fixes dans ${core.REGISTRES.length} registres.`);
 process.exit(total ? 1 : 0);

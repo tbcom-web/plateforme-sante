@@ -1,8 +1,9 @@
 ---
 // Paire d'empreintes en trame hexagonale de points (relevé de baropodométrie), avec ligne de scan
 // et légende graduée. Décoratif (aria-hidden) ; la ligne de scan ne tourne que lorsque le bloc est à l'écran.
-import { CONTOUR, ORTEILS } from '../animations/pied';
-import { trame, type Appui } from './trame';
+// Les deux empreintes (trame et contours) sont un fichier statique généré au build
+// (pages/dessins/[fichier].svg.ts), référencé par <use> : la page ne recopie pas les centaines de points.
+import type { Appui } from './trame';
 import { PRESSION, ARRETS_PRESSION, TRAIT } from '@plateforme/core';
 
 interface Props {
@@ -15,7 +16,6 @@ interface Props {
 }
 const { appui = 'normal', legende = true, scan = true, class: classe } = Astro.props;
 const id = `e-${Math.random().toString(36).slice(2, 8)}`;
-const niveaux = trame(appui);
 const largeur = legende ? 236 : 210;
 ---
 <svg class:list={['empreintes', classe, { 'empreintes--scan': scan }]} viewBox={`0 0 ${largeur} 236`} aria-hidden="true" fill="none" stroke-linecap="round">
@@ -28,13 +28,7 @@ const largeur = legende ? 236 : 210;
       <stop offset="1" stop-color="var(--signal)" stop-opacity="0.2" />
     </linearGradient>
   </defs>
-  {[`translate(10 7) scale(-1 1) translate(-92 0)`, `translate(108 7)`].map((t) => (
-    <g transform={t}>
-      <path class="empreintes__contour" d={CONTOUR} />
-      {ORTEILS.map(([cx, cy, rx, ry, r]) => <ellipse class="empreintes__contour" cx={cx} cy={cy} rx={rx} ry={ry} transform={`rotate(${r} ${cx} ${cy})`} />)}
-      {niveaux.map((n) => <path d={n.d} stroke={n.couleur} stroke-width={n.epaisseur} />)}
-    </g>
-  ))}
+  <use href={`/dessins/empreintes-${appui}.svg#d`} width="210" height="236" />
   {scan && (
     <g class="empreintes__scan">
       <rect x="0" y="-18" width="210" height="18" fill={`url(#${id}-s)`} />
@@ -51,7 +45,6 @@ const largeur = legende ? 236 : 210;
 
 <style>
   .empreintes { display: block; width: 100%; height: auto; overflow: visible; }
-  .empreintes__contour { stroke: currentColor; stroke-width: var(--pointille-leger-point); stroke-dasharray: var(--pointille); opacity: var(--pointille-leger-opacite); }
   .empreintes__graduation { stroke: currentColor; stroke-width: var(--trait-fin); opacity: 0.5; }
   .empreintes__scan { animation: scan var(--cycle-releve) var(--courbe-entree-sortie) infinite; animation-play-state: paused; }
   :global(.en-vue) .empreintes__scan { animation-play-state: running; }

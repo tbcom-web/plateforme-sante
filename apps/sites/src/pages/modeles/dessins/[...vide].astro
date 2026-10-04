@@ -1,5 +1,6 @@
 ---
 // Planche des dessins techniques, générée uniquement sur les sites de démo : /modeles/dessins
+// Registre « relevé » (par défaut) et registre « pédagogique », sur fond clair et sur fond plan, et en vignette.
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import Dessin, { type NomDessin } from '../../../components/dessins/Dessin.astro';
@@ -29,6 +30,15 @@ const noms: NomDessin[] = [...DESSINS_PODOLOGIE];
       {noms.map((n) => (
         <figure class="sombre"><Dessin nom={n} /><figcaption>{n} · fond plan</figcaption></figure>
       ))}
+      {noms.map((n) => (
+        <figure><Dessin nom={n} registre="pedagogique" /><figcaption>{n} · pédagogique</figcaption></figure>
+      ))}
+      {noms.map((n) => (
+        <figure class="sombre"><Dessin nom={n} registre="pedagogique" /><figcaption>{n} · pédagogique, fond plan</figcaption></figure>
+      ))}
+      {noms.map((n) => (
+        <figure class="vignette"><Dessin nom={n} /><figcaption>{n} · 240 px</figcaption></figure>
+      ))}
     </main>
   </body>
 </html>
@@ -38,6 +48,7 @@ const noms: NomDessin[] = [...DESSINS_PODOLOGIE];
   main { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; padding: 16px; }
   figure { margin: 0; background: var(--blanc); border-radius: 16px; padding: 18px; }
   figcaption { font-family: var(--police-mono); font-size: var(--taille-donnees); color: var(--encre-pale); margin-top: 6px; }
+  .vignette { width: 240px; padding: 8px; }
   .sombre { background: var(--plan); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-fond: var(--plan-profond);
     background-image: linear-gradient(var(--quadrillage-sombre) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-sombre) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas) var(--quadrillage-pas); }
 </style>
