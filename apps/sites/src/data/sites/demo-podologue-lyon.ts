@@ -424,11 +424,11 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   paiements: ['Carte bancaire', 'Chèques', 'Espèces'],
   // Matériel et hygiène (catalogue EQUIPEMENTS) : jeu courant d'un cabinet libéral qui fabrique ses semelles.
   equipements: [
-    'autoclave-classe-b', 'sachets-individuels', 'usage-unique', 'tracabilite-sterilisation', 'aspiration',
+    'autoclave-classe-b', 'bac-ultrasons', 'sachets-individuels', 'usage-unique', 'tracabilite-sterilisation', 'aspiration',
     'podoscope', 'plateforme-pression', 'analyse-video', 'monofilament-diapason',
     'empreinte-mousse', 'thermoformage', 'fauteuil-soins',
   ],
-  equipementsAutres: 'Bac à ultrasons pour le nettoyage des instruments',
+  equipementsAutres: '',
   domicile: { actif: true, creneaux: 'Le jeudi matin', secteurs: ['69100 Villeurbanne', '69300 Caluire-et-Cuire', '69500 Bron'] },
   message: '',
   communes: ['Lyon 6e', 'Lyon 3e', 'Villeurbanne', 'Caluire-et-Cuire', 'Bron'],

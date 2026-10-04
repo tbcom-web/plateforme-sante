@@ -74,6 +74,14 @@
 .dessin .poussieres { stroke: var(--d-accent); stroke-width: var(--trait-fort); }
 .dessin .vibration { stroke: var(--d-accent); stroke-width: var(--trait-fin); }
 .dessin .trame--legere { opacity: 0.55; }
+.dessin .trait--moyen { stroke-width: var(--trait-normal); }
+.dessin .canne-poignee { stroke-width: var(--trait-marque); }
+.dessin .canne-embout { fill: currentColor; stroke: none; }
+.dessin .repli { stroke-width: var(--trait-normal); }
+.dessin .ongle-cache { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); }
+.dessin .miroir { stroke-width: var(--trait-fin); fill: var(--d-accent); fill-opacity: 0.08; }
+/* Étiquettes : détourées par le fond, jamais posées sur un trait */
+.dessin .etiquette { paint-order: stroke; stroke: var(--d-fond); stroke-width: 3; stroke-linejoin: round; }
 .dessin .peau-seule { fill: var(--d-fond); stroke: none; }
 .dessin .os--teinte { fill: var(--d-accent); fill-opacity: 0.1; opacity: 0.7; }
 .dessin .canne { stroke-width: var(--trait-fort); }
@@ -85,7 +93,7 @@
 .dessin .trait--leger { stroke-width: var(--trait-normal); opacity: 0.35; }
 .dessin .zone { fill: var(--d-accent); stroke: none; opacity: 0.14; }
 .dessin .zone--forte { opacity: 0.32; }
-.dessin .etiquette { font-family: var(--police-texte, inherit); font-size: var(--taille-donnees-dessin); fill: currentColor; stroke: none; opacity: 0.85; }
+.dessin .etiquette { font-family: var(--police-texte, inherit); font-size: var(--taille-donnees-dessin); fill: currentColor; opacity: 0.85; }
 .dessin .renvoi { stroke-width: var(--trait-filet); opacity: 0.6; }
 .dessin .ancre { fill: currentColor; stroke: none; }
 .dessin--pedagogique .oscillation, .dessin--pedagogique .polygone, .dessin--pedagogique .force-courbe { stroke: var(--d-accent); }

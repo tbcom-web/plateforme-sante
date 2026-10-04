@@ -81,7 +81,7 @@ const kase = (photo: string, dessin: NomDessin, animation: Animation | null, pho
  */
 export const VISUELS_SOINS: Record<string, VisuelCase> = {
   // Examen sur plateforme : trajet du centre de pression
-  'bilan-podologique': kase(P('analyse-plateforme'), 'analyse', 'trajectoire', true),
+  'bilan-podologique': kase(P('analyse-plateforme'), 'voutes', 'trajectoire', true),
   // Chaussage et semelles : courbes de niveau de la semelle (photo de chaussage peu parlante)
   'semelles-orthopediques': kase(P('chaussage'), 'semelle', 'semelle', false),
   // Geste de soin : le dessin (loupe sur l'ongle) suffit
