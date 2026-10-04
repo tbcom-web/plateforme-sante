@@ -2,24 +2,11 @@
 // pour le praticien), géolocalisation du cabinet pour le plan d'accès (OpenStreetMap, sans cookie).
 import { site } from './site';
 import { lieu } from './textes';
+import { visuelSoin } from './visuels-soins';
+import { packVisuel, type ModeVisuel, type NomDessin } from '@plateforme/core';
 
-const PHOTO_SOIN: Record<string, string> = {
-  'bilan-podologique': '/photos/analyse-plateforme.webp',
-  'semelles-orthopediques': '/photos/chaussage.webp',
-  'soins-de-pedicurie': '/photos/examen-mains.webp',
-  'pied-diabetique': '/photos/soin-talon.webp',
-  'podologie-du-sport': '/photos/sport-course.webp',
-  'podologie-enfant': '/photos/enfant-pied.webp',
-  posturologie: '/photos/analyse-plateforme.webp',
-  'podologie-du-senior': '/photos/examen-mains.webp',
-  'verrues-plantaires': '/photos/soin-talon.webp',
-  'ongle-incarne': '/photos/examen-mains.webp',
-  'douleur-talon': '/photos/soin-talon.webp',
-  laser: '/photos/soin-talon.webp',
-  'k-taping': '/photos/sport-course.webp',
-};
-
-export const photoSoin = (slug: string) => PHOTO_SOIN[slug] ?? '/photos/examen-mains.webp';
+/** Photo d'un soin (source unique : lib/visuels-soins.ts) */
+export const photoSoin = (slug: string) => visuelSoin(slug).photo;
 
 // Photos du praticien d'abord, puis celles du pack visuel de sa spécialité.
 const pack = site.visuels.photos;
@@ -29,6 +16,32 @@ export const diaporama = [...new Set([site.photos.accueil, site.photos.panorama,
 /** Fond sombre des accueils animés, teinté de la couleur du cabinet (variable de la charte) */
 export const fondAnime = 'var(--fond-anime)';
 export const photoFinale = site.photos.cabinet[1] || '/photos/chaussage.webp';
+
+// ---- Style visuel choisi par le praticien : illustrations seules, photos seules ou mélange ----
+// Règles : les photos du praticien s'affichent toujours (c'est son choix, même en mode illustrations) ;
+// sa case « animation d'accueil » décochée n'est jamais contournée ; en mode photos, aucune animation.
+export const modeVisuel: ModeVisuel = site.theme.modeVisuel ?? 'mixte';
+export const enIllustrations = modeVisuel === 'illustrations';
+export const enPhotos = modeVisuel === 'photos';
+
+/** Dessin signature de la spécialité (accueil et panorama sans photo) */
+export const dessinSpecialite: NomDessin = packVisuel(site.visuels.specialite).dessins?.[0] ?? 'analyse';
+
+/** Animation affichée à l'accueil : celle de la spécialité si la case est cochée, jamais en mode photos */
+export const animationAccueil = enPhotos ? null : site.visuels.animation;
+/** Photo d'accueil affichée : en mode illustrations, seulement celle du praticien */
+export const photoAccueilAffichee = enIllustrations ? site.photos.accueil : photoAccueil;
+/** Diaporama affiché : en mode illustrations, seulement les photos du praticien */
+export const diaporamaAffiche = enIllustrations
+  ? [...new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].filter(Boolean))].slice(0, 4)
+  : diaporama;
+/** Photo du panorama affichée : en mode illustrations, seulement celle du praticien (sinon composition sur fond plan) */
+export const photoPanoramaAffichee = enIllustrations ? site.photos.panorama || site.photos.cabinet[0] || '' : photoPanorama;
+/** Visuel principal de l'accueil, par ordre de priorité */
+export const visuelAccueil = (photos: string[]): 'animation' | 'photo' | 'illustration' =>
+  animationAccueil ? 'animation' : photos.filter(Boolean).length ? 'photo' : 'illustration';
+/** Photo du cabinet pour un praticien sans portrait, en mode photos (lieu, jamais une personne) */
+export const photoLieu = site.photos.cabinet[0] || site.photos.accueil || pack.accueil;
 
 /** Coordonnées du cabinet : saisies, sinon géocodées au build via Nominatim (OpenStreetMap). */
 async function geocoder(): Promise<{ lat: number; lng: number } | null> {

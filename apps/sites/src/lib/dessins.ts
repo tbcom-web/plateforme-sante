@@ -2,25 +2,10 @@
 // La liste des dessins appartient à l'univers métier (packages/core/src/univers.ts).
 import type { NomDessin } from '@plateforme/core';
 export type { NomDessin };
+import { visuelSoin } from './visuels-soins';
 
-/** Dessin de chaque soin du catalogue ; « analyse » par défaut */
-const DESSIN_SOIN: Record<string, NomDessin> = {
-  'bilan-podologique': 'analyse',
-  'semelles-orthopediques': 'semelle',
-  'soins-de-pedicurie': 'soin',
-  'pied-diabetique': 'diabete',
-  'podologie-du-sport': 'sport',
-  'podologie-enfant': 'enfant',
-  posturologie: 'equilibre',
-  'podologie-du-senior': 'equilibre',
-  'verrues-plantaires': 'appuis',
-  'ongle-incarne': 'soin',
-  'douleur-talon': 'talon',
-  laser: 'soin',
-  'k-taping': 'sport',
-};
-
-export const dessinSoin = (slug: string): NomDessin => DESSIN_SOIN[slug] ?? 'analyse';
+/** Dessin de chaque soin (source unique : lib/visuels-soins.ts) */
+export const dessinSoin = (slug: string): NomDessin => visuelSoin(slug).dessin;
 
 // Mots-clés du thème (ou du titre) d'un article → dessin de couverture, du plus précis au plus général.
 const MOTS: [RegExp, NomDessin][] = [

@@ -1,0 +1,83 @@
+---
+// Visuel d'en-tête des pages internes (fiche d'un soin, liste des compétences), selon le style visuel :
+// - photos : grande photo 16:9, dimensions fixes, traitement de teinte du modèle (Gabarit) ;
+// - illustrations : planche du dessin, ou animation du soin quand elle existe, sur fond plan ;
+// - mixte : photo 16:9 et planche technique en encart, posée sur l'angle de la photo.
+// Décoratif : aria-hidden ; toute planche porte la mention illustrative de la charte.
+import Dessin from '../dessins/Dessin.astro';
+import Animation from '../animations/Animation.astro';
+import { MENTION_ILLUSTRATIVE, type Animation as NomAnimation, type NomDessin } from '@plateforme/core';
+import { modeVisuel } from '../../lib/visuels';
+
+interface Props {
+  photo: string;
+  /** Cadrage de la photo (object-position) */
+  cadrage?: string;
+  dessin: NomDessin;
+  animation?: NomAnimation | null;
+  /** Légende en mono (nom du soin…) et repère (« Fig. 05 ») */
+  legende?: string;
+  repere?: string;
+}
+const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '' } = Astro.props;
+---
+{modeVisuel === 'photos' && (
+  <figure class="ve ve--photo" aria-hidden="true">
+    <img src={photo} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${cadrage}`} />
+  </figure>
+)}
+
+{modeVisuel === 'illustrations' && (
+  <figure class:list={['ve', 've--plan', 'surface-plan', { 've--anime': animation }]} aria-hidden="true">
+    <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>
+    <span class="ve__scene">{animation ? <Animation nom={animation} fond="sombre" /> : <Dessin nom={dessin} />}</span>
+    <span class="ve__bas mono">{MENTION_ILLUSTRATIVE}</span>
+  </figure>
+)}
+
+{modeVisuel === 'mixte' && (
+  <figure class="ve ve--mixte" aria-hidden="true">
+    <span class="ve__cadre">
+      <img src={photo} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${cadrage}`} />
+    </span>
+    <span class="ve__encart surface-grille">
+      <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>
+      <Dessin nom={dessin} />
+    </span>
+    <span class="ve__mention mono">{MENTION_ILLUSTRATIVE}</span>
+  </figure>
+)}
+
+<style>
+  .ve { position: relative; width: 100%; margin: 0; }
+  .ve img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  /* Photo seule : 16:9, coins de la gamme */
+  .ve--photo { aspect-ratio: 16 / 9; border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); }
+
+  /* Illustrations : cartouche sur fond plan d'architecte, scène 16:9 */
+  .ve--plan { display: grid; grid-template-rows: auto auto auto; padding: 14px 16px; border-radius: var(--rayon-grand); overflow: hidden; box-shadow: var(--ombre); }
+  .ve__haut, .ve__bas { display: flex; justify-content: space-between; gap: 12px; font-size: var(--taille-donnees-petit); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; }
+  .ve--plan .ve__haut { padding-bottom: 10px; border-bottom: var(--filet) solid var(--sur-sombre-filet); color: var(--sur-sombre-pale); }
+  .ve--plan .ve__haut span:first-child { color: var(--signal); }
+  .ve--plan .ve__bas { padding-top: 10px; border-top: var(--filet) solid var(--sur-sombre-filet); color: var(--sur-sombre-pale); text-transform: none; letter-spacing: 0.02em; }
+  .ve__scene { display: grid; place-items: center; aspect-ratio: 16 / 9; min-height: 0; padding: clamp(10px, 2vw, 22px); color: var(--sur-sombre-doux); }
+  .ve__scene :global(.dessin) { height: 100%; width: auto; max-width: 100%; }
+  .ve--anime .ve__scene { padding: 0; }
+  .ve--anime .ve__scene :global(canvas), .ve--anime .ve__scene :global(svg) { width: 100%; height: 100%; background: none !important; }
+
+  /* Mixte : photo 16:9 et planche en encart sur l'angle bas droit */
+  .ve--mixte { display: grid; gap: 10px; }
+  .ve__cadre { display: block; aspect-ratio: 16 / 9; border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); }
+  .ve__encart { position: absolute; right: 14px; bottom: calc(14px + 1.6em + 10px); width: min(42%, 250px); display: grid; gap: 6px; padding: 10px 12px 12px; border-radius: var(--rayon); background-color: var(--fond); box-shadow: var(--ombre); }
+  .ve--mixte .ve__haut { padding-bottom: 6px; border-bottom: var(--filet) solid var(--ligne); color: var(--encre-pale); }
+  .ve--mixte .ve__haut span:first-child { color: var(--accent-vif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ve__mention { font-size: var(--taille-donnees-petit); color: var(--encre-pale); letter-spacing: 0.02em; }
+  @media (min-width: 960px) {
+    .ve__encart { right: auto; left: -28px; bottom: calc(1.6em + 10px + 28px); width: min(40%, 260px); }
+  }
+  @media (max-width: 520px) {
+    .ve__encart { width: 46%; padding: 8px 9px 9px; }
+    .ve--mixte .ve__haut span:last-child { display: none; }
+  }
+</style>

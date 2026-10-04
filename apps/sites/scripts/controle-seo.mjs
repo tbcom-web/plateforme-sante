@@ -1,11 +1,16 @@
 // Contrôle SEO des modèles : construit le site de démo avec chaque modèle intégré et vérifie que
 // tout ce que lisent les moteurs est identique (title, description, canonical, robots, H1, ensemble des H2,
 // données structurées, sitemap, robots.txt, llms.txt). Usage : node scripts/controle-seo.mjs [modele…]
+// Styles visuels : MODES_VISUELS=illustrations,photos,mixte construit chaque modèle dans chaque style ;
+// les titres et textes ne doivent jamais changer d'un style à l'autre.
 import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const modeles = process.argv.slice(2).length ? process.argv.slice(2) : ['proximite', 'premium', 'prestige', 'zen', 'atelier'];
+const modes = (process.env.MODES_VISUELS ?? '').split(',').map((m) => m.trim()).filter(Boolean);
+// Variantes construites : chaque modèle, dans chaque style visuel demandé (sinon le style par défaut).
+const variantes = modeles.flatMap((modele) => (modes.length ? modes : [null]).map((mode) => ({ modele, mode, nom: mode ? `${modele}/${mode}` : modele })));
 const dist = new URL('../dist/', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
 
 const fichiers = (dossier) =>
@@ -42,13 +47,13 @@ function signature() {
 }
 
 const resultats = {};
-for (const modele of modeles) {
-  console.log(`→ Construction avec le modèle « ${modele} »…`);
-  execSync('npx astro build', { stdio: 'ignore', env: { ...process.env, MODELE: modele } });
-  resultats[modele] = signature();
+for (const { modele, mode, nom } of variantes) {
+  console.log(`→ Construction avec le modèle « ${modele} »${mode ? `, style visuel « ${mode} »` : ''}…`);
+  execSync('npx astro build', { stdio: 'ignore', env: { ...process.env, MODELE: modele, ...(mode ? { MODE_VISUEL: mode } : {}) } });
+  resultats[nom] = signature();
 }
 
-const [reference, ...autres] = modeles;
+const [reference, ...autres] = variantes.map((v) => v.nom);
 let ecarts = 0;
 for (const autre of autres) {
   const a = resultats[reference], b = resultats[autre];
@@ -65,5 +70,5 @@ for (const autre of autres) {
     }
   }
 }
-console.log(ecarts ? `\n${ecarts} écart(s) SEO détecté(s).` : `\n✓ SEO identique sur ${modeles.length} modèles (${Object.keys(resultats[reference]).length} fichiers comparés).`);
+console.log(ecarts ? `\n${ecarts} écart(s) SEO détecté(s).` : `\n✓ SEO identique sur ${modeles.length} modèles${modes.length ? ` × ${modes.length} styles visuels` : ''} (${Object.keys(resultats[reference]).length} fichiers comparés).`);
 process.exit(ecarts ? 1 : 0);

@@ -1,16 +1,20 @@
 ---
-// Accueil « scindé » : titre à gauche, grande photo à droite avec badges.
+// Accueil « scindé » : titre à gauche, grande photo à droite avec badges. Selon le style visuel, la photo
+// cède la place à l'animation de la spécialité ou à une planche technique sur fond plan (lib/visuels).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
-import { photoAccueil, fondAnime } from '../../lib/visuels';
+import Planche from '../dessins/Planche.astro';
+import { photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
+import { packVisuel } from '@plateforme/core';
 import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
 
 const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
 const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}` : 'Sur rendez-vous';
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
+const choix = visuelAccueil([photoAccueilAffichee]);
 ---
 <section class="cadre accueil">
   <div>
@@ -26,9 +30,9 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
     </div>
   </div>
   <figure class="visuel">
-    {site.visuels.animation
-      ? <div class="visuel__anim" style={`background:${fondAnime}`} aria-hidden="true"><AnimationAccueil /></div>
-      : <img src={photoAccueil} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" {...zonePhoto('photos.accueil')} />}
+    {choix === 'animation' && <div class="visuel__anim" style={`background:${fondAnime}`} aria-hidden="true"><AnimationAccueil /></div>}
+    {choix === 'photo' && <img src={photoAccueilAffichee} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" {...zonePhoto('photos.accueil')} />}
+    {choix === 'illustration' && <div class="visuel__planche" {...zonePhoto('photos.accueil')}><Planche nom={dessinSpecialite} fond="plan" legende={packVisuel(site.visuels.specialite).label} /></div>}
     <figcaption class="flottant flottant--haut">
       <span class="pastille" aria-hidden="true"></span>
       {rdvEnLigne ? 'Réservation en ligne 24h/24' : 'Rendez-vous par téléphone'}
@@ -50,6 +54,8 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   .visuel { position: relative; margin: 0; }
   .visuel__anim { height: clamp(360px, 64vh, 640px); border-radius: var(--rayon-grand); overflow: hidden; }
   .visuel__anim :global(canvas), .visuel__anim :global(svg) { background: none !important; }
+  .visuel__planche { height: clamp(360px, 64vh, 640px); }
+  .visuel__planche :global(.planche) { height: 100%; }
   .visuel img { width: 100%; height: clamp(360px, 64vh, 640px); object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }
   .flottant { position: absolute; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 16px; background: rgb(var(--blanc-rgb) / 0.86); backdrop-filter: blur(14px) saturate(1.5); box-shadow: var(--ombre); font-size: 0.86rem; line-height: 1.35; color: var(--encre); }
   .flottant--haut { top: 18px; right: 18px; }

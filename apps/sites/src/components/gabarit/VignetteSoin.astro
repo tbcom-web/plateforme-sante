@@ -1,0 +1,22 @@
+---
+// Vignette d'un soin dans les listes (compétences en liste, « Autres compétences »), selon le style visuel :
+// illustrations → dessin ; photos → photo ; mixte → dessin, et la photo apparaît au survol si `survol`.
+// À poser dans une boîte en position relative et overflow hidden (fournie par le parent). Décorative.
+import Dessin from '../dessins/Dessin.astro';
+import { visuelSoin } from '../../lib/visuels-soins';
+import { modeVisuel } from '../../lib/visuels';
+
+interface Props { slug: string; survol?: boolean }
+const { slug, survol = false } = Astro.props;
+const v = visuelSoin(slug);
+const dessin = modeVisuel !== 'photos';
+const photo = modeVisuel === 'photos' || (modeVisuel === 'mixte' && survol);
+---
+{dessin && <Dessin nom={v.dessin} />}
+{photo && <img class:list={['vs__photo', { 'vs__photo--survol': dessin }]} src={v.photo} alt="" width="320" height="240" loading="lazy" decoding="async" style={`object-position:${v.cadrage}`} />}
+
+<style>
+  .vs__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .vs__photo--survol { opacity: 0; transition: opacity var(--duree-moyen) var(--courbe-sortie); }
+  :global(a:hover) .vs__photo--survol, :global(a:focus-visible) .vs__photo--survol { opacity: 1; }
+</style>

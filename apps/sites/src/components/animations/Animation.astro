@@ -1,0 +1,18 @@
+---
+// Animation de la marque, choisie par son nom (accueil, fiches de soins). Décorative (aria-hidden dans
+// chaque composant) ; pause hors écran et image fixe si le visiteur réduit les mouvements.
+import Podoscope from './Podoscope.astro';
+import Coureur from './Coureur.astro';
+import Trajectoire from './Trajectoire.astro';
+import PremiersPas from './PremiersPas.astro';
+import Semelle from './Semelle.astro';
+import type { Animation } from '@plateforme/core';
+
+interface Props { nom: Animation | null; fond?: 'sombre' | 'clair' }
+const { nom, fond = 'sombre' } = Astro.props;
+---
+{nom === 'podoscope' && <Podoscope fond={fond} />}
+{nom === 'coureur' && <Coureur fond={fond} />}
+{nom === 'trajectoire' && <Trajectoire fond={fond} />}
+{nom === 'premiers-pas' && <PremiersPas fond={fond} />}
+{nom === 'semelle' && <Semelle fond={fond} />}

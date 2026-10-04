@@ -1,21 +1,31 @@
 ---
 // Accueil « plein » : une grande photo plein écran, titre centré, voile réglé par le modèle.
 // Léger effet de profondeur au défilement (coupé si le visiteur réduit les mouvements).
+// Selon le style visuel : animation de la spécialité, photo, ou dessin technique sur fond plan (lib/visuels).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
-import { photoAccueil, fondAnime } from '../../lib/visuels';
+import Dessin from '../dessins/Dessin.astro';
+import { photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
+import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
 
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
-const anime = site.visuels.animation !== null;
+const choix = visuelAccueil([photoAccueilAffichee]);
+// Animation ou illustration : titre à gauche, visuel à droite
+const anime = choix !== 'photo';
 ---
-<section class:list={['plein', { 'plein--anime': anime }]} style={anime ? `background:${fondAnime}` : undefined}>
-  {anime
-    ? <div class="plein__anim" aria-hidden="true"><AnimationAccueil /></div>
-    : <img class="plein__image" src={photoAccueil} alt="" width="2000" height="1300" fetchpriority="high" decoding="async" {...zonePhoto('photos.accueil')} />}
+<section class:list={['plein', { 'plein--anime': anime }]} style={choix === 'animation' ? `background:${fondAnime}` : undefined}>
+  {choix === 'animation' && <div class="plein__anim" aria-hidden="true"><AnimationAccueil /></div>}
+  {choix === 'photo' && <img class="plein__image" src={photoAccueilAffichee} alt="" width="2000" height="1300" fetchpriority="high" decoding="async" {...zonePhoto('photos.accueil')} />}
+  {choix === 'illustration' && (
+    <div class="plein__illus surface-plan" aria-hidden="true" {...zonePhoto('photos.accueil')}>
+      <span class="plein__dessin"><Dessin nom={dessinSpecialite} /></span>
+      <span class="plein__mention mono">{MENTION_ILLUSTRATIVE}</span>
+    </div>
+  )}
   <div class="cadre plein__contenu">
     <p class="sur plein__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
@@ -54,6 +64,12 @@ const anime = site.visuels.animation !== null;
   .plein__anim { position: absolute; inset: 0; z-index: -2; opacity: 0.35; }
   .plein__anim :global(canvas), .plein__anim :global(svg) { background: none !important; }
   @media (min-width: 900px) { .plein__anim { left: 50%; opacity: 1; } }
+  /* Illustration : fond plan d'architecte plein cadre, dessin de la spécialité à droite */
+  .plein__illus { position: absolute; inset: 0; z-index: -2; }
+  .plein__dessin { position: absolute; inset: 18% 6% 16% 6%; display: grid; place-items: center; opacity: 0.3; }
+  .plein__dessin :global(.dessin) { width: 100%; height: 100%; }
+  .plein__mention { position: absolute; right: clamp(20px, 4vw, 56px); bottom: 28px; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); letter-spacing: 0.02em; display: none; }
+  @media (min-width: 900px) { .plein__dessin { left: 60%; right: 4%; opacity: 1; } .plein__mention { display: block; } }
   .plein__sur { color: var(--sur-sombre-doux); }
   .plein__sur::before { display: none; }
   h1 { color: var(--blanc); font-size: clamp(2.6rem, 6.6vw, 5.8rem); max-width: 16ch; line-height: 1; }

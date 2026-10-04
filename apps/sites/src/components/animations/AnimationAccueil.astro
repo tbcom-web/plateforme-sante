@@ -1,18 +1,9 @@
 ---
-// Animation d'accueil retenue pour le site (pack visuel de la spécialité), ou rien.
-import Podoscope from './Podoscope.astro';
-import Coureur from './Coureur.astro';
-import Trajectoire from './Trajectoire.astro';
-import PremiersPas from './PremiersPas.astro';
-import Semelle from './Semelle.astro';
-import { site } from '../../lib/site';
+// Animation d'accueil retenue pour le site (spécialité, case cochée, style visuel autre que « photos »), ou rien.
+import Animation from './Animation.astro';
+import { animationAccueil } from '../../lib/visuels';
 
 interface Props { fond?: 'sombre' | 'clair' }
 const { fond = 'sombre' } = Astro.props;
-const animation = site.visuels.animation;
 ---
-{animation === 'podoscope' && <Podoscope fond={fond} />}
-{animation === 'coureur' && <Coureur fond={fond} />}
-{animation === 'trajectoire' && <Trajectoire fond={fond} />}
-{animation === 'premiers-pas' && <PremiersPas fond={fond} />}
-{animation === 'semelle' && <Semelle fond={fond} />}
+<Animation nom={animationAccueil} fond={fond} />

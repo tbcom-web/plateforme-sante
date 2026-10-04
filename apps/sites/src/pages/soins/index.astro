@@ -1,16 +1,19 @@
 ---
-// Liste des compétences : en-tête éditorial (filet, sur-titre indexé, planche technique) et grille bento
-// des soins illustrés par leurs dessins, comme à l'accueil.
+// Liste des compétences : en-tête éditorial (filet, sur-titre indexé, visuel selon le style visuel) et
+// grille bento des soins illustrés comme à l'accueil (dessins, photos ou les deux).
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import Competences from '../../components/gabarit/Competences.astro';
-import Planche from '../../components/dessins/Planche.astro';
+import VisuelEntete from '../../components/gabarit/VisuelEntete.astro';
+import { visuelSoin } from '../../lib/visuels-soins';
 import { site } from '../../lib/site';
 import { breadcrumbSchema } from '../../lib/schema';
 import { titreCompetences, titreCabinet } from '../../lib/textes';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }];
 const total = String(site.soins.length).padStart(2, '0');
+// Visuel d'en-tête : celui du bilan (examen qui ouvre toute prise en charge), sans animation.
+const bilan = visuelSoin('bilan-podologique');
 ---
 <Gabarit
   title={`${titreCompetences} – ${titreCabinet}`}
@@ -26,7 +29,7 @@ const total = String(site.soins.length).padStart(2, '0');
         <h1>{titreCompetences}</h1>
         <p class="chapo">Chaque prise en charge commence par un échange et un examen, afin de proposer des soins adaptés.</p>
       </div>
-      <Planche nom="analyse" legende="Bilan" repere="Fig. 00" fond="plan" />
+      <VisuelEntete photo={bilan.photo} cadrage={bilan.cadrage} dessin="analyse" legende="Bilan" repere="Fig. 00" />
     </div>
   </section>
   <section class="section section--serree">

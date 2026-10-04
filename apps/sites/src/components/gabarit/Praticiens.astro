@@ -1,10 +1,13 @@
 ---
 // Fiches praticiens, mise en page éditoriale. Sans photo : un portrait « relevé » sur fond plan
 // d'architecte (empreintes en trame de points et initiales), jamais un visage de banque d'images.
+// En mode photos : une photo du lieu (cabinet du praticien, sinon photo sans personne de la spécialité),
+// voilée, avec les initiales ; jamais une personne qui pourrait passer pour le praticien.
 import Empreintes from '../dessins/Empreintes.astro';
 import type { Appui } from '../dessins/trame';
 import { site } from '../../lib/site';
 import { zonePhoto } from '../../lib/edition';
+import { enPhotos, photoLieu } from '../../lib/visuels';
 import { lienRdv, rdvEnLigne } from '../../lib/textes';
 
 const STATUTS: Record<string, string> = { titulaire: 'Titulaire', collaborateur: 'Collaborateur·rice', remplacant: 'Remplaçant·e' };
@@ -23,10 +26,16 @@ const seul = site.praticiens.length === 1;
 <div class:list={['praticiens', { 'praticiens--seul': seul }]}>
   {site.praticiens.map((p, i) => (
     <article class="praticien apparait">
-      <div class:list={['praticien__portrait', { 'surface-plan': !p.photo }]}>
+      <div class:list={['praticien__portrait', { 'surface-plan': !p.photo && !enPhotos }]}>
         {p.photo
           ? <img class="praticien__photo" src={p.photo} alt={`Portrait de ${p.prenom} ${p.nom}`} width="480" height="600" loading="lazy" {...zonePhoto(`praticien.${i}.photo`)} />
-          : (
+          : enPhotos ? (
+            <div class="praticien__releve praticien__releve--photo" aria-hidden="true">
+              <img class="praticien__lieu" src={photoLieu} alt="" width="480" height="600" loading="lazy" decoding="async" />
+              <span class="praticien__repere mono"><span>Fiche {String(i + 1).padStart(2, '0')}</span><span>Le cabinet</span></span>
+              <span class="praticien__initiales">{p.prenom[0]}{p.nom[0]}</span>
+            </div>
+          ) : (
             <div class="praticien__releve" aria-hidden="true">
               <span class="praticien__repere mono"><span>Fiche {String(i + 1).padStart(2, '0')}</span><span>Relevé illustratif</span></span>
               <Empreintes appui={appui(p.orientations)} scan={false} legende={false} class="praticien__empreintes" />
@@ -68,6 +77,10 @@ const seul = site.praticiens.length === 1;
   .praticien__releve { position: absolute; inset: 0; display: grid; }
   .praticien__repere { position: absolute; top: 14px; left: 16px; right: 16px; padding-bottom: 8px; border-bottom: var(--filet) solid var(--sur-sombre-filet); display: flex; justify-content: space-between; gap: 12px; color: var(--signal); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
   .praticien__releve :global(.praticien__empreintes) { position: absolute; right: 6%; bottom: -14%; width: 52%; color: var(--sur-sombre-doux); }
+  .praticien__lieu { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .praticien__releve--photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(var(--nuit-rgb) / 0.45) 0%, rgb(var(--nuit-rgb) / 0.1) 40%, rgb(var(--nuit-rgb) / 0.6) 100%); }
+  .praticien__releve--photo > span { z-index: 1; }
+  .praticien__releve--photo .praticien__repere { color: var(--blanc); border-bottom-color: var(--sur-sombre-pale); }
   .praticien__initiales { position: absolute; left: 16px; bottom: 6px; font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(4.5rem, 22cqi, 7.5rem); line-height: 0.9; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: calc(var(--trait-fin) * 1.2px) var(--papier); }
   .praticien__texte { display: grid; gap: 6px; align-content: start; padding: 22px 12px 10px; }
   @container (min-width: 620px) {

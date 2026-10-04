@@ -1,14 +1,15 @@
 ---
-// Page d'un soin : même langage que l'accueil (en-tête éditorial à filet, sur-titre indexé, planche
-// technique du soin via lib/dessins.ts). Titres, textes et données structurées inchangés.
+// Page d'un soin : même langage que l'accueil (en-tête éditorial à filet, sur-titre indexé, visuel du soin
+// selon le style visuel : photo, planche ou animation, ou les deux ; source unique lib/visuels-soins.ts).
+// Titres, textes et données structurées inchangés.
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import FaqList from '../../components/FaqList.astro';
-import Planche from '../../components/dessins/Planche.astro';
-import Dessin from '../../components/dessins/Dessin.astro';
+import VisuelEntete from '../../components/gabarit/VisuelEntete.astro';
+import VignetteSoin from '../../components/gabarit/VignetteSoin.astro';
 import { site, md } from '../../lib/site';
 import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
-import { dessinSoin } from '../../lib/dessins';
+import { visuelSoin } from '../../lib/visuels-soins';
 import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences } from '../../lib/textes';
 import type { Soin } from '@plateforme/core';
 
@@ -27,6 +28,7 @@ const deux = (n: number) => String(n).padStart(2, '0');
 const rang = site.soins.findIndex((s) => s.slug === soin.slug) + 1;
 const total = site.soins.length;
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
+const visuel = visuelSoin(soin.slug);
 ---
 <Gabarit
   title={`${soin.titre} – ${noms}`}
@@ -37,13 +39,13 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
   <article>
     <header class="cadre tete-page">
       <Breadcrumb items={crumbs} />
-      <div class="tete-page__grille">
+      <div class="tete-page__grille tete-page__grille--soin">
         <div>
           <p class="sur sur--index"><b aria-hidden="true">{deux(rang)} / {deux(total)} —</b> {titreCompetences}</p>
           <h1>{soin.titre}</h1>
           <p class="chapo">{soin.resume}</p>
         </div>
-        <Planche nom={dessinSoin(soin.slug)} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} />
+        <VisuelEntete photo={visuel.photo} cadrage={visuel.cadrage} dessin={visuel.dessin} animation={visuel.animation} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} />
       </div>
     </header>
 
@@ -83,7 +85,7 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
             <li>
               <a href={`/soins/${s.slug}`}>
                 <span class="autres__num mono" aria-hidden="true">{deux(site.soins.indexOf(s) + 1)}</span>
-                <span class="autres__dessin surface-grille" aria-hidden="true"><Dessin nom={dessinSoin(s.slug)} /></span>
+                <span class="autres__dessin surface-grille" aria-hidden="true"><VignetteSoin slug={s.slug} survol /></span>
                 <span class="autres__titre">{s.titreCourt}</span>
                 <span class="autres__fleche" aria-hidden="true">→</span>
               </a>
@@ -96,6 +98,7 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
 </Gabarit>
 
 <style>
+  @media (min-width: 960px) { .tete-page__grille--soin { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
   .corps { display: grid; gap: 40px; padding-block: 8px clamp(56px, 8vw, 96px); }
   @media (min-width: 960px) { .corps { grid-template-columns: 1fr 320px; } }
   .encart { position: sticky; top: 96px; display: grid; gap: 12px; padding: 18px 0 0; border-top: var(--filet-fort) solid var(--encre); }
@@ -110,7 +113,7 @@ const autres = site.soins.filter((s) => s.slug !== soin.slug);
   .autres li { border-bottom: var(--filet) solid var(--ligne); }
   .autres a { display: grid; grid-template-columns: 2.2em 84px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 0; text-decoration: none; color: var(--encre); }
   .autres__num { color: var(--encre-pale); }
-  .autres__dessin { display: grid; place-items: center; width: 84px; aspect-ratio: 4 / 3; padding: 4px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
+  .autres__dessin { position: relative; overflow: hidden; display: grid; place-items: center; width: 84px; aspect-ratio: 4 / 3; padding: 4px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
   .autres__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.1rem; letter-spacing: -0.02em; line-height: 1.15; }
   .autres__fleche { color: var(--accent-vif); transition: transform var(--duree-court) var(--courbe-sortie); }
   .autres a:hover .autres__fleche { transform: translateX(4px); }
