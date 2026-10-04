@@ -1,0 +1,217 @@
+> Repris du studio ÉcranZen (studio/charte/pieges.md), le 2026-10-04. Pour les sites : appliquer les sections Lecture profane, Anatomie et Style. Les sections Texte et Technique concernent surtout la vidéo de salle d'attente : en retenir les principes.
+
+# Pièges connus — check-list obligatoire (tous agents)
+
+> UNE seule liste, courte, jointe à chaque demande (illustrateur, graphiste, patient, communication, contrôleurs).
+> Chaque ligne vient d'un défaut réellement vu (source entre crochets). Un retour de Paul marqué « règle » ou un défaut
+> vu deux fois s'ajoute ici — et nulle part ailleurs. Les méthodes du producteur restent dans `production/_learnings.md`.
+> Avant de livrer : relire la liste, cocher mentalement chaque ligne concernée par l'image.
+
+## Lecture profane (ce que le patient croit voir)
+- Orteils écartés sans cheville = **main** [0001]. Pied posé, cheville visible.
+- Pointe d'objet qui descend / goutte au bout d'un objet = **produit déposé, pipette** [0001, 008 v1.1]. La goutte reste sur la peau, loin de la pointe.
+- Deux traits qui convergent entre deux orteils = **pince** [008 v1.1].
+- Bande en travers du pied = **bandage** ; bande le long de la jambe = **attelle** ; double trait sur le tibia = **attelle** [008, fondations].
+- Pointillés sur la peau = **ligne de découpe** [0001]. Une limite se dit par une forme, jamais un trait.
+- Point clair au bout d'un doigt = glycémie ; point clair sur un talon = plaie [0001].
+- **Toute couleur posée sur la peau = maladie** (rougeur, peinture, mousse) [015, 0001]. L'appui se montre sur la vitre / le sol.
+- Peau blanchie / ongles gris = **manque de sang, nécrose** [008 v1.1, os]. La crème se dit par la brillance (voile ≤ 15–30 %, reflets courts), jamais en blanchissant.
+- Zone « sans » plus foncée que la peau = **rougeur** [008 v1.1]. Même teinte, seulement mate.
+- Cercle posé sur une zone = « **ici** », jamais « pas ici » [008 v1.1]. Une négation se montre par une absence.
+- Petite volute = émoji ; petit anneau autour d'un orteil = bague ; traits blancs parallèles = griffures / veines [008, 028].
+- « Ampoule » = aussi l'ampoule électrique : pictogramme sans poire, sans culot, sans rayons [0004 quoi chercher].
+- Médaillon relié par un cône à un signe dessiné sur le pied = « ce pied est malade » ; un signe à chercher se montre en pastille isolée [0004].
+- Croissant clair à bord droit sur la peau = « rognure d'ongle » ; une fente de plaie reste fine et symétrique [0004 S5b].
+- `alerte-clair` sur la peau est PLUS CLAIR qu'elle = « peau blanchie » : une rougeur demande un ton plus foncé que la peau [0004 S5b].
+- Pastille couleur peau sans anneau à côté d'un pied = « morceau de peau découpé / zoom de ce pied » ; l'anneau contrasté en fait un exemple [0004 S5b patient].
+- Halo coloré autour d'un pied entier = « pied mouillé / froid » (et annonce à tort le geste suivant) ; le repérage se fait par le rond [0004 anim].
+- Fichiers de la Salle déjà thémés (film bloc-pop rangé sous « zen-doux ») : tout rendu passe `--sans-theme` [retours].
+- Un problème (ongle épais…) qui s'amincit / disparaît à l'image après l'orientation = **avant/après, promesse** [0018].
+- Atome repris dans le plan suivant retombé sur son état par défaut (`repos`) = le problème « **guérit** » au changement de cadrage : déclarer l'état du problème dans CHAQUE plan [0018].
+- Outil qui entoure le bout d'un ongle, même immobile = « **ça coupe / ça pince** » : un blocage se montre par un espace visible et un arrêt net [0018 4a].
+- Becs aussi ouverts que l'ongle est épais = « l'outil est adapté » ; « trop épais » = l'ongle DÉBORDE nettement l'ouverture (≥ 1,5×), pointes arrêtées sur la face avant, pause À DISTANCE [0018 st., vu 2 fois].
+- Rapport ongle / bouche d'outil : se mesure au point de CONTACT ; on exagère le problème, jamais l'outil (un outil grand ouvert = le modèle spécial qui passe) [0018 4bis].
+- Bras de coupe-ongles en V ouvert vers l'avant, épais = **tenaille** : vrai profil = amande fine rivetée à l'arrière, levier droit sur l'axe [0018 4bis].
+- Pointes d'outil posées sur les COINS de la tranche = « il tient / pince l'ongle » : pointes à l'intérieur de la face avant, l'ongle dépasse visiblement dessus et dessous [0018 v2].
+- Outil au trait plus fin et plus pâle que le pied = « pince » générique : même épaisseur de contour que le pied, partie distinctive (levier) bien détachée [0018 v2].
+- Outil à becs qui se referme en s'éloignant = « il a coupé » ; grisé et fermé en sortie de médaillon = « lèvres » [0018 st.].
+- Coupe-ongles de profil sans son levier = **agrafeuse** ; bloc clair épais au bout de l'orteil = **pansement / chewing-gum** [0018 4a].
+- Objet plus long que la fenêtre d'un médaillon = non reconnu une fois « rangé » : vérifier la place de l'état final avant de fixer le zoom [0018].
+- Objet posé à côté d'un problème = lu comme **sa solution** (lime à côté de l'ongle épais = « limez-le vous-même ») [0018].
+- « Un index d'espace » = longueur d'un doigt ; Ameli dit « la largeur d'un index » : écrire « largeur d'un index » [010 éthique].
+- Couronne de 12 pastilles = horloge : pour une année, couleurs / pictos de saison, sans chiffres ni aiguilles [007 brief].
+- « Talon » = du pied ou de la chaussure : écrire « talon maintenu » (pied), jamais à côté de « talon large et bas » (chaussure) [012 brief].
+- Repère en petite pastille arrondie au bord du cadre = « interrupteur / curseur » [010 one-shot].
+- Jours en tubes à jauge = « éprouvettes / batteries » : le temps passé dans la journée = arc de soleil [033 one-shot].
+- Espace « à garder » rempli de rouge-saumon = « rougeur / alerte » : aplat vert [010 one-shot].
+- Objet du médaillon de la même couleur que son fond = invisible [0010].
+- Plis en crochet au fond des espaces = **fissure / mycose** [0010]. Pli droit, fin, clair.
+- Contour interne qui traverse un os / liseré horizontal = **fracture** [os].
+- Point sombre plein = **bouton, plaie, cible** ; douleur = point creux + anneaux ≤ 70 % (grammaire §5) [028].
+- Onde à taille constante en pixels + changement de cadrage fort entre plans = la douleur paraît GROSSIR par rapport au pied : rapport onde/talon 0,85–1,2 dans tous les plans, anneau externe dans la peau [HTML-014 éthique].
+- Transition par ligne de scan entre deux cadrages différents = jambe sectionnée ; et « scanner » juste après une consigne d'examen = imagerie suggérée : balayage seulement entre vues de même cadrage, sinon fondu [HTML-014, vu 2 fois].
+- Anneaux d'onde qui débordent de la peau sur le sol = « ondes au sol / choc » : masqués par la silhouette de peau de la pose courante [HTML-014 7a].
+- Fondu de sortie qui vire la peau au gris-beige = « pied qui grisonne / circulation » (diabétique) : sortir par l'opacité seule [HTML-014 v2].
+- Excroissance osseuse au bout recourbé ou à l'encoche étroite = crochet / os fendu : bout mousse vers l'avant, raccord concave ouvert, dans toutes les poses [HTML-075].
+- Structure nommée à l'écran mais trop petite pour être vue à 3 m = le patient prend l'élément voisin qui dépasse pour elle (bout de bande = « clou ») [HTML-075].
+- Fin de boucle où la pose de fin ≠ image 0 et se superpose en translucide = « pied fantôme / vue double / pied gris » : la dernière pose EST l'image 0 avant le fondu [HTML-014 v3].
+- Ongle rempli de rose sur un pied en transparence = « sparadrap » : même teinte que la peau [HTML-014 v3].
+- Bout de bande effilé près d'une structure appelée « épine » = l'enfant le montre comme l'épine « qui pique » [HTML-075].
+- Rond creux posé sur un OBJET (col de chaussure) = rond de douleur : un objet se repère par un aplat [reel semelles-neuves].
+- Calendrier en 2 rangées de 7 cases = « 2 semaines » (durée implicite) : une seule rangée, sans graduation [reel semelles-neuves].
+- Douleur qui pâlit ou disparaît seule = « **c'est guéri** » [028].
+- Pied translaté en l'air sans la jambe = **impossible** (Paul) [028]. Tout mouvement garde le pied et la jambe solidaires.
+- Jambe inclinée en arrière sur un pied en attaque talon (orteils levés), ou jambe qui bascule dans la foulée = « **le pied / la jambe tombe en arrière** » (Paul, règle) [028 rc4]. Une pose de marche se vérifie en silhouette : centre de gravité au-dessus de l'appui.
+- Corriger une pose d'un cycle (foulée) = recontrôler TOUTES les poses du cycle contre toutes les règles (l'attaque talon est restée en rc4 après la correction de l'envol) [028 rc5]. Contrôle auto (i) `jambeArriere`.
+- Talon levé, jambe verticale = **test sur pointes** (interdit) [028]. La course se montre par un cycle au sol + lignes de vitesse.
+- Idée portée par le décor (soleil, fond) pendant que l'objet central reste immobile = « rien ne se passe, on ne comprend pas » : c'est l'objet qui agit [010 v2, Paul].
+- Deux images identiques à la suite = le patient décroche [028]. Chaque plan a son image.
+- Effet « malin » (bascule, rotation) = souvent mal lu [015]. Le mouvement le plus simple qui porte le sens.
+- Liquide jaune vif dans une ampoule ou une bulle = **pus / infection** ; un liquide clair est translucide, presque incolore [peau3d ampoule].
+- Plaque translucide bleutée = **vitre / glaçon**, pas une chaussure ; un objet qui presse doit **toucher** la peau et la creuser, sinon « pression » ne se voit pas [peau3d].
+- Objet translucide qui s'efface par l'opacité sur fond beige = **gris / pierre** : on l'efface en l'éloignant, puis en fondu court [peau3d].
+- Teinte de pathologie (rougeur, corne) appliquée à tout le matériau = « **toute la peau est malade** » : toujours localisée [peau3d].
+- Cône de kératine à pointe acérée = **écharde** : pointe mousse, matière distincte de la corne [peau3d cor].
+- Prévention montrée sur la lésion existante (chaussure remise sur l'ampoule pansée) = « **on peut le remettre dessus** » ; ou lésion qui disparaît sur le même bloc = « c'est guéri » : la prévention se montre sur une peau saine, après un fondu [peau3d ampoule].
+- Signe d'infection présenté comme une étape normale d'un mécanisme (« la peau rougit, puis… ») = le patient **banalise** ce signe : le mécanisme se dit sans nommer le signe, qui va au site [peau3d GATE 2].
+- Fragment d'ongle isolé dans la peau (en coupe comme en 3D) = **écharde / corps étranger** : le coin reste relié à sa lame (même arc, prolongement en fantôme), pointe mousse [ongle3d].
+- Rognure restée dans le prolongement du bord libre = « **l'ongle est encore long** » : elle sort du cadre [ongle3d].
+- Orteils vus du bout, pointes en bas, sans avant-pied = **doigts de main** : pointes vers le haut ou avant-pied dans le cadre [ongle3d].
+- Rose du lit découvert au fond d'un coin taillé, sous le rond de repérage = « **rougeur ici** » : teinte peau ou sillon [ongle3d GATE 2].
+- Trait de coupe posé sur le bord actuel = « coupez ici » : il se pose sur la ligne de coupe future, token `trait` [ongle3d GATE 2].
+- Étiquettes qui disparaissent avant la fin d'un plan en coupe = **coupe muette** pour qui arrive en cours de boucle [ongle3d patients].
+- Graisse en alvéoles jaunes = **ruche, fromage** ; os en ovale pointillé = **cachet, œuf** (panel, enfant et senior) [ongle3d patients].
+- Pathologie jamais nommée à l'écran = on retient le conseil sans savoir à quoi il sert : le nom apparaît au moins une fois [ongle3d patients].
+- « Ongle droit » = aussi « ongle du pied droit » : écrire « Coupez droit », jamais « coupez l'ongle droit » [ongle3d brief].
+
+## Anatomie
+- Calque de peau posé par-dessus un objet (repli sur la lame) : il couvre TOUTE la racine et reprend le contour qu'il cache, sinon l'objet paraît collé (« pansement ») et le contour s'interrompt [0018 7a].
+- Liste de présence d'abord (atlas de la même vue), formes ensuite [os de la jambe, Paul].
+- Jambe : tibia ET fibula ; malléole latérale plus basse et en arrière ; pas de « planche » coupée net ; la coupe sort du cadre [os].
+- Même en style « traits et ronds », une semelle / un pied / une empreinte gardent leur VRAIE forme (géométrie commune : semelle.mjs L/l ≈ 2,6, contour plantaire POD-AT-0002, empreinte réelle : talon, bord externe, avant-pied, orteils séparés) — jamais une forme « Paint » [Paul, générateur de reels].
+- Proportions comparées au réel chiffré, pas « à l'œil » (semelle L/l ≈ 2,6) [015, Paul].
+- Main + pied : à éviter (règle de Paul) ; objet seul, rond, médaillon [004].
+
+## Texte
+- Un signe nommé (plaie, rougeur…) est suivi **au plan suivant** de sa mention d'orientation, film compris (qui part avant la fin n'a jamais l'orientation) [0004 S5b].
+- Un « Cherchez : » dont les mots entrent en décalé laisse le « : » seul : le texte entre d'un bloc, seules les images se décalent [0004 S5b].
+- Pastilles d'exemple de même taille / anneau que le médaillon de zoom vu juste avant = « zoom sur ce pied » : plus petites, sans cône [0004 S5b].
+- Un geste d'examen (« regardez… ») dit toujours **quoi chercher** (« dessus, dessous… mais regarder quoi ??? ») [Paul, film diabète v0.4].
+- **Temps de lecture : ≥ 2 s + 0,5 s/mot, texte net (hors fondu) ; mentions ≥ 6 s** [Paul, retour récurrent, 2026-09-30].
+- Tout en gras, ≥ 72 px, couleur `texte` ; ≤ 12 mots ; aucun mot au bord (≥ 5 %) [0001, 028].
+- Pas de pronom sans antécédent (« Elle », « faites-la ») : la boucle peut être prise en cours [028].
+- Phrase coupée en deux cartons : le 2e entre au moins 0,5 s × (mots du 1er) après le 1er (sinon l'outil passe mais le patient n'a pas le temps) [recalage lecture].
+- Participe ou adjectif sans nom en tête de carton (« Fabriquée… ») = antécédent manquant quand la boucle est prise en cours [0007 recalage].
+- Ne jamais isoler en fin de ligne un mot qui a un homographe verbe (« sèche ») : garder « si peau sèche » sur une ligne [film recalage].
+- Mention figée (M2…) en sous-titre petit et gris sous un titre gras qui nomme le diabète = on lit « Diabète : vigilance » **sans l'orientation** : la mention a le poids du titre [peau3d GATE 2].
+- Étiquette ancrée sur l'arête d'un objet 3D = coupée par le bord du cadre dès que la vue tourne : l'ancrer sur la face visible ; `capturer.mjs` contrôle 5 %–95 % de la largeur [peau3d].
+- Jamais une phrase suspendue (« , » « : ») en fin de plan ; un bloc « Ne forcez pas dessus : » ne s'affiche jamais seul [film, 028].
+- Proposer un texte ou une zone = mesurer sa largeur avec la police (`police.largeur`) avant ; une zone trop juste ne se voit qu'à la compilation [film v0.4].
+- L'alt (et la légende) écrits au brief ne suivent pas les changements d'image : les relire à CHAQUE version du master, sinon ils affirment ce que l'image a justement évité [0018 7b].
+- Geste clé joué pendant le fondu d'entrée du texte qui l'explique = geste raté (l'œil lit le texte) : le geste se joue ou se rejoue une fois le texte net [0018 anim].
+- Mention figée recopiée de l'écran vers le site = forme courte « écran » : sur le site, toujours la colonne « Texte long » du référentiel [0018 08a].
+- Deux cartons « cause possible / cause fréquente » dans un plan : le 2e jamais plus grand ni plus coloré que le 1er, sinon « Souvent » se lit comme LA réponse = diagnostic [HTML-014].
+- Texte révélé par un masque qui balaie = une ligne (« Diabète : ») seule quelques images : le carton entre d'un bloc (fondu + montée), jamais ligne par ligne [0018 gabarit HTML].
+- Fait rassurant (« souvent sans douleur ») sans la consigne d'examen juste derrière = on nie la douleur de celui qui a mal : rassurance et orientation indissociables [HTML-075].
+- Chiffre de fréquence recopié d'une source (90 %) = il perd sa condition (durée, gravité, « si non traité ») : jamais de pourcentage de maladie à l'écran sans sa condition [arthrose-pieds].
+- Citation « vérifiée » reprise d'un brief à l'autre = peut avoir changé ou n'avoir jamais été sur la page : relire la page source à chaque nouveau brief [éthique, 4 briefs calendrier].
+- Mesurer avec l'ASSEMBLEUR dès qu'un master existe (valider-lottie ne mesure rien sans master) [028].
+
+## Style
+- Un trait plus fin ou absent révèle les raccords que le gros contour cachait (moustache du 5e orteil, encoche) : corriger la géométrie avant d'adopter un style fin [style].
+- Orteils jointifs + un orteil qui tourne vers son voisin = chevauchement : poses croissantes de l'hallux au 5e [pied v2].
+- Reflet en fuseau rempli de blanc = refusé par g2 : tracer un trait blanc [pied v2].
+- Tout trait est un morceau exact du bord d'une forme pleine (sinon moustache / double trait au raccord) [pied D].
+- Deux traits semi-transparents qui se touchent = perle foncée : l'opacité du contour se met sur la couche, pas sur chaque trait [pied D].
+- Palmure qui dépasse au-dessus de la séparation des orteils = tache foncée ; reflet le long d'une séparation = « fente / fissure » ; éventail de tendons fins = « veines » [pied D].
+- Un dégradé posé forme par forme crée un raccord : un seul dégradé par teinte et par composition [style D Lottie].
+- Un « symbole » se reconnaît au nom du calque, pas à l'épaisseur `w:epais` (sinon les sandales gardent le gros contour) [style D Lottie].
+- Fond sombre + os clairs en transparence = négatif de radio : os en contour fin, remplissage teinté, jamais blanc lumineux [HTML-075, éthique].
+- Onde de douleur sur une structure que le texte dit souvent indolore = contradiction image/texte : l'onde se retire, pas le texte [HTML-075].
+- Trait / volet horizontal qui traverse la jambe avec décalage des deux moitiés = « jambe coupée / guillotine / bug » : fondu, même échelle et même sol entre plans [HTML-014 patient].
+- Bande fine couleur os sous le pied transparent = « nerf » (diabétique), « fil / ver » (enfant) : nappe plus large, contrastée, qui se redresse en corde au pas [HTML-014 patient].
+- Pied entier transparent sur fond sombre = « radio → fracture » (peur) : contour en peau, intérieur montré seulement là où c'est utile [HTML-014 patient].
+- Grands numéros d'étape 01–05 sur un conseil unique = « 5 conseils » attendus, déception [HTML-014 patient].
+- Voile de transparence au token `fond` sur une direction sombre = pied « radio » : le voile de transparence est toujours CLAIR (`blanc`), quel que soit le fond [HTML-014].
+- Texture de lavis trop marquée sur la peau = « marbrures / maladie » [style A].
+
+## Technique
+- Jambe/pied coupés par track matte, jamais par clip (liseré) ; remappage sans arrondi [os, 028].
+- Nouveaux états d'un atome : APRÈS les anciens ; vérifier au pixel que les anciennes images ne bougent pas [028].
+- Une nouvelle version d'une scène validée se produit dans un sous-dossier ; tout prolongement d'atome réserve sa plage au catalogue [008 v1.1, 0010].
+- Image fixe (print) : jamais prise pendant une transition [0010, 008].
+- Un générateur qui prolonge un atome relit l'archive `@version`, pas la bibliothèque [TRV-AT-0002].
+- Chaque générateur déclare ses `SORTIES` (un JSON appartient à celui qui l'écrit) [reconstruire].
+- Une règle partagée qui se durcit (ex. temps de lecture) casse d'un coup les contenus validés et les générateurs gelés : prévoir une migration, jamais d'application silencieuse [lecture 2026-09-30].
+- Ne jamais recopier une règle (ex. temps de lecture) dans les `contraintes` d'un fichier : ça la fige [lecture].
+- Une mention coupée en deux calques se contrôle en entier (la 1re moitié seule ressemble à une autre mention) [lecture].
+- Allonger les `calques_cles` d'un atome peut faire échouer la tolérance de réutilisation d'une scène [TRV-AT-0002].
+- Deux générateurs d'un même dossier ne partagent jamais un dossier de sortie (bac à sable) ; un fichier de textes recalé appartient au master recalé qui le lit [lot à blanc].
+- Recaler une scène validée = la rejouer par tenues (`outils/lib/tenues.mjs`), jamais la réanimer ; vérifier au pixel (`verifier-tenues.mjs`) [recalage 0001/0004].
+- Raccourcir un plan au recalage = coupe dans une plage IMMOBILE prouvée par une carte de mouvement, jamais « à l'œil » ; coupe de fin d'un cycle (ligne d'eau) là où le cycle revient à sa place [0007, 0010].
+- Condition « image avant texte » (pose finie avant le texte net) : vérifier sur les images réelles de la source, pas sur le calcul du brief (0007 : 12 images de retard) [0007].
+- Un aperçu de storyboard avec une valeur par défaut (ouverture 15 u) a remplacé l'état de la géométrie (7 u) : storyboard et Lottie lisent l'ÉTAT NOMMÉ, jamais un paramètre par défaut [0018].
+- Une précomposition 512 coupe son contenu à y 0 (jambe de POD-AT-0003 jusqu'à y −160) : prolonger par la même géométrie sous cache, ou cadrer pour que la coupe sorte du cadre [0018].
+- Assemblage à texte vivant lu par lottie-web en CANVAS = erreur à chaque image de texte : lecteurs canvas/mobiles → `--texte-en-formes` (le SVG n'a pas ce problème) [0018 7c].
+- Aplat translucide jaune sur fond bleu = kaki : aplats opaques mélangés au fond ; `will-change` sur un texte rend l'entrée non déterministe [générateur reels].
+- `pathLength` + `vector-effect: non-scaling-stroke` = tracé tronqué dans Chrome : épaisseur de trait en unités locales [one-shot 025].
+- 9:16 : un visuel petit en haut + texte au milieu + bas vide = rendu « générateur », pas « wow » : le visuel occupe la moitié du cadre, la mise en scène change d'un sujet à l'autre [one-shot 025].
+- Scène HTML : toute animation est fonction de t SEUL (ni animation/transition CSS, ni horloge), sinon l'export image par image et les planches ne montrent pas ce que joue l'écran [0018 HTML].
+- Capture parallèle de pages HTML : une attente d'image étranglée fait quitter Node sans message — toujours un délai et un filet sur ezAller, et vérifier que le MP4 existe [HTML-014 v2].
+- Remappage `tm` : décalage ≤ 1e-6 image (0 exact à l'image 0) — 1e-3 suffit à décaler les transitions de 0,01 image des molécules ; dernière clé à op − ε (contrôle f) [recalage].
+- Élément posé dans la colonne de texte d'un master = coupé par le cadre image du film : le déclarer `cadre.hors_cadre` [film v0.5].
+- Pastille de sticker qui reste après la sortie de son texte = pastille vide à l'écran : elle sort avec son texte [film v0.5].
+- Atome sous ID provisoire hors catalogue = échec `compose_de` : id d'asset hors motif d'ID jusqu'à l'attribution [0004 v1.2].
+- Contraste d'un anneau / contour : se contrôle contre le fond où l'élément est POSÉ (panneau du film), pas contre le fond du master [film v0.5 S5b].
+- node seulement, jamais `python -` ; sous PowerShell 5.1, jamais Get-Content/Set-Content pour réécrire un fichier (encodage cassé) : Edit ou node [CLAUDE.md 2026-09-30]. ; pas de long heredoc ; aucune donnée personnelle dans une requête.
+- « 0 erreur au contrôle » ne dit rien de la compréhension : test patient sur le MP4 final avant tout envoi à Paul [Paul 2026-10-01, « rien compris »].
+- Texte qui porte seul le message, image qui ne fait qu'illustrer = PARTIELLEMENT compris : l'image doit MONTRER le phénomène (ex. artère qui se rétrécit) [tabac v1].
+- Objet planté vertical en haut d'une jambe sans corps + trait coloré qui descend = piqûre / perfusion / mèche ; jambe coupée à la cuisse sur un sujet vasculaire = amputation : cadrer une silhouette ou un short [tabac v1].
+- Plan quasi figé > 5 s = décrochage (Instagram scrolle avant la mention) : toujours un mouvement porteur de sens [tabac v1].
+- Zones de peau qui s'éclaircissent tour à tour pour dire « on examine ici » = peau qui blanchit / pied gelé ; et un rond creux posé SUR le pied = code douleur (même bleu) : picto « œil » à côté du pied, hors peau, ou halo qui balaie tout le pied [007 final + éthique v2].
+- Monofilament seul = stylo / piqûre : montrer le fil qui PLIE contre la peau ≥ 1,5 s, jamais de bout de fil orphelin [007 final].
+- Chaque plan doit se comprendre seul en 5 s (quelqu'un lève les yeux au milieu) : rappeler le sujet (« Diabète ») en petit sur chaque plan [007 final].
+- Rouge au talon / bout de chaussette = plaie ; et réutiliser cette couleur pour une pièce de chaussure brouille le code : chaussette unie, une pièce = une couleur de bout en bout [012 final].
+- Le mot du texte (« usés », « chute ») doit être DESSINÉ franchement : un chausson propre sous « usés ? » = « pas concerné » ; un balancement mou ≠ déséquilibre [012 final].
+- Élément de décor qui bouge (tapis qui glisse) sous la « bonne » solution = message parasite contraire [012 final].
+- Pied / jambe du second plan assombri(e) pour la profondeur = « deux personnes » ou « pied mal irrigué » (public diabétique) : même peau, profondeur par l'ombre au sol [006 final].
+- Sol à motif crénelé / damier fin = image qui bugue : décor simple, les pieds attirent l'œil [006 final].
+- Le danger que le texte évoque doit arriver à l'image (objet touché, conséquence discrète), sinon « rien ne se passe » [006 final].
+- Pied qui s'élève hors de la chaussure et flotte = « pied éjecté », pas « pied qui gonfle » ; un gonflement se montre (contour fantôme + pied qui grossit nettement), pas par des petites flèches [010 v3].
+- Doigt seul qui descend vers le bout de la chaussure = « appuyez » ; aplat collé à l'ongle = embout / pansement : un espace vide se montre par l'objet qui le remplit exactement (index posé à plat en travers) [010 v3].
+- Carton final « au moindre doute » sans rappel du conseil = plan vide pour qui lève les yeux à ce moment : récap (pictos) avant ou avec la mention [010 v3].
+- Courbure du monofilament dessinée DANS la silhouette du pied = hameçon / suture : fil perpendiculaire vu de profil, qui plie hors de la peau [007 v2 patient].
+- Empreinte / picto de pied noir sur un sujet diabète = pied nécrosé pour un senior : pictos en couleur [007 v2 patient].
+- Plan récap copie exacte d'un plan précédent = redite, « la vidéo tourne en boucle » : un récap a sa propre image [007 v2 patient].
+- Rond de repérage de loupe creux, posé sur la peau = code douleur, même relié au cône : pied de loupe rempli avec l'aplat de la loupe, qui apparaît et disparaît avec elle [tabac v2 éthique].
+- Artère en pointillés dans une jambe qui marche, dont le haut tombe sur la main = canne / bâton tenu : trait fin continu, qui part sous le vêtement [tabac v2 patient].
+- Traits d'une loupe accrochée à un membre qui bouge = « ficelle de ballon » qui traverse la main : loupe sur un plan arrêté ou traits courts [tabac v2 patient].
+- Bénéfice d'un comportement impossible à dessiner sans promesse (avant/après interdit) = image qui ne dit plus rien : le dire au brief, et raccourcir ce passage au profit du geste à faire (en parler) [tabac v2].
+- Tapis décoratif sous le pied tout le film = semelle épaisse ou sujet du message ; coche posée près du tapis = « tapis antidérapant » : sol nu sous le point d'appui quand le sujet est la chaussure, et chaque coche posée SUR la pièce qu'elle désigne [012 v2 patient].
+- Signe après un contact (objet piétiné) : hors de la peau, sur l'objet, en disque plein (« ? »), jamais d'anneau creux sur la plante [006 v2 éthique].
+- Sujet diabète : des pieds nus qui marchent « normalement » contredisent Ameli (« évitez de marcher pieds nus ») : chaussettes unies ou empreintes de semelle (sauf si le pied nu EST le danger montré, cf. 006) [007 v3 éthique].
+- Objet du quotidien dessiné « à la main » dans un reel (chausson…) = laid pour Paul : tout objet récurrent devient un ÉLÉMENT (html/elements/) au niveau des références visuelles, puis les reels le réutilisent [Paul 2026-10-02, chaussons « très laids »].
+- Objet de protection (chaussure, chausson) qui bascule sur un obstacle = « chute / trébucher » pour un public âgé : la protection se montre à plat et stable [006 v2 patient].
+- Fil de monofilament qui pend en U sous son manche = câble / cordon branché sur le pied [007 v3 patient].
+- Pastille de saison allumée dans une couronne annuelle = « c'est à cette saison qu'il faut y aller » ; arc + point noir = aiguille d'horloge / chargement [007 v3 patient].
+- Carton en bout de phrase (« Même sans gêne. », « Par votre médecin… ») = incompréhensible seul : une phrase complète par plan [007 v3 patient].
+- Variante de mention (M2-b…) sans champ `"mention"` = non reconnue comme figée par lecture.mjs (6 s non contrôlées) [éthique 2026-10-02].
+- Rond creux pâle sur une jambe (sujet vasculaire) = douleur ET ischémie ; pause sur un banc puis relevé après « Arrêter » = « c'est guéri » [tabac plateforme].
+- Titre de thème en jargon (« artérite ») ou en tournure floue = sujet incompris : partir du titre et du script en mots de patient, PUIS l'image [Paul 2026-10-02].
+- Titre en question rhétorique ou en clin d'œil (« Chez moi, je ne risque rien ? ») = sujet incompris : le titre NOMME l'objet et l'enjeu en clair (ex. « Chaussons usés : attention aux chutes ») [Paul 2026-10-02].
+- Nuance (Paul 2026-10-02, exemple « C'est quoi un pied d'athlète ? ») : une VRAIE question qui nomme le terme est bonne (format « C'est quoi… ? » : terme connu mais mal compris → explication simple + petite surprise + bon geste) ; seule la question floue qui ne nomme pas le sujet est interdite.
+- Mention qui cite le médecin hors des cas M2 (diabète avec doute/signe) et M5 (hors champ, traumatisme, tabac) = erreur : conclusion vers le pédicure-podologue seul [Paul 2026-10-02].
+- Sujet au nom trompeur (pied d'athlète, syndrome de l'essuie-glace, tennis-elbow…) : l'image joue d'abord sur le NOM (pictogramme d'athlète, essuie-glace…) puis révèle la réalité — la surprise devient visuelle [Paul 2026-10-02].
+- Lésion dessinée à la mauvaise échelle ou dans une couleur vive sur le pied (cor ambre en boule) = « crotte sur le pied » : taille réelle relative (cor ≈ 1/4 de la largeur de l'orteil), teinte de peau à peine jaunie ; on la DÉSIGNE par un repère d'interface ou un zoom, jamais par une grosse forme colorée [Paul 2026-10-03, cor].
+- Représentation du pédicure-podologue (Paul 2026-10-03) : un personnage NEUTRE en blouse (blanche, verte, grise…), sans stéthoscope, croix, seringue ni autre symbole « purement médical » ; pas d'insigne chargé.
+- Signes en mots seuls (« frotte », « douleur ») = pas parlant : un signe à la fois, phrase complète sourcée (« La bosse frotte dans la chaussure. ») + image de la SITUATION (chaussure qui frotte, pas qui marche) [Paul 2026-10-03].
+- Titres-questions : « Qu'est-ce que… / Qu'est-ce qu'une… ? », jamais « C'est quoi… ? » [Paul 2026-10-03].
+- La pastille de rappel du sujet compte dans les 12 mots à l'écran ; un picto « interdit » (ciseaux) est barré dès son entrée (< 0,5 s), jamais vu non barré [verrue GATE 2].
+- Légendes d'image : SEULEMENT sur les schémas de vulgarisation d'un mécanisme (« couche cornée », « virus », « hallux = gros orteil »), jamais sur les objets évidents (« piscine », « sandales ») — Paul 2026-10-03 : « on a compris ».
+- Deux sources officielles qui divergent sur un geste (ex. percer une ampoule) : le contenu n'en parle pas [ampoule 2026-10-03].
+- Mieux vaut rester VAGUE qu'être précis et faux (Paul 2026-10-03) : une étiquette ne pointe que ce qui est réellement visible à cette échelle (le virus est microscopique : jamais une flèche « virus » sur un point de la peau ; un picto « virus » flotte à part, symbolique). Doute sur l'exactitude d'un repère → on le retire.
+- MP4 « Reel / WhatsApp ready » (Paul 2026-10-03) : l'IMAGE 0 est la plus représentative (titre + visuel complets), jamais un fondu vide ou un fond uni ; sinon `node studio/outils/reel-ready.mjs <mp4> <T>` fait démarrer la boucle à T. Vérifier la couverture.png.
+- Objet du quotidien mal construit (ciseaux à lame tordue, chaussure « rectangle ») = amateur : chaque objet est vérifié en GROS PLAN avant livraison (symétrie, pivot, proportions réelles) ; si un détail est douteux, on simplifie l'objet plutôt que de le laisser faux [Paul 2026-10-03, verrue].
+- Ne JAMAIS mélanger dans un même zoom l'anatomie grossie (coupe de peau) et un objet physique à une autre échelle (chaussure, sol) : ça crée des non-sens (la chaussure ressemble à l'ampoule). Une échelle par image : l'objet à l'échelle du pied d'un côté, la coupe seule (avec flèches abstraites) de l'autre [Paul 2026-10-03, ampoule].
+- Conseils flous = inutiles : on les annonce par un intertitre-question (« Comment l'éviter ? », « Que faire en cas de… ? ») et chaque astuce dit son EFFET, recopié de la source et jamais déduit (ex. Ameli : « Gardez le toit, un pansement naturel. ») [Paul 2026-10-03, ampoule].
+- Pédicure-podologue à l'image (Paul 2026-10-03, précise la règle) : personnage le plus NEUTRE possible — face ronde, asexué, SANS visage (ni yeux ni bouche : un symbole, sinon il fait « chauve »), pas de coiffure ; on le reconnaît comme podologue par la blouse + un petit picto PIED sur la poitrine (pas de symbole médical). Portrait réaliste = « too much ».

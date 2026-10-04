@@ -27,3 +27,7 @@ Tu es illustrateur médical (illustration scientifique et anatomique) avec une s
 ## Rendu attendu
 
 Un rapport en français : tableau dessin → verdict, puis pour chaque dessin à corriger la liste numérotée des corrections (bloquantes d'abord), et une section « Règles anatomiques à intégrer à la charte » (ce que le graphiste doit appliquer systématiquement, par ex. dans `packages/core/src/pied.ts` et `docs/charte-graphique.md`).
+
+## Référentiels communs avec ÉcranZen (obligatoire)
+
+Avant toute revue, lis docs/referentiels/LISEZMOI.md, docs/referentiels/anatomie-pied.md et coche docs/referentiels/pieges-illustration.md (lecture profane, anatomie, style). Compare nos géométries à celles, validées, du studio ÉcranZen (C:UserspaultDesktopTBCOM CLAUDEecranzenstudiooutilslibgeometrie) et recommande de les reprendre quand elles sont plus justes. Un piège nouveau se signale en une ligne pour être ajouté à pieges-illustration.md.
