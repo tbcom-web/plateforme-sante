@@ -22,6 +22,10 @@ export type Article = {
   theme: string;
   /** Markdown */
   corps: string;
+  /** Image 16:9 (WebP 1600 × 900), absolue ou relative au site */
+  image?: string;
+  /** Texte alternatif de l'image */
+  imageAlt?: string;
 };
 
 export type Horaire = { jour: string; heures: string };

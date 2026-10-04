@@ -1,8 +1,11 @@
 ---
+// Article du flux de contenus : mise en page éditoriale, image 16:9 optimisée (dimensions fixes, priorité
+// de chargement, og:image et ImageObject dans les données structurées), liens vers les autres conseils.
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
-import { site, md, nomPraticien, dateFr, rdvHref } from '../../lib/site';
+import { site, md, dateFr } from '../../lib/site';
 import { articleSchema, breadcrumbSchema } from '../../lib/schema';
+import { titreCabinet, praticiens, lienRdv, libelleRdv } from '../../lib/textes';
 import type { Article } from '@plateforme/core';
 
 export function getStaticPaths() {
@@ -16,34 +19,85 @@ const crumbs = [
   { name: 'Conseils', path: '/actualites' },
   { name: article.titre, path },
 ];
+const auteur = praticiens.length === 1 ? `${praticiens[0].prenom} ${praticiens[0].nom}, ${praticiens[0].titre.toLowerCase()}` : titreCabinet;
+const minutes = Math.max(1, Math.round(article.corps.split(/\s+/).length / 200));
+const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 ---
 <Gabarit
-  title={`${article.titre} | ${nomPraticien}`}
+  title={`${article.titre} | ${site.cabinet.nom}`}
   description={article.resume}
   path={path}
   schemas={[articleSchema(article), breadcrumbSchema(crumbs)]}
+  image={article.image ? { src: article.image, alt: article.imageAlt, largeur: 1600, hauteur: 900 } : undefined}
+  article={{ date: article.date, theme: article.theme }}
 >
-  <article class="section">
-    <div class="cadre">
+  <article class="section article">
+    <header class="cadre article__tete">
       <Breadcrumb items={crumbs} />
-      <header class="head">
-        <span class="tag">{article.theme}</span>
-        <h1>{article.titre}</h1>
-        <p class="meta">Par <a href="/a-propos">{nomPraticien}</a>, {site.profession.libelle.toLowerCase()} · <time datetime={article.date}>{dateFr(article.date)}</time></p>
-      </header>
+      <p class="sur">{article.theme} · <time datetime={article.date}>{dateFr(article.date)}</time> · {minutes} min de lecture</p>
+      <h1>{article.titre}</h1>
+      <p class="chapo">{article.resume}</p>
+      <p class="article__auteur">Par <a href="/le-cabinet">{auteur}</a></p>
+    </header>
+
+    {article.image && (
+      <figure class="cadre article__image">
+        <img
+          src={article.image}
+          alt={article.imageAlt ?? ''}
+          width="1600"
+          height="900"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </figure>
+    )}
+
+    <div class="cadre article__corps">
       <div class="prose" set:html={md(article.corps)} />
-      <div class="card encart">
-        <p><strong>Une question sur vos pieds ?</strong> Je vous reçois au cabinet, {site.cabinet.quartier}.</p>
-        <a class="btn btn--primary" href={rdvHref(`article-${article.slug}`)}>Prendre rendez-vous</a>
-      </div>
+
+      <aside class="article__rdv" aria-label="Rendez-vous">
+        <p><strong>Une question sur vos pieds ?</strong><span>{titreCabinet}, {site.cabinet.ville}.</span></p>
+        <a class="bouton bouton--plein" href={lienRdv(`article-${article.slug}`)}>{libelleRdv}</a>
+      </aside>
     </div>
+
+    {autres.length > 0 && (
+      <nav class="cadre article__autres" aria-label="Autres conseils">
+        <p class="sur">Autres conseils</p>
+        <ul>
+          {autres.map((a) => (
+            <li><a href={`/actualites/${a.slug}`}><span>{a.theme}</span>{a.titre}</a></li>
+          ))}
+        </ul>
+      </nav>
+    )}
   </article>
 </Gabarit>
 
 <style>
-  .head { max-width: 70ch; margin-bottom: 24px; }
-  .tag { font-size: 0.8rem; font-weight: 700; color: var(--brand-ink); text-transform: uppercase; letter-spacing: 0.08em; }
-  .meta { color: var(--ink-mute); font-size: 0.95rem; }
-  .encart { max-width: 70ch; margin-top: 40px; background: var(--brand-softer); border-color: var(--brand-line); display: grid; gap: 12px; justify-items: start; }
-  .encart p { margin: 0; }
+  .article__tete { max-width: 860px; }
+  .article__tete h1 { font-size: clamp(2.2rem, 5vw, 4rem); margin: 4px 0 22px; }
+  .article__tete .chapo { font-size: clamp(1.1rem, 1.6vw, 1.3rem); }
+  .article__auteur { font-size: 0.92rem; color: var(--encre-douce); padding-top: 18px; border-top: 1px solid var(--ligne); margin: 26px 0 0; }
+  .article__auteur a { font-weight: 600; text-decoration: none; }
+
+  .article__image { margin-block: clamp(32px, 5vw, 56px); }
+  .article__image img { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }
+
+  .article__corps { max-width: 860px; }
+  .article__corps .prose { font-size: 1.08rem; }
+  .article__corps .prose :global(h2) { font-size: clamp(1.4rem, 2.4vw, 1.9rem); margin-top: 2em; }
+  .article__corps .prose :global(p:first-child) { font-size: 1.18rem; color: var(--encre); }
+
+  .article__rdv { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; margin-top: 48px; padding: 26px 28px; border-radius: var(--rayon); background: var(--doux); border: 1px solid var(--accent-ligne); }
+  .article__rdv p { margin: 0; display: grid; gap: 4px; }
+  .article__rdv span { color: var(--encre-douce); font-size: 0.95rem; }
+
+  .article__autres { max-width: 860px; margin-top: clamp(56px, 8vw, 96px); }
+  .article__autres ul { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--ligne); }
+  .article__autres li { border-bottom: 1px solid var(--ligne); }
+  .article__autres a { display: grid; gap: 4px; padding: 18px 0; text-decoration: none; color: var(--encre); font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; }
+  .article__autres a span { font-size: 0.76rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-vif); }
+  .article__autres a:hover { color: var(--accent-fonce); }
 </style>

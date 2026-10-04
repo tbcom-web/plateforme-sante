@@ -19,7 +19,8 @@ export default async function Shell({ email, children }: { email: string; childr
                 Super admin
               </Link>
             )}
-            <span className="hidden text-neutral-500 sm:inline">{email}</span>
+            <Link href="/compte" className="hidden text-neutral-500 hover:text-teal-800 sm:inline" title="Mon compte">{email}</Link>
+            <Link href="/compte" className="text-neutral-600 hover:text-teal-800 sm:hidden">Mon compte</Link>
             <form action="/deconnexion" method="post">
               <button className="text-neutral-600 underline-offset-4 hover:underline">Déconnexion</button>
             </form>

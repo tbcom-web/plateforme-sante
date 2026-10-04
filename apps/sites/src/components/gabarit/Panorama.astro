@@ -17,7 +17,7 @@ const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
 <section class="panorama">
   <img src={photoPanorama} alt="" loading="lazy" width="2000" height="1100" />
   <div class="cadre panorama__texte apparait">
-    <p class="sur sur--clair">{lieuNom} · {site.cabinet.ville}</p>
+    <p class="sur sur--clair sur--num">{lieuNom} · {site.cabinet.ville}</p>
     <h2>Un cabinet calme et lumineux, pensé pour votre confort.</h2>
     <ul>
       {atouts.map((a) => <li><strong>{a.titre}</strong>{a.texte}</li>)}

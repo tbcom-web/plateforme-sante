@@ -7,10 +7,13 @@ import { exigerAdmin } from '@/lib/admin';
 import { declencherPublication } from '@/lib/publication';
 import { createClient } from '@/lib/supabase/server';
 
-export type ChampsArticle = { titre: string; resume: string; corps: string; theme: string; date_publication: string };
+export type ChampsArticle = { titre: string; resume: string; corps: string; theme: string; date_publication: string; image: string; image_alt: string };
 export type Resultat = { ok: boolean; message: string; alertes?: string[] } | null;
 
 const t = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+// Seules les images déposées dans le dossier « banque/flux » du stockage sont acceptées.
+const PREFIXE_IMAGES = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/banque/flux/`;
+
 const slugifier = (s: string) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 70);
 
@@ -21,6 +24,8 @@ function nettoyer(c: ChampsArticle) {
     corps: t(c.corps, 20000),
     theme: (THEMES_FLUX as readonly string[]).includes(c.theme) ? c.theme : THEMES_FLUX[0],
     date_publication: /^\d{4}-\d{2}-\d{2}$/.test(c.date_publication) ? c.date_publication : new Date().toISOString().slice(0, 10),
+    image: t(c.image, 400).startsWith(PREFIXE_IMAGES) ? t(c.image, 400) : '',
+    image_alt: t(c.image_alt, 160),
   };
 }
 
@@ -35,6 +40,7 @@ export async function enregistrerArticle(id: string | null, champs: ChampsArticl
   await exigerAdmin();
   const v = nettoyer(champs);
   if (!v.titre || !v.resume || !v.corps) return { ok: false, message: 'Titre, résumé et texte sont obligatoires.' };
+  if (v.image && v.image_alt.length < 10) return { ok: false, message: 'Décrivez l’image en une phrase (texte alternatif, utile au référencement et à l’accessibilité).' };
   const alertes = controler(v);
   if (alertes.length) return { ok: false, message: 'Le texte contient des formulations à revoir.', alertes };
 
@@ -56,8 +62,9 @@ export async function enregistrerArticle(id: string | null, champs: ChampsArticl
 export async function diffuserArticle(id: string): Promise<Resultat> {
   await exigerAdmin();
   const supabase = await createClient();
-  const { data: article } = await supabase.from('articles_flux').select('id, theme, profession_slug').eq('id', id).maybeSingle();
+  const { data: article } = await supabase.from('articles_flux').select('id, theme, profession_slug, image, image_alt').eq('id', id).maybeSingle();
   if (!article) return { ok: false, message: 'Article introuvable.' };
+  if (!article.image || !article.image_alt) return { ok: false, message: 'Ajoutez une image et son texte alternatif avant de diffuser l’article.' };
 
   const { data: sites } = await supabase
     .from('sites')

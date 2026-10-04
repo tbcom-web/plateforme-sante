@@ -1,0 +1,39 @@
+---
+// Planche des dessins techniques, générée uniquement sur les sites de démo : /modeles/dessins
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+import Dessin, { type NomDessin } from '../../../components/dessins/Dessin.astro';
+import { site } from '../../../lib/site';
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { vide: undefined } }] : [];
+}
+const noms: NomDessin[] = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'enfant', 'equilibre', 'talon', 'appuis'];
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Dessins techniques</title>
+  </head>
+  <body>
+    <main>
+      {noms.map((n) => (
+        <figure><Dessin nom={n} /><figcaption>{n}</figcaption></figure>
+      ))}
+      {noms.map((n) => (
+        <figure class="sombre"><Dessin nom={n} /><figcaption>{n} · fond plan</figcaption></figure>
+      ))}
+    </main>
+  </body>
+</html>
+<style>
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: #f6f3ee; --accent-vif: #2f7d6d; --encre: #102224; }
+  main { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; padding: 16px; }
+  figure { margin: 0; background: #fff; border-radius: 16px; padding: 18px; }
+  figcaption { font-size: 0.8rem; color: #8a9898; margin-top: 6px; }
+  .sombre { background: #123c8c; --dessin-trait: #f2f6ff; --dessin-accent: #6ff2c2; --dessin-fond: #0c2c6b;
+    background-image: linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px); background-size: 24px 24px; }
+</style>

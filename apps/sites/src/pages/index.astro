@@ -13,9 +13,10 @@ import Infos from '../components/gabarit/Infos.astro';
 import Galerie from '../components/gabarit/Galerie.astro';
 import Panorama from '../components/gabarit/Panorama.astro';
 import Carte from '../components/gabarit/Carte.astro';
+import Couverture from '../components/dessins/Couverture.astro';
 import { site, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
-import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne } from '../lib/textes';
+import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien } from '../lib/textes';
 
 const m = site.modele;
 const metier = site.titreMetier.toLowerCase();
@@ -38,7 +39,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
   {m.accueil.sections.map((section) => (
     <>
       {section === 'faits' && (
-        <ul class="cadre faits" aria-label="En bref">{faits.map((f) => <li>{f}</li>)}</ul>
+        <ul class="cadre faits" aria-label="En bref">{faits.map((f, i) => <li><span class="faits__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{f}</li>)}</ul>
       )}
 
       {section === 'competences' && (
@@ -46,7 +47,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
           <div class="cadre">
             <div class="entete-section apparait">
               <div>
-                <p class="sur">{titreCompetences}</p>
+                <p class="sur sur--num">{titreCompetences}</p>
                 <h2>Une prise en charge <span class="pale">du pied, à tout âge.</span></h2>
               </div>
               <p class="chapo">Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.</p>
@@ -63,7 +64,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
           <div class="cadre">
             <div class="entete-section apparait">
               <div>
-                <p class="sur">{titrePraticiens}</p>
+                <p class="sur sur--num">{titrePraticiens}</p>
                 <h2>{site.praticiens.length > 1 ? <>Une équipe <span class="pale">à votre écoute.</span></> : <>Votre {metier} <span class="pale">à {site.cabinet.ville}.</span></>}</h2>
               </div>
             </div>
@@ -75,7 +76,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
       {section === 'galerie' && site.photos.cabinet.length > 0 && (
         <section class="section">
           <div class="cadre">
-            <div class="entete-section apparait"><div><p class="sur">Le cabinet</p><h2>En images</h2></div></div>
+            <div class="entete-section apparait"><div><p class="sur sur--num">Le cabinet</p><h2>En images</h2></div></div>
             <Galerie />
           </div>
         </section>
@@ -86,15 +87,20 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
           <div class="cadre">
             <div class="entete-section apparait">
               <div>
-                <p class="sur">Actualités</p>
+                <p class="sur sur--num">Actualités</p>
                 <h2>Conseils <span class="pale">et actualités.</span></h2>
               </div>
               <a class="bouton bouton--ligne bouton--petit" href="/actualites">Toutes les actualités</a>
             </div>
-            <div class="articles">
-              {articles.map((a) => (
+            <div class:list={['articles', `articles--${articles.length}`]}>
+              {articles.map((a, i) => (
                 <a class="article apparait" href={`/actualites/${a.slug}`}>
-                  <span class="article__meta">{a.theme} · <time datetime={a.date}>{dateFr(a.date)}</time></span>
+                  <span class="article__visuel">
+                    {a.image
+                      ? <img src={a.image} alt={a.imageAlt ?? ''} width="1600" height="900" loading="lazy" />
+                      : <Couverture theme={a.theme} titre={a.titre} numero={i + 1} />}
+                  </span>
+                  <span class="article__meta mono">{a.theme} · <time datetime={a.date}>{dateFr(a.date)}</time></span>
                   <span class="article__titre">{a.titre}</span>
                   <span class="article__resume">{a.resume}</span>
                   <span class="article__lire">Lire l’article →</span>
@@ -110,7 +116,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
           <div class="cadre">
             <div class="entete-section apparait">
               <div>
-                <p class="sur">Accès et informations</p>
+                <p class="sur sur--num">Accès et informations</p>
                 <h2>Venir <span class="pale">au cabinet.</span></h2>
               </div>
             </div>
@@ -122,9 +128,10 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
       {section === 'faq' && (
         <section class="section section--douce">
           <div class="cadre faq">
-            <div>
-              <p class="sur">Questions fréquentes</p>
+            <div class="faq__entete">
+              <p class="sur sur--num">Questions fréquentes</p>
               <h2>Bon à savoir <span class="pale">avant de venir.</span></h2>
+              <p class="faq__contact"><span class="mono">{String(site.faqGenerale.length).padStart(2, '0')} questions</span>Une autre question ? <a href={telLien}>{site.cabinet.telephone}</a></p>
             </div>
             <FaqList items={site.faqGenerale} />
           </div>
@@ -135,22 +142,38 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
 </Gabarit>
 
 <style>
-  .faits { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-block: 1px solid var(--ligne); }
-  .faits li { padding: 20px 20px 20px 0; font-size: 0.93rem; color: var(--encre-douce); }
+  .faits { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-top: 1.5px solid var(--encre); border-bottom: 1px solid var(--ligne); margin-top: clamp(28px, 4vw, 48px); }
+  .faits li { display: grid; gap: 6px; padding: 18px 20px 20px 0; font-size: 0.93rem; color: var(--encre); font-weight: 500; }
+  .faits__num { color: var(--accent-vif); font-weight: 450; }
   .faits li + li { border-top: 1px solid var(--ligne); }
   @media (min-width: 760px) { .faits li + li { border-top: 0; border-left: 1px solid var(--ligne); padding-left: 20px; } }
 
-  .articles { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-  .article { display: grid; gap: 10px; padding: 28px; border-radius: var(--rayon); border: 1px solid var(--ligne); text-decoration: none; color: var(--encre); transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; }
-  .article:hover { transform: translateY(-3px); box-shadow: var(--ombre); border-color: transparent; color: var(--encre); }
-  .article__meta { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-vif); }
-  .article__titre { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.025em; line-height: 1.2; }
+  .articles { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+  .article { display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 10px; text-decoration: none; color: var(--encre); }
+  .article:hover { color: var(--encre); }
+  .article__visuel { display: block; aspect-ratio: 16 / 9; border-radius: var(--rayon); overflow: hidden; margin-bottom: 8px; box-shadow: var(--ombre); transition: transform 0.45s cubic-bezier(.2,.7,.2,1), box-shadow 0.45s; }
+  .article__visuel img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(.2,.7,.2,1); }
+  .article__visuel :global(.couverture) { height: 100%; }
+  .article:hover .article__visuel { transform: translateY(-4px); box-shadow: var(--ombre-profonde); }
+  .article:hover .article__visuel img { transform: scale(1.04); }
+  .article__meta { padding-top: 12px; border-top: 1.5px solid var(--encre); color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
+  .article__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(1.3rem, 2vw, 1.6rem); letter-spacing: -0.03em; line-height: 1.12; }
   .article__resume { color: var(--encre-douce); font-size: 0.95rem; }
-  .article__lire { margin-top: auto; font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
+  .article__lire { font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
+  @media (min-width: 1000px) {
+    /* Trois articles : le plus récent en vedette, les deux autres en colonne */
+    .articles--3 { grid-template-columns: 1.35fr 1fr; grid-template-rows: auto auto; }
+    .articles--3 .article:first-child { grid-row: span 2; }
+    .articles--3 .article:first-child .article__titre { font-size: clamp(1.7rem, 2.6vw, 2.3rem); }
+    .articles--3 .article:not(:first-child) { grid-template-columns: 0.9fr 1.1fr; grid-template-rows: auto auto 1fr auto; column-gap: 20px; }
+    .articles--3 .article:not(:first-child) .article__visuel { grid-row: 1 / -1; margin: 0; }
+  }
 
-  .acces { display: grid; gap: 20px; }
+  .acces { display: grid; gap: 28px; }
   @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } }
 
   .faq { display: grid; gap: 32px; }
-  @media (min-width: 960px) { .faq { grid-template-columns: 0.8fr 1.2fr; align-items: start; } }
+  .faq__contact { display: grid; gap: 6px; margin: 28px 0 0; padding-top: 16px; border-top: 1px solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; max-width: 30ch; }
+  .faq__contact .mono { color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
+  @media (min-width: 960px) { .faq { grid-template-columns: 0.8fr 1.2fr; align-items: start; } .faq__entete { position: sticky; top: 110px; } }
 </style>

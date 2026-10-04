@@ -6,6 +6,14 @@ import { lieu, telLien, itineraire, horairesRegroupes, libelleJours, rdvEnLigne,
 
 const horaires = horairesRegroupes();
 const ouvert = lieu.horaires.some((h) => /\d/.test(h.heures));
+// Plages horaires en heures décimales, pour la frise graphique (aria-hidden : le texte reste la référence).
+const plages = (heures: string) =>
+  [...heures.matchAll(/(\d{1,2})\s*h\s*(\d{2})?\s*[–—-]\s*(\d{1,2})\s*h\s*(\d{2})?/g)].map((r) => [+r[1] + (+(r[2] ?? 0)) / 60, +r[3] + (+(r[4] ?? 0)) / 60]);
+const toutes = horaires.flatMap((h) => plages(h.heures)).flat();
+const debut = toutes.length ? Math.min(8, Math.floor(Math.min(...toutes))) : 8;
+const fin = toutes.length ? Math.max(20, Math.ceil(Math.max(...toutes))) : 20;
+const pos = (h: number) => `${(((h - debut) / (fin - debut)) * 100).toFixed(2)}%`;
+const reperes = Array.from({ length: Math.floor((fin - debut) / 4) + 1 }, (_, k) => debut + k * 4).filter((h) => h <= fin);
 const acces = [
   site.accesDetail.parking,
   site.accesDetail.pmr ? 'Accès facile pour les personnes à mobilité réduite' : '',
@@ -15,9 +23,23 @@ const acces = [
 ---
 <div class="infos">
   {ouvert && (
-    <div class="info">
+    <div class="info info--horaires">
       <h3><Icone nom="lucide:clock" />Horaires</h3>
-      <dl>{horaires.map((h) => <><dt>{libelleJours(h.jours)}</dt><dd>{h.heures}</dd></>)}</dl>
+      <div class="frise__ligne frise__ligne--axe" aria-hidden="true"><span></span><span class="frise__axe mono">{reperes.map((h) => <span style={`left:${pos(h)}`}>{h}h</span>)}</span></div>
+      <dl class="frise">
+        {horaires.map((h) => (
+          <div class="frise__ligne">
+            <dt>{libelleJours(h.jours)}</dt>
+            <dd>
+              <span class="frise__piste" aria-hidden="true">
+                {reperes.map((r) => <i class="frise__repere" style={`left:${pos(r)}`}></i>)}
+                {plages(h.heures).map(([a, b]) => <b style={`left:${pos(a)};width:calc(${pos(b)} - ${pos(a)})`}></b>)}
+              </span>
+              <span class="frise__heures">{h.heures}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )}
   <div class="info">
@@ -61,16 +83,27 @@ const acces = [
 )}
 
 <style>
-  .infos { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); }
-  .info { padding: 24px; border-radius: var(--rayon); background: var(--doux); }
-  h3 { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; margin-bottom: 12px; }
-  h3 :global(.icone) { color: var(--accent); font-size: 1.3rem; }
-  p { margin: 0 0 8px; color: var(--encre-douce); font-size: 0.97rem; }
-  ul { margin: 0; padding-left: 1.1em; color: var(--encre-douce); font-size: 0.97rem; }
-  dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; font-size: 0.95rem; }
-  dt { font-weight: 600; }
-  dd { margin: 0; color: var(--encre-douce); text-align: right; }
+  .infos { display: grid; gap: 0 28px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); counter-reset: info; }
+  .info { padding: 18px 0 22px; border-top: 1.5px solid var(--encre); }
+  .info--horaires { grid-column: 1 / -1; }
+  h3 { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; margin-bottom: 12px; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; }
+  h3::after { counter-increment: info; content: counter(info, decimal-leading-zero); margin-left: auto; font-family: var(--police-mono); font-size: 0.7rem; font-weight: 450; color: var(--encre-pale); }
+  h3 :global(.icone) { color: var(--accent-vif); font-size: 1.15rem; }
+  p { margin: 0 0 8px; color: var(--encre-douce); font-size: 0.95rem; }
+  ul { margin: 0; padding-left: 1.1em; color: var(--encre-douce); font-size: 0.95rem; }
+  /* Frise des horaires : une piste par groupe de jours, plages d'ouverture en barres */
+  .frise { display: grid; gap: 0; margin: 0; }
+  .frise__ligne { display: grid; grid-template-columns: minmax(9em, 0.42fr) minmax(0, 1fr); align-items: center; column-gap: 18px; row-gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--ligne); font-size: 0.92rem; }
+  .frise__ligne--axe { padding: 0 0 4px; border-bottom: 0; }
+  .frise__axe { position: relative; height: 16px; color: var(--encre-pale); font-size: 0.64rem; }
+  .frise__axe span { position: absolute; translate: -50% 0; }
+  dt { grid-column: 1; grid-row: 1; font-weight: 600; }
+  dd { display: contents; }
+  .frise__heures { grid-column: 1; grid-row: 2; color: var(--encre-douce); font-family: var(--police-mono); font-size: 0.7rem; letter-spacing: 0.01em; }
+  .frise__piste { grid-column: 2; grid-row: 1 / span 2; position: relative; height: 10px; border-radius: 2px; background: color-mix(in srgb, var(--encre) 6%, transparent); }
+  .frise__piste b { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: linear-gradient(90deg, var(--accent-vif), color-mix(in srgb, var(--accent-vif), #fff 25%)); }
+  .frise__repere { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ligne); }
   .pastilles { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .pastilles li { padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--ligne); font-size: 0.88rem; }
-  .communes { margin-top: 24px; }
+  .pastilles li { padding: 5px 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ligne); font-size: 0.85rem; color: var(--encre); }
+  .communes { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--ligne); font-size: 0.9rem; }
 </style>

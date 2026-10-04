@@ -2,10 +2,16 @@
 // Plan d'accès : carte OpenStreetMap (sans cookie) + adresse + bouton itinéraire.
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
-import { carteUrl } from '../../lib/visuels';
+import { carteUrl, geo } from '../../lib/visuels';
 import { lieu, itineraire } from '../../lib/textes';
 ---
 <div class="carte">
+  <span class="carte__cadre" aria-hidden="true"></span>
+  {geo && (
+    <span class="carte__coordonnees mono" aria-hidden="true">
+      {Math.abs(geo.lat).toFixed(4)}° {geo.lat >= 0 ? 'N' : 'S'} · {Math.abs(geo.lng).toFixed(4)}° {geo.lng >= 0 ? 'E' : 'O'}
+    </span>
+  )}
   {carteUrl ? (
     <iframe
       src={carteUrl}
@@ -29,5 +35,13 @@ import { lieu, itineraire } from '../../lib/textes';
   .carte__vide { display: grid; place-items: center; font-size: 3rem; color: var(--accent-vif); }
   .carte__adresse { grid-area: 1 / 1; align-self: end; justify-self: start; margin: 16px; padding: 18px 20px; border-radius: 16px; background: rgb(255 255 255 / 0.92); backdrop-filter: blur(10px); box-shadow: var(--ombre); max-width: 300px; }
   .carte__adresse p { margin: 0 0 12px; font-size: 0.93rem; color: var(--encre-douce); }
+  .carte__cadre { grid-area: 1 / 1; z-index: 1; margin: 14px; pointer-events: none; color: var(--encre); opacity: 0.55;
+    background:
+      linear-gradient(currentColor, currentColor) 0 0 / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 0 0 / 1.5px 14px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 0 / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 100% 0 / 1.5px 14px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 100% / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 0 100% / 1.5px 14px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 100% / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 100% 100% / 1.5px 14px no-repeat; }
+  .carte__coordonnees { grid-area: 1 / 1; z-index: 1; align-self: start; justify-self: end; margin: 26px; padding: 6px 10px; border-radius: 4px; background: var(--plan); color: var(--signal); font-size: 0.68rem; letter-spacing: 0.06em; }
+  .carte__adresse { z-index: 1; }
   .carte__titre { font-weight: 650; color: var(--encre) !important; margin-bottom: 4px !important; }
 </style>

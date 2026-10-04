@@ -96,6 +96,8 @@ export const articleSchema = (a: Article) => ({
   datePublished: a.date,
   inLanguage: 'fr-FR',
   url: absUrl(`/actualites/${a.slug}`),
+  mainEntityOfPage: absUrl(`/actualites/${a.slug}`),
+  ...(a.image ? { image: { '@type': 'ImageObject', url: absUrl(a.image), width: 1600, height: 900, caption: a.imageAlt ?? '' } } : {}),
   author: { '@id': personId },
   publisher: { '@id': businessId },
 });

@@ -1,0 +1,32 @@
+---
+// Couverture générée d'un article (quand il n'a pas de photo) : planche technique sur fond plan
+// d'architecte, dessin choisi selon le thème de l'article, repères et lectures en mono. Décorative.
+import Dessin from './Dessin.astro';
+import { dessinArticle } from '../../lib/dessins';
+
+interface Props {
+  theme?: string;
+  titre?: string;
+  /** Numéro affiché dans le cartouche (« Fig. 01 ») */
+  numero?: number;
+  class?: string;
+}
+const { theme = '', titre = '', numero = 1, class: classe } = Astro.props;
+const nom = dessinArticle(theme, titre);
+---
+<span class:list={['couverture', 'surface-plan', classe]} aria-hidden="true">
+  <span class="couverture__haut mono"><span>{theme || 'Conseils'}</span><span>Fig. {String(numero).padStart(2, '0')}</span></span>
+  <span class="couverture__dessin"><Dessin nom={nom} /></span>
+  <span class="couverture__bas mono">Représentation illustrative</span>
+</span>
+
+<style>
+  .couverture { position: relative; display: grid; grid-template-rows: auto 1fr auto; aspect-ratio: 16 / 9; padding: 12px 14px; overflow: hidden; }
+  .couverture__haut, .couverture__bas { display: flex; justify-content: space-between; gap: 12px; font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgb(242 246 255 / 0.75); }
+  .couverture__haut { padding-bottom: 8px; border-bottom: 1px solid rgb(255 255 255 / 0.22); }
+  .couverture__haut span:first-child { color: var(--signal); }
+  .couverture__bas { padding-top: 8px; border-top: 1px solid rgb(255 255 255 / 0.22); text-transform: none; letter-spacing: 0.02em; color: rgb(242 246 255 / 0.5); }
+  .couverture__dessin { display: grid; place-items: center; min-height: 0; padding: 6px 0; }
+  .couverture__dessin :global(.dessin) { height: 100%; width: auto; max-width: 100%; transition: transform 0.7s cubic-bezier(.2,.7,.2,1); }
+  :global(a:hover) > .couverture .couverture__dessin :global(.dessin), :global(a:hover) .couverture .couverture__dessin :global(.dessin) { transform: scale(1.05); }
+</style>

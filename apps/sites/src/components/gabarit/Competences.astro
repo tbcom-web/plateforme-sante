@@ -1,27 +1,98 @@
 ---
-import Icone from '../Icone.astro';
+// Compétences en grille « bento » : une tuile vedette sur fond plan d'architecte, puis des tuiles
+// illustrées par les dessins techniques de la marque (un dessin par soin du catalogue).
+import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
-import { iconeSoin, ICONE_SOIN_DEFAUT } from '@plateforme/core';
+import { dessinSoin } from '../../lib/dessins';
+
+const n = site.soins.length;
+/** Format de chaque tuile selon le nombre de soins, pour une grille toujours pleine sur 4 colonnes */
+const format = (i: number): 'vedette' | 'moyen' | 'petit' | 'large' => {
+  if (n === 1) return 'large';
+  if (n === 2) return 'moyen';
+  if (i === 0) return 'vedette';
+  if (n === 3) return 'moyen';
+  if (n === 4) return i === 1 ? 'moyen' : 'petit';
+  if (i <= 4) return 'petit';
+  const reste = n - 5;
+  return reste % 2 === 1 && i === n - 1 ? 'large' : 'moyen';
+};
+const num = (i: number) => String(i + 1).padStart(2, '0');
 ---
-<ul class="competences">
-  {site.soins.map((s) => (
-    <li>
-      <a href={`/soins/${s.slug}`}>
-        <span class="competences__icone"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
-        <span class="competences__titre">{s.titreCourt}</span>
-        <span class="competences__texte">{s.resume}</span>
-        <span class="competences__lien">En savoir plus</span>
+<ul class="bento">
+  {site.soins.map((s, i) => (
+    <li class:list={['tuile', `tuile--${format(i)}`, { 'tuile--plan': i === 0 && n > 2 }, 'apparait']} style={`--i:${i}`}>
+      <a href={`/soins/${s.slug}`} class:list={{ 'surface-plan': i === 0 && n > 2 }}>
+        <span class:list={['tuile__visuel', { 'surface-grille': !(i === 0 && n > 2) }]}>
+          <Dessin nom={dessinSoin(s.slug)} />
+        </span>
+        <span class="tuile__corps">
+          <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>
+          <span class="tuile__titre">{s.titreCourt}</span>
+          <span class="tuile__texte">{s.resume}</span>
+          <span class="tuile__lien">En savoir plus<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" /></svg></span>
+        </span>
       </a>
     </li>
   ))}
 </ul>
 
 <style>
-  .competences { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-  a { display: grid; gap: 8px; height: 100%; padding: 24px; border-radius: var(--rayon); border: 1px solid var(--ligne); background: #fff; text-decoration: none; color: var(--encre); transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
-  a:hover { border-color: var(--accent); box-shadow: 0 10px 30px -18px rgb(23 41 42 / 0.4); transform: translateY(-2px); color: var(--encre); }
-  .competences__icone { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--accent-pale); color: var(--accent); font-size: 1.9rem; }
-  .competences__titre { font-weight: 650; font-size: 1.15rem; margin-top: 6px; }
-  .competences__texte { color: var(--encre-douce); font-size: 0.95rem; }
-  .competences__lien { color: var(--accent); font-weight: 600; font-size: 0.92rem; margin-top: auto; }
+  .bento { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  .tuile.apparait.pret { transition-delay: calc(var(--i) * 60ms); }
+  a { position: relative; display: grid; height: 100%; grid-template-rows: auto 1fr; text-decoration: none; color: var(--encre); border-radius: var(--rayon-grand); background-color: var(--fond); box-shadow: inset 0 0 0 1px var(--ligne); overflow: hidden; transition: box-shadow 0.35s, transform 0.35s cubic-bezier(.2,.7,.2,1); }
+  a:hover { color: var(--encre); transform: translateY(-3px); box-shadow: inset 0 0 0 1px var(--accent-ligne), var(--ombre-profonde); }
+
+  .tuile__visuel { position: relative; display: grid; place-items: center; padding: 18px 22px; aspect-ratio: 16 / 10; border-bottom: 1px solid var(--ligne); }
+  .tuile__visuel :global(.dessin) { width: min(100%, 360px); transition: transform 0.6s cubic-bezier(.2,.7,.2,1); }
+  .tuile:hover .tuile__visuel :global(.dessin) { transform: scale(1.035); }
+  /* Repères de cadrage aux quatre coins, comme sur une planche technique */
+  .tuile__visuel::after {
+    content: ''; position: absolute; inset: 12px; pointer-events: none; opacity: 0.4;
+    background:
+      linear-gradient(currentColor, currentColor) 0 0 / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 0 0 / 1px 10px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 0 / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 100% 0 / 1px 10px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 100% / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 0 100% / 1px 10px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 100% / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 100% 100% / 1px 10px no-repeat;
+  }
+
+  .tuile__corps { display: grid; align-content: start; gap: 8px; padding: 22px 24px 24px; }
+  .tuile__num { color: var(--encre-pale); }
+  .tuile__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.32rem; line-height: 1.1; letter-spacing: -0.03em; }
+  .tuile__texte { color: var(--encre-douce); font-size: 0.95rem; line-height: 1.55; }
+  .tuile__lien { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
+  .tuile__lien svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
+  .tuile:hover .tuile__lien svg { transform: translateX(4px); }
+
+  /* Tuile vedette : fond plan d'architecte, dessin clair, grand titre */
+  a.surface-plan { background-color: var(--plan); color: #f2f6ff; box-shadow: var(--ombre); }
+  a.surface-plan:hover { color: #f2f6ff; box-shadow: var(--ombre-profonde); }
+  .tuile--plan .tuile__visuel { border-bottom-color: rgb(255 255 255 / 0.14); color: #fff; }
+  .tuile--plan .tuile__num { color: var(--signal); }
+  .tuile--plan .tuile__texte { color: rgb(242 246 255 / 0.78); }
+  .tuile--plan .tuile__lien { color: var(--signal); }
+
+  @media (min-width: 640px) {
+    .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tuile--vedette, .tuile--large { grid-column: span 2; }
+  }
+  @media (min-width: 1000px) {
+    .bento { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .tuile--vedette { grid-column: span 2; grid-row: span 2; }
+    .tuile--vedette a { grid-template-rows: 1fr auto; }
+    .tuile--vedette .tuile__visuel { aspect-ratio: auto; min-height: 340px; padding: 36px; }
+    .tuile--vedette .tuile__visuel :global(.dessin) { width: min(100%, 470px); }
+    .tuile--vedette .tuile__corps { padding: 28px 32px 32px; }
+    .tuile--vedette .tuile__titre { font-size: clamp(1.8rem, 2.6vw, 2.5rem); line-height: 1; letter-spacing: -0.04em; }
+    .tuile--vedette .tuile__texte { font-size: 1.02rem; max-width: 46ch; }
+    .tuile--moyen, .tuile--large { grid-column: span 2; }
+    .tuile--moyen a, .tuile--large a { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr); grid-template-rows: auto; }
+    .tuile--large { grid-column: span 4; }
+    .tuile--large a { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+    .tuile--moyen .tuile__visuel, .tuile--large .tuile__visuel { aspect-ratio: auto; min-height: 220px; border-bottom: 0; border-right: 1px solid var(--ligne); }
+    .tuile--moyen .tuile__corps, .tuile--large .tuile__corps { align-content: center; }
+    .tuile--large .tuile__titre { font-size: 1.7rem; }
+    .tuile--petit .tuile__titre { font-size: 1.18rem; }
+    .tuile--petit .tuile__texte { font-size: 0.9rem; }
+  }
 </style>

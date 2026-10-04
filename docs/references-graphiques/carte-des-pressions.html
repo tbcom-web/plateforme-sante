@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La carte des pressions · EcranZen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #E8ECF1;
+    --ink: #0F1B2D;
+    --mute: #5B6678;
+    --rule: rgba(15,27,45,.16);
+    --lo: #3E7BFA; --even: #22C3A6; --mid: #FFC23D; --hi: #FF7A2F; --peak: #F0352F;
+    color-scheme: light; box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #E8ECF1; } }
+  :root[data-theme="dark"] { --bg: #E8ECF1; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif; overflow: hidden; }
+
+  .frame {
+    height: 100%;
+    display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-rows: auto 1fr auto;
+    padding: clamp(18px, 4.5vh, 56px) clamp(20px, 4.5vw, 80px);
+    column-gap: clamp(20px, 4vw, 72px);
+  }
+  /* Bandeau supérieur, façon affiche */
+  .top { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; padding-bottom: clamp(10px, 1.6vh, 18px); border-bottom: 1.5px solid var(--ink); font-size: clamp(11px, 1.15vw, 17px); font-weight: 500; letter-spacing: .02em; }
+  .top b { font-weight: 800; letter-spacing: -0.01em; }
+
+  .copy { display: grid; align-content: center; gap: clamp(14px, 3vh, 34px); }
+  .kicker { font-size: clamp(11px, 1.15vw, 17px); font-weight: 500; color: var(--mute); letter-spacing: .02em; }
+  h1 { font-weight: 800; font-size: clamp(34px, 5.6vw, 104px); line-height: .9; letter-spacing: -0.045em; }
+  .state { position: relative; height: clamp(64px, 12vh, 140px); }
+  .state p { position: absolute; inset: 0; display: grid; align-content: start; gap: .4em; opacity: 0; transform: translateY(10px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); }
+  .state p.on { opacity: 1; transform: none; }
+  .state strong { font-size: clamp(16px, 2vw, 34px); font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: .5em; }
+  .state strong i { width: .7em; height: .7em; border-radius: 50%; }
+  .state span { font-size: clamp(14px, 1.6vw, 26px); color: var(--mute); max-width: 28ch; line-height: 1.35; }
+
+  /* Comparaison des pics */
+  .bars { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; align-items: center; font-size: clamp(11px, 1.1vw, 16px); color: var(--mute); max-width: 440px; }
+  .bar { height: clamp(10px, 1.4vh, 16px); background: var(--rule); position: relative; overflow: hidden; }
+  .bar i { position: absolute; inset: 0 auto 0 0; width: 0; }
+
+  .viz { position: relative; min-height: 0; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: clamp(12px, 2vw, 32px); }
+  canvas { width: 100%; height: 100%; display: block; }
+
+  /* Légende verticale */
+  .legend { display: grid; grid-template-rows: auto 1fr auto; justify-items: center; gap: 10px; height: 62%; font-size: clamp(10px, 1vw, 15px); color: var(--mute); }
+  .scale { position: relative; width: clamp(8px, .8vw, 12px); height: 100%; background: linear-gradient(to top, var(--lo), var(--even) 35%, var(--mid) 60%, var(--hi) 80%, var(--peak)); }
+  .marker { position: absolute; left: 100%; width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-right: 10px solid var(--ink); margin-left: 4px; translate: 0 50%; bottom: 0; }
+
+  .foot-note { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 20px; padding-top: clamp(10px, 1.6vh, 18px); border-top: 1.5px solid var(--rule); font-size: clamp(10px, 1vw, 15px); color: var(--mute); }
+
+  @media (max-width: 760px) {
+    .frame { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }
+    .legend { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="top"><b>EcranZen</b><span>Podologie · Analyse des appuis</span></div>
+
+  <div class="copy">
+    <div class="kicker">01 — La carte des pressions</div>
+    <h1>Où portez-vous votre poids ?</h1>
+    <div class="state">
+      <p id="s1"><strong><i style="background:var(--peak)"></i>Sans semelles</strong><span>Le poids se concentre sur le talon et l'avant-pied.</span></p>
+      <p id="s2"><strong><i style="background:var(--even)"></i>Avec semelles adaptées</strong><span>L'appui s'étale sur toute la plante du pied.</span></p>
+    </div>
+    <div class="bars" aria-hidden="true">
+      <span>Pic sans</span><div class="bar"><i id="b1" style="background:var(--peak)"></i></div>
+      <span>Pic avec</span><div class="bar"><i id="b2" style="background:var(--even)"></i></div>
+    </div>
+  </div>
+
+  <div class="viz">
+    <canvas id="cv" role="img" aria-label="Empreintes de pieds formées de points : les zones de forte pression au talon et à l'avant-pied s'apaisent et se répartissent après le passage d'une ligne de balayage"></canvas>
+    <div class="legend" aria-hidden="true">
+      <span>Forte</span>
+      <div class="scale"><div class="marker" id="marker"></div></div>
+      <span>Faible</span>
+    </div>
+  </div>
+
+  <div class="foot-note"><span>Représentation illustrative, sans valeur de mesure</span><span>Parlez-en à votre podologue</span></div>
+</div>
+
+<script>
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cv = document.getElementById("cv"), cx = cv.getContext("2d");
+
+  // Silhouette de la plante du pied (repère local, pied « droit »)
+  const SOLE = new Path2D("M100 382 C70 382 56 357 58 327 C60 292 71 262 69 227 C67 192 51 167 51 132 C51 96 76 78 110 78 C144 78 160 102 158 137 C156 177 141 202 139 242 C137 282 146 312 144 342 C142 370 126 382 100 382 Z");
+  const TOES = [[121,50,17,20],[95,42,10.5,12],[79,48,9.5,11],[66,58,9,10],[57,72,8.5,9.5]];
+  const BOX = { x0: 32, x1: 172, y0: 20, y1: 388 };
+
+  // Champs de pression (0 à 1)
+  const g = (x, y, cx0, cy0, s) => Math.exp(-((x-cx0)**2 + (y-cy0)**2) / (2*s*s));
+  function before(x, y) {
+    let p = .12 + .92*g(x,y,100,338,30) + .86*g(x,y,120,132,24) + .5*g(x,y,74,146,20) + .55*g(x,y,126,50,13) + .2*g(x,y,96,44,9);
+    if (y > 168 && y < 312 && x > 92 + 14*Math.sin((y-168)/144*Math.PI)) p = 0;  // voûte : aucun contact au sol
+    if (y < 96) p = Math.max(p, .38 + .3*g(x,y,121,50,12));  // pulpe des orteils
+    return Math.min(1, p);
+  }
+  function after(x, y) {
+    const n = Math.sin(x*.21 + y*.13) * .03;
+    return Math.min(.52, .36 + .1*g(x,y,100,338,40) + .08*g(x,y,112,135,34) + n);
+  }
+
+  // Trame hexagonale de points à l'intérieur du pied
+  const probe = document.createElement("canvas").getContext("2d");
+  const inside = (x, y) => probe.isPointInPath(SOLE, x, y) || TOES.some(([a,b,rx,ry]) => ((x-a)/rx)**2 + ((y-b)/ry)**2 <= 1);
+  const S = 9.2, dots = [];
+  for (let row = 0, y = BOX.y0; y <= BOX.y1; row++, y += S * .866)
+    for (let x = BOX.x0 + (row % 2 ? S/2 : 0); x <= BOX.x1; x += S)
+      if (inside(x, y)) dots.push({ x, y, b: before(x, y), a: after(x, y) });
+  const cX = 104, cY = 205;
+  const maxD = Math.max(...dots.map(d => Math.hypot(d.x-cX, d.y-cY)));
+  dots.forEach(d => { d.d = Math.hypot(d.x-cX, d.y-cY) / maxD; d.yn = (d.y - BOX.y0) / (BOX.y1 - BOX.y0); });
+
+  // Palette continue
+  const STOPS = [[0,"#3E7BFA"],[.35,"#22C3A6"],[.6,"#FFC23D"],[.8,"#FF7A2F"],[1,"#F0352F"]].map(([t,h]) => [t, [1,3,5].map(i => parseInt(h.slice(i,i+2),16))]);
+  function color(v) {
+    for (let k = 1; k < STOPS.length; k++) if (v <= STOPS[k][0]) {
+      const [t0,c0] = STOPS[k-1], [t1,c1] = STOPS[k], u = (v-t0)/(t1-t0);
+      return `rgb(${c0.map((c,i) => Math.round(c + (c1[i]-c)*u)).join(",")})`;
+    }
+    return "rgb(240,53,47)";
+  }
+
+  // Courbes d'accélération
+  const clamp = v => Math.max(0, Math.min(1, v));
+  const inOut = u => u < .5 ? 16*u**5 : 1 - (-2*u+2)**5/2;           // quintique
+  const outBack = u => { const c = 1.6; return 1 + (c+1)*(u-1)**3 + c*(u-1)**2; };
+  const outCubic = u => 1 - (1-u)**3;
+
+  const LOOP = 10;
+  let W, H, scale, ox, gapX;
+  function resize() {
+    const r = Math.min(devicePixelRatio || 1, 2), b = cv.getBoundingClientRect();
+    cv.width = b.width * r; cv.height = b.height * r; W = cv.width; H = cv.height;
+    scale = Math.min(H * .9 / (BOX.y1 - BOX.y0), W * .44 / (BOX.x1 - BOX.x0));
+    gapX = (BOX.x1 - BOX.x0) * scale * 1.12;
+    ox = W/2;
+  }
+  addEventListener("resize", resize); resize();
+
+  const s1 = document.getElementById("s1"), s2 = document.getElementById("s2");
+  const b1 = document.getElementById("b1"), b2 = document.getElementById("b2");
+  const marker = document.getElementById("marker");
+
+  function drawFoot(t, mirror, offsetX) {
+    const scanStart = 4.0, scanDur = 1.3;
+    let peak = 0;
+    for (const d of dots) {
+      // Apparition en onde depuis le centre, puis disparition inverse
+      const inT = outBack(clamp((t - .15 - d.d*.7) / .6));
+      const outT = 1 - inOut(clamp((t - 8.9 - (1-d.d)*.45) / .55));
+      const vis = Math.min(inT, outT);
+      if (vis <= .001) continue;
+      // Montée de la pression, puis transition au passage du balayage (de bas en haut)
+      const rise = inOut(clamp((t - .9) / 1.7));
+      let v = d.b < .02 ? d.b * rise : .18 + (d.b - .18) * rise;
+      const pass = inOut(clamp((t - (scanStart + (1 - d.yn) * scanDur)) / .8));
+      v = v + (d.a - v) * pass;
+      peak = Math.max(peak, v);
+      const presence = clamp((v - .03) / .1);           // pas de point là où le pied ne touche pas
+      const r = (1.3 + v * 3.1) * scale * vis * presence;
+      const x = (mirror ? (BOX.x1 + BOX.x0 - d.x) : d.x);
+      cx.beginPath();
+      cx.arc(ox + offsetX + (x - (BOX.x0 + BOX.x1)/2) * scale, H/2 + (d.y - (BOX.y0 + BOX.y1)/2) * scale, Math.max(0, r), 0, 6.2832);
+      cx.fillStyle = color(v);
+      cx.fill();
+    }
+    return peak;
+  }
+
+  function frame(now) {
+    const t = reduce ? 7 : (now / 1000) % LOOP;
+    cx.clearRect(0, 0, W, H);
+    const peak = Math.max(drawFoot(t, false, -gapX/2), drawFoot(t, true, gapX/2));
+
+    // Ligne de balayage (la semelle qui se glisse)
+    const sp = clamp((t - 4.0) / 1.3);   // même rythme que la transition des points
+    if (sp > 0 && sp < 1) {
+      const y = H/2 + ((BOX.y1 - (BOX.y1 - BOX.y0) * sp) - (BOX.y0 + BOX.y1)/2) * scale;
+      const x0 = ox - gapX/2 - (BOX.x1 - BOX.x0) * scale * .62, x1 = ox + gapX/2 + (BOX.x1 - BOX.x0) * scale * .62;
+      const grd = cx.createLinearGradient(0, y - 30*scale/4, 0, y);
+      grd.addColorStop(0, "rgba(34,195,166,0)"); grd.addColorStop(1, "rgba(34,195,166,.28)");
+      cx.fillStyle = grd; cx.fillRect(x0, y - 30*scale/4, x1 - x0, 30*scale/4);
+      cx.fillStyle = "#0F1B2D"; cx.fillRect(x0, y - 1, x1 - x0, 2 * (devicePixelRatio || 1));
+    }
+
+    // Légende, états et barres
+    marker.style.bottom = (peak * 100) + "%";
+    s1.classList.toggle("on", t > 1.6 && t < 4.1);
+    s2.classList.toggle("on", t > 5.4 && t < 8.8);
+    b1.style.width = (inOut(clamp((t - 2.0) / 1.2)) * (1 - inOut(clamp((t - 8.9) / .6))) * 92) + "%";
+    b2.style.width = (inOut(clamp((t - 5.6) / 1.2)) * (1 - inOut(clamp((t - 8.9) / .6))) * 48) + "%";
+
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

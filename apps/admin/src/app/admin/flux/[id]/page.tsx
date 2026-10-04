@@ -7,11 +7,11 @@ export const metadata = { title: 'Super admin · Article' };
 
 export default async function Article({ params }: PageProps<'/admin/flux/[id]'>) {
   const { id } = await params;
-  let article = { titre: '', resume: '', corps: '', theme: 'Prévention', date_publication: new Date().toISOString().slice(0, 10), statut: 'brouillon' };
+  let article = { titre: '', resume: '', corps: '', theme: 'Prévention', date_publication: new Date().toISOString().slice(0, 10), image: '', image_alt: '', statut: 'brouillon' };
 
   if (id !== 'nouveau') {
     const supabase = await createClient();
-    const { data } = await supabase.from('articles_flux').select('titre, resume, corps, theme, date_publication, statut').eq('id', id).maybeSingle();
+    const { data } = await supabase.from('articles_flux').select('titre, resume, corps, theme, date_publication, image, image_alt, statut').eq('id', id).maybeSingle();
     if (!data) notFound();
     article = data;
   }

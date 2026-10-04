@@ -38,7 +38,7 @@ type LigneSite = {
   test: boolean;
   config: unknown;
 };
-type LigneArticle = { slug: string; titre: string; resume: string; corps: string; theme: string; date_publication: string };
+type LigneArticle = { slug: string; titre: string; resume: string; corps: string; theme: string; date_publication: string; image?: string; image_alt?: string };
 type LigneProfession = { slug: string; libelle: string; specialite_schema: string; ordre: string };
 type LigneSoin = { slug: string; titre_court: string; titre: string; resume: string; corps: string; faq: Faq[]; icone?: string | null };
 
@@ -63,7 +63,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
 
   // Articles du flux publiés par ce site (tolérant si le flux n'est pas encore installé).
   const publies = await lire<{ article: LigneArticle | null }[]>(
-    `site_articles?site_id=eq.${s.id}&statut=eq.publie&select=article:articles_flux(slug,titre,resume,corps,theme,date_publication)`,
+    `site_articles?site_id=eq.${s.id}&statut=eq.publie&select=article:articles_flux(slug,titre,resume,corps,theme,date_publication,image,image_alt)`,
   ).catch(() => []);
 
   const d = normaliserDraft(s.config);
@@ -166,7 +166,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     articles: publies
       .map((p) => p.article)
       .filter((a): a is LigneArticle => Boolean(a))
-      .map((a) => ({ slug: a.slug, titre: perso(a.titre), resume: perso(a.resume), corps: perso(a.corps), theme: a.theme, date: a.date_publication })),
+      .map((a) => ({ slug: a.slug, titre: perso(a.titre), resume: perso(a.resume), corps: perso(a.corps), theme: a.theme, date: a.date_publication, image: a.image || undefined, imageAlt: a.image_alt || undefined })),
     tracking: {},
     mentions: {
       editeur: `${noms}, ${titreMetier.toLowerCase()}${pluriel ? 's' : ''}`,

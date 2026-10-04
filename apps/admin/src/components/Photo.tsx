@@ -9,15 +9,16 @@ import { createClient } from '@/lib/supabase/client';
 const TAILLE_MAX = 2000;
 const QUALITE = 0.82;
 
-async function compresser(fichier: File, carre: boolean): Promise<Blob> {
+/** Redimensionne (et recadre au centre si un ratio largeur/hauteur est imposé), puis convertit en WebP. */
+async function compresser(fichier: File, ratio: number | null, max: number): Promise<Blob> {
   const image = await createImageBitmap(fichier);
   let { width: l, height: h } = image;
   let sx = 0, sy = 0, sl = l, sh = h;
-  if (carre) {
-    const c = Math.min(l, h);
-    sx = (l - c) / 2; sy = (h - c) / 2; sl = sh = c; l = h = c;
+  if (ratio) {
+    if (l / h > ratio) { sl = Math.round(h * ratio); sx = (l - sl) / 2; } else { sh = Math.round(l / ratio); sy = (h - sh) / 2; }
+    l = sl; h = sh;
   }
-  const echelle = Math.min(1, (carre ? 800 : TAILLE_MAX) / Math.max(l, h));
+  const echelle = Math.min(1, max / Math.max(l, h));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(l * echelle);
   canvas.height = Math.round(h * echelle);
@@ -33,10 +34,14 @@ type Props = {
   onChange: (url: string) => void;
   /** Recadrage carré (portraits) */
   carre?: boolean;
+  /** Recadrage à un ratio largeur/hauteur (ex. 16 / 9 pour les images d'articles) */
+  ratio?: number;
+  /** Plus grand côté en pixels après redimensionnement */
+  largeurMax?: number;
   label: string;
 };
 
-export default function Photo({ siteId, type, valeur, onChange, carre = false, label }: Props) {
+export default function Photo({ siteId, type, valeur, onChange, carre = false, ratio, largeurMax, label }: Props) {
   const entree = useRef<HTMLInputElement>(null);
   const [etat, setEtat] = useState<string | null>(null);
 
@@ -45,7 +50,7 @@ export default function Photo({ siteId, type, valeur, onChange, carre = false, l
     if (!fichier.type.startsWith('image/')) return setEtat('Ce fichier n’est pas une image.');
     setEtat('Optimisation…');
     try {
-      const blob = await compresser(fichier, carre);
+      const blob = await compresser(fichier, carre ? 1 : ratio ?? null, largeurMax ?? (carre ? 800 : TAILLE_MAX));
       setEtat('Envoi…');
       const chemin = `${siteId}/${type}-${Date.now()}.webp`;
       const supabase = createClient();

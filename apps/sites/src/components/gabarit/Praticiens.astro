@@ -1,51 +1,95 @@
 ---
+// Fiches praticiens, mise en page éditoriale. Sans photo : un portrait « relevé » sur fond plan
+// d'architecte (empreintes en trame de points et initiales), jamais un visage de banque d'images.
+import Empreintes from '../dessins/Empreintes.astro';
+import type { Appui } from '../dessins/trame';
 import { site } from '../../lib/site';
 import { lienRdv, rdvEnLigne } from '../../lib/textes';
 
-const STATUTS: Record<string, string> = { titulaire: '', collaborateur: 'Collaborateur·rice', remplacant: 'Remplaçant·e' };
+const STATUTS: Record<string, string> = { titulaire: 'Titulaire', collaborateur: 'Collaborateur·rice', remplacant: 'Remplaçant·e' };
+// Profil d'appui illustratif selon l'orientation du praticien (pure variation graphique).
+const appui = (orientations: string[]): Appui => {
+  const t = orientations.join(' ').toLowerCase();
+  if (/enfant/.test(t)) return 'enfant';
+  if (/sport/.test(t)) return 'avant';
+  if (/postur|équilibre|semelle/.test(t)) return 'reparti';
+  return 'normal';
+};
+const PASTILLES = ['#3e7bfa', '#22c3a6', '#ffc23d', '#ff7a2f', '#f0352f'];
+const seul = site.praticiens.length === 1;
 ---
-<div class="praticiens">
+<div class:list={['praticiens', { 'praticiens--seul': seul }]}>
   {site.praticiens.map((p, i) => (
-    <article class="praticien">
-      {p.photo
-        ? <img class="praticien__photo" src={p.photo} alt={`Portrait de ${p.prenom} ${p.nom}`} width="128" height="128" loading="lazy" />
-        : <div class="praticien__avatar" aria-hidden="true">{p.prenom[0]}{p.nom[0]}</div>}
-      <h3>{p.prenom} {p.nom}</h3>
-      <p class="praticien__titre">
-        {p.titre} à {site.cabinet.ville}{STATUTS[p.statut] && ` — ${STATUTS[p.statut]}`}
-      </p>
-      {p.identifiants.map((id) => <p class="praticien__id">{id}</p>)}
-      {p.diplome && <p class="praticien__diplome">{p.diplome}</p>}
-      {p.presence && <p class="praticien__diplome">Présent·e au cabinet : {p.presence}</p>}
-      {p.bio && <p class="praticien__bio">{p.bio}</p>}
-      {p.orientations.length > 0 && (
-        <ul class="praticien__orientations" aria-label="Orientations">{p.orientations.map((o) => <li>{o}</li>)}</ul>
-      )}
-      {p.sports.length > 0 && <p class="praticien__diplome">Sports suivis : {p.sports.join(', ')}</p>}
-      {p.formations.length > 0 && (
-        <ul class="praticien__formations">{p.formations.map((f) => <li>{f}</li>)}</ul>
-      )}
-      <a class="bouton bouton--plein" href={lienRdv(`praticien-${i}`, rdvEnLigne && site.praticiens.length > 1 ? i : undefined)}>
-        {rdvEnLigne ? (site.praticiens.length > 1 ? `Prendre rendez-vous avec ${p.prenom}` : 'Prendre rendez-vous') : 'Appeler le cabinet'}
-      </a>
+    <article class="praticien apparait">
+      <div class:list={['praticien__portrait', { 'surface-plan': !p.photo }]}>
+        {p.photo
+          ? <img class="praticien__photo" src={p.photo} alt={`Portrait de ${p.prenom} ${p.nom}`} width="480" height="600" loading="lazy" />
+          : (
+            <div class="praticien__releve" aria-hidden="true">
+              <span class="praticien__repere mono"><span>Fiche {String(i + 1).padStart(2, '0')}</span><span>Relevé illustratif</span></span>
+              <Empreintes appui={appui(p.orientations)} scan={false} legende={false} class="praticien__empreintes" />
+              <span class="praticien__initiales">{p.prenom[0]}{p.nom[0]}</span>
+            </div>
+          )}
+      </div>
+      <div class="praticien__texte">
+        <p class="praticien__statut mono">{p.photo ? `${String(i + 1).padStart(2, '0')} — ` : ''}{STATUTS[p.statut]}</p>
+        <h3>{p.prenom} {p.nom}</h3>
+        <p class="praticien__titre">{p.titre} à {site.cabinet.ville}</p>
+        {p.orientations.length > 0 && (
+          <ul class="praticien__orientations" aria-label="Orientations">
+            {p.orientations.map((o, k) => <li><i style={`background:${PASTILLES[(k * 2 + i) % PASTILLES.length]}`} aria-hidden="true"></i>{o}</li>)}
+          </ul>
+        )}
+        {p.bio && <p class="praticien__bio">{p.bio}</p>}
+        <dl class="praticien__fiche">
+          {p.diplome && <><dt class="mono">Diplôme</dt><dd>{p.diplome}</dd></>}
+          {p.presence && <><dt class="mono">Au cabinet</dt><dd>Présent·e : {p.presence}</dd></>}
+          {p.sports.length > 0 && <><dt class="mono">Sports suivis</dt><dd>{p.sports.join(', ')}</dd></>}
+          {p.formations.length > 0 && <><dt class="mono">Formations</dt><dd><ul>{p.formations.map((f) => <li>{f}</li>)}</ul></dd></>}
+          {p.identifiants.length > 0 && <><dt class="mono">Inscription</dt><dd class="praticien__id">{p.identifiants.map((id) => <span>{id}</span>)}</dd></>}
+        </dl>
+        <a class="bouton bouton--plein" href={lienRdv(`praticien-${i}`, rdvEnLigne && site.praticiens.length > 1 ? i : undefined)}>
+          {rdvEnLigne ? (site.praticiens.length > 1 ? `Prendre rendez-vous avec ${p.prenom}` : 'Prendre rendez-vous') : 'Appeler le cabinet'}
+        </a>
+      </div>
     </article>
   ))}
 </div>
 
 <style>
-  .praticiens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-  .praticien { background: #fff; border-radius: var(--rayon); padding: 28px; display: grid; gap: 6px; align-content: start; border: 1px solid var(--ligne); }
-  .praticien__avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 700; font-size: 1.2rem; margin-bottom: 10px; }
-  .praticien__photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-  h3 { font-size: 1.35rem; }
+  .praticiens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+  .praticien { container-type: inline-size; background: var(--fond); border-radius: var(--rayon-grand); padding: 14px; box-shadow: inset 0 0 0 1px var(--ligne), var(--ombre); }
+  .praticien > * { min-width: 0; }
+  .praticien__portrait { position: relative; aspect-ratio: 4 / 3; border-radius: calc(var(--rayon-grand) * 0.7); overflow: hidden; }
+  .praticien__photo { width: 100%; height: 100%; object-fit: cover; }
+  .praticien__releve { position: absolute; inset: 0; display: grid; }
+  .praticien__repere { position: absolute; top: 14px; left: 16px; right: 16px; padding-bottom: 8px; border-bottom: 1px solid rgb(255 255 255 / 0.25); display: flex; justify-content: space-between; gap: 12px; color: var(--signal); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; }
+  .praticien__releve :global(.praticien__empreintes) { position: absolute; right: 6%; bottom: -14%; width: 52%; color: rgb(255 255 255 / 0.65); }
+  .praticien__initiales { position: absolute; left: 16px; bottom: 6px; font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(4.5rem, 22cqi, 7.5rem); line-height: 0.9; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: 1.2px rgb(242 246 255 / 0.85); }
+  .praticien__texte { display: grid; gap: 6px; align-content: start; padding: 22px 12px 10px; }
+  @container (min-width: 620px) {
+    .praticien { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 8px; }
+    .praticien__portrait { aspect-ratio: auto; min-height: 100%; }
+    .praticien__texte { padding: 22px 22px 18px; }
+  }
   p { margin: 0; }
+  .praticien__statut { color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; margin-bottom: 4px; }
+  h3 { font-family: var(--police-titres); font-size: clamp(1.6rem, 6cqi, 2.2rem); letter-spacing: -0.04em; line-height: 1; }
   .praticien__titre { color: var(--encre-douce); }
-  .praticien__id { font-size: 0.88rem; }
-  .praticien__id:first-of-type { margin-top: 8px; }
-  .praticien__diplome { font-size: 0.88rem; color: var(--encre-douce); }
+  .praticien__orientations { list-style: none; padding: 0; margin: 10px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .praticien__orientations li { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; padding: 6px 12px 6px 10px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ligne); color: var(--encre); }
+  .praticien__orientations i { width: 8px; height: 8px; border-radius: 50%; }
   .praticien__bio { margin-top: 8px; color: var(--encre-douce); }
-  .praticien__orientations { list-style: none; padding: 0; margin: 12px 0 4px; display: flex; flex-wrap: wrap; gap: 6px; }
-  .praticien__orientations li { font-size: 0.82rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: var(--accent-pale); color: var(--accent); }
-  .praticien__formations { margin: 6px 0 0; padding-left: 1.1em; font-size: 0.88rem; color: var(--encre-douce); }
-  .bouton { margin-top: 14px; }
+  .praticien__fiche { display: grid; grid-template-columns: minmax(0, 1fr); margin: 14px 0 0; border-top: 1.5px solid var(--encre); }
+  .praticien__fiche dt { padding-top: 10px; color: var(--encre-pale); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.66rem; }
+  .praticien__fiche dd { margin: 2px 0 0; padding-bottom: 10px; border-bottom: 1px solid var(--ligne); font-size: 0.9rem; color: var(--encre-douce); }
+  .praticien__fiche ul { margin: 0; padding-left: 1.1em; }
+  .praticien__id { display: grid; gap: 2px; font-size: 0.84rem !important; }
+  @container (min-width: 480px) {
+    .praticien__fiche { grid-template-columns: 9.5em minmax(0, 1fr); }
+    .praticien__fiche dt { padding: 11px 12px 11px 0; border-bottom: 1px solid var(--ligne); }
+    .praticien__fiche dd { margin: 0; padding: 10px 0; }
+  }
+  .bouton { margin-top: 16px; justify-self: start; white-space: normal; text-align: center; }
 </style>

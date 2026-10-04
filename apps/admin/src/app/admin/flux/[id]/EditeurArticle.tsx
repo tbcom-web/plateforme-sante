@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { THEMES_FLUX } from '@plateforme/core';
+import Photo from '@/components/Photo';
 import { diffuserArticle, enregistrerArticle, type ChampsArticle, type Resultat } from '../actions';
 
 const champ = 'w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-teal-700 focus:ring-2 focus:ring-teal-700/20';
@@ -15,6 +16,8 @@ export default function EditeurArticle({ id, article }: Props) {
     corps: article.corps,
     theme: article.theme,
     date_publication: article.date_publication,
+    image: article.image,
+    image_alt: article.image_alt,
   });
   const [resultat, setResultat] = useState<Resultat>(null);
   const [enCours, demarrer] = useTransition();
@@ -44,6 +47,23 @@ export default function EditeurArticle({ id, article }: Props) {
           <input type="date" className={champ} value={v.date_publication} onChange={(e) => maj('date_publication', e.target.value)} />
         </label>
       </div>
+      <fieldset className="grid gap-3 rounded-xl border border-neutral-200 p-4">
+        <legend className="px-1 text-sm font-medium">Image de l’article</legend>
+        <Photo
+          siteId="banque/flux"
+          type="article"
+          ratio={16 / 9}
+          largeurMax={1600}
+          label="Photo (recadrée en 16:9, convertie en WebP 1600 × 900) — sans visage reconnaissable"
+          valeur={v.image}
+          onChange={(u) => maj('image', u)}
+        />
+        <label className="grid gap-1.5 text-sm">
+          <span className="font-medium">Texte alternatif</span>
+          <input className={champ} value={v.image_alt} onChange={(e) => maj('image_alt', e.target.value)} placeholder="Chaussures de marche à semelle crantée posées sur des feuilles mortes" />
+          <span className="text-xs text-neutral-500">Décrivez ce que montre la photo, en une phrase (utile à Google Images et aux lecteurs d’écran).</span>
+        </label>
+      </fieldset>
       <label className="grid gap-1.5 text-sm">
         <span className="font-medium">Résumé (cartes et référencement)</span>
         <textarea rows={2} className={champ} value={v.resume} onChange={(e) => maj('resume', e.target.value)} />

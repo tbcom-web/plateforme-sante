@@ -8,13 +8,19 @@
 export const SECTIONS_ACCUEIL = ['faits', 'competences', 'panorama', 'praticiens', 'galerie', 'actualites', 'acces', 'faq'] as const;
 export type SectionAccueil = (typeof SECTIONS_ACCUEIL)[number];
 
-export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument'] as const;
+export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted'] as const;
 export type PoliceTitres = (typeof POLICES_TITRES)[number];
 export const POLICES_TEXTE = ['inter', 'manrope'] as const;
 export type PoliceTexte = (typeof POLICES_TEXTE)[number];
 /** Traitement appliqué aux photos pour l'unité graphique du style */
 export const TRAITEMENTS_IMAGES = ['naturel', 'chaud', 'doux', 'contraste'] as const;
 export type TraitementImages = (typeof TRAITEMENTS_IMAGES)[number];
+/**
+ * Texture discrète des sections alternées et des surfaces « plan » : quadrillage de plan d'architecte,
+ * trame hexagonale de points (relevé de baropodométrie), courbes de niveau (semelle thermoformée), ou rien.
+ */
+export const MOTIFS = ['plan', 'trame', 'courbes', 'aucun'] as const;
+export type Motif = (typeof MOTIFS)[number];
 
 export type ModeleManifeste = {
   /** Identifiant stable (minuscules, chiffres, tirets) */
@@ -56,6 +62,12 @@ export type ModeleManifeste = {
     images: TraitementImages;
     /** Fond des sections alternées (#rrggbb), facultatif (sinon teinte de la couleur du cabinet) */
     fondDoux?: string;
+    /** Texture des sections (défaut : plan) */
+    motif?: Motif;
+    /** Fond des surfaces sombres « plan d'architecte » (#rrggbb), facultatif (sinon couleur du cabinet assombrie) */
+    plan?: string;
+    /** Couleur des lectures de données sur fond sombre : légendes, lignes de scan (#rrggbb), facultatif */
+    signal?: string;
   };
 };
 
@@ -65,14 +77,14 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
   {
     id: 'proximite',
     nom: 'Proximité',
-    description: 'Clair et factuel, aux couleurs du cabinet. Titre et photo côte à côte.',
-    version: 1,
+    description: 'Clair et factuel, aux couleurs du cabinet. Titre et photo côte à côte, typographie grotesque affirmée.',
+    version: 2,
     entete: 'opaque',
     accueil: { hero: 'scinde', voile: 0, sections: TOUTES },
     competences: 'liste',
     pied: 'sombre',
     animations: 'douces',
-    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 600, rayon: 22, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel' },
+    jetons: { policeTitres: 'schibsted', policeTexte: 'inter', graisseTitres: 750, rayon: 18, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', fondDoux: '#eef1f4', motif: 'trame', signal: '#6ff2c2' },
   },
   {
     id: 'premium',
@@ -84,7 +96,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'liste',
     pied: 'sombre',
     animations: 'douces',
-    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 500, rayon: 14, boutons: 'arrondi', accent: 'encre', fond: '#ffffff', images: 'naturel', fondDoux: '#f4f5f4' },
+    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 500, rayon: 14, boutons: 'arrondi', accent: 'encre', fond: '#ffffff', images: 'naturel', fondDoux: '#f4f5f4', motif: 'plan', plan: '#123c8c', signal: '#6ff2c2' },
   },
   {
     id: 'prestige',
@@ -96,7 +108,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'cartes',
     pied: 'sombre',
     animations: 'douces',
-    jetons: { policeTitres: 'fraunces', policeTexte: 'inter', graisseTitres: 420, rayon: 6, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'contraste', fondDoux: '#f6f3ee' },
+    jetons: { policeTitres: 'fraunces', policeTexte: 'inter', graisseTitres: 420, rayon: 6, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'contraste', fondDoux: '#f6f3ee', motif: 'courbes', signal: '#e9c98f' },
   },
   {
     id: 'zen',
@@ -109,7 +121,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'accent',
     animations: 'douces',
     couleurConseillee: '#2f6f6a',
-    jetons: { policeTitres: 'manrope', policeTexte: 'manrope', graisseTitres: 300, rayon: 30, boutons: 'pilule', accent: 'couleur', fond: '#fbfcfb', images: 'doux', fondDoux: '#eef4f1' },
+    jetons: { policeTitres: 'manrope', policeTexte: 'manrope', graisseTitres: 300, rayon: 30, boutons: 'pilule', accent: 'couleur', fond: '#fbfcfb', images: 'doux', fondDoux: '#eef4f1', motif: 'courbes', signal: '#bdf0da' },
   },
   {
     id: 'atelier',
@@ -122,7 +134,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'clair',
     animations: 'douces',
     couleurConseillee: '#b0583a',
-    jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', images: 'chaud', fondDoux: '#efe6dc' },
+    jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', images: 'chaud', fondDoux: '#efe6dc', motif: 'plan', plan: '#3a1f17', signal: '#f2b880' },
   },
 ];
 
@@ -173,6 +185,9 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
     if (j.fond !== undefined && !HEX.test(j.fond)) e.push('« jetons.fond » : couleur au format #rrggbb.');
     if (j.images !== undefined && !parmi(j.images, TRAITEMENTS_IMAGES)) e.push(`« jetons.images » : ${TRAITEMENTS_IMAGES.join(', ')}.`);
     if (j.fondDoux !== undefined && !HEX.test(j.fondDoux)) e.push('« jetons.fondDoux » : couleur au format #rrggbb.');
+    if (j.motif !== undefined && !parmi(j.motif, MOTIFS)) e.push(`« jetons.motif » : ${MOTIFS.join(', ')}.`);
+    if (j.plan !== undefined && !HEX.test(j.plan)) e.push('« jetons.plan » : couleur au format #rrggbb.');
+    if (j.signal !== undefined && !HEX.test(j.signal)) e.push('« jetons.signal » : couleur au format #rrggbb.');
   }
   if (e.length) return { erreurs: e };
 
@@ -201,6 +216,9 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
         fond: v.jetons.fond ?? '#ffffff',
         images: v.jetons.images ?? 'naturel',
         ...(v.jetons.fondDoux ? { fondDoux: v.jetons.fondDoux } : {}),
+        motif: v.jetons.motif ?? 'plan',
+        ...(v.jetons.plan ? { plan: v.jetons.plan } : {}),
+        ...(v.jetons.signal ? { signal: v.jetons.signal } : {}),
       },
     },
   };

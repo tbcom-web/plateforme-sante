@@ -18,7 +18,8 @@ function lisser(points: P[]): string {
   return `${d} Z`;
 }
 
-const PLANTE: P[] = [
+/** Points relevés du contour de la plante (avant lissage) */
+export const PLANTE: P[] = [
   [48, 219], [33, 214], [23, 202], [19, 186], [20, 168], [25, 152], // talon, bord interne
   [32, 138], [35, 124], [33, 110], [27, 98], // voûte interne (creusée)
   [19, 86], [14, 72], [13, 58], [17, 46], [24, 38], // bosse du 1er métatarsien

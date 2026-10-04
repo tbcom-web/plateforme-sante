@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La posturologie · EcranZen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cobalt: #123C8C;
+    --cobalt-deep: #0C2C6B;
+    --line: rgba(255,255,255,.9);
+    --faint: rgba(255,255,255,.12);
+    --paper: #F2F6FF;
+    --signal: #FF8A3D;
+    --mint: #6FF2C2;
+    color-scheme: dark; box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --cobalt: #123C8C; } }
+  :root[data-theme="dark"] { --cobalt: #123C8C; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    color: var(--paper); font-family: "Sora", "Segoe UI", system-ui, sans-serif; overflow: hidden;
+    background-color: var(--cobalt);
+    /* Papier « plan d'architecte » */
+    background-image:
+      linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+      radial-gradient(120% 90% at 70% 50%, #184CAB 0%, var(--cobalt-deep) 75%);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px, 100% 100%;
+  }
+
+  .stage { position: relative; height: 100%; }
+  header { position: absolute; z-index: 10; top: clamp(16px, 4vh, 48px); left: clamp(20px, 5vw, 80px); right: clamp(20px, 5vw, 80px); display: flex; justify-content: space-between; align-items: baseline; font-size: clamp(13px, 1.4vw, 22px); }
+  .brand { font-weight: 800; } .brand span { color: var(--mint); }
+  .topic { font-weight: 600; color: var(--mint); }
+
+  /* Transition : ligne de scan qui balaie l'écran */
+  .scene {
+    position: absolute; inset: 0; z-index: 1;
+    display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: clamp(20px, 4vw, 90px);
+    padding: clamp(70px, 13vh, 150px) clamp(20px, 5vw, 90px) clamp(56px, 10vh, 110px);
+    visibility: hidden;
+  }
+  .scene.on { visibility: visible; }
+  .scene.enter { z-index: 2; animation: reveal 1s cubic-bezier(.65,0,.35,1) both; }
+  .scene.prev { z-index: 1; }
+  @keyframes reveal { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+  .scan { position: absolute; z-index: 9; left: 0; right: 0; height: 2px; top: -4px; background: var(--mint); box-shadow: 0 0 18px 4px rgba(111,242,194,.6); opacity: 0; pointer-events: none; }
+  .scan.go { animation: scan 1s cubic-bezier(.65,0,.35,1); }
+  @keyframes scan { 0% { top: 0; opacity: 1; } 95% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+  /* Chaque scène a un fond opaque pour masquer la précédente pendant le balayage */
+  .scene { background-image: linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px), radial-gradient(120% 90% at 70% 50%, #184CAB 0%, #0C2C6B 75%); background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px, 100% 100%; background-color: #123C8C; }
+
+  .text { display: grid; gap: clamp(12px, 2.6vh, 28px); }
+  .kick { font-family: "JetBrains Mono", monospace; font-size: clamp(11px, 1.2vw, 18px); color: var(--mint); letter-spacing: .02em; }
+  h2 { font-weight: 800; font-size: clamp(28px, 4.6vw, 86px); line-height: .98; letter-spacing: -0.035em; max-width: 13ch; text-wrap: balance; }
+  .lead { font-weight: 300; font-size: clamp(16px, 2vw, 34px); line-height: 1.4; max-width: 27ch; color: rgba(242,246,255,.9); }
+  .lead strong { font-weight: 600; color: var(--paper); }
+  .scene.on .text > * { animation: rise .9s cubic-bezier(.2,.7,.2,1) both; }
+  .scene.on .text > *:nth-child(1) { animation-delay: .7s; }
+  .scene.on .text > *:nth-child(2) { animation-delay: .9s; }
+  .scene.on .text > *:nth-child(3) { animation-delay: 1.15s; }
+  .scene.on .text > *:nth-child(4) { animation-delay: 1.4s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+  .viz { display: grid; place-items: center; height: 100%; min-height: 0; }
+  .viz svg { width: 100%; height: auto; max-height: 68vh; overflow: visible; }
+
+  /* Silhouette « plan technique » */
+  .bone { stroke: var(--line); stroke-width: 4; stroke-linecap: round; fill: none; }
+  .joint { fill: var(--cobalt); stroke: var(--line); stroke-width: 3; }
+  .head { fill: none; stroke: var(--line); stroke-width: 4; }
+  .foot { fill: var(--line); }
+  .plumb { stroke: var(--mint); stroke-width: 1.5; stroke-dasharray: 6 6; }
+  .ref { stroke: rgba(255,255,255,.35); stroke-width: 1; stroke-dasharray: 3 5; }
+  .tiltline { stroke: var(--signal); stroke-width: 2; }
+  .lvl { fill: rgba(255,255,255,.08); stroke: rgba(255,255,255,.6); stroke-width: 1.5; }
+  .lvl-mark { stroke: rgba(255,255,255,.6); stroke-width: 1.5; }
+  .bubble { transition: fill .4s; }
+  .lvl-lab { font: 500 11px "JetBrains Mono", monospace; fill: rgba(242,246,255,.8); }
+  .pain { fill: var(--signal); opacity: .9; transform-box: fill-box; transform-origin: center; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(.6); opacity: .9; } 50% { transform: scale(1.5); opacity: .25; } }
+  .insole { fill: var(--signal); }
+  .sway { transform-origin: 160px 500px; }
+  .scene.on .sway { animation: sway 4s ease-in-out infinite; }
+  @keyframes sway { 0%,100% { transform: rotate(-.6deg); } 50% { transform: rotate(.6deg); } }
+
+  /* Chaîne posturale */
+  .node { fill: var(--cobalt); stroke: rgba(255,255,255,.4); stroke-width: 3; transition: fill .4s, stroke .4s; }
+  .node.lit { fill: var(--mint); stroke: var(--mint); filter: drop-shadow(0 0 8px var(--mint)); }
+  .nlab { font: 600 15px "Sora", sans-serif; fill: var(--paper); opacity: 0; transition: opacity .4s; }
+  .nlab.lit { opacity: 1; }
+  .nlink { stroke: rgba(111,242,194,.6); stroke-width: 1.2; stroke-dasharray: 3 4; opacity: 0; transition: opacity .4s; }
+  .nlink.lit { opacity: 1; }
+
+  /* Capteurs */
+  .sensor { fill: none; stroke: var(--mint); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .scene.on .sensor { animation: ping 2s ease-out infinite; }
+  @keyframes ping { from { opacity: .9; transform: scale(.4); } to { opacity: 0; transform: scale(1.8); } }
+  .signal { fill: var(--mint); filter: drop-shadow(0 0 6px var(--mint)); }
+  .brain { fill: rgba(111,242,194,.18); stroke: var(--mint); stroke-width: 2; }
+  .scene.on .brain { animation: glowB 2s ease-in-out infinite; }
+  @keyframes glowB { 50% { fill: rgba(111,242,194,.45); } }
+  .slab { font: 600 14px "Sora", sans-serif; fill: var(--paper); }
+
+  /* Plateforme */
+  .plate { fill: rgba(255,255,255,.06); stroke: rgba(255,255,255,.7); stroke-width: 2; }
+  .cross { stroke: rgba(255,255,255,.3); stroke-width: 1; }
+  .print { fill: rgba(242,246,255,.18); stroke: rgba(242,246,255,.5); stroke-width: 1.5; }
+  .trace { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .cop { filter: drop-shadow(0 0 6px currentColor); }
+  .readout { display: flex; gap: clamp(16px, 3vw, 40px); font-family: "JetBrains Mono", monospace; font-size: clamp(12px, 1.3vw, 20px); }
+  .readout div { display: grid; gap: 6px; }
+  .readout span { color: rgba(242,246,255,.7); }
+  .readout b { font-weight: 500; font-size: 1.5em; }
+  .mode { display: inline-flex; align-items: center; gap: .6em; font-weight: 600; font-size: clamp(14px, 1.6vw, 26px); padding: .45em 1em; border-radius: 99px; border: 1.5px solid currentColor; }
+  .mode i { width: .6em; height: .6em; border-radius: 50%; background: currentColor; }
+
+  /* Final */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chips span { font-size: clamp(13px, 1.5vw, 24px); padding: .45em 1em; border-radius: 99px; border: 1.5px solid rgba(242,246,255,.5); }
+  .cta { justify-self: start; font-weight: 600; font-size: clamp(14px, 1.7vw, 28px); padding: .8em 1.4em; border-radius: 99px; background: var(--mint); color: var(--cobalt-deep); box-shadow: 0 0 30px rgba(111,242,194,.35); }
+
+  .progress { position: absolute; z-index: 10; left: clamp(20px, 5vw, 80px); right: clamp(20px, 5vw, 80px); bottom: clamp(18px, 3.5vh, 40px); display: flex; gap: 8px; }
+  .progress i { flex: 1; height: 2px; background: rgba(255,255,255,.2); overflow: hidden; }
+  .progress b { display: block; height: 100%; width: 0; background: var(--mint); }
+
+  @media (max-width: 760px) {
+    .scene { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .viz svg { max-height: 36vh; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01s !important; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <div class="brand">Ecran<span>Zen</span></div>
+    <div class="topic">La posturologie</div>
+  </header>
+
+  <!-- 1. Accroche -->
+  <section class="scene" data-dur="10000">
+    <div class="text">
+      <div class="kick">Bilan postural</div>
+      <h2>Et si votre mal de dos commençait par vos pieds ?</h2>
+      <p class="lead">Un appui mal réparti peut se répercuter <strong>plus haut</strong> : genoux, bassin, jusqu'au dos.</p>
+    </div>
+    <div class="viz"><svg viewBox="0 0 330 540" role="img" aria-label="Silhouette déséquilibrée avec épaules et bassin inclinés" data-fig="hook"></svg></div>
+  </section>
+
+  <!-- 2. La chaîne -->
+  <section class="scene" data-dur="12000">
+    <div class="text">
+      <div class="kick">La chaîne posturale</div>
+      <h2>Votre corps fonctionne comme une chaîne</h2>
+      <p class="lead">Des pieds à la tête, chaque maillon <strong>compense</strong> les autres. Quand la base bouge, tout s'adapte au-dessus.</p>
+    </div>
+    <div class="viz"><svg viewBox="0 0 330 540" role="img" aria-label="Les articulations s'allument des pieds jusqu'à la tête" data-fig="chain"></svg></div>
+  </section>
+
+  <!-- 3. Les capteurs -->
+  <section class="scene" data-dur="11000">
+    <div class="text">
+      <div class="kick">L'équilibre</div>
+      <h2>Vos pieds informent votre cerveau</h2>
+      <p class="lead">Avec les <strong>yeux</strong> et l'<strong>oreille interne</strong>, ils lui indiquent en permanence comment garder l'équilibre.</p>
+    </div>
+    <div class="viz"><svg viewBox="0 0 330 540" role="img" aria-label="Des signaux partent des pieds, des yeux et de l'oreille vers le cerveau" data-fig="sensors"></svg></div>
+  </section>
+
+  <!-- 4. La mesure -->
+  <section class="scene" data-dur="13000">
+    <div class="text">
+      <div class="kick">La plateforme de posturologie</div>
+      <h2>Le bilan mesure votre équilibre</h2>
+      <p class="lead">Debout sur une plateforme, vos <strong>petites oscillations</strong> sont enregistrées, yeux ouverts puis yeux fermés.</p>
+      <div class="mode" id="mode" style="color: var(--mint)"><i></i><span id="modeTxt">Yeux ouverts</span></div>
+    </div>
+    <div class="viz">
+      <svg viewBox="0 0 420 330" role="img" aria-label="Tracé en direct du centre de pression sur une plateforme">
+        <rect class="plate" x="50" y="20" width="320" height="270" rx="26"/>
+        <line class="cross" x1="210" y1="36" x2="210" y2="274"/>
+        <line class="cross" x1="66" y1="155" x2="354" y2="155"/>
+        <circle class="cross" cx="210" cy="155" r="40" fill="none"/>
+        <circle class="cross" cx="210" cy="155" r="80" fill="none"/>
+        <g transform="translate(206 40) scale(-.55 .55)"><path class="print" d="M100 382 C70 382 56 357 58 327 C60 292 71 262 69 227 C67 192 51 167 51 132 C51 96 76 78 110 78 C144 78 160 102 158 137 C156 177 141 202 139 242 C137 282 146 312 144 342 C142 370 126 382 100 382 Z"/></g>
+        <g transform="translate(214 40) scale(.55)"><path class="print" d="M100 382 C70 382 56 357 58 327 C60 292 71 262 69 227 C67 192 51 167 51 132 C51 96 76 78 110 78 C144 78 160 102 158 137 C156 177 141 202 139 242 C137 282 146 312 144 342 C142 370 126 382 100 382 Z"/></g>
+        <path class="trace" id="trace" stroke="#6FF2C2"/>
+        <circle class="cop" id="cop" r="6" fill="#6FF2C2" style="color:#6FF2C2"/>
+        <text x="60" y="318" font-family="JetBrains Mono, monospace" font-size="12" fill="rgba(242,246,255,.7)">Centre de pression, tracé illustratif</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 5. La correction -->
+  <section class="scene" data-dur="13000">
+    <div class="text">
+      <div class="kick">Rééquilibrer</div>
+      <h2>Tout part des appuis</h2>
+      <p class="lead">Selon le bilan, des <strong>semelles posturales</strong> peuvent être proposées pour mieux répartir vos appuis.</p>
+    </div>
+    <div class="viz"><svg viewBox="0 0 330 540" role="img" aria-label="Des semelles glissent sous les pieds et la silhouette se réaligne" data-fig="fix"></svg></div>
+  </section>
+
+  <!-- 6. Appel -->
+  <section class="scene" data-dur="10000">
+    <div class="text">
+      <div class="kick">Pour qui ?</div>
+      <h2>Faites le point sur votre posture</h2>
+      <div class="chips"><span>Maux de dos</span><span>Douleurs aux genoux</span><span>Déséquilibres</span><span>Sportifs</span></div>
+      <span class="cta">Parlez-en à votre podologue</span>
+    </div>
+    <div class="viz"><svg viewBox="0 0 330 540" role="img" aria-label="Silhouette alignée" data-fig="end"></svg></div>
+  </section>
+
+  <div class="scan" id="scan"></div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+</div>
+
+<script>
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; };
+  const rad = d => d * Math.PI / 180;
+  const rot = (v, d) => { const c = Math.cos(rad(d)), s = Math.sin(rad(d)); return [v[0] * c - v[1] * s, v[0] * s + v[1] * c]; };
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  // Posture déséquilibrée → alignée
+  const TILT = { ap: 7, s: -4, as: -8, h: 6 };
+  const ALIGN = { ap: 0, s: 0, as: 0, h: 0 };
+  const C0 = [160, 262], ANK_L = [132, 484], ANK_R = [188, 484];
+
+  // Construit une silhouette dans un SVG
+  function buildFigure(svg, opts = {}) {
+    const g = el("g", { class: "sway" }, svg);
+    const F = { svg, g };
+    F.plumb = el("line", { class: "plumb", x1: 160, y1: 6, x2: 160, y2: 510 }, g);
+    F.refS = el("line", { class: "ref", x1: 70, x2: 250 }, g);
+    F.refP = el("line", { class: "ref", x1: 90, x2: 230 }, g);
+    F.tS = el("line", { class: "tiltline" }, g);
+    F.tP = el("line", { class: "tiltline" }, g);
+    F.insL = el("rect", { class: "insole", x: 110, y: 492, width: 44, height: 8, rx: 4, opacity: 0 }, g);
+    F.insR = el("rect", { class: "insole", x: 166, y: 492, width: 44, height: 8, rx: 4, opacity: 0 }, g);
+    F.footL = el("ellipse", { class: "foot", cx: 128, cy: 494, rx: 20, ry: 7 }, g);
+    F.footR = el("ellipse", { class: "foot", cx: 192, cy: 494, rx: 20, ry: 7 }, g);
+    F.bones = {};
+    for (const k of ["thL", "shL", "thR", "shR", "pelvis", "spine", "shoulders", "neck", "uaL", "faL", "uaR", "faR"]) F.bones[k] = el("line", { class: "bone" }, g);
+    F.headC = el("circle", { class: "head", r: 26 }, g);
+    F.joints = {};
+    for (const k of ["hipL", "hipR", "kneeL", "kneeR", "shL", "shR", "elL", "elR", "C", "T"]) F.joints[k] = el("circle", { class: "joint", r: 6 }, g);
+    if (opts.levels) {
+      F.lvS = makeLevel(svg, "Épaules"); F.lvP = makeLevel(svg, "Bassin");
+    }
+    if (opts.pain) {
+      F.painBack = el("circle", { class: "pain", r: 12 }, g);
+      F.painKnee = el("circle", { class: "pain", r: 10, style: "animation-delay:.5s" }, g);
+    }
+    return F;
+  }
+  function makeLevel(svg, label) {
+    const g = el("g", {}, svg);
+    const r = el("rect", { class: "lvl", x: 262, width: 60, height: 16, rx: 8 }, g);
+    const m1 = el("line", { class: "lvl-mark" }, g), m2 = el("line", { class: "lvl-mark" }, g);
+    const b = el("circle", { class: "bubble", r: 5.5 }, g);
+    const t = el("text", { class: "lvl-lab", x: 262 }, g); t.textContent = label;
+    return { r, m1, m2, b, t };
+  }
+  const setL = (l, a, b) => { l.setAttribute("x1", a[0]); l.setAttribute("y1", a[1]); l.setAttribute("x2", b[0]); l.setAttribute("y2", b[1]); };
+  const setC = (c, p) => { c.setAttribute("cx", p[0]); c.setAttribute("cy", p[1]); };
+
+  function pose(F, p) {
+    const C = C0;
+    const hipL = add(C, rot([-28, 0], p.ap)), hipR = add(C, rot([28, 0], p.ap));
+    const T = add(C, rot([0, -150], p.s));
+    const shL = add(T, rot([-52, 0], p.as)), shR = add(T, rot([52, 0], p.as));
+    const N = add(T, rot([0, -22], p.s + p.h));
+    const H = add(N, rot([0, -26], p.s + p.h));
+    const kneeL = [(hipL[0] + ANK_L[0]) / 2 - 3, (hipL[1] + ANK_L[1]) / 2];
+    const kneeR = [(hipR[0] + ANK_R[0]) / 2 + 3, (hipR[1] + ANK_R[1]) / 2];
+    const elL = add(shL, [-9, 78]), elR = add(shR, [9, 78]);
+    const wrL = add(elL, [-4, 70]), wrR = add(elR, [4, 70]);
+    const B = F.bones;
+    setL(B.thL, hipL, kneeL); setL(B.shL, kneeL, ANK_L); setL(B.thR, hipR, kneeR); setL(B.shR, kneeR, ANK_R);
+    setL(B.pelvis, hipL, hipR); setL(B.spine, C, T); setL(B.shoulders, shL, shR); setL(B.neck, T, N);
+    setL(B.uaL, shL, elL); setL(B.faL, elL, wrL); setL(B.uaR, shR, elR); setL(B.faR, elR, wrR);
+    setC(F.headC, H);
+    const J = F.joints;
+    setC(J.hipL, hipL); setC(J.hipR, hipR); setC(J.kneeL, kneeL); setC(J.kneeR, kneeR);
+    setC(J.shL, shL); setC(J.shR, shR); setC(J.elL, elL); setC(J.elR, elR); setC(J.C, C); setC(J.T, T);
+    // Repères horizontaux et lignes d'inclinaison
+    F.refS.setAttribute("y1", T[1]); F.refS.setAttribute("y2", T[1]);
+    F.refP.setAttribute("y1", C[1]); F.refP.setAttribute("y2", C[1]);
+    setL(F.tS, add(shL, rot([-20, 0], p.as)), add(shR, rot([20, 0], p.as)));
+    setL(F.tP, add(hipL, rot([-22, 0], p.ap)), add(hipR, rot([22, 0], p.ap)));
+    const off = Math.abs(p.ap) + Math.abs(p.as);
+    F.tS.style.opacity = F.tP.style.opacity = Math.min(1, off / 6);
+    if (F.lvS) { level(F.lvS, T[1], p.as); level(F.lvP, C[1], p.ap); }
+    if (F.painBack) {
+      setC(F.painBack, add(C, rot([0, -34], p.s))); setC(F.painKnee, kneeR);
+      const o = Math.min(1, off / 8); F.painBack.style.opacity = F.painKnee.style.opacity = o;
+    }
+    return { C, T, H, hipL, hipR, kneeL, kneeR, shL, shR };
+  }
+  function level(L, y, angle) {
+    L.r.setAttribute("y", y - 8);
+    setL(L.m1, [286, y - 8], [286, y + 8]); setL(L.m2, [298, y - 8], [298, y + 8]);
+    const x = 292 + Math.max(-22, Math.min(22, angle * 3));
+    setC(L.b, [x, y]);
+    L.b.style.fill = Math.abs(angle) < 1 ? "#6FF2C2" : "#FF8A3D";
+    L.t.setAttribute("y", y - 14);
+  }
+
+  // Instances
+  const figs = {};
+  document.querySelectorAll("[data-fig]").forEach(svg => {
+    const k = svg.dataset.fig;
+    figs[k] = buildFigure(svg, { levels: k === "hook" || k === "fix", pain: k === "hook" || k === "fix" });
+  });
+  pose(figs.hook, TILT);
+  const chainPts = pose(figs.chain, { ap: 3, s: -2, as: -3, h: 2 });
+  const sensPts = pose(figs.sensors, ALIGN);
+  pose(figs.fix, TILT);
+  pose(figs.end, ALIGN);
+
+  // Scène 2 : noeuds de la chaîne, du bas vers le haut
+  const chainSvg = figs.chain.svg;
+  const chainNodes = [
+    ["Pieds", [160, 494]], ["Genoux", [(chainPts.kneeL[0] + chainPts.kneeR[0]) / 2, chainPts.kneeL[1]]],
+    ["Bassin", chainPts.C], ["Colonne", [(chainPts.C[0] + chainPts.T[0]) / 2, (chainPts.C[1] + chainPts.T[1]) / 2]],
+    ["Épaules", chainPts.T], ["Tête", chainPts.H]
+  ].map(([label, p]) => {
+    const n = el("circle", { class: "node", cx: p[0], cy: p[1], r: 9 }, chainSvg);
+    const l = el("line", { class: "nlink", x1: p[0] + 12, y1: p[1], x2: 250, y2: p[1] }, chainSvg);
+    const t = el("text", { class: "nlab", x: 256, y: p[1] + 5 }, chainSvg); t.textContent = label;
+    return [n, l, t];
+  });
+  let chainTimers = [];
+  function runChain() {
+    chainTimers.forEach(clearTimeout); chainTimers = [];
+    chainNodes.forEach(arr => arr.forEach(e => e.classList.remove("lit")));
+    chainNodes.forEach((arr, k) => chainTimers.push(setTimeout(() => arr.forEach(e => e.classList.add("lit")), 1500 + k * 900)));
+  }
+
+  // Scène 3 : capteurs et signaux vers le cerveau
+  (function sensors() {
+    const s = figs.sensors.svg, H = sensPts.H;
+    el("path", { class: "brain", d: `M${H[0] - 14} ${H[1] - 6} C${H[0] - 16} ${H[1] - 20} ${H[0] + 16} ${H[1] - 20} ${H[0] + 14} ${H[1] - 6} C${H[0] + 10} ${H[1] + 2} ${H[0] - 10} ${H[1] + 2} ${H[0] - 14} ${H[1] - 6} Z` }, s);
+    const spots = [
+      ["Yeux", [H[0] + 10, H[1] + 2], 44], ["Oreille interne", [H[0] - 24, H[1] + 4], 70],
+      ["Pieds", [128, 494], 0], ["", [192, 494], 0]
+    ];
+    spots.forEach(([lab, p], k) => {
+      el("circle", { class: "sensor", cx: p[0], cy: p[1], r: 16, style: `animation-delay:${k * .3}s` }, s);
+      if (lab) { const t = el("text", { class: "slab", x: k === 1 ? p[0] - 118 : p[0] + 22, y: p[1] + (k === 0 ? -14 : 5) }, s); t.textContent = lab; }
+    });
+    // Signaux qui remontent le long du corps
+    const route = `M128 494 L${sensPts.kneeL[0]} ${sensPts.kneeL[1]} L${sensPts.hipL[0]} ${sensPts.hipL[1]} L${sensPts.C[0]} ${sensPts.C[1]} L${sensPts.T[0]} ${sensPts.T[1]} L${H[0]} ${H[1]}`;
+    const route2 = `M192 494 L${sensPts.kneeR[0]} ${sensPts.kneeR[1]} L${sensPts.hipR[0]} ${sensPts.hipR[1]} L${sensPts.C[0]} ${sensPts.C[1]} L${sensPts.T[0]} ${sensPts.T[1]} L${H[0]} ${H[1]}`;
+    [route, route2].forEach((r, j) => {
+      for (let k = 0; k < 3; k++) {
+        const c = el("circle", { class: "signal", r: 4 }, s);
+        el("animateMotion", { dur: "2.4s", repeatCount: "indefinite", begin: `${j * .4 + k * .8}s`, path: r }, c);
+      }
+    });
+  })();
+
+  // Scène 4 : tracé du centre de pression
+  const trace = document.getElementById("trace"), cop = document.getElementById("cop");
+  const modeEl = document.getElementById("mode"), modeTxt = document.getElementById("modeTxt");
+  let copRun = 0;
+  function runCop() {
+    const id = ++copRun, t0 = performance.now(), pts = [];
+    function f(now) {
+      if (id !== copRun) return;
+      const t = (now - t0) / 1000;
+      const closed = t > 6;
+      const A = closed ? 30 : 11;
+      const col = closed ? "#FF8A3D" : "#6FF2C2";
+      if (closed && modeTxt.textContent !== "Yeux fermés") { modeTxt.textContent = "Yeux fermés"; modeEl.style.color = col; pts.length = 0; }
+      if (!closed && modeTxt.textContent !== "Yeux ouverts") { modeTxt.textContent = "Yeux ouverts"; modeEl.style.color = col; }
+      const x = 210 + A * (Math.sin(t * 1.3) * .6 + Math.sin(t * 3.1 + 1) * .3 + Math.sin(t * 7.3 + 2) * .12);
+      const y = 155 + A * (Math.sin(t * 1.1 + .5) * .7 + Math.sin(t * 2.7 + 2) * .25 + Math.sin(t * 6.1) * .1);
+      pts.push(x.toFixed(1) + " " + y.toFixed(1));
+      if (pts.length > 260) pts.shift();
+      trace.setAttribute("d", "M" + pts.join(" L"));
+      trace.setAttribute("stroke", col);
+      cop.setAttribute("cx", x); cop.setAttribute("cy", y); cop.setAttribute("fill", col); cop.style.color = col;
+      if (!reduce) requestAnimationFrame(f);
+    }
+    requestAnimationFrame(f);
+  }
+
+  // Scène 5 : semelles puis réalignement en cascade, du bas vers le haut
+  let fixRun = 0;
+  function runFix() {
+    const id = ++fixRun, F = figs.fix;
+    pose(F, TILT);
+    F.insL.setAttribute("opacity", 0); F.insR.setAttribute("opacity", 0);
+    const t0 = performance.now();
+    function f(now) {
+      if (id !== fixRun) return;
+      const t = (now - t0) / 1000;
+      // Semelles qui glissent sous les pieds (1 s → 2 s)
+      const si = Math.max(0, Math.min(1, (t - 1) / 1));
+      const e = ease(si);
+      F.insL.setAttribute("opacity", si > 0 ? 1 : 0); F.insR.setAttribute("opacity", si > 0 ? 1 : 0);
+      F.insL.setAttribute("x", lerp(10, 106, e)); F.insR.setAttribute("x", lerp(270, 170, e));
+      // Réalignement : bassin, puis colonne, épaules, tête
+      const k = (start) => ease(Math.max(0, Math.min(1, (t - start) / 1.8)));
+      const p = { ap: lerp(TILT.ap, 0, k(2.4)), s: lerp(TILT.s, 0, k(3.0)), as: lerp(TILT.as, 0, k(3.6)), h: lerp(TILT.h, 0, k(4.2)) };
+      pose(F, p);
+      if (t < 7 && !reduce) requestAnimationFrame(f); else if (reduce) pose(F, ALIGN);
+    }
+    requestAnimationFrame(f);
+  }
+
+  // Enchaînement
+  const scenes = [...document.querySelectorAll(".scene")];
+  const prog = document.getElementById("progress");
+  prog.innerHTML = scenes.map(() => "<i><b></b></i>").join("");
+  const fills = [...prog.querySelectorAll("b")];
+  const scan = document.getElementById("scan");
+  let i = 0, prev = null;
+
+  function show() {
+    const s = scenes[i];
+    if (prev && prev !== s) {
+      prev.classList.add("prev");
+      const old = prev;
+      setTimeout(() => old.classList.remove("on", "prev"), 1000);
+    }
+    s.classList.remove("enter"); void s.offsetWidth;
+    s.classList.add("on", "enter");
+    scan.classList.remove("go"); void scan.offsetWidth; scan.classList.add("go");
+    const d = +s.dataset.dur;
+    fills.forEach((f, k) => { f.style.transition = "none"; f.style.width = k < i ? "100%" : "0"; });
+    requestAnimationFrame(() => requestAnimationFrame(() => { fills[i].style.transition = `width ${d}ms linear`; fills[i].style.width = "100%"; }));
+    if (i === 1) runChain();
+    if (i === 3) runCop(); else copRun++;
+    if (i === 4) runFix(); else { fixRun++; }
+    prev = s;
+    setTimeout(() => { i = (i + 1) % scenes.length; show(); }, d);
+  }
+  show();
+</script>
+</body>
+</html>
