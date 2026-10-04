@@ -11,6 +11,8 @@ import '@fontsource-variable/schibsted-grotesk';
 import '@fontsource-variable/jetbrains-mono';
 import Icone from '../components/Icone.astro';
 import Consent from '../components/Consent.astro';
+import EditionApercu from '../components/EditionApercu.astro';
+import { APERCU } from '../lib/edition';
 import Empreintes from '../components/dessins/Empreintes.astro';
 import { CONTOUR } from '../components/animations/pied';
 import { site, absUrl } from '../lib/site';
@@ -187,6 +189,7 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
       <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:map-pin" />Itinéraire</a>
     </nav>
     <Consent />
+    {APERCU && <EditionApercu />}
 
     <script>
       // En-tête transparent sur visuel plein écran : opacité progressive au défilement.

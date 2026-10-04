@@ -32,8 +32,10 @@ if (!site) throw new Error(`Site introuvable : ${siteId}`);
 if (commande === 'preparer') {
   let slug = site.slug;
   if (!slug) {
-    const { praticien, cabinet } = site.config;
-    const base = slugifier(`${site.profession_slug} ${praticien.nom} ${cabinet.ville}`).slice(0, 50);
+    // Brouillon v2 (praticiens[]) ou v1 (praticien).
+    const { cabinet } = site.config;
+    const nom = site.config.praticiens?.[0]?.nom || site.config.praticien?.nom || 'cabinet';
+    const base = slugifier(`${site.profession_slug} ${nom} ${cabinet?.ville ?? ''}`).slice(0, 50);
     slug = base;
     // Garantit l'unicité du slug (et donc du nom de projet Cloudflare).
     for (let i = 2; (await api(`sites?slug=eq.${slug}&select=id`)).length > 0; i++) slug = `${base}-${i}`;

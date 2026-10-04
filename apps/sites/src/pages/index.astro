@@ -3,6 +3,7 @@
 // Les textes, titres et données structurées sont identiques quel que soit le modèle (SEO stable).
 import Gabarit from '../layouts/Gabarit.astro';
 import FaqList from '../components/FaqList.astro';
+import { texte, champ } from '../lib/edition';
 import HeroDiaporama from '../components/gabarit/HeroDiaporama.astro';
 import HeroScinde from '../components/gabarit/HeroScinde.astro';
 import HeroPlein from '../components/gabarit/HeroPlein.astro';
@@ -48,9 +49,9 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
             <div class="entete-section apparait">
               <div>
                 <p class="sur sur--num">{titreCompetences}</p>
-                <h2>Une prise en charge <span class="pale">du pied, à tout âge.</span></h2>
+                <h2>Une prise en charge <span class="pale" {...champ('competences.deco')}>{texte('competences.deco', 'du pied, à tout âge.')}</span></h2>
               </div>
-              <p class="chapo">Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.</p>
+              <p class="chapo" {...champ('competences.chapo')}>{texte('competences.chapo', 'Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.')}</p>
             </div>
             {m.competences === 'cartes' ? <Competences /> : <Expertises />}
           </div>
@@ -65,7 +66,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
             <div class="entete-section apparait">
               <div>
                 <p class="sur sur--num">{titrePraticiens}</p>
-                <h2>{site.praticiens.length > 1 ? <>Une équipe <span class="pale">à votre écoute.</span></> : <>Votre {metier} <span class="pale">à {site.cabinet.ville}.</span></>}</h2>
+                <h2>{site.praticiens.length > 1 ? <>Une équipe <span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', 'à votre écoute.')}</span></> : <>Votre {metier} <span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', `à ${site.cabinet.ville}.`)}</span></>}</h2>
               </div>
             </div>
             <Praticiens />
@@ -88,7 +89,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
             <div class="entete-section apparait">
               <div>
                 <p class="sur sur--num">Actualités</p>
-                <h2>Conseils <span class="pale">et actualités.</span></h2>
+                <h2>Conseils <span class="pale" {...champ('actualites.deco')}>{texte('actualites.deco', 'et actualités.')}</span></h2>
               </div>
               <a class="bouton bouton--ligne bouton--petit" href="/actualites">Toutes les actualités</a>
             </div>
@@ -117,7 +118,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
             <div class="entete-section apparait">
               <div>
                 <p class="sur sur--num">Accès et informations</p>
-                <h2>Venir <span class="pale">au cabinet.</span></h2>
+                <h2>Venir <span class="pale" {...champ('acces.deco')}>{texte('acces.deco', 'au cabinet.')}</span></h2>
               </div>
             </div>
             <div class="acces"><Carte /><Infos /></div>
@@ -130,10 +131,10 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
           <div class="cadre faq">
             <div class="faq__entete">
               <p class="sur sur--num">Questions fréquentes</p>
-              <h2>Bon à savoir <span class="pale">avant de venir.</span></h2>
+              <h2>Bon à savoir <span class="pale" {...champ('faq.deco')}>{texte('faq.deco', 'avant de venir.')}</span></h2>
               <p class="faq__contact"><span class="mono">{String(site.faqGenerale.length).padStart(2, '0')} questions</span>Une autre question ? <a href={telLien}>{site.cabinet.telephone}</a></p>
             </div>
-            <FaqList items={site.faqGenerale} />
+            <FaqList items={site.faqGenerale} cle="faq" />
           </div>
         </section>
       )}

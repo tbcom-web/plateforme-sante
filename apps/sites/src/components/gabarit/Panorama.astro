@@ -1,6 +1,7 @@
 ---
 // Bandeau photo pleine largeur (photo panoramique du cabinet, sinon photo d'illustration).
 import { site } from '../../lib/site';
+import { texte, champ, zonePhoto } from '../../lib/edition';
 import { photoPanorama } from '../../lib/visuels';
 import { lieu, TYPES_LIEU } from '../../lib/textes';
 
@@ -15,10 +16,10 @@ const atouts = [
 const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
 ---
 <section class="panorama">
-  <img src={photoPanorama} alt="" loading="lazy" width="2000" height="1100" />
+  <img src={photoPanorama} alt="" loading="lazy" width="2000" height="1100" {...zonePhoto('photos.panorama')} />
   <div class="cadre panorama__texte apparait">
     <p class="sur sur--clair sur--num">{lieuNom} · {site.cabinet.ville}</p>
-    <h2>Un cabinet calme et lumineux, pensé pour votre confort.</h2>
+    <h2 {...champ('panorama.titre')}>{texte('panorama.titre', 'Un cabinet calme et lumineux, pensé pour votre confort.')}</h2>
     <ul>
       {atouts.map((a) => <li><strong>{a.titre}</strong>{a.texte}</li>)}
     </ul>

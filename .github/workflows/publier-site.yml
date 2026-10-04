@@ -1,6 +1,9 @@
 name: publier-site
 
-# Déclenché par le bouton « Publier » du back-office (API GitHub workflow_dispatch).
+# Déclenché par le bouton « Publier » du back-office (API GitHub workflow_dispatch),
+# ou appelé par « publier-sites » pour une publication groupée (propagation d'un changement partagé).
+# mode « production » : site public ; mode « apercu » : brouillon pour l'éditeur visuel, sur la branche
+# Cloudflare « apercu » (https://apercu.<slug>.pages.dev), jamais indexé, statut du site inchangé.
 on:
   workflow_dispatch:
     inputs:
@@ -8,10 +11,33 @@ on:
         description: Identifiant du site dans Supabase (uuid)
         required: true
         type: string
+      mode:
+        description: production ou apercu
+        required: false
+        default: production
+        type: string
+  workflow_call:
+    inputs:
+      site_id:
+        required: true
+        type: string
+      mode:
+        required: false
+        default: production
+        type: string
+    secrets:
+      SUPABASE_URL:
+        required: true
+      SUPABASE_SECRET_KEY:
+        required: true
+      CLOUDFLARE_API_TOKEN:
+        required: true
+      CLOUDFLARE_ACCOUNT_ID:
+        required: true
 
-# Une seule publication à la fois par site ; la plus récente gagne.
+# Une seule publication à la fois par site et par mode ; la plus récente gagne.
 concurrency:
-  group: publier-${{ inputs.site_id }}
+  group: publier-${{ inputs.site_id }}-${{ inputs.mode }}
   cancel-in-progress: true
 
 permissions:
@@ -27,6 +53,7 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       SITE_ID: ${{ inputs.site_id }}
+      APERCU: ${{ inputs.mode == 'apercu' && '1' || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,8 +80,9 @@ jobs:
 
       - name: Déployer sur Cloudflare Pages
         working-directory: apps/sites
-        run: npx wrangler pages deploy dist --project-name "${{ steps.prep.outputs.slug }}" --branch main --commit-dirty=true
+        run: npx wrangler pages deploy dist --project-name "${{ steps.prep.outputs.slug }}" --branch "${{ inputs.mode == 'apercu' && 'apercu' || 'main' }}" --commit-dirty=true
 
       - name: Passer le site en ligne
+        if: inputs.mode != 'apercu'
         working-directory: apps/sites
         run: node scripts/publication.mjs terminer "$SITE_ID" "${{ steps.prep.outputs.slug }}.pages.dev"

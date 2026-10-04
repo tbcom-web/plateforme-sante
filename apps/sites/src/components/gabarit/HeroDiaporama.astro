@@ -3,6 +3,7 @@
 // Sans JavaScript ; animations coupées si le visiteur réduit les mouvements.
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
+import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import { diaporama as diapos, fondAnime } from '../../lib/visuels';
 import { CYCLES } from '@plateforme/core';
@@ -17,7 +18,7 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   {anime ? (
     <div class="hero__anim" aria-hidden="true"><AnimationAccueil /></div>
   ) : (
-    <div class="hero__diapos" aria-hidden="true">
+    <div class="hero__diapos" aria-hidden="true" {...zonePhoto('photos.accueil')}>
       {diapos.map((src, i) => (
         <img src={src} alt="" style={`--i:${i}`} width="2000" height="1300" fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
       ))}
@@ -26,7 +27,7 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   <div class="cadre hero__contenu">
     <p class="sur hero__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
-    <p class="hero__chapo">{phraseAccueil}</p>
+    <p class="hero__chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
     <div class="hero__actions">
       <a class="bouton bouton--clair" href={rdvAccueil}>
         {libelleRdv}

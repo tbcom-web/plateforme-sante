@@ -1,6 +1,7 @@
 import { GAMMES, MODELES_INTEGRES, MOTIFS, POLICES_TEXTE, POLICES_TITRES, SECTIONS_ACCUEIL, TRAITEMENTS_IMAGES, validerManifeste } from '@plateforme/core';
 import { getModelesImportes } from '@/lib/modeles';
 import { ActionsModele, Import } from './Import';
+import Propagation from '@/components/Propagation';
 
 export const metadata = { title: 'Super admin · Modèles' };
 
@@ -30,6 +31,7 @@ export default async function Modeles() {
               <span className="block font-semibold">{m.nom}</span>
               <span className="block text-neutral-600">{m.description}</span>
               <code className="mt-2 block text-xs text-neutral-400">{m.id} · v{m.version}</code>
+              <div className="mt-3"><Propagation cible={{ modele: m.id }} libelle="ce modèle" /></div>
             </li>
           ))}
         </ul>
@@ -54,6 +56,7 @@ export default async function Modeles() {
                   </span>
                   <ActionsModele id={l.id} actif={l.actif} />
                 </span>
+                {l.actif && <div className="w-full"><Propagation cible={{ modele: l.id }} libelle="ce modèle" /></div>}
               </li>
             );
           })}

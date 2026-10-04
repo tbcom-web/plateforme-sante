@@ -1,0 +1,27 @@
+name: publier-sites
+
+# Publication groupée : propage à tous les sites concernés un changement partagé
+# (photo de la banque visuelle, modèle, charte, dessins…). Déclenché depuis le back-office.
+on:
+  workflow_dispatch:
+    inputs:
+      site_ids:
+        description: Liste JSON des identifiants de sites (ex. ["uuid1","uuid2"])
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publier:
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        site_id: ${{ fromJSON(inputs.site_ids) }}
+    uses: ./.github/workflows/publier-site.yml
+    with:
+      site_id: ${{ matrix.site_id }}
+      mode: production
+    secrets: inherit

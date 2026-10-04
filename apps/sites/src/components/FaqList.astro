@@ -1,8 +1,12 @@
 ---
 // Questions fréquentes : liste numérotée à filets (mise en page éditoriale), réponses dépliables.
 import type { Faq } from '@plateforme/core';
-interface Props { items: Faq[] }
-const { items } = Astro.props;
+import { texte, champ } from '../lib/edition';
+// cle : préfixe des réponses modifiables dans l'éditeur visuel (FAQ générale de l'accueil : « faq »).
+interface Props { items: Faq[]; cle?: string }
+const { items, cle } = Astro.props;
+const reponse = (f: Faq, i: number) => (cle ? texte(`${cle}.${i + 1}.reponse`, f.r) : f.r);
+const zone = (i: number) => (cle ? champ(`${cle}.${i + 1}.reponse`) : {});
 ---
 <div class="faq">
   {items.map((f, i) => (
@@ -12,7 +16,7 @@ const { items } = Astro.props;
         <h3>{f.q}</h3>
         <span class="faq__signe" aria-hidden="true"></span>
       </summary>
-      <p>{f.r}</p>
+      <p {...zone(i)}>{reponse(f, i)}</p>
     </details>
   ))}
 </div>

@@ -1,11 +1,12 @@
 ---
 // Galerie du cabinet : affichée uniquement si le praticien a fourni des photos.
 import { site } from '../../lib/site';
+import { zonePhoto } from '../../lib/edition';
 ---
 {site.photos.cabinet.length > 0 && (
   <ul class="galerie">
     {site.photos.cabinet.map((src, i) => (
-      <li><img src={src} alt={`Le cabinet de ${site.cabinet.ville}, photo ${i + 1}`} loading="lazy" decoding="async" width="800" height="600" /></li>
+      <li><img src={src} alt={`Le cabinet de ${site.cabinet.ville}, photo ${i + 1}`} loading="lazy" decoding="async" width="800" height="600" {...zonePhoto(`photos.cabinet.${i}`)} /></li>
     ))}
   </ul>
 )}

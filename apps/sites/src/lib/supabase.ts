@@ -79,7 +79,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);
   // Même contrôle que le back-office : un site incomplet n'est jamais publié (sauf site de test).
   const { bloquants } = controlerPublication(d);
-  if (bloquants.length && !s.test) {
+  // L'aperçu de l'éditeur visuel (APERCU=1) montre aussi un brouillon incomplet ; il n'est jamais indexé.
+  if (bloquants.length && !s.test && process.env.APERCU !== '1') {
     throw new Error(['Publication refusée :', ...bloquants.map((b) => `- ${b}`)].join('\n'));
   }
   const lieu = d.lieux[0];
@@ -128,7 +129,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   return {
     id: s.id,
     domaine: s.domaine ?? `${s.slug ?? s.id}.pages.dev`,
-    demo: s.test,
+    demo: s.test || process.env.APERCU === '1',
     profession: { slug: prof.slug, libelle: titreMetier, specialiteSchema: prof.specialite_schema },
 
     // Champs historiques (premier praticien / premier lieu), utilisés par le schema.org.

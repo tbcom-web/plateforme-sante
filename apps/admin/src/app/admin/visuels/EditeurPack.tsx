@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { ANIMATIONS, LIBELLES_ANIMATIONS, type PackVisuel, type PersonnalisationPack } from '@plateforme/core';
 import Photo from '@/components/Photo';
+import Propagation from '@/components/Propagation';
 import { enregistrerPack, type ResultatPack } from './actions';
 
 type Props = { pack: PackVisuel; perso: PersonnalisationPack };
@@ -86,6 +87,7 @@ export default function EditeurPack({ pack, perso: initial }: Props) {
         </button>
         {etat && <p className={`text-sm ${etat.ok ? 'text-teal-800' : 'text-red-700'}`}>{etat.message}</p>}
       </div>
+      <Propagation cible={{ specialite: pack.value }} libelle={`la spécialité « ${pack.label} »`} />
     </section>
   );
 }

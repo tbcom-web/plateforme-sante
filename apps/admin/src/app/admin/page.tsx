@@ -2,6 +2,7 @@ import { normaliserDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { manques } from '@/lib/sites';
 import ActionsSite from './ActionsSite';
+import Propagation from '@/components/Propagation';
 
 export const metadata = { title: 'Super admin · Sites' };
 
@@ -42,6 +43,10 @@ export default async function AdminSites() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Sites des praticiens</h1>
+      <div className="mt-3">
+        <p className="mb-2 text-sm text-neutral-600">Après une évolution de la charte, des dessins ou des animations (mise en ligne du code), appliquez-la aux sites déjà publiés :</p>
+        <Propagation cible={{ tous: true }} libelle="la charte et les visuels communs" />
+      </div>
       {error && <p className="mt-2 text-sm text-red-700">Lecture impossible : {error.message}</p>}
 
       <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -99,6 +104,7 @@ export default async function AdminSites() {
                     {reste.length === 0 ? <span className="text-teal-800">Complet</span> : (
                       <span className="text-amber-800" title={reste.join(', ')}>{reste.length} manque(s)</span>
                     )}
+                    <a href={`/edition/${s.id}`} className="mt-1 block text-xs font-semibold text-teal-800 underline-offset-4 hover:underline">Édition visuelle</a>
                   </td>
                   <td className="px-4 py-3 text-neutral-600">
                     {date(s.published_at)}

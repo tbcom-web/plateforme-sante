@@ -1,0 +1,103 @@
+---
+// Script de l'éditeur visuel, inclus uniquement dans l'aperçu (APERCU=1).
+// Il ne s'active que si la page est affichée dans un cadre du back-office (origines autorisées).
+// Protocole (postMessage) :
+//   aperçu → admin : { type: 'pret' } · { type: 'texte', cle, valeur } · { type: 'photo', emplacement }
+//   admin → aperçu : { type: 'init', edition: boolean, guides: string[] } · { type: 'photo-ok', emplacement, url }
+//                    { type: 'texte-ok', cle, valeur } (retour au standard ou correction)
+import { ORIGINES_ADMIN, STANDARDS } from '../lib/edition';
+// Rendu en fin de page : les textes standard de la page ont déjà été enregistrés.
+const standards = Object.fromEntries(STANDARDS);
+---
+<script is:inline define:vars={{ origines: ORIGINES_ADMIN, standards }}>
+  (() => {
+    if (window.self === window.top) return; // hors du back-office : aucune édition
+    let origineAdmin = null;
+    const envoyer = (m) => origineAdmin && window.parent.postMessage(m, origineAdmin);
+
+    const style = document.createElement('style');
+    // Couleurs : variables de la charte (accent du cabinet, encre, blanc, palette de données).
+    style.textContent = `
+      [data-champ][contenteditable] { outline: 1.5px dashed color-mix(in srgb, var(--accent-vif) 60%, transparent); outline-offset: 4px; cursor: text; border-radius: 4px; }
+      [data-champ][contenteditable]:hover { outline-style: solid; }
+      [data-champ][contenteditable]:focus { outline: 2px solid var(--accent-fonce); background: color-mix(in srgb, var(--accent-vif) 7%, transparent); }
+      [data-champ].verrou { outline: 1.5px dashed color-mix(in srgb, var(--pression-3) 70%, transparent); outline-offset: 4px; cursor: not-allowed; }
+      .ed-photo { position: absolute; z-index: 9999; display: inline-flex; gap: 6px; align-items: center; padding: 7px 12px; border: 0; border-radius: 999px;
+        background: var(--accent-fonce); color: var(--blanc); font: 600 13px var(--police-texte); box-shadow: var(--ombre); cursor: pointer; }
+      .ed-photo:hover { background: var(--encre); }
+      .ed-bulle { position: fixed; z-index: 10000; left: 50%; bottom: 18px; translate: -50% 0; padding: 8px 14px; border-radius: 10px; background: var(--encre); color: var(--blanc); font: 500 13px var(--police-texte); opacity: 0; transition: opacity var(--duree-court); pointer-events: none; }
+    `;
+    document.head.appendChild(style);
+    const bulle = document.createElement('div');
+    bulle.className = 'ed-bulle';
+    document.body.appendChild(bulle);
+    const informer = (t) => { bulle.textContent = t; bulle.style.opacity = '1'; clearTimeout(informer.t); informer.t = setTimeout(() => (bulle.style.opacity = '0'), 2600); };
+
+    // Boutons « Remplacer la photo », positionnés sur chaque zone photo.
+    const boutons = [];
+    function placerBoutons() {
+      for (const [b, el] of boutons) {
+        const r = el.getBoundingClientRect();
+        b.style.left = `${r.left + scrollX + 12}px`;
+        b.style.top = `${r.top + scrollY + 12}px`;
+        b.style.display = r.width > 40 && r.height > 40 ? '' : 'none';
+      }
+    }
+
+    function activer(edition, guides) {
+      document.querySelectorAll('[data-champ]').forEach((el) => {
+        const cle = el.dataset.champ;
+        const guide = guides.some((g) => (g.includes('*') ? cle.startsWith(g.split('*')[0]) && cle.endsWith(g.split('*')[1]) : g === cle));
+        if (guide && !edition) {
+          el.classList.add('verrou');
+          el.title = 'Texte modifiable avec l’option « édition »';
+          el.addEventListener('click', (e) => { e.preventDefault(); informer('Ce texte se personnalise avec l’option « édition ».'); });
+          return;
+        }
+        el.setAttribute('contenteditable', 'plaintext-only');
+        el.spellcheck = true;
+        // Dans un lien ou un résumé de FAQ, le clic sert à éditer, pas à naviguer.
+        el.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+        el.addEventListener('keydown', (e) => { if (e.key === 'Enter' && el.tagName !== 'P') { e.preventDefault(); el.blur(); } });
+        el.addEventListener('input', () => envoyer({ type: 'texte', cle, valeur: el.innerText }));
+      });
+      document.querySelectorAll('[data-photo]').forEach((el) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ed-photo';
+        b.textContent = '📷 Remplacer la photo';
+        b.addEventListener('click', () => envoyer({ type: 'photo', emplacement: el.dataset.photo }));
+        document.body.appendChild(b);
+        boutons.push([b, el]);
+      });
+      placerBoutons();
+      addEventListener('resize', placerBoutons);
+      addEventListener('scroll', placerBoutons, { passive: true });
+      setInterval(placerBoutons, 1000); // mises en page tardives (polices, images)
+      // Ouvre les réponses de FAQ pour les rendre modifiables.
+      document.querySelectorAll('details').forEach((d) => { if (d.querySelector('[data-champ]')) d.open = true; });
+    }
+
+    addEventListener('message', (e) => {
+      if (e.source !== window.parent || !origines.includes(e.origin)) return;
+      const m = e.data || {};
+      if (m.type === 'init' && !origineAdmin) { origineAdmin = e.origin; activer(Boolean(m.edition), m.guides || []); }
+      if (e.origin !== origineAdmin) return;
+      if (m.type === 'photo-ok') {
+        document.querySelectorAll(`[data-photo="${CSS.escape(m.emplacement)}"]`).forEach((el) => {
+          (el.tagName === 'IMG' ? [el] : el.querySelectorAll('img')).forEach((img, k) => { if (k === 0 || el.tagName === 'IMG') { img.src = m.url; img.removeAttribute('srcset'); } });
+        });
+        informer('Photo remplacée.');
+      }
+      if (m.type === 'retablir') {
+        const valeur = standards[m.cle];
+        if (valeur !== undefined) document.querySelectorAll(`[data-champ="${CSS.escape(m.cle)}"]`).forEach((el) => { el.innerText = valeur; });
+      }
+      if (m.type === 'texte-ok') {
+        document.querySelectorAll(`[data-champ="${CSS.escape(m.cle)}"]`).forEach((el) => { if (el.innerText !== m.valeur) el.innerText = m.valeur; });
+      }
+    });
+    // Signale au back-office que l'aperçu est prêt ; il répondra par « init ».
+    for (const o of origines) { try { window.parent.postMessage({ type: 'pret', chemin: location.pathname }, o); } catch {} }
+  })();
+</script>

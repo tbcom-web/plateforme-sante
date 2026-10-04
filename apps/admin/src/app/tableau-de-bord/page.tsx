@@ -34,9 +34,16 @@ export default async function TableauDeBord() {
           </h1>
           <p className="text-neutral-600">Voici l’état de votre site.</p>
         </div>
-        <Link href="/mon-site" className="rounded-lg bg-teal-800 px-5 py-2.5 font-semibold text-white hover:bg-teal-900">
-          {site.id ? 'Modifier mon site' : 'Créer mon site'}
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {site.id && (
+            <Link href={`/edition/${site.id}`} className="rounded-lg border border-teal-800 px-5 py-2.5 font-semibold text-teal-900 hover:bg-teal-50">
+              Édition visuelle
+            </Link>
+          )}
+          <Link href="/mon-site" className="rounded-lg bg-teal-800 px-5 py-2.5 font-semibold text-white hover:bg-teal-900">
+            {site.id ? 'Modifier mon site' : 'Créer mon site'}
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.3fr]">

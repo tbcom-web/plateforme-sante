@@ -3,6 +3,7 @@
 // illustrées par les dessins techniques de la marque (un dessin par soin du catalogue).
 import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
+import { texte, champ } from '../../lib/edition';
 import { dessinSoin } from '../../lib/dessins';
 
 const n = site.soins.length;
@@ -29,7 +30,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
         <span class="tuile__corps">
           <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>
           <span class="tuile__titre">{s.titreCourt}</span>
-          <span class="tuile__texte">{s.resume}</span>
+          <span class="tuile__texte" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
           <span class="tuile__lien">En savoir plus<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" /></svg></span>
         </span>
       </a>

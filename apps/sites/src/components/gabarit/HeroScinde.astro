@@ -2,6 +2,7 @@
 // Accueil « scindé » : titre à gauche, grande photo à droite avec badges.
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
+import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import { photoAccueil, fondAnime } from '../../lib/visuels';
 import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
@@ -15,7 +16,7 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   <div>
     <p class="sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
-    <p class="chapo">{phraseAccueil}</p>
+    <p class="chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
     <div class="actions">
       <a class="bouton bouton--plein" href={rdvAccueil}>
         {libelleRdv}
@@ -27,7 +28,7 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   <figure class="visuel">
     {site.visuels.animation
       ? <div class="visuel__anim" style={`background:${fondAnime}`} aria-hidden="true"><AnimationAccueil /></div>
-      : <img src={photoAccueil} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" />}
+      : <img src={photoAccueil} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" {...zonePhoto('photos.accueil')} />}
     <figcaption class="flottant flottant--haut">
       <span class="pastille" aria-hidden="true"></span>
       {rdvEnLigne ? 'Réservation en ligne 24h/24' : 'Rendez-vous par téléphone'}
