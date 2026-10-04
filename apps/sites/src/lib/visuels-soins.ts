@@ -15,9 +15,15 @@ export type VisuelSoin = {
   dessin: NomDessin;
   /** Animation du soin quand elle a du sens, sinon null (le dessin suffit) */
   animation: Animation | null;
+  /** Photo assez forte pour l'en-tête de la fiche (sinon, en mode mélange, illustration ou animation) */
+  photoBonne: boolean;
 };
 
-const VISUELS: Record<string, VisuelSoin> = {
+// Photos de la banque jugées trop faibles pour un en-tête (sujet peu lisible, ambiance générique) :
+// en mode mélange, la fiche du soin montre alors son illustration ou son animation.
+const PHOTOS_FAIBLES = new Set(['soins-de-pedicurie', 'pied-diabetique', 'podologie-du-senior', 'laser']);
+
+const VISUELS: Record<string, Omit<VisuelSoin, 'photoBonne'>> = {
   // Examen sur plateforme : trajet du centre de pression
   'bilan-podologique': { photo: '/photos/analyse-plateforme.webp', cadrage: '50% 88%', dessin: 'analyse', animation: 'trajectoire' },
   // Chaussage et semelles : courbes de niveau de la semelle
@@ -43,7 +49,7 @@ const VISUELS: Record<string, VisuelSoin> = {
   'k-taping': { photo: '/photos/sport-course.webp', cadrage: '50% 62%', dessin: 'sport', animation: 'coureur' },
 };
 
-const PAR_DEFAUT: VisuelSoin = { photo: '/photos/examen-mains.webp', cadrage: '50% 45%', dessin: 'analyse', animation: null };
+const PAR_DEFAUT: Omit<VisuelSoin, 'photoBonne'> = { photo: '/photos/examen-mains.webp', cadrage: '50% 45%', dessin: 'analyse', animation: null };
 
 /** Photos fournies par le praticien pour ses soins (facultatif, clé = slug du soin) */
 const photosPraticien = site.photos.soins ?? {};
@@ -52,7 +58,8 @@ const photosPraticien = site.photos.soins ?? {};
 export function visuelSoin(slug: string): VisuelSoin {
   const v = VISUELS[slug] ?? PAR_DEFAUT;
   const perso = photosPraticien[slug];
-  return perso ? { ...v, photo: perso, cadrage: '50% 50%' } : { ...v };
+  // La photo du praticien est toujours jugée bonne : c'est la sienne.
+  return perso ? { ...v, photo: perso, cadrage: '50% 50%', photoBonne: true } : { ...v, photoBonne: !PHOTOS_FAIBLES.has(slug) && slug in VISUELS };
 }
 
 /** Photo de la banque associée à un dessin (couvertures d'articles en mode photos, par exemple) */

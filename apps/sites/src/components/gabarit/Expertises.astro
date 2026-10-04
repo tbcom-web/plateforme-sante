@@ -5,7 +5,7 @@
 import VignetteSoin from './VignetteSoin.astro';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
-import { enIllustrations } from '../../lib/visuels';
+import { enPhotos } from '../../lib/visuels';
 import { visuelSoin } from '../../lib/visuels-soins';
 ---
 <ol class="expertises">
@@ -14,7 +14,7 @@ import { visuelSoin } from '../../lib/visuels-soins';
       <a href={`/soins/${s.slug}`} class="expertise">
         <span class="expertise__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
         <span class="expertise__dessin surface-grille" aria-hidden="true"><VignetteSoin slug={s.slug} /></span>
-        {!enIllustrations && <img class="expertise__vignette" src={visuelSoin(s.slug).photo} alt="" loading="lazy" width="320" height="240" style={`object-position:${visuelSoin(s.slug).cadrage}`} />}
+        {enPhotos && <img class="expertise__vignette" src={visuelSoin(s.slug).photo} alt="" loading="lazy" width="320" height="240" style={`object-position:${visuelSoin(s.slug).cadrage}`} />}
         <span class="expertise__titre">{s.titreCourt}</span>
         <span class="expertise__resume" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
         <span class="expertise__fleche" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 14 14 6M7 6h7v7" /></svg></span>

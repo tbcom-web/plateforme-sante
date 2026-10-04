@@ -1,6 +1,6 @@
 ---
 // Vignette d'un soin dans les listes (compétences en liste, « Autres compétences »), selon le style visuel :
-// illustrations → dessin ; photos → photo ; mixte → dessin, et la photo apparaît au survol si `survol`.
+// illustrations et mélange → dessin (les listes restent illustrées) ; photos → photo du soin.
 // À poser dans une boîte en position relative et overflow hidden (fournie par le parent). Décorative.
 import Dessin from '../dessins/Dessin.astro';
 import { visuelSoin } from '../../lib/visuels-soins';
@@ -10,7 +10,8 @@ interface Props { slug: string; survol?: boolean }
 const { slug, survol = false } = Astro.props;
 const v = visuelSoin(slug);
 const dessin = modeVisuel !== 'photos';
-const photo = modeVisuel === 'photos' || (modeVisuel === 'mixte' && survol);
+// Listes : illustrations, sauf style « Photos » (la photo du soin est réservée à sa fiche).
+const photo = modeVisuel === 'photos';
 ---
 {dessin && <Dessin nom={v.dessin} />}
 {photo && <img class:list={['vs__photo', { 'vs__photo--survol': dessin }]} src={v.photo} alt="" width="320" height="240" loading="lazy" decoding="async" style={`object-position:${v.cadrage}`} />}

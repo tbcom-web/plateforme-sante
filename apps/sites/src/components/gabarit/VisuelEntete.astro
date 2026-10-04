@@ -18,16 +18,22 @@ interface Props {
   /** Légende en mono (nom du soin…) et repère (« Fig. 05 ») */
   legende?: string;
   repere?: string;
+  /** Photo assez forte pour un en-tête ; sinon, en mode mélange, l'illustration la remplace */
+  photoBonne?: boolean;
+  /** Page de liste (compétences) : en mode mélange, illustration plutôt que photo */
+  liste?: boolean;
 }
-const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '' } = Astro.props;
+const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '', photoBonne = true, liste = false } = Astro.props;
+// Règle : illustrations dans les listes ; photo sur la fiche d'un soin si elle est bonne (mode mélange).
+const rendu = modeVisuel === 'mixte' && (liste || !photoBonne) ? 'illustrations' : modeVisuel;
 ---
-{modeVisuel === 'photos' && (
+{rendu === 'photos' && (
   <figure class="ve ve--photo" aria-hidden="true">
     <img src={photo} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${cadrage}`} />
   </figure>
 )}
 
-{modeVisuel === 'illustrations' && (
+{rendu === 'illustrations' && (
   <figure class:list={['ve', 've--plan', 'surface-plan', { 've--anime': animation }]} aria-hidden="true">
     <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>
     <span class="ve__scene">{animation ? <Animation nom={animation} fond="sombre" /> : <Dessin nom={dessin} />}</span>
@@ -35,7 +41,7 @@ const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repe
   </figure>
 )}
 
-{modeVisuel === 'mixte' && (
+{rendu === 'mixte' && (
   <figure class="ve ve--mixte" aria-hidden="true">
     <span class="ve__cadre">
       <img src={photo} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${cadrage}`} />

@@ -116,7 +116,7 @@ export type SiteDraft = {
 /** Style visuel du site : illustrations techniques, photos, ou mélange (par défaut). */
 export type ModeVisuel = 'illustrations' | 'photos' | 'mixte';
 export const MODES_VISUELS: { value: ModeVisuel; label: string; description: string }[] = [
-  { value: 'mixte', label: 'Mélange', description: 'Photos et illustrations techniques, chacune là où elle parle le mieux.' },
+  { value: 'mixte', label: 'Mélange', description: 'Illustrations dans les listes ; photo sur la page de chaque soin quand elle est de qualité.' },
   { value: 'photos', label: 'Photos', description: 'Des photos partout : cabinet, soins, ambiance.' },
   { value: 'illustrations', label: 'Illustrations', description: 'Dessins et animations techniques, sans photo d’illustration.' },
 ];
