@@ -1,4 +1,5 @@
 -- Relecture praticien (2026-10-04) : précisions médicales sur le pied diabétique et le bilan.
+-- Nombre de séances vérifié sur ameli.fr (espace pédicure-podologue, « Diabète : prévenir les complications du pied »).
 -- Remplacements ciblés : un texte déjà modifié dans l'admin (catalogue) n'est pas touché.
 
 -- Pied diabétique : une plaie relève du médecin, sans attendre.
@@ -12,7 +13,7 @@ where slug = 'pied-diabetique';
 update public.soins_catalogue
 set corps = replace(corps,
   'Selon le grade de risque, déterminé par le médecin, l’Assurance Maladie prend en charge un bilan et un nombre défini de séances de prévention par an, sur prescription médicale.',
-  'Le médecin détermine un grade de risque podologique (de 0 à 3). Pour les grades 2 et 3, l’Assurance Maladie prend en charge, sur prescription, un bilan podologique puis des séances de soins de prévention : jusqu’à 5 par an en grade 2 et 8 par an en grade 3.')
+  'Le médecin détermine un grade de risque podologique (de 0 à 3). En grade 0 ou 1, un bilan de gradation est pris en charge une fois par an. En grade 2 et 3, l’Assurance Maladie prend en charge, sur prescription, un forfait annuel qui comprend le bilan et des séances de soins de prévention : 5 par an en grade 2 ; 6 par an en grade 3, ou 8 en cas de plaie en cours de cicatrisation.')
 where slug = 'pied-diabetique';
 
 -- Bilan : l'équipement dépend du cabinet, sans formule de modèle.
