@@ -22,7 +22,7 @@ export async function connexionMotDePasse(_: EtatConnexion, formData: FormData):
     // Message volontairement identique dans tous les cas (ne révèle pas si le compte existe).
     return { ok: false, message: 'E-mail ou mot de passe incorrect. Pas encore de mot de passe ? Recevez un lien de connexion.' };
   }
-  redirect('/tableau-de-bord');
+  redirect('/');
 }
 
 // Envoie un lien de connexion par e-mail (première connexion ou mot de passe oublié).

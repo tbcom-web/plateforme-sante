@@ -2,7 +2,7 @@ import 'server-only';
 import { controlerPublication, draftVide, normaliserDraft, type ResultatControle, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
-export type SoinCatalogue = { slug: string; titre_court: string; resume: string; icone?: string | null };
+export type SoinCatalogue = { slug: string; titre_court: string; resume: string; icone?: string | null; titre?: string; corps?: string };
 
 export type MonSite = {
   id: string | null;

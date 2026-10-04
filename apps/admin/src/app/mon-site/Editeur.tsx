@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   controlerPublication,
@@ -24,6 +24,7 @@ import {
   LIBELLES_ANIMATIONS,
   specialiteDuProfil,
   STATUTS,
+  ficheConseil,
   THEMES_FLUX,
   TYPES_LIEU,
   VOIX,
@@ -32,6 +33,7 @@ import {
   type SiteDraft,
 } from '@plateforme/core';
 import Apercu from '@/components/Apercu';
+import ApercuTheme from '@/components/ApercuTheme';
 import Photo from '@/components/Photo';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
@@ -50,9 +52,12 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
   const [statut, setStatut] = useState<{ ok: boolean; message: string } | null>(null);
   const [enCours, demarrer] = useTransition();
   const controle = useMemo(() => controlerPublication(d), [d]);
-  const gammesConseillees = modeleIntegre(d.theme.modele).gammes ?? [];
+  // Fiche du modèle choisi (importée et active si elle existe, sinon intégrée)
+  const modeleCourant = modeles.find((m) => m.id === d.theme.modele)?.manifeste ?? modeleIntegre(d.theme.modele);
+  const gammesConseillees = modeleCourant.gammes ?? [];
+  const [onglet, setOnglet] = useState<'theme' | 'contenu' | null>(null);
+  const ongletAffiche = onglet ?? (etape === ETAPES.length - 1 || etape === 0 ? 'theme' : 'contenu');
   // Aperçu des logos : rendu identique au site (traitement du modèle, couleurs de la gamme ou du cabinet).
-  const modeleCourant = modeleIntegre(d.theme.modele);
   const traitement = traitementLogo(modeleCourant);
   const couleursLogo = couleursMarque(modeleCourant, { couleur: d.theme.couleur, gamme: d.theme.gamme || null });
   const sigle = initiales(d.cabinet.nom || `${d.praticiens[0]?.prenom ?? ''} ${d.praticiens[0]?.nom ?? ''}`).replace(/[^\p{L}]/gu, '');
@@ -62,7 +67,15 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
     svgMarque(id, couleursLogo, { traitement: traitement.marque, rayon: traitement.rayon, epais: traitement.epais, taille: 48, initiales: sigle, police: traitement.police, graisse: traitement.graisse });
   const pays = PAYS.find((p) => p.value === d.pays) ?? PAYS[0];
 
-  const maj = (patch: Partial<SiteDraft>) => { setD((x) => ({ ...x, ...patch })); setStatut(null); };
+  // Modifications non enregistrées : alerte si l'on quitte la page
+  const [modifie, setModifie] = useState(false);
+  useEffect(() => {
+    if (!modifie) return;
+    const avant = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', avant);
+    return () => window.removeEventListener('beforeunload', avant);
+  }, [modifie]);
+  const maj = (patch: Partial<SiteDraft>) => { setD((x) => ({ ...x, ...patch })); setStatut(null); setModifie(true); };
   const majCabinet = (patch: Partial<SiteDraft['cabinet']>) => maj({ cabinet: { ...d.cabinet, ...patch } });
   const majAcces = (patch: Partial<SiteDraft['acces']>) => maj({ acces: { ...d.acces, ...patch } });
   const majLieu = (i: number, patch: Partial<LieuDraft>) => maj({ lieux: d.lieux.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
@@ -73,6 +86,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
     demarrer(async () => {
       const r = await enregistrerSite(id, d);
       setStatut(r);
+      if (r.ok) setModifie(false);
       if (r.ok && r.id) setId(r.id);
       if (r.ok && suivante !== undefined) setEtape(suivante);
     });
@@ -80,6 +94,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
     demarrer(async () => {
       const r = await enregistrerEtPublier(id, d);
       setStatut(r);
+      if (r.id) setModifie(false);
       if (r.id) setId(r.id);
     });
 
@@ -114,6 +129,8 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
             enregistrer(derniere ? undefined : etape + 1);
           }}
         >
+          <FicheConseil etape={ETAPES[etape]} />
+
           {etape === 0 && (
             <div className="grid gap-7">
               <Choix
@@ -132,6 +149,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
                 valeur={d.profil}
                 onChange={(v) => {
                   const p = PROFILS.find((x) => x.value === v)!;
+                  if (id && d.profil !== v && !confirm('Changer de profil remplace le modèle, la spécialité et la façon de s’exprimer. Continuer ?')) return;
                   maj({ profil: p.value, voix: p.voix, theme: { ...d.theme, modele: p.modele, specialite: specialiteDuProfil(p.value) } });
                 }}
               />
@@ -525,14 +543,14 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
             <button type="button" disabled={etape === 0} onClick={() => setEtape((e) => e - 1)} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100 disabled:invisible">
               ← Précédent
             </button>
-            <span role="status" className={`text-sm ${statut?.ok ? 'text-teal-800' : 'text-red-700'}`}>
-              {enCours ? 'Enregistrement…' : statut?.message}
+            <span role="status" className={`text-sm ${statut?.ok ? 'text-teal-800' : statut ? 'text-red-700' : 'text-amber-700'}`}>
+              {enCours ? 'Enregistrement…' : statut?.message ?? (modifie ? 'Modifications non enregistrées' : '')}
             </span>
             {derniere ? (
               <div className="flex gap-2">
                 <button type="submit" disabled={enCours} className="rounded-lg border border-teal-800 px-4 py-2.5 text-sm font-semibold text-teal-900 hover:bg-teal-50">Enregistrer</button>
                 <button type="button" disabled={enCours} onClick={publier} className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">Enregistrer et publier</button>
-                <Link href="/tableau-de-bord" className="rounded-lg px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Terminer</Link>
+                <Link href="/tableau-de-bord" onClick={(e) => { if (modifie && !confirm('Des modifications ne sont pas enregistrées. Quitter quand même ?')) e.preventDefault(); }} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Terminer</Link>
               </div>
             ) : (
               <div className="flex gap-2">
@@ -553,10 +571,40 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
       </div>
 
       <div className="lg:sticky lg:top-24 lg:self-start">
-        <p className="mb-3 text-sm font-medium text-neutral-600">Aperçu en direct</p>
-        <Apercu draft={d} catalogue={catalogue} />
+        <div className="mb-3 flex items-center gap-2 text-sm">
+          <span className="mr-auto font-medium text-neutral-600">Aperçu en direct</span>
+          {(['theme', 'contenu'] as const).map((o) => (
+            <button key={o} type="button" onClick={() => setOnglet(o)} aria-pressed={ongletAffiche === o} className={`rounded-md px-2.5 py-1 ${ongletAffiche === o ? 'bg-teal-800 font-semibold text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}>
+              {o === 'theme' ? 'Rendu du site' : 'Résumé du contenu'}
+            </button>
+          ))}
+        </div>
+        {ongletAffiche === 'theme'
+          ? <ApercuTheme draft={d} modele={modeleCourant} catalogue={catalogue} marquesImportees={marquesImportees} />
+          : <Apercu draft={d} catalogue={catalogue} />}
       </div>
     </div>
+  );
+}
+
+/** Fiche conseil de l'étape : ce qu'elle produit sur le site et comment bien la remplir */
+function FicheConseil({ etape }: { etape: string }) {
+  const f = ficheConseil(etape);
+  if (!f) return null;
+  return (
+    <details className="mb-6 rounded-xl border border-teal-900/10 bg-teal-50/60 p-4 text-sm">
+      <summary className="cursor-pointer font-semibold text-teal-900">Conseils pour cette étape</summary>
+      <p className="mt-2 text-xs text-teal-900/80">Sur le site : {f.surLeSite}</p>
+      <dl className="mt-3 grid gap-3">
+        {f.points.map((p) => (
+          <div key={p.titre}>
+            <dt className="font-medium text-neutral-900">{p.titre}</dt>
+            <dd className="text-neutral-700">{p.conseil}</dd>
+            {p.exemple && <dd className="mt-1 border-l-2 border-teal-700/30 pl-3 text-xs italic text-neutral-600">{p.exemple}</dd>}
+          </div>
+        ))}
+      </dl>
+    </details>
   );
 }
 

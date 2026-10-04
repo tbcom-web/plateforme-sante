@@ -37,7 +37,11 @@ export default function ActionsSite({ id, statut, test, edition }: { id: string;
             className="accent-amber-600"
             checked={edition}
             disabled={enCours}
-            onChange={(e) => lancer(() => basculerEdition(id, e.target.checked))}
+            onChange={(e) => {
+              const actif = e.target.checked;
+              if (!actif && !confirm('Retirer l’option « Édition » ? Les textes personnalisés ne seront plus publiés.')) return;
+              lancer(() => basculerEdition(id, actif));
+            }}
           />
           Édition
         </label>

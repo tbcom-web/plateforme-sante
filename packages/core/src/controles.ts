@@ -34,6 +34,10 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
   // Praticiens
   if (d.praticiens.length === 0) bloquants.push('Ajouter au moins un praticien.');
   const numeros = new Map<string, string>();
+  // Numéros visiblement fictifs (exemples, suites, chiffres répétés) : jamais publiés.
+  const fictif = (n: string) => /^(\d)\1+$/.test(n.slice(1)) || '0123456789012'.includes(n) || '9876543210'.includes(n);
+  // Clé de Luhn (dernier chiffre du RPPS)
+  const luhn = (n: string) => [...n].reverse().reduce((t, c, k) => { let x = Number(c) * (k % 2 ? 2 : 1); if (x > 9) x -= 9; return t + x; }, 0) % 10 === 0;
   d.praticiens.forEach((p, i) => {
     const qui = p.prenom || p.nom ? `${p.prenom} ${p.nom}`.trim() : `praticien ${i + 1}`;
     if (!p.prenom || !p.nom) bloquants.push(`Indiquer le nom et le prénom (${qui}).`);
@@ -42,7 +46,11 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
       if (!ordre) bloquants.push(`Indiquer le n° d’inscription au tableau de l’Ordre (${qui}).`);
       else if (/^\d{11}$/.test(ordre)) bloquants.push(`Le numéro saisi comme n° d’Ordre ressemble à un RPPS (11 chiffres) (${qui}).`);
       else if (!/^\d{9}$/.test(ordre)) bloquants.push(`Le n° d’inscription à l’Ordre doit compter 9 chiffres (${qui}).`);
-      if (p.rpps && !/^\d{11}$/.test(p.rpps.replace(/\s/g, ''))) bloquants.push(`Le RPPS doit compter 11 chiffres (${qui}).`);
+      else if (fictif(ordre)) bloquants.push(`Le n° d’Ordre semble fictif : saisir le vrai numéro (${qui}).`);
+      const rpps = p.rpps.replace(/\s/g, '');
+      if (rpps && !/^\d{11}$/.test(rpps)) bloquants.push(`Le RPPS doit compter 11 chiffres (${qui}).`);
+      else if (rpps && fictif(rpps)) bloquants.push(`Le RPPS semble fictif : saisir le vrai numéro (${qui}).`);
+      else if (rpps && !luhn(rpps)) conseils.push(`Vérifier le RPPS sur l’annuaire santé : sa clé de contrôle ne correspond pas (${qui}).`);
       if (ordre) {
         if (numeros.has(ordre)) bloquants.push(`Le même n° d’Ordre est saisi pour ${numeros.get(ordre)} et ${qui}.`);
         numeros.set(ordre, qui);
@@ -59,6 +67,8 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
   if (d.rdv.mode !== 'telephone') {
     const url = d.rdv.url || d.praticiens.find((p) => p.rdvUrl)?.rdvUrl || '';
     if (!/^https:\/\/\S+\.\S+/.test(url)) bloquants.push('Indiquer un lien de prise de rendez-vous valide (https://…).');
+    // Lien vers la page d'accueil de la plateforme (doctolib.fr seul) : le patient ne trouverait pas le praticien.
+    else if (/^https:\/\/[^/]+\/?$/.test(url.trim())) bloquants.push('Le lien de rendez-vous doit mener à la page du praticien, pas à l’accueil de la plateforme.');
     // Lien Doctolib qui pointe vers une autre ville que le cabinet.
     const liens = [d.rdv.url, ...d.praticiens.map((p) => p.rdvUrl)].filter(Boolean);
     for (const lien of liens) {

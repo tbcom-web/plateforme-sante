@@ -17,3 +17,4 @@ export * from './logos';
 export * from './marques-importees';
 export * from './dessins';
 export * from './jeux';
+export * from './conseils';
