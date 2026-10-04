@@ -72,6 +72,8 @@ export type SiteConfig = {
     couleur: string;
     /** Gamme de couleurs choisie (identifiant de GAMMES) ; prioritaire sur la couleur libre, facultative */
     gamme?: string;
+    /** Logo : marque et disposition (logos.ts, validerChoixLogo) ; facultatif, valeur par défaut sinon */
+    logo?: import('./logos').ChoixLogo;
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };

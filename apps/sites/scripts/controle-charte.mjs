@@ -57,22 +57,24 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
 rmSync(sortie, { force: true });
 const gammes = core.GAMMES.flatMap(core.verifierGamme);
 const modeles = core.MODELES_INTEGRES.flatMap((m) => core.validerManifeste(m).erreurs.map((e) => `${m.id} : ${e}`));
+// Chaque marque de logo déclarée par un univers doit avoir son dessin (logos.ts)
+const marques = core.UNIVERS_LISTE.flatMap((u) => u.marques.filter((q) => !core.MARQUES_DESSINEES.includes(q.id)).map((q) => `${u.id} : marque de logo « ${q.id} » sans dessin`));
 const inconnues = core.MODELES_INTEGRES.flatMap((m) => (m.gammes ?? []).filter((g) => !core.GAMMES.some((x) => x.id === g)).map((g) => `${m.id} : gamme inconnue « ${g} »`));
 
 if (defauts.length) {
   console.log(`✗ ${defauts.length} couleur(s) littérale(s) hors charte :`);
   for (const d of defauts) console.log(`  ${d}`);
 }
-for (const d of [...gammes, ...modeles, ...inconnues]) console.log(`✗ ${d}`);
-const total = defauts.length + gammes.length + modeles.length + inconnues.length;
+for (const d of [...gammes, ...modeles, ...inconnues, ...marques]) console.log(`✗ ${d}`);
+const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides.`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées.`);
 process.exit(total ? 1 : 0);

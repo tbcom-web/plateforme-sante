@@ -1,0 +1,177 @@
+---
+// Planche des logos, générée uniquement sur les sites de démo (noindex) : /modeles/logos
+// Toutes les marques de l'univers × dispositions, une même marque dans les 5 modèles et 4 gammes,
+// la version claire (en-tête sur photo, pied sombre) et la version compacte en 16 px (favicon).
+// Tout vient du core (logos.ts, univers.ts, charte.ts) : la planche ne peut pas diverger du site.
+import '@fontsource-variable/inter';
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/manrope';
+import '@fontsource/instrument-serif/400.css';
+import '@fontsource-variable/schibsted-grotesk';
+import '@fontsource-variable/jetbrains-mono';
+import Logo from '../../../components/Logo.astro';
+import { site } from '../../../lib/site';
+import {
+  feuilleCharte, variablesTheme, POLICES, MODELES_INTEGRES, GAMMES, DISPOSITIONS_LOGO, LOGO_PAR_DEFAUT,
+  marquesLogo, svgFavicon, svgMarque, couleursMarque, traitementLogo, initiales, gamme, LOGO,
+  type ModeleManifeste,
+} from '@plateforme/core';
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { vide: undefined } }] : [];
+}
+
+// Variables du thème d'un modèle et d'une gamme (mêmes règles que Gabarit.astro)
+const theme = (m: ModeleManifeste, g?: string) =>
+  [
+    ...Object.entries(variablesTheme(m, { couleur: m.couleurConseillee ?? site.theme.couleur, gamme: g })).map(([k, v]) => `${k}:${v}`),
+    `--police-titres:${POLICES[m.jetons.policeTitres]}`,
+    `--police-texte:${POLICES[m.jetons.policeTexte]}`,
+    `--graisse-titres:${m.jetons.graisseTitres}`,
+  ].join(';');
+
+const marques = marquesLogo(site.profession.slug);
+const m = site.modele;
+const nom = `${site.praticiens[0].prenom} ${site.praticiens[0].nom}`;
+const ligne = `${site.titreMetier} · ${site.cabinet.ville}`;
+const ini = initiales(nom);
+const GAMMES_PLANCHE = ['canard', 'terracotta', 'encre', 'sauge'];
+const marqueDemo = LOGO_PAR_DEFAUT.marque;
+const favicon = (marque: string, mod: ModeleManifeste, g?: string) =>
+  svgFavicon({ marque, disposition: 'monogramme' }, mod, { couleur: mod.couleurConseillee ?? site.theme.couleur, gamme: g }, nom);
+const atelier = MODELES_INTEGRES.find((x) => x.id === 'atelier')!;
+const proximite = MODELES_INTEGRES.find((x) => x.id === 'proximite')!;
+const prestige = MODELES_INTEGRES.find((x) => x.id === 'prestige')!;
+---
+<!doctype html>
+<html lang="fr" style={theme(m, site.theme.gamme)}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Logos</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
+  </head>
+  <body>
+    <header class="bandeau cadre">
+      <span>Logos · plateforme santé</span><span>Modèle : {m.nom}{site.theme.gamme ? ` · gamme ${site.theme.gamme}` : ''} · traitement {traitementLogo(m).marque}</span>
+    </header>
+
+    <main class="cadre">
+      <section>
+        <p class="sur">01 — Marques × dispositions · modèle {m.nom}</p>
+        <div class="marques">
+          {marques.map((q, i) => (
+            <article class="marque">
+              <p class="marque__tete"><span class="mono">{String(i + 1).padStart(2, '0')} · {q.id}</span><strong>{q.nom}</strong></p>
+              <p class="marque__sens">{q.sens}</p>
+              <div class="marque__dispositions">
+                {DISPOSITIONS_LOGO.map((d) => (
+                  <div class="case">
+                    <Logo choix={{ marque: q.id, disposition: d.id }} nom={nom} ligne={ligne} href={null} />
+                    <span class="mono pale">{d.nom.toLowerCase()}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <p class="sur">02 — Une marque (« {marqueDemo} »), 5 modèles × 4 gammes</p>
+        <div class="tableau">
+          <div class="tableau__tete"><span></span>{GAMMES_PLANCHE.map((g) => <span class="mono">{gamme(g)?.nom}</span>)}</div>
+          {MODELES_INTEGRES.map((mod) => (
+            <div class="tableau__ligne">
+              <span class="mono">{mod.nom}<br /><span class="pale">{traitementLogo(mod).marque}</span></span>
+              {GAMMES_PLANCHE.map((g) => (
+                <div class="cellule" style={theme(mod, g)}>
+                  <Logo choix={{ marque: marqueDemo, disposition: 'horizontale' }} modele={mod} nom={nom} ligne={ligne} href={null} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <p class="sur">03 — Version claire · en-tête sur photo et pied de page sombre</p>
+        <div class="clairs">
+          {MODELES_INTEGRES.map((mod) => (
+            <div class="clair" style={theme(mod)}>
+              <Logo choix={{ marque: marqueDemo, disposition: 'horizontale' }} modele={mod} nom={nom} ligne={ligne} href={null} clair />
+              <span class="mono">{mod.nom}</span>
+            </div>
+          ))}
+        </div>
+        <div class="clairs">
+          {marques.map((q) => (
+            <div class="clair clair--plan" style={theme(prestige)}>
+              <Logo choix={{ marque: q.id, disposition: 'empilee' }} modele={prestige} nom={nom} ligne={ligne} href={null} clair />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <p class="sur">04 — Favicon · version compacte, taille réelle 16 / 24 / 32 px puis 48 px</p>
+        <div class="favicons">
+          {marques.map((q) => (
+            <div class="favicon">
+              {[proximite, atelier].map((mod) => (
+                <div class="favicon__ligne">
+                  {[16, 24, 32].map((px) => <span class="favicon__px" style={`width:${px}px;height:${px}px`} set:html={favicon(q.id, mod)} />)}
+                  <span class="favicon__px" style={`width:${LOGO.tailles.pied}px;height:${LOGO.tailles.pied}px`} set:html={svgMarque(q.id, couleursMarque(mod, { couleur: mod.couleurConseillee ?? site.theme.couleur }), { traitement: traitementLogo(mod).marque, rayon: traitementLogo(mod).rayon, epais: traitementLogo(mod).epais, initiales: ini, police: traitementLogo(mod).police, graisse: traitementLogo(mod).graisse })} />
+                </div>
+              ))}
+              <span class="mono pale">{q.id}</span>
+            </div>
+          ))}
+        </div>
+        <div class="onglets">
+          {marques.slice(0, 4).map((q, i) => (
+            <span class="onglet"><span class="onglet__icone" set:html={favicon(q.id, MODELES_INTEGRES[i % MODELES_INTEGRES.length], GAMMES[i].id)} />{nom} — {site.titreMetier}</span>
+          ))}
+        </div>
+        <p class="note mono">En 16 px, chaque marque passe en version compacte (traits {LOGO.compact} px et moins : épaissis, sans pointillés ni annotations), toujours sur tuile pour rester visible sur les onglets clairs et sombres.</p>
+      </section>
+    </main>
+  </body>
+</html>
+
+<style>
+  body { margin: 0; font-family: var(--police-texte); color: var(--encre); background: var(--blanc); }
+  .cadre { width: min(1240px, 100% - 32px); margin-inline: auto; }
+  .mono { font-family: var(--police-mono); font-size: var(--taille-donnees-petit); letter-spacing: 0.02em; }
+  .pale { color: var(--encre-pale); }
+  .note { color: var(--encre-douce); margin-top: 16px; line-height: 1.6; }
+  .bandeau { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 22px 0 12px; border-bottom: var(--filet-fort) solid var(--encre); font-family: var(--police-mono); font-size: var(--taille-donnees); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  section { padding-block: 40px; border-bottom: var(--filet) solid var(--ligne); }
+  .sur { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--accent-vif); margin: 0 0 20px; }
+  .marques { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 560px), 1fr)); gap: 16px; }
+  .marque { display: grid; gap: 10px; padding: 16px; border-top: var(--filet-fort) solid var(--encre); background: var(--fond); }
+  .marque__tete { display: flex; gap: 12px; align-items: baseline; margin: 0; }
+  .marque__sens { margin: 0; color: var(--encre-douce); font-size: 0.86rem; line-height: 1.5; }
+  .marque__dispositions { display: grid; grid-template-columns: 1.6fr 1fr 0.5fr; gap: 12px; align-items: end; }
+  @media (max-width: 640px) { .marque__dispositions { grid-template-columns: 1fr 1fr; } .marque__dispositions .case:first-child { grid-column: 1 / -1; } }
+  .case { display: grid; gap: 10px; justify-items: start; padding: 14px; background: var(--doux); border-radius: 6px; min-width: 0; }
+  .case:has(.logo--empilee), .case:has(.logo--monogramme) { justify-items: center; }
+  .tableau { display: grid; gap: 8px; overflow-x: auto; }
+  .tableau__tete, .tableau__ligne { display: grid; grid-template-columns: 8em repeat(4, minmax(240px, 1fr)); gap: 8px; align-items: center; }
+  .cellule { padding: 18px 16px; background: var(--fond); box-shadow: inset 0 0 0 var(--filet) var(--ligne); border-radius: 6px; }
+  .clairs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 8px; margin-bottom: 8px; }
+  .clair { display: grid; gap: 14px; padding: 22px 18px; border-radius: 6px; background: linear-gradient(rgb(var(--nuit-rgb) / 0.55), rgb(var(--nuit-rgb) / 0.55)), url('/photos/cabinet-lumiere.webp') center / cover, var(--fond-nuit); color: var(--sur-sombre-doux); }
+  .clair--plan { justify-items: center; background: var(--encre); }
+  .favicons { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+  .favicon { display: grid; gap: 10px; padding: 12px; background: var(--doux); border-radius: 6px; }
+  .favicon__ligne { display: flex; align-items: end; gap: 10px; }
+  .favicon__px { display: block; flex: none; }
+  .favicon__px :global(svg) { display: block; width: 100%; height: 100%; }
+  .onglets { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 22px; padding: 8px 8px 0; background: var(--encre); border-radius: 10px 10px 0 0; }
+  .onglet { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px 8px 0 0; background: var(--encre-nuit-douce); color: var(--sur-sombre-doux); font-size: 0.78rem; }
+  .onglet:first-child { background: var(--blanc); color: var(--encre); }
+  .onglet__icone { width: 16px; height: 16px; flex: none; }
+  .onglet__icone :global(svg) { display: block; width: 16px; height: 16px; }
+</style>

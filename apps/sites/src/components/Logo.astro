@@ -1,0 +1,85 @@
+---
+// Logo du site : marque (icône de l'univers métier) + nom du cabinet + ligne « métier · ville » en mono.
+// Le praticien choisit la marque et la disposition (site.theme.logo, facultatif) ; le traitement (tuile
+// pleine, trait, tuile « plan »), la police et la graisse du nom suivent le modèle, les couleurs la gamme.
+// Les couleurs de la marque sont des variables CSS (--logo-*) : la version claire (en-tête transparent sur
+// photo, pied de page sombre) ne fait que les régler. Voir packages/core/src/logos.ts.
+import { site } from '../lib/site';
+import { titreMetierAffiche, titreCabinet, praticiens } from '../lib/textes';
+import {
+  svgMarque, traitementLogo, validerChoixLogo, initiales, LOGO, COULEURS_MARQUE_CSS,
+  type ChoixLogo, type ModeleManifeste,
+} from '@plateforme/core';
+
+interface Props {
+  /** Choix du logo (défaut : site.theme.logo validé) */
+  choix?: ChoixLogo;
+  /** Modèle dont le logo suit le style (défaut : celui du site) */
+  modele?: ModeleManifeste;
+  /** Version claire, sur fond sombre (pied de page, photo) */
+  clair?: boolean;
+  /** Taille de la marque en px (défaut : selon la disposition) */
+  taille?: number;
+  nom?: string;
+  ligne?: string;
+  /** Lien (défaut : accueil) ; null = pas de lien */
+  href?: string | null;
+}
+
+const p = Astro.props;
+const choix = p.choix ?? validerChoixLogo(site.theme.logo, site.profession.slug);
+const m = p.modele ?? site.modele;
+const t = traitementLogo(m);
+const nom = p.nom ?? (praticiens.length > 1 ? 'Cabinet de podologie' : `${praticiens[0].prenom} ${praticiens[0].nom}`);
+const ligne = p.ligne ?? `${titreMetierAffiche} · ${site.cabinet.ville}`;
+const taille = p.taille ?? LOGO.tailles[choix.disposition];
+const svg = svgMarque(choix.marque, COULEURS_MARQUE_CSS, {
+  traitement: t.marque,
+  rayon: t.rayon,
+  epais: t.epais,
+  taille,
+  initiales: initiales(praticiens.length > 1 ? site.cabinet.nom : nom),
+  police: t.police,
+  graisse: t.graisse,
+});
+const href = p.href === undefined ? '/' : p.href;
+const Element = href ? 'a' : 'span';
+const style = `--logo-taille:${taille}px;--logo-graisse:${t.graisse};--logo-nom:${choix.disposition === 'empilee' && !t.serif ? LOGO.nom.tailleEmpilee : t.tailleNom}`;
+---
+<Element
+  class:list={['logo', `logo--${choix.disposition}`, `logo--${t.marque}`, { 'logo--clair': p.clair, 'logo--serif': t.serif }]}
+  href={href ?? undefined}
+  aria-label={href ? `Accueil — ${titreCabinet}` : undefined}
+  style={style}
+>
+  <span class="logo__marque" set:html={svg} />
+  {choix.disposition !== 'monogramme' && (
+    <span class="logo__texte">
+      <strong>{nom}</strong>
+      <small>{ligne}</small>
+    </span>
+  )}
+</Element>
+
+<style is:global>
+  .logo { --logo-accent: var(--accent); --logo-clair: var(--blanc); --logo-plan: var(--plan); --logo-signal: var(--signal); display: inline-flex; align-items: center; gap: 12px; color: var(--encre); text-decoration: none; line-height: 1.2; min-width: 0; }
+  .logo:hover { color: var(--encre); }
+  .logo__marque { display: block; flex: none; width: var(--logo-taille); height: var(--logo-taille); }
+  .logo__marque svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .logo__texte { display: grid; gap: 3px; min-width: 0; }
+  .logo strong { font-family: var(--police-titres); font-weight: var(--logo-graisse); font-size: var(--logo-nom); letter-spacing: -0.02em; line-height: 1.05; }
+  .logo--serif strong { letter-spacing: -0.01em; }
+  .logo small { font-family: var(--police-mono); font-size: var(--taille-donnees-petit); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--encre-pale); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .logo--empilee { flex-direction: column; gap: 8px; text-align: center; }
+  .logo--empilee .logo__texte { justify-items: center; }
+  /* En-tête sur mobile : la version empilée se couche pour garder un en-tête bas ; pied de page : alignée à gauche */
+  @media (max-width: 639px) { .entete .logo--empilee { flex-direction: row; gap: 12px; text-align: left; } .entete .logo--empilee .logo__texte { justify-items: start; } }
+  .pied .logo--empilee { align-items: flex-start; text-align: left; }
+  .pied .logo--empilee .logo__texte { justify-items: start; }
+  /* Version claire : sur photo (en-tête transparent) ou sur fond sombre (pied de page) */
+  :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo) { color: var(--blanc); }
+  :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo) small { color: var(--sur-sombre-doux); }
+  :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo).logo--plein { --logo-accent: var(--sur-sombre-verre); }
+  :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo).logo--trait { --logo-accent: var(--blanc); }
+  :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo).logo--plan { --logo-plan: var(--sur-sombre-verre); }
+</style>

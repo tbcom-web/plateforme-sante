@@ -13,3 +13,4 @@ export * from './couleurs';
 export * from './charte';
 export * from './univers';
 export * from './gammes';
+export * from './logos';

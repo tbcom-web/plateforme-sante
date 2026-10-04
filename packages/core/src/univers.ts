@@ -15,6 +15,25 @@ import { SPECIALITES, ANIMATIONS, type Animation, type Specialite } from './pack
 export const DESSINS_PODOLOGIE = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'enfant', 'equilibre', 'talon', 'appuis'] as const;
 export type NomDessin = (typeof DESSINS_PODOLOGIE)[number];
 
+/**
+ * Marques (icônes du logo) d'un univers : chacune traduit un geste ou un examen du métier. Le dessin est
+ * produit par logos.ts (svgMarque), dans la grammaire de la charte ; ici, l'identifiant, le libellé
+ * proposé au praticien et l'idée métier.
+ */
+export type MarqueLogo = { id: string; nom: string; sens: string };
+
+/** Marques de la podologie : géométrie du pied (pied.ts), trame de pression, pointillés du podoscope… */
+export const MARQUES_PODOLOGIE = [
+  { id: 'empreinte', nom: 'Empreinte', sens: 'Relevé au podoscope : contour de la plante en pointillés, orteils et deux points d’appui (talon, 1re tête métatarsienne).' },
+  { id: 'trame', nom: 'Trame de pression', sens: 'Baropodométrie : la plante en trame hexagonale de points, dont la taille suit la pression.' },
+  { id: 'courbes', nom: 'Courbes de niveau', sens: 'Semelle thermoformée : contours imbriqués de la plante, comme les lignes d’un relief.' },
+  { id: 'trajet', nom: 'Centre de pression', sens: 'Analyse du pas : trajet du centre de pression du talon au gros orteil, sur le contour du pied.' },
+  { id: 'appuis', nom: 'Polygone d’appui', sens: 'Posturologie et stabilométrie : les deux pieds, le polygone d’appui et le centre de gravité, marqué d’un point.' },
+  { id: 'voute', nom: 'Voûte plantaire', sens: 'Examen statique : l’arche interne vue de profil, cotée entre le sol et son sommet.' },
+  { id: 'monogramme', nom: 'Monogramme', sens: 'Initiales du cabinet dans la police des titres, soulignées par une échelle de pression graduée.' },
+] as const satisfies readonly MarqueLogo[];
+export type NomMarque = (typeof MARQUES_PODOLOGIE)[number]['id'];
+
 /** Motif signature d'un univers : la texture qui le rend reconnaissable */
 export type MotifSignature = {
   id: string;
@@ -45,6 +64,9 @@ export type UniversMetier = {
   /** Spécialités proposées au praticien (couche 3) */
   specialites: Specialite[];
   specialiteParDefaut: string;
+  /** Marques proposées pour le logo (logos.ts) et marque par défaut */
+  marques: readonly MarqueLogo[];
+  marqueParDefaut: string;
 };
 
 /** Palette de pression de la podologie (relevé de baropodométrie) : bleu → vert d'eau → jaune → orange → rouge */
@@ -67,6 +89,8 @@ export const UNIVERS = {
     animations: ANIMATIONS,
     specialites: SPECIALITES,
     specialiteParDefaut: 'generale',
+    marques: MARQUES_PODOLOGIE,
+    marqueParDefaut: 'empreinte',
   },
 } satisfies Record<string, UniversMetier>;
 

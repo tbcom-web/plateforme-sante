@@ -10,13 +10,14 @@ import '@fontsource/instrument-serif/400-italic.css';
 import '@fontsource-variable/schibsted-grotesk';
 import '@fontsource-variable/jetbrains-mono';
 import Icone from '../components/Icone.astro';
+import Logo from '../components/Logo.astro';
 import Consent from '../components/Consent.astro';
 import EditionApercu from '../components/EditionApercu.astro';
 import { APERCU } from '../lib/edition';
 import Empreintes from '../components/dessins/Empreintes.astro';
 import { CONTOUR } from '../components/animations/pied';
 import { site, absUrl } from '../lib/site';
-import { feuilleCharte, variablesTheme, POLICES, NEUTRES, TRAIT } from '@plateforme/core';
+import { feuilleCharte, variablesTheme, POLICES, NEUTRES, TRAIT, LOGO } from '@plateforme/core';
 import { businessSchema, personSchema } from '../lib/schema';
 import { photoAccueil } from '../lib/visuels';
 import {
@@ -69,7 +70,6 @@ const liens = [
   ...(site.articles.length > 0 ? [{ href: '/actualites', label: 'Actualités' }] : []),
   { href: '/acces', label: 'Accès' },
 ];
-const nomMarque = praticiens.length > 1 ? 'Cabinet de podologie' : `${praticiens[0].prenom} ${praticiens[0].nom}`;
 const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? '/le-cabinet#praticiens' : null;
 ---
 <!doctype html>
@@ -114,13 +114,7 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
 
     <header class="entete">
       <div class="cadre entete__contenu">
-        <a class="marque" href="/" aria-label={`Accueil — ${titreCabinet}`}>
-          <span class="marque__icone"><Icone nom="healthicons:foot-outline" /></span>
-          <span class="marque__texte">
-            <strong>{nomMarque}</strong>
-            <small>{titreMetierAffiche} · {site.cabinet.ville}</small>
-          </span>
-        </a>
+        <Logo />
         <nav class="liens" aria-label="Navigation principale">
           {liens.map((l) => <a href={l.href} aria-current={courant.startsWith(l.href) ? 'page' : undefined}>{l.label}</a>)}
         </nav>
@@ -142,6 +136,7 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
         </div>
         <div class="pied__haut">
           <div class="pied__gauche">
+            <Logo clair={m.pied !== 'clair'} taille={LOGO.tailles.pied} />
             <p class="pied__appel">
               {libelleRdv}
               <span>{site.rdvMode !== 'telephone' ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : `Au ${site.cabinet.telephone}`}</span>
@@ -317,15 +312,10 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
 
   .entete { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--fond) 86%, transparent); backdrop-filter: blur(16px) saturate(1.6); border-bottom: var(--filet) solid var(--ligne); transition: color var(--duree-court), border-color var(--duree-court); }
   .entete-transparent .entete { position: fixed; left: 0; right: 0; background: color-mix(in srgb, var(--fond) calc(var(--opacite-entete, 0) * 90%), transparent); border-bottom-color: rgb(var(--encre-rgb) / calc(var(--opacite-entete, 0) * 0.1)); backdrop-filter: blur(calc(var(--opacite-entete, 0) * 16px)); }
-  .entete-transparent:not(.entete-opaque) .entete .marque, .entete-transparent:not(.entete-opaque) .entete .liens a { color: var(--blanc); }
-  .entete-transparent:not(.entete-opaque) .entete .marque small { color: var(--sur-sombre-doux); }
-  .entete-transparent:not(.entete-opaque) .entete .marque__icone { background: var(--sur-sombre-verre); backdrop-filter: blur(6px); }
+  .entete-transparent:not(.entete-opaque) .entete .liens a { color: var(--blanc); }
   .entete-transparent:not(.entete-opaque) .entete__rdv { background: var(--blanc); color: var(--encre); }
   .entete__contenu { display: flex; align-items: center; gap: 28px; min-height: 74px; }
-  .marque { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--encre); margin-right: auto; line-height: 1.2; }
-  .marque strong { display: block; font-size: 1.02rem; letter-spacing: -0.02em; }
-  .marque small { color: var(--encre-pale); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; }
-  .marque__icone { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: var(--accent); color: var(--blanc); font-size: 1.5rem; }
+  .entete .logo { margin-right: auto; padding-block: 8px; }
   .liens { display: none; gap: 28px; font-size: 0.94rem; }
   .liens a { color: var(--encre-douce); text-decoration: none; transition: color var(--duree-instant); }
   .liens a:hover, .liens a[aria-current='page'] { color: var(--encre); }

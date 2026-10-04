@@ -52,8 +52,8 @@ Compatibilité : une couleur libre (`theme.couleur`) reste acceptée et utilisé
 
 ## Grammaire des dessins
 
-- **Géométrie partagée** : `components/animations/pied.ts` (contour `PLANTE` et `CONTOUR`, `ORTEILS`, `TRAJET`, repère 92 × 222, pied gauche par symétrie). Aucun dessin de pied n'est tracé à la main ailleurs.
-- **Trame** : `components/dessins/trame.ts`. Le pas vaut `TRAME.pas` (6,4 unités du pied, 9 pour l'enfant). Le diamètre d'un point vaut pas × (0,3 → 0,8) selon la valeur. Les points sont répartis sur 9 niveaux, tracés en un `<path>` par niveau. Le Podoscope (canvas) utilise la même trame.
+- **Géométrie partagée** : `packages/core/src/pied.ts` (contour `PLANTE` et `CONTOUR`, `ORTEILS`, `TRAJET`, repère 92 × 222, pied gauche par symétrie), réexportée par `components/animations/pied.ts` pour le site. Aucun dessin de pied n'est tracé à la main ailleurs.
+- **Trame** : `packages/core/src/trame.ts` (réexportée par `components/dessins/trame.ts`). Le pas vaut `TRAME.pas` (6,4 unités du pied, 9 pour l'enfant). Le diamètre d'un point vaut pas × (0,3 → 0,8) selon la valeur. Les points sont répartis sur 9 niveaux, tracés en un `<path>` par niveau. Le Podoscope (canvas) utilise la même trame.
 - **Traits** (`--trait-*`) : `filet` 0,6 pour les grilles et hachures, `fin` 1 pour les cotes, repères et liaisons, `normal` 1,5 pour le contour principal, `fort` 2,2 pour le trait anatomique et les forces, `marque` 3,2 pour le squelette du coureur et les crampons.
 - **Pointillés** : le contour de pied est une suite de points ronds (`--pointille` « 0 5,5 », point de 2,6, ou 1,6 en version légère autour d'une trame). Les tirets s'écrivent `--tiret` (4 5) et `--tiret-court` (2 3).
 - **Annotations** : en mono (`--police-mono`, `--taille-donnees-dessin` dans les SVG), courtes, avec des valeurs plausibles et illustratives.
@@ -70,6 +70,25 @@ Compatibilité : une couleur libre (`theme.couleur`) reste acceptée et utilisé
 
 L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`, `-note`, `-donnees` (0,74 rem) et `-donnees-petit` (0,66 rem). En capitales, les données prennent un interlettrage de `--interlettrage-donnees` (0,08 em).
 
+## Logo
+
+Le logo combine trois choix, sur le même principe de couches (`packages/core/src/logos.ts`) :
+
+| Élément | Qui choisit | Source |
+|---|---|---|
+| **Marque** (icône) | le praticien, parmi les marques de son univers | `univers.ts` (`marques`, libellé et idée métier) ; dessin par `svgMarque` |
+| **Disposition** : horizontale, empilée, marque seule | le praticien | `DISPOSITIONS_LOGO` |
+| **Traitement** : plein (tuile à la couleur du cabinet), trait (sans tuile), plan (tuile « plan », points en couleurs de données) | le modèle (`jetons.logo`, sinon déduit) | `traitementLogo(modele)` |
+
+- Le choix est enregistré dans `site.theme.logo` (`ChoixLogo = { marque, disposition }`, facultatif) et validé par `validerChoixLogo` (rétrocompatible : absent, chaîne seule ou valeur inconnue → valeur par défaut).
+- Le nom du cabinet prend la police et la graisse des titres du modèle (bornée entre 400 et 750 pour rester lisible en petit) ; la ligne secondaire est factuelle, « métier · ville », en mono capitales.
+- Les couleurs ne viennent que de la gamme et de la charte : accent, clair, plan, signal, palette de données (`CouleursMarque`). Sur le site, ce sont des variables `--logo-*`, que la version claire (en-tête transparent sur photo, pied de page sombre) se contente de régler.
+- Trois niveaux de détail (`LOGO` dans `charte.ts`) : jusqu'à 24 px (favicon), version pleine et épaissie, sans pointillés ni annotation ; jusqu'à 56 px (en-tête, pied de page), version allégée ; au-delà, version détaillée (pointillés, cotes, polygone d'appui).
+- Le favicon `/favicon.svg` est généré au build (`svgFavicon`) à partir de la marque et des couleurs du site, toujours sur tuile.
+- Une marque reste sobre et lisible : pas d'effet décoratif qui gêne la lecture du nom, et jamais de motif de mire, cible, réticule ou viseur (cercle et croix).
+- Planche de démonstration : `/modeles/logos` (sites de démo, noindex).
+- Pour l'éditeur : `marquesLogo(metier)`, `DISPOSITIONS_LOGO`, `svgMarque(marque, couleurs, options)` (chaîne SVG), `couleursMarque(modele, theme)` et `traitementLogo(modele)` pour un aperçu fidèle.
+
 ## Mouvement
 
 - **Durées** : `--duree-instant` 150 ms, `-court` 300 ms, `-moyen` 600 ms, `-long` 900 ms, `-trace` 1 400 ms et `-decalage` 80 ms (cascade).
@@ -82,7 +101,9 @@ L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`,
 - Une couleur, une épaisseur, un pas de trame ou une durée codés en dur dans un composant (`npm run controle:charte` échoue).
 - Les couleurs de données sur un élément d'interface (bouton, lien, texte).
 - Les pieds géométriques ou dessinés à main levée hors de `pied.ts`, les « bonshommes bâtons », les pictogrammes de banque d'images, les visages.
-- Les slogans, superlatifs et promesses de résultat. Une donnée chiffrée présentée comme une mesure réelle.
+- Tout motif de **cible, réticule, mire ou viseur** (cercle + croix, axes croisés avec cercle central) : il évoque une arme, pas un examen. Rejeté par le client (« on dirait un sniper »).
+- Les slogans, superlatifs, promesses de résultat et phrases d'ambiance (« un cabinet calme et lumineux, pensé pour votre confort », « à votre écoute ») : les titres disent un fait. Une donnée chiffrée présentée comme une mesure réelle.
+- Les infos pratiques « mises en scène » (frise d'horaires, dataviz décorative) : horaires, adresse et téléphone restent en tableau ou en liste simple.
 - Les polices non auto-hébergées et les librairies d'animation lourdes.
 
 ## Ajouter un nouveau visuel
@@ -104,7 +125,8 @@ L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`,
    - `professions` (slugs de la table professions).
 2. Décrire ses spécialités sur le modèle de `SPECIALITES` : photos sans visage, vidéos facultatives, dessins prioritaires, soins mis en avant.
 3. Dessiner sa géométrie partagée (l'équivalent de `pied.ts`) puis sa famille de dessins, avec les traits, pointillés et annotations de la charte.
-4. Les couches 1, 4 et 5 ne changent pas : charte, gammes et modèles s'appliquent tels quels.
+4. Déclarer ses marques de logo (`marques`, `marqueParDefaut`) et les dessiner dans `logos.ts`, avec leurs trois niveaux de détail.
+5. Les couches 1, 4 et 5 ne changent pas : charte, gammes et modèles s'appliquent tels quels.
 
 Motifs signatures envisagés (non implémentés) :
 

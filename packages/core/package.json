@@ -6,7 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./icones": "./src/icones.ts",
-    "./charte": "./src/charte.ts"
+    "./charte": "./src/charte.ts",
+    "./pied": "./src/pied.ts",
+    "./trame": "./src/trame.ts",
+    "./logos": "./src/logos.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

@@ -25,6 +25,13 @@ export type TraitementImages = (typeof TRAITEMENTS_IMAGES)[number];
  */
 export const MOTIFS = ['plan', 'trame', 'courbes', 'aucun'] as const;
 export type Motif = (typeof MOTIFS)[number];
+/**
+ * Traitement de la marque du logo (logos.ts) : « plein » = marque claire sur une tuile à la couleur du
+ * cabinet ; « trait » = marque à la couleur du cabinet, sans tuile ; « plan » = marque sur tuile « plan
+ * d'architecte », points de pression en couleurs de données.
+ */
+export const TRAITEMENTS_MARQUE = ['plein', 'trait', 'plan'] as const;
+export type TraitementMarque = (typeof TRAITEMENTS_MARQUE)[number];
 
 export type ModeleManifeste = {
   /** Identifiant stable (minuscules, chiffres, tirets) */
@@ -74,6 +81,8 @@ export type ModeleManifeste = {
     plan?: string;
     /** Couleur des lectures de données sur fond sombre : légendes, lignes de scan (#rrggbb), facultatif */
     signal?: string;
+    /** Traitement de la marque du logo, facultatif (sinon déduit des autres jetons : voir traitementLogo) */
+    logo?: TraitementMarque;
   };
 };
 
@@ -91,7 +100,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'sombre',
     animations: 'douces',
     gammes: ['canard', 'cobalt', 'ardoise', 'sauge'],
-    jetons: { policeTitres: 'schibsted', policeTexte: 'inter', graisseTitres: 750, rayon: 18, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', fondDoux: '#eef1f4', motif: 'trame', signal: '#6ff2c2' },
+    jetons: { policeTitres: 'schibsted', policeTexte: 'inter', graisseTitres: 750, rayon: 18, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', fondDoux: '#eef1f4', motif: 'trame', signal: '#6ff2c2', logo: 'plein' },
   },
   {
     id: 'premium',
@@ -104,7 +113,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'sombre',
     animations: 'douces',
     gammes: ['encre', 'cobalt', 'ardoise'],
-    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 500, rayon: 14, boutons: 'arrondi', accent: 'encre', fond: '#ffffff', images: 'naturel', fondDoux: '#f4f5f4', motif: 'plan', plan: '#123c8c', signal: '#6ff2c2' },
+    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 500, rayon: 14, boutons: 'arrondi', accent: 'encre', fond: '#ffffff', images: 'naturel', fondDoux: '#f4f5f4', motif: 'plan', plan: '#123c8c', signal: '#6ff2c2', logo: 'trait' },
   },
   {
     id: 'prestige',
@@ -117,7 +126,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'sombre',
     animations: 'douces',
     gammes: ['canard', 'prune', 'encre', 'sable'],
-    jetons: { policeTitres: 'fraunces', policeTexte: 'inter', graisseTitres: 420, rayon: 6, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'contraste', fondDoux: '#f6f3ee', motif: 'courbes', signal: '#e9c98f' },
+    jetons: { policeTitres: 'fraunces', policeTexte: 'inter', graisseTitres: 420, rayon: 6, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'contraste', fondDoux: '#f6f3ee', motif: 'courbes', signal: '#e9c98f', logo: 'trait' },
   },
   {
     id: 'zen',
@@ -131,7 +140,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     animations: 'douces',
     couleurConseillee: '#2f6f6a',
     gammes: ['sauge', 'canard', 'sable'],
-    jetons: { policeTitres: 'manrope', policeTexte: 'manrope', graisseTitres: 300, rayon: 30, boutons: 'pilule', accent: 'couleur', fond: '#fbfcfb', images: 'doux', fondDoux: '#eef4f1', motif: 'courbes', signal: '#bdf0da' },
+    jetons: { policeTitres: 'manrope', policeTexte: 'manrope', graisseTitres: 300, rayon: 30, boutons: 'pilule', accent: 'couleur', fond: '#fbfcfb', images: 'doux', fondDoux: '#eef4f1', motif: 'courbes', signal: '#bdf0da', logo: 'plein' },
   },
   {
     id: 'atelier',
@@ -145,7 +154,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     animations: 'douces',
     couleurConseillee: '#b0583a',
     gammes: ['terracotta', 'sable', 'prune'],
-    jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', images: 'chaud', fondDoux: '#efe6dc', motif: 'plan', plan: '#3a1f17', signal: '#f2b880' },
+    jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', images: 'chaud', fondDoux: '#efe6dc', motif: 'plan', plan: '#3a1f17', signal: '#f2b880', logo: 'plan' },
   },
 ];
 
@@ -202,6 +211,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
     if (j.motif !== undefined && !parmi(j.motif, MOTIFS)) e.push(`« jetons.motif » : ${MOTIFS.join(', ')}.`);
     if (j.plan !== undefined && !HEX.test(j.plan)) e.push('« jetons.plan » : couleur au format #rrggbb.');
     if (j.signal !== undefined && !HEX.test(j.signal)) e.push('« jetons.signal » : couleur au format #rrggbb.');
+    if (j.logo !== undefined && !parmi(j.logo, TRAITEMENTS_MARQUE)) e.push(`« jetons.logo » : ${TRAITEMENTS_MARQUE.join(', ')}.`);
   }
   if (e.length) return { erreurs: e };
 
@@ -234,6 +244,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
         motif: v.jetons.motif ?? 'plan',
         ...(v.jetons.plan ? { plan: v.jetons.plan } : {}),
         ...(v.jetons.signal ? { signal: v.jetons.signal } : {}),
+        ...(v.jetons.logo ? { logo: v.jetons.logo } : {}),
       },
     },
   };

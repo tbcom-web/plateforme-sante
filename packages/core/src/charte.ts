@@ -167,6 +167,32 @@ export const COURBES = {
   rebond: 'cubic-bezier(.3,1.4,.5,1)',
 } as const;
 
+// ———————————————————————————————————————————————————— Logo
+
+/**
+ * Logo du site (logos.ts) : la marque est dessinée dans un repère carré de `cadre` unités, avec les traits,
+ * pointillés et la trame de la charte. Trois niveaux de détail selon la taille affichée : jusqu'à `compact` px
+ * (favicon), version pleine et épaissie ; jusqu'à `moyen` px (en-tête, pied de page), version allégée
+ * (points plus gros, sans annotations) ; au-delà, version détaillée. La trame des marques est plus lâche que celle du relevé (illisible à 48 px) :
+ * pas = TRAME.pas × facteur. `marge` : marge intérieure de la tuile, au trait, et marge verticale des marques
+ * en forme de pied, étroites (unités). `rayonTuile` : arrondi de la
+ * tuile = arrondi du modèle × rapport, plafonné à `rayonMax` (unités). `opaciteSecondaire` : traits
+ * d'accompagnement (contour derrière une trame, axes). `tailles` : côté de la marque affichée (px).
+ * `nom` : taille du nom du cabinet (la police et la graisse sont celles des titres du modèle).
+ */
+export const LOGO = {
+  cadre: 48,
+  compact: 24,
+  moyen: 56,
+  trame: { facteur: 2.4, facteurMoyen: 3.4 },
+  marge: { tuile: 7, trait: 2, pied: 4 },
+  rayonTuile: 0.6,
+  rayonMax: 24,
+  opaciteSecondaire: 0.45,
+  tailles: { horizontale: 42, empilee: 40, monogramme: 44, pied: 48 },
+  nom: { taille: '1.04rem', tailleSerif: '1.32rem', tailleEmpilee: '0.98rem' },
+} as const;
+
 /** Mention obligatoire des représentations graphiques de données */
 export const MENTION_ILLUSTRATIVE = 'Représentation illustrative, sans valeur de mesure';
 
