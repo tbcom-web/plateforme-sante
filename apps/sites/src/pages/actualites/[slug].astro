@@ -5,7 +5,9 @@ import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import { site, md, dateFr } from '../../lib/site';
 import { articleSchema, breadcrumbSchema } from '../../lib/schema';
-import { titreCabinet, praticiens, lienRdv, libelleRdv } from '../../lib/textes';
+import { titreCabinet, praticiens, lienRdv, libelleRdv, lieu } from '../../lib/textes';
+import { espacesFines } from '@plateforme/core';
+import { photoResponsive } from '../../lib/visuels';
 import type { Article } from '@plateforme/core';
 
 export function getStaticPaths() {
@@ -35,7 +37,7 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
     <header class="cadre article__tete">
       <Breadcrumb items={crumbs} />
       <p class="sur">{article.theme} · <time datetime={article.date}>{dateFr(article.date)}</time> · {minutes} min de lecture</p>
-      <h1>{article.titre}</h1>
+      <h1>{espacesFines(article.titre)}</h1>
       <p class="chapo">{article.resume}</p>
       <p class="article__auteur">Par <a href="/le-cabinet">{auteur}</a></p>
     </header>
@@ -44,6 +46,7 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
       <figure class="cadre article__image">
         <img
           src={article.image}
+          {...photoResponsive(article.image, 'min(1180px, 100vw)')}
           alt={article.imageAlt ?? ''}
           width="1600"
           height="900"
@@ -57,7 +60,7 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
       <div class="prose" set:html={md(article.corps)} />
 
       <aside class="article__rdv" aria-label="Rendez-vous">
-        <p><strong>Une question sur vos pieds ?</strong><span>{titreCabinet}, {site.cabinet.ville}.</span></p>
+        <p><strong>Une question sur vos pieds ?</strong><span>{titreCabinet}{lieu.nom ? `, ${lieu.nom}` : ''}, {lieu.adresse}.</span></p>
         <a class="bouton bouton--plein" href={lienRdv(`article-${article.slug}`)}>{libelleRdv}</a>
       </aside>
     </div>
@@ -98,6 +101,6 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
   .article__autres ul { list-style: none; padding: 0; margin: 0; border-top: var(--filet) solid var(--ligne); }
   .article__autres li { border-bottom: var(--filet) solid var(--ligne); }
   .article__autres a { display: grid; gap: 4px; padding: 18px 0; text-decoration: none; color: var(--encre); font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; }
-  .article__autres a span { font-size: 0.76rem; font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-vif); }
+  .article__autres a span { font-size: var(--taille-donnees-petit); font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-vif); }
   .article__autres a:hover { color: var(--accent-fonce); }
 </style>

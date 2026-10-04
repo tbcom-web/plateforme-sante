@@ -7,9 +7,9 @@ import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Dessin from '../dessins/Dessin.astro';
-import { photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
+import { photoResponsive, photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
 import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
-import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
+import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme } from '../../lib/textes';
 
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
@@ -19,7 +19,7 @@ const anime = choix !== 'photo';
 ---
 <section class:list={['plein', { 'plein--anime': anime }]} style={choix === 'animation' ? `background:${fondAnime}` : undefined}>
   {choix === 'animation' && <div class="plein__anim" aria-hidden="true"><AnimationAccueil /></div>}
-  {choix === 'photo' && <img class="plein__image" src={photoAccueilAffichee} alt="" width="2000" height="1300" fetchpriority="high" decoding="async" {...zonePhoto('photos.accueil')} />}
+  {choix === 'photo' && <img class="plein__image" src={photoAccueilAffichee} {...photoResponsive(photoAccueilAffichee, '100vw')} alt={site.photos.accueil && photoAccueilAffichee === site.photos.accueil ? `Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}` : ''} width="2000" height="1300" fetchpriority="high" decoding="async" {...zonePhoto('photos.accueil')} />}
   {choix === 'illustration' && (
     <div class="plein__illus surface-plan" aria-hidden="true" {...zonePhoto('photos.accueil')}>
       <span class="plein__dessin"><Dessin nom={dessinSpecialite} /></span>
@@ -27,12 +27,12 @@ const anime = choix !== 'photo';
     </div>
   )}
   <div class="cadre plein__contenu">
-    <p class="sur plein__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
+    <p class="sur plein__sur">{titreMetierAffiche} · {localisation}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
     <p class="plein__chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
     <div class="plein__actions">
       <a class="bouton bouton--clair" href={rdvAccueil}>
-        {libelleRdv}
+        {libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}
         <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
       </a>
       <a class="bouton bouton--verre" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>

@@ -3,6 +3,8 @@
 import {
   controlerPublication,
   formaterTelephone,
+  lieuEnClair,
+  lienRdvPrecis,
   mentionOrdre,
   modeleIntegre,
   packVisuel,
@@ -141,7 +143,9 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const p1 = praticiens[0];
   const pluriel = praticiens.length > 1;
   const noms = enListe(praticiens.map((p) => `${p.prenom} ${p.nom}`));
-  const quartier = d.cabinet.quartier || ville;
+  // Le quartier complète la ville, il ne la remplace jamais (« dans le quartier Claret, à Toulon »).
+  const quartier = d.cabinet.quartier.trim();
+  const lieuExercice = lieuEnClair(quartier, ville);
   const aujourdhui = new Date().toISOString().slice(0, 10);
   const messageActif = d.message.texte && (!d.message.jusquAu || d.message.jusquAu >= aujourdhui);
   const listeSoins = soins.slice(0, 3).map((x) => x.titreCourt.toLowerCase());
@@ -162,7 +166,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       conventionnement: d.conventionnement,
       parcours:
         p1.bio ||
-        `${noms}, ${titreMetier.toLowerCase()}${pluriel ? 's' : ''}, accueille${pluriel ? 'nt' : ''} les patients à ${quartier}.`,
+        `${noms}, ${titreMetier.toLowerCase()}${pluriel ? 's' : ''}, accueille${pluriel ? 'nt' : ''} les patients ${lieuExercice}.`,
       formations: p1.formations,
       langues: ['Français'],
     },
@@ -183,10 +187,10 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
-      texte: `${titreMetier} à ${quartier} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
+      texte: `${titreMetier} ${lieuExercice} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
     },
     soins,
-    faqGenerale: defauts.faq({ pmr: d.acces.pmr, plateforme: d.rdv.mode === 'telephone' ? 'téléphone' : d.rdv.outil }),
+    faqGenerale: defauts.faq({ pmr: d.acces.pmr, plateforme: d.rdv.outil, enLigne: d.rdv.mode !== 'telephone' && lienRdvPrecis(d.rdv.url || d.praticiens.find((p) => p.rdvUrl)?.rdvUrl) }),
     articles: publies
       .map((p) => p.article)
       .filter((a): a is LigneArticle => Boolean(a))

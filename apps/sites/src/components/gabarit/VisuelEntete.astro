@@ -8,7 +8,7 @@
 import Dessin from '../dessins/Dessin.astro';
 import Animation from '../animations/Animation.astro';
 import { MENTION_ILLUSTRATIVE, rendreCase, type Animation as NomAnimation, type NomDessin } from '@plateforme/core';
-import { modeVisuel } from '../../lib/visuels';
+import { modeVisuel, photoResponsive } from '../../lib/visuels';
 
 interface Props {
   photo: string;
@@ -25,18 +25,21 @@ interface Props {
   liste?: boolean;
   /** Photo fournie par le praticien pour ce soin : affichée quel que soit le style visuel */
   photoPraticien?: string;
+  /** Texte alternatif de la photo du praticien (porteuse d'information) ; une photo d'illustration reste décorative */
+  altPraticien?: string;
 }
-const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '', photoBonne = true, liste = false, photoPraticien } = Astro.props;
+const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '', photoBonne = true, liste = false, photoPraticien, altPraticien = '' } = Astro.props;
 // Règle : illustrations dans les listes ; photo sur la fiche d'un soin si elle est bonne (mode mélange).
 const choix = rendreCase({ photo, cadrage, dessin, animation, photoBonne }, modeVisuel, liste ? 'liste' : 'page', { photoPraticien, animationActive: true });
 const image = choix.type === 'photo' ? choix : { src: photo, cadrage };
 // Photo : seule (style photos, ou photo du praticien en style illustrations) ou avec la planche en encart (mélange).
 const rendu = choix.type === 'photo' ? (modeVisuel === 'mixte' ? 'mixte' : 'photos') : 'illustrations';
 const anime = choix.type === 'animation' ? choix.animation : null;
+const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
 ---
 {rendu === 'photos' && (
-  <figure class="ve ve--photo" aria-hidden="true">
-    <img src={image.src} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
+  <figure class="ve ve--photo" aria-hidden={alt ? undefined : 'true'}>
+    <img src={image.src} {...photoResponsive(image.src, '(min-width: 960px) 52vw, calc(100vw - 40px)')} alt={alt} width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
   </figure>
 )}
 
@@ -49,15 +52,15 @@ const anime = choix.type === 'animation' ? choix.animation : null;
 )}
 
 {rendu === 'mixte' && (
-  <figure class="ve ve--mixte" aria-hidden="true">
+  <figure class="ve ve--mixte">
     <span class="ve__cadre">
-      <img src={image.src} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
+      <img src={image.src} {...photoResponsive(image.src, '(min-width: 960px) 52vw, calc(100vw - 40px)')} alt={alt} width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
     </span>
-    <span class="ve__encart surface-grille">
+    <span class="ve__encart surface-grille" aria-hidden="true">
       <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>
       <Dessin nom={dessin} />
     </span>
-    <span class="ve__mention mono">{MENTION_ILLUSTRATIVE}</span>
+    <span class="ve__mention mono" aria-hidden="true">{MENTION_ILLUSTRATIVE}</span>
   </figure>
 )}
 

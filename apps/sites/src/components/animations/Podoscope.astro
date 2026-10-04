@@ -4,13 +4,30 @@
 // (charte du core). Les points apparaissent par balayage, puis la pression se déplace du talon vers
 // l'avant-pied comme pendant le pas. Canvas, sans librairie.
 // Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
-interface Props { fond?: 'sombre' | 'clair' }
-const { fond = 'sombre' } = Astro.props;
+// `releve` (accueil) : habillage « relevé de podoscope » — ligne de scan, légende graduée de la pression,
+// tracé du centre de pression de chaque pied et mention illustrative. Animations actives seulement à l'écran.
+import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
+interface Props { fond?: 'sombre' | 'clair'; releve?: boolean }
+const { fond = 'sombre', releve = false } = Astro.props;
+const NIVEAUX = ['Pic', 'Forte', 'Moyenne', 'Modérée', 'Faible'];
 ---
-<canvas class:list={['podoscope', `podoscope--${fond}`]} aria-hidden="true"></canvas>
+{releve ? (
+  <div class="releve anime-visible" aria-hidden="true">
+    <canvas class:list={['podoscope', `podoscope--${fond}`, 'podoscope--cdp']}></canvas>
+    <span class="releve__scan"></span>
+    <span class="releve__legende mono">
+      <span class="releve__echelle"></span>
+      <span class="releve__niveaux">{NIVEAUX.map((n) => <span>{n}</span>)}</span>
+    </span>
+    <span class="releve__cdp mono"><i></i>Centre de pression</span>
+    <span class="releve__mention mono">{MENTION_ILLUSTRATIVE}</span>
+  </div>
+) : (
+  <canvas class:list={['podoscope', `podoscope--${fond}`]} aria-hidden="true"></canvas>
+)}
 
 <script>
-  import { couleurPression, TRAME, CYCLES, DUREES } from '@plateforme/core/charte';
+  import { couleurPression, TRAME, TRAIT, CYCLES, DUREES } from '@plateforme/core/charte';
   import { dansPlante, pression as pressionStatique } from '../dessins/trame';
 
   type Point = { x: number; y: number; b: number; zone: number; gauche: boolean };
@@ -64,6 +81,10 @@ const { fond = 'sombre' } = Astro.props;
     const ctx = cv.getContext('2d')!;
     const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let pts: Point[] = [], pasPx = 6, l = 0, h = 0;
+    // Tracé du centre de pression (accueil) : barycentre des points pondérés par la pression, par pied.
+    const cdp = cv.classList.contains('podoscope--cdp');
+    const signal = getComputedStyle(cv).getPropertyValue('--signal').trim() || 'white';
+    const traces: { x: number; y: number }[][] = [[], []];
     const debut = performance.now();
     const ratio = Math.min(2, devicePixelRatio || 1);
     const { min, max } = TRAME.diametre;
@@ -73,16 +94,19 @@ const { fond = 'sombre' } = Astro.props;
       cv.width = l * ratio; cv.height = h * ratio;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ({ pts, pasPx } = construire(l, h));
+      traces[0] = []; traces[1] = [];
     }
 
     function dessiner(maintenant: number) {
       const t = calme ? DUREES.long : maintenant - debut;
       ctx.clearRect(0, 0, l, h);
       const balayage = calme ? 2 : Math.min(1.2, t / DUREES.trace); // apparition du haut vers le bas
+      const somme = [[0, 0, 0], [0, 0, 0]];
       for (const p of pts) {
         const seuil = p.y / h;
         if (seuil > balayage) continue;
         const v = pression(p, t);
+        if (cdp) { const k = p.gauche ? 0 : 1, w = v ** 3; somme[k][0] += p.x * w; somme[k][1] += p.y * w; somme[k][2] += w; }
         const apparition = Math.min(1, (balayage - seuil) * 6);
         const rayon = (pasPx * (min + (max - min) * v)) / 2;
         ctx.globalAlpha = (0.35 + 0.65 * v) * apparition;
@@ -94,6 +118,23 @@ const { fond = 'sombre' } = Astro.props;
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+      if (cdp && balayage >= 1) {
+        // Trajet du talon vers l'avant-pied : traîne courte, point au signal (lecture de données)
+        somme.forEach(([sx, sy, sw], k) => {
+          if (!sw) return;
+          const trace = traces[k];
+          trace.push({ x: sx / sw, y: sy / sw });
+          if (trace.length > 46) trace.shift();
+          ctx.strokeStyle = signal; ctx.fillStyle = signal; ctx.lineWidth = TRAIT.fin * 1.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath();
+          trace.forEach((q, i) => { ctx.globalAlpha = 0.85; i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); });
+          ctx.stroke();
+          const fin = trace[trace.length - 1];
+          ctx.beginPath(); ctx.arc(fin.x, fin.y, pasPx * 0.45, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
       if (!calme && visible) requestAnimationFrame(dessiner);
     }
 
@@ -110,6 +151,20 @@ const { fond = 'sombre' } = Astro.props;
 
 <style>
   .podoscope { display: block; width: 100%; height: 100%; }
+  /* Habillage « relevé » de l'accueil */
+  .releve { position: relative; width: 100%; height: 100%; color: var(--sur-sombre-doux); }
+  .releve__scan { position: absolute; left: 6%; right: 6%; top: 0; height: var(--filet-fort); background: linear-gradient(90deg, transparent, var(--signal), transparent); opacity: 0; }
+  .en-vue .releve__scan { animation: scan var(--cycle-releve) var(--courbe-entree-sortie) infinite; }
+  @keyframes scan { 0% { top: 12%; opacity: 0; } 10% { opacity: 0.9; } 90% { opacity: 0.9; } 100% { top: 88%; opacity: 0; } }
+  .releve__legende { position: absolute; right: clamp(14px, 3%, 28px); top: 50%; transform: translateY(-50%); display: flex; gap: 8px; height: min(46%, 220px); font-size: var(--taille-donnees-petit); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  .releve__echelle { width: 6px; border-radius: 3px; background: linear-gradient(0deg, var(--degrade-donnees)); }
+  .releve__niveaux { display: flex; flex-direction: column; justify-content: space-between; }
+  .releve__niveaux span { position: relative; padding-left: 8px; line-height: 1; }
+  .releve__niveaux span::before { content: ''; position: absolute; left: -6px; top: 50%; width: 10px; height: var(--filet); background: var(--sur-sombre-pale); }
+  .releve__cdp { position: absolute; left: clamp(14px, 3%, 28px); top: max(72px, 12%); display: inline-flex; align-items: center; gap: 8px; font-size: var(--taille-donnees-petit); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  .releve__cdp i { width: 14px; height: var(--filet-fort); background: var(--signal); }
+  .releve__mention { position: absolute; left: clamp(14px, 3%, 28px); right: clamp(14px, 3%, 28px); bottom: 12px; text-align: right; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); }
+  @media (max-width: 520px) { .releve__niveaux { display: none; } .releve__cdp { display: none; } }
   .podoscope--sombre { background: var(--fond-nuit); }
   .podoscope--clair { background: transparent; }
 </style>

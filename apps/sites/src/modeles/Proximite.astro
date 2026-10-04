@@ -4,6 +4,7 @@
 import '@fontsource-variable/inter';
 import Icone from '../components/Icone.astro';
 import { site, rdvHref, adresseComplete } from '../lib/site';
+import { localisation } from '../lib/textes';
 import { iconeSoin, ICONE_SOIN_DEFAUT, mentionOrdre } from '@plateforme/core';
 
 // Données de démonstration propres à ce modèle (seront saisies dans le back-office).
@@ -63,7 +64,7 @@ const titreDoc = `${titre} – ${noms}, pédicures-podologues · Modèle Proximi
           <span class="marque__icone"><Icone nom="healthicons:foot-outline" /></span>
           <span>
             <strong>Cabinet de podologie</strong>
-            <small>{site.cabinet.ville} · {site.cabinet.quartier}</small>
+            <small>{localisation}</small>
           </span>
         </a>
         <nav class="liens" aria-label="Navigation principale">

@@ -8,7 +8,7 @@ import VisuelEntete from '../../components/gabarit/VisuelEntete.astro';
 import { visuelSoin } from '../../lib/visuels-soins';
 import { site } from '../../lib/site';
 import { breadcrumbSchema } from '../../lib/schema';
-import { titreCompetences, titreCabinet } from '../../lib/textes';
+import { titreCompetences, titreCabinet, localisation } from '../../lib/textes';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }];
 const total = String(site.soins.length).padStart(2, '0');
@@ -25,7 +25,7 @@ const bilan = visuelSoin('bilan-podologique');
     <Breadcrumb items={crumbs} />
     <div class="tete-page__grille">
       <div>
-        <p class="sur sur--index"><b aria-hidden="true">{total} —</b> {site.cabinet.quartier || site.cabinet.ville}</p>
+        <p class="sur sur--index"><b aria-hidden="true">{total} —</b> {localisation}</p>
         <h1>{titreCompetences}</h1>
         <p class="chapo">Chaque prise en charge commence par un échange et un examen, afin de proposer des soins adaptés.</p>
       </div>

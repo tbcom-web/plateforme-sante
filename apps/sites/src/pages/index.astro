@@ -17,16 +17,21 @@ import Carte from '../components/gabarit/Carte.astro';
 import Couverture from '../components/dessins/Couverture.astro';
 import { site, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
-import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien } from '../lib/textes';
+import { photoResponsive } from '../lib/visuels';
+import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien, lieu } from '../lib/textes';
+import { espacesFines } from '@plateforme/core';
 
 const m = site.modele;
 const metier = site.titreMetier.toLowerCase();
+// Bande « en bref » : seulement des informations utiles au patient (jamais le seul nom du métier, déjà dans le titre).
+const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
 const faits = [
-  site.praticiens.length > 1 ? `${site.praticiens.length} praticiens` : site.praticiens[0].diplome || site.titreMetier,
+  site.praticiens.length > 1 ? `${site.praticiens.length} praticiens` : site.praticiens[0].diplome,
   site.praticien.conventionnement,
   site.accesDetail.pmr ? 'Cabinet accessible PMR' : '',
   site.domicile.actif ? 'Visites à domicile' : '',
   rdvEnLigne ? `Réservation en ligne sur ${site.rdv.plateforme}` : `Rendez-vous au ${site.cabinet.telephone}`,
+  ouverts.length > 1 ? `Ouvert du ${ouverts[0]} au ${ouverts.at(-1)}` : '',
 ].filter(Boolean).slice(0, 4);
 const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 
@@ -66,7 +71,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
             <div class="entete-section apparait">
               <div>
                 <p class="sur sur--num">{titrePraticiens}</p>
-                <h2>{site.praticiens.length > 1 ? <>Une équipe <span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', `de ${site.praticiens.length} praticiens.`)}</span></> : <>Votre {metier} <span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', `à ${site.cabinet.ville}.`)}</span></>}</h2>
+                <h2>{site.praticiens.length > 1 ? <>Une équipe{' '}<span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', `de ${site.praticiens.length} praticiens.`)}</span></> : <>Votre {metier}{' '}<span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', `à ${site.cabinet.ville}.`)}</span></>}</h2>
               </div>
             </div>
             <Praticiens />
@@ -98,11 +103,11 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
                 <a class="article apparait" href={`/actualites/${a.slug}`}>
                   <span class="article__visuel">
                     {a.image
-                      ? <img src={a.image} alt={a.imageAlt ?? ''} width="1600" height="900" loading="lazy" />
+                      ? <img src={a.image} {...photoResponsive(a.image, '(min-width: 1000px) 40vw, 100vw')} alt={a.imageAlt ?? ''} width="1600" height="900" loading="lazy" />
                       : <Couverture theme={a.theme} titre={a.titre} numero={i + 1} />}
                   </span>
                   <span class="article__meta mono">{a.theme} · <time datetime={a.date}>{dateFr(a.date)}</time></span>
-                  <span class="article__titre">{a.titre}</span>
+                  <span class="article__titre">{espacesFines(a.titre)}</span>
                   <span class="article__resume">{a.resume}</span>
                   <span class="article__lire">Lire l’article →</span>
                 </a>
@@ -121,7 +126,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
                 <h2>Venir <span class="pale" {...champ('acces.deco')}>{texte('acces.deco', 'au cabinet.')}</span></h2>
               </div>
             </div>
-            <div class="acces"><Carte /><Infos /></div>
+            <div class="acces"><Carte /><Infos sansAdresse /></div>
           </div>
         </section>
       )}
@@ -152,13 +157,13 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
   .articles { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
   .article { display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 10px; text-decoration: none; color: var(--encre); }
   .article:hover { color: var(--encre); }
-  .article__visuel { display: block; aspect-ratio: 16 / 9; border-radius: var(--rayon); overflow: hidden; margin-bottom: 8px; box-shadow: var(--ombre); transition: transform var(--duree-moyen) var(--courbe-sortie), box-shadow var(--duree-moyen); }
+  .article__visuel { display: block; aspect-ratio: 16 / 9; border-radius: var(--rayon); overflow: hidden; margin-bottom: 8px; background: var(--doux); box-shadow: var(--ombre); transition: transform var(--duree-moyen) var(--courbe-sortie), box-shadow var(--duree-moyen); }
   .article__visuel img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--duree-moyen) var(--courbe-sortie); }
   .article__visuel :global(.couverture) { height: 100%; }
   .article:hover .article__visuel { transform: translateY(-4px); box-shadow: var(--ombre-profonde); }
   .article:hover .article__visuel img { transform: scale(1.04); }
-  .article__meta { padding-top: 12px; border-top: var(--filet-fort) solid var(--encre); color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
-  .article__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(1.3rem, 2vw, 1.6rem); letter-spacing: -0.03em; line-height: 1.12; }
+  .article__meta { padding-top: 12px; border-top: var(--filet-fort) solid var(--encre); color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--taille-donnees-petit); }
+  .article__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(1.3rem, 2vw, 1.6rem); letter-spacing: -0.03em; line-height: 1.12; text-wrap: balance; }
   .article__resume { color: var(--encre-douce); font-size: 0.95rem; }
   .article__lire { font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
   @media (min-width: 1000px) {
@@ -171,10 +176,11 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
   }
 
   .acces { display: grid; gap: 28px; }
-  @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } }
+  /* Carte collante à côté des informations (pas de vide sous la carte quand la colonne de droite est longue) */
+  @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } .acces > :global(.carte) { position: sticky; top: 100px; } }
 
   .faq { display: grid; gap: 32px; }
   .faq__contact { display: grid; gap: 6px; margin: 28px 0 0; padding-top: 16px; border-top: var(--filet) solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; max-width: 30ch; }
-  .faq__contact .mono { color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
+  .faq__contact .mono { color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--taille-donnees-petit); }
   @media (min-width: 960px) { .faq { grid-template-columns: 0.8fr 1.2fr; align-items: start; } .faq__entete { position: sticky; top: 110px; } }
 </style>

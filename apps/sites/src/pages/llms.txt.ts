@@ -1,17 +1,18 @@
 // Résumé du cabinet lisible par les assistants IA (convention llms.txt).
 import type { APIRoute } from 'astro';
 import { site, absUrl, nomPraticien, adresseComplete } from '../lib/site';
+import { lieuExercice, rdvEnLigne } from '../lib/textes';
 
 export const GET: APIRoute = () => {
   const lignes = [
     `# ${site.cabinet.nom}`,
     '',
-    `> ${nomPraticien}, ${site.praticien.titre.toLowerCase()}, ${site.cabinet.quartier}. ${site.accroche.texte}`,
+    `> ${nomPraticien}, ${site.praticien.titre.toLowerCase()}, ${lieuExercice}. ${site.accroche.texte}`,
     '',
     '## Informations clés',
     `- Adresse : ${adresseComplete}`,
     `- Téléphone : ${site.cabinet.telephone}`,
-    `- Prise de rendez-vous : ${site.rdv.url} (${site.rdv.plateforme})`,
+    rdvEnLigne ? `- Prise de rendez-vous : ${site.rdv.url} (${site.rdv.plateforme})` : `- Prise de rendez-vous : par téléphone au ${site.cabinet.telephone}`,
     `- ${site.praticien.conventionnement}`,
     `- RPPS : ${site.praticien.rpps}`,
     `- Accessibilité PMR : ${site.cabinet.pmr ? 'oui' : 'non'}`,

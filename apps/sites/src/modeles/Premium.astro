@@ -3,6 +3,7 @@
 import '@fontsource-variable/inter';
 import CartePied from '../components/CartePied.astro';
 import { site, nomPraticien, rdvHref, telLien, adresseComplete } from '../lib/site';
+import { localisation } from '../lib/textes';
 
 const photos: Record<string, string> = {
   'bilan-podologique': '/photos/analyse-plateforme.webp',
@@ -66,7 +67,7 @@ const titreDoc = `${site.profession.libelle} à ${site.cabinet.ville} – ${nomP
     <main id="contenu">
       <section class="hero">
         <div class="hero__texte">
-          <p class="etiquette">Cabinet de podologie — {site.cabinet.quartier}</p>
+          <p class="etiquette">Cabinet de podologie — {localisation}</p>
           <h1>Le soin du pied,<br /><span class="clair">avec précision.</span></h1>
           <p class="hero__chapo">{site.accroche.texte}</p>
           <div class="hero__actions">

@@ -4,7 +4,7 @@
 // À poser dans une boîte en position relative et overflow hidden (fournie par le parent). Décorative.
 import Dessin from '../dessins/Dessin.astro';
 import { visuelSoin } from '../../lib/visuels-soins';
-import { modeVisuel } from '../../lib/visuels';
+import { modeVisuel, photoResponsive } from '../../lib/visuels';
 import { rendreCase } from '@plateforme/core';
 
 interface Props { slug: string; survol?: boolean }
@@ -16,7 +16,7 @@ const dessin = rendu.type !== 'photo';
 const photo = rendu.type === 'photo';
 ---
 {dessin && <Dessin nom={v.dessin} />}
-{photo && <img class:list={['vs__photo', { 'vs__photo--survol': dessin }]} src={v.photo} alt="" width="320" height="240" loading="lazy" decoding="async" style={`object-position:${v.cadrage}`} />}
+{photo && <img class:list={['vs__photo', { 'vs__photo--survol': dessin }]} src={v.photo} {...photoResponsive(v.photo, '148px')} alt="" width="320" height="240" loading="lazy" decoding="async" style={`object-position:${v.cadrage}`} />}
 
 <style>
   .vs__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }

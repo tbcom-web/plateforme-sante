@@ -1,12 +1,13 @@
 ---
-// Compétences en grille « bento » : une tuile vedette sur fond plan d'architecte, puis des tuiles illustrées
-// selon le style visuel (source unique lib/visuels-soins.ts) : dessin technique (illustrations), photo du soin
-// (photos), ou photo avec la planche du soin en encart (mixte).
+// Compétences en grille « bento » : même gabarit que la liste des compétences (Expertises) et les « autres
+// compétences » d'une fiche — filet en tête, numéro en mono, visuel sur surface grille (dessin technique ; photo
+// du soin seulement en style « Photos », source unique lib/visuels-soins.ts), titre et résumé. Pas de carte
+// blanche : la première tuile est simplement plus grande.
 import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
 import { visuelSoin } from '../../lib/visuels-soins';
-import { modeVisuel } from '../../lib/visuels';
+import { modeVisuel, photoResponsive } from '../../lib/visuels';
 import { rendreCase } from '@plateforme/core';
 
 const n = site.soins.length;
@@ -30,14 +31,14 @@ const visuels = site.soins.map((s) => {
 ---
 <ul class="bento">
   {site.soins.map((s, i) => (
-    <li class:list={['tuile', `tuile--${format(i)}`, { 'tuile--plan': i === 0 && n > 2 }, 'apparait']} style={`--i:${i}`}>
-      <a href={`/soins/${s.slug}`} class:list={{ 'surface-plan': i === 0 && n > 2 }}>
-        <span class:list={['tuile__visuel', { 'surface-grille': !visuels[i].avecPhoto && !(i === 0 && n > 2), 'tuile__visuel--photo': visuels[i].avecPhoto }]} aria-hidden="true">
-          {visuels[i].avecPhoto && <img class="tuile__photo" src={visuels[i].photo} alt="" width="800" height="500" loading="lazy" decoding="async" style={`object-position:${visuels[i].cadrage}`} />}
+    <li class:list={['tuile', `tuile--${format(i)}`, 'apparait']} style={`--i:${i}`}>
+      <a href={`/soins/${s.slug}`}>
+        <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>
+        <span class:list={['tuile__visuel', { 'surface-grille': !visuels[i].avecPhoto, 'tuile__visuel--photo': visuels[i].avecPhoto }]} aria-hidden="true">
+          {visuels[i].avecPhoto && <img class="tuile__photo" src={visuels[i].photo} {...photoResponsive(visuels[i].photo, '(min-width: 1000px) 30vw, (min-width: 640px) 50vw, 100vw')} alt="" width="800" height="500" loading="lazy" decoding="async" style={`object-position:${visuels[i].cadrage}`} />}
           {!visuels[i].avecPhoto && <Dessin nom={visuels[i].dessin} />}
         </span>
         <span class="tuile__corps">
-          <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>
           <span class="tuile__titre">{s.titreCourt}</span>
           <span class="tuile__texte" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
           <span class="tuile__lien">En savoir plus<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" /></svg></span>
@@ -48,66 +49,50 @@ const visuels = site.soins.map((s) => {
 </ul>
 
 <style>
-  .bento { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  .bento { list-style: none; padding: 0; margin: 0; display: grid; gap: 36px 20px; grid-template-columns: minmax(0, 1fr); }
   .tuile.apparait.pret { transition-delay: calc(var(--i) * var(--duree-decalage)); }
-  a { position: relative; display: grid; height: 100%; grid-template-rows: auto 1fr; text-decoration: none; color: var(--encre); border-radius: var(--rayon-grand); background-color: var(--fond); box-shadow: inset 0 0 0 var(--filet) var(--ligne); overflow: hidden; transition: box-shadow var(--duree-court), transform var(--duree-court) var(--courbe-sortie); }
-  a:hover { color: var(--encre); transform: translateY(-3px); box-shadow: inset 0 0 0 var(--filet) var(--accent-ligne), var(--ombre-profonde); }
+  /* Une tuile : filet fort en tête (comme les listes), numéro mono, visuel sur grille, texte sans cadre */
+  a { position: relative; display: grid; height: 100%; grid-template-rows: auto auto 1fr; gap: 12px; padding-top: 12px; border-top: var(--filet-fort) solid var(--encre); text-decoration: none; color: var(--encre); }
+  a:hover { color: var(--encre); }
+  .tuile__num { color: var(--encre-pale); }
 
-  .tuile__visuel { position: relative; display: grid; place-items: center; padding: 18px 22px; aspect-ratio: 16 / 10; border-bottom: var(--filet) solid var(--ligne); }
+  .tuile__visuel { position: relative; display: grid; place-items: center; padding: 18px 22px; aspect-ratio: 16 / 10; border-radius: var(--rayon); overflow: hidden; box-shadow: inset 0 0 0 var(--filet) var(--ligne); transition: box-shadow var(--duree-court); }
+  a:hover .tuile__visuel { box-shadow: inset 0 0 0 var(--filet) var(--accent-ligne); }
   .tuile__visuel :global(.dessin) { width: min(100%, 360px); transition: transform var(--duree-moyen) var(--courbe-sortie); }
   .tuile:hover .tuile__visuel :global(.dessin) { transform: scale(1.035); }
-  /* Photo du soin (modes photos et mixte) : pleine tuile, traitement de teinte du modèle (Gabarit) */
-  .tuile__visuel--photo { overflow: hidden; color: var(--blanc); }
+  /* Photo du soin (style « Photos ») : pleine tuile, fond d'attente doux, traitement de teinte du modèle (Gabarit) */
+  .tuile__visuel--photo { background: var(--doux); }
   .tuile__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform var(--duree-long) var(--courbe-sortie); }
   .tuile:hover .tuile__photo { transform: scale(1.04); }
-  /* Mixte : planche du soin en encart sur l'angle de la photo */
-  .tuile__encart { position: absolute; right: 12px; bottom: 12px; width: min(40%, 170px); padding: 6px 8px; border-radius: calc(var(--rayon) * 0.6); background-color: var(--fond); box-shadow: var(--ombre); color: var(--encre); }
-  .tuile__visuel .tuile__encart :global(.dessin) { width: 100%; }
-  .tuile--vedette .tuile__encart { width: min(36%, 220px); }
-  /* Repères de cadrage aux quatre coins, comme sur une planche technique */
-  .tuile__visuel::after {
-    content: ''; position: absolute; inset: 12px; pointer-events: none; opacity: 0.4;
-    background:
-      linear-gradient(currentColor, currentColor) 0 0 / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 0 0 / 1px 10px no-repeat,
-      linear-gradient(currentColor, currentColor) 100% 0 / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 100% 0 / 1px 10px no-repeat,
-      linear-gradient(currentColor, currentColor) 0 100% / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 0 100% / 1px 10px no-repeat,
-      linear-gradient(currentColor, currentColor) 100% 100% / 10px 1px no-repeat, linear-gradient(currentColor, currentColor) 100% 100% / 1px 10px no-repeat;
-  }
 
-  .tuile__corps { display: grid; align-content: start; gap: 8px; padding: 22px 24px 24px; }
-  .tuile__num { color: var(--encre-pale); }
-  .tuile__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.32rem; line-height: 1.1; letter-spacing: -0.03em; }
+  .tuile__corps { display: grid; align-content: start; gap: 8px; }
+  .tuile__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.32rem; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; }
   .tuile__texte { color: var(--encre-douce); font-size: 0.95rem; line-height: 1.55; }
-  .tuile__lien { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
+  .tuile__lien { display: inline-flex; align-items: center; gap: 8px; margin-top: 4px; font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
   .tuile__lien svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duree-court); }
   .tuile:hover .tuile__lien svg { transform: translateX(4px); }
-
-  /* Tuile vedette : fond plan d'architecte, dessin clair, grand titre */
-  a.surface-plan { background-color: var(--plan); color: var(--papier); box-shadow: var(--ombre); }
-  a.surface-plan:hover { color: var(--papier); box-shadow: var(--ombre-profonde); }
-  .tuile--plan .tuile__visuel { border-bottom-color: var(--sur-sombre-filet); color: var(--blanc); }
-  .tuile--plan .tuile__num { color: var(--signal); }
-  .tuile--plan .tuile__texte { color: var(--sur-sombre-doux); }
-  .tuile--plan .tuile__lien { color: var(--signal); }
+  /* Filet de pression qui se trace au survol, comme la liste des compétences */
+  a::after { content: ''; position: absolute; left: 0; right: 0; top: calc(var(--filet-fort) * -1); height: 2px; background: linear-gradient(90deg, var(--degrade-donnees)); transform: scaleX(0); transform-origin: left; transition: transform var(--duree-moyen) var(--courbe-sortie); }
+  a:hover::after, a:focus-visible::after { transform: scaleX(1); }
 
   @media (min-width: 640px) {
     .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .tuile--vedette, .tuile--large { grid-column: span 2; }
   }
   @media (min-width: 1000px) {
-    .bento { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .bento { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 44px 24px; }
     .tuile--vedette { grid-column: span 2; grid-row: span 2; }
-    .tuile--vedette a { grid-template-rows: 1fr auto; }
-    .tuile--vedette .tuile__visuel { aspect-ratio: auto; min-height: 340px; padding: 36px; }
+    .tuile--vedette a { grid-template-rows: auto 1fr auto; }
+    .tuile--vedette .tuile__visuel { aspect-ratio: auto; min-height: 320px; padding: 36px; }
     .tuile--vedette .tuile__visuel :global(.dessin) { width: min(100%, 470px); }
-    .tuile--vedette .tuile__corps { padding: 28px 32px 32px; }
     .tuile--vedette .tuile__titre { font-size: clamp(1.8rem, 2.6vw, 2.5rem); line-height: 1; letter-spacing: -0.04em; }
     .tuile--vedette .tuile__texte { font-size: 1.02rem; max-width: 46ch; }
     .tuile--moyen, .tuile--large { grid-column: span 2; }
-    .tuile--moyen a, .tuile--large a { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr); grid-template-rows: auto; }
+    .tuile--moyen a, .tuile--large a { grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 24px; }
+    .tuile--moyen .tuile__num, .tuile--large .tuile__num { grid-column: 1 / -1; }
     .tuile--large { grid-column: span 4; }
     .tuile--large a { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
-    .tuile--moyen .tuile__visuel, .tuile--large .tuile__visuel { aspect-ratio: auto; min-height: 220px; border-bottom: 0; border-right: var(--filet) solid var(--ligne); }
+    .tuile--moyen .tuile__visuel, .tuile--large .tuile__visuel { aspect-ratio: auto; min-height: 200px; }
     .tuile--moyen .tuile__corps, .tuile--large .tuile__corps { align-content: center; }
     .tuile--large .tuile__titre { font-size: 1.7rem; }
     .tuile--petit .tuile__titre { font-size: 1.18rem; }

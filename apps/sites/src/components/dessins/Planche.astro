@@ -37,14 +37,4 @@ const { nom, legende = '', repere = '', fond = 'grille', class: classe } = Astro
   .planche--plan .planche__dessin { color: var(--sur-sombre-doux); }
   .planche__dessin :global(.dessin) { width: min(100%, 440px); }
   .planche__dessin :global(.empreintes) { width: min(100%, 300px); }
-  /* Repères de cadrage aux quatre coins, comme sur une planche technique */
-  .planche::after {
-    content: ''; position: absolute; inset: 8px; pointer-events: none; opacity: 0.35; color: var(--encre);
-    background:
-      linear-gradient(currentColor, currentColor) 0 0 / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 0 0 / var(--filet) 10px no-repeat,
-      linear-gradient(currentColor, currentColor) 100% 0 / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 100% 0 / var(--filet) 10px no-repeat,
-      linear-gradient(currentColor, currentColor) 0 100% / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 0 100% / var(--filet) 10px no-repeat,
-      linear-gradient(currentColor, currentColor) 100% 100% / 10px var(--filet) no-repeat, linear-gradient(currentColor, currentColor) 100% 100% / var(--filet) 10px no-repeat;
-  }
-  .planche--plan::after { color: var(--blanc); }
 </style>

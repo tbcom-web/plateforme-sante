@@ -1,8 +1,13 @@
 ---
 // Informations pratiques : seules les tuiles renseignées sont affichées (jamais de tuile vide).
+// `sansAdresse` : à côté du plan d'accès, qui donne déjà l'adresse (pas de doublon).
+// `colonnes` : horaires dans la colonne de gauche, autres blocs empilés à droite (page « Le cabinet »).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { lieu, telLien, itineraire, rdvEnLigne, TYPES_LIEU } from '../../lib/textes';
+
+interface Props { sansAdresse?: boolean; colonnes?: boolean }
+const { sansAdresse = false, colonnes = false } = Astro.props;
 
 // Horaires jour par jour, en clair (jours fermés en retrait, jour courant mis en évidence par le script).
 const horaires = lieu.horaires;
@@ -16,7 +21,7 @@ const acces = [
   ...site.accesDetail.autres,
 ].filter(Boolean);
 ---
-<div class="infos">
+<div class:list={['infos', { 'infos--colonnes': colonnes }]}>
   {ouvert && (
     <div class="info info--horaires">
       <h3><Icone nom="lucide:clock" />Horaires</h3>
@@ -30,22 +35,24 @@ const acces = [
           ))}
         </tbody>
       </table>
-      <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach((l) => l.classList.add('aujourdhui'));</script>
+      <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach((l) => { l.classList.add('aujourdhui'); var e = document.createElement('span'); e.className = 'horaires__jour'; e.textContent = 'aujourd’hui'; l.querySelector('th').appendChild(e); });</script>
     </div>
   )}
   <div class="info">
     <h3><Icone nom="lucide:calendar" />Prise de rendez-vous</h3>
     {rdvEnLigne && <p>En ligne sur {site.rdv.plateforme}, 24h/24{site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.</p>}
-    {site.rdvMode !== 'en_ligne' && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
+    {(site.rdvMode !== 'en_ligne' || !rdvEnLigne) && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
   </div>
-  <div class="info">
-    <h3><Icone nom="lucide:map-pin" />Adresse</h3>
-    <p>
-      {lieu.nom ? <>{lieu.nom}<br /></> : lieu.type !== 'cabinet' && <>{TYPES_LIEU[lieu.type]}<br /></>}
-      {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}
-    </p>
-    <a href={itineraire} target="_blank" rel="noopener">Plan d’accès</a>
-  </div>
+  {!sansAdresse && (
+    <div class="info">
+      <h3><Icone nom="lucide:map-pin" />Adresse</h3>
+      <p>
+        {lieu.nom ? <>{lieu.nom}<br /></> : lieu.type !== 'cabinet' && <>{TYPES_LIEU[lieu.type]}<br /></>}
+        {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}
+      </p>
+      <a href={itineraire} target="_blank" rel="noopener">Itinéraire</a>
+    </div>
+  )}
   {acces.length > 0 && (
     <div class="info">
       <h3><Icone nom="healthicons:wheelchair-outline" />Accès</h3>
@@ -75,9 +82,15 @@ const acces = [
 
 <style>
   .infos { display: grid; gap: 0 28px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); counter-reset: info; }
+  /* Deux colonnes : horaires à gauche sur toute la hauteur, autres blocs empilés à droite */
+  @media (min-width: 760px) {
+    .infos--colonnes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 clamp(28px, 4vw, 56px); align-items: start; }
+    .infos--colonnes > .info--horaires { grid-column: 1; grid-row: 1 / span 8; }
+    .infos--colonnes > .info:not(.info--horaires) { grid-column: 2; }
+  }
   .info { padding: 18px 0 22px; border-top: var(--filet-fort) solid var(--encre); }
   h3 { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; margin-bottom: 12px; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; }
-  h3::after { counter-increment: info; content: counter(info, decimal-leading-zero); margin-left: auto; font-family: var(--police-mono); font-size: 0.7rem; font-weight: 450; color: var(--encre-pale); }
+  h3::after { counter-increment: info; content: counter(info, decimal-leading-zero); margin-left: auto; font-family: var(--police-mono); font-size: var(--taille-donnees-petit); font-weight: 450; color: var(--encre-pale); }
   h3 :global(.icone) { color: var(--accent-vif); font-size: 1.15rem; }
   p { margin: 0 0 8px; color: var(--encre-douce); font-size: 0.95rem; }
   ul { margin: 0; padding-left: 1.1em; color: var(--encre-douce); font-size: 0.95rem; }
@@ -88,7 +101,10 @@ const acces = [
   .horaires td { color: var(--encre-douce); font-variant-numeric: tabular-nums; }
   .horaires td span { display: block; white-space: nowrap; }
   .horaires .ferme th, .horaires .ferme td { color: var(--encre-pale); font-weight: 400; }
-  .horaires .aujourdhui th, .horaires .aujourdhui td { color: var(--accent-vif); font-weight: 650; }
+  /* Jour courant : fond doux et libellé « aujourd'hui » (pas de couleur d'accent, qui ressemblerait à un lien) */
+  .horaires :global(.aujourdhui) :is(th, td) { background: var(--doux); color: var(--encre); }
+  .horaires :global(.aujourdhui) th { padding-left: 10px; }
+  .horaires :global(.horaires__jour) { display: block; font-family: var(--police-mono); font-size: var(--taille-donnees-petit); font-weight: 450; letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--encre-douce); }
   .pastilles { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .pastilles li { padding: 5px 12px; border-radius: 999px; box-shadow: inset 0 0 0 var(--filet) var(--ligne); font-size: 0.85rem; color: var(--encre); }
   .communes { margin-top: 20px; padding-top: 16px; border-top: var(--filet) solid var(--ligne); font-size: 0.9rem; }

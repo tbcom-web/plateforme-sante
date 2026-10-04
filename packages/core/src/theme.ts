@@ -29,12 +29,18 @@ const mix = (a: Rgb, b: Rgb, t: number): Rgb => [0, 1, 2].map((i) => a[i] + (b[i
 const WHITE: Rgb = [255, 255, 255];
 const BLACK: Rgb = [0, 0, 0];
 
-export function buildTheme(couleur: string) {
+/**
+ * `fonds` : fonds clairs du modèle (fond de page, sections douces) sur lesquels l'accent sert aussi de
+ * couleur de texte (sur-titres, liens) ; l'accent est assombri jusqu'à 4,6:1 sur chacun d'eux et sur le blanc.
+ */
+export function buildTheme(couleur: string, fonds: string[] = []) {
   const brand = hexToRgb(couleur);
+  const surfaces = [WHITE, ...fonds.filter((f) => /^#[0-9a-f]{3,6}$/i.test(f)).map(hexToRgb)];
+  const minimum = (c: Rgb) => Math.min(...surfaces.map((s) => contrast(c, s)));
 
-  // Version foncée lisible sur fond blanc (liens, boutons avec texte blanc).
+  // Version foncée lisible sur les fonds clairs (liens, sur-titres, boutons avec texte blanc).
   let ink = brand;
-  for (let i = 0; i < 30 && contrast(ink, WHITE) < 4.6; i++) ink = mix(ink, BLACK, 0.06);
+  for (let i = 0; i < 30 && minimum(ink) < 4.6; i++) ink = mix(ink, BLACK, 0.06);
 
   return {
     '--brand': toHex(brand),

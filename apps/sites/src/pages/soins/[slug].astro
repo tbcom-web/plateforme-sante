@@ -10,7 +10,8 @@ import VignetteSoin from '../../components/gabarit/VignetteSoin.astro';
 import { site, md } from '../../lib/site';
 import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
 import { visuelSoin, photoPraticienSoin } from '../../lib/visuels-soins';
-import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences } from '../../lib/textes';
+import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences, viaPlateforme } from '../../lib/textes';
+import { espacesFines } from '@plateforme/core';
 import type { Soin } from '@plateforme/core';
 
 export function getStaticPaths() {
@@ -42,10 +43,10 @@ const visuel = visuelSoin(soin.slug);
       <div class="tete-page__grille tete-page__grille--soin">
         <div>
           <p class="sur sur--index"><b aria-hidden="true">{deux(rang)} / {deux(total)} —</b> {titreCompetences}</p>
-          <h1>{soin.titre}</h1>
+          <h1>{espacesFines(soin.titre)}</h1>
           <p class="chapo">{soin.resume}</p>
         </div>
-        <VisuelEntete photo={visuel.photo} cadrage={visuel.cadrage} dessin={visuel.dessin} animation={visuel.animation} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} photoBonne={visuel.photoBonne} photoPraticien={photoPraticienSoin(soin.slug)} />
+        <VisuelEntete photo={visuel.photo} cadrage={visuel.cadrage} dessin={visuel.dessin} animation={visuel.animation} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} photoBonne={visuel.photoBonne} photoPraticien={photoPraticienSoin(soin.slug)} altPraticien={`${soin.titreCourt} au cabinet de ${site.cabinet.ville}`} />
       </div>
     </header>
 
@@ -55,7 +56,7 @@ const visuel = visuelSoin(soin.slug);
         <div class="encart">
           <p class="encart__titre mono">Rendez-vous</p>
           <p class="encart__lieu">{lieu.nom || site.cabinet.nom}<br />{lieu.adresse}, {lieu.codePostal} {lieu.ville}</p>
-          <a class="bouton bouton--plein" href={site.praticiens.length > 1 && rdvEnLigne ? '/#praticiens' : lienRdv(`soin-${soin.slug}`)}>{libelleRdv}</a>
+          <a class="bouton bouton--plein" href={site.praticiens.length > 1 && rdvEnLigne ? '/#praticiens' : lienRdv(`soin-${soin.slug}`)}>{libelleRdv}{!(site.praticiens.length > 1) && viaPlateforme && <span class="via">{viaPlateforme}</span>}</a>
           {rdvEnLigne && <a class="bouton bouton--ligne" href={telLien}>{site.cabinet.telephone}</a>}
         </div>
       </aside>
@@ -113,7 +114,7 @@ const visuel = visuelSoin(soin.slug);
   .autres li { border-bottom: var(--filet) solid var(--ligne); }
   .autres a { display: grid; grid-template-columns: 2.2em 84px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 0; text-decoration: none; color: var(--encre); }
   .autres__num { color: var(--encre-pale); }
-  .autres__dessin { position: relative; overflow: hidden; display: grid; place-items: center; width: 84px; aspect-ratio: 4 / 3; padding: 4px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
+  .autres__dessin { position: relative; overflow: hidden; display: grid; place-items: center; width: 84px; aspect-ratio: 4 / 3; padding: 4px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 var(--filet) var(--ligne); background-color: var(--doux); }
   .autres__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.1rem; letter-spacing: -0.02em; line-height: 1.15; }
   .autres__fleche { color: var(--accent-vif); transition: transform var(--duree-court) var(--courbe-sortie); }
   .autres a:hover .autres__fleche { transform: translateX(4px); }

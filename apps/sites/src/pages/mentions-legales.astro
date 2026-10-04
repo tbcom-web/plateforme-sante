@@ -1,10 +1,18 @@
 ---
 import Gabarit from '../layouts/Gabarit.astro';
 import { site } from '../lib/site';
-import { noms, lieu, titreCabinet } from '../lib/textes';
+import { noms, lieu, titreCabinet, rdvEnLigne } from '../lib/textes';
 
 const mesure = site.tracking.ga4 || site.tracking.clarity;
 const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH: 'Société Suisse des Podologues (SSP)' }[site.pays];
+// Profession réglementée : titre professionnel, État où il a été obtenu et règles professionnelles applicables.
+const paysTitre = { FR: 'France', BE: 'Belgique', CH: 'Suisse' }[site.pays];
+const diplomeEtat = { FR: 'Diplôme d’État de pédicure-podologue', BE: 'Titre professionnel de podologue', CH: 'Diplôme de podologue ES' }[site.pays];
+const regles = {
+  FR: 'Code de déontologie des pédicures-podologues : Code de la santé publique, articles R.4322-31 et suivants (consultables sur legifrance.gouv.fr).',
+  BE: 'Loi coordonnée du 10 mai 2015 relative à l’exercice des professions des soins de santé.',
+  CH: 'Législation sanitaire du canton d’exercice et règles professionnelles de la Société Suisse des Podologues.',
+}[site.pays];
 ---
 <Gabarit title={`Mentions légales – ${titreCabinet}`} description={`Mentions légales du site de ${noms}.`} path="/mentions-legales">
   <section class="cadre tete-page">
@@ -28,14 +36,16 @@ const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH:
       </p>
       {site.praticiens.map((p) => (
         <p>
-          <strong>{p.prenom} {p.nom}</strong>, {p.titre.toLowerCase()}<br />
+          <strong>{p.prenom} {p.nom}</strong><br />
+          Titre professionnel : {p.titre.toLowerCase()}<br />
+          Diplôme : {p.diplome || diplomeEtat} ({paysTitre})<br />
           {p.identifiants.map((id) => <>{id}<br /></>)}
-          {p.diplome}
         </p>
       ))}
-      <p>Directeur·rice de la publication : {site.praticiens[0].prenom} {site.praticiens[0].nom}.</p>
+      <p>Directeur de la publication : {site.praticiens[0].prenom} {site.praticiens[0].nom}.</p>
       {site.praticien.conventionnement && <p>{site.praticien.conventionnement}.</p>}
       <p>Instance professionnelle : {ordre}.</p>
+      <p>Règles professionnelles : {regles}</p>
 
       <h2>Hébergement</h2>
       <p>{site.mentions.hebergeur}</p>
@@ -49,7 +59,7 @@ const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH:
       <h2>Données personnelles</h2>
       <p>
         Ce site ne collecte aucune donnée de santé.
-        {site.rdvMode !== 'telephone' && ` La prise de rendez-vous se fait sur ${site.rdv.plateforme}, qui dispose de sa propre politique de confidentialité.`}
+        {rdvEnLigne && ` La prise de rendez-vous se fait sur ${site.rdv.plateforme}, qui dispose de sa propre politique de confidentialité.`}
         Les clics vers la prise de rendez-vous sont comptés de façon anonyme, sans cookie ni adresse IP.
       </p>
       {mesure && (

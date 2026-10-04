@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import type { SiteConfig } from '@plateforme/core';
+import { espacesFines, type SiteConfig } from '@plateforme/core';
 import { chargerDepuisSupabase } from './supabase';
 
 const sites = import.meta.glob<SiteConfig>('../data/sites/*.ts', { eager: true, import: 'default' });
@@ -18,7 +18,9 @@ export const metierVille = `${site.profession.libelle} à ${site.cabinet.ville}`
 export const adresseComplete = `${site.cabinet.adresse}, ${site.cabinet.codePostal} ${site.cabinet.ville}`;
 export const telLien = `tel:${site.cabinet.telephone.replace(/[^\d+]/g, '').replace(/^0/, '+33')}`;
 
-export const md = (source: string) => marked.parse(source, { async: false }) as string;
+/** Markdown → HTML ; espace fine insécable avant « : ; ? ! » dans les intertitres (typographie française). */
+export const md = (source: string) =>
+  (marked.parse(source, { async: false }) as string).replace(/<(h[2-4])([^>]*)>([\s\S]*?)<\/\1>/g, (_, h, attrs, t) => `<${h}${attrs}>${espacesFines(t)}</${h}>`);
 
 export const dateFr = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });

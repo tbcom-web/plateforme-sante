@@ -6,24 +6,26 @@ import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Planche from '../dessins/Planche.astro';
-import { photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
+import { photoResponsive, photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
 import { packVisuel } from '@plateforme/core';
-import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
+import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne, localisation, viaPlateforme } from '../../lib/textes';
 
 const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
 const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}` : 'Sur rendez-vous';
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 const choix = visuelAccueil([photoAccueilAffichee]);
+// Texte alternatif seulement pour la photo du praticien (son cabinet) ; une photo d'illustration reste décorative.
+const altAccueil = site.photos.accueil && photoAccueilAffichee === site.photos.accueil ? `Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}` : '';
 ---
 <section class="cadre accueil">
   <div>
-    <p class="sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
+    <p class="sur">{titreMetierAffiche} · {localisation}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
     <p class="chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
     <div class="actions">
       <a class="bouton bouton--plein" href={rdvAccueil}>
-        {libelleRdv}
+        {libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}
         <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
       </a>
       {rdvEnLigne && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
@@ -31,7 +33,7 @@ const choix = visuelAccueil([photoAccueilAffichee]);
   </div>
   <figure class="visuel">
     {choix === 'animation' && <div class="visuel__anim" style={`background:${fondAnime}`} aria-hidden="true"><AnimationAccueil /></div>}
-    {choix === 'photo' && <img src={photoAccueilAffichee} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" {...zonePhoto('photos.accueil')} />}
+    {choix === 'photo' && <img src={photoAccueilAffichee} {...photoResponsive(photoAccueilAffichee, '(min-width: 960px) 46vw, calc(100vw - 40px)')} alt={altAccueil} width="1200" height="1500" fetchpriority="high" {...zonePhoto('photos.accueil')} />}
     {choix === 'illustration' && <div class="visuel__planche" {...zonePhoto('photos.accueil')}><Planche nom={dessinSpecialite} fond="plan" legende={packVisuel(site.visuels.specialite).label} /></div>}
     <figcaption class="flottant flottant--haut">
       <span class="pastille" aria-hidden="true"></span>
@@ -62,7 +64,7 @@ const choix = visuelAccueil([photoAccueilAffichee]);
   .flottant--bas { bottom: 18px; left: 18px; color: var(--encre-douce); }
   .flottant--bas :global(.icone) { color: var(--accent-vif); font-size: 1.3rem; }
   .flottant strong { color: var(--encre); }
-  @media (min-width: 960px) { .flottant--bas { left: -28px; bottom: 44px; } }
+  @media (min-width: 960px) { .flottant--bas { bottom: 44px; } }
   .pastille { width: 8px; height: 8px; border-radius: 50%; background: var(--disponible); box-shadow: 0 0 0 0 color-mix(in srgb, var(--disponible) 50%, transparent); animation: pouls var(--cycle-pouls) infinite; }
   @keyframes pouls { 70% { box-shadow: 0 0 0 9px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 </style>

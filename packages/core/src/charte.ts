@@ -28,7 +28,8 @@ export const NEUTRES = {
   /** Encre du texte et des dessins sur fond clair (vert-de-gris très foncé) */
   encre: '#102224',
   encreDouce: '#4d5d5e',
-  encrePale: '#8a9898',
+  /** Texte secondaire (jours fermés, numéros, fil d'Ariane) : contraste AA (≥ 4,5:1) sur blanc et sur les fonds doux */
+  encrePale: '#5a6a6b',
   /** Filets et bordures sur fond clair */
   ligne: '#e3e9e8',
   blanc: '#ffffff',
@@ -129,8 +130,9 @@ export const TYPO = {
     chapo: '1.12rem',
     texte: '1.0625rem',
     note: '0.86rem',
-    donnees: '0.74rem',
-    donneesPetit: '0.66rem',
+    /** Lectures mono (sur-titres, numéros, légendes) : 12,8 px, jamais moins de 12 px pour rester lisibles */
+    donnees: '0.8rem',
+    donneesPetit: '0.75rem',
   },
   /** Taille des annotations mono dans les dessins SVG (unités du dessin 240 × 180) */
   donneesDessin: 7.5,

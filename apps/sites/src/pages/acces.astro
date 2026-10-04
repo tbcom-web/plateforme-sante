@@ -28,7 +28,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path:
     </div>
   </section>
   <section class="section section--serree">
-    <div class="cadre acces"><Carte /><Infos /></div>
+    <div class="cadre acces"><Carte /><Infos sansAdresse /></div>
   </section>
 </Gabarit>
 
@@ -36,6 +36,5 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path:
   .section--serree { padding-top: 0; }
   .tete-page__grille--simple .chapo { margin: 0; max-width: 40ch; }
   .acces { display: grid; gap: 28px; }
-  .acces :global(.carte) { min-height: 460px; }
-  @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } }
+  @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } .acces > :global(.carte) { position: sticky; top: 100px; } .acces :global(.carte__plan) { min-height: 460px; } }
 </style>

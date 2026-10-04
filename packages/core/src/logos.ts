@@ -134,6 +134,11 @@ export type OptionsMarque = {
   compact?: boolean;
   /** Traits épais */
   epais?: boolean;
+  /**
+   * Trait principal compact (LOGO.trait.compact) en gardant le niveau de détail de la taille : en-tête et
+   * pied de page, où le trait moyen paraît trop fin autour de 42 px.
+   */
+  traitCompact?: boolean;
   /** Points en couleurs de données (par défaut : seulement sur tuile « plan ») */
   donnees?: boolean;
   /** Monogramme : initiales, police et graisse */
@@ -547,7 +552,7 @@ export function svgMarque(marque: string, couleurs: CouleursMarque, o: OptionsMa
     donnees,
     n: niveau,
     os: LOGO.opaciteSecondaire,
-    ep: compact ? LOGO.trait.compact : moyen ? LOGO.trait.moyen : o.epais ? LOGO.trait.epais : LOGO.trait.normal,
+    ep: compact || (moyen && o.traitCompact) ? LOGO.trait.compact : moyen ? LOGO.trait.moyen : o.epais ? LOGO.trait.epais : LOGO.trait.normal,
     epais: !!o.epais,
     initiales: o.initiales ?? '',
     police: o.police ?? POLICES.inter,

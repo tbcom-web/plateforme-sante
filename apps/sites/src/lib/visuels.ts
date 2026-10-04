@@ -1,5 +1,5 @@
 // Visuels et coordonnées : photos par défaut (sans visage, pour ne jamais faire passer une personne
-// pour le praticien), géolocalisation du cabinet pour le plan d'accès (OpenStreetMap, sans cookie).
+// pour le praticien), géolocalisation du cabinet pour le plan d'accès (lien OpenStreetMap, sans cookie).
 import { site } from './site';
 import { lieu } from './textes';
 import { jeu, visuelSoin } from './visuels-soins';
@@ -20,7 +20,8 @@ export const photoFinale = site.photos.cabinet[1] || '/photos/chaussage.webp';
 // Règles (rendreCase, packages/core/src/jeux.ts) : les photos du praticien s'affichent toujours (c'est son
 // choix, même en mode illustrations) ; sa case « animation d'accueil » décochée n'est jamais contournée ;
 // en mode photos, aucune animation.
-export const modeVisuel: ModeVisuel = site.theme.modeVisuel ?? 'mixte';
+// Par défaut : illustrations (style des nouveaux sites, draft.ts).
+export const modeVisuel: ModeVisuel = site.theme.modeVisuel ?? 'illustrations';
 export const enIllustrations = modeVisuel === 'illustrations';
 export const enPhotos = modeVisuel === 'photos';
 
@@ -62,7 +63,17 @@ async function geocoder(): Promise<{ lat: number; lng: number } | null> {
 
 export const geo = await geocoder();
 
-/** URL de la carte OpenStreetMap intégrable (marqueur sur le cabinet). */
-export const carteUrl = geo
-  ? `https://www.openstreetmap.org/export/embed.html?bbox=${geo.lng - 0.006}%2C${geo.lat - 0.0035}%2C${geo.lng + 0.006}%2C${geo.lat + 0.0035}&layer=mapnik&marker=${geo.lat}%2C${geo.lng}`
-  : '';
+/** Carte OpenStreetMap complète (ouverte à la demande, jamais intégrée au chargement de la page). */
+export const lienCarte = geo
+  ? `https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lng}#map=17/${geo.lat}/${geo.lng}`
+  : `https://www.openstreetmap.org/search?query=${encodeURIComponent(`${lieu.adresse}, ${lieu.codePostal} ${lieu.ville}`)}`;
+
+/**
+ * Variantes allégées d'une photo d'illustration (480 et 960 px, produites au build par astro.config.mjs) :
+ * attributs srcset et sizes à poser sur <img>. Photos du praticien (URL externes) : inchangées.
+ */
+export const photoResponsive = (src: string, sizes: string): { srcset?: string; sizes?: string } => {
+  if (process.env.PHOTOS_VARIANTES !== '1' || !import.meta.env.PROD || !/^\/photos\/[^/]+\.webp$/.test(src)) return {};
+  const base = src.slice(0, -'.webp'.length);
+  return { srcset: `${base}-480.webp 480w, ${base}-960.webp 960w, ${src} 1600w`, sizes };
+};

@@ -8,10 +8,11 @@ import PremiersPas from './PremiersPas.astro';
 import Semelle from './Semelle.astro';
 import type { Animation } from '@plateforme/core';
 
-interface Props { nom: Animation | null; fond?: 'sombre' | 'clair' }
-const { nom, fond = 'sombre' } = Astro.props;
+/** releve : habillage « relevé de podoscope » (accueil seulement) */
+interface Props { nom: Animation | null; fond?: 'sombre' | 'clair'; releve?: boolean }
+const { nom, fond = 'sombre', releve = false } = Astro.props;
 ---
-{nom === 'podoscope' && <Podoscope fond={fond} />}
+{nom === 'podoscope' && <Podoscope fond={fond} releve={releve} />}
 {nom === 'coureur' && <Coureur fond={fond} />}
 {nom === 'trajectoire' && <Trajectoire fond={fond} />}
 {nom === 'premiers-pas' && <PremiersPas fond={fond} />}

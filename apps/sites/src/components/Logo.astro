@@ -42,6 +42,8 @@ const svg = importee
   rayon: t.rayon,
   epais: t.epais,
   taille,
+  // En-tête et pied de page (≤ 56 px) : trait compact de la charte, le trait moyen y paraît trop fin.
+  traitCompact: true,
   initiales: initiales(praticiens.length > 1 ? site.cabinet.nom : nom),
   police: t.police,
   graisse: t.graisse,

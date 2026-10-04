@@ -51,6 +51,7 @@ Compatibilité : une couleur libre (`theme.couleur`) reste acceptée et utilisé
 - **Grille** (`.surface-grille`) : quadrillage fin de 16 px derrière les dessins techniques.
 - **Nuit** (`--fond-nuit`, `--fond-anime`) : fond des animations. Les voiles sur photo s'écrivent `rgb(var(--nuit-rgb) / x)`.
 - Sur fond sombre, le texte utilise `--sur-sombre`, `-doux` (0,8), `-pale` (0,55), `-filet` (0,22) et `-verre` (0,14).
+- Texte secondaire sur fond clair : `--encre-pale` (`#5a6a6b`, ≥ 4,5:1 sur blanc et sur les fonds doux des modèles). L'accent sert aussi de couleur de texte : `variablesTheme` l'assombrit jusqu'à 4,6:1 sur le fond et le fond doux du modèle.
 
 ## Grammaire des dessins
 
@@ -70,7 +71,7 @@ Compatibilité : une couleur libre (`theme.couleur`) reste acceptée et utilisé
 | Texte | `--police-texte` (Inter ou Manrope) | 1,0625 rem, interligne 1,65 |
 | Données | `--police-mono` (JetBrains Mono), identique sur tous les modèles | sur-titres numérotés « 01 — », lectures, cotes, légendes, fil d'Ariane, numéros |
 
-L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`, `-note`, `-donnees` (0,74 rem) et `-donnees-petit` (0,66 rem). En capitales, les données prennent un interlettrage de `--interlettrage-donnees` (0,08 em).
+L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`, `-note`, `-donnees` (0,8 rem, soit 12,8 px) et `-donnees-petit` (0,75 rem, 12 px ; aucun texte d'interface en dessous de 12 px). En capitales, les données prennent un interlettrage de `--interlettrage-donnees` (0,08 em).
 
 ## Logo
 
@@ -101,6 +102,7 @@ Le logo combine trois choix, sur le même principe de couches (`packages/core/sr
 - **Cycles** : `--cycle-pouls` 2,4 s (pulsation, onde, déroulé du pas), `-pas` 3,2 s (trajet du centre de pression), `-releve` 5,6 s (scan, courbes de niveau, empreintes), `-diapo` 7 s, `-foulee` 0,72 s (cadence d'environ 167 pas/min).
 - **Courbes** : `--courbe-sortie` pour les apparitions et survols, `-entree-sortie` pour les balayages, `-trace` pour le tracé d'un trait, `-rebond` pour un point qui s'allume.
 - Les animations sont mises en pause hors écran (`.anime-visible`, IntersectionObserver), avec une image fixe si `prefers-reduced-motion` est actif.
+- Accueil « relevé de podoscope » (`Podoscope` avec `releve`) : trame des deux empreintes, ligne de scan (`--cycle-releve`), légende graduée de la pression, tracé du centre de pression au `--signal` et mention illustrative ; rien ne bouge hors écran ni avec `prefers-reduced-motion`.
 
 ## Ce qu'on s'interdit
 
@@ -110,6 +112,7 @@ Le logo combine trois choix, sur le même principe de couches (`packages/core/sr
 - Tout motif de **cible, réticule, mire ou viseur** (cercle + croix, axes croisés avec cercle central) : il évoque une arme, pas un examen. Rejeté par le client (« on dirait un sniper »).
 - Les slogans, superlatifs, promesses de résultat et phrases d'ambiance (« un cabinet calme et lumineux, pensé pour votre confort », « à votre écoute ») : les titres disent un fait. Une donnée chiffrée présentée comme une mesure réelle.
 - Les infos pratiques « mises en scène » (frise d'horaires, dataviz décorative) : horaires, adresse et téléphone restent en tableau ou en liste simple.
+- Les repères de cadrage en coins sur une carte ou un visuel (ils évoquent un viseur) ; le plan d'accès est un plan schématique sur fond plan, sans carte tierce chargée avec la page.
 - Les polices non auto-hébergées et les librairies d'animation lourdes.
 
 ## Ajouter un nouveau visuel

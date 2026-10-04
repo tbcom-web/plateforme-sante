@@ -1,5 +1,6 @@
 // Phrases du site accordées à la voix choisie (je / nous / 3e personne) et au nombre de praticiens.
 import { site } from './site';
+import { lieuEnClair, lieuCourt, lienRdvPrecis } from '@plateforme/core';
 
 const enListe = (mots: string[]) =>
   mots.length > 1 ? `${mots.slice(0, -1).join(', ')} et ${mots.at(-1)}` : mots[0] ?? '';
@@ -18,7 +19,11 @@ export const titreMetierAffiche = pluriel ? metierAuPluriel(site.titreMetier) : 
 export const titreMetierPluriel = titreMetierAffiche.toLowerCase();
 export const titreCabinet = `Cabinet de ${site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} à ${site.cabinet.ville}`;
 
-const lieuPhrase = lieu.nom ? `à la ${lieu.nom}` : `à ${site.cabinet.quartier || site.cabinet.ville}`;
+/** Lieu d'exercice en clair : le quartier complète la ville, il ne la remplace jamais (« dans le quartier Claret, à Toulon »). */
+export const lieuExercice = lieuEnClair(site.cabinet.quartier, site.cabinet.ville);
+/** Version courte des sur-titres et bandeaux : « Toulon, quartier Claret », sinon la ville seule. */
+export const localisation = lieuCourt(site.cabinet.quartier, site.cabinet.ville);
+const lieuPhrase = lieu.nom ? `à la ${lieu.nom}` : lieuExercice;
 const voisines = site.communes.filter((c) => c !== site.cabinet.ville && !site.cabinet.quartier.includes(c)).slice(0, 3);
 const proximite = voisines.length ? `, à proximité de ${enListe(voisines)}` : '';
 
@@ -39,7 +44,14 @@ export const telLien = `tel:${site.cabinet.telephone.replace(/[^\d+]/g, '').repl
 export const adresseLieu = `${lieu.adresse}, ${lieu.codePostal} ${lieu.ville}`;
 export const itineraire = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lieu.nom ? `${lieu.nom}, ` : ''}${adresseLieu}`)}`;
 
-export const rdvEnLigne = site.rdvMode !== 'telephone';
+/**
+ * Réservation en ligne : seulement si le lien mène à une page précise de la plateforme. Un lien vers son
+ * accueil (« https://www.doctolib.com ») ferait perdre le patient : les boutons passent alors sur « Appeler ».
+ */
+export const rdvEnLigne = site.rdvMode !== 'telephone' && lienRdvPrecis(site.rdv.url || site.praticiens.find((p) => p.rdvUrl)?.rdvUrl);
+
+/** Mention discrète de la plateforme sur les boutons qui quittent le site (« via Doctolib »). */
+export const viaPlateforme = rdvEnLigne && site.rdv.plateforme ? `via ${site.rdv.plateforme}` : '';
 
 /** Lien de prise de RDV : compteur /rdv si en ligne, sinon appel téléphonique. */
 export const lienRdv = (source: string, praticien?: number) =>

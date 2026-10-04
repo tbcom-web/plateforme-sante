@@ -58,11 +58,12 @@ Au cabinet, je prends le temps d’écouter, d’examiner et d’expliquer. Chaq
     ],
     geo: { lat: 45.7696, lng: 4.8513 },
   },
-  rdv: { url: 'https://www.doctolib.fr/', plateforme: 'Doctolib' },
+  // Lien vers une page précise de la plateforme (un lien vers son accueil fait basculer les boutons sur « Appeler »).
+  rdv: { url: 'https://www.doctolib.fr/pedicure-podologue/lyon', plateforme: 'Doctolib' },
   // GAMME=… pour essayer une gamme de couleurs de la charte (sinon couleur libre conseillée par le modèle).
-  // MODE_VISUEL=illustrations|photos|mixte pour essayer le style visuel.
+  // MODE_VISUEL=illustrations|photos|mixte pour essayer le style visuel (illustrations par défaut, comme les nouveaux sites).
   // MARQUE=… et DISPOSITION=… pour essayer un logo (logos.ts ; sinon logo par défaut).
-  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', ...(process.env.GAMME ? { gamme: process.env.GAMME } : {}), ...(process.env.MARQUE || process.env.DISPOSITION ? { logo: { marque: process.env.MARQUE ?? '', disposition: (process.env.DISPOSITION ?? 'horizontale') as 'horizontale' } } : {}), modeVisuel: (process.env.MODE_VISUEL ?? 'mixte') as 'mixte', mise_en_page: 'chaleureux', style_images: 'organique' },
+  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', ...(process.env.GAMME ? { gamme: process.env.GAMME } : {}), ...(process.env.MARQUE || process.env.DISPOSITION ? { logo: { marque: process.env.MARQUE ?? '', disposition: (process.env.DISPOSITION ?? 'horizontale') as 'horizontale' } } : {}), modeVisuel: (process.env.MODE_VISUEL ?? 'illustrations') as 'illustrations', mise_en_page: 'chaleureux', style_images: 'organique' },
   accroche: {
     titre: 'Prendre soin de vos pieds, à chaque étape de la vie',
     texte:
@@ -294,7 +295,7 @@ Bien souvent, des conseils de chaussage et un suivi suffisent. Si des semelles s
     },
     {
       q: 'Les consultations sont-elles remboursées ?',
-      r: 'Les soins de pédicurie courants ne sont pas remboursés, sauf pour les patients diabétiques sur prescription. Les semelles orthopédiques sont partiellement remboursées sur prescription. Votre complémentaire santé peut compléter.',
+      r: 'Les soins de pédicurie courants ne sont pas remboursés, sauf pour les patients diabétiques sur prescription. Sur prescription, l’Assurance Maladie rembourse les semelles sur la base d’un tarif réglementaire faible ; le reste peut être pris en charge par la complémentaire santé selon le contrat. Un devis est remis avant fabrication.',
     },
     {
       q: 'Quels moyens de paiement sont acceptés ?',
@@ -373,7 +374,7 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
       formations: ['Diplôme universitaire de podologie du sport', 'Formation à la prévention du pied diabétique'],
       orientations: ['Podologie du sport', 'Pied diabétique'],
       sports: ['Course à pied', 'Trail', 'Football'],
-      rdvUrl: 'https://www.doctolib.fr/',
+      rdvUrl: 'https://www.doctolib.fr/pedicure-podologue/lyon',
       presence: '',
       bio: '',
       photo: '',
@@ -388,7 +389,7 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
       formations: [],
       orientations: ['Podologie de l’enfant', 'Bilan podologique'],
       sports: [],
-      rdvUrl: 'https://www.doctolib.fr/',
+      rdvUrl: 'https://www.doctolib.fr/pedicure-podologue/lyon',
       presence: 'Mercredi, jeudi et vendredi',
       bio: '',
       photo: '',
@@ -427,4 +428,12 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   photos: { accueil: '', panorama: '', cabinet: [] },
 };
 
+// CAS=solo : praticienne seule, voix « je », cabinet simple identifié par son quartier (cas le plus courant
+// en production), pour vérifier les fiches pleine largeur et les phrases « quartier + ville ».
+if (process.env.CAS === 'solo') {
+  site.praticiens = site.praticiens.slice(0, 1);
+  site.voix = 'je';
+  site.cabinet.quartier = 'Brotteaux';
+  site.lieux = site.lieux.map((l) => ({ ...l, type: 'cabinet', nom: '' }));
+}
 export default site;

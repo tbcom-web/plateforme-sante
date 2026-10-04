@@ -6,7 +6,7 @@
 import Dessin from './Dessin.astro';
 import { dessinArticle } from '../../lib/dessins';
 import { photoDessin } from '../../lib/visuels-soins';
-import { enPhotos } from '../../lib/visuels';
+import { enPhotos, photoResponsive } from '../../lib/visuels';
 import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
 
 interface Props {
@@ -24,7 +24,7 @@ const photo = enPhotos && !dessinSeul ? photoDessin(nom) : null;
 ---
 {photo ? (
 <span class:list={['couverture', 'couverture--photo', classe]} aria-hidden="true">
-  <img src={photo.photo} alt="" width="1600" height="900" loading="lazy" decoding="async" style={`object-position:${photo.cadrage}`} />
+  <img src={photo.photo} {...photoResponsive(photo.photo, '(min-width: 1000px) 40vw, 100vw')} alt="" width="1600" height="900" loading="lazy" decoding="async" style={`object-position:${photo.cadrage}`} />
 </span>
 ) : (
 <span class:list={['couverture', 'surface-plan', classe]} aria-hidden="true">

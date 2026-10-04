@@ -2,13 +2,21 @@
 // Gabarit commun à toutes les pages d'un site praticien.
 // La présentation suit la fiche du modèle (site.modele) ; tout ce qui sert le SEO est produit ici, quel que soit le modèle.
 import '@fontsource-variable/inter';
-import '@fontsource-variable/fraunces/full.css';
-import '@fontsource-variable/fraunces/full-italic.css';
+// Fraunces : axes graisse + taille optique (droit) et graisse + « wonk » (italique des mots en retrait), soit
+// 110 Ko au lieu de 270 Ko pour la version complète ; l'axe SOFT n'est pas chargé (mobile d'abord).
+import '@fontsource-variable/fraunces/standard.css';
+import '@fontsource-variable/fraunces/wonk-italic.css';
 import '@fontsource-variable/manrope';
 import '@fontsource/instrument-serif/400.css';
 import '@fontsource/instrument-serif/400-italic.css';
 import '@fontsource-variable/schibsted-grotesk';
 import '@fontsource-variable/jetbrains-mono';
+// Fichiers latins préchargés (texte + titres du modèle) : le texte s'affiche tout de suite dans la bonne police.
+import policeInter from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import policeFraunces from '@fontsource-variable/fraunces/files/fraunces-latin-standard-normal.woff2?url';
+import policeManrope from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2?url';
+import policeSchibsted from '@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-normal.woff2?url';
+import policeInstrument from '@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2?url';
 import Icone from '../components/Icone.astro';
 import Logo from '../components/Logo.astro';
 import Consent from '../components/Consent.astro';
@@ -22,6 +30,7 @@ import { businessSchema, personSchema } from '../lib/schema';
 import { photoAccueil } from '../lib/visuels';
 import {
   titreMetierAffiche, telLien, itineraire, lienRdv, libelleRdv, titreCabinet, praticiens, lieu, adresseLieu,
+  rdvEnLigne, viaPlateforme, localisation,
 } from '../lib/textes';
 
 interface Props {
@@ -55,6 +64,8 @@ const couleurs = [
   `--rayon-bouton:${{ pilule: '999px', arrondi: '12px', carre: '2px' }[m.jetons.boutons]}`,
   `--voile:${m.accueil.voile / 100}`,
 ].join(';');
+const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument } as const;
+const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres]])];
 const motif = m.jetons.motif ?? 'plan';
 // Motif « courbes de niveau » : contours imbriqués d'une semelle couchée, en filigrane (image SVG en ligne,
 // filet de la charte à l'encre de la charte).
@@ -70,7 +81,9 @@ const liens = [
   ...(site.articles.length > 0 ? [{ href: '/actualites', label: 'Actualités' }] : []),
   { href: '/acces', label: 'Accès' },
 ];
-const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? '/le-cabinet#praticiens' : null;
+const rdvGeneral = site.praticiens.length > 1 && rdvEnLigne ? '/le-cabinet#praticiens' : null;
+// Mention « via Doctolib » seulement sur les boutons qui quittent le site (pas vers la liste des praticiens).
+const via = rdvGeneral ? '' : viaPlateforme;
 ---
 <!doctype html>
 <html lang="fr" style={style} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
@@ -83,6 +96,7 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
     {(site.demo || noindex) && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content={site.theme.couleur} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {prechargees.map((f) => <link rel="preload" href={f} as="font" type="font/woff2" crossorigin />)}
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:site_name" content={site.cabinet.nom} />
@@ -119,10 +133,32 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
           {liens.map((l) => <a href={l.href} aria-current={courant.startsWith(l.href) ? 'page' : undefined}>{l.label}</a>)}
         </nav>
         <a class="bouton bouton--plein bouton--petit entete__rdv" href={rdvGeneral ?? lienRdv('entete')}>
-          {site.rdvMode === 'telephone' ? 'Appeler' : 'Prendre RDV'}
+          {rdvEnLigne ? 'Prendre RDV' : 'Appeler'}
         </a>
+        <button class="menu-bouton" type="button" aria-expanded="false" aria-controls="tiroir" aria-haspopup="dialog">
+          <span class="menu-bouton__traits" aria-hidden="true"></span>Menu
+        </button>
       </div>
     </header>
+
+    <!-- Menu mobile (sous 960 px) : tiroir plein écran sur fond plan, <dialog> natif (focus et Échap gérés par le navigateur). -->
+    <dialog class="tiroir surface-plan" id="tiroir" aria-label="Menu">
+      <div class="cadre tiroir__contenu">
+        <div class="tiroir__haut">
+          <span class="mono">{titreMetierAffiche} · {localisation}</span>
+          <button class="tiroir__fermer" type="button">Fermer<span aria-hidden="true" class="tiroir__croix"></span></button>
+        </div>
+        <nav class="tiroir__nav" aria-label="Menu principal">
+          <a href="/" aria-current={courant === '/' ? 'page' : undefined}><span class="mono" aria-hidden="true">00</span>Accueil</a>
+          {liens.map((l, i) => <a href={l.href} aria-current={courant.startsWith(l.href) ? 'page' : undefined}><span class="mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{l.label}</a>)}
+        </nav>
+        <div class="tiroir__bas">
+          <p>{lieu.nom && <>{lieu.nom}<br /></>}{adresseLieu}</p>
+          <a class="bouton bouton--clair" href={rdvGeneral ?? lienRdv('menu')}>{libelleRdv}{via && <span class="via">{via}</span>}</a>
+          {rdvEnLigne && <a class="tiroir__tel" href={telLien}>{site.cabinet.telephone}</a>}
+        </div>
+      </div>
+    </dialog>
 
     <main id="contenu">
       <slot />
@@ -132,16 +168,16 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
       <div class="cadre">
         <div class="pied__bandeau" aria-hidden="true">
           <span>{titreMetierAffiche}</span>
-          <span>{site.cabinet.quartier || site.cabinet.ville}</span>
+          <span>{localisation}</span>
         </div>
         <div class="pied__haut">
           <div class="pied__gauche">
             <Logo clair={m.pied !== 'clair'} taille={LOGO.tailles.pied} />
             <p class="pied__appel">
               {libelleRdv}
-              <span>{site.rdvMode !== 'telephone' ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : `Au ${site.cabinet.telephone}`}</span>
+              <span>{rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : `Au ${site.cabinet.telephone}`}</span>
             </p>
-            <a class="bouton bouton--clair" href={rdvGeneral ?? lienRdv('pied')}>{libelleRdv}</a>
+            <a class="bouton bouton--clair" href={rdvGeneral ?? lienRdv('pied')}>{libelleRdv}{via && <span class="via">{via}</span>}</a>
           </div>
           <div class="pied__visuel anime-visible"><Empreintes appui="reparti" /></div>
         </div>
@@ -178,15 +214,41 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
       </div>
     </footer>
 
-    <nav class="barre-mobile" aria-label="Accès rapide">
-      <a href={telLien}><Icone nom="lucide:phone" />Appeler</a>
-      <a href={rdvGeneral ?? lienRdv('barre-mobile')} class="barre-mobile__rdv"><Icone nom="lucide:calendar" />Rendez-vous</a>
+    <nav class:list={['barre-mobile', { 'barre-mobile--appel': !rdvEnLigne }]} aria-label="Accès rapide">
+      {rdvEnLigne ? (
+        <>
+          <a href={telLien}><Icone nom="lucide:phone" />Appeler</a>
+          <a href={rdvGeneral ?? lienRdv('barre-mobile')} class="barre-mobile__rdv"><Icone nom="lucide:calendar" /><span>Rendez-vous{via && <span class="via">{via}</span>}</span></a>
+        </>
+      ) : (
+        <a href={telLien} class="barre-mobile__rdv"><Icone nom="lucide:phone" />Appeler le cabinet</a>
+      )}
       <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:map-pin" />Itinéraire</a>
     </nav>
     <Consent />
     {APERCU && <EditionApercu />}
 
     <script>
+      // Menu mobile : <dialog> modal (piège du focus, Échap et retour du focus assurés par le navigateur).
+      const boutonMenu = document.querySelector<HTMLButtonElement>('.menu-bouton');
+      const tiroir = document.querySelector<HTMLDialogElement>('#tiroir');
+      if (boutonMenu && tiroir && typeof tiroir.showModal === 'function') {
+        const racine = document.documentElement;
+        boutonMenu.addEventListener('click', () => {
+          tiroir.showModal();
+          boutonMenu.setAttribute('aria-expanded', 'true');
+          racine.classList.add('tiroir-ouvert');
+        });
+        tiroir.addEventListener('close', () => {
+          boutonMenu.setAttribute('aria-expanded', 'false');
+          racine.classList.remove('tiroir-ouvert');
+          boutonMenu.focus();
+        });
+        tiroir.querySelector('.tiroir__fermer')?.addEventListener('click', () => tiroir.close());
+        // Lien vers une ancre de la page courante : on referme le tiroir avant de défiler.
+        tiroir.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => tiroir.close()));
+        matchMedia('(min-width: 960px)').addEventListener('change', (e) => { if (e.matches && tiroir.open) tiroir.close(); });
+      }
       // En-tête transparent sur visuel plein écran : opacité progressive au défilement.
       if (document.documentElement.classList.contains('entete-transparent')) {
         const racine = document.documentElement;
@@ -257,16 +319,16 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
   .cadre { width: min(1180px, 100% - 40px); margin-inline: auto; }
   .section { padding-block: clamp(64px, 9vw, 120px); }
   .section--douce { background: var(--doux); }
-  .sur { display: inline-flex; align-items: center; gap: 10px; font-size: 0.76rem; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-vif); margin: 0 0 18px; }
+  .sur { display: inline-flex; align-items: center; gap: 10px; font-size: var(--taille-donnees); font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-vif); margin: 0 0 18px; }
   .sur::before { content: ''; width: 20px; height: var(--filet-fort); background: currentColor; }
   /* Sur-titres numérotés de l'accueil, façon affiche : « 01 — Compétences » */
   main { counter-reset: sur; }
   .sur--num { counter-increment: sur; font-family: var(--police-mono); font-weight: 500; letter-spacing: var(--interlettrage-donnees); font-size: var(--taille-donnees); }
-  .sur--num::before { content: counter(sur, decimal-leading-zero) ' —'; width: auto; height: auto; background: none; opacity: 0.7; }
+  .sur--num::before { content: counter(sur, decimal-leading-zero) ' —'; width: auto; height: auto; background: none; font-weight: 400; }
   /* Sur-titre indexé des pages internes : « 03 / 08 — Compétences » (numéro fourni par la page) */
   .sur--index { font-family: var(--police-mono); font-weight: 500; letter-spacing: var(--interlettrage-donnees); font-size: var(--taille-donnees); }
   .sur--index::before { display: none; }
-  .sur--index b { font-weight: 500; opacity: 0.7; }
+  .sur--index b { font-weight: 400; }
   /* En-tête éditorial des pages internes : bandeau filet, titre à gauche, planche technique à droite */
   .tete-page { padding-block: clamp(28px, 4vw, 48px) clamp(48px, 7vw, 96px); }
   .tete-page__grille { display: grid; gap: clamp(28px, 4vw, 56px); align-items: end; padding-top: clamp(20px, 3vw, 32px); border-top: var(--filet-fort) solid var(--encre); }
@@ -323,6 +385,46 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
   .entete__rdv { display: none; }
   @media (min-width: 640px) { .entete__rdv { display: inline-flex; } }
 
+  /* Bouton du menu mobile : visible sous 960 px, taille fixe (pas de décalage de mise en page) */
+  .menu-bouton { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px 0 14px; border: 0; border-radius: var(--rayon-bouton, 999px); background: transparent; box-shadow: inset 0 0 0 var(--filet) var(--ligne); color: var(--encre); font: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer; }
+  .menu-bouton__traits { position: relative; width: 16px; height: var(--filet-fort); background: currentColor; }
+  .menu-bouton__traits::before, .menu-bouton__traits::after { content: ''; position: absolute; left: 0; width: 16px; height: var(--filet-fort); background: currentColor; }
+  .menu-bouton__traits::before { top: -5px; }
+  .menu-bouton__traits::after { top: 5px; width: 10px; }
+  .entete-transparent:not(.entete-opaque) .menu-bouton { color: var(--blanc); box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); }
+  @media (min-width: 960px) { .menu-bouton { display: none; } }
+  .entete__contenu { gap: 12px; }
+  @media (min-width: 960px) { .entete__contenu { gap: 28px; } }
+
+  /* Tiroir plein écran : fond plan d'architecte, liens en grands titres numérotés */
+  html.tiroir-ouvert { overflow: hidden; }
+  .tiroir { position: fixed; inset: 0; width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 0; border: 0; overflow-y: auto; color: var(--papier); }
+  .tiroir[open] { animation: tiroir-entree var(--duree-court) var(--courbe-sortie); }
+  .tiroir::backdrop { background: rgb(var(--nuit-rgb) / 0.4); }
+  @keyframes tiroir-entree { from { opacity: 0; transform: translateY(-12px); } }
+  .tiroir__contenu { display: grid; grid-template-rows: auto 1fr auto; gap: 28px; min-height: 100%; padding-block: 18px max(28px, env(safe-area-inset-bottom)); }
+  .tiroir__haut { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: var(--filet) solid var(--sur-sombre-filet); }
+  .tiroir__haut .mono { color: var(--signal); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  .tiroir__fermer { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px; border: 0; border-radius: var(--rayon-bouton, 999px); background: var(--sur-sombre-verre); color: var(--blanc); font: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer; }
+  .tiroir__croix { position: relative; width: 14px; height: 14px; }
+  .tiroir__croix::before, .tiroir__croix::after { content: ''; position: absolute; left: 0; top: 50%; width: 14px; height: var(--filet-fort); background: currentColor; transform: rotate(45deg); }
+  .tiroir__croix::after { transform: rotate(-45deg); }
+  .tiroir__nav { display: grid; align-content: start; }
+  .tiroir__nav a { display: flex; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: var(--filet) solid var(--sur-sombre-filet); color: var(--blanc); text-decoration: none; font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(2rem, 9vw, 3rem); letter-spacing: -0.04em; line-height: 1.05; }
+  .tiroir__nav a .mono { color: var(--signal); letter-spacing: var(--interlettrage-donnees); }
+  .tiroir__nav a[aria-current='page'] { text-decoration: underline; text-decoration-thickness: var(--filet-fort); text-underline-offset: 8px; }
+  .tiroir__bas { display: grid; gap: 14px; justify-items: start; color: var(--sur-sombre-doux); }
+  .tiroir__bas p { margin: 0; }
+  .tiroir__bas .bouton { white-space: normal; }
+  .tiroir__tel { color: var(--blanc); font-weight: 600; }
+  .tiroir :focus-visible { outline-color: var(--signal); }
+
+  /* « via Doctolib » : la plateforme de réservation, sur les boutons qui quittent le site */
+  .via { font-family: var(--police-mono); font-size: var(--taille-donnees-petit); font-weight: 450; letter-spacing: 0.02em; }
+  /* Sur un bouton : seconde ligne centrée, sous le libellé et la flèche */
+  .bouton:has(.via) { flex-wrap: wrap; row-gap: 0; padding-block: 7px; line-height: 1.25; }
+  .bouton .via { order: 3; flex-basis: 100%; text-align: center; }
+
   .breadcrumb { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: 0.02em; color: var(--encre-pale); margin-bottom: 20px; }
   .breadcrumb ol { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4em; padding: 0; margin: 0; }
   .breadcrumb li:not(:last-child)::after { content: '/'; margin-left: 0.4em; }
@@ -349,6 +451,7 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
   .pied__haut { display: grid; gap: 36px; align-items: center; padding-block: clamp(36px, 5vw, 72px); margin-bottom: 44px; border-bottom: var(--filet) solid var(--pied-ligne); }
   @media (min-width: 860px) { .pied__haut { grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr); } }
   .pied__gauche { display: grid; gap: 30px; justify-items: start; }
+  .pied__gauche > .logo { margin-bottom: 32px; }
   .pied__appel { margin: 0; font-family: var(--police-titres); font-size: clamp(2.4rem, 6.4vw, 5.4rem); font-weight: var(--graisse-titres, 560); letter-spacing: -0.045em; line-height: 0.95; color: var(--blanc); text-wrap: balance; }
   .pied__appel span { display: block; font-family: var(--police-mono); font-size: 0.86rem; font-weight: 450; letter-spacing: 0.02em; line-height: 1.5; color: var(--pied-repere); margin-top: 18px; }
   .pied__visuel { width: min(100%, 300px); justify-self: center; color: var(--sur-sombre-doux); }
@@ -360,10 +463,13 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
   .pied__titre::before { counter-increment: pied; content: counter(pied, decimal-leading-zero) ' — '; font-family: var(--police-mono); font-weight: 450; font-size: 0.8em; color: var(--pied-repere); }
   .pied ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; }
   .pied small { color: var(--sur-sombre-pale); }
-  .pied__bas { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 48px; padding-top: 16px; border-top: var(--filet-fort) solid var(--pied-ligne); font-family: var(--police-mono); font-size: 0.72rem; letter-spacing: 0.02em; color: var(--sur-sombre-pale); }
+  .pied__bas { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 48px; padding-top: 16px; border-top: var(--filet-fort) solid var(--pied-ligne); font-family: var(--police-mono); font-size: var(--taille-donnees-petit); letter-spacing: 0.02em; color: var(--sur-sombre-pale); }
 
   .barre-mobile { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; padding: 8px; border-radius: 20px; background: rgb(var(--blanc-rgb) / 0.94); backdrop-filter: blur(14px); box-shadow: var(--ombre); }
-  .barre-mobile a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 14px; font-weight: 600; font-size: 0.9rem; text-decoration: none; color: var(--encre); }
+  .barre-mobile a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 14px; font-weight: 600; font-size: 0.9rem; line-height: 1.15; text-decoration: none; color: var(--encre); }
+  .barre-mobile--appel { grid-template-columns: 1.6fr 1fr; }
+  .barre-mobile__rdv > span { display: grid; }
+  .barre-mobile .via { font-size: var(--taille-donnees-petit); }
   .barre-mobile__rdv { background: var(--accent); color: var(--blanc) !important; }
   @media (min-width: 900px) { .barre-mobile { display: none; } }
 

@@ -1,47 +1,53 @@
 ---
-// Plan d'accès : carte OpenStreetMap (sans cookie) + adresse + bouton itinéraire.
+// Plan d'accès : plan schématique de la charte (fond plan d'architecte quadrillé, point du cabinet pulsé),
+// adresse et liens vers OpenStreetMap et l'itinéraire. Aucune carte tierce chargée avec la page (performance,
+// vie privée) : la vraie carte s'ouvre seulement si le patient la demande.
 import Icone from '../Icone.astro';
-import { site } from '../../lib/site';
-import { carteUrl, geo } from '../../lib/visuels';
+import { geo, lienCarte } from '../../lib/visuels';
 import { lieu, itineraire } from '../../lib/textes';
 ---
 <div class="carte">
-  <span class="carte__cadre" aria-hidden="true"></span>
-  {geo && (
-    <span class="carte__coordonnees mono" aria-hidden="true">
-      {Math.abs(geo.lat).toFixed(4)}° {geo.lat >= 0 ? 'N' : 'S'} · {Math.abs(geo.lng).toFixed(4)}° {geo.lng >= 0 ? 'E' : 'O'}
-    </span>
-  )}
-  {carteUrl ? (
-    <iframe
-      src={carteUrl}
-      title={`Plan d’accès au cabinet de ${site.cabinet.ville}`}
-      loading="lazy"
-      referrerpolicy="no-referrer"
-    ></iframe>
-  ) : (
-    <div class="carte__vide"><Icone nom="lucide:map-pin" /></div>
-  )}
+  <div class="carte__plan surface-plan anime-visible" aria-hidden="true">
+    <span class="carte__haut mono"><span>Plan schématique</span><span class="carte__nord">N ↑</span></span>
+    <span class="carte__point"><span class="carte__etiquette mono">{lieu.adresse}</span></span>
+    {geo && (
+      <span class="carte__coordonnees mono">
+        {Math.abs(geo.lat).toFixed(4)}° {geo.lat >= 0 ? 'N' : 'S'} · {Math.abs(geo.lng).toFixed(4)}° {geo.lng >= 0 ? 'E' : 'O'}
+      </span>
+    )}
+  </div>
   <div class="carte__adresse">
     <p class="carte__titre">{lieu.nom || 'Le cabinet'}</p>
     <p>{lieu.adresse}{lieu.complement && <><br />{lieu.complement}</>}<br />{lieu.codePostal} {lieu.ville}</p>
-    <a class="bouton bouton--plein bouton--petit" href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" secours="lucide:map-pin" />Itinéraire</a>
+    <div class="carte__liens">
+      <a class="bouton bouton--plein bouton--petit" href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" secours="lucide:map-pin" />Itinéraire</a>
+      <a class="carte__osm" href={lienCarte} target="_blank" rel="noopener">Ouvrir dans OpenStreetMap</a>
+    </div>
   </div>
 </div>
 
 <style>
-  .carte { position: relative; border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); min-height: 380px; display: grid; grid-template-columns: minmax(0, 1fr); }
-  iframe, .carte__vide { width: 100%; height: 100%; min-height: 380px; border: 0; grid-area: 1 / 1; filter: saturate(0.85); }
-  .carte__vide { display: grid; place-items: center; font-size: 3rem; color: var(--accent-vif); }
-  .carte__adresse { grid-area: 1 / 1; align-self: end; justify-self: start; margin: 16px; padding: 18px 20px; border-radius: 16px; background: rgb(var(--blanc-rgb) / 0.92); backdrop-filter: blur(10px); box-shadow: var(--ombre); max-width: 300px; }
+  .carte { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); }
+  .carte__plan { position: relative; grid-area: 1 / 1; min-height: 380px; }
+  .carte__haut { position: absolute; top: 14px; left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: var(--filet) solid var(--sur-sombre-filet); color: var(--sur-sombre-doux); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
+  .carte__nord { color: var(--signal); }
+  /* Point du cabinet : pastille au signal et onde lente (pas de cercle ni de croix de visée) */
+  .carte__point { position: absolute; left: 68%; top: 34%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--signal) 30%, transparent); }
+  .carte__point::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: color-mix(in srgb, var(--signal) 45%, transparent); opacity: 0; }
+  .en-vue .carte__point::after { animation: onde var(--cycle-pouls) var(--courbe-sortie) infinite; }
+  @keyframes onde { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(5); opacity: 0; } }
+  .carte__etiquette { position: absolute; left: 22px; top: 50%; transform: translateY(-50%); white-space: nowrap; padding: 4px 8px; border-radius: 4px; background: rgb(var(--nuit-rgb) / 0.35); color: var(--papier); }
+  .carte__coordonnees { position: absolute; left: 16px; bottom: 14px; color: var(--sur-sombre-doux); letter-spacing: 0.04em; }
+  .carte__adresse { position: relative; z-index: 1; grid-area: 1 / 1; align-self: end; justify-self: start; margin: 16px; padding: 18px 20px; border-radius: 16px; background: var(--blanc); box-shadow: var(--ombre); max-width: 320px; }
   .carte__adresse p { margin: 0 0 12px; font-size: 0.93rem; color: var(--encre-douce); }
-  .carte__cadre { grid-area: 1 / 1; z-index: 1; margin: 14px; pointer-events: none; color: var(--encre); opacity: 0.55;
-    background:
-      linear-gradient(currentColor, currentColor) 0 0 / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 0 0 / 1.5px 14px no-repeat,
-      linear-gradient(currentColor, currentColor) 100% 0 / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 100% 0 / 1.5px 14px no-repeat,
-      linear-gradient(currentColor, currentColor) 0 100% / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 0 100% / 1.5px 14px no-repeat,
-      linear-gradient(currentColor, currentColor) 100% 100% / 14px 1.5px no-repeat, linear-gradient(currentColor, currentColor) 100% 100% / 1.5px 14px no-repeat; }
-  .carte__coordonnees { grid-area: 1 / 1; z-index: 1; align-self: start; justify-self: end; margin: 26px; padding: 6px 10px; border-radius: 4px; background: var(--plan); color: var(--signal); font-size: 0.68rem; letter-spacing: 0.06em; }
-  .carte__adresse { z-index: 1; }
   .carte__titre { font-weight: 650; color: var(--encre) !important; margin-bottom: 4px !important; }
+  .carte__liens { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+  .carte__osm { font-size: 0.9rem; font-weight: 600; }
+  /* Mobile : le plan au-dessus, l'adresse en dessous (rien n'est masqué) */
+  @media (max-width: 559px) {
+    .carte__plan { min-height: 240px; }
+    .carte__adresse { grid-area: auto; margin: 0; max-width: none; border-radius: 0; box-shadow: none; }
+    .carte__coordonnees { display: none; }
+    .carte__point { left: 30%; }
+  }
 </style>

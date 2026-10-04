@@ -5,7 +5,7 @@
 import VignetteSoin from './VignetteSoin.astro';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
-import { modeVisuel } from '../../lib/visuels';
+import { modeVisuel, photoResponsive } from '../../lib/visuels';
 import { visuelSoin } from '../../lib/visuels-soins';
 import { rendreCase } from '@plateforme/core';
 
@@ -21,7 +21,7 @@ const vignette = (slug: string) => {
       <a href={`/soins/${s.slug}`} class="expertise">
         <span class="expertise__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
         <span class="expertise__dessin surface-grille" aria-hidden="true"><VignetteSoin slug={s.slug} /></span>
-        {vignette(s.slug) && <img class="expertise__vignette" src={vignette(s.slug)!.src} alt="" loading="lazy" width="320" height="240" style={`object-position:${vignette(s.slug)!.cadrage}`} />}
+        {vignette(s.slug) && <img class="expertise__vignette" src={vignette(s.slug)!.src} {...photoResponsive(vignette(s.slug)!.src, '230px')} alt="" loading="lazy" width="320" height="240" style={`object-position:${vignette(s.slug)!.cadrage}`} />}
         <span class="expertise__titre">{s.titreCourt}</span>
         <span class="expertise__resume" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
         <span class="expertise__fleche" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 14 14 6M7 6h7v7" /></svg></span>
@@ -39,7 +39,7 @@ const vignette = (slug: string) => {
   .expertise { position: relative; display: grid; grid-template-columns: 92px 1fr 40px; grid-template-areas: 'dessin titre fleche' 'dessin resume fleche'; column-gap: 16px; align-items: center; padding: 20px 0; text-decoration: none; color: var(--encre); }
   .expertise__num { display: none; }
   .expertise__dessin { grid-area: dessin; position: relative; overflow: hidden; display: grid; place-items: center; width: 92px; aspect-ratio: 4 / 3; padding: 6px; border-radius: calc(var(--rayon) * 0.6); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
-  .expertise__vignette { display: none; }
+  .expertise__vignette { display: none; object-fit: cover; background: var(--doux); }
   .expertise__titre { grid-area: titre; font-family: var(--police-titres); font-size: clamp(1.2rem, 2.4vw, 2rem); font-weight: var(--graisse-titres, 560); letter-spacing: -0.035em; line-height: 1.05; transition: transform var(--duree-moyen) var(--courbe-sortie); }
   .expertise__resume { grid-area: resume; font-size: 0.93rem; color: var(--encre-douce); margin-top: 4px; transition: opacity var(--duree-court); }
   .expertise__fleche { grid-area: fleche; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; border: var(--filet) solid var(--ligne); color: var(--encre); transition: background var(--duree-court), border-color var(--duree-court), color var(--duree-court); }

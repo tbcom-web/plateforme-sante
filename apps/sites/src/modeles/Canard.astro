@@ -6,6 +6,7 @@ import '@fontsource-variable/fraunces/full-italic.css';
 import CartePied from '../components/CartePied.astro';
 import Illustration, { type NomIllustration } from '../components/Illustration.astro';
 import { site, nomPraticien, rdvHref, telLien, adresseComplete } from '../lib/site';
+import { localisation } from '../lib/textes';
 
 
 const visuels: Record<string, NomIllustration> = {
@@ -67,7 +68,7 @@ const titreDoc = `${site.profession.libelle} à ${site.cabinet.ville} – ${nomP
       <section class="hero">
         <div class="hero__fond" aria-hidden="true"></div>
         <div class="hero__contenu">
-          <p class="sur">{site.profession.libelle} · {site.cabinet.quartier}</p>
+          <p class="sur">{site.profession.libelle} · {localisation}</p>
           <h1 class="hero__titre">
             {mots.map((m, i) => <span class="mot" style={`--i:${i}`}>{m}</span>)}
           </h1>

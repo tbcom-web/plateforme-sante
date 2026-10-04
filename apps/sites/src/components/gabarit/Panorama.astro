@@ -5,16 +5,16 @@
 import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import Empreintes from '../dessins/Empreintes.astro';
-import { photoPanoramaAffichee } from '../../lib/visuels';
+import { photoPanoramaAffichee, photoResponsive } from '../../lib/visuels';
 import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
-import { lieu, TYPES_LIEU } from '../../lib/textes';
+import { lieu, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
 
 const atouts = [
   { titre: 'Hygiène', texte: 'Instruments stérilisés après chaque patient' },
   site.accesDetail.pmr || site.accesDetail.parking
     ? { titre: 'Accès', texte: [site.accesDetail.pmr && 'Accessible PMR', site.accesDetail.parking].filter(Boolean).join(' · ') }
     : null,
-  { titre: 'Rendez-vous', texte: site.rdvMode === 'telephone' ? `Par téléphone au ${site.cabinet.telephone}` : `En ligne sur ${site.rdv.plateforme}, 24h/24` },
+  { titre: 'Rendez-vous', texte: !rdvEnLigne ? `Par téléphone au ${site.cabinet.telephone}` : `En ligne sur ${site.rdv.plateforme}, 24h/24` },
   site.domicile.actif ? { titre: 'Domicile', texte: site.domicile.creneaux || 'Visites à domicile sur demande' } : null,
 ].filter(Boolean) as { titre: string; texte: string }[];
 const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
@@ -23,7 +23,7 @@ const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
 ---
 <section class:list={['panorama', { 'panorama--illus': !photoPanoramaAffichee }]}>
   {photoPanoramaAffichee
-    ? <img src={photoPanoramaAffichee} alt="" loading="lazy" width="2000" height="1100" {...zonePhoto('photos.panorama')} />
+    ? <img src={photoPanoramaAffichee} {...photoResponsive(photoPanoramaAffichee, '100vw')} alt={[site.photos.panorama, ...site.photos.cabinet].includes(photoPanoramaAffichee) ? `${lieuNom} à ${lieu.ville || site.cabinet.ville}` : ''} loading="lazy" width="2000" height="1100" {...zonePhoto('photos.panorama')} />
     : (
       <div class="panorama__illus surface-plan" aria-hidden="true" {...zonePhoto('photos.panorama')}>
         <span class="panorama__releve anime-visible"><Empreintes appui="reparti" /></span>
@@ -41,7 +41,7 @@ const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
 
 <style>
   .panorama { position: relative; min-height: clamp(520px, 78vh, 800px); display: grid; align-items: end; color: var(--blanc); overflow: hidden; isolation: isolate; }
-  img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; animation: zoom linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+  img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; background: var(--nuit-haut); animation: zoom linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
   .panorama::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(var(--nuit-rgb) / 0) 25%, rgb(var(--nuit-rgb) / 0.82)); }
   /* Illustration : plan d'architecte plein cadre, relevé d'empreintes à droite */
   .panorama__illus { position: absolute; inset: 0; z-index: -2; }

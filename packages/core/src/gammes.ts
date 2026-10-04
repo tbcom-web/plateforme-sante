@@ -89,7 +89,7 @@ export function variablesGamme(g: Gamme): Record<string, string> {
 export function variablesTheme(m: ModeleManifeste, choix: { couleur: string; gamme?: string | null }): Record<string, string> {
   const encre = m.jetons.accent === 'encre';
   const g = gamme(choix.gamme);
-  const t = buildTheme(g?.accent ?? choix.couleur);
+  const t = buildTheme(g?.accent ?? choix.couleur, [m.jetons.fond, m.jetons.fondDoux ?? ''].filter(Boolean));
   const v: Record<string, string> = {
     '--accent': t['--brand-ink'],
     '--accent-fonce': t['--brand-deep'],

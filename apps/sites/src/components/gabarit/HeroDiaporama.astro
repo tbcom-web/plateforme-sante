@@ -7,12 +7,15 @@ import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Dessin from '../dessins/Dessin.astro';
-import { diaporamaAffiche as diapos, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
+import { photoResponsive, diaporamaAffiche as diapos, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
 import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
 import { CYCLES } from '@plateforme/core';
-import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
+import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme } from '../../lib/textes';
 
 const choix = visuelAccueil(diapos);
+// Photos du praticien (son cabinet) : texte alternatif factuel ; photos d'illustration : décoratives.
+const photosPraticien = new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].filter(Boolean));
+const altDiapo = (src: string) => (photosPraticien.has(src) ? `Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}` : '');
 // Animation ou illustration : titre à gauche, visuel à droite
 const anime = choix !== 'photo';
 const duree = CYCLES.diapo; // ms par photo (charte)
@@ -28,19 +31,19 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
     </div>
   )}
   {choix === 'photo' && (
-    <div class="hero__diapos" aria-hidden="true" {...zonePhoto('photos.accueil')}>
+    <div class="hero__diapos" {...zonePhoto('photos.accueil')}>
       {diapos.map((src, i) => (
-        <img src={src} alt="" style={`--i:${i}`} width="2000" height="1300" fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+        <img src={src} {...photoResponsive(src, '100vw')} alt={altDiapo(src)} style={`--i:${i}`} width="2000" height="1300" fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
       ))}
     </div>
   )}
   <div class="cadre hero__contenu">
-    <p class="sur hero__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
+    <p class="sur hero__sur">{titreMetierAffiche} · {localisation}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
     <p class="hero__chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
     <div class="hero__actions">
       <a class="bouton bouton--clair" href={rdvAccueil}>
-        {libelleRdv}
+        {libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}
         <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
       </a>
       <a class="bouton bouton--verre" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>

@@ -3,15 +3,18 @@ import type { Faq } from '@plateforme/core';
 
 type Defauts = {
   accrocheTitre: string;
-  faq: (o: { pmr: boolean; plateforme: string }) => Faq[];
+  /** enLigne : réservation en ligne possible (lien précis vers la plateforme) */
+  faq: (o: { pmr: boolean; plateforme: string; enLigne: boolean }) => Faq[];
 };
 
 const PODOLOGUE: Defauts = {
   accrocheTitre: 'Prendre soin de vos pieds, à chaque étape de la vie',
-  faq: ({ pmr, plateforme }) => [
+  faq: ({ pmr, plateforme, enLigne }) => [
     {
       q: 'Comment prendre rendez-vous ?',
-      r: `En ligne sur ${plateforme}, 24h/24, ou par téléphone aux heures d’ouverture du cabinet.`,
+      r: enLigne
+        ? `En ligne sur ${plateforme}, 24h/24, ou par téléphone aux heures d’ouverture du cabinet.`
+        : 'Par téléphone, aux heures d’ouverture du cabinet.',
     },
     {
       q: 'Le cabinet est-il accessible aux personnes à mobilité réduite ?',
@@ -21,7 +24,7 @@ const PODOLOGUE: Defauts = {
     },
     {
       q: 'Les soins sont-ils remboursés ?',
-      r: 'Les soins de pédicurie courants ne sont pas remboursés, sauf pour les patients diabétiques sur prescription. Les semelles orthopédiques sont partiellement remboursées sur prescription. Votre complémentaire santé peut compléter.',
+      r: 'Les soins de pédicurie courants ne sont pas remboursés, sauf pour les patients diabétiques sur prescription. Sur prescription, l’Assurance Maladie rembourse les semelles sur la base d’un tarif réglementaire faible ; le reste peut être pris en charge par la complémentaire santé selon le contrat. Un devis est remis avant fabrication.',
     },
   ],
 };
