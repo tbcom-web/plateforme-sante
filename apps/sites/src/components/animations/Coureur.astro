@@ -1,56 +1,165 @@
 ---
-// Animation « coureur » : silhouette schématique en pleine foulée, lignes de vitesse et sol qui défile.
-// SVG + CSS uniquement (≈ 2 Ko). Décoratif : aria-hidden ; immobile si le visiteur réduit les mouvements.
+// Animation « coureur » (podologie du sport), façon laboratoire d'analyse du mouvement :
+// squelette vu de profil avec marqueurs articulaires, trajectoires des marqueurs (tapis de course),
+// angle du genou mesuré en direct et cadence. Cinématique simplifiée d'une foulée de course.
+// Canvas, sans librairie. Décoratif : aria-hidden ; image fixe si le visiteur réduit les mouvements.
 interface Props { fond?: 'sombre' | 'clair' }
 const { fond = 'sombre' } = Astro.props;
 ---
-<svg class:list={['coureur', `coureur--${fond}`]} viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-  <g class="vitesse">
-    <line x1="40" y1="95" x2="150" y2="95" style="--i:0" />
-    <line x1="10" y1="130" x2="140" y2="130" style="--i:1" />
-    <line x1="60" y1="165" x2="150" y2="165" style="--i:2" />
-    <line x1="20" y1="200" x2="130" y2="200" style="--i:3" />
-  </g>
-  <g class="sol"><line x1="0" y1="252" x2="420" y2="252" /></g>
+<canvas class:list={['coureur', `coureur--${fond}`]} data-fond={fond} aria-hidden="true"></canvas>
 
-  <g class="corps">
-    <!-- jambe arrière puis bras arrière (plus pâles), corps, jambe et bras avant -->
-    <g class="jambe jambe--b"><line x1="200" y1="150" x2="200" y2="196" /><g class="tibia"><line x1="200" y1="196" x2="200" y2="242" /><line x1="200" y1="242" x2="214" y2="244" /></g></g>
-    <g class="bras bras--b"><line x1="214" y1="94" x2="214" y2="122" /><g class="avant-bras"><line x1="214" y1="122" x2="214" y2="146" /></g></g>
-    <line class="tronc" x1="200" y1="150" x2="216" y2="92" />
-    <circle class="tete" cx="223" cy="70" r="13" />
-    <g class="jambe jambe--a"><line x1="200" y1="150" x2="200" y2="196" /><g class="tibia"><line x1="200" y1="196" x2="200" y2="242" /><line x1="200" y1="242" x2="214" y2="244" /></g></g>
-    <g class="bras bras--a"><line x1="214" y1="94" x2="214" y2="122" /><g class="avant-bras"><line x1="214" y1="122" x2="214" y2="146" /></g></g>
-  </g>
-</svg>
+<script>
+  type Pt = { x: number; y: number };
+  const CYCLE = 0.72; // secondes par cycle (2 pas) → cadence ≈ 167 pas/min
+  const RAD = Math.PI / 180;
+
+  // Angles en degrés selon la phase p (0..1) du cycle d'une jambe.
+  // Hanche : flexion avant positive (−15° en fin de poussée, 45° en fin d'oscillation).
+  const hanche = (p: number) => 15 + 30 * Math.sin(2 * Math.PI * p);
+  // Genou : flexion (≈25° en appui, ≈115° au milieu de l'oscillation).
+  const genou = (p: number) => 25 + 45 * (1 + Math.cos(2 * Math.PI * p));
+  // Cheville : légère variation autour de l'angle droit.
+  const cheville = (p: number) => 8 * Math.sin(2 * Math.PI * (p + 0.15));
+
+  function jambe(h: Pt, p: number, l: number) {
+    const a = hanche(p) * RAD;
+    const g: Pt = { x: h.x + Math.sin(a) * l * 0.48, y: h.y + Math.cos(a) * l * 0.48 };
+    const b = a - genou(p) * RAD; // tibia : le genou plie vers l'arrière
+    const c: Pt = { x: g.x + Math.sin(b) * l * 0.47, y: g.y + Math.cos(b) * l * 0.47 };
+    const f = b + cheville(p) * RAD; // pied : perpendiculaire au tibia, vers l'avant
+    const o: Pt = { x: c.x + Math.cos(f) * l * 0.17, y: c.y - Math.sin(f) * l * 0.17 };
+    return { g, c, o, angleGenou: genou(p) };
+  }
+
+  function bras(e: Pt, p: number, l: number) {
+    const a = -hanche(p) * 0.85 * RAD + 10 * RAD;
+    const coude: Pt = { x: e.x + Math.sin(a) * l * 0.3, y: e.y + Math.cos(a) * l * 0.3 };
+    const b = a + 95 * RAD;
+    const main: Pt = { x: coude.x + Math.sin(b) * l * 0.27, y: coude.y + Math.cos(b) * l * 0.27 };
+    return { coude, main };
+  }
+
+  document.querySelectorAll<HTMLCanvasElement>('canvas.coureur').forEach((cv) => {
+    const ctx = cv.getContext('2d')!;
+    const sombre = cv.dataset.fond !== 'clair';
+    const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const style = getComputedStyle(cv);
+    const accent = style.getPropertyValue('--accent-pale').trim() || '#8fe3cf';
+    const encre = sombre ? '#e9f4f1' : '#102224';
+    const ratio = Math.min(2, devicePixelRatio || 1);
+    let l = 0, h = 0, debut = performance.now(), precedent = debut, visible = true;
+    // Traces des marqueurs (cheville, genou, orteil de la jambe droite), décalées comme sur un tapis.
+    const traces: Record<string, Pt[]> = { cheville: [], genou: [], orteil: [] };
+    const COULEURS: Record<string, string> = { cheville: '#ffd166', genou: '#ee6a5f', orteil: '#7fd6e8' };
+
+    function dimensionner() {
+      l = cv.clientWidth; h = cv.clientHeight;
+      cv.width = l * ratio; cv.height = h * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      for (const k in traces) traces[k] = [];
+    }
+
+    function segment(a: Pt, b: Pt, largeur: number, couleur: string) {
+      ctx.strokeStyle = couleur; ctx.lineWidth = largeur; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    function marqueur(p: Pt, r: number, couleur = '#ffffff') {
+      ctx.fillStyle = couleur; ctx.shadowColor = couleur; ctx.shadowBlur = r * 2.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function dessiner(maintenant: number) {
+      const t = calme ? 0.1 : (maintenant - debut) / 1000;
+      const dt = Math.min(0.05, (maintenant - precedent) / 1000); precedent = maintenant;
+      const p = (t / CYCLE) % 1;
+      const taille = Math.min(h * 0.62, l * 0.9); // hauteur du squelette, tête comprise
+      const L = taille * 0.5; // longueur de jambe
+      const sol = h * 0.86;
+      const bassin: Pt = { x: l * 0.5, y: sol - L * 0.97 - 5 * Math.cos(4 * Math.PI * p) * (L / 120) };
+      const tronc = 8 * RAD; // inclinaison vers l'avant
+      const epaule: Pt = { x: bassin.x + Math.sin(tronc) * L * 0.62, y: bassin.y - Math.cos(tronc) * L * 0.62 };
+      const tete: Pt = { x: epaule.x + Math.sin(tronc) * L * 0.2, y: epaule.y - L * 0.2 };
+
+      const d = jambe(bassin, p, L), g = jambe(bassin, (p + 0.5) % 1, L);
+      const bd = bras(epaule, (p + 0.5) % 1, L), bg = bras(epaule, p, L);
+
+      ctx.clearRect(0, 0, l, h);
+
+      // Grille du laboratoire et sol du tapis
+      ctx.strokeStyle = sombre ? 'rgb(255 255 255 / 0.05)' : 'rgb(16 34 36 / 0.06)'; ctx.lineWidth = 1;
+      const pas = Math.max(24, L / 4);
+      for (let x = (l / 2) % pas; x < l; x += pas) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = sol % pas; y < h; y += pas) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(l, y); ctx.stroke(); }
+      const vitesse = (L * 1.9) / CYCLE; // défilement du tapis (px/s)
+      ctx.strokeStyle = sombre ? 'rgb(255 255 255 / 0.35)' : 'rgb(16 34 36 / 0.35)'; ctx.lineWidth = 2;
+      ctx.setLineDash([3, 14]); ctx.lineDashOffset = (t * vitesse) % 17;
+      ctx.beginPath(); ctx.moveTo(0, sol + 2); ctx.lineTo(l, sol + 2); ctx.stroke(); ctx.setLineDash([]);
+
+      // Traces des marqueurs (elles reculent avec le tapis)
+      if (!calme) {
+        for (const k in traces) {
+          const tr = traces[k];
+          for (const q of tr) q.x -= vitesse * dt * 0.55;
+          tr.push({ ...(k === 'cheville' ? d.c : k === 'genou' ? d.g : d.o) });
+          while (tr.length && tr[0].x < l * 0.04) tr.shift();
+          ctx.strokeStyle = COULEURS[k]; ctx.lineWidth = 1.6;
+          for (let i = 1; i < tr.length; i++) {
+            ctx.globalAlpha = (i / tr.length) * 0.8;
+            ctx.beginPath(); ctx.moveTo(tr[i - 1].x, tr[i - 1].y); ctx.lineTo(tr[i].x, tr[i].y); ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      // Membres côté gauche (en retrait), puis tronc, puis côté droit
+      const pale = sombre ? 'rgb(233 244 241 / 0.35)' : 'rgb(16 34 36 / 0.3)';
+      segment(epaule, bg.coude, 3, pale); segment(bg.coude, bg.main, 3, pale);
+      segment(bassin, g.g, 3, pale); segment(g.g, g.c, 3, pale); segment(g.c, g.o, 3, pale);
+      segment(bassin, epaule, 3.5, accent);
+      segment(bassin, d.g, 3.5, accent); segment(d.g, d.c, 3.5, accent); segment(d.c, d.o, 3.5, accent);
+      segment(epaule, bd.coude, 3.5, accent); segment(bd.coude, bd.main, 3.5, accent);
+      ctx.strokeStyle = accent; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(tete.x, tete.y, L * 0.085, 0, Math.PI * 2); ctx.stroke();
+
+      // Marqueurs articulaires
+      for (const m of [g.g, g.c, g.o, bg.coude]) marqueur(m, 3, pale);
+      marqueur(bassin, 4.5); marqueur(epaule, 4.5);
+      marqueur(d.g, 4.5, COULEURS.genou); marqueur(d.c, 4.5, COULEURS.cheville); marqueur(d.o, 4, COULEURS.orteil); marqueur(bd.coude, 4);
+
+      // Angle du genou droit : arc et valeur
+      const a1 = Math.atan2(bassin.y - d.g.y, bassin.x - d.g.x), a2 = Math.atan2(d.c.y - d.g.y, d.c.x - d.g.x);
+      ctx.strokeStyle = COULEURS.genou; ctx.lineWidth = 1.5;
+      let ecart = a2 - a1; // angle intérieur : le plus court chemin entre cuisse et tibia
+      if (ecart > Math.PI) ecart -= 2 * Math.PI;
+      if (ecart < -Math.PI) ecart += 2 * Math.PI;
+      ctx.beginPath(); ctx.arc(d.g.x, d.g.y, L * 0.12, a1, a1 + ecart, ecart < 0); ctx.stroke();
+      const police = Math.max(11, L / 11);
+      ctx.font = `600 ${police}px 'Inter Variable', system-ui, sans-serif`;
+      ctx.fillStyle = COULEURS.genou;
+      ctx.fillText(`${Math.round(180 - d.angleGenou)}°`, d.g.x + L * 0.16, d.g.y + 4);
+
+      // Lecture de laboratoire
+      ctx.fillStyle = encre; ctx.globalAlpha = 0.75;
+      ctx.font = `600 ${police * 0.85}px 'Inter Variable', system-ui, sans-serif`;
+      ctx.fillText('ANALYSE DE LA FOULÉE', l * 0.06, h * 0.1);
+      ctx.font = `400 ${police * 0.85}px 'Inter Variable', system-ui, sans-serif`;
+      ctx.fillText(`Cadence ${Math.round(120 / CYCLE)} pas/min`, l * 0.06, h * 0.1 + police * 1.4);
+      ctx.globalAlpha = 1;
+
+      if (!calme && visible) requestAnimationFrame(dessiner);
+    }
+
+    new IntersectionObserver(([e]) => {
+      const etait = visible; visible = e.isIntersecting;
+      if (visible && !etait) { precedent = performance.now(); requestAnimationFrame(dessiner); }
+    }).observe(cv);
+    new ResizeObserver(dimensionner).observe(cv);
+    dimensionner();
+    requestAnimationFrame(dessiner);
+  });
+</script>
 
 <style>
-  .coureur { display: block; width: 100%; height: 100%; --c: var(--accent-vif, #2f7d6d); --cycle: 0.62s; }
-  .coureur--sombre { --c: var(--accent-pale, #7fe0c8); background: radial-gradient(ellipse at 55% 45%, #10262a 0%, #071214 75%); }
-  .coureur line, .coureur circle { stroke: var(--c); stroke-width: 9; stroke-linecap: round; fill: none; }
-  .tete { fill: var(--c) !important; stroke: none !important; }
-  .jambe--b line, .bras--b line { opacity: 0.45; }
-
-  .corps { animation: rebond calc(var(--cycle) / 2) ease-in-out infinite; }
-  @keyframes rebond { 50% { transform: translateY(-7px); } }
-
-  .jambe { transform-origin: 200px 150px; animation: cuisse var(--cycle) ease-in-out infinite; }
-  .jambe .tibia { transform-origin: 200px 196px; animation: genou var(--cycle) ease-in-out infinite; }
-  .jambe--b, .jambe--b .tibia { animation-delay: calc(var(--cycle) / -2); }
-  @keyframes cuisse { 0%, 100% { transform: rotate(-48deg); } 50% { transform: rotate(32deg); } }
-  @keyframes genou { 0%, 100% { transform: rotate(18deg); } 30% { transform: rotate(10deg); } 55% { transform: rotate(45deg); } 78% { transform: rotate(110deg); } }
-
-  .bras { transform-origin: 214px 94px; animation: epaule var(--cycle) ease-in-out infinite; }
-  .bras .avant-bras { transform-origin: 214px 122px; transform: rotate(-95deg); }
-  .bras--a { animation-delay: calc(var(--cycle) / -2); }
-  @keyframes epaule { 0%, 100% { transform: rotate(-40deg); } 50% { transform: rotate(45deg); } }
-
-  .vitesse line { stroke-width: 4; opacity: 0; animation: trait 0.9s linear infinite; animation-delay: calc(var(--i) * -0.22s); }
-  @keyframes trait { 0% { transform: translateX(60px); opacity: 0; } 30% { opacity: 0.55; } 100% { transform: translateX(-120px); opacity: 0; } }
-  .sol line { stroke-width: 4; stroke-dasharray: 2 26; opacity: 0.6; animation: sol 0.4s linear infinite; }
-  @keyframes sol { to { stroke-dashoffset: 28; } }
-
-  @media (prefers-reduced-motion: reduce) {
-    .coureur * { animation: none !important; }
-  }
+  .coureur { display: block; width: 100%; height: 100%; }
+  .coureur--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
 </style>

@@ -15,11 +15,11 @@ const pieds = [
   {pieds.map((p) => (
     <g transform={p.transform} style={`--j:${p.delai}`}>
       <path class="contour" d={CONTOUR} />
-      {ORTEILS.map(([cx, cy, rx, ry]) => <ellipse class="contour" cx={cx} cy={cy} rx={rx} ry={ry} />)}
+      {ORTEILS.map(([cx, cy, rx, ry, r]) => <ellipse class="contour" cx={cx} cy={cy} rx={rx} ry={ry} transform={`rotate(${r} ${cx} ${cy})`} />)}
       <circle class="appui appui--talon" cx="47" cy="196" r="17" />
       <circle class="appui appui--externe" cx="62" cy="135" r="12" />
       <circle class="appui appui--avant" cx="36" cy="62" r="16" />
-      <circle class="appui appui--orteil" cx="26" cy="12" r="9" />
+      <circle class="appui appui--orteil" cx="27" cy="17" r="9" />
       <path class="trajet" d={TRAJET} pathLength="1" />
       <circle class="point" r="5" style={`offset-path: path('${TRAJET}')`} />
     </g>
@@ -29,7 +29,8 @@ const pieds = [
 <style>
   .trajectoire { display: block; width: 100%; height: 100%; --c: var(--accent-pale, #8fe3cf); --cycle: 3.2s; }
   .trajectoire--sombre { background: radial-gradient(ellipse at 50% 45%, #10262a 0%, #071214 75%); }
-  .contour { fill: none; stroke: var(--c); stroke-width: 1.6; opacity: 0.55; }
+  /* Contour en pointillés ronds, dans l'esprit d'un relevé de podoscope */
+  .contour { fill: none; stroke: var(--c); stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 0 5.5; opacity: 0.75; }
   .trajet { fill: none; stroke: #ffd166; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1;
     animation: trace var(--cycle) ease-in-out infinite; animation-delay: calc(var(--j) * var(--cycle) / 2); }
   .point { fill: #fff; filter: drop-shadow(0 0 6px #ffd166); offset-distance: 0%; opacity: 0;

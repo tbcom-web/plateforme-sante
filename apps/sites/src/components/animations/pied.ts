@@ -1,19 +1,42 @@
 // Géométrie d'un pied droit vu de dessous, en SVG (repère 92 × 222, talon en bas, gros orteil à gauche).
-// Le pied gauche s'obtient par symétrie (scale(-1, 1)).
+// Le pied gauche s'obtient par symétrie (scale(-1, 1)). Contour relevé point par point (talon, voûte
+// interne creusée, bosse du 1er métatarsien, bord externe) puis lissé, pour une forme anatomique.
+
+type P = [number, number];
+
+/** Courbe fermée passant par les points (Catmull-Rom convertie en courbes de Bézier). */
+function lisser(points: P[]): string {
+  const n = points.length;
+  const pt = (i: number) => points[(i + n) % n];
+  let d = `M${pt(0)[0]} ${pt(0)[1]}`;
+  for (let i = 0; i < n; i++) {
+    const [p0, p1, p2, p3] = [pt(i - 1), pt(i), pt(i + 1), pt(i + 2)];
+    const c1: P = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2: P = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0]} ${p2[1]}`;
+  }
+  return `${d} Z`;
+}
+
+const PLANTE: P[] = [
+  [48, 219], [33, 214], [23, 202], [19, 186], [20, 168], [25, 152], // talon, bord interne
+  [32, 138], [35, 124], [33, 110], [27, 98], // voûte interne (creusée)
+  [19, 86], [14, 72], [13, 58], [17, 46], [24, 38], // bosse du 1er métatarsien
+  [34, 35], [45, 35], [56, 38], [65, 42], [73, 48], [79, 56], // sous les orteils
+  [82, 68], [81, 82], [78, 98], [74, 116], [72, 134], [73, 152], [75, 170], [75, 188], [71, 204], [61, 215], // bord externe
+];
 
 /** Contour de la plante (sans les orteils) */
-export const CONTOUR =
-  'M48 218 C26 218 16 200 18 176 C20 150 32 132 30 110 C28 88 14 76 12 56 C10 38 20 26 34 28 ' +
-  'C50 30 66 38 74 52 C82 66 80 90 74 110 C68 132 72 160 74 180 C76 204 66 218 48 218 Z';
+export const CONTOUR = lisser(PLANTE);
 
-/** Orteils : [cx, cy, rx, ry], du gros orteil au petit */
-export const ORTEILS: [number, number, number, number][] = [
-  [26, 10, 10, 12],
-  [45, 12, 6, 7.5],
-  [57, 18, 5.5, 6.5],
-  [67, 26, 5, 6],
-  [76, 36, 4.5, 5],
+/** Orteils : [cx, cy, rx, ry, rotation°], du gros orteil au petit */
+export const ORTEILS: [number, number, number, number, number][] = [
+  [27, 16, 10, 13, -8],
+  [45, 15, 5.8, 7.5, 4],
+  [56, 19, 5.2, 6.8, 10],
+  [66, 25, 4.8, 6, 16],
+  [75, 34, 4.2, 5.2, 24],
 ];
 
 /** Trajet du centre de pression pendant le pas : talon → bord externe → avant-pied → gros orteil */
-export const TRAJET = 'M46 200 C52 170 60 150 58 125 C56 100 48 80 40 62 C34 46 30 30 27 12';
+export const TRAJET = 'M47 202 C52 176 62 156 62 132 C62 106 52 82 40 62 C33 48 29 34 27 18';
