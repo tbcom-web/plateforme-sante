@@ -1,34 +1,49 @@
-// Résumé du cabinet lisible par les assistants IA (convention llms.txt).
+// Résumé du cabinet pour les assistants IA, au format llms.txt (https://llmstxt.org) : titre, résumé en
+// citation, informations clés, puis sections de liens vers les versions Markdown des pages.
 import type { APIRoute } from 'astro';
-import { site, absUrl, nomPraticien, adresseComplete } from '../lib/site';
-import { lieuExercice, rdvEnLigne } from '../lib/textes';
+import { site, absUrl } from '../lib/site';
+import { pagesMarkdown, cheminMarkdown, reponseTexte, dateMaj } from '../lib/agents';
+import { noms, titreMetierAffiche, lieuExercice, adresseLieu, rdvEnLigne } from '../lib/textes';
+
+const lien = (titre: string, path: string, note: string) => `- [${titre}](${absUrl(path)}): ${note}`;
 
 export const GET: APIRoute = () => {
+  const pages = new Map(pagesMarkdown().map((p) => [p.path, p]));
+  const md = (path: string) => cheminMarkdown(path);
   const lignes = [
     `# ${site.cabinet.nom}`,
     '',
-    `> ${nomPraticien}, ${site.praticien.titre.toLowerCase()}, ${lieuExercice}. ${site.accroche.texte}`,
+    `> ${noms}, ${titreMetierAffiche.toLowerCase()} ${lieuExercice}. ${site.accroche.texte}`,
     '',
-    '## Informations clés',
-    `- Adresse : ${adresseComplete}`,
+    `Site officiel du cabinet (${absUrl('/')}), mis à jour le ${dateMaj}. Informations factuelles, sans publicité.`,
+    '',
+    `- Adresse : ${adresseLieu}`,
     `- Téléphone : ${site.cabinet.telephone}`,
-    rdvEnLigne ? `- Prise de rendez-vous : ${site.rdv.url} (${site.rdv.plateforme})` : `- Prise de rendez-vous : par téléphone au ${site.cabinet.telephone}`,
-    `- ${site.praticien.conventionnement}`,
-    `- RPPS : ${site.praticien.rpps}`,
-    `- Accessibilité PMR : ${site.cabinet.pmr ? 'oui' : 'non'}`,
-    `- Langues : ${site.praticien.langues.join(', ')}`,
-    `- Horaires : ${site.cabinet.horaires.map((h) => `${h.jour} ${h.heures}`).join(' ; ')}`,
+    rdvEnLigne ? `- Prise de rendez-vous : en ligne sur ${site.rdv.plateforme} (${site.rdv.url}) ou par téléphone` : `- Prise de rendez-vous : par téléphone au ${site.cabinet.telephone}`,
+    ...(site.praticien.conventionnement ? [`- ${site.praticien.conventionnement}`] : []),
+    ...site.praticiens.flatMap((p) => p.identifiants.map((i) => `- ${p.prenom} ${p.nom} : ${i}`)),
+    `- Accessibilité PMR : ${site.accesDetail.pmr ? 'oui' : 'non'}`,
+    ...(site.communes.length ? [`- Communes desservies : ${site.communes.join(', ')}`] : []),
     '',
-    '## Soins',
-    ...site.soins.map((s) => `- [${s.titreCourt}](${absUrl(`/soins/${s.slug}`)}) : ${s.resume}`),
+    '## Le cabinet',
     '',
-    ...(site.articles.length > 0 ? ['## Conseils'] : []),
-    ...site.articles.map((a) => `- [${a.titre}](${absUrl(`/actualites/${a.slug}`)}) : ${a.resume}`),
+    lien('Accueil', md('/'), pages.get('/')!.resume),
+    lien('Le cabinet et les praticiens', md('/le-cabinet'), 'Praticiens, diplômes, identifiants professionnels, orientations, horaires.'),
+    lien('Plan d’accès', md('/acces'), pages.get('/acces')!.resume),
     '',
-    '## Pages',
-    `- [Le cabinet et les praticiens](${absUrl('/le-cabinet')})`,
-    `- [Mentions légales](${absUrl('/mentions-legales')})`,
+    '## Compétences',
+    '',
+    ...site.soins.map((s) => lien(s.titre, md(`/soins/${s.slug}`), s.resume)),
+    ...(site.articles.length
+      ? ['', '## Conseils', '', ...[...site.articles].sort((a, b) => b.date.localeCompare(a.date)).map((a) => lien(a.titre, md(`/actualites/${a.slug}`), a.resume))]
+      : []),
+    '',
+    '## Optional',
+    '',
+    lien('Contenu complet', '/llms-full.txt', 'Toutes les pages du site en un seul fichier Markdown.'),
+    lien('Mentions légales', '/mentions-legales', 'Éditeur, hébergeur, données personnelles.'),
+    lien('Plan du site', '/sitemap.xml', 'Liste des pages HTML avec leur date de mise à jour.'),
     '',
   ];
-  return new Response(lignes.join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  return reponseTexte(lignes.join('\n'), 'text/plain');
 };

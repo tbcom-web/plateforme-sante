@@ -26,7 +26,8 @@ import Empreintes from '../components/dessins/Empreintes.astro';
 import { CONTOUR } from '../components/animations/pied';
 import { site, absUrl } from '../lib/site';
 import { feuilleCharte, variablesTheme, POLICES, NEUTRES, TRAIT, LOGO } from '@plateforme/core';
-import { businessSchema, personSchema } from '../lib/schema';
+import { businessSchema, personSchemas, websiteSchema, pageSchema, breadcrumbSchema } from '../lib/schema';
+import { aUneVersionMarkdown, cheminMarkdown } from '../lib/agents';
 import { photoAccueil } from '../lib/visuels';
 import {
   titreMetierAffiche, telLien, itineraire, lienRdv, libelleRdv, titreCabinet, praticiens, lieu, adresseLieu,
@@ -73,7 +74,20 @@ const courbes = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='-6 -6 234 104'
   [1, 0.86, 0.72, 0.58, 0.45, 0.33, 0.22, 0.12].map((e) => `<path d='${CONTOUR}' transform='translate(${(47 * (1 - e)).toFixed(1)} ${(130 * (1 - e)).toFixed(1)}) scale(${e})' stroke-width='${(TRAIT.filet / e).toFixed(2)}'/>`).join('')
 }</g></svg>`;
 const style = motif === 'courbes' ? `${couleurs};--courbes:url("data:image/svg+xml,${encodeURIComponent(courbes)}")` : couleurs;
-const allSchemas = [businessSchema(), personSchema(), ...schemas];
+// Page ordinaire : nœud WebPage (date de mise à jour) sauf si la page fournit déjà le sien (soin, article).
+const typeDe = (s: object) => (s as { '@type'?: string })['@type'] ?? '';
+const typePage = schemas.some((s) => ['MedicalWebPage', 'Article', 'WebPage', 'FAQPage'].includes(typeDe(s)));
+// Fil d'Ariane : l'accueil (sans fil visible) en a un d'un seul élément, pour situer la page dans le site.
+const allSchemas = [
+  businessSchema(),
+  ...personSchemas(),
+  websiteSchema(),
+  ...(typePage || noindex ? [] : [pageSchema(title, description, path)]),
+  ...schemas,
+  ...(noindex || schemas.some((s) => typeDe(s) === 'BreadcrumbList') ? [] : [breadcrumbSchema([{ name: 'Accueil', path: '/' }])]),
+];
+// Version Markdown de la page pour les assistants IA (/index.md, /soins/x.md…), si elle existe.
+const versionMarkdown = !noindex && aUneVersionMarkdown(path) ? cheminMarkdown(path) : null;
 const courant = Astro.url.pathname;
 const liens = [
   { href: '/soins', label: 'Compétences' },
@@ -93,7 +107,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    {(site.demo || noindex) && <meta name="robots" content="noindex, nofollow" />}
+    {site.demo || noindex ? <meta name="robots" content="noindex, nofollow" /> : <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />}
     <meta name="theme-color" content={site.theme.couleur} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {prechargees.map((f) => <link rel="preload" href={f} as="font" type="font/woff2" crossorigin />)}
@@ -110,7 +124,8 @@ const via = rdvGeneral ? '' : viaPlateforme;
     {article && <meta property="article:published_time" content={article.date} />}
     {article && <meta property="article:section" content={article.theme} />}
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="alternate" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
+    {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
+    <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
     <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>

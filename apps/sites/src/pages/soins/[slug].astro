@@ -37,7 +37,7 @@ const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
   title={`${soin.titre} – ${noms}`}
   description={soin.resume}
   path={path}
-  schemas={[soinSchema(soin), ...(soin.faq.length ? [faqSchema(soin.faq)] : []), breadcrumbSchema(crumbs)]}
+  schemas={[soinSchema(soin), ...(soin.faq.length ? [faqSchema(soin.faq, { nom: `Questions fréquentes : ${soin.titre}`, description: soin.resume, path })] : []), breadcrumbSchema(crumbs)]}
 >
   <article>
     <header class="cadre tete-page">

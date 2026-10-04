@@ -35,6 +35,8 @@ export type SiteConfig = {
   domaine: string;
   /** Site de démonstration : jamais indexé par les moteurs. */
   demo?: boolean;
+  /** Date de dernière modification du contenu (ISO YYYY-MM-DD) : dateModified et lastmod ; facultative */
+  majLe?: string;
   profession: {
     slug: string;
     libelle: string;

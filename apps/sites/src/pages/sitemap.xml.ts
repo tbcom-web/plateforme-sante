@@ -1,17 +1,20 @@
 import type { APIRoute } from 'astro';
 import { site, absUrl } from '../lib/site';
+import { dateMaj } from '../lib/agents';
 
 export const GET: APIRoute = () => {
   const derniere = [...site.articles].map((a) => a.date).sort().at(-1);
+  // Pages du cabinet : date de la dernière modification de la fiche ; actualités : date de l'article.
+  const recente = [dateMaj, derniere].filter(Boolean).sort().at(-1);
   const urls: { path: string; lastmod?: string }[] = [
-    { path: '/', lastmod: derniere },
-    { path: '/soins' },
-    ...site.soins.map((s) => ({ path: `/soins/${s.slug}` })),
-    { path: '/le-cabinet' },
-    { path: '/acces' },
+    { path: '/', lastmod: recente },
+    { path: '/soins', lastmod: dateMaj },
+    ...site.soins.map((s) => ({ path: `/soins/${s.slug}`, lastmod: dateMaj })),
+    { path: '/le-cabinet', lastmod: dateMaj },
+    { path: '/acces', lastmod: dateMaj },
     ...(site.articles.length > 0 ? [{ path: '/actualites', lastmod: derniere }] : []),
     ...site.articles.map((a) => ({ path: `/actualites/${a.slug}`, lastmod: a.date })),
-    { path: '/mentions-legales' },
+    { path: '/mentions-legales', lastmod: dateMaj },
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

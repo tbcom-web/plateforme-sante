@@ -8,7 +8,9 @@ const SITE_ID = (import.meta.env.SITE_ID as string | undefined) ?? process.env.S
 const local = Object.entries(sites).find(([path]) => path.endsWith(`/${SITE_ID}.ts`));
 
 // Site décrit dans un fichier local (démos), sinon chargé depuis Supabase.
-export const site: SiteConfig = local ? local[1] : await chargerDepuisSupabase(SITE_ID);
+const charge: SiteConfig = local ? local[1] : await chargerDepuisSupabase(SITE_ID);
+// Contrôle local de la découvrabilité (scripts/controle-agents.mjs) : la démo est construite comme un site en ligne.
+export const site: SiteConfig = process.env.CONTROLE_INDEXABLE === '1' ? { ...charge, demo: false } : charge;
 
 export const baseUrl = `https://${site.domaine}`;
 export const absUrl = (path: string) => new URL(path, baseUrl).toString();

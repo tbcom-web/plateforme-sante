@@ -1,6 +1,6 @@
 // Contrôle SEO des modèles : construit le site de démo avec chaque modèle intégré et vérifie que
 // tout ce que lisent les moteurs est identique (title, description, canonical, robots, H1, ensemble des H2,
-// données structurées, sitemap, robots.txt, llms.txt). Usage : node scripts/controle-seo.mjs [modele…]
+// données structurées, sitemap, robots.txt, llms.txt, llms-full.txt et versions Markdown). Usage : node scripts/controle-seo.mjs [modele…]
 // Styles visuels : MODES_VISUELS=illustrations,photos,mixte construit chaque modèle dans chaque style ;
 // les titres et textes ne doivent jamais changer d'un style à l'autre.
 import { execSync } from 'node:child_process';
@@ -39,7 +39,8 @@ function signature() {
         h2: tous(h, /<h2[^>]*>([\s\S]*?)<\/h2>/g).sort(),
         jsonld: [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => m[1]).sort(),
       };
-    } else if (['sitemap.xml', 'robots.txt', 'llms.txt'].includes(cle)) {
+    } else if (['sitemap.xml', 'robots.txt', 'llms.txt', 'llms-full.txt'].includes(cle) || cle.endsWith('.md')) {
+      // Fichiers lus par les moteurs et les assistants IA (versions Markdown, sitemap.md, AGENTS.md).
       sig[cle] = readFileSync(f, 'utf8');
     }
   }

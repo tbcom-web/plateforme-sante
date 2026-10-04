@@ -47,6 +47,8 @@ type LigneSite = {
   config: unknown;
   /** Options payantes activées par l'admin (ex. { edition: true }) */
   options?: { edition?: boolean } | null;
+  /** Dernière modification de la fiche (dateModified, lastmod) */
+  updated_at?: string;
 };
 type LigneArticle = { slug: string; titre: string; resume: string; corps: string; theme: string; date_publication: string; image?: string; image_alt?: string };
 type LigneProfession = { slug: string; libelle: string; specialite_schema: string; ordre: string };
@@ -65,7 +67,7 @@ const enListe = (mots: string[]) =>
 
 export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig> {
   const filtre = /^[0-9a-f-]{36}$/.test(siteId) ? `id=eq.${siteId}` : `slug=eq.${encodeURIComponent(siteId)}`;
-  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,options`);
+  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,options,updated_at`);
   if (!s) throw new Error(`Site introuvable dans Supabase : ${siteId}`);
 
   const [prof] = await lire<LigneProfession[]>(`professions?slug=eq.${s.profession_slug}`);
@@ -154,6 +156,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     id: s.id,
     domaine: s.domaine ?? `${s.slug ?? s.id}.pages.dev`,
     demo: s.test || process.env.APERCU === '1',
+    majLe: s.updated_at?.slice(0, 10),
     profession: { slug: prof.slug, libelle: titreMetier, specialiteSchema: prof.specialite_schema },
 
     // Champs historiques (premier praticien / premier lieu), utilisés par le schema.org.

@@ -1,74 +1,168 @@
 // Données structurées schema.org : lues par Google, Bing et les assistants IA.
-import { site, absUrl, nomPraticien, baseUrl } from './site';
-import type { Faq, Soin, Article } from '@plateforme/core';
+import { site, absUrl, baseUrl } from './site';
+import { photoAccueil } from './visuels';
+import { dateMaj } from './agents';
+import { rdvEnLigne, itineraire, lieu, telLien } from './textes';
+import type { Faq, Soin, Article, PraticienPublic } from '@plateforme/core';
 
 const businessId = `${baseUrl}/#cabinet`;
-const personId = `${baseUrl}/#praticien`;
+const siteId = `${baseUrl}/#site`;
+/** Premier praticien : « #praticien » (référencé par les soins et articles) ; suivants : « #praticien-2 »… */
+const personId = (i = 0) => `${baseUrl}/#praticien${i ? `-${i + 1}` : ''}`;
 
 const jours: Record<string, string> = {
   Lundi: 'Monday', Mardi: 'Tuesday', Mercredi: 'Wednesday', Jeudi: 'Thursday',
   Vendredi: 'Friday', Samedi: 'Saturday', Dimanche: 'Sunday',
 };
 
-const openingHours = () =>
-  site.cabinet.horaires
-    .filter((h) => /\d/.test(h.heures))
+/** « 9h », « 9h00 », « 14h30 », « 9:00 » → « 09:00 ». */
+const heure = (t: string) => {
+  const [, h, m] = t.match(/(\d{1,2})\s*[h:]\s*(\d{2})?/) ?? [];
+  return h ? `${h.padStart(2, '0')}:${m ?? '00'}` : '';
+};
+
+const openingHours = (horaires = lieu.horaires) =>
+  horaires
+    .filter((h) => /\d/.test(h.heures) && jours[h.jour])
     .flatMap((h) =>
-      h.heures.split(/\s*[,/]\s*/).map((plage) => {
-        const [opens, closes] = plage.split(/\s*[–-]\s*/).map((t) => t.replace('h', ':').padEnd(5, '0'));
-        return { '@type': 'OpeningHoursSpecification', dayOfWeek: jours[h.jour], opens, closes };
+      h.heures.split(/\s*[,/]\s*/).flatMap((plage) => {
+        const [opens, closes] = plage.split(/\s*[–—-]\s*/).map(heure);
+        return opens && closes ? [{ '@type': 'OpeningHoursSpecification', dayOfWeek: `https://schema.org/${jours[h.jour]}`, opens, closes }] : [];
       }),
     );
 
+/** Lien direct vers l'agenda en ligne (sans le compteur /rdv), seulement s'il mène à une page précise. */
+const agenda = rdvEnLigne ? site.rdv.url || site.praticiens.find((p) => p.rdvUrl)?.rdvUrl : undefined;
+
+/** Identifiants professionnels publics : « N° RPPS : 10001234567 » → PropertyValue. */
+const identifiants = (p: PraticienPublic) =>
+  p.identifiants.flatMap((ligne) => {
+    const i = ligne.lastIndexOf(':');
+    if (i < 0) return [];
+    const nom = ligne.slice(0, i).trim();
+    const valeur = ligne.slice(i + 1).replace(/\(exemple\)/i, '').trim();
+    const code = /RPPS/i.test(nom) ? 'RPPS' : /INAMI/i.test(nom) ? 'INAMI' : /RCC/i.test(nom) ? 'RCC' : /Ordre/i.test(nom) ? 'Ordre' : nom;
+    return valeur ? [{ '@type': 'PropertyValue', propertyID: code, name: nom, value: valeur }] : [];
+  });
+
+const adresse = {
+  '@type': 'PostalAddress',
+  streetAddress: [lieu.adresse, lieu.complement].filter(Boolean).join(', '),
+  postalCode: lieu.codePostal,
+  addressLocality: lieu.ville,
+  addressCountry: site.pays,
+};
+
 export const businessSchema = () => ({
   '@context': 'https://schema.org',
-  '@type': ['MedicalBusiness', 'LocalBusiness'],
+  // MedicalClinic : à la fois commerce local (adresse, horaires) et organisation de santé (spécialité, patients) ;
+  // LocalBusiness et MedicalBusiness restent explicites pour les lecteurs qui ne suivent pas la hiérarchie schema.org.
+  '@type': ['LocalBusiness', 'MedicalBusiness', 'MedicalClinic'],
   '@id': businessId,
   name: site.cabinet.nom,
   description: site.accroche.texte,
   url: baseUrl,
-  telephone: site.cabinet.telephone,
-  medicalSpecialty: site.profession.specialiteSchema,
+  image: absUrl(photoAccueil),
+  telephone: telLien.replace(/^tel:/, ''),
+  ...(site.cabinet.email && { email: site.cabinet.email }),
+  medicalSpecialty: site.profession.specialiteSchema.startsWith('http') ? site.profession.specialiteSchema : `https://schema.org/${site.profession.specialiteSchema}`,
   isAcceptingNewPatients: true,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: site.cabinet.adresse,
-    postalCode: site.cabinet.codePostal,
-    addressLocality: site.cabinet.ville,
-    addressCountry: 'FR',
-  },
+  address: adresse,
   ...(site.cabinet.geo && {
     geo: { '@type': 'GeoCoordinates', latitude: site.cabinet.geo.lat, longitude: site.cabinet.geo.lng },
   }),
+  hasMap: itineraire,
   openingHoursSpecification: openingHours(),
+  ...(site.communes.length > 0 && { areaServed: site.communes.map((name) => ({ '@type': 'AdministrativeArea', name })) }),
+  ...(site.paiements.length > 0 && { paymentAccepted: site.paiements.join(', ') }),
+  currenciesAccepted: site.pays === 'CH' ? 'CHF' : 'EUR',
+  ...(site.cabinet.tarifs.length > 0 && {
+    makesOffer: site.cabinet.tarifs.map((t) => {
+      const prix = /^\s*(\d+(?:[.,]\d+)?)\s*(€|CHF)\s*$/.exec(t.prix);
+      return { '@type': 'Offer', name: t.acte, description: `${t.acte} : ${t.prix}`, ...(prix && { price: prix[1].replace(',', '.'), priceCurrency: prix[2] === '€' ? 'EUR' : 'CHF' }) };
+    }),
+  }),
+  amenityFeature: [{ '@type': 'LocationFeatureSpecification', name: 'Accès personnes à mobilité réduite', value: site.accesDetail.pmr }],
   availableService: site.soins.map((s) => ({
     '@type': 'MedicalProcedure',
     name: s.titre,
+    description: s.resume,
     url: absUrl(`/soins/${s.slug}`),
   })),
-  employee: { '@id': personId },
-  potentialAction: {
-    '@type': 'ReserveAction',
-    target: site.rdv.url,
-    name: 'Prendre rendez-vous',
-  },
+  employee: site.praticiens.map((_, i) => ({ '@id': personId(i) })),
+  ...(agenda && { sameAs: [agenda] }),
+  potentialAction: agenda
+    ? {
+        '@type': 'ReserveAction',
+        name: 'Prendre rendez-vous',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: agenda,
+          inLanguage: 'fr',
+          actionPlatform: ['https://schema.org/DesktopWebPlatform', 'https://schema.org/MobileWebPlatform'],
+        },
+      }
+    : { '@type': 'CommunicateAction', name: 'Appeler le cabinet', target: telLien },
 });
 
-export const personSchema = () => ({
+/** Une fiche Person par praticien, avec ses identifiants publics (RPPS, n° d'Ordre, INAMI…). */
+export const personSchemas = () =>
+  site.praticiens.map((p, i) => ({
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    '@id': personId(i),
+    name: `${p.prenom} ${p.nom}`,
+    givenName: p.prenom,
+    familyName: p.nom,
+    jobTitle: p.titre,
+    url: absUrl('/le-cabinet'),
+    identifier: identifiants(p),
+    worksFor: { '@id': businessId },
+    workLocation: { '@id': businessId },
+    knowsLanguage: site.praticien.langues,
+    ...(p.orientations.length > 0 && { knowsAbout: p.orientations }),
+    hasCredential: [p.diplome, ...p.formations].filter(Boolean).map((f) => ({ '@type': 'EducationalOccupationalCredential', name: f })),
+    ...(rdvEnLigne && p.rdvUrl && { sameAs: [p.rdvUrl] }),
+  }));
+
+export const websiteSchema = () => ({
   '@context': 'https://schema.org',
-  '@type': 'Person',
-  '@id': personId,
-  name: nomPraticien,
-  jobTitle: site.praticien.titre,
-  identifier: { '@type': 'PropertyValue', propertyID: 'RPPS', value: site.praticien.rpps },
-  worksFor: { '@id': businessId },
-  knowsLanguage: site.praticien.langues,
-  hasCredential: site.praticien.formations.map((f) => ({ '@type': 'EducationalOccupationalCredential', name: f })),
+  '@type': 'WebSite',
+  '@id': siteId,
+  name: site.cabinet.nom,
+  url: baseUrl,
+  inLanguage: 'fr-FR',
+  publisher: { '@id': businessId },
+  dateModified: dateMaj,
 });
 
-export const faqSchema = (faq: Faq[]) => ({
+/** Page ordinaire (accueil, cabinet, accès…) : rattachée au site et au cabinet, avec sa date de mise à jour. */
+export const pageSchema = (nom: string, description: string, path: string) => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${absUrl(path)}#page`,
+  name: nom,
+  description,
+  url: absUrl(path),
+  inLanguage: 'fr-FR',
+  isPartOf: { '@id': siteId },
+  about: { '@id': businessId },
+  dateModified: dateMaj,
+});
+
+/** Questions fréquentes ; avec « page », le nœud décrit aussi la page (nom, description, adresse, date). */
+export const faqSchema = (faq: Faq[], page?: { nom: string; description: string; path: string }) => ({
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
+  ...(page && {
+    '@id': `${absUrl(page.path)}#faq`,
+    name: page.nom,
+    description: page.description,
+    url: absUrl(page.path),
+    inLanguage: 'fr-FR',
+    isPartOf: { '@id': siteId },
+    dateModified: dateMaj,
+  }),
   mainEntity: faq.map((f) => ({
     '@type': 'Question',
     name: f.q,
@@ -79,12 +173,16 @@ export const faqSchema = (faq: Faq[]) => ({
 export const soinSchema = (soin: Soin) => ({
   '@context': 'https://schema.org',
   '@type': 'MedicalWebPage',
+  '@id': `${absUrl(`/soins/${soin.slug}`)}#page`,
   name: soin.titre,
   description: soin.resume,
   url: absUrl(`/soins/${soin.slug}`),
   inLanguage: 'fr-FR',
+  isPartOf: { '@id': siteId },
   about: { '@type': 'MedicalProcedure', name: soin.titre },
-  reviewedBy: { '@id': personId },
+  reviewedBy: { '@id': personId() },
+  lastReviewed: dateMaj,
+  dateModified: dateMaj,
   provider: { '@id': businessId },
 });
 
@@ -94,11 +192,13 @@ export const articleSchema = (a: Article) => ({
   headline: a.titre,
   description: a.resume,
   datePublished: a.date,
+  dateModified: a.date,
   inLanguage: 'fr-FR',
   url: absUrl(`/actualites/${a.slug}`),
   mainEntityOfPage: absUrl(`/actualites/${a.slug}`),
+  isPartOf: { '@id': siteId },
   ...(a.image ? { image: { '@type': 'ImageObject', url: absUrl(a.image), width: 1600, height: 900, caption: a.imageAlt ?? '' } } : {}),
-  author: { '@id': personId },
+  author: { '@id': personId() },
   publisher: { '@id': businessId },
 });
 

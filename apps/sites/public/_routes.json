@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "include": [
+    "/",
+    "/index.md",
+    "/soins",
+    "/soins.md",
+    "/soins/*",
+    "/le-cabinet",
+    "/le-cabinet.md",
+    "/acces",
+    "/acces.md",
+    "/actualites",
+    "/actualites.md",
+    "/actualites/*",
+    "/rdv"
+  ],
+  "exclude": []
+}

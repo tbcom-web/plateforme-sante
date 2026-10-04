@@ -42,7 +42,7 @@ const title = `${site.titreMetier} ${site.cabinet.ville} – ${noms}`;
 const description = `${titreCabinet}. ${phraseAccueil} ${site.soins.slice(0, 4).map((s) => s.titreCourt).join(', ')}.`;
 const douce = (s: string) => ['praticiens', 'faq'].includes(s);
 ---
-<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale)]} immersif={m.accueil.hero !== 'scinde'}>
+<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale, { nom: title, description, path: '/' })]} immersif={m.accueil.hero !== 'scinde'}>
   {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : <HeroScinde />}
 
   {m.accueil.sections.map((section) => (
