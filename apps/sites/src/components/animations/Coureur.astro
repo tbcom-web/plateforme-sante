@@ -26,7 +26,7 @@ const { fond = 'sombre' } = Astro.props;
 
 <style>
   .coureur { display: block; width: 100%; height: 100%; --c: var(--accent-vif, #2f7d6d); --cycle: 0.62s; }
-  .coureur--sombre { --c: #7fe0c8; background: radial-gradient(ellipse at 55% 45%, #10262a 0%, #071214 75%); }
+  .coureur--sombre { --c: var(--accent-pale, #7fe0c8); background: radial-gradient(ellipse at 55% 45%, #10262a 0%, #071214 75%); }
   .coureur line, .coureur circle { stroke: var(--c); stroke-width: 9; stroke-linecap: round; fill: none; }
   .tete { fill: var(--c) !important; stroke: none !important; }
   .jambe--b line, .bras--b line { opacity: 0.45; }

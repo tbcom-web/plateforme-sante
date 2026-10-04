@@ -3,14 +3,18 @@
 // Léger effet de profondeur au défilement (coupé si le visiteur réduit les mouvements).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
-import { photoAccueil } from '../../lib/visuels';
+import AnimationAccueil from '../animations/AnimationAccueil.astro';
+import { photoAccueil, fondAnime } from '../../lib/visuels';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
 
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
+const anime = site.visuels.animation !== null;
 ---
-<section class="plein">
-  <img class="plein__image" src={photoAccueil} alt="" width="2000" height="1300" fetchpriority="high" decoding="async" />
+<section class:list={['plein', { 'plein--anime': anime }]} style={anime ? `background:${fondAnime}` : undefined}>
+  {anime
+    ? <div class="plein__anim" aria-hidden="true"><AnimationAccueil /></div>
+    : <img class="plein__image" src={photoAccueil} alt="" width="2000" height="1300" fetchpriority="high" decoding="async" />}
   <div class="cadre plein__contenu">
     <p class="sur plein__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
@@ -41,6 +45,14 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   .plein::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
       linear-gradient(180deg, rgb(10 22 22 / calc(var(--voile, 0.4) * 0.9)) 0%, rgb(10 22 22 / calc(var(--voile, 0.4) * 0.6)) 50%, rgb(10 22 22 / calc(var(--voile, 0.4) * 1.2)) 100%); }
   .plein__contenu { display: grid; justify-items: center; padding-block: 140px 120px; }
+  /* Accueil animé : titre aligné à gauche, animation à droite (en fond atténué sur mobile). */
+  .plein--anime { text-align: left; place-items: center stretch; }
+  .plein--anime::after { background: linear-gradient(90deg, rgb(5 12 13 / 0.6) 0%, rgb(5 12 13 / 0) 60%); }
+  .plein--anime .plein__contenu { justify-items: start; }
+  .plein--anime .plein__actions { justify-content: flex-start; }
+  .plein__anim { position: absolute; inset: 0; z-index: -2; opacity: 0.35; }
+  .plein__anim :global(canvas), .plein__anim :global(svg) { background: none !important; }
+  @media (min-width: 900px) { .plein__anim { left: 50%; opacity: 1; } }
   .plein__sur { color: rgb(255 255 255 / 0.85); }
   .plein__sur::before { display: none; }
   h1 { color: #fff; font-size: clamp(2.6rem, 6.6vw, 5.8rem); max-width: 16ch; line-height: 1; }

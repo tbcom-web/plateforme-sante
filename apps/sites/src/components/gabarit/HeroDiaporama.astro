@@ -3,21 +3,25 @@
 // Sans JavaScript ; animations coupées si le visiteur réduit les mouvements.
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
+import AnimationAccueil from '../animations/AnimationAccueil.astro';
+import { diaporama as diapos, fondAnime } from '../../lib/visuels';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU } from '../../lib/textes';
 
-const photos = [site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].filter(Boolean);
-const defauts = ['/photos/cabinet-lumiere.webp', '/photos/chaussage.webp', '/photos/enfant-pied.webp', '/photos/sport-course.webp'];
-const diapos = [...new Set([...photos, ...defauts])].slice(0, 4);
+const anime = site.visuels.animation !== null;
 const duree = 7; // secondes par photo
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 ---
-<section class="hero" style={`--n:${diapos.length};--d:${duree}s`}>
-  <div class="hero__diapos" aria-hidden="true">
-    {diapos.map((src, i) => (
-      <img src={src} alt="" style={`--i:${i}`} width="2000" height="1300" fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
-    ))}
-  </div>
+<section class:list={['hero', { 'hero--anime': anime }]} style={`--n:${diapos.length};--d:${duree}s;${anime ? `background:${fondAnime}` : ''}`}>
+  {anime ? (
+    <div class="hero__anim" aria-hidden="true"><AnimationAccueil /></div>
+  ) : (
+    <div class="hero__diapos" aria-hidden="true">
+      {diapos.map((src, i) => (
+        <img src={src} alt="" style={`--i:${i}`} width="2000" height="1300" fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+      ))}
+    </div>
+  )}
   <div class="cadre hero__contenu">
     <p class="sur hero__sur">{titreMetierAffiche} · {site.cabinet.quartier || site.cabinet.ville}</p>
     <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
@@ -31,7 +35,7 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
     </div>
     <p class="hero__lieu"><Icone nom="lucide:map-pin" />{lieu.nom || TYPES_LIEU[lieu.type]} · {lieu.adresse}, {lieu.ville}</p>
   </div>
-  <div class="hero__points" aria-hidden="true">{diapos.map((_, i) => <span style={`--i:${i}`}></span>)}</div>
+  {!anime && <div class="hero__points" aria-hidden="true">{diapos.map((_, i) => <span style={`--i:${i}`}></span>)}</div>}
   <a class="hero__suite" href="#competences" aria-label="Découvrir le cabinet">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
   </a>
@@ -52,6 +56,11 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
       linear-gradient(180deg, rgb(8 20 22 / var(--voile, 0.55)) 0%, rgb(8 20 22 / calc(var(--voile, 0.55) * 0.1)) 30%, rgb(8 20 22 / calc(var(--voile, 0.55) * 0.45)) 55%, rgb(8 20 22 / calc(var(--voile, 0.55) * 1.55)) 100%); }
   .hero__contenu { padding-block: 140px clamp(80px, 12vh, 140px); }
+  /* Accueil animé : l'animation occupe la droite, le titre reste à gauche (en fond atténué sur mobile). */
+  .hero--anime::after { background: linear-gradient(90deg, rgb(5 12 13 / 0.7) 0%, rgb(5 12 13 / 0) 60%); }
+  .hero__anim { position: absolute; inset: 0; z-index: -2; opacity: 0.35; }
+  .hero__anim :global(canvas), .hero__anim :global(svg) { background: none !important; }
+  @media (min-width: 900px) { .hero__anim { left: 50%; opacity: 1; } }
   .hero__sur { color: rgb(255 255 255 / 0.85); }
   h1 { color: #fff; font-size: clamp(2.8rem, 7.4vw, 6.6rem); max-width: 14ch; line-height: 0.98; }
   h1 .pale { color: rgb(255 255 255 / 0.72) !important; }

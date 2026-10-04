@@ -94,6 +94,8 @@ export type SiteConfig = {
   communes: string[];
   /** URLs des photos ; vide = photo d'illustration par défaut */
   photos: { accueil: string; panorama: string; cabinet: string[] };
+  /** Pack visuel de la spécialité (photos par défaut) et animation d'accueil retenue (null = aucune) */
+  visuels: { specialite: string; animation: import('./packs').Animation | null; photos: import('./packs').PackVisuel['photos'] };
 };
 
 export type PraticienPublic = {

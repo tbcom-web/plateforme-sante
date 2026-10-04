@@ -1,6 +1,7 @@
-import { MODELES_INTEGRES } from './modeles';
 // Brouillon de site édité dans le back-office (colonne sites.config), version 2.
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
+import { MODELES_INTEGRES } from './modeles';
+import { specialiteDuProfil } from './packs';
 import type { Horaire, SiteConfig } from './types';
 import type { Voix } from './lexique';
 
@@ -85,7 +86,8 @@ export type SiteDraft = {
   domicile: { actif: boolean; creneaux: string; secteurs: string[] };
   message: { texte: string; jusquAu: string };
   conventionnement: string;
-  theme: { couleur: string; modele: Modele };
+  /** Style (modèle), spécialité (pack visuel) et animation d'accueil */
+  theme: { couleur: string; modele: Modele; specialite: string; animation: boolean };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
   /** URLs publiques des photos (stockage Supabase) */
@@ -177,7 +179,7 @@ export const draftVide = (): SiteDraft => ({
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
-  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite' },
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', animation: true },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],
@@ -197,7 +199,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       rdv: { ...vide.rdv, ...d.rdv },
       domicile: { ...vide.domicile, ...d.domicile },
       message: { ...vide.message, ...d.message },
-      theme: { ...vide.theme, ...d.theme },
+      theme: { ...vide.theme, specialite: specialiteDuProfil(d.profil), ...d.theme },
       flux: { ...vide.flux, ...d.flux, themes: Array.isArray(d.flux?.themes) ? d.flux.themes : [] },
       photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
@@ -218,7 +220,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
     praticiens: [{ ...praticienVide(), prenom: p1.prenom ?? '', nom: p1.nom ?? '', rpps: rpps.length === 11 ? rpps : '', numeroOrdre: rpps.length === 9 ? rpps : '' }],
     acces: { ...vide.acces, pmr: Boolean(c1.pmr) },
     rdv: { mode: d.rdv?.url ? 'les_deux' : 'telephone', outil: d.rdv?.plateforme || 'Doctolib', url: d.rdv?.url ?? '' },
-    theme: { couleur: d.theme?.couleur ?? vide.theme.couleur, modele: 'proximite' },
+    theme: { ...vide.theme, couleur: d.theme?.couleur ?? vide.theme.couleur },
     soins: Array.isArray(d.soins) ? d.soins : [],
   };
 }

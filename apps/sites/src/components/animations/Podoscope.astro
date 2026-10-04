@@ -26,7 +26,7 @@ const { fond = 'sombre' } = Astro.props;
   const zone = (y: number) => (y > 0.62 ? 0 : y > 0.22 ? 1 : 2);
 
   function construire(l: number, h: number): Point[] {
-    const pied = Math.min(h * 0.86, l * 0.8);
+    const pied = Math.min(h * 0.74, l * 0.62);
     const largeur = pied * 0.42;
     const pas = Math.max(6, pied / 34);
     const pts: Point[] = [];
@@ -81,7 +81,7 @@ const { fond = 'sombre' } = Astro.props;
       const t = calme ? 900 : maintenant - debut;
       ctx.clearRect(0, 0, l, h);
       const balayage = calme ? 2 : Math.min(1.2, t / 1600); // apparition du haut vers le bas
-      const taille = Math.max(6, Math.min(h * 0.86, l * 0.8) / 34) * 0.34; // ≈ un tiers de l'écart entre points
+      const taille = Math.max(6, Math.min(h * 0.74, l * 0.62) / 34) * 0.34; // ≈ un tiers de l'écart entre points
       for (const p of pts) {
         const seuil = p.y / h;
         if (seuil > balayage) continue;

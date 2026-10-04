@@ -2,7 +2,8 @@
 // Accueil « scindé » : titre à gauche, grande photo à droite avec badges.
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
-import { photoAccueil } from '../../lib/visuels';
+import AnimationAccueil from '../animations/AnimationAccueil.astro';
+import { photoAccueil, fondAnime } from '../../lib/visuels';
 import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
 
 const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
@@ -24,7 +25,9 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
     </div>
   </div>
   <figure class="visuel">
-    <img src={photoAccueil} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" />
+    {site.visuels.animation
+      ? <div class="visuel__anim" style={`background:${fondAnime}`} aria-hidden="true"><AnimationAccueil /></div>
+      : <img src={photoAccueil} alt={`Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`} width="1200" height="1500" fetchpriority="high" />}
     <figcaption class="flottant flottant--haut">
       <span class="pastille" aria-hidden="true"></span>
       {rdvEnLigne ? 'Réservation en ligne 24h/24' : 'Rendez-vous par téléphone'}
@@ -44,6 +47,8 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   .fleche { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.3s; }
   .bouton:hover .fleche { transform: translateX(3px); }
   .visuel { position: relative; margin: 0; }
+  .visuel__anim { height: clamp(360px, 64vh, 640px); border-radius: var(--rayon-grand); overflow: hidden; }
+  .visuel__anim :global(canvas), .visuel__anim :global(svg) { background: none !important; }
   .visuel img { width: 100%; height: clamp(360px, 64vh, 640px); object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }
   .flottant { position: absolute; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 16px; background: rgb(255 255 255 / 0.86); backdrop-filter: blur(14px) saturate(1.5); box-shadow: var(--ombre); font-size: 0.86rem; line-height: 1.35; color: var(--encre); }
   .flottant--haut { top: 18px; right: 18px; }

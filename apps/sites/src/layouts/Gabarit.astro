@@ -67,7 +67,7 @@ const nomMarque = praticiens.length > 1 ? 'Cabinet de podologie' : `${praticiens
 const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? '/le-cabinet#praticiens' : null;
 ---
 <!doctype html>
-<html lang="fr" style={couleurs} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" style={couleurs} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -206,6 +206,10 @@ const rdvGeneral = site.praticiens.length > 1 && site.rdvMode !== 'telephone' ? 
     --brand-softer: var(--doux); --brand-soft: var(--accent-pale); --brand-line: var(--accent-ligne);
   }
   [data-modele='premium'] { --encre: #0b1c24; }
+  /* Traitement des photos selon le style, pour l'unité graphique (portraits exclus). */
+  [data-images='chaud'] main img:not(.praticien__photo) { filter: sepia(0.22) saturate(1.1) hue-rotate(-8deg) contrast(1.02); }
+  [data-images='doux'] main img:not(.praticien__photo) { filter: saturate(0.72) brightness(1.06) contrast(0.92); }
+  [data-images='contraste'] main img:not(.praticien__photo) { filter: contrast(1.12) saturate(0.88) brightness(0.96); }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }

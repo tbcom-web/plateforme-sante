@@ -7,3 +7,4 @@ export * from './icones-meta';
 export * from './lexique';
 export * from './controles';
 export * from './modeles';
+export * from './packs';

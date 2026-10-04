@@ -21,8 +21,13 @@ const PHOTO_SOIN: Record<string, string> = {
 
 export const photoSoin = (slug: string) => PHOTO_SOIN[slug] ?? '/photos/examen-mains.webp';
 
-export const photoAccueil = site.photos.accueil || '/photos/cabinet-lumiere.webp';
-export const photoPanorama = site.photos.panorama || site.photos.cabinet[0] || '/photos/cabinet-lumiere.webp';
+// Photos du praticien d'abord, puis celles du pack visuel de sa spécialité.
+const pack = site.visuels.photos;
+export const photoAccueil = site.photos.accueil || pack.accueil;
+export const photoPanorama = site.photos.panorama || site.photos.cabinet[0] || pack.panorama;
+export const diaporama = [...new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet, ...pack.diaporama].filter(Boolean))].slice(0, 4);
+/** Fond sombre des accueils animés, teinté de la couleur du cabinet */
+export const fondAnime = 'radial-gradient(ellipse at 65% 45%, color-mix(in srgb, var(--accent-fonce) 45%, #050c0d) 0%, #050c0d 78%)';
 export const photoFinale = site.photos.cabinet[1] || '/photos/chaussage.webp';
 
 /** Coordonnées du cabinet : saisies, sinon géocodées au build via Nominatim (OpenStreetMap). */

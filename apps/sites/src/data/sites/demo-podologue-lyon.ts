@@ -1,8 +1,10 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
-import { modeleIntegre, type SiteConfig } from '@plateforme/core';
+import { modeleIntegre, packVisuel, type SiteConfig } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 const modele = modeleIntegre(process.env.MODELE ?? 'prestige');
+// Spécialité de la démo (variable SPECIALITE) ; ANIMATION=non pour la désactiver.
+const pack = packVisuel(process.env.SPECIALITE ?? 'generale');
 
 const site: SiteConfig = {
   id: 'demo-podologue-lyon',
@@ -353,6 +355,7 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   voix: 'tiers',
   // Modèle affiché sur la démo (variable MODELE pour comparer les modèles en local).
   modele,
+  visuels: { specialite: pack.value, animation: process.env.ANIMATION === 'non' ? null : pack.animation, photos: pack.photos },
   titreMetier: 'Pédicure-podologue',
   praticiens: [
     {

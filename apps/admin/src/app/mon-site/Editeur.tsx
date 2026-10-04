@@ -9,6 +9,8 @@ import {
   PAYS,
   praticienVide,
   PROFILS,
+  SPECIALITES,
+  specialiteDuProfil,
   STATUTS,
   THEMES_FLUX,
   TYPES_LIEU,
@@ -102,7 +104,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                 valeur={d.profil}
                 onChange={(v) => {
                   const p = PROFILS.find((x) => x.value === v)!;
-                  maj({ profil: p.value, voix: p.voix, theme: { ...d.theme, modele: p.modele } });
+                  maj({ profil: p.value, voix: p.voix, theme: { ...d.theme, modele: p.modele, specialite: specialiteDuProfil(p.value) } });
                 }}
               />
               <Choix
@@ -406,6 +408,19 @@ export default function Editeur({ siteId, initial, catalogue, modeles }: Props) 
                 valeur={d.theme.modele}
                 onChange={(v) => maj({ theme: { ...d.theme, modele: v, couleur: modeles.find((m) => m.id === v)?.couleurConseillee ?? d.theme.couleur } })}
               />
+              <Choix
+                legende="Spécialité mise en avant (photos et animation par défaut)"
+                options={SPECIALITES.map((s) => ({ value: s.value, label: s.label, description: s.description }))}
+                valeur={d.theme.specialite}
+                onChange={(v) => maj({ theme: { ...d.theme, specialite: v } })}
+              />
+              {SPECIALITES.find((s) => s.value === d.theme.specialite)?.animation && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" className="size-4 accent-teal-800" checked={d.theme.animation} onChange={(e) => maj({ theme: { ...d.theme, animation: e.target.checked } })} />
+                  Animation d’accueil ({SPECIALITES.find((s) => s.value === d.theme.specialite)?.animation === 'coureur' ? 'coureur en mouvement' : 'empreintes de podoscope'}) à la place de la photo
+                </label>
+              )}
+              <p className="text-xs text-neutral-500">Vos photos remplacent toujours les photos par défaut. Le style applique une teinte commune à toutes les images.</p>
             </div>
           )}
 

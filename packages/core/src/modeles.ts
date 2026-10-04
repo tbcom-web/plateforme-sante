@@ -12,6 +12,9 @@ export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument'] as 
 export type PoliceTitres = (typeof POLICES_TITRES)[number];
 export const POLICES_TEXTE = ['inter', 'manrope'] as const;
 export type PoliceTexte = (typeof POLICES_TEXTE)[number];
+/** Traitement appliqué aux photos pour l'unité graphique du style */
+export const TRAITEMENTS_IMAGES = ['naturel', 'chaud', 'doux', 'contraste'] as const;
+export type TraitementImages = (typeof TRAITEMENTS_IMAGES)[number];
 
 export type ModeleManifeste = {
   /** Identifiant stable (minuscules, chiffres, tirets) */
@@ -49,6 +52,8 @@ export type ModeleManifeste = {
     accent: 'couleur' | 'encre';
     /** Fond des pages (#rrggbb) */
     fond: string;
+    /** Traitement des photos : naturel, chaud (beige, terracotta), doux (pastel), contraste (profond) */
+    images: TraitementImages;
     /** Fond des sections alternées (#rrggbb), facultatif (sinon teinte de la couleur du cabinet) */
     fondDoux?: string;
   };
@@ -67,7 +72,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'liste',
     pied: 'sombre',
     animations: 'douces',
-    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 600, rayon: 22, boutons: 'pilule', accent: 'couleur', fond: '#ffffff' },
+    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 600, rayon: 22, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel' },
   },
   {
     id: 'premium',
@@ -79,7 +84,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'liste',
     pied: 'sombre',
     animations: 'douces',
-    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 500, rayon: 14, boutons: 'arrondi', accent: 'encre', fond: '#ffffff', fondDoux: '#f4f5f4' },
+    jetons: { policeTitres: 'inter', policeTexte: 'inter', graisseTitres: 500, rayon: 14, boutons: 'arrondi', accent: 'encre', fond: '#ffffff', images: 'naturel', fondDoux: '#f4f5f4' },
   },
   {
     id: 'prestige',
@@ -91,7 +96,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     competences: 'cartes',
     pied: 'sombre',
     animations: 'douces',
-    jetons: { policeTitres: 'fraunces', policeTexte: 'inter', graisseTitres: 420, rayon: 6, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', fondDoux: '#f6f3ee' },
+    jetons: { policeTitres: 'fraunces', policeTexte: 'inter', graisseTitres: 420, rayon: 6, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'contraste', fondDoux: '#f6f3ee' },
   },
   {
     id: 'zen',
@@ -104,7 +109,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'accent',
     animations: 'douces',
     couleurConseillee: '#2f6f6a',
-    jetons: { policeTitres: 'manrope', policeTexte: 'manrope', graisseTitres: 300, rayon: 30, boutons: 'pilule', accent: 'couleur', fond: '#fbfcfb', fondDoux: '#eef4f1' },
+    jetons: { policeTitres: 'manrope', policeTexte: 'manrope', graisseTitres: 300, rayon: 30, boutons: 'pilule', accent: 'couleur', fond: '#fbfcfb', images: 'doux', fondDoux: '#eef4f1' },
   },
   {
     id: 'atelier',
@@ -117,7 +122,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     pied: 'clair',
     animations: 'douces',
     couleurConseillee: '#b0583a',
-    jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', fondDoux: '#efe6dc' },
+    jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', images: 'chaud', fondDoux: '#efe6dc' },
   },
 ];
 
@@ -166,6 +171,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
     if (j.boutons !== undefined && !parmi(j.boutons, ['pilule', 'arrondi', 'carre'])) e.push('« jetons.boutons » : « pilule », « arrondi » ou « carre ».');
     if (!parmi(j.accent, ['couleur', 'encre'])) e.push('« jetons.accent » : « couleur » ou « encre ».');
     if (j.fond !== undefined && !HEX.test(j.fond)) e.push('« jetons.fond » : couleur au format #rrggbb.');
+    if (j.images !== undefined && !parmi(j.images, TRAITEMENTS_IMAGES)) e.push(`« jetons.images » : ${TRAITEMENTS_IMAGES.join(', ')}.`);
     if (j.fondDoux !== undefined && !HEX.test(j.fondDoux)) e.push('« jetons.fondDoux » : couleur au format #rrggbb.');
   }
   if (e.length) return { erreurs: e };
@@ -193,6 +199,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
         boutons: v.jetons.boutons ?? 'pilule',
         accent: v.jetons.accent,
         fond: v.jetons.fond ?? '#ffffff',
+        images: v.jetons.images ?? 'naturel',
         ...(v.jetons.fondDoux ? { fondDoux: v.jetons.fondDoux } : {}),
       },
     },

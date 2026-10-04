@@ -1,0 +1,12 @@
+---
+// Animation d'accueil retenue pour le site (pack visuel de la spécialité), ou rien.
+import Podoscope from './Podoscope.astro';
+import Coureur from './Coureur.astro';
+import { site } from '../../lib/site';
+
+interface Props { fond?: 'sombre' | 'clair' }
+const { fond = 'sombre' } = Astro.props;
+const animation = site.visuels.animation;
+---
+{animation === 'podoscope' && <Podoscope fond={fond} />}
+{animation === 'coureur' && <Coureur fond={fond} />}

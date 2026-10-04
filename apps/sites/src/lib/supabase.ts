@@ -5,6 +5,7 @@ import {
   formaterTelephone,
   mentionOrdre,
   modeleIntegre,
+  packVisuel,
   validerManifeste,
   normaliserDraft,
   PAYS,
@@ -68,6 +69,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   // Modèle de présentation : fiche importée par l'admin (table « modeles »), sinon modèle intégré.
   const [ligneModele] = await lire<{ manifeste: unknown }[]>(`modeles?id=eq.${encodeURIComponent(d.theme.modele)}&actif=eq.true&select=manifeste`).catch(() => []);
   const modele = (ligneModele && validerManifeste(ligneModele.manifeste).modele) || modeleIntegre(d.theme.modele);
+  const pack = packVisuel(d.theme.specialite);
   // Même contrôle que le back-office : un site incomplet n'est jamais publié (sauf site de test).
   const { bloquants } = controlerPublication(d);
   if (bloquants.length && !s.test) {
@@ -180,5 +182,10 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     message: messageActif ? d.message.texte : '',
     communes: d.cabinet.communes,
     photos: d.photos,
+    visuels: {
+      specialite: pack.value,
+      animation: d.theme.animation ? pack.animation : null,
+      photos: pack.photos,
+    },
   };
 }
