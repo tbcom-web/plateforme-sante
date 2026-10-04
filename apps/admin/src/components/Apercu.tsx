@@ -1,4 +1,4 @@
-import { buildTheme, iconeSoin, urlIconeApi, PAYS, type SiteDraft } from '@plateforme/core';
+import { buildTheme, iconeSoin, lieuEnClair, urlIconeApi, PAYS, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 // Aperçu miniature du site (gabarit Proximité), calculé avec le même thème que le générateur.
@@ -14,7 +14,7 @@ export default function Apercu({ draft, catalogue }: { draft: SiteDraft; catalog
   const plusieurs = draft.praticiens.length > 1;
   const metier = (plusieurs ? pluriel(titre) : titre).toLowerCase();
   const noms = enListe(nomsListe) || 'Votre nom';
-  const ou = lieu?.nom ? `à la ${lieu.nom}` : `à ${draft.cabinet.quartier || ville}`;
+  const ou = lieu?.nom ? `à la ${lieu.nom}` : lieuEnClair(draft.cabinet.quartier, ville);
   const phrase =
     draft.voix === 'je'
       ? `Je vous accueille ${ou}.`
