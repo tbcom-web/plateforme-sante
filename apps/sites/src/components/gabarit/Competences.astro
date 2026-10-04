@@ -7,6 +7,7 @@ import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
 import { visuelSoin } from '../../lib/visuels-soins';
 import { modeVisuel } from '../../lib/visuels';
+import { rendreCase } from '@plateforme/core';
 
 const n = site.soins.length;
 /** Format de chaque tuile selon le nombre de soins, pour une grille toujours pleine sur 4 colonnes */
@@ -21,16 +22,19 @@ const format = (i: number): 'vedette' | 'moyen' | 'petit' | 'large' => {
   return reste % 2 === 1 && i === n - 1 ? 'large' : 'moyen';
 };
 const num = (i: number) => String(i + 1).padStart(2, '0');
-// Listes : illustrations (homogènes) ; photos seulement si le praticien a choisi le style « Photos ».
-const avecPhoto = modeVisuel === 'photos';
+// Listes : illustrations (homogènes) ; photos seulement si le praticien a choisi le style « Photos » (rendreCase, core).
+const visuels = site.soins.map((s) => {
+  const v = visuelSoin(s.slug);
+  return { ...v, avecPhoto: rendreCase(v, modeVisuel, 'liste').type === 'photo' };
+});
 ---
 <ul class="bento">
   {site.soins.map((s, i) => (
     <li class:list={['tuile', `tuile--${format(i)}`, { 'tuile--plan': i === 0 && n > 2 }, 'apparait']} style={`--i:${i}`}>
       <a href={`/soins/${s.slug}`} class:list={{ 'surface-plan': i === 0 && n > 2 }}>
-        <span class:list={['tuile__visuel', { 'surface-grille': !avecPhoto && !(i === 0 && n > 2), 'tuile__visuel--photo': avecPhoto }]} aria-hidden="true">
-          {avecPhoto && <img class="tuile__photo" src={visuelSoin(s.slug).photo} alt="" width="800" height="500" loading="lazy" decoding="async" style={`object-position:${visuelSoin(s.slug).cadrage}`} />}
-          {!avecPhoto && <Dessin nom={visuelSoin(s.slug).dessin} />}
+        <span class:list={['tuile__visuel', { 'surface-grille': !visuels[i].avecPhoto && !(i === 0 && n > 2), 'tuile__visuel--photo': visuels[i].avecPhoto }]} aria-hidden="true">
+          {visuels[i].avecPhoto && <img class="tuile__photo" src={visuels[i].photo} alt="" width="800" height="500" loading="lazy" decoding="async" style={`object-position:${visuels[i].cadrage}`} />}
+          {!visuels[i].avecPhoto && <Dessin nom={visuels[i].dessin} />}
         </span>
         <span class="tuile__corps">
           <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>

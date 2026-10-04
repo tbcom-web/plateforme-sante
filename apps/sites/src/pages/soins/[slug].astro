@@ -1,6 +1,6 @@
 ---
 // Page d'un soin : même langage que l'accueil (en-tête éditorial à filet, sur-titre indexé, visuel du soin
-// selon le style visuel : photo, planche ou animation, ou les deux ; source unique lib/visuels-soins.ts).
+// selon le style visuel : photo, planche ou animation, ou les deux ; source unique : jeu visuel de la spécialité, lib/visuels-soins.ts).
 // Titres, textes et données structurées inchangés.
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
@@ -9,7 +9,7 @@ import VisuelEntete from '../../components/gabarit/VisuelEntete.astro';
 import VignetteSoin from '../../components/gabarit/VignetteSoin.astro';
 import { site, md } from '../../lib/site';
 import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
-import { visuelSoin } from '../../lib/visuels-soins';
+import { visuelSoin, photoPraticienSoin } from '../../lib/visuels-soins';
 import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences } from '../../lib/textes';
 import type { Soin } from '@plateforme/core';
 
@@ -45,7 +45,7 @@ const visuel = visuelSoin(soin.slug);
           <h1>{soin.titre}</h1>
           <p class="chapo">{soin.resume}</p>
         </div>
-        <VisuelEntete photo={visuel.photo} cadrage={visuel.cadrage} dessin={visuel.dessin} animation={visuel.animation} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} photoBonne={visuel.photoBonne} />
+        <VisuelEntete photo={visuel.photo} cadrage={visuel.cadrage} dessin={visuel.dessin} animation={visuel.animation} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} photoBonne={visuel.photoBonne} photoPraticien={photoPraticienSoin(soin.slug)} />
       </div>
     </header>
 

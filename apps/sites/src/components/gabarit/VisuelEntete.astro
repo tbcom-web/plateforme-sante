@@ -3,10 +3,11 @@
 // - photos : grande photo 16:9, dimensions fixes, traitement de teinte du modèle (Gabarit) ;
 // - illustrations : planche du dessin, ou animation du soin quand elle existe, sur fond plan ;
 // - mixte : photo 16:9 et planche technique en encart, posée sur l'angle de la photo.
+// Le choix suit rendreCase (packages/core/src/jeux.ts), la même règle que l'aperçu de l'admin.
 // Décoratif : aria-hidden ; toute planche porte la mention illustrative de la charte.
 import Dessin from '../dessins/Dessin.astro';
 import Animation from '../animations/Animation.astro';
-import { MENTION_ILLUSTRATIVE, type Animation as NomAnimation, type NomDessin } from '@plateforme/core';
+import { MENTION_ILLUSTRATIVE, rendreCase, type Animation as NomAnimation, type NomDessin } from '@plateforme/core';
 import { modeVisuel } from '../../lib/visuels';
 
 interface Props {
@@ -22,21 +23,27 @@ interface Props {
   photoBonne?: boolean;
   /** Page de liste (compétences) : en mode mélange, illustration plutôt que photo */
   liste?: boolean;
+  /** Photo fournie par le praticien pour ce soin : affichée quel que soit le style visuel */
+  photoPraticien?: string;
 }
-const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '', photoBonne = true, liste = false } = Astro.props;
+const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '', photoBonne = true, liste = false, photoPraticien } = Astro.props;
 // Règle : illustrations dans les listes ; photo sur la fiche d'un soin si elle est bonne (mode mélange).
-const rendu = modeVisuel === 'mixte' && (liste || !photoBonne) ? 'illustrations' : modeVisuel;
+const choix = rendreCase({ photo, cadrage, dessin, animation, photoBonne }, modeVisuel, liste ? 'liste' : 'page', { photoPraticien, animationActive: true });
+const image = choix.type === 'photo' ? choix : { src: photo, cadrage };
+// Photo : seule (style photos, ou photo du praticien en style illustrations) ou avec la planche en encart (mélange).
+const rendu = choix.type === 'photo' ? (modeVisuel === 'mixte' ? 'mixte' : 'photos') : 'illustrations';
+const anime = choix.type === 'animation' ? choix.animation : null;
 ---
 {rendu === 'photos' && (
   <figure class="ve ve--photo" aria-hidden="true">
-    <img src={photo} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${cadrage}`} />
+    <img src={image.src} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
   </figure>
 )}
 
 {rendu === 'illustrations' && (
-  <figure class:list={['ve', 've--plan', 'surface-plan', { 've--anime': animation }]} aria-hidden="true">
+  <figure class:list={['ve', 've--plan', 'surface-plan', { 've--anime': anime }]} aria-hidden="true">
     <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>
-    <span class="ve__scene">{animation ? <Animation nom={animation} fond="sombre" /> : <Dessin nom={dessin} />}</span>
+    <span class="ve__scene">{anime ? <Animation nom={anime} fond="sombre" /> : <Dessin nom={dessin} />}</span>
     <span class="ve__bas mono">{MENTION_ILLUSTRATIVE}</span>
   </figure>
 )}
@@ -44,7 +51,7 @@ const rendu = modeVisuel === 'mixte' && (liste || !photoBonne) ? 'illustrations'
 {rendu === 'mixte' && (
   <figure class="ve ve--mixte" aria-hidden="true">
     <span class="ve__cadre">
-      <img src={photo} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${cadrage}`} />
+      <img src={image.src} alt="" width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
     </span>
     <span class="ve__encart surface-grille">
       <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>

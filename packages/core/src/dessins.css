@@ -1,0 +1,62 @@
+/* Dessins techniques de la marque (packages/core/src/dessins.ts, svgDessin) : styles communs au site et à
+   l'aperçu de l'admin, importés une fois (feuille globale). Toutes les valeurs viennent de la charte
+   (packages/core/src/charte.ts) : traits, pointillés, palette de données de l'univers (--pression-1 à 5),
+   annotations mono, durées et courbes. Sélecteurs préfixés par .dessin (le SVG est injecté en chaîne). */
+.dessin {
+  --d-trait: var(--dessin-trait, var(--encre)); --d-accent: var(--dessin-accent, var(--accent-vif, var(--encre))); --d-fond: var(--dessin-fond, var(--blanc));
+  --d-bas: var(--pression-1); --d-froid: var(--pression-2); --d-doux: var(--pression-3); --d-haut: var(--pression-4); --d-chaud: var(--pression-5);
+  display: block; width: 100%; height: auto; color: var(--d-trait); stroke: currentColor; stroke-width: var(--trait-normal); }
+.dessin .grille line { stroke-width: var(--trait-filet); opacity: 0.12; }
+/* Contour « relevé de podoscope » : points ronds (longueur nulle, bouts ronds) */
+.dessin .pointille { stroke-width: var(--pointille-point); stroke-dasharray: var(--pointille); opacity: var(--pointille-opacite); }
+.dessin .pointille--leger { stroke-width: var(--pointille-leger-point); opacity: var(--pointille-leger-opacite); }
+.dessin .trait { stroke-width: var(--trait-fort); }
+.dessin .axe { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret); }
+.dessin .mire, .dessin .loupe { stroke: var(--d-accent); }
+.dessin .loupe { stroke-width: var(--trait-normal); }
+.dessin .liaison { stroke: var(--d-accent); stroke-width: var(--trait-fin); opacity: 0.7; }
+.dessin .fond-loupe { fill: var(--d-fond); stroke: none; }
+.dessin .fin { stroke-width: var(--trait-fin); opacity: 0.6; }
+.dessin .cote { stroke-width: var(--trait-fin); opacity: 0.45; }
+.dessin .guide { stroke-width: var(--trait-filet); stroke-dasharray: var(--tiret-court); opacity: 0.45; }
+.dessin .niveau { fill: none; }
+.dessin .ongle { stroke: var(--d-accent); }
+.dessin .ongle-petit { stroke-width: var(--trait-normal); opacity: 0.55; }
+.dessin .sillon { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); }
+.dessin .anneau { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); opacity: 0.7; }
+.dessin .anneau-chaud { stroke: var(--d-chaud); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); }
+.dessin .semelle { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+.dessin .crampons { stroke-width: var(--trait-marque); stroke-dasharray: var(--tiret); stroke-linecap: butt; opacity: 0.8; }
+.dessin .oeillet { stroke-width: var(--trait-fin); }
+.dessin .lacet { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+.dessin .sol { stroke-width: var(--trait-fin); }
+.dessin .hachures line { stroke-width: var(--trait-filet); opacity: 0.3; }
+.dessin .force, .dessin .force-fleche { stroke: var(--d-chaud); stroke-width: var(--trait-fort); }
+.dessin .force-courbe { stroke: var(--d-accent); stroke-width: var(--trait-normal); }
+.dessin .polygone { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret); }
+.dessin .oscillation { stroke: var(--d-chaud); stroke-width: var(--trait-normal); }
+.dessin .onde { stroke: var(--d-chaud); stroke-width: var(--trait-normal); stroke-dasharray: var(--tiret); }
+.dessin .point { stroke: none; }
+.dessin .trame path { fill: none; }
+.dessin .piste { fill: currentColor; opacity: 0.1; stroke: none; }
+.dessin .barre { stroke: none; }
+.dessin .curseur { fill: currentColor; stroke: none; }
+.dessin .legende rect { stroke: none; }
+.dessin .mono { font-family: var(--police-mono); font-size: var(--taille-donnees-dessin); fill: currentColor; stroke: none; opacity: 0.75; letter-spacing: 0.02em; }
+.dessin .mono--accent { fill: var(--d-accent); opacity: 1; }
+.dessin .mono--chaud { fill: var(--d-chaud); opacity: 1; }
+
+/* Apparition : les traits se dessinent, les points s'allument (si le parent est animé). */
+.pret .dessin .trace:not(.axe):not(.onde):not(.polygone) { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset var(--duree-trace) var(--courbe-trace); }
+.pret.vu .dessin .trace:not(.axe):not(.onde):not(.polygone) { stroke-dashoffset: 0; }
+.pret .dessin .point { opacity: 0; transform: scale(0.3); transform-box: fill-box; transform-origin: center; transition: opacity var(--duree-court), transform var(--duree-moyen) var(--courbe-rebond); transition-delay: calc(var(--duree-long) + var(--k, 0) * var(--duree-decalage)); }
+.pret.vu .dessin .point { opacity: 1; transform: none; }
+.pret .dessin .trame path { opacity: 0; transition: opacity var(--duree-moyen); transition-delay: calc(var(--duree-court) + var(--k, 0) * var(--duree-decalage)); }
+.pret.vu .dessin .trame path { opacity: 1; }
+.pret .dessin .barre { transform: scaleX(0); transform-box: fill-box; transition: transform var(--duree-long) var(--courbe-sortie) var(--duree-long); }
+.pret.vu .dessin .barre { transform: none; }
+.dessin--talon .onde { animation: dessin-onde var(--cycle-pouls) ease-out infinite; animation-delay: calc(var(--k) * var(--cycle-pouls) / 6); transform-box: fill-box; transform-origin: center; }
+.dessin .pulse { transform-box: fill-box; transform-origin: center; animation: dessin-pulse var(--cycle-pouls) ease-out infinite; }
+@keyframes dessin-onde { 0% { opacity: 0.9; } 100% { opacity: 0.15; } }
+@keyframes dessin-pulse { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.7); } }
+@media (prefers-reduced-motion: reduce) { .dessin * { animation: none !important; transition: none !important; } }

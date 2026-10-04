@@ -14,6 +14,8 @@ La plateforme sert toutes les professions de santé. Pour qu'un site de podologu
 
 Les couches 1 et 2 sont injectées une fois par page dans `Gabarit.astro` par `feuilleCharte()`, qui produit `:root { --… }` et les surfaces partagées. Les couches 4 et 5 sont résolues par `variablesTheme(modele, site.theme)` et posées dans le style de `<html>`. La couche 3 est résolue au build (`site.visuels`).
 
+**Jeux visuels** (`jeux.ts`). Pour une spécialité (principale, secondaire facultative, personnalisation de l'admin), `jeuVisuel()` donne le jeu complet : accueil, panorama, galerie et une case par soin du catalogue, chaque case portant une illustration (dessin), une animation facultative et une photo avec son cadrage. `rendreCase(case, mode, contexte)` choisit ce qui s'affiche selon le style visuel (illustrations, photos, mélange) : c'est la même règle sur le site et dans l'aperçu de l'admin. Les illustrations sont le visuel principal (style par défaut des nouveaux sites) ; une photo de banque n'est marquée `photoBonne` que si elle est forte, sans visage, et montre vraiment le sujet. Images fixes des animations pour les aperçus : `svgAnimationFixe()`.
+
 Compatibilité : une couleur libre (`theme.couleur`) reste acceptée et utilisée telle quelle. Une gamme choisie (`theme.gamme`) est prioritaire. `gammeLaPlusProche(couleur)` permet de rattacher une couleur libre à une gamme lors de la migration de l'éditeur. Sur le site de démo, `GAMME=sauge` (par exemple) permet d'essayer une gamme.
 
 **Règle de cohérence.** Toute ressource d'une spécialité (photo, vidéo, dessin) respecte la charte :
@@ -112,7 +114,7 @@ Le logo combine trois choix, sur le même principe de couches (`packages/core/sr
 
 ## Ajouter un nouveau visuel
 
-1. Partir de `pied.ts` et `trame.ts` (ou de la géométrie de l'univers concerné). Ajouter le dessin dans `Dessin.astro` et son nom dans `DESSINS_<UNIVERS>` (`univers.ts`).
+1. Partir de `pied.ts` et `trame.ts` (ou de la géométrie de l'univers concerné). Ajouter le dessin dans `packages/core/src/dessins.ts` (`svgDessin`, styles dans `dessins.css` ; `Dessin.astro` n'est qu'une enveloppe, l'admin utilise la même fonction pour ses aperçus) et son nom dans `DESSINS_<UNIVERS>` (`univers.ts`).
 2. N'utiliser que les variables de la charte : `--trait-*`, `--pointille*`, `--tiret*`, `--d-*` (palette de données), `--police-mono`, `--duree-*`, `--cycle-*`, `--courbe-*`. Dans un script, importer depuis `@plateforme/core/charte`.
 3. Si un besoin nouveau apparaît (une épaisseur, une durée), l'ajouter d'abord à `charte.ts` et à ce document.
 4. Rendre le visuel décoratif (`aria-hidden`), respecter `prefers-reduced-motion` et le mettre en pause hors écran.

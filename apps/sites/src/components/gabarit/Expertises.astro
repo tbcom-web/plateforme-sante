@@ -5,8 +5,15 @@
 import VignetteSoin from './VignetteSoin.astro';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
-import { enPhotos } from '../../lib/visuels';
+import { modeVisuel } from '../../lib/visuels';
 import { visuelSoin } from '../../lib/visuels-soins';
+import { rendreCase } from '@plateforme/core';
+
+// Vignette photo (mobile) : seulement si la règle des listes donne une photo (style « Photos », rendreCase).
+const vignette = (slug: string) => {
+  const r = rendreCase(visuelSoin(slug), modeVisuel, 'liste');
+  return r.type === 'photo' ? r : null;
+};
 ---
 <ol class="expertises">
   {site.soins.map((s, i) => (
@@ -14,7 +21,7 @@ import { visuelSoin } from '../../lib/visuels-soins';
       <a href={`/soins/${s.slug}`} class="expertise">
         <span class="expertise__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
         <span class="expertise__dessin surface-grille" aria-hidden="true"><VignetteSoin slug={s.slug} /></span>
-        {enPhotos && <img class="expertise__vignette" src={visuelSoin(s.slug).photo} alt="" loading="lazy" width="320" height="240" style={`object-position:${visuelSoin(s.slug).cadrage}`} />}
+        {vignette(s.slug) && <img class="expertise__vignette" src={vignette(s.slug)!.src} alt="" loading="lazy" width="320" height="240" style={`object-position:${vignette(s.slug)!.cadrage}`} />}
         <span class="expertise__titre">{s.titreCourt}</span>
         <span class="expertise__resume" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
         <span class="expertise__fleche" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 14 14 6M7 6h7v7" /></svg></span>

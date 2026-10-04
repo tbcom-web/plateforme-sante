@@ -15,3 +15,5 @@ export * from './univers';
 export * from './gammes';
 export * from './logos';
 export * from './marques-importees';
+export * from './dessins';
+export * from './jeux';

@@ -5,13 +5,15 @@
 import Dessin from '../dessins/Dessin.astro';
 import { visuelSoin } from '../../lib/visuels-soins';
 import { modeVisuel } from '../../lib/visuels';
+import { rendreCase } from '@plateforme/core';
 
 interface Props { slug: string; survol?: boolean }
 const { slug, survol = false } = Astro.props;
 const v = visuelSoin(slug);
-const dessin = modeVisuel !== 'photos';
-// Listes : illustrations, sauf style « Photos » (la photo du soin est réservée à sa fiche).
-const photo = modeVisuel === 'photos';
+// Listes : illustrations, sauf style « Photos » (la photo du soin est réservée à sa fiche). Règle : rendreCase (core).
+const rendu = rendreCase(v, modeVisuel, 'liste');
+const dessin = rendu.type !== 'photo';
+const photo = rendu.type === 'photo';
 ---
 {dessin && <Dessin nom={v.dessin} />}
 {photo && <img class:list={['vs__photo', { 'vs__photo--survol': dessin }]} src={v.photo} alt="" width="320" height="240" loading="lazy" decoding="async" style={`object-position:${v.cadrage}`} />}

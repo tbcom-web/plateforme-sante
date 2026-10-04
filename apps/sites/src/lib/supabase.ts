@@ -217,6 +217,10 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       specialite: pack.value,
       animation: d.theme.animation ? pack.animation : null,
       photos: visuelsSpecialite.photos,
+      // Jeu visuel (jeux.ts) : secondaire et personnalisations de l'admin, recombinées au build.
+      ...(d.theme.specialiteSecondaire ? { specialiteSecondaire: d.theme.specialiteSecondaire } : {}),
+      perso: persoPack ?? null,
+      persoSecondaire: persoSecondaire ?? null,
     },
   };
 }

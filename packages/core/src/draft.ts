@@ -113,12 +113,17 @@ export type SiteDraft = {
   perso: { textes: Record<string, string> };
 };
 
-/** Style visuel du site : illustrations techniques, photos, ou mélange (par défaut). */
+/**
+ * Style visuel du site : illustrations techniques (recommandé, par défaut des nouveaux sites), photos, ou
+ * mélange. Les illustrations sont le visuel principal de la plateforme : adaptées aux couleurs de chaque
+ * site, sans personne à l'image ; les photos de banque restent un complément facultatif.
+ * Les sites existants gardent la valeur enregistrée.
+ */
 export type ModeVisuel = 'illustrations' | 'photos' | 'mixte';
 export const MODES_VISUELS: { value: ModeVisuel; label: string; description: string }[] = [
+  { value: 'illustrations', label: 'Illustrations (recommandé)', description: 'Dessins et animations techniques aux couleurs du cabinet, sans photo d’illustration. Vos propres photos restent affichées.' },
   { value: 'mixte', label: 'Mélange', description: 'Illustrations dans les listes ; photo sur la page de chaque soin quand elle est de qualité.' },
   { value: 'photos', label: 'Photos', description: 'Des photos partout : cabinet, soins, ambiance.' },
-  { value: 'illustrations', label: 'Illustrations', description: 'Dessins et animations techniques, sans photo d’illustration.' },
 ];
 
 export const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const;
@@ -204,7 +209,7 @@ export const draftVide = (): SiteDraft => ({
   domicile: { actif: false, creneaux: '', secteurs: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
-  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'mixte', logo: { marque: 'empreinte', disposition: 'horizontale' }, logoPerso: { url: '', complet: true }, animation: true },
+  theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'illustrations', logo: { marque: 'empreinte', disposition: 'horizontale' }, logoPerso: { url: '', complet: true }, animation: true },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
   soins: [],
@@ -225,7 +230,8 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       rdv: { ...vide.rdv, ...d.rdv },
       domicile: { ...vide.domicile, ...d.domicile },
       message: { ...vide.message, ...d.message },
-      theme: { ...vide.theme, specialite: specialiteDuProfil(d.profil), ...d.theme },
+      // Brouillon enregistré sans style visuel : il garde l'ancien défaut (mélange), seul un nouveau site part en illustrations.
+      theme: { ...vide.theme, modeVisuel: 'mixte', specialite: specialiteDuProfil(d.profil), ...d.theme },
       flux: { ...vide.flux, ...d.flux, themes: Array.isArray(d.flux?.themes) ? d.flux.themes : [] },
       photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
@@ -247,7 +253,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
     praticiens: [{ ...praticienVide(), prenom: p1.prenom ?? '', nom: p1.nom ?? '', rpps: rpps.length === 11 ? rpps : '', numeroOrdre: rpps.length === 9 ? rpps : '' }],
     acces: { ...vide.acces, pmr: Boolean(c1.pmr) },
     rdv: { mode: d.rdv?.url ? 'les_deux' : 'telephone', outil: d.rdv?.plateforme || 'Doctolib', url: d.rdv?.url ?? '' },
-    theme: { ...vide.theme, couleur: d.theme?.couleur ?? vide.theme.couleur },
+    theme: { ...vide.theme, modeVisuel: 'mixte', couleur: d.theme?.couleur ?? vide.theme.couleur },
     soins: Array.isArray(d.soins) ? d.soins : [],
   };
 }

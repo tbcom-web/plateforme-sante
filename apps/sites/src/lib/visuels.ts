@@ -2,46 +2,48 @@
 // pour le praticien), géolocalisation du cabinet pour le plan d'accès (OpenStreetMap, sans cookie).
 import { site } from './site';
 import { lieu } from './textes';
-import { visuelSoin } from './visuels-soins';
-import { packVisuel, type ModeVisuel, type NomDessin } from '@plateforme/core';
+import { jeu, visuelSoin } from './visuels-soins';
+import { rendreCase, type ModeVisuel, type NomDessin } from '@plateforme/core';
 
-/** Photo d'un soin (source unique : lib/visuels-soins.ts) */
+/** Photo d'un soin (source unique : jeu visuel, lib/visuels-soins.ts) */
 export const photoSoin = (slug: string) => visuelSoin(slug).photo;
 
-// Photos du praticien d'abord, puis celles du pack visuel de sa spécialité.
-const pack = site.visuels.photos;
-export const photoAccueil = site.photos.accueil || pack.accueil;
-export const photoPanorama = site.photos.panorama || site.photos.cabinet[0] || pack.panorama;
-export const diaporama = [...new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet, ...pack.diaporama].filter(Boolean))].slice(0, 4);
+// Photos du praticien d'abord, puis celles du jeu visuel de sa spécialité (packages/core/src/jeux.ts).
+export const photoAccueil = site.photos.accueil || jeu.accueil.photo;
+export const photoPanorama = site.photos.panorama || site.photos.cabinet[0] || jeu.panorama.photo;
+export const diaporama = [...new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet, ...jeu.galerie.map((g) => g.photo)].filter(Boolean))].slice(0, 4);
 /** Fond sombre des accueils animés, teinté de la couleur du cabinet (variable de la charte) */
 export const fondAnime = 'var(--fond-anime)';
 export const photoFinale = site.photos.cabinet[1] || '/photos/chaussage.webp';
 
 // ---- Style visuel choisi par le praticien : illustrations seules, photos seules ou mélange ----
-// Règles : les photos du praticien s'affichent toujours (c'est son choix, même en mode illustrations) ;
-// sa case « animation d'accueil » décochée n'est jamais contournée ; en mode photos, aucune animation.
+// Règles (rendreCase, packages/core/src/jeux.ts) : les photos du praticien s'affichent toujours (c'est son
+// choix, même en mode illustrations) ; sa case « animation d'accueil » décochée n'est jamais contournée ;
+// en mode photos, aucune animation.
 export const modeVisuel: ModeVisuel = site.theme.modeVisuel ?? 'mixte';
 export const enIllustrations = modeVisuel === 'illustrations';
 export const enPhotos = modeVisuel === 'photos';
 
 /** Dessin signature de la spécialité (accueil et panorama sans photo) */
-export const dessinSpecialite: NomDessin = packVisuel(site.visuels.specialite).dessins?.[0] ?? 'analyse';
+export const dessinSpecialite: NomDessin = jeu.accueil.dessin;
 
+const renduAccueil = rendreCase(jeu.accueil, modeVisuel, 'accueil', { photoPraticien: site.photos.accueil || undefined, animationActive: Boolean(site.visuels.animation) });
 /** Animation affichée à l'accueil : celle de la spécialité si la case est cochée, jamais en mode photos */
-export const animationAccueil = enPhotos ? null : site.visuels.animation;
+export const animationAccueil = renduAccueil.type === 'animation' ? renduAccueil.animation : null;
 /** Photo d'accueil affichée : en mode illustrations, seulement celle du praticien */
 export const photoAccueilAffichee = enIllustrations ? site.photos.accueil : photoAccueil;
 /** Diaporama affiché : en mode illustrations, seulement les photos du praticien */
 export const diaporamaAffiche = enIllustrations
   ? [...new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].filter(Boolean))].slice(0, 4)
   : diaporama;
+const renduPanorama = rendreCase(jeu.panorama, modeVisuel, 'accueil', { photoPraticien: site.photos.panorama || site.photos.cabinet[0] || undefined, animationActive: false });
 /** Photo du panorama affichée : en mode illustrations, seulement celle du praticien (sinon composition sur fond plan) */
-export const photoPanoramaAffichee = enIllustrations ? site.photos.panorama || site.photos.cabinet[0] || '' : photoPanorama;
+export const photoPanoramaAffichee = renduPanorama.type === 'photo' ? renduPanorama.src : '';
 /** Visuel principal de l'accueil, par ordre de priorité */
 export const visuelAccueil = (photos: string[]): 'animation' | 'photo' | 'illustration' =>
   animationAccueil ? 'animation' : photos.filter(Boolean).length ? 'photo' : 'illustration';
 /** Photo du cabinet pour un praticien sans portrait, en mode photos (lieu, jamais une personne) */
-export const photoLieu = site.photos.cabinet[0] || site.photos.accueil || pack.accueil;
+export const photoLieu = site.photos.cabinet[0] || site.photos.accueil || jeu.accueil.photo;
 
 /** Coordonnées du cabinet : saisies, sinon géocodées au build via Nominatim (OpenStreetMap). */
 async function geocoder(): Promise<{ lat: number; lng: number } | null> {

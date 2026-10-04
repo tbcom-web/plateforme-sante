@@ -9,7 +9,8 @@
     "./charte": "./src/charte.ts",
     "./pied": "./src/pied.ts",
     "./trame": "./src/trame.ts",
-    "./logos": "./src/logos.ts"
+    "./logos": "./src/logos.ts",
+    "./dessins.css": "./src/dessins.css"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

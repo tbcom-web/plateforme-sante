@@ -111,7 +111,16 @@ export type SiteConfig = {
   /** Textes personnalisés par le praticien (clés de personnalisation.ts) ; absents = texte standard */
   textes?: Record<string, string>;
   /** Pack visuel de la spécialité (photos par défaut) et animation d'accueil retenue (null = aucune) */
-  visuels: { specialite: string; animation: import('./packs').Animation | null; photos: import('./packs').PackVisuel['photos'] };
+  visuels: {
+    specialite: string;
+    animation: import('./packs').Animation | null;
+    photos: import('./packs').PackVisuel['photos'];
+    /** Spécialité secondaire (facultative) : complète le jeu visuel (jeux.ts) */
+    specialiteSecondaire?: string;
+    /** Personnalisations de l'admin (table packs_visuels) de la principale et de la secondaire */
+    perso?: import('./packs').PersonnalisationPack | null;
+    persoSecondaire?: import('./packs').PersonnalisationPack | null;
+  };
 };
 
 export type PraticienPublic = {
