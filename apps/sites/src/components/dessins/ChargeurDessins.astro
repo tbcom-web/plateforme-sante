@@ -1,0 +1,61 @@
+---
+// Chargement différé des dessins de la marque (fichiers SVG externes, adresse dans <use data-dessin>).
+// À l'approche de l'écran (200 px), le fichier est téléchargé (une fois par fichier) et son symbole est inséré
+// DANS la page à la place du <use> : les styles de la page s'appliquent au tracé (apparition « trace », points,
+// trame), ce qu'un <use> externe ne permet pas. Rien n'est téléchargé pendant le premier affichage (mobile).
+// La place du dessin est déjà réservée par le <svg> parent (viewBox) : aucun décalage de mise en page.
+// Identifiants internes (dégradés, masques) rendus uniques à chaque insertion. Mouvements réduits : respectés
+// par la feuille des dessins (dessins.css). Sans JavaScript : <noscript> des composants (<use href> direct).
+// Inclus par chaque composant qui pose un dessin (Dessin, Empreintes, Materiel) : Astro n'émet le script
+// qu'une fois par page, quel que soit le gabarit.
+---
+<script>
+  const SVG = 'http://www.w3.org/2000/svg';
+  const fichiers = new Map<string, Promise<string>>();
+  let rang = 0;
+
+  /** Contenu du symbole « d » d'un fichier, identifiants internes suffixés pour cette insertion. */
+  async function symbole(adresse: string) {
+    const url = adresse.split('#')[0];
+    if (!fichiers.has(url)) fichiers.set(url, fetch(url).then((r) => (r.ok ? r.text() : Promise.reject(new Error(String(r.status))))));
+    let texte = await fichiers.get(url)!;
+    const suffixe = `-i${++rang}`;
+    const ids = [...texte.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]).filter((id) => id !== 'd');
+    for (const id of ids.sort((a, b) => b.length - a.length)) {
+      const e = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      texte = texte.replace(new RegExp(`(id="|#)${e}(?=["')])`, 'g'), `$1${id}${suffixe}`);
+    }
+    return new DOMParser().parseFromString(texte, 'image/svg+xml').getElementById('d');
+  }
+
+  /** Remplace <use data-dessin> par un <svg> imbriqué portant le symbole (même cadre que le <use>). */
+  async function inserer(u: SVGUseElement) {
+    const adresse = u.dataset.dessin;
+    if (!adresse || u.dataset.charge) return;
+    u.dataset.charge = '1';
+    try {
+      const s = await symbole(adresse);
+      if (!s) throw new Error('symbole absent');
+      const cadre = document.createElementNS(SVG, 'svg');
+      for (const a of ['viewBox', 'overflow', 'preserveAspectRatio']) if (s.hasAttribute(a)) cadre.setAttribute(a, s.getAttribute(a)!);
+      for (const a of ['x', 'y', 'width', 'height', 'class', 'style']) if (u.hasAttribute(a)) cadre.setAttribute(a, u.getAttribute(a)!);
+      cadre.append(...[...s.childNodes].map((n) => document.importNode(n, true)));
+      u.replaceWith(cadre);
+    } catch {
+      u.setAttribute('href', adresse); // repli : référence externe
+    }
+  }
+
+  const dessins = document.querySelectorAll<SVGUseElement>('use[data-dessin]');
+  if ('IntersectionObserver' in window && 'fetch' in window) {
+    const proches = new IntersectionObserver(
+      (es) => es.forEach((e) => {
+        if (!e.isIntersecting) return;
+        proches.unobserve(e.target);
+        e.target.querySelectorAll<SVGUseElement>('use[data-dessin]').forEach(inserer);
+      }),
+      { rootMargin: '200px 0px' },
+    );
+    new Set([...dessins].map((u) => u.ownerSVGElement ?? u)).forEach((svg) => proches.observe(svg));
+  } else dessins.forEach((u) => u.setAttribute('href', u.dataset.dessin ?? ''));
+</script>

@@ -2,12 +2,14 @@
 // Informations pratiques : seules les tuiles renseignées sont affichées (jamais de tuile vide).
 // `sansAdresse` : à côté du plan d'accès, qui donne déjà l'adresse (pas de doublon).
 // `colonnes` : horaires dans la colonne de gauche, autres blocs empilés à droite (page « Le cabinet »).
+// `niveau` : titres des tuiles en h2 quand la page n'a pas d'autre intertitre (plan d'accès : ordre des titres).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { lieu, telLien, itineraire, rdvEnLigne, TYPES_LIEU } from '../../lib/textes';
 
-interface Props { sansAdresse?: boolean; colonnes?: boolean }
-const { sansAdresse = false, colonnes = false } = Astro.props;
+interface Props { sansAdresse?: boolean; colonnes?: boolean; niveau?: 2 | 3 }
+const { sansAdresse = false, colonnes = false, niveau = 3 } = Astro.props;
+const Titre = niveau === 2 ? 'h2' : 'h3';
 
 // Horaires jour par jour, en clair (jours fermés en retrait, jour courant mis en évidence par le script).
 const horaires = lieu.horaires;
@@ -24,7 +26,7 @@ const acces = [
 <div class:list={['infos', { 'infos--colonnes': colonnes }]}>
   {ouvert && (
     <div class="info info--horaires">
-      <h3><Icone nom="lucide:clock" />Horaires</h3>
+      <Titre class="info__titre"><Icone nom="lucide:clock" />Horaires</Titre>
       <table class="horaires">
         <tbody>
           {horaires.map((h, i) => (
@@ -39,13 +41,13 @@ const acces = [
     </div>
   )}
   <div class="info">
-    <h3><Icone nom="lucide:calendar" />Prise de rendez-vous</h3>
+    <Titre class="info__titre"><Icone nom="lucide:calendar" />Prise de rendez-vous</Titre>
     {rdvEnLigne && <p>En ligne sur {site.rdv.plateforme}, 24h/24{site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.</p>}
     {(site.rdvMode !== 'en_ligne' || !rdvEnLigne) && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
   </div>
   {!sansAdresse && (
     <div class="info">
-      <h3><Icone nom="lucide:map-pin" />Adresse</h3>
+      <Titre class="info__titre"><Icone nom="lucide:map-pin" />Adresse</Titre>
       <p>
         {lieu.nom ? <>{lieu.nom}<br /></> : lieu.type !== 'cabinet' && <>{TYPES_LIEU[lieu.type]}<br /></>}
         {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}
@@ -55,13 +57,13 @@ const acces = [
   )}
   {acces.length > 0 && (
     <div class="info">
-      <h3><Icone nom="healthicons:wheelchair-outline" />Accès</h3>
+      <Titre class="info__titre"><Icone nom="healthicons:wheelchair-outline" />Accès</Titre>
       <ul>{acces.map((a) => <li>{a}</li>)}</ul>
     </div>
   )}
   {site.domicile.actif && (
     <div class="info">
-      <h3><Icone nom="healthicons:home-outline" />Visites à domicile</h3>
+      <Titre class="info__titre"><Icone nom="healthicons:home-outline" />Visites à domicile</Titre>
       {site.domicile.creneaux && <p>{site.domicile.creneaux}.</p>}
       {site.domicile.secteurs.length > 0 ? (
         <><p>Secteurs d’intervention :</p><ul>{site.domicile.secteurs.map((s) => <li>{s}</li>)}</ul></>
@@ -70,7 +72,7 @@ const acces = [
   )}
   {site.paiements.length > 0 && (
     <div class="info">
-      <h3><Icone nom="lucide:wallet" secours="lucide:credit-card" />Moyens de règlement acceptés</h3>
+      <Titre class="info__titre"><Icone nom="lucide:wallet" secours="lucide:credit-card" />Moyens de règlement acceptés</Titre>
       <ul class="pastilles">{site.paiements.map((m) => <li>{m}</li>)}</ul>
       {site.praticien.conventionnement && <p class="note">{site.praticien.conventionnement}.</p>}
     </div>
@@ -89,9 +91,9 @@ const acces = [
     .infos--colonnes > .info:not(.info--horaires) { grid-column: 2; }
   }
   .info { padding: 18px 0 22px; border-top: var(--filet-fort) solid var(--encre); }
-  h3 { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; margin-bottom: 12px; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; }
-  h3::after { counter-increment: info; content: counter(info, decimal-leading-zero); margin-left: auto; font-family: var(--police-mono); font-size: var(--taille-donnees-petit); font-weight: 450; color: var(--encre-pale); }
-  h3 :global(.icone) { color: var(--accent-vif); font-size: 1.15rem; }
+  .info__titre { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; line-height: 1.2; margin: 0 0 12px; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; }
+  .info__titre::after { counter-increment: info; content: counter(info, decimal-leading-zero); margin-left: auto; font-family: var(--police-mono); font-size: var(--taille-donnees-petit); font-weight: 450; color: var(--encre-pale); }
+  .info__titre :global(.icone) { color: var(--accent-vif); font-size: 1.15rem; }
   p { margin: 0 0 8px; color: var(--encre-douce); font-size: 0.95rem; }
   ul { margin: 0; padding-left: 1.1em; color: var(--encre-douce); font-size: 0.95rem; }
   /* Horaires : tableau simple, une ligne par jour */

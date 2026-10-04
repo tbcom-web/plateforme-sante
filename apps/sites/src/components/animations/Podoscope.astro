@@ -66,9 +66,11 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
   /** Niveaux de pression pré-rendus (couleur, diamètre et halo) : écart invisible à l'œil. */
   const NIVEAUX_POINTS = 48;
 
-  /** Après le chargement de la page, quand le navigateur est libre (repli : court délai). */
+  /** Pause sur le relevé fixe avant le premier pas (ms) : la page se pose, puis la pression se met en mouvement. */
+  const PAUSE_RELEVE = 1500;
+  /** Après le chargement de la page et la pause sur le relevé, quand le navigateur est libre. */
   function apresChargement(f: () => void) {
-    const libre = () => ('requestIdleCallback' in window ? requestIdleCallback(f, { timeout: 2000 }) : setTimeout(f, 300));
+    const libre = () => setTimeout(() => ('requestIdleCallback' in window ? requestIdleCallback(f, { timeout: 2000 }) : f()), PAUSE_RELEVE);
     if (document.readyState === 'complete') libre();
     else addEventListener('load', libre, { once: true });
   }
@@ -109,14 +111,18 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
       }
     }
 
+    // Points pré-rendus pour un pas de trame donné : refaits seulement si le pas change.
+    let pasPrepare = -1;
     function dimensionner() {
+      if (cv.clientWidth === l && cv.clientHeight === h) return false; // taille inchangée : rien à refaire
       l = cv.clientWidth; h = cv.clientHeight;
       cv.width = l * ratio; cv.height = h * ratio;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ({ pts, pasPx } = construire(l, h, modele.points));
       traces[0] = []; traces[1] = [];
       signal = getComputedStyle(cv).getPropertyValue('--signal').trim() || 'white';
-      preparerPoints();
+      if (pasPx !== pasPrepare) { preparerPoints(); pasPrepare = pasPx; }
+      return true;
     }
 
     function dessiner(maintenant: number) {
@@ -163,8 +169,7 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
     new IntersectionObserver(([e]) => { visible = e.isIntersecting; relancer(); }).observe(cv);
     // Premier appel juste après la mise en page initiale : le relevé fixe figure dès le premier affichage.
     new ResizeObserver(() => {
-      dimensionner();
-      if (!enCours) dessiner(performance.now());
+      if (dimensionner() && !enCours) dessiner(performance.now());
     }).observe(cv);
     if (!calme) apresChargement(() => { debut = performance.now(); relancer(); });
   });

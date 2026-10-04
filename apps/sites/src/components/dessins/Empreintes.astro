@@ -5,6 +5,8 @@
 // (pages/dessins/[fichier].svg.ts), référencé par <use> : la page ne recopie pas les centaines de points.
 import type { Appui } from './trame';
 import { PRESSION, ARRETS_PRESSION, TRAIT } from '@plateforme/core';
+import { urlDessin } from '../../lib/fichiers-dessins';
+import ChargeurDessins from './ChargeurDessins.astro';
 
 interface Props {
   appui?: Appui;
@@ -28,7 +30,7 @@ const largeur = legende ? 236 : 210;
       <stop offset="1" stop-color="var(--signal)" stop-opacity="0.2" />
     </linearGradient>
   </defs>
-  <use href={`/dessins/empreintes-${appui}.svg#d`} width="210" height="236" />
+  <use data-dessin={urlDessin(`empreintes-${appui}`)} width="210" height="236" />
   {scan && (
     <g class="empreintes__scan">
       <rect x="0" y="-18" width="210" height="18" fill={`url(#${id}-s)`} />
@@ -42,6 +44,7 @@ const largeur = legende ? 236 : 210;
     </g>
   )}
 </svg>
+<ChargeurDessins />
 
 <style>
   .empreintes { display: block; width: 100%; height: auto; overflow: visible; }

@@ -7,6 +7,8 @@ import '@plateforme/core/dessins.css';
 import Icone from '../Icone.astro';
 import { equipementsParCategorie, equipementDessine } from '@plateforme/core';
 import { site } from '../../lib/site';
+import { urlDessin } from '../../lib/fichiers-dessins';
+import ChargeurDessins from '../dessins/ChargeurDessins.astro';
 
 const groupes = equipementsParCategorie(site.equipements ?? []);
 const autres = (site.equipementsAutres ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
@@ -26,7 +28,7 @@ let rang = 0;
             <span class="materiel__num mono" aria-hidden="true">{deux(++rang)}</span>
             <span class:list={['materiel__picto', { 'materiel__picto--dessin': equipementDessine(e.id) }]} aria-hidden="true">
               {equipementDessine(e.id) ? (
-                <svg class="dessin dessin--materiel" viewBox="0 0 120 90"><use href={`/dessins/materiel-${e.id}.svg#d`} width="120" height="90" /></svg>
+                <><svg class="dessin dessin--materiel" viewBox="0 0 120 90"><use data-dessin={urlDessin(`materiel-${e.id}`)} width="120" height="90" /></svg><noscript><svg class="dessin dessin--materiel" viewBox="0 0 120 90"><use href={urlDessin(`materiel-${e.id}`)} width="120" height="90" /></svg><style>svg:has(> use[data-dessin]){display:none}</style></noscript></>
               ) : (
                 <Icone nom={e.icone} secours="tabler:point" taille="22" />
               )}
@@ -54,6 +56,7 @@ let rang = 0;
     </section>
   )}
 </div>
+<ChargeurDessins />
 
 <style>
   .materiel { display: grid; gap: clamp(28px, 4vw, 44px) clamp(28px, 4vw, 56px); grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); align-items: start; margin-top: 8px; }

@@ -9,6 +9,8 @@
 // Registre « pedagogique » : schéma au trait, sans trame ni lecture. Décoratif : aria-hidden.
 import '@plateforme/core/dessins.css';
 import type { NomDessin, Registre } from '@plateforme/core';
+import { urlDessin } from '../../lib/fichiers-dessins';
+import ChargeurDessins from './ChargeurDessins.astro';
 export type { NomDessin } from '@plateforme/core';
 
 interface Props {
@@ -19,6 +21,8 @@ interface Props {
 }
 
 const { nom, class: classe, registre = 'releve' } = Astro.props;
-const fichier = `/dessins/${nom}${registre === 'pedagogique' ? '-pedagogique' : ''}.svg#d`;
+const fichier = urlDessin(`${nom}${registre === 'pedagogique' ? '-pedagogique' : ''}`);
 ---
-<svg class:list={['dessin', `dessin--${nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use href={fichier} width="240" height="180" /></svg>
+<svg class:list={['dessin', `dessin--${nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use data-dessin={fichier} width="240" height="180" /></svg>
+<noscript><svg class:list={['dessin', `dessin--${nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use href={fichier} width="240" height="180" /></svg><style>svg:has(> use[data-dessin]){display:none}</style></noscript>
+<ChargeurDessins />
