@@ -12,8 +12,8 @@ export const COMPETENCES_PODOLOGUE = [
   'Podologie',
   'Bilan podologique',
   'Semelles orthopédiques',
-  'Podo-diabétologie',
-  'Podopédiatrie',
+  'Suivi du pied diabétique',
+  'Podologie de l’enfant',
   'Podologie du sport',
   'Posturologie',
   'Réflexologie plantaire',
@@ -27,6 +27,8 @@ export const COMPETENCES_PODOLOGUE = [
 
 /** Formulations à remplacer : [à éviter, à préférer, raison]. */
 export const PREFERER: [RegExp, string, string][] = [
+  [/podo-?diab[ée]tologi(e|que)s?/gi, 'suivi du pied diabétique', 'Titre non reconnu par l’Ordre.'],
+  [/podop[ée]diatri(e|que)s?/gi, 'podologie de l’enfant', 'Titre non reconnu par l’Ordre.'],
   [/\bspécialiste (du|de la|des|en)\b/gi, 'orienté(e) vers', 'Le titre de spécialiste n’est pas reconnu pour la profession.'],
   [/\bspécialisée? (dans|en)\b/gi, 'formé(e) à', 'Préférer la formation suivie à une spécialité.'],
   [/\bguérir\b/gi, 'prendre en charge', 'Aucune promesse de guérison.'],
