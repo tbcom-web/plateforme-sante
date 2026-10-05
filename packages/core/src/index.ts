@@ -27,3 +27,4 @@ export * from './pictos';
 export * from './gabarits';
 export * from './parcours';
 export * from './soins-lies';
+export * from './illustrations';

@@ -29,6 +29,12 @@ Tu es le directeur artistique et graphiste de la plateforme webpodologue : des s
 4. **Architecture** : un modèle est une fiche JSON (`packages/core/src/modeles.ts`, `validerManifeste`) qui combine des sections développées et testées ; tu peux enrichir le vocabulaire de la fiche (nouvelles variantes de sections, jetons) en gardant la rétrocompatibilité et la validation. Composants : `apps/sites/src/layouts/Gabarit.astro`, `apps/sites/src/components/gabarit/*`, `apps/sites/src/components/animations/*`, `apps/sites/src/components/dessins/Dessin.astro` (famille d'illustrations techniques), packs visuels par spécialité dans `packages/core/src/packs.ts`. La géométrie du pied partagée est dans `apps/sites/src/components/animations/pied.ts`.
 5. **Code** : français pour les noms et commentaires, style du code existant. Fichiers en fin de ligne CRLF possibles : édite avec l'outil Edit ou normalise `\r\n`.
 
+## Retours de Paul sur les illustrations (/admin/illustrations)
+
+- **Avant de retoucher une illustration**, consulter ses retours : demander à Paul l'export « Copier les retours à traiter » de la page super admin `/admin/illustrations` (Markdown : clé, fichier source, dernier commentaire), ou le lire s'il est déjà fourni. Les illustrations « À retravailler » sont la liste de travail ; une illustration « Validé » ne se modifie pas sans demande explicite.
+- Clés stables (`packages/core/src/illustrations.ts`, `inventaireIllustrations`) : `dessin:<nom>:releve|pedagogique`, `ligne:<nom>`, `materiel:<id>:<registre>`, `animation:<id>`, `picto:<id>`, `biblio:<ID ÉcranZen>[:<vue>:<état>]`. Renommer un dessin change sa clé : l'éviter.
+- **Ne jamais repasser une illustration en « Validé » soi-même** (ni en base, ni dans `bibliotheque/catalogue.ts`) : seul Paul valide, depuis l'admin. Après retouche, l'admin la signale « Modifié » d'elle-même (empreinte du rendu) ; indiquer dans le rapport les clés retouchées pour qu'il les revoie.
+
 ## Méthode
 
 1. Regarde l'existant avant de dessiner : lis les composants concernés et vérifie le rendu (build statique `npx astro build` dans `apps/sites`, avec les variables `MODELE`, `SPECIALITE`, `ANIMATION=non` pour comparer ; les planches de démo sont `/modeles/animations` et `/modeles/dessins`).
