@@ -15,6 +15,15 @@ export type ResultatControle = {
 const PLACEHOLDER = /\[[^\]]{2,30}\]|\bx{3,}\b|\blorem ipsum\b/i;
 const sansAccents = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
+// Numéros visiblement fictifs (exemples, suites, chiffres répétés) : jamais publiés.
+export const numeroFictif = (n: string) => /^(\d)\1+$/.test(n.slice(1)) || '0123456789012'.includes(n) || '9876543210'.includes(n);
+// Clé de Luhn (dernier chiffre du RPPS)
+const luhn = (n: string) => [...n].reverse().reduce((t, c, k) => { let x = Number(c) * (k % 2 ? 2 : 1); if (x > 9) x -= 9; return t + x; }, 0) % 10 === 0;
+/** N° d'Ordre affichable sur le site : 9 chiffres, non fictif ; sinon '' (la mention est omise). */
+export const numeroOrdreAffichable = (n: string) => { const v = n.replace(/\s/g, ''); return /^\d{9}$/.test(v) && !numeroFictif(v) ? v : ''; };
+/** RPPS affichable sur le site : 11 chiffres, non fictif ; sinon ''. */
+export const rppsAffichable = (n: string) => { const v = n.replace(/\s/g, ''); return /^\d{11}$/.test(v) && !numeroFictif(v) ? v : ''; };
+
 export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 'standard'): ResultatControle {
   const bloquants: string[] = [];
   const conseils: string[] = [];
@@ -35,25 +44,23 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
   // Praticiens
   if (d.praticiens.length === 0) bloquants.push('Ajouter au moins un praticien.');
   const numeros = new Map<string, string>();
-  // Numéros visiblement fictifs (exemples, suites, chiffres répétés) : jamais publiés.
-  const fictif = (n: string) => /^(\d)\1+$/.test(n.slice(1)) || '0123456789012'.includes(n) || '9876543210'.includes(n);
-  // Clé de Luhn (dernier chiffre du RPPS)
-  const luhn = (n: string) => [...n].reverse().reduce((t, c, k) => { let x = Number(c) * (k % 2 ? 2 : 1); if (x > 9) x -= 9; return t + x; }, 0) % 10 === 0;
   d.praticiens.forEach((p, i) => {
     const qui = p.prenom || p.nom ? `${p.prenom} ${p.nom}`.trim() : `praticien ${i + 1}`;
     if (!p.prenom || !p.nom) bloquants.push(`Indiquer le nom et le prénom (${qui}).`);
     if (d.pays === 'FR') {
+      // N° d'Ordre et RPPS : avertissements seulement, la création et la publication ne sont jamais bloquées (règle de
+      // Paul, 2026-10-05). Un numéro manquant ou mal formé n'est simplement pas affiché sur le site (numeroOrdreAffichable).
       const ordre = p.numeroOrdre.replace(/\s/g, '');
-      if (!ordre) bloquants.push(`Indiquer le n° d’inscription au tableau de l’Ordre (${qui}).`);
-      else if (/^\d{11}$/.test(ordre)) bloquants.push(`Le numéro saisi comme n° d’Ordre ressemble à un RPPS (11 chiffres) (${qui}).`);
-      else if (!/^\d{9}$/.test(ordre)) bloquants.push(`Le n° d’inscription à l’Ordre doit compter 9 chiffres (${qui}).`);
-      else if (fictif(ordre)) bloquants.push(`Le n° d’Ordre semble fictif : saisir le vrai numéro (${qui}).`);
+      if (!ordre) conseils.push(`Indiquer le n° d’inscription au tableau de l’Ordre : la mention est attendue sur le site (${qui}).`);
+      else if (/^\d{11}$/.test(ordre)) conseils.push(`Le numéro saisi comme n° d’Ordre ressemble à un RPPS (11 chiffres) : il ne sera pas affiché (${qui}).`);
+      else if (!/^\d{9}$/.test(ordre)) conseils.push(`Le n° d’inscription à l’Ordre compte normalement 9 chiffres : il ne sera pas affiché (${qui}).`);
+      else if (numeroFictif(ordre)) conseils.push(`Le n° d’Ordre semble fictif : il ne sera pas affiché (${qui}).`);
       const rpps = p.rpps.replace(/\s/g, '');
-      if (rpps && !/^\d{11}$/.test(rpps)) bloquants.push(`Le RPPS doit compter 11 chiffres (${qui}).`);
-      else if (rpps && fictif(rpps)) bloquants.push(`Le RPPS semble fictif : saisir le vrai numéro (${qui}).`);
+      if (rpps && !/^\d{11}$/.test(rpps)) conseils.push(`Le RPPS compte normalement 11 chiffres : il ne sera pas affiché (${qui}).`);
+      else if (rpps && numeroFictif(rpps)) conseils.push(`Le RPPS semble fictif : il ne sera pas affiché (${qui}).`);
       else if (rpps && !luhn(rpps)) conseils.push(`Vérifier le RPPS sur l’annuaire santé : sa clé de contrôle ne correspond pas (${qui}).`);
       if (ordre) {
-        if (numeros.has(ordre)) bloquants.push(`Le même n° d’Ordre est saisi pour ${numeros.get(ordre)} et ${qui}.`);
+        if (numeros.has(ordre)) conseils.push(`Le même n° d’Ordre est saisi pour ${numeros.get(ordre)} et ${qui}.`);
         numeros.set(ordre, qui);
       }
     }

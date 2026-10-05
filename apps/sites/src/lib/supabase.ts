@@ -6,6 +6,8 @@ import {
   lieuEnClair,
   lienRdvPrecis,
   mentionOrdre,
+  numeroOrdreAffichable,
+  rppsAffichable,
   modeleIntegre,
   modeleDuSite,
   ordonnerSoins,
@@ -71,7 +73,9 @@ const identifiants = (d: SiteDraft, p: SiteDraft['praticiens'][number], ordre: s
   if (d.pays === 'CH') {
     return [p.membreSsp && 'Membre de la Société Suisse des Podologues (SSP)', p.rcc && `N° RCC : ${p.rcc}`].filter(Boolean) as string[];
   }
-  return [p.numeroOrdre && mentionOrdre(p.numeroOrdre, ordre), p.rpps && `N° RPPS : ${p.rpps}`].filter(Boolean) as string[];
+  // Numéros mal formés ou fictifs : jamais affichés (la saisie ne bloque plus la publication, voir controles.ts).
+  const numero = numeroOrdreAffichable(p.numeroOrdre), rpps = rppsAffichable(p.rpps);
+  return [numero && mentionOrdre(numero, ordre), rpps && `N° RPPS : ${rpps}`].filter(Boolean) as string[];
 };
 
 const enListe = (mots: string[]) =>
@@ -192,7 +196,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       prenom: p1.prenom,
       nom: p1.nom,
       titre: titreMetier,
-      rpps: d.praticiens[0].rpps || d.praticiens[0].numeroOrdre || d.praticiens[0].inami,
+      rpps: rppsAffichable(d.praticiens[0].rpps) || numeroOrdreAffichable(d.praticiens[0].numeroOrdre) || d.praticiens[0].inami,
       ordre: p1.identifiants[0] ?? '',
       conventionnement: d.conventionnement,
       parcours:

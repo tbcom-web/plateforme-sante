@@ -148,16 +148,19 @@ type ChampProps = {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  /** Avertissements non bloquants (affichés en ambre, le champ reste valide) */
+  avertissements?: string[];
   messages?: string[];
   aide?: string;
   montrer: boolean;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'>;
 
 /** Champ avec validation douce : les messages des contrôles de publication s'affichent après la saisie */
-function Champ({ label, value, onChange, messages = [], aide, montrer, onBlur, ...rest }: ChampProps) {
+function Champ({ label, value, onChange, messages = [], avertissements = [], aide, montrer, onBlur, ...rest }: ChampProps) {
   const idBase = useId();
   const [touche, setTouche] = useState(false);
   const visibles = touche || montrer ? messages : [];
+  const avertis = touche || montrer ? avertissements : [];
   return (
     <label className="grid gap-1.5 text-sm">
       <span className="font-medium">{label}</span>
@@ -171,7 +174,7 @@ function Champ({ label, value, onChange, messages = [], aide, montrer, onBlur, .
         {...rest}
       />
       {aide && <span id={`${idBase}-aide`} className="text-xs text-neutral-500">{aide}</span>}
-      <span id={`${idBase}-msg`} className="grid gap-0.5 text-xs text-red-700">{visibles.map((m) => <span key={m}>{m}</span>)}</span>
+      <span id={`${idBase}-msg`} className="grid gap-0.5 text-xs text-red-700">{visibles.map((m) => <span key={m}>{m}</span>)}{avertis.map((m) => <span key={m} className="text-amber-800">{m}</span>)}</span>
     </label>
   );
 }
@@ -230,8 +233,8 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
             </div>
             {d.pays === 'FR' && (
               <div className="grid gap-3 sm:grid-cols-2">
-                <Champ montrer={montrer} label="N° d’inscription à l’Ordre" aide="9 chiffres, sur annuaire.sante.fr" inputMode="numeric" value={p.numeroOrdre} onChange={(v) => majPraticien(i, { numeroOrdre: v.replace(/\D/g, '').slice(0, 11) })} messages={filtre(/Ordre/, qui(p, i))} />
-                <Champ montrer={montrer} label="N° RPPS (facultatif)" aide="11 chiffres" inputMode="numeric" value={p.rpps} onChange={(v) => majPraticien(i, { rpps: v.replace(/\D/g, '').slice(0, 11) })} messages={filtre(/^(Le RPPS|Vérifier le RPPS)/, qui(p, i), true)} />
+                <Champ montrer={montrer} label="N° d’inscription à l’Ordre" aide="9 chiffres, sur annuaire.sante.fr" inputMode="numeric" value={p.numeroOrdre} onChange={(v) => majPraticien(i, { numeroOrdre: v.replace(/\D/g, '').slice(0, 11) })} avertissements={controle.conseils.filter((c) => /Ordre/.test(c) && c.includes(`(${qui(p, i)})`))} />
+                <Champ montrer={montrer} label="N° RPPS (facultatif)" aide="11 chiffres" inputMode="numeric" value={p.rpps} onChange={(v) => majPraticien(i, { rpps: v.replace(/\D/g, '').slice(0, 11) })} avertissements={controle.conseils.filter((c) => /^(Le RPPS|Vérifier le RPPS)/.test(c) && c.includes(`(${qui(p, i)})`))} />
               </div>
             )}
             {d.pays === 'BE' && <Champ montrer={montrer} label="N° INAMI" placeholder="5-12345-12-123" value={p.inami} onChange={(v) => majPraticien(i, { inami: v })} messages={filtre(/INAMI/, qui(p, i))} />}
