@@ -6,7 +6,7 @@
 // de la charte. Les styles sont dans dessins.css (importé une fois par le site et par l'admin).
 // Les traits marqués « trace » se dessinent quand le bloc parent apparaît (.pret.vu).
 //
-// Deux registres pour chaque dessin :
+// Trois registres pour chaque dessin (le 3e, « ligne », est le trait continu de ligne.ts : un seul trait fluide, sans aplat) :
 // - « releve » (par défaut) : langage du relevé de podoscope — trame de points colorés par la pression,
 //   légendes graduées, lectures en mono ;
 // - « pedagogique » : schéma de manuel d'anatomie — trait monochrome (--dessin-trait), un seul accent doux
@@ -23,10 +23,12 @@ import { poseCoureur, reculParCycle, APPUI } from './foulee';
 import { svgForme } from './bibliotheque/rendu';
 import { HALLUX_GROS_PLAN, FLECHE_INCARNE } from './bibliotheque/hallux-gros-plan';
 import type { Animation } from './packs';
+import { svgLigne, contenuLigne, contenuLigneAuto, brancherEquipements, LIGNE_DESSIN, LIGNE_EQUIPEMENT, LIGNE_ANIMATION, type OptionsLigne } from './ligne';
+export * from './ligne';
 
-/** Registre graphique d'un dessin : relevé de podoscope (données) ou schéma pédagogique (trait seul) */
-export type Registre = 'releve' | 'pedagogique';
-export const REGISTRES: readonly Registre[] = ['releve', 'pedagogique'];
+/** Registre graphique d'un dessin : relevé de podoscope (données), schéma pédagogique (trait et aplat) ou trait continu (ligne.ts) */
+export type Registre = 'releve' | 'pedagogique' | 'ligne';
+export const REGISTRES: readonly Registre[] = ['releve', 'pedagogique', 'ligne'];
 
 const r1 = (v: number) => +v.toFixed(1);
 const echapper = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -693,11 +695,13 @@ const ZOOM: Record<string, { x: number; y: number; r: number }> = { verrue: { x:
  * Dessin technique complet (<svg>…</svg>), décoratif (aria-hidden). `id` préfixe les identifiants internes
  * (symbole du pied, dégradé, découpe) : il doit être unique dans la page. Par défaut, déterministe
  * (`d-${nom}`) pour que le rendu serveur et le rendu navigateur de l'admin coïncident.
- * `registre` : « releve » (par défaut, relevé de podoscope) ou « pedagogique » (schéma au trait).
+ * `registre` : « releve » (par défaut, relevé de podoscope), « pedagogique » (schéma au trait) ou « ligne » (trait continu du même
+ * sujet, LIGNE_DESSIN ; options `ligne` : épaisseur, boucles, animation du tracé).
  */
-export function svgDessin(nom: NomDessin, opts: { id?: string; classe?: string; registre?: Registre; variante?: VarianteDessin } = {}): string {
+export function svgDessin(nom: NomDessin, opts: { id?: string; classe?: string; registre?: Registre; variante?: VarianteDessin; ligne?: OptionsLigne } = {}): string {
   const id = opts.id ?? `d-${nom}`;
   const registre = opts.registre ?? 'releve';
+  if (registre === 'ligne') return svgLigne(LIGNE_DESSIN[nom] ?? 'pied-dessous', { ...opts.ligne, classe: opts.classe, nomClasse: nom });
   const pied = `${id}-pied`, degrade = `${id}-degrade`, loupe = `${id}-loupe`;
   const classes = ['dessin', `dessin--${nom}`, `dessin--${registre}`, opts.classe].filter(Boolean).join(' ');
   const R = registre === 'releve';
@@ -983,8 +987,13 @@ const SCHEMA_ANIMATION: Record<Animation, NomDessin> = { podoscope: 'analyse', c
  * même géométrie de pied, même trame, même palette. Fond transparent : l'appelant pose le fond sombre.
  * En registre pédagogique : le schéma au trait du même sujet, centré (styles de dessins.css).
  */
-export function svgAnimationFixe(animation: Animation, opts: { id?: string; registre?: Registre } = {}): string {
+export function svgAnimationFixe(animation: Animation, opts: { id?: string; registre?: Registre; ligne?: OptionsLigne } = {}): string {
   const id = opts.id ?? `a-${animation}`;
+  if (opts.registre === 'ligne') {
+    // Trait continu du même sujet (LIGNE_ANIMATION), centré ; le tracé peut se dessiner (opts.ligne.trace)
+    const dessin = svgLigne(LIGNE_ANIMATION[animation] ?? 'empreintes', opts.ligne).replace('<svg ', '<svg x="30" y="22.5" width="340" height="255" ');
+    return `<svg id="${echapper(id)}" class="animation-fixe animation-fixe--${animation} animation-fixe--ligne" ${F}>${dessin}</svg>`;
+  }
   if (opts.registre === 'pedagogique') {
     const schema = svgDessin(SCHEMA_ANIMATION[animation], { id: `${id}-schema`, registre: 'pedagogique' }).replace('<svg ', '<svg x="30" y="22.5" width="340" height="255" ');
     return `<svg id="${echapper(id)}" class="animation-fixe animation-fixe--${animation} animation-fixe--pedagogique" ${F}>${schema}</svg>`;
@@ -1128,11 +1137,19 @@ function corpsEquipement(id: EquipementDessine, R: boolean, ident: string): stri
  * Dessin d'un équipement du cabinet (<svg>…</svg>, repère 120 × 90), décoratif, dans le registre demandé ;
  * chaîne vide si l'équipement n'a pas de dessin (l'appelant garde alors son icône au trait).
  */
-export function svgEquipement(id: string, opts: { id?: string; classe?: string; registre?: Registre } = {}): string {
+export function svgEquipement(id: string, opts: { id?: string; classe?: string; registre?: Registre; ligne?: OptionsLigne } = {}): string {
   if (!equipementDessine(id)) return '';
   const registre = opts.registre ?? 'releve';
   const ident = opts.id ?? `m-${id}`;
-  const classes = ['dessin', 'dessin--materiel', `dessin--${registre}`, opts.classe].filter(Boolean).join(' ');
+  const classes = ['dessin', 'dessin--materiel', `dessin--${registre}`, registre === 'ligne' && opts.ligne?.trace ? 'ligne-auto' : '', opts.classe].filter(Boolean).join(' ');
+  if (registre === 'ligne') {
+    // Trait continu : dessin dédié (repère 240 × 180 ramené au 120 × 90, graisse compensée) ou parcours automatique du dessin revu
+    const dedie = LIGNE_EQUIPEMENT[id];
+    const corpsLigne = dedie
+      ? `<g transform="scale(0.5)">${contenuLigne(dedie, { ...opts.ligne, echelleTrait: 2 * (opts.ligne?.echelleTrait ?? 1) })}</g>`
+      : contenuLigneAuto(svgEquipement(id, { registre: 'pedagogique', id: ident }), opts.ligne);
+    return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${corpsLigne}</svg>`;
+  }
   return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${corpsEquipement(id, registre === 'releve', ident)}</svg>`;
 }
 
@@ -1143,3 +1160,6 @@ export function symboleEquipement(id: EquipementDessine, opts: { registre?: Regi
   const interieur = svg.slice(svg.indexOf('>') + 1, svg.lastIndexOf('</svg>'));
   return `<symbol id="d" viewBox="0 0 120 90" overflow="visible"><g class="${classe}" fill="none" stroke-linecap="round" stroke-linejoin="round">${interieur}</g></symbol>`;
 }
+
+// Le registre « ligne » parcourt les dessins du matériel revus (registre pédagogique) : branchement sans import circulaire.
+brancherEquipements((id) => svgEquipement(id, { registre: 'pedagogique' }));

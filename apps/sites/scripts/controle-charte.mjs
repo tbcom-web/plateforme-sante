@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, UNIVERS_DU_PROFIL } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, UNIVERS_DU_PROFIL } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -72,11 +72,28 @@ const marques = core.UNIVERS_LISTE.flatMap((u) => u.marques.filter((q) => !core.
 const LIMITE_ELEMENTS = 400;
 const elements = (svg) => (svg.match(/<(?!\/)[a-z]/gi) || []).length;
 const invalide = (svg) => /NaN|undefined|Infinity/.test(svg);
+// Registre « ligne » (trait continu, packages/core/src/ligne.ts) : 1 à 3 chemins, aucun aplat (fill="none" partout, ni <rect>, <circle>,
+// <ellipse>, <polygon>), épaisseur en unités locales (jamais vector-effect : tracé tronqué dans WebKit avec pathLength), pathLength="1"
+// sur chaque chemin (animation du tracé), aucune <style>, poids léger (≤ 16 ko).
+const LIMITE_KO_LIGNE = 16;
+const defautsLigne = (svg, quoi) => {
+  const chemins = (svg.match(/<path\b/g) || []).length, d = [];
+  if (chemins < 1 || chemins > 3) d.push(`${quoi} : ${chemins} chemin(s) (attendu 1 à 3)`);
+  if (/fill="(?!none)/.test(svg) || /<(rect|circle|ellipse|polygon|text)\b/.test(svg)) d.push(`${quoi} : aplat ou forme pleine dans le registre ligne`);
+  if (/vector-effect/.test(svg)) d.push(`${quoi} : vector-effect (tracé tronqué dans WebKit avec pathLength)`);
+  if ((svg.match(/pathLength="1"/g) || []).length !== chemins) d.push(`${quoi} : chemin sans pathLength="1"`);
+  if (/<style[\s>]/.test(svg)) d.push(`${quoi} : <style> dans un dessin en ligne`);
+  if (invalide(svg)) d.push(`${quoi} : valeur invalide`);
+  if (Buffer.byteLength(svg) / 1024 > LIMITE_KO_LIGNE) d.push(`${quoi} : ${(Buffer.byteLength(svg) / 1024).toFixed(1)} ko (> ${LIMITE_KO_LIGNE} ko)`);
+  return d;
+};
 const dessins = [
   ...core.DESSINS_PODOLOGIE.flatMap((n) => core.REGISTRES.flatMap((r) => {
     const svg = core.svgDessin(n, { registre: r });
+    if (r === 'ligne') return defautsLigne(svg, `dessin « ${n} » (ligne)`);
     return [...(invalide(svg) ? [`dessin « ${n} » (${r}) : valeur invalide`] : []), ...(elements(svg) < 8 ? [`dessin « ${n} » (${r}) : vide`] : [])];
   })),
+  ...core.DESSINS_LIGNE.flatMap((l) => ['discretes', 'marquees'].flatMap((b) => defautsLigne(core.svgLigne(l, { boucles: b }), `dessin ligne « ${l} » (boucles ${b})`))),
   ...core.ANIMATIONS.flatMap((a) => core.REGISTRES.flatMap((r) => {
     const svg = core.svgAnimationFixe(a, { registre: r });
     return [...(invalide(svg) ? [`image fixe « ${a} » (${r}) : valeur invalide`] : []), ...(elements(svg) > LIMITE_ELEMENTS ? [`image fixe « ${a} » (${r}) : ${elements(svg)} éléments (> ${LIMITE_ELEMENTS})`] : [])];
@@ -85,6 +102,7 @@ const dessins = [
     ...(core.EQUIPEMENTS.some((e) => e.id === id) ? [] : [`dessin de matériel « ${id} » absent du catalogue EQUIPEMENTS`]),
     ...core.REGISTRES.flatMap((r) => {
       const svg = core.svgEquipement(id, { registre: r });
+      if (r === 'ligne') return defautsLigne(svg, `dessin de matériel « ${id} » (ligne)`);
       return invalide(svg) || elements(svg) < 6 ? [`dessin de matériel « ${id} » (${r}) : vide ou invalide`] : [];
     }),
   ]),
@@ -107,6 +125,8 @@ const bibliotheque = [
       ...(ko > LIMITE_KO ? [`bibliothèque « ${cle} » (${r}) : ${ko.toFixed(0)} ko (> ${LIMITE_KO} ko)`] : [])];
   })),
   ...core.BIBLIOTHEQUE.flatMap((e) => e.declinaisons.filter((d) => !core.FORMES_BIBLIOTHEQUE.includes(d.forme)).map((d) => `bibliothèque « ${e.id} » : forme inconnue « ${d.forme} »`)),
+  // Registre ligne des éléments : le dessin au trait continu du même sujet, ou la forme pédagogique (sans couleur littérale)
+  ...core.BIBLIOTHEQUE.flatMap((e) => e.declinaisons.flatMap((d) => { const svg = core.svgElement(e.id, { vue: d.vue, etat: d.etat, registre: 'ligne' }); return invalide(svg) || litterales(svg).length ? [`bibliothèque « ${e.id} » ${d.vue}/${d.etat} (ligne) : invalide ou couleur littérale`] : []; })),
   ...readdirSync(dossierBib).filter((f) => /\.ts$/.test(f)).flatMap((f) => readFileSync(join(dossierBib, f), 'utf8').split(/\r?\n/)
     .flatMap((ligne, i) => (EXCEPTION_LIGNE.test(ligne) ? [] : litterales(ligne).map((c) => `packages/core/src/bibliotheque/${f}:${i + 1}  ${c}`)))),
 ];
@@ -180,7 +200,7 @@ const anatomie = [];
   // Lecture profane : ni zone colorée, ni point, ni anneau, ni trame posés sur la PEAU (dessins pédagogiques qui montrent le pied réel)
   for (const n of ['soin', 'diabete', 'laser', 'verrue', 'talon', 'taping', 'ongle']) {
     const svg = geo.svgDessin(n, { registre: 'pedagogique' });
-    if (/class="(zone|point|anneau|trame)/.test(svg)) anatomie.push(`dessin « ${n} » (pédagogique) : couleur ou point posé sur la peau`);
+    if (/class="(zone|point|anneau|trame)\b/.test(svg)) anatomie.push(`dessin « ${n} » (pédagogique) : couleur ou point posé sur la peau`);
   }
   // Podoscope : aucune pression en phase oscillante
   if (geo.pressionPas(48, 200, 1, (geo.APPUI_MARCHE + 1) / 2, geo.TRAJET_POINTS) !== 0) anatomie.push('podoscope : pression pendant la phase oscillante');
@@ -197,9 +217,12 @@ const webkit = [];
   const fs2 = await import(pathToFileURL(sortieFs).href);
   rmSync(sortieFs, { force: true });
   const feuille = readFileSync(join(racine, '../../packages/core/src/dessins.css'), 'utf8');
-  for (const [nom, svg] of [['talon', fs2.fichierSvg(fs2.symboleDessin('talon'), feuille)], ['materiel-podoscope', fs2.fichierSvg(fs2.symboleEquipement('podoscope'), feuille)]]) {
+  for (const [nom, svg] of [['talon', fs2.fichierSvg(fs2.symboleDessin('talon'), feuille)], ['materiel-podoscope', fs2.fichierSvg(fs2.symboleEquipement('podoscope'), feuille)], ['talon-ligne', fs2.fichierSvg(fs2.symboleDessin('talon', { registre: 'ligne' }), feuille)], ['materiel-fauteuil-soins-ligne', fs2.fichierSvg(fs2.symboleEquipement('fauteuil-soins', { registre: 'ligne' }), feuille)]]) {
     if (/<style[s>]/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : <style> (ignoré par WebKit)`);
     if (nom === 'talon' && !/class="mono[^"]*"[^>]*style="[^"]*font-size/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : styles des étiquettes absents des attributs`);
+    // Registre ligne : trait, épaisseur et couleur EN ATTRIBUTS (WebKit), aucune règle de la page reportée sur le trait (le pointillé
+    // d'attente n'est posé que par la page, à l'apparition)
+    if (nom.endsWith('-ligne') && (!/class="ligne"[^>]*style="stroke:[^"]*stroke-width:/.test(svg) || /stroke-dasharray/.test(svg))) webkit.push(`fichier de dessin « ${nom} » : trait du registre ligne sans styles en attributs, ou pointillé figé`);
   }
   const dossierDist = join(racine, 'dist/dessins');
   let fichiersDist = [];
@@ -286,5 +309,5 @@ for (const d of [...gammes, ...modeles, ...univers, ...inconnues, ...marques, ..
 const total = defauts.length + gammes.length + modeles.length + univers.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length + webkit.length + contenus.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.CATALOGUE_UNIVERS.length} univers de catalogue valides (identité préservée), ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit) ; moteur de contenus : gabarits sans couleur littérale, ${nbSujets} sujets et leurs publications (4 formats × 4 identités) conformes aux garde-fous.`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.CATALOGUE_UNIVERS.length} univers de catalogue valides (identité préservée), ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; ${core.DESSINS_LIGNE.length} dessins au trait continu (1 à 3 chemins, sans aplat) ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit) ; moteur de contenus : gabarits sans couleur littérale, ${nbSujets} sujets et leurs publications (4 formats × 4 identités) conformes aux garde-fous.`);
 process.exit(total ? 1 : 0);

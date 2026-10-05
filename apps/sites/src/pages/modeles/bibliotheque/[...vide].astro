@@ -1,7 +1,7 @@
 ---
 // Planche de la bibliothèque partagée (éléments repris d'ÉcranZen, packages/core/src/bibliotheque), générée uniquement sur les
-// sites de démo : /modeles/bibliotheque. Chaque déclinaison dans les deux registres (pédagogique, relevé), sur fond clair et sur
-// fond plan, puis en vignette de 240 px.
+// sites de démo : /modeles/bibliotheque. Chaque déclinaison dans les registres pédagogique et relevé, sur fond clair et sur fond plan,
+// puis au trait continu (registre « ligne » : dessin du même sujet, sinon la forme pédagogique) et en vignette de 240 px.
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import { site } from '../../../lib/site';
@@ -39,11 +39,11 @@ const comparaisons: { sujet: string; actuel: NomDessin; ecranzen: [string, { vue
   <body>
     <main>
       <section id="comparaison">
-        <p class="entete"><b>Actuel vs ÉcranZen</b> · à gauche le dessin actuel des sites, à droite les éléments ÉcranZen · registres pédagogique puis relevé</p>
+        <p class="entete"><b>Actuel vs ÉcranZen</b> · à gauche le dessin actuel des sites, à droite les éléments ÉcranZen · registres pédagogique, relevé puis ligne</p>
         {comparaisons.map((c) => (
           <div class="comparaison">
             <p class="entete">{c.sujet}</p>
-            {(['pedagogique', 'releve'] as const).map((r) => (
+            {(['pedagogique', 'releve', 'ligne'] as const).map((r) => (
               <div class="rangee rangee--comparaison">
                 <figure><Fragment set:html={svgDessin(c.actuel, { registre: r })} /><figcaption>actuel · {c.actuel} · {r}</figcaption></figure>
                 {c.ecranzen.map(([id, o]) => (
@@ -61,6 +61,7 @@ const comparaisons: { sujet: string; actuel: NomDessin; ecranzen: [string, { vue
             {fonds.map((f) => (
               <figure class={f.classe}><Fragment set:html={svgForme(d.forme, { registre: f.registre })} /><figcaption>{f.nom}</figcaption></figure>
             ))}
+            <figure><Fragment set:html={svgElement(e.id, { vue: d.vue, etat: d.etat, registre: 'ligne' })} /><figcaption>ligne</figcaption></figure>
             <figure class="vignette"><Fragment set:html={svgForme(d.forme)} /><figcaption>240 px</figcaption></figure>
           </div>
         </section>
@@ -74,7 +75,7 @@ const comparaisons: { sujet: string; actuel: NomDessin; ecranzen: [string, { vue
   main { display: grid; gap: 16px; padding: 16px; }
   section { background: var(--blanc); border-radius: 16px; padding: 12px; }
   .entete { margin: 0 0 8px; font-family: var(--police-mono); font-size: var(--taille-donnees); color: var(--encre-pale); }
-  .rangee { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 240px; gap: 10px; align-items: start; }
+  .rangee { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 240px; gap: 10px; align-items: start; }
   figure { margin: 0; background: var(--blanc); border: var(--filet) solid var(--ligne); border-radius: 12px; padding: 10px; }
   figure :global(svg) { display: block; width: 100%; height: auto; max-height: 340px; }
   figcaption { font-family: var(--police-mono); font-size: var(--taille-donnees-petit); color: var(--encre-pale); margin-top: 6px; }

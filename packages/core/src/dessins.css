@@ -141,4 +141,15 @@
 .dessin .pulse { transform-box: fill-box; transform-origin: center; animation: dessin-pulse var(--cycle-pouls) ease-out infinite; }
 @keyframes dessin-onde { 0% { opacity: 0.9; } 100% { opacity: 0.15; } }
 @keyframes dessin-pulse { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.7); } }
+/* Registre « ligne » (trait continu, ligne.ts) : « le trait se dessine ». Chaque chemin a pathLength="1" et ses parts du tracé
+   (--ligne-debut, --ligne-part, fractions de --duree-ligne : les traits se suivent). Sur le site, ChargeurDessins pose
+   .ligne-attente (trait masqué) puis .ligne-trace à l'apparition, et .ligne-fini à la fin (plus de pointillé) ; un dessin en
+   ligne peut demander .ligne-auto (animation CSS au chargement : aperçus, contenus). Tiret de 1, vide de 2, décalage 1,01 : aucun
+   point résiduel au départ. Épaisseur en unités LOCALES (jamais vector-effect : tracé tronqué dans WebKit avec pathLength). */
+.ligne-attente .ligne { stroke-dasharray: 1 2; stroke-dashoffset: 1.01; }
+.ligne-attente.ligne-trace .ligne { stroke-dashoffset: 0; transition: stroke-dashoffset calc(var(--ligne-part, 1) * var(--duree-ligne)) var(--courbe-trace) calc(var(--ligne-debut, 0) * var(--duree-ligne)); }
+.ligne-fini .ligne { stroke-dasharray: none; stroke-dashoffset: 0; transition: none; }
+.ligne-auto .ligne { stroke-dasharray: 1 2; animation: ligne-trace calc(var(--ligne-part, 1) * var(--duree-ligne)) var(--courbe-trace) calc(var(--ligne-debut, 0) * var(--duree-ligne)) both; }
+@keyframes ligne-trace { from { stroke-dashoffset: 1.01; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .ligne-attente .ligne, .ligne-auto .ligne { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; } }
 @media (prefers-reduced-motion: reduce) { .dessin * { animation: none !important; transition: none !important; } }

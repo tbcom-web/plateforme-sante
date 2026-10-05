@@ -2,7 +2,8 @@
 // Animation de la marque, choisie par son nom (accueil, fiches de soins). Décorative (aria-hidden dans
 // chaque composant) ; pause hors écran et image fixe si le visiteur réduit les mouvements.
 // Registre « pedagogique » (modèle Simple et pédagogique) : image calme du schéma correspondant, sans mouvement,
-// sans trame, sans lecture ni ligne de scan (svgAnimationFixe, même règle que l'aperçu de l'admin).
+// sans trame, sans lecture ni ligne de scan (svgAnimationFixe, même règle que l'aperçu de l'admin). Registre « ligne » : le dessin
+// au trait continu du même sujet, dont le trait se dessine au chargement (.ligne-auto ; trait complet si mouvements réduits).
 import Podoscope from './Podoscope.astro';
 import Coureur from './Coureur.astro';
 import Trajectoire from './Trajectoire.astro';
@@ -15,8 +16,8 @@ import { registre as registreSite } from '../../lib/visuels';
 interface Props { nom: Animation | null; fond?: 'sombre' | 'clair'; releve?: boolean; registre?: Registre }
 const { nom, fond = 'sombre', releve = false, registre = registreSite } = Astro.props;
 ---
-{nom && registre === 'pedagogique' ? (
-  <span class="anim-calme" aria-hidden="true" set:html={svgAnimationFixe(nom, { registre })} />
+{nom && registre !== 'releve' ? (
+  <span class="anim-calme" aria-hidden="true" set:html={svgAnimationFixe(nom, { registre, ligne: { trace: true } })} />
 ) : (
   <>
     {nom === 'podoscope' && <Podoscope fond={fond} releve={releve} />}

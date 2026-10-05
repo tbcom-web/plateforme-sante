@@ -28,6 +28,29 @@
     return new DOMParser().parseFromString(texte, 'image/svg+xml').getElementById('d');
   }
 
+  /**
+   * Registre « ligne » (dessin au trait continu, svg[data-trace]) : le trait se dessine quand le dessin entre vraiment à l'écran
+   * (35 % visible), une seule fois. Le dessin est inséré ~200 px avant l'écran : le trait est masqué d'abord (.ligne-attente),
+   * puis tracé (.ligne-trace, transitions de dessins.css), puis figé sans pointillé (.ligne-fini). Mouvements réduits : rien
+   * n'est masqué, le trait est complet d'emblée.
+   */
+  const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const enVue = 'IntersectionObserver' in window
+    ? new IntersectionObserver((es) => es.forEach((e) => {
+        if (!e.isIntersecting) return;
+        enVue!.unobserve(e.target);
+        const svg = e.target as SVGSVGElement;
+        requestAnimationFrame(() => requestAnimationFrame(() => svg.classList.add('ligne-trace')));
+        const duree = parseFloat(getComputedStyle(svg).getPropertyValue('--duree-ligne')) || 2600;
+        setTimeout(() => svg.classList.add('ligne-fini'), duree + 200);
+      }), { threshold: 0.35 })
+    : null;
+  function tracer(svg: SVGSVGElement) {
+    if (reduit || !enVue || svg.classList.contains('ligne-attente')) return;
+    svg.classList.add('ligne-attente');
+    enVue.observe(svg);
+  }
+
   /** Remplace <use data-dessin> par un <svg> imbriqué portant le symbole (même cadre que le <use>). */
   async function inserer(u: SVGUseElement) {
     const adresse = u.dataset.dessin;
@@ -40,7 +63,9 @@
       for (const a of ['viewBox', 'overflow', 'preserveAspectRatio']) if (s.hasAttribute(a)) cadre.setAttribute(a, s.getAttribute(a)!);
       for (const a of ['x', 'y', 'width', 'height', 'class', 'style']) if (u.hasAttribute(a)) cadre.setAttribute(a, u.getAttribute(a)!);
       cadre.append(...[...s.childNodes].map((n) => document.importNode(n, true)));
+      const hote = u.ownerSVGElement;
       u.replaceWith(cadre);
+      if (hote?.hasAttribute('data-trace')) tracer(hote);
     } catch {
       u.setAttribute('href', adresse); // repli : référence externe
     }

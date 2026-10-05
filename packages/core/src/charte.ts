@@ -95,6 +95,22 @@ export const SUR_SOMBRE = { doux: 0.8, pale: 0.55, filet: 0.22, verre: 0.14 } as
 export const TRAIT = { filet: 0.6, fin: 1, normal: 1.5, fort: 2.2, marque: 3.2 } as const;
 
 /**
+ * Registre « ligne » (dessins au trait continu, ligne.ts) : une seule épaisseur par dessin, prise dans TRAIT (unités LOCALES du
+ * repère 240 × 180, jamais vector-effect : piège WebKit avec pathLength) ; boucles de raccord (rayon) et queues de début et de
+ * fin (longueur), en unités du repère ; `final` : le trait finit par une boucle. Variantes soumises à l'arbitrage de Paul.
+ */
+export const LIGNE = {
+  epaisseur: { fine: TRAIT.normal, moyenne: TRAIT.fort },
+  boucles: {
+    marquees: { rayon: 5.2, queue: 16, final: true },
+    discretes: { rayon: 2.6, queue: 9, final: false },
+  },
+  defaut: { epaisseur: 'fine', boucles: 'discretes' },
+} as const;
+export type EpaisseurLigne = keyof typeof LIGNE.epaisseur;
+export type BouclesLigne = keyof typeof LIGNE.boucles;
+
+/**
  * Pointillés et tirets (dasharray). Le contour « relevé de podoscope » est une suite de points ronds
  * (longueur 0, bouts ronds) : `point` = épaisseur, `ecart` = distance entre deux points.
  */
@@ -160,7 +176,7 @@ export const TYPO = {
 // ———————————————————————————————————————————————————— Mouvement
 
 /** Durées (ms) : transitions ponctuelles */
-export const DUREES = { instant: 150, court: 300, moyen: 600, long: 900, trace: 1400, decalage: 80 } as const;
+export const DUREES = { instant: 150, court: 300, moyen: 600, long: 900, trace: 1400, decalage: 80, ligne: 2600 } as const;
 /** Cycles (ms) des animations continues */
 export const CYCLES = {
   /** Pulsation d'un point d'intérêt, onde, rebond, déroulé d'un pas au podoscope */

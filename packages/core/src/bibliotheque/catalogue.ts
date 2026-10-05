@@ -9,6 +9,7 @@
 // valide_par. Ajouts propres aux sites : `declinaisons` (vue / état → forme de formes.ts), `usages_sites`, `limites`.
 import type { Registre } from '../dessins';
 import { svgForme } from './rendu';
+import { svgLigne, LIGNE_FORME, type OptionsLigne } from '../ligne';
 
 export type StatutBibliotheque = 'reserve' | 'brouillon' | 'en-validation' | 'valide' | 'a-revalider' | 'retire';
 
@@ -217,6 +218,13 @@ export function declinaison(id: string, o: { vue?: string; etat?: string } = {})
  * SVG d'un élément de la bibliothèque, dans la charte des sites (variables --dessin-*, --peau…, --pression-*).
  * svgElement('POD-AT-0001') · svgElement('semelle-orthopedique', { vue: 'profil' }) · svgElement('hallux-dorsal', { etat: 'incarne', registre: 'releve' })
  */
-export function svgElement(id: string, opts: { registre?: Registre; vue?: string; etat?: string; titre?: string; classe?: string } = {}): string {
-  return svgForme(declinaison(id, opts).forme, opts);
+export function svgElement(id: string, opts: { registre?: Registre; vue?: string; etat?: string; titre?: string; classe?: string; ligne?: OptionsLigne } = {}): string {
+  const forme = declinaison(id, opts).forme;
+  // Registre « ligne » : le dessin au trait continu du même sujet (LIGNE_FORME) ; sinon la forme dans le registre pédagogique
+  if (opts.registre === 'ligne') {
+    const nom = LIGNE_FORME[forme];
+    if (nom) return svgLigne(nom, { ...opts.ligne, classe: opts.classe });
+    return svgForme(forme, { ...opts, registre: 'pedagogique' });
+  }
+  return svgForme(forme, opts);
 }

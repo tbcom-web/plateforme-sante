@@ -6,24 +6,32 @@
 // composant référence par <use> : la page ne recopie pas le tracé (HTML léger, fichier mis en cache), et le
 // dessin hérite des couleurs de la page — --dessin-trait, --dessin-accent, --dessin-fond (surchargeables par
 // le parent, par exemple .surface-plan), palette de pression et accent de la gamme.
-// Registre « pedagogique » : schéma au trait, sans trame ni lecture. Décoratif : aria-hidden.
+// Registre « pedagogique » : schéma au trait, sans trame ni lecture. Registre « ligne » : dessin au trait continu (ligne.ts) ;
+// le tracé se dessine à l'apparition (ChargeurDessins, data-trace ; trait complet si le visiteur réduit les mouvements). La
+// prop `ligne` pose directement un dessin du registre ligne par son nom (DESSINS_LIGNE). Décoratif : aria-hidden.
 import '@plateforme/core/dessins.css';
-import type { NomDessin, Registre } from '@plateforme/core';
-import { urlDessin } from '../../lib/fichiers-dessins';
+import type { NomDessin, NomLigne, Registre } from '@plateforme/core';
+import { urlDessin, suffixeRegistre } from '../../lib/fichiers-dessins';
 import ChargeurDessins from './ChargeurDessins.astro';
 import { registre as registreSite } from '../../lib/visuels';
 export type { NomDessin } from '@plateforme/core';
 
 interface Props {
-  nom: NomDessin;
+  nom?: NomDessin;
+  /** Dessin du registre « ligne » par son nom (sinon : celui qui correspond à `nom`) */
+  ligne?: NomLigne;
   class?: string;
-  /** « releve » ou « pedagogique » (par défaut : registre du modèle) : schéma au trait, sans trame ni lecture */
+  /** « releve », « pedagogique » ou « ligne » (par défaut : registre du modèle) */
   registre?: Registre;
+  /** Registre ligne : le trait se dessine à l'apparition (par défaut : oui) */
+  trace?: boolean;
 }
 
-const { nom, class: classe, registre = registreSite } = Astro.props;
-const fichier = urlDessin(`${nom}${registre === 'pedagogique' ? '-pedagogique' : ''}`);
+const { nom = 'appuis', ligne, class: classe, registre: registreProp = registreSite, trace = true } = Astro.props;
+const registre: Registre = ligne ? 'ligne' : registreProp;
+const fichier = urlDessin(ligne ? `ligne-${ligne}` : `${nom}${suffixeRegistre(registre)}`);
+const anime = registre === 'ligne' && trace ? '' : undefined;
 ---
-<svg class:list={['dessin', `dessin--${nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use data-dessin={fichier} width="240" height="180" /></svg>
-<noscript><svg class:list={['dessin', `dessin--${nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use href={fichier} width="240" height="180" /></svg><style>svg:has(> use[data-dessin]){display:none}</style></noscript>
+<svg class:list={['dessin', `dessin--${ligne ?? nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true" data-trace={anime}><use data-dessin={fichier} width="240" height="180" /></svg>
+<noscript><svg class:list={['dessin', `dessin--${ligne ?? nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use href={fichier} width="240" height="180" /></svg><style>svg:has(> use[data-dessin]){display:none}</style></noscript>
 <ChargeurDessins />

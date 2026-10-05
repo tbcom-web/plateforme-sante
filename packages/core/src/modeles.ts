@@ -24,9 +24,17 @@ export type Hero = (typeof HEROS)[number];
 /**
  * Registre des illustrations du site (voir docs/charte-graphique.md, « Deux registres ») :
  * « releve » = trame de pression, lectures en mono, fonds plan sombres ; « pedagogique » = schémas de manuel au
- * trait, fonds clairs, sans trame, sans lecture de données, sans ligne de scan, sans sur-titres numérotés.
+ * trait, fonds clairs, sans trame, sans lecture de données, sans ligne de scan, sans sur-titres numérotés ; « ligne » = dessins au
+ * trait continu (one-line art, ligne.ts), le tracé se dessine à l'apparition (registre proposé pour l'univers Zen : REGISTRE_PROPOSE).
  */
-export const REGISTRES_MODELE: readonly Registre[] = ['releve', 'pedagogique'];
+export const REGISTRES_MODELE: readonly Registre[] = ['releve', 'pedagogique', 'ligne'];
+/**
+ * Registre PROPOSÉ par modèle (non appliqué : les fiches gardent leur jeton `registre`, rien ne change pour les sites en ligne).
+ * Zen : le trait continu, doux et épuré, s'accorde à sa typographie légère et à ses formes arrondies. À arbitrer par Paul
+ * (variantes de trait et de boucles : docs/charte-graphique.md, « Registre ligne »).
+ * TODO(univers) : à reprendre dans le préréglage de l'univers Zen du catalogue d'univers (catalogue-univers.ts) quand il sera stabilisé.
+ */
+export const REGISTRE_PROPOSE: Readonly<Record<string, Registre>> = { zen: 'ligne' };
 
 export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito'] as const;
 export type PoliceTitres = (typeof POLICES_TITRES)[number];

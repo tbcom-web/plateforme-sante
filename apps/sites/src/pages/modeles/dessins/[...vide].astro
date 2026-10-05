@@ -1,17 +1,20 @@
 ---
 // Planche des dessins techniques, générée uniquement sur les sites de démo : /modeles/dessins
-// Registre « relevé » (par défaut) et registre « pédagogique », sur fond clair et sur fond plan, et en vignette.
+// Registre « relevé » (par défaut), registre « pédagogique » et registre « ligne » (trait continu), sur fond clair et sur fond plan,
+// et en vignette ; puis, en grille serrée, les dessins propres au registre ligne et la comparaison des 3 registres.
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import Dessin, { type NomDessin } from '../../../components/dessins/Dessin.astro';
 import { site } from '../../../lib/site';
-import { feuilleCharte, DESSINS_PODOLOGIE, GAMMES, variablesGamme } from '@plateforme/core';
+import { feuilleCharte, DESSINS_PODOLOGIE, DESSINS_LIGNE, svgDessin, GAMMES, variablesGamme } from '@plateforme/core';
 const accent = Object.entries(variablesGamme(GAMMES[0])).map(([k, v]) => `${k}:${v}`).join(';');
 
 export function getStaticPaths() {
   return site.demo ? [{ params: { vide: undefined } }] : [];
 }
 const noms: NomDessin[] = [...DESSINS_PODOLOGIE];
+// Comparaison des trois registres sur quatre sujets
+const sujets: NomDessin[] = ['appuis', 'talon', 'ongle', 'semelle'];
 ---
 <!doctype html>
 <html lang="fr" style={accent}>
@@ -39,6 +42,21 @@ const noms: NomDessin[] = [...DESSINS_PODOLOGIE];
       {noms.map((n) => (
         <figure class="vignette"><Dessin nom={n} /><figcaption>{n} · 240 px</figcaption></figure>
       ))}
+      <section class="ligne">
+        <p>Registre « ligne » (trait continu) : dessins des soins, fond plan, dessins propres au registre, comparaison des 3 registres. Variantes d'épaisseur et de boucles : planches d'arbitrage.</p>
+        {noms.map((n) => (
+          <figure id={`ligne-${n}`}><Dessin nom={n} registre="ligne" /><figcaption>{n} · ligne</figcaption></figure>
+        ))}
+        {noms.slice(0, 8).map((n) => (
+          <figure class="sombre"><Dessin nom={n} registre="ligne" /><figcaption>{n} · ligne, plan</figcaption></figure>
+        ))}
+        {DESSINS_LIGNE.map((l) => (
+          <figure><Dessin ligne={l} /><figcaption>{l}</figcaption></figure>
+        ))}
+        {sujets.map((n) => (['releve', 'pedagogique', 'ligne'] as const).map((r) => (
+          <figure><Fragment set:html={svgDessin(n, { registre: r, id: `cmp-${n}-${r}` })} /><figcaption>{n} · {r}</figcaption></figure>
+        )))}
+      </section>
     </main>
   </body>
 </html>
@@ -49,6 +67,10 @@ const noms: NomDessin[] = [...DESSINS_PODOLOGIE];
   figure { margin: 0; background: var(--blanc); border-radius: 16px; padding: 18px; }
   figcaption { font-family: var(--police-mono); font-size: var(--taille-donnees); color: var(--encre-pale); margin-top: 6px; }
   .vignette { width: 240px; padding: 8px; }
+  .ligne { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .ligne p { grid-column: 1 / -1; margin: 0; font-size: var(--taille-donnees); color: var(--encre-pale); }
+  .ligne figure { padding: 8px; border-radius: 10px; }
+  .ligne figcaption { font-size: var(--taille-donnees-petit); }
   .sombre { background: var(--plan); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-fond: var(--plan-profond);
     background-image: linear-gradient(var(--quadrillage-sombre) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-sombre) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas) var(--quadrillage-pas); }
 </style>

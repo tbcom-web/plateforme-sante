@@ -86,6 +86,8 @@
 
 - Plusieurs aplats réunis dans un seul chemin SVG avec des sens de tracé opposés = trous (règle nonzero), invisibles sur fond blanc, visibles sur fond sombre : un tracé par forme [sites, refonte 2026-10-04].
 
+- Trait continu (registre « ligne », revue du 2026-10-05) : boucle de raccord posée sur le contour de la peau = bouton / verrue (boucles seulement dans les ongles, les pulpes ou hors de la peau) ; ongle en boucle aussi large que l'orteil = perle, chapelet (lame à 0,5–0,6 de la largeur, ou pas d'ongle en petit) ; trait qui relie le bout de l'orteil au bord libre = entaille ; raccord en crochet ou deux traits qui convergent en goutte au fond d'un espace interdigital = fissure, mycose (pont droit, fond en U ouvert) ; pulpes d'empreinte enfilées sur une ligne de base = chapelet ; monofilament en S ou pendant en U = câble (un seul C, bombé vers les orteils) ; pied couché coupé sous la tête de M1 sans talon = pouce levé ; canne en trait simple ou embout fondu dans le sol = poteau (double trait, cloche fermée) ; jambes de marche qui ne vont pas à une même hanche = deux personnes ; podoscope sans plantes dans le miroir = caisse ; hublot rond sans plateaux ni poignée = machine à laver ; trait qui relie une poignée à un afficheur = bulle de BD ; queue de trait qui sort d'un objet = languette [sites, trait continu].
+
 - Orteils en gros plan dont la commissure est à plus de 2 fois la largeur de l'orteil sous la pointe = **doigts** : longueur visible de l'hallux ≈ 1,4–1,5 × sa largeur, avant-pied dans le cadre [sites, ongle v5].
 
 ## Anatomie
