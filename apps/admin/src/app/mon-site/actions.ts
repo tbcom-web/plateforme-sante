@@ -9,8 +9,12 @@ import { getRole } from '@/lib/admin';
 import { manques } from '@/lib/sites';
 import { declencherPublication } from '@/lib/publication';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
+import { textesAConserver } from '@/lib/personnalisation';
 
-export type EtatEnregistrement = { ok: boolean; message: string; id?: string };
+/** version : date de dernière modification du brouillon après l'enregistrement (verrou optimiste) ; conflit : modifié ailleurs. */
+export type EtatEnregistrement = { ok: boolean; message: string; id?: string; version?: string; conflit?: boolean };
+
+const MESSAGE_CONFLIT = 'Modifié ailleurs entre-temps : rechargez la page. Votre saisie est gardée dans ce navigateur.';
 
 const t = (v: unknown, max = 200) => String(v ?? '').trim().slice(0, max);
 const liste = (v: unknown, max = 20, taille = 80) => (Array.isArray(v) ? v : []).map((x) => t(x, taille)).filter(Boolean).slice(0, max);
@@ -103,37 +107,52 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
   };
 }
 
-export async function enregistrerSite(id: string | null, draft: SiteDraft): Promise<EtatEnregistrement> {
+/**
+ * Enregistre le brouillon (jamais la version en ligne : voir « Publier »).
+ * version : updated_at lu à l'ouverture ; si le brouillon a changé depuis (autre onglet, admin…), rien n'est écrasé.
+ */
+export async function enregistrerSite(id: string | null, draft: SiteDraft, version?: string | null): Promise<EtatEnregistrement> {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return { ok: false, message: 'Session expirée, reconnectez-vous.' };
 
-  const { data: existant } = id ? await supabase.from('sites').select('options, config').eq('id', id).maybeSingle() : { data: null };
+  const { data: existant } = id ? await supabase.from('sites').select('options, config, updated_at').eq('id', id).maybeSingle() : { data: null };
+  if (id && !existant) return { ok: false, message: 'Site introuvable.' };
+  if (existant && version && existant.updated_at !== version) return { ok: false, conflit: true, message: MESSAGE_CONFLIT, id: id ?? undefined };
   const edition = Boolean((existant?.options as { edition?: boolean } | null)?.edition);
   const config = nettoyer(draft, (await getModelesDisponibles()).map((m) => m.id), edition, (await getMarquesImportees()).map((m) => m.id));
+  // Option « édition » retirée : les textes guidés déjà enregistrés sont gardés (seulement plus publiés).
+  config.perso.textes = textesAConserver(existant ? normaliserDraft(existant.config).perso.textes : {}, config.perso.textes, edition);
   // Jeu de photos : tiré au hasard à la création et quand la spécialité principale change (lib/jeux-photos.ts).
   const ancien = existant ? normaliserDraft(existant.config).theme : null;
   config.theme.jeuPhotos = await jeuPhotosAEnregistrer(supabase, id, ancien, config.theme.specialite);
-  const requete = id
-    ? supabase.from('sites').update({ config }).eq('id', id).select('id').single()
-    : supabase.from('sites').insert({ profession_slug: 'podologue', config }).select('id').single();
 
-  const { data, error } = await requete;
+  let data: { id: string; updated_at: string } | null = null;
+  let error: unknown = null;
+  if (id) {
+    // Mise à jour conditionnelle : refusée si updated_at a changé entre la lecture et l'écriture.
+    let requete = supabase.from('sites').update({ config }).eq('id', id);
+    if (version) requete = requete.eq('updated_at', version);
+    ({ data, error } = await requete.select('id, updated_at').maybeSingle());
+    if (!error && !data) return { ok: false, conflit: true, message: MESSAGE_CONFLIT, id };
+  } else {
+    ({ data, error } = await supabase.from('sites').insert({ profession_slug: 'podologue', config }).select('id, updated_at').single());
+  }
   if (error || !data) return { ok: false, message: 'Enregistrement impossible. Réessayez.' };
 
   revalidatePath('/tableau-de-bord');
-  return { ok: true, message: 'Enregistré (le site en ligne change après « Enregistrer et publier »)', id: data.id };
+  return { ok: true, message: 'Enregistré, pas encore en ligne : « Enregistrer et publier » met le site à jour.', id: data.id, version: data.updated_at };
 }
 
 /** Enregistre puis republie le site : le site est statique, une modification n'est visible qu'après publication. */
-export async function enregistrerEtPublier(id: string | null, draft: SiteDraft): Promise<EtatEnregistrement> {
-  const r = await enregistrerSite(id, draft);
+export async function enregistrerEtPublier(id: string | null, draft: SiteDraft, version?: string | null): Promise<EtatEnregistrement> {
+  const r = await enregistrerSite(id, draft, version);
   if (!r.ok || !r.id) return r;
-  // Le praticien ne publie qu'un site complet ; le super admin peut toujours republier.
+  // Le praticien ne publie qu'un site complet ; le super admin peut toujours lancer la publication.
   const aFaire = manques(normaliserDraft(draft));
   if (aFaire.length > 0 && (await getRole()) !== 'admin') {
-    return { ok: false, message: `Enregistré, mais pas encore publiable. Il manque : ${aFaire.join(', ')}.`, id: r.id };
+    return { ...r, ok: false, message: `Enregistré, pas encore en ligne. Il manque : ${aFaire.join(', ')}.` };
   }
   const p = await declencherPublication(r.id);
-  return { ...p, message: p.ok ? 'Enregistré. Publication lancée : en ligne d’ici 2 à 3 minutes.' : `Enregistré, mais ${p.message}`, id: r.id };
+  return { ...r, ok: p.ok, message: p.ok ? 'Enregistré. Publication lancée : en ligne d’ici 2 à 3 minutes.' : `Enregistré, pas encore en ligne : ${p.message}` };
 }

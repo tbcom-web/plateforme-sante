@@ -3,17 +3,21 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { definitionChamp, verifierTexte, type DefinitionChamp } from '@plateforme/core';
 import { envoyerPhoto, TAILLE_MAX } from '@/lib/envoi-photo';
+import SaisieGardee from '@/components/SaisieGardee';
+import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import { enregistrerEdition, etatApercu, lancerApercu, publierDepuisEdition, type ResultatEdition } from './actions';
 
-type Props = { siteId: string; slug: string | null; edition: boolean; textesInitiaux: Record<string, string>; champs: DefinitionChamp[] };
+type Props = { siteId: string; slug: string | null; version: string | null; edition: boolean; textesInitiaux: Record<string, string>; champs: DefinitionChamp[] };
 
 // Recadrage des photos selon l'emplacement (portraits en 4:5, le reste libre).
 const ratioPhoto = (emplacement: string) => (emplacement.startsWith('praticien.') ? 4 / 5 : null);
 
-export default function EditeurVisuel({ siteId, slug: slugInitial, edition, textesInitiaux, champs }: Props) {
+export default function EditeurVisuel({ siteId, slug: slugInitial, version: versionInitiale, edition, textesInitiaux, champs }: Props) {
   const cadre = useRef<HTMLIFrameElement>(null);
   const fichier = useRef<HTMLInputElement>(null);
   const [slug, setSlug] = useState(slugInitial);
+  // Date de modification du brouillon lue : l'enregistrement est refusé si quelqu'un l'a modifié depuis.
+  const [version, setVersion] = useState(versionInitiale);
   const [genere, setGenere] = useState<string | null>(null);
   const [recharge, setRecharge] = useState(0);
   const [textes, setTextes] = useState<Record<string, string>>({});
@@ -101,6 +105,11 @@ export default function EditeurVisuel({ siteId, slug: slugInitial, edition, text
       </div>
 
       <aside className="flex min-h-0 flex-col gap-4 overflow-y-auto border-l border-black/5 bg-white p-4 text-sm">
+        <SaisieGardee<{ textes: Record<string, string>; photos: Record<string, string> }>
+          espace="edition"
+          id={siteId}
+          onReprendre={(v) => { setTextes(v.textes ?? {}); setPhotos(v.photos ?? {}); setMessage({ ok: true, message: 'Saisie reprise : enregistrez pour la conserver.' }); }}
+        />
         <section>
           <h2 className="font-semibold">Comment modifier</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-neutral-600">
@@ -147,9 +156,11 @@ export default function EditeurVisuel({ siteId, slug: slugInitial, edition, text
             type="button"
             disabled={enCours || modifie === 0}
             onClick={() => demarrer(async () => {
-              const r = await enregistrerEdition(siteId, textes, photos);
+              const r = await enregistrerEdition(siteId, textes, photos, version);
               setMessage(r);
-              if (r.ok) { setTextes({}); setPhotos({}); }
+              if (r.version) setVersion(r.version);
+              if (r.conflit) garderLocalement('edition', siteId, { textes, photos });
+              if (r.ok) { setTextes({}); setPhotos({}); oublierLocalement('edition', siteId); }
             })}
             className="rounded-lg bg-teal-800 px-4 py-2.5 font-semibold text-white hover:bg-teal-900 disabled:opacity-50"
           >

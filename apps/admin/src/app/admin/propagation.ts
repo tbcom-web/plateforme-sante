@@ -8,6 +8,7 @@ const cibleValide = (c: Cible): Cible => ({
   modele: typeof c.modele === 'string' && /^[a-z0-9-]{2,40}$/.test(c.modele) ? c.modele : undefined,
   marque: typeof c.marque === 'string' && /^[a-z0-9-]{3,40}$/.test(c.marque) ? c.marque : undefined,
   jeuPhotos: typeof c.jeuPhotos === 'string' && /^[0-9a-f-]{36}$/.test(c.jeuPhotos) ? c.jeuPhotos : undefined,
+  soin: typeof c.soin === 'string' && /^[a-z0-9-]{1,80}$/.test(c.soin) ? c.soin : undefined,
   tous: c.tous === true,
 });
 
@@ -18,11 +19,11 @@ export async function compterConcernes(cible: Cible) {
   return { nombre: sites.length, noms: sites.slice(0, 8).map((s) => s.nom) };
 }
 
-/** Republie tous les sites concernés (propagation d'un changement d'image, de modèle ou de charte). */
+/** Republie la version publiée de tous les sites concernés (propagation d'un changement d'image, de modèle, de charte…). */
 export async function propager(cible: Cible) {
   await exigerAdmin();
   const c = cibleValide(cible);
-  if (!c.specialite && !c.modele && !c.marque && !c.jeuPhotos && !c.tous) return { ok: false, message: 'Cible invalide.' };
+  if (!c.specialite && !c.modele && !c.marque && !c.jeuPhotos && !c.soin && !c.tous) return { ok: false, message: 'Cible invalide.' };
   const sites = await sitesConcernes(c);
   return declencherPublications(sites.map((s) => s.id));
 }

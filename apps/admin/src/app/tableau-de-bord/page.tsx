@@ -1,5 +1,9 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import ActualisationAuto from '@/components/ActualisationAuto';
+import { dateCourte, etatPublication, STATUTS } from '@/lib/libelles';
+import { CODE_VALIDE } from '@/lib/rattachement';
 import Shell from '@/components/Shell';
 import Apercu from '@/components/Apercu';
 import BoutonPublier from './BoutonPublier';
@@ -10,12 +14,6 @@ import { getCatalogue, getMonSite, manques } from '@/lib/sites';
 
 export const metadata = { title: 'Tableau de bord' };
 
-const STATUTS = {
-  brouillon: { label: 'Brouillon', classe: 'bg-amber-100 text-amber-900' },
-  en_ligne: { label: 'En ligne', classe: 'bg-teal-100 text-teal-900' },
-  suspendu: { label: 'Suspendu', classe: 'bg-neutral-200 text-neutral-700' },
-} as const;
-
 export default async function TableauDeBord() {
   const user = await getUser();
   if (!user) redirect('/connexion');
@@ -24,9 +22,19 @@ export default async function TableauDeBord() {
   const aFaire = manques(site.draft);
   const propositions = site.id ? await getPropositions(site.id) : [];
   const statut = STATUTS[site.statut];
+  const publication = etatPublication(site.publication.etat, site.publication.debut);
+  // Lien de rattachement ouvert avant la connexion (voir /rattacher)
+  const codeEnAttente = (await cookies()).get('rattachement')?.value;
 
   return (
     <Shell email={user.email ?? ''}>
+      <ActualisationAuto actif={publication?.cle === 'en_cours'} />
+      {codeEnAttente && CODE_VALIDE.test(codeEnAttente) && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>Un site préparé pour votre cabinet attend d’être rattaché à votre compte.</span>
+          <Link href={`/rattacher?code=${encodeURIComponent(codeEnAttente)}`} className="font-semibold underline-offset-4 hover:underline">Rattacher ce site →</Link>
+        </div>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
@@ -56,6 +64,28 @@ export default async function TableauDeBord() {
             <p className="mt-2 text-sm text-neutral-600">
               {site.domaine ? site.domaine : 'Nom de domaine : à choisir avant la mise en ligne.'}
             </p>
+            {publication && (
+              <div className="mt-3 text-sm">
+                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${publication.classe}`}>{publication.label}</span>
+                <span className="ml-2 text-xs text-neutral-500">
+                  {publication.cle === 'ok' ? `le ${dateCourte(site.publication.fin)}` : `demandée le ${dateCourte(site.publication.debut)}`}
+                </span>
+                {(publication.cle === 'echec' || publication.cle === 'interrompue') && (
+                  <p className="mt-2 text-red-800">
+                    {site.publication.erreur || 'La mise en ligne n’a pas abouti.'} Vous pouvez relancer la publication ci-dessous ; si l’échec se répète, contactez-nous.
+                  </p>
+                )}
+                {publication.cle === 'en_cours' && <p className="mt-2 text-neutral-600">Votre site sera à jour d’ici 2 à 3 minutes (cette page s’actualise seule).</p>}
+              </div>
+            )}
+            {site.modifsNonPubliees && (
+              <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                Modifications non publiées : votre site en ligne n’affiche pas encore vos derniers changements.
+              </p>
+            )}
+            {site.statut === 'suspendu' && (
+              <p className="mt-3 rounded-lg bg-neutral-100 px-3 py-2 text-sm text-neutral-700">Votre site est suspendu : contactez-nous pour le remettre en ligne.</p>
+            )}
 
             {aFaire.length > 0 ? (
               <>
@@ -78,7 +108,14 @@ export default async function TableauDeBord() {
                 Voir mon site en ligne ↗
               </a>
             )}
-            <BoutonPublier pret={aFaire.length === 0} enLigne={site.statut === 'en_ligne'} />
+            {site.statut !== 'suspendu' && (
+              <BoutonPublier
+                pret={aFaire.length === 0}
+                enLigne={site.statut === 'en_ligne'}
+                modifs={site.modifsNonPubliees}
+                echec={publication?.cle === 'echec' || publication?.cle === 'interrompue'}
+              />
+            )}
           </section>
 
           {site.id && <Propositions items={propositions} />}

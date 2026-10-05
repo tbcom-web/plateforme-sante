@@ -44,15 +44,18 @@ import ApercuTheme from '@/components/ApercuTheme';
 import Photo from '@/components/Photo';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
-import { enregistrerEtPublier, enregistrerSite } from './actions';
+import SaisieGardee from '@/components/SaisieGardee';
+import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
+import { enregistrerEtPublier, enregistrerSite, type EtatEnregistrement } from './actions';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
-type Props = { siteId: string | null; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null };
+// version : date de modification du brouillon lue (verrou optimiste) ; titre : « Site de … » quand l'admin édite un client.
+type Props = { siteId: string | null; version?: string | null; titre?: string; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, initial, catalogue, modeles, marquesImportees, jeuPhotos }: Props) {
+export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', initial, catalogue, modeles, marquesImportees, jeuPhotos }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -89,21 +92,22 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
   const majPraticien = (i: number, patch: Partial<PraticienDraft>) =>
     maj({ praticiens: d.praticiens.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
 
+  // Verrou optimiste : un enregistrement refusé (modifié ailleurs) garde la saisie dans ce navigateur.
+  const [version, setVersion] = useState(versionInitiale);
+  const apresEnregistrement = (r: EtatEnregistrement) => {
+    setStatut(r);
+    if (r.version) setVersion(r.version);
+    if (r.conflit && id) garderLocalement('formulaire', id, d);
+    if (r.version && r.id) { setModifie(false); setId(r.id); oublierLocalement('formulaire', r.id); }
+  };
   const enregistrer = (suivante?: number) =>
     demarrer(async () => {
-      const r = await enregistrerSite(id, d);
-      setStatut(r);
-      if (r.ok) setModifie(false);
-      if (r.ok && r.id) setId(r.id);
+      const r = await enregistrerSite(id, d, version);
+      apresEnregistrement(r);
       if (r.ok && suivante !== undefined) setEtape(suivante);
     });
   const publier = () =>
-    demarrer(async () => {
-      const r = await enregistrerEtPublier(id, d);
-      setStatut(r);
-      if (r.id) setModifie(false);
-      if (r.id) setId(r.id);
-    });
+    demarrer(async () => apresEnregistrement(await enregistrerEtPublier(id, d, version)));
 
   const derniere = etape === ETAPES.length - 1;
   const lieu = d.lieux[0];
@@ -111,7 +115,8 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
   return (
     <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
       <div>
-        <h1 className="text-2xl font-bold">Mon site</h1>
+        <SaisieGardee<SiteDraft> espace="formulaire" id={id} onReprendre={(x) => { setD(x); setModifie(true); setStatut({ ok: true, message: 'Saisie reprise : enregistrez pour la conserver.' }); }} />
+        <h1 className="text-2xl font-bold">{titre}</h1>
         <ol className="mt-5 flex flex-wrap gap-2" aria-label="Étapes">
           {ETAPES.map((e, i) => (
             <li key={e}>
@@ -252,6 +257,7 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
           {etape === 2 && (
             <div className="grid gap-6">
               <Grille>
+                <Champ large label="Nom du cabinet (facultatif)" aide="Affiché en tête du site. À défaut : « Cabinet de » suivi du nom des praticiens." value={d.cabinet.nom} onChange={(v) => majCabinet({ nom: v })} />
                 <Champ label="Ville principale" value={d.cabinet.ville} onChange={(v) => majCabinet({ ville: v })} />
                 <Champ label="Quartier (facultatif)" placeholder="Lyon 6e, Brotteaux" value={d.cabinet.quartier} onChange={(v) => majCabinet({ quartier: v })} />
                 <Champ label="Téléphone" type="tel" value={d.cabinet.telephone} onChange={(v) => majCabinet({ telephone: v })} />

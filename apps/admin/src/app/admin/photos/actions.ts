@@ -11,7 +11,7 @@ export type Resultat = { ok: boolean; message: string; id?: string } | null;
 /** Licence Adobe Stock d'une photo (table licences_photos) */
 export type Licence = { reference: string; dateAchat: string; transferee: boolean; notes: string };
 
-const MIGRATION = 'La migration 0016 (jeux de photos) a-t-elle été exécutée dans Supabase ?';
+const MIGRATION = 'La base de données est-elle à jour (mise à jour 0016, jeux de photos) ?';
 
 async function optionsDuSite(siteId: string) {
   const supabase = await createClient();
@@ -111,13 +111,23 @@ export async function basculerPhotosPremium(siteId: string, photosPremium: boole
   return error ? { ok: false, message: 'Modification impossible.' } : { ok: true, message: photosPremium ? 'Option « photos premium » activée.' : 'Option « photos premium » retirée.' };
 }
 
+/**
+ * Écrit le jeu dans le brouillon et, s'il existe, dans la version publiée : le jeu est choisi par l'admin, une
+ * republication (« Réessayer », propagation du jeu) l'applique sans mettre en ligne le brouillon du praticien.
+ */
 async function ecrireJeuDuSite(siteId: string, config: unknown, jeuPhotos: string): Promise<Resultat> {
   const d = normaliserDraft(config);
   const supabase = await createClient();
-  const { error } = await supabase.from('sites').update({ config: { ...d, theme: { ...d.theme, jeuPhotos } } }).eq('id', siteId);
+  const { data: publie } = await supabase.from('sites').select('config_publiee').eq('id', siteId).maybeSingle();
+  const maj: Record<string, unknown> = { config: { ...d, theme: { ...d.theme, jeuPhotos } } };
+  if (publie?.config_publiee) {
+    const p = publie.config_publiee as { theme?: Record<string, unknown> };
+    maj.config_publiee = { ...p, theme: { ...(p.theme ?? {}), jeuPhotos } };
+  }
+  const { error } = await supabase.from('sites').update(maj).eq('id', siteId);
   revalidatePath(`/admin/sites/${siteId}`);
   revalidatePath('/admin/photos');
-  return error ? { ok: false, message: 'Affectation impossible.' } : { ok: true, message: 'Jeu affecté. Publiez le site pour l’appliquer.' };
+  return error ? { ok: false, message: 'Affectation impossible.' } : { ok: true, message: 'Jeu affecté. Republiez le site pour l’afficher en ligne.' };
 }
 
 /** Affecte un jeu au site : '' (photos intégrées), jeu partagé actif de sa spécialité, ou jeu exclusif de ce site. */

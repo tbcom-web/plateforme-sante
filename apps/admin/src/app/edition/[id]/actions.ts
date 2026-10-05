@@ -5,6 +5,7 @@ import { normaliserDraft, validerPersonnalisation, controlerPublication, type Al
 import { createClient } from '@/lib/supabase/server';
 import { declencherApercu, declencherPublication } from '@/lib/publication';
 import { enregistrerSite } from '@/app/mon-site/actions';
+import { refusDesModifiees } from '@/lib/personnalisation';
 
 const UUID = /^[0-9a-f-]{36}$/;
 
@@ -16,13 +17,14 @@ async function lireSite(siteId: string) {
   return data;
 }
 
-export type ResultatEdition = { ok: boolean; message: string; refus?: Record<string, string>; alertes?: Record<string, Alerte[]> };
+export type ResultatEdition = { ok: boolean; message: string; refus?: Record<string, string>; alertes?: Record<string, Alerte[]>; version?: string; conflit?: boolean };
 
 /**
  * Enregistre les modifications de l'éditeur visuel.
- * textes : clé → texte (chaîne vide = retour au standard) ; photos : emplacement → URL déjà envoyée.
+ * textes : clé → texte (chaîne vide = retour au standard) ; photos : emplacement → URL déjà envoyée ;
+ * version : date de modification du brouillon lue à l'ouverture (rien n'est écrasé s'il a changé depuis).
  */
-export async function enregistrerEdition(siteId: string, textes: Record<string, string>, photos: Record<string, string>): Promise<ResultatEdition> {
+export async function enregistrerEdition(siteId: string, textes: Record<string, string>, photos: Record<string, string>, version?: string | null): Promise<ResultatEdition> {
   const site = await lireSite(siteId);
   if (!site) return { ok: false, message: 'Site introuvable.' };
   const d = normaliserDraft(site.config);
@@ -34,6 +36,8 @@ export async function enregistrerEdition(siteId: string, textes: Record<string, 
     if (valeur.trim()) fusion[cle] = valeur; else delete fusion[cle];
   }
   const controle = validerPersonnalisation(fusion, edition);
+  // Remarques limitées aux zones modifiées : un texte guidé conservé sans l'option « édition » n'est pas un refus.
+  const refus = refusDesModifiees(controle.refus, Object.keys(textes));
 
   // Photos : emplacements connus uniquement (l'URL est revérifiée à l'enregistrement du brouillon).
   for (const [emplacement, url] of Object.entries(photos)) {
@@ -46,14 +50,15 @@ export async function enregistrerEdition(siteId: string, textes: Record<string, 
   d.photos.cabinet = d.photos.cabinet.filter(Boolean);
   d.perso = { textes: controle.textes };
 
-  const r = await enregistrerSite(siteId, d);
-  if (!r.ok) return { ok: false, message: r.message };
+  const r = await enregistrerSite(siteId, d, version);
+  if (!r.ok) return { ok: false, message: r.message, conflit: r.conflit };
   revalidatePath(`/edition/${siteId}`);
-  const nbRefus = Object.keys(controle.refus).length;
+  const nbRefus = Object.keys(refus).length;
   return {
     ok: nbRefus === 0,
-    message: nbRefus ? `${nbRefus} texte(s) non enregistré(s) : voir les remarques.` : 'Modifications enregistrées.',
-    refus: controle.refus,
+    message: nbRefus ? `${nbRefus} texte(s) non enregistré(s) : voir les remarques.` : 'Modifications enregistrées, pas encore en ligne : « Publier le site » les met en ligne.',
+    version: r.version,
+    refus,
     alertes: controle.alertes,
   };
 }

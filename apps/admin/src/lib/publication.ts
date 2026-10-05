@@ -18,12 +18,26 @@ async function lancerWorkflow(fichier: string, inputs: Record<string, string>): 
   return r.ok ? null : { ok: false, message: `La publication n’a pas pu démarrer (GitHub ${r.status}).` };
 }
 
-/** Déclenche le workflow GitHub de publication pour un site. */
+const UUID = /^[0-9a-f-]{36}$/;
+
+/**
+ * Publie un site : fige le brouillon en version publiée (config → config_publiee, fonction demander_publication),
+ * puis lance le workflow GitHub qui construit le site depuis cette version. Refusé pour un site suspendu.
+ */
 export async function declencherPublication(siteId: string): Promise<Resultat> {
-  const erreur = await lancerWorkflow('publier-site.yml', { site_id: siteId, mode: 'production' });
-  if (erreur) return erreur;
+  if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const supabase = await createClient();
-  await supabase.from('sites').update({ publication_demandee_at: new Date().toISOString() }).eq('id', siteId);
+  const { error } = await supabase.rpc('demander_publication', { p_site: siteId });
+  if (error) {
+    if (/suspendu/i.test(error.message)) return { ok: false, message: 'Site suspendu : il ne peut pas être publié.' };
+    console.error('demander_publication', error);
+    return { ok: false, message: 'La publication n’a pas pu être enregistrée. Réessayez dans un instant.' };
+  }
+  const erreur = await lancerWorkflow('publier-site.yml', { site_id: siteId, mode: 'production' });
+  if (erreur) {
+    await supabase.rpc('signaler_echec_publication', { p_site: siteId, p_message: erreur.message });
+    return erreur;
+  }
   return { ok: true, message: 'Publication lancée : en ligne d’ici 2 à 3 minutes.' };
 }
 
@@ -33,36 +47,66 @@ export async function declencherApercu(siteId: string): Promise<Resultat> {
   return erreur ?? { ok: true, message: 'Aperçu en préparation (1 à 2 minutes).' };
 }
 
-/** Publication groupée (propagation d'un changement partagé), par lots de 200 sites. */
+/**
+ * Republie la version déjà publiée de chaque site (propagation d'un changement partagé, « Réessayer »), par lots
+ * de 100 sites. Le brouillon n'est jamais publié ici, et un site suspendu n'est jamais republié.
+ */
 export async function declencherPublications(siteIds: string[]): Promise<Resultat> {
-  const ids = [...new Set(siteIds)];
-  if (!ids.length) return { ok: true, message: 'Aucun site à republier.' };
-  for (let i = 0; i < ids.length; i += 200) {
-    const erreur = await lancerWorkflow('publier-sites.yml', { site_ids: JSON.stringify(ids.slice(i, i + 200)) });
-    if (erreur) return erreur;
-  }
+  const demandes = [...new Set(siteIds)].filter((id) => UUID.test(id));
+  if (!demandes.length) return { ok: true, message: 'Aucun site à republier.' };
   const supabase = await createClient();
-  await supabase.from('sites').update({ publication_demandee_at: new Date().toISOString() }).in('id', ids);
-  return { ok: true, message: `${ids.length} site(s) en cours de republication (quelques minutes, 4 en parallèle).` };
+  let lances = 0;
+  let ignores = 0;
+  for (let i = 0; i < demandes.length; i += 100) {
+    const lot = demandes.slice(i, i + 100);
+    const { data, error } = await supabase.from('sites').select('id').in('id', lot).neq('statut', 'suspendu');
+    if (error) return { ok: false, message: 'Lecture des sites impossible.' };
+    const ids = (data ?? []).map((s) => s.id as string);
+    ignores += lot.length - ids.length;
+    if (!ids.length) continue;
+    const maintenant = new Date().toISOString();
+    const erreur = await lancerWorkflow('publier-sites.yml', { site_ids: JSON.stringify(ids) });
+    if (erreur) {
+      await supabase.from('sites').update({ publication_etat: 'echec', publication_fin: maintenant, publication_erreur: erreur.message }).in('id', ids);
+      return lances ? { ok: false, message: `${lances} site(s) lancés, puis : ${erreur.message}` } : erreur;
+    }
+    const { error: suivi } = await supabase
+      .from('sites')
+      .update({ publication_demandee_at: maintenant, publication_etat: 'en_cours', publication_debut: maintenant, publication_fin: null, publication_erreur: null, publication_run_url: null })
+      .in('id', ids);
+    if (suivi) await supabase.from('sites').update({ publication_demandee_at: maintenant }).in('id', ids);
+    lances += ids.length;
+  }
+  const suspendus = ignores ? ` ${ignores} site(s) suspendu(s) ou introuvable(s) ignoré(s).` : '';
+  return { ok: true, message: `${lances} site(s) en cours de republication (quelques minutes, 4 en parallèle).${suspendus}` };
 }
 
-export type Cible = { specialite?: string; modele?: string; marque?: string; jeuPhotos?: string; tous?: boolean };
+export type Cible = { specialite?: string; modele?: string; marque?: string; jeuPhotos?: string; soin?: string; tous?: boolean };
 
 /**
- * Sites en ligne qui utilisent une ressource partagée : spécialité (photos et animation de la banque visuelle),
- * modèle, jeu de photos (sites auxquels il est affecté), ou tous (changement de charte, de dessins, d'animations).
+ * Sites en ligne dont la version publiée utilise une ressource partagée : spécialité (photos et animation de la
+ * banque visuelle), modèle, logo, jeu de photos, soin du catalogue, ou tous (charte, dessins, animations).
+ * Les sites suspendus ne sont jamais concernés.
  */
 export async function sitesConcernes(cible: Cible): Promise<{ id: string; nom: string }[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from('sites').select('id, config').eq('statut', 'en_ligne');
-  return (data ?? [])
+  // Version publiée ; repli sur le brouillon pour un site publié avant la version publiée séparée.
+  const [publies, anciens] = await Promise.all([
+    supabase.from('sites').select('id, config:config_publiee').eq('statut', 'en_ligne').not('config_publiee', 'is', null),
+    supabase.from('sites').select('id, config').eq('statut', 'en_ligne').is('config_publiee', null),
+  ]);
+  const lignes = publies.error
+    ? ((await supabase.from('sites').select('id, config').eq('statut', 'en_ligne')).data ?? [])
+    : [...(publies.data ?? []), ...(anciens.data ?? [])];
+  return lignes
     .map((s) => ({ id: s.id as string, d: normaliserDraft(s.config) }))
     .filter(({ d }) =>
       cible.tous ||
-      (cible.specialite && (d.theme.specialite === cible.specialite || (d.theme as { specialiteSecondaire?: string }).specialiteSecondaire === cible.specialite)) ||
+      (cible.specialite && (d.theme.specialite === cible.specialite || d.theme.specialiteSecondaire === cible.specialite)) ||
       (cible.modele && d.theme.modele === cible.modele) ||
       (cible.marque && d.theme.logo?.marque === cible.marque) ||
-      (cible.jeuPhotos && d.theme.jeuPhotos === cible.jeuPhotos),
+      (cible.jeuPhotos && d.theme.jeuPhotos === cible.jeuPhotos) ||
+      (cible.soin && d.soins.includes(cible.soin)),
     )
     .map(({ id, d }) => ({ id, nom: d.cabinet.nom || d.praticiens[0]?.nom || id }));
 }

@@ -27,6 +27,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
     getMarquesImportees(),
   ]);
   if (!site) notFound();
+  const nomClient = site.draft.cabinet.nom || `${site.draft.praticiens[0]?.prenom ?? ''} ${site.draft.praticiens[0]?.nom ?? ''}`.trim() || 'ce client';
   // Jeu de photos affecté (aperçu seulement : le praticien ne le choisit pas)
   const jeuPhotos = site.draft.theme.jeuPhotos ? await lireJeuPhotos(site.draft.theme.jeuPhotos) : null;
 
@@ -35,7 +36,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
       {pourClient && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <span>
-            Vous modifiez le site de <strong>{site.draft.cabinet.nom || `${site.draft.praticiens[0]?.prenom ?? ''} ${site.draft.praticiens[0]?.nom ?? ''}`.trim() || 'ce client'}</strong> (super admin).
+            Vous modifiez le site de <strong>{nomClient}</strong> (super admin). « Enregistrer » ne change pas le site en ligne ; « Enregistrer et publier » le met à jour.
           </span>
           <span className="flex gap-3 font-semibold">
             <Link href={`/edition/${site.id}`} className="underline-offset-4 hover:underline">Édition visuelle</Link>
@@ -43,7 +44,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
           </span>
         </div>
       )}
-      <Editeur siteId={site.id} initial={site.draft} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
+      <Editeur siteId={site.id} version={site.updatedAt} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
     </Shell>
   );
 }

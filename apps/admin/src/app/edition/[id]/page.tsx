@@ -13,7 +13,7 @@ export default async function Edition({ params }: PageProps<'/edition/[id]'>) {
   if (!user) redirect('/connexion');
 
   const supabase = await createClient();
-  const { data: site } = await supabase.from('sites').select('id, slug, options, config').eq('id', id).maybeSingle();
+  const { data: site } = await supabase.from('sites').select('id, slug, options, config, updated_at').eq('id', id).maybeSingle();
   if (!site) notFound();
   const d = normaliserDraft(site.config);
   // Super admin sur le site d'un client : les liens mènent à ce site, jamais au sien.
@@ -24,13 +24,14 @@ export default async function Edition({ params }: PageProps<'/edition/[id]'>) {
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 bg-white px-4 py-2.5 text-sm">
         <div className="flex items-center gap-3">
           <Link href={admin ? '/admin' : '/tableau-de-bord'} className="text-teal-800">{admin ? '← Tous les sites' : '← Tableau de bord'}</Link>
-          <span className="font-semibold">Édition visuelle · {d.cabinet.nom || d.praticiens[0]?.nom || 'mon site'}</span>
+          <span className="font-semibold">{admin ? `Site de ${d.cabinet.nom || [d.praticiens[0]?.prenom, d.praticiens[0]?.nom].filter(Boolean).join(' ') || 'ce client'}` : 'Édition visuelle'} · {admin ? 'édition visuelle' : d.cabinet.nom || d.praticiens[0]?.nom || 'mon site'}</span>
         </div>
         <Link href={admin ? `/mon-site?site=${site.id}` : '/mon-site'} className="text-neutral-600 underline-offset-4 hover:underline">Informations du cabinet (formulaire)</Link>
       </header>
       <EditeurVisuel
         siteId={site.id}
         slug={site.slug}
+        version={site.updated_at}
         edition={Boolean((site.options as { edition?: boolean } | null)?.edition)}
         textesInitiaux={d.perso.textes}
         champs={CHAMPS_TEXTE}
