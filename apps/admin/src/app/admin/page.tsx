@@ -227,6 +227,7 @@ export default async function AdminSites({ searchParams }: PageProps<'/admin'>) 
                       <span className="text-amber-800" title={reste.join(', ')}>{reste.length} manque(s)</span>
                     )}
                     <span className="mt-1 flex gap-3 text-xs font-semibold">
+                      <a href={`/creer?site=${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Parcours</a>
                       <a href={`/mon-site?site=${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Formulaire</a>
                       <a href={`/edition/${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Édition visuelle</a>
                       <a href={`/admin/sites/${s.id}`} className="text-teal-800 underline-offset-4 hover:underline">Photos{s.options?.photosPremium ? ' (premium)' : ''}</a>

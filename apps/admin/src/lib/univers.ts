@@ -7,7 +7,9 @@ import {
   universCatalogue,
   type LigneStatutUnivers,
   type ResultatUnivers,
+  type SiteDraft,
   type Univers,
+  universApplicableAuParcours,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
@@ -40,13 +42,14 @@ export async function sitesParUnivers(supabase?: Client): Promise<Record<string,
  * Applique un univers au brouillon d'un site et l'enregistre (jamais la version en ligne : la publication reste un
  * geste distinct). Identité conservée (appliquerUnivers) ; jeu de photos retiré au sort si la spécialité change.
  * Seuls les univers validés sont applicables, sauf par le super admin (préparation, aperçu).
- * Utilisée par le parcours praticien (phase B) ; RLS : le praticien ne modifie que ses sites.
+ * Parcours guidé (/creer, `parcours: true`) : les trois modèles du parcours sont applicables même en brouillon
+ * (catalogue de départ choisi par Paul, universApplicableAuParcours). RLS : le praticien ne modifie que ses sites.
  */
 export async function appliquerUniversAuSite(
   siteId: string,
   universId: string,
-  opts: { admin?: boolean; version?: string | null } = {},
-): Promise<{ ok: boolean; message: string; resultat?: Omit<ResultatUnivers, 'draft'>; version?: string }> {
+  opts: { admin?: boolean; version?: string | null; parcours?: boolean } = {},
+): Promise<{ ok: boolean; message: string; resultat?: Omit<ResultatUnivers, 'draft'>; version?: string; draft?: SiteDraft }> {
   const supabase = await createClient();
   const { univers } = await getUnivers(supabase);
   const u = univers.find((x) => x.id === universId) ?? universCatalogue(universId);
@@ -60,13 +63,13 @@ export async function appliquerUniversAuSite(
   const r = appliquerUnivers(avant, u, {
     modeles: modeles.map((m) => m.manifeste),
     soinsConnus: catalogue.map((c) => c.slug),
-    autoriserNonValide: Boolean(opts.admin) && u.statut !== 'differe',
+    autoriserNonValide: (Boolean(opts.admin) && u.statut !== 'differe') || (Boolean(opts.parcours) && universApplicableAuParcours(u)),
   });
   if (r.erreurs.length) return { ok: false, message: r.erreurs.join(' ') };
   r.draft.theme.jeuPhotos = r.draft.theme.jeuPhotos || (await jeuPhotosAEnregistrer(supabase, siteId, avant.theme, r.draft.theme.specialite));
 
   const { data, error } = await supabase.from('sites').update({ config: r.draft }).eq('id', siteId).eq('updated_at', site.updated_at).select('updated_at').maybeSingle();
   if (error || !data) return { ok: false, message: 'Enregistrement impossible (modifié entre-temps ?). Réessayez.' };
-  const { draft: _d, ...resultat } = r;
-  return { ok: true, message: `Univers « ${u.nom} » appliqué au brouillon. Vérifiez puis publiez.`, resultat, version: data.updated_at };
+  const { draft, ...resultat } = r;
+  return { ok: true, message: `Univers « ${u.nom} » appliqué au brouillon. Vérifiez puis publiez.`, resultat, version: data.updated_at, draft };
 }

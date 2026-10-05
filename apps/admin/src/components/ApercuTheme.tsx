@@ -31,9 +31,13 @@ type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
   /** Jeu de photos affecté au site (enregistré), appliqué tant que la spécialité correspond */
   jeuPhotos?: JeuPhotos | null;
+  /** Appareil affiché à l'ouverture (ordinateur par défaut) */
+  appareil?: Appareil;
+  /** Vignette (catalogue du parcours) : haut de l'accueil seulement, sur cette hauteur en pixels, sans commandes */
+  vignette?: number;
 };
 type Vue = 'accueil' | 'soin';
-type Appareil = 'bureau' | 'mobile';
+export type Appareil = 'bureau' | 'mobile';
 
 const LARGEUR: Record<Appareil, number> = { bureau: 1280, mobile: 390 };
 const FILTRES: Record<string, string> = {
@@ -68,9 +72,9 @@ function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 
   );
 }
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos }: Props) {
+export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette }: Props) {
   const [vue, setVue] = useState<Vue>('accueil');
-  const [appareil, setAppareil] = useState<Appareil>('bureau');
+  const [appareil, setAppareil] = useState<Appareil>(appareilInitial);
   const boite = useRef<HTMLDivElement>(null);
   const page = useRef<HTMLDivElement>(null);
   const [echelle, setEchelle] = useState(0.4);
@@ -407,9 +411,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   let douce = false;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm">
+    <div className={vignette ? 'overflow-hidden bg-white' : 'overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm'}>
       <style>{CSS + SURFACES_CSS}</style>
-      <div className="flex flex-wrap items-center gap-2 border-b border-black/5 bg-neutral-50 px-3 py-2 text-xs">
+      {!vignette && <div className="flex flex-wrap items-center gap-2 border-b border-black/5 bg-neutral-50 px-3 py-2 text-xs">
         <span className="mr-auto truncate text-neutral-500">Modèle <strong className="text-neutral-800">{m.nom}</strong> · {jeu.label}</span>
         {(['accueil', 'soin'] as Vue[]).map((v) => (
           <button key={v} type="button" onClick={() => setVue(v)} aria-pressed={vue === v} className={`rounded-md px-2 py-1 ${vue === v ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{v === 'accueil' ? 'Accueil' : 'Fiche soin'}</button>
@@ -418,8 +422,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         {(['bureau', 'mobile'] as Appareil[]).map((a) => (
           <button key={a} type="button" onClick={() => setAppareil(a)} aria-pressed={appareil === a} className={`rounded-md px-2 py-1 ${appareil === a ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{a === 'bureau' ? 'Ordinateur' : 'Mobile'}</button>
         ))}
-      </div>
-      <div ref={boite} className="max-h-[78vh] overflow-y-auto overflow-x-hidden bg-neutral-100">
+      </div>}
+      <div ref={boite} className={vignette ? 'overflow-hidden bg-neutral-100' : 'max-h-[78vh] overflow-y-auto overflow-x-hidden bg-neutral-100'} style={vignette ? { height: vignette } : undefined}>
         <div style={{ height: hauteur * echelle, width: LARGEUR[appareil] * echelle, margin: '0 auto', position: 'relative' }}>
           <div
             ref={page}
@@ -467,9 +471,11 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           </div>
         </div>
       </div>
-      <p className="border-t border-black/5 px-3 py-2 text-[11px] text-neutral-500">
-        Aperçu calculé avec les réglages du générateur ; textes et mises en page détaillés peuvent varier légèrement sur le site publié.
-      </p>
+      {!vignette && (
+        <p className="border-t border-black/5 px-3 py-2 text-[11px] text-neutral-500">
+          Aperçu calculé avec les réglages du générateur ; textes et mises en page détaillés peuvent varier légèrement sur le site publié.
+        </p>
+      )}
     </div>
   );
 }

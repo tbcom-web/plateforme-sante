@@ -11,6 +11,7 @@ import Propositions from './Propositions';
 import { getPropositions } from './flux';
 import { getUser } from '@/lib/supabase/server';
 import { getCatalogue, getMonSite, manques } from '@/lib/sites';
+import { getRole } from '@/lib/admin';
 
 export const metadata = { title: 'Tableau de bord' };
 
@@ -18,7 +19,11 @@ export default async function TableauDeBord() {
   const user = await getUser();
   if (!user) redirect('/connexion');
 
-  const [site, catalogue] = await Promise.all([getMonSite(), getCatalogue()]);
+  const [site, catalogue, role] = await Promise.all([getMonSite(), getCatalogue(), getRole()]);
+  // Praticien sans site : parcours guidé de création
+  if (!site.id && role !== 'admin') redirect('/creer');
+  // Site jamais publié : la création se reprend dans le parcours guidé
+  const creationEnCours = Boolean(site.id) && !site.dejaPublie && site.statut !== 'en_ligne';
   const aFaire = manques(site.draft);
   const propositions = site.id ? await getPropositions(site.id) : [];
   const statut = STATUTS[site.statut];
@@ -48,9 +53,20 @@ export default async function TableauDeBord() {
               Édition visuelle
             </Link>
           )}
-          <Link href="/mon-site" className="rounded-lg bg-teal-800 px-5 py-2.5 font-semibold text-white hover:bg-teal-900">
-            {site.id ? 'Modifier mon site' : 'Créer mon site'}
-          </Link>
+          {creationEnCours || !site.id ? (
+            <>
+              <Link href="/mon-site" className="rounded-lg border border-teal-800 px-5 py-2.5 font-semibold text-teal-900 hover:bg-teal-50">
+                Formulaire complet
+              </Link>
+              <Link href="/creer" className="rounded-lg bg-teal-800 px-5 py-2.5 font-semibold text-white hover:bg-teal-900">
+                {site.id ? 'Reprendre la création' : 'Créer mon site'}
+              </Link>
+            </>
+          ) : (
+            <Link href="/mon-site" className="rounded-lg bg-teal-800 px-5 py-2.5 font-semibold text-white hover:bg-teal-900">
+              Modifier mon site
+            </Link>
+          )}
         </div>
       </div>
 
