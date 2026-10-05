@@ -372,7 +372,7 @@ type Contexte = { pied: string; degrade: string; loupe: string; R: boolean; vari
  * médaillons de l'hallux en couleur (peau, ongle) ; `ongle-coupe` : incarné vu de dessus + coupe transversale (POD-AT-0010) ;
  * `sites-anneaux` : sites du monofilament en anneaux fins ; `contour-empreinte` / `sans-contour` : contour des relevés.
  */
-export type VarianteDessin = 'ongle-couleur' | 'ongle-coupe' | 'sites-anneaux' | 'contour-empreinte' | 'sans-contour';
+export type VarianteDessin = 'ongle-couleur' | 'ongle-monochrome' | 'ongle-coupe' | 'sites-anneaux' | 'contour-empreinte' | 'sans-contour';
 
 /** Corps de chaque dessin (repère 240 × 180) */
 function corps(nom: NomDessin, c: Contexte): string {
@@ -543,11 +543,12 @@ function corps(nom: NomDessin, c: Contexte): string {
     }
 
     case 'ongle': {
-      // Ongle incarné (dessin refait le 2026-10-05, brouillon) : gros plan de l'hallux du pied droit vu de dessus, normal puis incarné,
+      // Ongle incarné (dessin refait le 2026-10-05, validé par Paul le 2026-10-05) : gros plan de l'hallux du pied droit vu de dessus, normal puis incarné,
       // dans deux fenêtres côte à côte (bibliotheque/hallux-gros-plan.ts). Incarné : tout le bord latéral (côté du 2e orteil) bombe en
       // courbe douce, la peau gonflée recouvre le bord de la lame (coin caché), rougeur fondue localisée sur le repli ; en monochrome,
       // l'accent du cabinet, fondu. Pédagogique : une flèche fine, du bord de la lame vers la peau.
-      const couleur = variante === 'ongle-couleur';
+      // Couleur par défaut (choix de Paul, 2026-10-05) : en monochrome, la rougeur prendrait l'accent du cabinet (bleu, vert…) et se lirait hématome.
+      const couleur = variante !== 'ongle-monochrome';
       const g = { x: 4, y: 18 }, d = { x: 124, y: 18 }, cg = g.x + HALLUX_GROS_PLAN.largeur / 2, cd = d.x + HALLUX_GROS_PLAN.largeur / 2;
       if (variante === 'ongle-coupe')
         return `<g>${grosPlanHallux('incarne', g.x, g.y, `${loupe}-g`)}${element('ongle-coupe-incarne', d.x, 41, 112, 354)}${R ? `${mono(cg, 12, 'INCARNÉ', 'mono--chaud', 'middle')}${mono(cd, 12, 'COUPE', '', 'middle')}` : `${etiquette(cg, 12, 'Ongle incarné', 'middle')}${etiquette(cd, 12, 'Vu en coupe', 'middle')}`}</g>`;
