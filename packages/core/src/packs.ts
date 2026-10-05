@@ -136,9 +136,12 @@ export const packVisuel = (value: string) => SPECIALITES.find((s) => s.value ===
 /** Spécialité d'un identifiant (alias explicite de packVisuel) */
 export const specialite = packVisuel;
 
-/** Spécialité proposée par défaut selon le profil de cabinet. */
+/**
+ * Spécialité proposée par défaut selon le profil de cabinet. Jamais « posture » par défaut : sujets à faible niveau de preuve,
+ * proposés seulement après validation déontologique (règle de Paul, 2026-10-05) ; le profil « technique » mène à la générale.
+ */
 export const specialiteDuProfil = (profil: string) =>
-  ({ sport: 'sport', technique: 'posture', prevention: 'soins' } as Record<string, string>)[profil] ?? 'generale';
+  ({ sport: 'sport', prevention: 'soins' } as Record<string, string>)[profil] ?? 'generale';
 
 const unique = <T>(l: (T | undefined | null | false | '')[]) => [...new Set(l.filter(Boolean) as T[])];
 
