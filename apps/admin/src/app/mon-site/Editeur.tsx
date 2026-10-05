@@ -18,6 +18,7 @@ import {
   traitementLogo,
   initiales,
   DISPOSITIONS_LOGO,
+  modeleDuSite,
   MODES_VISUELS,
   svgMarqueImportee,
   couleursImportee,
@@ -629,7 +630,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
           ))}
         </div>
         {ongletAffiche === 'theme'
-          ? <ApercuTheme draft={d} modele={modeleCourant} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
+          ? <ApercuTheme draft={d} modele={modeleDuSite(modeleCourant, d.theme)} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
           : <Apercu draft={d} catalogue={catalogue} />}
       </div>
     </div>

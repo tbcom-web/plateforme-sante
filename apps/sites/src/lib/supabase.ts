@@ -7,6 +7,8 @@ import {
   lienRdvPrecis,
   mentionOrdre,
   modeleIntegre,
+  modeleDuSite,
+  ordonnerSoins,
   packVisuel,
   fusionnerPack,
   fusionnerSpecialites,
@@ -96,7 +98,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
 
   // Modèle de présentation : fiche importée par l'admin (table « modeles »), sinon modèle intégré.
   const [ligneModele] = await lire<{ manifeste: unknown }[]>(`modeles?id=eq.${encodeURIComponent(d.theme.modele)}&actif=eq.true&select=manifeste`).catch(() => []);
-  const modele = (ligneModele && validerManifeste(ligneModele.manifeste).modele) || modeleIntegre(d.theme.modele);
+  // Ordre des sections et registre posés par un univers du catalogue (catalogue-univers.ts), s'ils sont compatibles.
+  const modele = modeleDuSite((ligneModele && validerManifeste(ligneModele.manifeste).modele) || modeleIntegre(d.theme.modele), d.theme);
   // Pack visuel de la spécialité, éventuellement personnalisé par l'admin (banque visuelle).
   const [persoBanque] = await lire<PersonnalisationPack[]>(`packs_visuels?id=eq.${encodeURIComponent(d.theme.specialite)}&select=photos,animation`).catch(() => []);
   // Jeu de photos affecté (tiré au hasard ou exclusif premium) : seulement s'il est actif et autorisé pour ce site
@@ -138,7 +141,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const titreMetier = PAYS.find((p) => p.value === d.pays)?.titre ?? prof.libelle;
   const libelle = (slug: string) => catalogue.find((c) => c.slug === slug)?.titre_court ?? slug;
 
-  const soins: Soin[] = catalogue
+  // Soins cochés, dans l'ordre du catalogue ; ceux mis en avant par l'univers passent devant (theme.soinsEnAvant).
+  const soins: Soin[] = ordonnerSoins(catalogue
     .filter((c) => d.soins.includes(c.slug))
     .map((c) => ({
       slug: c.slug,
@@ -148,7 +152,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       corps: perso(c.corps),
       faq: c.faq.map((f) => ({ q: perso(f.q), r: perso(f.r) })),
       icone: c.icone ?? undefined,
-    }));
+    })), d.theme.soinsEnAvant);
 
   const praticiens: PraticienPublic[] = d.praticiens.map((p) => ({
     prenom: p.prenom,

@@ -183,6 +183,14 @@ const SURCHARGES: Record<string, Surcharges> = {
       'podologie-du-senior': { photo: P('soins-bandages'), photoBonne: false },
     },
   },
+  // Pied diabétique : aucune photo de banque assez juste pour porter seule l'accueil ; le schéma du monofilament le porte.
+  diabete: {
+    accueilBonne: false,
+    panoramaBonne: false,
+    soins: {
+      'podologie-du-senior': { photo: P('soins-bandages'), photoBonne: false },
+    },
+  },
 };
 
 const unique = <T>(l: T[]) => [...new Set(l)];

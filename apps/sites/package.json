@@ -10,7 +10,9 @@
     "controle:seo": "node scripts/controle-seo.mjs",
     "controle:charte": "node scripts/controle-charte.mjs",
     "controle:agents": "node scripts/controle-agents.mjs",
-    "controle:webkit": "node scripts/controle-webkit.mjs"
+    "controle:webkit": "node scripts/controle-webkit.mjs",
+    "univers:apercu": "node scripts/univers-apercu.mjs",
+    "univers:planche": "node scripts/univers-planche.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.1.0",

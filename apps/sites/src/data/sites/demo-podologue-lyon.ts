@@ -1,5 +1,5 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
-import { modeleIntegre, packVisuel, type SiteConfig } from '@plateforme/core';
+import { modeleIntegre, modeleDuSite, ordonnerSoins, packVisuel, universCatalogue, type SiteConfig } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 // POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
@@ -9,6 +9,11 @@ const modele = process.env.POLICE_TITRES
   : modeleBase;
 // Spécialité de la démo (variable SPECIALITE, secondaire SPECIALITE_SECONDAIRE) ; ANIMATION=non pour la désactiver.
 const pack = packVisuel(process.env.SPECIALITE ?? 'generale');
+
+// UNIVERS=<id> : la démo prend le préréglage complet d'un univers du catalogue (catalogue-univers.ts), identité
+// inchangée (npm run univers:apercu -- <id>). Il remplace MODELE, SPECIALITE, GAMME, MARQUE, MODE_VISUEL et ANIMATION.
+const univers = process.env.UNIVERS ? universCatalogue(process.env.UNIVERS) : undefined;
+if (process.env.UNIVERS && !univers) throw new Error(`Univers inconnu : ${process.env.UNIVERS}`);
 
 const site: SiteConfig = {
   id: 'demo-podologue-lyon',
@@ -446,5 +451,18 @@ if (process.env.CAS === 'solo') {
   site.voix = 'je';
   site.cabinet.quartier = 'Brotteaux';
   site.lieux = site.lieux.map((l) => ({ ...l, type: 'cabinet', nom: '' }));
+}
+if (univers) {
+  const p = univers.preReglage;
+  const packUnivers = packVisuel(p.specialite);
+  site.modele = modeleDuSite(modeleIntegre(p.modele), p);
+  site.theme = { ...site.theme, gamme: p.gamme, logo: { ...p.logo }, modeVisuel: p.modeVisuel };
+  site.visuels = {
+    specialite: packUnivers.value,
+    animation: p.animation && process.env.ANIMATION !== 'non' ? packUnivers.animation : null,
+    photos: packUnivers.photos,
+    ...(p.specialiteSecondaire ? { specialiteSecondaire: p.specialiteSecondaire } : {}),
+  };
+  site.soins = ordonnerSoins(site.soins, p.soinsEnAvant);
 }
 export default site;

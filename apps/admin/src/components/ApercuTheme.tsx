@@ -14,7 +14,7 @@ import '@fontsource-variable/nunito';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  completerJeuVisuel, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
+  completerJeuVisuel, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, visuelSoinJeu,
   type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
@@ -116,7 +116,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const titre = PAYS.find((p) => p.value === d.pays)?.titre ?? 'Pédicure-podologue';
   const noms = d.praticiens.map((p) => [p.prenom, p.nom].filter(Boolean).join(' ')).filter(Boolean);
   const nomCabinet = d.cabinet.nom || noms[0] || 'Votre cabinet';
-  const soins = catalogue.filter((s) => d.soins.includes(s.slug));
+  // Soins cochés ; ceux mis en avant par l'univers passent devant (même règle que le site : ordonnerSoins).
+  const soins = ordonnerSoins(catalogue.filter((s) => d.soins.includes(s.slug)), d.theme.soinsEnAvant);
   const soinsAffiches = (soins.length ? soins : catalogue).slice(0, 6);
   const soinPage = soinsAffiches[0];
   const rdv = d.rdv.mode === 'telephone' ? 'Appeler' : 'Prendre RDV';

@@ -114,6 +114,22 @@ export const SPECIALITES: Specialite[] = [
     dessins: ['soin', 'diabete', 'talon'],
     soins: ['soins-de-pedicurie', 'pied-diabetique', 'podologie-du-senior', 'ongle-incarne'],
   },
+  {
+    // Spécialité de l'univers « Pied diabétique et soins » (catalogue-univers.ts) : l'accueil montre le schéma du
+    // dépistage au monofilament (3 sites, IWGDF / HAS), sans animation ni lecture de pression (pas de rouge « pic »
+    // sur un public diabétique). Aucun pied nu en marche dans les photos (conseil Ameli : éviter de marcher pieds nus).
+    value: 'diabete',
+    label: 'Pied diabétique',
+    description: 'Dépistage, gradation du risque podologique, soins et prévention des plaies.',
+    animation: null,
+    photos: {
+      accueil: '/photos/soins-pied-tenu.webp',
+      panorama: '/photos/examen-mains.webp',
+      diaporama: ['/photos/soins-pied-tenu.webp', '/photos/examen-mains.webp', '/photos/soin-talon.webp', '/photos/soins-bandages.webp', '/photos/chaussage.webp'],
+    },
+    dessins: ['diabete', 'soin', 'senior'],
+    soins: ['pied-diabetique', 'soins-de-pedicurie', 'ongle-incarne', 'podologie-du-senior'],
+  },
 ];
 
 export const packVisuel = (value: string) => SPECIALITES.find((s) => s.value === value) ?? SPECIALITES[0];

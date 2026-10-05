@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, UNIVERS_DU_PROFIL } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -248,15 +248,43 @@ let nbSujets = 0;
   if (!faible.erreurs.some((e) => /faible niveau de preuve/.test(e))) contenus.push('garde-fou « faible niveau de preuve » inactif');
   nbSujets = K.SUJETS.length;
 }
+// Univers du catalogue (catalogue-univers.ts) : préréglages valides (soins du catalogue, sections du modèle, aucun sujet à
+// faible niveau de preuve hors « differe »), profils qui ne recommandent qu'un univers proposable, identité jamais touchée.
+const univers = core.CATALOGUE_UNIVERS.flatMap((u) => core.validerUnivers(u, { soinsConnus: Object.keys(core.VISUELS_SOINS) }).map((e) => `univers ${u.id} : ${e}`));
+{
+  const posture = core.CATALOGUE_UNIVERS.find((u) => u.preReglage.specialite === 'posture');
+  if (!posture || !core.validerUnivers({ ...posture, statut: 'brouillon' }).some((e) => /faible niveau de preuve/.test(e))) univers.push('garde-fou « faible niveau de preuve » des univers inactif');
+  const zen = core.CATALOGUE_UNIVERS[0];
+  if (!core.validerUnivers({ ...zen, pourQui: 'Réflexologie plantaire et bien-être' }).some((e) => /faible niveau de preuve/.test(e))) univers.push('garde-fou « réflexologie » des univers inactif');
+}
+for (const [profil, id] of Object.entries(core.UNIVERS_DU_PROFIL)) {
+  const u = core.CATALOGUE_UNIVERS.find((x) => x.id === id);
+  if (!u || ['differe', 'retire'].includes(u.statut)) univers.push(`profil « ${profil} » : univers recommandé absent ou non proposable (${id})`);
+}
+{
+  const d = core.draftVide();
+  Object.assign(d.cabinet, { nom: 'Cabinet du Parc', ville: 'Nantes', telephone: '02 40 00 00 00' });
+  d.praticiens[0] = { ...d.praticiens[0], prenom: 'Anne', nom: 'Martin', photo: 'https://exemple/portrait.webp' };
+  d.photos = { accueil: 'https://exemple/a.webp', panorama: '', cabinet: ['https://exemple/c.webp'] };
+  d.theme.logoPerso = { url: 'https://exemple/logo.png', complet: true };
+  d.soins = ['bilan-podologique'];
+  d.flux.mode = 'auto';
+  const identite = (x) => JSON.stringify([x.pays, x.profil, x.voix, x.cabinet, x.lieux, x.praticiens, x.acces, x.rdv, x.paiements, x.equipements, x.domicile, x.message, x.conventionnement, x.photos, x.soins, x.perso, x.theme.logoPerso, x.flux.mode]);
+  for (const u of core.CATALOGUE_UNIVERS) {
+    const r = core.appliquerUnivers(d, u, { autoriserNonValide: true });
+    if (identite(r.draft) !== identite(d)) univers.push(`univers ${u.id} : appliquerUnivers modifie l'identité du cabinet`);
+    if (r.draft.theme.univers !== u.id || r.draft.theme.modele !== u.preReglage.modele) univers.push(`univers ${u.id} : préréglage non appliqué`);
+  }
+}
 const inconnues = core.MODELES_INTEGRES.flatMap((m) => (m.gammes ?? []).filter((g) => !core.GAMMES.some((x) => x.id === g)).map((g) => `${m.id} : gamme inconnue « ${g} »`));
 
 if (defauts.length) {
   console.log(`✗ ${defauts.length} couleur(s) littérale(s) hors charte :`);
   for (const d of defauts) console.log(`  ${d}`);
 }
-for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins, ...bibliotheque, ...anatomie, ...webkit, ...contenus]) console.log(`✗ ${d}`);
-const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length + webkit.length + contenus.length;
+for (const d of [...gammes, ...modeles, ...univers, ...inconnues, ...marques, ...dessins, ...bibliotheque, ...anatomie, ...webkit, ...contenus]) console.log(`✗ ${d}`);
+const total = defauts.length + gammes.length + modeles.length + univers.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length + webkit.length + contenus.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit) ; moteur de contenus : gabarits sans couleur littérale, ${nbSujets} sujets et leurs publications (4 formats × 4 identités) conformes aux garde-fous.`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.CATALOGUE_UNIVERS.length} univers de catalogue valides (identité préservée), ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit) ; moteur de contenus : gabarits sans couleur littérale, ${nbSujets} sujets et leurs publications (4 formats × 4 identités) conformes aux garde-fous.`);
 process.exit(total ? 1 : 0);

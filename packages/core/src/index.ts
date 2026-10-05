@@ -12,6 +12,7 @@ export * from './personnalisation';
 export * from './couleurs';
 export * from './charte';
 export * from './univers';
+export * from './catalogue-univers';
 export * from './gammes';
 export * from './logos';
 export * from './marques-importees';

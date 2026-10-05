@@ -5,6 +5,8 @@ import { specialiteDuProfil } from './packs';
 import { nettoyerEquipements, nettoyerEquipementsAutres } from './equipements';
 import type { Horaire, SiteConfig } from './types';
 import type { Voix } from './lexique';
+import type { SectionAccueil } from './modeles';
+import type { Registre } from './dessins';
 
 export type MiseEnPage = SiteConfig['theme']['mise_en_page'];
 export type StyleImages = SiteConfig['theme']['style_images'];
@@ -113,6 +115,17 @@ export type SiteDraft = {
      * Jamais choisi par le praticien (contrôlé côté serveur et en base).
      */
     jeuPhotos: string;
+    /**
+     * Univers du catalogue appliqué (catalogue-univers.ts, appliquerUnivers) ; absent : site composé à la main.
+     * Les quatre champs suivants sont posés par l'univers et facultatifs (sites antérieurs inchangés).
+     */
+    univers?: string;
+    /** Soins à présenter en premier, dans cet ordre (seuls les soins cochés dans « soins » sont affichés) */
+    soinsEnAvant?: string[];
+    /** Ordre des sections de l'accueil : permutation des sections du modèle, sinon ignoré (modeleDuSite) */
+    sections?: SectionAccueil[];
+    /** Registre des illustrations, s'il diffère de celui du modèle */
+    registre?: Registre;
   };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
@@ -120,6 +133,8 @@ export type SiteDraft = {
   photos: { accueil: string; panorama: string; cabinet: string[] };
   /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
+  /** Fiches conseils proposées aux patients (identifiants de SUJETS_FICHES_CONSEILS, catalogue-univers.ts), facultatif */
+  fichesConseils?: string[];
   /** Textes personnalisés dans l'éditeur visuel (surcouche du standard, voir personnalisation.ts) */
   perso: { textes: Record<string, string> };
 };
