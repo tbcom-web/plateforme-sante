@@ -12,6 +12,13 @@ import { titreCompetences, titreCabinet, localisation } from '../../lib/textes';
 import TetePage from '../../components/gabarits/TetePage.astro';
 import SoinsVariantes from '../../components/gabarits/Soins.astro';
 import { nouveauGabarit, variantes } from '../../lib/gabarits';
+import SujetsAccueil from '../../components/SujetsAccueil.astro';
+import { navigation, soinDuSite } from '../../lib/navigation';
+import type { Soin } from '@plateforme/core';
+
+// Soins groupés par thème du praticien (principaux, secondaires, puis « Autres soins ») : chaque soin une seule fois.
+const groupes = navigation.groupesSoins.map((g) => ({ ...g, liste: g.soins.map(soinDuSite).filter((s): s is Soin => Boolean(s)) }));
+const groupe = groupes.length > 1;
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }];
 const total = String(site.soins.length).padStart(2, '0');
@@ -28,7 +35,7 @@ const bilan = visuelSoin('bilan-podologique');
     <TetePage crumbs={crumbs} sur={localisation} chapo="Chaque prise en charge commence par un échange et un examen, afin de proposer des soins adaptés.">
       <h1 slot="titre">{titreCompetences}</h1>
     </TetePage>
-    <section class="g-section g-bloc"><div class="g-cadre g-bloc__dedans"><SoinsVariantes variante={variantes.soins} complet /></div></section>
+    <section class="g-section g-bloc"><div class="g-cadre g-bloc__dedans"><SujetsAccueil variante="soins" /><SoinsVariantes variante={variantes.soins} complet /></div></section>
   </>) : (<>
   <section class="cadre tete-page">
     <Breadcrumb items={crumbs} />
@@ -43,7 +50,13 @@ const bilan = visuelSoin('bilan-podologique');
   </section>
   <section class="section section--serree">
     <div class="cadre">
-      <Competences />
+      <SujetsAccueil variante="soins" />
+      {groupe ? groupes.map((g) => (
+        <div class="groupe">
+          <p class="sur groupe__titre">{g.href ? <a href={g.href}>{g.titre}</a> : g.titre}</p>
+          <Competences soins={g.liste} />
+        </div>
+      )) : <Competences />}
     </div>
   </section>
   </>)}
@@ -51,4 +64,7 @@ const bilan = visuelSoin('bilan-podologique');
 
 <style>
   .section--serree { padding-top: 0; }
+  .groupe + .groupe { margin-top: clamp(40px, 6vw, 64px); }
+  .groupe__titre { margin-bottom: 18px; }
+  .groupe__titre a { color: inherit; display: inline-flex; align-items: center; min-height: 44px; }
 </style>

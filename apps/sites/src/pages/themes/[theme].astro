@@ -1,0 +1,124 @@
+---
+// Page d'un thème du cabinet (/themes/<id>) : hub pédagogique d'un sujet choisi par le praticien (themes.ts, priorités).
+// Intro courte pré-écrite (neutre, conforme au lexique), soins du thème cochés par le cabinet (liens vers leurs pages),
+// conseils publiés du même thème s'il y en a, rendez-vous. Construite seulement pour un thème qui a au moins un soin coché
+// (navigation.pages) : jamais de page vide ni de lien mort. Mêmes textes et données structurées pour tous les gabarits.
+import Gabarit from '../../layouts/Gabarit.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import TetePage from '../../components/gabarits/TetePage.astro';
+import Icone from '../../components/Icone.astro';
+import { site, dateFr } from '../../lib/site';
+import { breadcrumbSchema, themeSchema } from '../../lib/schema';
+import { titreCompetences, localisation, lienRdv, libelleRdv, rdvEnLigne, telLien, viaPlateforme, lieu } from '../../lib/textes';
+import { nouveauGabarit, pictoDuSoin } from '../../lib/gabarits';
+import { themesDuSite, pageTheme, pictoTheme } from '../../lib/navigation';
+import { espacesFines, type ThemeDuSite } from '@plateforme/core';
+
+export function getStaticPaths() {
+  return themesDuSite.map((t) => ({ params: { theme: t.theme.id }, props: { t } }));
+}
+
+const { t } = Astro.props as { t: ThemeDuSite & { principal: boolean } };
+const p = pageTheme(t);
+const crumbs = [{ name: 'Accueil', path: '/' }, { name: titreCompetences, path: '/soins' }, { name: t.theme.libelle, path: p.path }];
+const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
+const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`);
+---
+<Gabarit title={p.title} description={p.description} path={p.path} schemas={[themeSchema({ nom: p.titre, description: p.description, path: p.path, soins: p.soins }), breadcrumbSchema(crumbs)]}>
+  {nouveauGabarit ? (
+    <TetePage crumbs={crumbs} sur={localisation} chapo={p.intro}>
+      <h1 slot="titre">{espacesFines(t.theme.libelle)}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
+    </TetePage>
+  ) : (
+    <section class="cadre tete-page">
+      <Breadcrumb items={crumbs} />
+      <div class="tete-page__grille">
+        <div>
+          <p class="sur">{localisation}</p>
+          <h1>{espacesFines(t.theme.libelle)}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
+          <p class="chapo">{p.intro}</p>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <div class:list={['theme', nouveauGabarit ? 'g-section g-bloc' : 'section section--theme']}>
+    <div class:list={[nouveauGabarit ? 'g-cadre g-bloc__dedans' : 'cadre', 'theme__dedans']}>
+      <section aria-labelledby="titre-soins">
+        <h2 id="titre-soins" class="theme__titre"><span class="theme__picto" aria-hidden="true"><Icone nom={pictoTheme(t.theme.id)} secours="lucide:footprints" /></span>Les soins proposés</h2>
+        <ul class="theme__soins">
+          {p.soins.map((s) => (
+            <li>
+              <a href={`/soins/${s.slug}`}>
+                <span class="theme__soin-picto" aria-hidden="true"><Icone nom={pictoDuSoin(s.slug)} secours="lucide:footprints" /></span>
+                <span class="theme__soin-texte"><span class="theme__soin-nom">{s.titreCourt}</span><span class="theme__soin-resume">{s.resume}</span></span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {p.articles.length > 0 && (
+        <section aria-labelledby="titre-conseils">
+          <h2 id="titre-conseils" class="theme__titre">Conseils à lire</h2>
+          <ul class="theme__conseils">
+            {p.articles.map((a) => <li><a href={`/actualites/${a.slug}`}>{a.titre}</a><span class="theme__date">{dateFr(a.date)}</span></li>)}
+          </ul>
+        </section>
+      )}
+
+      <section class="theme__rdv" aria-labelledby="titre-rdv">
+        <h2 id="titre-rdv" class="theme__titre">Prendre rendez-vous</h2>
+        <p class="theme__lieu">{lieu.nom || site.cabinet.nom}, {lieu.adresse}, {lieu.codePostal} {lieu.ville}</p>
+        <div class="theme__actions">
+          <a class="theme__bouton theme__bouton--plein" href={rdv}>{libelleRdv}{!plusieurs && viaPlateforme && <span>{viaPlateforme}</span>}</a>
+          {rdvEnLigne && <a class="theme__bouton" href={telLien}>{site.cabinet.telephone}</a>}
+        </div>
+      </section>
+    </div>
+  </div>
+</Gabarit>
+
+<style>
+  /* Jetons du gabarit classique (--encre…) ou des gabarits tableau, village, revue (--g-*). */
+  .theme {
+    --t-encre: var(--g-encre, var(--encre));
+    --t-douce: var(--g-encre-douce, var(--encre-douce));
+    --t-ligne: var(--g-ligne, var(--ligne));
+    --t-accent: var(--g-accent-texte, var(--accent-vif));
+    --t-bulle: var(--g-bulle, var(--accent-tres-pale, var(--doux)));
+    --t-picto: var(--g-bulle-picto, var(--accent-vif));
+    --t-plein: var(--g-plein, var(--accent-vif));
+    --t-plein-texte: var(--g-plein-texte, var(--blanc));
+    --picto-accent: var(--t-accent);
+  }
+  .section--theme { padding-top: 0; }
+  .theme__dedans { display: grid; gap: clamp(36px, 5vw, 56px); }
+  .theme__titre { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
+  .theme__picto { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--t-bulle); color: var(--t-picto); flex: none; }
+  .theme__picto :global(.icone) { width: 32px; height: 32px; }
+  .theme__soins { list-style: none; margin: 0; padding: 0; display: grid; gap: 0 28px; border-top: var(--filet-fort, 2px) solid var(--t-encre); }
+  @media (min-width: 760px) { .theme__soins { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); } }
+  .theme__soins li { border-bottom: var(--filet, 1px) solid var(--t-ligne); }
+  .theme__soins a { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; min-height: 48px; padding: 16px 0; color: var(--t-encre); text-decoration: none; }
+  .theme__soin-picto { color: var(--t-accent); }
+  .theme__soin-picto :global(.icone) { width: 36px; height: 36px; }
+  .theme__soin-texte { display: grid; gap: 4px; }
+  .theme__soin-nom { font-weight: 700; color: var(--t-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .theme__soins a:hover .theme__soin-nom { text-decoration-thickness: 2px; }
+  .theme__soin-resume { color: var(--t-douce); font-size: 1rem; line-height: 1.45; }
+  .theme__conseils { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .theme__conseils li { display: grid; gap: 2px; padding: 10px 0; border-bottom: var(--filet, 1px) solid var(--t-ligne); }
+  .theme__conseils a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--t-accent); }
+  .theme__date { color: var(--t-douce); font-size: 0.92rem; }
+  .theme__lieu { margin: 0 0 14px; color: var(--t-douce); }
+  .theme__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .theme__bouton { display: inline-grid; place-items: center; align-content: center; min-height: 52px; padding: 6px 22px; border-radius: var(--rayon-bouton, 999px); color: var(--t-encre); font-weight: 650; text-align: center; text-decoration: none; box-shadow: inset 0 0 0 var(--filet-fort, 2px) var(--t-ligne); }
+  .theme__bouton:hover { color: var(--t-encre); box-shadow: inset 0 0 0 var(--filet-fort, 2px) var(--t-accent); }
+  .theme__bouton--plein, .theme__bouton--plein:hover { background: var(--t-plein); color: var(--t-plein-texte); box-shadow: none; }
+  .theme__bouton span { display: block; font-size: 0.8rem; font-weight: 500; }
+  @media (max-width: 559px) { .theme__actions { display: grid; } }
+  :global(.coquille--revue) .theme__titre { font-weight: 500; }
+  :global(.coquille--revue) .theme__picto { background: none; }
+  :global(.coquille--revue) .theme__soins { border-top-width: var(--filet, 1px); }
+</style>

@@ -9,6 +9,7 @@ import { getMarquesImportees } from '@/lib/marques';
 import { getRole } from '@/lib/admin';
 import { getUnivers } from '@/lib/univers';
 import { lireJeuPhotos } from '@/lib/jeux-photos';
+import { themesActives } from '@/lib/themes';
 
 export const metadata = { title: 'Créer mon site' };
 
@@ -51,6 +52,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
         univers={univers}
         client={nomClient}
         admin={admin}
+        themesActives={themesActives()}
         lienAvance={pourClient ? `/mon-site?site=${site.id}` : '/mon-site'}
         actions={{ sauvegarder: sauvegarderParcours, choisir: choisirModele, publier: publierParcours }}
       />

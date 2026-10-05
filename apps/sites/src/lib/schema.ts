@@ -214,3 +214,24 @@ export const breadcrumbSchema = (items: { name: string; path: string }[]) => ({
     item: absUrl(it.path),
   })),
 });
+
+/**
+ * Page d'un thème du cabinet (/themes/<id>) : WebPage rattachée au site et au cabinet, avec la liste des pages de soin du
+ * thème (ItemList d'adresses existantes : seulement les soins cochés). Aucune donnée ajoutée hors du contenu affiché.
+ */
+export const themeSchema = (t: { nom: string; description: string; path: string; soins: Soin[] }) => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${absUrl(t.path)}#page`,
+  name: t.nom,
+  description: t.description,
+  url: absUrl(t.path),
+  inLanguage: 'fr-FR',
+  isPartOf: { '@id': siteId },
+  about: { '@id': businessId },
+  dateModified: dateMaj,
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: t.soins.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: s.titre, url: absUrl(`/soins/${s.slug}`) })),
+  },
+});

@@ -6,8 +6,8 @@
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
-    "predev": "node scripts/copier-photos.mjs",
-    "prebuild": "node scripts/copier-photos.mjs"
+    "predev": "node scripts/copier-photos.mjs && node scripts/copier-studio.mjs",
+    "prebuild": "node scripts/copier-photos.mjs && node scripts/copier-studio.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bodoni-moda": "^5.3.0",
@@ -21,6 +21,7 @@
     "@fontsource-variable/public-sans": "^5.3.0",
     "@fontsource-variable/schibsted-grotesk": "^5.3.0",
     "@fontsource/instrument-serif": "^5.3.0",
+    "@mediapipe/tasks-vision": "^1.0.1",
     "@plateforme/core": "file:../../packages/core",
     "@supabase/ssr": "^0",
     "@supabase/supabase-js": "^2",

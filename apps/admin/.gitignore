@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Banque de photos copiée depuis apps/sites (scripts/copier-photos.mjs)
 /public/photos
+
+# WebAssembly de MediaPipe copié depuis node_modules (scripts/copier-studio.mjs)
+/public/studio-portrait/wasm

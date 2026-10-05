@@ -550,6 +550,9 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   message: '',
   communes: ['Lyon 6e', 'Lyon 3e', 'Villeurbanne', 'Caluire-et-Cuire', 'Bron'],
   photos: { accueil: '', panorama: '', cabinet: [] },
+  // Hiérarchie choisie par la praticienne (themes.ts) : sport, diabète, ongles en principaux ; enfants, seniors traités aussi.
+  // PRIORITES=aucune : démo sans thème (navigation historique Soins · Le cabinet · Infos pratiques).
+  ...(process.env.PRIORITES === 'aucune' ? {} : { priorites: { principaux: ['sport', 'diabete', 'ongles'], secondaires: ['enfant', 'senior'] } }),
 };
 
 // CAS=solo : praticienne seule, voix « je », cabinet simple identifié par son quartier (cas le plus courant

@@ -10,6 +10,7 @@ import Soins from './Soins.astro';
 import Praticiens from './Praticiens.astro';
 import VenirAuCabinet from './VenirAuCabinet.astro';
 import Actus from './Actus.astro';
+import SujetsAccueil from '../SujetsAccueil.astro';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
 import { titreCompetences, titrePraticiens, adresseLieu, lieu } from '../../lib/textes';
@@ -23,6 +24,7 @@ const m = site.modele;
 const metier = site.titreMetier.toLowerCase();
 ---
 <PremierEcran variante={variantes.accueil} />
+<SujetsAccueil />
 
 {m.accueil.sections.map((section) => (
   <>

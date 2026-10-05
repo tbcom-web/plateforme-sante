@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   appliquerUnivers,
+  avecPrioritesParcours,
   avecStatut,
   CATALOGUE_UNIVERS,
   normaliserDraft,
@@ -15,6 +16,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
+import { themesActives } from '@/lib/themes';
 
 // Univers du catalogue côté serveur : statuts enregistrés (table univers_statuts, migration 0018), nombre de sites
 // qui les utilisent, et application d'un univers au brouillon d'un site (parcours praticien, phase B).
@@ -66,6 +68,8 @@ export async function appliquerUniversAuSite(
     autoriserNonValide: (Boolean(opts.admin) && u.statut !== 'differe') || (Boolean(opts.parcours) && universApplicableAuParcours(u)),
   });
   if (r.erreurs.length) return { ok: false, message: r.erreurs.join(' ') };
+  // Parcours : les sujets choisis par le praticien (étape 1) priment sur le préréglage du modèle (spécialités, soins en avant).
+  if (opts.parcours) r.draft = avecPrioritesParcours(r.draft, { soinsConnus: catalogue.map((c) => c.slug), themesActives: themesActives() });
   r.draft.theme.jeuPhotos = r.draft.theme.jeuPhotos || (await jeuPhotosAEnregistrer(supabase, siteId, avant.theme, r.draft.theme.specialite));
 
   const { data, error } = await supabase.from('sites').update({ config: r.draft }).eq('id', siteId).eq('updated_at', site.updated_at).select('updated_at').maybeSingle();

@@ -10,12 +10,18 @@
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { pourQui, pictoDuSoin, infosPratiques } from '../../lib/gabarits';
+import { navigation, soinDuSite } from '../../lib/navigation';
 
 interface Props { variante: 'bulles' | 'grille' | 'filets'; complet?: boolean; accueil?: boolean }
 const { variante, complet = false, accueil = false } = Astro.props;
 const infos = infosPratiques(accueil);
+// Page « Compétences » (complet) : une rangée de soins par groupe de la navigation (thèmes du praticien, puis « Autres
+// soins »), l'étiquette du groupe menant à la page du thème ; ailleurs, une seule rangée « Soins ».
+const groupes = complet && navigation.groupesSoins.length > 1
+  ? navigation.groupesSoins.map((g) => ({ etiquette: g.titre, href: g.href, soins: g.soins.map(soinDuSite).filter((s) => s !== undefined) }))
+  : [{ etiquette: 'Soins', href: undefined, soins: site.soins }];
 const rangees = [
-  { cle: 'soins', etiquette: 'Soins', bulles: site.soins.map((s) => ({ libelle: s.titreCourt, href: `/soins/${s.slug}`, picto: pictoDuSoin(s.slug), resume: complet ? s.resume : '' })) },
+  ...groupes.map((g) => ({ cle: 'soins', etiquette: g.etiquette, href: g.href, bulles: g.soins.map((s) => ({ libelle: s.titreCourt, href: `/soins/${s.slug}`, picto: pictoDuSoin(s.slug), resume: complet ? s.resume : '' })) })),
   ...(pourQui.length >= 2 ? [{ cle: 'publics', etiquette: 'Pour qui', bulles: pourQui.map((p) => ({ ...p, resume: '' })) }] : []),
   { cle: 'infos', etiquette: 'Infos pratiques', bulles: infos.map((i) => ({ libelle: i.libelle, href: i.href, picto: i.picto, resume: '' })) },
 ];
@@ -23,7 +29,7 @@ const rangees = [
 <div class:list={['rangees', `rangees--${variante}`, { 'rangees--complet': complet }]}>
   {rangees.map((r) => (
     <div class:list={['rangee', `rangee--${r.cle}`]}>
-      <p class="rangee__etiquette">{r.etiquette}</p>
+      <p class="rangee__etiquette">{'href' in r && r.href ? <a href={r.href}>{r.etiquette}</a> : r.etiquette}</p>
       <ul class="rangee__bulles">
         {r.bulles.map((b) => (
           <li>
@@ -52,6 +58,7 @@ const rangees = [
   .rangees { display: grid; gap: 22px; }
   .rangee { display: grid; gap: 10px; }
   .rangee__etiquette { font-size: 0.95rem; font-weight: 650; color: var(--g-encre-douce); }
+  .rangee__etiquette a { display: inline-flex; align-items: center; min-height: 44px; color: var(--g-accent-texte); }
   .rangee__bulles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 12px; }
   .bulle { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 18px 6px 7px; border-radius: 999px; color: var(--g-encre); font-weight: 600; font-size: 1rem; line-height: 1.25; text-decoration: none; transition: box-shadow var(--duree-court); }
   .bulle:hover { color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }

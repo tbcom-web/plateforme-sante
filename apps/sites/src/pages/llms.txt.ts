@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { site, absUrl } from '../lib/site';
 import { pagesMarkdown, cheminMarkdown, reponseTexte, dateMaj } from '../lib/agents';
 import { noms, titreMetierAffiche, lieuExercice, adresseLieu, rdvEnLigne } from '../lib/textes';
+import { themesDuSite, pageTheme } from '../lib/navigation';
 
 const lien = (titre: string, path: string, note: string) => `- [${titre}](${absUrl(path)}): ${note}`;
 
@@ -31,6 +32,8 @@ export const GET: APIRoute = () => {
     lien('Le cabinet et les praticiens', md('/le-cabinet'), 'Praticiens, diplômes, identifiants professionnels, orientations, horaires.'),
     lien('Plan d’accès', md('/acces'), pages.get('/acces')!.resume),
     '',
+    // Sujets choisis par le praticien (principaux dans son ordre, puis secondaires) : pages de thème
+    ...(themesDuSite.length ? ['## Sujets du cabinet', '', ...themesDuSite.map((t) => lien(pageTheme(t).titre, md(t.href), t.theme.description)), ''] : []),
     '## Compétences',
     '',
     ...site.soins.map((s) => lien(s.titre, md(`/soins/${s.slug}`), s.resume)),

@@ -1,7 +1,8 @@
 'use client';
 
-// Parcours guidé de création du site : 5 étapes, une par écran, une recommandation par défaut à chaque étape.
-// Le praticien CHOISIT un modèle (3 sites prêts) puis AFFINE couleurs, cabinet, soins et image, contenus ; il vérifie
+// Parcours guidé de création du site : 6 étapes, une par écran, une recommandation par défaut à chaque étape.
+// Le praticien dit d'abord ses SUJETS (3 principaux dans l'ordre, 3 traités aussi : menu, accueil, modèle recommandé),
+// CHOISIT un modèle (3 sites prêts) puis AFFINE couleurs, cabinet, soins et image, contenus ; il vérifie
 // puis publie. Sauvegarde automatique du brouillon (verrou optimiste : un enregistrement refusé garde la saisie dans ce
 // navigateur). Fonctions pures dans packages/core/src/parcours.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,7 +22,12 @@ import {
   type SiteDraft,
   type Univers,
   soinsSuggeres,
+  soinsSuggeresParcours,
+  soinsEnAvantDesPriorites,
+  avecPrioritesParcours,
+  type Priorites,
 } from '@plateforme/core';
+import ChoixSujets from '@/components/ChoixSujets';
 import ApercuTheme, { type Appareil } from '@/components/ApercuTheme';
 import SaisieGardee from '@/components/SaisieGardee';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
@@ -48,6 +54,8 @@ type Props = {
   admin: boolean;
   /** Formulaire complet (réglages avancés) */
   lienAvance: string;
+  /** Thèmes différés activés par le drapeau admin (THEMES_ACTIVES) */
+  themesActives: string[];
   actions: { sauvegarder: ActionEnregistrer; choisir: ActionChoisir; publier: ActionEnregistrer };
 };
 
@@ -66,7 +74,7 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, actions }: Props) {
+export default function Parcours({ siteId, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const proposes = useMemo(() => universDuParcours(univers), [univers]);
@@ -143,14 +151,14 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
   // Soins suggérés par le modèle, affichés pré-cochés à l'étape 4 : « Continuer » vaut confirmation
   const [suggestion, setSuggestion] = useState<{ soins: string[]; enAvant: string[] } | null>(null);
   const aller = (n: number) => {
-    if (etape === 4 && n > 4 && suggestion && dRef.current.soins.length === 0) {
+    if (etape === 5 && n > 5 && suggestion && dRef.current.soins.length === 0) {
       const s = suggestion;
       setD((x) => ({ ...x, soins: s.soins, theme: { ...x.theme, soinsEnAvant: s.enAvant } }));
       setSuggestion(null);
     }
     void sauvegarder();
     setVerif(false);
-    setEtape(Math.max(1, Math.min(5, n)));
+    setEtape(Math.max(1, Math.min(ETAPES_PARCOURS.length, n)));
   };
 
   // ---- Modèle choisi ----
@@ -162,7 +170,7 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
 
   const choisir = async (u: Univers) => {
-    if (d.theme.univers === u.id) return aller(2);
+    if (d.theme.univers === u.id) return aller(3);
     if (d.theme.univers && !confirm(`Passer au site « ${u.nom} » ? Vos informations sont gardées ; les couleurs et le logo proposés changent.`)) return;
     setChoixEnCours(u.id);
     if (minuteur.current) clearTimeout(minuteur.current);
@@ -181,7 +189,7 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
     setD(r.draft);
     setEtat({ type: 'ok', message: 'Modèle appliqué, brouillon enregistré' });
     setVerif(false);
-    setEtape(2);
+    setEtape(3);
   };
 
   const publier = async () => {
@@ -197,13 +205,21 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
   };
 
   const controle = useMemo(() => controlerPublication(d), [d]);
+  // Soins suggérés : ceux des sujets choisis (soin « pivot » de chaque sujet principal d'abord), sinon ceux du modèle
+  const suggestionsSoins = useMemo(() => {
+    const l = soinsSuggeresParcours(d, universCourant, slugs);
+    return [...new Set([...soinsEnAvantDesPriorites(d.priorites, l), ...l])];
+  }, [d, universCourant, slugs]);
+  // Sujets modifiés après le choix du modèle : spécialités et soins en avant recalculés (mêmes règles que le serveur)
+  const majPriorites = (p: Priorites) =>
+    setD((x) => (x.theme.univers ? avecPrioritesParcours({ ...x, priorites: p }, { soinsConnus: slugs, themesActives }) : { ...x, priorites: p }));
   const infos = ETAPES_PARCOURS[etape - 1];
   const aide = aideEtape(etape);
   const pret = Boolean(universCourant);
 
   // Aperçu des étapes 2 à 4 : brouillon courant (l'étape 4 y injecte les soins suggérés à confirmer)
   // Sans soin confirmé, l'aperçu montre les soins suggérés par le modèle (jamais tout le catalogue)
-  const suggeres = soinsSuggeres(universCourant, slugs);
+  const suggeres = suggestionsSoins;
   const draftApercu = d.soins.length
     ? d
     : suggestion
@@ -243,7 +259,13 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
           )}
         </div>
 
-        {etape === 1 && (
+        {etape === 1 && !verif && (
+          <div className="max-w-3xl">
+            <ChoixSujets priorites={d.priorites} onChange={majPriorites} soins={d.soins} soinsConnus={slugs} themesActives={themesActives} />
+          </div>
+        )}
+
+        {etape === 2 && (
           <ChoixModeles
             proposes={proposes}
             d={d}
@@ -251,8 +273,8 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
             choixEnCours={choixEnCours}
             onChoisir={choisir}
             apercu={(u) => {
-              const r = appliquerUniversParcours(d, u, { modeles: manifestes, soinsConnus: slugs });
-              const soins = d.soins.length ? d.soins : soinsSuggeres(u, slugs);
+              const r = appliquerUniversParcours(d, u, { modeles: manifestes, soinsConnus: slugs, themesActives });
+              const soins = d.soins.length ? d.soins : soinsSuggeresParcours(d, u, slugs);
               const m = modeles.find((x) => x.id === r.draft.theme.modele)?.manifeste ?? modeleIntegre(r.draft.theme.modele);
               return { draft: { ...r.draft, soins }, modele: modeleDuSite(m, r.draft.theme) };
             }}
@@ -262,24 +284,24 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
           />
         )}
 
-        {etape > 1 && !verif && (
+        {etape > 2 && !verif && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-start">
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-6">
-              {etape === 2 && <EtapeCouleurs d={d} modele={modeleCourant} univers={universCourant} onTheme={(theme) => maj({ theme })} />}
-              {etape === 3 && <EtapeCabinet d={d} controle={controle} maj={maj} lienAvance={lienAvance} />}
-              {etape === 4 && (
+              {etape === 3 && <EtapeCouleurs d={d} modele={modeleCourant} univers={universCourant} onTheme={(theme) => maj({ theme })} />}
+              {etape === 4 && <EtapeCabinet d={d} controle={controle} maj={maj} lienAvance={lienAvance} />}
+              {etape === 5 && (
                 <EtapeSoinsImage
                   d={d}
                   id={id}
                   catalogue={catalogue}
-                  suggestions={soinsSuggeres(universCourant, slugs)}
+                  suggestions={suggestionsSoins}
                   modele={modeleCourant}
                   marquesImportees={marquesImportees}
                   maj={maj}
                   onSuggestion={setSuggestion}
                 />
               )}
-              {etape === 5 && <EtapeContenus d={d} univers={universCourant} maj={maj} />}
+              {etape === 6 && <EtapeContenus d={d} univers={universCourant} maj={maj} />}
             </div>
             <div className="grid gap-2 lg:sticky lg:top-24">
               <p className="text-sm font-medium text-neutral-600" aria-live="polite">{libelleApercu}</p>
@@ -306,7 +328,7 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
         )}
       </section>
 
-      {(etape > 1 || pret) && <nav aria-label="Navigation entre les étapes" className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t border-black/5 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:rounded-2xl sm:border sm:px-5">
+      {<nav aria-label="Navigation entre les étapes" className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t border-black/5 bg-white/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:rounded-2xl sm:border sm:px-5">
         <button
           type="button"
           onClick={() => (verif ? setVerif(false) : aller(etape - 1))}
@@ -316,12 +338,16 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
           ← Retour
         </button>
         {etape === 1 ? (
+          <button type="button" onClick={() => aller(2)} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
+            {d.priorites.principaux.length ? 'Continuer →' : 'Passer cette étape →'}
+          </button>
+        ) : etape === 2 ? (
           pret && (
-            <button type="button" onClick={() => aller(2)} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
+            <button type="button" onClick={() => aller(3)} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
               Continuer avec « {universCourant!.nom} » →
             </button>
           )
-        ) : etape < 5 ? (
+        ) : etape < ETAPES_PARCOURS.length ? (
           <button type="button" onClick={() => aller(etape + 1)} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
             Continuer →
           </button>
@@ -345,12 +371,12 @@ function Progression({ etape, pret, onAller, etat }: { etape: number; pret: bool
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-        <p className="font-semibold text-teal-900">Étape {etape} sur 5</p>
+        <p className="font-semibold text-teal-900">Étape {etape} sur {ETAPES_PARCOURS.length}</p>
         <p role="status" className={etat.type === 'erreur' || etat.type === 'conflit' ? 'text-red-700' : 'text-neutral-500'}>{libelle}</p>
       </div>
-      <ol className="grid grid-cols-5 gap-1.5" aria-label="Étapes de la création">
+      <ol className="grid grid-cols-6 gap-1.5" aria-label="Étapes de la création">
         {ETAPES_PARCOURS.map((e) => {
-          const accessible = e.numero === 1 || pret;
+          const accessible = e.numero <= 2 || pret;
           const fait = e.numero < etape;
           return (
             <li key={e.numero}>

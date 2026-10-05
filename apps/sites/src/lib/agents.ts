@@ -7,6 +7,7 @@ import {
   horairesRegroupes, libelleJours, TYPES_LIEU, itineraire, lieuExercice, telLien,
 } from './textes';
 import { soinsLies, type Faq } from '@plateforme/core';
+import { navigation, themesDuSite, pageTheme } from './navigation';
 
 /** Date de dernière mise à jour du contenu : fiche du site, sinon article le plus récent, sinon jour du build. */
 export const dateMaj =
@@ -79,6 +80,13 @@ const fichePraticien = (p: (typeof praticiens)[number], detail: boolean) =>
   ].join('\n');
 
 const lienSoin = (s: (typeof site.soins)[number]) => `[${s.titre}](${absUrl(`/soins/${s.slug}.md`)}): ${s.resume}`;
+/** Lien Markdown vers la page d'un thème du cabinet (sujet choisi par le praticien) */
+const lienTheme = (t: (typeof themesDuSite)[number]) => `[${pageTheme(t).titre}](${absUrl(`${t.href}.md`)}): ${t.theme.description}`;
+/** Sujets du cabinet (accueil Markdown) : principaux dans l'ordre du praticien, puis « Aussi au cabinet » */
+const sujetsMd = () => [
+  ...(navigation.principaux.length ? ['## Sujets principaux du cabinet', '', liste(themesDuSite.filter((t) => t.principal).map(lienTheme)), ''] : []),
+  ...(navigation.secondaires.length ? ['## Aussi au cabinet', '', liste(themesDuSite.filter((t) => !t.principal).map(lienTheme)), ''] : []),
+];
 
 /** Toutes les pages disponibles en Markdown (chemin de la page HTML → contenu). */
 export const pagesMarkdown = (): PageMd[] => [
@@ -91,6 +99,7 @@ export const pagesMarkdown = (): PageMd[] => [
       '',
       praticiens.map((p) => fichePraticien(p, false)).join('\n\n'),
       '',
+      ...sujetsMd(),
       '## Compétences',
       '',
       liste(site.soins.map(lienSoin)),
@@ -105,6 +114,26 @@ export const pagesMarkdown = (): PageMd[] => [
     resume: `Soins et prises en charge proposés par ${noms}, ${titreMetierAffiche.toLowerCase()} à ${site.cabinet.ville}.`,
     corps: liste(site.soins.map(lienSoin)),
   },
+  ...themesDuSite.map((t) => {
+    const p = pageTheme(t);
+    return {
+      path: p.path,
+      titre: p.titre,
+      resume: p.description,
+      corps: [
+        p.intro,
+        '',
+        '## Les soins proposés',
+        '',
+        liste(p.soins.map(lienSoin)),
+        ...(p.articles.length ? ['', '## Conseils à lire', '', liste(p.articles.map((a) => `[${a.titre}](${absUrl(`/actualites/${a.slug}.md`)}) (${dateFr(a.date)}): ${a.resume}`))] : []),
+        '',
+        '## Prendre rendez-vous',
+        '',
+        `${noms}, ${titreMetierAffiche.toLowerCase()}, ${adresseLieu}. Rendez-vous ${rdv()}`,
+      ].join('\n'),
+    };
+  }),
   ...site.soins.map((s) => ({
     path: `/soins/${s.slug}`,
     titre: s.titre,
@@ -199,7 +228,8 @@ export const planDuSite = () => {
     '',
     `> Pages du site ${absUrl('/')}, mises à jour le ${dateMaj}.`,
     '',
-    ...rubrique('Le cabinet', (p) => !p.path.startsWith('/soins') && !p.path.startsWith('/actualites')),
+    ...rubrique('Le cabinet', (p) => !p.path.startsWith('/soins') && !p.path.startsWith('/actualites') && !p.path.startsWith('/themes/')),
+    ...rubrique('Sujets du cabinet', (p) => p.path.startsWith('/themes/')),
     ...rubrique('Compétences', (p) => p.path.startsWith('/soins')),
     ...rubrique('Actualités', (p) => p.path.startsWith('/actualites')),
     '## Autres ressources',
@@ -236,6 +266,7 @@ export const consignesAgents = () =>
     liste([
       `Cabinet : ${site.cabinet.nom}, ${adresseLieu}`,
       `Praticien${pluriel ? 's' : ''} : ${noms}`,
+      ...(themesDuSite.length ? [`Sujets du cabinet : ${themesDuSite.map((t) => t.theme.libelle).join(', ')}`] : []),
       `Compétences : ${site.soins.map((s) => s.titreCourt).join(', ')}`,
       `Mise à jour : ${dateMaj}`,
     ]),

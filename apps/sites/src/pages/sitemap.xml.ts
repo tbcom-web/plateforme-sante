@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { site, absUrl } from '../lib/site';
 import { dateMaj } from '../lib/agents';
+import { navigation } from '../lib/navigation';
 
 export const GET: APIRoute = () => {
   const derniere = [...site.articles].map((a) => a.date).sort().at(-1);
@@ -8,6 +9,7 @@ export const GET: APIRoute = () => {
   const recente = [dateMaj, derniere].filter(Boolean).sort().at(-1);
   const urls: { path: string; lastmod?: string }[] = [
     { path: '/', lastmod: recente },
+    ...navigation.pages.map((path) => ({ path, lastmod: dateMaj })),
     { path: '/soins', lastmod: dateMaj },
     ...site.soins.map((s) => ({ path: `/soins/${s.slug}`, lastmod: dateMaj })),
     { path: '/le-cabinet', lastmod: dateMaj },

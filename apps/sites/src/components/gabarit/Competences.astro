@@ -8,9 +8,12 @@ import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
 import { visuelSoin } from '../../lib/visuels-soins';
 import { modeVisuel, photoResponsive } from '../../lib/visuels';
-import { rendreCase } from '@plateforme/core';
+import { rendreCase, type Soin } from '@plateforme/core';
 
-const n = site.soins.length;
+// Soins montrés : tous ceux du site, ou ceux d'un groupe de la page « Compétences » (thème du praticien, lib/navigation.ts)
+interface Props { soins?: Soin[] }
+const { soins = site.soins } = Astro.props;
+const n = soins.length;
 /** Format de chaque tuile selon le nombre de soins, pour une grille toujours pleine sur 4 colonnes */
 const format = (i: number): 'vedette' | 'moyen' | 'petit' | 'large' => {
   if (n === 1) return 'large';
@@ -24,13 +27,13 @@ const format = (i: number): 'vedette' | 'moyen' | 'petit' | 'large' => {
 };
 const num = (i: number) => String(i + 1).padStart(2, '0');
 // Listes : illustrations (homogènes) ; photos seulement si le praticien a choisi le style « Photos » (rendreCase, core).
-const visuels = site.soins.map((s) => {
+const visuels = soins.map((s) => {
   const v = visuelSoin(s.slug);
   return { ...v, avecPhoto: rendreCase(v, modeVisuel, 'liste').type === 'photo' };
 });
 ---
 <ul class="bento">
-  {site.soins.map((s, i) => (
+  {soins.map((s, i) => (
     <li class:list={['tuile', `tuile--${format(i)}`, 'apparait']} style={`--i:${i}`}>
       <a href={`/soins/${s.slug}`}>
         <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>

@@ -43,6 +43,7 @@ import {
   type Univers,
 } from '@plateforme/core';
 import Photo from '@/components/Photo';
+import PortraitPraticien from '@/components/PortraitPraticien';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Maj = (patch: Partial<SiteDraft>) => void;
@@ -440,7 +441,7 @@ export function EtapeSoinsImage({
           <p className="text-sm text-neutral-600">Facultatif. Sans portrait, le site affiche un monogramme.</p>
         </div>
         {d.praticiens.map((p, i) => (
-          <Photo key={p.id} siteId={id} type={`portrait-${p.id}`} carre label={qui(p, i)} valeur={p.photo} onChange={(u) => maj({ praticiens: d.praticiens.map((x, j) => (j === i ? { ...x, photo: u } : x)) })} />
+          <PortraitPraticien key={p.id} siteId={id} praticien={p} label={qui(p, i)} theme={d.theme} onChange={(m) => maj({ praticiens: d.praticiens.map((x, j) => (j === i ? { ...x, ...m } : x)) })} />
         ))}
       </section>
 

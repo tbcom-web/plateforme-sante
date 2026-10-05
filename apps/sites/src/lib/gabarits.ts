@@ -3,6 +3,8 @@
 // les intertitres (H1, H2) restent ceux du gabarit classique (SEO identique, npm run controle:seo).
 import { variantesModele, gabaritModele, pictoSoin, resumeHygiene, faitEquipement, rendreCase, LIGNE_DESSIN, type Variantes, type NomDessin, type NomLigne } from '@plateforme/core';
 import { site } from './site';
+import { cheminTheme } from '@plateforme/core';
+import { navigation } from './navigation';
 import { lieu, rdvEnLigne, TYPES_LIEU } from './textes';
 import { visuelSoin, photoPraticienSoin } from './visuels-soins';
 import { modeVisuel, registre } from './visuels';
@@ -20,15 +22,18 @@ export const pictoDuSoin = (slug: string) => `picto:${pictoSoin(slug) ?? 'pied-d
  * Bulles « pour qui » : publics des soins du cabinet (seulement ceux que le cabinet propose), vers la fiche du soin.
  * Libellés factuels, sans promesse.
  */
-const PUBLICS: [RegExp, string][] = [
-  [/enfant/, 'Enfants'],
-  [/sport/, 'Sportifs'],
-  [/diab/, 'Diabétiques'],
-  [/senior|chute/, 'Seniors'],
+const PUBLICS: [RegExp, string, string][] = [
+  [/enfant/, 'Enfants', 'enfant'],
+  [/sport/, 'Sportifs', 'sport'],
+  [/diab/, 'Diabétiques', 'diabete'],
+  [/senior|chute/, 'Seniors', 'senior'],
 ];
+// Quand le praticien a retenu le thème du même public (lib/navigation.ts), la bulle mène à la page du thème.
 export const pourQui = site.soins.flatMap((s) => {
   const p = PUBLICS.find(([re]) => re.test(s.slug));
-  return p ? [{ libelle: p[1], href: `/soins/${s.slug}`, picto: pictoDuSoin(s.slug) }] : [];
+  if (!p) return [];
+  const theme = cheminTheme(p[2]);
+  return [{ libelle: p[1], href: navigation.pages.includes(theme) ? theme : `/soins/${s.slug}`, picto: pictoDuSoin(s.slug) }];
 });
 
 /** Plages d'un jour (« 9h00–12h30, 14h00–19h00 » → deux plages) ; vide = fermé. */

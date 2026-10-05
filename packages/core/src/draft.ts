@@ -48,6 +48,8 @@ export type PraticienDraft = {
   bio: string;
   /** URL publique du portrait (facultatif) */
   photo: string;
+  /** Portrait composé par le studio (portrait.ts) : photo retouchée, photo détourée, style, cadrage et rendus ; absent = photo simple */
+  portrait?: import('./portrait').PortraitStudio;
 };
 
 export type LieuDraft = {

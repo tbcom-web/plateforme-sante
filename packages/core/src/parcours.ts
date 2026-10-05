@@ -13,6 +13,7 @@ import { JOURS, type Profil, type SiteDraft } from './draft';
 import { GAMMES, variantesGamme, type Gamme } from './gammes';
 import type { ModeleManifeste } from './modeles';
 import type { Horaire } from './types';
+import { appliquerPriorites, soinsDesPriorites, soinsEnAvantDesPriorites, universDesPriorites } from './themes';
 
 /**
  * Les trois modèles du parcours, dans l'ordre d'affichage : trois sites vraiment différents, personnalisables par les
@@ -45,20 +46,46 @@ export const UNIVERS_PARCOURS_DU_PROFIL: Record<Profil, UniversParcours> = {
   technique: 'clair-pratique',
 };
 
-/** Univers recommandé : celui déjà choisi s'il fait partie du parcours, sinon celui du profil, sinon le premier proposé */
-export function universRecommande(d: Pick<SiteDraft, 'profil' | 'theme'>, proposes: readonly Univers[] = universDuParcours()): Univers | undefined {
-  return proposes.find((u) => u.id === d.theme.univers) ?? proposes.find((u) => u.id === UNIVERS_PARCOURS_DU_PROFIL[d.profil]) ?? proposes[0];
+/**
+ * Univers recommandé : celui déjà choisi s'il fait partie du parcours, sinon celui du thème principal n° 1 (étape « Vos
+ * sujets », themes.ts), sinon celui du profil, sinon le premier proposé.
+ */
+export function universRecommande(d: Pick<SiteDraft, 'profil' | 'theme'> & { priorites?: SiteDraft['priorites'] }, proposes: readonly Univers[] = universDuParcours()): Univers | undefined {
+  const duTheme = d.priorites ? universDesPriorites(d.priorites) : undefined;
+  return proposes.find((u) => u.id === d.theme.univers) ?? proposes.find((u) => u.id === duTheme) ?? proposes.find((u) => u.id === UNIVERS_PARCOURS_DU_PROFIL[d.profil]) ?? proposes[0];
 }
 
 /**
  * Applique un modèle du parcours au brouillon (aperçu local et enregistrement serveur) : préréglage complet de
  * l'univers, identité conservée. Les univers du parcours en brouillon sont acceptés (universApplicableAuParcours).
  */
-export function appliquerUniversParcours(d: SiteDraft, u: Univers, opts: { modeles?: readonly ModeleManifeste[]; soinsConnus?: readonly string[] } = {}): ResultatUnivers {
-  return appliquerUnivers(d, u, { ...opts, autoriserNonValide: universApplicableAuParcours(u) });
+export function appliquerUniversParcours(
+  d: SiteDraft,
+  u: Univers,
+  opts: { modeles?: readonly ModeleManifeste[]; soinsConnus?: readonly string[]; themesActives?: readonly string[] } = {},
+): ResultatUnivers {
+  const r = appliquerUnivers(d, u, { ...opts, autoriserNonValide: universApplicableAuParcours(u) });
+  return { ...r, draft: avecPrioritesParcours(r.draft, opts) };
 }
 
-// ---- Étape 2 : couleurs ----
+/**
+ * Les sujets choisis par le praticien priment sur le préréglage du modèle : spécialités tirées des thèmes n° 1 et n° 2,
+ * soins des thèmes présentés en premier (theme.soinsEnAvant). Sans thème principal : brouillon inchangé.
+ */
+export function avecPrioritesParcours(d: SiteDraft, opts: { soinsConnus?: readonly string[]; themesActives?: readonly string[] } = {}): SiteDraft {
+  if (!d.priorites?.principaux.length) return d;
+  const x = appliquerPriorites(d, d.priorites, opts.themesActives);
+  const ordre = soinsEnAvantDesPriorites(x.priorites, soinsDesPriorites(x.priorites, opts.soinsConnus), 6);
+  return ordre.length ? { ...x, theme: { ...x.theme, soinsEnAvant: ordre } } : x;
+}
+
+/** Soins suggérés à l'étape « Vos soins » : ceux des sujets choisis, sinon ceux du modèle (présents au catalogue) */
+export function soinsSuggeresParcours(d: Pick<SiteDraft, 'priorites'>, u: Pick<Univers, 'preReglage'> | undefined, soinsConnus: readonly string[]): string[] {
+  const duTheme = d.priorites ? soinsDesPriorites(d.priorites, soinsConnus) : [];
+  return duTheme.length ? duTheme : soinsSuggeres(u, soinsConnus);
+}
+
+// ---- Étape 3 : couleurs ----
 
 /** Nombre de gammes conseillées montrées d'abord (pastilles) */
 export const GAMMES_CONSEILLEES_MAX = 4;
@@ -109,7 +136,7 @@ export function natureCouleur(theme: Pick<SiteDraft['theme'], 'gamme'>, m: Pick<
   return gammesConseillees(m).some((g) => g.id === theme.gamme) ? 'conseillee' : 'autre';
 }
 
-// ---- Étape 4 : soins ----
+// ---- Étape 5 : soins ----
 
 /** Soins mis en avant dans le parcours (les plus visibles de l'accueil) */
 export const SOINS_EN_AVANT_MAX = 3;
@@ -161,7 +188,7 @@ export function placerSoin(enAvant: readonly string[], slug: string, vers: numbe
   return liste;
 }
 
-// ---- Étape 3 : horaires simplifiés ----
+// ---- Étape 4 : horaires simplifiés ----
 
 export const FERME = 'Fermé';
 export const HEURES_PAR_DEFAUT = '9h00–12h30, 14h00–19h00';
@@ -187,7 +214,7 @@ export function appliquerHorairesSimplifies(jours: readonly string[], heures: st
 // ---- Étapes, aide et reprise ----
 
 export type EtapeParcours = {
-  numero: 1 | 2 | 3 | 4 | 5;
+  numero: 1 | 2 | 3 | 4 | 5 | 6;
   titre: string;
   /** Une phrase : ce que le praticien fait à cette étape */
   consigne: string;
@@ -197,37 +224,49 @@ export type EtapeParcours = {
   aide: [string, string][];
 };
 
+/**
+ * Les six étapes. « Vos sujets » vient en premier : c'est la question la plus simple pour le praticien (« ce que je fais »)
+ * et elle règle tout le reste — modèle recommandé (thème n° 1), spécialité des illustrations, soins suggérés, accueil et
+ * menus. Les aperçus des modèles de l'étape 2 montrent donc déjà le bon menu.
+ */
 export const ETAPES_PARCOURS: EtapeParcours[] = [
   {
     numero: 1,
+    titre: 'Vos sujets',
+    consigne: 'Choisissez jusqu’à 3 sujets principaux, dans l’ordre, puis jusqu’à 3 sujets que vous traitez aussi.',
+    recommandation: 'Commencez par l’activité qui occupe le plus votre agenda.',
+    aide: [['Sujets', 'Pourquoi choisir'], ['Sujets', 'Accueil et menus']],
+  },
+  {
+    numero: 2,
     titre: 'Choisissez votre site',
     consigne: 'Trois sites prêts à l’emploi. Choisissez celui qui ressemble le plus à votre cabinet ; vous pourrez en changer.',
     recommandation: 'Le site mis en avant convient à la plupart des cabinets comme le vôtre.',
     aide: [['Photos et style', 'Style du site']],
   },
   {
-    numero: 2,
+    numero: 3,
     titre: 'Vos couleurs',
     consigne: 'Choisissez deux couleurs pour votre site. L’aperçu se met à jour aussitôt.',
     recommandation: 'Les couleurs conseillées sont choisies pour ce site ; leur lisibilité est vérifiée.',
     aide: [['Photos et style', 'Gamme de couleurs']],
   },
   {
-    numero: 3,
+    numero: 4,
     titre: 'Votre cabinet',
     consigne: 'Vérifiez les informations essentielles : elles s’affichent sur toutes les pages.',
     recommandation: 'Recopiez le n° d’Ordre et le lien de rendez-vous tels quels.',
     aide: [['Praticiens', 'N° d’Ordre et RPPS'], ['Rendez-vous et infos', 'Lien de rendez-vous'], ['Horaires', 'Cohérence']],
   },
   {
-    numero: 4,
+    numero: 5,
     titre: 'Vos soins et votre image',
     consigne: 'Confirmez les soins que vous pratiquez, puis ajoutez un portrait et un logo si vous le souhaitez.',
     recommandation: 'Gardez les soins suggérés que vous pratiquez chaque semaine, et la marque proposée si vous n’avez pas de logo.',
     aide: [['Compétences', 'Choix'], ['Compétences', 'Ordre'], ['Praticiens', 'Portrait'], ['Photos et style', 'Logo']],
   },
   {
-    numero: 5,
+    numero: 6,
     titre: 'Vos contenus',
     consigne: 'Choisissez les articles et les fiches conseils proposés à vos patients, puis vérifiez avant de publier.',
     recommandation: 'Commencez par valider vous-même chaque article.',
@@ -249,15 +288,15 @@ export function aideEtape(numero: number): { titre: string; conseil: string; exe
 export const BLOQUANT_IDENTITE = /ville|téléphone|adresse|Code postal|praticien|nom et le prénom|Ordre|RPPS|INAMI|rendez-vous|Texte provisoire/i;
 
 /**
- * Étape où reprendre la création : 1 sans modèle du parcours, 3 si l'identité est à compléter, 4 sans soin, sinon 5.
- * (L'étape 2 a une valeur par défaut : la gamme du modèle.)
+ * Étape où reprendre la création : sans modèle du parcours, 1 (aucun sujet choisi) ou 2 ; 4 si l'identité est à
+ * compléter, 5 sans soin, sinon 6. (L'étape 3 a une valeur par défaut : la gamme du modèle.)
  */
-export function etapeDeReprise(d: SiteDraft): 1 | 3 | 4 | 5 {
-  if (!d.theme.univers || !(UNIVERS_PARCOURS as readonly string[]).includes(d.theme.univers)) return 1;
+export function etapeDeReprise(d: SiteDraft): 1 | 2 | 4 | 5 | 6 {
+  if (!d.theme.univers || !(UNIVERS_PARCOURS as readonly string[]).includes(d.theme.univers)) return d.priorites?.principaux.length ? 2 : 1;
   const { bloquants } = controlerPublication(d);
-  if (bloquants.some((b) => BLOQUANT_IDENTITE.test(b) && !/compétence/i.test(b))) return 3;
-  if (!d.soins.length) return 4;
-  return 5;
+  if (bloquants.some((b) => BLOQUANT_IDENTITE.test(b) && !/compétence/i.test(b))) return 4;
+  if (!d.soins.length) return 5;
+  return 6;
 }
 
 /** Fiches conseils connues, dans l'ordre du catalogue, sans doublon */

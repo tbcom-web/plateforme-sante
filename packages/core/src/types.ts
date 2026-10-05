@@ -146,6 +146,8 @@ export type PraticienPublic = {
   presence: string;
   bio: string;
   photo: string;
+  /** Rendus du studio portrait (WebP, plusieurs largeurs, 4:5 et carré) ; absent = photo simple */
+  portrait?: import('./portrait').RendusPortrait;
 };
 
 export type LieuPublic = {

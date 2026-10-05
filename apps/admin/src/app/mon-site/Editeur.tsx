@@ -44,6 +44,7 @@ import {
 import Apercu from '@/components/Apercu';
 import ApercuTheme from '@/components/ApercuTheme';
 import Photo from '@/components/Photo';
+import PortraitPraticien from '@/components/PortraitPraticien';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
 import SaisieGardee from '@/components/SaisieGardee';
@@ -219,7 +220,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                       </>
                     )}
                   </Grille>
-                  <Photo siteId={id} type={`portrait-${p.id}`} carre label="Portrait (facultatif)" valeur={p.photo} onChange={(u) => majPraticien(i, { photo: u })} />
+                  <PortraitPraticien siteId={id} praticien={p} label="Portrait (facultatif)" theme={d.theme} onChange={(m) => majPraticien(i, m)} />
                   <Zone label="Formations et DU (une par ligne)" value={p.formations.join('\n')} onChange={(v) => majPraticien(i, { formations: versListe(v, /\n/) })} />
                   {(d.profil === 'sport' || p.sports.length > 0) && (
                     <Champ large label="Sports suivis (séparés par des virgules)" value={p.sports.join(', ')} onChange={(v) => majPraticien(i, { sports: versListe(v) })} />

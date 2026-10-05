@@ -6,6 +6,7 @@
 // - « liste » (revue) : une entrée par praticien séparée par un filet, sans carte ni monogramme (portrait seulement s'il est fourni).
 import { site } from '../../lib/site';
 import { zonePhoto } from '../../lib/edition';
+import { imagePortrait } from '../../lib/portraits';
 import { lienRdv, rdvEnLigne, viaPlateforme } from '../../lib/textes';
 
 interface Props { variante: 'cartes' | 'fiches' | 'liste' }
@@ -18,7 +19,7 @@ const plusieurs = site.praticiens.length > 1;
     <li class="praticien">
       <div class="praticien__haut">
         {p.photo
-          ? <img class="praticien__photo" src={p.photo} alt={`Portrait de ${p.prenom} ${p.nom}`} width="160" height="160" loading="lazy" decoding="async" {...zonePhoto(`praticien.${i}.photo`)} />
+          ? <img class="praticien__photo" {...imagePortrait(p, 'carre')} loading="lazy" decoding="async" {...zonePhoto(`praticien.${i}.photo`)} />
           : <span class="praticien__monogramme" aria-hidden="true">{p.prenom[0]}{p.nom[0]}</span>}
         <div>
           <h3>{p.prenom}{' '}{p.nom}</h3>

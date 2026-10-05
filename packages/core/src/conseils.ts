@@ -85,3 +85,14 @@ export const FICHES_CONSEILS: FicheConseil[] = [
 
 /** Fiche conseil d'une étape du formulaire */
 export const ficheConseil = (etape: string) => FICHES_CONSEILS.find((f) => f.etape === etape);
+
+/**
+ * Fiche « Prendre son portrait au téléphone », affichée par le studio portrait de l'admin avant le choix de la photo.
+ * Le studio corrige la lumière et peut remplacer le fond : la photo peut être prise n'importe où, sans matériel.
+ */
+export const CONSEILS_PHOTO_PORTRAIT: PointConseil[] = [
+  { titre: 'Lumière', conseil: 'Face à une fenêtre, en journée, sans soleil direct ni lampe au plafond : la lumière du jour donne un teint naturel.' },
+  { titre: 'Cadrage', conseil: 'Téléphone à hauteur des yeux, à un bras de distance (ou tenu par un collègue), tête et épaules dans l’image, sans zoom.' },
+  { titre: 'Fond', conseil: 'Peu importe le fond : le studio peut le remplacer par une couleur du site ou le flouter. Évitez seulement une autre personne derrière vous.' },
+  { titre: 'Portrait fidèle', conseil: 'Le studio corrige la lumière et les couleurs, jamais les traits ni la peau : le patient doit vous reconnaître à l’accueil.' },
+];

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { formaterTelephone, validerChoixLogo, GAMMES, REGISTRES_MODELE, SECTIONS_ACCUEIL, SUJETS_FICHES_CONSEILS, universCatalogue, normaliserDraft, nettoyerEquipements, nettoyerEquipementsAutres, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
+import { nettoyerPortrait } from '@plateforme/core/portrait';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getMarquesImportees } from '@/lib/marques';
@@ -23,6 +24,11 @@ const url = (v: unknown) => { const s = t(v, 400); return /^https:\/\//.test(s) 
 // Seules les photos stockées dans le dossier « photos » du projet Supabase sont acceptées.
 const PREFIXE_PHOTOS = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/`;
 const photo = (v: unknown) => { const s = t(v, 400); return s.startsWith(PREFIXE_PHOTOS) ? s : ''; };
+// Portrait du studio (praticiens[].portrait) : gardé seulement si ses fichiers sont dans le stockage et s'il correspond à la photo.
+const avecPortrait = (v: unknown, photoPraticien: string) => {
+  const portrait = nettoyerPortrait(v, photoPraticien, (u) => u !== '' && photo(u) === u);
+  return portrait ? { portrait } : {};
+};
 const parmi = <T extends string>(v: unknown, valeurs: readonly T[], defaut: T): T => (valeurs.includes(v as T) ? (v as T) : defaut);
 
 // Normalise puis borne chaque champ (aucune donnée inattendue n'est enregistrée).
@@ -70,6 +76,7 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
       presence: t(p.presence, 120),
       bio: t(p.bio, 1500),
       photo: photo(p.photo),
+      ...avecPortrait(p.portrait, photo(p.photo)),
     })),
     acces: {
       pmr: Boolean(d.acces.pmr),

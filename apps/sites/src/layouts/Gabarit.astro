@@ -49,6 +49,7 @@ import { site, absUrl } from '../lib/site';
 import { feuilleCharte, variablesTheme, variablesGabarit, gabaritModele, POLICES, POLICE_MONO, NEUTRES, TRAIT, LOGO } from '@plateforme/core';
 import { businessSchema, personSchemas, websiteSchema, pageSchema, breadcrumbSchema } from '../lib/schema';
 import { aUneVersionMarkdown, cheminMarkdown } from '../lib/agents';
+import { navigation, lienActif } from '../lib/navigation';
 import { photoAccueil, pedagogique, dessinSpecialite } from '../lib/visuels';
 import {
   titreMetierAffiche, telLien, itineraire, lienRdv, libelleRdv, titreCabinet, praticiens, lieu, adresseLieu,
@@ -175,12 +176,11 @@ const allSchemas = [
 // Version Markdown de la page pour les assistants IA (/index.md, /soins/x.md…), si elle existe.
 const versionMarkdown = !noindex && aUneVersionMarkdown(path) ? cheminMarkdown(path) : null;
 const courant = Astro.url.pathname;
-const liens = [
-  { href: '/soins', label: 'Compétences' },
-  { href: '/le-cabinet', label: praticiens.length > 1 ? 'Praticiens' : 'Le cabinet' },
-  ...(site.articles.length > 0 ? [{ href: '/actualites', label: 'Actualités' }] : []),
-  { href: '/acces', label: 'Accès' },
-];
+// Menus calculés par le core (lib/navigation.ts, construireNavigation) : thèmes principaux du praticien, Soins, Le cabinet,
+// Infos pratiques ; sur téléphone (tiroir), 3 entrées au plus avec l'Accueil et le bouton de rendez-vous.
+const liens = navigation.menu.map((l) => ({ href: l.href, label: l.libelle, cle: l.cle }));
+const liensMobile = navigation.menuMobile.map((l) => ({ href: l.href, label: l.libelle }));
+const liensPied = navigation.pied.filter((l) => l.cle !== 'accueil').map((l) => ({ href: l.href, label: l.libelle }));
 const rdvGeneral = site.praticiens.length > 1 && rdvEnLigne ? '/le-cabinet#praticiens' : null;
 // Mention « via Doctolib » seulement sur les boutons qui quittent le site (pas vers la liste des praticiens).
 const via = rdvGeneral ? '' : viaPlateforme;
@@ -222,7 +222,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
     {site.message && <div class="message" role="status"><Icone nom="lucide:info" />{site.message}</div>}
 
     {nouveau ? (
-      <Coquille liens={liens} courant={courant} rdvGeneral={rdvGeneral}><slot /></Coquille>
+      <Coquille courant={courant} rdvGeneral={rdvGeneral}><slot /></Coquille>
     ) : (<>
     {!transparent && <div class="infobarre">
       <div class="cadre infobarre__contenu">
@@ -235,7 +235,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
       <div class="cadre entete__contenu">
         <Logo />
         <nav class="liens" aria-label="Navigation principale">
-          {liens.map((l) => <a href={l.href} aria-current={courant.startsWith(l.href) ? 'page' : undefined}>{l.label}</a>)}
+          {liens.map((l, i) => <a href={l.href} data-rang={l.cle === 'theme' ? i + 1 : undefined} aria-current={lienActif(l.href, courant) ? 'page' : undefined}>{l.label}</a>)}
         </nav>
         <a class="bouton bouton--plein bouton--petit entete__rdv" href={rdvGeneral ?? lienRdv('entete')}>
           {rdvEnLigne ? 'Prendre RDV' : 'Appeler'}
@@ -255,7 +255,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
         </div>
         <nav class="tiroir__nav" aria-label="Menu principal">
           <a href="/" aria-current={courant === '/' ? 'page' : undefined}><span class="mono" aria-hidden="true">00</span>Accueil</a>
-          {liens.map((l, i) => <a href={l.href} aria-current={courant.startsWith(l.href) ? 'page' : undefined}><span class="mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{l.label}</a>)}
+          {liensMobile.map((l, i) => <a href={l.href} aria-current={lienActif(l.href, courant) ? 'page' : undefined}><span class="mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{l.label}</a>)}
         </nav>
         <div class="tiroir__bas">
           <p>{lieu.nom && <>{lieu.nom}<br /></>}{adresseLieu}</p>
@@ -306,7 +306,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
           <div>
             <p class="pied__titre">Navigation</p>
             <ul>
-              {liens.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+              {liensPied.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
               <li><a href="/mentions-legales">Mentions légales</a></li>
               {site.pays === 'FR' && <li><a href="https://www.onpp.fr" rel="noopener" target="_blank">Ordre national des pédicures-podologues</a></li>}
             </ul>
@@ -488,6 +488,8 @@ const via = rdvGeneral ? '' : viaPlateforme;
   .liens a { color: var(--encre-douce); text-decoration: none; transition: color var(--duree-instant); }
   .liens a:hover, .liens a[aria-current='page'] { color: var(--encre); }
   @media (min-width: 960px) { .liens { display: flex; } }
+  /* Écran moyen : seul le thème n° 1 reste dans la barre (les n° 2 et 3 sont en tête de « Soins »), comme sur téléphone */
+  @media (min-width: 960px) and (max-width: 1199px) { .liens { gap: 22px; } .liens a:is([data-rang='2'], [data-rang='3']) { display: none; } }
   .entete__rdv { display: none; }
   @media (min-width: 640px) { .entete__rdv { display: inline-flex; } }
 

@@ -156,10 +156,12 @@ test('horaires simplifiés : lecture et écriture', () => {
 test('étape de reprise', () => {
   const d = identite();
   assert.equal(etapeDeReprise(d), 1);
+  // Sujets choisis, modèle pas encore choisi : reprise au choix du site
+  assert.equal(etapeDeReprise({ ...d, priorites: { principaux: ['ongles'], secondaires: [] } }), 2);
   const u = appliquerUniversParcours(d, universCatalogue('clair-pratique')!).draft;
-  assert.equal(etapeDeReprise(u), 5);
-  assert.equal(etapeDeReprise({ ...u, soins: [] }), 4);
-  assert.equal(etapeDeReprise({ ...u, cabinet: { ...u.cabinet, telephone: '' } }), 3);
+  assert.equal(etapeDeReprise(u), 6);
+  assert.equal(etapeDeReprise({ ...u, soins: [] }), 5);
+  assert.equal(etapeDeReprise({ ...u, cabinet: { ...u.cabinet, telephone: '' } }), 4);
 });
 
 test('aide de chaque étape reprise des fiches conseils', () => {

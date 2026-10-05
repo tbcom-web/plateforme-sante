@@ -34,6 +34,7 @@ import {
   type Soin,
 } from '@plateforme/core';
 import { defautsProfession } from './defaults';
+import { rendusPortrait } from '@plateforme/core/portrait';
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
 
@@ -172,6 +173,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     presence: p.presence,
     bio: p.bio,
     photo: p.photo,
+    // Rendus du studio portrait (srcset), seulement s'ils correspondent à la photo enregistrée
+    ...(rendusPortrait(p) ? { portrait: rendusPortrait(p)! } : {}),
   }));
 
   const p1 = praticiens[0];
