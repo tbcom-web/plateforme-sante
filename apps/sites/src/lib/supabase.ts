@@ -48,7 +48,12 @@ type LigneSite = {
   profession_slug: string;
   domaine: string | null;
   test: boolean;
+  /** Brouillon (aperçu de l'éditeur visuel) */
   config: unknown;
+  /** Version publiée, figée au moment de « Publier » (null : site publié avant la migration 0017) */
+  config_publiee?: unknown;
+  /** Date à laquelle la version publiée a été figée */
+  publiee_le?: string | null;
   /** Options payantes activées par l'admin (ex. { edition: true }) */
   options?: { edition?: boolean } | null;
   /** Dernière modification de la fiche (dateModified, lastmod) */
@@ -72,7 +77,7 @@ const enListe = (mots: string[]) =>
 
 export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig> {
   const filtre = /^[0-9a-f-]{36}$/.test(siteId) ? `id=eq.${siteId}` : `slug=eq.${encodeURIComponent(siteId)}`;
-  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,options,updated_at`);
+  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,config_publiee,publiee_le,options,updated_at`);
   if (!s) throw new Error(`Site introuvable dans Supabase : ${siteId}`);
 
   const [prof] = await lire<LigneProfession[]>(`professions?slug=eq.${s.profession_slug}`);
@@ -83,7 +88,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     `site_articles?site_id=eq.${s.id}&statut=eq.publie&select=article:articles_flux(slug,titre,resume,corps,theme,date_publication,image,image_alt)`,
   ).catch(() => []);
 
-  const d = normaliserDraft(s.config);
+  // Site public : version publiée (repli sur le brouillon si elle n'existe pas encore) ; aperçu (APERCU=1) : brouillon.
+  const d = normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config));
 
   // Modèle de présentation : fiche importée par l'admin (table « modeles »), sinon modèle intégré.
   const [ligneModele] = await lire<{ manifeste: unknown }[]>(`modeles?id=eq.${encodeURIComponent(d.theme.modele)}&actif=eq.true&select=manifeste`).catch(() => []);
@@ -171,7 +177,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     id: s.id,
     domaine: s.domaine ?? `${s.slug ?? s.id}.pages.dev`,
     demo: s.test || process.env.APERCU === '1',
-    majLe: s.updated_at?.slice(0, 10),
+    majLe: (process.env.APERCU === '1' ? s.updated_at : (s.publiee_le ?? s.updated_at))?.slice(0, 10),
     profession: { slug: prof.slug, libelle: titreMetier, specialiteSchema: prof.specialite_schema },
 
     // Champs historiques (premier praticien / premier lieu), utilisés par le schema.org.

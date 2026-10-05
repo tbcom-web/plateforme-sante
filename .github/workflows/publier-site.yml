@@ -54,6 +54,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       SITE_ID: ${{ inputs.site_id }}
       APERCU: ${{ inputs.mode == 'apercu' && '1' || '' }}
+      # Lien de l'exécution, enregistré dans Supabase pour le suivi de publication (back-office).
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,15 +66,18 @@ jobs:
 
       - run: npm ci
 
-      - name: Préparer (slug du site)
+      # En production : publication « en cours » dans Supabase (la version construite est config_publiee).
+      - name: Préparer (slug du site, suivi de publication)
         id: prep
         working-directory: apps/sites
         run: |
           slug=$(node scripts/publication.mjs preparer "$SITE_ID")
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
 
+      # Journal conservé pour expliquer un éventuel échec (ex. « Publication refusée » d'un site incomplet).
       - name: Construire le site
-        run: npm run build -w apps/sites
+        shell: bash
+        run: npm run build -w apps/sites 2>&1 | tee "$RUNNER_TEMP/construction.log"
 
       - name: Créer le projet Cloudflare Pages si besoin
         working-directory: apps/sites
@@ -82,7 +87,13 @@ jobs:
         working-directory: apps/sites
         run: npx wrangler pages deploy dist --project-name "${{ steps.prep.outputs.slug }}" --branch "${{ inputs.mode == 'apercu' && 'apercu' || 'main' }}" --commit-dirty=true
 
-      - name: Passer le site en ligne
+      - name: Publication réussie (site en ligne, sauf site suspendu)
         if: inputs.mode != 'apercu'
         working-directory: apps/sites
         run: node scripts/publication.mjs terminer "$SITE_ID" "${{ steps.prep.outputs.slug }}.pages.dev"
+
+      # Une étape a échoué : la publication passe « en échec » dans le back-office (pastille, lien, « Réessayer »).
+      - name: Signaler l'échec de la publication
+        if: failure() && inputs.mode != 'apercu'
+        working-directory: apps/sites
+        run: node scripts/publication.mjs echec "$SITE_ID" "$RUNNER_TEMP/construction.log"
