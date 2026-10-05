@@ -11,6 +11,7 @@ import Praticiens from './Praticiens.astro';
 import VenirAuCabinet from './VenirAuCabinet.astro';
 import Actus from './Actus.astro';
 import SujetsAccueil from '../SujetsAccueil.astro';
+import { soinsAccueilAllege } from '../../lib/navigation';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
 import { titreCompetences, titrePraticiens, adresseLieu, lieu, aAdresse } from '../../lib/textes';
@@ -36,6 +37,7 @@ const metier = site.titreMetier.toLowerCase();
             <p class="g-chapo">Choisissez un soin ou votre situation.</p>
           </div>
           <Soins variante={variantes.soins} accueil />
+          {soinsAccueilAllege && <a class="g-suite" href="/soins">Voir tous les soins</a>}
         </div>
       </section>
     )}

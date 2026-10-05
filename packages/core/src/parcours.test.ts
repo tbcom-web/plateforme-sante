@@ -38,11 +38,13 @@ test('un univers retiré ou hors parcours n’est jamais proposé', () => {
   assert.equal(universApplicableAuParcours(universCatalogue('posture-biomecanique')!), false);
 });
 
-test('recommandation : choix existant, sinon profil, sinon premier', () => {
+test('recommandation : sujet n° 1 actuel, sinon premier ; le choix enregistré ne la change pas', () => {
   const d = draftVide();
   assert.equal(universRecommande(d)?.id, 'clair-pratique');
-  assert.equal(universRecommande({ ...d, profil: 'prevention' })?.id, 'simple-proche');
-  assert.equal(universRecommande({ ...d, profil: 'prevention', theme: { ...d.theme, univers: 'elegant-sobre' } })?.id, 'elegant-sobre');
+  assert.equal(universRecommande({ ...d, profil: 'prevention' })?.id, 'clair-pratique', 'le profil ne compte plus');
+  const diabete = { ...d, priorites: { principaux: ['diabete'], secondaires: [] } } as typeof d;
+  assert.equal(universRecommande(diabete)?.id, 'simple-proche');
+  assert.equal(universRecommande({ ...diabete, theme: { ...d.theme, univers: 'elegant-sobre' } })?.id, 'simple-proche', 'badge séparé « Votre choix actuel »');
 });
 
 test('application d’un modèle : identité jamais écrasée', () => {

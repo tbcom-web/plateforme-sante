@@ -16,7 +16,7 @@ import { MODELES_INTEGRES, SECTIONS_ACCUEIL, REGISTRES_MODELE, type ModeleManife
 import { GAMMES } from './gammes';
 import { SPECIALITES } from './packs';
 import { marquesLogo, DISPOSITIONS_LOGO, type DispositionLogo } from './logos';
-import { THEMES_FLUX, type ModeVisuel, type Profil, type SiteDraft } from './draft';
+import { THEMES_FLUX, type ModeVisuel, type SiteDraft } from './draft';
 import { controlerPublication, type ResultatControle } from './controles';
 import type { Registre } from './dessins';
 
@@ -346,19 +346,6 @@ export const universCatalogue = (id: string | undefined | null) => CATALOGUE_UNI
 
 /** Univers montrés aux praticiens : validés seulement */
 export const universProposables = (liste: Univers[] = CATALOGUE_UNIVERS) => liste.filter((u) => u.statut === 'valide');
-
-/**
- * Univers du catalogue recommandé selon le profil du cabinet. Ne pointe jamais vers un univers « differe » ou « retire »
- * (posture et biomécanique : plus tard ; vérifié par npm run controle:charte). Le parcours /creer ne s'en sert pas : il
- * recommande l'un de ses trois modèles d'après le sujet n° 1 (parcours.ts, universRecommande).
- */
-export const UNIVERS_DU_PROFIL: Record<Profil, string> = {
-  proximite: 'podologie-generale',
-  groupe: 'podologie-generale',
-  sport: 'podologie-sport',
-  prevention: 'pied-diabetique',
-  technique: 'podologie-generale',
-};
 
 // ---- Sujets à faible niveau de preuve ----
 

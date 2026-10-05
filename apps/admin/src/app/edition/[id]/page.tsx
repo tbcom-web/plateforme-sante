@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { CHAMPS_TEXTE, normaliserDraft } from '@plateforme/core';
+import { CHAMPS_TEXTE, controlerPublication, normaliserDraft } from '@plateforme/core';
 import { createClient, getUser } from '@/lib/supabase/server';
 import { getRole } from '@/lib/admin';
 import EditeurVisuel from './EditeurVisuel';
@@ -35,6 +35,7 @@ export default async function Edition({ params }: PageProps<'/edition/[id]'>) {
         edition={Boolean((site.options as { edition?: boolean } | null)?.edition)}
         textesInitiaux={d.perso.textes}
         champs={CHAMPS_TEXTE}
+        remplacements={controlerPublication(d).remplacements}
       />
     </div>
   );

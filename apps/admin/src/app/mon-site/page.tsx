@@ -45,7 +45,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
           </span>
         </div>
       )}
-      <Editeur siteId={site.id} version={site.updatedAt} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} themesActives={themesActives()} />
+      <Editeur siteId={site.id} version={site.updatedAt} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} lienChangerModele={pourClient ? `/creer?site=${site.id}&etape=2` : '/creer?etape=2'} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} themesActives={themesActives()} />
     </Shell>
   );
 }

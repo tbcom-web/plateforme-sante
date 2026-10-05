@@ -40,6 +40,8 @@ export type ActionChoisir = (id: string | null, draft: SiteDraft, version: strin
 
 type Props = {
   siteId: string | null;
+  /** Étape d'arrivée imposée (/creer?etape=2 : « Changer de modèle » depuis /mon-site) */
+  etapeInitiale?: number;
   version: string | null;
   initial: SiteDraft;
   catalogue: SoinCatalogue[];
@@ -73,11 +75,11 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions }: Props) {
+export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const proposes = useMemo(() => universDuParcours(univers), [univers]);
-  const [etape, setEtape] = useState<number>(() => (siteId ? etapeDeReprise(initial) : 1));
+  const [etape, setEtape] = useState<number>(() => etapeInitiale ?? (siteId ? etapeDeReprise(initial) : 1));
   const [verif, setVerif] = useState(false);
   const [etat, setEtat] = useState<Etat>({ type: 'repos' });
   const [choixEnCours, setChoixEnCours] = useState<string | null>(null);

@@ -4,15 +4,16 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { definitionChamp, verifierTexte, type DefinitionChamp } from '@plateforme/core';
 import { envoyerPhoto, TAILLE_MAX } from '@/lib/envoi-photo';
 import SaisieGardee from '@/components/SaisieGardee';
+import ConfirmationPublication from '@/components/ConfirmationPublication';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import { enregistrerEdition, etatApercu, lancerApercu, publierDepuisEdition, type ResultatEdition } from './actions';
 
-type Props = { siteId: string; slug: string | null; version: string | null; edition: boolean; textesInitiaux: Record<string, string>; champs: DefinitionChamp[] };
+type Props = { siteId: string; slug: string | null; version: string | null; edition: boolean; textesInitiaux: Record<string, string>; champs: DefinitionChamp[]; remplacements?: string[] };
 
 // Recadrage des photos selon l'emplacement (portraits en 4:5, le reste libre).
 const ratioPhoto = (emplacement: string) => (emplacement.startsWith('praticien.') ? 4 / 5 : null);
 
-export default function EditeurVisuel({ siteId, slug: slugInitial, version: versionInitiale, edition, textesInitiaux, champs }: Props) {
+export default function EditeurVisuel({ siteId, slug: slugInitial, version: versionInitiale, edition, textesInitiaux, champs, remplacements = [] }: Props) {
   const cadre = useRef<HTMLIFrameElement>(null);
   const fichier = useRef<HTMLInputElement>(null);
   const [slug, setSlug] = useState(slugInitial);
@@ -27,6 +28,9 @@ export default function EditeurVisuel({ siteId, slug: slugInitial, version: vers
   const [message, setMessage] = useState<ResultatEdition | { ok: boolean; message: string } | null>(null);
   const [attente, setAttente] = useState(false);
   const [enCours, demarrer] = useTransition();
+  // Rien n'empêche la publication : avec des informations manquantes, la même confirmation que /mon-site les liste.
+  const [confirmer, setConfirmer] = useState(false);
+  const publierMaintenant = () => { setConfirmer(false); demarrer(async () => setMessage(await publierDepuisEdition(siteId))); };
 
   const url = slug ? `https://apercu.${slug}.pages.dev/` : null;
   const origine = url ? new URL(url).origin : null;
@@ -173,11 +177,12 @@ export default function EditeurVisuel({ siteId, slug: slugInitial, version: vers
             type="button"
             disabled={enCours || modifie > 0}
             title={modifie > 0 ? 'Enregistrez d’abord vos modifications' : undefined}
-            onClick={() => demarrer(async () => setMessage(await publierDepuisEdition(siteId)))}
+            onClick={() => (remplacements.length ? setConfirmer(true) : publierMaintenant())}
             className="rounded-lg border border-teal-800 px-4 py-2.5 font-semibold text-teal-900 hover:bg-teal-50 disabled:opacity-50"
           >
             Publier le site
           </button>
+          {confirmer && <ConfirmationPublication remplacements={remplacements} onConfirmer={publierMaintenant} onAnnuler={() => setConfirmer(false)} enCours={enCours} />}
           {genere && <p className="text-xs text-neutral-500">Aperçu du {new Date(genere).toLocaleString('fr-FR')}</p>}
         </div>
       </aside>

@@ -9,7 +9,7 @@
 import { appliquerUnivers, CATALOGUE_UNIVERS, SUJETS_FICHES_CONSEILS, type ResultatUnivers, type Univers } from './catalogue-univers';
 import { FICHES_CONSEILS } from './conseils';
 import { controlerPublication } from './controles';
-import { JOURS, type Profil, type SiteDraft } from './draft';
+import { JOURS, type SiteDraft } from './draft';
 import { GAMMES, variantesGamme, type Gamme } from './gammes';
 import type { ModeleManifeste } from './modeles';
 import type { Horaire } from './types';
@@ -35,25 +35,13 @@ export function universDuParcours(liste: readonly Univers[] = CATALOGUE_UNIVERS)
 }
 
 /**
- * Repli quand aucun sujet n'est choisi (le parcours ne demande pas le profil : « proximite » par défaut, réglable dans le
- * formulaire complet). Modèle mis en avant selon le profil du cabinet : une patientèle de prévention (seniors, diabète, domicile) lit
- * mieux la colonne en gros caractères ; les autres profils partent du tableau, le plus polyvalent.
+ * Univers recommandé (badge « Recommandé pour vous » de l'étape 2) : celui du sujet principal n° 1 actuel (themes.ts),
+ * sinon le premier proposé (le tableau, le plus polyvalent). Le modèle déjà enregistré n'influe pas : il a son propre
+ * badge « Votre choix actuel ».
  */
-export const UNIVERS_PARCOURS_DU_PROFIL: Record<Profil, UniversParcours> = {
-  proximite: 'clair-pratique',
-  groupe: 'clair-pratique',
-  sport: 'clair-pratique',
-  prevention: 'simple-proche',
-  technique: 'clair-pratique',
-};
-
-/**
- * Univers recommandé : celui déjà choisi s'il fait partie du parcours, sinon celui du thème principal n° 1 (étape « Vos
- * sujets », themes.ts), sinon celui du profil, sinon le premier proposé.
- */
-export function universRecommande(d: Pick<SiteDraft, 'profil' | 'theme'> & { priorites?: SiteDraft['priorites'] }, proposes: readonly Univers[] = universDuParcours()): Univers | undefined {
+export function universRecommande(d: { priorites?: SiteDraft['priorites'] }, proposes: readonly Univers[] = universDuParcours()): Univers | undefined {
   const duTheme = d.priorites ? universDesPriorites(d.priorites) : undefined;
-  return proposes.find((u) => u.id === d.theme.univers) ?? proposes.find((u) => u.id === duTheme) ?? proposes.find((u) => u.id === UNIVERS_PARCOURS_DU_PROFIL[d.profil]) ?? proposes[0];
+  return proposes.find((u) => u.id === duTheme) ?? proposes[0];
 }
 
 /**

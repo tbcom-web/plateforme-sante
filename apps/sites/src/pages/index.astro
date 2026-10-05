@@ -21,6 +21,7 @@ import Couverture from '../components/dessins/Couverture.astro';
 import AccueilVariantes from '../components/gabarits/Accueil.astro';
 import SujetsAccueil from '../components/SujetsAccueil.astro';
 import { nouveauGabarit } from '../lib/gabarits';
+import { soinsAccueil, soinsAccueilAllege } from '../lib/navigation';
 import { site, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
 import { photoResponsive } from '../lib/visuels';
@@ -118,7 +119,9 @@ const faqEnPlus = pedagogique
               </div>
               {!(pedagogique && m.accueil.sections.includes('etapes')) && <p class="chapo" {...champ('competences.chapo')}>{texte('competences.chapo', 'Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.')}</p>}
             </div>
-            {m.competences === 'cartes' ? <Competences /> : <Expertises />}
+            {/* Soins déjà portés par les cartes des sujets : non répétés (lib/navigation.ts, soinsAccueil) */}
+            {soinsAccueil.length > 0 && (m.competences === 'cartes' ? <Competences soins={soinsAccueil} /> : <Expertises soins={soinsAccueil} />)}
+            {soinsAccueilAllege && <p class="tous-soins"><a class="bouton bouton--ligne bouton--petit" href="/soins">Voir tous les soins</a></p>}
           </div>
         </section>
       )}
@@ -251,6 +254,7 @@ const faqEnPlus = pedagogique
   .etape__titre { margin: 0 0 6px; font-family: var(--police-titres); font-weight: var(--graisse-titres, 700); font-size: 1.2rem; line-height: 1.25; color: var(--encre); }
   .etape__texte { margin: 0; color: var(--encre-douce); }
   .etapes__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .tous-soins { margin: 28px 0 0; }
   .section--etapes { padding-block: 0 clamp(56px, 8vw, 96px); }
   .faq__suite :global(.faq) { border-top: 0; }
 

@@ -16,6 +16,16 @@ export const themesDuSite: (ThemeDuSite & { principal: boolean })[] = [
   ...navigation.secondaires.map((t) => ({ ...t, principal: false })),
 ];
 
+/**
+ * Accueil (tous les gabarits) : les cartes des sujets principaux (SujetsAccueil) portent déjà leurs soins ; la section
+ * Soins qui suit ne montre que les autres (peu d'information d'un coup). Tous portés : un simple lien « Voir tous les
+ * soins ». Sans carte de sujet : tous les soins. Aucun intertitre ne change (SEO identique d'un modèle à l'autre).
+ */
+const soinsDesCartes = new Set(navigation.principaux.flatMap((t) => t.soins));
+export const soinsAccueil = site.soins.filter((s) => !soinsDesCartes.has(s.slug));
+/** Des soins de l'accueil sont laissés aux cartes des sujets : lien vers la page de tous les soins */
+export const soinsAccueilAllege = soinsAccueil.length < site.soins.length;
+
 /** Lien du menu actif sur la page courante (préfixe d'adresse) */
 export const lienActif = (href: string, courant: string) => (href === '/' ? courant === '/' : courant === href || courant.startsWith(`${href}/`));
 

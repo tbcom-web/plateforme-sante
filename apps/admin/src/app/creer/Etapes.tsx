@@ -403,9 +403,17 @@ export function EtapeSoinsImage({
         )}
       </section>
 
-      <section className={carte} aria-labelledby="titre-avant">
+      {/* Soins mis en avant : pré-remplis par les sujets ; l'ordre manuel est un réglage avancé, replié par défaut */}
+      <details className={carte}>
+        <summary className={`min-h-11 cursor-pointer content-center rounded ${focus}`}>
+          <span className="font-semibold">Réglages avancés</span>
+          <span className="block text-sm text-neutral-600">
+            Soins mis en avant sur l’accueil{etat.enAvant.length ? ` : ${etat.enAvant.map(titreSoin).join(', ')}` : ''} (tirés de vos sujets)
+          </span>
+        </summary>
+        <div className="mt-3 grid gap-3">
         <div>
-          <h2 id="titre-avant" className="text-lg font-semibold">À mettre en avant</h2>
+          <h2 className="text-lg font-semibold">À mettre en avant</h2>
           <p className="text-sm text-neutral-600">Les {SOINS_EN_AVANT_MAX} soins montrés en premier sur l’accueil. Réordonnez avec les flèches ou en glissant.</p>
         </div>
         <ol className="grid gap-2">
@@ -436,7 +444,8 @@ export function EtapeSoinsImage({
             ))}
           </div>
         )}
-      </section>
+        </div>
+      </details>
 
       <section className={carte} aria-labelledby="titre-portraits">
         <div>

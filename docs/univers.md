@@ -54,8 +54,8 @@ l'admin (`ApercuTheme`) suit les mêmes règles.
 **Posturologie, réflexologie, semelles « posturales », reprogrammation proprioceptive… : proposés plus tard, après
 validation déontologique.** Aucun univers proposable ne les met en avant (soins, spécialités, nom, « pour qui »,
 fiches) : `validerUnivers` le refuse hors statut `differe`, et `npm run controle:charte` le vérifie. L'univers
-« Posture et biomécanique » est `differe` : absent de la planche et du catalogue, jamais recommandé par défaut
-(`UNIVERS_DU_PROFIL` : le profil « technique » mène à « Podologie générale »), et ne peut pas être validé (ni dans
+« Posture et biomécanique » est `differe` : absent de la planche et du catalogue, jamais recommandé
+(le parcours ne recommande que ses trois modèles, d'après le sujet n° 1), et ne peut pas être validé (ni dans
 l'admin, ni en base). « Zen, confort du pied » reste sur la pédicurie, les ongles et le chaussage, sans réflexologie
 ni promesse.
 
@@ -94,18 +94,20 @@ Prescriptif : à chaque étape, une recommandation par défaut, un bouton « Con
    fixe le site recommandé à l'étape 2, les spécialités (illustrations) viennent des sujets n° 1 et 2, les soins
    suggérés et les menus du site (`construireNavigation`) en découlent. Étape facultative.
 2. **Choisissez votre site** : les trois univers du parcours (`UNIVERS_PARCOURS` : Clair et pratique, Simple et proche,
-   Élégant et sobre), vignettes réelles ordinateur et mobile ; recommandé : celui du sujet n° 1 (`universRecommande`),
-   à défaut celui du profil. Les sujets priment sur le préréglage de l'univers (`avecPrioritesParcours`).
+   Élégant et sobre), vignettes réelles ordinateur et mobile ; badge « Recommandé pour vous » : celui du sujet n° 1
+   actuel (`universRecommande`), à défaut le premier ; badge séparé « Votre choix actuel » sur le modèle enregistré.
+   `/creer?etape=2` (bouton « Changer de modèle » de `/mon-site`) y ramène un site existant. Les sujets priment sur le préréglage de l'univers (`avecPrioritesParcours`).
 3. **Vos couleurs** : gammes conseillées du modèle, autres gammes ou couleur libre (contraste garanti).
 4. **Votre cabinet** : identité, adresse, téléphone, n° d'Ordre et RPPS (avertissements seulement), horaires, rendez-vous.
-5. **Vos soins et votre image** : soins des sujets (sinon de l'univers) suggérés, 3 soins mis en avant, portrait
+5. **Vos soins et votre image** : soins des sujets (sinon de l'univers) suggérés ; les 3 soins mis en avant sont
+   pré-remplis par les sujets, leur ordre manuel est replié dans « Réglages avancés » ; portrait
    (studio portrait facultatif), logo.
 6. **Vos contenus** : articles du flux (mode manuel par défaut), fiches conseils proposées par l'univers.
 
 **Vérifier et publier** : récapitulatif ; **rien n'empêche la publication** (règle de Paul, 2026-10-05). Chaque
 information manquante est listée avec son repli sobre sur le site (`controlerPublication().remplacements`, `replis.ts`)
-et confirmée par « Publier quand même ». Le profil du cabinet n'est pas demandé dans le parcours (formulaire complet,
-`/mon-site`). Pré-remplissage depuis l'annuaire santé : pas encore fait.
+et confirmée par « Publier quand même ». Le profil du cabinet n'est plus demandé nulle part au praticien (le champ reste dans
+les brouillons) : `/mon-site` ne demande que la façon de s'exprimer, et y montre les spécialités en lecture seule. Pré-remplissage depuis l'annuaire santé : pas encore fait.
 
 ## Catalogue initial (2026-10-05)
 

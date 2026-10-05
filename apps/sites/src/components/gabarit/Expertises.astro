@@ -7,7 +7,11 @@ import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
 import { modeVisuel, photoResponsive } from '../../lib/visuels';
 import { visuelSoin } from '../../lib/visuels-soins';
-import { rendreCase } from '@plateforme/core';
+import { rendreCase, type Soin } from '@plateforme/core';
+
+// Soins montrés : tous ceux du site, ou ceux que les cartes des sujets ne portent pas déjà (accueil, lib/navigation.ts)
+interface Props { soins?: Soin[] }
+const { soins = site.soins } = Astro.props;
 
 // Vignette photo (mobile) : seulement si la règle des listes donne une photo (style « Photos », rendreCase).
 const vignette = (slug: string) => {
@@ -16,7 +20,7 @@ const vignette = (slug: string) => {
 };
 ---
 <ol class="expertises">
-  {site.soins.map((s, i) => (
+  {soins.map((s, i) => (
     <li class="apparait">
       <a href={`/soins/${s.slug}`} class="expertise">
         <span class="expertise__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>

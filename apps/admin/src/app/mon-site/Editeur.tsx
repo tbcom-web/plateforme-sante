@@ -26,10 +26,9 @@ import {
   type MarqueImportee,
   PAYS,
   praticienVide,
-  PROFILS,
   SPECIALITES,
   LIBELLES_ANIMATIONS,
-  specialiteDuProfil,
+  universCatalogue,
   STATUTS,
   ficheConseil,
   THEMES_FLUX,
@@ -56,11 +55,11 @@ import ConfirmationPublication from '@/components/ConfirmationPublication';
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
 // version : date de modification du brouillon lue (verrou optimiste) ; titre : « Site de … » quand l'admin édite un client.
-type Props = { siteId: string | null; version?: string | null; titre?: string; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null; themesActives?: string[] };
+type Props = { siteId: string | null; version?: string | null; titre?: string; initial: SiteDraft; lienChangerModele: string; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null; themesActives?: string[] };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', initial, catalogue, modeles, marquesImportees, jeuPhotos, themesActives = [] }: Props) {
+export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', initial, lienChangerModele, catalogue, modeles, marquesImportees, jeuPhotos, themesActives = [] }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -164,22 +163,8 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                   maj({ pays: v as SiteDraft['pays'], rdv: { ...d.rdv, outil: p.outilsRdv[0] }, paiements: p.paiements.slice(0, 3) });
                 }}
               />
-              <Choix
-                legende="Profil du cabinet"
-                colonnes={2}
-                options={PROFILS.map((p) => ({ value: p.value, label: p.label, description: p.description }))}
-                valeur={d.profil}
-                onChange={(v) => {
-                  const p = PROFILS.find((x) => x.value === v)!;
-                  // Les choix plus récents priment sur le profil : un modèle du parcours (/creer) n'est pas remplacé, et la
-                  // spécialité reste celle des sujets n° 1 et 2 quand des sujets sont choisis (themes.ts, appliquerPriorites).
-                  const garderModele = Boolean(d.theme.univers);
-                  const garderSpecialite = d.priorites.principaux.length > 0;
-                  const remplace = [!garderModele && 'le modèle', !garderSpecialite && 'la spécialité', 'la façon de s’exprimer'].filter(Boolean).join(', ');
-                  if (id && d.profil !== v && !confirm(`Changer de profil remplace ${remplace}. Continuer ?`)) return;
-                  maj({ profil: p.value, voix: p.voix, theme: { ...d.theme, modele: garderModele ? d.theme.modele : p.modele, specialite: garderSpecialite ? d.theme.specialite : specialiteDuProfil(p.value) } });
-                }}
-              />
+              {/* Plus de « profil du cabinet » : les sujets (étape « Compétences ») pilotent le modèle recommandé et les
+                  spécialités. Le champ profil reste dans les brouillons (normaliserDraft), seule la voix se choisit ici. */}
               <Choix
                 legende="Façon de s’exprimer sur le site"
                 options={VOIX.map((v) => ({ value: v.value, label: v.label, description: v.exemple }))}
@@ -582,29 +567,44 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                   ))}
                 </div>
               </fieldset>
-              <ChoixModele
-                modeles={modeles}
-                valeur={d.theme.modele}
-                onChange={(v) => maj({ theme: { ...d.theme, modele: v, couleur: modeles.find((m) => m.id === v)?.couleurConseillee ?? d.theme.couleur } })}
-              />
-              <Choix
-                legende="Spécialité mise en avant (photos et animation par défaut)"
-                options={SPECIALITES.map((s) => ({ value: s.value, label: s.label, description: s.description }))}
-                valeur={d.theme.specialite}
-                onChange={(v) => maj({ theme: { ...d.theme, specialite: v } })}
-              />
-              <label className="grid gap-1.5 text-sm">
-                <span className="font-medium">Spécialité secondaire (facultatif)</span>
-                <select
-                  value={d.theme.specialiteSecondaire}
-                  onChange={(e) => maj({ theme: { ...d.theme, specialiteSecondaire: e.target.value } })}
-                  className="rounded-lg border border-neutral-300 px-3 py-2"
-                >
-                  <option value="">Aucune</option>
-                  {SPECIALITES.filter((s) => s.value !== d.theme.specialite).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-                </select>
-                <span className="text-xs text-neutral-500">Complète les photos, illustrations et soins mis en avant ; l’accueil reste celui de la spécialité principale. Les deux sont tirées de vos sujets n° 1 et 2 (étape « Compétences ») : changer de sujets les remplace.</span>
-              </label>
+              {d.theme.univers ? (
+                // Site créé par le parcours : modèle et univers changent ensemble, à l'étape 2 de /creer (jamais ici seul).
+                <fieldset className="grid gap-3">
+                  <legend className="font-medium">Style du site</legend>
+                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 p-3 text-sm">
+                    <VignetteModele m={modeleCourant} />
+                    <span className="grid content-start gap-0.5">
+                      <span className="font-semibold">{universCatalogue(d.theme.univers)?.nom ?? effetModele(modeleCourant)}</span>
+                      <span className="text-[11px] text-neutral-400">Modèle « {modeleCourant.nom} »</span>
+                    </span>
+                    <Link
+                      href={lienChangerModele}
+                      onClick={(e) => { if (modifie && !confirm('Des modifications ne sont pas enregistrées. Changer de modèle quand même ?')) e.preventDefault(); }}
+                      className="ml-auto rounded-lg border border-teal-800 px-3 py-2 font-semibold text-teal-900 hover:bg-teal-50"
+                    >
+                      Changer de modèle
+                    </Link>
+                  </div>
+                  <p className="text-xs text-neutral-500">Le modèle se change avec ses couleurs et son logo proposés, en comparant les sites prêts sur ordinateur et téléphone. Vos informations sont gardées.</p>
+                </fieldset>
+              ) : (
+                <ChoixModele
+                  modeles={modeles}
+                  valeur={d.theme.modele}
+                  onChange={(v) => maj({ theme: { ...d.theme, modele: v, couleur: modeles.find((m) => m.id === v)?.couleurConseillee ?? d.theme.couleur } })}
+                />
+              )}
+              <div className="grid gap-1.5 rounded-xl border border-neutral-200 p-3 text-sm">
+                <p className="font-medium">Spécialités mises en avant <span className="font-normal text-neutral-500">(photos, illustrations et animation)</span></p>
+                <p className="text-xs text-neutral-500">Tirées de vos sujets</p>
+                <dl className="grid gap-1 sm:grid-cols-2">
+                  <div><dt className="text-xs text-neutral-500">Principale</dt><dd className="font-semibold">{SPECIALITES.find((s) => s.value === d.theme.specialite)?.label ?? 'Aucune'}</dd></div>
+                  <div><dt className="text-xs text-neutral-500">Secondaire</dt><dd className="font-semibold">{SPECIALITES.find((s) => s.value === d.theme.specialiteSecondaire)?.label ?? 'Aucune'}</dd></div>
+                </dl>
+                <button type="button" onClick={() => setEtape(ETAPES.indexOf('Compétences'))} className="justify-self-start text-sm font-semibold text-teal-800 underline-offset-4 hover:underline">
+                  Régler vos sujets (étape « Compétences »)
+                </button>
+              </div>
               {SPECIALITES.find((s) => s.value === d.theme.specialite)?.animation && (
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" className="size-4 accent-teal-800" checked={d.theme.animation} onChange={(e) => maj({ theme: { ...d.theme, animation: e.target.checked } })} />

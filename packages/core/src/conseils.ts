@@ -25,9 +25,8 @@ export const FICHES_CONSEILS: FicheConseil[] = [
   },
   {
     etape: 'Profil',
-    surLeSite: 'Le ton de tous les textes. Le modèle et les illustrations suivent vos sujets n° 1 et 2 (étape « Compétences ») dès qu’ils sont choisis.',
+    surLeSite: 'Le ton de tous les textes. Le modèle recommandé et les illustrations suivent vos sujets n° 1 et 2 (étape « Compétences »).',
     points: [
-      { titre: 'Profil du cabinet', conseil: 'Choisir celui qui décrit l’activité principale, pas l’activité souhaitée. Il propose une façon de s’exprimer ; il ne règle le modèle et la spécialité des illustrations que s’ils n’ont pas été choisis par le parcours ou par vos sujets.' },
       { titre: 'Façon de s’exprimer', conseil: '« Je » pour un praticien seul, « nous » pour un cabinet de groupe. Le même choix s’applique à tout le site.' },
     ],
   },
@@ -89,7 +88,7 @@ export const FICHES_CONSEILS: FicheConseil[] = [
       { titre: 'Photos du cabinet', conseil: 'Format paysage, au moins 2000 px de large, pièces rangées, aucun patient identifiable. 3 à 6 photos variées : accueil, salle de soins, matériel.' },
       { titre: 'Gamme de couleurs', conseil: 'Garder une gamme conseillée pour le modèle : les contrastes y sont vérifiés pour la lecture. Une couleur personnalisée peut nuire à la lisibilité.' },
       { titre: 'Logo', conseil: 'Votre logo en PNG à fond transparent ; cocher « contient le nom » seulement si le nom y figure vraiment. Sinon, choisir une marque dessinée.' },
-      { titre: 'Spécialité', conseil: 'La spécialité principale choisit l’animation d’accueil et les illustrations ; la secondaire les complète seulement. Elles sont tirées de vos sujets n° 1 et 2 : changer de sujets les remplace.' },
+      { titre: 'Spécialité', conseil: 'La spécialité principale choisit l’animation d’accueil et les illustrations ; la secondaire les complète seulement. Elles sont tirées de vos sujets n° 1 et 2 : pour les changer, modifiez l’ordre de vos sujets (étape « Compétences »).' },
     ],
   },
 ];

@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, UNIVERS_DU_PROFIL, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -281,17 +281,13 @@ let nbSujets = 0;
   nbSujets = K.SUJETS.length;
 }
 // Univers du catalogue (catalogue-univers.ts) : préréglages valides (soins du catalogue, sections du modèle, aucun sujet à
-// faible niveau de preuve hors « differe »), profils qui ne recommandent qu'un univers proposable, identité jamais touchée.
+// faible niveau de preuve hors « differe »), identité jamais touchée.
 const univers = core.CATALOGUE_UNIVERS.flatMap((u) => core.validerUnivers(u, { soinsConnus: Object.keys(core.VISUELS_SOINS) }).map((e) => `univers ${u.id} : ${e}`));
 {
   const posture = core.CATALOGUE_UNIVERS.find((u) => u.preReglage.specialite === 'posture');
   if (!posture || !core.validerUnivers({ ...posture, statut: 'brouillon' }).some((e) => /faible niveau de preuve/.test(e))) univers.push('garde-fou « faible niveau de preuve » des univers inactif');
   const zen = core.CATALOGUE_UNIVERS[0];
   if (!core.validerUnivers({ ...zen, pourQui: 'Réflexologie plantaire et bien-être' }).some((e) => /faible niveau de preuve/.test(e))) univers.push('garde-fou « réflexologie » des univers inactif');
-}
-for (const [profil, id] of Object.entries(core.UNIVERS_DU_PROFIL)) {
-  const u = core.CATALOGUE_UNIVERS.find((x) => x.id === id);
-  if (!u || ['differe', 'retire'].includes(u.statut)) univers.push(`profil « ${profil} » : univers recommandé absent ou non proposable (${id})`);
 }
 {
   const d = core.draftVide();

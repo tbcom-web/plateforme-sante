@@ -15,11 +15,14 @@ export const metadata = { title: 'Créer mon site' };
 
 // /creer : parcours guidé du praticien (nouveau site, ou site pas encore publié : création à reprendre) ;
 // /creer?site=<id> : le site d'un client, préparé par le super admin.
+// /creer?etape=2 : changer de modèle (bouton « Changer de modèle » de /mon-site), y compris pour un site déjà publié :
+// modèle et univers changent ensemble.
 export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
   const user = await getUser();
   if (!user) redirect('/connexion');
 
-  const { site: siteDemande } = await searchParams;
+  const { site: siteDemande, etape: etapeDemandee } = await searchParams;
+  const changerModele = etapeDemandee === '2';
   const pourClient = typeof siteDemande === 'string' && siteDemande.length > 0;
   const admin = (await getRole()) === 'admin';
   if (pourClient && !admin) redirect('/creer');
@@ -33,7 +36,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
   ]);
   if (!site) notFound();
   // Site déjà publié : le praticien le modifie dans le formulaire (le parcours sert à la création)
-  if (site.dejaPublie && !admin) redirect('/mon-site');
+  if (site.dejaPublie && !admin && !changerModele) redirect('/mon-site');
   const jeuPhotos = site.draft.theme.jeuPhotos ? await lireJeuPhotos(site.draft.theme.jeuPhotos) : null;
   const nomClient = pourClient
     ? site.draft.cabinet.nom || `${site.draft.praticiens[0]?.prenom ?? ''} ${site.draft.praticiens[0]?.nom ?? ''}`.trim() || 'ce client'
@@ -43,6 +46,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
     <Shell email={user.email ?? ''}>
       <Parcours
         siteId={site.id}
+        etapeInitiale={changerModele ? 2 : undefined}
         version={site.updatedAt}
         initial={site.draft}
         catalogue={catalogue}
