@@ -10,12 +10,13 @@
 // peau-2, trait, os…) et les épaisseurs des variables `--ez-ep-<fin|normal|epais>`. Aucune couleur littérale : bibliotheque/rendu.ts
 // relie ces variables à la charte des sites, selon le registre (relevé ou pédagogique).
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import vm from 'node:vm';
+import { resoudre } from './chemins.mjs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
-const STUDIO = resolve(process.argv[2] || 'C:/Users/pault/Desktop/TBCOM CLAUDE/ecranzen/studio');
+const STUDIO = resoudre(process.argv[2] || 'C:/Users/pault/Desktop/TBCOM CLAUDE/ecranzen/studio');
 const SORTIE = join(ICI, '../src/bibliotheque/formes.ts');
 const geo = async (f) => import(pathToFileURL(join(STUDIO, 'outils/lib/geometrie', f)).href);
 

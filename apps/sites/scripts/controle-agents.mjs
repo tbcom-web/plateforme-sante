@@ -7,9 +7,10 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
+import { cheminWindows } from '../../../packages/core/scripts/chemins.mjs';
 
 const racineSites = new URL('..', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
-let dist = process.argv[2];
+let dist = cheminWindows(process.argv[2]);
 if (!dist) {
   dist = join(tmpdir(), 'controle-agents-dist');
   rmSync(dist, { recursive: true, force: true });

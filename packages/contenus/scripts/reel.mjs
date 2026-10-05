@@ -14,12 +14,13 @@ import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import vm from 'node:vm';
 import { construire, RACINE } from './construire.mjs';
+import { sortieAutorisee } from '../../core/scripts/chemins.mjs';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : d; };
 const DEPOT = join(RACINE, '../..');
 const id = args.find((a, k) => !a.startsWith('--') && !args[k - 1]?.startsWith('--')) ?? 'semelles-neuves-progressivement';
-const SORTIE = join(opt('sortie', join(RACINE, 'dist/social')), 'reel');
+const SORTIE = join(sortieAutorisee(opt('sortie', join(RACINE, 'dist/social'))), 'reel');
 const EZ = join(RACINE, 'reels/ecranzen');
 const FFMPEG = [process.env.FFMPEG, 'C:/Users/pault/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg.Essentials_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.1-essentials_build/bin/ffmpeg.exe'].find((f) => f && existsSync(f)) ?? 'ffmpeg';
 const stop = (m) => { console.error(`✗ ${m}`); process.exit(1); };

@@ -17,11 +17,12 @@ import { join, relative } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { construire, RACINE } from './construire.mjs';
+import { sortieAutorisee } from '../../core/scripts/chemins.mjs';
 
 const args = process.argv.slice(2);
 const opt = (n, d) => { const i = args.indexOf(`--${n}`); return i >= 0 ? args[i + 1] : d; };
 const DEPOT = join(RACINE, '../..');
-const SORTIE = opt('sortie', join(RACINE, 'dist/social'));
+const SORTIE = sortieAutorisee(opt('sortie', join(RACINE, 'dist/social')));
 const AUJOURDHUI = opt('date', new Date().toISOString().slice(0, 10));
 const STYLES = ['releve', 'pedagogique', 'simple'];
 const LIBELLES = { releve: 'Relevé', pedagogique: 'Pédagogique', simple: 'Simple' };

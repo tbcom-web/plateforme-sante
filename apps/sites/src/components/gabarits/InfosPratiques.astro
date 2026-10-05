@@ -4,6 +4,9 @@
 // acceptés). Horaires : tableau simple jour / heures, jour courant signalé par un texte (« aujourd'hui »), pas seulement
 // une couleur.
 // - « tuiles » (tableau) : cartes en grille, horaires dans la plus grande ; « notice » (village) : une colonne, gros texte.
+// Colonnes réglées sur la largeur DISPONIBLE (requête de conteneur, pas la fenêtre) : à côté du plan, la zone ne fait que ~500 px
+// et trois tuiles de 150 px coupaient les plages (« 9h00– »). Une plage d'horaires n'est jamais coupée ni tronquée : chaque
+// plage est insécable et passe à la ligne entière ; dans une tuile trop étroite, le jour passe au-dessus de ses plages.
 // `niveau` : titres des rubriques en h2 quand la page n'a pas d'autre intertitre (plan d'accès, comme le gabarit classique).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
@@ -20,6 +23,7 @@ const acces = [
   ...site.accesDetail.autres,
 ].filter(Boolean);
 ---
+<div class="infos-zone">
 <div class:list={['infos', variante === 'notice' ? 'infos--notice' : 'infos--tuiles']}>
   {cabinetOuvert && (
     <div class="info info--horaires" id="horaires">
@@ -80,11 +84,16 @@ const acces = [
   )}
 </div>
 {site.communes.length > 0 && <p class="communes">Le cabinet accueille les patients de {site.communes.join(', ')} et des communes alentour.</p>}
+</div>
 
 <style>
+  .infos-zone { container-type: inline-size; min-width: 0; }
   .infos { display: grid; gap: 14px; }
-  .infos--tuiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
-  @media (min-width: 900px) { .infos--tuiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } .infos--tuiles .info--horaires { grid-row: span 2; } }
+  .infos--tuiles { grid-template-columns: minmax(0, 1fr); }
+  /* 2 tuiles dès 600 px de zone, 3 dès 900 px : une tuile ne descend jamais sous ~280 px (plages lisibles en entier) */
+  @container (min-width: 600px) { .infos--tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .infos--tuiles .info--horaires { grid-row: span 2; } }
+  @container (min-width: 900px) { .infos--tuiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .info { min-width: 0; container-type: inline-size; }
   .info { display: grid; gap: 10px; align-content: start; padding: clamp(22px, 3vw, 28px); border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
   .infos--notice { gap: 0; }
   .infos--notice .info { padding: 24px 0; border-radius: 0; background: none; box-shadow: none; border-top: var(--filet) solid var(--g-ligne); }
@@ -98,6 +107,12 @@ const acces = [
   .horaires th, .horaires td { padding: 10px 0; border-bottom: var(--filet) solid var(--g-ligne); text-align: left; vertical-align: top; }
   .horaires th { font-weight: 650; width: 42%; padding-right: 12px; }
   .horaires td span { display: block; white-space: nowrap; }
+  /* Tuile étroite (< 240 px de contenu) : le jour au-dessus, ses plages dessous (jamais de plage coupée ni tronquée) */
+  @container (max-width: 240px) {
+    .horaires tr { display: grid; border-bottom: var(--filet) solid var(--g-ligne); padding: 8px 0; }
+    .horaires th, .horaires td { width: auto; padding: 0; border-bottom: 0; }
+    .horaires td span { white-space: normal; }
+  }
   .horaires .ferme :is(th, td) { color: var(--g-encre-douce); font-weight: 400; }
   .horaires :global(.aujourdhui) :is(th, td) { background: var(--g-bulle); color: var(--g-encre); }
   .horaires :global(.aujourdhui) th { padding-left: 12px; border-radius: 10px 0 0 10px; }

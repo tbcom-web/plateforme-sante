@@ -66,6 +66,8 @@
 .dessin .papille { fill: currentColor; stroke: none; }
 /* Refonte 2026-10-04 (géométrie ÉcranZen) : empreinte seule, pièces de semelle, os du profil, filament, canne en arrière-plan */
 .dessin .empreinte { fill: var(--d-accent); stroke: none; opacity: 0.3; }
+/* Contour du pied réel autour d'une empreinte (registre pédagogique) : trait fin et discret, aucun aplat sur la peau */
+.dessin .contour-pied { fill: none; stroke-width: var(--trait-fin); opacity: 0.4; }
 .dessin .piece { fill: var(--d-accent); fill-opacity: 0.16; stroke: currentColor; stroke-width: var(--trait-fin); stroke-opacity: 0.6; }
 .dessin .piece--forte { fill-opacity: 0.36; }
 .dessin .piece-coque { fill: currentColor; fill-opacity: 0.12; stroke: currentColor; stroke-width: var(--trait-fin); stroke-opacity: 0.6; }

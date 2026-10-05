@@ -558,16 +558,20 @@ function parcours(nom: NomLigne, b: BouclesLigne, equipement: (id: string) => st
       return [new Trait(b).ajouter(partirDe(pince, pince[0], 6)).pts, new Trait(b).ajouter(partirDe(g, g[Math.floor(g.length / 2)], 5)).pts];
     }
     case 'monofilament': {
-      // Monofilament 10 g (revue du 2026-10-05) : le pied de profil couché, plante tournée vers la droite (patient allongé), orteils en
-      // haut ; le manche horizontal arrive de la droite, le filament (≈ 0,42 × le manche) touche la plante sous la tête de M1,
-      // perpendiculaire à la peau, et plie en UN SEUL C (corde ≈ 0,8 de sa longueur), sans boucle au contact.
+      // Monofilament 10 g (IWGDF 2019, HAS ; revue du 2026-10-05, reprise du 2026-10-05) : le pied de profil couché, plante tournée
+      // vers la droite (patient allongé), orteils en haut ; le manche arrive de la droite. Lisible à 240 px : manche COURT et FIN
+      // (≈ 40 × 7 u), filament long (corde ≈ 0,6 × le manche) posé PERPENDICULAIRE à la plante sous la tête de M1, plié en UN SEUL
+      // C franc (flèche ≈ 0,42 × la corde, bombé vers les orteils), extrémités sur l'axe : on voit le fil qui plie, pas un manche
+      // contre la plante. Sans boucle au contact.
       const p = contourProfil(), k = 0.95, xs = 118, ym = 88;
       const m: Affine = [0, -k, k, 0, xs - p.sol * k, ym + 83 * k]; // (x, y) du profil → (xs + (y − sol)·k, ym − (x − 83)·k)
       const pied = transf(p.trait, m);
-      const lm = 72, lf = 0.42 * lm, contact: P = [xs + 0.8, ym], bout: P = [contact[0] + 0.8 * lf, ym];
-      const manche = new Trait(b).ajouter(sousChemins(`M${bout[0]} ${ym} L${bout[0]} ${ym - 5} C${bout[0]} ${ym - 7.5} ${bout[0] + 2} ${ym - 8} ${bout[0] + 4} ${ym - 8} L${bout[0] + lm - 4} ${ym - 8} C${bout[0] + lm} ${ym - 8} ${bout[0] + lm} ${ym - 8} ${bout[0] + lm} ${ym - 4} L${bout[0] + lm} ${ym + 4} C${bout[0] + lm} ${ym + 8} ${bout[0] + lm} ${ym + 8} ${bout[0] + lm - 4} ${ym + 8} L${bout[0] + 4} ${ym + 8} C${bout[0] + 2} ${ym + 8} ${bout[0]} ${ym + 7.5} ${bout[0]} ${ym + 5} L${bout[0]} ${ym}`, 0.4)[0].pts);
-      // Filament : flambage d'Euler (demi-sinusoïde, flèche 0,28 × la corde) : une seule courbure, extrémités alignées sur l'axe
-      const filament: P[] = Array.from({ length: 25 }, (_, j) => { const t = j / 24; return [bout[0] + (contact[0] - bout[0]) * t, ym - 0.28 * (bout[0] - contact[0]) * Math.sin(Math.PI * t)] as P; }); // bombé vers les orteils
+      const lm = 40, h = 3.5, r = 3, corde = 26, fleche = 0.42 * corde;
+      const contact: P = [xs + 0.8, ym], bout: P = [contact[0] + corde, ym], x0 = bout[0], x1 = bout[0] + lm;
+      // Manche : du point d'attache du filament, tour du manche (coins arrondis) et retour au point d'attache
+      const manche = new Trait(b).ajouter(sousChemins(`M${x0} ${ym} L${x0} ${ym - h + r} Q${x0} ${ym - h} ${x0 + r} ${ym - h} L${x1 - r} ${ym - h} Q${x1} ${ym - h} ${x1} ${ym - h + r} L${x1} ${ym + h - r} Q${x1} ${ym + h} ${x1 - r} ${ym + h} L${x0 + r} ${ym + h} Q${x0} ${ym + h} ${x0} ${ym + h - r} L${x0} ${ym}`, 0.4)[0].pts);
+      // Filament : flambage d'Euler (demi-sinusoïde) : une seule courbure, extrémités sur l'axe manche → peau
+      const filament: P[] = Array.from({ length: 33 }, (_, j) => { const t = j / 32; return [x0 + (contact[0] - x0) * t, ym - fleche * Math.sin(Math.PI * t)] as P; });
       manche.ajouter(filament.slice(1));
       return [pied, manche.pts, transf(p.malleole, m)];
     }

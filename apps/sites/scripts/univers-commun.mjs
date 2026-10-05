@@ -9,6 +9,7 @@ import { join, extname, normalize } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { sousDossier } from '../../../packages/core/scripts/chemins.mjs';
 
 export const racine = fileURLToPath(new URL('..', import.meta.url));
 
@@ -25,7 +26,7 @@ export async function catalogue() {
 }
 
 /** Dossier de construction d'un univers (hors du dépôt) */
-export const dossierUnivers = (id) => join(tmpdir(), 'plateforme-univers', id);
+export const dossierUnivers = (id) => sousDossier(join(tmpdir(), 'plateforme-univers'), id); // vidé avant construction : jamais hors de ce dossier
 
 /** Construit la démo avec l'univers appliqué (identité de démo inchangée) */
 export function construire(id, { silencieux = false } = {}) {

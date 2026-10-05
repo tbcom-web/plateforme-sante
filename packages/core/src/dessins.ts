@@ -385,12 +385,14 @@ function corps(nom: NomDessin, c: Contexte): string {
 
   switch (nom) {
     case 'analyse': {
-      // Relevé : les deux pieds (gauche à gauche, vus de dessus) en trame de pression ; pédagogique : les deux empreintes seules
+      // Relevé : les deux pieds (gauche à gauche, vus de dessus) en trame de pression ; pédagogique : les deux empreintes, chacune
+      // dans le contour léger du pied réel (CONTOUR_PIED, trait fin, sans aplat de peau) : la voûte non chargée se lit DANS le pied,
+      // jamais « entre les pieds ». Renvoi « Voûte » sur la zone interne du pied droit (arche médiale), à l'intérieur du contour.
       const td = appliquer([0.68, 0, 0, 0.68, 126, 12], 0, 0);
       const sur = (x: number, y: number): P => [td[0] + x * 0.68, td[1] + y * 0.68];
-      const [ax, ay] = sur(54, 76), [vx, vy] = sur(22, 140), [tx, ty] = sur(56, 205);
+      const [ax, ay] = sur(54, 76), [vx, vy] = sur(42, 132), [tx, ty] = sur(56, 205);
       return `<g>${grille([40, 80, 120, 160])}${[piedGauche(52, 12), piedDroit(126, 12)]
-        .map((t) => `<g transform="${t}">${R ? `${pointilles(true)}${traceTrame('normal')}` : empreinteZones('normal')}</g>`)
+        .map((t) => `<g transform="${t}">${R ? `${pointilles(true)}${traceTrame('normal')}` : `${empreinteZones('normal')}<path class="contour-pied" d="${PIED_TRACE}"></path>`}</g>`)
         .join('')}${R ? legende(degrade) : `${renvoi(ax, ay, 198, 46)}${etiquette(200, 48, 'Avant-pied')}${renvoi(vx, vy, 198, 100)}${etiquette(200, 103, 'Voûte')}${renvoi(tx, ty, 198, 156)}${etiquette(200, 159, 'Talon')}`}</g>`;
     }
 

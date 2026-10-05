@@ -6,12 +6,13 @@
 import { execSync } from 'node:child_process';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const modeles = process.argv.slice(2).length ? process.argv.slice(2) : ['proximite', 'premium', 'prestige', 'zen', 'atelier', 'simple', 'tableau', 'village', 'revue'];
 const modes = (process.env.MODES_VISUELS ?? '').split(',').map((m) => m.trim()).filter(Boolean);
 // Variantes construites : chaque modèle, dans chaque style visuel demandé (sinon le style par défaut).
 const variantes = modeles.flatMap((modele) => (modes.length ? modes : [null]).map((mode) => ({ modele, mode, nom: mode ? `${modele}/${mode}` : modele })));
-const dist = new URL('../dist/', import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
+const dist = fileURLToPath(new URL('../dist/', import.meta.url)); // jamais .pathname (« /C:/… », espaces en %20)
 
 const fichiers = (dossier) =>
   readdirSync(dossier).flatMap((f) => {

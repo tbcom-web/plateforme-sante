@@ -5,17 +5,18 @@
 //   --gros-plans : captures pleine page (ordinateur et mobile) des univers indiqués, en plus de la planche.
 // Prérequis (une fois) : npx playwright install chromium
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { catalogue, construire, servir } from './univers-commun.mjs';
+import { sortieAutorisee } from '../../../packages/core/scripts/chemins.mjs';
 
 const args = process.argv.slice(2);
 const option = (nom) => { const i = args.indexOf(nom); return i >= 0 ? args[i + 1] : undefined; };
 const valeurs = new Set([option('--sortie'), option('--gros-plans')].filter(Boolean));
 const ids = args.filter((a) => !a.startsWith('--') && !valeurs.has(a));
-const sortie = resolve(option('--sortie') ?? join(tmpdir(), 'plateforme-univers', 'planche'));
+const sortie = sortieAutorisee(option('--sortie') ?? join(tmpdir(), 'plateforme-univers', 'planche')); // jamais C:c… ni hors dépôt / temporaire
 const grosPlans = (option('--gros-plans') ?? '').split(',').filter(Boolean);
 mkdirSync(sortie, { recursive: true });
 

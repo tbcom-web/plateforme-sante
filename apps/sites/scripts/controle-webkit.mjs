@@ -22,8 +22,9 @@ import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { createServer } from 'node:http';
 import { readFile, stat, readdir, mkdir, writeFile } from 'node:fs/promises';
-import { join, extname, resolve } from 'node:path';
+import { join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resoudre, sortieAutorisee } from '../../../packages/core/scripts/chemins.mjs';
 
 // Arguments « --cle valeur » lus jeton par jeton : un chemin peut contenir « -- » (ex. C--Users…).
 const args = {};
@@ -33,9 +34,9 @@ for (let i = 2, v = process.argv; i < v.length; i++) {
   args[v[i].slice(2)] = suivant !== undefined && !suivant.startsWith('--') ? (i++, suivant) : true;
 }
 const racine = fileURLToPath(new URL('..', import.meta.url));
-const dist = resolve(args.dist || join(racine, 'dist'));
+const dist = resoudre(args.dist || join(racine, 'dist'));
 const SEUIL = +(args.seuil || 4);
-const SORTIE = resolve(args.sortie || join(racine, 'controle-webkit'));
+const SORTIE = sortieAutorisee(args.sortie || join(racine, 'controle-webkit')); // jamais C:c… (chemin MSYS), jamais hors du dépôt / du temporaire
 const PAGES = (args.pages || '/,/soins,/le-cabinet,/acces,/modeles/dessins,/modeles/animations,/modeles/bibliotheque').split(',');
 const BANDE = 300;
 const defauts = [];
