@@ -51,15 +51,17 @@ import SaisieGardee from '@/components/SaisieGardee';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import { enregistrerEtPublier, enregistrerSite, type EtatEnregistrement } from './actions';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
+import SuiviPublication from '@/components/SuiviPublication';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
-// version : date de modification du brouillon lue (verrou optimiste) ; titre : « Site de … » quand l'admin édite un client.
-type Props = { siteId: string | null; version?: string | null; titre?: string; initial: SiteDraft; lienChangerModele: string; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null; themesActives?: string[] };
+// version : date de modification du brouillon lue (verrou optimiste) ; titre : « Site de … » quand l'admin édite un client ;
+// publicationEnCours : une publication est en cours à l'ouverture (son suivi reprend).
+type Props = { siteId: string | null; version?: string | null; titre?: string; publicationEnCours?: boolean; initial: SiteDraft; lienChangerModele: string; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null; themesActives?: string[] };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', initial, lienChangerModele, catalogue, modeles, marquesImportees, jeuPhotos, themesActives = [] }: Props) {
+export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', publicationEnCours = false, initial, lienChangerModele, catalogue, modeles, marquesImportees, jeuPhotos, themesActives = [] }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -112,9 +114,17 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
     });
   // Plus rien ne bloque la publication : avec des informations manquantes, une confirmation les liste (« Publier quand même »).
   const [confirmer, setConfirmer] = useState(false);
+  // Suivi détaillé de la publication lancée (étapes réelles, « en ligne » une fois la nouvelle version servie).
+  const [suivi, setSuivi] = useState<number | null>(publicationEnCours ? 0 : null);
+  const enregistrerPuisPublier = async () => {
+    const r = await enregistrerEtPublier(id, d, version);
+    apresEnregistrement(r);
+    if (r.ok && r.id) setSuivi((n) => (n ?? 0) + 1);
+    return r;
+  };
   const publierMaintenant = () => {
     setConfirmer(false);
-    demarrer(async () => apresEnregistrement(await enregistrerEtPublier(id, d, version)));
+    demarrer(async () => { await enregistrerPuisPublier(); });
   };
   const publier = () => (controle.remplacements.length ? setConfirmer(true) : publierMaintenant());
 
@@ -644,6 +654,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
         </form>
 
         {confirmer && <div className="mt-4"><ConfirmationPublication remplacements={controle.remplacements} onConfirmer={publierMaintenant} onAnnuler={() => setConfirmer(false)} enCours={enCours} /></div>}
+        {suivi !== null && id && <SuiviPublication key={suivi} siteId={id} reessayer={enregistrerPuisPublier} onFermer={() => setSuivi(null)} className="mt-4" />}
         <Verification remplacements={controle.remplacements} conseils={controle.conseils.filter((c) => !controle.remplacements.includes(c))} />
       </div>
 

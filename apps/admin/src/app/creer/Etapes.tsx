@@ -45,6 +45,7 @@ import {
 } from '@plateforme/core';
 import Photo from '@/components/Photo';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
+import SuiviPublication from '@/components/SuiviPublication';
 import PortraitPraticien from '@/components/PortraitPraticien';
 import type { SoinCatalogue } from '@/lib/sites';
 
@@ -569,7 +570,7 @@ export function EtapeContenus({ d, univers, maj }: { d: SiteDraft; univers?: Uni
 const etapeDuManque = (m: string) => (/compétence/i.test(m) ? 5 : 4);
 
 export function Verification({
-  d, controle, catalogue, univers, admin, enCours, publication, onModifier, onPublier, lienAvance,
+  d, siteId, controle, catalogue, univers, admin, enCours, publication, onModifier, onPublier, lienAvance,
 }: {
   d: SiteDraft;
   controle: ResultatControle;
@@ -578,8 +579,10 @@ export function Verification({
   admin: boolean;
   enCours: boolean;
   publication: { ok: boolean; message: string } | null;
+  /** Site enregistré : suivi de la publication une fois lancée */
+  siteId?: string | null;
   onModifier: (etape: number) => void;
-  onPublier: () => void;
+  onPublier: () => void | Promise<void>;
   lienAvance: string;
 }) {
   const g = GAMMES.find((x) => x.id === d.theme.gamme);
@@ -650,8 +653,12 @@ export function Verification({
         >
           {enCours ? 'Publication…' : 'Publier mon site'}
         </button>
-        <p role="status" aria-live="polite" className={`text-sm ${publication?.ok ? 'text-teal-800' : 'text-red-700'}`}>{publication?.message ?? ''}</p>
-        {publication?.ok && <Link href="/tableau-de-bord" className="font-semibold text-teal-800 underline">Suivre la mise en ligne dans le tableau de bord →</Link>}
+        {publication?.ok && siteId ? (
+          <SuiviPublication siteId={siteId} reessayer={async () => { await onPublier(); }} />
+        ) : (
+          <p role="status" aria-live="polite" className={`text-sm ${publication?.ok ? 'text-teal-800' : 'text-red-700'}`}>{publication?.message ?? ''}</p>
+        )}
+        {publication?.ok && <Link href="/tableau-de-bord" className="font-semibold text-teal-800 underline">Aller au tableau de bord →</Link>}
       </section>
     </div>
   );

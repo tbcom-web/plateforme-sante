@@ -37,7 +37,7 @@ export async function deciderArticle(articleId: string, statut: 'publie' | 'igno
   let message = statut === 'publie' ? 'Article ajouté à votre site.' : 'Article retiré de vos propositions.';
   if (site.statut === 'en_ligne') {
     const r = await declencherPublication(site.id);
-    message += r.ok ? ' Votre site sera mis à jour d’ici 2 à 3 minutes.' : ` ${r.message}`;
+    message += r.ok ? ' Mise à jour de votre site lancée : suivez-la ci-contre.' : ` ${r.message}`;
   }
   revalidatePath('/tableau-de-bord');
   return { ok: true, message };

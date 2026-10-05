@@ -9,6 +9,7 @@ import { getMarquesImportees } from '@/lib/marques';
 import { getRole } from '@/lib/admin';
 import { lireJeuPhotos } from '@/lib/jeux-photos';
 import { themesActives } from '@/lib/themes';
+import { etatPublication } from '@/lib/libelles';
 
 export const metadata = { title: 'Mon site' };
 
@@ -45,7 +46,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
           </span>
         </div>
       )}
-      <Editeur siteId={site.id} version={site.updatedAt} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} lienChangerModele={pourClient ? `/creer?site=${site.id}&etape=2` : '/creer?etape=2'} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} themesActives={themesActives()} />
+      <Editeur siteId={site.id} version={site.updatedAt} publicationEnCours={etatPublication(site.publication.etat, site.publication.debut)?.cle === 'en_cours'} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} lienChangerModele={pourClient ? `/creer?site=${site.id}&etape=2` : '/creer?etape=2'} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} themesActives={themesActives()} />
     </Shell>
   );
 }

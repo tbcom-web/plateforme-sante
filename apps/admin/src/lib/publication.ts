@@ -40,7 +40,7 @@ export async function declencherPublication(siteId: string): Promise<Resultat> {
     if (!sansSuivi) await supabase.rpc('signaler_echec_publication', { p_site: siteId, p_message: erreur.message });
     return erreur;
   }
-  return { ok: true, message: 'Publication lancée : en ligne d’ici 2 à 3 minutes.' };
+  return { ok: true, message: 'Publication lancée.' };
 }
 
 /** Construit l'aperçu privé du brouillon (éditeur visuel) : https://apercu.<slug>.pages.dev */

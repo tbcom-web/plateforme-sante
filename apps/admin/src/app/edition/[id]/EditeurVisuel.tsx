@@ -5,15 +5,16 @@ import { definitionChamp, verifierTexte, type DefinitionChamp } from '@plateform
 import { envoyerPhoto, TAILLE_MAX } from '@/lib/envoi-photo';
 import SaisieGardee from '@/components/SaisieGardee';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
+import SuiviPublication from '@/components/SuiviPublication';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import { enregistrerEdition, etatApercu, lancerApercu, publierDepuisEdition, type ResultatEdition } from './actions';
 
-type Props = { siteId: string; slug: string | null; version: string | null; edition: boolean; textesInitiaux: Record<string, string>; champs: DefinitionChamp[]; remplacements?: string[] };
+type Props = { siteId: string; slug: string | null; version: string | null; edition: boolean; textesInitiaux: Record<string, string>; champs: DefinitionChamp[]; remplacements?: string[]; publicationEnCours?: boolean };
 
 // Recadrage des photos selon l'emplacement (portraits en 4:5, le reste libre).
 const ratioPhoto = (emplacement: string) => (emplacement.startsWith('praticien.') ? 4 / 5 : null);
 
-export default function EditeurVisuel({ siteId, slug: slugInitial, version: versionInitiale, edition, textesInitiaux, champs, remplacements = [] }: Props) {
+export default function EditeurVisuel({ siteId, slug: slugInitial, version: versionInitiale, edition, textesInitiaux, champs, remplacements = [], publicationEnCours = false }: Props) {
   const cadre = useRef<HTMLIFrameElement>(null);
   const fichier = useRef<HTMLInputElement>(null);
   const [slug, setSlug] = useState(slugInitial);
@@ -30,7 +31,15 @@ export default function EditeurVisuel({ siteId, slug: slugInitial, version: vers
   const [enCours, demarrer] = useTransition();
   // Rien n'empêche la publication : avec des informations manquantes, la même confirmation que /mon-site les liste.
   const [confirmer, setConfirmer] = useState(false);
-  const publierMaintenant = () => { setConfirmer(false); demarrer(async () => setMessage(await publierDepuisEdition(siteId))); };
+  // Suivi détaillé de la publication lancée (clé renouvelée à chaque publication) ; repris si une publication est en cours.
+  const [suivi, setSuivi] = useState<number | null>(publicationEnCours ? 0 : null);
+  const publierEtSuivre = async () => {
+    const r = await publierDepuisEdition(siteId);
+    setMessage(r);
+    if (r.ok) setSuivi((n) => (n ?? 0) + 1);
+    return r;
+  };
+  const publierMaintenant = () => { setConfirmer(false); demarrer(async () => { await publierEtSuivre(); }); };
 
   const url = slug ? `https://apercu.${slug}.pages.dev/` : null;
   const origine = url ? new URL(url).origin : null;
@@ -183,6 +192,7 @@ export default function EditeurVisuel({ siteId, slug: slugInitial, version: vers
             Publier le site
           </button>
           {confirmer && <ConfirmationPublication remplacements={remplacements} onConfirmer={publierMaintenant} onAnnuler={() => setConfirmer(false)} enCours={enCours} />}
+          {suivi !== null && <SuiviPublication key={suivi} siteId={siteId} reessayer={publierEtSuivre} onFermer={() => setSuivi(null)} />}
           {genere && <p className="text-xs text-neutral-500">Aperçu du {new Date(genere).toLocaleString('fr-FR')}</p>}
         </div>
       </aside>

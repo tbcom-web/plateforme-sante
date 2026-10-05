@@ -1,4 +1,5 @@
 // Libellés affichés pour les valeurs techniques (statut du site, état de publication).
+import { DUREE_MAX_PUBLICATION_MS } from '@plateforme/core';
 
 export type Statut = 'brouillon' | 'en_ligne' | 'suspendu';
 
@@ -10,8 +11,9 @@ export const STATUTS: Record<Statut, { label: string; classe: string }> = {
 
 export type Etat = 'en_cours' | 'ok' | 'echec';
 
-/** Au-delà, une publication « en cours » est considérée comme interrompue (le workflow dure 2 à 5 minutes). */
-const DUREE_MAX_MS = 30 * 60_000;
+/** Au-delà, une publication « en cours » est considérée comme interrompue (le workflow dure environ une minute ; marge
+ * pour la file d'attente GitHub). Même valeur que le suivi détaillé (@plateforme/core, suivi-publication.ts). */
+const DUREE_MAX_MS = DUREE_MAX_PUBLICATION_MS;
 
 /** État affiché d'une publication, en tenant compte d'une publication restée « en cours » trop longtemps. */
 export function etatPublication(etat: Etat | null, debut: string | null, maintenant = Date.now()): { cle: Etat | 'interrompue'; label: string; classe: string } | null {

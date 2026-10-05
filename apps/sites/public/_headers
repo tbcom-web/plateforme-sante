@@ -40,5 +40,10 @@
 /robots.txt
   Cache-Control: public, max-age=3600
 
+# Version publiée, relue par le back-office après chaque publication : jamais en cache, jamais indexée
+/version.json
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+
 /sitemap.xml
   Cache-Control: public, max-age=3600

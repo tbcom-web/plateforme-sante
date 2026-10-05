@@ -8,3 +8,9 @@ body {
   background: #f6f7f6;
   color: #1d2523;
 }
+
+/* Coche de fin de publication (SuiviPublication) : apparition discrète, désactivée si l'animation est réduite. */
+@keyframes apparition {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

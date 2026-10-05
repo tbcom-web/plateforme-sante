@@ -1,4 +1,7 @@
 name: publier-site
+# Titre du run avec l'identifiant du site : le back-office retrouve ainsi la publication d'un site encore en file d'attente
+# (suivi des étapes, apps/admin/src/lib/suivi-publication.ts). Ignoré quand le workflow est appelé par « publier-sites ».
+run-name: publier-site ${{ inputs.mode || 'production' }} ${{ inputs.site_id }}
 
 # Déclenché par le bouton « Publier » du back-office (API GitHub workflow_dispatch),
 # ou appelé par « publier-sites » pour une publication groupée (propagation d'un changement partagé).
@@ -75,8 +78,13 @@ jobs:
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
 
       # Journal conservé pour expliquer un éventuel échec (ex. « Publication refusée » d'un site incomplet).
+      # PUBLICATION_VERSION / PUBLICATION_RUN : écrits dans /version.json du site, que le back-office relit pour
+      # n'annoncer « publié » qu'une fois la nouvelle version réellement servie en ligne.
       - name: Construire le site
         shell: bash
+        env:
+          PUBLICATION_VERSION: ${{ steps.prep.outputs.version }}
+          PUBLICATION_RUN: ${{ github.run_id }}
         run: npm run build -w apps/sites 2>&1 | tee "$RUNNER_TEMP/construction.log"
 
       - name: Créer le projet Cloudflare Pages si besoin

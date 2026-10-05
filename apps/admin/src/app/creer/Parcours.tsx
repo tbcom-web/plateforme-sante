@@ -316,6 +316,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
         {verif && (
           <Verification
             d={d}
+            siteId={id}
             controle={controle}
             catalogue={catalogue}
             univers={universCourant}

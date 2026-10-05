@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { STATUTS, type Statut } from '@/lib/libelles';
 import { basculerEdition, basculerTest, changerProprietaire, changerStatut, publierCommeAdmin, reessayerPublication, type Resultat, type ResultatRattachement } from './actions';
 import LienACopier from './LienACopier';
+import SuiviPublication from '@/components/SuiviPublication';
 
 type Props = { id: string; statut: Statut; test: boolean; edition: boolean; manques: string[]; dejaPublie: boolean; relancer: boolean };
 
@@ -11,6 +12,19 @@ export default function ActionsSite({ id, statut, test, edition, manques, dejaPu
   const [resultat, setResultat] = useState<Resultat | ResultatRattachement>(null);
   const [enCours, demarrer] = useTransition();
   const lancer = (f: () => Promise<Resultat | ResultatRattachement>) => demarrer(async () => setResultat(await f()));
+  // Suivi détaillé d'une publication lancée ici (clé renouvelée à chaque publication).
+  const [suivi, setSuivi] = useState<number | null>(null);
+  const publierEtSuivre = (f: () => Promise<Resultat>) =>
+    demarrer(async () => {
+      const r = await f();
+      setResultat(r);
+      if (r?.ok) setSuivi((n) => (n ?? 0) + 1);
+    });
+  const relancerVersionPubliee = async () => {
+    const r = await reessayerPublication(id);
+    if (r?.ok) setSuivi((n) => (n ?? 0) + 1);
+    return r;
+  };
 
   const publier = () => {
     if (statut === 'suspendu') {
@@ -21,7 +35,7 @@ export default function ActionsSite({ id, statut, test, edition, manques, dejaPu
       ? `Informations manquantes : le site affichera une mention sobre à la place.\n- ${manques.join('\n- ')}\n\nPublier quand même ?\n`
       : '';
     if (!confirm(`${avertissement}Publier le brouillon actuel ? Il remplacera la version en ligne.`)) return;
-    lancer(() => publierCommeAdmin(id));
+    publierEtSuivre(() => publierCommeAdmin(id));
   };
 
   return (
@@ -40,7 +54,7 @@ export default function ActionsSite({ id, statut, test, edition, manques, dejaPu
             type="button"
             disabled={enCours}
             title="Relance la publication de la version déjà validée, sans le brouillon"
-            onClick={() => lancer(() => reessayerPublication(id))}
+            onClick={() => publierEtSuivre(() => reessayerPublication(id))}
             className="rounded-lg border border-red-700 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-50 disabled:opacity-50"
           >
             Réessayer
@@ -91,6 +105,9 @@ export default function ActionsSite({ id, statut, test, edition, manques, dejaPu
           Changer de propriétaire
         </button>
       </div>
+      {suivi !== null && (
+        <SuiviPublication key={suivi} siteId={id} reessayer={dejaPublie ? relancerVersionPubliee : undefined} onFermer={() => setSuivi(null)} className="max-w-sm" />
+      )}
       {resultat && (
         <div className={`text-xs ${resultat.ok ? 'text-teal-800' : 'text-red-700'}`}>
           <p>{resultat.message}</p>

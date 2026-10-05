@@ -4,6 +4,7 @@ import { CHAMPS_TEXTE, controlerPublication, normaliserDraft } from '@plateforme
 import { createClient, getUser } from '@/lib/supabase/server';
 import { getRole } from '@/lib/admin';
 import EditeurVisuel from './EditeurVisuel';
+import { etatPublication, type Etat } from '@/lib/libelles';
 
 export const metadata = { title: 'Édition visuelle' };
 
@@ -13,7 +14,7 @@ export default async function Edition({ params }: PageProps<'/edition/[id]'>) {
   if (!user) redirect('/connexion');
 
   const supabase = await createClient();
-  const { data: site } = await supabase.from('sites').select('id, slug, options, config, updated_at').eq('id', id).maybeSingle();
+  const { data: site } = await supabase.from('sites').select('id, slug, options, config, updated_at, publication_etat, publication_debut').eq('id', id).maybeSingle();
   if (!site) notFound();
   const d = normaliserDraft(site.config);
   // Super admin sur le site d'un client : les liens mènent à ce site, jamais au sien.
@@ -36,6 +37,7 @@ export default async function Edition({ params }: PageProps<'/edition/[id]'>) {
         textesInitiaux={d.perso.textes}
         champs={CHAMPS_TEXTE}
         remplacements={controlerPublication(d).remplacements}
+        publicationEnCours={etatPublication((site.publication_etat ?? null) as Etat | null, site.publication_debut ?? null)?.cle === 'en_cours'}
       />
     </div>
   );

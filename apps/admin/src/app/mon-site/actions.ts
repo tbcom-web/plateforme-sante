@@ -170,5 +170,5 @@ export async function enregistrerEtPublier(id: string | null, draft: SiteDraft, 
   const aFaire = manques(normaliserDraft(draft));
   const p = await declencherPublication(r.id);
   const complement = aFaire.length ? ` ${aFaire.length > 1 ? `${aFaire.length} informations manquantes sont remplacées` : 'Une information manquante est remplacée'} par une mention sobre.` : '';
-  return { ...r, ok: p.ok, message: p.ok ? `Enregistré. Publication lancée : en ligne d’ici 2 à 3 minutes.${complement}` : `Enregistré, pas encore en ligne : ${p.message}` };
+  return { ...r, ok: p.ok, message: p.ok ? `Enregistré. Publication lancée.${complement}` : `Enregistré, pas encore en ligne : ${p.message}` };
 }

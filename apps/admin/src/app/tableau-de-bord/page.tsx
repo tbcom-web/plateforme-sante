@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import ActualisationAuto from '@/components/ActualisationAuto';
+import SuiviPublication from '@/components/SuiviPublication';
 import { dateCourte, etatPublication, STATUTS } from '@/lib/libelles';
 import { CODE_VALIDE } from '@/lib/rattachement';
 import Shell from '@/components/Shell';
@@ -9,6 +9,7 @@ import Apercu from '@/components/Apercu';
 import BoutonPublier from './BoutonPublier';
 import Propositions from './Propositions';
 import { getPropositions } from './flux';
+import { publierSite } from './actions';
 import { getUser } from '@/lib/supabase/server';
 import { getCatalogue, getMonSite, manques } from '@/lib/sites';
 import { getRole } from '@/lib/admin';
@@ -28,12 +29,14 @@ export default async function TableauDeBord() {
   const propositions = site.id ? await getPropositions(site.id) : [];
   const statut = STATUTS[site.statut];
   const publication = etatPublication(site.publication.etat, site.publication.debut);
+  // Suivi détaillé pendant la publication, et quelques minutes après pour annoncer la mise en ligne (vérifiée).
+  const finRecente = site.publication.fin ? Date.now() - Date.parse(site.publication.fin) < 3 * 60_000 : false;
+  const suivi = Boolean(site.id) && (publication?.cle === 'en_cours' || (publication?.cle === 'ok' && finRecente));
   // Lien de rattachement ouvert avant la connexion (voir /rattacher)
   const codeEnAttente = (await cookies()).get('rattachement')?.value;
 
   return (
     <Shell email={user.email ?? ''}>
-      <ActualisationAuto actif={publication?.cle === 'en_cours'} />
       {codeEnAttente && CODE_VALIDE.test(codeEnAttente) && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <span>Un site préparé pour votre cabinet attend d’être rattaché à votre compte.</span>
@@ -80,7 +83,7 @@ export default async function TableauDeBord() {
             <p className="mt-2 text-sm text-neutral-600">
               {site.domaine ? site.domaine : 'Nom de domaine : à choisir avant la mise en ligne.'}
             </p>
-            {publication && (
+            {publication && !suivi && (
               <div className="mt-3 text-sm">
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${publication.classe}`}>{publication.label}</span>
                 <span className="ml-2 text-xs text-neutral-500">
@@ -91,10 +94,10 @@ export default async function TableauDeBord() {
                     {site.publication.erreur || 'La mise en ligne n’a pas abouti.'} Vous pouvez relancer la publication ci-dessous ; si l’échec se répète, contactez-nous.
                   </p>
                 )}
-                {publication.cle === 'en_cours' && <p className="mt-2 text-neutral-600">Votre site sera à jour d’ici 2 à 3 minutes (cette page s’actualise seule).</p>}
               </div>
             )}
-            {site.modifsNonPubliees && (
+            {suivi && site.id && <SuiviPublication siteId={site.id} reessayer={publierSite} className="mt-4" />}
+            {site.modifsNonPubliees && !suivi && (
               <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
                 Modifications non publiées : votre site en ligne n’affiche pas encore vos derniers changements.
               </p>
@@ -124,7 +127,7 @@ export default async function TableauDeBord() {
                 Voir mon site en ligne ↗
               </a>
             )}
-            {site.statut !== 'suspendu' && (
+            {site.statut !== 'suspendu' && publication?.cle !== 'en_cours' && (
               <BoutonPublier
                 manques={aFaire}
                 enLigne={site.statut === 'en_ligne'}

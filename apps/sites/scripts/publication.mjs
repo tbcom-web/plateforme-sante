@@ -1,6 +1,7 @@
 // Outils du workflow « publier-site » (GitHub Actions).
 //   node scripts/publication.mjs preparer <site_id>   → choisit le slug du site, l'écrit dans Supabase, l'affiche ;
 //                                                       en production, passe la publication « en cours » (lien du run)
+//                                                       et donne l'horodatage de la demande (sortie GitHub « version »)
 //   node scripts/publication.mjs terminer <site_id> <domaine_pages_dev>  → publication réussie, site « en ligne »
 //                                                       (sauf site suspendu, dont le statut n'est jamais changé)
 //   node scripts/publication.mjs echec <site_id> [journal]  → publication échouée (message lisible tiré du journal)
@@ -50,7 +51,7 @@ const runUrl = /^https:\/\/[^\s]+$/.test(RUN_URL ?? '') ? RUN_URL : null;
 
 if (commande === 'preparer') {
   // Sans config_publiee si la base n'a pas encore reçu la mise à jour 0017.
-  const [site] = await api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config,config_publiee`).catch(() =>
+  const [site] = await api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config,config_publiee,publication_demandee_at`).catch(() =>
     api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config`),
   );
   if (!site) throw new Error(`Site introuvable : ${siteId}`);
@@ -71,6 +72,12 @@ if (commande === 'preparer') {
       method: 'PATCH',
       body: JSON.stringify({ publication_etat: 'en_cours', publication_run_url: runUrl, publication_debut: new Date().toISOString(), publication_fin: null, publication_erreur: null }),
     }).catch((e) => console.error(`Suivi de publication non enregistré : ${e.message}`));
+  }
+  // Horodatage de la demande, écrit au build dans /version.json : le back-office n'annonce « publié » qu'une fois
+  // cette version servie par le site en ligne (sortie « version » de l'étape, voir publier-site.yml).
+  if (production && process.env.GITHUB_OUTPUT && site.publication_demandee_at) {
+    const { appendFile } = await import('node:fs/promises');
+    await appendFile(process.env.GITHUB_OUTPUT, `version=${site.publication_demandee_at}\n`);
   }
   console.log(slug);
 } else if (commande === 'terminer') {
