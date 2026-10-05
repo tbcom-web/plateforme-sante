@@ -28,6 +28,15 @@ export const ICONES_SOINS: Record<string, string> = {
   'pied-diabetique': 'healthicons:diabetes-measure-outline',
   'podologie-du-sport': 'healthicons:running-outline',
   'podologie-enfant': 'healthicons:child-care-outline',
+  // Fiches de la migration 0020 (même icône qu'en base) : le picto métier (PICTOS_SOINS) reste affiché sur les sites
+  // tant que le super admin n'a pas choisi une autre icône.
+  orthonyxie: 'lucide:paperclip',
+  onychoplastie: 'healthicons:foot-outline',
+  orthoplastie: 'lucide:shield-plus',
+  'mycose-ongles': 'healthicons:foot-outline',
+  'cors-durillons': 'lucide:layers',
+  'ongles-epais': 'lucide:scissors',
+  'soins-a-domicile': 'tabler:home-heart',
 };
 
 export const ICONE_SOIN_DEFAUT = 'healthicons:foot-outline';

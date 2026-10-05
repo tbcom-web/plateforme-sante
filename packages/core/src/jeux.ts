@@ -106,6 +106,21 @@ export const VISUELS_SOINS: Record<string, VisuelCase> = {
   laser: kase(P('generale-pied-sol'), 'laser', null, false),
   // Bandes adhésives posées sur la cheville (la photo ne montre pas de bande) : le dessin suffit
   'k-taping': kase(P('sport-course'), 'taping', null, false),
+  // Fiches ajoutées le 2026-10-05 (migration 0020). Aucune photo de banque ne montre ces soins : le dessin porte la case.
+  // Orthonyxie : hallux normal puis incarné (la courbure que l'orthèse corrige)
+  orthonyxie: kase(P('generale-pied-profil'), 'ongle', null, false),
+  // Onychoplastie : médaillon de l'hallux et de son ongle
+  onychoplastie: kase(P('examen-mains'), 'soin', null, false),
+  // Orthoplastie : médaillon des orteils (hallux et voisins), là où se pose l'orthèse
+  orthoplastie: kase(P('generale-pied-sol'), 'soin', null, false),
+  // Mycose des ongles : soin de l'ongle (aucune lésion dessinée sur la peau)
+  'mycose-ongles': kase(P('examen-mains'), 'soin', null, false),
+  // Cors et durillons : zone d'appui sous la tête du 1er métatarsien ; relevé de podoscope (hyperpression)
+  'cors-durillons': kase(P('soin-talon'), 'appuis', 'podoscope', false),
+  // Ongles épais : soin des ongles (la prévention des chutes reste au dessin « senior »)
+  'ongles-epais': kase(P('examen-mains'), 'soin', null, false),
+  // Soins à domicile : polygone d'appui et canne (personne âgée) ; photo patient allongé en complément seulement
+  'soins-a-domicile': kase(P('soins-bandages'), 'senior', null, false),
 };
 
 /** Soin hors catalogue : dessin d'analyse, photo jamais montrée seule */

@@ -657,6 +657,14 @@ export const PICTOS_SOINS: Record<string, IdPicto> = {
   'ongle-incarne': 'ongle-incarne',
   'douleur-talon': 'talon-douloureux',
   'k-taping': 'k-taping',
+  // Fiches de la migration 0020
+  orthonyxie: 'hallux-ongle',
+  onychoplastie: 'hallux-ongle',
+  orthoplastie: 'pied-dessus',
+  'mycose-ongles': 'mycose-ongle',
+  'cors-durillons': 'cor-durillon',
+  'ongles-epais': 'instruments',
+  'soins-a-domicile': 'soins-domicile',
 };
 
 /** Picto métier d'un équipement du catalogue (equipements.ts) ; absent = icône Iconify de l'équipement */
