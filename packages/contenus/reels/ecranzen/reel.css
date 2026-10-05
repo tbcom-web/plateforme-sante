@@ -1,0 +1,103 @@
+/* COPIE conforme du studio ÉcranZen (TBCOM CLAUDE/ecranzen/studio/html, 2026-10-05), reprise autorisée par Paul : ne pas modifier ici, recopier depuis ÉcranZen. Voir docs/moteur-contenus.md (§ Reels). */
+/* REEL — html/reels/reel.css. Mise en page des reels « plan technique » (reprise des pages de Paul : La posturologie,
+   La carte des pressions, Chaque foulée compte). Scène 1920×1080. AUCUNE animation ni transition CSS : tout est posé par
+   moteur-reel.js en fonction de t (export MP4 image par image). Couleurs = variables de palette uniquement. */
+@font-face { font-family: "Sora"; font-weight: 100 800; font-display: block; src: url("../polices/Sora-VF.ttf") format("truetype"); }
+@font-face { font-family: "Bricolage Grotesque"; font-weight: 700 800; font-display: block; src: url("../polices/BricolageGrotesque-96ptExtraBold.ttf") format("truetype"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 100 800; font-display: block; src: url("../polices/JetBrainsMono-VF.ttf") format("truetype"); }
+
+/* Palettes (une page de Paul = une palette). Hex obligatoires pour --texte et --fond (contrôle de contraste). */
+:root, :root[data-palette="plan"] {
+  --fond: #123C8C; --fond-alt: #0C2C6B; --halo: #184CAB; --texte: #F2F6FF; --ligne: #FFFFFF; --accent: #6FF2C2; --signal: #FF8A3D;
+  --p1: #3E7BFA; --p2: #22C3A6; --p3: #FFC23D; --p4: #FF9A3D; --p5: #FF7A2F;
+  --typo: "Sora"; --mono: "JetBrains Mono"; --grille: 1;
+}
+:root[data-palette="clair"] {
+  --fond: #E8ECF1; --fond-alt: #D5DCE6; --halo: #F4F6F9; --texte: #0F1B2D; --ligne: #0F1B2D; --accent: #127A68; --signal: #E0621A;
+  --p1: #3E7BFA; --p2: #22C3A6; --p3: #FFC23D; --p4: #FF9A3D; --p5: #FF7A2F;
+  --typo: "Sora"; --mono: "JetBrains Mono"; --grille: 0;
+}
+:root[data-palette="violet"] {
+  --fond: #3B22B8; --fond-alt: #140C2E; --halo: #4B2BD6; --texte: #FFF6E0; --ligne: #FFF6E0; --accent: #FFD23F; --signal: #FF7A6B;
+  --p1: #3E7BFA; --p2: #3DDC97; --p3: #FFD23F; --p4: #FF9A5A; --p5: #FF7A6B;
+  --typo: "Bricolage Grotesque"; --mono: "JetBrains Mono"; --grille: 0;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--fond-alt); }
+#ez-scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden;
+  font-family: var(--typo), "Sora", system-ui, sans-serif; color: var(--texte); background: var(--fond);
+  -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; }
+
+/* Couche d'une scène : fond opaque (masque la précédente pendant le scan) */
+.rl-couche { position: absolute; inset: 0; overflow: hidden; background-color: var(--fond);
+  background-image: radial-gradient(120% 90% at 70% 50%, var(--halo) 0%, var(--fond-alt) 75%); }
+:root[data-palette="plan"] .rl-couche, :root:not([data-palette]) .rl-couche {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--ligne) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ligne) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--ligne) 3.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ligne) 3.5%, transparent) 1px, transparent 1px),
+    radial-gradient(120% 90% at 70% 50%, var(--halo) 0%, var(--fond-alt) 75%);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px, 100% 100%; }
+:root[data-palette="clair"] .rl-couche { background-image: none; }
+
+/* En-tête (décor : marque + sujet) */
+.rl-entete { position: absolute; z-index: 10; top: 40px; left: 96px; right: 96px; display: flex; justify-content: space-between;
+  align-items: baseline; font-size: 24px; }
+.rl-marque { font-weight: 800; } .rl-marque span { color: var(--accent); }
+.rl-sujet { font-weight: 600; color: var(--accent); }
+:root[data-palette="clair"] .rl-entete { border-bottom: 1.5px solid var(--ligne); padding-bottom: 14px; }
+
+.rl-kicker { position: absolute; font-family: var(--mono), monospace; font-weight: 500; font-size: 24px; line-height: 32px;
+  color: var(--accent); letter-spacing: .02em; white-space: nowrap; }
+.rl-lead { position: absolute; font-weight: 300; font-size: 34px; line-height: 1.4; color: color-mix(in srgb, var(--texte) 90%, transparent); }
+.rl-lead strong { font-weight: 600; color: var(--texte); }
+.rl-viz { position: absolute; }
+.rl-viz > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.rl-viz > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ez-carton { font-weight: 800 !important; word-spacing: 0.07em; will-change: auto !important; } /* pas de calque composé : rendu du texte identique quel que soit l’historique (déterminisme) */
+
+.rl-scan { position: absolute; z-index: 9; left: 0; right: 0; height: 2px; background: var(--accent);
+  box-shadow: 0 0 18px 4px color-mix(in srgb, var(--accent) 60%, transparent); opacity: 0; pointer-events: none; }
+.rl-progres { position: absolute; z-index: 10; left: 96px; right: 96px; bottom: 38px; display: flex; gap: 8px; }
+.rl-progres i { flex: 1; height: 3px; background: color-mix(in srgb, var(--ligne) 20%, transparent); overflow: hidden; display: block; }
+.rl-progres b { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); }
+
+/* Vocabulaire graphique partagé des visuels (plan technique) */
+.v-os { stroke: var(--ligne); stroke-width: 4; stroke-linecap: round; fill: none; }
+.v-articulation { fill: var(--fond); stroke: var(--ligne); stroke-width: 3; }
+.v-tete { fill: none; stroke: var(--ligne); stroke-width: 4; }
+.v-pied { fill: var(--ligne); }
+.v-aplomb { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 6; }
+.v-ref { stroke: color-mix(in srgb, var(--ligne) 45%, transparent); stroke-width: 1.2; stroke-dasharray: 3 5; }
+.v-repere { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.v-incl { stroke: var(--signal); stroke-width: 2; }
+.v-niveau { fill: color-mix(in srgb, var(--ligne) 8%, transparent); stroke: color-mix(in srgb, var(--ligne) 60%, transparent); stroke-width: 1.5; }
+.v-niveau-trait { stroke: color-mix(in srgb, var(--ligne) 60%, transparent); stroke-width: 1.5; }
+.v-douleur { fill: none; stroke: var(--signal); stroke-width: 3; }
+.v-semelle { fill: var(--signal); }
+.v-noeud { fill: var(--fond); stroke: color-mix(in srgb, var(--ligne) 40%, transparent); stroke-width: 3; }
+.v-noeud-on { fill: var(--accent); stroke: var(--accent); }
+.v-lien { stroke: color-mix(in srgb, var(--accent) 60%, transparent); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.v-etiquette { font: 600 15px var(--typo), sans-serif; fill: var(--texte); }
+.v-capteur { fill: none; stroke: var(--accent); stroke-width: 2; }
+.v-signal { fill: var(--accent); }
+.v-cerveau { fill: color-mix(in srgb, var(--accent) 18%, transparent); stroke: var(--accent); stroke-width: 2; }
+.v-plateau { fill: color-mix(in srgb, var(--ligne) 6%, transparent); stroke: color-mix(in srgb, var(--ligne) 70%, transparent); stroke-width: 2; }
+.v-croix { stroke: color-mix(in srgb, var(--ligne) 30%, transparent); stroke-width: 1; fill: none; }
+.v-empreinte { fill: color-mix(in srgb, var(--ligne) 18%, transparent); stroke: color-mix(in srgb, var(--ligne) 50%, transparent); stroke-width: 1.5; }
+.v-trace { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.v-trait { fill: none; stroke: var(--ligne); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.v-trait-fin { fill: none; stroke: var(--ligne); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.v-aplat { fill: color-mix(in srgb, var(--ligne) 10%, transparent); }
+.v-accent { fill: var(--accent); }
+.v-accent-trait { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.v-lueur { filter: drop-shadow(0 0 8px var(--accent)); }
+.rl-chiffre { position: absolute; font-weight: 800; letter-spacing: -0.04em; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; line-height: .85; }
+
+/* Mises en page (templates) : bandeau du visuel plein, séparateur de comparaison, frise d'étapes, numéro d'étape */
+.rl-bandeau { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--fond-alt) 88%, transparent) 38%); }
+.rl-sep { position: absolute; width: 0; border-left: 2px dashed color-mix(in srgb, var(--ligne) 35%, transparent); }
+.rl-frise { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.rl-num { position: absolute; font-weight: 800; font-size: 72px; line-height: 76px; text-align: center; color: var(--texte); letter-spacing: -0.03em; }

@@ -206,15 +206,57 @@ const webkit = [];
   try { fichiersDist = readdirSync(dossierDist).filter((f) => f.endsWith('.svg')); } catch {}
   for (const f of fichiersDist) if (/<style[s>]/.test(readFileSync(join(dossierDist, f), 'utf8'))) webkit.push(`dist/dessins/${f} : <style> dans un fichier référencé par <use> (ignoré par WebKit)`);
 }
+// Moteur de contenus (packages/contenus, réseaux sociaux) : gabarits sans couleur littérale (toutes les couleurs viennent de la
+// charte, de la gamme ou de la couleur du cabinet) ; catalogue de sujets et publications de tous les formats conformes aux
+// garde-fous (sources, mentions, lexique, lecture), pour le cabinet de démo et trois identités fictives ; garde-fou « faible niveau
+// de preuve » actif. Exclu : reels/ecranzen (copie conforme du studio ÉcranZen, ses palettes y sont définies — voir docs/moteur-contenus.md).
+// Les contrôles de rendu (débordement, taille ≥ 34 px, contraste AA mesuré, zone utile des Stories) tournent dans le navigateur à
+// chaque génération (packages/contenus/scripts/generer.mjs) : une diapositive en défaut n'est pas exportée.
+const contenus = [];
+let nbSujets = 0;
+{
+  const dossierContenus = join(racine, '../../packages/contenus');
+  for (const sous of ['src', 'scripts']) {
+    for (const f of fichiers(join(dossierContenus, sous))) {
+      readFileSync(f, 'utf8').split(/\r?\n/).forEach((ligne, i) => {
+        if (EXCEPTION_LIGNE.test(ligne)) return;
+        for (const re of [HEX, FONCTION]) for (const m of ligne.matchAll(re)) {
+          if (re === HEX && ANCRE.test(ligne.slice(0, m.index))) continue;
+          contenus.push(`${relative(dossierContenus, f).replaceAll('\\', '/')}:${i + 1}  ${m[0]} : couleur littérale dans le moteur de contenus`);
+        }
+      });
+    }
+  }
+  const sortieC = join(tmpdir(), `controle-charte-contenus-${process.pid}.mjs`);
+  await build({ stdin: { contents: "export * from '../../packages/contenus/src/index.ts'; export { default as SITE_DEMO } from './src/data/sites/demo-podologue-lyon.ts';", resolveDir: racine, loader: 'ts' }, bundle: true, format: 'esm', platform: 'node', outfile: sortieC, logLevel: 'silent', loader: { '.css': 'text' } });
+  const K = await import(pathToFileURL(sortieC).href);
+  rmSync(sortieC, { force: true });
+  const aujourdHui = new Date().toISOString().slice(0, 10);
+  const identites = [
+    K.identiteDepuisSite(K.SITE_DEMO),
+    K.identiteRapide({ nom: 'Cabinet du Parc', praticiens: ['A B'], ville: 'Nantes', domaine: 'exemple.fr', modele: 'premium', gamme: 'canard' }),
+    K.identiteRapide({ nom: 'Cabinet de pédicurie-podologie des Coteaux de Saint-Germain-en-Laye', praticiens: ['A B', 'C D'], ville: 'Saint-Germain-en-Laye', domaine: 'exemple.fr', modele: 'simple', gamme: 'sable' }),
+    K.identiteRapide({ nom: 'L’Atelier du Pied — « Beaune » & Cie', praticiens: ['Élodie Ægerter'], ville: 'Beaune', domaine: 'exemple.fr', modele: 'prestige', gamme: 'encre' }),
+  ];
+  for (const s of K.SUJETS) {
+    contenus.push(...K.verifierSujet(s, aujourdHui).erreurs);
+    for (const f of ['carrousel', 'post', 'story', 'google']) for (const i of identites) contenus.push(...K.verifierPublication(K.personnaliser(K.composer(s, f), s, i)).erreurs);
+  }
+  for (const i of identites) contenus.push(...K.verifierIdentite(i.nom, i.praticiens).erreurs);
+  contenus.push(...K.verifierEnchainements(K.MOIS_TYPE_OCTOBRE));
+  const faible = K.verifierSujet({ ...K.SUJETS[0], id: 'essai', specialite: 'posture', niveauPreuve: 'faible' }, aujourdHui);
+  if (!faible.erreurs.some((e) => /faible niveau de preuve/.test(e))) contenus.push('garde-fou « faible niveau de preuve » inactif');
+  nbSujets = K.SUJETS.length;
+}
 const inconnues = core.MODELES_INTEGRES.flatMap((m) => (m.gammes ?? []).filter((g) => !core.GAMMES.some((x) => x.id === g)).map((g) => `${m.id} : gamme inconnue « ${g} »`));
 
 if (defauts.length) {
   console.log(`✗ ${defauts.length} couleur(s) littérale(s) hors charte :`);
   for (const d of defauts) console.log(`  ${d}`);
 }
-for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins, ...bibliotheque, ...anatomie, ...webkit]) console.log(`✗ ${d}`);
-const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length + webkit.length;
+for (const d of [...gammes, ...modeles, ...inconnues, ...marques, ...dessins, ...bibliotheque, ...anatomie, ...webkit, ...contenus]) console.log(`✗ ${d}`);
+const total = defauts.length + gammes.length + modeles.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length + webkit.length + contenus.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit).`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides, ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit) ; moteur de contenus : gabarits sans couleur littérale, ${nbSujets} sujets et leurs publications (4 formats × 4 identités) conformes aux garde-fous.`);
 process.exit(total ? 1 : 0);

@@ -1,0 +1,24 @@
+{
+  "id": "semelles-neuves-progressivement",
+  "sujet": "POD-SUJ-033",
+  "titre": "Semelles neuves",
+  "palette": "plan",
+  "format": "salle",
+  "ratio": "9x16",
+  "themes": ["semelles"],
+  "avant_interdit": ["posturologie", "POD-SUJ-040", "consultation-comment-ca-se-passe"],
+  "alt": "Une semelle se glisse dans une chaussure fermée ; un calendrier d'une rangée dont chaque jour montre une jauge un peu plus haute ; des paliers réguliers ; puis la mention d'orientation M3.",
+  "source_textes": "Copie de ÉcranZen studio/html/reels/semelles-neuves.json (POD-SUJ-033, validé éthique le 2026-09-30, validation-ethique.md) ; seule modification : « votre podologue » → « votre pédicure-podologue » (titre légal, décision de Paul du 2026-10-02).",
+  "scenes": [
+    { "kicker": "Semelles neuves", "titre": "Les premiers jours, allez-y progressivement.", "duree": 10,
+      "visuel": { "type": "picto", "nom": "semelle", "dans_chaussure": true },
+      "valide": "validé éthique 2026-09-30 (semelle repérée par son aplat vert, sans rond)" },
+    { "kicker": "Jour après jour", "titre": "Un peu plus longtemps chaque jour.", "duree": 10,
+      "visuel": { "type": "picto", "nom": "calendrier", "cases": 6, "jauges": true, "pas": 0.5 },
+      "valide": "validé éthique 2026-09-30 (calendrier en une rangée, sans chiffre)" },
+    { "kicker": "La consigne", "titre": "Comme votre pédicure-podologue vous l'a indiqué.", "duree": 10,
+      "visuel": { "type": "picto", "nom": "paliers", "marches": 5, "pas": 0.9 },
+      "valide": "validé éthique 2026-09-30 ; titre légal 2026-10-02" },
+    { "mention": "M3-b", "duree": 10, "visuel": { "type": "picto", "nom": "semelle" }, "mise_en_page": "titre-geant" }
+  ]
+}

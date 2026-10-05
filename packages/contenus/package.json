@@ -1,0 +1,21 @@
+{
+  "name": "@plateforme/contenus",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Moteur de contenus : sujets sourcés, publications (Instagram, Facebook, fiche Google, Reels), gabarits personnalisés à l'identité du cabinet, garde-fous déontologiques.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./navigateur": "./src/navigateur.ts"
+  },
+  "scripts": {
+    "construire": "node scripts/construire.mjs",
+    "generer": "node scripts/generer.mjs",
+    "reel": "node scripts/reel.mjs",
+    "verifier": "node scripts/generer.mjs --verifier",
+    "tsc": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@plateforme/core": "file:../core"
+  }
+}
