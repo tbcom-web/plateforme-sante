@@ -23,3 +23,4 @@ export * from './equipements';
 export * from './agents';
 export * from './jeux-photos';
 export * from './bibliotheque';
+export * from './pictos';

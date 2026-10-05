@@ -95,6 +95,12 @@ export const SUR_SOMBRE = { doux: 0.8, pale: 0.55, filet: 0.22, verre: 0.14 } as
 export const TRAIT = { filet: 0.6, fin: 1, normal: 1.5, fort: 2.2, marque: 3.2 } as const;
 
 /**
+ * Pictogrammes métier (pictos.ts) : grille de `grille` unités, UN seul trait par picto, en unités de la grille (le picto se dessine
+ * à 24, 32 ou 48 px) : `trait` 3 = 1,5 px à 24 px (défaut), `traitFort` 4 = 2 px à 24 px (variante soumise à l'arbitrage).
+ */
+export const PICTO = { grille: 48, trait: 3, traitFort: 4 } as const;
+
+/**
  * Registre « ligne » (dessins au trait continu, ligne.ts) : une seule épaisseur par dessin, prise dans TRAIT (unités LOCALES du
  * repère 240 × 180, jamais vector-effect : piège WebKit avec pathLength) ; boucles de raccord (rayon) et queues de début et de
  * fin (longueur), en unités du repère ; `final` : le trait finit par une boucle. Variantes soumises à l'arbitrage de Paul.

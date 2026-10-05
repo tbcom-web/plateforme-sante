@@ -1,0 +1,118 @@
+---
+// Planche des pictogrammes métier (pictos.ts), générée uniquement sur les sites de démo : /modeles/pictos (noindex).
+// Grille complète à 24, 32 et 48 px, sur fond clair et sur fond plan ; variantes à arbitrer (épaisseur 1,5 / 2 px à 24 px, avec ou
+// sans accent) ; exemples d'intégration avant / après (liste de soins, infos pratiques) avec les icônes Iconify remplacées.
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+import { site } from '../../../lib/site';
+import { svgIcone } from '@plateforme/core/icones';
+import { feuilleCharte, GAMMES, variablesGamme, PICTOS, FAMILLES_PICTOS, svgPicto, PICTOS_SOINS, iconeSoin, iconeOuPictoSoin, type Famille } from '@plateforme/core';
+const accent = Object.entries(variablesGamme(GAMMES[0])).map(([k, v]) => `${k}:${v}`).join(';');
+
+export function getStaticPaths() {
+  return site.demo ? [{ params: { vide: undefined } }] : [];
+}
+const familles = Object.keys(FAMILLES_PICTOS) as Famille[];
+const tailles = [24, 32, 48];
+const variantes = [
+  { titre: 'A — trait 1,5 px à 24 px, avec accent (défaut proposé)', opts: { accent: true } },
+  { titre: 'B — trait 2 px à 24 px, avec accent', opts: { accent: true, trait: 'fort' as const } },
+  { titre: 'C — trait 1,5 px à 24 px, sans accent', opts: { accent: false } },
+  { titre: 'D — trait 2 px à 24 px, sans accent', opts: { accent: false, trait: 'fort' as const } },
+];
+const soins = Object.keys(PICTOS_SOINS).slice(0, 6);
+const nomSoin = (slug: string) => slug.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+const infos: [string, string, string][] = [
+  ['lucide:clock', 'picto:horaires', 'Horaires'],
+  ['lucide:calendar', 'picto:rendez-vous', 'Prise de rendez-vous'],
+  ['lucide:map-pin', 'picto:itineraire', 'Adresse'],
+  ['healthicons:wheelchair-outline', 'picto:accessibilite', 'Accès'],
+  ['healthicons:home-outline', 'picto:soins-domicile', 'Visites à domicile'],
+  ['lucide:wallet', 'picto:honoraires', 'Moyens de règlement acceptés'],
+];
+const icone = (nom: string, taille = 24) => svgIcone(nom, { taille, accent: true }) ?? '';
+---
+<!doctype html>
+<html lang="fr" style={accent}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Pictogrammes</title>
+    <Fragment set:html={`<style>${feuilleCharte()}</style>`} />
+  </head>
+  <body>
+    <header class="tete">
+      <p class="mono">{PICTOS.length} pictogrammes · grille 48 · un seul trait · currentColor + un accent</p>
+    </header>
+    {['clair', 'sombre'].map((fond) => (
+      <section class:list={['planche', fond]} data-fond={fond}>
+        <p class="mono titre">Fond {fond === 'clair' ? 'clair' : 'plan (sombre)'} — 24 / 32 / 48 px</p>
+        {familles.map((f) => (
+          <>
+            <p class="mono famille">{FAMILLES_PICTOS[f]}</p>
+            <div class="grille">
+              {PICTOS.filter((p) => p.famille === f).map((p) => (
+                <figure>
+                  <div class="tailles">{tailles.map((t) => <Fragment set:html={svgPicto(p.id, { taille: t, accent: true })} />)}</div>
+                  <figcaption>{p.libelle}<span class="mono">{p.id}</span></figcaption>
+                </figure>
+              ))}
+            </div>
+          </>
+        ))}
+      </section>
+    ))}
+    <section class="planche clair">
+      <p class="mono titre">Variantes à arbitrer (24 px)</p>
+      {variantes.map((v) => (
+        <div class="variante">
+          <p class="mono famille">{v.titre}</p>
+          <div class="rangee">{PICTOS.map((p) => <Fragment set:html={svgPicto(p.id, { taille: 24, ...v.opts })} />)}</div>
+          <div class="rangee sombre">{PICTOS.map((p) => <Fragment set:html={svgPicto(p.id, { taille: 24, ...v.opts })} />)}</div>
+        </div>
+      ))}
+    </section>
+    <section class="planche clair">
+      <p class="mono titre">Intégration — liste de soins (avant : Iconify ; après : picto métier)</p>
+      <div class="avant-apres">
+        {[false, true].map((apres) => (
+          <ul class="liste">
+            <li class="mono famille">{apres ? 'Après' : 'Avant'}</li>
+            {soins.map((s) => <li><span class="ico" set:html={icone(apres ? iconeOuPictoSoin(s) : iconeSoin(s), 28)} />{nomSoin(s)}</li>)}
+          </ul>
+        ))}
+      </div>
+      <p class="mono titre">Intégration — infos pratiques</p>
+      <div class="avant-apres">
+        {[false, true].map((apres) => (
+          <ul class="liste">
+            <li class="mono famille">{apres ? 'Après' : 'Avant'}</li>
+            {infos.map(([a, p, l]) => <li><span class="ico" set:html={icone(apres ? p : a, 22)} /><strong>{l}</strong></li>)}
+          </ul>
+        ))}
+      </div>
+    </section>
+  </body>
+</html>
+<style>
+  /* Planche de contrôle : valeurs de la charte (variables injectées dans <head>), accent de la gamme Canard. */
+  body { margin: 0; font-family: 'Inter Variable', system-ui, sans-serif; background: var(--doux-defaut); color: var(--encre); }
+  .mono { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; }
+  .tete { padding: 16px 16px 0; color: var(--encre-pale); }
+  .planche { padding: 16px; }
+  .clair { background: var(--blanc); color: var(--encre); }
+  .sombre { background: var(--plan); color: var(--papier); --accent: var(--signal); }
+  .titre { margin: 8px 0 12px; }
+  .famille { margin: 18px 0 8px; opacity: 0.75; }
+  .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+  figure { margin: 0; padding: 12px; border-radius: 12px; outline: var(--filet) solid currentColor; outline-color: color-mix(in srgb, currentColor 14%, transparent); }
+  .tailles { display: flex; align-items: flex-end; gap: 14px; }
+  figcaption { margin-top: 8px; font-size: var(--taille-note); display: flex; flex-direction: column; gap: 2px; }
+  figcaption .mono { opacity: 0.6; text-transform: none; }
+  .rangee { display: flex; flex-wrap: wrap; gap: 12px; padding: 10px; border-radius: 10px; }
+  .avant-apres { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .liste { list-style: none; margin: 0; padding: 12px; border-radius: 12px; background: var(--doux-defaut); }
+  .liste li { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+  .ico { display: inline-flex; color: var(--encre); }
+</style>

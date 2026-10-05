@@ -301,6 +301,10 @@ for (const [profil, id] of Object.entries(core.UNIVERS_DU_PROFIL)) {
 }
 const inconnues = core.MODELES_INTEGRES.flatMap((m) => (m.gammes ?? []).filter((g) => !core.GAMMES.some((x) => x.id === g)).map((g) => `${m.id} : gamme inconnue « ${g} »`));
 
+// Pictogrammes métier (pictos.ts) : grille 48, un seul trait, aucune couleur littérale ni <style> (scripts/controle-pictos.mjs)
+const pictos = await import('./controle-pictos.mjs');
+anatomie.push(...pictos.defauts.map((d) => `picto ${d}`));
+if (!pictos.defauts.length) console.log(`✓ ${pictos.resume}`);
 if (defauts.length) {
   console.log(`✗ ${defauts.length} couleur(s) littérale(s) hors charte :`);
   for (const d of defauts) console.log(`  ${d}`);

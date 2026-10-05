@@ -26,7 +26,7 @@ const acces = [
 <div class:list={['infos', { 'infos--colonnes': colonnes }]}>
   {ouvert && (
     <div class="info info--horaires">
-      <Titre class="info__titre"><Icone nom="lucide:clock" />Horaires</Titre>
+      <Titre class="info__titre"><Icone nom="picto:horaires" secours="lucide:clock" />Horaires</Titre>
       <table class="horaires">
         <tbody>
           {horaires.map((h, i) => (
@@ -41,13 +41,13 @@ const acces = [
     </div>
   )}
   <div class="info">
-    <Titre class="info__titre"><Icone nom="lucide:calendar" />Prise de rendez-vous</Titre>
+    <Titre class="info__titre"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Prise de rendez-vous</Titre>
     {rdvEnLigne && <p>En ligne sur {site.rdv.plateforme}, 24h/24{site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.</p>}
     {(site.rdvMode !== 'en_ligne' || !rdvEnLigne) && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
   </div>
   {!sansAdresse && (
     <div class="info">
-      <Titre class="info__titre"><Icone nom="lucide:map-pin" />Adresse</Titre>
+      <Titre class="info__titre"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Adresse</Titre>
       <p>
         {lieu.nom ? <>{lieu.nom}<br /></> : lieu.type !== 'cabinet' && <>{TYPES_LIEU[lieu.type]}<br /></>}
         {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}
@@ -57,13 +57,13 @@ const acces = [
   )}
   {acces.length > 0 && (
     <div class="info">
-      <Titre class="info__titre"><Icone nom="healthicons:wheelchair-outline" />Accès</Titre>
+      <Titre class="info__titre"><Icone nom="picto:accessibilite" secours="healthicons:wheelchair-outline" />Accès</Titre>
       <ul>{acces.map((a) => <li>{a}</li>)}</ul>
     </div>
   )}
   {site.domicile.actif && (
     <div class="info">
-      <Titre class="info__titre"><Icone nom="healthicons:home-outline" />Visites à domicile</Titre>
+      <Titre class="info__titre"><Icone nom="picto:soins-domicile" secours="healthicons:home-outline" />Visites à domicile</Titre>
       {site.domicile.creneaux && <p>{site.domicile.creneaux}.</p>}
       {site.domicile.secteurs.length > 0 ? (
         <><p>Secteurs d’intervention :</p><ul>{site.domicile.secteurs.map((s) => <li>{s}</li>)}</ul></>
@@ -72,7 +72,7 @@ const acces = [
   )}
   {site.paiements.length > 0 && (
     <div class="info">
-      <Titre class="info__titre"><Icone nom="lucide:wallet" secours="lucide:credit-card" />Moyens de règlement acceptés</Titre>
+      <Titre class="info__titre"><Icone nom="picto:honoraires" secours="lucide:wallet" />Moyens de règlement acceptés</Titre>
       <ul class="pastilles">{site.paiements.map((m) => <li>{m}</li>)}</ul>
       {site.praticien.conventionnement && <p class="note">{site.praticien.conventionnement}.</p>}
     </div>

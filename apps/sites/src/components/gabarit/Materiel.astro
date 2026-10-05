@@ -5,7 +5,7 @@
 // Seul le matériel coché par le praticien apparaît ; phrases factuelles du catalogue (equipements.ts).
 import '@plateforme/core/dessins.css';
 import Icone from '../Icone.astro';
-import { equipementsParCategorie, equipementDessine } from '@plateforme/core';
+import { equipementsParCategorie, equipementDessine, iconeOuPictoEquipement } from '@plateforme/core';
 import { site } from '../../lib/site';
 import { urlDessin, suffixeRegistre } from '../../lib/fichiers-dessins';
 import ChargeurDessins from '../dessins/ChargeurDessins.astro';
@@ -31,7 +31,7 @@ let rang = 0;
               {equipementDessine(e.id) ? (
                 <><svg class="dessin dessin--materiel" viewBox="0 0 120 90" data-trace={registre === 'ligne' ? '' : undefined}><use data-dessin={urlDessin(`materiel-${e.id}${suffixeRegistre(registre)}`)} width="120" height="90" /></svg><noscript><svg class="dessin dessin--materiel" viewBox="0 0 120 90"><use href={urlDessin(`materiel-${e.id}${suffixeRegistre(registre)}`)} width="120" height="90" /></svg><style>svg:has(> use[data-dessin]){display:none}</style></noscript></>
               ) : (
-                <Icone nom={e.icone} secours="tabler:point" taille="22" />
+                <Icone nom={iconeOuPictoEquipement(e.id, e.icone)} secours={e.icone} taille="22" />
               )}
             </span>
             <span class="materiel__texte">

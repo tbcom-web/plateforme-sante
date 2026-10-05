@@ -5,7 +5,7 @@ import '@fontsource-variable/inter';
 import Icone from '../components/Icone.astro';
 import { site, rdvHref, adresseComplete } from '../lib/site';
 import { localisation } from '../lib/textes';
-import { iconeSoin, ICONE_SOIN_DEFAUT, mentionOrdre } from '@plateforme/core';
+import { iconeOuPictoSoin, ICONE_SOIN_DEFAUT, mentionOrdre } from '@plateforme/core';
 
 // Données de démonstration propres à ce modèle (seront saisies dans le back-office).
 const cabinet = {
@@ -117,7 +117,7 @@ const titreDoc = `${titre} – ${noms}, pédicures-podologues · Modèle Proximi
             {site.soins.map((s) => (
               <li>
                 <a href={`/soins/${s.slug}`}>
-                  <span class="competences__icone"><Icone nom={iconeSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
+                  <span class="competences__icone"><Icone nom={iconeOuPictoSoin(s.slug, s.icone)} secours={ICONE_SOIN_DEFAUT} /></span>
                   <span class="competences__titre">{s.titreCourt}</span>
                   <span class="competences__texte">{s.resume}</span>
                   <span class="competences__lien">En savoir plus</span>

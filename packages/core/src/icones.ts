@@ -6,7 +6,8 @@ import healthicons from '@iconify-json/healthicons/icons.json' with { type: 'jso
 import lucide from '@iconify-json/lucide/icons.json' with { type: 'json' };
 import ph from '@iconify-json/ph/icons.json' with { type: 'json' };
 import tabler from '@iconify-json/tabler/icons.json' with { type: 'json' };
-import { FORMAT_ICONE } from './icones-meta';
+import { FORMAT_ICONE, PREFIXE_PICTO } from './icones-meta';
+import { svgPicto, pictoExiste } from './pictos';
 
 const jeux: Record<string, IconifyJSON> = {
   healthicons: healthicons as IconifyJSON,
@@ -22,13 +23,15 @@ function donnees(nom: string) {
   return jeu ? getIconData(jeu, icone) : null;
 }
 
-export const iconeExiste = (nom: string) => donnees(nom) !== null;
+export const iconeExiste = (nom: string) => (nom.startsWith(PREFIXE_PICTO) ? pictoExiste(nom.slice(PREFIXE_PICTO.length)) : donnees(nom) !== null);
 
 /**
  * SVG en ligne de l'icône, coloré par currentColor, ou null si inconnue.
  * `taille` en px ou unité CSS (défaut 1em). `titre` rend l'icône porteuse de sens (role="img").
+ * « picto:<id> » : picto métier de la marque (pictos.ts), même interface ; `accent` colore son détail à l'accent.
  */
-export function svgIcone(nom: string, opts: { taille?: string | number; classe?: string; titre?: string } = {}): string | null {
+export function svgIcone(nom: string, opts: { taille?: string | number; classe?: string; titre?: string; accent?: boolean } = {}): string | null {
+  if (nom.startsWith(PREFIXE_PICTO)) return svgPicto(nom.slice(PREFIXE_PICTO.length), { taille: opts.taille, titre: opts.titre, accent: opts.accent, classe: opts.classe });
   const d = donnees(nom);
   if (!d) return null;
   const taille = opts.taille ?? '1em';
