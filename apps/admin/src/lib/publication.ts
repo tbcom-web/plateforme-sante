@@ -28,14 +28,16 @@ export async function declencherPublication(siteId: string): Promise<Resultat> {
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const supabase = await createClient();
   const { error } = await supabase.rpc('demander_publication', { p_site: siteId });
-  if (error) {
+  // Fonction absente (base sans la mise à jour 0017) : publication à l'ancienne, depuis le brouillon.
+  const sansSuivi = error?.code === 'PGRST202';
+  if (error && !sansSuivi) {
     if (/suspendu/i.test(error.message)) return { ok: false, message: 'Site suspendu : il ne peut pas être publié.' };
     console.error('demander_publication', error);
     return { ok: false, message: 'La publication n’a pas pu être enregistrée. Réessayez dans un instant.' };
   }
   const erreur = await lancerWorkflow('publier-site.yml', { site_id: siteId, mode: 'production' });
   if (erreur) {
-    await supabase.rpc('signaler_echec_publication', { p_site: siteId, p_message: erreur.message });
+    if (!sansSuivi) await supabase.rpc('signaler_echec_publication', { p_site: siteId, p_message: erreur.message });
     return erreur;
   }
   return { ok: true, message: 'Publication lancée : en ligne d’ici 2 à 3 minutes.' };

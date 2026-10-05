@@ -49,7 +49,10 @@ const production = APERCU !== '1';
 const runUrl = /^https:\/\/[^\s]+$/.test(RUN_URL ?? '') ? RUN_URL : null;
 
 if (commande === 'preparer') {
-  const [site] = await api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config,config_publiee`);
+  // Sans config_publiee si la base n'a pas encore reçu la mise à jour 0017.
+  const [site] = await api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config,config_publiee`).catch(() =>
+    api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config`),
+  );
   if (!site) throw new Error(`Site introuvable : ${siteId}`);
   let slug = site.slug;
   if (!slug) {
@@ -67,19 +70,22 @@ if (commande === 'preparer') {
     await api(`sites?id=eq.${siteId}`, {
       method: 'PATCH',
       body: JSON.stringify({ publication_etat: 'en_cours', publication_run_url: runUrl, publication_debut: new Date().toISOString(), publication_fin: null, publication_erreur: null }),
-    });
+    }).catch((e) => console.error(`Suivi de publication non enregistré : ${e.message}`));
   }
   console.log(slug);
 } else if (commande === 'terminer') {
   const [site] = await api(`sites?id=eq.${siteId}&select=id,statut,domaine`);
   if (!site) throw new Error(`Site introuvable : ${siteId}`);
   const maintenant = new Date().toISOString();
-  const maj = { published_at: maintenant, publication_etat: 'ok', publication_fin: maintenant, publication_erreur: null };
+  const maj = { published_at: maintenant };
   // Un site suspendu par l'admin le reste : seule une action de l'admin le remet en ligne.
   if (site.statut !== 'suspendu') maj.statut = 'en_ligne';
-  if (runUrl) maj.publication_run_url = runUrl;
   if (!site.domaine && argument) maj.domaine = argument;
-  await api(`sites?id=eq.${siteId}`, { method: 'PATCH', body: JSON.stringify(maj) });
+  const suivi = { publication_etat: 'ok', publication_fin: maintenant, publication_erreur: null, ...(runUrl ? { publication_run_url: runUrl } : {}) };
+  // Repli sans le suivi si la base n'a pas encore reçu la mise à jour 0017.
+  await api(`sites?id=eq.${siteId}`, { method: 'PATCH', body: JSON.stringify({ ...maj, ...suivi }) }).catch(() =>
+    api(`sites?id=eq.${siteId}`, { method: 'PATCH', body: JSON.stringify(maj) }),
+  );
   console.log(`Site ${siteId} publié${site.statut === 'suspendu' ? ' (reste suspendu)' : ', en ligne'}.`);
 } else if (commande === 'echec') {
   let journal = '';

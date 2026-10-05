@@ -77,7 +77,10 @@ const enListe = (mots: string[]) =>
 
 export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig> {
   const filtre = /^[0-9a-f-]{36}$/.test(siteId) ? `id=eq.${siteId}` : `slug=eq.${encodeURIComponent(siteId)}`;
-  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,config_publiee,publiee_le,options,updated_at`);
+  // Sans les colonnes de la version publiée si la base n'a pas encore reçu la mise à jour 0017.
+  const [s] = await lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,config_publiee,publiee_le,options,updated_at`).catch(() =>
+    lire<LigneSite[]>(`sites?${filtre}&select=id,slug,profession_slug,domaine,test,config,options,updated_at`),
+  );
   if (!s) throw new Error(`Site introuvable dans Supabase : ${siteId}`);
 
   const [prof] = await lire<LigneProfession[]>(`professions?slug=eq.${s.profession_slug}`);
