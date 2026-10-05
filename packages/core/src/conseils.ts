@@ -13,6 +13,17 @@ export type FicheConseil = {
 
 export const FICHES_CONSEILS: FicheConseil[] = [
   {
+    etape: 'Sujets',
+    surLeSite: 'L’ordre du menu, les cartes en tête de l’accueil, une page par sujet et le regroupement des soins.',
+    points: [
+      { titre: 'Pourquoi choisir', conseil: 'Un patient cherche d’abord un sujet (« mon enfant », « mon diabète », « je cours »), pas un nom de soin. Vos sujets principaux le guident en un geste vers les bons soins.' },
+      { titre: 'Accueil et menus', conseil: 'Les sujets principaux ouvrent le menu dans l’ordre choisi (sur téléphone, seul le n° 1 reste dans la barre, les autres sont en tête de « Soins ») et ont une carte en haut de l’accueil. Les sujets traités aussi apparaissent dans une rangée plus discrète « Aussi au cabinet ».' },
+      { titre: 'Ordre', conseil: 'Le n° 1 est l’activité qui occupe le plus votre agenda : il choisit aussi le modèle proposé et les illustrations. Choisir moins de 3 sujets est possible.' },
+      { titre: 'Soins', conseil: 'Un sujet ne s’affiche que si au moins un de ses soins est coché : cochez ensuite les soins réellement pratiqués.' },
+      { titre: 'Bientôt disponible', conseil: 'La posture et l’équilibre seront proposés après validation déontologique : ces sujets ont un niveau de preuve encore faible.' },
+    ],
+  },
+  {
     etape: 'Profil',
     surLeSite: 'Le ton de tous les textes, le modèle proposé et la spécialité qui choisit les illustrations.',
     points: [

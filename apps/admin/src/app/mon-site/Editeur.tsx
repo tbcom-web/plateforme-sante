@@ -40,7 +40,9 @@ import {
   type PraticienDraft,
   type JeuPhotos,
   type SiteDraft,
+  appliquerPriorites,
 } from '@plateforme/core';
+import ChoixSujets from '@/components/ChoixSujets';
 import Apercu from '@/components/Apercu';
 import ApercuTheme from '@/components/ApercuTheme';
 import Photo from '@/components/Photo';
@@ -55,11 +57,11 @@ import ConfirmationPublication from '@/components/ConfirmationPublication';
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
 // version : date de modification du brouillon lue (verrou optimiste) ; titre : « Site de … » quand l'admin édite un client.
-type Props = { siteId: string | null; version?: string | null; titre?: string; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null };
+type Props = { siteId: string | null; version?: string | null; titre?: string; initial: SiteDraft; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null; themesActives?: string[] };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', initial, catalogue, modeles, marquesImportees, jeuPhotos }: Props) {
+export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', initial, catalogue, modeles, marquesImportees, jeuPhotos, themesActives = [] }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -407,6 +409,18 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
 
           {etape === 5 && (
             <div className="grid gap-8">
+            <fieldset className="grid gap-3 rounded-xl border border-neutral-200 p-4">
+              <legend className="px-1 font-semibold">Structure du site : vos sujets</legend>
+              <p className="text-sm text-neutral-600">Ils ordonnent le menu et l’accueil, et choisissent la spécialité des illustrations (sujets n° 1 et 2).</p>
+              <ChoixSujets
+                priorites={d.priorites}
+                onChange={(p) => { const x = appliquerPriorites(d, p, themesActives); maj({ priorites: x.priorites, theme: x.theme }); }}
+                soins={d.soins}
+                soinsConnus={catalogue.map((c) => c.slug)}
+                themesActives={themesActives}
+                conseils
+              />
+            </fieldset>
             <fieldset>
               <legend className="text-sm text-neutral-600">Chaque compétence cochée aura sa propre page, optimisée pour le référencement.</legend>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">

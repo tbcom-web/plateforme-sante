@@ -115,6 +115,11 @@ export type SiteConfig = {
   photos: { accueil: string; panorama: string; cabinet: string[]; /** Photos du praticien par soin (slug → URL), facultatif */ soins?: Record<string, string> };
   /** Marque de logo importée par l'admin, quand le praticien l'a choisie (nettoyée, voir marques-importees.ts) */
   marqueImportee?: import('./marques-importees').MarqueImportee;
+  /**
+   * Hiérarchie choisie par le praticien (themes.ts) : thèmes principaux (menu, cartes de l'accueil) et secondaires
+   * (« Aussi au cabinet ») ; absente = navigation sans thème (Soins, Le cabinet, Infos pratiques).
+   */
+  priorites?: import('./themes').Priorites;
   /** Textes personnalisés par le praticien (clés de personnalisation.ts) ; absents = texte standard */
   textes?: Record<string, string>;
   /** Pack visuel de la spécialité (photos par défaut) et animation d'accueil retenue (null = aucune) */

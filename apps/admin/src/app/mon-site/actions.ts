@@ -10,6 +10,8 @@ import { manques } from '@/lib/sites';
 import { declencherPublication } from '@/lib/publication';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
 import { textesAConserver } from '@/lib/personnalisation';
+import { themesActives } from '@/lib/themes';
+import { prioritesSelectionnables } from '@plateforme/core';
 
 /** version : date de dernière modification du brouillon après l'enregistrement (verrou optimiste) ; conflit : modifié ailleurs. */
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string; version?: string; conflit?: boolean };
@@ -115,6 +117,8 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
     photos: { accueil: photo(d.photos.accueil), panorama: photo(d.photos.panorama), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
     ...(Array.isArray(d.fichesConseils) ? { fichesConseils: d.fichesConseils.filter((f) => SUJETS_FICHES_CONSEILS.some((x) => x.id === f)).slice(0, 12) } : {}),
     soins: d.soins.filter((s) => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 30),
+    // Hiérarchie du site : thèmes connus, 3 + 3 au plus, sans doublon ; thèmes différés refusés sauf drapeau THEMES_ACTIVES.
+    priorites: prioritesSelectionnables(d.priorites, themesActives()),
     // Textes de l'éditeur visuel : zones connues, longueurs bornées, lexique, option « édition » pour les zones guidées.
     perso: { textes: validerPersonnalisation(d.perso.textes, edition).textes },
   };

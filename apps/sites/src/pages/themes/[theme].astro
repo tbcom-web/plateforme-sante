@@ -9,7 +9,7 @@ import TetePage from '../../components/gabarits/TetePage.astro';
 import Icone from '../../components/Icone.astro';
 import { site, dateFr } from '../../lib/site';
 import { breadcrumbSchema, themeSchema } from '../../lib/schema';
-import { titreCompetences, localisation, lienRdv, libelleRdv, rdvEnLigne, telLien, viaPlateforme, lieu } from '../../lib/textes';
+import { titreCompetences, localisation, lienRdv, libelleRdv, rdvEnLigne, telLien, viaPlateforme, lieu, aLaVille, aAdresse, aTelephone, adresseLieu } from '../../lib/textes';
 import { nouveauGabarit, pictoDuSoin } from '../../lib/gabarits';
 import { themesDuSite, pageTheme, pictoTheme } from '../../lib/navigation';
 import { espacesFines, type ThemeDuSite } from '@plateforme/core';
@@ -27,7 +27,7 @@ const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`
 <Gabarit title={p.title} description={p.description} path={p.path} schemas={[themeSchema({ nom: p.titre, description: p.description, path: p.path, soins: p.soins }), breadcrumbSchema(crumbs)]}>
   {nouveauGabarit ? (
     <TetePage crumbs={crumbs} sur={localisation} chapo={p.intro}>
-      <h1 slot="titre">{espacesFines(t.theme.libelle)}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
+      <h1 slot="titre">{espacesFines(t.theme.libelle)}{aLaVille && <>{' '}<span class="pale">{aLaVille}</span></>}</h1>
     </TetePage>
   ) : (
     <section class="cadre tete-page">
@@ -35,7 +35,7 @@ const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`
       <div class="tete-page__grille">
         <div>
           <p class="sur">{localisation}</p>
-          <h1>{espacesFines(t.theme.libelle)}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
+          <h1>{espacesFines(t.theme.libelle)}{aLaVille && <>{' '}<span class="pale">{aLaVille}</span></>}</h1>
           <p class="chapo">{p.intro}</p>
         </div>
       </div>
@@ -69,10 +69,10 @@ const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`
 
       <section class="theme__rdv" aria-labelledby="titre-rdv">
         <h2 id="titre-rdv" class="theme__titre">Prendre rendez-vous</h2>
-        <p class="theme__lieu">{lieu.nom || site.cabinet.nom}, {lieu.adresse}, {lieu.codePostal} {lieu.ville}</p>
+        <p class="theme__lieu">{lieu.nom || site.cabinet.nom}{aAdresse && `, ${adresseLieu}`}</p>
         <div class="theme__actions">
           <a class="theme__bouton theme__bouton--plein" href={rdv}>{libelleRdv}{!plusieurs && viaPlateforme && <span>{viaPlateforme}</span>}</a>
-          {rdvEnLigne && <a class="theme__bouton" href={telLien}>{site.cabinet.telephone}</a>}
+          {rdvEnLigne && aTelephone && <a class="theme__bouton" href={telLien}>{site.cabinet.telephone}</a>}
         </div>
       </section>
     </div>

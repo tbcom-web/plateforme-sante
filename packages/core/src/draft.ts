@@ -7,6 +7,7 @@ import type { Horaire, SiteConfig } from './types';
 import type { Voix } from './lexique';
 import type { SectionAccueil } from './modeles';
 import type { Registre } from './dessins';
+import { deduirePriorites, normaliserPriorites, type Priorites } from './themes';
 
 export type MiseEnPage = SiteConfig['theme']['mise_en_page'];
 export type StyleImages = SiteConfig['theme']['style_images'];
@@ -133,6 +134,12 @@ export type SiteDraft = {
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
   /** URLs publiques des photos (stockage Supabase) */
   photos: { accueil: string; panorama: string; cabinet: string[] };
+  /**
+   * Hiérarchie du site (themes.ts) : jusqu'à 3 thèmes principaux par ordre de préférence (menu, cartes de l'accueil, pages
+   * de thème) et jusqu'à 3 thèmes secondaires (« Aussi au cabinet »). Absent d'un brouillon ancien : déduit à la lecture
+   * de la spécialité et des soins cochés (normaliserDraft).
+   */
+  priorites: Priorites;
   /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
   /** Fiches conseils proposées aux patients (identifiants de SUJETS_FICHES_CONSEILS, catalogue-univers.ts), facultatif */
@@ -242,6 +249,7 @@ export const draftVide = (): SiteDraft => ({
   theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'illustrations', logo: { marque: 'empreinte', disposition: 'horizontale' }, logoPerso: { url: '', complet: true }, animation: true, jeuPhotos: '' },
   photos: { accueil: '', panorama: '', cabinet: [] },
   flux: { mode: 'manuel', themes: [] },
+  priorites: { principaux: [], secondaires: [] },
   soins: [],
   perso: { textes: {} },
 });
@@ -267,6 +275,10 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
       praticiens: Array.isArray(d.praticiens) && d.praticiens.length ? d.praticiens.map((p: any) => ({ ...praticienVide(), ...p })) : vide.praticiens,
       soins: Array.isArray(d.soins) ? d.soins : [],
+      // Priorités enregistrées : normalisées ; absentes (brouillon antérieur) : déduites de la spécialité et des soins.
+      priorites: d.priorites !== undefined && d.priorites !== null
+        ? normaliserPriorites(d.priorites)
+        : deduirePriorites({ soins: Array.isArray(d.soins) ? d.soins : [], theme: { specialite: d.theme?.specialite ?? specialiteDuProfil(d.profil), specialiteSecondaire: d.theme?.specialiteSecondaire, soinsEnAvant: Array.isArray(d.theme?.soinsEnAvant) ? d.theme.soinsEnAvant : [] } }),
       // Sites enregistrés avant la rubrique « Matériel et hygiène » : aucun équipement.
       equipements: nettoyerEquipements(d.equipements),
       equipementsAutres: nettoyerEquipementsAutres(d.equipementsAutres),
@@ -288,5 +300,6 @@ export function normaliserDraft(brut: unknown): SiteDraft {
     rdv: { mode: d.rdv?.url ? 'les_deux' : 'telephone', outil: d.rdv?.plateforme || 'Doctolib', url: d.rdv?.url ?? '' },
     theme: { ...vide.theme, modeVisuel: 'mixte', couleur: d.theme?.couleur ?? vide.theme.couleur },
     soins: Array.isArray(d.soins) ? d.soins : [],
+    priorites: deduirePriorites({ soins: Array.isArray(d.soins) ? d.soins : [], theme: vide.theme }),
   };
 }

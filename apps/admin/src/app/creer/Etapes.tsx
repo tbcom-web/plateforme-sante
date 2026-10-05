@@ -1,6 +1,6 @@
 'use client';
 
-// Écrans des étapes 2 à 5 du parcours guidé (/creer) et vérification avant publication. Peu d'information à la fois,
+// Écrans des étapes 3 à 6 du parcours guidé (/creer ; l'étape 1 « Vos sujets » est components/ChoixSujets.tsx, la 2 dans Parcours.tsx) et vérification avant publication. Peu d'information à la fois,
 // une recommandation par défaut, libellés explicites ; les champs avancés restent dans le formulaire complet (/mon-site).
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import Link from 'next/link';
@@ -41,6 +41,7 @@ import {
   type ResultatControle,
   type SiteDraft,
   type Univers,
+  themeParId,
 } from '@plateforme/core';
 import Photo from '@/components/Photo';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
@@ -556,7 +557,7 @@ export function EtapeContenus({ d, univers, maj }: { d: SiteDraft; univers?: Uni
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Étape où se complète une information manquante */
-const etapeDuManque = (m: string) => (/compétence/i.test(m) ? 4 : 3);
+const etapeDuManque = (m: string) => (/compétence/i.test(m) ? 5 : 4);
 
 export function Verification({
   d, controle, catalogue, univers, admin, enCours, publication, onModifier, onPublier, lienAvance,
@@ -578,15 +579,16 @@ export function Verification({
   const titreSoin = (slug: string) => catalogue.find((c) => c.slug === slug)?.titre_court ?? slug;
   const enAvant = soinsEnAvantValides(d.theme.soinsEnAvant, d.soins);
   const lignes: [string, ReactNode, number][] = [
-    ['Site', univers?.nom ?? '—', 1],
-    ['Couleurs', g ? g.nom : <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-4 rounded-full ring-1 ring-black/10" style={{ background: d.theme.couleur }} />Couleur personnalisée</span>, 2],
-    ['Cabinet', [d.cabinet.nom, [lieu.adresse, lieu.codePostal, lieu.ville].filter(Boolean).join(' '), d.cabinet.telephone].filter(Boolean).join(' · ') || '—', 3],
-    [d.praticiens.length > 1 ? 'Praticiens' : 'Praticien', noms.join(', ') || '—', 3],
-    ['Rendez-vous', d.rdv.mode === 'telephone' ? 'Par téléphone' : d.rdv.url || 'Lien à indiquer', 3],
-    ['Soins', d.soins.length ? `${d.soins.length} soin${d.soins.length > 1 ? 's' : ''}${enAvant.length ? `, en avant : ${enAvant.map(titreSoin).join(', ')}` : ''}` : 'Aucun', 4],
-    ['Logo', d.theme.logoPerso.url ? 'Votre logo' : 'Marque proposée', 4],
-    ['Articles', `${d.flux.mode === 'manuel' ? 'Validés par vous' : 'Publication automatique'}${d.flux.themes.length ? ` · ${d.flux.themes.join(', ')}` : ''}`, 5],
-    ['Fiches conseils', `${(d.fichesConseils ?? []).length} fiche(s)`, 5],
+    ['Sujets', d.priorites.principaux.length ? [...d.priorites.principaux.map((x, i) => `${i + 1}. ${themeParId(x)?.court ?? x}`), ...(d.priorites.secondaires.length ? [`aussi : ${d.priorites.secondaires.map((x) => themeParId(x)?.court ?? x).join(', ')}`] : [])].join(' · ') : 'Aucun', 1],
+    ['Site', univers?.nom ?? '—', 2],
+    ['Couleurs', g ? g.nom : <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-4 rounded-full ring-1 ring-black/10" style={{ background: d.theme.couleur }} />Couleur personnalisée</span>, 3],
+    ['Cabinet', [d.cabinet.nom, [lieu.adresse, lieu.codePostal, lieu.ville].filter(Boolean).join(' '), d.cabinet.telephone].filter(Boolean).join(' · ') || '—', 4],
+    [d.praticiens.length > 1 ? 'Praticiens' : 'Praticien', noms.join(', ') || '—', 4],
+    ['Rendez-vous', d.rdv.mode === 'telephone' ? 'Par téléphone' : d.rdv.url || 'Lien à indiquer', 4],
+    ['Soins', d.soins.length ? `${d.soins.length} soin${d.soins.length > 1 ? 's' : ''}${enAvant.length ? `, en avant : ${enAvant.map(titreSoin).join(', ')}` : ''}` : 'Aucun', 5],
+    ['Logo', d.theme.logoPerso.url ? 'Votre logo' : 'Marque proposée', 5],
+    ['Articles', `${d.flux.mode === 'manuel' ? 'Validés par vous' : 'Publication automatique'}${d.flux.themes.length ? ` · ${d.flux.themes.join(', ')}` : ''}`, 6],
+    ['Fiches conseils', `${(d.fichesConseils ?? []).length} fiche(s)`, 6],
   ];
   // Plus rien ne bloque la publication : avec des informations manquantes, une confirmation les liste (« Publier quand même »).
   const [confirmer, setConfirmer] = useState(false);

@@ -3,7 +3,7 @@
 // d'un modèle à l'autre. Thèmes différés (posture) : seulement si activés par le drapeau THEMES_ACTIVES au build.
 import { construireNavigation, themeParId, type ThemeDuSite } from '@plateforme/core';
 import { site } from './site';
-import { noms, titreMetierAffiche, lieuExercice } from './textes';
+import { noms, titreMetierAffiche, lieuExercice, suffixeVille } from './textes';
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
 export const themesActives = (env('THEMES_ACTIVES') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
@@ -33,9 +33,10 @@ export function pageTheme(t: ThemeDuSite) {
   const soins = t.soins.map(soinDuSite).filter((s): s is NonNullable<typeof s> => Boolean(s));
   return {
     path: t.href,
-    titre: `${t.theme.libelle} à ${site.cabinet.ville}`,
-    title: `${t.theme.libelle} à ${site.cabinet.ville} – ${noms}`,
-    description: `${t.theme.description} ${noms}, ${titreMetierAffiche.toLowerCase()} ${lieuExercice}.`,
+    // Sans ville : pas de « à » orphelin (replis de lib/textes.ts)
+    titre: `${t.theme.libelle}${suffixeVille}`,
+    title: `${t.theme.libelle}${suffixeVille} – ${noms}`,
+    description: `${t.theme.description} ${noms}, ${titreMetierAffiche.toLowerCase()}${lieuExercice ? ` ${lieuExercice}` : ''}.`,
     intro: t.theme.intro,
     soins,
     articles: [...site.articles].filter((a) => t.theme.themesFlux.includes(a.theme)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3),
