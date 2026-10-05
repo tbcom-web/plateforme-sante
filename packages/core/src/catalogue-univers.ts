@@ -315,6 +315,29 @@ export const CATALOGUE_UNIVERS: Univers[] = [
       fichesConseils: ['premier-rendez-vous', 'senior-chutes', 'diabete-examen-quotidien', 'coupe-ongles'],
     },
   },
+  // Gabarit « revue » (2026-10-05) : option nouvelle, les univers ci-dessus ne changent pas (docs/univers.md).
+  {
+    id: 'elegant-sobre',
+    nom: 'Élégant et sobre',
+    pourQui: 'Cabinet discret, en centre-ville ou en exercice seul : une présentation soignée, sans effet, facile à lire.',
+    justification: 'Gabarit « Revue » (titres Bodoni Moda, texte Newsreader, papier blanc cassé, colonnes de journal, filets fins) en mangue et encre (gamme vitaminée), un seul dessin au trait continu, sans animation.',
+    statut: 'brouillon',
+    revu: false,
+    preReglage: {
+      modele: 'revue',
+      gamme: 'mangue',
+      specialite: 'generale',
+      specialiteSecondaire: '',
+      registre: 'ligne',
+      modeVisuel: 'illustrations',
+      animation: false,
+      logo: { marque: 'empreinte', disposition: 'horizontale' },
+      soinsEnAvant: ['bilan-podologique', 'semelles-orthopediques', 'soins-de-pedicurie', 'pied-diabetique'],
+      jeuPhotos: '',
+      themesFlux: ['Prévention', 'Saison', 'Actualité de la profession'],
+      fichesConseils: ['premier-rendez-vous', 'coupe-ongles', 'cors-durillons', 'semelles-entretien'],
+    },
+  },
 ];
 
 export const universCatalogue = (id: string | undefined | null) => CATALOGUE_UNIVERS.find((u) => u.id === id);

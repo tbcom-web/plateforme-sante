@@ -3,13 +3,15 @@
 // Infos pratiques — chaque bulle (picto métier de pictos.ts + texte court) mène à sa page ou ouvre le bon volet de « Venir au
 // cabinet ». En `complet` (page « Compétences »), les soins sont de grandes bulles avec leur résumé d'une ligne.
 // - « bulles » (tableau) : pastilles arrondies ; Soins sur la couleur vive pâle, Pour qui sur le duo pâle, Infos neutres ;
-// - « grille » (village) : boutons rectangulaires bordés, deux par ligne, étiquettes de rangée en capitales.
+// - « grille » (village) : boutons rectangulaires bordés, deux par ligne, étiquettes de rangée en capitales ;
+// - « filets » (revue) : bulles à filet fin, texte encre, picto nu de la couleur de la rangée (soins : couleur du cabinet pâle,
+//   pour qui : duo pâle, infos : sans fond), étiquettes de rangée en italique ; page « Compétences » : cadres à filet.
 // Les étiquettes de rangée ne sont pas des titres (aucun intertitre ajouté : SEO identique).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { pourQui, pictoDuSoin, infosPratiques } from '../../lib/gabarits';
 
-interface Props { variante: 'bulles' | 'grille'; complet?: boolean; accueil?: boolean }
+interface Props { variante: 'bulles' | 'grille' | 'filets'; complet?: boolean; accueil?: boolean }
 const { variante, complet = false, accueil = false } = Astro.props;
 const infos = infosPratiques(accueil);
 const rangees = [
@@ -80,4 +82,25 @@ const rangees = [
   .rangees--grille .rangee--publics .bulle__picto { background: var(--g-duo-bulle); color: var(--g-duo-picto); }
   .rangees--grille .rangee--infos .bulle__picto { background: var(--g-doux); color: var(--g-encre); }
   @media (max-width: 559px) { .rangees--bulles .rangee__bulles { gap: 8px; } .bulle { padding-right: 14px; } }
+  /* Filets (revue) */
+  .rangees--filets { gap: 28px; }
+  .rangees--filets .rangee { gap: 12px; }
+  .rangees--filets .rangee__etiquette { font-style: italic; font-weight: 400; font-size: 1.05rem; }
+  .rangees--filets .bulle { gap: 10px; padding: 6px 20px 6px 12px; font-size: 1.1rem; font-weight: 400; color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .rangees--filets .bulle:hover { color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet) var(--g-encre); }
+  .rangees--filets .bulle__picto { width: 28px; height: 28px; background: none; }
+  .rangees--filets .bulle__picto :global(.icone) { width: 26px; height: 26px; }
+  .rangees--filets .rangee--soins .bulle { background: var(--g-bulle); box-shadow: inset 0 0 0 var(--filet) var(--g-bulle-bord); }
+  .rangees--filets .rangee--soins .bulle__picto { color: var(--g-bulle-picto); }
+  .rangees--filets .rangee--publics .bulle { background: var(--g-duo-bulle); box-shadow: inset 0 0 0 var(--filet) var(--g-duo-bord); }
+  .rangees--filets .rangee--publics .bulle__picto { color: var(--g-duo-picto); }
+  .rangees--filets .rangee--infos .bulle__picto { color: var(--g-accent-texte); }
+  .rangees--filets :is(.rangee--soins, .rangee--publics) .bulle:hover { box-shadow: inset 0 0 0 var(--filet) var(--g-encre); }
+  .rangees--filets.rangees--complet .rangee--soins .rangee__bulles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+  .rangees--filets.rangees--complet .rangee--soins .bulle { border-radius: 4px; padding: 18px 20px; gap: 16px; background: transparent; box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); align-items: center; }
+  .rangees--filets.rangees--complet .rangee--soins .bulle:hover { box-shadow: inset 0 0 0 var(--filet) var(--g-encre); }
+  .rangees--filets.rangees--complet .rangee--soins .bulle__picto { width: 40px; height: 40px; }
+  .rangees--filets.rangees--complet .rangee--soins .bulle__picto :global(.icone) { width: 34px; height: 34px; }
+  .rangees--filets.rangees--complet .rangee--soins .bulle__libelle { font-family: var(--police-titres); font-weight: 500; font-size: 1.22rem; line-height: 1.2; }
+  .rangees--filets.rangees--complet .rangee--soins .bulle__resume { font-size: 1.02rem; }
 </style>

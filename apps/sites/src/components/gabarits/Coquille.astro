@@ -1,5 +1,5 @@
 ---
-// Coquille des gabarits autres que « classique » (tableau, village… : packages/core/src/modeles.ts, GABARITS) : en-tête court,
+// Coquille des gabarits autres que « classique » (tableau, village, revue… : packages/core/src/modeles.ts, GABARITS) : en-tête court,
 // navigation en bulles, pied de page sobre, barre d'actions sur téléphone. Rendue par layouts/Gabarit.astro à la place de
 // l'en-tête et du pied de page classiques ; le <head> (title, description, données structurées) reste celui du gabarit commun.
 // Règles de clarté : une idée par écran, menu court, texte de 18 px (20 px en « village »), une couleur d'accent, beaucoup
@@ -8,6 +8,9 @@
 // Styles : les classes partagées par les sections (g-*) sont déclarées ici sous .coquille (sélecteurs portant l'attribut
 // du composant) : sur un site « classique », la coquille est absente et ces règles sont retirées de la page au build
 // (styles-alleges, astro.config.mjs).
+// Revue : en-tête sur le papier, souligné d'un filet double ; sections en colonnes de journal (chiffre romain et titre à
+// gauche, contenu à droite ; une colonne sur téléphone), compteur CSS (aucun texte ajouté au HTML : SEO identique) ;
+// filets fins à la place des cartes ; pied de page sur le papier, filet double ; aucune animation.
 import Logo from '../Logo.astro';
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
@@ -238,4 +241,78 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : 'Appeler';
   .c-barre__plein { background: var(--g-vif); color: var(--g-vif-texte) !important; }
   @media (min-width: 900px) { .c-barre { display: none; } }
   @media (prefers-reduced-motion: reduce) { .coquille :global(*) { transition: none !important; } }
+  /* ———— Revue : éditorial sobre (Bodoni Moda pour les titres, Newsreader pour le texte) ———— */
+  .coquille--revue { --largeur: 1120px; --gouttiere: 64px; font-size: 1.1875rem; line-height: 1.6; }
+  @media (max-width: 759px) { .coquille--revue { --gouttiere: 32px; font-size: 1.125rem; } }
+  :global(html[data-gabarit='revue'] body :is(h1, h2, h3)) { font-weight: 500; letter-spacing: -0.01em; line-height: 1.1; }
+  :global(html[data-gabarit='revue'] body h1) { font-size: clamp(2.3rem, 4.8vw, 3.6rem); line-height: 1.05; }
+  :global(html[data-gabarit='revue'] body h2) { font-size: clamp(1.7rem, 2.6vw, 2.2rem); line-height: 1.12; }
+  :global(html[data-gabarit='revue'] body h3) { font-size: 1.25rem; }
+  .coquille--revue :global(*) { transition: none !important; }
+  .coquille--revue :global(.g-sur) { font-style: italic; font-weight: 400; font-size: 1.05rem; color: var(--g-encre-douce); }
+  .coquille--revue :global(.g-chapo) { font-style: italic; }
+  .coquille--revue :global(.g-suite) { font-weight: 600; }
+  .coquille--revue :global(.g-carte) { background: none; box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); border-radius: 4px; }
+  /* En-tête : nom en italique à empattements, menu court, filet double */
+  .coquille--revue .c-entete { padding: 0; background: var(--g-page); border-bottom: 3px double var(--g-encre); }
+  .coquille--revue .c-entete__ligne { min-height: 76px; }
+  .coquille--revue .c-entete :global(.logo strong) { font-family: var(--police-titres); font-style: italic; font-weight: 500; font-size: 1.3rem; letter-spacing: 0; }
+  .coquille--revue .c-entete :global(.logo small) { font-size: 0.9rem; letter-spacing: 0.02em; }
+  .coquille--revue .c-nav a { font-weight: 400; font-size: 1.05rem; }
+  .coquille--revue .c-nav a:hover, .coquille--revue .c-nav a[aria-current='page'] { background: none; color: var(--g-accent-texte); }
+  .coquille--revue .c-nav a:hover { text-decoration: underline; }
+  .coquille--revue .c-nav .c-nav__rdv a { font-weight: 600; padding-inline: 22px; }
+  @media (max-width: 759px) {
+    .coquille--revue .c-entete__ligne { min-height: 64px; padding-top: 6px; }
+    .coquille--revue .c-nav { flex-basis: 100%; }
+    .coquille--revue .c-nav ul { justify-content: space-between; }
+    .coquille--revue .c-nav li:first-child a { padding-left: 0; }
+    .coquille--revue .c-nav li:nth-last-child(2) a { padding-right: 0; }
+    .coquille--revue .c-nav a { padding-inline: 10px; }
+    .coquille--revue .c-nav__rdv { display: none; }
+  }
+  /* Boutons : plein dans la couleur du cabinet (la plus contrastée du duo), secondaire à filet encre */
+  .coquille--revue :global(.g-bouton) { font-weight: 600; font-size: 1.05rem; }
+  .coquille--revue :global(.g-bouton--ligne) { background: transparent; box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
+  .coquille--revue :global(.g-bouton--ligne:hover) { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); text-decoration: underline; }
+  /* Bulles (autres compétences) : filet fin, picto nu */
+  .coquille--revue :global(.g-bulle) { padding: 6px 20px 6px 12px; background: transparent; color: var(--g-encre); font-weight: 400; font-size: 1.1rem; box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .coquille--revue :global(.g-bulle:hover) { color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet) var(--g-encre); }
+  .coquille--revue :global(.g-bulle__picto) { width: 28px; height: 28px; background: none; color: var(--g-accent-texte); }
+  /* Sections : filet fin entre elles, beaucoup d'air */
+  .coquille--revue :global(.g-section.g-bloc) { padding-block: clamp(56px, 8vw, 96px); }
+  .coquille--revue :global(.g-section.g-bloc + .g-section.g-bloc) { border-top: var(--filet) solid var(--g-ligne); }
+  /* Colonnes de journal (accueil, le cabinet) : chiffre romain et titre à gauche, contenu à droite */
+  .coquille--revue .c-principal { counter-reset: folio; }
+  .coquille--revue :global(.g-bloc:not(.fiche__section) > .g-bloc__dedans > .g-tete::before), .coquille--revue :global(.g-bloc > .g-bloc__dedans.lieu::before) { counter-increment: folio; content: counter(folio, upper-roman); display: block; font-family: var(--police-titres); font-style: italic; font-size: 1.1rem; line-height: 1; color: var(--g-accent-texte); }
+  @media (min-width: 900px) {
+    .coquille--revue :global(.g-bloc:not(.fiche__section) > .g-bloc__dedans:has(> .g-tete)) { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); column-gap: 64px; align-items: start; }
+    .coquille--revue :global(.g-bloc:not(.fiche__section) > .g-bloc__dedans:has(> .g-tete) > *) { grid-column: 2; }
+    .coquille--revue :global(.g-bloc:not(.fiche__section) > .g-bloc__dedans:has(> .g-tete) > .g-tete) { grid-column: 1; grid-row: 1 / span 8; position: sticky; top: 100px; margin: 0; }
+  }
+  /* Questions fréquentes et volets : filets, signe « + » nu */
+  .coquille--revue :global(.accordeon) { gap: 0; border-top: var(--filet) solid var(--g-ligne); }
+  .coquille--revue :global(.accordeon details) { border-radius: 0; background: none; box-shadow: none; border-bottom: var(--filet) solid var(--g-ligne); }
+  .coquille--revue :global(.accordeon summary) { min-height: 60px; padding: 12px 0; grid-template-columns: minmax(0, 1fr) 24px; }
+  .coquille--revue :global(.accordeon summary h3) { font-size: 1.1rem !important; font-weight: 500; }
+  .coquille--revue :global(.accordeon details > p) { padding: 0 0 20px; }
+  .coquille--revue :global(:is(.accordeon__signe, .volets__signe)) { width: 24px; height: 24px; background: none; }
+  .coquille--revue :global(:is(.accordeon__signe, .volets__signe)::before), .coquille--revue :global(:is(.accordeon__signe, .volets__signe)::after) { width: 14px; background: var(--g-encre); }
+  .coquille--revue :global(summary:hover :is(.accordeon__signe, .volets__signe)) { box-shadow: none; }
+  .coquille--revue :global(summary:hover) { color: var(--g-accent-texte); }
+  .coquille--revue :global(.volets summary) { font-weight: 500; }
+  /* Horaires : jour courant en couleur, sans aplat */
+  .coquille--revue :global(.venir .horaires .aujourdhui :is(th, td)) { background: none; color: var(--g-accent-texte); font-weight: 700; }
+  .coquille--revue :global(.venir .horaires .aujourdhui th) { padding-left: 0; }
+  .coquille--revue :global(.horaires .horaires__jour) { color: var(--g-accent-texte); font-style: italic; font-weight: 400; }
+  /* Actualités : date en italique */
+  .coquille--revue :global(.actus--liste .actu__meta) { font-style: italic; }
+  .coquille--revue :global(.actus--liste .actu__titre) { font-weight: 500; font-size: 1.15rem !important; }
+  /* Pied de page : sur le papier, filet double */
+  .coquille--revue .c-pied { margin-top: 0; background: var(--g-page); color: var(--g-encre-douce); border-top: 3px double var(--g-encre); }
+  .coquille--revue .c-pied__titre { color: var(--g-encre); }
+  .coquille--revue .c-pied__bloc:first-child .c-pied__titre { font-family: var(--police-titres); font-style: italic; font-weight: 500; font-size: 1.2rem; }
+  .coquille--revue .c-pied a { color: var(--g-encre); }
+  .coquille--revue .c-pied a:hover { color: var(--g-accent-texte); }
+  .coquille--revue .c-barre { background: var(--g-page); }
 </style>

@@ -48,6 +48,12 @@ export const NEUTRES = {
 } as const;
 
 /**
+ * Papier blanc cassé du gabarit « revue » (fond de page quand la gamme n'a pas son propre blanc cassé, ou couleur libre).
+ * Hors NEUTRES : ce n'est pas une variable globale de la charte, seulement une base de calcul de couleursGabarit (gabarits.ts).
+ */
+export const PAPIER_REVUE = '#fcfaf6';
+
+/**
  * Teintes anatomiques des illustrations de la bibliothèque partagée (bibliotheque/, éléments repris d'ÉcranZen), registre
  * pédagogique : peau (claire, moyenne, ombre), ongle, os et tendon. Valeurs du thème « zen-doux » d'ÉcranZen, validées par
  * Paul sur les atomes du studio (peau-1, peau-2, peau-ombre, ongle, os, tendon) : mêmes rendus sur les sites et en salle d'attente.
@@ -158,6 +164,10 @@ export const POLICES = {
   geist: "'Geist Variable', system-ui, sans-serif",
   /** Sans des services publics, dessinée pour la lecture (gabarit « village ») */
   publicsans: "'Public Sans Variable', system-ui, sans-serif",
+  /** Didone éditoriale, titres seulement (gabarit « revue ») */
+  bodoni: "'Bodoni Moda Variable', Didot, 'Bodoni 72', Georgia, serif",
+  /** Sérif de lecture à taille optique, texte courant (gabarit « revue ») */
+  newsreader: "'Newsreader Variable', Georgia, serif",
 } as const;
 /** Police des données (lectures, cotes, numéros, légendes) : toujours la même, quel que soit le modèle */
 export const POLICE_MONO = "'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Consolas, monospace";

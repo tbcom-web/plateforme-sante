@@ -103,5 +103,14 @@ const acces = [
   .horaires :global(.aujourdhui) th { padding-left: 12px; border-radius: 10px 0 0 10px; }
   .horaires :global(.aujourdhui) td { border-radius: 0 10px 10px 0; }
   .horaires :global(.horaires__jour) { display: block; font-size: 0.85rem; font-weight: 600; color: var(--g-bulle-texte); }
+  /* Revue : une colonne à filets (à côté du plan, page « Plan d'accès ») ; jour courant en couleur, sans aplat */
+  :global(.coquille--revue) .infos--tuiles { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  :global(.coquille--revue) .infos--tuiles .info--horaires { grid-row: auto; }
+  :global(.coquille--revue) .info { padding: 22px 0; border-radius: 0; background: none; box-shadow: none; border-top: var(--filet) solid var(--g-ligne); }
+  :global(.coquille--revue) .info:first-child { border-top: 0; padding-top: 0; }
+  :global(.coquille--revue) .info__titre { font-weight: 600; }
+  :global(.coquille--revue) .horaires :global(.aujourdhui) :is(th, td) { background: none; color: var(--g-accent-texte); font-weight: 700; }
+  :global(.coquille--revue) .horaires :global(.aujourdhui) th { padding-left: 0; }
+  :global(.coquille--revue) .horaires :global(.horaires__jour) { color: var(--g-accent-texte); font-style: italic; font-weight: 400; }
   .communes { margin-top: 20px !important; color: var(--g-encre-douce); font-size: 0.95rem; }
 </style>

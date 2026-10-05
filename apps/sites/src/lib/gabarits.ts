@@ -1,11 +1,11 @@
 // Données communes aux variantes de sections des gabarits autres que « classique » (components/gabarits/*) : variantes
 // effectives du modèle, bulles « pour qui », horaires du jour, atouts du lieu. Aucun texte nouveau qui serait un titre :
 // les intertitres (H1, H2) restent ceux du gabarit classique (SEO identique, npm run controle:seo).
-import { variantesModele, gabaritModele, pictoSoin, resumeHygiene, faitEquipement, rendreCase, type Variantes } from '@plateforme/core';
+import { variantesModele, gabaritModele, pictoSoin, resumeHygiene, faitEquipement, rendreCase, LIGNE_DESSIN, type Variantes, type NomDessin, type NomLigne } from '@plateforme/core';
 import { site } from './site';
 import { lieu, rdvEnLigne, TYPES_LIEU } from './textes';
 import { visuelSoin, photoPraticienSoin } from './visuels-soins';
-import { modeVisuel } from './visuels';
+import { modeVisuel, registre } from './visuels';
 
 export const gabarit = gabaritModele(site.modele);
 /** Gabarit autre que « classique » : les pages passent par les variantes de sections. */
@@ -57,8 +57,29 @@ export const titreLieu = `${nomLieu} à ${lieu.ville || site.cabinet.ville}`;
 export function visuelVariante(slug: string, contexte: 'liste' | 'page') {
   const v = visuelSoin(slug);
   const r = rendreCase(v, modeVisuel, contexte, { photoPraticien: photoPraticienSoin(slug), animationActive: false });
-  return r.type === 'photo' ? { type: 'photo' as const, src: r.src, cadrage: r.cadrage, praticien: r.src === photoPraticienSoin(slug) } : { type: 'dessin' as const, dessin: v.dessin };
+  return r.type === 'photo' ? { type: 'photo' as const, src: r.src, cadrage: r.cadrage, praticien: r.src === photoPraticienSoin(slug) } : { type: 'dessin' as const, dessin: unSujet(v.dessin) };
 }
+
+/**
+ * Dessins à plusieurs sujets côte à côte (trois pieds et leurs empreintes, trois arrière-pieds) : dans le cadre bas et large
+ * d'un en-tête de fiche, les sujets se tassent et se coupent (lu « des jambes alignées »). Ces gabarits montrent UNE
+ * illustration claire par fiche : le dessin à un seul sujet le plus proche (empreintes des deux pieds avec leurs zones
+ * d'appui, pour le bilan). Le registre « ligne » a déjà un sujet unique par dessin (LIGNE_DESSIN) : inchangé.
+ */
+const UN_SUJET: Partial<Record<NomDessin, NomDessin>> = { voutes: 'analyse', 'arriere-pied': 'analyse' };
+const unSujet = (d: NomDessin): NomDessin => (registre === 'ligne' ? d : (UN_SUJET[d] ?? d));
+
+/** Dessin au trait continu d'un soin (gabarit « revue » : figure du premier écran et des fiches). */
+export const ligneDuSoin = (slug: string): NomLigne => LIGNE_DESSIN[visuelSoin(slug).dessin] ?? 'pied-dessous';
+/** Légende factuelle d'un dessin au trait continu : ce qui est dessiné, jamais une promesse ni une mesure. */
+const LEGENDES_LIGNE: Record<NomLigne, string> = {
+  'pied-dessous': 'Le pied, vue de dessous', 'pied-dessus': 'Le pied, vue de dessus', 'pieds-dessus': 'Les pieds, vue de dessus',
+  empreintes: 'Empreintes des deux pieds', 'pied-profil': 'Le pied, vue de profil', marche: 'La marche', ongle: 'Les ongles des orteils',
+  semelle: 'Une semelle orthopédique', 'chaussure-course': 'Une chaussure de course', 'premiers-pas': 'Pied d’adulte et pied d’enfant',
+  'senior-canne': 'La marche avec une canne', fauteuil: 'Le fauteuil de soins', instruments: 'Les instruments de soin',
+  autoclave: 'L’autoclave de stérilisation', podoscope: 'Le podoscope', monofilament: 'Le test au monofilament',
+};
+export const legendeLigne = (nom: NomLigne) => LEGENDES_LIGNE[nom];
 
 /**
  * Bulles « Infos pratiques » (règles de clarté) : chacune ouvre le bon volet de « Venir au cabinet » (accueil) ou mène à la

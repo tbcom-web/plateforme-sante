@@ -14,6 +14,11 @@ import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/nunito';
 import '@fontsource-variable/geist';
 import '@fontsource-variable/public-sans';
+// Gabarit « revue » : Bodoni Moda (titres) et Newsreader (texte), droit et italique (mots en retrait, légendes)
+import '@fontsource-variable/bodoni-moda/wght.css';
+import '@fontsource-variable/bodoni-moda/wght-italic.css';
+import '@fontsource-variable/newsreader/wght.css';
+import '@fontsource-variable/newsreader/wght-italic.css';
 // Fichiers latins préchargés (texte, titres et leur italique, mono des données), tous visibles dès le haut de
 // page : le texte s'affiche tout de suite dans la bonne police, sans décalage quand une police arrive en retard.
 import policeInter from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
@@ -27,6 +32,10 @@ import policeNunito from '@fontsource-variable/nunito/files/nunito-latin-wght-no
 import policeMono from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url';
 import policeGeist from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
 import policePublicSans from '@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2?url';
+import policeBodoni from '@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-wght-normal.woff2?url';
+import policeBodoniItalique from '@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-wght-italic.woff2?url';
+import policeNewsreader from '@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url';
+import policeNewsreaderItalique from '@fontsource-variable/newsreader/files/newsreader-latin-wght-italic.woff2?url';
 import Coquille from '../components/gabarits/Coquille.astro';
 import Icone from '../components/Icone.astro';
 import Logo from '../components/Logo.astro';
@@ -89,6 +98,9 @@ const REPLIS: Record<string, Repli> = {
   // Gabarits tableau et village (mêmes calculs : @capsizecss/unpack sur les fichiers latins)
   'Geist Variable': { sources: SANS, taille: 104.76, haut: 95.93, bas: 28.16 },
   'Public Sans Variable': { sources: SANS, taille: 102.18, haut: 92.97, bas: 22.02 },
+  // Gabarit revue (même calcul, repli Times New Roman et son italique)
+  'Bodoni Moda Variable': { sources: SERIF, taille: 114.22, haut: 98.5, bas: 35.02, italique: { taille: 106.93, haut: 105.21, bas: 37.41 } },
+  'Newsreader Variable': { sources: SERIF, taille: 105.48, haut: 69.68, bas: 25.12, italique: { taille: 98.48, haut: 74.63, bas: 26.91 } },
 };
 /** Première famille d'une pile : « 'Inter Variable', system-ui » → « Inter Variable ». */
 const famille = (pile: string) => pile.match(/'([^']+)'/)?.[1] ?? '';
@@ -125,10 +137,12 @@ const couleurs = [
   `--voile:${m.accueil.voile / 100}`,
   ...Object.entries(variablesGabarit(m, site.theme)).map(([k, v]) => `${k}:${v}`),
 ].join(';');
-const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito, geist: policeGeist, publicsans: policePublicSans } as const;
+const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito, geist: policeGeist, publicsans: policePublicSans, bodoni: policeBodoni, newsreader: policeNewsreader } as const;
 // Italique des titres (mots en retrait « .pale » du titre principal) : seulement pour les titres à empattements.
-const ITALIQUES: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { fraunces: policeFrauncesItalique, instrument: policeInstrumentItalique };
-const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres], ITALIQUES[m.jetons.policeTitres], sansMono ? '' : policeMono].filter(Boolean))];
+const ITALIQUES: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { fraunces: policeFrauncesItalique, instrument: policeInstrumentItalique, bodoni: policeBodoniItalique };
+// Italique du texte (gabarit revue : chapô et légendes en italique dès le premier écran)
+const ITALIQUES_TEXTE: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { newsreader: policeNewsreaderItalique };
+const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres], ITALIQUES[m.jetons.policeTitres], ITALIQUES_TEXTE[m.jetons.policeTexte], sansMono ? '' : policeMono].filter(Boolean))];
 // Chargement des mêmes polices lancé dès le début du corps de page : un fichier préchargé n'est appliqué
 // qu'après décodage, et la première mise en page se ferait sinon avec la police de secours (le texte se
 // recompose ensuite et décale la page).
@@ -136,6 +150,7 @@ const policesAvantAffichage = [
   `400 1em "${famille(POLICES[m.jetons.policeTexte])}"`,
   `${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`,
   ...(ITALIQUES[m.jetons.policeTitres] ? [`italic ${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`] : []),
+  ...(ITALIQUES_TEXTE[m.jetons.policeTexte] ? [`italic 400 1em "${famille(POLICES[m.jetons.policeTexte])}"`] : []),
   ...(sansMono ? [] : [`400 1em "${famille(POLICE_MONO)}"`]),
 ];
 const motif = m.jetons.motif ?? 'plan';

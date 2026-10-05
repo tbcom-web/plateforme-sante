@@ -110,6 +110,7 @@ Prescriptif : à chaque étape, une recommandation par défaut, un bouton « Con
 | Simple et rassurant | Simple et pédagogique · sauge | générale + soins | pédagogique · mélange · non | empreinte | brouillon |
 | Clair et pratique | **Tableau** · cobalt & abricot | générale | ligne · illustrations · non | empreinte | brouillon |
 | Simple et proche | **Village** · tournesol & ardoise | générale + soins | pédagogique · illustrations · non | empreinte | brouillon |
+| Élégant et sobre | **Revue** · mangue & encre | générale | ligne · illustrations · non | empreinte | brouillon |
 
 Spécialité ajoutée pour le premier : `diabete` (`packs.ts`) — accueil sur le schéma du dépistage au monofilament
 (3 sites), sans animation ni lecture de pression rouge ; pas de pied nu en marche.
@@ -131,3 +132,11 @@ Gammes conseillées : Tableau → cobalt-abricot, lavande, menthe, mangue (évit
 tournesol, menthe, cobalt-abricot, pistache. Toute gamme ou couleur libre reste lisible (garde-fous de contraste,
 `couleursGabarit`). Un univers existant peut passer sur l'un de ces modèles en changeant seulement `preReglage.modele`
 (l'ordre des sections, s'il est fixé, doit alors reprendre celles du nouveau modèle).
+
+## Gabarit « Revue » comme option d'univers (2026-10-05)
+
+Univers « Élégant et sobre » (`elegant-sobre`, modèle `revue`) ajouté **sans modifier les univers existants**, en
+brouillon (`npm run univers:apercu -- elegant-sobre`). Revue : éditorial humble pour un cabinet discret (titres Bodoni
+Moda, texte Newsreader, papier blanc cassé, colonnes de journal, filets fins, un seul dessin au trait au premier écran,
+aucune animation). Gammes conseillées : mangue, corail-nuit, menthe, tournesol ; toute gamme ou couleur libre reste
+lisible (`couleursGabarit`, contrôlé sur 17 gammes et 5 couleurs libres extrêmes).

@@ -252,16 +252,27 @@ Un modèle choisit désormais un **gabarit** (`gabarit` dans la fiche, `packages
 - `tableau` (« Clair et pratique ») : cartes arrondies sur un fond à peine teinté, premier écran en carte + aplat vif
   illustré, navigation par bulles, Geist ;
 - `village` (« Simple et proche ») : une colonne de 880 px, texte de 20 px, bandeau pastel au premier écran, deux gros
-  boutons, plan d'accès dans « Venir au cabinet », Public Sans.
+  boutons, plan d'accès dans « Venir au cabinet », Public Sans ;
+- `revue` (« Élégant et sobre ») : éditorial humble, papier blanc cassé, Bodoni Moda (titres) et Newsreader (texte),
+  texte de 19 px (18 px sur téléphone), en-tête et pied soulignés d'un filet double, premier écran sur l'aplat pastel avec
+  UN dessin au trait continu légendé « Fig. 1 — … » (masqué sur téléphone), sections en colonnes de journal (chiffre romain
+  et titre à gauche, contenu à droite, compteur CSS : aucun texte ajouté), bulles à filet fin, aucune animation.
 
 Hors `classique`, chaque section est rendue par une **variante** (`variantes`, `VARIANTES_SECTIONS`, défauts par gabarit
-dans `VARIANTES_PAR_DEFAUT`) : accueil `carte` | `notice`, soins `bulles` | `grille`, praticiens `cartes` | `fiches`,
+dans `VARIANTES_PAR_DEFAUT`) : accueil `carte` | `notice` | `figure`, soins `bulles` | `grille` | `filets`, praticiens `cartes` | `fiches` | `liste`,
 infos `volets` | `notice`, faq `accordeon`, actualités `liste` | `cartes`, pied `simple`. Les composants sont dans
 `apps/sites/src/components/gabarits/` (Coquille, PremierEcran, Soins, VenirAuCabinet, Praticiens, Faq, Actus, PlanAcces,
 FicheSoin, TetePage, Materiel, InfosPratiques) ; les pages choisissent `{nouveauGabarit ? variantes : classique}` à
 l'intérieur du même `<Gabarit>` : title, description, H1, H2, données structurées, sitemap et llms restent communs
-(`npm run controle:seo` sur les 8 modèles). Un nouveau gabarit (ex. « Revue ») = une entrée dans `GABARITS`, ses variantes
-par défaut, une classe `coquille--<id>` et, au besoin, de nouvelles valeurs de variantes.
+(`npm run controle:seo` sur les 9 modèles). Un nouveau gabarit = une entrée dans `GABARITS`, ses variantes par défaut,
+une classe `coquille--<id>` et, au besoin, de nouvelles valeurs de variantes (exemple : « Revue », ajouté avec `figure`,
+`filets` et `liste`).
+
+**Une illustration par fiche de soin.** Les gabarits n'affichent qu'UN dessin clair en tête de fiche. Les dessins à
+plusieurs sujets côte à côte (`voutes` : trois pieds et leurs empreintes ; `arriere-pied` : trois arrière-pieds) sont
+remplacés, dans les registres relevé et pédagogique, par le dessin à un sujet le plus proche (`analyse` : empreintes des
+deux pieds et leurs zones d'appui) — `visuelVariante`, `apps/sites/src/lib/gabarits.ts`. Le dessin tient entier dans son
+cadre (jamais rogné) ; le registre « ligne » a déjà un sujet par dessin (`LIGNE_DESSIN`).
 
 Règles de clarté appliquées : une idée par écran (premier écran = qui, où, soins principaux, Rendez-vous / Appeler),
 navigation par bulles (Soins, Pour qui, Infos pratiques ; ≥ 48 px), information progressive (`details` natifs), sobre
@@ -273,7 +284,9 @@ barre Appeler / Rendez-vous sur téléphone.
 `couleursGabarit(modele, { couleur, gamme })` (`packages/core/src/gabarits.ts`) calcule les rôles `--g-*` posés sur
 `<html>` : `page`, `carte`, `doux`, `bulle` (vif pâle), `duo-bulle` (duo pâle), `vif` (la couleur vive telle quelle : carte
 illustrée, « Rendez-vous »), `aplat` (pastel du premier écran), `plein` (bouton principal : vif ou duo, celui qui se détache
-le plus), `sombre` (pied de page), `plan-*` (plan d'accès), etc. Source : gamme vitaminée (vif, duo, aplat, encre :
+le plus), `sombre` (pied de page), `plan-*` (plan d'accès), `bulle-bord` / `duo-bord` (filets des bulles), `figure` (trait
+du dessin posé sur l'aplat, ≥ 3:1), etc. Revue : `page` = blanc cassé de la gamme (sinon `PAPIER_REVUE`, `charte.ts`, à
+peine teinté de la couleur), `carte` = `page` (aucune carte). Source : gamme vitaminée (vif, duo, aplat, encre :
 `variantesGamme`), gamme sobre (replis) ou couleur libre du praticien. Garde-fous : chaque ton dérivé est assombri ou
 éclairci jusqu'au contraste requis (4,5:1 texte, 3:1 pictos et contours) ; le texte posé sur une couleur pleine est blanc
 ou encre, le plus lisible. `npm run controle:charte` vérifie chaque gabarit sur les 17 gammes et 5 couleurs libres

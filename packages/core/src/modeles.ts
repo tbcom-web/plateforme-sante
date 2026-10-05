@@ -40,21 +40,25 @@ export const REGISTRE_PROPOSE: Readonly<Record<string, Registre>> = { zen: 'lign
  * Gabarit de mise en page (structure des pages, pas seulement des jetons) :
  * - « classique » : en-tête éditorial, accueil selon `accueil.hero`, sections du gabarit commun (les 6 premiers modèles) ;
  * - « tableau » : cartes arrondies (bento), bulles de navigation, très mobile ;
- * - « village » : une colonne, très gros texte, accès d'abord (plan, trois gros boutons).
+ * - « village » : une colonne, très gros texte, accès d'abord (plan, trois gros boutons) ;
+ * - « revue » : éditorial sobre, papier blanc cassé, colonnes de journal (folio et titre à gauche, contenu à droite), filets fins.
  * Hors « classique », chaque section est rendue par une VARIANTE choisie par la fiche (`variantes`), avec le même contenu et
  * les mêmes titres (SEO identique). Un nouveau gabarit = une entrée ici, ses variantes par défaut (VARIANTES_PAR_DEFAUT) et sa
  * coquille (apps/sites/src/components/gabarits/Coquille.astro) ; les variantes de sections sont partagées entre gabarits.
  */
-export const GABARITS = ['classique', 'tableau', 'village'] as const;
+export const GABARITS = ['classique', 'tableau', 'village', 'revue'] as const;
 export type Gabarit = (typeof GABARITS)[number];
 /** Sections dont la présentation change selon la variante (gabarits autres que « classique »). */
 export const VARIANTES_SECTIONS = {
   /** Premier écran (qui, où, soin principal, Rendez-vous / Appeler) : dans une carte à aplat de couleur avec une illustration, ou en notice (lignes à picto) */
-  accueil: ['carte', 'notice'],
+  /** … ou en « figure » (revue) : une colonne de texte sur l'aplat pastel et un seul dessin au trait légendé, masqué sur téléphone */
+  accueil: ['carte', 'notice', 'figure'],
   /** Soins : trois rangées (Soins, Pour qui, Infos pratiques) en bulles à picto, ou en grille de boutons */
-  soins: ['bulles', 'grille'],
+  /** … ou en « filets » (revue) : bulles à filet fin, texte encre, picto de la couleur de la rangée */
+  soins: ['bulles', 'grille', 'filets'],
   /** Praticiens : cartes courtes (détails repliés) ou fiches en une colonne */
-  praticiens: ['cartes', 'fiches'],
+  /** … ou en « liste » (revue) : une ligne par praticien, séparées par un filet, sans carte */
+  praticiens: ['cartes', 'fiches', 'liste'],
   /** Venir au cabinet : horaires et accès côte à côte puis volets repliés, ou notice en une colonne avec plan schématique */
   infos: ['volets', 'notice'],
   /** Questions fréquentes : accordéon */
@@ -70,6 +74,7 @@ export type Variantes = { [S in SectionVariable]: (typeof VARIANTES_SECTIONS)[S]
 export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
   tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
   village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
+  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
 };
 /** Gabarit d'un modèle (défaut : classique, pour les fiches antérieures au champ). */
 export const gabaritModele = (m: Pick<ModeleManifeste, 'gabarit'>): Gabarit => m.gabarit ?? 'classique';
@@ -79,9 +84,9 @@ export function variantesModele(m: Pick<ModeleManifeste, 'gabarit' | 'variantes'
   return g === 'classique' ? null : { ...VARIANTES_PAR_DEFAUT[g], ...(m.variantes ?? {}) };
 }
 
-export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito', 'geist', 'publicsans'] as const;
+export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito', 'geist', 'publicsans', 'bodoni'] as const;
 export type PoliceTitres = (typeof POLICES_TITRES)[number];
-export const POLICES_TEXTE = ['inter', 'manrope', 'nunito', 'geist', 'publicsans'] as const;
+export const POLICES_TEXTE = ['inter', 'manrope', 'nunito', 'geist', 'publicsans', 'newsreader'] as const;
 export type PoliceTexte = (typeof POLICES_TEXTE)[number];
 /** Traitement appliqué aux photos pour l'unité graphique du style */
 export const TRAITEMENTS_IMAGES = ['naturel', 'chaud', 'doux', 'contraste'] as const;
@@ -294,6 +299,26 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     couleurConseillee: '#3e5568',
     gammes: ['tournesol', 'menthe', 'cobalt-abricot', 'pistache', 'ardoise', 'sauge'],
     jetons: { policeTitres: 'publicsans', policeTexte: 'publicsans', graisseTitres: 750, rayon: 14, boutons: 'arrondi', accent: 'couleur', fond: '#ffffff', images: 'naturel', motif: 'aucun', logo: 'plein', registre: 'pedagogique' },
+  },
+  {
+    // Gabarit « revue » : éditorial élégant et humble. Deux familles (Bodoni Moda pour les titres, Newsreader pour le texte),
+    // papier blanc cassé, colonnes de journal (chiffre romain et titre à gauche, contenu à droite ; une colonne sur téléphone),
+    // bulles à filet fin, un seul dessin au trait sur l'aplat pastel du premier écran, aucune animation (règles de clarté v2).
+    id: 'revue',
+    nom: 'Revue',
+    effet: 'Élégant et sobre',
+    description: 'Une mise en page de revue : grands titres à empattements, beaucoup d’air, filets fins et un dessin au trait.',
+    version: 1,
+    gabarit: 'revue',
+    entete: 'opaque',
+    accueil: { hero: 'scinde', voile: 0, sections: ['competences', 'acces', 'praticiens', 'panorama', 'galerie', 'faq', 'actualites'] },
+    competences: 'liste',
+    pied: 'clair',
+    animations: 'aucune',
+    couleurConseillee: '#a8472a',
+    // Gammes vitaminées (2026) : aplat pastel au premier écran, bouton dans la couleur du duo la plus contrastée.
+    gammes: ['mangue', 'corail-nuit', 'menthe', 'tournesol'],
+    jetons: { policeTitres: 'bodoni', policeTexte: 'newsreader', graisseTitres: 500, rayon: 4, boutons: 'pilule', accent: 'couleur', fond: '#fcfaf6', images: 'naturel', motif: 'aucun', logo: 'plein', registre: 'ligne' },
   },
 ];
 

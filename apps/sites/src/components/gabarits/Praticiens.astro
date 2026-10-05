@@ -2,12 +2,13 @@
 // Praticiens dans les gabarits tableau et village : l'essentiel visible (nom, titre, orientations, rendez-vous), le
 // détail (diplôme, présence, formations, inscription à l'Ordre) replié sous « Diplôme et inscription » (information
 // progressive). Sans portrait : un monogramme sobre, jamais un visage de banque d'images.
-// - « cartes » (tableau) : cartes côte à côte ; « fiches » (village) : une fiche par ligne, en une colonne.
+// - « cartes » (tableau) : cartes côte à côte ; « fiches » (village) : une fiche par ligne, en une colonne ;
+// - « liste » (revue) : une entrée par praticien séparée par un filet, sans carte ni monogramme (portrait seulement s'il est fourni).
 import { site } from '../../lib/site';
 import { zonePhoto } from '../../lib/edition';
 import { lienRdv, rdvEnLigne, viaPlateforme } from '../../lib/textes';
 
-interface Props { variante: 'cartes' | 'fiches' }
+interface Props { variante: 'cartes' | 'fiches' | 'liste' }
 const { variante } = Astro.props;
 const STATUTS: Record<string, string> = { titulaire: 'Titulaire du cabinet', collaborateur: 'En collaboration', remplacant: 'En remplacement' };
 const plusieurs = site.praticiens.length > 1;
@@ -73,4 +74,16 @@ const plusieurs = site.praticiens.length > 1;
   .praticien__id { display: block; }
   .praticien__rdv { justify-self: start; flex-wrap: wrap; row-gap: 0; }
   @media (max-width: 559px) { .praticien__rdv { justify-self: stretch; } }
+  /* Liste (revue) */
+  .praticiens--liste { gap: 0; border-bottom: var(--filet) solid var(--g-ligne); }
+  .praticiens--liste .praticien { gap: 14px; padding: 26px 0; border-radius: 0; background: none; box-shadow: none; border-top: var(--filet) solid var(--g-ligne); }
+  .praticiens--liste .praticien__monogramme { display: none; }
+  .praticiens--liste .praticien__haut { grid-template-columns: minmax(0, 1fr); }
+  .praticiens--liste .praticien__haut:has(.praticien__photo) { grid-template-columns: auto minmax(0, 1fr); }
+  .praticiens--liste h3 { font-weight: 500; font-size: 1.5rem; }
+  .praticiens--liste .praticien__orientations li { background: transparent; color: var(--g-encre); font-weight: 400; font-size: 1rem; box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .praticiens--liste .praticien__detail { border-top: 0; }
+  .praticiens--liste .praticien__detail summary { min-height: 44px; color: var(--g-accent-texte); font-weight: 600; font-size: 1rem; }
+  .praticiens--liste .praticien__detail summary::after { content: '+'; width: auto; height: auto; background: none; color: var(--g-accent-texte); font-size: 1.3rem; font-weight: 400; }
+  .praticiens--liste .praticien__detail[open] summary::after { content: '−'; }
 </style>

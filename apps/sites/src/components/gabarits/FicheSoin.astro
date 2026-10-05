@@ -3,6 +3,9 @@
 // une colonne de lecture, encadré « En pratique » (lieu, rendez-vous, téléphone, horaires) qui reste visible à côté sur
 // ordinateur, questions fréquentes en accordéon, autres compétences en bulles. Titres, textes et données structurées
 // identiques au gabarit classique.
+// Revue : une colonne de lecture centrée (titre, chapô, boutons), le visuel en figure large légendée, pastilles « en pratique »
+// à filet, étapes numérotées en chiffres à empattements, questions et autres compétences dans la même colonne ; pas d'encadré
+// latéral (les boutons sont en tête de fiche, l'adresse au pied de page). Dessin au trait sans animation.
 import TetePage from './TetePage.astro';
 import Faq from './Faq.astro';
 import Icone from '../Icone.astro';
@@ -10,14 +13,17 @@ import Dessin from '../dessins/Dessin.astro';
 import { site, md } from '../../lib/site';
 import { photoResponsive } from '../../lib/visuels';
 import { telLien, lienRdv, rdvEnLigne, titreCompetences, viaPlateforme, lieu } from '../../lib/textes';
-import { pictoDuSoin, visuelVariante, nomLieu } from '../../lib/gabarits';
-import { espacesFines, equipementsDuSoin, type Soin } from '@plateforme/core';
+import { pictoDuSoin, visuelVariante, nomLieu, gabarit, legendeLigne } from '../../lib/gabarits';
+import { espacesFines, equipementsDuSoin, LIGNE_DESSIN, type Soin } from '@plateforme/core';
 
 interface Props { soin: Soin }
 const { soin } = Astro.props;
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }, { name: soin.titreCourt, path: `/soins/${soin.slug}` }];
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
 const v = visuelVariante(soin.slug, 'page');
+const revue = gabarit === 'revue';
+// Revue : légende factuelle de la figure (ce qui est dessiné ; pour une photo, le nom du soin)
+const legende = revue ? `Fig. — ${v.type === 'dessin' ? legendeLigne(LIGNE_DESSIN[v.dessin] ?? 'pied-dessous') : soin.titreCourt}.` : undefined;
 const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = rdvEnLigne ? (plusieurs ? '/le-cabinet#praticiens' : lienRdv(`soin-${soin.slug}`)) : telLien;
@@ -35,7 +41,7 @@ const enPratique = [
 ].filter(Boolean) as { titre: string; texte: string }[];
 ---
 <article>
-  <TetePage crumbs={crumbs} sur={titreCompetences} chapo={soin.resume}>
+  <TetePage crumbs={crumbs} sur={titreCompetences} chapo={soin.resume} legende={legende}>
     <h1 slot="titre">{espacesFines(soin.titre)}</h1>
     <div class="actions">
       <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}{rdvEnLigne && !plusieurs && viaPlateforme && <span class="g-via">{viaPlateforme}</span>}</a>
@@ -44,7 +50,7 @@ const enPratique = [
     <Fragment slot="visuel">
       {v.type === 'photo'
         ? <img src={v.src} {...photoResponsive(v.src, '(min-width: 900px) 460px, 100vw')} alt={v.praticien ? `${soin.titreCourt} au cabinet de ${site.cabinet.ville}` : ''} width="1200" height="900" fetchpriority="high" decoding="async" style={`object-position:${v.cadrage}`} />
-        : <Dessin nom={v.dessin} />}
+        : <Dessin nom={v.dessin} trace={!revue} />}
     </Fragment>
   </TetePage>
 
@@ -74,7 +80,7 @@ const enPratique = [
   </div>
 
   {soin.faq.length > 0 && (
-    <section class="g-section g-bloc">
+    <section class="g-section g-bloc fiche__section">
       <div class="g-cadre g-bloc__dedans">
         <div class="g-tete">
           <p class="g-sur">{soin.titreCourt}</p>
@@ -87,7 +93,7 @@ const enPratique = [
 </article>
 
 {autres.length > 0 && (
-  <section class="g-section g-bloc">
+  <section class="g-section g-bloc fiche__section">
     <div class="g-cadre g-bloc__dedans">
       <div class="g-tete">
         <p class="g-sur">{titreCompetences}</p>
@@ -127,4 +133,21 @@ const enPratique = [
   .fiche__lieu { color: var(--g-encre-douce); font-size: 1rem; }
   .fiche__lieu strong { color: var(--g-encre); }
   .fiche__horaires { margin-top: 0 !important; }
+
+  /* ———— Revue : colonne de lecture centrée, filets fins ———— */
+  :global(.coquille--revue) article :global(.tete__texte) { width: min(760px, 100%); margin-inline: auto; }
+  :global(.coquille--revue) .pratique { width: min(760px, 100% - var(--gouttiere)); margin-top: 36px; }
+  :global(.coquille--revue) .pratique li { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding: 10px 18px; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); color: var(--g-encre-douce); }
+  :global(.coquille--revue) .pratique span { font-size: 1rem; font-weight: 400; }
+  :global(.coquille--revue) .pratique strong { font-size: 1rem; font-weight: 600; }
+  :global(.coquille--revue) .fiche { width: min(760px, 100% - var(--gouttiere)); grid-template-columns: minmax(0, 1fr); padding-top: 8px; }
+  :global(.coquille--revue) .fiche__corps { padding: 0; background: none; box-shadow: none; border-radius: 0; }
+  :global(.coquille--revue) .fiche__cote { display: none; }
+  :global(.coquille--revue) .fiche__prose :global(h2) { font-weight: 500 !important; font-size: clamp(1.5rem, 2.6vw, 2rem) !important; margin: 2em 0 0.55em !important; }
+  :global(.coquille--revue) .fiche__prose :global(h2:first-child) { margin-top: 1.2em !important; }
+  :global(.coquille--revue) .fiche__prose :global(ol) { list-style: none; counter-reset: etape; padding: 0; border-top: var(--filet) solid var(--g-ligne); }
+  :global(.coquille--revue) .fiche__prose :global(ol > li) { counter-increment: etape; position: relative; margin: 0; padding: 14px 0 14px 52px; border-bottom: var(--filet) solid var(--g-ligne); }
+  :global(.coquille--revue) .fiche__prose :global(ol > li::before) { content: counter(etape); position: absolute; left: 0; top: 12px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); font-family: var(--police-titres); font-style: italic; font-size: 1.15rem; color: var(--g-accent-texte); }
+  :global(.coquille--revue) .fiche__section :global(.g-cadre) { width: min(760px, 100% - var(--gouttiere)); }
+  :global(.coquille--revue) .fiche__section :global(h2) { font-weight: 500; font-size: clamp(1.5rem, 2.6vw, 2rem); }
 </style>

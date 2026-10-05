@@ -13,6 +13,10 @@ import '@fontsource/instrument-serif';
 import '@fontsource-variable/nunito';
 import '@fontsource-variable/geist';
 import '@fontsource-variable/public-sans';
+import '@fontsource-variable/bodoni-moda/wght.css';
+import '@fontsource-variable/bodoni-moda/wght-italic.css';
+import '@fontsource-variable/newsreader/wght.css';
+import '@fontsource-variable/newsreader/wght-italic.css';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {

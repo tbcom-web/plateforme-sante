@@ -17,11 +17,14 @@
 //   aplat / aplat-*            aplat pastel de la gamme (premier écran, bandeau), texte encre assortie
 //   duo / duo-bulle / duo-texte  seconde couleur de la gamme (« duo ») quand elle existe, sinon l'accent : bulles « Pour qui »,
 //                              fond des illustrations ; toujours avec garde-fous de contraste
+//   bulle-bord / duo-bord      filet fin des bulles (gabarit « revue » : bulles à filet), purement décoratif
+//   figure                     trait du dessin posé sur l'aplat du premier écran (≥ 3:1 sur l'aplat et la page : élément graphique)
+// « revue » : papier blanc cassé (celui de la gamme, sinon PAPIER_REVUE), aucune carte (carte = page), filets fins.
 // Les couleurs de données (pression) ne servent jamais à l'interface. Contrôle : npm run controle:charte
 // (verifierCouleursGabarit sur chaque gabarit × gammes × 5 couleurs libres extrêmes).
 
 import { contraste, melanger, luminance } from './couleurs';
-import { NEUTRES } from './charte';
+import { NEUTRES, PAPIER_REVUE } from './charte';
 import { gamme, variantesGamme } from './gammes';
 import { gabaritModele, type ModeleManifeste } from './modeles';
 
@@ -39,7 +42,8 @@ export type CouleursGabarit = Record<
   | 'page' | 'carte' | 'doux' | 'bulle' | 'bulle-texte' | 'bulle-picto' | 'accent-texte' | 'plein' | 'plein-texte' | 'plein-survol' | 'plein-bord'
   | 'sombre' | 'sombre-texte' | 'sombre-doux' | 'sombre-accent' | 'ligne' | 'encre' | 'encre-douce'
   | 'plan-fond' | 'plan-ilot' | 'plan-rue' | 'plan-bord' | 'plan-texte' | 'plan-point'
-  | 'vif' | 'vif-texte' | 'aplat' | 'aplat-texte' | 'aplat-doux' | 'duo' | 'duo-bulle' | 'duo-texte' | 'duo-picto' | 'duo-doux',
+  | 'vif' | 'vif-texte' | 'aplat' | 'aplat-texte' | 'aplat-doux' | 'duo' | 'duo-bulle' | 'duo-texte' | 'duo-picto' | 'duo-doux'
+  | 'bulle-bord' | 'duo-bord' | 'figure',
   string
 >;
 
@@ -55,6 +59,7 @@ export function couleursGabarit(m: Pick<ModeleManifeste, 'gabarit' | 'jetons'>, 
   const libre = /^#[0-9a-f]{6}$/i.test(choix.couleur) ? choix.couleur : (gamme('ardoise')?.accent ?? NEUTRES.encreNuit);
   const blanc = NEUTRES.blanc;
   const tableau = gabaritModele(m) === 'tableau';
+  const revue = gabaritModele(m) === 'revue';
   const encre = v?.encre ?? NEUTRES.encre;
   const vif = v?.vif ?? libre;
   const duo = v?.duo ?? vif;
@@ -62,14 +67,17 @@ export function couleursGabarit(m: Pick<ModeleManifeste, 'gabarit' | 'jetons'>, 
   // au blanc : les bulles et les cartes ne se distingueraient plus).
   const soutenue = (c: string) => (luminance(c) > 0.4 ? ajusterContraste(c, [blanc], 2.4) : c);
   const base = soutenue(vif);
-  const page = g ? (tableau ? melanger(g.fond, base, 0.04) : g.fond) : tableau ? melanger(blanc, base, 0.06) : blanc;
-  const carte = blanc;
-  const doux = g ? g.fondDoux : melanger(blanc, base, tableau ? 0.1 : 0.07);
+  // Revue : papier blanc cassé — celui de la gamme s'il est teinté, sinon le papier de la charte à peine teinté de la couleur.
+  const papier = g && g.fond.toLowerCase() !== blanc ? g.fond : melanger(PAPIER_REVUE, base, 0.025);
+  const page = revue ? papier : g ? (tableau ? melanger(g.fond, base, 0.04) : g.fond) : tableau ? melanger(blanc, base, 0.06) : blanc;
+  const carte = revue ? page : blanc;
+  const doux = revue ? (g && g.fondDoux.toLowerCase() !== blanc ? g.fondDoux : melanger(page, base, 0.07)) : g ? g.fondDoux : melanger(blanc, base, tableau ? 0.1 : 0.07);
   const bulle = v?.vifPale ?? melanger(blanc, base, 0.14);
   const duoBulle = v?.duoPale ?? bulle;
   const duoDoux = melanger(blanc, soutenue(duo), 0.09);
   // Aplat pastel : celui de la gamme vitaminée ; pour une couleur libre claire (jaune, vert fluo), sa propre teinte éclaircie (pas une version grisée).
-  const aplat = v?.aplat && g?.famille === 'vitaminee' ? v.aplat : luminance(vif) > 0.4 ? melanger(blanc, vif, 0.55) : melanger(blanc, base, 0.22);
+  // Revue : pastel plus retenu pour une couleur libre claire (un vert fluo ou un jaune vif resteraient criards en grand aplat).
+  const aplat = v?.aplat && g?.famille === 'vitaminee' ? v.aplat : luminance(vif) > 0.4 ? melanger(blanc, vif, revue ? 0.3 : 0.55) : melanger(blanc, base, 0.22);
   const clairs = [page, carte, doux, bulle, duoBulle, duoDoux, aplat];
   const encreSure = ajusterContraste(encre, clairs, 7);
   const encreDouce = ajusterContraste(melanger(encreSure, blanc, 0.32), clairs, 4.6);
@@ -93,7 +101,8 @@ export function couleursGabarit(m: Pick<ModeleManifeste, 'gabarit' | 'jetons'>, 
   const pleinTexte = lisibleSur(plein);
   // Survol : plus foncé sous un texte blanc, plus clair sous un texte encre (le contraste ne baisse jamais).
   const pleinSurvol = pleinTexte === blanc ? ajusterContraste(melanger(plein, NEUTRES.nuit, 0.22), [blanc], 4.6) : ajusterContraste(melanger(plein, blanc, 0.2), [encreSure], 4.6, 'clair');
-  const pleinBord = ajusterContraste(plein, [page, carte], 3);
+  // Revue : le bouton principal est posé sur l'aplat du premier écran : son contour s'en détache aussi (≥ 3:1).
+  const pleinBord = ajusterContraste(plein, revue ? [page, carte, aplat] : [page, carte], 3);
   // Surface sombre (pied de page « tableau ») : l'encre assortie, ou la couleur assombrie vers la nuit (texte papier ≥ 9:1).
   const sombre = ajusterContraste(g?.famille === 'vitaminee' ? encre : melanger(base, NEUTRES.nuit, 0.72), [NEUTRES.papier], 9);
   const sombreDoux = ajusterContraste(melanger(NEUTRES.papier, sombre, 0.25), [sombre], 6, 'clair');
@@ -107,12 +116,18 @@ export function couleursGabarit(m: Pick<ModeleManifeste, 'gabarit' | 'jetons'>, 
   const planPoint = ajusterContraste(plein, [planIlot, blanc], 3);
   const aplatTexte = encreSure;
   const aplatDoux = ajusterContraste(melanger(encreSure, aplat, 0.25), [aplat], 4.6);
+  // Filets des bulles : même teinte que la bulle, plus soutenue (décoratif : la bulle se lit par son texte et son fond).
+  const bulleBord = v?.vifLigne ?? melanger(bulle, base, 0.35);
+  const duoBord = v?.duoLigne ?? bulleBord;
+  // Trait du dessin du premier écran : le duo foncé (sinon la couleur), lisible sur l'aplat et sur la page.
+  const figure = ajusterContraste(v?.duoFonce ?? base, [aplat, page], 3);
   return {
     page, carte, doux, bulle, 'bulle-texte': bulleTexte, 'bulle-picto': bullePicto, 'accent-texte': accentTexte, plein, 'plein-texte': pleinTexte,
     'plein-survol': pleinSurvol, 'plein-bord': pleinBord, sombre, 'sombre-texte': NEUTRES.papier, 'sombre-doux': sombreDoux, 'sombre-accent': sombreAccent,
     ligne, encre: encreSure, 'encre-douce': encreDouce, 'plan-fond': planFond, 'plan-ilot': planIlot, 'plan-rue': blanc, 'plan-bord': planBord,
     'plan-texte': planTexte, 'plan-point': planPoint, vif: vifPlein, 'vif-texte': lisibleSur(vifPlein), aplat, 'aplat-texte': aplatTexte, 'aplat-doux': aplatDoux,
     duo: duoPlein, 'duo-bulle': duoBulle, 'duo-texte': duoTexte, 'duo-picto': duoPicto, 'duo-doux': duoDoux,
+    'bulle-bord': bulleBord, 'duo-bord': duoBord, figure,
   };
 }
 
@@ -133,7 +148,11 @@ const PAIRES: [keyof CouleursGabarit, keyof CouleursGabarit, number][] = [
   ['plan-texte', 'plan-ilot', 4.5], ['plan-texte', 'plan-rue', 4.5], ['plan-texte', 'plan-fond', 4.5], ['plan-point', 'plan-ilot', 3], ['plan-point', 'plan-rue', 3],
   ['aplat-texte', 'aplat', 4.5], ['aplat-doux', 'aplat', 4.5], ['vif-texte', 'vif', 4.5], ['bulle-picto', 'bulle', 3], ['duo-picto', 'duo-bulle', 3], ['encre', 'aplat', 4.5],
   ['duo-texte', 'duo-bulle', 4.5], ['duo-texte', 'duo-doux', 4.5], ['duo-texte', 'carte', 4.5], ['encre', 'duo-bulle', 4.5],
+  ['figure', 'aplat', 3], ['figure', 'page', 3], ['accent-texte', 'aplat', 4.5], ['encre-douce', 'bulle', 4.5],
 ];
+
+/** Paires propres au gabarit « revue » (bouton principal posé sur l'aplat du premier écran). */
+const PAIRES_REVUE: [keyof CouleursGabarit, keyof CouleursGabarit, number][] = [['plein-bord', 'aplat', 3]];
 
 /** Couleurs libres extrêmes du contrôle : jaune pâle, rouge saturé, bleu nuit, gris moyen, vert fluo. */
 export const COULEURS_EXTREMES = ['#fff3a0', '#e10600', '#0b1f4d', '#8a8a8a', '#39ff14'] as const;
@@ -142,7 +161,7 @@ export const COULEURS_EXTREMES = ['#fff3a0', '#e10600', '#0b1f4d', '#8a8a8a', '#
 export function verifierCouleursGabarit(m: Pick<ModeleManifeste, 'id' | 'gabarit' | 'jetons'>, choix: { couleur: string; gamme?: string | null }): string[] {
   if (gabaritModele(m) === 'classique') return [];
   const c = couleursGabarit(m, choix);
-  return PAIRES.map(([t, f, min]) => [t, f, min, contraste(c[t], c[f])] as const)
+  return [...PAIRES, ...(gabaritModele(m) === 'revue' ? PAIRES_REVUE : [])].map(([t, f, min]) => [t, f, min, contraste(c[t], c[f])] as const)
     .filter(([, , min, r]) => r < min)
     .map(([t, f, min, r]) => `${m.id} (${choix.gamme || choix.couleur}) : ${t} sur ${f} = ${r.toFixed(2)}:1 (minimum ${min}:1)`);
 }

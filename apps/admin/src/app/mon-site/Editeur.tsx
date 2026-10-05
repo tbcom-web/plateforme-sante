@@ -771,7 +771,8 @@ function VignetteModele({ m }: { m: ModeleManifeste }) {
         : [0.3, 0.45, 0.6, 0.38, 0.52].map((k, i) => <circle key={i} cx={x + w * (0.3 + i * 0.1)} cy={y + h * k} r={1.6} fill={['#3e7bfa', '#22c3a6', '#ffc23d', '#ff7a2f', '#22c3a6'][i]} />)}
     </g>
   );
-  // Gabarits tableau et village : vignette propre (cartes arrondies ; une colonne avec trois gros boutons et le plan)
+  // Gabarits tableau, village et revue : vignette propre (cartes arrondies ; une colonne avec trois gros boutons et le plan ;
+  // revue : filet double, bandeau pastel, titre à empattements et un dessin au trait légendé)
   const gabarit = gabaritModele(m);
   const hero = gabarit === 'classique' ? m.accueil.hero : gabarit;
   return (
@@ -780,6 +781,7 @@ function VignetteModele({ m }: { m: ModeleManifeste }) {
       {(hero === 'plein' || hero === 'diaporama') && (<>{image(0, 0, 96, 50)}{titre(10, 22, 40, '#fff')}{titre(10, 30, 28, '#fff')}<rect x={10} y={38} width={20} height={6} rx={rb} fill="#fff" />{hero === 'diaporama' && [0, 1, 2].map((i) => <circle key={i} cx={78 + i * 5} cy={44} r={1.2} fill="#fff" opacity={i ? 0.5 : 1} />)}</>)}
       {hero === 'tableau' && (<><rect x={0} y={0} width={96} height={56} fill={doux} />{[[4, 4, 46, 46], [53, 4, 19, 21], [75, 4, 17, 21], [53, 29, 39, 21]].map(([x, y, w, h], i) => <rect key={i} x={x} y={y} width={w} height={h} rx={4} fill={i === 1 ? accent : '#fff'} stroke='#00000014' />)}{titre(9, 14, 30)}{titre(9, 22, 22)}<rect x={9} y={34} width={18} height={6} rx={3} fill={accent} /><rect x={29} y={34} width={14} height={6} rx={3} fill='none' stroke={accent} strokeWidth={0.8} /></>)}
       {hero === 'village' && (<>{titre(26, 6, 44)}{titre(32, 13, 32)}{[0, 1, 2].map((i) => <rect key={i} x={8 + i * 27.5} y={22} width={25} height={9} rx={2} fill={i === 1 ? accent : '#fff'} stroke='#1b2a30' strokeWidth={0.6} />)}<rect x={8} y={35} width={80} height={18} rx={2} fill={doux} /><path d='M8 44 H88 M30 35 V53 M62 35 V53' stroke='#fff' strokeWidth={2.2} /><circle cx={50} cy={44} r={2.4} fill={accent} /></>)}
+      {hero === 'revue' && (<><path d='M0 9.2 H96 M0 10.6 H96' stroke='#1b2a30' strokeWidth={0.5} /><rect x={0} y={11} width={96} height={45} fill={doux} />{titre(8, 19, 36)}{titre(8, 25, 30)}<rect x={8} y={34} width={17} height={5.5} rx={2.75} fill={accent} /><rect x={27} y={34} width={14} height={5.5} rx={2.75} fill='none' stroke='#1b2a30' strokeWidth={0.5} /><path d='M60 16 V46' stroke='#1b2a30' strokeWidth={0.4} /><path d='M70 17 C70.5 26 71 32 69.5 36 C68.5 39 69.5 41 72 41 L84 41 C86 41 86 38.5 83.5 38 L77 36 C75 34.5 74.5 30 74.5 17' fill='none' stroke='#1b2a30' strokeWidth={0.7} /></>)}
       {hero === 'lieu' && (<>{image(6, 5, 84, 28)}<rect x={10} y={26} width={76} height={24} rx={r} fill={fond} stroke="#00000014" />{titre(15, 31, 34)}{titre(15, 39, 24)}<rect x={60} y={30} width={22} height={7} rx={rb} fill={accent} /><rect x={60} y={39.5} width={22} height={7} rx={rb} fill="none" stroke={accent} strokeWidth={0.8} /></>)}
       <rect x={0} y={56} width={96} height={16} fill={doux} />
       {pedago

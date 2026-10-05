@@ -1,12 +1,13 @@
 'use client';
 
-// Aperçu des gabarits autres que « classique » (tableau, village : packages/core/src/modeles.ts, GABARITS), rendu par
+// Aperçu des gabarits autres que « classique » (tableau, village, revue : packages/core/src/modeles.ts, GABARITS), rendu par
 // ApercuTheme : mêmes règles que le générateur (apps/sites/src/components/gabarits/*) — premier écran « bento » ou « plan »,
 // soins en bulles ou en liste, informations pratiques, questions en accordéon — et mêmes couleurs dérivées de la couleur du
 // cabinet avec garde-fous de contraste (couleursGabarit). Le plan est ici schématique (le site publié dessine les vraies rues
-// d'OpenStreetMap au build).
+// d'OpenStreetMap au build). Revue : filet double, premier écran sur l'aplat pastel avec un dessin au trait légendé, sections en
+// colonnes de journal (chiffre romain et titre à gauche), bulles à filet, Bodoni Moda et Newsreader.
 import type { CSSProperties, ReactNode } from 'react';
-import { gabaritModele, pictoSoin, svgDessin, svgPicto, type ModeleManifeste, type NomDessin, type SiteDraft } from '@plateforme/core';
+import { gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, type ModeleManifeste, type NomDessin, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -27,6 +28,9 @@ const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'
 
 export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, ville, dessinSoin }: Props) {
   const village = gabaritModele(m) === 'village';
+  const revue = gabaritModele(m) === 'revue';
+  const ROMAINS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
+  let folio = 0;
   const lieu = d.lieux[0];
   const tel = d.cabinet.telephone || '00 00 00 00 00';
   const enLigne = d.rdv.mode !== 'telephone';
@@ -37,13 +41,15 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const jour = horaires[0];
   const pourQui = soins.flatMap((s) => { const p = PUBLICS.find(([re]) => re.test(s.slug)); return p ? [p[1]] : []; });
   const picto = (slug: string, taille = 24) => <span aria-hidden="true" style={{ display: 'grid', placeItems: 'center' }} dangerouslySetInnerHTML={{ __html: svgPicto(pictoSoin(slug) ?? 'pied-dessus', { taille }) ?? '' }} />;
-  const carte: CSSProperties = village ? { background: 'var(--g-doux)', borderRadius: 'var(--rayon)', padding: mobile ? 22 : 30 } : { background: 'var(--g-carte)', borderRadius: 'var(--rayon)', padding: mobile ? 22 : 32, boxShadow: 'inset 0 0 0 1px var(--g-ligne)' };
+  const carte: CSSProperties = revue ? { padding: 0 } : village ? { background: 'var(--g-doux)', borderRadius: 'var(--rayon)', padding: mobile ? 22 : 30 } : { background: 'var(--g-carte)', borderRadius: 'var(--rayon)', padding: mobile ? 22 : 32, boxShadow: 'inset 0 0 0 1px var(--g-ligne)' };
   const bouton = (plein: boolean): CSSProperties => ({ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 52, padding: '0 22px', borderRadius: 'var(--rayon-bouton)', fontWeight: 650, fontSize: 16, background: plein ? 'var(--g-plein)' : 'var(--g-carte)', color: plein ? 'var(--g-plein-texte)' : 'var(--g-encre)', boxShadow: `inset 0 0 0 2px ${plein ? 'var(--g-plein-bord)' : 'var(--g-ligne)'}` });
-  const bulle: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '6px 18px 6px 8px', borderRadius: 999, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)', fontWeight: 600, fontSize: 16 };
+  const bulle: CSSProperties = revue
+    ? { display: 'inline-flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '6px 20px 6px 12px', borderRadius: 999, background: 'transparent', color: 'var(--g-encre)', fontWeight: 400, fontSize: 18, boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }
+    : { display: 'inline-flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '6px 18px 6px 8px', borderRadius: 999, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)', fontWeight: 600, fontSize: 16 };
   const rond: CSSProperties = { width: 34, height: 34, borderRadius: '50%', background: 'var(--g-carte)', color: 'var(--g-encre)', display: 'grid', placeItems: 'center' };
-  const cadre: CSSProperties = { width: `min(${village ? 880 : 1180}px, 100% - ${village ? 40 : 32}px)`, marginInline: 'auto' };
-  const h1: CSSProperties = { fontSize: mobile ? 40 : village ? 56 : 60, lineHeight: 1.1, letterSpacing: village ? '-0.015em' : '-0.035em' };
-  const h2: CSSProperties = { fontSize: mobile ? 30 : 40, lineHeight: 1.15 };
+  const cadre: CSSProperties = { width: `min(${village ? 880 : revue ? 1120 : 1180}px, 100% - ${village ? 40 : revue && !mobile ? 64 : 32}px)`, marginInline: 'auto' };
+  const h1: CSSProperties = revue ? { fontSize: mobile ? 40 : 66, lineHeight: 1.04, letterSpacing: '-0.01em', fontWeight: 500 } : { fontSize: mobile ? 40 : village ? 56 : 60, lineHeight: 1.1, letterSpacing: village ? '-0.015em' : '-0.035em' };
+  const h2: CSSProperties = revue ? { fontSize: mobile ? 28 : 34, lineHeight: 1.12, fontWeight: 500 } : { fontSize: mobile ? 30 : 40, lineHeight: 1.15 };
   const sur: CSSProperties = { fontWeight: 600, color: 'var(--g-accent-texte)', margin: '0 0 10px', fontSize: 16 };
   const plan = (
     <div style={{ aspectRatio: '4 / 3', borderRadius: 'var(--rayon)', background: 'var(--g-plan-fond)', display: 'grid', placeItems: 'center', alignContent: 'center', gap: 12, boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
@@ -52,9 +58,19 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       <span style={{ fontSize: 13, color: 'var(--g-encre-douce)' }}>Plan schématique (rues réelles sur le site publié)</span>
     </div>
   );
-  const titreH1 = <h1 className="ap-h1" style={h1}>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} à {ville}</h1>;
+  const titreH1 = <h1 className="ap-h1" style={h1}>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} {revue ? <em style={{ color: 'var(--g-accent-texte)' }}>à {ville}</em> : <>à {ville}</>}</h1>;
+  // Revue : dessin au trait continu du soin principal, légendé (sans animation)
+  const figure = (slug: string, taille: CSSProperties) => <div className="ap-svg" style={{ ...taille, '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)', color: 'var(--g-figure)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgLigne(LIGNE_DESSIN[dessinSoin(slug)] ?? 'pied-dessous') }} />;
 
-  const entete = (
+  const entete = revue ? (
+    <header style={{ borderBottom: '3px double var(--g-encre)' }}>
+      <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 76 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontStyle: 'italic', fontWeight: 500, fontSize: 20 }}>{nomCabinet}</strong></span>
+        {!mobile && <span style={{ display: 'flex', alignItems: 'center', gap: 26, fontSize: 17 }}>{['Soins', 'Le cabinet', 'Accès'].map((l) => <span key={l}>{l}</span>)}<span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none' }}>{enLigne ? 'Rendez-vous' : 'Appeler'}</span></span>}
+      </div>
+      {mobile && <nav style={{ ...cadre, display: 'flex', justifyContent: 'space-between', padding: '4px 0 10px' }}>{['Soins', 'Le cabinet', 'Accès'].map((l) => <span key={l}>{l}</span>)}</nav>}
+    </header>
+  ) : (
     <header style={{ padding: '12px 0 4px', borderBottom: village ? '1px solid var(--g-ligne)' : undefined }}>
       <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 64, ...(village ? {} : { background: 'var(--g-carte)', borderRadius: 999, padding: '8px 8px 8px 14px', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }) }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontSize: 18 }}>{nomCabinet}</strong></span>
@@ -70,7 +86,26 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const pid = (id: string) => <span aria-hidden="true" style={{ color: 'var(--g-accent-texte)', display: 'grid' }} dangerouslySetInnerHTML={{ __html: svgPicto(id, { taille: 26 }) ?? '' }} />;
   const ligne: CSSProperties = { display: 'grid', gridTemplateColumns: '30px 1fr', gap: 12, alignItems: 'start' };
   const principaux = soins.slice(0, 3).map((s) => s.titre_court.toLowerCase()).join(', ');
-  const premier = village ? (
+  const premier = revue ? (
+    <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 4fr', gap: 64, alignItems: 'center', paddingBlock: mobile ? '40px 48px' : '88px 80px' }}>
+      <div style={{ display: 'grid', justifyItems: 'start' }}>
+        <span style={{ fontSize: 15, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-aplat-doux)', marginBottom: 22 }}>{titre} · {ville}</span>
+        {titreH1}
+        <span style={{ fontSize: 19, marginTop: 24 }}>{noms.join(' et ') || 'Vos praticiens'} · {lieu?.adresse || 'Adresse du cabinet'}</span>
+        {principaux && <span style={{ fontStyle: 'italic', color: 'var(--g-aplat-doux)' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 26 }}>
+          <span style={{ ...bouton(true), boxShadow: 'none' }}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
+          {enLigne && <span style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 1.5px var(--g-encre)' }}>{tel}</span>}
+        </div>
+      </div>
+      {!mobile && soins[0] && (
+        <figure style={{ margin: 0, paddingLeft: 40, borderLeft: '1px solid var(--g-figure)' }}>
+          {figure(soins[0].slug, { width: '100%', aspectRatio: '4 / 3' })}
+          <figcaption style={{ fontStyle: 'italic', fontSize: 15, marginTop: 12 }}>Fig. 1 — dessin au trait du soin principal.</figcaption>
+        </figure>
+      )}
+    </div></section>
+  ) : village ? (
     <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gap: 18, paddingBlock: mobile ? 28 : 48 }}>
       {titreH1}
       <div style={{ display: 'grid', gap: 8 }}>
@@ -101,7 +136,14 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     </section>
   );
 
-  const section = (titreSection: string, contenu: ReactNode, fond?: string) => (
+  const section = (titreSection: string, contenu: ReactNode, fond?: string) => revue ? (
+    <section style={{ borderTop: '1px solid var(--g-ligne)', padding: `${mobile ? 56 : 96}px 0` }}>
+      <div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '4fr 8fr', columnGap: 64, rowGap: 24, alignItems: 'start' }}>
+        <div><span style={{ display: 'block', fontFamily: 'var(--police-titres)', fontStyle: 'italic', color: 'var(--g-accent-texte)', marginBottom: 10 }}>{ROMAINS[folio++] ?? ''}</span><h2 className="ap-h2" style={h2}>{titreSection}</h2></div>
+        {contenu}
+      </div>
+    </section>
+  ) : (
     <section style={village ? { borderTop: '1px solid var(--g-ligne)', padding: `${mobile ? 44 : 60}px 0`, background: fond } : { ...cadre, paddingTop: 14 }}>
       <div style={village ? cadre : { ...carte, padding: mobile ? 26 : 48 }}>
         <h2 className="ap-h2" style={{ ...h2, marginBottom: 24 }}>{titreSection}</h2>
@@ -112,11 +154,11 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const infos = ['Horaires', 'Accès', ...(d.domicile?.actif ? ['Visites à domicile'] : [])];
   const rangee = (etiquette: string, bulles: { cle: string; texte: string; picto?: string }[], fondBulle: string, texte: string) => (
     <div style={{ display: 'grid', gap: 10 }}>
-      <span style={{ fontWeight: 650, fontSize: village ? 14 : 15, color: village ? 'var(--g-encre)' : 'var(--g-encre-douce)', letterSpacing: village ? '0.08em' : 0, textTransform: village ? 'uppercase' : 'none' }}>{etiquette}</span>
+      <span style={{ fontStyle: revue ? 'italic' : 'normal', fontWeight: revue ? 400 : 650, fontSize: village ? 14 : 15, color: village ? 'var(--g-encre)' : 'var(--g-encre-douce)', letterSpacing: village ? '0.08em' : 0, textTransform: village ? 'uppercase' : 'none' }}>{etiquette}</span>
       <div style={village ? { display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: 10 } : { display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {bulles.map((b) => (
-          <span key={b.cle} style={village ? { display: 'flex', alignItems: 'center', gap: 10, minHeight: 58, padding: '8px 14px 8px 10px', borderRadius: 10, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-ligne)', fontWeight: 600 } : { ...bulle, background: fondBulle, color: texte }}>
-            <span style={{ ...rond, background: village ? fondBulle : 'var(--g-carte)', color: texte, borderRadius: village ? 8 : '50%' }}>{b.picto ? picto(b.picto) : '●'}</span>{b.texte}
+          <span key={b.cle} style={revue ? { ...bulle, background: fondBulle === 'var(--g-doux)' ? 'transparent' : fondBulle, boxShadow: `inset 0 0 0 1px ${fondBulle === 'var(--g-bulle)' ? 'var(--g-bulle-bord)' : fondBulle === 'var(--g-duo-bulle)' ? 'var(--g-duo-bord)' : 'var(--g-ligne)'}` } : village ? { display: 'flex', alignItems: 'center', gap: 10, minHeight: 58, padding: '8px 14px 8px 10px', borderRadius: 10, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-ligne)', fontWeight: 600 } : { ...bulle, background: fondBulle, color: texte }}>
+            <span style={{ ...rond, ...(revue ? { width: 28, height: 28, background: 'none', color: fondBulle === 'var(--g-duo-bulle)' ? 'var(--g-duo-picto)' : fondBulle === 'var(--g-bulle)' ? 'var(--g-bulle-picto)' : 'var(--g-accent-texte)' } : { background: village ? fondBulle : 'var(--g-carte)', color: texte, borderRadius: village ? 8 : '50%' }) }}>{b.picto ? picto(b.picto) : '●'}</span>{b.texte}
           </span>
         ))}
       </div>
@@ -143,11 +185,25 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     </div>
   ));
   const faqSection = section('Bon à savoir avant de venir.', (
-    <div style={{ display: 'grid', gap: 10, maxWidth: 820 }}>{['Comment prendre rendez-vous ?', 'Les consultations sont-elles remboursées ?'].map((q) => <div key={q} style={{ padding: '18px 22px', borderRadius: 'var(--rayon)', background: village ? 'var(--g-doux)' : 'var(--g-carte)', boxShadow: village ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', display: 'flex', justifyContent: 'space-between', fontWeight: 650 }}>{q}<span style={{ ...rond, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)' }}>+</span></div>)}</div>
+    <div style={{ display: 'grid', gap: 10, maxWidth: 820 }}>{['Comment prendre rendez-vous ?', 'Les consultations sont-elles remboursées ?'].map((q) => <div key={q} style={revue ? { padding: '16px 0', borderBottom: '1px solid var(--g-ligne)', display: 'flex', justifyContent: 'space-between', fontWeight: 500 } : { padding: '18px 22px', borderRadius: 'var(--rayon)', background: village ? 'var(--g-doux)' : 'var(--g-carte)', boxShadow: village ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', display: 'flex', justifyContent: 'space-between', fontWeight: 650 }}>{q}<span style={revue ? {} : { ...rond, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)' }}>+</span></div>)}</div>
   ));
 
 
-  const fiche = soins[0] && (
+  const fiche = soins[0] && revue ? (
+    <>
+      <section style={{ ...cadre, paddingTop: mobile ? 32 : 72 }}>
+        <div style={{ maxWidth: 760, marginInline: 'auto', display: 'grid', gap: 14 }}>
+          <p style={{ fontSize: 15, color: 'var(--g-encre-douce)', margin: 0 }}>Accueil / Compétences / {soins[0].titre_court}</p>
+          <h1 className="ap-h1" style={{ ...h1, fontSize: mobile ? 36 : 56 }}>{soins[0].titre?.replace('{ville}', ville) ?? soins[0].titre_court}</h1>
+          <p style={{ color: 'var(--g-encre-douce)', fontStyle: 'italic', margin: 0 }}>{soins[0].resume}</p>
+          <span style={{ ...bouton(true), justifySelf: 'start', boxShadow: 'none' }}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
+        </div>
+        <div style={{ marginTop: 40, aspectRatio: mobile ? '4 / 3' : '3 / 1', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{figure(soins[0].slug, { height: '82%', aspectRatio: '4 / 3' })}</div>
+        <p style={{ fontStyle: 'italic', fontSize: 15, color: 'var(--g-encre-douce)', margin: '8px 0 0' }}>Fig. — dessin au trait du soin.</p>
+      </section>
+      <section style={{ ...cadre, paddingTop: 32 }}><div style={{ maxWidth: 760, marginInline: 'auto' }}><h2 className="ap-h2" style={{ ...h2, fontSize: 30 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre)' }}>{(soins[0].corps ?? soins[0].resume).replace(/\{ville\}/g, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div></section>
+    </>
+  ) : soins[0] && (
     <>
       <section style={{ ...cadre, paddingTop: 20 }}>
         <div style={{ ...(village ? { padding: '32px 0 0' } : carte), display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.15fr 0.85fr', gap: 28, alignItems: 'center' }}>
@@ -169,11 +225,11 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   );
 
   return (
-    <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
+    <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
       {entete}
       {vue === 'accueil' ? <>{premier}{soinsSection}{accesSection}{faqSection}</> : fiche}
-      <footer style={{ marginTop: 64, padding: '44px 0 28px', background: village ? 'var(--g-doux)' : 'var(--g-sombre)', color: village ? 'var(--g-encre-douce)' : 'var(--g-sombre-doux)', borderTop: village ? '2px solid var(--g-encre)' : undefined }}>
-        <div style={cadre}><strong style={{ color: village ? 'var(--g-encre)' : 'var(--g-sombre-texte)' }}>{nomCabinet}</strong><p style={{ margin: '8px 0 0', fontSize: 15 }}>{adresse} · {tel}</p><p style={{ margin: '20px 0 0', fontSize: 13 }}>Illustrations : représentations schématiques, sans valeur de mesure</p></div>
+      <footer style={{ marginTop: revue ? 0 : 64, padding: '44px 0 28px', background: revue ? 'var(--g-page)' : village ? 'var(--g-doux)' : 'var(--g-sombre)', color: village || revue ? 'var(--g-encre-douce)' : 'var(--g-sombre-doux)', borderTop: revue ? '3px double var(--g-encre)' : village ? '2px solid var(--g-encre)' : undefined }}>
+        <div style={cadre}><strong style={{ color: village || revue ? 'var(--g-encre)' : 'var(--g-sombre-texte)', fontFamily: revue ? 'var(--police-titres)' : undefined, fontStyle: revue ? 'italic' : undefined }}>{nomCabinet}</strong><p style={{ margin: '8px 0 0', fontSize: 15 }}>{adresse} · {tel}</p><p style={{ margin: '20px 0 0', fontSize: 13 }}>Illustrations : représentations schématiques, sans valeur de mesure</p></div>
       </footer>
     </div>
   );

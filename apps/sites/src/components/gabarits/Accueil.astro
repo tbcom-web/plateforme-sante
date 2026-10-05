@@ -105,5 +105,13 @@ const metier = site.titreMetier.toLowerCase();
   .lieu__pastilles { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
   .lieu__pastilles li { padding: 8px 14px; border-radius: 999px; background: var(--g-duo-doux); color: var(--g-duo-texte); font-size: 0.95rem; font-weight: 600; }
   .galerie { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+  /* Revue : lieu en colonnes de journal (chiffre romain, titre et adresse à gauche ; pastilles à filet à droite) */
+  :global(.coquille--revue) .lieu__pastilles li { background: transparent; color: var(--g-encre); font-weight: 400; font-size: 1rem; box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  :global(.coquille--revue) .lieu > p { font-style: italic; }
+  @media (min-width: 900px) {
+    :global(.coquille--revue) .lieu { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); column-gap: 64px; align-items: start; }
+    :global(.coquille--revue) .lieu > :not(.lieu__pastilles) { grid-column: 1; }
+    :global(.coquille--revue) .lieu__pastilles { grid-column: 2; grid-row: 1 / span 3; margin: 0; }
+  }
   .galerie img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--rayon-carte); }
 </style>

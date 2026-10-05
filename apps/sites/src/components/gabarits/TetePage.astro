@@ -1,11 +1,12 @@
 ---
 // En-tête des pages internes des gabarits tableau et village : fil d'Ariane, sur-titre, titre (H1 fourni par la page,
 // identique au gabarit classique), chapô court, visuel facultatif (emplacement « visuel ») et actions (emplacement par défaut).
-// Tableau : une carte arrondie, visuel à droite ; village : une colonne, sans carte.
+// Tableau : une carte arrondie, visuel à droite ; village : une colonne, sans carte ; revue : une colonne sans carte, le
+// visuel en figure large sous le texte, avec sa légende (« Fig. — … », prop `legende`).
 import Breadcrumb from '../Breadcrumb.astro';
 
-interface Props { crumbs: { name: string; path: string }[]; sur?: string; chapo?: string }
-const { crumbs, sur, chapo } = Astro.props;
+interface Props { crumbs: { name: string; path: string }[]; sur?: string; chapo?: string; legende?: string }
+const { crumbs, sur, chapo, legende } = Astro.props;
 // Visuel : seulement s'il a un contenu (un emplacement conditionnel vide ne doit pas laisser de cadre vide)
 const htmlVisuel = Astro.slots.has('visuel') ? (await Astro.slots.render('visuel')).trim() : '';
 const visuel = htmlVisuel.length > 0;
@@ -20,6 +21,7 @@ const visuel = htmlVisuel.length > 0;
       <slot />
     </div>
     {visuel && <div class="tete__visuel" set:html={htmlVisuel} />}
+    {visuel && legende && <p class="tete__legende">{legende}</p>}
   </div>
 </header>
 
@@ -38,5 +40,14 @@ const visuel = htmlVisuel.length > 0;
   .tete__texte :global(.breadcrumb ol) { align-items: center; row-gap: 0; }
   .tete__visuel { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; border-radius: calc(var(--rayon-carte) * 0.7); background: var(--g-doux); overflow: hidden; color: var(--g-encre); --dessin-trait: var(--g-encre); --dessin-accent: var(--g-accent-texte); }
   .tete__visuel :global(svg) { width: 80%; height: 90%; }
+  /* Village : le dessin entier dans le cadre bas et large (jamais rogné), centré */
+  :global(.coquille--village) .tete__visuel :global(svg) { position: absolute; inset: 5% 5%; width: 90%; height: 90%; }
+  /* Revue : pas de carte ; visuel en figure large (2:1) sous le texte, sans arrondi, légende en italique */
+  :global(.coquille--revue) .tete__carte { padding: clamp(36px, 6vw, 72px) 0 0; background: none; box-shadow: none; border-radius: 0; grid-template-columns: minmax(0, 1fr); }
+  :global(.coquille--revue) .tete__visuel { aspect-ratio: 3 / 1; border-radius: 0; background: var(--g-doux); color: var(--g-figure); --dessin-trait: var(--g-figure); --dessin-ligne: var(--g-figure); --dessin-accent: var(--g-figure); }
+  :global(.coquille--revue) .tete__visuel :global(svg) { position: absolute; inset: 9% 25%; width: 50%; height: 82%; }
+  :global(.coquille--revue) .tete__texte :global(h1) { max-width: 22ch; }
+  .tete__legende { margin-top: -18px !important; font-style: italic; font-size: 0.95rem; color: var(--g-encre-douce); }
+  @media (max-width: 559px) { :global(.coquille--revue) .tete__visuel { aspect-ratio: 4 / 3; } :global(.coquille--revue) .tete__visuel :global(svg) { inset: 8% 8%; width: 84%; height: 84%; } }
   .tete__visuel :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 </style>
