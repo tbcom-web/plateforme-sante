@@ -39,6 +39,9 @@ returns trigger
 language plpgsql
 set search_path = ''
 as $$
+declare
+  ancien text := coalesce(old.config #>> '{theme,jeuPhotos}', '');
+  nouveau text := coalesce(new.config #>> '{theme,jeuPhotos}', '');
 begin
   if not public.is_admin() and current_user not in ('service_role', 'postgres') then
     new.owner := old.owner;
@@ -56,6 +59,13 @@ begin
     new.publication_fin := old.publication_fin;
     new.publication_erreur := old.publication_erreur;
     new.publication_demandee_at := old.publication_demandee_at;
+    -- Jeu de photos (repris de 0016) : un praticien ne peut affecter que des photos intégrées, un jeu partagé actif de sa
+    -- spécialité ou le jeu exclusif de son site ; sinon la valeur précédente est conservée.
+    if nouveau <> ancien
+      and not public.jeu_photos_autorise(nouveau, new.id, coalesce(new.config #>> '{theme,specialite}', ''))
+      and new.config ? 'theme' then
+      new.config := jsonb_set(new.config, '{theme,jeuPhotos}', to_jsonb(ancien));
+    end if;
   end if;
   -- Date de dernière modification du brouillon seulement (verrou optimiste de l'enregistrement) :
   -- l'état de publication, le statut ou les options ne la changent pas.
@@ -87,6 +97,10 @@ begin
     new.publication_fin := null;
     new.publication_erreur := null;
     new.publication_demandee_at := null;
+    if new.config ? 'theme'
+      and not public.jeu_photos_autorise(coalesce(new.config #>> '{theme,jeuPhotos}', ''), new.id, coalesce(new.config #>> '{theme,specialite}', '')) then
+      new.config := jsonb_set(new.config, '{theme,jeuPhotos}', '""'::jsonb);
+    end if;
   end if;
   return new;
 end;
