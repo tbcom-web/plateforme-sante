@@ -33,7 +33,7 @@ export const PREFERER: [RegExp, string, string][] = [
   [/\bspécialisée? (dans|en)\b/gi, 'formé(e) à', 'Préférer la formation suivie à une spécialité.'],
   [/\bguérir\b/gi, 'prendre en charge', 'Aucune promesse de guérison.'],
   [/\bsoulager définitivement\b/gi, 'aider à soulager', 'Aucune promesse de résultat.'],
-  [/\bpodologue\b(?!-)/gi, 'pédicure-podologue', 'Titre complet attendu dans les titres et mentions.'],
+  [/(?<!pédicure-)\bpodologue\b(?!-)/gi, 'pédicure-podologue', 'Titre complet attendu dans les titres et mentions.'],
 ];
 
 /** Termes bloquants par défaut (publicité, promesse, superlatif, prix promotionnel). */
