@@ -35,7 +35,8 @@ export function universDuParcours(liste: readonly Univers[] = CATALOGUE_UNIVERS)
 }
 
 /**
- * Modèle mis en avant selon le profil du cabinet : une patientèle de prévention (seniors, diabète, domicile) lit
+ * Repli quand aucun sujet n'est choisi (le parcours ne demande pas le profil : « proximite » par défaut, réglable dans le
+ * formulaire complet). Modèle mis en avant selon le profil du cabinet : une patientèle de prévention (seniors, diabète, domicile) lit
  * mieux la colonne en gros caractères ; les autres profils partent du tableau, le plus polyvalent.
  */
 export const UNIVERS_PARCOURS_DU_PROFIL: Record<Profil, UniversParcours> = {
@@ -284,8 +285,8 @@ export function aideEtape(numero: number): { titre: string; conseil: string; exe
   });
 }
 
-/** Points bloquants qui relèvent de l'étape « Votre cabinet » (identité, adresse, téléphone, rendez-vous) */
-export const BLOQUANT_IDENTITE = /ville|téléphone|adresse|Code postal|praticien|nom et le prénom|Ordre|RPPS|INAMI|rendez-vous|Texte provisoire/i;
+/** Informations manquantes (remplacements, jamais bloquantes) qui relèvent de l'étape « Votre cabinet » (identité, adresse, téléphone, rendez-vous) */
+export const MANQUE_IDENTITE = /ville|téléphone|adresse|Code postal|praticien|nom et le prénom|Ordre|RPPS|INAMI|rendez-vous|Texte provisoire/i;
 
 /**
  * Étape où reprendre la création : sans modèle du parcours, 1 (aucun sujet choisi) ou 2 ; 4 si l'identité est à
@@ -295,7 +296,7 @@ export function etapeDeReprise(d: SiteDraft): 1 | 2 | 4 | 5 | 6 {
   if (!d.theme.univers || !(UNIVERS_PARCOURS as readonly string[]).includes(d.theme.univers)) return d.priorites?.principaux.length ? 2 : 1;
   // Plus rien ne bloque la publication : on reprend à l'identité si une information y est remplacée par un repli.
   const { remplacements } = controlerPublication(d);
-  if (remplacements.some((b) => BLOQUANT_IDENTITE.test(b) && !/compétence|Horaires/i.test(b))) return 4;
+  if (remplacements.some((b) => MANQUE_IDENTITE.test(b) && !/compétence|Horaires/i.test(b))) return 4;
   if (!d.soins.length) return 5;
   return 6;
 }

@@ -348,8 +348,9 @@ export const universCatalogue = (id: string | undefined | null) => CATALOGUE_UNI
 export const universProposables = (liste: Univers[] = CATALOGUE_UNIVERS) => liste.filter((u) => u.statut === 'valide');
 
 /**
- * Univers recommandé par défaut selon le profil du cabinet (parcours praticien, étape 1). Ne pointe jamais vers un
- * univers « differe » ou « retire » (posture et biomécanique : plus tard).
+ * Univers du catalogue recommandé selon le profil du cabinet. Ne pointe jamais vers un univers « differe » ou « retire »
+ * (posture et biomécanique : plus tard ; vérifié par npm run controle:charte). Le parcours /creer ne s'en sert pas : il
+ * recommande l'un de ses trois modèles d'après le sujet n° 1 (parcours.ts, universRecommande).
  */
 export const UNIVERS_DU_PROFIL: Record<Profil, string> = {
   proximite: 'podologie-generale',

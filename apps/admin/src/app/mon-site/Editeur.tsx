@@ -24,7 +24,6 @@ import {
   svgMarqueImportee,
   couleursImportee,
   type MarqueImportee,
-  lieuVide,
   PAYS,
   praticienVide,
   PROFILS,
@@ -172,8 +171,13 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                 valeur={d.profil}
                 onChange={(v) => {
                   const p = PROFILS.find((x) => x.value === v)!;
-                  if (id && d.profil !== v && !confirm('Changer de profil remplace le modèle, la spécialité et la façon de s’exprimer. Continuer ?')) return;
-                  maj({ profil: p.value, voix: p.voix, theme: { ...d.theme, modele: p.modele, specialite: specialiteDuProfil(p.value) } });
+                  // Les choix plus récents priment sur le profil : un modèle du parcours (/creer) n'est pas remplacé, et la
+                  // spécialité reste celle des sujets n° 1 et 2 quand des sujets sont choisis (themes.ts, appliquerPriorites).
+                  const garderModele = Boolean(d.theme.univers);
+                  const garderSpecialite = d.priorites.principaux.length > 0;
+                  const remplace = [!garderModele && 'le modèle', !garderSpecialite && 'la spécialité', 'la façon de s’exprimer'].filter(Boolean).join(', ');
+                  if (id && d.profil !== v && !confirm(`Changer de profil remplace ${remplace}. Continuer ?`)) return;
+                  maj({ profil: p.value, voix: p.voix, theme: { ...d.theme, modele: garderModele ? d.theme.modele : p.modele, specialite: garderSpecialite ? d.theme.specialite : specialiteDuProfil(p.value) } });
                 }}
               />
               <Choix
@@ -599,7 +603,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                   <option value="">Aucune</option>
                   {SPECIALITES.filter((s) => s.value !== d.theme.specialite).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
-                <span className="text-xs text-neutral-500">Complète les photos, illustrations et soins mis en avant ; l’accueil reste celui de la spécialité principale.</span>
+                <span className="text-xs text-neutral-500">Complète les photos, illustrations et soins mis en avant ; l’accueil reste celui de la spécialité principale. Les deux sont tirées de vos sujets n° 1 et 2 (étape « Compétences ») : changer de sujets les remplace.</span>
               </label>
               {SPECIALITES.find((s) => s.value === d.theme.specialite)?.animation && (
                 <label className="flex items-center gap-2 text-sm">
@@ -640,7 +644,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
         </form>
 
         {confirmer && <div className="mt-4"><ConfirmationPublication remplacements={controle.remplacements} onConfirmer={publierMaintenant} onAnnuler={() => setConfirmer(false)} enCours={enCours} /></div>}
-        <Verification bloquants={controle.bloquants} remplacements={controle.remplacements} conseils={controle.conseils.filter((c) => !controle.remplacements.includes(c))} />
+        <Verification remplacements={controle.remplacements} conseils={controle.conseils.filter((c) => !controle.remplacements.includes(c))} />
       </div>
 
       <div className="lg:sticky lg:top-24 lg:self-start">
@@ -681,18 +685,13 @@ function FicheConseil({ etape }: { etape: string }) {
   );
 }
 
-function Verification({ bloquants, remplacements, conseils }: { bloquants: string[]; remplacements: string[]; conseils: string[] }) {
-  if (!bloquants.length && !remplacements.length && !conseils.length) {
+function Verification({ remplacements, conseils }: { remplacements: string[]; conseils: string[] }) {
+  if (!remplacements.length && !conseils.length) {
     return <p className="mt-4 rounded-xl bg-teal-50 p-4 text-sm text-teal-900">Tout est prêt pour la publication.</p>;
   }
   return (
     <div className="mt-4 grid gap-3 rounded-xl border border-neutral-200 bg-white p-4 text-sm">
       <p className="font-semibold">Vérification avant publication</p>
-      {bloquants.length > 0 && (
-        <ul className="grid gap-1">
-          {bloquants.map((b) => <li key={b} className="flex gap-2 text-red-800"><span aria-hidden>●</span>{b}</li>)}
-        </ul>
-      )}
       {remplacements.length > 0 && (
         <>
           <p className="text-amber-900">Informations manquantes : la publication reste possible, le site affichera une mention sobre à la place.</p>

@@ -25,9 +25,9 @@ export const FICHES_CONSEILS: FicheConseil[] = [
   },
   {
     etape: 'Profil',
-    surLeSite: 'Le ton de tous les textes, le modèle proposé et la spécialité qui choisit les illustrations.',
+    surLeSite: 'Le ton de tous les textes. Le modèle et les illustrations suivent vos sujets n° 1 et 2 (étape « Compétences ») dès qu’ils sont choisis.',
     points: [
-      { titre: 'Profil du cabinet', conseil: 'Choisir celui qui décrit l’activité principale, pas l’activité souhaitée : il règle le modèle, la spécialité et la façon de s’exprimer.' },
+      { titre: 'Profil du cabinet', conseil: 'Choisir celui qui décrit l’activité principale, pas l’activité souhaitée. Il propose une façon de s’exprimer ; il ne règle le modèle et la spécialité des illustrations que s’ils n’ont pas été choisis par le parcours ou par vos sujets.' },
       { titre: 'Façon de s’exprimer', conseil: '« Je » pour un praticien seul, « nous » pour un cabinet de groupe. Le même choix s’applique à tout le site.' },
     ],
   },
@@ -35,7 +35,7 @@ export const FICHES_CONSEILS: FicheConseil[] = [
     etape: 'Praticiens',
     surLeSite: 'Le bloc praticiens de l’accueil, la page « Le cabinet », le pied de page et les mentions légales.',
     points: [
-      { titre: 'N° d’Ordre et RPPS', conseil: 'Les recopier tels quels depuis l’annuaire santé (annuaire.sante.fr) : les patients et l’Ordre les vérifient. Un numéro d’exemple bloque la publication.' },
+      { titre: 'N° d’Ordre et RPPS', conseil: 'Les recopier tels quels depuis l’annuaire santé (annuaire.sante.fr) : les patients et l’Ordre les vérifient. Un numéro absent, d’exemple ou mal formé n’empêche pas la publication, mais il n’est pas affiché sur le site.' },
       { titre: 'Diplôme et formations', conseil: 'Un intitulé officiel par ligne, avec l’année : « Diplôme d’État de pédicure-podologue, 2012 », « DU de podologie du sport, 2016 ».' },
       { titre: 'Orientations', conseil: 'Trois au maximum, celles pratiquées chaque semaine. Éviter les titres non reconnus par l’Ordre (« podo-diabétologue », « posturologue »).' },
       { titre: 'Présentation', conseil: '3 à 5 phrases factuelles : parcours, façon de travailler, publics reçus. Ni superlatif, ni promesse de résultat.', exemple: 'Installé à Toulon depuis 2014, je reçois beaucoup de coureurs et de randonneurs. Chaque bilan commence par un échange sur vos douleurs et vos activités.' },
@@ -75,7 +75,7 @@ export const FICHES_CONSEILS: FicheConseil[] = [
     surLeSite: 'Une page par compétence cochée, la liste de l’accueil et les liens internes.',
     points: [
       { titre: 'Choix', conseil: 'Ne cocher que les soins réellement pratiqués : chaque coche crée une page publique indexée par Google.' },
-      { titre: 'Ordre', conseil: 'Les trois premières compétences sont les plus visibles : mettre en tête l’activité principale (par exemple sport et semelles pour un cabinet orienté sport).' },
+      { titre: 'Ordre', conseil: 'Les trois soins mis en avant sont les plus visibles : par défaut, ceux de vos sujets principaux. Mettre en tête l’activité principale (par exemple sport et semelles pour un cabinet orienté sport).' },
       { titre: 'Actualités', conseil: 'Commencer par la validation manuelle des articles proposés ; la publication automatique publie sans relecture.' },
     ],
   },
@@ -89,7 +89,7 @@ export const FICHES_CONSEILS: FicheConseil[] = [
       { titre: 'Photos du cabinet', conseil: 'Format paysage, au moins 2000 px de large, pièces rangées, aucun patient identifiable. 3 à 6 photos variées : accueil, salle de soins, matériel.' },
       { titre: 'Gamme de couleurs', conseil: 'Garder une gamme conseillée pour le modèle : les contrastes y sont vérifiés pour la lecture. Une couleur personnalisée peut nuire à la lisibilité.' },
       { titre: 'Logo', conseil: 'Votre logo en PNG à fond transparent ; cocher « contient le nom » seulement si le nom y figure vraiment. Sinon, choisir une marque dessinée.' },
-      { titre: 'Spécialité', conseil: 'La spécialité principale choisit l’animation d’accueil et les illustrations ; la secondaire les complète seulement.' },
+      { titre: 'Spécialité', conseil: 'La spécialité principale choisit l’animation d’accueil et les illustrations ; la secondaire les complète seulement. Elles sont tirées de vos sujets n° 1 et 2 : changer de sujets les remplace.' },
     ],
   },
 ];

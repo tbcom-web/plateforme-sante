@@ -59,7 +59,7 @@ function Badge({ children }: { children: ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Étape 2 : couleurs
+// Étape 3 : couleurs
 // ---------------------------------------------------------------------------------------------------------------
 
 function Pastille({ g, actif, recommandee, onChoisir, petite = false }: { g: Gamme; actif: boolean; recommandee?: boolean; onChoisir: () => void; petite?: boolean }) {
@@ -144,7 +144,7 @@ export function EtapeCouleurs({ d, modele, univers, onTheme }: { d: SiteDraft; m
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Étape 3 : cabinet
+// Étape 4 : cabinet
 // ---------------------------------------------------------------------------------------------------------------
 
 type ChampProps = {
@@ -189,7 +189,7 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
   const lieu = d.lieux[0];
   // Plus rien n'est bloquant : informations manquantes (remplacées sur le site par une mention sobre) en ambre, près du champ.
   const filtre = (re: RegExp, personne?: string, avecConseils = false) =>
-    [...new Set([...controle.bloquants, ...controle.remplacements, ...(avecConseils ? controle.conseils : [])])].filter((b) => re.test(b) && (!personne || b.includes(`(${personne})`)));
+    [...new Set([...controle.remplacements, ...(avecConseils ? controle.conseils : [])])].filter((b) => re.test(b) && (!personne || b.includes(`(${personne})`)));
   const majLieu = (patch: Partial<typeof lieu>) => maj({ lieux: d.lieux.map((l, j) => (j === 0 ? { ...l, ...patch } : l)) });
   const majPraticien = (i: number, patch: Partial<PraticienDraft>) => maj({ praticiens: d.praticiens.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
   const h = horairesSimplifies(lieu.horaires);
@@ -317,7 +317,7 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Étape 4 : soins et image
+// Étape 5 : soins et image
 // ---------------------------------------------------------------------------------------------------------------
 
 export function EtapeSoinsImage({
@@ -333,7 +333,7 @@ export function EtapeSoinsImage({
   /** Soins suggérés affichés mais pas encore confirmés (aperçu ; « Continuer » les confirme) */
   onSuggestion: (e: { soins: string[]; enAvant: string[] } | null) => void;
 }) {
-  // Aucun soin coché : les soins du modèle sont pré-cochés en suggestion, enregistrés seulement après confirmation
+  // Aucun soin coché : les soins des sujets choisis (sinon du modèle) sont pré-cochés en suggestion, enregistrés seulement après confirmation
   const [aConfirmer, setAConfirmer] = useState(d.soins.length === 0 && suggestions.length > 0);
   const etat = aConfirmer
     ? { soins: suggestions, enAvant: suggestions.slice(0, SOINS_EN_AVANT_MAX) }
@@ -385,7 +385,7 @@ export function EtapeSoinsImage({
         <h2 id="titre-soins" className="text-lg font-semibold">Vos soins</h2>
         {aConfirmer && (
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Suggestion du modèle : décochez les soins que vous ne pratiquez pas. Chaque soin coché aura sa page sur votre site.
+            Suggestion d’après vos sujets et le modèle : décochez les soins que vous ne pratiquez pas. Chaque soin coché aura sa page sur votre site.
           </p>
         )}
         <div className="grid gap-2">{suggeres.map((s) => caseSoin(s, true))}</div>
@@ -491,7 +491,7 @@ export function EtapeSoinsImage({
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Étape 5 : contenus
+// Étape 6 : contenus
 // ---------------------------------------------------------------------------------------------------------------
 
 export function EtapeContenus({ d, univers, maj }: { d: SiteDraft; univers?: Univers; maj: Maj }) {

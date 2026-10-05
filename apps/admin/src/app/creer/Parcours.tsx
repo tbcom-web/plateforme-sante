@@ -21,7 +21,6 @@ import {
   type MarqueImportee,
   type SiteDraft,
   type Univers,
-  soinsSuggeres,
   soinsSuggeresParcours,
   soinsEnAvantDesPriorites,
   avecPrioritesParcours,
@@ -148,7 +147,7 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
     titre.current?.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [etape, verif]);
-  // Soins suggérés par le modèle, affichés pré-cochés à l'étape 4 : « Continuer » vaut confirmation
+  // Soins suggérés (sujets, sinon modèle), affichés pré-cochés à l'étape 5 : « Continuer » vaut confirmation
   const [suggestion, setSuggestion] = useState<{ soins: string[]; enAvant: string[] } | null>(null);
   const aller = (n: number) => {
     if (etape === 5 && n > 5 && suggestion && dRef.current.soins.length === 0) {
@@ -217,7 +216,7 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
   const aide = aideEtape(etape);
   const pret = Boolean(universCourant);
 
-  // Aperçu des étapes 2 à 4 : brouillon courant (l'étape 4 y injecte les soins suggérés à confirmer)
+  // Aperçu des étapes 3 à 6 : brouillon courant (l'étape 5 y injecte les soins suggérés à confirmer)
   // Sans soin confirmé, l'aperçu montre les soins suggérés par le modèle (jamais tout le catalogue)
   const suggeres = suggestionsSoins;
   const draftApercu = d.soins.length
@@ -243,7 +242,7 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
           <h1 id="titre-etape" ref={titre} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none sm:text-3xl">
             {verif ? 'Vérifier et publier' : infos.titre}
           </h1>
-          <p className="max-w-2xl text-base text-neutral-700">{verif ? 'Relisez le récapitulatif. Les points en rouge sont à compléter avant la mise en ligne.' : infos.consigne}</p>
+          <p className="max-w-2xl text-base text-neutral-700">{verif ? 'Relisez le récapitulatif. Les informations manquantes ne bloquent pas la mise en ligne : le site affiche une mention sobre à la place, complétez-les quand vous voulez.' : infos.consigne}</p>
           {!verif && aide.length > 0 && (
             <details className="max-w-2xl rounded-xl bg-teal-50/70 px-4 py-3 text-sm text-teal-950">
               <summary className="cursor-pointer font-semibold">Conseil : {aide[0].titre}</summary>
@@ -365,7 +364,7 @@ export default function Parcours({ siteId, version, initial, catalogue, modeles,
   );
 }
 
-/** Barre de progression : 5 étapes, retour possible, état de la sauvegarde automatique */
+/** Barre de progression : 6 étapes, retour possible, état de la sauvegarde automatique */
 function Progression({ etape, pret, onAller, etat }: { etape: number; pret: boolean; onAller: (n: number) => void; etat: Etat }) {
   const libelle = etat.type === 'enCours' ? 'Enregistrement…' : etat.type === 'ok' ? 'Brouillon enregistré' : etat.message ?? '';
   return (
@@ -399,7 +398,7 @@ function Progression({ etape, pret, onAller, etat }: { etape: number; pret: bool
   );
 }
 
-/** Étape 1 : les trois sites en grandes cartes, avec vignettes réelles ordinateur et mobile */
+/** Étape 2 : les trois sites en grandes cartes, avec vignettes réelles ordinateur et mobile */
 function ChoixModeles({
   proposes, d, recommande, choixEnCours, onChoisir, apercu, catalogue, marquesImportees, jeuPhotos,
 }: {

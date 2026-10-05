@@ -83,19 +83,29 @@ avant n'apparaissent pas dans l'aperçu local.
 enregistre statut, auteur et date dans `univers_statuts`. Un univers validé peut être repassé en brouillon ou retiré ;
 les sites qui l'utilisent le gardent. La fonction serveur `appliquerUniversAuSite(siteId, universId)`
 (`apps/admin/src/lib/univers.ts`) applique un univers au brouillon d'un site (verrou optimiste, nouveau tirage du jeu
-de photos si la spécialité change) ; elle servira au parcours praticien.
+de photos si la spécialité change) ; elle sert au parcours praticien (choix du site, étape 2 de `/creer`).
 
-## Parcours praticien prévu (phase B)
+## Parcours praticien (`/creer`, en place depuis le 2026-10-05)
 
-Prescriptif : à chaque étape, une recommandation par défaut, un bouton « Continuer » qui l'accepte.
+Prescriptif : à chaque étape, une recommandation par défaut, un bouton « Continuer » qui l'accepte. Six étapes
+(`ETAPES_PARCOURS`, `packages/core/src/parcours.ts`), puis « Vérifier et publier » :
 
-1. **Choisir un univers** dans le catalogue : vignettes réelles ordinateur et mobile, « pour qui » en une ligne ;
-   univers recommandé selon le profil (`UNIVERS_DU_PROFIL`).
-2. **Identité pré-remplie** depuis l'annuaire santé (nom, n° RPPS / Ordre, adresse) : le praticien vérifie.
-3. **Affiner** : soins à mettre en avant (ceux de l'univers proposés, à cocher s'ils sont pratiqués), photos des
-   praticiens, logo (marque proposée par l'univers, ou envoi de son logo).
-4. **Contenus** : articles automatiques (thèmes de l'univers cochés, mode manuel par défaut), fiches conseils proposées.
-5. **Vérifier et publier** : contrôles de publication, aperçu, publication.
+1. **Vos sujets** (`themes.ts`) : jusqu'à 3 sujets principaux dans l'ordre, et 3 sujets traités aussi. Le sujet n° 1
+   fixe le site recommandé à l'étape 2, les spécialités (illustrations) viennent des sujets n° 1 et 2, les soins
+   suggérés et les menus du site (`construireNavigation`) en découlent. Étape facultative.
+2. **Choisissez votre site** : les trois univers du parcours (`UNIVERS_PARCOURS` : Clair et pratique, Simple et proche,
+   Élégant et sobre), vignettes réelles ordinateur et mobile ; recommandé : celui du sujet n° 1 (`universRecommande`),
+   à défaut celui du profil. Les sujets priment sur le préréglage de l'univers (`avecPrioritesParcours`).
+3. **Vos couleurs** : gammes conseillées du modèle, autres gammes ou couleur libre (contraste garanti).
+4. **Votre cabinet** : identité, adresse, téléphone, n° d'Ordre et RPPS (avertissements seulement), horaires, rendez-vous.
+5. **Vos soins et votre image** : soins des sujets (sinon de l'univers) suggérés, 3 soins mis en avant, portrait
+   (studio portrait facultatif), logo.
+6. **Vos contenus** : articles du flux (mode manuel par défaut), fiches conseils proposées par l'univers.
+
+**Vérifier et publier** : récapitulatif ; **rien n'empêche la publication** (règle de Paul, 2026-10-05). Chaque
+information manquante est listée avec son repli sobre sur le site (`controlerPublication().remplacements`, `replis.ts`)
+et confirmée par « Publier quand même ». Le profil du cabinet n'est pas demandé dans le parcours (formulaire complet,
+`/mon-site`). Pré-remplissage depuis l'annuaire santé : pas encore fait.
 
 ## Catalogue initial (2026-10-05)
 

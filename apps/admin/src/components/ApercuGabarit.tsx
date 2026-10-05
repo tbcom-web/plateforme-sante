@@ -7,7 +7,7 @@
 // d'OpenStreetMap au build). Revue : filet double, premier écran sur l'aplat pastel avec un dessin au trait légendé, sections en
 // colonnes de journal (chiffre romain et titre à gauche), bulles à filet, Bodoni Moda et Newsreader.
 import type { CSSProperties, ReactNode } from 'react';
-import { gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, type ModeleManifeste, type NomDessin, type SiteDraft } from '@plateforme/core';
+import { construireNavigation, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, type ModeleManifeste, type NomDessin, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -34,6 +34,9 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const lieu = d.lieux[0];
   const tel = d.cabinet.telephone || '00 00 00 00 00';
   const enLigne = d.rdv.mode !== 'telephone';
+  // Menu calculé comme sur le site (themes.ts, construireNavigation) : sujets principaux, Soins, Le cabinet, Infos pratiques
+  const navigation = construireNavigation(d, soins);
+  const menu = (mobile ? navigation.menuMobile : navigation.menu).map((l) => l.libelle);
   const noms = d.praticiens.map((p) => [p.prenom, p.nom].filter(Boolean).join(' ')).filter(Boolean);
   const phrase = noms.length ? `${noms.join(' et ')}, ${titre.toLowerCase()}${noms.length > 1 ? 's' : ''}, ${noms.length > 1 ? 'accueillent leurs' : 'accueille ses'} patients à ${ville}.` : `Votre cabinet à ${ville}.`;
   const adresse = `${lieu?.adresse || 'Adresse du cabinet'}, ${lieu?.codePostal ?? ''} ${lieu?.ville || ville}`;
@@ -66,18 +69,18 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     <header style={{ borderBottom: '3px double var(--g-encre)' }}>
       <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 76 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontStyle: 'italic', fontWeight: 500, fontSize: 20 }}>{nomCabinet}</strong></span>
-        {!mobile && <span style={{ display: 'flex', alignItems: 'center', gap: 26, fontSize: 17 }}>{['Soins', 'Le cabinet', 'Accès'].map((l) => <span key={l}>{l}</span>)}<span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none' }}>{enLigne ? 'Rendez-vous' : 'Appeler'}</span></span>}
+        {!mobile && <span style={{ display: 'flex', alignItems: 'center', gap: 26, fontSize: 17 }}>{menu.map((l) => <span key={l}>{l}</span>)}<span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none' }}>{enLigne ? 'Rendez-vous' : 'Appeler'}</span></span>}
       </div>
-      {mobile && <nav style={{ ...cadre, display: 'flex', justifyContent: 'space-between', padding: '4px 0 10px' }}>{['Soins', 'Le cabinet', 'Accès'].map((l) => <span key={l}>{l}</span>)}</nav>}
+      {mobile && <nav style={{ ...cadre, display: 'flex', justifyContent: 'space-between', padding: '4px 0 10px' }}>{menu.map((l) => <span key={l}>{l}</span>)}</nav>}
     </header>
   ) : (
     <header style={{ padding: '12px 0 4px', borderBottom: village ? '1px solid var(--g-ligne)' : undefined }}>
       <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 64, ...(village ? {} : { background: 'var(--g-carte)', borderRadius: 999, padding: '8px 8px 8px 14px', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }) }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontSize: 18 }}>{nomCabinet}</strong></span>
-        {!mobile && !village && <span style={{ display: 'flex', gap: 22, fontWeight: 600, fontSize: 15 }}>{['Soins', 'Le cabinet', 'Accès'].map((l) => <span key={l}>{l}</span>)}</span>}
+        {!mobile && !village && <span style={{ display: 'flex', gap: 22, fontWeight: 600, fontSize: 15 }}>{menu.map((l) => <span key={l}>{l}</span>)}</span>}
         {village ? <span style={{ fontWeight: 750, fontSize: 20 }}>☏ {mobile ? 'Appeler' : tel}</span> : !mobile && <span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none' }}>{enLigne ? 'Rendez-vous' : 'Appeler'}</span>}
       </div>
-      {(village || mobile) && <nav style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: village ? '4px 20px' : 6, padding: '10px 0 8px' }}>{['Soins', 'Le cabinet', 'Accès'].map((l) => <span key={l} style={village ? { textDecoration: 'underline', fontWeight: 600 } : { padding: '10px 12px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontWeight: 600, fontSize: 15 }}>{l}</span>)}</nav>}
+      {(village || mobile) && <nav style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: village ? '4px 20px' : 6, padding: '10px 0 8px' }}>{menu.map((l) => <span key={l} style={village ? { textDecoration: 'underline', fontWeight: 600 } : { padding: '10px 12px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontWeight: 600, fontSize: 15 }}>{l}</span>)}</nav>}
     </header>
   );
 

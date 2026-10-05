@@ -14,7 +14,9 @@ import { lienRdvPrecis } from './format';
 export type ResultatControle = {
   /**
    * Empêcheraient la publication. Toujours VIDE aujourd'hui : chaque manque a un repli sur le site. Le champ est gardé
-   * pour un cas réellement impossible techniquement (aucun n'est connu) et pour les écrans qui le lisent encore.
+   * pour un cas réellement impossible techniquement (aucun n'est connu) et pour la compatibilité des tests ; aucun écran
+   * de l'admin ne le lit plus (audit du 2026-10-05).
+   * @deprecated Toujours vide : utiliser `remplacements` (informations manquantes) et `conseils`.
    */
   bloquants: string[];
   /** Conseils, n'empêchent pas la publication (inclut les remplacements) */

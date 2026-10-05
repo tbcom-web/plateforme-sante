@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { normaliserDraft, validerPersonnalisation, controlerPublication, type Alerte } from '@plateforme/core';
+import { normaliserDraft, validerPersonnalisation, type Alerte } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { declencherApercu, declencherPublication } from '@/lib/publication';
 import { enregistrerSite } from '@/app/mon-site/actions';
@@ -82,11 +82,12 @@ export async function etatApercu(siteId: string): Promise<{ slug: string | null;
   }
 }
 
-/** Publie le site (mêmes contrôles que le tableau de bord). */
+/**
+ * Publie le site. Comme au tableau de bord, rien n'est bloquant : chaque information manquante a un repli sobre sur le site
+ * (replis.ts, règle de Paul du 2026-10-05).
+ */
 export async function publierDepuisEdition(siteId: string) {
   const site = await lireSite(siteId);
   if (!site) return { ok: false, message: 'Site introuvable.' };
-  const { bloquants } = controlerPublication(normaliserDraft(site.config));
-  if (bloquants.length) return { ok: false, message: `Avant de publier : ${bloquants.join(' · ')}` };
   return declencherPublication(siteId);
 }

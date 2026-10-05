@@ -1,7 +1,7 @@
 // Spécialités du praticien : couche 3 de la charte (sous l'univers métier, voir univers.ts).
 //
-// Le praticien choisit une spécialité principale (et éventuellement une secondaire), une gamme de couleurs
-// et un modèle. La spécialité pilote les visuels : photos par défaut, vidéos (boucles courtes et muettes),
+// Le site a une spécialité principale (et éventuellement une secondaire), tirées des sujets n° 1 et 2 du praticien
+// (themes.ts, specialitesDesPriorites ; réglables ensuite dans le formulaire complet), une gamme de couleurs et un modèle. La spécialité pilote les visuels : photos par défaut, vidéos (boucles courtes et muettes),
 // dessins prioritaires, animation d'accueil, soins mis en avant. Ses propres photos passent toujours en
 // premier ; le modèle leur applique un traitement de teinte pour garder l'unité graphique.
 // Règle de cohérence : toute ressource d'une spécialité respecte la charte (traitement du style, aucun visage,
@@ -137,7 +137,8 @@ export const packVisuel = (value: string) => SPECIALITES.find((s) => s.value ===
 export const specialite = packVisuel;
 
 /**
- * Spécialité proposée par défaut selon le profil de cabinet. Jamais « posture » par défaut : sujets à faible niveau de preuve,
+ * Spécialité proposée par défaut selon le profil de cabinet, quand aucun sujet n'est choisi (les sujets priment :
+ * themes.ts, appliquerPriorites). Jamais « posture » par défaut : sujets à faible niveau de preuve,
  * proposés seulement après validation déontologique (règle de Paul, 2026-10-05) ; le profil « technique » mène à la générale.
  */
 export const specialiteDuProfil = (profil: string) =>

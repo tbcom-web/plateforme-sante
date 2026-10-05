@@ -20,7 +20,7 @@ import '@fontsource-variable/newsreader/wght-italic.css';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  completerJeuVisuel, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
+  completerJeuVisuel, construireNavigation, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
   type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
@@ -451,7 +451,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                     </span>
                   )}
                 </span>
-                {!mobile && ['Compétences', 'Le cabinet', 'Accès'].map((l) => <span key={l} style={{ fontSize: 15, opacity: 0.85 }}>{l}</span>)}
+                {!mobile && construireNavigation(d, soins).menu.map((l) => l.libelle).map((l) => <span key={l} style={{ fontSize: 15, opacity: 0.85 }}>{l}</span>)}
                 <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 42, padding: '0 18px', fontSize: 14, ...(transparent ? { background: 'var(--blanc)', color: 'var(--encre)' } : {}) }}>{rdv}</span>
               </div>
             </header>

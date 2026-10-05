@@ -96,6 +96,9 @@
 
 ## 4. Profils de cabinet et tons
 
+Dans le générateur, la hiérarchie du site vient désormais des **sujets du cabinet** (`packages/core/src/themes.ts`) :
+le profil ne propose plus que la voix, et le modèle et la spécialité seulement quand aucun sujet n'est choisi.
+
 | Profil | Indices dans les sites | Voix | Modèle |
 |---|---|---|---|
 | Proximité (praticien seul, cabinet classique) | 3 à 5 compétences, infos pratiques | 3e personne sobre | Proximité |
@@ -106,7 +109,11 @@
 
 ## 5. Contrôles à la publication
 
-- Champs obligatoires selon le pays : titre, identifiant professionnel, adresse, téléphone.
+Règle de Paul (2026-10-05) : **aucun de ces contrôles n'empêche de créer ni de publier un site**. Une information
+manquante ou invalide est un avertissement à la saisie ; le site publié la remplace par une mention sobre ou l'omet
+(`packages/core/src/controles.ts`, `remplacements` ; `packages/core/src/replis.ts`).
+
+- Informations attendues selon le pays : titre, identifiant professionnel, adresse, téléphone (sinon repli ou mention omise).
 - Format et unicité des identifiants : Ordre 9 chiffres, RPPS 11 chiffres, INAMI, etc.
 - Aucun placeholder (`[…]`, `xxx`) dans le texte publié.
 - Lien de RDV valide, et ville cohérente avec le cabinet.
