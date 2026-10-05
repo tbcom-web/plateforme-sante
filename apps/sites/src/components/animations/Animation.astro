@@ -1,19 +1,33 @@
 ---
 // Animation de la marque, choisie par son nom (accueil, fiches de soins). Décorative (aria-hidden dans
 // chaque composant) ; pause hors écran et image fixe si le visiteur réduit les mouvements.
+// Registre « pedagogique » (modèle Simple et pédagogique) : image calme du schéma correspondant, sans mouvement,
+// sans trame, sans lecture ni ligne de scan (svgAnimationFixe, même règle que l'aperçu de l'admin).
 import Podoscope from './Podoscope.astro';
 import Coureur from './Coureur.astro';
 import Trajectoire from './Trajectoire.astro';
 import PremiersPas from './PremiersPas.astro';
 import Semelle from './Semelle.astro';
-import type { Animation } from '@plateforme/core';
+import { svgAnimationFixe, type Animation, type Registre } from '@plateforme/core';
+import { registre as registreSite } from '../../lib/visuels';
 
-/** releve : habillage « relevé de podoscope » (accueil seulement) */
-interface Props { nom: Animation | null; fond?: 'sombre' | 'clair'; releve?: boolean }
-const { nom, fond = 'sombre', releve = false } = Astro.props;
+/** releve : habillage « relevé de podoscope » (accueil seulement) ; registre : celui du modèle par défaut */
+interface Props { nom: Animation | null; fond?: 'sombre' | 'clair'; releve?: boolean; registre?: Registre }
+const { nom, fond = 'sombre', releve = false, registre = registreSite } = Astro.props;
 ---
-{nom === 'podoscope' && <Podoscope fond={fond} releve={releve} />}
-{nom === 'coureur' && <Coureur fond={fond} />}
-{nom === 'trajectoire' && <Trajectoire fond={fond} />}
-{nom === 'premiers-pas' && <PremiersPas fond={fond} />}
-{nom === 'semelle' && <Semelle fond={fond} />}
+{nom && registre === 'pedagogique' ? (
+  <span class="anim-calme" aria-hidden="true" set:html={svgAnimationFixe(nom, { registre })} />
+) : (
+  <>
+    {nom === 'podoscope' && <Podoscope fond={fond} releve={releve} />}
+    {nom === 'coureur' && <Coureur fond={fond} />}
+    {nom === 'trajectoire' && <Trajectoire fond={fond} />}
+    {nom === 'premiers-pas' && <PremiersPas fond={fond} />}
+    {nom === 'semelle' && <Semelle fond={fond} />}
+  </>
+)}
+
+<style>
+  .anim-calme { display: block; place-self: stretch; width: 100%; height: 100%; min-height: 0; overflow: hidden; }
+  .anim-calme :global(svg) { display: block; width: 100%; height: 100%; }
+</style>

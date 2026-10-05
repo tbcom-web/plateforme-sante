@@ -1,0 +1,93 @@
+---
+// Accueil « lieu » (modèle Simple et pédagogique) : grande photo du lieu d'exercice (façade, village, rue, cabinet)
+// et, posée dessus, une carte claire avec le titre factuel, la phrase d'accueil, le téléphone et la prise de
+// rendez-vous en gros boutons, l'adresse et les jours d'ouverture. Rien ne bouge, aucune lecture de données.
+// Photo : celle du praticien (accueil, sinon panorama, sinon cabinet), sinon la photo d'accueil du jeu de photos de la
+// spécialité ; sans photo du tout, schéma pédagogique calme de la spécialité sur fond clair (lib/visuels).
+// Titre H1 identique à tous les modèles (SEO verrouillé).
+import Icone from '../Icone.astro';
+import Dessin from '../dessins/Dessin.astro';
+import { site } from '../../lib/site';
+import { texte, champ, zonePhoto } from '../../lib/edition';
+import { photoResponsive, photoLieuAccueil, cadrageLieuAccueil, dessinSpecialite } from '../../lib/visuels';
+import { phraseAccueil, lieu, telLien, lienRdv, libelleRdv, rdvEnLigne, viaPlateforme, titreMetierAffiche, TYPES_LIEU } from '../../lib/textes';
+
+const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
+const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
+const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}, sur rendez-vous` : 'Sur rendez-vous';
+const photoPraticien = [site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].includes(photoLieuAccueil);
+// Texte alternatif seulement pour la photo du praticien (son lieu d'exercice) ; une photo de banque reste décorative.
+const alt = photoPraticien ? `${lieu.nom || TYPES_LIEU[lieu.type]} à ${lieu.ville || site.cabinet.ville}` : '';
+// Arbitrage de style en cours (démo seulement) : petit schéma pédagogique dans la carte, même quand il y a une photo.
+const schemaDansCarte = Boolean(photoLieuAccueil) && process.env.ACCUEIL_SCHEMA === 'oui';
+---
+<section class:list={['lieu', { 'lieu--sans-photo': !photoLieuAccueil }]}>
+  <div class="lieu__visuel">
+    {photoLieuAccueil
+      ? <img src={photoLieuAccueil} {...photoResponsive(photoLieuAccueil, '(min-width: 1220px) 1180px, calc(100vw - 32px)')} alt={alt} width="1600" height="1000" fetchpriority="high" decoding="async" style={`object-position:${cadrageLieuAccueil}`} {...zonePhoto('photos.accueil')} />
+      : <div class="lieu__schema" aria-hidden="true" {...zonePhoto('photos.accueil')}><Dessin nom={dessinSpecialite} registre="pedagogique" /></div>}
+  </div>
+  <div class="cadre lieu__cadre">
+    <div class="lieu__carte">
+      <div class="lieu__titre">
+        <p class="lieu__metier">{titreMetierAffiche} à {site.cabinet.ville}</p>
+        <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
+        <p class="lieu__chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
+      </div>
+      <div class="lieu__contact">
+      <div class="lieu__actions">
+        {rdvEnLigne ? (
+          <>
+            <a class="bouton bouton--plein lieu__bouton" href={rdvAccueil}><Icone nom="lucide:calendar" />{libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}</a>
+            <a class="bouton bouton--ligne lieu__bouton" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+          </>
+        ) : (
+          <a class="bouton bouton--plein lieu__bouton" href={telLien}><Icone nom="lucide:phone" />Appeler le {site.cabinet.telephone}</a>
+        )}
+      </div>
+      <ul class="lieu__pratique">
+        <li><Icone nom="lucide:map-pin" /><span>{lieu.nom && <>{lieu.nom}, </>}{lieu.adresse}, {lieu.codePostal} {lieu.ville}</span></li>
+        <li><Icone nom="lucide:clock" /><span>{jours}</span></li>
+      </ul>
+      </div>
+      {schemaDansCarte && <span class="lieu__mini" aria-hidden="true"><Dessin nom={dessinSpecialite} registre="pedagogique" /></span>}
+    </div>
+  </div>
+</section>
+
+<style>
+  .lieu { position: relative; padding-top: clamp(12px, 2vw, 24px); }
+  .lieu__visuel { width: min(1180px, 100% - 40px); margin-inline: auto; aspect-ratio: 4 / 3; border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); }
+  @media (min-width: 760px) { .lieu__visuel { aspect-ratio: 16 / 7; } }
+  .lieu__visuel img { width: 100%; height: 100%; object-fit: cover; }
+  .lieu__schema { display: grid; place-items: center; height: 100%; padding: clamp(16px, 4vw, 48px); }
+  .lieu__schema :global(.dessin) { width: min(100%, 520px); height: 100%; }
+  /* Carte posée à cheval sur le bas de la photo (ordinateur), juste dessous sur mobile */
+  .lieu__cadre { position: relative; margin-top: -48px; }
+  @media (min-width: 960px) { .lieu__cadre { margin-top: -140px; } }
+  .lieu__carte { position: relative; max-width: 760px; padding: clamp(24px, 4vw, 44px); border-radius: var(--rayon-grand); background: var(--fond); box-shadow: var(--ombre); }
+  .lieu__metier { margin: 0 0 10px; font-weight: 700; color: var(--accent-vif); }
+  .lieu h1 { font-size: clamp(2rem, 4.2vw, 3.2rem); line-height: 1.1; letter-spacing: -0.02em; max-width: 20ch; }
+  .lieu h1 .pale { color: var(--encre); }
+  .lieu__chapo { margin: 18px 0 26px; font-size: 1.06rem; color: var(--encre-douce); max-width: 52ch; }
+  .lieu__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .lieu__bouton { min-height: 60px; padding-inline: 26px; font-size: 1.05rem; font-weight: 700; white-space: normal; }
+  .lieu__bouton :global(.icone) { width: 1.25em; height: 1.25em; flex: none; }
+  @media (max-width: 559px) { .lieu__bouton { width: 100%; } }
+  .lieu__pratique { list-style: none; display: grid; gap: 8px; margin: 26px 0 0; padding: 18px 0 0; border-top: var(--filet) solid var(--ligne); color: var(--encre-douce); }
+  .lieu__pratique li { display: flex; align-items: flex-start; gap: 10px; }
+  .lieu__pratique :global(.icone) { flex: none; margin-top: 0.3em; color: var(--accent-vif); }
+  /* Ordinateur : titre à gauche, contact à droite, sur toute la largeur du cadre */
+  @media (min-width: 960px) {
+    .lieu__carte { max-width: none; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 0 48px; align-items: end; }
+    .lieu__chapo { margin-bottom: 0; }
+    .lieu__actions { flex-direction: column; align-items: stretch; }
+  }
+  .lieu__mini { display: none; }
+  @media (min-width: 960px) {
+    .lieu__carte:has(.lieu__mini) { grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr) 170px; }
+    .lieu__mini { display: block; align-self: center; }
+  }
+  .lieu--sans-photo .lieu__cadre { margin-top: -32px; }
+</style>

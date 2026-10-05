@@ -2,7 +2,11 @@
 import { modeleIntegre, packVisuel, type SiteConfig } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
-const modele = modeleIntegre(process.env.MODELE ?? 'prestige');
+// POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
+const modeleBase = modeleIntegre(process.env.MODELE ?? 'prestige');
+const modele = process.env.POLICE_TITRES
+  ? { ...modeleBase, jetons: { ...modeleBase.jetons, policeTitres: process.env.POLICE_TITRES as typeof modeleBase.jetons.policeTitres } }
+  : modeleBase;
 // Spécialité de la démo (variable SPECIALITE, secondaire SPECIALITE_SECONDAIRE) ; ANIMATION=non pour la désactiver.
 const pack = packVisuel(process.env.SPECIALITE ?? 'generale');
 

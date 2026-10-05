@@ -7,6 +7,9 @@ import { texte, champ } from '../lib/edition';
 import HeroDiaporama from '../components/gabarit/HeroDiaporama.astro';
 import HeroScinde from '../components/gabarit/HeroScinde.astro';
 import HeroPlein from '../components/gabarit/HeroPlein.astro';
+import HeroLieu from '../components/gabarit/HeroLieu.astro';
+import Icone from '../components/Icone.astro';
+import { pedagogique } from '../lib/visuels';
 import Expertises from '../components/gabarit/Expertises.astro';
 import Competences from '../components/gabarit/Competences.astro';
 import Praticiens from '../components/gabarit/Praticiens.astro';
@@ -18,7 +21,7 @@ import Couverture from '../components/dessins/Couverture.astro';
 import { site, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
 import { photoResponsive } from '../lib/visuels';
-import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien, lieu } from '../lib/textes';
+import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien, lieu, lienRdv, libelleRdv } from '../lib/textes';
 import { espacesFines, faitEquipement } from '@plateforme/core';
 
 const m = site.modele;
@@ -40,15 +43,64 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
 
 const title = `${site.titreMetier} ${site.cabinet.ville} – ${noms}`;
 const description = `${titreCabinet}. ${phraseAccueil} ${site.soins.slice(0, 4).map((s) => s.titreCourt).join(', ')}.`;
-const douce = (s: string) => ['praticiens', 'faq'].includes(s);
+// Sections sur fond doux ; en registre pédagogique, le lieu (panorama) et la FAQ seulement, pour alterner sans enchaîner deux fonds doux.
+const douce = (s: string) => (pedagogique ? ['faq'] : ['praticiens', 'faq']).includes(s);
+
+// Premier rendez-vous en trois étapes (section « etapes ») : uniquement des informations déjà saisies (prise de
+// rendez-vous, adresse et accès, déroulé de la consultation déjà affiché à l'accueil), sans intertitre : aucun titre SEO ajouté.
+const premiers = [...lieu.horaires].filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
+const aApporter = site.soins.flatMap((s) => s.faq).find((f) => /apporter/i.test(f.q))?.r;
+const telInsecable = site.cabinet.telephone.replace(/ /g, ' ');
+const etapes = [
+  {
+    titre: 'Prendre rendez-vous',
+    texte: rdvEnLigne
+      ? `En ligne sur ${site.rdv.plateforme}, 24h/24, ou par téléphone au ${telInsecable}.`
+      : `Par téléphone au ${telInsecable}${premiers.length > 1 ? `, du ${premiers[0]} au ${premiers.at(-1)}` : ''}.`,
+  },
+  {
+    titre: 'Venir au cabinet',
+    texte: `${lieu.nom ? `${lieu.nom}, ` : ''}${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}.${site.accesDetail.pmr ? ' Cabinet accessible aux personnes à mobilité réduite.' : ''}`,
+  },
+  {
+    titre: 'La consultation',
+    texte: `${texte('competences.chapo', 'Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.')}${aApporter ? ` À apporter : ${aApporter.charAt(0).toLowerCase()}${aApporter.slice(1)}` : ''}`,
+  },
+];
+// Registre pédagogique : questions des fiches de soins sur l'ordonnance et le remboursement, affichées en plus de la FAQ
+// générale (données structurées inchangées : FAQPage de l'accueil = FAQ générale).
+const faqEnPlus = pedagogique
+  ? site.soins.flatMap((s) => s.faq).filter((f, i, toutes) => /ordonnance|prescription|rembours/i.test(f.q) && !site.faqGenerale.some((g) => g.q === f.q) && toutes.findIndex((x) => x.q === f.q) === i).slice(0, 2)
+  : [];
 ---
-<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale, { nom: title, description, path: '/' })]} immersif={m.accueil.hero !== 'scinde'}>
-  {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : <HeroScinde />}
+<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale, { nom: title, description, path: '/' })]} immersif={m.accueil.hero === 'diaporama' || m.accueil.hero === 'plein'}>
+  {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : m.accueil.hero === 'lieu' ? <HeroLieu /> : <HeroScinde />}
 
   {m.accueil.sections.map((section) => (
     <>
       {section === 'faits' && (
         <ul class="cadre faits" aria-label="En bref">{faits.map((f, i) => <li><span class="faits__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{f}</li>)}</ul>
+      )}
+
+      {section === 'etapes' && (
+        <section class="section section--etapes" aria-label="Premier rendez-vous">
+          <div class="cadre">
+            <p class="sur">Premier rendez-vous</p>
+            <ol class="etapes">
+              {etapes.map((e, i) => (
+                <li class="etape">
+                  <span class="etape__num" aria-hidden="true">{i + 1}</span>
+                  <p class="etape__titre">{e.titre}</p>
+                  <p class="etape__texte">{e.texte}</p>
+                </li>
+              ))}
+            </ol>
+            <div class="etapes__actions">
+              <a class="bouton bouton--plein" href={site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('etapes')}><Icone nom={rdvEnLigne ? 'lucide:calendar' : 'lucide:phone'} />{libelleRdv}</a>
+              {rdvEnLigne && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
+            </div>
+          </div>
+        </section>
       )}
 
       {section === 'competences' && (
@@ -59,7 +111,7 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
                 <p class="sur sur--num">{titreCompetences}</p>
                 <h2>Une prise en charge <span class="pale" {...champ('competences.deco')}>{texte('competences.deco', 'du pied, à tout âge.')}</span></h2>
               </div>
-              <p class="chapo" {...champ('competences.chapo')}>{texte('competences.chapo', 'Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.')}</p>
+              {!(pedagogique && m.accueil.sections.includes('etapes')) && <p class="chapo" {...champ('competences.chapo')}>{texte('competences.chapo', 'Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.')}</p>}
             </div>
             {m.competences === 'cartes' ? <Competences /> : <Expertises />}
           </div>
@@ -142,7 +194,10 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
               <h2>Bon à savoir <span class="pale" {...champ('faq.deco')}>{texte('faq.deco', 'avant de venir.')}</span></h2>
               <p class="faq__contact"><span class="mono">{String(site.faqGenerale.length).padStart(2, '0')} questions</span>Une autre question ? <a href={telLien}>{site.cabinet.telephone}</a></p>
             </div>
-            <FaqList items={site.faqGenerale} cle="faq" />
+            <div>
+              <FaqList items={site.faqGenerale} cle="faq" />
+              {faqEnPlus.length > 0 && <div class="faq__suite"><FaqList items={faqEnPlus} /></div>}
+            </div>
           </div>
         </section>
       )}
@@ -181,6 +236,17 @@ const douce = (s: string) => ['praticiens', 'faq'].includes(s);
   .acces { display: grid; gap: 28px; }
   /* Carte collante à côté des informations (pas de vide sous la carte quand la colonne de droite est longue) */
   @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } .acces > :global(.carte) { position: sticky; top: 100px; } }
+
+  /* Premier rendez-vous : trois étapes en colonnes (ordinateur), numéros ronds dans la police du texte */
+  .etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  @media (min-width: 860px) { .etapes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
+  .etape { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 16px; align-content: start; padding: 22px; border-radius: var(--rayon); background: var(--doux); }
+  .etape__num { grid-row: span 2; display: grid; place-items: center; width: 2.4em; height: 2.4em; border-radius: 50%; background: var(--accent); color: var(--blanc); font-weight: 800; font-size: 1.1rem; }
+  .etape__titre { margin: 0 0 6px; font-family: var(--police-titres); font-weight: var(--graisse-titres, 700); font-size: 1.2rem; line-height: 1.25; color: var(--encre); }
+  .etape__texte { margin: 0; color: var(--encre-douce); }
+  .etapes__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .section--etapes { padding-block: 0 clamp(56px, 8vw, 96px); }
+  .faq__suite :global(.faq) { border-top: 0; }
 
   .faq { display: grid; gap: 32px; }
   .faq__contact { display: grid; gap: 6px; margin: 28px 0 0; padding-top: 16px; border-top: var(--filet) solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; max-width: 30ch; }

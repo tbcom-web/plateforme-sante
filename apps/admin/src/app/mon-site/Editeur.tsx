@@ -9,6 +9,9 @@ import {
   EQUIPEMENTS_AUTRES_MAX,
   GAMMES,
   modeleIntegre,
+  effetModele,
+  registreModele,
+  type ModeleManifeste,
   marquesLogo,
   svgMarque,
   couleursMarque,
@@ -546,9 +549,8 @@ export default function Editeur({ siteId, initial, catalogue, modeles, marquesIm
                   ))}
                 </div>
               </fieldset>
-              <Choix
-                legende="Modèle"
-                options={modeles.map((m) => ({ value: m.id, label: m.nom, description: m.description }))}
+              <ChoixModele
+                modeles={modeles}
                 valeur={d.theme.modele}
                 onChange={(v) => maj({ theme: { ...d.theme, modele: v, couleur: modeles.find((m) => m.id === v)?.couleurConseillee ?? d.theme.couleur } })}
               />
@@ -712,6 +714,66 @@ function Selection({ label, value, options, onChange }: { label: string; value: 
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </label>
+  );
+}
+
+/**
+ * Choix du modèle par l'effet recherché (« Moderne et technique », « Simple et rassurant »…), avec une phrase et une
+ * vignette schématique (type d'accueil, fond, couleur conseillée, registre des illustrations). Les identifiants des
+ * modèles ne changent pas ; le nom exact du modèle reste lisible en petit.
+ */
+function ChoixModele({ modeles, valeur, onChange }: { modeles: ModeleDisponible[]; valeur: string; onChange: (v: string) => void }) {
+  return (
+    <fieldset>
+      <legend className="font-medium">Style du site : quel effet recherchez-vous ?</legend>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        {modeles.map((m) => (
+          <label key={m.id} className={`flex cursor-pointer gap-3 rounded-xl border p-3 text-sm ${valeur === m.id ? 'border-teal-700 bg-teal-50' : 'border-neutral-200 hover:bg-neutral-50'}`}>
+            <input type="radio" className="sr-only" name="modele" checked={valeur === m.id} onChange={() => onChange(m.id)} />
+            <VignetteModele m={m.manifeste} />
+            <span className="grid content-start gap-0.5">
+              <span className="font-semibold">{effetModele(m.manifeste)}</span>
+              <span className="text-xs text-neutral-600">{m.description}</span>
+              <span className="text-[11px] text-neutral-400">Modèle « {m.nom} »</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+/** Vignette d'un modèle : mise en page de l'accueil en aplats (titre, bouton, image, sections), à ses couleurs. */
+function VignetteModele({ m }: { m: ModeleManifeste }) {
+  const g = GAMMES.find((x) => x.id === m.gammes?.[0]);
+  const accent = m.jetons.accent === 'encre' ? '#0b1c24' : g?.accent ?? m.couleurConseillee ?? '#1f6b64';
+  const fond = m.jetons.fond;
+  const doux = m.jetons.fondDoux ?? '#eef1f4';
+  const plan = m.jetons.plan ?? g?.plan ?? '#0f3b3a';
+  const pedago = registreModele(m) === 'pedagogique';
+  const r = Math.min(m.jetons.rayon / 4, 6);
+  const rb = { pilule: 4, arrondi: 2, carre: 0.5 }[m.jetons.boutons];
+  const titre = (x: number, y: number, w: number, c = '#1b2a30') => <rect x={x} y={y} width={w} height={m.jetons.graisseTitres > 600 ? 5 : 3.6} rx={1} fill={c} />;
+  // Image : photo évoquée (dégradé doux) ou relevé (plan sombre + points de pression)
+  const image = (x: number, y: number, w: number, h: number) => (
+    <g>
+      <rect x={x} y={y} width={w} height={h} rx={r} fill={pedago ? doux : plan} />
+      {pedago
+        ? <path d={`M${x + w * 0.15} ${y + h * 0.75} L${x + w * 0.4} ${y + h * 0.4} L${x + w * 0.6} ${y + h * 0.62} L${x + w * 0.75} ${y + h * 0.48} L${x + w * 0.9} ${y + h * 0.75} Z`} fill={accent} opacity={0.35} />
+        : [0.3, 0.45, 0.6, 0.38, 0.52].map((k, i) => <circle key={i} cx={x + w * (0.3 + i * 0.1)} cy={y + h * k} r={1.6} fill={['#3e7bfa', '#22c3a6', '#ffc23d', '#ff7a2f', '#22c3a6'][i]} />)}
+    </g>
+  );
+  const hero = m.accueil.hero;
+  return (
+    <svg viewBox="0 0 96 72" width="96" height="72" aria-hidden="true" className="shrink-0 rounded-md ring-1 ring-black/10" style={{ background: fond }}>
+      {hero === 'scinde' && (<>{titre(8, 18, 34)}{titre(8, 26, 26)}<rect x={8} y={36} width={20} height={6} rx={rb} fill={accent} />{image(50, 10, 38, 40)}</>)}
+      {(hero === 'plein' || hero === 'diaporama') && (<>{image(0, 0, 96, 50)}{titre(10, 22, 40, '#fff')}{titre(10, 30, 28, '#fff')}<rect x={10} y={38} width={20} height={6} rx={rb} fill="#fff" />{hero === 'diaporama' && [0, 1, 2].map((i) => <circle key={i} cx={78 + i * 5} cy={44} r={1.2} fill="#fff" opacity={i ? 0.5 : 1} />)}</>)}
+      {hero === 'lieu' && (<>{image(6, 5, 84, 28)}<rect x={10} y={26} width={76} height={24} rx={r} fill={fond} stroke="#00000014" />{titre(15, 31, 34)}{titre(15, 39, 24)}<rect x={60} y={30} width={22} height={7} rx={rb} fill={accent} /><rect x={60} y={39.5} width={22} height={7} rx={rb} fill="none" stroke={accent} strokeWidth={0.8} /></>)}
+      <rect x={0} y={56} width={96} height={16} fill={doux} />
+      {pedago
+        ? [0, 1, 2].map((i) => <g key={i}><circle cx={14 + i * 28} cy={64} r={3} fill={accent} /><rect x={20 + i * 28} y={62.5} width={14} height={3} rx={1} fill="#1b2a30" opacity={0.5} /></g>)
+        : [0, 1, 2].map((i) => <g key={i}><text x={8 + i * 28} y={66} fontSize={5} fontFamily="monospace" fill={accent}>0{i + 1}</text><rect x={16 + i * 28} y={62.5} width={14} height={3} rx={1} fill="#1b2a30" opacity={0.5} /></g>)}
+    </svg>
   );
 }
 

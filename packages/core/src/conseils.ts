@@ -72,6 +72,8 @@ export const FICHES_CONSEILS: FicheConseil[] = [
     etape: 'Photos et style',
     surLeSite: 'L’apparence de tout le site : modèle, couleurs, illustrations, logo et icône de l’onglet.',
     points: [
+      { titre: 'Style du site', conseil: 'Choisir l’effet recherché plutôt qu’un nom de modèle. « Simple et rassurant » convient à une patientèle âgée, à un cabinet de village ou à qui préfère la clarté : grande photo du lieu, téléphone bien visible, gros caractères, schémas explicatifs calmes. « Moderne et technique » met en avant l’examen et le matériel.' },
+      { titre: 'Photo de la façade ou du village', conseil: 'Avec le style « Simple et rassurant », la photo d’accueil EST l’accueil du site : une photo nette de la façade, de la rue ou du village, prise de jour, en format paysage, sans personne reconnaissable. Sans photo, une photo d’illustration ou un schéma la remplace.' },
       { titre: 'Illustrations ou photos', conseil: 'Les illustrations, adaptées à vos couleurs, donnent un site cohérent sans photo. N’ajouter des photos que si elles sont nettes, lumineuses et montrent votre cabinet.' },
       { titre: 'Photos du cabinet', conseil: 'Format paysage, au moins 2000 px de large, pièces rangées, aucun patient identifiable. 3 à 6 photos variées : accueil, salle de soins, matériel.' },
       { titre: 'Gamme de couleurs', conseil: 'Garder une gamme conseillée pour le modèle : les contrastes y sont vérifiés pour la lecture. Une couleur personnalisée peut nuire à la lisibilité.' },

@@ -10,12 +10,13 @@ import '@fontsource-variable/fraunces';
 import '@fontsource-variable/schibsted-grotesk';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource/instrument-serif';
+import '@fontsource-variable/nunito';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  completerJeuVisuel, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, rendreCase, SURFACES_CSS, svgAnimationFixe,
+  completerJeuVisuel, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, visuelSoinJeu,
-  type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Rendu, type SiteDraft,
+  type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
@@ -35,18 +36,22 @@ const FILTRES: Record<string, string> = {
   contraste: 'contrast(1.12) saturate(0.88) brightness(0.96)',
 };
 const SECTIONS_LIBELLES: Record<string, string> = {
-  faits: 'En bref', competences: 'Compétences', panorama: 'Le lieu', praticiens: 'Praticiens',
+  faits: 'En bref', etapes: 'Premier rendez-vous', competences: 'Compétences', panorama: 'Le lieu', praticiens: 'Praticiens',
   galerie: 'Le cabinet', actualites: 'Actualités', acces: 'Accès et horaires', faq: 'Questions fréquentes',
 };
 
 /** Visuel d'une case : photo traitée, dessin sur grille, ou image fixe de l'animation sur fond plan */
-function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false }: { rendu: Rendu; filtre: string; hauteur: number | string; rayon?: number; sombre?: boolean }) {
+function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 'releve' }: { rendu: Rendu; filtre: string; hauteur: number | string; rayon?: number; sombre?: boolean; registre?: Registre }) {
   const cadre: CSSProperties = { height: hauteur, borderRadius: rayon, overflow: 'hidden', position: 'relative' };
   if (rendu.type === 'photo') {
     // eslint-disable-next-line @next/next/no-img-element
     return <div style={cadre}><img src={rendu.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: rendu.cadrage, filter: filtre }} /></div>;
   }
-  const svg = rendu.type === 'animation' ? svgAnimationFixe(rendu.animation) : svgDessin(rendu.dessin);
+  const svg = rendu.type === 'animation' ? svgAnimationFixe(rendu.animation, { registre }) : svgDessin(rendu.dessin, { registre });
+  // Registre pédagogique : schéma calme sur fond doux, jamais de plan sombre ni d'indication « animé »
+  if (registre === 'pedagogique') {
+    return <div style={{ ...cadre, display: 'grid', placeItems: 'center', background: 'var(--doux)' }}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svg }} /></div>;
+  }
   const plan = sombre || rendu.type === 'animation';
   return (
     <div className={plan ? 'surface-plan' : 'surface-grille'} style={{ ...cadre, display: 'grid', placeItems: 'center' }}>
@@ -78,6 +83,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
 
   const mobile = appareil === 'mobile';
   const j = m.jetons;
+  // Registre des illustrations du modèle : relevé (trame, lectures, plan sombre) ou pédagogique (schémas au trait, fonds clairs)
+  const registre = registreModele(m);
+  const pedago = registre === 'pedagogique';
   const filtre = FILTRES[j.images] ?? 'none';
   const mode = d.theme.modeVisuel;
   const jeu = useMemo(() => {
@@ -95,11 +103,12 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       '--graisse-titres': String(j.graisseTitres),
       '--police-titres': POLICES[j.policeTitres],
       '--police-texte': POLICES[j.policeTexte],
+      ...(pedago ? { '--police-mono': POLICES[j.policeTexte] } : {}),
     };
     if (!v['--doux']) v['--doux'] = 'var(--accent-tres-pale)';
     if (m.pied === 'accent') v['--pied'] = 'var(--accent-fonce)';
     return v as CSSProperties;
-  }, [m, j, d.theme.couleur, d.theme.gamme]);
+  }, [m, j, pedago, d.theme.couleur, d.theme.gamme]);
 
   // Contenu tiré du formulaire
   const lieu = d.lieux[0];
@@ -125,10 +134,10 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const accueil = rendreCase(jeu.accueil, mode, 'accueil', { photoPraticien: d.photos.accueil || undefined, animationActive: d.theme.animation });
   const panorama = rendreCase(jeu.panorama, mode, 'liste', { photoPraticien: d.photos.panorama || d.photos.cabinet[0] || undefined });
   const galerie = mode === 'illustrations' ? d.photos.cabinet : [...d.photos.cabinet, ...jeu.galerie.map((g) => g.photo)].slice(0, 4);
-  const transparent = m.entete === 'transparent' && m.accueil.hero !== 'scinde' && vue === 'accueil';
+  const transparent = m.entete === 'transparent' && (m.accueil.hero === 'plein' || m.accueil.hero === 'diaporama') && vue === 'accueil';
 
   const Sur = ({ n, children }: { n?: number; children: ReactNode }) => (
-    <p className="ap-sur">{n !== undefined && <span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>}{children}</p>
+    <p className="ap-sur">{n !== undefined && !pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>}{children}</p>
   );
 
   const titreHero = <>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} <span className="ap-pale">à {ville}</span></>;
@@ -136,8 +145,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     <section style={{ position: 'relative', minHeight: mobile ? 560 : 640, display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
       {/* Photo : plein cadre sous un voile ; dessin ou animation : fond plan, visuel à droite du titre */}
       {accueil.type === 'photo'
-        ? <div style={{ position: 'absolute', inset: 0 }}><Visuel rendu={accueil} filtre={filtre} hauteur="100%" /></div>
-        : <div className="surface-plan" style={{ position: 'absolute', inset: 0 }}><div style={{ position: 'absolute', inset: mobile ? '90px 0 260px 0' : '80px 0 0 44%' }}><Visuel rendu={accueil} filtre={filtre} hauteur="100%" sombre /></div></div>}
+        ? <div style={{ position: 'absolute', inset: 0 }}><Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur="100%" /></div>
+        : <div className="surface-plan" style={{ position: 'absolute', inset: 0 }}><div style={{ position: 'absolute', inset: mobile ? '90px 0 260px 0' : '80px 0 0 44%' }}><Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur="100%" sombre /></div></div>}
       {accueil.type === 'photo' && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgb(0 0 0 / ${m.accueil.voile / 200}) 0%, rgb(0 0 0 / ${m.accueil.voile / 100}) 100%)` }} />}
       <div className="ap-cadre" style={{ position: 'relative', paddingBlock: mobile ? '120px 40px' : '160px 64px' }}>
         <p className="ap-sur" style={{ color: 'var(--blanc)' }}>{titre} · {ville}</p>
@@ -155,11 +164,57 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <p className="ap-chapo">{noms.length ? `${noms.join(', ')}, ${titre.toLowerCase()}.` : 'Votre nom, votre métier.'}</p>
         <span className="ap-bouton ap-bouton--plein">{rdv}</span>
       </div>
-      <Visuel rendu={accueil} filtre={filtre} hauteur={mobile ? 300 : 460} rayon={Math.round(j.rayon * 1.3)} />
+      <Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur={mobile ? 300 : 460} rayon={Math.round(j.rayon * 1.3)} />
+    </section>
+  );
+
+  // Accueil « lieu » (modèle Simple et pédagogique) : photo du lieu (praticien, sinon jeu de photos de la spécialité,
+  // quel que soit le style visuel), carte claire avec titre, téléphone et rendez-vous ; sans photo, schéma pédagogique.
+  const photoLieu = d.photos.accueil || d.photos.panorama || d.photos.cabinet[0] || jeu.accueil.photo;
+  const tel = d.cabinet.telephone || '00 00 00 00 00';
+  const heroLieu = (
+    <section style={{ paddingTop: 16 }}>
+      <div className="ap-cadre">
+        <Visuel registre={registre} rendu={photoLieu ? { type: 'photo', src: photoLieu, cadrage: '50% 50%' } : { type: 'dessin', dessin: jeu.accueil.dessin }} filtre={filtre} hauteur={mobile ? 260 : 460} rayon={Math.round(j.rayon * 1.3)} />
+      </div>
+      <div className="ap-cadre" style={{ position: 'relative', marginTop: mobile ? -40 : -120 }}>
+        <div style={{ background: 'var(--fond)', borderRadius: Math.round(j.rayon * 1.3), boxShadow: '0 18px 40px -24px rgb(0 0 0 / 0.35)', padding: mobile ? 22 : 40, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.25fr 0.75fr', gap: mobile ? 18 : 40, alignItems: 'end' }}>
+          <div>
+            <p style={{ fontWeight: 700, color: 'var(--accent-vif)', margin: '0 0 8px' }}>{titre} à {ville}</p>
+            <h1 className="ap-h1">{titreHero}</h1>
+            <p className="ap-chapo" style={{ marginBottom: 0 }}>{noms.length ? `${noms.join(', ')}, ${titre.toLowerCase()}.` : 'Votre nom, votre métier.'}</p>
+          </div>
+          <div style={{ display: 'grid', gap: 10 }}>
+            {d.rdv.mode !== 'telephone' && <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 58 }}>Prendre rendez-vous</span>}
+            <span className={`ap-bouton ${d.rdv.mode === 'telephone' ? 'ap-bouton--plein' : ''}`} style={{ minHeight: 58, boxShadow: d.rdv.mode === 'telephone' ? undefined : 'inset 0 0 0 1.5px var(--ligne)' }}>☏ {tel}</span>
+            <p style={{ margin: '8px 0 0', color: 'var(--encre-douce)', fontSize: 16 }}>{lieu?.adresse || 'Adresse du cabinet'}, {lieu?.codePostal} {lieu?.ville || ville}</p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 
   const sections: Record<string, (n: number, douce: boolean) => ReactNode> = {
+    etapes: (n, douce) => (
+      <section className={`ap-section ${douce ? 'ap-douce' : ''}`} style={{ paddingBlock: 64 }}>
+        <div className="ap-cadre">
+          <Sur n={n}>{SECTIONS_LIBELLES.etapes}</Sur>
+          <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
+            {[
+              ['Prendre rendez-vous', d.rdv.mode === 'telephone' ? `Par téléphone au ${tel}.` : `En ligne sur ${d.rdv.outil || 'la plateforme'}, ou par téléphone au ${tel}.`],
+              ['Venir au cabinet', `${lieu?.adresse || 'Adresse du cabinet'}, ${lieu?.codePostal ?? ''} ${lieu?.ville || ville}.`],
+              ['La consultation', 'Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.'],
+            ].map(([t, x], k) => (
+              <div key={t} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0 14px', padding: 20, borderRadius: j.rayon, background: douce ? 'var(--fond)' : 'var(--doux)' }}>
+                <span style={{ gridRow: 'span 2', width: 40, height: 40, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--accent)', color: 'var(--blanc)', fontWeight: 800 }}>{k + 1}</span>
+                <strong className="ap-h3">{t}</strong>
+                <span style={{ color: 'var(--encre-douce)' }}>{x}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    ),
     faits: (n, douce) => (
       <section className={`ap-section ${douce ? 'ap-douce' : ''}`}>
         <div className="ap-cadre">
@@ -187,7 +242,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                 const r = rendreCase(visuelSoinJeu(jeu, s.slug), mode, 'liste');
                 return (
                   <div key={s.slug} className="ap-carte">
-                    <Visuel rendu={r} filtre={filtre} hauteur={150} rayon={Math.max(0, j.rayon - 6)} />
+                    <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={150} rayon={Math.max(0, j.rayon - 6)} />
                     <h3 className="ap-h3" style={{ marginTop: 14 }}>{s.titre_court}</h3>
                     <p style={{ color: 'var(--encre-douce)', fontSize: 15, margin: '6px 0 0' }}>{s.resume.slice(0, 96)}…</p>
                   </div>
@@ -203,7 +258,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                     <span className="ap-mono" style={{ color: 'var(--encre-pale)' }}>{String(k + 1).padStart(2, '0')}</span>
                     <h3 className="ap-h3">{s.titre_court}</h3>
                     {!mobile && <p style={{ color: 'var(--encre-douce)', fontSize: 15, margin: 0 }}>{s.resume.slice(0, 90)}…</p>}
-                    {!mobile && <Visuel rendu={r} filtre={filtre} hauteur={72} rayon={Math.max(0, j.rayon - 8)} />}
+                    {!mobile && <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={72} rayon={Math.max(0, j.rayon - 8)} />}
                   </li>
                 );
               })}
@@ -212,9 +267,16 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         </div>
       </section>
     ),
-    panorama: (n) => (
+    panorama: (n) => pedago ? (
+      <section className="ap-section ap-douce">
+        <div className="ap-cadre">
+          <Sur>Le lieu d’exercice</Sur>
+          <p className="ap-h2" style={{ margin: 0 }}>{lieu?.nom ? `${lieu.nom} à ${ville}` : `Le cabinet à ${ville}`}</p>
+        </div>
+      </section>
+    ) : (
       <section style={{ position: 'relative' }}>
-        <Visuel rendu={panorama} filtre={filtre} hauteur={mobile ? 260 : 420} sombre />
+        <Visuel registre={registre} rendu={panorama} filtre={filtre} hauteur={mobile ? 260 : 420} sombre />
         <div className="ap-cadre" style={{ position: 'absolute', left: 0, right: 0, bottom: 28, color: 'var(--blanc)' }}>
           <p className="ap-sur" style={{ color: 'var(--blanc)' }}><span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>Le lieu d’exercice</p>
           <p className="ap-h2" style={{ color: 'var(--blanc)', margin: 0 }}>{lieu?.nom ? `${lieu.nom} à ${ville}` : `Le cabinet à ${ville}`}</p>
@@ -241,7 +303,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <div className="ap-cadre">
           <Sur n={n}>{SECTIONS_LIBELLES.galerie}</Sur>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : '2fr 1fr 1fr', gap: 12 }}>
-            {galerie.map((src, k) => <Visuel key={src + k} rendu={{ type: 'photo', src, cadrage: '50% 50%' }} filtre={filtre} hauteur={k === 0 && !mobile ? 300 : 144} rayon={j.rayon} />)}
+            {galerie.map((src, k) => <Visuel registre={registre} key={src + k} rendu={{ type: 'photo', src, cadrage: '50% 50%' }} filtre={filtre} hauteur={k === 0 && !mobile ? 300 : 144} rayon={j.rayon} />)}
           </div>
         </div>
       </section>
@@ -253,7 +315,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: 18 }}>
             {['Choisir ses chaussures de course', 'Le pied de l’enfant qui grandit'].map((t, k) => (
               <div key={t}>
-                <Visuel rendu={mode === 'photos' ? { type: 'photo', src: jeu.galerie[k + 1]?.photo ?? jeu.accueil.photo, cadrage: '50% 50%' } : { type: 'dessin', dessin: k ? 'enfant' : jeu.couverture }} filtre={filtre} hauteur={180} rayon={j.rayon} />
+                <Visuel registre={registre} rendu={mode === 'photos' ? { type: 'photo', src: jeu.galerie[k + 1]?.photo ?? jeu.accueil.photo, cadrage: '50% 50%' } : { type: 'dessin', dessin: k ? 'enfant' : jeu.couverture }} filtre={filtre} hauteur={180} rayon={j.rayon} />
                 <p className="ap-mono" style={{ color: 'var(--encre-pale)', marginTop: 12 }}>Conseil · 4 min</p>
                 <h3 className="ap-h3">{t}</h3>
               </div>
@@ -305,11 +367,11 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           <p className="ap-mono" style={{ color: 'var(--encre-pale)' }}>Accueil / Compétences / {soinPage.titre_court}</p>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.1fr 0.9fr', gap: 40, alignItems: 'end', borderTop: 'var(--filet-fort) solid var(--encre)', paddingTop: 24, marginTop: 16 }}>
             <div>
-              <p className="ap-sur"><span className="ap-mono" style={{ opacity: 0.7 }}>01 / {String(soinsAffiches.length).padStart(2, '0')} —</span>Compétences</p>
+              <p className="ap-sur">{!pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>01 / {String(soinsAffiches.length).padStart(2, '0')} —</span>}Compétences</p>
               <h1 className="ap-h1" style={{ fontSize: mobile ? 40 : 64 }}>{soinPage.titre?.replace('{ville}', ville) ?? soinPage.titre_court}</h1>
               <p className="ap-chapo">{soinPage.resume}</p>
             </div>
-            <Visuel rendu={r} filtre={filtre} hauteur={mobile ? 240 : 340} rayon={Math.round(j.rayon * 1.3)} />
+            <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={mobile ? 240 : 340} rayon={Math.round(j.rayon * 1.3)} />
           </div>
         </section>
         <section className="ap-section ap-douce">
@@ -354,6 +416,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             className="ap"
             data-motif={j.motif ?? 'plan'}
             data-titres={j.policeTitres}
+            data-registre={registre}
             style={{ ...style, width: LARGEUR[appareil], transform: `scale(${echelle})`, transformOrigin: '0 0', position: 'absolute', top: 0, left: 0 }}
           >
             <header className={`ap-entete ${transparent ? 'ap-entete--transparent' : ''}`}>
@@ -377,7 +440,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             <main>
               {vue === 'accueil' ? (
                 <>
-                  {m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
+                  {m.accueil.hero === 'lieu' ? heroLieu : m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
                   {ordre.map((s, k) => {
                     if (s !== 'panorama') douce = !douce;
                     return <div key={s}>{sections[s]?.(k + 1, s !== 'panorama' && douce)}</div>;
@@ -425,4 +488,12 @@ const CSS = `
 .ap-entete { position: relative; z-index: 2; background: color-mix(in srgb, var(--fond) 92%, transparent); border-bottom: var(--filet) solid var(--ligne); }
 .ap-entete--transparent { position: absolute; left: 0; right: 0; background: transparent; border-color: transparent; color: var(--blanc); }
 .ap-svg svg { width: 100%; height: 100%; }
+/* Registre pédagogique : texte à 18 px, titres sans interlettrage serré, sur-titres en casse normale */
+.ap[data-registre='pedagogique'] { font-size: 18px; }
+.ap[data-registre='pedagogique'] :is(.ap-h1, .ap-h2, .ap-h3) { letter-spacing: -0.015em; line-height: 1.15; }
+.ap[data-registre='pedagogique'] .ap-h1 { font-size: 54px; }
+.ap[data-registre='pedagogique'] .ap-h2 { font-size: 40px; }
+.ap[data-registre='pedagogique'] .ap-sur { font-size: 17px; letter-spacing: 0; text-transform: none; font-weight: 700; }
+.ap[data-registre='pedagogique'] .ap-pale { color: var(--encre-douce); }
+.ap[data-registre='pedagogique'] .ap-douce::before { display: none; }
 `;

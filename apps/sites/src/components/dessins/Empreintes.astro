@@ -7,6 +7,8 @@ import type { Appui } from './trame';
 import { PRESSION, ARRETS_PRESSION, TRAIT } from '@plateforme/core';
 import { urlDessin } from '../../lib/fichiers-dessins';
 import ChargeurDessins from './ChargeurDessins.astro';
+import Dessin from './Dessin.astro';
+import { pedagogique } from '../../lib/visuels';
 
 interface Props {
   appui?: Appui;
@@ -19,7 +21,9 @@ interface Props {
 const { appui = 'normal', legende = true, scan = true, class: classe } = Astro.props;
 const id = `e-${Math.random().toString(36).slice(2, 8)}`;
 const largeur = legende ? 236 : 210;
+// Registre pédagogique (modèle) : pas de relevé de pression ; le schéma des appuis au trait le remplace.
 ---
+{pedagogique ? <Dessin nom="appuis" class={['empreintes', classe].filter(Boolean).join(' ')} /> : (
 <svg class:list={['empreintes', classe, { 'empreintes--scan': scan }]} viewBox={`0 0 ${largeur} 236`} aria-hidden="true" fill="none" stroke-linecap="round">
   <defs>
     <linearGradient id={`${id}-g`} x1="0" y1="1" x2="0" y2="0">
@@ -44,6 +48,7 @@ const largeur = legende ? 236 : 210;
     </g>
   )}
 </svg>
+)}
 <ChargeurDessins />
 
 <style>

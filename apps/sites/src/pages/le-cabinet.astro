@@ -10,6 +10,7 @@ import Materiel from '../components/gabarit/Materiel.astro';
 import Planche from '../components/dessins/Planche.astro';
 import Empreintes from '../components/dessins/Empreintes.astro';
 import { site } from '../lib/site';
+import { pedagogique, photoLieuAccueil, cadrageLieuAccueil, photoResponsive } from '../lib/visuels';
 import { breadcrumbSchema } from '../lib/schema';
 import { titreCabinet, phraseAccueil, titrePraticiens, noms, titreMetierAffiche, localisation } from '../lib/textes';
 
@@ -31,9 +32,14 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
         <h1>{titreCabinet}</h1>
         <p class="chapo">{phraseAccueil}</p>
       </div>
+      {pedagogique && photoLieuAccueil ? (
+        // Registre pédagogique : la photo du lieu d'exercice plutôt qu'un relevé illustratif.
+        <img class="tete-page__photo" src={photoLieuAccueil} {...photoResponsive(photoLieuAccueil, '(min-width: 960px) 40vw, calc(100vw - 40px)')} alt="" width="1600" height="1000" fetchpriority="high" decoding="async" style={`object-position:${cadrageLieuAccueil}`} />
+      ) : (
       <Planche legende={site.cabinet.ville} repere="Relevé" fond="plan" class="tete-page__releve">
         <Empreintes appui="reparti" />
       </Planche>
+      )}
     </div>
     {site.photos.cabinet.length > 0 && <div class="galerie"><Galerie /></div>}
   </section>
@@ -63,6 +69,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
 </Gabarit>
 
 <style>
+  .tete-page__photo { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }
   .galerie { margin-top: 32px; }
   .tete-page :global(.tete-page__releve) { max-width: 460px; justify-self: end; }
   @media (max-width: 959px) { .tete-page :global(.tete-page__releve) { justify-self: stretch; max-width: none; } }

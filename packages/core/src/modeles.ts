@@ -8,13 +8,29 @@
 // en page ; les invariants (traits, trame, mouvement…) viennent de la charte, les couleurs de la gamme.
 
 import { GAMMES } from './gammes';
+import type { Registre } from './dessins';
 
-export const SECTIONS_ACCUEIL = ['faits', 'competences', 'panorama', 'praticiens', 'galerie', 'actualites', 'acces', 'faq'] as const;
+/**
+ * Sections possibles de l'accueil. « etapes » : premier rendez-vous en trois étapes (rendez-vous, venue,
+ * consultation), composé à partir des informations déjà saisies, sans intertitre (aucun titre SEO ajouté).
+ */
+export const SECTIONS_ACCUEIL = ['faits', 'etapes', 'competences', 'panorama', 'praticiens', 'galerie', 'actualites', 'acces', 'faq'] as const;
 export type SectionAccueil = (typeof SECTIONS_ACCUEIL)[number];
 
-export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted'] as const;
+/** Types d'accueil : diaporama plein écran, photo plein écran, titre + photo côte à côte, grande photo du lieu + carte de contact */
+export const HEROS = ['diaporama', 'plein', 'scinde', 'lieu'] as const;
+export type Hero = (typeof HEROS)[number];
+
+/**
+ * Registre des illustrations du site (voir docs/charte-graphique.md, « Deux registres ») :
+ * « releve » = trame de pression, lectures en mono, fonds plan sombres ; « pedagogique » = schémas de manuel au
+ * trait, fonds clairs, sans trame, sans lecture de données, sans ligne de scan, sans sur-titres numérotés.
+ */
+export const REGISTRES_MODELE: readonly Registre[] = ['releve', 'pedagogique'];
+
+export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito'] as const;
 export type PoliceTitres = (typeof POLICES_TITRES)[number];
-export const POLICES_TEXTE = ['inter', 'manrope'] as const;
+export const POLICES_TEXTE = ['inter', 'manrope', 'nunito'] as const;
 export type PoliceTexte = (typeof POLICES_TEXTE)[number];
 /** Traitement appliqué aux photos pour l'unité graphique du style */
 export const TRAITEMENTS_IMAGES = ['naturel', 'chaud', 'doux', 'contraste'] as const;
@@ -38,12 +54,17 @@ export type ModeleManifeste = {
   id: string;
   nom: string;
   description: string;
+  /**
+   * Effet recherché, en quelques mots (« Moderne et technique », « Simple et rassurant ») : c'est par lui que le
+   * praticien choisit son modèle dans le formulaire. Facultatif (sinon le nom). 40 caractères maximum.
+   */
+  effet?: string;
   version: number;
   /** En-tête : opaque, ou transparent sur l'image d'accueil puis opaque au défilement */
   entete: 'opaque' | 'transparent';
   accueil: {
-    /** diaporama plein écran, photo unique plein écran, ou titre + photo côte à côte */
-    hero: 'diaporama' | 'plein' | 'scinde';
+    /** diaporama plein écran, photo unique plein écran, titre + photo côte à côte, ou grande photo du lieu */
+    hero: Hero;
     /** Assombrissement de l'image d'accueil pour la lisibilité du titre (0 à 90 %) */
     voile: number;
     /** Ordre des sections sous l'en-tête d'accueil */
@@ -83,6 +104,8 @@ export type ModeleManifeste = {
     signal?: string;
     /** Traitement de la marque du logo, facultatif (sinon déduit des autres jetons : voir traitementLogo) */
     logo?: TraitementMarque;
+    /** Registre des illustrations, animations, matériel et bibliothèque (défaut : releve) */
+    registre?: Registre;
   };
 };
 
@@ -92,6 +115,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
   {
     id: 'proximite',
     nom: 'Proximité',
+    effet: 'Clair et factuel',
     description: 'Clair et factuel, aux couleurs du cabinet. Titre et photo côte à côte, typographie grotesque affirmée.',
     version: 2,
     entete: 'opaque',
@@ -105,6 +129,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
   {
     id: 'premium',
     nom: 'Médical premium',
+    effet: 'Moderne et technique',
     description: 'Bleu nuit et typographie fine, esprit clinique haut de gamme.',
     version: 1,
     entete: 'opaque',
@@ -118,6 +143,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
   {
     id: 'prestige',
     nom: 'Prestige',
+    effet: 'Élégant et immersif',
     description: 'Diaporama plein écran, en-tête transparent, grands titres élégants.',
     version: 1,
     entete: 'transparent',
@@ -131,6 +157,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
   {
     id: 'zen',
     nom: 'Zen',
+    effet: 'Doux et apaisant',
     description: 'Tons pastel et grande photo apaisante, typographie légère, formes très arrondies.',
     version: 1,
     entete: 'transparent',
@@ -145,6 +172,7 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
   {
     id: 'atelier',
     nom: 'Atelier',
+    effet: 'Chaleureux et éditorial',
     description: 'Beige chaud et terracotta, esprit maison de design : serif éditoriale, angles nets.',
     version: 1,
     entete: 'opaque',
@@ -156,7 +184,30 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     gammes: ['terracotta', 'sable', 'prune'],
     jetons: { policeTitres: 'instrument', policeTexte: 'inter', graisseTitres: 400, rayon: 2, boutons: 'carre', accent: 'couleur', fond: '#f7f2ec', images: 'chaud', fondDoux: '#efe6dc', motif: 'plan', plan: '#3a1f17', signal: '#f2b880', logo: 'plan' },
   },
+  {
+    // Registre pédagogique : pour les cabinets qui veulent un site simple, lisible et rassurant (patientèle âgée,
+    // cabinet de village). L'accueil est la photo du lieu ; les sections sont courtes ; aucune lecture de données.
+    // Toutes les sections porteuses d'un intertitre sont présentes (SEO identique aux autres modèles).
+    id: 'simple',
+    nom: 'Simple et pédagogique',
+    effet: 'Simple et rassurant',
+    description: 'Grande photo du lieu, téléphone bien visible, textes courts en gros caractères, schémas explicatifs calmes.',
+    version: 1,
+    entete: 'opaque',
+    accueil: { hero: 'lieu', voile: 0, sections: ['competences', 'etapes', 'faq', 'praticiens', 'panorama', 'galerie', 'acces', 'actualites'] },
+    competences: 'liste',
+    pied: 'clair',
+    animations: 'aucune',
+    couleurConseillee: '#3f6b4f',
+    gammes: ['sauge', 'canard', 'sable', 'ardoise'],
+    jetons: { policeTitres: 'nunito', policeTexte: 'nunito', graisseTitres: 750, rayon: 16, boutons: 'arrondi', accent: 'couleur', fond: '#fcfcfa', images: 'naturel', fondDoux: '#f1f4ef', motif: 'aucun', logo: 'plein', registre: 'pedagogique' },
+  },
 ];
+
+/** Effet recherché d'un modèle (choix dans le formulaire du praticien) : celui de la fiche, sinon son nom. */
+export const effetModele = (m: Pick<ModeleManifeste, 'nom' | 'effet'>) => m.effet || m.nom;
+/** Registre des illustrations d'un modèle (défaut : relevé, pour les fiches antérieures au jeton). */
+export const registreModele = (m: Pick<ModeleManifeste, 'jetons'>): Registre => m.jetons.registre ?? 'releve';
 
 const HEX = /^#[0-9a-f]{6}$/i;
 const parmi = (v: unknown, valeurs: readonly string[]) => valeurs.includes(v as string);
@@ -172,9 +223,10 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
   if (typeof m.id !== 'string' || !/^[a-z0-9-]{3,40}$/.test(m.id)) e.push('« id » : 3 à 40 caractères (minuscules, chiffres, tirets).');
   if (typeof m.nom !== 'string' || !m.nom.trim() || m.nom.length > 60) e.push('« nom » : obligatoire, 60 caractères maximum.');
   if (typeof m.description !== 'string' || m.description.length > 200) e.push('« description » : 200 caractères maximum.');
+  if (m.effet !== undefined && (typeof m.effet !== 'string' || m.effet.length > 40)) e.push('« effet » : 40 caractères maximum.');
   if (!Number.isInteger(m.version) || (m.version as number) < 1) e.push('« version » : entier positif.');
   if (!parmi(m.entete, ['opaque', 'transparent'])) e.push('« entete » : « opaque » ou « transparent ».');
-  if (!m.accueil || !parmi(m.accueil.hero, ['diaporama', 'plein', 'scinde'])) e.push('« accueil.hero » : « diaporama », « plein » ou « scinde ».');
+  if (!m.accueil || !parmi(m.accueil.hero, HEROS)) e.push(`« accueil.hero » : ${HEROS.join(', ')}.`);
   const voile = m.accueil?.voile ?? 50;
   if (!Number.isInteger(voile) || voile < 0 || voile > 90) e.push('« accueil.voile » : entre 0 et 90.');
   const sections = m.accueil?.sections;
@@ -212,6 +264,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
     if (j.plan !== undefined && !HEX.test(j.plan)) e.push('« jetons.plan » : couleur au format #rrggbb.');
     if (j.signal !== undefined && !HEX.test(j.signal)) e.push('« jetons.signal » : couleur au format #rrggbb.');
     if (j.logo !== undefined && !parmi(j.logo, TRAITEMENTS_MARQUE)) e.push(`« jetons.logo » : ${TRAITEMENTS_MARQUE.join(', ')}.`);
+    if (j.registre !== undefined && !parmi(j.registre, REGISTRES_MODELE)) e.push(`« jetons.registre » : ${REGISTRES_MODELE.join(' ou ')}.`);
   }
   if (e.length) return { erreurs: e };
 
@@ -223,6 +276,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
       id: v.id,
       nom: v.nom.trim(),
       description: v.description,
+      ...(v.effet?.trim() ? { effet: v.effet.trim() } : {}),
       version: v.version,
       entete: v.entete,
       accueil: { hero: v.accueil.hero, voile, sections: v.accueil.sections },
@@ -245,6 +299,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
         ...(v.jetons.plan ? { plan: v.jetons.plan } : {}),
         ...(v.jetons.signal ? { signal: v.jetons.signal } : {}),
         ...(v.jetons.logo ? { logo: v.jetons.logo } : {}),
+        registre: v.jetons.registre ?? 'releve',
       },
     },
   };

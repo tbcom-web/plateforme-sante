@@ -76,7 +76,13 @@ Chaque dessin existe en deux registres (`svgDessin(nom, { registre })`, `svgAnim
 | `releve` (par défaut) | sites « techniques » | trame de points colorés par la pression, contours en pointillés, légende graduée, lectures en mono |
 | `pedagogique` | sites simples et rassurants | schéma de manuel : trait monochrome (`--dessin-trait`), aplat clair (`--dessin-fond`), un seul accent doux (`--dessin-accent`, zones à 14 % et 32 %), étiquettes courtes dans la police du texte reliées par un renvoi fin ; ni trame, ni lecture, ni légende, ni ligne de scan |
 
-Les animations en registre pédagogique affichent l'image calme du schéma correspondant (podoscope → analyse, coureur → sport, trajectoire → équilibre, premiers pas → enfant, semelle → semelle), sans mouvement. Le choix du registre par modèle n'est pas encore branché.
+Les animations en registre pédagogique affichent l'image calme du schéma correspondant (podoscope → analyse, coureur → sport, trajectoire → équilibre, premiers pas → enfant, semelle → semelle), sans mouvement.
+
+**Registre par modèle** (jeton `jetons.registre`, défaut `releve` : les fiches antérieures ne changent pas ; `registreModele(m)`). Sur le site, `lib/visuels.ts` expose `registre` et `pedagogique`, valeurs par défaut de `Dessin`, `Animation`, `Empreintes` (remplacées par le schéma `appuis`), `Materiel` (fichiers `materiel-<id>-pedagogique.svg`) et de l'accueil. `<html data-registre="pedagogique">` règle le reste dans `Gabarit.astro` : texte à 18 px au moins (`font-size: 112,5 %` sur la racine), aucun sur-titre numéroté ni numéro décoratif en mono, pas de police mono chargée (`--police-mono` = police du texte), surfaces `.surface-plan` redéfinies en fond doux clair (mêmes composants ; `--sur-sombre-*`, `--papier`, `--signal`, `--dessin-*` ramenées à l'encre et à l'accent), `.surface-grille` sans quadrillage, cartouches techniques (légende, « Fig. », mention, coordonnées) retirés, filets de survol et pastilles à l'accent (jamais la palette de données sur l'interface), rien qui pulse. Fiche d'un soin : le dessin du soin plutôt que l'image de l'animation. Aperçu de l'admin : même règle (`ApercuTheme`, `data-registre`).
+
+### Modèle « Simple et pédagogique » (`simple`)
+
+Pour les praticiens qui veulent un site simple et rassurant (patientèle âgée, cabinet de village) : registre pédagogique ; accueil `lieu` (`HeroLieu.astro` : grande photo du lieu — photo d'accueil, panorama ou cabinet du praticien, sinon photo d'accueil du jeu de la spécialité, sinon schéma pédagogique — et carte claire avec le titre, le téléphone et le rendez-vous en gros boutons, l'adresse et les jours d'ouverture) ; section `etapes` (premier rendez-vous en trois étapes composées des informations déjà saisies, sans intertitre) ; FAQ complétée à l'affichage par les questions des fiches sur l'ordonnance et le remboursement (données structurées inchangées) ; lieu d'exercice en section claire ; police Nunito (titres et texte), motif `aucun`, boutons arrondis, photos `naturel`, gammes douces (sauge, canard, sable, ardoise), pied de page clair, aucune apparition au défilement. Toutes les sections à intertitre sont présentes : `controle:seo` reste identique sur les 6 modèles. Dans le formulaire, les modèles se choisissent par leur effet (champ `effet` de la fiche : « Simple et rassurant », « Moderne et technique »…), avec une phrase et une vignette.
 
 ### Poids des dessins (performance mobile)
 
@@ -167,8 +173,8 @@ registres (aucune couleur littérale, aucun jeton sans correspondance, ≤ 64 ko
 
 | Rôle | Police | Règle |
 |---|---|---|
-| Titres | `--police-titres` (au choix du modèle : Schibsted, Inter, Manrope, Fraunces, Instrument) | grandes tailles, interlettrage serré |
-| Texte | `--police-texte` (Inter ou Manrope) | 1,0625 rem, interligne 1,65 |
+| Titres | `--police-titres` (au choix du modèle : Schibsted, Inter, Manrope, Fraunces, Instrument, Nunito) | grandes tailles, interlettrage serré |
+| Texte | `--police-texte` (Inter, Manrope ou Nunito) | 1,0625 rem, interligne 1,65 (registre pédagogique : 18 px au moins) |
 | Données | `--police-mono` (JetBrains Mono), identique sur tous les modèles | sur-titres numérotés « 01 — », lectures, cotes, légendes, fil d'Ariane, numéros |
 
 L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`, `-note`, `-donnees` (0,8 rem, soit 12,8 px) et `-donnees-petit` (0,75 rem, 12 px ; aucun texte d'interface en dessous de 12 px). En capitales, les données prennent un interlettrage de `--interlettrage-donnees` (0,08 em).
@@ -252,4 +258,4 @@ Motifs signatures envisagés (non implémentés) :
 - `npm run controle:charte` vérifie aussi les règles anatomiques ci-dessus (proportions, semelle, profil, monofilament, coureur, podoscope, pas de pointillés en pédagogique).
 - `npm run controle:charte` vérifie aussi qu'aucun fichier `dist/dessins/*.svg` ne contient de `<style>` : WebKit (Safari et tous les navigateurs de l'iPhone) ignore la feuille d'un SVG externe référencé par `<use>`. Les styles des fichiers de dessins sont donc **en attributs** (`packages/core/src/fichiers-svg.ts`) et les réglages de surface passent par des **variables** (`--dessin-os`, `--dessin-os-aplat`, `--dessin-squelette`…), qui traversent `<use>` ; un sélecteur de la page (`.surface-plan .dessin …`) ne les atteint pas. Effet de bord : l'apparition « trace » (`.pret .dessin .trace`) ne s'applique plus aux dessins chargés par `<use>`.
 - `npm run controle:webkit` (`apps/sites`) : rendu iPhone (WebKit) comparé à Chromium, page par page, sur le dernier build (`--dist`, `--pages`, `--sortie`). Prérequis une fois par poste : `npx playwright install webkit chromium` (navigateurs hors du dépôt, dans `%LOCALAPPDATA%ms-playwright`).
-- `npm run controle:seo` : le SEO doit rester identique sur les 5 modèles.
+- `npm run controle:seo` : le SEO doit rester identique sur les 6 modèles.

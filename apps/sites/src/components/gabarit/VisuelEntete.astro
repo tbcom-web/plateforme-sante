@@ -8,7 +8,7 @@
 import Dessin from '../dessins/Dessin.astro';
 import Animation from '../animations/Animation.astro';
 import { MENTION_ILLUSTRATIVE, rendreCase, type Animation as NomAnimation, type NomDessin } from '@plateforme/core';
-import { modeVisuel, photoResponsive } from '../../lib/visuels';
+import { modeVisuel, photoResponsive, pedagogique } from '../../lib/visuels';
 
 interface Props {
   photo: string;
@@ -34,7 +34,8 @@ const choix = rendreCase({ photo, cadrage, dessin, animation, photoBonne }, mode
 const image = choix.type === 'photo' ? choix : { src: photo, cadrage };
 // Photo : seule (style photos, ou photo du praticien en style illustrations) ou avec la planche en encart (mélange).
 const rendu = choix.type === 'photo' ? (modeVisuel === 'mixte' ? 'mixte' : 'photos') : 'illustrations';
-const anime = choix.type === 'animation' ? choix.animation : null;
+// Registre pédagogique : le dessin du soin (schéma explicatif) plutôt que l'image calme de l'animation.
+const anime = choix.type === 'animation' && !pedagogique ? choix.animation : null;
 const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
 ---
 {rendu === 'photos' && (

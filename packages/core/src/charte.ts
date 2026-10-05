@@ -130,6 +130,8 @@ export const POLICES = {
   fraunces: "'Fraunces Variable', Georgia, serif",
   instrument: "'Instrument Serif', Georgia, serif",
   schibsted: "'Schibsted Grotesk Variable', 'Helvetica Neue', Arial, sans-serif",
+  /** Ronde et très lisible (modèle Simple et pédagogique) */
+  nunito: "'Nunito Variable', system-ui, sans-serif",
 } as const;
 /** Police des données (lectures, cotes, numéros, légendes) : toujours la même, quel que soit le modèle */
 export const POLICE_MONO = "'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Consolas, monospace";

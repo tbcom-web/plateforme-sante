@@ -149,7 +149,7 @@ export const PROFILS: { value: Profil; label: string; description: string; voix:
   { value: 'proximite', label: 'Cabinet de proximité', description: 'Être trouvé facilement, avec les informations pratiques.', voix: 'tiers', modele: 'proximite' },
   { value: 'groupe', label: 'Cabinet de groupe / maison de santé', description: 'Plusieurs praticiens, un RDV par praticien.', voix: 'nous', modele: 'proximite' },
   { value: 'sport', label: 'Sport et posture', description: 'Podologie du sport, posturologie, analyse de la course.', voix: 'tiers', modele: 'premium' },
-  { value: 'prevention', label: 'Prévention et soins', description: 'Pied diabétique, seniors, visites à domicile.', voix: 'tiers', modele: 'proximite' },
+  { value: 'prevention', label: 'Prévention et soins', description: 'Pied diabétique, seniors, visites à domicile.', voix: 'tiers', modele: 'simple' },
   { value: 'technique', label: 'Techniques et équipements', description: 'Laser, plateforme podométrique, approche moderne.', voix: 'nous', modele: 'premium' },
 ];
 

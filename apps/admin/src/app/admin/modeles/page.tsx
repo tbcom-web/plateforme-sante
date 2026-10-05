@@ -72,11 +72,12 @@ export default async function Modeles() {
         <ul className="mt-2 list-disc pl-5">
           <li><code>id</code> : 3 à 40 caractères (minuscules, chiffres, tirets) ; <code>version</code> : à augmenter à chaque mise à jour.</li>
           <li><code>entete</code> : <code>opaque</code> ou <code>transparent</code> (transparent sur l’image puis opaque au défilement).</li>
-          <li><code>accueil.hero</code> : <code>diaporama</code>, <code>plein</code> (une grande photo) ou <code>scinde</code> ; <code>accueil.voile</code> : assombrissement de la photo, 0 à 90.</li>
+          <li><code>accueil.hero</code> : <code>diaporama</code>, <code>plein</code> (une grande photo), <code>scinde</code> ou <code>lieu</code> (photo du lieu et carte de contact) ; <code>accueil.voile</code> : assombrissement de la photo, 0 à 90.</li>
           <li><code>pied</code> : <code>sombre</code>, <code>accent</code> ou <code>clair</code> ; <code>animations</code> : <code>douces</code> ou <code>aucune</code> ; <code>couleurConseillee</code> : #rrggbb proposé au praticien.</li>
           <li><code>accueil.sections</code> : ordre parmi {SECTIONS_ACCUEIL.join(', ')} ; <code>competences</code> et <code>acces</code> obligatoires.</li>
           <li><code>competences</code> : <code>liste</code> ou <code>cartes</code>.</li>
           <li><code>jetons</code> : <code>policeTitres</code> ({POLICES_TITRES.join(', ')}), <code>policeTexte</code> ({POLICES_TEXTE.join(', ')}), <code>graisseTitres</code> (300–800), <code>rayon</code> (0–40), <code>boutons</code> (pilule, arrondi, carre), <code>accent</code> (couleur, encre), <code>fond</code> et <code>fondDoux</code> (#rrggbb), <code>images</code> ({TRAITEMENTS_IMAGES.join(', ')}), <code>motif</code> ({MOTIFS.join(', ')}), <code>plan</code> (fond des surfaces sombres « plan d’architecte », #rrggbb) et <code>signal</code> (lectures de données sur fond sombre, #rrggbb). Police <code>schibsted</code> : grotesque des références « relevé de podoscope ».</li>
+          <li><code>jetons.registre</code> (facultatif) : <code>releve</code> (par défaut : trame de pression, lectures en mono, fonds plan sombres) ou <code>pedagogique</code> (schémas au trait, fonds clairs, sans lecture ni sur-titre numéroté). <code>effet</code> (facultatif, 40 caractères) : effet recherché montré au praticien (« Simple et rassurant »).</li>
           <li><code>gammes</code> (facultatif) : gammes de couleurs recommandées parmi {GAMMES.map((g) => g.id).join(', ')}. Traits, trame, typographie des données et mouvement viennent de la charte du core (<code>docs/charte-graphique.md</code>).</li>
         </ul>
       </details>

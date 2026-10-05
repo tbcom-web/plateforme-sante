@@ -10,7 +10,7 @@ import { enregistrerModele, type ResultatImport } from '../actions';
 type Props = { initial: ModeleManifeste; integre: boolean; actif: boolean };
 
 const SECTIONS: Record<SectionAccueil, string> = {
-  faits: 'En bref (faits clés)', competences: 'Compétences', panorama: 'Bandeau photo', praticiens: 'Praticiens',
+  faits: 'En bref (faits clés)', etapes: 'Premier rendez-vous (3 étapes)', competences: 'Compétences', panorama: 'Bandeau photo', praticiens: 'Praticiens',
   galerie: 'Galerie', actualites: 'Actualités', acces: 'Accès et informations', faq: 'Questions fréquentes',
 };
 const OBLIGATOIRES: SectionAccueil[] = ['competences', 'acces'];
@@ -71,13 +71,14 @@ export default function EditeurModele({ initial, integre, actif }: Props) {
         <section className="grid gap-3 rounded-xl border border-black/5 bg-white p-5">
           <h2 className="font-semibold">Identité</h2>
           <label className="grid gap-1 text-sm"><span className="font-medium">Nom</span><input className={champ} value={m.nom} maxLength={60} onChange={(e) => setM({ ...m, nom: e.target.value })} /></label>
+          <label className="grid gap-1 text-sm"><span className="font-medium">Effet recherché (choix du praticien, ex. « Simple et rassurant »)</span><input className={champ} value={m.effet ?? ''} maxLength={40} onChange={(e) => setM({ ...m, effet: e.target.value || undefined })} /></label>
           <label className="grid gap-1 text-sm"><span className="font-medium">Description (montrée au praticien)</span><input className={champ} value={m.description} maxLength={200} onChange={(e) => setM({ ...m, description: e.target.value })} /></label>
           <p className="text-xs text-neutral-500">Identifiant <code>{m.id}</code> · version {m.version}{integre ? ' · modèle intégré' : ''}{actif ? ' · actif' : ''}</p>
         </section>
 
         <section className="grid gap-4 rounded-xl border border-black/5 bg-white p-5 sm:grid-cols-2">
           <h2 className="font-semibold sm:col-span-2">Accueil et en-tête</h2>
-          <Choix label="Type d’accueil" valeur={m.accueil.hero} options={[{ v: 'scinde', l: 'Titre + photo côte à côte' }, { v: 'plein', l: 'Grande photo plein écran' }, { v: 'diaporama', l: 'Diaporama plein écran' }]} onChange={(v) => setM({ ...m, accueil: { ...m.accueil, hero: v } })} />
+          <Choix label="Type d’accueil" valeur={m.accueil.hero} options={[{ v: 'scinde', l: 'Titre + photo côte à côte' }, { v: 'plein', l: 'Grande photo plein écran' }, { v: 'diaporama', l: 'Diaporama plein écran' }, { v: 'lieu', l: 'Photo du lieu + carte de contact' }]} onChange={(v) => setM({ ...m, accueil: { ...m.accueil, hero: v } })} />
           <Choix label="En-tête" valeur={m.entete} options={[{ v: 'opaque', l: 'Opaque' }, { v: 'transparent', l: 'Transparent sur l’image, opaque au défilement' }]} onChange={(v) => setM({ ...m, entete: v })} />
           <Curseur label="Assombrissement de l’image d’accueil" valeur={m.accueil.voile} min={0} max={90} unite=" %" onChange={(v) => setM({ ...m, accueil: { ...m.accueil, voile: v } })} />
           <Choix label="Animations au défilement" valeur={m.animations} options={[{ v: 'douces', l: 'Douces' }, { v: 'aucune', l: 'Aucune' }]} onChange={(v) => setM({ ...m, animations: v })} />
@@ -118,6 +119,7 @@ export default function EditeurModele({ initial, integre, actif }: Props) {
           <Choix label="Boutons" valeur={j.boutons} options={[{ v: 'pilule', l: 'Pilule' }, { v: 'arrondi', l: 'Arrondis' }, { v: 'carre', l: 'Carrés' }]} onChange={(v) => majJetons({ boutons: v })} />
           <Choix label="Couleur des boutons" valeur={j.accent} options={[{ v: 'couleur', l: 'Couleur du cabinet' }, { v: 'encre', l: 'Bleu nuit' }]} onChange={(v) => majJetons({ accent: v })} />
           <Choix label="Logo" valeur={(j.logo ?? '') as '' | (typeof TRAITEMENTS_MARQUE)[number]} options={[{ v: '' as const, l: 'Automatique' }, ...TRAITEMENTS_MARQUE.map((t) => ({ v: t, l: { plein: 'Pastille pleine', trait: 'Au trait', plan: 'Fond plan' }[t] }))]} onChange={(v) => majJetons({ logo: v || undefined })} />
+          <Choix label="Registre des illustrations" valeur={j.registre ?? 'releve'} options={[{ v: 'releve' as const, l: 'Relevé (trame de pression, données, plan sombre)' }, { v: 'pedagogique' as const, l: 'Pédagogique (schémas au trait, fonds clairs)' }]} onChange={(v) => majJetons({ registre: v })} />
           <Choix label="Traitement des photos" valeur={j.images} options={TRAITEMENTS_IMAGES} onChange={(v) => majJetons({ images: v })} />
         </section>
 

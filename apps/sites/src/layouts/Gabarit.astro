@@ -11,6 +11,7 @@ import '@fontsource/instrument-serif/400.css';
 import '@fontsource/instrument-serif/400-italic.css';
 import '@fontsource-variable/schibsted-grotesk';
 import '@fontsource-variable/jetbrains-mono';
+import '@fontsource-variable/nunito';
 // Fichiers latins préchargés (texte, titres et leur italique, mono des données), tous visibles dès le haut de
 // page : le texte s'affiche tout de suite dans la bonne police, sans décalage quand une police arrive en retard.
 import policeInter from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
@@ -20,6 +21,7 @@ import policeSchibsted from '@fontsource-variable/schibsted-grotesk/files/schibs
 import policeInstrument from '@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2?url';
 import policeFrauncesItalique from '@fontsource-variable/fraunces/files/fraunces-latin-wonk-italic.woff2?url';
 import policeInstrumentItalique from '@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2?url';
+import policeNunito from '@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2?url';
 import policeMono from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url';
 import Icone from '../components/Icone.astro';
 import Logo from '../components/Logo.astro';
@@ -27,12 +29,13 @@ import Consent from '../components/Consent.astro';
 import EditionApercu from '../components/EditionApercu.astro';
 import { APERCU } from '../lib/edition';
 import Empreintes from '../components/dessins/Empreintes.astro';
+import Dessin from '../components/dessins/Dessin.astro';
 import { CONTOUR } from '../components/animations/pied';
 import { site, absUrl } from '../lib/site';
 import { feuilleCharte, variablesTheme, POLICES, POLICE_MONO, NEUTRES, TRAIT, LOGO } from '@plateforme/core';
 import { businessSchema, personSchemas, websiteSchema, pageSchema, breadcrumbSchema } from '../lib/schema';
 import { aUneVersionMarkdown, cheminMarkdown } from '../lib/agents';
-import { photoAccueil } from '../lib/visuels';
+import { photoAccueil, pedagogique, dessinSpecialite } from '../lib/visuels';
 import {
   titreMetierAffiche, telLien, itineraire, lienRdv, libelleRdv, titreCabinet, praticiens, lieu, adresseLieu,
   rdvEnLigne, viaPlateforme, localisation,
@@ -71,6 +74,7 @@ const REPLIS: Record<string, Repli> = {
   'Schibsted Grotesk Variable': { sources: SANS, taille: 103.5, haut: 94.4, bas: 24.9 },
   'Fraunces Variable': { sources: SERIF, taille: 92, haut: 106.3, bas: 27.7, italique: { taille: 90, haut: 108.7, bas: 28.3 } },
   'Instrument Serif': { sources: SERIF, taille: 83.94, haut: 117.94, bas: 36.93, italique: { taille: 87.95, haut: 112.56, bas: 35.25 } },
+  'Nunito Variable': { sources: SANS, taille: 97.8, haut: 103.4, bas: 36.1 },
   'JetBrains Mono Variable': { sources: MONO, taille: 100, haut: 102, bas: 30 },
 };
 /** Première famille d'une pile : « 'Inter Variable', system-ui » → « Inter Variable ». */
@@ -79,7 +83,10 @@ const famille = (pile: string) => pile.match(/'([^']+)'/)?.[1] ?? '';
 const avecRepli = (pile: string) => (REPLIS[famille(pile)] ? pile.replace(/^('[^']+')/, `$1, '${famille(pile)} repli'`) : pile);
 const face = (nom: string, src: string, f: { taille: number; haut: number; bas: number }, poids: string, style = 'normal') =>
   `@font-face{font-family:'${nom} repli';src:${src};font-weight:${poids};font-style:${style};font-display:swap;size-adjust:${f.taille}%;ascent-override:${f.haut}%;descent-override:${f.bas}%;line-gap-override:0%}`;
-const policesRepli = [...new Set([POLICES[m.jetons.policeTexte], POLICES[m.jetons.policeTitres], POLICE_MONO].map(famille))]
+// Registre pédagogique : aucune lecture de données, donc pas de police mono (les rares éléments d'interface en mono —
+// fil d'Ariane, « via Doctolib » — prennent la police du texte) : un fichier de police de moins sur mobile.
+const piles = pedagogique ? [POLICES[m.jetons.policeTexte], POLICES[m.jetons.policeTitres]] : [POLICES[m.jetons.policeTexte], POLICES[m.jetons.policeTitres], POLICE_MONO];
+const policesRepli = [...new Set(piles.map(famille))]
   .filter((nom) => REPLIS[nom])
   .map((nom) => {
     const r = REPLIS[nom];
@@ -100,14 +107,14 @@ const couleurs = [
   `--graisse-titres:${m.jetons.graisseTitres}`,
   `--police-titres:${avecRepli(POLICES[m.jetons.policeTitres])}`,
   `--police-texte:${avecRepli(POLICES[m.jetons.policeTexte])}`,
-  `--police-mono:${avecRepli(POLICE_MONO)}`,
+  `--police-mono:${pedagogique ? 'var(--police-texte)' : avecRepli(POLICE_MONO)}`,
   `--rayon-bouton:${{ pilule: '999px', arrondi: '12px', carre: '2px' }[m.jetons.boutons]}`,
   `--voile:${m.accueil.voile / 100}`,
 ].join(';');
-const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument } as const;
+const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito } as const;
 // Italique des titres (mots en retrait « .pale » du titre principal) : seulement pour les titres à empattements.
 const ITALIQUES: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { fraunces: policeFrauncesItalique, instrument: policeInstrumentItalique };
-const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres], ITALIQUES[m.jetons.policeTitres], policeMono].filter(Boolean))];
+const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres], ITALIQUES[m.jetons.policeTitres], pedagogique ? '' : policeMono].filter(Boolean))];
 // Chargement des mêmes polices lancé dès le début du corps de page : un fichier préchargé n'est appliqué
 // qu'après décodage, et la première mise en page se ferait sinon avec la police de secours (le texte se
 // recompose ensuite et décale la page).
@@ -115,7 +122,7 @@ const policesAvantAffichage = [
   `400 1em "${famille(POLICES[m.jetons.policeTexte])}"`,
   `${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`,
   ...(ITALIQUES[m.jetons.policeTitres] ? [`italic ${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`] : []),
-  `400 1em "${famille(POLICE_MONO)}"`,
+  ...(pedagogique ? [] : [`400 1em "${famille(POLICE_MONO)}"`]),
 ];
 const motif = m.jetons.motif ?? 'plan';
 // Motif « courbes de niveau » : contours imbriqués d'une semelle couchée, en filigrane (image SVG en ligne,
@@ -150,7 +157,7 @@ const rdvGeneral = site.praticiens.length > 1 && rdvEnLigne ? '/le-cabinet#prati
 const via = rdvGeneral ? '' : viaPlateforme;
 ---
 <!doctype html>
-<html lang="fr" style={style} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" style={style} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -245,7 +252,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
             </p>
             <a class="bouton bouton--clair" href={rdvGeneral ?? lienRdv('pied')}>{libelleRdv}{via && <span class="via">{via}</span>}</a>
           </div>
-          <div class="pied__visuel anime-visible"><Empreintes appui="reparti" /></div>
+          <div class="pied__visuel anime-visible">{pedagogique ? <Dessin nom={dessinSpecialite} /> : <Empreintes appui="reparti" />}</div>
         </div>
         <div class="pied__grille">
           <div>
@@ -544,6 +551,70 @@ const via = rdvGeneral ? '' : viaPlateforme;
      Limité au pied : rien ne le suit, donc aucun saut au défilement (WebKit) et aucun compteur coupé. */
   .pied { content-visibility: auto; contain-intrinsic-size: auto 1570px; }
   @media (min-width: 860px) { .pied { contain-intrinsic-size: auto 940px; } }
+
+  /* ———— Registre pédagogique (modèle Simple et pédagogique, jetons.registre) ————
+     Site simple et rassurant : texte à 18 px au moins, titres lisibles sans interlettrage serré, aucun sur-titre
+     numéroté ni lecture en mono, aucune couleur de données sur l'interface, surfaces « plan » rendues claires
+     (mêmes composants, variables redéfinies : texte à l'encre, dessins au trait sur fond doux), rien qui pulse. */
+  html[data-registre='pedagogique'] { font-size: 112.5%; }
+  html[data-registre='pedagogique'] body { font-size: 1rem; line-height: 1.6; font-feature-settings: normal; }
+  html[data-registre='pedagogique'] :is(h1, h2, h3) { letter-spacing: -0.015em; line-height: 1.15; }
+  html[data-registre='pedagogique'] h1 { font-size: clamp(2rem, 4.2vw, 3.2rem); }
+  html[data-registre='pedagogique'] h2 { font-size: clamp(1.65rem, 3vw, 2.4rem); }
+  html[data-registre='pedagogique'] .pale { color: var(--encre-douce); }
+  html[data-registre='pedagogique'] .sur { font-size: 1rem; font-weight: 700; letter-spacing: 0; text-transform: none; font-family: var(--police-texte); }
+  html[data-registre='pedagogique'] .sur::before, html[data-registre='pedagogique'] .sur--index b { display: none; }
+  html[data-registre='pedagogique'] :is(.chapo, .tuile__texte, .expertise__resume, .info p, .info ul, .horaires, .faq p, .praticien__fiche dd, .materiel__phrase, .article__resume, .carte__adresse p, .praticien__titre, .communes) { font-size: 1rem; }
+  html[data-registre='pedagogique'] .entete-section h2 { max-width: 24ch; }
+  /* Étiquettes autrefois en mono capitales : en police du texte, casse normale */
+  html[data-registre='pedagogique'] :is(.encart__titre, .materiel-soin__titre, .praticien__statut, .praticien__fiche dt, .article__meta, .horaires__jour, .logo .mono) { text-transform: none; letter-spacing: 0; font-size: 0.9rem; font-weight: 700; }
+  /* Numéros décoratifs en mono : retirés (et les grilles qui leur réservaient une colonne, resserrées) */
+  html[data-registre='pedagogique'] :is(.faits__num, .tuile__num, .expertise__num, .faq__num, .autres__num, .materiel__num, .faq__compte, .faq__contact .mono, .pied__bandeau, .tiroir__nav a .mono, .tiroir__haut .mono, .materiel__compte) { display: none !important; }
+  html[data-registre='pedagogique'] .info__titre::after, html[data-registre='pedagogique'] .pied__titre::before { content: none; }
+  html[data-registre='pedagogique'] .faq summary { grid-template-columns: minmax(0, 1fr) 34px; }
+  html[data-registre='pedagogique'] .faq details p { padding-left: 0; }
+  html[data-registre='pedagogique'] .faq h3 { font-size: 1.05rem; }
+  html[data-registre='pedagogique'] .autres a { grid-template-columns: 84px minmax(0, 1fr) auto; }
+  html[data-registre='pedagogique'] .materiel__liste li { grid-template-columns: 72px minmax(0, 1fr); }
+  html[data-registre='pedagogique'] .materiel__liste--simple li { grid-template-columns: minmax(0, 1fr); }
+  html[data-registre='pedagogique'] .materiel__categorie span:first-child { display: none; }
+  html[data-registre='pedagogique'] .materiel__categorie {text-transform: none; letter-spacing: 0; font-weight: 700; font-size: 1rem; }
+  @media (max-width: 520px) {
+    html[data-registre='pedagogique'] .expertise { grid-template-columns: 104px minmax(0, 1fr); }
+    html[data-registre='pedagogique'] .expertise__dessin { width: 104px; }
+  }
+  @media (min-width: 900px) {
+    html[data-registre='pedagogique'] .expertise { grid-template-columns: 184px minmax(0, 1fr) minmax(0, 1.05fr) 56px; grid-template-areas: 'dessin titre resume fleche'; }
+    html[data-registre='pedagogique'] .expertise__dessin { width: 184px; }
+    html[data-registre='pedagogique'] .expertise:hover .expertise__resume { opacity: 1; }
+    html[data-registre='pedagogique'] .expertise:hover .expertise__titre { transform: none; }
+  }
+  /* Couleurs de données réservées aux données : filets de survol et pastilles à l'accent du cabinet */
+  html[data-registre='pedagogique'] .expertises li::after, html[data-registre='pedagogique'] .bento a::after { background: var(--accent); }
+  html[data-registre='pedagogique'] .praticien__orientations i { background: var(--accent) !important; }
+  /* Surfaces : « plan » devient un fond doux clair, « grille » un aplat doux, sans quadrillage */
+  html[data-registre='pedagogique'] .surface-plan { --plan: var(--doux); --papier: var(--encre); --signal: var(--accent-vif); --sur-sombre: var(--encre); --sur-sombre-doux: var(--encre-douce); --sur-sombre-pale: var(--encre-pale); --sur-sombre-filet: var(--ligne); --sur-sombre-verre: var(--fond); --dessin-trait: var(--encre); --dessin-accent: var(--accent-vif); --dessin-fond: var(--fond); --dessin-os: var(--accent-vif); color: var(--encre); background-color: var(--doux); background-image: none; }
+  html[data-registre='pedagogique'] .surface-grille { background-color: var(--doux); background-image: none; }
+  /* Cartouches techniques (légende, repère « Fig. », mention, coordonnées) : retirés */
+  html[data-registre='pedagogique'] :is(.planche__haut, .planche__bas, .ve__haut, .ve__bas, .ve__mention, .couverture__haut, .couverture__bas, .carte__haut, .carte__coordonnees, .praticien__repere, .panorama__mention, .plein__mention) { display: none !important; }
+  html[data-registre='pedagogique'] .carte__etiquette { background: var(--fond); color: var(--encre); font-family: var(--police-texte); box-shadow: var(--ombre); }
+  html[data-registre='pedagogique'] .carte__plan.surface-plan { background-image: linear-gradient(var(--quadrillage-clair) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-clair) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas-majeur) var(--quadrillage-pas-majeur); }
+  html[data-registre='pedagogique'] .carte__point::after { animation: none !important; }
+  /* Praticien sans portrait : bandeau court au monogramme, sans dessin (pas de relevé illustratif) */
+  html[data-registre='pedagogique'] .praticien__portrait.surface-plan { aspect-ratio: auto; height: 120px; min-height: 0; }
+  html[data-registre='pedagogique'] .praticien__empreintes { display: none; }
+  html[data-registre='pedagogique'] .praticien__monogramme { color: var(--accent-vif); border-top-color: var(--accent-vif); }
+  /* Menu mobile : tiroir clair */
+  html[data-registre='pedagogique'] .tiroir__nav a, html[data-registre='pedagogique'] .tiroir__tel { color: var(--encre); }
+  html[data-registre='pedagogique'] .tiroir__fermer { background: var(--fond); color: var(--encre); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
+  html[data-registre='pedagogique'] .tiroir .bouton--clair { background: var(--accent); color: var(--blanc); }
+  html[data-registre='pedagogique'] .tiroir :focus-visible { outline-color: var(--accent-vif); }
+  /* Pied de page clair, sans quadrillage, appel lisible */
+  html[data-registre='pedagogique'] .pied { --pied-quadrillage: transparent; }
+  html[data-registre='pedagogique'] .pied__appel { font-size: clamp(2rem, 4.4vw, 3.2rem); letter-spacing: -0.02em; line-height: 1.1; }
+  html[data-registre='pedagogique'] .pied__appel span { font-family: var(--police-texte); font-size: 1rem; }
+  html[data-registre='pedagogique'] .pied__bas { font-size: 0.8rem; }
+  html[data-registre='pedagogique'] .pied__visuel { --dessin-trait: var(--encre); width: min(100%, 260px); }
 
   .apparait.pret { opacity: 0; transform: translateY(28px); transition: opacity var(--duree-long) var(--courbe-sortie), transform var(--duree-long) var(--courbe-sortie); }
   .apparait.pret.vu { opacity: 1; transform: none; }

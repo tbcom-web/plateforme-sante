@@ -3,7 +3,7 @@
 import { site } from './site';
 import { lieu } from './textes';
 import { jeu, visuelSoin } from './visuels-soins';
-import { rendreCase, type ModeVisuel, type NomDessin } from '@plateforme/core';
+import { rendreCase, registreModele, type ModeVisuel, type NomDessin, type Registre } from '@plateforme/core';
 
 /** Photo d'un soin (source unique : jeu visuel, lib/visuels-soins.ts) */
 export const photoSoin = (slug: string) => visuelSoin(slug).photo;
@@ -24,6 +24,21 @@ export const photoFinale = site.photos.cabinet[1] || '/photos/chaussage.webp';
 export const modeVisuel: ModeVisuel = site.theme.modeVisuel ?? 'illustrations';
 export const enIllustrations = modeVisuel === 'illustrations';
 export const enPhotos = modeVisuel === 'photos';
+
+// ---- Registre des illustrations, fixé par le modèle (jetons.registre) ----
+// « releve » : trame de pression, lectures en mono, fonds plan sombres ; « pedagogique » : schémas au trait sur fond
+// clair, sans trame, sans lecture, sans ligne de scan. Valeur par défaut de Dessin, Animation, Materiel, Planche…
+export const registre: Registre = registreModele(site.modele);
+export const pedagogique = registre === 'pedagogique';
+
+/**
+ * Accueil « lieu » (modèle Simple et pédagogique) : grande photo du lieu d'exercice — photo d'accueil ou panorama du
+ * praticien (façade, village, rue, cabinet), sinon la photo d'accueil du jeu de photos de la spécialité, quel que soit
+ * le style visuel (l'accueil de ce modèle est une photo) ; chaîne vide = illustration pédagogique calme.
+ */
+export const photoLieuAccueil = site.photos.accueil || site.photos.panorama || site.photos.cabinet[0] || (process.env.SANS_PHOTO === '1' ? '' : jeu.accueil.photo) || '';
+/** Cadrage de la photo du lieu : celui du jeu de photos pour une photo de banque, centré pour une photo du praticien. */
+export const cadrageLieuAccueil = photoLieuAccueil && photoLieuAccueil === jeu.accueil.photo && !site.photos.accueil ? jeu.accueil.cadrage : '50% 50%';
 
 /** Dessin signature de la spécialité (accueil et panorama sans photo) */
 export const dessinSpecialite: NomDessin = jeu.accueil.dessin;

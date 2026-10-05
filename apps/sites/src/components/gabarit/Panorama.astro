@@ -5,7 +5,7 @@
 import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import Empreintes from '../dessins/Empreintes.astro';
-import { photoPanoramaAffichee, photoResponsive } from '../../lib/visuels';
+import { photoPanoramaAffichee, photoResponsive, pedagogique } from '../../lib/visuels';
 import { MENTION_ILLUSTRATIVE, resumeHygiene } from '@plateforme/core';
 import { lieu, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
 
@@ -22,6 +22,18 @@ const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
 // Titre factuel (lieu d'exercice et ville), jamais de formule commerciale.
 const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
 ---
+{pedagogique ? (
+  // Registre pédagogique : la photo du lieu fait déjà l'accueil ; ici, le lieu en clair (même titre, mêmes informations).
+  <section class="section section--douce lieu-clair">
+    <div class="cadre">
+      <p class="sur">Le lieu d’exercice</p>
+      <h2 {...champ('panorama.titre')}>{texte('panorama.titre', titreStandard)}</h2>
+      <ul class="lieu-clair__liste">
+        {atouts.map((a) => <li><strong>{a.titre}</strong>{a.texte}</li>)}
+      </ul>
+    </div>
+  </section>
+) : (
 <section class:list={['panorama', { 'panorama--illus': !photoPanoramaAffichee }]}>
   {photoPanoramaAffichee
     ? <img src={photoPanoramaAffichee} {...photoResponsive(photoPanoramaAffichee, '100vw')} alt={[site.photos.panorama, ...site.photos.cabinet].includes(photoPanoramaAffichee) ? `${lieuNom} à ${lieu.ville || site.cabinet.ville}` : ''} loading="lazy" width="2000" height="1100" {...zonePhoto('photos.panorama')} />
@@ -39,12 +51,18 @@ const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
     </ul>
   </div>
 </section>
+)}
 
 <style>
+  .lieu-clair h2 { max-width: 22ch; margin: 0; }
+  .lieu-clair__liste { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 16px; }
+  @media (min-width: 760px) { .lieu-clair__liste { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } }
+  .lieu-clair__liste li { display: grid; gap: 4px; padding: 18px 20px; border-radius: var(--rayon); background: var(--fond); color: var(--encre-douce); }
+  .lieu-clair__liste strong { color: var(--encre); font-weight: 700; }
   .panorama { position: relative; min-height: clamp(520px, 78vh, 800px); display: grid; align-items: end; color: var(--blanc); overflow: hidden; isolation: isolate; }
-  img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; background: var(--nuit-haut); }
+  .panorama img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; background: var(--nuit-haut); }
   /* Zoom lié au défilement : seulement là où il est pris en charge (sinon image fixe, iOS < 26). */
-  @supports (animation-timeline: view()) { img { animation: zoom linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; } }
+  @supports (animation-timeline: view()) { .panorama img { animation: zoom linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; } }
   .panorama::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(var(--nuit-rgb) / 0) 25%, rgb(var(--nuit-rgb) / 0.82)); }
   /* Illustration : plan d'architecte plein cadre, relevé d'empreintes à droite */
   .panorama__illus { position: absolute; inset: 0; z-index: -2; }
@@ -54,11 +72,11 @@ const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
   @media (min-width: 900px) { .panorama__releve { opacity: 1; width: min(42%, 520px); right: 6%; } }
   .panorama--illus::after { background: linear-gradient(90deg, rgb(var(--nuit-rgb) / 0.55) 0%, rgb(var(--nuit-rgb) / 0) 65%); }
   .panorama__texte { padding-block: clamp(48px, 8vw, 104px); }
-  h2 { color: var(--blanc); max-width: 16ch; }
+  .panorama h2 { color: var(--blanc); max-width: 16ch; }
   .sur--clair { color: var(--sur-sombre-doux); }
-  ul { list-style: none; padding: 0; margin: 40px 0 0; display: grid; gap: 0; }
-  @media (min-width: 760px) { ul { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
-  li { display: grid; gap: 4px; padding: 18px 20px 0 0; border-top: var(--filet) solid var(--sur-sombre-filet); font-size: 0.93rem; color: var(--sur-sombre-doux); }
-  strong { color: var(--blanc); font-weight: 600; }
+  .panorama ul { list-style: none; padding: 0; margin: 40px 0 0; display: grid; gap: 0; }
+  @media (min-width: 760px) { .panorama ul { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); } }
+  .panorama li { display: grid; gap: 4px; padding: 18px 20px 0 0; border-top: var(--filet) solid var(--sur-sombre-filet); font-size: 0.93rem; color: var(--sur-sombre-doux); }
+  .panorama strong { color: var(--blanc); font-weight: 600; }
   @keyframes zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
 </style>
