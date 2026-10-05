@@ -18,7 +18,7 @@ export default function ActionsSite({ id, statut, test, edition, manques, dejaPu
       return;
     }
     const avertissement = manques.length
-      ? `Site incomplet :\n- ${manques.join('\n- ')}\n\n${test ? 'Site de test : il sera publié quand même.' : 'La publication sera refusée tant que ces points manquent.'}\n\n`
+      ? `Informations manquantes : le site affichera une mention sobre à la place.\n- ${manques.join('\n- ')}\n\nPublier quand même ?\n`
       : '';
     if (!confirm(`${avertissement}Publier le brouillon actuel ? Il remplacera la version en ligne.`)) return;
     lancer(() => publierCommeAdmin(id));

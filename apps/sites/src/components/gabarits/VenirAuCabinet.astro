@@ -7,14 +7,14 @@
 import Icone from '../Icone.astro';
 import PlanAcces from './PlanAcces.astro';
 import { site } from '../../lib/site';
-import { lieu, telLien, itineraire, rdvEnLigne } from '../../lib/textes';
+import { lieu, telLien, itineraire, rdvEnLigne, aTelephone, aAdresse, adresseLieu, phraseRdv, lienContact, contactRdv, horairesConnus, REPLI_HORAIRES } from '../../lib/textes';
 import { semaine, cabinetOuvert, nomLieu } from '../../lib/gabarits';
 
 interface Props { variante: 'volets' | 'notice' }
 const { variante } = Astro.props;
 const transports = [site.accesDetail.parking, site.accesDetail.pmr ? 'Accès facile pour les personnes à mobilité réduite' : '', site.accesDetail.transports, ...site.accesDetail.autres].filter(Boolean);
 const volets = [
-  { id: 'volet-rdv', titre: 'Prise de rendez-vous', lignes: [rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24${site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.` : '', site.rdvMode !== 'en_ligne' || !rdvEnLigne ? `Par téléphone au ${site.cabinet.telephone}.` : ''].filter(Boolean) },
+  { id: 'volet-rdv', titre: 'Prise de rendez-vous', lignes: [rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24${site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.` : '', (site.rdvMode !== 'en_ligne' || !rdvEnLigne) && aTelephone ? `Par téléphone au ${site.cabinet.telephone}.` : !rdvEnLigne ? `${phraseRdv}.` : ''].filter(Boolean) },
   { id: 'volet-acces', titre: 'Transports et stationnement', lignes: transports },
   ...(site.domicile.actif ? [{ id: 'volet-domicile', titre: 'Visites à domicile', lignes: [site.domicile.creneaux ? `${site.domicile.creneaux}.` : 'Sur demande, contactez le cabinet.', site.domicile.secteurs.length ? `Secteurs : ${site.domicile.secteurs.join(', ')}.` : ''].filter(Boolean) }] : []),
   ...(site.cabinet.tarifs.length ? [{ id: 'volet-tarifs', titre: 'Tarifs', lignes: site.cabinet.tarifs.map((t) => `${t.acte} : ${t.prix}`) }] : []),
@@ -39,14 +39,20 @@ const volets = [
         <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach(function (l) { l.classList.add('aujourdhui'); var e = document.createElement('span'); e.className = 'horaires__jour'; e.textContent = 'aujourd’hui'; l.querySelector('th').appendChild(e); });</script>
       </div>
     )}
+    {!horairesConnus && (
+      <div class="venir__bloc" id="horaires">
+        <p class="venir__titre"><Icone nom="picto:horaires" secours="lucide:clock" />Horaires</p>
+        <p>{REPLI_HORAIRES}.</p>
+      </div>
+    )}
     <div class="venir__bloc">
       <p class="venir__titre"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Adresse</p>
-      <p><strong>{nomLieu}</strong><br />{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</p>
+      <p><strong>{nomLieu}</strong><br />{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</> : `${adresseLieu}.`}</p>
       <p class="venir__liens">
-        <a href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>
-        <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" />Itinéraire</a>
+        {aTelephone ? <a href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a> : contactRdv === 'email' && <a href={lienContact}><Icone nom="lucide:mail" />{site.cabinet.email}</a>}
+        {itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" />Itinéraire</a>}
       </p>
-      {variante === 'notice' && <PlanAcces class="venir__plan" />}
+      {variante === 'notice' && aAdresse && <PlanAcces class="venir__plan" />}
     </div>
   </div>
   <div class="volets">

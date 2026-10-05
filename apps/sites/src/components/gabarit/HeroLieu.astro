@@ -10,7 +10,7 @@ import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import { photoResponsive, photoLieuAccueil, cadrageLieuAccueil, dessinSpecialite } from '../../lib/visuels';
-import { phraseAccueil, lieu, telLien, lienRdv, libelleRdv, rdvEnLigne, viaPlateforme, titreMetierAffiche, TYPES_LIEU } from '../../lib/textes';
+import { phraseAccueil, lieu, telLien, lienRdv, libelleRdv, rdvEnLigne, viaPlateforme, titreMetierAffiche, TYPES_LIEU, aLaVille, suffixeVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
 
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
@@ -18,7 +18,7 @@ const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jo
 const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}, sur rendez-vous` : 'Sur rendez-vous';
 const photoPraticien = [site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].includes(photoLieuAccueil);
 // Texte alternatif seulement pour la photo du praticien (son lieu d'exercice) ; une photo de banque reste décorative.
-const alt = photoPraticien ? `${lieu.nom || TYPES_LIEU[lieu.type]} à ${lieu.ville || site.cabinet.ville}` : '';
+const alt = photoPraticien ? `${lieu.nom || TYPES_LIEU[lieu.type]}${lieu.ville ? ` à ${lieu.ville}` : suffixeVille}` : '';
 // Arbitrage de style en cours (démo seulement) : petit schéma pédagogique dans la carte, même quand il y a une photo.
 const schemaDansCarte = Boolean(photoLieuAccueil) && process.env.ACCUEIL_SCHEMA === 'oui';
 ---
@@ -31,8 +31,8 @@ const schemaDansCarte = Boolean(photoLieuAccueil) && process.env.ACCUEIL_SCHEMA 
   <div class="cadre lieu__cadre">
     <div class="lieu__carte">
       <div class="lieu__titre">
-        <p class="lieu__metier">{titreMetierAffiche} à {site.cabinet.ville}</p>
-        <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
+        <p class="lieu__metier">{titreMetierAffiche}{suffixeVille}</p>
+        <h1>Cabinet de {specialite} {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
         <p class="lieu__chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
       </div>
       <div class="lieu__contact">
@@ -40,14 +40,16 @@ const schemaDansCarte = Boolean(photoLieuAccueil) && process.env.ACCUEIL_SCHEMA 
         {rdvEnLigne ? (
           <>
             <a class="bouton bouton--plein lieu__bouton" href={rdvAccueil}><Icone nom="lucide:calendar" />{libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}</a>
-            <a class="bouton bouton--ligne lieu__bouton" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+            {aTelephone && <a class="bouton bouton--ligne lieu__bouton" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
           </>
         ) : (
-          <a class="bouton bouton--plein lieu__bouton" href={telLien}><Icone nom="lucide:phone" />Appeler le {site.cabinet.telephone}</a>
+          aTelephone
+            ? <a class="bouton bouton--plein lieu__bouton" href={telLien}><Icone nom="lucide:phone" />Appeler le {site.cabinet.telephone}</a>
+            : <a class="bouton bouton--plein lieu__bouton" href={lienContact}><Icone nom="lucide:calendar" />{libelleContact}</a>
         )}
       </div>
       <ul class="lieu__pratique">
-        <li><Icone nom="lucide:map-pin" /><span>{lieu.nom && <>{lieu.nom}, </>}{lieu.adresse}, {lieu.codePostal} {lieu.ville}</span></li>
+        <li><Icone nom="lucide:map-pin" /><span>{lieu.nom && <>{lieu.nom}, </>}{adresseLieu}</span></li>
         <li><Icone nom="lucide:clock" /><span>{jours}</span></li>
       </ul>
       </div>

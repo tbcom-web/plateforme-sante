@@ -6,7 +6,6 @@ import { nettoyerPortrait } from '@plateforme/core/portrait';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getMarquesImportees } from '@/lib/marques';
-import { getRole } from '@/lib/admin';
 import { manques } from '@/lib/sites';
 import { declencherPublication } from '@/lib/publication';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
@@ -162,11 +161,10 @@ export async function enregistrerSite(id: string | null, draft: SiteDraft, versi
 export async function enregistrerEtPublier(id: string | null, draft: SiteDraft, version?: string | null): Promise<EtatEnregistrement> {
   const r = await enregistrerSite(id, draft, version);
   if (!r.ok || !r.id) return r;
-  // Le praticien ne publie qu'un site complet ; le super admin peut toujours lancer la publication.
+  // Rien n'empêche de publier (règle de Paul, 2026-10-05) : les informations manquantes sont remplacées sur le site par une
+  // mention sobre (replis.ts) ; la confirmation « Publier quand même » les a listées avant l'envoi.
   const aFaire = manques(normaliserDraft(draft));
-  if (aFaire.length > 0 && (await getRole()) !== 'admin') {
-    return { ...r, ok: false, message: `Enregistré, pas encore en ligne. Il manque : ${aFaire.join(', ')}.` };
-  }
   const p = await declencherPublication(r.id);
-  return { ...r, ok: p.ok, message: p.ok ? 'Enregistré. Publication lancée : en ligne d’ici 2 à 3 minutes.' : `Enregistré, pas encore en ligne : ${p.message}` };
+  const complement = aFaire.length ? ` ${aFaire.length > 1 ? `${aFaire.length} informations manquantes sont remplacées` : 'Une information manquante est remplacée'} par une mention sobre.` : '';
+  return { ...r, ok: p.ok, message: p.ok ? `Enregistré. Publication lancée : en ligne d’ici 2 à 3 minutes.${complement}` : `Enregistré, pas encore en ligne : ${p.message}` };
 }

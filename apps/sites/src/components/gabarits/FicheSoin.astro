@@ -13,7 +13,7 @@ import Icone from '../Icone.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { site, md } from '../../lib/site';
 import { photoResponsive } from '../../lib/visuels';
-import { telLien, lienRdv, rdvEnLigne, titreCompetences, viaPlateforme, lieu } from '../../lib/textes';
+import { telLien, lienRdv, rdvEnLigne, titreCompetences, viaPlateforme, lieu, aTelephone, adresseLieu, lienContact, libelleContact, suffixeVille } from '../../lib/textes';
 import { pictoDuSoin, visuelVariante, nomLieu, gabarit, legendeLigne } from '../../lib/gabarits';
 import { espacesFines, equipementsDuSoin, LIGNE_DESSIN, type Soin } from '@plateforme/core';
 
@@ -27,7 +27,7 @@ const revue = gabarit === 'revue';
 const legende = revue ? `Fig. — ${v.type === 'dessin' ? legendeLigne(LIGNE_DESSIN[v.dessin] ?? 'pied-dessous') : soin.titreCourt}.` : undefined;
 const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
-const rdv = rdvEnLigne ? (plusieurs ? '/le-cabinet#praticiens' : lienRdv(`soin-${soin.slug}`)) : telLien;
+const rdv = rdvEnLigne ? (plusieurs ? '/le-cabinet#praticiens' : lienRdv(`soin-${soin.slug}`)) : aTelephone ? telLien : lienContact;
 // Trois pastilles « en pratique » (règles de clarté), tirées des informations déjà saisies, jamais inventées : durée (texte du
 // soin ou réponse d'une question), tarif (grille des tarifs du cabinet), ordonnance (réponse « oui » / « non » d'une question).
 const sansAccents = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -45,12 +45,12 @@ const enPratique = [
   <TetePage crumbs={crumbs} sur={titreCompetences} chapo={soin.resume} legende={legende}>
     <h1 slot="titre">{espacesFines(soin.titre)}</h1>
     <div class="actions">
-      <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}{rdvEnLigne && !plusieurs && viaPlateforme && <span class="g-via">{viaPlateforme}</span>}</a>
-      {rdvEnLigne && <a class="g-bouton g-bouton--ligne" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
+      <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : libelleContact}{rdvEnLigne && !plusieurs && viaPlateforme && <span class="g-via">{viaPlateforme}</span>}</a>
+      {rdvEnLigne && aTelephone && <a class="g-bouton g-bouton--ligne" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
     </div>
     <Fragment slot="visuel">
       {v.type === 'photo'
-        ? <img src={v.src} {...photoResponsive(v.src, '(min-width: 900px) 460px, 100vw')} alt={v.praticien ? `${soin.titreCourt} au cabinet de ${site.cabinet.ville}` : ''} width="1200" height="900" fetchpriority="high" decoding="async" style={`object-position:${v.cadrage}`} />
+        ? <img src={v.src} {...photoResponsive(v.src, '(min-width: 900px) 460px, 100vw')} alt={v.praticien ? `${soin.titreCourt} au cabinet${suffixeVille}` : ''} width="1200" height="900" fetchpriority="high" decoding="async" style={`object-position:${v.cadrage}`} />
         : <Dessin nom={v.dessin} trace={!revue} />}
     </Fragment>
   </TetePage>
@@ -73,9 +73,9 @@ const enPratique = [
     </div>
     <aside class="fiche__cote" aria-label="En pratique">
       <p class="fiche__etiquette">En pratique</p>
-      <p class="fiche__lieu"><strong>{nomLieu}</strong><br />{lieu.adresse}, {lieu.codePostal} {lieu.ville}</p>
-      <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</a>
-      {rdvEnLigne && <a class="g-bouton g-bouton--ligne" href={telLien}>{site.cabinet.telephone}</a>}
+      <p class="fiche__lieu"><strong>{nomLieu}</strong><br />{adresseLieu}</p>
+      <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : libelleContact}</a>
+      {rdvEnLigne && aTelephone && <a class="g-bouton g-bouton--ligne" href={telLien}>{site.cabinet.telephone}</a>}
       <a class="g-suite fiche__horaires" href="/acces">Horaires et accès</a>
     </aside>
   </div>

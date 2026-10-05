@@ -3,18 +3,25 @@ import type { Faq } from '@plateforme/core';
 
 type Defauts = {
   accrocheTitre: string;
-  /** enLigne : réservation en ligne possible (lien précis vers la plateforme) */
-  faq: (o: { pmr: boolean; plateforme: string; enLigne: boolean }) => Faq[];
+  /**
+   * enLigne : réservation en ligne possible (lien précis vers la plateforme) ; telephone : numéro publiable ; email : adresse
+   * du cabinet (repli quand ni téléphone ni lien en ligne). Absents : valeurs historiques (téléphone présent).
+   */
+  faq: (o: { pmr: boolean; plateforme: string; enLigne: boolean; telephone?: boolean; email?: string }) => Faq[];
 };
 
 const PODOLOGUE: Defauts = {
   accrocheTitre: 'Prendre soin de vos pieds, à chaque étape de la vie',
-  faq: ({ pmr, plateforme, enLigne }) => [
+  faq: ({ pmr, plateforme, enLigne, telephone = true, email = '' }) => [
     {
       q: 'Comment prendre rendez-vous ?',
       r: enLigne
-        ? `En ligne sur ${plateforme}, 24h/24, ou par téléphone aux heures d’ouverture du cabinet.`
-        : 'Par téléphone, aux heures d’ouverture du cabinet.',
+        ? `En ligne sur ${plateforme}, 24h/24${telephone ? ', ou par téléphone aux heures d’ouverture du cabinet' : ''}.`
+        : telephone
+          ? 'Par téléphone, aux heures d’ouverture du cabinet.'
+          : email
+            ? `Par e-mail (${email}) ou directement au cabinet.`
+            : 'Directement au cabinet.',
     },
     {
       q: 'Le cabinet est-il accessible aux personnes à mobilité réduite ?',

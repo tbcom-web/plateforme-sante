@@ -5,7 +5,7 @@ import { svgFavicon, validerChoixLogo, svgMarqueImportee, couleursImportee, coul
 import { site } from '../lib/site';
 
 export const GET: APIRoute = () => {
-  const nom = site.praticiens.length > 1 ? site.cabinet.nom : `${site.praticiens[0].prenom} ${site.praticiens[0].nom}`;
+  const nom = site.praticiens.length === 1 ? `${site.praticiens[0].prenom} ${site.praticiens[0].nom}`.trim() : site.cabinet.nom;
   const t = traitementLogo(site.modele);
   const svg = site.marqueImportee
     ? svgMarqueImportee(site.marqueImportee, couleursImportee(t.marque === 'plan' ? 'plan' : 'plein', couleursMarque(site.modele, site.theme), t.rayon), 32)

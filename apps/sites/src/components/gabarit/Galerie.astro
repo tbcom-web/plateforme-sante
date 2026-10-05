@@ -6,7 +6,7 @@ import { zonePhoto } from '../../lib/edition';
 {site.photos.cabinet.length > 0 && (
   <ul class="galerie">
     {site.photos.cabinet.map((src, i) => (
-      <li><img src={src} alt={`Le cabinet de ${site.cabinet.ville}, photo ${i + 1}`} loading="lazy" decoding="async" width="800" height="600" {...zonePhoto(`photos.cabinet.${i}`)} /></li>
+      <li><img src={src} alt={`Le cabinet${site.cabinet.ville ? ` de ${site.cabinet.ville}` : ''}, photo ${i + 1}`} loading="lazy" decoding="async" width="800" height="600" {...zonePhoto(`photos.cabinet.${i}`)} /></li>
     ))}
   </ul>
 )}

@@ -1,18 +1,32 @@
 // Contrôles avant publication. Reprennent les défauts observés sur les sites webpodologue en production :
 // placeholder « [NumOrdre] » publié, n° d'Ordre en double, RPPS affiché comme n° d'Ordre,
 // lien Doctolib vers une autre ville, tuiles vides.
+//
+// Règle de Paul (2026-10-05) : plus RIEN n'empêche de créer ni de publier un site. Chaque information manquante est un
+// avertissement (conseil, affiché en ambre à la saisie) qui dit ce que le site affichera à la place ; le site publié
+// affiche un repli sobre (replis.ts, appliqué au chargement des données dans apps/sites/src/lib/supabase.ts).
 import type { SiteDraft } from './draft';
 import { verifierTexte, type NiveauConformite } from './lexique';
 import { EQUIPEMENTS } from './equipements';
+import { REPLIS, TEXTE_PROVISOIRE, adresseUtilisable, telephoneUtilisable } from './replis';
+import { lienRdvPrecis } from './format';
 
 export type ResultatControle = {
-  /** Empêchent la publication */
+  /**
+   * Empêcheraient la publication. Toujours VIDE aujourd'hui : chaque manque a un repli sur le site. Le champ est gardé
+   * pour un cas réellement impossible techniquement (aucun n'est connu) et pour les écrans qui le lisent encore.
+   */
   bloquants: string[];
-  /** Conseils, n'empêchent pas la publication */
+  /** Conseils, n'empêchent pas la publication (inclut les remplacements) */
   conseils: string[];
+  /**
+   * Informations manquantes remplacées par une mention de repli sur le site (sous-ensemble des conseils) : listées dans
+   * la confirmation « Publier quand même » et dans les points « à compléter » du tableau de bord.
+   */
+  remplacements: string[];
 };
 
-const PLACEHOLDER = /\[[^\]]{2,30}\]|\bx{3,}\b|\blorem ipsum\b/i;
+const PLACEHOLDER = TEXTE_PROVISOIRE;
 const sansAccents = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 // Numéros visiblement fictifs (exemples, suites, chiffres répétés) : jamais publiés.
@@ -25,28 +39,55 @@ export const numeroOrdreAffichable = (n: string) => { const v = n.replace(/\s/g,
 export const rppsAffichable = (n: string) => { const v = n.replace(/\s/g, ''); return /^\d{11}$/.test(v) && !numeroFictif(v) ? v : ''; };
 
 export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 'standard'): ResultatControle {
+  // Aucun bloquant : voir ResultatControle. Les remplacements sont aussi des conseils (repris à la fin).
   const bloquants: string[] = [];
   const conseils: string[] = [];
+  const remplacements: string[] = [];
+  const remplace = (m: string) => remplacements.push(m);
+
+  // Rendez-vous effectif (même règle que le site : lien précis vers la page du praticien sur la plateforme)
+  const lienRdv = d.rdv.url || d.praticiens.find((p) => p.rdvUrl)?.rdvUrl || '';
+  const rdvEnLigne = d.rdv.mode !== 'telephone' && lienRdvPrecis(lienRdv);
+  const telephone = telephoneUtilisable(d.cabinet.telephone);
+  const email = /^\S+@\S+\.\S+$/.test(d.cabinet.email ?? '');
 
   // Cabinet
-  if (!d.cabinet.ville) bloquants.push('Indiquer la ville du cabinet.');
-  if (!d.cabinet.telephone.replace(/\D/g, '')) bloquants.push('Indiquer le téléphone du cabinet.');
+  if (!d.cabinet.ville.trim()) {
+    if (d.lieux[0]?.ville.trim()) conseils.push(`Ville du cabinet non renseignée : le site reprendra la ville de l’adresse (${d.lieux[0].ville.trim()}).`);
+    else remplace('Ville non renseignée : le site ne mentionnera aucune ville dans ses titres (« Cabinet de pédicurie-podologie » au lieu de « … à Lyon »).');
+  }
+  if (!telephone) {
+    remplace(d.cabinet.telephone.replace(/\D/g, '')
+      ? 'Téléphone incomplet : il ne sera pas affiché et le site n’aura pas de bouton « Appeler ».'
+      : `Téléphone non renseigné : le site n’aura pas de bouton « Appeler »${rdvEnLigne ? ' ; le rendez-vous en ligne devient l’action principale' : email ? ' ; les patients seront invités à écrire au cabinet par e-mail' : ` ; le site indiquera « ${REPLIS.rdvCabinet} »`}.`);
+  }
+  if (!d.cabinet.nom.trim() && !d.lieux[0]?.nom.trim() && !d.praticiens.some((p) => p.nom.trim())) {
+    remplace(`Nom du cabinet non renseigné : le site s’intitulera « ${REPLIS.nomCabinet} ».`);
+  }
   if (d.cabinet.communes.length === 0) conseils.push('Ajouter quelques communes voisines améliore le référencement local.');
 
   // Lieux
   d.lieux.forEach((l, i) => {
     const n = d.lieux.length > 1 ? ` (lieu ${i + 1})` : '';
-    if (!l.adresse || !l.codePostal || !l.ville) bloquants.push(`Compléter l’adresse${n}.`);
-    if (d.pays === 'FR' && l.codePostal && !/^\d{5}$/.test(l.codePostal)) bloquants.push(`Code postal invalide${n}.`);
-    if (!l.horaires.some((h) => /\d/.test(h.heures))) conseils.push(`Renseigner les horaires${n}.`);
+    const repli = `le site indiquera « ${REPLIS.adresse} », sans plan ni itinéraire`;
+    if (!l.adresse.trim() || !l.codePostal.trim() || !l.ville.trim()) {
+      const manque = [!l.adresse.trim() && 'rue', !l.codePostal.trim() && 'code postal', !l.ville.trim() && 'ville'].filter(Boolean).join(', ');
+      remplace(`Adresse incomplète${n} (${manque}) : ${repli}.`);
+    } else if (!adresseUtilisable(l, d.pays)) {
+      remplace(`Code postal invalide${n} : ${repli}.`);
+    }
+    if (!l.horaires.some((h) => /\d/.test(h.heures))) remplace(`Horaires non renseignés${n} : le site indiquera « ${REPLIS.horaires} ».`);
   });
 
   // Praticiens
-  if (d.praticiens.length === 0) bloquants.push('Ajouter au moins un praticien.');
+  if (d.praticiens.length === 0 || !d.praticiens.some((p) => p.nom.trim())) {
+    remplace(`Aucun praticien nommé : le site présentera le cabinet (« ${REPLIS.equipe} »), sans nom de praticien.`);
+  }
   const numeros = new Map<string, string>();
   d.praticiens.forEach((p, i) => {
     const qui = p.prenom || p.nom ? `${p.prenom} ${p.nom}`.trim() : `praticien ${i + 1}`;
-    if (!p.prenom || !p.nom) bloquants.push(`Indiquer le nom et le prénom (${qui}).`);
+    if (!p.nom.trim() && p.prenom.trim()) remplace(`Nom de famille non renseigné (${qui}) : ce praticien ne sera pas présenté nommément sur le site.`);
+    else if (p.nom.trim() && !p.prenom.trim()) conseils.push(`Prénom non renseigné (${qui}) : le site affichera seulement le nom.`);
     if (d.pays === 'FR') {
       // N° d'Ordre et RPPS : avertissements seulement, la création et la publication ne sont jamais bloquées (règle de
       // Paul, 2026-10-05). Un numéro manquant ou mal formé n'est simplement pas affiché sur le site (numeroOrdreAffichable).
@@ -65,7 +106,7 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
       }
     }
     if (d.pays === 'BE' && !/^\d-\d{5}-\d{2}-\d{3}$/.test(p.inami.trim())) {
-      bloquants.push(`Indiquer le n° INAMI au format 5-XXXXX-XX-XXX (${qui}).`);
+      remplace(`N° INAMI ${p.inami.trim() ? 'mal formé (format 5-XXXXX-XX-XXX)' : 'non renseigné'} (${qui}) : la mention sera omise sur le site.`);
     }
     if (d.pays === 'CH' && !p.membreSsp && !p.rcc) conseils.push(`Indiquer l’appartenance à la SSP ou le n° RCC (${qui}).`);
     if (!p.diplome) conseils.push(`Ajouter le diplôme et l’école renforce la confiance (${qui}).`);
@@ -73,10 +114,11 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
 
   // Rendez-vous
   if (d.rdv.mode !== 'telephone') {
-    const url = d.rdv.url || d.praticiens.find((p) => p.rdvUrl)?.rdvUrl || '';
-    if (!/^https:\/\/\S+\.\S+/.test(url)) bloquants.push('Indiquer un lien de prise de rendez-vous valide (https://…).');
+    const url = lienRdv;
+    const vers = telephone ? 'au téléphone du cabinet' : email ? 'à l’e-mail du cabinet' : `à la rubrique contact (« ${REPLIS.rdvCabinet} »)`;
+    if (!/^https:\/\/\S+\.\S+/.test(url)) remplace(`Lien de prise de rendez-vous ${url.trim() ? 'invalide (https://…)' : 'non renseigné'} : le bouton « Prendre rendez-vous » mènera ${vers}.`);
     // Lien vers la page d'accueil de la plateforme (doctolib.fr seul) : le patient ne trouverait pas le praticien.
-    else if (/^https:\/\/[^/]+\/?$/.test(url.trim())) bloquants.push('Le lien de rendez-vous doit mener à la page du praticien, pas à l’accueil de la plateforme.');
+    else if (!rdvEnLigne) remplace(`Le lien de rendez-vous mène à l’accueil de la plateforme, pas à la page du praticien : il ne sera pas utilisé, le bouton mènera ${vers}.`);
     // Lien Doctolib qui pointe vers une autre ville que le cabinet.
     const liens = [d.rdv.url, ...d.praticiens.map((p) => p.rdvUrl)].filter(Boolean);
     for (const lien of liens) {
@@ -89,7 +131,9 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
   }
 
   // Compétences
-  if (d.soins.length === 0) bloquants.push('Choisir au moins une compétence.');
+  if (d.soins.length === 0) {
+    remplace('Aucune compétence choisie : le site présentera les soins courants de la spécialité choisie (bilan podologique, soins de pédicurie, semelles…).');
+  }
 
   // Photos
   if (!d.photos.accueil) conseils.push('Ajouter une photo du cabinet : un site avec de vraies photos inspire davantage confiance.');
@@ -113,12 +157,13 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
   ];
   for (const [champ, texte] of textes) {
     if (!texte) continue;
-    if (PLACEHOLDER.test(texte)) bloquants.push(`Texte provisoire à remplacer dans « ${champ} ».`);
+    if (PLACEHOLDER.test(texte)) remplace(`Texte provisoire dans « ${champ} » : le passage concerné ne sera pas publié.`);
+    // Lexique : en niveau « strict », les alertes restent des avertissements (la publication n'est plus bloquée).
     for (const a of verifierTexte(texte, niveau)) {
-      const msg = `« ${a.extrait} » dans « ${champ} » : ${a.raison}${a.suggestion ? ` (préférer « ${a.suggestion} »)` : ''}.`;
-      (a.bloquante ? bloquants : conseils).push(msg);
+      conseils.push(`« ${a.extrait} » dans « ${champ} » : ${a.raison}${a.suggestion ? ` (préférer « ${a.suggestion} »)` : ''}.`);
     }
   }
 
-  return { bloquants: [...new Set(bloquants)], conseils: [...new Set(conseils)] };
+  const r = [...new Set(remplacements)];
+  return { bloquants: [...new Set(bloquants)], conseils: [...new Set([...r, ...conseils])], remplacements: r };
 }

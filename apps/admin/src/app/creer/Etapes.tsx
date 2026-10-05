@@ -43,6 +43,7 @@ import {
   type Univers,
 } from '@plateforme/core';
 import Photo from '@/components/Photo';
+import ConfirmationPublication from '@/components/ConfirmationPublication';
 import PortraitPraticien from '@/components/PortraitPraticien';
 import type { SoinCatalogue } from '@/lib/sites';
 
@@ -185,34 +186,35 @@ const qui = (p: PraticienDraft, i: number) => (p.prenom || p.nom ? `${p.prenom} 
 export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; controle: ResultatControle; maj: Maj; lienAvance: string }) {
   const [montrer, setMontrer] = useState(false);
   const lieu = d.lieux[0];
+  // Plus rien n'est bloquant : informations manquantes (remplacées sur le site par une mention sobre) en ambre, près du champ.
   const filtre = (re: RegExp, personne?: string, avecConseils = false) =>
-    [...controle.bloquants, ...(avecConseils ? controle.conseils : [])].filter((b) => re.test(b) && (!personne || b.includes(`(${personne})`)));
+    [...new Set([...controle.bloquants, ...controle.remplacements, ...(avecConseils ? controle.conseils : [])])].filter((b) => re.test(b) && (!personne || b.includes(`(${personne})`)));
   const majLieu = (patch: Partial<typeof lieu>) => maj({ lieux: d.lieux.map((l, j) => (j === 0 ? { ...l, ...patch } : l)) });
   const majPraticien = (i: number, patch: Partial<PraticienDraft>) => maj({ praticiens: d.praticiens.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
   const h = horairesSimplifies(lieu.horaires);
   const [heures, setHeures] = useState(h.heures);
   const idRdv = useId();
-  const reste = controle.bloquants.filter((b) => !/compétence/i.test(b));
+  const reste = controle.remplacements.filter((b) => !/compétence/i.test(b));
 
   return (
     <>
       <fieldset className={carte}>
         <legend className="sr-only">Le cabinet</legend>
         <p className="text-lg font-semibold">Le cabinet</p>
-        <Champ montrer={montrer} label="Nom du cabinet (facultatif)" aide="À défaut, « Cabinet de » suivi du nom des praticiens." value={d.cabinet.nom} onChange={(v) => maj({ cabinet: { ...d.cabinet, nom: v } })} messages={filtre(/Nom du cabinet/)} />
-        <Champ montrer={montrer} label="Adresse" autoComplete="street-address" value={lieu.adresse} onChange={(v) => majLieu({ adresse: v })} messages={filtre(/adresse/i)} />
+        <Champ montrer={montrer} label="Nom du cabinet (facultatif)" aide="À défaut, « Cabinet de » suivi du nom des praticiens." value={d.cabinet.nom} onChange={(v) => maj({ cabinet: { ...d.cabinet, nom: v } })} avertissements={filtre(/Nom du cabinet/)} />
+        <Champ montrer={montrer} label="Adresse" autoComplete="street-address" value={lieu.adresse} onChange={(v) => majLieu({ adresse: v })} avertissements={filtre(/^Adresse incomplète/)} />
         <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-3">
-          <Champ montrer={montrer} label="Code postal" inputMode="numeric" autoComplete="postal-code" value={lieu.codePostal} onChange={(v) => majLieu({ codePostal: v.replace(/[^\dA-Za-z -]/g, '').slice(0, 10) })} messages={filtre(/Code postal/)} />
+          <Champ montrer={montrer} label="Code postal" inputMode="numeric" autoComplete="postal-code" value={lieu.codePostal} onChange={(v) => majLieu({ codePostal: v.replace(/[^\dA-Za-z -]/g, '').slice(0, 10) })} avertissements={filtre(/Code postal/)} />
           <Champ
             montrer={montrer}
             label="Ville"
             autoComplete="address-level2"
             value={lieu.ville}
             onChange={(v) => maj({ lieux: d.lieux.map((l, j) => (j === 0 ? { ...l, ville: v } : l)), cabinet: { ...d.cabinet, ville: !d.cabinet.ville || d.cabinet.ville === lieu.ville ? v : d.cabinet.ville } })}
-            messages={filtre(/ville du cabinet/)}
+            avertissements={filtre(/^Ville/, undefined, true)}
           />
         </div>
-        <Champ montrer={montrer} label="Téléphone du cabinet" type="tel" autoComplete="tel" value={d.cabinet.telephone} onChange={(v) => maj({ cabinet: { ...d.cabinet, telephone: v } })} messages={filtre(/téléphone/)} />
+        <Champ montrer={montrer} label="Téléphone du cabinet" type="tel" autoComplete="tel" value={d.cabinet.telephone} onChange={(v) => maj({ cabinet: { ...d.cabinet, telephone: v } })} avertissements={filtre(/^Téléphone/)} />
       </fieldset>
 
       <fieldset className={carte}>
@@ -229,8 +231,8 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
               )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Champ montrer={montrer} label="Prénom" autoComplete="given-name" value={p.prenom} onChange={(v) => majPraticien(i, { prenom: v })} messages={filtre(/nom et le prénom/, qui(p, i))} />
-              <Champ montrer={montrer} label="Nom" autoComplete="family-name" value={p.nom} onChange={(v) => majPraticien(i, { nom: v })} />
+              <Champ montrer={montrer} label="Prénom" autoComplete="given-name" value={p.prenom} onChange={(v) => majPraticien(i, { prenom: v })} avertissements={filtre(/^Prénom non renseigné/, qui(p, i), true)} />
+              <Champ montrer={montrer} label="Nom" autoComplete="family-name" value={p.nom} onChange={(v) => majPraticien(i, { nom: v })} avertissements={[...filtre(/^Nom de famille/, qui(p, i)), ...(i === 0 ? filtre(/^Aucun praticien nommé/) : [])]} />
             </div>
             {d.pays === 'FR' && (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -238,7 +240,7 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
                 <Champ montrer={montrer} label="N° RPPS (facultatif)" aide="11 chiffres" inputMode="numeric" value={p.rpps} onChange={(v) => majPraticien(i, { rpps: v.replace(/\D/g, '').slice(0, 11) })} avertissements={controle.conseils.filter((c) => /^(Le RPPS|Vérifier le RPPS)/.test(c) && c.includes(`(${qui(p, i)})`))} />
               </div>
             )}
-            {d.pays === 'BE' && <Champ montrer={montrer} label="N° INAMI" placeholder="5-12345-12-123" value={p.inami} onChange={(v) => majPraticien(i, { inami: v })} messages={filtre(/INAMI/, qui(p, i))} />}
+            {d.pays === 'BE' && <Champ montrer={montrer} label="N° INAMI" placeholder="5-12345-12-123" value={p.inami} onChange={(v) => majPraticien(i, { inami: v })} avertissements={filtre(/INAMI/, qui(p, i))} />}
             {d.pays === 'CH' && <Champ montrer={montrer} label="N° RCC / ZSR" value={p.rcc} onChange={(v) => majPraticien(i, { rcc: v })} />}
           </div>
         ))}
@@ -294,15 +296,15 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
           ))}
         </div>
         {d.rdv.mode !== 'telephone' && (
-          <Champ montrer={montrer} id={idRdv} label="Lien de prise de rendez-vous" type="url" inputMode="url" placeholder="https://www.doctolib.fr/…" aide="La page du praticien sur la plateforme, pas son accueil." value={d.rdv.url} onChange={(v) => maj({ rdv: { ...d.rdv, url: v.trim() } })} messages={[...filtre(/rendez-vous/), ...controle.conseils.filter((c) => /Doctolib/.test(c))]} />
+          <Champ montrer={montrer} id={idRdv} label="Lien de prise de rendez-vous" type="url" inputMode="url" placeholder="https://www.doctolib.fr/…" aide="La page du praticien sur la plateforme, pas son accueil." value={d.rdv.url} onChange={(v) => maj({ rdv: { ...d.rdv, url: v.trim() } })} avertissements={[...filtre(/^(Lien de prise de rendez-vous|Le lien de rendez-vous)/), ...controle.conseils.filter((c) => /Doctolib/.test(c))]} />
         )}
       </fieldset>
 
       <div className="grid gap-2 rounded-2xl bg-neutral-50 p-4 text-sm">
         {reste.length ? (
           <>
-            <p className="font-semibold">À compléter avant la mise en ligne ({reste.length})</p>
-            <button type="button" className={`min-h-11 justify-self-start rounded px-1 font-semibold text-teal-800 underline ${focus}`} onClick={() => setMontrer(true)}>Montrer les champs à compléter</button>
+            <p className="font-semibold text-amber-900">Informations manquantes ({reste.length}) : le site affichera une mention sobre à la place, la mise en ligne reste possible.</p>
+            <button type="button" className={`min-h-11 justify-self-start rounded px-1 font-semibold text-teal-800 underline ${focus}`} onClick={() => setMontrer(true)}>Montrer les champs concernés</button>
           </>
         ) : (
           <p className="font-semibold text-teal-900">Les informations essentielles sont complètes.</p>
@@ -553,7 +555,7 @@ export function EtapeContenus({ d, univers, maj }: { d: SiteDraft; univers?: Uni
 // Vérifier et publier
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Étape où se corrige un point bloquant */
+/** Étape où se complète une information manquante */
 const etapeDuManque = (m: string) => (/compétence/i.test(m) ? 4 : 3);
 
 export function Verification({
@@ -586,7 +588,9 @@ export function Verification({
     ['Articles', `${d.flux.mode === 'manuel' ? 'Validés par vous' : 'Publication automatique'}${d.flux.themes.length ? ` · ${d.flux.themes.join(', ')}` : ''}`, 5],
     ['Fiches conseils', `${(d.fichesConseils ?? []).length} fiche(s)`, 5],
   ];
-  const bloque = controle.bloquants.length > 0 && !admin;
+  // Plus rien ne bloque la publication : avec des informations manquantes, une confirmation les liste (« Publier quand même »).
+  const [confirmer, setConfirmer] = useState(false);
+  const publierOuConfirmer = () => (controle.remplacements.length && !confirmer ? setConfirmer(true) : (setConfirmer(false), onPublier()));
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-start">
@@ -606,10 +610,10 @@ export function Verification({
 
       <section className={carte} aria-labelledby="titre-publier">
         <h2 id="titre-publier" className="text-lg font-semibold">Avant la mise en ligne</h2>
-        {controle.bloquants.length ? (
-          <ul className="grid gap-2 text-sm">
-            {controle.bloquants.map((b) => (
-              <li key={b} className="flex items-start justify-between gap-2 text-red-800">
+        {controle.remplacements.length ? (
+          <ul className="grid gap-2 text-sm" aria-label="Informations manquantes, remplacées sur le site par une mention sobre">
+            {controle.remplacements.map((b) => (
+              <li key={b} className="flex items-start justify-between gap-2 text-amber-900">
                 <span className="flex gap-2"><span aria-hidden="true">●</span>{b}</span>
                 <button type="button" onClick={() => onModifier(etapeDuManque(b))} className={`min-h-11 shrink-0 rounded px-1 font-semibold text-teal-800 ${focus}`}>Compléter</button>
               </li>
@@ -618,22 +622,23 @@ export function Verification({
         ) : (
           <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-medium text-teal-900">Tout est prêt pour la mise en ligne.</p>
         )}
-        {controle.conseils.length > 0 && (
+        {controle.conseils.length > controle.remplacements.length && (
           <details className="text-sm">
-            <summary className={`min-h-11 cursor-pointer content-center rounded font-semibold text-amber-900 ${focus}`}>Conseils facultatifs ({controle.conseils.length})</summary>
-            <ul className="mt-1 grid gap-1 text-amber-900">{controle.conseils.map((c) => <li key={c} className="flex gap-2"><span aria-hidden="true">○</span>{c}</li>)}</ul>
+            <summary className={`min-h-11 cursor-pointer content-center rounded font-semibold text-amber-900 ${focus}`}>Conseils facultatifs ({controle.conseils.length - controle.remplacements.length})</summary>
+            <ul className="mt-1 grid gap-1 text-amber-900">{controle.conseils.filter((c) => !controle.remplacements.includes(c)).map((c) => <li key={c} className="flex gap-2"><span aria-hidden="true">○</span>{c}</li>)}</ul>
           </details>
+        )}
+        {confirmer && !enCours && !publication?.ok && (
+          <ConfirmationPublication remplacements={controle.remplacements} onConfirmer={publierOuConfirmer} onAnnuler={() => setConfirmer(false)} />
         )}
         <button
           type="button"
-          onClick={onPublier}
-          disabled={bloque || enCours || Boolean(publication?.ok)}
+          onClick={publierOuConfirmer}
+          disabled={enCours || Boolean(publication?.ok)}
           className={`min-h-12 rounded-xl bg-teal-800 px-5 text-base font-semibold text-white hover:bg-teal-900 disabled:cursor-not-allowed disabled:bg-neutral-200 disabled:text-neutral-500 ${focus}`}
         >
           {enCours ? 'Publication…' : 'Publier mon site'}
         </button>
-        {bloque && <p className="text-xs text-neutral-600">Complétez les points en rouge pour publier.</p>}
-        {admin && controle.bloquants.length > 0 && <p className="text-xs text-amber-800">Super admin : la publication reste possible malgré les manques.</p>}
         <p role="status" aria-live="polite" className={`text-sm ${publication?.ok ? 'text-teal-800' : 'text-red-700'}`}>{publication?.message ?? ''}</p>
         {publication?.ok && <Link href="/tableau-de-bord" className="font-semibold text-teal-800 underline">Suivre la mise en ligne dans le tableau de bord →</Link>}
       </section>

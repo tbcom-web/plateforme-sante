@@ -5,7 +5,7 @@ import { variantesModele, gabaritModele, pictoSoin, resumeHygiene, faitEquipemen
 import { site } from './site';
 import { cheminTheme } from '@plateforme/core';
 import { navigation } from './navigation';
-import { lieu, rdvEnLigne, TYPES_LIEU } from './textes';
+import { lieu, TYPES_LIEU, phraseRdv, suffixeVille } from './textes';
 import { visuelSoin, photoPraticienSoin } from './visuels-soins';
 import { modeVisuel, registre } from './visuels';
 
@@ -48,12 +48,12 @@ export const atoutsLieu = [
   site.accesDetail.pmr || site.accesDetail.parking
     ? { titre: 'Accès', texte: [site.accesDetail.pmr && 'Accessible PMR', site.accesDetail.parking].filter(Boolean).join(' · ') }
     : null,
-  { titre: 'Rendez-vous', texte: !rdvEnLigne ? `Par téléphone au ${site.cabinet.telephone}` : `En ligne sur ${site.rdv.plateforme}, 24h/24` },
+  { titre: 'Rendez-vous', texte: phraseRdv },
   site.domicile.actif ? { titre: 'Domicile', texte: site.domicile.creneaux || 'Visites à domicile sur demande' } : null,
 ].filter(Boolean) as { titre: string; texte: string }[];
 export const nomLieu = lieu.nom || TYPES_LIEU[lieu.type];
 /** Titre du lieu d'exercice (H2 « panorama » du gabarit classique) */
-export const titreLieu = `${nomLieu} à ${lieu.ville || site.cabinet.ville}`;
+export const titreLieu = `${nomLieu}${lieu.ville ? ` à ${lieu.ville}` : suffixeVille}`;
 
 /**
  * Visuel d'un soin dans une variante : photo (règles du style visuel, rendreCase) ou dessin. Jamais d'animation dans ces

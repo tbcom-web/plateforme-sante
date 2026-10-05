@@ -1,8 +1,16 @@
 // Charge un site praticien depuis Supabase au moment du build et l'assemble en SiteConfig.
 // Nécessite SUPABASE_URL et SUPABASE_SECRET_KEY (jamais exposés au navigateur : le site est statique).
 import {
-  controlerPublication,
   formaterTelephone,
+  avecVille,
+  adresseUtilisable,
+  ligneSansProvisoire,
+  retirerTextesProvisoires,
+  telephoneUtilisable,
+  nomAffiche,
+  soinsParDefaut,
+  REPLIS,
+  type Specialite,
   lieuEnClair,
   lienRdvPrecis,
   mentionOrdre,
@@ -70,9 +78,10 @@ type LigneJeuPhotos = { id: string; nom: string; specialite: string; photos: unk
 type LigneSoin = { slug: string; titre_court: string; titre: string; resume: string; corps: string; faq: Faq[]; icone?: string | null };
 
 const identifiants = (d: SiteDraft, p: SiteDraft['praticiens'][number], ordre: string): string[] => {
-  if (d.pays === 'BE') return [p.inami && `N° INAMI : ${p.inami}`, 'Agréé·e INAMI'].filter(Boolean) as string[];
+  // N° INAMI absent ou mal formé : mention omise (jamais bloquant, voir controles.ts).
+  if (d.pays === 'BE') return /^\d-\d{5}-\d{2}-\d{3}$/.test(p.inami.trim()) ? [`N° INAMI : ${p.inami.trim()}`, 'Agréé·e INAMI'] : [];
   if (d.pays === 'CH') {
-    return [p.membreSsp && 'Membre de la Société Suisse des Podologues (SSP)', p.rcc && `N° RCC : ${p.rcc}`].filter(Boolean) as string[];
+    return [p.membreSsp && 'Membre de la Société Suisse des Podologues (SSP)', ligneSansProvisoire(p.rcc) && `N° RCC : ${p.rcc.trim()}`].filter(Boolean) as string[];
   }
   // Numéros mal formés ou fictifs : jamais affichés (la saisie ne bloque plus la publication, voir controles.ts).
   const numero = numeroOrdreAffichable(p.numeroOrdre), rpps = rppsAffichable(p.rpps);
@@ -133,22 +142,89 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   }
   const logo = marqueImportee ? { marque: marqueImportee.id, disposition: choixLogo.disposition } : choixLogo;
   const visuelsSpecialite = d.theme.specialiteSecondaire ? fusionnerSpecialites(pack, fusionnerPack(packVisuel(d.theme.specialiteSecondaire), persoSecondaire)) : pack;
-  // Même contrôle que le back-office : un site incomplet n'est jamais publié (sauf site de test).
-  const { bloquants } = controlerPublication(d);
-  // L'aperçu de l'éditeur visuel (APERCU=1) montre aussi un brouillon incomplet ; il n'est jamais indexé.
-  if (bloquants.length && !s.test && process.env.APERCU !== '1') {
-    throw new Error(['Publication refusée :', ...bloquants.map((b) => `- ${b}`)].join('\n'));
-  }
-  const lieu = d.lieux[0];
-  const ville = d.cabinet.ville || lieu.ville;
-  const perso = (t: string) => t.replaceAll('{ville}', ville);
-  const defauts = defautsProfession(s.profession_slug);
+  // Plus rien ne bloque la publication (règle de Paul, 2026-10-05) : chaque information manquante a un repli sobre,
+  // appliqué par assemblerSite. Les avertissements restent visibles à la saisie (controlerPublication, conseils).
+  return assemblerSite({
+    ligne: s,
+    apercu: process.env.APERCU === '1',
+    d,
+    prof,
+    catalogue,
+    articles: publies.map((p) => p.article).filter((a): a is LigneArticle => Boolean(a)),
+    modele,
+    pack,
+    visuelsSpecialite,
+    persoPack: persoPack ?? null,
+    persoSecondaire: persoSecondaire ?? null,
+    logo,
+    marqueImportee,
+    creditAdobe: jeuPhotos?.source === 'adobe',
+  });
+}
+
+/** Données lues (Supabase ou fichier local de test) nécessaires pour assembler un site, sans accès réseau. */
+export type EntreeAssemblage = {
+  ligne: Pick<LigneSite, 'id' | 'slug' | 'domaine' | 'test' | 'options' | 'updated_at' | 'publiee_le'>;
+  /** Aperçu de l'éditeur (brouillon, jamais indexé) */
+  apercu: boolean;
+  d: SiteDraft;
+  prof: LigneProfession;
+  catalogue: LigneSoin[];
+  articles: LigneArticle[];
+  modele: SiteConfig['modele'];
+  pack: Specialite;
+  visuelsSpecialite: Specialite;
+  persoPack: PersonnalisationPack | null;
+  persoSecondaire: PersonnalisationPack | null;
+  logo: SiteConfig['theme']['logo'];
+  marqueImportee?: MarqueImportee;
+  creditAdobe?: boolean;
+};
+export type { LigneSoin, LigneProfession, LigneArticle };
+
+/**
+ * Assemble la SiteConfig d'un site depuis son brouillon, avec les REPLIS des informations manquantes (replis.ts) :
+ * - ville absente : titres sans « à {ville} » ; adresse incomplète : « Adresse communiquée à la prise de rendez-vous »
+ *   (adresse, code postal et ville du lieu vidés : pas de plan, pas d'itinéraire, pas d'adresse postale inventée) ;
+ * - téléphone absent : vide (pas de bouton « Appeler ») ; lien de RDV absent ou vers l'accueil d'une plateforme : vidé ;
+ * - praticien sans nom : non présenté ; aucun praticien nommé : présentation au nom du cabinet ;
+ * - nom du cabinet absent : « Cabinet de {noms} », sinon « Cabinet de pédicurie-podologie » ;
+ * - aucune compétence : soins de l'univers / de la spécialité, sinon de la podologie générale ;
+ * - horaires vides : « Sur rendez-vous » (textes.ts) ; textes provisoires (« [..] », xxx, lorem) : paragraphe retiré ;
+ * - n° d'Ordre, RPPS ou INAMI absents ou mal formés : mention omise.
+ */
+export function assemblerSite(e: EntreeAssemblage): SiteConfig {
+  const { ligne: s, apercu, d, prof, catalogue, modele, pack, visuelsSpecialite, persoPack, persoSecondaire, logo, marqueImportee } = e;
+  const lieuBrut = d.lieux[0];
+  // Adresse publiable seulement si complète (rue, code postal valide, ville) : sinon rien d'inventé.
+  const lieux = d.lieux.map(({ id: _id, ...l }) => {
+    const complete = adresseUtilisable(l, d.pays);
+    return {
+      ...l,
+      nom: ligneSansProvisoire(l.nom),
+      adresse: complete ? l.adresse.trim() : '',
+      complement: complete ? ligneSansProvisoire(l.complement) : '',
+      codePostal: complete ? l.codePostal.trim() : '',
+      ville: complete ? l.ville.trim() : '',
+    };
+  });
+  const lieu = lieux[0];
+  const ville = ligneSansProvisoire(d.cabinet.ville) || ligneSansProvisoire(lieuBrut?.ville ?? '');
+  const perso = (t: string) => avecVille(t, ville);
+  const defauts = defautsProfession(prof.slug);
   const titreMetier = PAYS.find((p) => p.value === d.pays)?.titre ?? prof.libelle;
   const libelle = (slug: string) => catalogue.find((c) => c.slug === slug)?.titre_court ?? slug;
+  const telephone = telephoneUtilisable(d.cabinet.telephone) ? formaterTelephone(d.cabinet.telephone) : '';
+  const email = /^\S+@\S+\.\S+$/.test(d.cabinet.email ?? '') ? d.cabinet.email.trim() : '';
+  // Lien de rendez-vous : seulement s'il mène à une page précise (jamais l'accueil d'une plateforme).
+  const rdvUrl = (u: string) => (lienRdvPrecis(u) ? u.trim() : '');
+  const rdvCabinet = d.rdv.mode === 'telephone' ? '' : rdvUrl(d.rdv.url) || rdvUrl(d.praticiens.find((p) => rdvUrl(p.rdvUrl))?.rdvUrl ?? '');
 
-  // Soins cochés, dans l'ordre du catalogue ; ceux mis en avant par l'univers passent devant (theme.soinsEnAvant).
+  // Soins cochés (à défaut : ceux de l'univers ou de la spécialité), dans l'ordre du catalogue ; ceux mis en avant par
+  // l'univers passent devant (theme.soinsEnAvant).
+  const slugsSoins = d.soins.length ? d.soins : soinsParDefaut(d.theme, catalogue.map((c) => c.slug));
   const soins: Soin[] = ordonnerSoins(catalogue
-    .filter((c) => d.soins.includes(c.slug))
+    .filter((c) => slugsSoins.includes(c.slug))
     .map((c) => ({
       slug: c.slug,
       titre: perso(c.titre),
@@ -159,86 +235,93 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       icone: c.icone ?? undefined,
     })), d.theme.soinsEnAvant);
 
-  const praticiens: PraticienPublic[] = d.praticiens.map((p) => ({
-    prenom: p.prenom,
-    nom: p.nom,
+  // Seuls les praticiens nommés sont présentés (le nom de famille suffit) ; sans aucun : présentation au nom du cabinet.
+  const praticiensNommes = d.praticiens.filter((p) => nomAffiche(p));
+  const praticiens: PraticienPublic[] = praticiensNommes.map((p) => ({
+    prenom: ligneSansProvisoire(p.prenom),
+    nom: ligneSansProvisoire(p.nom),
     statut: p.statut,
     titre: titreMetier,
     identifiants: identifiants(d, p, prof.ordre),
-    diplome: [p.diplome, p.ecole].filter(Boolean).join(' — '),
-    formations: p.formations,
+    diplome: [p.diplome, p.ecole].map(ligneSansProvisoire).filter(Boolean).join(' — '),
+    formations: p.formations.map(ligneSansProvisoire).filter(Boolean),
     orientations: p.orientations.map(libelle),
     sports: p.sports,
-    rdvUrl: p.rdvUrl || d.rdv.url,
-    presence: p.presence,
-    bio: p.bio,
+    rdvUrl: d.rdv.mode === 'telephone' ? '' : rdvUrl(p.rdvUrl) || rdvCabinet,
+    presence: ligneSansProvisoire(p.presence),
+    bio: retirerTextesProvisoires(p.bio),
     photo: p.photo,
     // Rendus du studio portrait (srcset), seulement s'ils correspondent à la photo enregistrée
     ...(rendusPortrait(p) ? { portrait: rendusPortrait(p)! } : {}),
   }));
 
-  const p1 = praticiens[0];
+  const p1 = praticiens[0] as PraticienPublic | undefined;
+  const d1 = praticiensNommes[0];
   const pluriel = praticiens.length > 1;
-  const noms = enListe(praticiens.map((p) => `${p.prenom} ${p.nom}`));
+  const noms = enListe(praticiens.map((p) => `${p.prenom} ${p.nom}`.trim()));
   // Le quartier complète la ville, il ne la remplace jamais (« dans le quartier Claret, à Toulon »).
-  const quartier = d.cabinet.quartier.trim();
+  const quartier = ligneSansProvisoire(d.cabinet.quartier);
   const lieuExercice = lieuEnClair(quartier, ville);
   const aujourdhui = new Date().toISOString().slice(0, 10);
-  const messageActif = d.message.texte && (!d.message.jusquAu || d.message.jusquAu >= aujourdhui);
+  const messageTexte = retirerTextesProvisoires(d.message.texte);
+  const messageActif = messageTexte && (!d.message.jusquAu || d.message.jusquAu >= aujourdhui);
   const listeSoins = soins.slice(0, 3).map((x) => x.titreCourt.toLowerCase());
+  const nomCabinet = ligneSansProvisoire(d.cabinet.nom) || lieu.nom || (noms ? `Cabinet de ${noms}` : REPLIS.nomCabinet);
+  const metier = `${titreMetier.toLowerCase()}${pluriel ? 's' : ''}`;
+  const enPhrase = (...morceaux: string[]) => morceaux.filter(Boolean).join(' ');
 
   return {
     id: s.id,
     domaine: s.domaine ?? `${s.slug ?? s.id}.pages.dev`,
-    demo: s.test || process.env.APERCU === '1',
-    majLe: (process.env.APERCU === '1' ? s.updated_at : (s.publiee_le ?? s.updated_at))?.slice(0, 10),
+    demo: s.test || apercu,
+    majLe: (apercu ? s.updated_at : (s.publiee_le ?? s.updated_at))?.slice(0, 10),
     profession: { slug: prof.slug, libelle: titreMetier, specialiteSchema: prof.specialite_schema },
 
-    // Champs historiques (premier praticien / premier lieu), utilisés par le schema.org.
+    // Champs historiques (premier praticien / premier lieu), utilisés par le schema.org. Sans praticien nommé : vides.
     praticien: {
-      prenom: p1.prenom,
-      nom: p1.nom,
+      prenom: p1?.prenom ?? '',
+      nom: p1?.nom ?? '',
       titre: titreMetier,
-      rpps: rppsAffichable(d.praticiens[0].rpps) || numeroOrdreAffichable(d.praticiens[0].numeroOrdre) || d.praticiens[0].inami,
-      ordre: p1.identifiants[0] ?? '',
-      conventionnement: d.conventionnement,
+      rpps: d1 ? rppsAffichable(d1.rpps) || numeroOrdreAffichable(d1.numeroOrdre) || (d.pays === 'BE' && /^\d-\d{5}-\d{2}-\d{3}$/.test(d1.inami.trim()) ? d1.inami.trim() : '') : '',
+      ordre: p1?.identifiants[0] ?? '',
+      conventionnement: retirerTextesProvisoires(d.conventionnement),
       parcours:
-        p1.bio ||
-        `${noms}, ${titreMetier.toLowerCase()}${pluriel ? 's' : ''}, accueille${pluriel ? 'nt' : ''} les patients ${lieuExercice}.`,
-      formations: p1.formations,
+        p1?.bio ||
+        (noms
+          ? `${enPhrase(`${noms}, ${metier}, accueille${pluriel ? 'nt' : ''} les patients`, lieuExercice)}.`
+          : `${enPhrase(`${REPLIS.equipe} accueille les patients`, lieuExercice)}.`),
+      formations: p1?.formations ?? [],
       langues: ['Français'],
     },
     cabinet: {
-      nom: d.cabinet.nom || lieu.nom || `Cabinet de ${noms}`,
+      nom: nomCabinet,
       adresse: lieu.adresse,
       codePostal: lieu.codePostal,
       ville,
       quartier,
-      telephone: formaterTelephone(d.cabinet.telephone),
-      email: d.cabinet.email || undefined,
-      acces: [d.acces.parking, d.acces.transports, ...d.acces.autres].filter(Boolean),
+      telephone,
+      email: email || undefined,
+      acces: [d.acces.parking, d.acces.transports, ...d.acces.autres].map(ligneSansProvisoire).filter(Boolean),
       pmr: d.acces.pmr,
       horaires: lieu.horaires,
       tarifs: [],
     },
-    rdv: { url: d.rdv.url, plateforme: d.rdv.outil },
+    rdv: { url: rdvCabinet, plateforme: d.rdv.outil },
     theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
-      texte: `${titreMetier} ${lieuExercice} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
+      texte: `${enPhrase(titreMetier, lieuExercice)} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
     },
     soins,
-    faqGenerale: defauts.faq({ pmr: d.acces.pmr, plateforme: d.rdv.outil, enLigne: d.rdv.mode !== 'telephone' && lienRdvPrecis(d.rdv.url || d.praticiens.find((p) => p.rdvUrl)?.rdvUrl) }),
-    articles: publies
-      .map((p) => p.article)
-      .filter((a): a is LigneArticle => Boolean(a))
+    faqGenerale: defauts.faq({ pmr: d.acces.pmr, plateforme: d.rdv.outil, enLigne: Boolean(rdvCabinet), telephone: Boolean(telephone), email }),
+    articles: e.articles
       .map((a) => ({ slug: a.slug, titre: perso(a.titre), resume: perso(a.resume), corps: perso(a.corps), theme: a.theme, date: a.date_publication, image: a.image || undefined, imageAlt: a.image_alt || undefined })),
     tracking: {},
     mentions: {
-      editeur: `${noms}, ${titreMetier.toLowerCase()}${pluriel ? 's' : ''}`,
+      editeur: noms ? `${noms}, ${metier}` : nomCabinet,
       hebergeur: 'Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis',
       // Licence Adobe Stock : mention de la source, sans nom de fichier.
-      ...(jeuPhotos?.source === 'adobe' ? { creditPhotos: 'Photos : Adobe Stock' } : {}),
+      ...(e.creditAdobe ? { creditPhotos: 'Photos : Adobe Stock' } : {}),
     },
 
     pays: d.pays,
@@ -246,15 +329,18 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     modele,
     titreMetier,
     praticiens,
-    lieux: d.lieux.map(({ id: _id, ...l }) => l),
-    accesDetail: d.acces,
-    rdvMode: d.rdv.mode,
+    lieux,
+    accesDetail: { ...d.acces, parking: ligneSansProvisoire(d.acces.parking), transports: ligneSansProvisoire(d.acces.transports), autres: d.acces.autres.map(ligneSansProvisoire).filter(Boolean) },
+    // Sans lien de rendez-vous utilisable, le site ne propose pas la réservation en ligne.
+    rdvMode: rdvCabinet ? d.rdv.mode : 'telephone',
     paiements: d.paiements,
     equipements: d.equipements,
-    equipementsAutres: d.equipementsAutres,
-    domicile: d.domicile,
-    message: messageActif ? d.message.texte : '',
-    communes: d.cabinet.communes,
+    equipementsAutres: retirerTextesProvisoires(d.equipementsAutres),
+    domicile: { ...d.domicile, creneaux: ligneSansProvisoire(d.domicile.creneaux) },
+    message: messageActif ? messageTexte : '',
+    communes: d.cabinet.communes.map(ligneSansProvisoire).filter(Boolean),
+    // Hiérarchie du site (thèmes principaux et secondaires) : navigation et pages de thème (lib/navigation.ts)
+    priorites: d.priorites,
     photos: d.photos,
     // Textes de l'éditeur visuel, revalidés (option « édition » requise pour les zones guidées).
     marqueImportee,
@@ -265,8 +351,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
       photos: visuelsSpecialite.photos,
       // Jeu visuel (jeux.ts) : secondaire et personnalisations de l'admin, recombinées au build.
       ...(d.theme.specialiteSecondaire ? { specialiteSecondaire: d.theme.specialiteSecondaire } : {}),
-      perso: persoPack ?? null,
-      persoSecondaire: persoSecondaire ?? null,
+      perso: persoPack,
+      persoSecondaire,
     },
   };
 }

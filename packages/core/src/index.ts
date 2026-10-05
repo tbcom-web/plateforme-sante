@@ -6,6 +6,7 @@ export * from './ambiances';
 export * from './icones-meta';
 export * from './lexique';
 export * from './controles';
+export * from './replis';
 export * from './modeles';
 export * from './packs';
 export * from './personnalisation';

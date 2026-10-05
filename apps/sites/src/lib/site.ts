@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { espacesFines, type SiteConfig } from '@plateforme/core';
+import { espacesFines, REPLIS, telephoneUtilisable, type SiteConfig } from '@plateforme/core';
 import { chargerDepuisSupabase } from './supabase';
 
 const sites = import.meta.glob<SiteConfig>('../data/sites/*.ts', { eager: true, import: 'default' });
@@ -15,10 +15,11 @@ export const site: SiteConfig = process.env.CONTROLE_INDEXABLE === '1' ? { ...ch
 export const baseUrl = `https://${site.domaine}`;
 export const absUrl = (path: string) => new URL(path, baseUrl).toString();
 
-export const nomPraticien = `${site.praticien.prenom} ${site.praticien.nom}`;
-export const metierVille = `${site.profession.libelle} à ${site.cabinet.ville}`;
-export const adresseComplete = `${site.cabinet.adresse}, ${site.cabinet.codePostal} ${site.cabinet.ville}`;
-export const telLien = `tel:${site.cabinet.telephone.replace(/[^\d+]/g, '').replace(/^0/, '+33')}`;
+// Replis des informations manquantes (replis.ts) : jamais de nom vide, de « à » orphelin ni de lien « tel: » vide.
+export const nomPraticien = `${site.praticien.prenom} ${site.praticien.nom}`.trim() || site.cabinet.nom;
+export const metierVille = site.cabinet.ville ? `${site.profession.libelle} à ${site.cabinet.ville}` : site.profession.libelle;
+export const adresseComplete = site.cabinet.adresse && site.cabinet.codePostal ? `${site.cabinet.adresse}, ${site.cabinet.codePostal} ${site.cabinet.ville}` : REPLIS.adresse;
+export const telLien = telephoneUtilisable(site.cabinet.telephone) ? `tel:${site.cabinet.telephone.replace(/[^\d+]/g, '').replace(/^0/, '+33')}` : '';
 
 /** Markdown → HTML ; espace fine insécable avant « : ; ? ! » dans les intertitres (typographie française). */
 export const md = (source: string) =>

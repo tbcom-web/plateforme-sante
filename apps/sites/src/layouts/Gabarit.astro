@@ -53,7 +53,7 @@ import { navigation, lienActif } from '../lib/navigation';
 import { photoAccueil, pedagogique, dessinSpecialite } from '../lib/visuels';
 import {
   titreMetierAffiche, telLien, itineraire, lienRdv, libelleRdv, titreCabinet, praticiens, lieu, adresseLieu,
-  rdvEnLigne, viaPlateforme, localisation,
+  rdvEnLigne, viaPlateforme, localisation, aTelephone, aAdresse, phraseRdv, libelleContact, contactRdv, lienContact,
 } from '../lib/textes';
 
 interface Props {
@@ -227,7 +227,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
     {!transparent && <div class="infobarre">
       <div class="cadre infobarre__contenu">
         <span><Icone nom="lucide:map-pin" />{lieu.nom ? `${lieu.nom} — ` : ''}{adresseLieu}</span>
-        <a href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+        {aTelephone && <a href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
       </div>
     </div>}
 
@@ -238,7 +238,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
           {liens.map((l, i) => <a href={l.href} data-rang={l.cle === 'theme' ? i + 1 : undefined} aria-current={lienActif(l.href, courant) ? 'page' : undefined}>{l.label}</a>)}
         </nav>
         <a class="bouton bouton--plein bouton--petit entete__rdv" href={rdvGeneral ?? lienRdv('entete')}>
-          {rdvEnLigne ? 'Prendre RDV' : 'Appeler'}
+          {rdvEnLigne ? 'Prendre RDV' : aTelephone ? 'Appeler' : contactRdv === 'email' ? 'Écrire' : 'Rendez-vous'}
         </a>
         <button class="menu-bouton" type="button" aria-expanded="false" aria-controls="tiroir" aria-haspopup="dialog">
           <span class="menu-bouton__traits" aria-hidden="true"></span><span class="menu-bouton__libelle">Menu</span>
@@ -250,7 +250,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
     <dialog class="tiroir surface-plan" id="tiroir" aria-label="Menu">
       <div class="cadre tiroir__contenu">
         <div class="tiroir__haut">
-          <span class="mono">{titreMetierAffiche} · {localisation}</span>
+          <span class="mono">{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</span>
           <button class="tiroir__fermer" type="button">Fermer<span aria-hidden="true" class="tiroir__croix"></span></button>
         </div>
         <nav class="tiroir__nav" aria-label="Menu principal">
@@ -260,7 +260,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
         <div class="tiroir__bas">
           <p>{lieu.nom && <>{lieu.nom}<br /></>}{adresseLieu}</p>
           <a class="bouton bouton--clair" href={rdvGeneral ?? lienRdv('menu')}>{libelleRdv}{via && <span class="via">{via}</span>}</a>
-          {rdvEnLigne && <a class="tiroir__tel" href={telLien}>{site.cabinet.telephone}</a>}
+          {rdvEnLigne && aTelephone && <a class="tiroir__tel" href={telLien}>{site.cabinet.telephone}</a>}
         </div>
       </div>
     </dialog>
@@ -280,7 +280,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
             <Logo clair={m.pied !== 'clair'} taille={LOGO.tailles.pied} />
             <p class="pied__appel">
               {libelleRdv}
-              <span>{rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : `Au ${site.cabinet.telephone}`}</span>
+              <span>{rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : aTelephone ? `Au ${site.cabinet.telephone}` : phraseRdv}</span>
             </p>
             <a class="bouton bouton--clair" href={rdvGeneral ?? lienRdv('pied')}>{libelleRdv}{via && <span class="via">{via}</span>}</a>
           </div>
@@ -289,20 +289,20 @@ const via = rdvGeneral ? '' : viaPlateforme;
         <div class="pied__grille">
           <div>
             <p class="pied__titre">{titreCabinet}</p>
-            <p>{lieu.nom && <>{lieu.nom}<br /></>}{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}</p>
+            <p>{lieu.nom && <>{lieu.nom}<br /></>}{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}</> : adresseLieu}</p>
             <p>
-              <a href={telLien}>{site.cabinet.telephone}</a>
-              {site.cabinet.email && <><br /><a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></>}
+              {aTelephone && <a href={telLien}>{site.cabinet.telephone}</a>}
+              {site.cabinet.email && <>{aTelephone && <br />}<a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></>}
             </p>
           </div>
-          <div>
+          {praticiens.length > 0 && <div>
             <p class="pied__titre">{praticiens.length > 1 ? 'Praticiens' : 'Praticien'}</p>
             <ul>
               {praticiens.map((p) => (
-                <li><strong>{p.prenom} {p.nom}</strong> — {p.titre}{p.identifiants[0] && <><br /><small>{p.identifiants[0]}</small></>}</li>
+                <li><strong>{`${p.prenom} ${p.nom}`.trim()}</strong> — {p.titre}{p.identifiants[0] && <><br /><small>{p.identifiants[0]}</small></>}</li>
               ))}
             </ul>
-          </div>
+          </div>}
           <div>
             <p class="pied__titre">Navigation</p>
             <ul>
@@ -322,13 +322,13 @@ const via = rdvGeneral ? '' : viaPlateforme;
     <nav class:list={['barre-mobile', { 'barre-mobile--appel': !rdvEnLigne }]} aria-label="Accès rapide">
       {rdvEnLigne ? (
         <>
-          <a href={telLien}><Icone nom="lucide:phone" />Appeler</a>
+          {aTelephone && <a href={telLien}><Icone nom="lucide:phone" />Appeler</a>}
           <a href={rdvGeneral ?? lienRdv('barre-mobile')} class="barre-mobile__rdv"><Icone nom="lucide:calendar" /><span>Rendez-vous{via && <span class="via">{via}</span>}</span></a>
         </>
       ) : (
-        <a href={telLien} class="barre-mobile__rdv"><Icone nom="lucide:phone" />Appeler le cabinet</a>
+        <a href={aTelephone ? telLien : lienContact} class="barre-mobile__rdv"><Icone nom={aTelephone ? 'lucide:phone' : 'lucide:calendar'} />{libelleContact}</a>
       )}
-      <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:map-pin" />Itinéraire</a>
+      {itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:map-pin" />Itinéraire</a>}
     </nav>
     </>)}
     <Consent />

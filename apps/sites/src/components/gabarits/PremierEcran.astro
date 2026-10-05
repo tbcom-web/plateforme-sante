@@ -10,17 +10,20 @@
 import Icone from '../Icone.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
-import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche } from '../../lib/textes';
+import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche, aLaVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
 import { nomLieu, visuelVariante, ligneDuSoin, legendeLigne } from '../../lib/gabarits';
 
 interface Props { variante: 'carte' | 'notice' | 'figure' }
 const { variante } = Astro.props;
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
-const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : telLien;
-const libelleRdv = rdvEnLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet';
-const qui = `${noms}, ${titreMetierPluriel}`;
-const ou = `${nomLieu}, ${lieu.adresse}, ${lieu.codePostal} ${lieu.ville}`;
+const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : aTelephone ? telLien : lienContact;
+const libelleRdv = rdvEnLigne ? 'Prendre rendez-vous' : libelleContact;
+// Sans praticien nommé : le nom du cabinet seul (pas de « pédicures-podologues » accolé au nom du cabinet).
+const qui = site.praticiens.length ? `${noms}, ${titreMetierPluriel}` : noms;
+const ou = aAdresse ? `${nomLieu}, ${adresseLieu}` : adresseLieu;
+// Ligne courte « qui · où » : sans adresse, le lieu seul.
+const quiOu = `${noms} · ${nomLieu}${aAdresse ? `, ${lieu.adresse}` : ''}`;
 const principaux = site.soins.slice(0, 3).map((s) => s.titreCourt.toLowerCase());
 const soins = principaux.length ? `${principaux.slice(0, -1).join(', ')}${principaux.length > 1 ? ' et ' : ''}${principaux.at(-1)}.` : '';
 const soinsPhrase = soins.charAt(0).toUpperCase() + soins.slice(1);
@@ -31,13 +34,13 @@ const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0
 {variante === 'figure' ? (
   <section class="figure-bande" aria-label="Le cabinet en bref"><div class="g-cadre figure-accueil">
     <div class="figure-accueil__texte">
-      <p class="figure-accueil__sur">{titreMetierAffiche} · {localisation}</p>
-      <h1>Cabinet de {specialite}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
-      <p class="figure-accueil__qui">{noms} · {nomLieu}, {lieu.adresse}</p>
+      <p class="figure-accueil__sur">{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
+      <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
+      <p class="figure-accueil__qui">{quiOu}</p>
       {soinsPhrase && <p class="figure-accueil__soins">{soinsPhrase}</p>}
       <div class="figure-accueil__actions">
         <a class="g-bouton g-bouton--plein" href={rdv}>{libelleRdv}</a>
-        {rdvEnLigne && <a class="g-bouton figure-accueil__tel" href={telLien}>{site.cabinet.telephone}</a>}
+        {rdvEnLigne && aTelephone && <a class="g-bouton figure-accueil__tel" href={telLien}>{site.cabinet.telephone}</a>}
       </div>
       {rdvEnLigne && !plusieurs && viaPlateforme && <p class="figure-accueil__via">Réservation {viaPlateforme}, 24h/24</p>}
     </div>
@@ -51,13 +54,13 @@ const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0
 ) : variante === 'carte' ? (
   <section class="g-cadre carte-accueil" aria-label="Le cabinet en bref">
     <div class="carte-accueil__texte">
-      <p class="carte-accueil__lieu"><span aria-hidden="true"></span>{titreMetierAffiche} · {localisation}</p>
-      <h1>Cabinet de {specialite}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
-      <p class="carte-accueil__qui">{noms} · {nomLieu}, {lieu.adresse}</p>
+      <p class="carte-accueil__lieu"><span aria-hidden="true"></span>{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
+      <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
+      <p class="carte-accueil__qui">{quiOu}</p>
       {soinsPhrase && <p class="carte-accueil__soins">{soinsPhrase}</p>}
       <div class="carte-accueil__actions">
         <a class="carte-accueil__rdv" href={rdv}>{libelleRdv}</a>
-        {rdvEnLigne && <a class="carte-accueil__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
+        {rdvEnLigne && aTelephone && <a class="carte-accueil__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
       </div>
       {rdvEnLigne && !plusieurs && viaPlateforme && <p class="carte-accueil__via">Réservation {viaPlateforme}, 24h/24</p>}
     </div>
@@ -71,7 +74,7 @@ const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0
   </section>
 ) : (
   <section class="notice-bande" aria-label="Le cabinet en bref"><div class="g-cadre notice">
-    <h1>Cabinet de {specialite}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
+    <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
     <ul class="notice__lignes">
       <li><Icone nom="lucide:users" />{qui}</li>
       <li><Icone nom="picto:itineraire" secours="lucide:map-pin" />{ou}</li>
@@ -79,7 +82,7 @@ const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0
     </ul>
     <div class="notice__actions">
       <a class="notice__bouton notice__bouton--plein" href={rdv}>{libelleRdv}{rdvEnLigne && !plusieurs && viaPlateforme && <span>{viaPlateforme}</span>}</a>
-      {rdvEnLigne && <a class="notice__bouton" href={telLien}>Appeler le {site.cabinet.telephone}</a>}
+      {rdvEnLigne && aTelephone && <a class="notice__bouton" href={telLien}>Appeler le {site.cabinet.telephone}</a>}
     </div>
   </div></section>
 )}

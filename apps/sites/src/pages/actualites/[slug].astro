@@ -21,7 +21,7 @@ const crumbs = [
   { name: 'Conseils', path: '/actualites' },
   { name: article.titre, path },
 ];
-const auteur = praticiens.length === 1 ? `${praticiens[0].prenom} ${praticiens[0].nom}, ${praticiens[0].titre.toLowerCase()}` : titreCabinet;
+const auteur = praticiens.length === 1 ? `${`${praticiens[0].prenom} ${praticiens[0].nom}`.trim()}, ${praticiens[0].titre.toLowerCase()}` : titreCabinet;
 const minutes = Math.max(1, Math.round(article.corps.split(/\s+/).length / 200));
 const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 ---

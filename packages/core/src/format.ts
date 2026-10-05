@@ -22,6 +22,8 @@ export function libelleQuartier(quartier: string, ville: string): string {
  */
 export function lieuEnClair(quartier: string, ville: string): string {
   const q = libelleQuartier(quartier, ville);
+  // Sans ville (information manquante, voir replis.ts) : jamais de « à » orphelin.
+  if (!ville.trim()) return q ? `dans le ${q.charAt(0).toLowerCase()}${q.slice(1)}` : '';
   if (!q) return `à ${ville}`;
   if (q.toLowerCase().includes(ville.trim().toLowerCase())) return `à ${q}`;
   return `dans le ${q.charAt(0).toLowerCase()}${q.slice(1)}, à ${ville}`;
@@ -30,7 +32,7 @@ export function lieuEnClair(quartier: string, ville: string): string {
 /** Version courte pour les sur-titres et bandeaux : « Toulon, quartier Claret » (ou la ville seule). */
 export function lieuCourt(quartier: string, ville: string): string {
   const q = libelleQuartier(quartier, ville);
-  if (!q) return ville;
+  if (!q || !ville.trim()) return q || ville.trim();
   return q.toLowerCase().includes(ville.trim().toLowerCase()) ? q : `${ville}, ${q}`;
 }
 

@@ -5,7 +5,8 @@
 // `niveau` : titres des tuiles en h2 quand la page n'a pas d'autre intertitre (plan d'accès : ordre des titres).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
-import { lieu, telLien, itineraire, rdvEnLigne, TYPES_LIEU } from '../../lib/textes';
+import { lieu, itineraire, TYPES_LIEU, aAdresse, adresseLieu, REPLI_HORAIRES } from '../../lib/textes';
+import RdvContact from '../RdvContact.astro';
 
 interface Props { sansAdresse?: boolean; colonnes?: boolean; niveau?: 2 | 3 }
 const { sansAdresse = false, colonnes = false, niveau = 3 } = Astro.props;
@@ -40,19 +41,24 @@ const acces = [
       <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach((l) => { l.classList.add('aujourdhui'); var e = document.createElement('span'); e.className = 'horaires__jour'; e.textContent = 'aujourd’hui'; l.querySelector('th').appendChild(e); });</script>
     </div>
   )}
-  <div class="info">
+  {!ouvert && (
+    <div class="info">
+      <Titre class="info__titre"><Icone nom="picto:horaires" secours="lucide:clock" />Horaires</Titre>
+      <p>{REPLI_HORAIRES}.</p>
+    </div>
+  )}
+  <div class="info" id="rdv">
     <Titre class="info__titre"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Prise de rendez-vous</Titre>
-    {rdvEnLigne && <p>En ligne sur {site.rdv.plateforme}, 24h/24{site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.</p>}
-    {(site.rdvMode !== 'en_ligne' || !rdvEnLigne) && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
+    <RdvContact />
   </div>
-  {!sansAdresse && (
+  {(!sansAdresse || !aAdresse) && (
     <div class="info">
       <Titre class="info__titre"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Adresse</Titre>
       <p>
         {lieu.nom ? <>{lieu.nom}<br /></> : lieu.type !== 'cabinet' && <>{TYPES_LIEU[lieu.type]}<br /></>}
-        {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}
+        {aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}</> : `${adresseLieu}.`}
       </p>
-      <a href={itineraire} target="_blank" rel="noopener">Itinéraire</a>
+      {itineraire && <a href={itineraire} target="_blank" rel="noopener">Itinéraire</a>}
     </div>
   )}
   {acces.length > 0 && (

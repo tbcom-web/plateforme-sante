@@ -15,7 +15,7 @@ import Logo from '../Logo.astro';
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { gabaritModele } from '@plateforme/core';
-import { telLien, itineraire, lienRdv, titreCabinet, praticiens, lieu, rdvEnLigne } from '../../lib/textes';
+import { telLien, itineraire, lienRdv, titreCabinet, praticiens, lieu, rdvEnLigne, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact, contactRdv } from '../../lib/textes';
 import { navigation, lienActif } from '../../lib/navigation';
 
 interface Props {
@@ -35,14 +35,14 @@ const mobiles = new Set(navigation.menuMobile.map((l) => l.href));
 const nav = navigation.menu.map((l, i) => ({ href: l.href, label: l.libelle, mobile: mobiles.has(l.href), repli: l.cle === 'theme' && i > 0 }));
 const pied = navigation.pied.map((l) => ({ href: l.href, label: l.libelle }));
 const actif = (href: string) => lienActif(href, courant);
-const rdv = rdvEnLigne ? lienRendezVous : telLien;
-const libelle = rdvEnLigne ? 'Rendez-vous' : 'Appeler';
+const rdv = rdvEnLigne ? lienRendezVous : aTelephone ? telLien : lienContact;
+const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv === 'email' ? 'Écrire' : 'Rendez-vous';
 ---
 <div class:list={['coquille', `coquille--${gabarit}`]}>
   <header class="c-entete">
     <div class="g-cadre c-entete__ligne">
       <Logo />
-      {village && <a class="c-entete__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" /><span class="c-entete__tel-libelle">Appeler</span><span class="c-entete__numero">{site.cabinet.telephone}</span></a>}
+      {village && aTelephone && <a class="c-entete__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" /><span class="c-entete__tel-libelle">Appeler</span><span class="c-entete__numero">{site.cabinet.telephone}</span></a>}
       {!village && (
         <nav class="c-nav" aria-label="Navigation principale">
           <ul>
@@ -72,15 +72,15 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : 'Appeler';
     <div class="g-cadre c-pied__grille">
       <div class="c-pied__bloc">
         <p class="c-pied__titre">{titreCabinet}</p>
-        <p>{lieu.nom && <>{lieu.nom}<br /></>}{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</p>
-        <p><a href={telLien}>{site.cabinet.telephone}</a>{site.cabinet.email && <><br /><a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></>}</p>
+        <p>{lieu.nom && <>{lieu.nom}<br /></>}{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</> : adresseLieu}</p>
+        <p>{aTelephone && <a href={telLien}>{site.cabinet.telephone}</a>}{site.cabinet.email && <>{aTelephone && <br />}<a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></>}</p>
       </div>
-      <div class="c-pied__bloc">
+      {praticiens.length > 0 && <div class="c-pied__bloc">
         <p class="c-pied__titre">{praticiens.length > 1 ? 'Praticiens' : 'Praticien'}</p>
         <ul>
-          {praticiens.map((p) => <li>{p.prenom}{' '}{p.nom} — {p.titre}{p.identifiants[0] && <><br /><small>{p.identifiants[0]}</small></>}</li>)}
+          {praticiens.map((p) => <li>{`${p.prenom} ${p.nom}`.trim()} — {p.titre}{p.identifiants[0] && <><br /><small>{p.identifiants[0]}</small></>}</li>)}
         </ul>
-      </div>
+      </div>}
       <div class="c-pied__bloc">
         <p class="c-pied__titre">Pages</p>
         <ul class="c-pied__liens">
@@ -94,10 +94,12 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : 'Appeler';
   </footer>
 
   <nav class="c-barre" aria-label="Accès rapide">
-    <a href={telLien} class:list={{ 'c-barre__plein': !rdvEnLigne }}><Icone nom="picto:telephone" secours="lucide:phone" />{rdvEnLigne ? 'Appeler' : 'Appeler le cabinet'}</a>
+    {aTelephone
+      ? <a href={telLien} class:list={{ 'c-barre__plein': !rdvEnLigne }}><Icone nom="picto:telephone" secours="lucide:phone" />{rdvEnLigne ? 'Appeler' : 'Appeler le cabinet'}</a>
+      : !rdvEnLigne && <a href={lienContact} class="c-barre__plein"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />{libelleContact}</a>}
     {rdvEnLigne
       ? <a href={lienRendezVous} class="c-barre__plein"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Rendez-vous</a>
-      : <a href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
+      : itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
   </nav>
 </div>
 

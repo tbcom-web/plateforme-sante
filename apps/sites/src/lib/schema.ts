@@ -2,7 +2,7 @@
 import { site, absUrl, baseUrl } from './site';
 import { photoAccueil } from './visuels';
 import { dateMaj } from './agents';
-import { rdvEnLigne, itineraire, lieu, telLien } from './textes';
+import { rdvEnLigne, itineraire, lieu, telLien, aTelephone, aAdresse } from './textes';
 import type { Faq, Soin, Article, PraticienPublic } from '@plateforme/core';
 
 const businessId = `${baseUrl}/#cabinet`;
@@ -45,13 +45,20 @@ const identifiants = (p: PraticienPublic) =>
     return valeur ? [{ '@type': 'PropertyValue', propertyID: code, name: nom, value: valeur }] : [];
   });
 
-const adresse = {
-  '@type': 'PostalAddress',
-  streetAddress: [lieu.adresse, lieu.complement].filter(Boolean).join(', '),
-  postalCode: lieu.codePostal,
-  addressLocality: lieu.ville,
-  addressCountry: site.pays,
-};
+// Adresse : complète, sinon la ville seule si elle est connue, sinon aucune (jamais de champ vide ni d'adresse inventée).
+const adresse = aAdresse
+  ? {
+      '@type': 'PostalAddress',
+      streetAddress: [lieu.adresse, lieu.complement].filter(Boolean).join(', '),
+      postalCode: lieu.codePostal,
+      addressLocality: lieu.ville,
+      addressCountry: site.pays,
+    }
+  : site.cabinet.ville
+    ? { '@type': 'PostalAddress', addressLocality: site.cabinet.ville, addressCountry: site.pays }
+    : null;
+/** Auteur et relecteur des pages : le premier praticien, sinon le cabinet (aucun praticien nommé). */
+const auteurId = () => (site.praticiens.length ? personId() : businessId);
 
 export const businessSchema = () => ({
   '@context': 'https://schema.org',
@@ -63,16 +70,16 @@ export const businessSchema = () => ({
   description: site.accroche.texte,
   url: baseUrl,
   image: absUrl(photoAccueil),
-  telephone: telLien.replace(/^tel:/, ''),
+  ...(aTelephone && { telephone: telLien.replace(/^tel:/, '') }),
   ...(site.cabinet.email && { email: site.cabinet.email }),
   medicalSpecialty: site.profession.specialiteSchema.startsWith('http') ? site.profession.specialiteSchema : `https://schema.org/${site.profession.specialiteSchema}`,
   isAcceptingNewPatients: true,
-  address: adresse,
+  ...(adresse && { address: adresse }),
   ...(site.cabinet.geo && {
     geo: { '@type': 'GeoCoordinates', latitude: site.cabinet.geo.lat, longitude: site.cabinet.geo.lng },
   }),
-  hasMap: itineraire,
-  openingHoursSpecification: openingHours(),
+  ...(itineraire && { hasMap: itineraire }),
+  ...(openingHours().length > 0 && { openingHoursSpecification: openingHours() }),
   ...(site.communes.length > 0 && { areaServed: site.communes.map((name) => ({ '@type': 'AdministrativeArea', name })) }),
   ...(site.paiements.length > 0 && { paymentAccepted: site.paiements.join(', ') }),
   currenciesAccepted: site.pays === 'CH' ? 'CHF' : 'EUR',
@@ -91,7 +98,7 @@ export const businessSchema = () => ({
   })),
   employee: site.praticiens.map((_, i) => ({ '@id': personId(i) })),
   ...(agenda && { sameAs: [agenda] }),
-  potentialAction: agenda
+  ...((agenda || aTelephone) && { potentialAction: agenda
     ? {
         '@type': 'ReserveAction',
         name: 'Prendre rendez-vous',
@@ -102,7 +109,7 @@ export const businessSchema = () => ({
           actionPlatform: ['https://schema.org/DesktopWebPlatform', 'https://schema.org/MobileWebPlatform'],
         },
       }
-    : { '@type': 'CommunicateAction', name: 'Appeler le cabinet', target: telLien },
+    : { '@type': 'CommunicateAction', name: 'Appeler le cabinet', target: telLien } }),
 });
 
 /** Une fiche Person par praticien, avec ses identifiants publics (RPPS, n° d'Ordre, INAMI…). */
@@ -111,8 +118,8 @@ export const personSchemas = () =>
     '@context': 'https://schema.org',
     '@type': 'Person',
     '@id': personId(i),
-    name: `${p.prenom} ${p.nom}`,
-    givenName: p.prenom,
+    name: `${p.prenom} ${p.nom}`.trim(),
+    ...(p.prenom && { givenName: p.prenom }),
     familyName: p.nom,
     jobTitle: p.titre,
     url: absUrl('/le-cabinet'),
@@ -181,7 +188,7 @@ export const soinSchema = (soin: Soin, lies: string[] = []) => ({
   inLanguage: 'fr-FR',
   isPartOf: { '@id': siteId },
   about: { '@type': 'MedicalProcedure', name: soin.titre },
-  reviewedBy: { '@id': personId() },
+  reviewedBy: { '@id': auteurId() },
   lastReviewed: dateMaj,
   dateModified: dateMaj,
   provider: { '@id': businessId },
@@ -200,7 +207,7 @@ export const articleSchema = (a: Article) => ({
   mainEntityOfPage: absUrl(`/actualites/${a.slug}`),
   isPartOf: { '@id': siteId },
   ...(a.image ? { image: { '@type': 'ImageObject', url: absUrl(a.image), width: 1600, height: 900, caption: a.imageAlt ?? '' } } : {}),
-  author: { '@id': personId() },
+  author: { '@id': auteurId() },
   publisher: { '@id': businessId },
 });
 

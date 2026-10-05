@@ -13,7 +13,7 @@ import Actus from './Actus.astro';
 import SujetsAccueil from '../SujetsAccueil.astro';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
-import { titreCompetences, titrePraticiens, adresseLieu, lieu } from '../../lib/textes';
+import { titreCompetences, titrePraticiens, adresseLieu, lieu, aAdresse } from '../../lib/textes';
 import { photoResponsive } from '../../lib/visuels';
 import { variantes, titreLieu, pastillesLieu } from '../../lib/gabarits';
 import type { Article } from '@plateforme/core';
@@ -49,7 +49,7 @@ const metier = site.titreMetier.toLowerCase();
       </section>
     )}
 
-    {section === 'praticiens' && (
+    {section === 'praticiens' && site.praticiens.length > 0 && (
       <section class="g-section g-bloc" id="praticiens" aria-label={titrePraticiens}>
         <div class="g-cadre g-bloc__dedans">
           <div class="g-tete">
@@ -64,7 +64,7 @@ const metier = site.titreMetier.toLowerCase();
       <section class="g-section g-bloc">
         <div class="g-cadre g-bloc__dedans lieu">
           <h2 {...champ('panorama.titre')}>{texte('panorama.titre', titreLieu)}</h2>
-          <p class="g-doux">{lieu.nom ? `${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}` : adresseLieu}.</p>
+          <p class="g-doux">{lieu.nom && aAdresse ? `${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}` : adresseLieu}.</p>
           {pastillesLieu.length > 0 && <ul class="lieu__pastilles">{pastillesLieu.map((p) => <li>{p}</li>)}</ul>}
         </div>
       </section>

@@ -9,7 +9,7 @@ import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { photoResponsive, photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
 import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
-import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme } from '../../lib/textes';
+import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme, aLaVille, aTelephone, aAdresse, adresseLieu } from '../../lib/textes';
 
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
@@ -27,18 +27,18 @@ const anime = choix !== 'photo';
     </div>
   )}
   <div class="cadre plein__contenu">
-    <p class="sur plein__sur">{titreMetierAffiche} · {localisation}</p>
-    <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
+    <p class="sur plein__sur">{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
+    <h1>Cabinet de {specialite} {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
     <p class="plein__chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
     <div class="plein__actions">
       <a class="bouton bouton--clair" href={rdvAccueil}>
         {libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}
         <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
       </a>
-      <a class="bouton bouton--verre" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>
+      {aTelephone && <a class="bouton bouton--verre" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
     </div>
   </div>
-  <p class="plein__lieu"><Icone nom="lucide:map-pin" />{lieu.nom || TYPES_LIEU[lieu.type]} · {lieu.adresse}, {lieu.ville}</p>
+  <p class="plein__lieu"><Icone nom="lucide:map-pin" />{lieu.nom || TYPES_LIEU[lieu.type]} · {aAdresse ? `${lieu.adresse}, ${lieu.ville}` : adresseLieu}</p>
 </section>
 
 <script>

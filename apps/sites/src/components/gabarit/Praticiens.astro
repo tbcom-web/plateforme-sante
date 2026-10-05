@@ -9,7 +9,7 @@ import type { Appui } from '../dessins/trame';
 import { site } from '../../lib/site';
 import { zonePhoto } from '../../lib/edition';
 import { imagePortrait } from '../../lib/portraits';
-import { lienRdv, rdvEnLigne, viaPlateforme } from '../../lib/textes';
+import { lienRdv, rdvEnLigne, viaPlateforme, libelleContact } from '../../lib/textes';
 
 const STATUTS: Record<string, string> = { titulaire: 'Titulaire du cabinet', collaborateur: 'En collaboration', remplacant: 'En remplacement' };
 // Profil d'appui illustratif selon l'orientation du praticien (pure variation graphique).
@@ -35,14 +35,14 @@ const seul = site.praticiens.length === 1;
             <div class="praticien__releve" aria-hidden="true">
               <span class="praticien__repere mono"><span>Fiche {String(i + 1).padStart(2, '0')}</span><span>Relevé illustratif</span></span>
               <Empreintes appui={appui(p.orientations)} scan={false} legende={false} class="praticien__empreintes" />
-              <span class="praticien__monogramme">{p.prenom[0]}{p.nom[0]}</span>
+              <span class="praticien__monogramme">{p.prenom.charAt(0)}{p.nom.charAt(0)}</span>
             </div>
           )}
       </div>
       <div class="praticien__texte">
         <p class="praticien__statut mono">{p.photo ? `${String(i + 1).padStart(2, '0')} — ` : ''}{STATUTS[p.statut]}</p>
         <h3>{p.prenom} {p.nom}</h3>
-        <p class="praticien__titre">{p.titre} à {site.cabinet.ville}</p>
+        <p class="praticien__titre">{p.titre}{site.cabinet.ville && ` à ${site.cabinet.ville}`}</p>
         {p.orientations.length > 0 && (
           <ul class="praticien__orientations" aria-label="Orientations">
             {p.orientations.map((o, k) => <li><i style={`background:${PASTILLES[(k * 2 + i) % PASTILLES.length]}`} aria-hidden="true"></i>{o}</li>)}
@@ -57,7 +57,7 @@ const seul = site.praticiens.length === 1;
           {p.identifiants.length > 0 && <><dt class="mono">Inscription</dt><dd class="praticien__id">{p.identifiants.map((id) => <span>{id}</span>)}</dd></>}
         </dl>
         <a class="bouton bouton--plein" href={lienRdv(`praticien-${i}`, rdvEnLigne && site.praticiens.length > 1 ? i : undefined)}>
-          {rdvEnLigne ? (site.praticiens.length > 1 ? `Prendre rendez-vous avec ${p.prenom}` : 'Prendre rendez-vous') : 'Appeler le cabinet'}
+          {rdvEnLigne ? (site.praticiens.length > 1 ? `Prendre rendez-vous avec ${p.prenom || p.nom}` : 'Prendre rendez-vous') : libelleContact}
           {viaPlateforme && <span class="via">{viaPlateforme}</span>}
         </a>
       </div>

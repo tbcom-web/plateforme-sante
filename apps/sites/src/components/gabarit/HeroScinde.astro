@@ -8,7 +8,7 @@ import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Planche from '../dessins/Planche.astro';
 import { photoResponsive, photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
 import { packVisuel } from '@plateforme/core';
-import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne, localisation, viaPlateforme } from '../../lib/textes';
+import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, TYPES_LIEU, rdvEnLigne, localisation, viaPlateforme, aLaVille, suffixeVille, aTelephone, contactRdv } from '../../lib/textes';
 
 const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
 const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}` : 'Sur rendez-vous';
@@ -16,19 +16,19 @@ const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 const choix = visuelAccueil([photoAccueilAffichee]);
 // Texte alternatif seulement pour la photo du praticien (son cabinet) ; une photo d'illustration reste décorative.
-const altAccueil = site.photos.accueil && photoAccueilAffichee === site.photos.accueil ? `Le cabinet de ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}` : '';
+const altAccueil = site.photos.accueil && photoAccueilAffichee === site.photos.accueil ? `Le cabinet de ${site.titreMetier.toLowerCase()}${suffixeVille}` : '';
 ---
 <section class="cadre accueil">
   <div>
-    <p class="sur">{titreMetierAffiche} · {localisation}</p>
-    <h1>Cabinet de {specialite} <span class="pale">à {site.cabinet.ville}</span></h1>
+    <p class="sur">{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
+    <h1>Cabinet de {specialite} {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
     <p class="chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
     <div class="actions">
       <a class="bouton bouton--plein" href={rdvAccueil}>
         {libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}
         <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>
       </a>
-      {rdvEnLigne && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
+      {rdvEnLigne && aTelephone && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
     </div>
   </div>
   <figure class="visuel">
@@ -37,7 +37,7 @@ const altAccueil = site.photos.accueil && photoAccueilAffichee === site.photos.a
     {choix === 'illustration' && <div class="visuel__planche" {...zonePhoto('photos.accueil')}><Planche nom={dessinSpecialite} fond="plan" legende={packVisuel(site.visuels.specialite).label} /></div>}
     <figcaption class="flottant flottant--haut">
       <span class="pastille" aria-hidden="true"></span>
-      {rdvEnLigne ? 'Réservation en ligne 24h/24' : 'Rendez-vous par téléphone'}
+      {rdvEnLigne ? 'Réservation en ligne 24h/24' : aTelephone ? 'Rendez-vous par téléphone' : contactRdv === 'email' ? 'Rendez-vous par e-mail' : 'Rendez-vous au cabinet'}
     </figcaption>
     <div class="flottant flottant--bas">
       <Icone nom="lucide:map-pin" />

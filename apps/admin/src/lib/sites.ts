@@ -114,12 +114,15 @@ export async function getCatalogue(profession = 'podologue'): Promise<SoinCatalo
   return data ?? [];
 }
 
-/** Contrôles avant publication (bloquants + conseils), sur un brouillon v1 ou v2. */
+/** Contrôles avant publication (conseils et remplacements ; plus rien de bloquant), sur un brouillon v1 ou v2. */
 export function controles(d: unknown): ResultatControle {
   return controlerPublication(normaliserDraft(d));
 }
 
-/** Points bloquants restant à compléter avant de pouvoir publier. */
+/**
+ * Informations manquantes, remplacées sur le site publié par une mention sobre (replis.ts). Elles n'empêchent JAMAIS de
+ * publier (règle de Paul, 2026-10-05) : elles sont listées « à compléter » et dans la confirmation « Publier quand même ».
+ */
 export function manques(d: unknown): string[] {
-  return controles(d).bloquants;
+  return controles(d).remplacements;
 }

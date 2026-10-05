@@ -3,7 +3,7 @@
 import type { APIRoute } from 'astro';
 import { site, absUrl } from '../lib/site';
 import { pagesMarkdown, cheminMarkdown, reponseTexte, dateMaj } from '../lib/agents';
-import { noms, titreMetierAffiche, lieuExercice, adresseLieu, rdvEnLigne } from '../lib/textes';
+import { noms, titreMetierAffiche, lieuExercice, adresseLieu, rdvEnLigne, aTelephone, contactRdv } from '../lib/textes';
 import { themesDuSite, pageTheme } from '../lib/navigation';
 
 const lien = (titre: string, path: string, note: string) => `- [${titre}](${absUrl(path)}): ${note}`;
@@ -14,15 +14,15 @@ export const GET: APIRoute = () => {
   const lignes = [
     `# ${site.cabinet.nom}`,
     '',
-    `> ${noms}, ${titreMetierAffiche.toLowerCase()} ${lieuExercice}. ${site.accroche.texte}`,
+    `> ${noms}${site.praticiens.length ? `, ${titreMetierAffiche.toLowerCase()}` : ''}${lieuExercice ? ` ${lieuExercice}` : ''}. ${site.accroche.texte}`,
     '',
     `Site officiel du cabinet (${absUrl('/')}), mis à jour le ${dateMaj}. Informations factuelles, sans publicité.`,
     '',
     `- Adresse : ${adresseLieu}`,
-    `- Téléphone : ${site.cabinet.telephone}`,
-    rdvEnLigne ? `- Prise de rendez-vous : en ligne sur ${site.rdv.plateforme} (${site.rdv.url}) ou par téléphone` : `- Prise de rendez-vous : par téléphone au ${site.cabinet.telephone}`,
+    ...(aTelephone ? [`- Téléphone : ${site.cabinet.telephone}`] : []),
+    rdvEnLigne ? `- Prise de rendez-vous : en ligne sur ${site.rdv.plateforme} (${site.rdv.url})${aTelephone ? ' ou par téléphone' : ''}` : `- Prise de rendez-vous : ${aTelephone ? `par téléphone au ${site.cabinet.telephone}` : contactRdv === 'email' ? `par e-mail : ${site.cabinet.email}` : 'directement au cabinet'}`,
     ...(site.praticien.conventionnement ? [`- ${site.praticien.conventionnement}`] : []),
-    ...site.praticiens.flatMap((p) => p.identifiants.map((i) => `- ${p.prenom} ${p.nom} : ${i}`)),
+    ...site.praticiens.flatMap((p) => p.identifiants.map((i) => `- ${`${p.prenom} ${p.nom}`.trim()} : ${i}`)),
     `- Accessibilité PMR : ${site.accesDetail.pmr ? 'oui' : 'non'}`,
     ...(site.communes.length ? [`- Communes desservies : ${site.communes.join(', ')}`] : []),
     '',

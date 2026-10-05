@@ -7,7 +7,7 @@
 import { site } from '../../lib/site';
 import { zonePhoto } from '../../lib/edition';
 import { imagePortrait } from '../../lib/portraits';
-import { lienRdv, rdvEnLigne, viaPlateforme } from '../../lib/textes';
+import { lienRdv, rdvEnLigne, viaPlateforme, libelleContact } from '../../lib/textes';
 
 interface Props { variante: 'cartes' | 'fiches' | 'liste' }
 const { variante } = Astro.props;
@@ -20,17 +20,17 @@ const plusieurs = site.praticiens.length > 1;
       <div class="praticien__haut">
         {p.photo
           ? <img class="praticien__photo" {...imagePortrait(p, 'carre')} loading="lazy" decoding="async" {...zonePhoto(`praticien.${i}.photo`)} />
-          : <span class="praticien__monogramme" aria-hidden="true">{p.prenom[0]}{p.nom[0]}</span>}
+          : <span class="praticien__monogramme" aria-hidden="true">{p.prenom.charAt(0)}{p.nom.charAt(0)}</span>}
         <div>
           <h3>{p.prenom}{' '}{p.nom}</h3>
-          <p class="praticien__titre">{p.titre} à {site.cabinet.ville}</p>
+          <p class="praticien__titre">{p.titre}{site.cabinet.ville && ` à ${site.cabinet.ville}`}</p>
           <p class="praticien__statut">{STATUTS[p.statut]}{p.presence ? ` · ${p.presence}` : ''}</p>
         </div>
       </div>
       {p.orientations.length > 0 && <ul class="praticien__orientations" aria-label="Orientations">{p.orientations.map((o) => <li>{o}</li>)}</ul>}
       {(p.bio || p.diplome || p.formations.length > 0 || p.identifiants.length > 0 || p.sports.length > 0) && (
         <details class="praticien__detail">
-          <summary>En savoir plus sur {p.prenom}{' '}{p.nom}</summary>
+          <summary>En savoir plus sur {`${p.prenom} ${p.nom}`.trim()}</summary>
           {p.bio && <p class="praticien__bio">{p.bio}</p>}
           <dl>
             {p.diplome && <><dt>Diplôme</dt><dd>{p.diplome}</dd></>}
@@ -41,7 +41,7 @@ const plusieurs = site.praticiens.length > 1;
         </details>
       )}
       <a class="g-bouton g-bouton--ligne praticien__rdv" href={lienRdv(`praticien-${i}`, rdvEnLigne && plusieurs ? i : undefined)}>
-        {rdvEnLigne ? (plusieurs ? `Rendez-vous avec ${p.prenom}` : 'Prendre rendez-vous') : 'Appeler le cabinet'}
+        {rdvEnLigne ? (plusieurs ? `Rendez-vous avec ${p.prenom || p.nom}` : 'Prendre rendez-vous') : libelleContact}
         {viaPlateforme && <span class="g-via">{viaPlateforme}</span>}
       </a>
     </li>

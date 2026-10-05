@@ -15,13 +15,13 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
 ---
 <Gabarit
   title={`Conseils et actualités | ${nomPraticien}`}
-  description={`Conseils pour prendre soin de vos pieds, par ${nomPraticien}, ${site.profession.libelle.toLowerCase()} à ${site.cabinet.ville}.`}
+  description={`Conseils pour prendre soin de vos pieds, par ${nomPraticien}${site.praticiens.length ? `, ${site.profession.libelle.toLowerCase()}` : ''}${site.cabinet.ville ? ` à ${site.cabinet.ville}` : ''}.`}
   path="/actualites"
   schemas={[breadcrumbSchema(crumbs)]}
   noindex={articles.length === 0}
 >
   {nouveauGabarit ? (<>
-    <TetePage crumbs={crumbs} sur={site.cabinet.ville} chapo={articles.length === 0 ? 'Les premiers conseils arrivent bientôt.' : undefined}>
+    <TetePage crumbs={crumbs} sur={site.cabinet.ville || 'Conseils'} chapo={articles.length === 0 ? 'Les premiers conseils arrivent bientôt.' : undefined}>
       <h1 slot="titre">Conseils et actualités</h1>
     </TetePage>
     {articles.length > 0 && <section class="g-section g-bloc"><div class="g-cadre g-bloc__dedans"><Actus articles={articles} variante={variantes.actualites} titres="h2" /></div></section>}
@@ -30,7 +30,7 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
     <Breadcrumb items={crumbs} />
     <div class="tete-page__grille tete-page__grille--simple">
       <div>
-        <p class="sur sur--index"><b aria-hidden="true">{String(articles.length).padStart(2, '0')} —</b> {site.cabinet.ville}</p>
+        <p class="sur sur--index"><b aria-hidden="true">{String(articles.length).padStart(2, '0')} —</b> {site.cabinet.ville || 'Conseils'}</p>
         <h1>Conseils et actualités</h1>
       </div>
       {articles.length === 0 && <p class="chapo">Les premiers conseils arrivent bientôt.</p>}

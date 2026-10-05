@@ -7,7 +7,7 @@ import { texte, champ, zonePhoto } from '../../lib/edition';
 import Empreintes from '../dessins/Empreintes.astro';
 import { photoPanoramaAffichee, photoResponsive, pedagogique } from '../../lib/visuels';
 import { MENTION_ILLUSTRATIVE, resumeHygiene } from '@plateforme/core';
-import { lieu, TYPES_LIEU, rdvEnLigne } from '../../lib/textes';
+import { lieu, TYPES_LIEU, phraseRdv, suffixeVille } from '../../lib/textes';
 
 const atouts = [
   // Hygiène : mention précise si le cabinet a coché son matériel de stérilisation (rubrique « Matériel et hygiène »).
@@ -15,12 +15,12 @@ const atouts = [
   site.accesDetail.pmr || site.accesDetail.parking
     ? { titre: 'Accès', texte: [site.accesDetail.pmr && 'Accessible PMR', site.accesDetail.parking].filter(Boolean).join(' · ') }
     : null,
-  { titre: 'Rendez-vous', texte: !rdvEnLigne ? `Par téléphone au ${site.cabinet.telephone}` : `En ligne sur ${site.rdv.plateforme}, 24h/24` },
+  { titre: 'Rendez-vous', texte: phraseRdv },
   site.domicile.actif ? { titre: 'Domicile', texte: site.domicile.creneaux || 'Visites à domicile sur demande' } : null,
 ].filter(Boolean) as { titre: string; texte: string }[];
 const lieuNom = lieu.nom || TYPES_LIEU[lieu.type];
 // Titre factuel (lieu d'exercice et ville), jamais de formule commerciale.
-const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
+const titreStandard = `${lieuNom}${lieu.ville ? ` à ${lieu.ville}` : suffixeVille}`;
 ---
 {pedagogique ? (
   // Registre pédagogique : la photo du lieu fait déjà l'accueil ; ici, le lieu en clair (même titre, mêmes informations).
@@ -36,7 +36,7 @@ const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
 ) : (
 <section class:list={['panorama', { 'panorama--illus': !photoPanoramaAffichee }]}>
   {photoPanoramaAffichee
-    ? <img src={photoPanoramaAffichee} {...photoResponsive(photoPanoramaAffichee, '100vw')} alt={[site.photos.panorama, ...site.photos.cabinet].includes(photoPanoramaAffichee) ? `${lieuNom} à ${lieu.ville || site.cabinet.ville}` : ''} loading="lazy" width="2000" height="1100" {...zonePhoto('photos.panorama')} />
+    ? <img src={photoPanoramaAffichee} {...photoResponsive(photoPanoramaAffichee, '100vw')} alt={[site.photos.panorama, ...site.photos.cabinet].includes(photoPanoramaAffichee) ? titreStandard : ''} loading="lazy" width="2000" height="1100" {...zonePhoto('photos.panorama')} />
     : (
       <div class="panorama__illus surface-plan" aria-hidden="true" {...zonePhoto('photos.panorama')}>
         <span class="panorama__releve anime-visible"><Empreintes appui="reparti" /></span>

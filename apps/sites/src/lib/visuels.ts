@@ -64,6 +64,8 @@ export const photoLieu = site.photos.cabinet[0] || site.photos.accueil || jeu.ac
 /** Coordonnées du cabinet : saisies, sinon géocodées au build via Nominatim (OpenStreetMap). */
 async function geocoder(): Promise<{ lat: number; lng: number } | null> {
   if (site.cabinet.geo) return site.cabinet.geo;
+  // Adresse incomplète (vidée au chargement, voir assemblerSite) : aucune position inventée.
+  if (!lieu.adresse || !lieu.codePostal || !lieu.ville) return null;
   const q = `${lieu.adresse}, ${lieu.codePostal} ${lieu.ville}`;
   try {
     const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=${site.pays.toLowerCase()}&q=${encodeURIComponent(q)}`, {

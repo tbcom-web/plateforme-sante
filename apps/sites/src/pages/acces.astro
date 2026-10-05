@@ -7,7 +7,7 @@ import Carte from '../components/gabarit/Carte.astro';
 import Infos from '../components/gabarit/Infos.astro';
 import { site } from '../lib/site';
 import { breadcrumbSchema } from '../lib/schema';
-import { titreCabinet, adresseLieu, lieu } from '../lib/textes';
+import { titreCabinet, adresseLieu, lieu, aLaVille, aTelephone, aAdresse } from '../lib/textes';
 import TetePage from '../components/gabarits/TetePage.astro';
 import PlanAcces from '../components/gabarits/PlanAcces.astro';
 import InfosPratiques from '../components/gabarits/InfosPratiques.astro';
@@ -25,15 +25,15 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path:
 >
   {nouveauGabarit ? (<>
     <TetePage crumbs={crumbs} sur="Plan d’accès" chapo={`${lieu.nom ? `${lieu.nom}, ` : ''}${adresseLieu}.`}>
-      <h1 slot="titre">Venir au cabinet <span class="pale">à {site.cabinet.ville}</span></h1>
+      <h1 slot="titre">Venir au cabinet {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
       <div class="g-bulles">
-        <a class="g-bouton g-bouton--plein" href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>
-        <a class="g-bouton g-bouton--ligne" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>
+        {itineraire && <a class="g-bouton g-bouton--plein" href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
+        {aTelephone && <a class="g-bouton g-bouton--ligne" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
       </div>
     </TetePage>
     <section class="g-section g-bloc">
       <div class="g-cadre g-bloc__dedans g-acces">
-        <div class="g-acces__plan"><PlanAcces /></div>
+        {aAdresse && <div class="g-acces__plan"><PlanAcces /></div>}
         <InfosPratiques variante={variantes.infos} sansAdresse niveau={2} />
       </div>
     </section>
@@ -42,8 +42,8 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path:
     <Breadcrumb items={crumbs} />
     <div class="tete-page__grille tete-page__grille--simple">
       <div>
-        <p class="sur sur--index"><b aria-hidden="true">{site.cabinet.codePostal} —</b> Plan d’accès</p>
-        <h1>Venir au cabinet <span class="pale">à {site.cabinet.ville}</span></h1>
+        <p class="sur sur--index">{site.cabinet.codePostal && <b aria-hidden="true">{site.cabinet.codePostal} —</b>} Plan d’accès</p>
+        <h1>Venir au cabinet {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
       </div>
       <p class="chapo">{lieu.nom ? `${lieu.nom}, ` : ''}{adresseLieu}.</p>
     </div>

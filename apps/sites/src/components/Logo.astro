@@ -32,8 +32,9 @@ const importee = site.marqueImportee && (p.choix?.marque ?? site.theme.logo?.mar
 const choix = p.choix ?? (importee ? { marque: importee.id, disposition: validerChoixLogo(site.theme.logo, site.profession.slug).disposition } : validerChoixLogo(site.theme.logo, site.profession.slug));
 const m = p.modele ?? site.modele;
 const t = traitementLogo(m);
-const nom = p.nom ?? (praticiens.length > 1 ? 'Cabinet de podologie' : `${praticiens[0].prenom} ${praticiens[0].nom}`);
-const ligne = p.ligne ?? `${titreMetierAffiche} · ${site.cabinet.ville}`;
+// Sans praticien nommé : nom du cabinet ; sans ville : le métier seul (replis.ts).
+const nom = p.nom ?? (praticiens.length > 1 ? 'Cabinet de podologie' : praticiens.length ? `${praticiens[0].prenom} ${praticiens[0].nom}`.trim() : site.cabinet.nom);
+const ligne = p.ligne ?? (site.cabinet.ville ? `${titreMetierAffiche} · ${site.cabinet.ville}` : titreMetierAffiche);
 const taille = p.taille ?? LOGO.tailles[choix.disposition];
 const svg = importee
   ? svgMarqueImportee(importee, couleursImportee(t.marque, COULEURS_MARQUE_CSS, t.rayon), taille)

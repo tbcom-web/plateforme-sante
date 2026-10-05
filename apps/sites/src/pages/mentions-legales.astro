@@ -1,7 +1,7 @@
 ---
 import Gabarit from '../layouts/Gabarit.astro';
 import { site } from '../lib/site';
-import { noms, lieu, titreCabinet, rdvEnLigne } from '../lib/textes';
+import { noms, lieu, titreCabinet, rdvEnLigne, aAdresse, adresseLieu, aTelephone } from '../lib/textes';
 
 const mesure = site.tracking.ga4 || site.tracking.clarity;
 const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH: 'Société Suisse des Podologues (SSP)' }[site.pays];
@@ -30,19 +30,19 @@ const regles = {
       <p>
         {titreCabinet}<br />
         {lieu.nom && <>{lieu.nom}<br /></>}
-        {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}, {lieu.codePostal} {lieu.ville}<br />
-        Téléphone : {site.cabinet.telephone}
+        {aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}, {lieu.codePostal} {lieu.ville}</> : `${adresseLieu}.`}
+        {aTelephone && <><br />Téléphone : {site.cabinet.telephone}</>}
         {site.cabinet.email && <><br />E-mail : {site.cabinet.email}</>}
       </p>
       {site.praticiens.map((p) => (
         <p>
-          <strong>{p.prenom} {p.nom}</strong><br />
+          <strong>{`${p.prenom} ${p.nom}`.trim()}</strong><br />
           Titre professionnel : {p.titre.toLowerCase()}<br />
           Diplôme : {p.diplome || diplomeEtat} ({paysTitre})<br />
           {p.identifiants.map((id) => <>{id}<br /></>)}
         </p>
       ))}
-      <p>Directeur de la publication : {site.praticiens[0].prenom} {site.praticiens[0].nom}.</p>
+      <p>Directeur de la publication : {site.praticiens.length ? `${site.praticiens[0].prenom} ${site.praticiens[0].nom}`.trim() : site.mentions.editeur}.</p>
       {site.praticien.conventionnement && <p>{site.praticien.conventionnement}.</p>}
       <p>Instance professionnelle : {ordre}.</p>
       <p>Règles professionnelles : {regles}</p>

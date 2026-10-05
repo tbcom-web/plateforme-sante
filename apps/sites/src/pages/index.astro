@@ -24,7 +24,7 @@ import { nouveauGabarit } from '../lib/gabarits';
 import { site, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
 import { photoResponsive } from '../lib/visuels';
-import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien, lieu, lienRdv, libelleRdv } from '../lib/textes';
+import { titreCabinet, phraseAccueil, titreCompetences, titrePraticiens, noms, rdvEnLigne, telLien, lieu, lienRdv, libelleRdv, aTelephone, adresseLieu, aAdresse, phraseRdv, lienContact, contactRdv } from '../lib/textes';
 import { espacesFines, faitEquipement } from '@plateforme/core';
 
 const m = site.modele;
@@ -32,11 +32,11 @@ const metier = site.titreMetier.toLowerCase();
 // Bande « en bref » : seulement des informations utiles au patient (jamais le seul nom du métier, déjà dans le titre).
 const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
 const faits = [
-  site.praticiens.length > 1 ? `${site.praticiens.length} praticiens` : site.praticiens[0].diplome,
+  site.praticiens.length > 1 ? `${site.praticiens.length} praticiens` : site.praticiens[0]?.diplome ?? '',
   site.praticien.conventionnement,
   site.accesDetail.pmr ? 'Cabinet accessible PMR' : '',
   site.domicile.actif ? 'Visites à domicile' : '',
-  rdvEnLigne ? `Réservation en ligne sur ${site.rdv.plateforme}` : `Rendez-vous au ${site.cabinet.telephone}`,
+  rdvEnLigne ? `Réservation en ligne sur ${site.rdv.plateforme}` : aTelephone ? `Rendez-vous au ${site.cabinet.telephone}` : phraseRdv,
   ouverts.length > 1 ? `Ouvert du ${ouverts[0]} au ${ouverts.at(-1)}` : '',
 ].filter(Boolean).slice(0, 4);
 // Matériel et hygiène : une ligne de plus quand le cabinet a coché la stérilisation (ex. « Stérilisation autoclave classe B »).
@@ -44,7 +44,7 @@ const faitHygiene = faitEquipement(site.equipements ?? []);
 if (faitHygiene) faits.splice(Math.min(2, faits.length), 0, faitHygiene);
 const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 
-const title = `${site.titreMetier} ${site.cabinet.ville} – ${noms}`;
+const title = `${[site.titreMetier, site.cabinet.ville].filter(Boolean).join(' ')} – ${noms}`;
 const description = `${titreCabinet}. ${phraseAccueil} ${site.soins.slice(0, 4).map((s) => s.titreCourt).join(', ')}.`;
 // Sections sur fond doux ; en registre pédagogique, le lieu (panorama) et la FAQ seulement, pour alterner sans enchaîner deux fonds doux.
 const douce = (s: string) => (pedagogique ? ['faq'] : ['praticiens', 'faq']).includes(s);
@@ -58,12 +58,12 @@ const etapes = [
   {
     titre: 'Prendre rendez-vous',
     texte: rdvEnLigne
-      ? `En ligne sur ${site.rdv.plateforme}, 24h/24, ou par téléphone au ${telInsecable}.`
-      : `Par téléphone au ${telInsecable}${premiers.length > 1 ? `, du ${premiers[0]} au ${premiers.at(-1)}` : ''}.`,
+      ? `En ligne sur ${site.rdv.plateforme}, 24h/24${aTelephone ? `, ou par téléphone au ${telInsecable}` : ''}.`
+      : aTelephone ? `Par téléphone au ${telInsecable}${premiers.length > 1 ? `, du ${premiers[0]} au ${premiers.at(-1)}` : ''}.` : `${phraseRdv}.`,
   },
   {
     titre: 'Venir au cabinet',
-    texte: `${lieu.nom ? `${lieu.nom}, ` : ''}${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}.${site.accesDetail.pmr ? ' Cabinet accessible aux personnes à mobilité réduite.' : ''}`,
+    texte: `${lieu.nom ? `${lieu.nom}, ` : ''}${aAdresse ? `${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}` : adresseLieu}.${site.accesDetail.pmr ? ' Cabinet accessible aux personnes à mobilité réduite.' : ''}`,
   },
   {
     titre: 'La consultation',
@@ -101,8 +101,8 @@ const faqEnPlus = pedagogique
               ))}
             </ol>
             <div class="etapes__actions">
-              <a class="bouton bouton--plein" href={site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('etapes')}><Icone nom={rdvEnLigne ? 'lucide:calendar' : 'lucide:phone'} />{libelleRdv}</a>
-              {rdvEnLigne && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
+              <a class="bouton bouton--plein" href={site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('etapes')}><Icone nom={rdvEnLigne ? 'lucide:calendar' : aTelephone ? 'lucide:phone' : 'lucide:mail'} />{libelleRdv}</a>
+              {rdvEnLigne && aTelephone && <a class="bouton bouton--ligne" href={telLien}><Icone nom="lucide:phone" />{site.cabinet.telephone}</a>}
             </div>
           </div>
         </section>
@@ -125,7 +125,7 @@ const faqEnPlus = pedagogique
 
       {section === 'panorama' && <Panorama />}
 
-      {section === 'praticiens' && (
+      {section === 'praticiens' && site.praticiens.length > 0 && (
         <section class:list={['section', { 'section--douce': douce(section) }]} id="praticiens">
           <div class="cadre">
             <div class="entete-section apparait">
@@ -197,7 +197,7 @@ const faqEnPlus = pedagogique
             <div class="faq__entete">
               <p class="sur sur--num">Questions fréquentes</p>
               <h2>Bon à savoir <span class="pale" {...champ('faq.deco')}>{texte('faq.deco', 'avant de venir.')}</span></h2>
-              <p class="faq__contact"><span class="mono">{String(site.faqGenerale.length).padStart(2, '0')} questions</span>Une autre question ? <a href={telLien}>{site.cabinet.telephone}</a></p>
+              <p class="faq__contact"><span class="mono">{String(site.faqGenerale.length).padStart(2, '0')} questions</span>{aTelephone ? <>Une autre question ? <a href={telLien}>{site.cabinet.telephone}</a></> : contactRdv === 'email' && <>Une autre question ? <a href={lienContact}>{site.cabinet.email}</a></>}</p>
             </div>
             <div>
               <FaqList items={site.faqGenerale} cle="faq" />

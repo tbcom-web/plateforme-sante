@@ -12,7 +12,7 @@ import Empreintes from '../components/dessins/Empreintes.astro';
 import { site } from '../lib/site';
 import { pedagogique, photoLieuAccueil, cadrageLieuAccueil, photoResponsive } from '../lib/visuels';
 import { breadcrumbSchema } from '../lib/schema';
-import { titreCabinet, phraseAccueil, titrePraticiens, noms, titreMetierAffiche, localisation } from '../lib/textes';
+import { titreCabinet, phraseAccueil, titrePraticiens, noms, titreMetierAffiche, localisation, suffixeVille } from '../lib/textes';
 import TetePage from '../components/gabarits/TetePage.astro';
 import PraticiensVariantes from '../components/gabarits/Praticiens.astro';
 import VenirAuCabinet from '../components/gabarits/VenirAuCabinet.astro';
@@ -27,27 +27,28 @@ const photoDuLieu = [site.photos.accueil, site.photos.panorama, ...site.photos.c
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le-cabinet' }];
 ---
 <Gabarit
-  title={`Le cabinet – ${noms}, ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`}
+  title={`Le cabinet – ${noms}${site.praticiens.length ? `, ${site.titreMetier.toLowerCase()}` : ''}${suffixeVille}`}
   description={`${titreCabinet}. ${phraseAccueil}`}
   path="/le-cabinet"
   schemas={[breadcrumbSchema(crumbs)]}
 >
   {nouveauGabarit ? (<>
-    <TetePage crumbs={crumbs} sur={`${titreMetierAffiche} · ${localisation}`} chapo={phraseAccueil}>
+    <TetePage crumbs={crumbs} sur={[titreMetierAffiche, localisation].filter(Boolean).join(' · ')} chapo={phraseAccueil}>
       <h1 slot="titre">{titreCabinet}</h1>
       <ul class="g-bulles">
-        <li><a class="g-bulle g-bulle--texte" href="#praticiens">{titrePraticiens}</a></li>
+        {site.praticiens.length > 0 && <li><a class="g-bulle g-bulle--texte" href="#praticiens">{titrePraticiens}</a></li>}
         {materiel && <li><a class="g-bulle g-bulle--texte" href="#materiel">Matériel et hygiène</a></li>}
         <li><a class="g-bulle g-bulle--texte" href="#infos">Informations pratiques</a></li>
       </ul>
-      {photoDuLieu && <img slot="visuel" src={photoDuLieu} alt={`${lieu.nom || 'Le cabinet'} à ${site.cabinet.ville}`} width="1200" height="900" fetchpriority="high" decoding="async" />}
+      {photoDuLieu && <img slot="visuel" src={photoDuLieu} alt={`${lieu.nom || 'Le cabinet'}${suffixeVille}`} width="1200" height="900" fetchpriority="high" decoding="async" />}
     </TetePage>
-    <section class="g-section g-bloc" id="praticiens">
+    {/* Sans praticien nommé : la page présente le cabinet seul (replis.ts). */}
+    {site.praticiens.length > 0 && <section class="g-section g-bloc" id="praticiens">
       <div class="g-cadre g-bloc__dedans">
         <div class="g-tete"><p class="g-sur">{titreMetierAffiche}</p><h2>{titrePraticiens}</h2></div>
         <PraticiensVariantes variante={variantes.praticiens} />
       </div>
-    </section>
+    </section>}
     {materiel && (
       <section class="g-section g-bloc" id="materiel">
         <div class="g-cadre g-bloc__dedans">
@@ -67,7 +68,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
     <Breadcrumb items={crumbs} />
     <div class="tete-page__grille">
       <div>
-        <p class="sur sur--index"><b aria-hidden="true">{String(site.praticiens.length).padStart(2, '0')} —</b> {titreMetierAffiche} · {localisation}</p>
+        <p class="sur sur--index"><b aria-hidden="true">{String(site.praticiens.length).padStart(2, '0')} —</b> {[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
         <h1>{titreCabinet}</h1>
         <p class="chapo">{phraseAccueil}</p>
       </div>
@@ -82,13 +83,13 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
     </div>
     {site.photos.cabinet.length > 0 && <div class="galerie"><Galerie /></div>}
   </section>
-  <section class="section section--douce">
+  {site.praticiens.length > 0 && <section class="section section--douce">
     <div class="cadre">
       <p class="sur sur--num">{titreMetierAffiche}</p>
       <h2>{titrePraticiens}</h2>
       <Praticiens />
     </div>
-  </section>
+  </section>}
   {materiel && (
     <section class="section" id="materiel">
       <div class="cadre">

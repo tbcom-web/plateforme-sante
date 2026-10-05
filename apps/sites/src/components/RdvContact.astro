@@ -1,0 +1,11 @@
+---
+// Rubrique « Prise de rendez-vous » des informations pratiques (tous gabarits) : en ligne, par téléphone, sinon par e-mail,
+// sinon « Prise de rendez-vous au cabinet » (replis.ts). Jamais de lien « tel: » vide ni de lien vers l'accueil d'une plateforme.
+import { site } from '../lib/site';
+import { telLien, rdvEnLigne, aTelephone, contactRdv, lienContact, phraseRdv } from '../lib/textes';
+---
+{rdvEnLigne && <p>En ligne sur {site.rdv.plateforme}, 24h/24{site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.</p>}
+{(site.rdvMode !== 'en_ligne' || !rdvEnLigne) && aTelephone && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
+{!rdvEnLigne && !aTelephone && (contactRdv === 'email'
+  ? <p>Par e-mail : <a href={lienContact}>{site.cabinet.email}</a>.</p>
+  : <p>{phraseRdv}.</p>)}

@@ -4,8 +4,10 @@
 // vie privée) : la vraie carte s'ouvre seulement si le patient la demande.
 import Icone from '../Icone.astro';
 import { geo, lienCarte } from '../../lib/visuels';
-import { lieu, itineraire } from '../../lib/textes';
+import { lieu, itineraire, aAdresse } from '../../lib/textes';
 ---
+{/* Sans adresse complète : pas de plan ni d'itinéraire (les informations pratiques affichent la mention de repli). */}
+{aAdresse && (
 <div class="carte">
   <div class="carte__plan surface-plan anime-visible" aria-hidden="true">
     <span class="carte__haut mono"><span>Plan schématique</span><span class="carte__nord">N ↑</span></span>
@@ -25,6 +27,7 @@ import { lieu, itineraire } from '../../lib/textes';
     </div>
   </div>
 </div>
+)}
 
 <style>
   .carte { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); }

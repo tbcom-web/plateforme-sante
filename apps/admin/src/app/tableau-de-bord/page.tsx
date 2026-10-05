@@ -105,7 +105,7 @@ export default async function TableauDeBord() {
 
             {aFaire.length > 0 ? (
               <>
-                <p className="mt-4 text-sm font-medium">Il reste à renseigner :</p>
+                <p className="mt-4 text-sm font-medium">À compléter (en attendant, le site affiche une mention à la place) :</p>
                 <ul className="mt-2 grid gap-1.5 text-sm">
                   {aFaire.map((m) => (
                     <li key={m} className="flex items-center gap-2 text-neutral-700">
@@ -126,7 +126,7 @@ export default async function TableauDeBord() {
             )}
             {site.statut !== 'suspendu' && (
               <BoutonPublier
-                pret={aFaire.length === 0}
+                manques={aFaire}
                 enLigne={site.statut === 'en_ligne'}
                 modifs={site.modifsNonPubliees}
                 echec={publication?.cle === 'echec' || publication?.cle === 'interrompue'}

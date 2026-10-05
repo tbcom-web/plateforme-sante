@@ -293,8 +293,9 @@ export const BLOQUANT_IDENTITE = /ville|téléphone|adresse|Code postal|praticie
  */
 export function etapeDeReprise(d: SiteDraft): 1 | 2 | 4 | 5 | 6 {
   if (!d.theme.univers || !(UNIVERS_PARCOURS as readonly string[]).includes(d.theme.univers)) return d.priorites?.principaux.length ? 2 : 1;
-  const { bloquants } = controlerPublication(d);
-  if (bloquants.some((b) => BLOQUANT_IDENTITE.test(b) && !/compétence/i.test(b))) return 4;
+  // Plus rien ne bloque la publication : on reprend à l'identité si une information y est remplacée par un repli.
+  const { remplacements } = controlerPublication(d);
+  if (remplacements.some((b) => BLOQUANT_IDENTITE.test(b) && !/compétence|Horaires/i.test(b))) return 4;
   if (!d.soins.length) return 5;
   return 6;
 }

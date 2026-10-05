@@ -4,8 +4,12 @@
 import { site, absUrl, dateFr } from './site';
 import {
   praticiens, pluriel, noms, lieu, adresseLieu, titreCabinet, titreMetierAffiche, phraseAccueil, rdvEnLigne,
-  horairesRegroupes, libelleJours, TYPES_LIEU, itineraire, lieuExercice, telLien,
+  horairesRegroupes, libelleJours, TYPES_LIEU, itineraire, lieuExercice, telLien, aTelephone, aAdresse, contactRdv,
+  horairesConnus, REPLI_HORAIRES, suffixeVille,
 } from './textes';
+import { REPLIS } from '@plateforme/core';
+/** « pédicure-podologue à Lyon » ; sans ville : le métier seul (replis.ts). */
+const lieuDit = lieuExercice ? ` ${lieuExercice}` : '';
 import { soinsLies, type Faq } from '@plateforme/core';
 import { navigation, themesDuSite, pageTheme } from './navigation';
 
@@ -22,11 +26,11 @@ const decaler = (source: string) => source.trim().replace(/^(#{1,5}) /gm, '#$1 '
 
 const rdv = () =>
   rdvEnLigne
-    ? `en ligne sur ${site.rdv.plateforme} : ${site.rdv.url}${site.rdvMode !== 'en_ligne' ? ` ; ou par téléphone au ${site.cabinet.telephone}` : ''}.`
-    : `par téléphone au ${site.cabinet.telephone}.`;
+    ? `en ligne sur ${site.rdv.plateforme} : ${site.rdv.url}${site.rdvMode !== 'en_ligne' && aTelephone ? ` ; ou par téléphone au ${site.cabinet.telephone}` : ''}.`
+    : aTelephone ? `par téléphone au ${site.cabinet.telephone}.` : contactRdv === 'email' ? `par e-mail : ${site.cabinet.email}.` : 'directement au cabinet.';
 
 const horaires = () =>
-  horairesRegroupes().map((h) => `${libelleJours(h.jours)} : ${/\d/.test(h.heures) ? h.heures : 'fermé'}`);
+  !horairesConnus ? [REPLI_HORAIRES] : horairesRegroupes().map((h) => `${libelleJours(h.jours)} : ${/\d/.test(h.heures) ? h.heures : 'fermé'}`);
 
 /** Bloc « informations pratiques » commun à l'accueil, au plan d'accès et à llms-full.txt. */
 const pratique = () =>
@@ -34,9 +38,9 @@ const pratique = () =>
     '## Informations pratiques',
     '',
     liste([
-      `Adresse : ${lieu.nom ? `${lieu.nom}, ` : lieu.type !== 'cabinet' ? `${TYPES_LIEU[lieu.type]}, ` : ''}${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}`,
-      `Itinéraire : ${itineraire}`,
-      `Téléphone : ${site.cabinet.telephone}`,
+      `Adresse : ${lieu.nom ? `${lieu.nom}, ` : lieu.type !== 'cabinet' ? `${TYPES_LIEU[lieu.type]}, ` : ''}${aAdresse ? `${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}` : REPLIS.adresse}`,
+      itineraire && `Itinéraire : ${itineraire}`,
+      aTelephone && `Téléphone : ${site.cabinet.telephone}`,
       site.cabinet.email && `Courriel : ${site.cabinet.email}`,
       `Prise de rendez-vous : ${rdv()}`,
       site.praticien.conventionnement && `Conventionnement : ${site.praticien.conventionnement}`,
@@ -58,13 +62,13 @@ const pratique = () =>
       '',
       `### Autre lieu d'exercice : ${l.nom || TYPES_LIEU[l.type]}`,
       '',
-      liste([`Adresse : ${l.adresse}${l.complement ? `, ${l.complement}` : ''}, ${l.codePostal} ${l.ville}`, ...horairesRegroupes(l.horaires).map((h) => `${libelleJours(h.jours)} : ${/\d/.test(h.heures) ? h.heures : 'fermé'}`)]),
+      liste([`Adresse : ${l.adresse && l.codePostal && l.ville ? `${l.adresse}${l.complement ? `, ${l.complement}` : ''}, ${l.codePostal} ${l.ville}` : REPLIS.adresse}`, ...horairesRegroupes(l.horaires).map((h) => `${libelleJours(h.jours)} : ${/\d/.test(h.heures) ? h.heures : 'fermé'}`)]),
     ]),
   ].join('\n');
 
 const fichePraticien = (p: (typeof praticiens)[number], detail: boolean) =>
   [
-    `### ${p.prenom} ${p.nom}`,
+    `### ${`${p.prenom} ${p.nom}`.trim()}`,
     '',
     liste([
       `${p.titre}${p.statut === 'collaborateur' ? ', collaborateur' : p.statut === 'remplacant' ? ', remplaçant' : ''}`,
@@ -92,13 +96,10 @@ const sujetsMd = () => [
 export const pagesMarkdown = (): PageMd[] => [
   {
     path: '/',
-    titre: `${site.cabinet.nom}, ${site.titreMetier.toLowerCase()} à ${site.cabinet.ville}`,
+    titre: `${site.cabinet.nom}, ${site.titreMetier.toLowerCase()}${suffixeVille}`,
     resume: `${titreCabinet}. ${phraseAccueil}`,
     corps: [
-      `## ${pluriel ? 'Praticiens' : 'Praticien'}`,
-      '',
-      praticiens.map((p) => fichePraticien(p, false)).join('\n\n'),
-      '',
+      ...(praticiens.length ? [`## ${pluriel ? 'Praticiens' : 'Praticien'}`, '', praticiens.map((p) => fichePraticien(p, false)).join('\n\n'), ''] : []),
       ...sujetsMd(),
       '## Compétences',
       '',
@@ -111,7 +112,7 @@ export const pagesMarkdown = (): PageMd[] => [
   {
     path: '/soins',
     titre: `Compétences du cabinet, ${noms}`,
-    resume: `Soins et prises en charge proposés par ${noms}, ${titreMetierAffiche.toLowerCase()} à ${site.cabinet.ville}.`,
+    resume: `Soins et prises en charge proposés par ${noms}${praticiens.length ? `, ${titreMetierAffiche.toLowerCase()}` : ''}${suffixeVille}.`,
     corps: liste(site.soins.map(lienSoin)),
   },
   ...themesDuSite.map((t) => {
@@ -130,7 +131,7 @@ export const pagesMarkdown = (): PageMd[] => [
         '',
         '## Prendre rendez-vous',
         '',
-        `${noms}, ${titreMetierAffiche.toLowerCase()}, ${adresseLieu}. Rendez-vous ${rdv()}`,
+        `${praticiens.length ? `${noms}, ${titreMetierAffiche.toLowerCase()}` : noms}, ${aAdresse ? adresseLieu : `${adresseLieu.charAt(0).toLowerCase()}${adresseLieu.slice(1)}`}. Rendez-vous ${rdv()}`,
       ].join('\n'),
     };
   }),
@@ -146,14 +147,14 @@ export const pagesMarkdown = (): PageMd[] => [
       '',
       '## Rendez-vous',
       '',
-      `${noms}, ${titreMetierAffiche.toLowerCase()}, ${adresseLieu}. Rendez-vous ${rdv()}`,
+      `${praticiens.length ? `${noms}, ${titreMetierAffiche.toLowerCase()}` : noms}, ${aAdresse ? adresseLieu : `${adresseLieu.charAt(0).toLowerCase()}${adresseLieu.slice(1)}`}. Rendez-vous ${rdv()}`,
     ].join('\n'),
   })),
   {
     path: '/le-cabinet',
     titre: `Le cabinet, ${noms}`,
     resume: `${titreCabinet}. ${phraseAccueil}`,
-    corps: [`## ${pluriel ? 'Praticiens' : 'Praticien'}`, '', praticiens.map((p) => fichePraticien(p, true)).join('\n\n'), '', pratique()].join('\n'),
+    corps: [...(praticiens.length ? [`## ${pluriel ? 'Praticiens' : 'Praticien'}`, '', praticiens.map((p) => fichePraticien(p, true)).join('\n\n'), ''] : []), pratique()].join('\n'),
   },
   {
     path: '/acces',
@@ -259,13 +260,13 @@ export const consignesAgents = () =>
   [
     `# ${site.cabinet.nom} : consignes pour les agents IA`,
     '',
-    `> Site officiel de ${noms}, ${titreMetierAffiche.toLowerCase()} ${lieuExercice}. Site d'information statique : aucune API, aucun formulaire, aucune donnée de patient.`,
+    `> Site officiel de ${noms}${praticiens.length ? `, ${titreMetierAffiche.toLowerCase()}` : ''}${lieuDit}. Site d'information statique : aucune API, aucun formulaire, aucune donnée de patient.`,
     '',
     '## Présentation (Overview)',
     '',
     liste([
       `Cabinet : ${site.cabinet.nom}, ${adresseLieu}`,
-      `Praticien${pluriel ? 's' : ''} : ${noms}`,
+      praticiens.length > 0 && `Praticien${pluriel ? 's' : ''} : ${noms}`,
       ...(themesDuSite.length ? [`Sujets du cabinet : ${themesDuSite.map((t) => t.theme.libelle).join(', ')}`] : []),
       `Compétences : ${site.soins.map((s) => s.titreCourt).join(', ')}`,
       `Mise à jour : ${dateMaj}`,
@@ -277,8 +278,8 @@ export const consignesAgents = () =>
       `Lire le résumé : ${absUrl('/llms.txt')} ; tout le contenu : ${absUrl('/llms-full.txt')} ; plan du site : ${absUrl('/sitemap.md')}`,
       `Chaque page existe en Markdown : ajouter « .md » à son adresse (accueil : ${absUrl('/index.md')}), ou demander « Accept: text/markdown »`,
       `Prendre rendez-vous : ${rdv()}`,
-      `Appeler le cabinet : ${telLien.replace(/^tel:/, '')}`,
-      `Itinéraire : ${itineraire}`,
+      aTelephone && `Appeler le cabinet : ${telLien.replace(/^tel:/, '')}`,
+      itineraire && `Itinéraire : ${itineraire}`,
     ]),
     '',
     '## Règles (Guidelines)',

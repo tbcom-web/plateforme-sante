@@ -50,6 +50,7 @@ import type { ModeleDisponible } from '@/lib/modeles';
 import SaisieGardee from '@/components/SaisieGardee';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import { enregistrerEtPublier, enregistrerSite, type EtatEnregistrement } from './actions';
+import ConfirmationPublication from '@/components/ConfirmationPublication';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
@@ -109,8 +110,13 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
       apresEnregistrement(r);
       if (r.ok && suivante !== undefined) setEtape(suivante);
     });
-  const publier = () =>
+  // Plus rien ne bloque la publication : avec des informations manquantes, une confirmation les liste (« Publier quand même »).
+  const [confirmer, setConfirmer] = useState(false);
+  const publierMaintenant = () => {
+    setConfirmer(false);
     demarrer(async () => apresEnregistrement(await enregistrerEtPublier(id, d, version)));
+  };
+  const publier = () => (controle.remplacements.length ? setConfirmer(true) : publierMaintenant());
 
   const derniere = etape === ETAPES.length - 1;
   const lieu = d.lieux[0];
@@ -619,7 +625,8 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
           </div>
         </form>
 
-        <Verification bloquants={controle.bloquants} conseils={controle.conseils} />
+        {confirmer && <div className="mt-4"><ConfirmationPublication remplacements={controle.remplacements} onConfirmer={publierMaintenant} onAnnuler={() => setConfirmer(false)} enCours={enCours} /></div>}
+        <Verification bloquants={controle.bloquants} remplacements={controle.remplacements} conseils={controle.conseils.filter((c) => !controle.remplacements.includes(c))} />
       </div>
 
       <div className="lg:sticky lg:top-24 lg:self-start">
@@ -660,8 +667,8 @@ function FicheConseil({ etape }: { etape: string }) {
   );
 }
 
-function Verification({ bloquants, conseils }: { bloquants: string[]; conseils: string[] }) {
-  if (!bloquants.length && !conseils.length) {
+function Verification({ bloquants, remplacements, conseils }: { bloquants: string[]; remplacements: string[]; conseils: string[] }) {
+  if (!bloquants.length && !remplacements.length && !conseils.length) {
     return <p className="mt-4 rounded-xl bg-teal-50 p-4 text-sm text-teal-900">Tout est prêt pour la publication.</p>;
   }
   return (
@@ -671,6 +678,14 @@ function Verification({ bloquants, conseils }: { bloquants: string[]; conseils: 
         <ul className="grid gap-1">
           {bloquants.map((b) => <li key={b} className="flex gap-2 text-red-800"><span aria-hidden>●</span>{b}</li>)}
         </ul>
+      )}
+      {remplacements.length > 0 && (
+        <>
+          <p className="text-amber-900">Informations manquantes : la publication reste possible, le site affichera une mention sobre à la place.</p>
+          <ul className="grid gap-1">
+            {remplacements.map((m) => <li key={m} className="flex gap-2 text-amber-800"><span aria-hidden>●</span>{m}</li>)}
+          </ul>
+        </>
       )}
       {conseils.length > 0 && (
         <ul className="grid gap-1">
