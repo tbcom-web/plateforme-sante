@@ -106,21 +106,22 @@ export const VISUELS_SOINS: Record<string, VisuelCase> = {
   laser: kase(P('generale-pied-sol'), 'laser', null, false),
   // Bandes adhésives posées sur la cheville (la photo ne montre pas de bande) : le dessin suffit
   'k-taping': kase(P('sport-course'), 'taping', null, false),
-  // Fiches ajoutées le 2026-10-05 (migration 0020). Aucune photo de banque ne montre ces soins : le dessin porte la case.
-  // Orthonyxie : hallux normal puis incarné (la courbure que l'orthèse corrige)
-  orthonyxie: kase(P('generale-pied-profil'), 'ongle', null, false),
-  // Onychoplastie : médaillon de l'hallux et de son ongle
-  onychoplastie: kase(P('examen-mains'), 'soin', null, false),
-  // Orthoplastie : médaillon des orteils (hallux et voisins), là où se pose l'orthèse
-  orthoplastie: kase(P('generale-pied-sol'), 'soin', null, false),
-  // Mycose des ongles : soin de l'ongle (aucune lésion dessinée sur la peau)
-  'mycose-ongles': kase(P('examen-mains'), 'soin', null, false),
-  // Cors et durillons : zone d'appui sous la tête du 1er métatarsien ; relevé de podoscope (hyperpression)
-  'cors-durillons': kase(P('soin-talon'), 'appuis', 'podoscope', false),
-  // Ongles épais : soin des ongles (la prévention des chutes reste au dessin « senior »)
-  'ongles-epais': kase(P('examen-mains'), 'soin', null, false),
-  // Soins à domicile : polygone d'appui et canne (personne âgée) ; photo patient allongé en complément seulement
-  'soins-a-domicile': kase(P('soins-bandages'), 'senior', null, false),
+  // Fiches ajoutées le 2026-10-05 (migration 0020), chacune avec son dessin dédié (bibliotheque/soins-ongles.ts). Aucune photo de
+  // banque ne montre ces soins : le dessin porte la case (photos gardées en complément, jamais montrées seules).
+  // Orthonyxie : agrafe en fil sur l'ongle de l'hallux, et la même en coupe (traction douce sur les bords de la lame)
+  orthonyxie: kase(P('generale-pied-profil'), 'orthonyxie', null, false),
+  // Onychoplastie : partie distale de l'ongle reconstituée en résine, ongle naturel qui repousse
+  onychoplastie: kase(P('examen-mains'), 'onychoplastie', null, false),
+  // Orthoplastie : orthèse en silicone sur un orteil en griffe (coupe)
+  orthoplastie: kase(P('generale-pied-sol'), 'orthoplastie', null, false),
+  // Mycose des ongles : ongle sain et ongle atteint (aucune lésion dessinée sur la peau)
+  'mycose-ongles': kase(P('examen-mains'), 'mycose', null, false),
+  // Cors et durillons : cor sur l'orteil en griffe qui frotte dans la chaussure, durillon sous la tête du métatarsien
+  'cors-durillons': kase(P('soin-talon'), 'cors-durillons', null, false),
+  // Ongles épais : ongle épaissi de profil et fraise de meulage
+  'ongles-epais': kase(P('examen-mains'), 'ongles-epais', null, false),
+  // Soins à domicile : maison, mallette et micromoteur des visites ; photo en complément seulement
+  'soins-a-domicile': kase(P('soins-bandages'), 'domicile', null, false),
 };
 
 /** Soin hors catalogue : dessin d'analyse, photo jamais montrée seule */
@@ -144,6 +145,13 @@ export const PHOTOS_DESSINS: Record<NomDessin, { photo: string; cadrage: string 
   verrue: { photo: P('generale-pieds-nus'), cadrage: '50% 40%' },
   voutes: { photo: P('generale-pied-profil'), cadrage: '60% 55%' },
   'arriere-pied': { photo: P('posture-pieds-herbe'), cadrage: '50% 72%' },
+  orthonyxie: { photo: P('generale-pied-profil'), cadrage: '60% 55%' },
+  onychoplastie: { photo: P('examen-mains'), cadrage: '50% 45%' },
+  orthoplastie: { photo: P('generale-pied-sol'), cadrage: '50% 55%' },
+  mycose: { photo: P('examen-mains'), cadrage: '50% 45%' },
+  'cors-durillons': { photo: P('soin-talon'), cadrage: '50% 50%' },
+  'ongles-epais': { photo: P('examen-mains'), cadrage: '50% 45%' },
+  domicile: { photo: P('soins-bandages'), cadrage: '50% 60%' },
 };
 
 type Surcharges = {

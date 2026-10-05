@@ -10,7 +10,14 @@ export const dessinSoin = (slug: string): NomDessin => visuelSoin(slug).dessin;
 // Mots-clés du thème (ou du titre) d'un article → dessin de couverture, du plus précis au plus général.
 const MOTS: [RegExp, NomDessin][] = [
   [/diab|monofilament|sensibilit/, 'diabete'],
+  [/orthonyxie/, 'orthonyxie'],
+  [/onychoplastie|reconstitution de l.ongle/, 'onychoplastie'],
+  [/orthoplastie/, 'orthoplastie'],
+  [/mycose.*ongle|ongle.*mycose|onychomycose/, 'mycose'],
+  [/ongles? epais|onychogryphose/, 'ongles-epais'],
   [/incarn|ongle/, 'ongle'],
+  [/durillon|callosit|hyperkeratose|\bcors?\b/, 'cors-durillons'],
+  [/domicile|ehpad/, 'domicile'],
   [/verrue/, 'verrue'],
   [/laser/, 'laser'],
   [/taping|tape|strapping|bande adhesive|contention/, 'taping'],

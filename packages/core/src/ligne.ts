@@ -18,8 +18,11 @@
 // Animation « le trait se dessine » : chaque chemin porte pathLength="1" et ses parts du tracé (--ligne-debut, --ligne-part, en
 // fraction de LIGNE.duree). Sur le site, ChargeurDessins pose .ligne-attente puis .ligne-trace à l'apparition (dessins.css) ; un
 // dessin en ligne (aperçu, contenus) peut demander `trace: true` (.ligne-auto, animation CSS). prefers-reduced-motion : trait complet.
-import { CONTOUR_PIED, EMPREINTE, SEMELLE, SEMELLE_ELEMENTS, CHAUSSURE, PLANTE_ENFANT, ORTEILS_ENFANT, piedDeProfil, echantillonner, lisser, type P } from './pied';
+import { CONTOUR_PIED, EMPREINTE, SEMELLE, SEMELLE_ELEMENTS, CHAUSSURE, PLANTE_ENFANT, ORTEILS_ENFANT, piedDeProfil, echantillonner, lisser, dansPolygone, type P } from './pied';
 import { LIGNE, type EpaisseurLigne, type BouclesLigne } from './charte';
+import { MEDIAL, LATERAL_NORMAL, VOISINS, LAME } from './bibliotheque/hallux-gros-plan';
+import { AGRAFE_Y, LAME_MYCOSE, FRONT_MYCOSE, PEAU_GRIFFE, COR, NOYAU, EMPEIGNE, CRETE_ORTHO, ANNEAU_ORTHO, contourFraise } from './bibliotheque/soins-ongles';
+import { FORMES } from './bibliotheque/formes';
 
 export type { EpaisseurLigne, BouclesLigne } from './charte';
 
@@ -27,6 +30,8 @@ export type { EpaisseurLigne, BouclesLigne } from './charte';
 export const DESSINS_LIGNE = [
   'pied-dessous', 'pied-dessus', 'pieds-dessus', 'empreintes', 'pied-profil', 'marche', 'ongle', 'semelle', 'chaussure-course',
   'premiers-pas', 'senior-canne', 'fauteuil', 'instruments', 'autoclave', 'podoscope', 'monofilament',
+  // Fiches de soins de la migration 0020 (2026-10-05)
+  'orthonyxie', 'onychoplastie', 'mycose', 'ongle-epais', 'cor', 'orthoplastie', 'domicile',
 ] as const;
 export type NomLigne = (typeof DESSINS_LIGNE)[number];
 
@@ -575,10 +580,108 @@ function parcours(nom: NomLigne, b: BouclesLigne, equipement: (id: string) => st
       manche.ajouter(filament.slice(1));
       return [pied, manche.pts, transf(p.malleole, m)];
     }
+    case 'orthonyxie': case 'onychoplastie': case 'mycose': case 'ongle-epais': case 'cor': case 'orthoplastie': case 'domicile':
+      return parcoursSoin(nom, b);
     case 'fauteuil': case 'autoclave': case 'podoscope':
       return parcoursEquipement(nom, b, equipement);
   }
   return [];
+}
+
+/** Courbe lisse (Catmull-Rom → Bézier) passant par des points, en tracé SVG (unités du repère des points) */
+function lisse(pts: P[], ferme = false): string {
+  const n = pts.length, Q = (i: number) => (ferme ? pts[(i + n) % n] : pts[Math.max(0, Math.min(n - 1, i))]);
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < (ferme ? n : n - 1); i++) {
+    const [p0, p1, p2, p3] = [Q(i - 1), Q(i), Q(i + 1), Q(i + 2)];
+    d += ` C${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]} ${p2[1]}`;
+  }
+  return ferme ? `${d} Z` : d;
+}
+const echantillon = (pts: P[], ferme = false, pas = 0.4) => sousChemins(lisse(pts, ferme), pas)[0].pts;
+
+/**
+ * Fiches de soins de la migration 0020 (2026-10-05), au trait continu, parcours des formes de bibliotheque/soins-ongles.ts (mêmes
+ * points, jamais redessinés) : 1 à 3 traits par dessin. Revue « trait continu » (pieges-illustration.md) : la lame est un trait à part
+ * (jamais reliée au bout de l'orteil : « entaille »), aucune boucle posée sur le contour de la peau (« bouton »), les seules boucles
+ * sont dans l'objet (boucle d'activation de l'agrafe).
+ */
+function parcoursSoin(nom: 'orthonyxie' | 'onychoplastie' | 'mycose' | 'ongle-epais' | 'cor' | 'orthoplastie' | 'domicile', b: BouclesLigne): P[][] {
+  const R = reglage(b);
+  // Gros plan de l'hallux (fenêtre 112 × 158 de hallux-gros-plan.ts) agrandi ×1,45, l'avant-pied sort du cadre en bas
+  const mH: Affine = [1.45, 0, 0, 1.45, 65.5, -4];
+  const peauHallux = () => {
+    const t = new Trait(b).ajouter(transf(echantillon([...MEDIAL, ...LATERAL_NORMAL, ...VOISINS.slice(0, -2)]), mH));
+    return R.final ? t.entree(R.queue * 0.6, 0.2).pts : t.pts;
+  };
+  const lame = (pts: P[]) => partirDe(transf(echantillon(pts, true), mH), appliquer(mH, [22.4, 50]), 1.2);
+  // Coupe du 2e orteil en griffe (unités du dessin de la forme, x 60 → 188) agrandie ×1,8, sol en y 164
+  const mG: Affine = [1.8, 0, 0, 1.8, 4 - 60 * 1.8, 164 - 100 * 1.8];
+  const peauGriffe = () => new Trait(b).ajouter(transf(echantillon(PEAU_GRIFFE), mG)).pts;
+  switch (nom) {
+    case 'orthonyxie': {
+      // Contour, lame, puis l'agrafe : crochet sous le bord médial, fil, boucle d'activation (un tour), fil, crochet sous le bord latéral
+      const y = AGRAFE_Y, cx = 37.6, rb = 3.4;
+      const fil = new Trait(b).ajouter(transf(echantillon([[20.2, 44.2], [20.5, 41.6], [22.8, y], [30, y], [cx, y]]), mH));
+      fil.ajouter(transf(Array.from({ length: 41 }, (_, k) => { const a = Math.PI / 2 + (k / 40) * 2 * Math.PI; return [cx + rb * Math.cos(a), y - rb + rb * Math.sin(a)] as P; }), mH));
+      fil.ajouter(transf(echantillon([[cx, y], [45, y], [52.4, y], [54.8, 41.6], [55, 44.2]]), mH));
+      return [peauHallux(), lame(LAME), fil.pts];
+    }
+    case 'onychoplastie': {
+      // Contour, lame, puis la plaque de résine : front de repousse, bords et bord libre de la partie distale, en retrait de la lame
+      const plaque: P[] = [[24.4, 46.6], [28, 45.2], [37.6, 44.4], [47.2, 45.2], [50.8, 46.6], [51.2, 36], [50.4, 28.4], [48.8, 26.8], [37.6, 26.2], [26.4, 26.8], [24.8, 28.4], [24, 36]];
+      return [peauHallux(), lame(LAME), partirDe(transf(echantillon(plaque, true), mH), appliquer(mH, [24.4, 46.6]), 1)];
+    }
+    case 'mycose': {
+      // Contour, lame au bord libre effrité (prolongée par la ligne des couches du bord épaissi), puis le front de la zone atteinte
+      const l = lame(LAME_MYCOSE);
+      const t = new Trait(b).ajouter(l).ajouter(transf(echantillon([[23.6, 30.4], [37.6, 29.4], [51.6, 30.4]]), mH), { tension: 0.4 });
+      return [peauHallux(), t.pts, transf(echantillon(FRONT_MYCOSE.slice(1, -1)), mH)];
+    }
+    case 'ongle-epais': {
+      // L'hallux de profil (POD-AT-0003, état « ongle-epais ») recadré ×1,6 : dos du pied → hallux → plante (hors cadre) ; l'ongle
+      // épaissi ; la pièce à main et sa fraise posée sur le dos de l'ongle
+      const corps = FORMES['pied-profil-ongle-epais'].corps;
+      const chemin = (debut: string) => { const i = corps.lastIndexOf(`d="${debut}`); return corps.slice(i + 3, corps.indexOf('"', i + 3)); };
+      const m: Affine = [1.6, 0, 0, 1.6, -342 * 1.6, -334 * 1.6];
+      const contour = sousChemins(chemin('M48,-160 C52,-60 62,30 76,120 C86,190 95,244 95,288 C95,326 82,352 68,372 C59,385'), 0.5);
+      const dos = inverse(contour[1].pts), plante = inverse(contour[0].pts);
+      const hallux = sousChemins(chemin('M358,377 C372,382'), 0.5)[0].pts;
+      // Le contour de l'hallux passe SOUS l'ongle : le trait quitte la peau à l'entrée de l'ongle, suit le dessus et le bord libre de
+      // la lame, et reprend la peau à la sortie ; le dessous de la lame (contact avec le lit) est le 2e trait
+      const ongle = sousChemins(chemin('M421,391.5'), 0.4)[0].pts;
+      const dedans = hallux.map(([x, y]) => dansPolygone(ongle, x, y));
+      const i = dedans.indexOf(true), j = dedans.lastIndexOf(true);
+      const proche = (q: P) => ongle.reduce((k, o, n) => (dist(o, q) < dist(ongle[k], q) ? n : k), 0);
+      const kE = proche(hallux[Math.max(0, i - 1)]), kX = proche(hallux[Math.min(hallux.length - 1, j + 1)]);
+      const dessus = kE <= kX ? ongle.slice(kE, kX + 1) : [...ongle.slice(kE), ...ongle.slice(0, kX + 1)];
+      const dessous = kE <= kX ? [...ongle.slice(kX), ...ongle.slice(0, kE + 1)] : ongle.slice(kX, kE + 1);
+      const peau = new Trait(b).ajouter(transf([...dos, ...hallux.slice(0, i), ...dessus, ...hallux.slice(j + 1), ...plante], m)).pts;
+      return [peau, transf(dessous, m), transf(contourFraise(), m)];
+    }
+    case 'cor': {
+      // Peau de l'orteil en griffe : sous la tête, le trait suit le bord interne du durillon (lentille entre ce trait et le sol, sans
+      // boucle) ; chaussure : empeigne puis semelle intérieure (le sol) d'un seul trait ; cor : lentille de corne puis son noyau conique
+      const p = PEAU_GRIFFE, iSol = p.findIndex(([, yy]) => yy >= 100);
+      const durillon: P[] = [[122.4, 99.6], [117, 97.2], [110, 96.4], [102, 97.2], [94, 99.6]];
+      const peau = new Trait(b).ajouter(transf(echantillon([...p.slice(0, iSol - 1), ...durillon, [60, 100], [20, 99.4], [-12, 98.6]]), mG));
+      const chaussure = new Trait(b).ajouter(transf(echantillon(EMPEIGNE), mG)).ajouter(transf([[178, 100], [-12, 100]] as P[], mG), { tension: 0.2 });
+      const cor = new Trait(b).ajouter(transf(echantillon(COR, true), mG)).ajouter(transf(echantillon(NOYAU, true), mG), { tension: 0.3 });
+      return [peau.pts, chaussure.pts, cor.pts];
+    }
+    case 'orthoplastie': {
+      // Peau de l'orteil en griffe ; crête en silicone sous l'orteil ; anneau qui coiffe le dessus (la même pièce, en coupe)
+      return [peauGriffe(), partirDe(transf(echantillon(CRETE_ORTHO, true), mG), appliquer(mG, [127, 99.6]), 1), partirDe(transf(echantillon(ANNEAU_ORTHO, true), mG), appliquer(mG, [124.2, 59.2]), 1)];
+    }
+    case 'domicile': {
+      // Maison (sol, porte, murs, toit), puis la mallette posée au sol avec sa poignée, puis le micromoteur et sa pièce à main
+      const sol = 150;
+      const maison = morceaux(`M4 ${sol} H60 V118 C60 115.8 61.8 114 64 114 H74 C76.2 114 78 115.8 78 118 V${sol} H112 V92.5 L120 100 L69 52 L18 100 L26 92.5 V${sol}`, 0.5)[0];
+      const mallette = morceaux(`M112 ${sol} H136 C134.9 ${sol} 134 149.1 134 148 V118 C134 115.8 135.8 114 138 114 H154 V108 C154 105.8 155.8 104 158 104 H172 C174.2 104 176 105.8 176 108 V114 H192 C194.2 114 196 115.8 196 118 V148 C196 149.1 195.1 ${sol} 194 ${sol} H204 V132 C204 130.9 204.9 130 206 130 H230 C231.1 130 232 130.9 232 132 V${sol} H236`, 0.5)[0];
+      const piece = morceaux('M209 126.4 L227.4 112.6 C228.6 111.7 230.2 112 231 113.2 C231.8 114.4 231.5 116 230.3 116.8 L211.8 130.4 Z', 0.4)[0];
+      return [new Trait(b).ajouter(maison).pts, new Trait(b).ajouter(mallette).pts, piece];
+    }
+  }
 }
 
 /** Silhouette du pied du tout-petit (pied.ts : PLANTE_ENFANT, ORTEILS_ENFANT ; même construction que le dessin « enfant ») */
@@ -718,6 +821,8 @@ export const LIGNE_DESSIN: Record<string, NomLigne> = {
   analyse: 'empreintes', appuis: 'pied-dessous', semelle: 'semelle', soin: 'pieds-dessus', diabete: 'monofilament', sport: 'chaussure-course',
   enfant: 'premiers-pas', equilibre: 'empreintes', talon: 'pied-profil', ongle: 'ongle', laser: 'pied-dessous', senior: 'senior-canne',
   taping: 'pied-profil', verrue: 'pied-dessous', voutes: 'pied-profil', 'arriere-pied': 'pieds-dessus',
+  orthonyxie: 'orthonyxie', onychoplastie: 'onychoplastie', orthoplastie: 'orthoplastie', mycose: 'mycose', 'cors-durillons': 'cor',
+  'ongles-epais': 'ongle-epais', domicile: 'domicile',
 };
 /** Matériel : dessin au trait continu dédié (les autres équipements sont parcourus automatiquement, en 3 traits au plus) */
 export const LIGNE_EQUIPEMENT: Record<string, NomLigne> = {
@@ -732,6 +837,8 @@ export const LIGNE_FORME: Record<string, NomLigne> = {
   'hallux-dorsal': 'ongle', 'hallux-dorsal-incarne': 'ongle', 'hallux-dorsal-incarne-sites': 'ongle', 'hallux-gros-plan': 'ongle', 'hallux-gros-plan-incarne': 'ongle',
   'semelle-dorsal': 'semelle', 'semelle-dessous': 'semelle', 'semelle-ortho-dessus': 'semelle', 'semelle-ortho-dessous': 'semelle',
   'chaussure-running-profil': 'chaussure-course', 'chaussure-running-trois-quarts': 'chaussure-course',
+  'hallux-gros-plan-orthonyxie': 'orthonyxie', 'ongle-coupe-orthonyxie': 'orthonyxie', 'hallux-gros-plan-onychoplastie': 'onychoplastie',
+  'hallux-gros-plan-mycose': 'mycose', 'pied-profil-ongle-epais-meulage': 'ongle-epais', 'orteil-griffe-cor': 'cor', 'orteil-griffe-orthoplastie': 'orthoplastie',
 };
 
 /**

@@ -13,7 +13,7 @@ import type { Registre } from '../dessins';
 import { FORMES as FORMES_EZ, JETONS_FORMES } from './formes';
 import { FORMES_DERIVEES } from './derivees';
 /** Jetons propres aux formes dérivées (absents des formes ÉcranZen générées) */
-const JETONS_DERIVES = ['inflammation', 'rougeur'] as const;
+const JETONS_DERIVES = ['inflammation', 'rougeur', 'orthese', 'resine', 'mycose', 'mycose-fonce', 'corne', 'noyau', 'silicone', 'metal'] as const;
 
 /** Formes ÉcranZen (générées) et formes dérivées côté sites (derivees.ts) */
 const FORMES = { ...FORMES_EZ, ...FORMES_DERIVEES };
@@ -52,6 +52,18 @@ export const CORRESPONDANCE_JETONS: Record<string, readonly [string, string]> = 
   // Rougeur fondue du repli de l'ongle incarné (hallux-gros-plan.ts, dégradé radial dont l'opacité décroît jusqu'à 0) : au centre un
   // ton plus sombre et plus chaud que la peau, jamais un rouge vif ; en monochrome, l'accent mêlé au fond (faible intensité)
   rougeur: [m('var(--peau-ombre)', 62, P(5)), m(AC, 62, FD)],
+  // Fiches de soins (soins-ongles.ts, 2026-10-05) : orthèse (fil d'orthonyxie, fraise) à l'accent ; résine d'onychoplastie claire et
+  // froide, distincte de l'ongle ; mycose : lame à peine jaunie (jamais vive : « pus »), traînées et bord épaissi ocre doux ; corne d'un
+  // cor ou d'un durillon : peau à peine jaunie, noyau un peu plus dense ; silicone d'orthoplastie : vert d'eau pâle ; métal de l'outil :
+  // gris clair. En monochrome : mélanges du trait et de l'accent avec le fond (mycose à l'accent, jamais un ongle gris : « nécrose »).
+  orthese: [AC, AC],
+  resine: [m(AC, 14, BL), m(AC, 14, FD)],
+  mycose: [m('var(--ongle)', 64, P(3)), m(AC, 20, FD)],
+  'mycose-fonce': [m(P(3), 42, 'var(--peau-ombre)'), m(AC, 45, FD)],
+  corne: [m('var(--peau-clair)', 78, P(3)), m(TR, 10, FD)],
+  noyau: [m('var(--peau-ombre)', 72, P(3)), m(TR, 30, FD)],
+  silicone: [m(P(2), 32, BL), m(AC, 22, FD)],
+  metal: [m(TR, 16, BL), m(TR, 8, FD)],
   // Objets de la géométrie (semelle POD-AT-0004/0005, sandale, chaussure TRV-AT-0009) : palette de données
   chaussure: [m(TR, 62, FD), m(TR, 12, FD)],
   'semelle-ardoise': [m(EN, 72, BL), m(TR, 16, FD)],

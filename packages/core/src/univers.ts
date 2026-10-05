@@ -12,7 +12,9 @@ import { interpoler } from './couleurs';
 import { SPECIALITES, ANIMATIONS, type Animation, type Specialite } from './packs';
 
 /** Dessins techniques de la podologie (apps/sites/src/components/dessins/Dessin.astro) */
-export const DESSINS_PODOLOGIE = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'enfant', 'equilibre', 'talon', 'appuis', 'ongle', 'laser', 'senior', 'taping', 'verrue', 'voutes', 'arriere-pied'] as const;
+export const DESSINS_PODOLOGIE = ['analyse', 'semelle', 'soin', 'diabete', 'sport', 'enfant', 'equilibre', 'talon', 'appuis', 'ongle', 'laser', 'senior', 'taping', 'verrue', 'voutes', 'arriere-pied',
+  // Fiches de soins de la migration 0020 (2026-10-05)
+  'orthonyxie', 'onychoplastie', 'orthoplastie', 'mycose', 'cors-durillons', 'ongles-epais', 'domicile'] as const;
 export type NomDessin = (typeof DESSINS_PODOLOGIE)[number];
 
 /**

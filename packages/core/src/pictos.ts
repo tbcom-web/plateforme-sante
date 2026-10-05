@@ -36,6 +36,9 @@ import {
   type P,
 } from './pied';
 import { PICTO } from './charte';
+import { MEDIAL, LATERAL_NORMAL, VOISINS, LAME } from './bibliotheque/hallux-gros-plan';
+import { PEAU_GRIFFE, CRETE_ORTHO, ANNEAU_ORTHO } from './bibliotheque/soins-ongles';
+import { FORMES } from './bibliotheque/formes';
 
 // ———————————————————————————————————————————————————— Outils de tracé
 
@@ -255,6 +258,19 @@ const ORTEILS_DESSUS = {
   ongle2: 'M20.3 12.6C20.5 11.4 21.3 10.9 22.25 10.9S24 11.4 24.2 12.6',
 };
 
+/**
+ * Gros plan de l'hallux du pied droit vu de dessus (bibliotheque/hallux-gros-plan.ts, fenêtre 112 × 158 ramenée ×0,55) : hallux, bord
+ * du 2e orteil, l'avant-pied sort du cadre en bas ; lame à ≈ 0,57 de la largeur de l'orteil, bord libre droit.
+ */
+function halluxGros() {
+  const t: Transfo = (x, y) => [x * 0.55, y * 0.55 - 2];
+  const garder = (p: P) => p[0] <= 46.5 && p[1] <= 46.5;
+  return {
+    peau: simplifier(courbe([...MEDIAL, ...LATERAL_NORMAL, ...VOISINS.slice(0, -2)], false), t, 0.25, garder),
+    lame: simplifier(courbe(LAME, true), t, 0.2),
+  };
+}
+
 const DEFS: Record<string, Def> = {
   // ——— Le pied
   'pied-profil': {
@@ -291,6 +307,40 @@ const DEFS: Record<string, Def> = {
     parties: () => [trait(ORTEILS_DESSUS.peau), accent(ORTEILS_DESSUS.ongle)],
   },
 
+  // ——— Soins de l'ongle et des orteils (fiches de la migration 0020) : gros plan de l'hallux (bibliotheque/hallux-gros-plan.ts) et
+  // coupe de l'orteil en griffe (bibliotheque/soins-ongles.ts), mêmes géométries que les dessins
+  orthonyxie: {
+    libelle: 'Orthonyxie',
+    famille: 'soins',
+    // Gros plan de l'hallux et de son ongle ; agrafe en fil à l'accent : crochets sous les bords de la lame, boucle d'activation
+    parties: () => {
+      const h = halluxGros();
+      return [trait(h.peau), trait(h.lame), accent(`M10.8 22.6C10.6 21 11.4 20.2 12.8 20.2H18.1M23.3 20.2H28.6C30 20.2 30.8 21 30.6 22.6${cercle(20.7, 17.6, 2.6)}`)];
+    },
+  },
+  onychoplastie: {
+    libelle: 'Onychoplastie',
+    famille: 'soins',
+    // Gros plan de l'hallux : partie avant de l'ongle reconstituée (front de repousse et hachures à l'accent), ongle naturel à la base
+    parties: () => {
+      const h = halluxGros();
+      return [trait(h.peau), trait(h.lame), accent('M13.4 23.4C17 22.2 24.6 22.2 28.2 23.4M15.2 19.6L19.4 13.4M21 19.6L25.2 13.4')];
+    },
+  },
+  orthoplastie: {
+    libelle: 'Orthoplastie',
+    famille: 'soins',
+    // Orteil en griffe de profil (coupe du 2e rayon) et orthèse en silicone à l'accent : crête sous l'orteil, anneau sur le dessus
+    parties: () => {
+      const t: Transfo = (x, y) => [3 + (x - 80) * 0.45, 4 + (y - 30) * 0.45];
+      return [
+        trait(simplifier(courbe(PEAU_GRIFFE, false), t, 0.3, (p) => p[0] >= 1.5 && p[0] <= 46.5)),
+        accent(simplifier(courbe(CRETE_ORTHO, true), t, 0.3)),
+        accent(simplifier(courbe(ANNEAU_ORTHO, true), t, 0.3)),
+      ];
+    },
+  },
+
   // ——— Motifs de consultation
   'ongle-incarne': {
     libelle: 'Ongle incarné',
@@ -313,6 +363,25 @@ const DEFS: Record<string, Def> = {
       trait('M8.8 11.4V14.4C8.8 15.8 10.2 16.6 12 16.6S15.2 15.8 15.2 14.4V11.4'),
       accent('M8.8 11.4C10 10 11 12.2 12 10.6C13 12.2 14 10 15.2 11.4M10.8 14.2H13.2'),
     ],
+  },
+  'ongle-epais': {
+    libelle: 'Ongle épais',
+    famille: 'pathologies',
+    // Hallux de profil (POD-AT-0003, état « ongle-epais ») : ongle épaissi à l'accent, fraise posée sur le dos de l'ongle
+    parties: () => {
+      const corps = FORMES['pied-profil-ongle-epais'].corps;
+      const chemin = (debut: string) => { const i = corps.lastIndexOf(`d="${debut}`); return corps.slice(i + 3, corps.indexOf('"', i + 3)); };
+      const t: Transfo = (x, y) => [2 + (x - 380) * 0.49, 43 + (y - 440) * 0.49];
+      const dos = chemin('M358,377 C372,382');
+      const B: P = [34.3, 11.4], u: P = [0.92, -0.39], n: P = [0.39, 0.92];
+      const at = (s: number, w: number): P => [B[0] + u[0] * s + n[0] * w, B[1] + u[1] * s + n[1] * w];
+      const outil = `M${at(2.4, 0).map(r1).join(' ')}L${at(6, 0).map(r1).join(' ')}M${[at(6, -2), at(13.4, -2), at(13.4, 2), at(6, 2)].map((p) => p.map(r1).join(' ')).join('L')}Z`;
+      return [
+        trait(simplifier(`M334,371 C342,372 350,374 358,377 ${dos.replace(/^M358,377/, '')}`, t, 0.3, (p) => p[0] >= 1.5 && p[1] <= 46.5)),
+        accent(simplifier(chemin('M421,391.5'), t, 0.25)),
+        trait(`${cercle(B[0], B[1], 2.4)}${outil}`),
+      ];
+    },
   },
   'cor-durillon': {
     libelle: 'Cor et durillon',
@@ -658,12 +727,12 @@ export const PICTOS_SOINS: Record<string, IdPicto> = {
   'douleur-talon': 'talon-douloureux',
   'k-taping': 'k-taping',
   // Fiches de la migration 0020
-  orthonyxie: 'hallux-ongle',
-  onychoplastie: 'hallux-ongle',
-  orthoplastie: 'pied-dessus',
+  orthonyxie: 'orthonyxie',
+  onychoplastie: 'onychoplastie',
+  orthoplastie: 'orthoplastie',
   'mycose-ongles': 'mycose-ongle',
   'cors-durillons': 'cor-durillon',
-  'ongles-epais': 'instruments',
+  'ongles-epais': 'ongle-epais',
   'soins-a-domicile': 'soins-domicile',
 };
 

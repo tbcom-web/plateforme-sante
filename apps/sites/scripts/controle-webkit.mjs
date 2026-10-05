@@ -86,7 +86,9 @@ async function capturer(type, chemin) {
   await page.addStyleTag({ content: FIGER });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(300);
-  const png = PNG.sync.read(await page.screenshot({ fullPage: true, scale: 'css' }));
+  // Capture pleine page, bornée à 32 000 px (limite des moteurs : la planche /modeles/dessins dépasse sur mobile)
+  const [largeur, hauteur] = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight]);
+  const png = PNG.sync.read(await page.screenshot(hauteur > 32000 ? { fullPage: true, scale: 'css', clip: { x: 0, y: 0, width: largeur, height: 32000 } } : { fullPage: true, scale: 'css' }));
   await nav.close();
   return png;
 }

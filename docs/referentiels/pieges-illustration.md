@@ -231,3 +231,5 @@
 - Conseils flous = inutiles : on les annonce par un intertitre-question (« Comment l'éviter ? », « Que faire en cas de… ? ») et chaque astuce dit son EFFET, recopié de la source et jamais déduit (ex. Ameli : « Gardez le toit, un pansement naturel. ») [Paul 2026-10-03, ampoule].
 - Pédicure-podologue à l'image (Paul 2026-10-03, précise la règle) : personnage le plus NEUTRE possible — face ronde, asexué, SANS visage (ni yeux ni bouche : un symbole, sinon il fait « chauve »), pas de coiffure ; on le reconnaît comme podologue par la blouse + un petit picto PIED sur la poitrine (pas de symbole médical). Portrait réaliste = « too much ».
 - Empreinte posée dans un contour de pied (registre pédagogique) : une bande d'appui coupée droite contre le contour se lit « découpée » ; extrémités arrondies, ~3 u en dedans du contour ; un repère « Voûte » pointe l'arche médiale DANS le contour, jamais l'espace entre les pieds [revue 2026-10-05, dessin analyse].
+
+- Registre monochrome (relevé) : zone d'ongle atteinte rendue en gris = « ongle gris, nécrose » ; une lésion de l'ongle se désigne à l'accent mêlé au fond [sites, revue 2026-10-05, mycose].

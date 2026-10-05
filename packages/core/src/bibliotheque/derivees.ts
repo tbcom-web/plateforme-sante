@@ -2,6 +2,7 @@
 // modifiés : chaque dérivée est une retouche documentée, validée par Paul, déclarée au catalogue comme déclinaison propre aux sites.
 import { FORMES, type FormeEcranZen } from './formes';
 import { FORMES_HALLUX_GROS_PLAN } from './hallux-gros-plan';
+import { FORMES_SOINS_ONGLES } from './soins-ongles';
 
 /** Remplace un fragment exact du corps (erreur si le fragment a changé dans formes.ts : la retouche est à revoir) */
 function remplacer(corps: string, avant: string, apres: string): string {
@@ -62,4 +63,6 @@ export const FORMES_DERIVEES: Record<string, FormeEcranZen> = {
   'hallux-dorsal-incarne-sites': halluxIncarneSites(),
   // Gros plan de l'hallux, normal et incarné, dessiné de zéro pour les sites (2026-10-05, brouillon) : hallux-gros-plan.ts
   ...FORMES_HALLUX_GROS_PLAN,
+  // Fiches de soins de la migration 0020 (2026-10-05, brouillon) : orthonyxie, onychoplastie, mycose, ongle épais, cor, orthoplastie
+  ...FORMES_SOINS_ONGLES,
 };

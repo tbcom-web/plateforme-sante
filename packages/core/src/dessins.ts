@@ -22,6 +22,7 @@ import { pressionPas, PHASE_FIXE } from './pas';
 import { poseCoureur, reculParCycle, APPUI } from './foulee';
 import { svgForme } from './bibliotheque/rendu';
 import { HALLUX_GROS_PLAN, FLECHE_INCARNE } from './bibliotheque/hallux-gros-plan';
+import { GRIFFE } from './bibliotheque/soins-ongles';
 import type { Animation } from './packs';
 import { svgLigne, contenuLigne, contenuLigneAuto, brancherEquipements, LIGNE_DESSIN, LIGNE_EQUIPEMENT, LIGNE_ANIMATION, type OptionsLigne } from './ligne';
 export * from './ligne';
@@ -295,9 +296,9 @@ const medaillonHallux = (cx: number, cy: number, r: number, etat: 'repos' | 'inc
  * en (x, y) : l'hallux occupe l'essentiel du cadre, 2e et 3e orteils esquissés au bord, l'avant-pied sort du cadre (bord découpé par
  * la fenêtre, jamais un orteil isolé « coupé »). `id` : préfixe unique des identifiants internes (dégradé, découpes).
  */
-function grosPlanHallux(etat: 'repos' | 'incarne', x: number, y: number, id: string, couleur = false): string {
+function grosPlanHallux(etat: 'repos' | 'incarne' | 'orthonyxie' | 'onychoplastie' | 'mycose', x: number, y: number, id: string, couleur = false): string {
   const { largeur: l, hauteur: h, echelle } = HALLUX_GROS_PLAN;
-  const cle = etat === 'incarne' ? 'hallux-gros-plan-incarne' : 'hallux-gros-plan';
+  const cle = etat === 'repos' ? 'hallux-gros-plan' : `hallux-gros-plan-${etat}`;
   const svg = svgForme(cle, { registre: couleur ? 'pedagogique' : 'releve', echelleTrait: echelle, id }).replace('<svg ', `<svg x="${x}" y="${y}" width="${l}" height="${h}" stroke="none" `);
   return `<clipPath id="${id}-fenetre"><rect x="${x}" y="${y}" width="${l}" height="${h}" rx="6"></rect></clipPath><g clip-path="url(#${id}-fenetre)">${svg}</g><rect class="cadre" x="${x}" y="${y}" width="${l}" height="${h}" rx="6"></rect>`;
 }
@@ -308,6 +309,20 @@ function flecheIncarne(x: number, y: number): string {
   const p = (k: number) => `${r1(bx - t * Math.cos(a + k * o))} ${r1(by - t * Math.sin(a + k * o))}`;
   return `<path class="fleche" d="M${r1(ax)} ${r1(ay)} L${r1(bx - 2.4 * Math.cos(a))} ${r1(by - 2.4 * Math.sin(a))}"></path><path class="fleche-pointe" d="M${r1(bx)} ${r1(by)} L${p(1)} L${p(-1)} Z"></path>`;
 }
+/**
+ * Forme de la bibliothèque posée en (x, y), largeur `l` (unités du dessin), hauteur selon son cadre ; traits ramenés aux graisses de
+ * la charte. Renvoie le SVG et la projection d'un point de la forme (unités de la forme) vers le dessin.
+ */
+function poserForme(cle: string, x: number, y: number, l: number, o: { id?: string; couleur?: boolean } = {}): { svg: string; h: number; sur: (X: number, Y: number) => P } {
+  const brut = svgForme(cle, { registre: o.couleur ? 'pedagogique' : 'releve', echelleTrait: 1, id: o.id });
+  const [vx, vy, vl, vh] = (brut.match(/viewBox="([^"]+)"/)?.[1] ?? '0 0 1 1').split(' ').map(Number);
+  const k = l / vl, h = vh * k;
+  const svg = svgForme(cle, { registre: o.couleur ? 'pedagogique' : 'releve', echelleTrait: vl / l, id: o.id }).replace('<svg ', `<svg x="${r1(x)}" y="${r1(y)}" width="${r1(l)}" height="${r1(h)}" stroke="none" `);
+  return { svg, h, sur: (X, Y) => [x + (X - vx) * k, y + (Y - vy) * k] };
+}
+/** Pression sur le sol (relevé) : demi-disque de trame SOUS la ligne du sol, centré en cx (jamais sur la peau) */
+const trameSol = (cx: number, sol: number, r: number) => trameDisque(cx, sol + 1, r, 2.8, (_, y) => y >= sol + 1.5);
+
 /** Point du médaillon de l'hallux (repère de l'atome 512) → repère du dessin */
 const surMedaillon = (cx: number, cy: number, r: number, X: number, Y: number): P => [cx + ((X - MED.centre) * r) / MED.rayon, cy + ((Y - MED.centre) * r) / MED.rayon];
 
@@ -685,6 +700,103 @@ function corps(nom: NomDessin, c: Contexte): string {
         .join('')}</g><circle class="trace loupe" cx="${z.x}" cy="${z.y}" r="${z.r}" pathLength="1"></circle>${
         R ? `${mono(z.x + z.r + 2, z.y + z.r + 10, '× 8', '', 'end')}${mono(z.x, 24, 'Ø 6 mm · zone d’appui', '', 'middle')}` : `${etiquette(z.x, z.y + z.r + 14, 'Lignes de la peau interrompues', 'middle')}${renvoi(z.x - 4, z.y - 12, z.x - 30, 30)}${etiquette(z.x - 30, 24, 'Verrue', 'middle')}`
       }</g>`;
+    }
+
+    // ——— Fiches de soins de la migration 0020 (2026-10-05) : formes de bibliotheque/soins-ongles.ts. Relevé : dessin technique
+    // monochrome et lectures mono ; pédagogique : couleurs de la bibliothèque (peau, ongle, résine, silicone) et étiquettes.
+    case 'orthonyxie': {
+      // Gros plan de l'hallux avec l'agrafe en fil (crochets sous les bords de la lame, boucle d'activation) ; à droite, la même
+      // agrafe en coupe transversale (POD-AT-0010) : traction douce qui relève les bords de la lame. Aucun avant / après.
+      const g = { x: 4, y: 18 }, cg = g.x + HALLUX_GROS_PLAN.largeur / 2;
+      const coupe = poserForme('ongle-coupe-orthonyxie', 124, 46, 112, { couleur: !R });
+      return `<g>${grosPlanHallux('orthonyxie', g.x, g.y, `${loupe}-g`, !R)}${coupe.svg}${
+        R
+          ? `${mono(cg, 12, 'AGRAFE · FIL', '', 'middle')}${mono(180, 12, 'COUPE', '', 'middle')}${mono(180, 156, 'traction douce', 'mono--accent', 'middle')}${mono(180, 166, 'sur les bords de l’ongle', '', 'middle')}`
+          : `${etiquette(cg, 12, 'Agrafe sur l’ongle', 'middle')}${etiquette(180, 12, 'Vu en coupe', 'middle')}${etiquette2(180, 156, 'Traction douce', 'sur les bords de l’ongle', 'middle')}`
+      }</g>`;
+    }
+
+    case 'onychoplastie': {
+      // Gros plan de l'hallux : partie distale de la lame reconstituée en résine (teinte distincte, hachures fines), ongle naturel
+      // qui repousse depuis la base (lunule), front de repousse ; renvois vers les deux parties.
+      const g = { x: 14, y: 18 };
+      const sur = (u: number, v: number): P => [g.x + u, g.y + v];
+      const [rx, ry] = sur(44, 35), [nx, ny] = sur(44, 56);
+      return `<g>${grosPlanHallux('onychoplastie', g.x, g.y, `${loupe}-g`, !R)}${renvoi(rx, ry, 150, 46)}${renvoi(nx, ny, 150, 104)}${
+        R
+          ? `${mono(152, 44, 'résine', 'mono--accent')}${mono(152, 54, 'ongle reconstitué')}${mono(152, 102, 'ongle naturel')}${mono(152, 112, 'qui repousse')}`
+          : `${etiquette2(152, 44, 'Résine :', 'ongle reconstitué')}${etiquette2(152, 102, 'Ongle naturel', 'qui repousse')}`
+      }</g>`;
+    }
+
+    case 'mycose': {
+      // Deux gros plans côte à côte (même construction que l'ongle incarné) : ongle sain, puis ongle atteint d'une mycose (lame
+      // jaunâtre depuis le bord libre, traînées, bord épaissi et effrité, lunule épargnée). Aucune lésion sur la peau.
+      const g = { x: 4, y: 18 }, d = { x: 124, y: 18 }, cg = g.x + HALLUX_GROS_PLAN.largeur / 2, cd = d.x + HALLUX_GROS_PLAN.largeur / 2;
+      return `<g>${grosPlanHallux('repos', g.x, g.y, `${loupe}-g`, !R)}${grosPlanHallux('mycose', d.x, d.y, `${loupe}-d`, !R)}${
+        R ? `${mono(cg, 12, 'SAIN', '', 'middle')}${mono(cd, 12, 'MYCOSE', 'mono--accent', 'middle')}` : `${etiquette(cg, 12, 'Ongle sain', 'middle')}${etiquette(cd, 12, 'Mycose de l’ongle', 'middle')}`
+      }</g>`;
+    }
+
+    case 'ongles-epais': {
+      // L'hallux de profil, ongle épaissi (POD-AT-0003, état « ongle-epais »), et la fraise du micromoteur posée sur le dos de l'ongle :
+      // le meulage réduit l'épaisseur en respectant la courbure (HAS § 3.4.2). Aucun état « après ».
+      const f = poserForme('pied-profil-ongle-epais-meulage', 4, 16, 156, { couleur: !R });
+      const [ox, oy] = f.sur(440, 396), [fx, fy] = f.sur(452, 372);
+      return `<g>${f.svg}${renvoi(fx + 3, fy - 3, 168, 40)}${renvoi(ox, oy + 2, 168, 112)}${
+        R
+          ? `${mono(170, 38, 'fraise', 'mono--accent')}${mono(170, 48, 'micromoteur')}${mono(170, 110, 'ongle épaissi')}${mono(170, 120, 'meulage', 'mono--accent')}`
+          : `${etiquette2(170, 38, 'Fraise du', 'micromoteur')}${etiquette2(170, 110, 'Ongle épaissi :', 'meulage en surface')}`
+      }</g>`;
+    }
+
+    case 'cors-durillons': {
+      // Coupe du 2e orteil en griffe dans la chaussure : cor sur le dessus de l'articulation (noyau conique qui appuie vers
+      // l'intérieur), là où l'empeigne frotte ; durillon (plaque diffuse, sans noyau) sous la tête du métatarsien, zone d'appui.
+      // Relevé : la pression se lit SUR LE SOL (trame sous la ligne du sol, sous la tête), jamais sur la peau.
+      const E = 4, f = poserForme('orteil-griffe-cor', 4, 18, 232, { couleur: !R });
+      const s = (p: P) => f.sur(p[0] * E, p[1] * E);
+      const [cx, cy] = s(GRIFFE.cor), [dx, dy] = s(GRIFFE.durillon), [, sol] = s([0, GRIFFE.sol]), [ex, ey] = s([170, 57]);
+      return `<g>${f.svg}${R ? trameSol(dx, sol, 15) : ''}${renvoi(cx, cy - 3, 186, 14)}${renvoi(dx, dy + 3, dx, 166)}${renvoi(ex + 1, ey + 2, 194, 100)}${
+        R
+          ? `${mono(188, 12, 'cor · noyau', 'mono--accent')}${mono(dx, 174, 'durillon · zone d’appui', '', 'middle')}${mono(190, 110, 'frottement')}`
+          : `${etiquette2(188, 12, 'Cor :', 'noyau dur')}${etiquette(dx, 175, 'Durillon (corne étalée)', 'middle')}${etiquette2(190, 110, 'La chaussure', 'frotte')}`
+      }</g>`;
+    }
+
+    case 'orthoplastie': {
+      // Même coupe du 2e orteil en griffe : orthèse en silicone moulée sur mesure, crête sous l'orteil et anneau qui coiffe le dessus
+      // (une seule pièce, reliée hors du plan de coupe). La déformation n'est pas corrigée à l'image (Ameli : elle ne disparaît pas).
+      const E = 4, f = poserForme('orteil-griffe-orthoplastie', 4, 18, 232, { couleur: !R });
+      const s = (p: P) => f.sur(p[0] * E, p[1] * E);
+      const [ax, ay] = s(GRIFFE.anneau), [ox, oy] = s([138, 88]);
+      return `<g>${f.svg}${renvoi(ax - 1, ay - 3, 96, 22)}${renvoi(ox, oy, 188, 132)}${
+        R
+          ? `${mono(94, 16, 'protection du dessus', '', 'end')}${mono(190, 130, 'silicone', 'mono--accent')}${mono(190, 140, 'sur mesure')}`
+          : `${etiquette(94, 18, 'Protège le dessus de l’orteil', 'end')}${etiquette2(190, 130, 'Orthèse en', 'silicone')}`
+      }</g>`;
+    }
+
+    case 'domicile': {
+      // Soins à domicile, sans personne : une maison (pictogramme simple) et, devant, la mallette d'instruments stérilisés et le
+      // micromoteur portable réservé aux visites (pièce à main posée sur son support). Aucun visage, aucun symbole médical.
+      const sol = 150;
+      const maison = `M26 ${sol} V96 H112 V${sol} M18 100 L69 52 L120 100`;
+      const porte = `M60 ${sol} V118 C60 115.8 61.8 114 64 114 H74 C76.2 114 78 115.8 78 118 V${sol}`;
+      const fenetre = 'M86 106 H104 V124 H86 Z M95 106 V124 M86 115 H104';
+      const mallette = `M134 118 C134 115.8 135.8 114 138 114 H192 C194.2 114 196 115.8 196 118 V${sol - 2} C196 ${sol - 0.9} 195.1 ${sol} 194 ${sol} H136 C134.9 ${sol} 134 ${sol - 0.9} 134 ${sol - 2} Z`;
+      const poignee = 'M154 114 V108 C154 105.8 155.8 104 158 104 H172 C174.2 104 176 105.8 176 108 V114';
+      const moteur = `M204 132 C204 130.9 204.9 130 206 130 H230 C231.1 130 232 130.9 232 132 V${sol} H204 Z`;
+      // Pièce à main : corps allongé posé en biais sur son support (au-dessus du boîtier), fraise vers le haut ; cordon court vers le boîtier
+      const piece = 'M209 126.4 L227.4 112.6 C228.6 111.7 230.2 112 231 113.2 C231.8 114.4 231.5 116 230.3 116.8 L211.8 130.4 Z';
+      const cordon = 'M209.6 128.6 C206.6 129.6 205.4 131 206.8 133.2';
+      return `<g>${grille([60, 100, 140])}<line class="sol" x1="8" y1="${sol}" x2="236" y2="${sol}"></line><path class="peau-seule" d="${maison} Z"></path><path class="trait" d="${maison}"></path><path class="piece" d="${porte}"></path><path class="fin" d="${fenetre}"></path>` +
+        `<path class="piece piece--forte" d="${mallette}"></path><path class="trait trait--moyen" d="${mallette}"></path><path class="trait trait--moyen" d="${poignee}"></path><path class="fin" d="M134 126 H196 M146 122 V130 M184 122 V130"></path>` +
+        `<path class="peau-seule" d="${moteur}"></path><path class="trait trait--moyen" d="${moteur}"></path><path class="fin" d="M208 136 H220 V142 H208 Z"></path><circle class="fin" cx="226" cy="140" r="2.4"></circle><path class="fin" d="${cordon}"></path><path class="piece" d="${piece}"></path><path class="trait--fin" d="${piece}"></path><path class="fleche" d="M231.6 112.2 L234 110.4"></path>` +
+        (R
+          ? `${mono(69, 166, 'visite à domicile', '', 'middle')}${mono(165, 96, 'instruments stérilisés', 'mono--accent', 'middle')}${mono(236, 162, 'micromoteur', '', 'end')}${mono(236, 172, 'des visites', '', 'end')}`
+          : `${etiquette(69, 167, 'À domicile', 'middle')}${etiquette2(165, 92, 'Instruments', 'stérilisés', 'middle')}${etiquette2(236, 162, 'Micromoteur', 'des visites', 'end')}`) +
+        `</g>`;
     }
   }
   return '';
