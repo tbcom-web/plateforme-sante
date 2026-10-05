@@ -13,9 +13,17 @@ import { site } from '../lib/site';
 import { pedagogique, photoLieuAccueil, cadrageLieuAccueil, photoResponsive } from '../lib/visuels';
 import { breadcrumbSchema } from '../lib/schema';
 import { titreCabinet, phraseAccueil, titrePraticiens, noms, titreMetierAffiche, localisation } from '../lib/textes';
+import TetePage from '../components/gabarits/TetePage.astro';
+import PraticiensVariantes from '../components/gabarits/Praticiens.astro';
+import VenirAuCabinet from '../components/gabarits/VenirAuCabinet.astro';
+import MaterielVariantes from '../components/gabarits/Materiel.astro';
+import { nouveauGabarit, variantes } from '../lib/gabarits';
+import { lieu } from '../lib/textes';
 
 // Rubrique « Matériel et hygiène » : seulement si le praticien a coché du matériel (sinon rien n'apparaît).
 const materiel = (site.equipements?.length ?? 0) > 0 || Boolean(site.equipementsAutres?.trim());
+// Gabarits tableau et village : la photo du lieu en en-tête seulement si c'est celle du praticien (jamais une photo de banque légendée « le cabinet »).
+const photoDuLieu = [site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].filter(Boolean)[0] ?? '';
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le-cabinet' }];
 ---
 <Gabarit
@@ -24,6 +32,37 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
   path="/le-cabinet"
   schemas={[breadcrumbSchema(crumbs)]}
 >
+  {nouveauGabarit ? (<>
+    <TetePage crumbs={crumbs} sur={`${titreMetierAffiche} · ${localisation}`} chapo={phraseAccueil}>
+      <h1 slot="titre">{titreCabinet}</h1>
+      <ul class="g-bulles">
+        <li><a class="g-bulle g-bulle--texte" href="#praticiens">{titrePraticiens}</a></li>
+        {materiel && <li><a class="g-bulle g-bulle--texte" href="#materiel">Matériel et hygiène</a></li>}
+        <li><a class="g-bulle g-bulle--texte" href="#infos">Informations pratiques</a></li>
+      </ul>
+      {photoDuLieu && <img slot="visuel" src={photoDuLieu} alt={`${lieu.nom || 'Le cabinet'} à ${site.cabinet.ville}`} width="1200" height="900" fetchpriority="high" decoding="async" />}
+    </TetePage>
+    <section class="g-section g-bloc" id="praticiens">
+      <div class="g-cadre g-bloc__dedans">
+        <div class="g-tete"><p class="g-sur">{titreMetierAffiche}</p><h2>{titrePraticiens}</h2></div>
+        <PraticiensVariantes variante={variantes.praticiens} />
+      </div>
+    </section>
+    {materiel && (
+      <section class="g-section g-bloc" id="materiel">
+        <div class="g-cadre g-bloc__dedans">
+          <div class="g-tete"><p class="g-sur">Le cabinet</p><h2>Matériel et hygiène</h2></div>
+          <MaterielVariantes />
+        </div>
+      </section>
+    )}
+    <section class="g-section g-bloc" id="infos">
+      <div class="g-cadre g-bloc__dedans">
+        <div class="g-tete"><p class="g-sur">Accès et horaires</p><h2>Informations pratiques</h2></div>
+        <VenirAuCabinet variante={variantes.infos} />
+      </div>
+    </section>
+  </>) : (<>
   <section class="cadre tete-page">
     <Breadcrumb items={crumbs} />
     <div class="tete-page__grille">
@@ -66,6 +105,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
       <Infos colonnes />
     </div>
   </section>
+  </>)}
 </Gabarit>
 
 <style>

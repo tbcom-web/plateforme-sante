@@ -7,6 +7,7 @@ const modeleBase = modeleIntegre(process.env.MODELE ?? 'prestige');
 const modele = process.env.POLICE_TITRES
   ? { ...modeleBase, jetons: { ...modeleBase.jetons, policeTitres: process.env.POLICE_TITRES as typeof modeleBase.jetons.policeTitres } }
   : modeleBase;
+// COULEUR=#rrggbb : couleur libre du cabinet (essais de personnalisation, ex. gabarits tableau et village).
 // Spécialité de la démo (variable SPECIALITE, secondaire SPECIALITE_SECONDAIRE) ; ANIMATION=non pour la désactiver.
 const pack = packVisuel(process.env.SPECIALITE ?? 'generale');
 
@@ -72,7 +73,7 @@ Au cabinet, je prends le temps d’écouter, d’examiner et d’expliquer. Chaq
   // GAMME=… pour essayer une gamme de couleurs de la charte (sinon couleur libre conseillée par le modèle).
   // MODE_VISUEL=illustrations|photos|mixte pour essayer le style visuel (illustrations par défaut, comme les nouveaux sites).
   // MARQUE=… et DISPOSITION=… pour essayer un logo (logos.ts ; sinon logo par défaut).
-  theme: { couleur: modele.couleurConseillee ?? '#2f7d6d', ...(process.env.GAMME ? { gamme: process.env.GAMME } : {}), ...(process.env.MARQUE || process.env.DISPOSITION ? { logo: { marque: process.env.MARQUE ?? '', disposition: (process.env.DISPOSITION ?? 'horizontale') as 'horizontale' } } : {}), modeVisuel: (process.env.MODE_VISUEL ?? 'illustrations') as 'illustrations', mise_en_page: 'chaleureux', style_images: 'organique' },
+  theme: { couleur: process.env.COULEUR ?? modele.couleurConseillee ?? '#2f7d6d', ...(process.env.GAMME ? { gamme: process.env.GAMME } : {}), ...(process.env.MARQUE || process.env.DISPOSITION ? { logo: { marque: process.env.MARQUE ?? '', disposition: (process.env.DISPOSITION ?? 'horizontale') as 'horizontale' } } : {}), modeVisuel: (process.env.MODE_VISUEL ?? 'illustrations') as 'illustrations', mise_en_page: 'chaleureux', style_images: 'organique' },
   accroche: {
     titre: 'Prendre soin de vos pieds, à chaque étape de la vie',
     texte:

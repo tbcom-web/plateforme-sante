@@ -1,0 +1,101 @@
+---
+// Premier écran des gabarits tableau et village (règles de clarté) : qui (praticiens), où (lieu, adresse), soins principaux,
+// Rendez-vous / Appeler — rien d'autre (ni horaires, ni plan, ni chiffres). Le H1 est celui du gabarit classique.
+// - « carte » (tableau) : carte claire (aplat pastel de la gamme sur téléphone) et, à côté, le dessin du soin principal sur la
+//   couleur vive (masqué sur téléphone) : un seul aplat vif, court ;
+// - « notice » (village) : bandeau pleine largeur sur l'aplat pastel, titre, trois lignes à picto (qui, où, soins), deux gros boutons.
+// Couleurs : rôles --g-* (packages/core/src/gabarits.ts) tirés de la gamme (vif, duo, aplat) ou de la couleur libre, AA garantis.
+import Icone from '../Icone.astro';
+import Dessin from '../dessins/Dessin.astro';
+import { site } from '../../lib/site';
+import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche } from '../../lib/textes';
+import { nomLieu, visuelVariante } from '../../lib/gabarits';
+
+interface Props { variante: 'carte' | 'notice' }
+const { variante } = Astro.props;
+const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
+const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : telLien;
+const libelleRdv = rdvEnLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet';
+const qui = `${noms}, ${titreMetierPluriel}`;
+const ou = `${nomLieu}, ${lieu.adresse}, ${lieu.codePostal} ${lieu.ville}`;
+const principaux = site.soins.slice(0, 3).map((s) => s.titreCourt.toLowerCase());
+const soins = principaux.length ? `${principaux.slice(0, -1).join(', ')}${principaux.length > 1 ? ' et ' : ''}${principaux.at(-1)}.` : '';
+const soinsPhrase = soins.charAt(0).toUpperCase() + soins.slice(1);
+const visuel = site.soins[0] ? visuelVariante(site.soins[0].slug, 'liste') : null;
+---
+{variante === 'carte' ? (
+  <section class="g-cadre carte-accueil" aria-label="Le cabinet en bref">
+    <div class="carte-accueil__texte">
+      <p class="carte-accueil__lieu"><span aria-hidden="true"></span>{titreMetierAffiche} · {localisation}</p>
+      <h1>Cabinet de {specialite}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
+      <p class="carte-accueil__qui">{noms} · {nomLieu}, {lieu.adresse}</p>
+      {soinsPhrase && <p class="carte-accueil__soins">{soinsPhrase}</p>}
+      <div class="carte-accueil__actions">
+        <a class="carte-accueil__rdv" href={rdv}>{libelleRdv}</a>
+        {rdvEnLigne && <a class="carte-accueil__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
+      </div>
+      {rdvEnLigne && !plusieurs && viaPlateforme && <p class="carte-accueil__via">Réservation {viaPlateforme}, 24h/24</p>}
+    </div>
+    {visuel && (
+      <div class="carte-accueil__visuel" aria-hidden="true">
+        {visuel.type === 'photo'
+          ? <img src={visuel.src} alt="" width="800" height="900" loading="lazy" decoding="async" style={`object-position:${visuel.cadrage}`} />
+          : <Dessin nom={visuel.dessin} />}
+      </div>
+    )}
+  </section>
+) : (
+  <section class="notice-bande" aria-label="Le cabinet en bref"><div class="g-cadre notice">
+    <h1>Cabinet de {specialite}{' '}<span class="pale">à {site.cabinet.ville}</span></h1>
+    <ul class="notice__lignes">
+      <li><Icone nom="lucide:users" />{qui}</li>
+      <li><Icone nom="picto:itineraire" secours="lucide:map-pin" />{ou}</li>
+      {soinsPhrase && <li><Icone nom="picto:bilan" secours="lucide:stethoscope" />{soinsPhrase}</li>}
+    </ul>
+    <div class="notice__actions">
+      <a class="notice__bouton notice__bouton--plein" href={rdv}>{libelleRdv}{rdvEnLigne && !plusieurs && viaPlateforme && <span>{viaPlateforme}</span>}</a>
+      {rdvEnLigne && <a class="notice__bouton" href={telLien}>Appeler le {site.cabinet.telephone}</a>}
+    </div>
+  </div></section>
+)}
+
+<style>
+  /* ———— Carte (tableau) ———— */
+  .carte-accueil { display: grid; gap: 14px; padding-top: 14px; }
+  @media (min-width: 900px) { .carte-accueil { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 16px; } }
+  .carte-accueil__texte { display: grid; gap: 16px; align-content: start; justify-items: start; padding: clamp(28px, 4.4vw, 56px); border-radius: var(--rayon-carte); background: var(--g-aplat); color: var(--g-encre); }
+  @media (min-width: 900px) { .carte-accueil__texte { background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); } }
+  .carte-accueil h1 { max-width: 12ch; }
+  .carte-accueil__lieu { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 999px; background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); font-size: 0.92rem; font-weight: 600; }
+  .carte-accueil__lieu span { width: 8px; height: 8px; border-radius: 50%; background: var(--g-bulle-picto); flex: none; }
+  .carte-accueil__qui { font-weight: 600; max-width: 34em; }
+  .carte-accueil__soins { color: var(--g-encre-douce); max-width: 34em; }
+  @media (max-width: 899px) { .carte-accueil__soins, .carte-accueil__via { color: var(--g-aplat-doux) !important; } }
+  .carte-accueil__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .carte-accueil__rdv, .carte-accueil__tel { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 24px; border-radius: var(--rayon-bouton); font-weight: 650; font-size: 1rem; text-decoration: none; }
+  .carte-accueil__rdv, .carte-accueil__rdv:hover { background: var(--g-plein); color: var(--g-plein-texte); }
+  .carte-accueil__rdv:hover { background: var(--g-plein-survol); }
+  .carte-accueil__tel, .carte-accueil__tel:hover { background: var(--g-carte); color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .carte-accueil__tel :global(.icone) { width: 22px; height: 22px; }
+  .carte-accueil__via { font-size: 0.85rem; color: var(--g-encre-douce); }
+  .carte-accueil__visuel { position: relative; display: none; place-items: center; border-radius: var(--rayon-carte); background: var(--g-vif); overflow: hidden; color: var(--g-vif-texte); --dessin-trait: var(--g-vif-texte); --dessin-accent: var(--g-vif-texte); }
+  .carte-accueil__visuel :global(svg) { width: 72%; height: 80%; }
+  .carte-accueil__visuel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  @media (min-width: 900px) { .carte-accueil__visuel { display: grid; } }
+  @media (max-width: 559px) { .carte-accueil__actions { display: grid; width: 100%; } }
+
+  /* ———— Notice (village) : bandeau sur l'aplat pastel ———— */
+  .notice-bande { background: var(--g-aplat); color: var(--g-encre); }
+  .notice { display: grid; gap: 20px; padding-block: clamp(32px, 5vw, 56px); }
+  .notice h1 { max-width: 16ch; }
+  .notice__lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .notice__lignes li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .notice__lignes :global(.icone) { width: 28px; height: 28px; color: var(--g-encre); margin-top: 2px; }
+  .notice__actions { display: grid; gap: 12px; margin-top: 6px; }
+  @media (min-width: 760px) { .notice__actions { grid-template-columns: 1fr 1fr; } }
+  .notice__bouton { display: grid; place-items: center; align-content: center; min-height: 64px; padding: 8px 20px; border-radius: var(--rayon-carte); background: var(--g-carte); color: var(--g-encre); font-weight: 700; text-align: center; text-decoration: none; box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
+  .notice__bouton:hover { color: var(--g-encre); text-decoration: underline; }
+  .notice__bouton--plein, .notice__bouton--plein:hover { background: var(--g-plein); color: var(--g-plein-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .notice__bouton span { font-size: 0.85rem; font-weight: 500; }
+</style>

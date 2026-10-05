@@ -1,0 +1,56 @@
+---
+// Conseils et actualités dans les gabarits tableau et village.
+// - « cartes » (tableau) : image (ou dessin du thème) et titre dans une carte ;
+// - « liste » (village) : liste de titres datés, sans image, très lisible.
+// `titres` : « h2 » sur la page des actualités (chaque article y est un intertitre, comme le gabarit classique), sinon texte.
+import Dessin from '../dessins/Dessin.astro';
+import { dateFr } from '../../lib/site';
+import { dessinArticle } from '../../lib/dessins';
+import { photoResponsive } from '../../lib/visuels';
+import { espacesFines, type Article } from '@plateforme/core';
+
+interface Props { articles: Article[]; variante: 'cartes' | 'liste'; titres?: 'h2' | 'texte' }
+const { articles, variante, titres = 'texte' } = Astro.props;
+const Titre = titres === 'h2' ? 'h2' : 'span';
+---
+<ul class:list={['actus', `actus--${variante}`]}>
+  {articles.map((a) => (
+    <li>
+      <a class="actu" href={`/actualites/${a.slug}`}>
+        {variante === 'cartes' && (
+          <span class="actu__visuel" aria-hidden="true">
+            {a.image
+              ? <img src={a.image} {...photoResponsive(a.image, '(min-width: 900px) 380px, 100vw')} alt="" width="1600" height="900" loading="lazy" decoding="async" />
+              : <Dessin nom={dessinArticle(a.theme, a.titre)} />}
+          </span>
+        )}
+        <span class="actu__meta">{variante === 'cartes' && <>{a.theme} · </>}<time datetime={a.date}>{dateFr(a.date)}</time></span>
+        <Titre class="actu__titre">{espacesFines(a.titre)}</Titre>
+        {variante === 'cartes' && <span class="actu__resume">{a.resume}</span>}
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .actus { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .actus--cartes { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+  .actu { display: grid; gap: 8px; align-content: start; height: 100%; color: var(--g-encre); text-decoration: none; }
+  .actu:hover { color: var(--g-encre); }
+  .actus--cartes .actu { padding: 14px 14px 22px; border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .actus--cartes .actu:hover { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .actu__visuel { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; margin-bottom: 8px; border-radius: calc(var(--rayon-carte) * 0.65); background: var(--g-doux); overflow: hidden; color: var(--g-encre); --dessin-trait: var(--g-encre); --dessin-accent: var(--g-accent-texte); }
+  .actu__visuel :global(svg) { width: 70%; height: 100%; }
+  .actu__visuel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .actus--cartes :is(.actu__meta, .actu__titre, .actu__resume) { padding-inline: 8px; }
+  .actu__meta { font-size: 0.9rem; font-weight: 600; color: var(--g-accent-texte); }
+  .actu__titre { display: block; font-family: var(--police-titres); font-weight: var(--graisse-titres); font-size: 1.25rem !important; line-height: 1.25 !important; letter-spacing: -0.015em; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: text-decoration-color var(--duree-court); }
+  .actu:hover .actu__titre { text-decoration-color: currentColor; }
+  .actu__resume { color: var(--g-encre-douce); font-size: 1rem; }
+  .actus--liste { gap: 0; border-top: var(--filet) solid var(--g-ligne); }
+  .actus--liste li { border-bottom: var(--filet) solid var(--g-ligne); }
+  .actus--liste .actu { grid-template-columns: minmax(0, 11em) minmax(0, 1fr); align-items: baseline; gap: 4px 24px; padding: 18px 0; }
+  .actus--liste .actu__meta { color: var(--g-encre-douce); font-weight: 500; }
+  .actus--liste .actu__titre { font-family: var(--police-texte); font-size: 1.05rem !important; font-weight: 650; }
+  @media (max-width: 559px) { .actus--liste .actu { grid-template-columns: minmax(0, 1fr); } }
+</style>

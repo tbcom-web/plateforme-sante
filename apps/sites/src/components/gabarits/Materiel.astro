@@ -1,0 +1,47 @@
+---
+// Matériel et hygiène dans les gabarits tableau et village : une carte par catégorie (picto, nom, nombre d'équipements), la
+// liste dépliée à la demande (information progressive), phrases factuelles du catalogue (equipements.ts). Seul le matériel
+// coché par le praticien apparaît.
+import Icone from '../Icone.astro';
+import { equipementsParCategorie, iconeOuPictoEquipement } from '@plateforme/core';
+import { site } from '../../lib/site';
+
+const groupes = equipementsParCategorie(site.equipements ?? []);
+const autres = (site.equipementsAutres ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+---
+<div class="materiel">
+  {groupes.map((g, i) => (
+    <details class="materiel__groupe" open={i === 0}>
+      <summary>
+        <span class="materiel__picto" aria-hidden="true"><Icone nom={iconeOuPictoEquipement(g.equipements[0].id, g.equipements[0].icone)} secours={g.equipements[0].icone} /></span>
+        <span class="materiel__categorie">{g.categorie.label}</span>
+        <span class="materiel__compte">{g.equipements.length} {g.equipements.length > 1 ? 'équipements' : 'équipement'}</span>
+      </summary>
+      <ul>
+        {g.equipements.map((e) => <li><strong>{e.libelle}</strong><span>{e.phrase}</span></li>)}
+      </ul>
+    </details>
+  ))}
+  {autres.length > 0 && (
+    <details class="materiel__groupe">
+      <summary><span class="materiel__picto" aria-hidden="true"><Icone nom="picto:instruments" secours="lucide:wrench" /></span><span class="materiel__categorie">Autres équipements</span><span class="materiel__compte">{autres.length}</span></summary>
+      <ul>{autres.map((a) => <li><span>{a}</span></li>)}</ul>
+    </details>
+  )}
+</div>
+
+<style>
+  .materiel { display: grid; gap: 10px; max-width: 52rem; }
+  .materiel__groupe { border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  :global(.coquille--village) .materiel__groupe { background: var(--g-doux); box-shadow: none; }
+  summary { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 14px; min-height: 64px; padding: 12px 20px 12px 14px; cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  .materiel__picto { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--g-bulle); color: var(--g-encre); }
+  .materiel__picto :global(.icone) { width: 26px; height: 26px; }
+  .materiel__categorie { font-weight: 650; }
+  .materiel__compte { font-size: 0.9rem; color: var(--g-encre-douce); }
+  ul { list-style: none; margin: 0; padding: 0 22px 18px 72px; display: grid; gap: 12px; }
+  li { display: grid; gap: 2px; }
+  li span { color: var(--g-encre-douce); font-size: 0.95rem; }
+  @media (max-width: 559px) { ul { padding-left: 22px; } .materiel__compte { display: none; } summary { grid-template-columns: 44px minmax(0, 1fr); } }
+</style>

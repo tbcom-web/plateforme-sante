@@ -9,6 +9,9 @@ import { visuelSoin } from '../../lib/visuels-soins';
 import { site } from '../../lib/site';
 import { breadcrumbSchema } from '../../lib/schema';
 import { titreCompetences, titreCabinet, localisation } from '../../lib/textes';
+import TetePage from '../../components/gabarits/TetePage.astro';
+import SoinsVariantes from '../../components/gabarits/Soins.astro';
+import { nouveauGabarit, variantes } from '../../lib/gabarits';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }];
 const total = String(site.soins.length).padStart(2, '0');
@@ -21,6 +24,12 @@ const bilan = visuelSoin('bilan-podologique');
   path="/soins"
   schemas={[breadcrumbSchema(crumbs)]}
 >
+  {nouveauGabarit ? (<>
+    <TetePage crumbs={crumbs} sur={localisation} chapo="Chaque prise en charge commence par un échange et un examen, afin de proposer des soins adaptés.">
+      <h1 slot="titre">{titreCompetences}</h1>
+    </TetePage>
+    <section class="g-section g-bloc"><div class="g-cadre g-bloc__dedans"><SoinsVariantes variante={variantes.soins} complet /></div></section>
+  </>) : (<>
   <section class="cadre tete-page">
     <Breadcrumb items={crumbs} />
     <div class="tete-page__grille">
@@ -37,6 +46,7 @@ const bilan = visuelSoin('bilan-podologique');
       <Competences />
     </div>
   </section>
+  </>)}
 </Gabarit>
 
 <style>

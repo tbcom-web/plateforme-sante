@@ -1,0 +1,241 @@
+---
+// Coquille des gabarits autres que « classique » (tableau, village… : packages/core/src/modeles.ts, GABARITS) : en-tête court,
+// navigation en bulles, pied de page sobre, barre d'actions sur téléphone. Rendue par layouts/Gabarit.astro à la place de
+// l'en-tête et du pied de page classiques ; le <head> (title, description, données structurées) reste celui du gabarit commun.
+// Règles de clarté : une idée par écran, menu court, texte de 18 px (20 px en « village »), une couleur d'accent, beaucoup
+// d'air, zones tactiles ≥ 44 px. Couleurs : uniquement les rôles --g-* (packages/core/src/gabarits.ts), tous dérivés de la
+// couleur du cabinet avec garde-fous de contraste.
+// Styles : les classes partagées par les sections (g-*) sont déclarées ici sous .coquille (sélecteurs portant l'attribut
+// du composant) : sur un site « classique », la coquille est absente et ces règles sont retirées de la page au build
+// (styles-alleges, astro.config.mjs).
+import Logo from '../Logo.astro';
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { gabaritModele } from '@plateforme/core';
+import { telLien, itineraire, lienRdv, titreCabinet, praticiens, lieu, rdvEnLigne } from '../../lib/textes';
+
+interface Props {
+  liens: { href: string; label: string }[];
+  courant: string;
+  /** Lien de rendez-vous général (plusieurs praticiens : liste des praticiens) */
+  rdvGeneral: string | null;
+}
+const { liens, courant, rdvGeneral } = Astro.props;
+const gabarit = gabaritModele(site.modele);
+const village = gabarit === 'village';
+const lienRendezVous = rdvGeneral ?? lienRdv('entete');
+// Menu court, le même partout (règles de clarté) : Soins · Le cabinet · Accès · Rendez-vous. Les actualités restent au pied de page.
+const nav = [
+  { href: '/soins', label: 'Soins' },
+  { href: '/le-cabinet', label: 'Le cabinet' },
+  { href: '/acces', label: 'Accès' },
+];
+const pied = [{ href: '/', label: 'Accueil' }, ...nav, ...liens.filter((l) => l.href === '/actualites')];
+const actif = (href: string) => courant === href || courant.startsWith(`${href}/`);
+const rdv = rdvEnLigne ? lienRendezVous : telLien;
+const libelle = rdvEnLigne ? 'Rendez-vous' : 'Appeler';
+---
+<div class:list={['coquille', `coquille--${gabarit}`]}>
+  <header class="c-entete">
+    <div class="g-cadre c-entete__ligne">
+      <Logo />
+      {village && <a class="c-entete__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" /><span class="c-entete__tel-libelle">Appeler</span><span class="c-entete__numero">{site.cabinet.telephone}</span></a>}
+      {!village && (
+        <nav class="c-nav" aria-label="Navigation principale">
+          <ul>
+            {nav.map((l) => <li><a href={l.href} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
+            <li class="c-nav__rdv"><a class="g-bouton g-bouton--plein" href={rdv}>{libelle}</a></li>
+          </ul>
+        </nav>
+      )}
+    </div>
+    {village && (
+      <div class="c-bande">
+        <nav class="g-cadre c-nav" aria-label="Navigation principale">
+          <ul>
+            {nav.map((l) => <li><a href={l.href} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
+            <li class="c-nav__rdv"><a href={rdv}>{libelle}</a></li>
+          </ul>
+        </nav>
+      </div>
+    )}
+  </header>
+
+  <main id="contenu" class="c-principal">
+    <slot />
+  </main>
+
+  <footer class="c-pied">
+    <div class="g-cadre c-pied__grille">
+      <div class="c-pied__bloc">
+        <p class="c-pied__titre">{titreCabinet}</p>
+        <p>{lieu.nom && <>{lieu.nom}<br /></>}{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</p>
+        <p><a href={telLien}>{site.cabinet.telephone}</a>{site.cabinet.email && <><br /><a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></>}</p>
+      </div>
+      <div class="c-pied__bloc">
+        <p class="c-pied__titre">{praticiens.length > 1 ? 'Praticiens' : 'Praticien'}</p>
+        <ul>
+          {praticiens.map((p) => <li>{p.prenom}{' '}{p.nom} — {p.titre}{p.identifiants[0] && <><br /><small>{p.identifiants[0]}</small></>}</li>)}
+        </ul>
+      </div>
+      <div class="c-pied__bloc">
+        <p class="c-pied__titre">Pages</p>
+        <ul class="c-pied__liens">
+          {pied.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+          <li><a href="/mentions-legales">Mentions légales</a></li>
+          {site.pays === 'FR' && <li><a href="https://www.onpp.fr" rel="noopener" target="_blank">Ordre national des pédicures-podologues</a></li>}
+        </ul>
+      </div>
+    </div>
+    <p class="g-cadre c-pied__bas"><span>© {new Date().getFullYear()} {titreCabinet}</span><span>Illustrations : représentations schématiques, sans valeur de mesure</span></p>
+  </footer>
+
+  <nav class="c-barre" aria-label="Accès rapide">
+    <a href={telLien} class:list={{ 'c-barre__plein': !rdvEnLigne }}><Icone nom="picto:telephone" secours="lucide:phone" />{rdvEnLigne ? 'Appeler' : 'Appeler le cabinet'}</a>
+    {rdvEnLigne
+      ? <a href={lienRendezVous} class="c-barre__plein"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Rendez-vous</a>
+      : <a href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
+  </nav>
+</div>
+
+<style>
+  /* ———— Socle : fond, texte, titres ———— */
+  .coquille { --gouttiere: 32px; --largeur: 1180px; --rayon-carte: var(--rayon); --picto-accent: var(--g-accent-texte); background: var(--g-page); color: var(--g-encre); font-size: 1.125rem; line-height: 1.6; font-feature-settings: normal; min-height: 100vh; }
+  .coquille--village { --gouttiere: 40px; --largeur: 880px; font-size: 1.12rem; }
+  .coquille :global(.g-cadre) { width: min(var(--largeur), 100% - var(--gouttiere)); margin-inline: auto; }
+  .coquille :global(.g-cadre--large) { width: min(1100px, 100% - var(--gouttiere)); margin-inline: auto; }
+  /* Titres, paragraphes et liens de base : sélecteurs html[data-gabarit] body pour l'emporter sur les règles globales du gabarit
+     classique (h1, a…), sans gêner les règles des composants (qui précisent les leurs) ; sans effet sur un site classique. */
+  :global(html[data-gabarit] body :is(h1, h2, h3)) { font-family: var(--police-titres); font-weight: var(--graisse-titres); color: var(--g-encre); letter-spacing: -0.025em; line-height: 1.1; text-wrap: balance; margin: 0; }
+  :global(html[data-gabarit] body h1) { font-size: clamp(2.3rem, 5.4vw, 3.9rem); letter-spacing: -0.035em; }
+  :global(html[data-gabarit] body h2) { font-size: clamp(1.75rem, 3.4vw, 2.6rem); margin: 0; }
+  :global(html[data-gabarit] body h3) { font-size: 1.2rem; letter-spacing: -0.01em; line-height: 1.25; }
+  :global(html[data-gabarit='village'] body :is(h1, h2, h3)) { letter-spacing: -0.015em; line-height: 1.15; }
+  :global(html[data-gabarit='village'] body h1) { font-size: clamp(2.1rem, 5.6vw, 3.3rem); }
+  :global(html[data-gabarit='village'] body h2) { font-size: clamp(1.7rem, 3.6vw, 2.25rem); }
+  :global(html[data-gabarit='village'] body h3) { font-size: 1.15rem; }
+  .coquille :global(.pale) { color: inherit; font-style: normal; }
+  :global(html[data-gabarit] p) { margin: 0; }
+  :global(html[data-gabarit] a) { color: var(--g-accent-texte); text-underline-offset: 3px; }
+  :global(html[data-gabarit] a:hover) { color: var(--g-encre); }
+  .coquille :global(:focus-visible) { outline: 3px solid var(--g-plein-bord); outline-offset: 3px; border-radius: 6px; }
+  .coquille :global(.g-section) { padding-block: clamp(44px, 6vw, 72px); }
+  .coquille :global(.g-section + .g-section) { padding-top: 0; }
+  /* Sections en blocs : tableau = une carte blanche arrondie par section, serrées ; village = sections pleine largeur séparées par un filet */
+  .coquille--tableau :global(.g-section.g-bloc) { padding-block: 14px 0; }
+  .coquille--tableau :global(.g-bloc__dedans) { padding: clamp(26px, 4.4vw, 52px); border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .coquille--village :global(.g-section.g-bloc) { padding-block: clamp(44px, 6vw, 64px); border-top: var(--filet) solid var(--g-ligne); }
+  .coquille--village :global(.g-section.g-bloc + .g-section.g-bloc) { padding-top: clamp(44px, 6vw, 64px); }
+  .coquille--village :global(.g-section:not(.g-bloc) + .g-section:not(.g-bloc)) { border-top: var(--filet) solid var(--g-ligne); padding-top: clamp(44px, 6vw, 64px); }
+  .coquille :global(.g-tete) { display: grid; gap: 12px; margin-bottom: clamp(24px, 4vw, 36px); max-width: 46rem; }
+  .coquille :global(.g-sur) { font-size: 1rem; font-weight: 600; color: var(--g-accent-texte); }
+  .coquille :global(.g-chapo) { color: var(--g-encre-douce); max-width: 40em; }
+  .coquille :global(.g-doux) { color: var(--g-encre-douce); }
+  .coquille :global(.g-suite) { display: inline-flex; align-items: center; gap: 8px; min-height: var(--cible-tactile); margin-top: 20px; font-weight: 600; text-decoration: none; }
+  .coquille :global(.g-suite::after) { content: '→'; transition: transform var(--duree-court) var(--courbe-sortie); }
+  .coquille :global(.g-suite:hover::after) { transform: translateX(3px); }
+  .coquille :global(.g-carte) { background: var(--g-carte); border-radius: var(--rayon-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); padding: clamp(22px, 3vw, 32px); }
+  .coquille--village :global(.g-carte) { background: var(--g-doux); box-shadow: none; }
+
+  /* Plan d'accès et informations côte à côte (page « Plan d'accès ») */
+  .coquille :global(.g-acces) { display: grid; gap: 18px; }
+  @media (min-width: 960px) { .coquille :global(.g-acces) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: start; } .coquille :global(.g-acces__plan) { position: sticky; top: 110px; } }
+
+  /* Pages communes à tous les gabarits (article, mentions légales) : classes du gabarit classique, accordées à la coquille */
+  .coquille :global(.tete-page__grille) { border-top: 0; padding-top: 8px; }
+  .coquille :global(.sur) { font-family: var(--police-texte); font-size: 1rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--g-accent-texte); }
+  .coquille :global(.sur::before), .coquille :global(.sur--index b) { display: none; }
+  .coquille :global(.chapo) { color: var(--g-encre-douce); font-size: 1.08em; }
+  .coquille :global(.prose) { max-width: 38em; }
+  .coquille :global(.prose p + p) { margin-top: 0.9em; }
+  .coquille :global(.prose h2) { font-size: clamp(1.4rem, 2.6vw, 1.75rem); margin: 1.6em 0 0.5em; }
+  .coquille :global(.breadcrumb) { font-family: var(--police-texte); font-size: 0.92rem; letter-spacing: 0; color: var(--g-encre-douce); }
+  .coquille :global(.breadcrumb a) { color: var(--g-encre-douce); display: inline-flex; align-items: center; min-height: var(--cible-tactile); }
+  .coquille :global(.bouton--plein) { background: var(--g-plein); color: var(--g-plein-texte); }
+  .coquille :global(.bouton--plein:hover) { background: var(--g-plein-survol); color: var(--g-plein-texte); }
+
+  /* ———— Boutons ———— */
+  .coquille :global(.g-bouton) { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 8px 24px; border-radius: var(--rayon-bouton); font: inherit; font-weight: 650; font-size: 1rem; line-height: 1.2; text-align: center; text-decoration: none; border: 0; cursor: pointer; transition: background var(--duree-court); }
+  .coquille :global(.g-bouton--plein) { background: var(--g-plein); color: var(--g-plein-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .coquille :global(.g-bouton--plein:hover) { background: var(--g-plein-survol); color: var(--g-plein-texte); }
+  .coquille :global(.g-bouton--ligne) { background: var(--g-carte); color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-ligne); }
+  .coquille :global(.g-bouton--ligne:hover) { color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .coquille :global(.g-bouton .icone) { width: 1.3em; height: 1.3em; }
+  .coquille :global(.g-via) { display: block; flex-basis: 100%; font-size: 0.8rem; font-weight: 500; opacity: 0.9; }
+
+  /* ———— Bulles de navigation (soins, « pour qui », infos pratiques) ———— */
+  .coquille :global(.g-bulles) { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  .coquille :global(.g-bulle) { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 18px 6px 8px; border-radius: 999px; background: var(--g-bulle); color: var(--g-bulle-texte); font-weight: 600; font-size: 1rem; line-height: 1.2; text-decoration: none; transition: box-shadow var(--duree-court), background var(--duree-court); }
+  .coquille :global(.g-bulle:hover) { color: var(--g-bulle-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .coquille :global(.g-bulle--texte) { padding-left: 18px; }
+  .coquille :global(.g-bulle__picto) { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--g-carte); color: var(--g-encre); flex: none; }
+  .coquille :global(.g-bulle__picto .icone) { width: 24px; height: 24px; }
+
+  /* ———— En-tête : nom du cabinet, menu court (Soins · Le cabinet · Accès · Rendez-vous) ———— */
+  .c-entete { padding-block: 10px 0; }
+  .c-entete__ligne { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; min-height: 64px; }
+  .c-entete :global(.logo small) { font-family: var(--police-texte); text-transform: none; letter-spacing: 0; font-size: 0.85rem; color: var(--g-encre-douce); }
+  .coquille :global(.logo), .coquille :global(.logo:hover) { color: var(--g-encre); }
+  .c-nav ul { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; }
+  .c-nav a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); padding: 0 14px; border-radius: 999px; color: var(--g-encre); font-weight: 600; font-size: 1rem; text-decoration: none; }
+  .c-nav a:hover { color: var(--g-encre); background: var(--g-bulle); }
+  .c-nav a[aria-current='page'] { background: var(--g-bulle); color: var(--g-bulle-texte); }
+  .c-nav .c-nav__rdv a { margin-left: 8px; min-height: 48px; padding-inline: 20px; background: var(--g-vif); color: var(--g-vif-texte); box-shadow: none; }
+  .c-nav .c-nav__rdv a:hover { background: var(--g-vif); color: var(--g-vif-texte); text-decoration: underline; }
+  /* Téléphone : le menu passe en une ligne sous le nom ; « Rendez-vous » est dans la barre du bas */
+  @media (max-width: 759px) {
+    .coquille--tableau .c-nav { flex-basis: 100%; }
+    .coquille--tableau .c-nav ul { justify-content: space-between; }
+    .coquille--tableau .c-nav a { padding-inline: 10px; }
+    .coquille--tableau .c-nav__rdv { display: none; }
+    .c-entete :global(.logo small) { display: none; }
+  }
+  /* Village : téléphone en grand, menu dans une bande sous le nom, « Rendez-vous » en aplat de couleur */
+  .c-entete__tel { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border-radius: var(--rayon-bouton); color: var(--g-encre); font-weight: 750; font-size: 1.3rem; text-decoration: none; font-variant-numeric: tabular-nums; }
+  .c-entete__tel:hover { color: var(--g-encre); background: var(--g-doux); }
+  .c-entete__tel :global(.icone) { width: 28px; height: 28px; color: var(--g-accent-texte); }
+  .c-entete__tel-libelle { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .c-bande { margin-top: 8px; background: var(--g-bulle); border-block: var(--filet) solid var(--g-ligne); }
+  .c-bande ul { justify-content: flex-start; }
+  .c-bande a { border-radius: 0; padding-inline: 16px; min-height: 52px; }
+  .c-bande li:first-child a { padding-left: 0; }
+  .c-bande a[aria-current='page'] { background: transparent; color: var(--g-encre); text-decoration: underline; text-decoration-thickness: var(--filet-fort); text-underline-offset: 6px; }
+  .c-bande .c-nav__rdv { margin-left: auto; }
+  .c-bande .c-nav__rdv a { margin: 0; min-height: 52px; border-radius: 0; background: var(--g-vif); color: var(--g-vif-texte); padding-inline: 22px; }
+  .c-bande .c-nav__rdv a:hover { background: var(--g-vif); color: var(--g-vif-texte); text-decoration: underline; }
+  @media (max-width: 559px) {
+    .c-entete__numero { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .c-entete__tel-libelle { position: static; width: auto; height: auto; overflow: visible; clip-path: none; font-size: 1rem; }
+    .c-entete__tel { display: none; } /* « Appeler » est dans la barre du bas */
+    .c-bande .c-nav__rdv { display: none; }
+    .c-bande ul { justify-content: space-between; }
+    .c-bande a { padding-inline: 8px; }
+    .c-bande li:last-of-type a { padding-right: 0; }
+  }
+
+  /* ———— Pied de page ———— */
+  .c-pied { margin-top: clamp(40px, 6vw, 72px); padding-block: clamp(40px, 6vw, 64px) 24px; background: var(--g-sombre); color: var(--g-sombre-doux); font-size: 1rem; }
+  .coquille--village .c-pied { background: var(--g-doux); color: var(--g-encre-douce); border-top: var(--filet-fort) solid var(--g-encre); }
+  .c-pied__grille { display: grid; gap: 32px; }
+  @media (min-width: 860px) { .c-pied__grille { grid-template-columns: 1.2fr 1fr 1fr; } }
+  .c-pied__titre { color: var(--g-sombre-texte); font-weight: 700; margin-bottom: 10px !important; }
+  .coquille--village .c-pied__titre { color: var(--g-encre); }
+  .c-pied__bloc p + p { margin-top: 10px; }
+  .c-pied ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .c-pied a { color: var(--g-sombre-texte); text-decoration: underline; text-decoration-thickness: var(--filet); }
+  .c-pied a:hover { color: var(--g-sombre-accent); }
+  .coquille--village .c-pied a { color: var(--g-encre); }
+  .coquille--village .c-pied a:hover { color: var(--g-accent-texte); }
+  .c-pied__liens { gap: 0 !important; }
+  .c-pied__liens a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); }
+  .c-pied small { font-size: 0.85rem; }
+  .c-pied__bas { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 36px; padding-top: 16px; border-top: var(--filet) solid currentColor; font-size: 0.85rem; }
+
+  /* ———— Barre d'actions (téléphone) : Appeler / Rendez-vous ———— */
+  .c-barre { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr; padding-bottom: env(safe-area-inset-bottom); background: var(--g-carte); box-shadow: 0 -1px 0 var(--g-ligne); }
+  .c-barre a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 60px; padding-inline: 12px; color: var(--g-encre); font-weight: 650; font-size: 1rem; text-decoration: none; }
+  .c-barre a :global(.icone) { width: 22px; height: 22px; }
+  .c-barre__plein { background: var(--g-vif); color: var(--g-vif-texte) !important; }
+  @media (min-width: 900px) { .c-barre { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .coquille :global(*) { transition: none !important; } }
+</style>

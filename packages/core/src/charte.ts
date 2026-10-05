@@ -154,6 +154,10 @@ export const POLICES = {
   schibsted: "'Schibsted Grotesk Variable', 'Helvetica Neue', Arial, sans-serif",
   /** Ronde et très lisible (modèle Simple et pédagogique) */
   nunito: "'Nunito Variable', system-ui, sans-serif",
+  /** Sans géométrique nette, chiffres tabulaires (gabarit « tableau ») */
+  geist: "'Geist Variable', system-ui, sans-serif",
+  /** Sans des services publics, dessinée pour la lecture (gabarit « village ») */
+  publicsans: "'Public Sans Variable', system-ui, sans-serif",
 } as const;
 /** Police des données (lectures, cotes, numéros, légendes) : toujours la même, quel que soit le modèle */
 export const POLICE_MONO = "'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Consolas, monospace";

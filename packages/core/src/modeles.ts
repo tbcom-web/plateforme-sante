@@ -36,9 +36,52 @@ export const REGISTRES_MODELE: readonly Registre[] = ['releve', 'pedagogique', '
  */
 export const REGISTRE_PROPOSE: Readonly<Record<string, Registre>> = { zen: 'ligne' };
 
-export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito'] as const;
+/**
+ * Gabarit de mise en page (structure des pages, pas seulement des jetons) :
+ * - « classique » : en-tête éditorial, accueil selon `accueil.hero`, sections du gabarit commun (les 6 premiers modèles) ;
+ * - « tableau » : cartes arrondies (bento), bulles de navigation, très mobile ;
+ * - « village » : une colonne, très gros texte, accès d'abord (plan, trois gros boutons).
+ * Hors « classique », chaque section est rendue par une VARIANTE choisie par la fiche (`variantes`), avec le même contenu et
+ * les mêmes titres (SEO identique). Un nouveau gabarit = une entrée ici, ses variantes par défaut (VARIANTES_PAR_DEFAUT) et sa
+ * coquille (apps/sites/src/components/gabarits/Coquille.astro) ; les variantes de sections sont partagées entre gabarits.
+ */
+export const GABARITS = ['classique', 'tableau', 'village'] as const;
+export type Gabarit = (typeof GABARITS)[number];
+/** Sections dont la présentation change selon la variante (gabarits autres que « classique »). */
+export const VARIANTES_SECTIONS = {
+  /** Premier écran (qui, où, soin principal, Rendez-vous / Appeler) : dans une carte à aplat de couleur avec une illustration, ou en notice (lignes à picto) */
+  accueil: ['carte', 'notice'],
+  /** Soins : trois rangées (Soins, Pour qui, Infos pratiques) en bulles à picto, ou en grille de boutons */
+  soins: ['bulles', 'grille'],
+  /** Praticiens : cartes courtes (détails repliés) ou fiches en une colonne */
+  praticiens: ['cartes', 'fiches'],
+  /** Venir au cabinet : horaires et accès côte à côte puis volets repliés, ou notice en une colonne avec plan schématique */
+  infos: ['volets', 'notice'],
+  /** Questions fréquentes : accordéon */
+  faq: ['accordeon'],
+  /** Actualités : liste de titres datés, ou cartes */
+  actualites: ['liste', 'cartes'],
+  /** Pied de page : sobre (coordonnées, liens) */
+  pied: ['simple'],
+} as const;
+export type SectionVariable = keyof typeof VARIANTES_SECTIONS;
+export type Variantes = { [S in SectionVariable]: (typeof VARIANTES_SECTIONS)[S][number] };
+/** Variantes par défaut de chaque gabarit (la fiche peut en changer une partie). */
+export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
+  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
+  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
+};
+/** Gabarit d'un modèle (défaut : classique, pour les fiches antérieures au champ). */
+export const gabaritModele = (m: Pick<ModeleManifeste, 'gabarit'>): Gabarit => m.gabarit ?? 'classique';
+/** Variantes de sections effectives d'un modèle ; null pour le gabarit classique (rendu historique, inchangé). */
+export function variantesModele(m: Pick<ModeleManifeste, 'gabarit' | 'variantes'>): Variantes | null {
+  const g = gabaritModele(m);
+  return g === 'classique' ? null : { ...VARIANTES_PAR_DEFAUT[g], ...(m.variantes ?? {}) };
+}
+
+export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito', 'geist', 'publicsans'] as const;
 export type PoliceTitres = (typeof POLICES_TITRES)[number];
-export const POLICES_TEXTE = ['inter', 'manrope', 'nunito'] as const;
+export const POLICES_TEXTE = ['inter', 'manrope', 'nunito', 'geist', 'publicsans'] as const;
 export type PoliceTexte = (typeof POLICES_TEXTE)[number];
 /** Traitement appliqué aux photos pour l'unité graphique du style */
 export const TRAITEMENTS_IMAGES = ['naturel', 'chaud', 'doux', 'contraste'] as const;
@@ -68,6 +111,10 @@ export type ModeleManifeste = {
    */
   effet?: string;
   version: number;
+  /** Gabarit de mise en page (défaut : classique). Hors classique, `accueil.hero`, `competences` et `entete` sont ignorés. */
+  gabarit?: Gabarit;
+  /** Variantes des sections (gabarits autres que classique) ; absentes : celles du gabarit (VARIANTES_PAR_DEFAUT) */
+  variantes?: Partial<Variantes>;
   /** En-tête : opaque, ou transparent sur l'image d'accueil puis opaque au défilement */
   entete: 'opaque' | 'transparent';
   accueil: {
@@ -210,6 +257,44 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     gammes: ['sauge', 'canard', 'sable', 'ardoise'],
     jetons: { policeTitres: 'nunito', policeTexte: 'nunito', graisseTitres: 750, rayon: 16, boutons: 'arrondi', accent: 'couleur', fond: '#fcfcfa', images: 'naturel', fondDoux: '#f1f4ef', motif: 'aucun', logo: 'plein', registre: 'pedagogique' },
   },
+  {
+    // Gabarit « tableau » : cartes arrondies sur un fond teinté de la couleur du cabinet, premier écran en aplat de couleur,
+    // bulles de navigation (Soins, Pour qui, Infos pratiques), une idée par carte (docs/directions : règles de clarté v2).
+    // Toutes les sections porteuses d'un intertitre sont présentes (SEO identique).
+    id: 'tableau',
+    nom: 'Tableau',
+    effet: 'Clair et pratique',
+    description: 'Cartes arrondies et bulles : toutes les infos utiles en un coup d’œil, pensé pour le téléphone.',
+    version: 1,
+    gabarit: 'tableau',
+    entete: 'opaque',
+    accueil: { hero: 'scinde', voile: 0, sections: ['competences', 'acces', 'praticiens', 'panorama', 'galerie', 'faq', 'actualites'] },
+    competences: 'cartes',
+    pied: 'clair',
+    animations: 'aucune',
+    couleurConseillee: '#2d5bff',
+    // Gammes vitaminées (2026) d'abord : un aplat vif court, bulles en duo ; éviter les grands aplats rose-rouge (pastèque, corail).
+    gammes: ['cobalt-abricot', 'lavande', 'menthe', 'mangue', 'cobalt', 'canard'],
+    jetons: { policeTitres: 'geist', policeTexte: 'geist', graisseTitres: 650, rayon: 24, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', motif: 'aucun', logo: 'plein', registre: 'ligne' },
+  },
+  {
+    // Gabarit « village » : une colonne, texte à 20 px, premier écran en notice (qui, où, soins) et deux gros boutons ;
+    // « Venir au cabinet » avec le plan tiré des vraies rues (jamais inventé). Schémas pédagogiques calmes, aucune animation.
+    id: 'village',
+    nom: 'Village',
+    effet: 'Simple et proche',
+    description: 'Une colonne en gros caractères, le téléphone et l’accès bien visibles : pour une patientèle de quartier ou de bourg.',
+    version: 1,
+    gabarit: 'village',
+    entete: 'opaque',
+    accueil: { hero: 'lieu', voile: 0, sections: ['competences', 'acces', 'praticiens', 'panorama', 'galerie', 'faq', 'actualites'] },
+    competences: 'liste',
+    pied: 'clair',
+    animations: 'aucune',
+    couleurConseillee: '#3e5568',
+    gammes: ['tournesol', 'menthe', 'cobalt-abricot', 'pistache', 'ardoise', 'sauge'],
+    jetons: { policeTitres: 'publicsans', policeTexte: 'publicsans', graisseTitres: 750, rayon: 14, boutons: 'arrondi', accent: 'couleur', fond: '#ffffff', images: 'naturel', motif: 'aucun', logo: 'plein', registre: 'pedagogique' },
+  },
 ];
 
 /** Effet recherché d'un modèle (choix dans le formulaire du praticien) : celui de la fiche, sinon son nom. */
@@ -234,6 +319,19 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
   if (m.effet !== undefined && (typeof m.effet !== 'string' || m.effet.length > 40)) e.push('« effet » : 40 caractères maximum.');
   if (!Number.isInteger(m.version) || (m.version as number) < 1) e.push('« version » : entier positif.');
   if (!parmi(m.entete, ['opaque', 'transparent'])) e.push('« entete » : « opaque » ou « transparent ».');
+  const gabarit = m.gabarit ?? 'classique';
+  if (!parmi(gabarit, GABARITS)) e.push(`« gabarit » : ${GABARITS.join(', ')}.`);
+  if (m.variantes !== undefined) {
+    if (!m.variantes || typeof m.variantes !== 'object' || Array.isArray(m.variantes)) e.push('« variantes » : objet { section: variante }.');
+    else if (gabarit === 'classique') e.push('« variantes » : réservées aux gabarits autres que « classique ».');
+    else {
+      for (const [s, v] of Object.entries(m.variantes)) {
+        const possibles = (VARIANTES_SECTIONS as Record<string, readonly string[]>)[s];
+        if (!possibles) e.push(`Variante pour une section inconnue : ${s}. Possibles : ${Object.keys(VARIANTES_SECTIONS).join(', ')}.`);
+        else if (!parmi(v, possibles)) e.push(`« variantes.${s} » : ${possibles.join(', ')}.`);
+      }
+    }
+  }
   if (!m.accueil || !parmi(m.accueil.hero, HEROS)) e.push(`« accueil.hero » : ${HEROS.join(', ')}.`);
   const voile = m.accueil?.voile ?? 50;
   if (!Number.isInteger(voile) || voile < 0 || voile > 90) e.push('« accueil.voile » : entre 0 et 90.');
@@ -286,6 +384,8 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
       description: v.description,
       ...(v.effet?.trim() ? { effet: v.effet.trim() } : {}),
       version: v.version,
+      ...(gabarit !== 'classique' ? { gabarit } : {}),
+      ...(gabarit !== 'classique' && v.variantes && Object.keys(v.variantes).length ? { variantes: { ...v.variantes } } : {}),
       entete: v.entete,
       accueil: { hero: v.accueil.hero, voile, sections: v.accueil.sections },
       competences: v.competences,

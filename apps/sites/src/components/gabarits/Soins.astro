@@ -1,0 +1,83 @@
+---
+// Navigation par bulles des gabarits tableau et village (règles de clarté) : une rangée par catégorie — Soins, Pour qui,
+// Infos pratiques — chaque bulle (picto métier de pictos.ts + texte court) mène à sa page ou ouvre le bon volet de « Venir au
+// cabinet ». En `complet` (page « Compétences »), les soins sont de grandes bulles avec leur résumé d'une ligne.
+// - « bulles » (tableau) : pastilles arrondies ; Soins sur la couleur vive pâle, Pour qui sur le duo pâle, Infos neutres ;
+// - « grille » (village) : boutons rectangulaires bordés, deux par ligne, étiquettes de rangée en capitales.
+// Les étiquettes de rangée ne sont pas des titres (aucun intertitre ajouté : SEO identique).
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { pourQui, pictoDuSoin, infosPratiques } from '../../lib/gabarits';
+
+interface Props { variante: 'bulles' | 'grille'; complet?: boolean; accueil?: boolean }
+const { variante, complet = false, accueil = false } = Astro.props;
+const infos = infosPratiques(accueil);
+const rangees = [
+  { cle: 'soins', etiquette: 'Soins', bulles: site.soins.map((s) => ({ libelle: s.titreCourt, href: `/soins/${s.slug}`, picto: pictoDuSoin(s.slug), resume: complet ? s.resume : '' })) },
+  ...(pourQui.length >= 2 ? [{ cle: 'publics', etiquette: 'Pour qui', bulles: pourQui.map((p) => ({ ...p, resume: '' })) }] : []),
+  { cle: 'infos', etiquette: 'Infos pratiques', bulles: infos.map((i) => ({ libelle: i.libelle, href: i.href, picto: i.picto, resume: '' })) },
+];
+---
+<div class:list={['rangees', `rangees--${variante}`, { 'rangees--complet': complet }]}>
+  {rangees.map((r) => (
+    <div class:list={['rangee', `rangee--${r.cle}`]}>
+      <p class="rangee__etiquette">{r.etiquette}</p>
+      <ul class="rangee__bulles">
+        {r.bulles.map((b) => (
+          <li>
+            <a class="bulle" href={b.href} data-volet={b.href.startsWith('#volet-') ? b.href.slice(1) : undefined}>
+              <span class="bulle__picto" aria-hidden="true"><Icone nom={b.picto} /></span>
+              <span class="bulle__texte"><span class="bulle__libelle">{b.libelle}</span>{b.resume && <span class="bulle__resume">{b.resume}</span>}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</div>
+
+<script>
+  // Bulle « Infos pratiques » de l'accueil : ouvre le volet correspondant de « Venir au cabinet » avant d'y défiler.
+  document.querySelectorAll<HTMLAnchorElement>('a[data-volet]').forEach((a) =>
+    a.addEventListener('click', () => {
+      const volet = document.getElementById(a.dataset.volet ?? '');
+      if (volet instanceof HTMLDetailsElement) volet.open = true;
+    }),
+  );
+</script>
+
+<style>
+  .rangees { display: grid; gap: 22px; }
+  .rangee { display: grid; gap: 10px; }
+  .rangee__etiquette { font-size: 0.95rem; font-weight: 650; color: var(--g-encre-douce); }
+  .rangee__bulles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 12px; }
+  .bulle { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 18px 6px 7px; border-radius: 999px; color: var(--g-encre); font-weight: 600; font-size: 1rem; line-height: 1.25; text-decoration: none; transition: box-shadow var(--duree-court); }
+  .bulle:hover { color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .bulle__picto { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; flex: none; background: var(--g-carte); }
+  .bulle__picto :global(.icone) { width: 26px; height: 26px; }
+  .bulle__texte { display: grid; gap: 2px; }
+  .bulle__resume { font-weight: 400; font-size: 0.95rem; color: var(--g-encre-douce); }
+  /* Couleurs des rangées (tableau) : soins = couleur du cabinet, pour qui = seconde couleur, infos = neutre */
+  .rangees--bulles .rangee--soins .bulle { background: var(--g-bulle); color: var(--g-bulle-texte); }
+  .rangees--bulles .rangee--soins .bulle__picto { color: var(--g-bulle-picto); }
+  .rangees--bulles .rangee--publics .bulle { background: var(--g-duo-bulle); color: var(--g-duo-texte); }
+  .rangees--bulles .rangee--publics .bulle__picto { color: var(--g-duo-picto); }
+  .rangees--bulles .rangee--infos .bulle { background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .rangees--bulles .rangee--infos .bulle__picto { background: var(--g-doux); color: var(--g-accent-texte); }
+  .rangees--bulles .rangee--infos .bulle:hover { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  /* Page « Compétences » : grandes bulles avec résumé, en grille */
+  .rangees--complet .rangee--soins .rangee__bulles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+  .rangees--complet .rangee--soins .bulle { display: flex; height: 100%; border-radius: var(--rayon-carte); padding: 16px 20px 16px 14px; align-items: flex-start; }
+  .rangees--complet .rangee--soins .bulle__picto { width: 48px; height: 48px; }
+  .rangees--complet .rangee--soins .bulle__picto :global(.icone) { width: 32px; height: 32px; }
+  .rangees--complet .bulle__libelle { font-size: 1.1rem; }
+  /* Grille (village) : boutons bordés, deux par ligne */
+  .rangees--grille .rangee__etiquette { font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--g-encre); }
+  .rangees--grille .rangee__bulles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 10px; }
+  .rangees--grille .bulle { display: flex; min-height: 60px; border-radius: calc(var(--rayon-carte) * 0.6); padding: 8px 16px 8px 10px; background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-ligne); }
+  .rangees--grille .bulle:hover { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
+  .rangees--grille .bulle__picto { background: var(--g-bulle); color: var(--g-bulle-picto); border-radius: calc(var(--rayon-carte) * 0.45); }
+  .rangees--grille .rangee--publics .bulle__picto { background: var(--g-duo-bulle); color: var(--g-duo-picto); }
+  .rangees--grille .rangee--infos .bulle__picto { background: var(--g-doux); color: var(--g-encre); }
+  @media (max-width: 559px) { .rangees--bulles .rangee__bulles { gap: 8px; } .bulle { padding-right: 14px; } }
+</style>

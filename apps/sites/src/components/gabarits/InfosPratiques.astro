@@ -1,0 +1,107 @@
+---
+// Informations pratiques des gabarits tableau et village : seules les rubriques renseignées sont affichées, titres
+// identiques au gabarit classique (Horaires, Prise de rendez-vous, Adresse, Accès, Visites à domicile, Moyens de règlement
+// acceptés). Horaires : tableau simple jour / heures, jour courant signalé par un texte (« aujourd'hui »), pas seulement
+// une couleur.
+// - « tuiles » (tableau) : cartes en grille, horaires dans la plus grande ; « notice » (village) : une colonne, gros texte.
+// `niveau` : titres des rubriques en h2 quand la page n'a pas d'autre intertitre (plan d'accès, comme le gabarit classique).
+import Icone from '../Icone.astro';
+import { site } from '../../lib/site';
+import { lieu, telLien, itineraire, rdvEnLigne, TYPES_LIEU } from '../../lib/textes';
+import { semaine, cabinetOuvert } from '../../lib/gabarits';
+
+interface Props { variante: 'volets' | 'notice'; sansAdresse?: boolean; niveau?: 2 | 3 }
+const { variante, sansAdresse = false, niveau = 3 } = Astro.props;
+const Titre = niveau === 2 ? 'h2' : 'h3';
+const acces = [
+  site.accesDetail.parking,
+  site.accesDetail.pmr ? 'Accès facile pour les personnes à mobilité réduite' : '',
+  site.accesDetail.transports,
+  ...site.accesDetail.autres,
+].filter(Boolean);
+---
+<div class:list={['infos', variante === 'notice' ? 'infos--notice' : 'infos--tuiles']}>
+  {cabinetOuvert && (
+    <div class="info info--horaires" id="horaires">
+      <Titre class="info__titre"><Icone nom="picto:horaires" secours="lucide:clock" />Horaires</Titre>
+      <table class="horaires">
+        <tbody>
+          {semaine.map((j) => (
+            <tr class:list={{ ferme: j.plages.length === 0 }} data-jour={j.numero}>
+              <th scope="row">{j.jour}</th>
+              <td>{j.plages.length ? j.plages.map((p) => <span>{p}</span>) : 'Fermé'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach(function (l) { l.classList.add('aujourdhui'); var e = document.createElement('span'); e.className = 'horaires__jour'; e.textContent = 'aujourd’hui'; l.querySelector('th').appendChild(e); });</script>
+    </div>
+  )}
+  <div class="info" id="rdv">
+    <Titre class="info__titre"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Prise de rendez-vous</Titre>
+    {rdvEnLigne && <p>En ligne sur {site.rdv.plateforme}, 24h/24{site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.</p>}
+    {(site.rdvMode !== 'en_ligne' || !rdvEnLigne) && <p>Par téléphone au <a href={telLien}>{site.cabinet.telephone}</a>.</p>}
+  </div>
+  {!sansAdresse && (
+    <div class="info">
+      <Titre class="info__titre"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Adresse</Titre>
+      <p>
+        {lieu.nom ? <>{lieu.nom}<br /></> : lieu.type !== 'cabinet' && <>{TYPES_LIEU[lieu.type]}<br /></>}
+        {lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}
+      </p>
+      <a class="info__lien" href={itineraire} target="_blank" rel="noopener">Itinéraire</a>
+    </div>
+  )}
+  {acces.length > 0 && (
+    <div class="info" id="acces">
+      <Titre class="info__titre"><Icone nom="picto:accessibilite" secours="healthicons:wheelchair-outline" />Accès</Titre>
+      <ul>{acces.map((a) => <li>{a}</li>)}</ul>
+    </div>
+  )}
+  {site.domicile.actif && (
+    <div class="info" id="domicile">
+      <Titre class="info__titre"><Icone nom="picto:soins-domicile" secours="healthicons:home-outline" />Visites à domicile</Titre>
+      {site.domicile.creneaux && <p>{site.domicile.creneaux}.</p>}
+      {site.domicile.secteurs.length > 0 ? <p>Secteurs : {site.domicile.secteurs.join(', ')}.</p> : <p>Sur demande, contactez le cabinet.</p>}
+    </div>
+  )}
+  {site.cabinet.tarifs.length > 0 && (
+    <div class="info" id="tarifs">
+      <p class="info__titre"><Icone nom="picto:honoraires" secours="lucide:wallet" />Tarifs</p>
+      <ul>{site.cabinet.tarifs.map((t) => <li>{t.acte} : {t.prix}</li>)}</ul>
+    </div>
+  )}
+  {site.paiements.length > 0 && (
+    <div class="info" id="reglement">
+      <Titre class="info__titre"><Icone nom="picto:honoraires" secours="lucide:wallet" />Moyens de règlement acceptés</Titre>
+      <p>{site.paiements.join(', ')}.</p>
+      {site.praticien.conventionnement && <p>{site.praticien.conventionnement}.</p>}
+    </div>
+  )}
+</div>
+{site.communes.length > 0 && <p class="communes">Le cabinet accueille les patients de {site.communes.join(', ')} et des communes alentour.</p>}
+
+<style>
+  .infos { display: grid; gap: 14px; }
+  .infos--tuiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
+  @media (min-width: 900px) { .infos--tuiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } .infos--tuiles .info--horaires { grid-row: span 2; } }
+  .info { display: grid; gap: 10px; align-content: start; padding: clamp(22px, 3vw, 28px); border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .infos--notice { gap: 0; }
+  .infos--notice .info { padding: 24px 0; border-radius: 0; background: none; box-shadow: none; border-top: var(--filet) solid var(--g-ligne); }
+  .infos--notice .info:first-child { border-top: 0; padding-top: 0; }
+  .info__titre { display: flex; align-items: center; gap: 12px; font-family: var(--police-texte); font-size: 1.15rem !important; font-weight: 700; letter-spacing: 0 !important; }
+  .info__titre :global(.icone) { width: 30px; height: 30px; color: var(--g-accent-texte); flex: none; }
+  .info p, .info ul { color: var(--g-encre-douce); }
+  .info ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+  .info__lien { display: inline-flex; align-items: center; min-height: var(--cible-tactile); font-weight: 600; }
+  .horaires { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .horaires th, .horaires td { padding: 10px 0; border-bottom: var(--filet) solid var(--g-ligne); text-align: left; vertical-align: top; }
+  .horaires th { font-weight: 650; width: 42%; padding-right: 12px; }
+  .horaires td span { display: block; white-space: nowrap; }
+  .horaires .ferme :is(th, td) { color: var(--g-encre-douce); font-weight: 400; }
+  .horaires :global(.aujourdhui) :is(th, td) { background: var(--g-bulle); color: var(--g-encre); }
+  .horaires :global(.aujourdhui) th { padding-left: 12px; border-radius: 10px 0 0 10px; }
+  .horaires :global(.aujourdhui) td { border-radius: 0 10px 10px 0; }
+  .horaires :global(.horaires__jour) { display: block; font-size: 0.85rem; font-weight: 600; color: var(--g-bulle-texte); }
+  .communes { margin-top: 20px !important; color: var(--g-encre-douce); font-size: 0.95rem; }
+</style>

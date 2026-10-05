@@ -1,0 +1,77 @@
+---
+// Plan d'accès des gabarits tableau et village (lib/plan-acces.ts) : rues réelles autour du cabinet, tirées d'OpenStreetMap
+// au build et dessinées en SVG aux couleurs du site (--g-plan-*), ou, à défaut, schéma abstrait étiqueté « plan schématique »
+// (un point et l'adresse, aucune fausse rue). Pas de tuile, pas d'iframe, pas de cible ni de viseur : le cabinet est une
+// pastille pleine avec son étiquette. Le plan est décoratif pour les lecteurs d'écran : l'adresse et l'itinéraire sont donnés
+// en texte à côté (lien « Ouvrir le plan complet »).
+import { planAcces, PLAN } from '../../lib/plan-acces';
+import { lienCarte } from '../../lib/visuels';
+import { lieu } from '../../lib/textes';
+
+interface Props {
+  /** Afficher les liens sous le plan (source, plan complet) */
+  legende?: boolean;
+  class?: string;
+}
+const { legende = true, class: classe } = Astro.props;
+const p = planAcces;
+const LARGEURS = { grande: 15, moyenne: 12, petite: 9, pietonne: 7 } as const;
+const { largeur: L, hauteur: H } = PLAN;
+---
+<figure class:list={['plan', classe]}>
+  {p.source === 'osm' ? (
+    <svg class="plan__svg" viewBox={`0 0 ${L} ${H}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Plan simplifié du quartier, le cabinet est au ${lieu.adresse}`}>
+      <rect width={L} height={H} fill="var(--g-plan-ilot)" />
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        {p.rues.map((r) => <path d={r.d} stroke="var(--g-plan-bord)" stroke-width={LARGEURS[r.classe] + 3} />)}
+        {p.rues.map((r) => <path d={r.d} stroke="var(--g-plan-rue)" stroke-width={LARGEURS[r.classe]} />)}
+      </g>
+      <g class="plan__noms" fill="var(--g-plan-texte)" text-anchor="middle" dominant-baseline="central">
+        {p.etiquettes.map((t) => <text transform={`translate(${t.x} ${t.y}) rotate(${t.angle})`}>{t.nom}</text>)}
+      </g>
+      {p.stations.map((s) => (
+        <g transform={`translate(${s.x} ${s.y})`}>
+          <rect x="-11" y="-11" width="22" height="22" rx="6" fill="var(--g-encre)" />
+          <text class="plan__metro" fill="var(--g-carte)" text-anchor="middle" dominant-baseline="central">M</text>
+          {s.x > L * 0.7
+            ? <text class="plan__station" x="-16" fill="var(--g-encre)" text-anchor="end" dominant-baseline="central">{s.nom}</text>
+            : <text class="plan__station" x="16" fill="var(--g-encre)" dominant-baseline="central">{s.nom}</text>}
+        </g>
+      ))}
+      <g transform={`translate(${p.point.x} ${p.point.y})`}>
+        <circle r="13" fill="var(--g-plan-point)" stroke="var(--g-plan-rue)" stroke-width="4" />
+        <rect x="-44" y="-50" width="88" height="28" rx="14" fill="var(--g-encre)" />
+        <text class="plan__cabinet" y="-36" fill="var(--g-carte)" text-anchor="middle" dominant-baseline="central">Le cabinet</text>
+      </g>
+    </svg>
+  ) : (
+    <div class="plan__schema" role="img" aria-label="Plan schématique : position du cabinet, sans les rues">
+      <span class="plan__pastille" aria-hidden="true"></span>
+      <span class="plan__adresse">{lieu.adresse}<br />{lieu.codePostal} {lieu.ville}</span>
+    </div>
+  )}
+  {legende && (
+    <figcaption class="plan__legende">
+      {p.source === 'osm'
+        ? <span>Plan simplifié · données © <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a></span>
+        : <span>Plan schématique, sans les rues</span>}
+      <a href={lienCarte} rel="noopener" target="_blank">Ouvrir le plan complet</a>
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .plan { margin: 0; display: grid; gap: 10px; }
+  .plan__svg, .plan__schema { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; border-radius: var(--rayon-carte, var(--rayon)); background: var(--g-plan-ilot); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); overflow: hidden; }
+  .plan__noms { font-family: var(--police-texte); font-size: 13px; font-weight: 600; paint-order: stroke; stroke: var(--g-plan-rue); stroke-width: 4px; stroke-linejoin: round; }
+  .plan__metro { font-family: var(--police-texte); font-size: 14px; font-weight: 800; }
+  .plan__station { font-family: var(--police-texte); font-size: 14px; font-weight: 700; paint-order: stroke; stroke: var(--g-plan-rue); stroke-width: 4px; stroke-linejoin: round; }
+  .plan__cabinet { font-family: var(--police-texte); font-size: 14px; font-weight: 700; }
+  /* Schéma abstrait : fond uni, pastille et adresse ; volontairement sans rue ni bâtiment */
+  .plan__schema { position: relative; display: grid; place-items: center; align-content: center; gap: 14px; background: var(--g-plan-fond); text-align: center; }
+  .plan__pastille { width: 26px; height: 26px; border-radius: 50%; background: var(--g-plan-point); box-shadow: 0 0 0 6px var(--g-plan-rue); }
+  .plan__adresse { font-weight: 650; color: var(--g-encre); }
+  .plan__legende { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; font-size: 0.85rem; color: var(--g-encre-douce); }
+  .plan__legende a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); font-weight: 600; }
+  .plan__legende span a { display: inline; min-height: 0; font-weight: 400; }
+</style>

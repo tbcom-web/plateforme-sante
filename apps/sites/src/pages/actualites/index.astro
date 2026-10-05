@@ -6,6 +6,9 @@ import { site, nomPraticien, dateFr } from '../../lib/site';
 import { breadcrumbSchema } from '../../lib/schema';
 import { espacesFines } from '@plateforme/core';
 import { photoResponsive } from '../../lib/visuels';
+import TetePage from '../../components/gabarits/TetePage.astro';
+import Actus from '../../components/gabarits/Actus.astro';
+import { nouveauGabarit, variantes } from '../../lib/gabarits';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Conseils', path: '/actualites' }];
 const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date));
@@ -17,6 +20,12 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
   schemas={[breadcrumbSchema(crumbs)]}
   noindex={articles.length === 0}
 >
+  {nouveauGabarit ? (<>
+    <TetePage crumbs={crumbs} sur={site.cabinet.ville} chapo={articles.length === 0 ? 'Les premiers conseils arrivent bientôt.' : undefined}>
+      <h1 slot="titre">Conseils et actualités</h1>
+    </TetePage>
+    {articles.length > 0 && <section class="g-section g-bloc"><div class="g-cadre g-bloc__dedans"><Actus articles={articles} variante={variantes.actualites} titres="h2" /></div></section>}
+  </>) : (<>
   <section class="cadre tete-page">
     <Breadcrumb items={crumbs} />
     <div class="tete-page__grille tete-page__grille--simple">
@@ -48,6 +57,7 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
       </div>
     </div>
   </section>
+  </>)}
 </Gabarit>
 
 <style>

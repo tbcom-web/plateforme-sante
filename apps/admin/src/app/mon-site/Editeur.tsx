@@ -11,6 +11,7 @@ import {
   modeleIntegre,
   effetModele,
   registreModele,
+  gabaritModele,
   type ModeleManifeste,
   marquesLogo,
   svgMarque,
@@ -770,11 +771,15 @@ function VignetteModele({ m }: { m: ModeleManifeste }) {
         : [0.3, 0.45, 0.6, 0.38, 0.52].map((k, i) => <circle key={i} cx={x + w * (0.3 + i * 0.1)} cy={y + h * k} r={1.6} fill={['#3e7bfa', '#22c3a6', '#ffc23d', '#ff7a2f', '#22c3a6'][i]} />)}
     </g>
   );
-  const hero = m.accueil.hero;
+  // Gabarits tableau et village : vignette propre (cartes arrondies ; une colonne avec trois gros boutons et le plan)
+  const gabarit = gabaritModele(m);
+  const hero = gabarit === 'classique' ? m.accueil.hero : gabarit;
   return (
     <svg viewBox="0 0 96 72" width="96" height="72" aria-hidden="true" className="shrink-0 rounded-md ring-1 ring-black/10" style={{ background: fond }}>
       {hero === 'scinde' && (<>{titre(8, 18, 34)}{titre(8, 26, 26)}<rect x={8} y={36} width={20} height={6} rx={rb} fill={accent} />{image(50, 10, 38, 40)}</>)}
       {(hero === 'plein' || hero === 'diaporama') && (<>{image(0, 0, 96, 50)}{titre(10, 22, 40, '#fff')}{titre(10, 30, 28, '#fff')}<rect x={10} y={38} width={20} height={6} rx={rb} fill="#fff" />{hero === 'diaporama' && [0, 1, 2].map((i) => <circle key={i} cx={78 + i * 5} cy={44} r={1.2} fill="#fff" opacity={i ? 0.5 : 1} />)}</>)}
+      {hero === 'tableau' && (<><rect x={0} y={0} width={96} height={56} fill={doux} />{[[4, 4, 46, 46], [53, 4, 19, 21], [75, 4, 17, 21], [53, 29, 39, 21]].map(([x, y, w, h], i) => <rect key={i} x={x} y={y} width={w} height={h} rx={4} fill={i === 1 ? accent : '#fff'} stroke='#00000014' />)}{titre(9, 14, 30)}{titre(9, 22, 22)}<rect x={9} y={34} width={18} height={6} rx={3} fill={accent} /><rect x={29} y={34} width={14} height={6} rx={3} fill='none' stroke={accent} strokeWidth={0.8} /></>)}
+      {hero === 'village' && (<>{titre(26, 6, 44)}{titre(32, 13, 32)}{[0, 1, 2].map((i) => <rect key={i} x={8 + i * 27.5} y={22} width={25} height={9} rx={2} fill={i === 1 ? accent : '#fff'} stroke='#1b2a30' strokeWidth={0.6} />)}<rect x={8} y={35} width={80} height={18} rx={2} fill={doux} /><path d='M8 44 H88 M30 35 V53 M62 35 V53' stroke='#fff' strokeWidth={2.2} /><circle cx={50} cy={44} r={2.4} fill={accent} /></>)}
       {hero === 'lieu' && (<>{image(6, 5, 84, 28)}<rect x={10} y={26} width={76} height={24} rx={r} fill={fond} stroke="#00000014" />{titre(15, 31, 34)}{titre(15, 39, 24)}<rect x={60} y={30} width={22} height={7} rx={rb} fill={accent} /><rect x={60} y={39.5} width={22} height={7} rx={rb} fill="none" stroke={accent} strokeWidth={0.8} /></>)}
       <rect x={0} y={56} width={96} height={16} fill={doux} />
       {pedago

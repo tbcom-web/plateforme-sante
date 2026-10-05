@@ -11,14 +11,17 @@ import '@fontsource-variable/schibsted-grotesk';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource/instrument-serif';
 import '@fontsource-variable/nunito';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/public-sans';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   completerJeuVisuel, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
-  svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, visuelSoinJeu,
+  svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
   type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
+import ApercuGabarit from './ApercuGabarit';
 
 type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
@@ -98,6 +101,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     const v: Record<string, string> = {
       ...variablesCharte(),
       ...variablesTheme(m, { couleur: d.theme.couleur, gamme: d.theme.gamme || null }),
+      // Gabarits tableau, village… : couleurs dérivées de la couleur du cabinet, garde-fous de contraste (vide en classique)
+      ...variablesGabarit(m, { couleur: d.theme.couleur, gamme: d.theme.gamme || null }),
       '--rayon': `${j.rayon}px`,
       '--rayon-bouton': { pilule: '999px', arrondi: '12px', carre: '2px' }[j.boutons],
       '--graisse-titres': String(j.graisseTitres),
@@ -420,6 +425,10 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             data-registre={registre}
             style={{ ...style, width: LARGEUR[appareil], transform: `scale(${echelle})`, transformOrigin: '0 0', position: 'absolute', top: 0, left: 0 }}
           >
+            {gabaritModele(m) !== 'classique' ? (
+              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} vue={vue} nomCabinet={nomCabinet} titre={titre} ville={ville} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
+                marque={d.theme.logoPerso.url ? <img src={d.theme.logoPerso.url} alt="" style={{ height: 40 }} /> : <span dangerouslySetInnerHTML={{ __html: marque }} />} />
+            ) : (<>
             <header className={`ap-entete ${transparent ? 'ap-entete--transparent' : ''}`}>
               <div className="ap-cadre" style={{ display: 'flex', alignItems: 'center', gap: 24, minHeight: 74 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 'auto' }}>
@@ -450,6 +459,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
               ) : ficheSoin}
             </main>
             {pied}
+            </>)}
           </div>
         </div>
       </div>

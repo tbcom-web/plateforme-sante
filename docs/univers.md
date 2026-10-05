@@ -108,6 +108,8 @@ Prescriptif : à chaque étape, une recommandation par défaut, un bouton « Con
 | Posture et biomécanique | Médical premium · encre | posture + générale | relevé | polygone d'appui | **differe** |
 | Zen, confort du pied | Zen · sable | soins + générale | relevé · illustrations · semelle | rubans | brouillon |
 | Simple et rassurant | Simple et pédagogique · sauge | générale + soins | pédagogique · mélange · non | empreinte | brouillon |
+| Clair et pratique | **Tableau** · cobalt & abricot | générale | ligne · illustrations · non | empreinte | brouillon |
+| Simple et proche | **Village** · tournesol & ardoise | générale + soins | pédagogique · illustrations · non | empreinte | brouillon |
 
 Spécialité ajoutée pour le premier : `diabete` (`packs.ts`) — accueil sur le schéma du dépistage au monofilament
 (3 sites), sans animation ni lecture de pression rouge ; pas de pied nu en marche.
@@ -117,3 +119,15 @@ Médical premium, le coureur animé est rogné par la carte d'adresse ; sur mobi
 un cadre haut et vide (registre pédagogique) et « Pédicures-podologues » est tronqué dans l'en-tête ; dans le bandeau
 « lieu d'exercice » (relevé), l'empreinte en points passe sous la ligne d'informations ; les cartes « Premier
 rendez-vous » gardent une grande hauteur vide quand le texte est court.
+
+## Gabarits « Tableau » et « Village » comme options d'univers (2026-10-05)
+
+Deux univers ajoutés **sans modifier les univers existants** : « Clair et pratique » (`clair-pratique`, modèle `tableau`) et
+« Simple et proche » (`simple-proche`, modèle `village`), en brouillon, à revoir comme les autres
+(`npm run univers:apercu -- clair-pratique` dans `apps/sites`). Ces modèles ne sont pas des jeux de jetons mais des
+**gabarits** (structure des pages, variantes de sections : `docs/charte-graphique.md`, « Gabarits et variantes de
+sections ») ; le préréglage d'univers s'y applique de la même façon (gamme, registre, ordre des sections compatible).
+Gammes conseillées : Tableau → cobalt-abricot, lavande, menthe, mangue (éviter les grands aplats rose-rouge) ; Village →
+tournesol, menthe, cobalt-abricot, pistache. Toute gamme ou couleur libre reste lisible (garde-fous de contraste,
+`couleursGabarit`). Un univers existant peut passer sur l'un de ces modèles en changeant seulement `preReglage.modele`
+(l'ordre des sections, s'il est fixé, doit alors reprendre celles du nouveau modèle).

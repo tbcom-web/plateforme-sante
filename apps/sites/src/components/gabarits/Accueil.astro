@@ -1,0 +1,109 @@
+---
+// Accueil des gabarits tableau et village (règles de clarté) : premier écran, puis les sections de la fiche du modèle dans
+// son ordre — Soins (trois rangées de bulles), Venir au cabinet (horaires, adresse, volets repliés), Équipe (fiches courtes),
+// Lieu (une ligne et quatre pastilles), Questions (accordéon), Actualités (deux liens). Chaque section est rendue par la
+// variante choisie par la fiche. Mêmes intertitres (H2) et mêmes clés de textes modifiables que le gabarit classique :
+// SEO identique (npm run controle:seo). Tableau : une carte blanche par section ; village : sections séparées par un filet.
+import FaqListe from './Faq.astro';
+import PremierEcran from './PremierEcran.astro';
+import Soins from './Soins.astro';
+import Praticiens from './Praticiens.astro';
+import VenirAuCabinet from './VenirAuCabinet.astro';
+import Actus from './Actus.astro';
+import { site } from '../../lib/site';
+import { texte, champ } from '../../lib/edition';
+import { titreCompetences, titrePraticiens, adresseLieu, lieu } from '../../lib/textes';
+import { photoResponsive } from '../../lib/visuels';
+import { variantes, titreLieu, pastillesLieu } from '../../lib/gabarits';
+import type { Article } from '@plateforme/core';
+
+interface Props { articles: Article[] }
+const { articles } = Astro.props;
+const m = site.modele;
+const metier = site.titreMetier.toLowerCase();
+---
+<PremierEcran variante={variantes.accueil} />
+
+{m.accueil.sections.map((section) => (
+  <>
+    {section === 'competences' && (
+      <section class="g-section g-bloc" id="competences" aria-label={titreCompetences}>
+        <div class="g-cadre g-bloc__dedans">
+          <div class="g-tete">
+            <h2>Une prise en charge <span class="pale" {...champ('competences.deco')}>{texte('competences.deco', 'du pied, à tout âge.')}</span></h2>
+            <p class="g-chapo">Choisissez un soin ou votre situation.</p>
+          </div>
+          <Soins variante={variantes.soins} accueil />
+        </div>
+      </section>
+    )}
+
+    {section === 'acces' && (
+      <section class="g-section g-bloc" id="infos">
+        <div class="g-cadre g-bloc__dedans">
+          <div class="g-tete"><h2>Venir <span class="pale" {...champ('acces.deco')}>{texte('acces.deco', 'au cabinet.')}</span></h2></div>
+          <VenirAuCabinet variante={variantes.infos} />
+        </div>
+      </section>
+    )}
+
+    {section === 'praticiens' && (
+      <section class="g-section g-bloc" id="praticiens" aria-label={titrePraticiens}>
+        <div class="g-cadre g-bloc__dedans">
+          <div class="g-tete">
+            <h2>{site.praticiens.length > 1 ? <>Une équipe{' '}<span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', `de ${site.praticiens.length} praticiens.`)}</span></> : <>Votre {metier}{' '}<span class="pale" {...champ('praticiens.deco')}>{texte('praticiens.deco', `à ${site.cabinet.ville}.`)}</span></>}</h2>
+          </div>
+          <Praticiens variante={variantes.praticiens} />
+        </div>
+      </section>
+    )}
+
+    {section === 'panorama' && (
+      <section class="g-section g-bloc">
+        <div class="g-cadre g-bloc__dedans lieu">
+          <h2 {...champ('panorama.titre')}>{texte('panorama.titre', titreLieu)}</h2>
+          <p class="g-doux">{lieu.nom ? `${lieu.adresse}${lieu.complement ? `, ${lieu.complement}` : ''}, ${lieu.codePostal} ${lieu.ville}` : adresseLieu}.</p>
+          {pastillesLieu.length > 0 && <ul class="lieu__pastilles">{pastillesLieu.map((p) => <li>{p}</li>)}</ul>}
+        </div>
+      </section>
+    )}
+
+    {section === 'galerie' && site.photos.cabinet.length > 0 && (
+      <section class="g-section g-bloc">
+        <div class="g-cadre g-bloc__dedans">
+          <div class="g-tete"><h2>En images</h2></div>
+          <ul class="galerie">
+            {site.photos.cabinet.slice(0, 4).map((src) => <li><img src={src} {...photoResponsive(src, '(min-width: 900px) 280px, 50vw')} alt="" width="800" height="600" loading="lazy" decoding="async" /></li>)}
+          </ul>
+        </div>
+      </section>
+    )}
+
+    {section === 'faq' && (
+      <section class="g-section g-bloc">
+        <div class="g-cadre g-bloc__dedans">
+          <div class="g-tete"><h2>Bon à savoir <span class="pale" {...champ('faq.deco')}>{texte('faq.deco', 'avant de venir.')}</span></h2></div>
+          <FaqListe items={site.faqGenerale} cle="faq" />
+        </div>
+      </section>
+    )}
+
+    {section === 'actualites' && articles.length > 0 && (
+      <section class="g-section g-bloc">
+        <div class="g-cadre g-bloc__dedans">
+          <div class="g-tete"><h2>Conseils <span class="pale" {...champ('actualites.deco')}>{texte('actualites.deco', 'et actualités.')}</span></h2></div>
+          <Actus articles={articles.slice(0, 2)} variante={variantes.actualites} />
+          <a class="g-suite" href="/actualites">Tous les conseils</a>
+        </div>
+      </section>
+    )}
+  </>
+))}
+
+<style>
+  .lieu { display: grid; gap: 12px; }
+  .lieu__pastilles { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .lieu__pastilles li { padding: 8px 14px; border-radius: 999px; background: var(--g-duo-doux); color: var(--g-duo-texte); font-size: 0.95rem; font-weight: 600; }
+  .galerie { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+  .galerie img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--rayon-carte); }
+</style>

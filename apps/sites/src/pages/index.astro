@@ -18,6 +18,8 @@ import Galerie from '../components/gabarit/Galerie.astro';
 import Panorama from '../components/gabarit/Panorama.astro';
 import Carte from '../components/gabarit/Carte.astro';
 import Couverture from '../components/dessins/Couverture.astro';
+import AccueilVariantes from '../components/gabarits/Accueil.astro';
+import { nouveauGabarit } from '../lib/gabarits';
 import { site, dateFr } from '../lib/site';
 import { faqSchema } from '../lib/schema';
 import { photoResponsive } from '../lib/visuels';
@@ -74,6 +76,7 @@ const faqEnPlus = pedagogique
   : [];
 ---
 <Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale, { nom: title, description, path: '/' })]} immersif={m.accueil.hero === 'diaporama' || m.accueil.hero === 'plein'}>
+  {nouveauGabarit ? <AccueilVariantes articles={articles} /> : (<>
   {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : m.accueil.hero === 'lieu' ? <HeroLieu /> : <HeroScinde />}
 
   {m.accueil.sections.map((section) => (
@@ -203,6 +206,7 @@ const faqEnPlus = pedagogique
       )}
     </>
   ))}
+  </>)}
 </Gabarit>
 
 <style>

@@ -13,6 +13,8 @@ import { visuelSoin, photoPraticienSoin } from '../../lib/visuels-soins';
 import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences, viaPlateforme } from '../../lib/textes';
 import { espacesFines, equipementsDuSoin } from '@plateforme/core';
 import type { Soin } from '@plateforme/core';
+import FicheSoin from '../../components/gabarits/FicheSoin.astro';
+import { nouveauGabarit } from '../../lib/gabarits';
 
 export function getStaticPaths() {
   return site.soins.map((soin) => ({ params: { slug: soin.slug }, props: { soin } }));
@@ -39,6 +41,9 @@ const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
   path={path}
   schemas={[soinSchema(soin), ...(soin.faq.length ? [faqSchema(soin.faq, { nom: `Questions fréquentes : ${soin.titre}`, description: soin.resume, path })] : []), breadcrumbSchema(crumbs)]}
 >
+  {nouveauGabarit ? (<>
+    <FicheSoin soin={soin} />
+  </>) : (<>
   <article>
     <header class="cadre tete-page">
       <Breadcrumb items={crumbs} />
@@ -106,6 +111,7 @@ const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
       </div>
     </section>
   )}
+  </>)}
 </Gabarit>
 
 <style>

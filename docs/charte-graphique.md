@@ -244,6 +244,48 @@ Le logo combine trois choix, sur le même principe de couches (`packages/core/sr
 - Les animations sont mises en pause hors écran (`.anime-visible`, IntersectionObserver), avec une image fixe si `prefers-reduced-motion` est actif.
 - Accueil « relevé de podoscope » (`Podoscope` avec `releve`) : trame des deux empreintes, ligne de scan (`--cycle-releve`), légende graduée de la pression, tracé du centre de pression au `--signal` et mention illustrative ; rien ne bouge hors écran ni avec `prefers-reduced-motion`.
 
+## Gabarits et variantes de sections (2026-10-05)
+
+Un modèle choisit désormais un **gabarit** (`gabarit` dans la fiche, `packages/core/src/modeles.ts`, `GABARITS`) :
+
+- `classique` (valeur par défaut, les 6 premiers modèles) : rendu historique, inchangé au pixel près ;
+- `tableau` (« Clair et pratique ») : cartes arrondies sur un fond à peine teinté, premier écran en carte + aplat vif
+  illustré, navigation par bulles, Geist ;
+- `village` (« Simple et proche ») : une colonne de 880 px, texte de 20 px, bandeau pastel au premier écran, deux gros
+  boutons, plan d'accès dans « Venir au cabinet », Public Sans.
+
+Hors `classique`, chaque section est rendue par une **variante** (`variantes`, `VARIANTES_SECTIONS`, défauts par gabarit
+dans `VARIANTES_PAR_DEFAUT`) : accueil `carte` | `notice`, soins `bulles` | `grille`, praticiens `cartes` | `fiches`,
+infos `volets` | `notice`, faq `accordeon`, actualités `liste` | `cartes`, pied `simple`. Les composants sont dans
+`apps/sites/src/components/gabarits/` (Coquille, PremierEcran, Soins, VenirAuCabinet, Praticiens, Faq, Actus, PlanAcces,
+FicheSoin, TetePage, Materiel, InfosPratiques) ; les pages choisissent `{nouveauGabarit ? variantes : classique}` à
+l'intérieur du même `<Gabarit>` : title, description, H1, H2, données structurées, sitemap et llms restent communs
+(`npm run controle:seo` sur les 8 modèles). Un nouveau gabarit (ex. « Revue ») = une entrée dans `GABARITS`, ses variantes
+par défaut, une classe `coquille--<id>` et, au besoin, de nouvelles valeurs de variantes.
+
+Règles de clarté appliquées : une idée par écran (premier écran = qui, où, soins principaux, Rendez-vous / Appeler),
+navigation par bulles (Soins, Pour qui, Infos pratiques ; ≥ 48 px), information progressive (`details` natifs), sobre
+(aucune animation au défilement), texte ≥ 18 px (20 px en village), menu court Soins · Le cabinet · Accès · Rendez-vous,
+barre Appeler / Rendez-vous sur téléphone.
+
+### Couleurs des gabarits : tout dérive de la couleur du cabinet
+
+`couleursGabarit(modele, { couleur, gamme })` (`packages/core/src/gabarits.ts`) calcule les rôles `--g-*` posés sur
+`<html>` : `page`, `carte`, `doux`, `bulle` (vif pâle), `duo-bulle` (duo pâle), `vif` (la couleur vive telle quelle : carte
+illustrée, « Rendez-vous »), `aplat` (pastel du premier écran), `plein` (bouton principal : vif ou duo, celui qui se détache
+le plus), `sombre` (pied de page), `plan-*` (plan d'accès), etc. Source : gamme vitaminée (vif, duo, aplat, encre :
+`variantesGamme`), gamme sobre (replis) ou couleur libre du praticien. Garde-fous : chaque ton dérivé est assombri ou
+éclairci jusqu'au contraste requis (4,5:1 texte, 3:1 pictos et contours) ; le texte posé sur une couleur pleine est blanc
+ou encre, le plus lisible. `npm run controle:charte` vérifie chaque gabarit sur les 17 gammes et 5 couleurs libres
+extrêmes (jaune pâle, rouge saturé, bleu nuit, gris moyen, vert fluo). Aucune couleur littérale dans les composants.
+
+### Plan d'accès : jamais inventé
+
+`apps/sites/src/lib/plan-acces.ts` lit les vraies rues autour des coordonnées du cabinet dans OpenStreetMap au build
+(API Overpass, une requête, cache `node_modules/.cache/plan-acces/`), et `PlanAcces.astro` les dessine en SVG aux couleurs
+du site (aucune tuile, aucune iframe, mention « © OpenStreetMap »). Sans coordonnées ou sans réseau (`PLAN_OSM=non`) :
+schéma abstrait étiqueté « Plan schématique, sans les rues » (un point et l'adresse, aucune fausse rue).
+
 ## Ce qu'on s'interdit
 
 - Une couleur, une épaisseur, un pas de trame ou une durée codés en dur dans un composant (`npm run controle:charte` échoue).

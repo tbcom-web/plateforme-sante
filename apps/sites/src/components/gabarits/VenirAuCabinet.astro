@@ -1,0 +1,99 @@
+---
+// « Venir au cabinet » des gabarits tableau et village (règles de clarté) : l'utile visible tout de suite — tableau jour /
+// heures (jour courant signalé par un texte), adresse, téléphone, itinéraire — puis cinq volets repliés (details/summary
+// natif) : prise de rendez-vous, transports et stationnement, visites à domicile, tarifs, moyens de règlement. Seuls les
+// volets renseignés apparaissent ; les bulles « Infos pratiques » ouvrent le bon volet.
+// - « volets » (tableau) : horaires et accès côte à côte ; « notice » (village) : une colonne, avec le plan d'accès.
+import Icone from '../Icone.astro';
+import PlanAcces from './PlanAcces.astro';
+import { site } from '../../lib/site';
+import { lieu, telLien, itineraire, rdvEnLigne } from '../../lib/textes';
+import { semaine, cabinetOuvert, nomLieu } from '../../lib/gabarits';
+
+interface Props { variante: 'volets' | 'notice' }
+const { variante } = Astro.props;
+const transports = [site.accesDetail.parking, site.accesDetail.pmr ? 'Accès facile pour les personnes à mobilité réduite' : '', site.accesDetail.transports, ...site.accesDetail.autres].filter(Boolean);
+const volets = [
+  { id: 'volet-rdv', titre: 'Prise de rendez-vous', lignes: [rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24${site.praticiens.length > 1 ? ', pour chaque praticien' : ''}.` : '', site.rdvMode !== 'en_ligne' || !rdvEnLigne ? `Par téléphone au ${site.cabinet.telephone}.` : ''].filter(Boolean) },
+  { id: 'volet-acces', titre: 'Transports et stationnement', lignes: transports },
+  ...(site.domicile.actif ? [{ id: 'volet-domicile', titre: 'Visites à domicile', lignes: [site.domicile.creneaux ? `${site.domicile.creneaux}.` : 'Sur demande, contactez le cabinet.', site.domicile.secteurs.length ? `Secteurs : ${site.domicile.secteurs.join(', ')}.` : ''].filter(Boolean) }] : []),
+  ...(site.cabinet.tarifs.length ? [{ id: 'volet-tarifs', titre: 'Tarifs', lignes: site.cabinet.tarifs.map((t) => `${t.acte} : ${t.prix}`) }] : []),
+  ...(site.paiements.length ? [{ id: 'volet-reglement', titre: 'Moyens de règlement acceptés', lignes: [`${site.paiements.join(', ')}.`, site.praticien.conventionnement ? `${site.praticien.conventionnement}.` : ''].filter(Boolean) }] : []),
+].filter((v) => v.lignes.length > 0);
+---
+<div class:list={['venir', `venir--${variante}`]}>
+  <div class="venir__haut">
+    {cabinetOuvert && (
+      <div class="venir__bloc" id="horaires">
+        <p class="venir__titre"><Icone nom="picto:horaires" secours="lucide:clock" />Horaires</p>
+        <table class="horaires">
+          <tbody>
+            {semaine.map((j) => (
+              <tr class:list={{ ferme: j.plages.length === 0 }} data-jour={j.numero}>
+                <th scope="row">{j.jour}</th>
+                <td>{j.plages.length ? j.plages.map((p) => <span>{p}</span>) : 'Fermé'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach(function (l) { l.classList.add('aujourdhui'); var e = document.createElement('span'); e.className = 'horaires__jour'; e.textContent = 'aujourd’hui'; l.querySelector('th').appendChild(e); });</script>
+      </div>
+    )}
+    <div class="venir__bloc">
+      <p class="venir__titre"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Adresse</p>
+      <p><strong>{nomLieu}</strong><br />{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</p>
+      <p class="venir__liens">
+        <a href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>
+        <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" />Itinéraire</a>
+      </p>
+      {variante === 'notice' && <PlanAcces class="venir__plan" />}
+    </div>
+  </div>
+  <div class="volets">
+    {volets.map((v) => (
+      <details id={v.id}>
+        <summary>{v.titre}<span class="volets__signe" aria-hidden="true"></span></summary>
+        {v.lignes.length > 1 ? <ul>{v.lignes.map((l) => <li>{l}</li>)}</ul> : <p>{v.lignes[0]}</p>}
+      </details>
+    ))}
+  </div>
+</div>
+<script is:inline>
+  // Arrivée par une ancre de volet (#volet-tarifs…) : le volet s'ouvre.
+  (function () { var v = location.hash && document.getElementById(location.hash.slice(1)); if (v && v.tagName === 'DETAILS') v.open = true; })();
+</script>
+
+<style>
+  .venir { display: grid; gap: 26px; }
+  .venir__haut { display: grid; gap: 26px; }
+  @media (min-width: 760px) { .venir--volets .venir__haut { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 40px; align-items: start; } }
+  .venir__bloc { display: grid; gap: 10px; align-content: start; }
+  .venir__titre { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .venir__titre :global(.icone) { width: 28px; height: 28px; color: var(--g-accent-texte); }
+  .venir__liens { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+  .venir__liens a { display: inline-flex; align-items: center; gap: 8px; min-height: var(--cible-tactile); font-weight: 650; }
+  .venir__liens :global(.icone) { width: 22px; height: 22px; }
+  .venir :global(.venir__plan) { margin-top: 10px; }
+  /* Plan bas et large : il accompagne l'adresse sans prendre tout l'écran */
+  .venir :global(.venir__plan .plan__svg), .venir :global(.venir__plan .plan__schema) { aspect-ratio: 16 / 9; }
+  @media (max-width: 559px) { .venir :global(.venir__plan .plan__svg), .venir :global(.venir__plan .plan__schema) { aspect-ratio: 4 / 3; } }
+  .horaires { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .horaires th, .horaires td { padding: 10px 0; border-bottom: var(--filet) solid var(--g-ligne); text-align: left; vertical-align: top; }
+  .horaires th { font-weight: 650; width: 40%; padding-right: 12px; }
+  .horaires td span { display: inline-block; white-space: nowrap; margin-right: 0.8em; }
+  .horaires .ferme :is(th, td) { color: var(--g-encre-douce); font-weight: 400; }
+  .horaires :global(.aujourdhui) :is(th, td) { background: var(--g-bulle); color: var(--g-encre); }
+  .horaires :global(.aujourdhui) th { padding-left: 12px; border-radius: 10px 0 0 10px; }
+  .horaires :global(.aujourdhui) td { border-radius: 0 10px 10px 0; }
+  .horaires :global(.horaires__jour) { display: block; font-size: 0.85rem; font-weight: 600; color: var(--g-bulle-texte); }
+  .volets { display: grid; border-top: var(--filet) solid var(--g-ligne); }
+  details { border-bottom: var(--filet) solid var(--g-ligne); scroll-margin-top: 100px; }
+  summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 60px; cursor: pointer; font-weight: 650; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  .volets__signe { position: relative; width: 34px; height: 34px; flex: none; border-radius: 50%; background: var(--g-bulle); }
+  .volets__signe::before, .volets__signe::after { content: ''; position: absolute; left: 50%; top: 50%; width: 13px; height: var(--filet-fort); background: var(--g-bulle-texte); translate: -50% -50%; }
+  .volets__signe::after { rotate: 90deg; }
+  details[open] .volets__signe::after { rotate: 0deg; }
+  details p, details ul { margin: 0 0 18px; color: var(--g-encre-douce); }
+  details ul { padding-left: 1.2em; display: grid; gap: 6px; }
+</style>

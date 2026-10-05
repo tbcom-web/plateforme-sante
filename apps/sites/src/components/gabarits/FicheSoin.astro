@@ -1,0 +1,130 @@
+---
+// Fiche d'un soin dans les gabarits tableau et village : en-tête (titre, résumé, rendez-vous, visuel), texte du soin dans
+// une colonne de lecture, encadré « En pratique » (lieu, rendez-vous, téléphone, horaires) qui reste visible à côté sur
+// ordinateur, questions fréquentes en accordéon, autres compétences en bulles. Titres, textes et données structurées
+// identiques au gabarit classique.
+import TetePage from './TetePage.astro';
+import Faq from './Faq.astro';
+import Icone from '../Icone.astro';
+import Dessin from '../dessins/Dessin.astro';
+import { site, md } from '../../lib/site';
+import { photoResponsive } from '../../lib/visuels';
+import { telLien, lienRdv, rdvEnLigne, titreCompetences, viaPlateforme, lieu } from '../../lib/textes';
+import { pictoDuSoin, visuelVariante, nomLieu } from '../../lib/gabarits';
+import { espacesFines, equipementsDuSoin, type Soin } from '@plateforme/core';
+
+interface Props { soin: Soin }
+const { soin } = Astro.props;
+const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }, { name: soin.titreCourt, path: `/soins/${soin.slug}` }];
+const autres = site.soins.filter((s) => s.slug !== soin.slug);
+const v = visuelVariante(soin.slug, 'page');
+const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
+const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
+const rdv = rdvEnLigne ? (plusieurs ? '/le-cabinet#praticiens' : lienRdv(`soin-${soin.slug}`)) : telLien;
+// Trois pastilles « en pratique » (règles de clarté), tirées des informations déjà saisies, jamais inventées : durée (texte du
+// soin ou réponse d'une question), tarif (grille des tarifs du cabinet), ordonnance (réponse « oui » / « non » d'une question).
+const sansAccents = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const minutes = [soin.corps, ...soin.faq.map((f) => f.r)].join(' ').match(/(\d+)\s*min(?:utes)?\b/)?.[1];
+const radical = sansAccents(soin.titreCourt).split(/[^a-z]+/).find((m) => m.length > 3)?.slice(0, 5) ?? '';
+const tarif = radical ? site.cabinet.tarifs.find((t) => sansAccents(t.acte).includes(radical)) : undefined;
+const ordonnance = soin.faq.find((f) => /ordonnance|prescription/i.test(f.q))?.r ?? '';
+const enPratique = [
+  minutes ? { titre: 'Durée', texte: `Environ ${minutes} min` } : null,
+  tarif ? { titre: 'Tarif', texte: tarif.prix } : null,
+  /^non\b/i.test(ordonnance) ? { titre: 'Ordonnance', texte: 'Pas nécessaire' } : /^oui\b/i.test(ordonnance) ? { titre: 'Ordonnance', texte: 'Nécessaire' } : null,
+].filter(Boolean) as { titre: string; texte: string }[];
+---
+<article>
+  <TetePage crumbs={crumbs} sur={titreCompetences} chapo={soin.resume}>
+    <h1 slot="titre">{espacesFines(soin.titre)}</h1>
+    <div class="actions">
+      <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}{rdvEnLigne && !plusieurs && viaPlateforme && <span class="g-via">{viaPlateforme}</span>}</a>
+      {rdvEnLigne && <a class="g-bouton g-bouton--ligne" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
+    </div>
+    <Fragment slot="visuel">
+      {v.type === 'photo'
+        ? <img src={v.src} {...photoResponsive(v.src, '(min-width: 900px) 460px, 100vw')} alt={v.praticien ? `${soin.titreCourt} au cabinet de ${site.cabinet.ville}` : ''} width="1200" height="900" fetchpriority="high" decoding="async" style={`object-position:${v.cadrage}`} />
+        : <Dessin nom={v.dessin} />}
+    </Fragment>
+  </TetePage>
+
+  {enPratique.length > 0 && (
+    <ul class="g-cadre pratique" aria-label="En pratique">
+      {enPratique.map((p) => <li><span>{p.titre}</span><strong>{p.texte}</strong></li>)}
+    </ul>
+  )}
+
+  <div class="g-cadre fiche">
+    <div class="fiche__corps">
+      <div class="prose fiche__prose" set:html={md(soin.corps)} />
+      {materiel.length > 0 && (
+        <div class="fiche__materiel">
+          <p class="fiche__etiquette"><a href="/le-cabinet#materiel">Matériel du cabinet</a></p>
+          <ul>{materiel.map((m) => <li>{m}</li>)}</ul>
+        </div>
+      )}
+    </div>
+    <aside class="fiche__cote" aria-label="En pratique">
+      <p class="fiche__etiquette">En pratique</p>
+      <p class="fiche__lieu"><strong>{nomLieu}</strong><br />{lieu.adresse}, {lieu.codePostal} {lieu.ville}</p>
+      <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</a>
+      {rdvEnLigne && <a class="g-bouton g-bouton--ligne" href={telLien}>{site.cabinet.telephone}</a>}
+      <a class="g-suite fiche__horaires" href="/acces">Horaires et accès</a>
+    </aside>
+  </div>
+
+  {soin.faq.length > 0 && (
+    <section class="g-section g-bloc">
+      <div class="g-cadre g-bloc__dedans">
+        <div class="g-tete">
+          <p class="g-sur">{soin.titreCourt}</p>
+          <h2>Questions fréquentes</h2>
+        </div>
+        <Faq items={soin.faq} />
+      </div>
+    </section>
+  )}
+</article>
+
+{autres.length > 0 && (
+  <section class="g-section g-bloc">
+    <div class="g-cadre g-bloc__dedans">
+      <div class="g-tete">
+        <p class="g-sur">{titreCompetences}</p>
+        <h2>Autres compétences du cabinet</h2>
+      </div>
+      <ul class="g-bulles">
+        {autres.map((s) => <li><a class="g-bulle" href={`/soins/${s.slug}`}><span class="g-bulle__picto" aria-hidden="true"><Icone nom={pictoDuSoin(s.slug)} /></span>{s.titreCourt}</a></li>)}
+      </ul>
+    </div>
+  </section>
+)}
+
+<style>
+  .pratique { list-style: none; margin-block: 14px 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  .pratique li { display: grid; gap: 2px; padding: 12px 20px; border-radius: calc(var(--rayon-carte) * 0.7); background: var(--g-duo-bulle); color: var(--g-duo-texte); min-width: 150px; }
+  .pratique span { font-size: 0.88rem; font-weight: 600; }
+  .pratique strong { font-size: 1.05rem; color: var(--g-encre); }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .actions :global(.g-bouton--plein) { flex-wrap: wrap; row-gap: 0; }
+  .fiche { display: grid; gap: 18px; padding-top: 18px; }
+  @media (min-width: 960px) { .fiche { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+  .fiche__corps { padding: clamp(24px, 4vw, 44px); border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  :global(.coquille--village) .fiche__corps { padding: 8px 0 0; background: none; box-shadow: none; }
+  .fiche__prose { max-width: 38em; }
+  .fiche__prose :global(h2) { font-size: clamp(1.4rem, 2.6vw, 1.75rem) !important; margin: 1.6em 0 0.5em !important; }
+  .fiche__prose :global(h2:first-child) { margin-top: 0 !important; }
+  .fiche__prose :global(p), .fiche__prose :global(li) { color: var(--g-encre); }
+  .fiche__prose :global(p + p) { margin-top: 0.9em; }
+  .fiche__prose :global(ul), .fiche__prose :global(ol) { padding-left: 1.2em; margin: 0.6em 0 0; }
+  .fiche__prose :global(li) { margin-bottom: 0.5em; }
+  .fiche__prose :global(li::marker) { color: var(--g-accent-texte); }
+  .fiche__materiel { margin-top: 28px; padding-top: 18px; border-top: var(--filet) solid var(--g-ligne); }
+  .fiche__materiel ul { margin: 8px 0 0; padding-left: 1.2em; color: var(--g-encre-douce); }
+  .fiche__etiquette { font-weight: 700; color: var(--g-accent-texte); }
+  .fiche__cote { display: grid; gap: 12px; padding: 26px; border-radius: var(--rayon-carte); background: var(--g-doux); }
+  @media (min-width: 960px) { .fiche__cote { position: sticky; top: 110px; } }
+  .fiche__lieu { color: var(--g-encre-douce); font-size: 1rem; }
+  .fiche__lieu strong { color: var(--g-encre); }
+  .fiche__horaires { margin-top: 0 !important; }
+</style>

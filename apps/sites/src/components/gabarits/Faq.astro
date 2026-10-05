@@ -1,0 +1,34 @@
+---
+// Questions fréquentes des gabarits tableau et village : accordéon natif (details/summary), une question par ligne,
+// réponse dépliée à la demande (information progressive). Questions en h3, comme le gabarit classique.
+import type { Faq } from '@plateforme/core';
+import { texte, champ } from '../../lib/edition';
+
+interface Props { items: Faq[]; cle?: string }
+const { items, cle } = Astro.props;
+const reponse = (f: Faq, i: number) => (cle ? texte(`${cle}.${i + 1}.reponse`, f.r) : f.r);
+const zone = (i: number) => (cle ? champ(`${cle}.${i + 1}.reponse`) : {});
+---
+<div class="accordeon">
+  {items.map((f, i) => (
+    <details>
+      <summary><h3>{f.q}</h3><span class="accordeon__signe" aria-hidden="true"></span></summary>
+      <p {...zone(i)}>{reponse(f, i)}</p>
+    </details>
+  ))}
+</div>
+
+<style>
+  .accordeon { display: grid; gap: 10px; max-width: 52rem; }
+  details { border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  :global(.coquille--village) details { background: var(--g-doux); box-shadow: none; }
+  summary { display: grid; grid-template-columns: minmax(0, 1fr) 36px; align-items: center; gap: 14px; min-height: 64px; padding: 14px 18px 14px 22px; cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary h3 { font-family: var(--police-texte); font-size: 1.05rem !important; font-weight: 650; line-height: 1.35; letter-spacing: 0 !important; }
+  .accordeon__signe { position: relative; width: 36px; height: 36px; border-radius: 50%; background: var(--g-bulle); }
+  .accordeon__signe::before, .accordeon__signe::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: var(--filet-fort); background: var(--g-bulle-texte); translate: -50% -50%; }
+  .accordeon__signe::after { rotate: 90deg; transition: rotate var(--duree-court) var(--courbe-sortie); }
+  details[open] .accordeon__signe::after { rotate: 0deg; }
+  summary:hover .accordeon__signe { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  p { padding: 0 22px 22px; color: var(--g-encre-douce); max-width: 40em; }
+</style>

@@ -12,6 +12,8 @@ import '@fontsource/instrument-serif/400-italic.css';
 import '@fontsource-variable/schibsted-grotesk';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/nunito';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/public-sans';
 // Fichiers latins préchargés (texte, titres et leur italique, mono des données), tous visibles dès le haut de
 // page : le texte s'affiche tout de suite dans la bonne police, sans décalage quand une police arrive en retard.
 import policeInter from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
@@ -23,6 +25,9 @@ import policeFrauncesItalique from '@fontsource-variable/fraunces/files/fraunces
 import policeInstrumentItalique from '@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2?url';
 import policeNunito from '@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2?url';
 import policeMono from '@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url';
+import policeGeist from '@fontsource-variable/geist/files/geist-latin-wght-normal.woff2?url';
+import policePublicSans from '@fontsource-variable/public-sans/files/public-sans-latin-wght-normal.woff2?url';
+import Coquille from '../components/gabarits/Coquille.astro';
 import Icone from '../components/Icone.astro';
 import Logo from '../components/Logo.astro';
 import Consent from '../components/Consent.astro';
@@ -32,7 +37,7 @@ import Empreintes from '../components/dessins/Empreintes.astro';
 import Dessin from '../components/dessins/Dessin.astro';
 import { CONTOUR } from '../components/animations/pied';
 import { site, absUrl } from '../lib/site';
-import { feuilleCharte, variablesTheme, POLICES, POLICE_MONO, NEUTRES, TRAIT, LOGO } from '@plateforme/core';
+import { feuilleCharte, variablesTheme, variablesGabarit, gabaritModele, POLICES, POLICE_MONO, NEUTRES, TRAIT, LOGO } from '@plateforme/core';
 import { businessSchema, personSchemas, websiteSchema, pageSchema, breadcrumbSchema } from '../lib/schema';
 import { aUneVersionMarkdown, cheminMarkdown } from '../lib/agents';
 import { photoAccueil, pedagogique, dessinSpecialite } from '../lib/visuels';
@@ -59,6 +64,11 @@ const { title, description, path, schemas = [], noindex = false, immersif = fals
 const partage = image ?? { src: photoAccueil };
 const canonical = absUrl(path);
 const m = site.modele;
+// Gabarit de mise en page (modeles.ts, GABARITS) : « classique » = rendu historique ; les autres passent par la coquille
+// (components/gabarits/Coquille.astro), sans police mono (aucune lecture de données) et avec leurs couleurs --g-* (gabarits.ts).
+const gabarit = gabaritModele(m);
+const nouveau = gabarit !== 'classique';
+const sansMono = pedagogique || nouveau;
 // Polices de secours ajustées (size-adjust, ascent/descent-override) : tant qu'une police n'est pas arrivée,
 // le texte s'affiche dans une police système recalée sur ses métriques (largeur moyenne, hauteurs), pour
 // que la recomposition à l'arrivée de la vraie police ne décale presque rien. Valeurs calculées sur les
@@ -76,6 +86,9 @@ const REPLIS: Record<string, Repli> = {
   'Instrument Serif': { sources: SERIF, taille: 83.94, haut: 117.94, bas: 36.93, italique: { taille: 87.95, haut: 112.56, bas: 35.25 } },
   'Nunito Variable': { sources: SANS, taille: 97.8, haut: 103.4, bas: 36.1 },
   'JetBrains Mono Variable': { sources: MONO, taille: 100, haut: 102, bas: 30 },
+  // Gabarits tableau et village (mêmes calculs : @capsizecss/unpack sur les fichiers latins)
+  'Geist Variable': { sources: SANS, taille: 104.76, haut: 95.93, bas: 28.16 },
+  'Public Sans Variable': { sources: SANS, taille: 102.18, haut: 92.97, bas: 22.02 },
 };
 /** Première famille d'une pile : « 'Inter Variable', system-ui » → « Inter Variable ». */
 const famille = (pile: string) => pile.match(/'([^']+)'/)?.[1] ?? '';
@@ -85,7 +98,7 @@ const face = (nom: string, src: string, f: { taille: number; haut: number; bas: 
   `@font-face{font-family:'${nom} repli';src:${src};font-weight:${poids};font-style:${style};font-display:swap;size-adjust:${f.taille}%;ascent-override:${f.haut}%;descent-override:${f.bas}%;line-gap-override:0%}`;
 // Registre pédagogique : aucune lecture de données, donc pas de police mono (les rares éléments d'interface en mono —
 // fil d'Ariane, « via Doctolib » — prennent la police du texte) : un fichier de police de moins sur mobile.
-const piles = pedagogique ? [POLICES[m.jetons.policeTexte], POLICES[m.jetons.policeTitres]] : [POLICES[m.jetons.policeTexte], POLICES[m.jetons.policeTitres], POLICE_MONO];
+const piles = sansMono ? [POLICES[m.jetons.policeTexte], POLICES[m.jetons.policeTitres]] : [POLICES[m.jetons.policeTexte], POLICES[m.jetons.policeTitres], POLICE_MONO];
 const policesRepli = [...new Set(piles.map(famille))]
   .filter((nom) => REPLIS[nom])
   .map((nom) => {
@@ -107,14 +120,15 @@ const couleurs = [
   `--graisse-titres:${m.jetons.graisseTitres}`,
   `--police-titres:${avecRepli(POLICES[m.jetons.policeTitres])}`,
   `--police-texte:${avecRepli(POLICES[m.jetons.policeTexte])}`,
-  `--police-mono:${pedagogique ? 'var(--police-texte)' : avecRepli(POLICE_MONO)}`,
+  `--police-mono:${sansMono ? 'var(--police-texte)' : avecRepli(POLICE_MONO)}`,
   `--rayon-bouton:${{ pilule: '999px', arrondi: '12px', carre: '2px' }[m.jetons.boutons]}`,
   `--voile:${m.accueil.voile / 100}`,
+  ...Object.entries(variablesGabarit(m, site.theme)).map(([k, v]) => `${k}:${v}`),
 ].join(';');
-const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito } as const;
+const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito, geist: policeGeist, publicsans: policePublicSans } as const;
 // Italique des titres (mots en retrait « .pale » du titre principal) : seulement pour les titres à empattements.
 const ITALIQUES: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { fraunces: policeFrauncesItalique, instrument: policeInstrumentItalique };
-const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres], ITALIQUES[m.jetons.policeTitres], pedagogique ? '' : policeMono].filter(Boolean))];
+const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres], ITALIQUES[m.jetons.policeTitres], sansMono ? '' : policeMono].filter(Boolean))];
 // Chargement des mêmes polices lancé dès le début du corps de page : un fichier préchargé n'est appliqué
 // qu'après décodage, et la première mise en page se ferait sinon avec la police de secours (le texte se
 // recompose ensuite et décale la page).
@@ -122,7 +136,7 @@ const policesAvantAffichage = [
   `400 1em "${famille(POLICES[m.jetons.policeTexte])}"`,
   `${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`,
   ...(ITALIQUES[m.jetons.policeTitres] ? [`italic ${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`] : []),
-  ...(pedagogique ? [] : [`400 1em "${famille(POLICE_MONO)}"`]),
+  ...(sansMono ? [] : [`400 1em "${famille(POLICE_MONO)}"`]),
 ];
 const motif = m.jetons.motif ?? 'plan';
 // Motif « courbes de niveau » : contours imbriqués d'une semelle couchée, en filigrane (image SVG en ligne,
@@ -157,7 +171,7 @@ const rdvGeneral = site.praticiens.length > 1 && rdvEnLigne ? '/le-cabinet#prati
 const via = rdvGeneral ? '' : viaPlateforme;
 ---
 <!doctype html>
-<html lang="fr" style={style} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" style={style} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-gabarit={nouveau ? gabarit : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -192,6 +206,9 @@ const via = rdvGeneral ? '' : viaPlateforme;
 
     {site.message && <div class="message" role="status"><Icone nom="lucide:info" />{site.message}</div>}
 
+    {nouveau ? (
+      <Coquille liens={liens} courant={courant} rdvGeneral={rdvGeneral}><slot /></Coquille>
+    ) : (<>
     {!transparent && <div class="infobarre">
       <div class="cadre infobarre__contenu">
         <span><Icone nom="lucide:map-pin" />{lieu.nom ? `${lieu.nom} — ` : ''}{adresseLieu}</span>
@@ -298,6 +315,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
       )}
       <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:map-pin" />Itinéraire</a>
     </nav>
+    </>)}
     <Consent />
     {APERCU && <EditionApercu />}
 
