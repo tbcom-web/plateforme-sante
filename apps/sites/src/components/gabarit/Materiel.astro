@@ -76,4 +76,17 @@ let rang = 0;
   .materiel__texte { display: grid; gap: 4px; }
   .materiel__libelle { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.05rem; letter-spacing: -0.015em; line-height: 1.25; color: var(--encre); }
   .materiel__phrase { color: var(--encre-pale); font-size: 0.95rem; line-height: 1.55; }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    /* Pictogramme et numéro sur une ligne, texte sur toute la largeur en dessous */
+    .materiel { gap: var(--espace-bloc); }
+    .materiel__liste li { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'picto num' 'texte texte'; gap: 10px 14px; padding: 18px 0; }
+    .materiel__liste--simple li { grid-template-columns: 2.4em minmax(0, 1fr); grid-template-areas: none; }
+    .materiel__num { grid-area: num; justify-self: end; }
+    .materiel__liste--simple .materiel__num { grid-area: auto; justify-self: start; }
+    .materiel__picto { grid-area: picto; justify-items: start; }
+    .materiel__picto--dessin, .materiel__picto--dessin svg { width: 96px; height: 72px; }
+    .materiel__texte { grid-area: texte; gap: 6px; }
+    .materiel__phrase { font-size: var(--taille-texte-telephone); line-height: 1.6; }
+  }
 </style>

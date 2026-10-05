@@ -103,4 +103,14 @@ const seul = site.praticiens.length === 1;
     .praticien__fiche dd { margin: 0; padding: 10px 0; }
   }
   .bouton { margin-top: 16px; justify-self: start; white-space: normal; text-align: center; }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .praticiens { gap: var(--espace-bloc); }
+    .praticien__texte { gap: 8px; padding-top: 26px; }
+    .praticien__orientations { gap: 8px; }
+    .praticien__fiche dt { padding-top: 14px; }
+    .praticien__fiche dd { margin-top: 4px; padding-bottom: 14px; font-size: var(--taille-texte-telephone); }
+    .praticien__id { font-size: var(--taille-note) !important; }
+    .bouton { margin-top: 22px; width: 100%; }
+  }
 </style>

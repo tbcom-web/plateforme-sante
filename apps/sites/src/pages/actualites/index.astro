@@ -65,4 +65,9 @@ const articles = [...site.articles].sort((a, b) => b.date.localeCompare(a.date))
   .item p { color: var(--encre-douce); margin: 0; }
   .tag { font-family: var(--police-mono); font-size: var(--taille-donnees-petit); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--accent-vif); }
   .item__lire { font-weight: 600; font-size: 0.92rem; color: var(--accent-vif); }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .item { padding: var(--espace-bloc) 0; }
+    .item__texte { gap: 12px; }
+  }
 </style>

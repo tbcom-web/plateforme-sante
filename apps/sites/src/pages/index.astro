@@ -238,7 +238,7 @@ const faqEnPlus = pedagogique
   @media (min-width: 1000px) { .acces { grid-template-columns: 1.1fr 0.9fr; align-items: start; } .acces > :global(.carte) { position: sticky; top: 100px; } }
 
   /* Premier rendez-vous : trois étapes en colonnes (ordinateur), numéros ronds dans la police du texte */
-  .etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  .etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; align-items: start; }
   @media (min-width: 860px) { .etapes { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; } }
   .etape { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 16px; align-content: start; padding: 22px; border-radius: var(--rayon); background: var(--doux); }
   .etape__num { grid-row: span 2; display: grid; place-items: center; width: 2.4em; height: 2.4em; border-radius: 50%; background: var(--accent); color: var(--blanc); font-weight: 800; font-size: 1.1rem; }
@@ -252,4 +252,14 @@ const faqEnPlus = pedagogique
   .faq__contact { display: grid; gap: 6px; margin: 28px 0 0; padding-top: 16px; border-top: var(--filet) solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; max-width: 30ch; }
   .faq__contact .mono { color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--taille-donnees-petit); }
   @media (min-width: 960px) { .faq { grid-template-columns: 0.8fr 1.2fr; align-items: start; } .faq__entete { position: sticky; top: 110px; } }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .faits li { font-size: var(--taille-texte-telephone); }
+    .articles { gap: var(--espace-bloc); }
+    .article__resume { font-size: var(--taille-texte-telephone); }
+    .etapes { gap: var(--espace-ligne); }
+    .section--etapes { padding-top: var(--espace-bloc); }
+    .faq__contact { font-size: var(--taille-texte-telephone); }
+    .faq__contact a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); }
+  }
 </style>

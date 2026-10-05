@@ -98,4 +98,10 @@ const visuels = site.soins.map((s) => {
     .tuile--petit .tuile__titre { font-size: 1.18rem; }
     .tuile--petit .tuile__texte { font-size: 0.9rem; }
   }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .bento { row-gap: var(--espace-bloc); }
+    .tuile__texte { font-size: var(--taille-texte-telephone); line-height: 1.6; }
+
+  }
 </style>

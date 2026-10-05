@@ -96,4 +96,6 @@ const style = `--logo-taille:${taille}px;--logo-graisse:${t.graisse};--logo-nom:
   :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo).logo--plein { --logo-accent: var(--sur-sombre-verre); }
   :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo).logo--trait { --logo-accent: var(--blanc); }
   :is(.logo--clair, .entete-transparent:not(.entete-opaque) .entete .logo).logo--plan { --logo-plan: var(--sur-sombre-verre); }
+  /* Téléphone : la ligne du métier passe à la ligne au lieu d'être tronquée (« Pédicures-podologues · Lyon » toujours lisible) */
+  @media (max-width: 759px) { .logo small { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.35; } }
 </style>

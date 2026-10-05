@@ -103,4 +103,11 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
   .article__autres a { display: grid; gap: 4px; padding: 18px 0; text-decoration: none; color: var(--encre); font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; }
   .article__autres a span { font-size: var(--taille-donnees-petit); font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-vif); }
   .article__autres a:hover { color: var(--accent-fonce); }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .article__auteur { font-size: var(--taille-texte-telephone); }
+    .article__rdv { padding: 24px 20px; }
+    .article__rdv span { font-size: var(--taille-texte-telephone); }
+    .article__rdv :global(.bouton) { width: 100%; }
+  }
 </style>

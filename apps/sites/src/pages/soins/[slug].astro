@@ -135,4 +135,14 @@ const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
   .autres__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.1rem; letter-spacing: -0.02em; line-height: 1.15; }
   .autres__fleche { color: var(--accent-vif); transition: transform var(--duree-court) var(--courbe-sortie); }
   .autres a:hover .autres__fleche { transform: translateX(4px); }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .corps { gap: var(--espace-bloc); }
+    .materiel-soin li { padding-block: var(--espace-ligne); font-size: var(--taille-texte-telephone); }
+    .encart__lieu { font-size: var(--taille-texte-telephone); }
+    /* Autres compétences : numéro décoratif retiré, dessin plus lisible, titre sur la largeur restante */
+    .autres a { grid-template-columns: 96px minmax(0, 1fr) auto; gap: 16px; padding: 16px 0; }
+    .autres__num { display: none; }
+    .autres__dessin { width: 96px; }
+  }
 </style>

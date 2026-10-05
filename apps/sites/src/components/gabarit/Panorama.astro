@@ -70,6 +70,8 @@ const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
   .panorama__releve :global(.empreintes) { width: 100%; height: 100%; }
   .panorama__mention { position: absolute; right: clamp(20px, 4vw, 56px); top: 24px; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); letter-spacing: 0.02em; }
   @media (min-width: 900px) { .panorama__releve { opacity: 1; width: min(42%, 520px); right: 6%; } }
+  /* Ordinateur : texte et lignes d'infos dans la moitié gauche, le relevé garde la droite (rien ne passe dessous) */
+  @media (min-width: 900px) { .panorama--illus .panorama__texte > * { max-width: 48%; } }
   .panorama--illus::after { background: linear-gradient(90deg, rgb(var(--nuit-rgb) / 0.55) 0%, rgb(var(--nuit-rgb) / 0) 65%); }
   .panorama__texte { padding-block: clamp(48px, 8vw, 104px); }
   .panorama h2 { color: var(--blanc); max-width: 16ch; }
@@ -79,4 +81,16 @@ const titreStandard = `${lieuNom} à ${lieu.ville || site.cabinet.ville}`;
   .panorama li { display: grid; gap: 4px; padding: 18px 20px 0 0; border-top: var(--filet) solid var(--sur-sombre-filet); font-size: 0.93rem; color: var(--sur-sombre-doux); }
   .panorama strong { color: var(--blanc); font-weight: 600; }
   @keyframes zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .lieu-clair__liste li { padding: 20px; }
+    .panorama li { font-size: var(--taille-texte-telephone); padding-bottom: 6px; }
+    .panorama ul { gap: var(--espace-ligne); }
+    /* Mention sur toute la largeur du cadre, alignée à droite (et non collée au bord gauche) */
+    .panorama__mention { left: 20px; right: 20px; top: 20px; text-align: right; }
+    /* Relevé posé au-dessus du texte (et non plus dessous, à travers les lignes d'infos) */
+    .panorama--illus { --hauteur-releve: 200px; }
+    .panorama__releve { top: calc(var(--espace-section) - 8px); bottom: auto; right: 20px; width: 60%; height: var(--hauteur-releve); opacity: 0.85; }
+    .panorama--illus .panorama__texte { padding-top: calc(var(--espace-section) + var(--hauteur-releve) + 8px); }
+  }
 </style>

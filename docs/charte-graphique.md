@@ -194,6 +194,25 @@ registres (aucune couleur littérale, aucun jeton sans correspondance, ≤ 64 ko
 
 L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`, `-note`, `-donnees` (0,8 rem, soit 12,8 px) et `-donnees-petit` (0,75 rem, 12 px ; aucun texte d'interface en dessous de 12 px). En capitales, les données prennent un interlettrage de `--interlettrage-donnees` (0,08 em).
 
+## Espacements et téléphone
+
+Le rythme vertical vient de `ESPACES` (`charte.ts`) : chaque jeton est un `clamp(téléphone, fluide, ordinateur)` dont la borne « ordinateur » reprend les valeurs historiques (rien ne bouge au-delà de 900 px).
+
+| Variable | Valeur | Usage |
+|---|---|---|
+| `--espace-section` | 72 → 120 px | entre deux sections (`.section`), bas des en-têtes de page sur téléphone |
+| `--espace-bloc` | 36 → 56 px | entre l'en-tête d'une section et son contenu, entre deux blocs (cartes de praticiens, articles, groupes de matériel, colonnes du pied de page) |
+| `--espace-element` | 20 → 28 px | entre deux éléments d'une liste ou d'une carte (lignes des compétences, blocs d'infos pratiques) |
+| `--espace-ligne` | 12 px | marge verticale d'une ligne de tableau ou de liste (horaires, matériel d'un soin) |
+
+Sur téléphone (`TELEPHONE`, jusqu'à 759 px, même seuil que les grilles à 760 px), règles communes à tous les modèles, posées en fin de feuille de chaque composant dans un bloc `@media (max-width: 759px)` :
+
+- **Textes secondaires à 16 px** (`--taille-texte-telephone`) : résumés des compétences et des tuiles, infos pratiques et horaires, fiches des praticiens, phrases du matériel, résumés d'articles. Les légendes restent à 13 px au moins.
+- **Données mono et légendes à 13 px** : `--taille-donnees` et `--taille-donnees-petit` passent à 0,8125 rem (`TELEPHONE_CSS`, injecté par `feuilleCharte()`).
+- **Zones tactiles de 44 px** (`--cible-tactile`) pour tout lien ou bouton isolé : fil d'Ariane, liens du pied de page, « Ouvrir dans OpenStreetMap », « Itinéraire », téléphone de la FAQ, petits boutons.
+- **Lignes empilées plutôt que colonnes étroites** : dans les listes (compétences, matériel, autres compétences), le dessin et le titre partagent une ligne, le texte prend toute la largeur dessous ; le numéro décoratif passe à droite du dessin ou disparaît. La réponse d'une FAQ n'est plus en retrait sous le numéro.
+- Dessins de liste agrandis (104 px pour les compétences, 96 px pour le matériel et les autres compétences).
+
 ## Logo
 
 Le logo combine trois choix, sur le même principe de couches (`packages/core/src/logos.ts`) :

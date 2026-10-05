@@ -50,4 +50,11 @@ import { lieu, itineraire } from '../../lib/textes';
     .carte__coordonnees { display: none; }
     .carte__point { left: 30%; }
   }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .carte__adresse { padding: 22px 20px 24px; }
+    .carte__adresse p { font-size: var(--taille-texte-telephone); }
+    .carte__liens { gap: 12px 20px; }
+    .carte__osm { display: inline-flex; align-items: center; min-height: var(--cible-tactile); font-size: var(--taille-texte-telephone); }
+  }
 </style>

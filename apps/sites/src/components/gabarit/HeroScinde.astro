@@ -56,6 +56,14 @@ const altAccueil = site.photos.accueil && photoAccueilAffichee === site.photos.a
   .visuel { position: relative; margin: 0; }
   .visuel__anim { height: clamp(360px, 64vh, 640px); border-radius: var(--rayon-grand); overflow: hidden; }
   .visuel__anim :global(canvas), .visuel__anim :global(svg) { background: none !important; }
+  /* La scène animée s'arrête au-dessus de la carte d'adresse (et sous le badge sur téléphone) : coureur et pieds jamais masqués.
+     Réserve = marge de la carte + sa hauteur (deux lignes à 0,86 rem et marges intérieures, ≈ 62 px) + un filet d'air. */
+  .visuel { --reserve-bas: calc(18px + 62px + 12px); --reserve-haut: calc(18px + 44px + 8px); }
+  .visuel__anim { display: grid; padding-bottom: var(--reserve-bas); }
+  @media (min-width: 960px) { .visuel { --reserve-bas: calc(44px + 62px + 12px); } }
+  @media (max-width: 759px) { .visuel__anim { padding-top: var(--reserve-haut); } }
+  /* Registre pédagogique (planche sans cartouches) : le dessin se centre entre le badge et la carte d'adresse */
+  :global(html[data-registre='pedagogique']) .visuel__planche :global(.planche) { padding-block: var(--reserve-haut) var(--reserve-bas); }
   .visuel__planche { height: clamp(360px, 64vh, 640px); }
   .visuel__planche :global(.planche) { height: 100%; }
   .visuel img { width: 100%; height: clamp(360px, 64vh, 640px); object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }

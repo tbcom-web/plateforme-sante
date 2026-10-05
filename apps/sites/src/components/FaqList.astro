@@ -36,4 +36,10 @@ const zone = (i: number) => (cle ? champ(`${cle}.${i + 1}.reponse`) : {});
   h3 { margin: 0; font-size: 1.06rem; font-family: var(--police-texte); font-weight: 650; letter-spacing: -0.01em; line-height: 1.35; }
   p { color: var(--encre-douce); margin: 0; padding: 0 46px 22px calc(2.6em + 12px); max-width: 68ch; }
   @media (max-width: 560px) { p { padding-right: 0; } }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    /* Réponse sur toute la largeur (plus de retrait sous le numéro) */
+    summary { gap: 10px; padding: 22px 0; }
+    p { padding: 0 0 24px; }
+  }
 </style>

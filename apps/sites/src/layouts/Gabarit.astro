@@ -209,7 +209,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
           {rdvEnLigne ? 'Prendre RDV' : 'Appeler'}
         </a>
         <button class="menu-bouton" type="button" aria-expanded="false" aria-controls="tiroir" aria-haspopup="dialog">
-          <span class="menu-bouton__traits" aria-hidden="true"></span>Menu
+          <span class="menu-bouton__traits" aria-hidden="true"></span><span class="menu-bouton__libelle">Menu</span>
         </button>
       </div>
     </header>
@@ -390,7 +390,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
   h3 { font-size: 1.2rem; letter-spacing: -0.02em; line-height: 1.2; }
   p { margin: 0 0 1em; }
   .cadre { width: min(1180px, 100% - 40px); margin-inline: auto; }
-  .section { padding-block: clamp(64px, 9vw, 120px); }
+  .section { padding-block: var(--espace-section); }
   .section--douce { background: var(--doux); }
   .sur { display: inline-flex; align-items: center; gap: 10px; font-size: var(--taille-donnees); font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-vif); margin: 0 0 18px; }
   .sur::before { content: ''; width: 20px; height: var(--filet-fort); background: currentColor; }
@@ -421,7 +421,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
   .pale { color: var(--encre-pale); }
   .chapo { color: var(--encre-douce); font-size: 1.12rem; max-width: 58ch; }
   .note { font-size: 0.86rem; color: var(--encre-douce); }
-  .entete-section { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 40px; margin-bottom: clamp(32px, 4vw, 56px); }
+  .entete-section { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 40px; margin-bottom: var(--espace-bloc); }
   .entete-section h2 { margin: 0; max-width: 18ch; }
   .entete-section .chapo { margin: 0; max-width: 46ch; }
   .evitement { position: absolute; left: -9999px; }
@@ -466,6 +466,8 @@ const via = rdvGeneral ? '' : viaPlateforme;
   .menu-bouton__traits::after { top: 5px; width: 10px; }
   .entete-transparent:not(.entete-opaque) .menu-bouton { color: var(--blanc); box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); }
   @media (min-width: 960px) { .menu-bouton { display: none; } }
+  /* Petit téléphone : bouton carré de 44 px, libellé gardé pour les lecteurs d'écran ; la ligne du métier du logo garde la place */
+  @media (max-width: 479px) { .menu-bouton { justify-content: center; min-width: var(--cible-tactile); padding: 0; } .menu-bouton__libelle { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
   .entete__contenu { gap: 12px; }
   @media (min-width: 960px) { .entete__contenu { gap: 28px; } }
 
@@ -541,6 +543,9 @@ const via = rdvGeneral ? '' : viaPlateforme;
   .barre-mobile { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; padding: 8px; border-radius: 20px; background: rgb(var(--blanc-rgb) / 0.94); backdrop-filter: blur(14px); box-shadow: var(--ombre); }
   .barre-mobile a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 14px; font-weight: 600; font-size: 0.9rem; line-height: 1.15; text-decoration: none; color: var(--encre); }
   .barre-mobile--appel { grid-template-columns: 1.6fr 1fr; }
+  /* Appeler et Itinéraire à la largeur de leur libellé, le rendez-vous prend le reste : aucun libellé coupé (texte à 18 px du registre pédagogique compris) */
+  .barre-mobile:not(.barre-mobile--appel) { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .barre-mobile:not(.barre-mobile--appel) a:not(.barre-mobile__rdv) { padding-inline: 8px; white-space: nowrap; }
   .barre-mobile__rdv > span { display: grid; }
   .barre-mobile .via { font-size: var(--taille-donnees-petit); }
   .barre-mobile__rdv { background: var(--accent); color: var(--blanc) !important; }
@@ -597,6 +602,8 @@ const via = rdvGeneral ? '' : viaPlateforme;
   html[data-registre='pedagogique'] .surface-grille { background-color: var(--doux); background-image: none; }
   /* Cartouches techniques (légende, repère « Fig. », mention, coordonnées) : retirés */
   html[data-registre='pedagogique'] :is(.planche__haut, .planche__bas, .ve__haut, .ve__bas, .ve__mention, .couverture__haut, .couverture__bas, .carte__haut, .carte__coordonnees, .praticien__repere, .panorama__mention, .plein__mention) { display: none !important; }
+  /* Planche sans cartouches : le dessin occupe toute la hauteur (centré), pas de case vide sous lui */
+  html[data-registre='pedagogique'] .planche { grid-template-rows: minmax(0, 1fr); }
   html[data-registre='pedagogique'] .carte__etiquette { background: var(--fond); color: var(--encre); font-family: var(--police-texte); box-shadow: var(--ombre); }
   html[data-registre='pedagogique'] .carte__plan.surface-plan { background-image: linear-gradient(var(--quadrillage-clair) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-clair) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas-majeur) var(--quadrillage-pas-majeur); }
   html[data-registre='pedagogique'] .carte__point::after { animation: none !important; }
@@ -605,6 +612,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
   html[data-registre='pedagogique'] .praticien__empreintes { display: none; }
   html[data-registre='pedagogique'] .praticien__monogramme { color: var(--accent-vif); border-top-color: var(--accent-vif); }
   /* Menu mobile : tiroir clair */
+  html[data-registre='pedagogique'] .barre-mobile a { font-size: 0.85rem; }
   html[data-registre='pedagogique'] .tiroir__nav a, html[data-registre='pedagogique'] .tiroir__tel { color: var(--encre); }
   html[data-registre='pedagogique'] .tiroir__fermer { background: var(--fond); color: var(--encre); box-shadow: inset 0 0 0 var(--filet) var(--ligne); }
   html[data-registre='pedagogique'] .tiroir .bouton--clair { background: var(--accent); color: var(--blanc); }
@@ -615,6 +623,28 @@ const via = rdvGeneral ? '' : viaPlateforme;
   html[data-registre='pedagogique'] .pied__appel span { font-family: var(--police-texte); font-size: 1rem; }
   html[data-registre='pedagogique'] .pied__bas { font-size: 0.8rem; }
   html[data-registre='pedagogique'] .pied__visuel { --dessin-trait: var(--encre); width: min(100%, 260px); }
+
+  /* ———— Téléphone (≤ 759 px, TELEPHONE de la charte) : air entre les blocs, textes secondaires à 16 px,
+     zones tactiles de 44 px, pied de page aéré. Rien ne change au-delà de 760 px. */
+  @media (max-width: 759px) {
+    .bouton--petit { min-height: var(--cible-tactile); }
+    .tete-page { padding-bottom: var(--espace-section); }
+    .tete-page .chapo { margin-top: var(--espace-element); }
+    .note { font-size: var(--taille-texte-telephone); }
+    .breadcrumb { margin-bottom: var(--espace-element); }
+    .breadcrumb a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); }
+    .breadcrumb ol { align-items: center; row-gap: 0; }
+    .prose li { margin-bottom: 0.7em; }
+    .pied { font-size: var(--taille-texte-telephone); }
+    .pied__haut { margin-bottom: var(--espace-bloc); }
+    .pied__grille { gap: var(--espace-bloc); }
+    .pied ul { gap: var(--espace-ligne); }
+    .pied ul:has(a) { gap: 0; }
+    .pied__grille a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); }
+    .pied small { font-size: var(--taille-donnees); line-height: 1.5; }
+    html[data-registre='pedagogique'] .materiel__liste li { grid-template-columns: auto minmax(0, 1fr); }
+    .pied__bas { margin-top: var(--espace-bloc); gap: var(--espace-ligne) 24px; line-height: 1.6; }
+  }
 
   .apparait.pret { opacity: 0; transform: translateY(28px); transition: opacity var(--duree-long) var(--courbe-sortie), transform var(--duree-long) var(--courbe-sortie); }
   .apparait.pret.vu { opacity: 1; transform: none; }

@@ -179,6 +179,34 @@ export const TYPO = {
   interlettrage: '0.08em',
 } as const;
 
+// ———————————————————————————————————————————————————— Espacements et téléphone
+
+/**
+ * Rythme vertical, du téléphone (375 px) à l'ordinateur (1 440 px) : `clamp(téléphone, fluide, ordinateur)`.
+ * La borne « ordinateur » reprend les valeurs historiques (rien ne change au-delà de 900 px) ; la borne
+ * « téléphone » donne de l'air aux petits écrans. `section` : entre deux sections ; `bloc` : entre l'en-tête
+ * d'une section et son contenu, ou entre deux blocs ; `element` : entre deux éléments d'une liste ou d'une carte ;
+ * `ligne` : marge intérieure verticale d'une ligne de liste ou de tableau.
+ */
+export const ESPACES = {
+  section: 'clamp(72px, 9vw, 120px)',
+  bloc: 'clamp(36px, 4vw, 56px)',
+  element: 'clamp(20px, 2.4vw, 28px)',
+  ligne: '12px',
+} as const;
+
+/**
+ * Téléphone (jusqu'à `largeur` px, même seuil que les grilles à 760 px) : minimums de lisibilité et de confort.
+ * `texte` : corps des textes secondaires (résumés, infos pratiques, fiches) ; `donnees` : lectures mono et
+ * légendes (13 px) ; `cible` : zone tactile minimale d'un lien ou d'un bouton isolé (WCAG 2.5.5).
+ */
+export const TELEPHONE = {
+  largeur: 759,
+  texte: '1rem',
+  donnees: '0.8125rem',
+  cible: '44px',
+} as const;
+
 // ———————————————————————————————————————————————————— Mouvement
 
 /** Durées (ms) : transitions ponctuelles */
@@ -324,6 +352,9 @@ export function variablesCharte(metier: string = UNIVERS.podologie.id): Record<s
   v['--taille-donnees-dessin'] = `${TYPO.donneesDessin}px`;
   v['--interlettrage-donnees'] = TYPO.interlettrage;
   // Mouvement
+  for (const [k, e] of Object.entries(ESPACES)) v[`--espace-${k}`] = e;
+  v['--taille-texte-telephone'] = TELEPHONE.texte;
+  v['--cible-tactile'] = TELEPHONE.cible;
   for (const [k, d] of Object.entries(DUREES)) v[`--duree-${k}`] = `${d}ms`;
   for (const [k, d] of Object.entries(CYCLES)) v[`--cycle-${k}`] = `${d}ms`;
   for (const [k, c] of Object.entries(COURBES)) v[`--courbe-${tiret(k)}`] = c;
@@ -338,4 +369,7 @@ export const SURFACES_CSS = `.surface-plan { --dessin-trait: var(--papier); --de
 
 /** Feuille de style de la charte : `:root { … }` et surfaces partagées, à poser une fois dans <head>. */
 export const feuilleCharte = (metier?: string) =>
-  `:root{${Object.entries(variablesCharte(metier)).map(([k, v]) => `${k}:${v}`).join(';')}}${SURFACES_CSS}`;
+  `:root{${Object.entries(variablesCharte(metier)).map(([k, v]) => `${k}:${v}`).join(';')}}${TELEPHONE_CSS}${SURFACES_CSS}`;
+
+/** Téléphone : lectures mono et légendes relevées à 13 px (jamais moins), le reste de l'échelle est inchangé. */
+export const TELEPHONE_CSS = `@media (max-width:${TELEPHONE.largeur}px){:root{--taille-donnees:${TELEPHONE.donnees};--taille-donnees-petit:${TELEPHONE.donnees}}}`;

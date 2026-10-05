@@ -60,4 +60,12 @@ const vignette = (slug: string) => {
     .expertise:hover .expertise__titre { transform: translateX(8px); }
     .expertise:hover .expertise__resume { opacity: 0.2; }
   }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    /* Dessin plus grand à côté du titre, résumé sur toute la largeur en dessous (16 px) */
+    .expertise { grid-template-columns: 104px minmax(0, 1fr); grid-template-areas: 'dessin titre' 'resume resume'; row-gap: 14px; padding: var(--espace-element) 0; }
+    .expertise__dessin { width: 104px; }
+    .expertise__fleche { display: none; }
+    .expertise__resume { margin-top: 0; font-size: var(--taille-texte-telephone); line-height: 1.6; }
+  }
 </style>
