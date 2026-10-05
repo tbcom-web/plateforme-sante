@@ -37,7 +37,7 @@ export default async function JeuxPhotos() {
           le site garde les photos intégrées. Les illustrations et animations ne changent pas. Choisissez des photos sans visage.
         </p>
       </div>
-      {error && <p className="text-sm text-red-700">Lecture impossible : exécutez la migration 0016 (jeux de photos) dans Supabase.</p>}
+      {error && <p className="text-sm text-red-700">Lecture impossible : la base de données n’est pas à jour (mise à jour 0016, jeux de photos, à installer).</p>}
 
       {SPECIALITES.map((spec) => {
         const partages = jeux.filter((j) => !j.siteId && j.specialite === spec.value);

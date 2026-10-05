@@ -53,7 +53,7 @@ export async function enregistrerArticle(id: string | null, champs: ChampsArticl
   }
   const slug = `${slugifier(v.titre)}-${Math.random().toString(36).slice(2, 6)}`;
   const { data, error } = await supabase.from('articles_flux').insert({ ...v, slug }).select('id').single();
-  if (error || !data) return { ok: false, message: 'Création impossible. La migration du flux a-t-elle été exécutée ?' };
+  if (error || !data) return { ok: false, message: 'Création impossible : la base de données est-elle à jour (mise à jour 0009, flux) ?' };
   revalidatePath('/admin/flux');
   redirect(`/admin/flux/${data.id}`);
 }

@@ -30,7 +30,7 @@ export default async function Flux() {
         <Link href="/admin/flux/nouveau" className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900">Nouvel article</Link>
       </div>
 
-      {error && <p className="mt-4 text-sm text-red-700">Lecture impossible : exécutez la migration 0009 du flux dans Supabase.</p>}
+      {error && <p className="mt-4 text-sm text-red-700">Lecture impossible : la base de données n’est pas à jour (mise à jour 0009, flux, à installer).</p>}
 
       <ul className="mt-6 grid gap-2">
         {(data ?? []).length === 0 && !error && <li className="text-sm text-neutral-500">Aucun article pour le moment.</li>}

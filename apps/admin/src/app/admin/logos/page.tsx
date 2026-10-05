@@ -27,7 +27,7 @@ export default async function Logos() {
           Toute marque prend automatiquement les couleurs de la gamme et le style du modèle de chaque site.
         </p>
       </div>
-      {error && <p className="text-sm text-red-700">Lecture impossible : exécutez la migration 0013 des logos dans Supabase.</p>}
+      {error && <p className="text-sm text-red-700">Lecture impossible : la base de données n’est pas à jour (mise à jour 0013, logos, à installer).</p>}
 
       <section>
         <h2 className="mb-3 font-semibold">Marques intégrées</h2>

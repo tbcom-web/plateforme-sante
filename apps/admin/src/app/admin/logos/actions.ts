@@ -24,7 +24,7 @@ export async function importerMarque(_: ResultatMarque, form: FormData): Promise
     id: marque.id, metier: 'podologie', nom: marque.nom, sens: marque.sens, view_box: marque.viewBox, contenu: marque.contenu,
     actif: false, updated_at: new Date().toISOString(),
   });
-  if (error) return { ok: false, message: 'Enregistrement impossible. La migration 0013 a-t-elle été exécutée ?' };
+  if (error) return { ok: false, message: 'Enregistrement impossible : la base de données est-elle à jour (mise à jour 0013, logos) ?' };
   revalidatePath('/admin/logos');
   return { ok: true, message: `Marque « ${marque.nom} » importée (inactive). Vérifiez l’aperçu puis activez-la.` };
 }

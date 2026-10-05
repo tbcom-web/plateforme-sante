@@ -18,7 +18,7 @@ export default async function Visuels() {
           le style du site leur applique ensuite une teinte commune. Choisissez des photos sans visage, pour qu’aucune personne ne passe pour le praticien.
         </p>
       </div>
-      {error && <p className="text-sm text-red-700">Lecture impossible : exécutez la migration 0011 de la banque visuelle dans Supabase.</p>}
+      {error && <p className="text-sm text-red-700">Lecture impossible : la base de données n’est pas à jour (mise à jour 0011, banque visuelle, à installer).</p>}
       {SPECIALITES.map((pack) => <EditeurPack key={pack.value} pack={pack} perso={persos.get(pack.value) ?? {}} />)}
     </div>
   );

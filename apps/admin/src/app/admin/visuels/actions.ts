@@ -27,7 +27,7 @@ export async function enregistrerPack(id: string, perso: PersonnalisationPack): 
   };
   const supabase = await createClient();
   const { error } = await supabase.from('packs_visuels').upsert(ligne);
-  if (error) return { ok: false, message: 'Enregistrement impossible. La migration 0011 a-t-elle été exécutée ?' };
+  if (error) return { ok: false, message: 'Enregistrement impossible : la base de données est-elle à jour (mise à jour 0011, banque visuelle) ?' };
   revalidatePath('/admin/visuels');
   return { ok: true, message: 'Enregistré. Les sites concernés l’afficheront à leur prochaine publication.' };
 }

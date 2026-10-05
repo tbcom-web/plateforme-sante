@@ -7,6 +7,7 @@ import { getCatalogue } from '@/lib/sites';
 import EditeurJeu, { PlancheContact } from '../../photos/EditeurJeu';
 import type { Licence } from '../../photos/actions';
 import PhotosSite from './PhotosSite';
+import { STATUTS, type Statut } from '@/lib/libelles';
 
 export const metadata = { title: 'Super admin · Photos du site' };
 
@@ -41,9 +42,9 @@ export default async function PhotosDuSite({ params }: PageProps<'/admin/sites/[
       <div>
         <Link href="/admin" className="text-sm text-teal-800">← Sites</Link>
         <h1 className="mt-2 text-2xl font-bold">Photos du site : {nom}</h1>
-        <p className="text-sm text-neutral-600">Spécialité principale : {specialiteDe(d.theme.specialite).label} · statut : {site.statut.replace('_', ' ')}</p>
+        <p className="text-sm text-neutral-600">Spécialité principale : {specialiteDe(d.theme.specialite).label} · statut : {STATUTS[site.statut as Statut]?.label ?? site.statut}</p>
       </div>
-      {error && <p className="text-sm text-red-700">Lecture impossible : exécutez la migration 0016 (jeux de photos) dans Supabase.</p>}
+      {error && <p className="text-sm text-red-700">Lecture impossible : la base de données n’est pas à jour (mise à jour 0016, jeux de photos, à installer).</p>}
 
       <section className="grid gap-3 rounded-xl border border-black/5 bg-white p-4">
         <h2 className="font-semibold">Jeu affecté</h2>

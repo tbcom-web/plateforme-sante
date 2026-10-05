@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PAGES_PUBLIQUES = ['/connexion', '/auth'];
+// /rattacher : lien de rattachement d'un site, ouvert avant connexion (le code est gardé pendant la connexion).
+const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher'];
 
 // Rafraîchit la session Supabase à chaque navigation et protège les pages privées.
 export async function proxy(request: NextRequest) {
