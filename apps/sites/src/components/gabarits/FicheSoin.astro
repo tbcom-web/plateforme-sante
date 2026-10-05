@@ -8,6 +8,7 @@
 // latéral (les boutons sont en tête de fiche, l'adresse au pied de page). Dessin au trait sans animation.
 import TetePage from './TetePage.astro';
 import Faq from './Faq.astro';
+import SoinsLies from '../SoinsLies.astro';
 import Icone from '../Icone.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { site, md } from '../../lib/site';
@@ -91,6 +92,8 @@ const enPratique = [
     </section>
   )}
 </article>
+
+<SoinsLies soin={soin} />
 
 {autres.length > 0 && (
   <section class="g-section g-bloc fiche__section">

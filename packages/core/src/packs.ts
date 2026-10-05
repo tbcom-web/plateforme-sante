@@ -112,7 +112,7 @@ export const SPECIALITES: Specialite[] = [
       diaporama: ['/photos/soin-talon.webp', '/photos/examen-mains.webp', '/photos/soins-pied-tenu.webp', '/photos/soins-bandages.webp', '/photos/generale-pied-profil.webp'],
     },
     dessins: ['soin', 'diabete', 'talon'],
-    soins: ['soins-de-pedicurie', 'pied-diabetique', 'podologie-du-senior', 'ongle-incarne'],
+    soins: ['soins-de-pedicurie', 'pied-diabetique', 'podologie-du-senior', 'ongle-incarne', 'soins-a-domicile'],
   },
   {
     // Spécialité de l'univers « Pied diabétique et soins » (catalogue-univers.ts) : l'accueil montre le schéma du
@@ -128,7 +128,7 @@ export const SPECIALITES: Specialite[] = [
       diaporama: ['/photos/soins-pied-tenu.webp', '/photos/examen-mains.webp', '/photos/soin-talon.webp', '/photos/soins-bandages.webp', '/photos/chaussage.webp'],
     },
     dessins: ['diabete', 'soin', 'senior'],
-    soins: ['pied-diabetique', 'soins-de-pedicurie', 'ongle-incarne', 'podologie-du-senior'],
+    soins: ['pied-diabetique', 'soins-de-pedicurie', 'ongle-incarne', 'podologie-du-senior', 'cors-durillons'],
   },
 ];
 

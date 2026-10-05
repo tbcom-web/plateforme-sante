@@ -6,7 +6,7 @@ import {
   praticiens, pluriel, noms, lieu, adresseLieu, titreCabinet, titreMetierAffiche, phraseAccueil, rdvEnLigne,
   horairesRegroupes, libelleJours, TYPES_LIEU, itineraire, lieuExercice, telLien,
 } from './textes';
-import type { Faq } from '@plateforme/core';
+import { soinsLies, type Faq } from '@plateforme/core';
 
 /** Date de dernière mise à jour du contenu : fiche du site, sinon article le plus récent, sinon jour du build. */
 export const dateMaj =
@@ -112,6 +112,8 @@ export const pagesMarkdown = (): PageMd[] => [
     corps: [
       decaler(s.corps),
       ...(s.faq.length ? ['', '## Questions fréquentes', '', faqMd(s.faq)] : []),
+      // Même bloc « À lire aussi » que la page HTML (soins proches proposés par le cabinet)
+      ...(soinsLies(s.slug, site.soins).length ? ['', '## À lire aussi', '', liste(soinsLies(s.slug, site.soins).map(lienSoin))] : []),
       '',
       '## Rendez-vous',
       '',

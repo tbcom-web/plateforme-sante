@@ -170,7 +170,8 @@ export const faqSchema = (faq: Faq[], page?: { nom: string; description: string;
   })),
 });
 
-export const soinSchema = (soin: Soin) => ({
+/** Page d'un soin ; `lies` : chemins des soins du bloc « À lire aussi » (relatedLink), seulement s'il y en a. */
+export const soinSchema = (soin: Soin, lies: string[] = []) => ({
   '@context': 'https://schema.org',
   '@type': 'MedicalWebPage',
   '@id': `${absUrl(`/soins/${soin.slug}`)}#page`,
@@ -184,6 +185,7 @@ export const soinSchema = (soin: Soin) => ({
   lastReviewed: dateMaj,
   dateModified: dateMaj,
   provider: { '@id': businessId },
+  ...(lies.length ? { relatedLink: lies.map((p) => absUrl(p)) } : {}),
 });
 
 export const articleSchema = (a: Article) => ({

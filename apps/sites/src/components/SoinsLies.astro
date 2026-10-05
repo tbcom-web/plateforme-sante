@@ -1,0 +1,54 @@
+---
+// Bloc « À lire aussi » d'une page soin, commun à tous les gabarits (classique, tableau, village, revue) : 1 à 3 soins
+// proches (graphe SOINS_LIES du core), seulement parmi ceux que le cabinet propose. Titre court, résumé d'une ligne,
+// lien. Sans JavaScript ; rien n'est affiché s'il n'y a aucun soin lié sur le site.
+import { soinsLies, type Soin } from '@plateforme/core';
+import { site } from '../lib/site';
+import { nouveauGabarit } from '../lib/gabarits';
+
+interface Props { soin: Soin }
+const { soin } = Astro.props;
+const lies = soinsLies(soin.slug, site.soins);
+const id = `lire-aussi-${soin.slug}`;
+---
+{lies.length > 0 && (
+  <nav class:list={['lies', nouveauGabarit ? 'g-section g-bloc' : 'section']} aria-labelledby={id}>
+    <div class:list={[nouveauGabarit ? 'g-cadre' : 'cadre', 'lies__dedans']}>
+      <h2 id={id} class="lies__titre">À lire aussi</h2>
+      <ul class="lies__liste">
+        {lies.map((s) => (
+          <li>
+            <a href={`/soins/${s.slug}`}>
+              <span class="lies__nom">{s.titreCourt}</span>
+              <span class="lies__resume">{s.resume}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </nav>
+)}
+
+<style>
+  /* Jetons du gabarit classique (--encre…) ou des gabarits tableau, village, revue (--g-encre…). */
+  .lies {
+    --l-encre: var(--g-encre, var(--encre));
+    --l-douce: var(--g-encre-douce, var(--encre-douce));
+    --l-ligne: var(--g-ligne, var(--ligne));
+    --l-accent: var(--g-accent-texte, var(--accent-vif));
+  }
+  .lies__titre { margin: 0 0 12px; font-size: clamp(1.25rem, 2.4vw, 1.6rem); }
+  .lies__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 0 28px; border-top: var(--filet-fort, 2px) solid var(--l-encre); }
+  @media (min-width: 760px) { .lies__liste { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+  .lies__liste li { border-bottom: var(--filet, 1px) solid var(--l-ligne); }
+  .lies__liste a { display: grid; gap: 4px; min-height: 48px; padding: 14px 0; color: var(--l-encre); text-decoration: none; }
+  .lies__nom { font-weight: 700; color: var(--l-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .lies__liste a:hover .lies__nom { text-decoration-thickness: 2px; }
+  .lies__liste a:focus-visible { outline: 2px solid var(--l-accent); outline-offset: 2px; }
+  /* Résumé : la phrase d'une ligne de la fiche, jamais tronquée */
+  .lies__resume { color: var(--l-douce); font-size: 1rem; line-height: 1.45; }
+  /* Revue : même colonne de lecture que la fiche */
+  :global(.coquille--revue) .lies__dedans { width: min(760px, 100% - var(--gouttiere)); }
+  :global(.coquille--revue) .lies__titre { font-weight: 500; }
+  :global(.coquille--revue) .lies__liste { border-top-width: var(--filet, 1px); }
+</style>

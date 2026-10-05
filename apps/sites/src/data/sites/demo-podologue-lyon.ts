@@ -293,6 +293,113 @@ Bien souvent, des conseils de chaussage et un suivi suffisent. Si des semelles s
         },
       ],
     },
+    // Fiches du catalogue (migration 0020), textes à voix neutre : pour vérifier le bloc « À lire aussi » de la démo.
+    {
+      slug: 'cors-durillons',
+      titre: "Cors et durillons : soins à Lyon",
+      titreCourt: "Cors et durillons",
+      resume:
+        "Retrait des cors, durillons et callosités, recherche de leur cause et prévention par le chaussage, les orthoplasties ou les semelles.",
+      corps: `## D’où viennent les cors et les durillons ?
+
+Cors, durillons et callosités sont des épaississements de la peau, appelés hyperkératoses. Ils sont dus à des frottements ou à des pressions répétés : chaussures trop étroites ou à talons hauts, orteils déformés, appuis trop marqués sous l’avant-pied. Le cor a un noyau dur qui appuie vers l’intérieur et peut être très douloureux. Une verrue plantaire peut ressembler à un cor : l’examen permet de les distinguer.
+
+## Le soin
+
+La corne est retirée et le noyau du cor enlevé avec des instruments stérilisés (bistouri, fraise). La technique est adaptée à la sensibilité et à la fragilité de la peau. Le soin diminue la gêne à la marche ; plusieurs séances sont parfois nécessaires.
+
+## Prévenir les récidives
+
+Tant que la cause persiste, la corne se reforme. Selon l’examen :
+
+- **Chaussage** : chaussures souples, assez larges à l’avant, sans couture intérieure gênante, à talon bas
+- **Orthoplastie** : orthèse d’orteil en silicone qui protège une zone de frottement
+- **Orthèses plantaires** (semelles orthopédiques) pour mieux répartir les appuis, après un bilan podologique
+- **Hydratation** de la peau, sauf entre les orteils
+
+## À éviter
+
+Ne pas couper soi-même un cor avec une lame ou des ciseaux. Les produits et pansements « coricides » sont à proscrire en cas de diabète, de troubles de la circulation ou de peau fragile : ils peuvent provoquer une plaie.
+
+## Diabète : vigilance
+
+Avec un diabète, la sensibilité des pieds peut diminuer et la peau cicatrise moins bien : une petite blessure peut passer inaperçue. Les soins sont à confier à un professionnel. Un cor, un durillon ou une zone de peau qui change de couleur doit être montré rapidement au pédicure-podologue ou au médecin. En cas de plaie, consulter le médecin sans attendre. En cas de rougeur qui s’étend, de fièvre ou de plaie qui s’aggrave, appeler le 15.`,
+      faq: [
+        {
+          q: "Faut-il une ordonnance pour soigner un cor ?",
+          r: "Non, il est possible de consulter un pédicure-podologue sans ordonnance.",
+        },
+        {
+          q: "Le soin est-il remboursé ?",
+          r: "Le soin courant n’est pas remboursé par l’Assurance Maladie. Les personnes diabétiques dont le pied est classé à risque (grades 2 et 3) par le médecin bénéficient de séances de prévention prises en charge, sur prescription médicale. Certaines complémentaires santé participent aux autres soins.",
+        },
+        {
+          q: "Le soin est-il douloureux ?",
+          r: "Le soin retire la corne sans entamer la peau saine. Il diminue souvent la pression du cor ; la technique est adaptée si la zone est sensible.",
+        },
+        {
+          q: "À quelle fréquence revenir ?",
+          r: "Selon la vitesse à laquelle la corne se reforme, le chaussage et l’activité. Le rythme est fixé lors de la première séance.",
+        },
+        {
+          q: "Le cor peut-il revenir ?",
+          r: "Oui, tant que le frottement ou la pression persiste. C’est pourquoi le soin s’accompagne de conseils de chaussage et, si besoin, d’une orthoplastie ou de semelles.",
+        },
+      ],
+    },
+    {
+      slug: 'ongles-epais',
+      titre: "Ongles épais : soins à Lyon",
+      titreCourt: "Ongles épais",
+      resume:
+        "Un soin régulier des ongles épaissis ou déformés, fréquents avec l’âge, pour marcher plus confortablement et éviter les blessures.",
+      corps: `## Pourquoi les ongles s’épaississent-ils ?
+
+Avec l’âge, les ongles des pieds s’épaississent souvent et deviennent plus durs. Des chocs ou frottements répétés dans la chaussure, des orteils déformés, des troubles de la circulation, une mycose ou des ongles longtemps restés sans soin peuvent y contribuer. Dans sa forme marquée, l’onychogryphose, l’ongle très épais se recourbe et prend l’aspect d’une griffe.
+
+## Pourquoi s’en occuper ?
+
+Un ongle épais est difficile à couper soi-même. Il appuie dans la chaussure, peut blesser l’orteil ou l’orteil voisin et rend la marche inconfortable. Des pieds douloureux rendent la marche moins sûre : prendre soin de ses ongles participe à la prévention des chutes.
+
+## Le soin
+
+- **Coupe** de l’ongle avec des instruments stérilisés
+- **Meulage** (fraisage) pour réduire son épaisseur, en respectant sa courbure
+- **Soin des bords de l’ongle** et de la corne éventuelle autour ou sous l’ongle
+- **Conseils** de chaussage : chaussures assez hautes et larges à l’avant
+
+Des précautions particulières sont prises pour éviter tout saignement, notamment chez les personnes diabétiques, sous anticoagulant ou ayant des troubles de la circulation.
+
+## Pour qui ?
+
+Personnes âgées, personnes qui ne peuvent plus atteindre leurs pieds ou qui voient mal, personnes diabétiques ou ayant des troubles de la circulation. Les soins se font au cabinet ou, selon les disponibilités, à domicile ou en établissement.
+
+## Quand voir le médecin ?
+
+Une tache, une bande foncée ou un saignement sous l’ongle apparus sans choc, une plaie de l’orteil ou une rougeur qui s’étend doivent être montrés au médecin.`,
+      faq: [
+        {
+          q: "Faut-il une ordonnance ?",
+          r: "Non, il est possible de consulter un pédicure-podologue sans ordonnance.",
+        },
+        {
+          q: "Le soin est-il remboursé ?",
+          r: "Le soin courant n’est pas remboursé par l’Assurance Maladie. Les personnes diabétiques dont le pied est classé à risque (grades 2 et 3) par le médecin bénéficient de séances de prévention prises en charge, sur prescription médicale. Certaines complémentaires santé participent aux autres soins.",
+        },
+        {
+          q: "Le meulage de l’ongle fait-il mal ?",
+          r: "Le meulage réduit l’épaisseur de l’ongle. Une sensation de vibration ou de chaleur est possible ; la vitesse est adaptée si l’orteil est sensible.",
+        },
+        {
+          q: "À quelle fréquence prévoir un soin ?",
+          r: "L’ongle épais se reforme : un soin régulier est nécessaire. Le rythme dépend de la pousse et du chaussage ; il est fixé lors de la première séance.",
+        },
+        {
+          q: "Le soin peut-il se faire à domicile ?",
+          r: "Selon les secteurs et les disponibilités du cabinet. Le plus simple est de contacter le cabinet par téléphone.",
+        },
+      ],
+    },
   ],
   faqGenerale: [
     {
