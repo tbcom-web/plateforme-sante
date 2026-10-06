@@ -78,7 +78,7 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
     <div class="g-cadre c-pied__grille">
       <div class="c-pied__bloc">
         <p class="c-pied__titre">{titreCabinet}</p>
-        <p>{lieu.nom && <>{lieu.nom}<br /></>}{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</> : adresseLieu}</p>
+        <p>{lieu.nom && <>{lieu.nom}<br /></>}{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{`${lieu.codePostal} ${lieu.ville}`}</> : adresseLieu}</p>
         <p>{aTelephone && <a href={telLien}>{site.cabinet.telephone}</a>}{site.cabinet.email && <>{aTelephone && <br />}<a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></>}</p>
       </div>
       {praticiens.length > 0 && <div class="c-pied__bloc">

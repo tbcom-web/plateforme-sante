@@ -57,7 +57,7 @@ const acces = [
       <Titre class="info__titre"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Adresse</Titre>
       <p>
         {lieu.nom ? <>{lieu.nom}<br /></> : lieu.type !== 'cabinet' && <>{TYPES_LIEU[lieu.type]}<br /></>}
-        {aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}</> : `${adresseLieu}.`}
+        {aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{`${lieu.codePostal} ${lieu.ville}`}</> : `${adresseLieu}.`}
       </p>
       {itineraire && <a href={itineraire} target="_blank" rel="noopener">Itinéraire</a>}
     </div>

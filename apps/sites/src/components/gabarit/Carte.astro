@@ -20,7 +20,7 @@ import { lieu, itineraire, aAdresse } from '../../lib/textes';
   </div>
   <div class="carte__adresse">
     <p class="carte__titre">{lieu.nom || 'Le cabinet'}</p>
-    <p>{lieu.adresse}{lieu.complement && <><br />{lieu.complement}</>}<br />{lieu.codePostal} {lieu.ville}</p>
+    <p>{lieu.adresse}{lieu.complement && <><br />{lieu.complement}</>}<br />{`${lieu.codePostal} ${lieu.ville}`}</p>
     <div class="carte__liens">
       <a class="bouton bouton--plein bouton--petit" href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" secours="lucide:map-pin" />Itinéraire</a>
       <a class="carte__osm" href={lienCarte} target="_blank" rel="noopener">Ouvrir dans OpenStreetMap</a>

@@ -69,6 +69,14 @@ jobs:
 
       - run: npm ci
 
+      # Rues OpenStreetMap du plan d'accès gardées d'une publication à l'autre : les serveurs Overpass publics sont souvent
+      # saturés ; une fois les rues obtenues, le plan ne dépend plus d'eux.
+      - uses: actions/cache@v4
+        with:
+          path: apps/sites/node_modules/.cache/plan-acces
+          key: plan-acces-${{ inputs.site_id }}-${{ github.run_id }}
+          restore-keys: plan-acces-${{ inputs.site_id }}-
+
       # En production : publication « en cours » dans Supabase (la version construite est config_publiee).
       - name: Préparer (slug du site, suivi de publication)
         id: prep

@@ -49,7 +49,7 @@ const { largeur: L, hauteur: H } = PLAN;
   ) : (
     <div class="plan__schema" role="img" aria-label="Plan schématique : position du cabinet, sans les rues">
       <span class="plan__pastille" aria-hidden="true"></span>
-      <span class="plan__adresse">{lieu.adresse}<br />{lieu.codePostal} {lieu.ville}</span>
+      <span class="plan__adresse">{lieu.adresse}<br />{`${lieu.codePostal} ${lieu.ville}`}</span>
     </div>
   )}
   {legende && (

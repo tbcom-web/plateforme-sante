@@ -297,7 +297,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
         <div class="pied__grille">
           <div>
             <p class="pied__titre">{titreCabinet}</p>
-            <p>{lieu.nom && <>{lieu.nom}<br /></>}{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal} {lieu.ville}</> : adresseLieu}</p>
+            <p>{lieu.nom && <>{lieu.nom}<br /></>}{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{`${lieu.codePostal} ${lieu.ville}`}</> : adresseLieu}</p>
             <p>
               {aTelephone && <a href={telLien}>{site.cabinet.telephone}</a>}
               {site.cabinet.email && <>{aTelephone && <br />}<a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></>}

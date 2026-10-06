@@ -49,7 +49,7 @@ const volets = [
     )}
     <div class="venir__bloc">
       <p class="venir__titre"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Adresse</p>
-      <p><strong>{nomLieu}</strong><br />{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{lieu.codePostal}{' '}{lieu.ville}</> : `${adresseLieu}.`}</p>
+      <p><strong>{nomLieu}</strong><br />{aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}<br />{`${lieu.codePostal} ${lieu.ville}`}</> : `${adresseLieu}.`}</p>
       <p class="venir__liens">
         {aTelephone ? <a href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a> : contactRdv === 'email' && <a href={lienContact}><Icone nom="lucide:mail" />{site.cabinet.email}</a>}
         {itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" />Itinéraire</a>}

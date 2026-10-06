@@ -166,7 +166,7 @@ const titreDoc = `${titre} – ${noms}, pédicures-podologues · Modèle Proximi
             </div>
             <div class="info">
               <h3><Icone nom="lucide:map-pin" />Adresse</h3>
-              <p>{cabinet.lieu}<br />{site.cabinet.adresse}, {cabinet.complement}<br />{site.cabinet.codePostal} {site.cabinet.ville}</p>
+              <p>{cabinet.lieu}<br />{site.cabinet.adresse}, {cabinet.complement}<br />{`${site.cabinet.codePostal} ${site.cabinet.ville}`}</p>
               <a href={mapsUrl} target="_blank" rel="noopener">Plan d’accès</a>
             </div>
             <div class="info">

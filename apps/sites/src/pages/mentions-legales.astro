@@ -30,7 +30,7 @@ const regles = {
       <p>
         {titreCabinet}<br />
         {lieu.nom && <>{lieu.nom}<br /></>}
-        {aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}, {lieu.codePostal} {lieu.ville}</> : `${adresseLieu}.`}
+        {aAdresse ? <>{lieu.adresse}{lieu.complement && `, ${lieu.complement}`}, {`${lieu.codePostal} ${lieu.ville}`}</> : `${adresseLieu}.`}
         {aTelephone && <><br />Téléphone : {site.cabinet.telephone}</>}
         {site.cabinet.email && <><br />E-mail : {site.cabinet.email}</>}
       </p>

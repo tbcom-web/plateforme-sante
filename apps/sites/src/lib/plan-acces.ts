@@ -31,8 +31,18 @@ async function donneesOsm(lat: number, lng: number): Promise<Element[] | null> {
   } catch { /* pas encore en cache */ }
   if (process.env.PLAN_OSM === 'non') return null;
   const r = Math.round(PLAN.rayon * 1.6);
+  const debut = Date.now();
   const requete = `[out:json][timeout:20];(way["highway"~"^(${Object.keys(CLASSES).join('|')})$"](around:${r},${lat},${lng});node["railway"="station"](around:${r},${lat},${lng});node["public_transport"="station"](around:${r},${lat},${lng}););out geom tags;`;
-  for (const serveur of ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter']) {
+  // Serveurs publics souvent saturés (504, 429) : plusieurs serveurs, deux tours, courte pause entre les tours.
+  const serveurs = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  ];
+  for (const [i, serveur] of [...serveurs, ...serveurs].entries()) {
+    if (i === serveurs.length) await new Promise((r) => setTimeout(r, 3000));
+    if (Date.now() - debut > 120000) break; // au plus 2 min : le site sort alors avec le plan schématique
     try {
       const rep = await fetch(serveur, {
         method: 'POST',
