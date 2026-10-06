@@ -85,8 +85,9 @@ const LEGENDES_LIGNE: Record<NomLigne, string> = {
   'senior-canne': 'La marche avec une canne', fauteuil: 'Le fauteuil de soins', instruments: 'Les instruments de soin',
   autoclave: 'L’autoclave de stérilisation', podoscope: 'Le podoscope', monofilament: 'Le test au monofilament',
   orthonyxie: 'Une agrafe d’orthonyxie sur l’ongle', onychoplastie: 'Un ongle reconstitué en résine', mycose: 'Un ongle atteint d’une mycose',
-  'ongle-epais': 'Le meulage d’un ongle épaissi', cor: 'Un cor et un durillon, vue en coupe', orthoplastie: 'Une orthèse d’orteil en silicone',
+  'ongle-epais': 'Le meulage d’un ongle épaissi', cor: 'Un durillon sous l’avant-pied et un cor sur un orteil', orthoplastie: 'Une orthèse d’orteil en silicone',
   domicile: 'Les soins à domicile',
+  talon: 'Le talon et la voûte plantaire', taping: 'Des bandes adhésives de K-taping', verrue: 'Une verrue plantaire', laser: 'Un soin au laser',
 };
 export const legendeLigne = (nom: NomLigne) => LEGENDES_LIGNE[nom];
 

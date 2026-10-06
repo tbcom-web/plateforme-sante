@@ -64,7 +64,8 @@ export function visuelTheme(id: string | null, usage: 'principal' | 'second' = '
  * le site (règle de Paul : pas de légende visible sous les illustrations). Indépendante du modèle et du style visuel (SEO
  * identique) : elle dit ce que représente l'illustration du sujet.
  */
-const phrase = (t: string) => `Illustration : ${t.charAt(0).toLowerCase()}${t.slice(1)}.`;
+// Description absente (dessin récent sans libellé) : ligne omise plutôt qu'un échec de construction du site.
+const phrase = (t: string | undefined) => (t ? `Illustration : ${t.charAt(0).toLowerCase()}${t.slice(1)}.` : '');
 export const descriptionTheme = (id: string) => phrase(legendeLigne(((id && DESSINS_THEME[id]) || DEFAUT).principal.ligne));
 export const descriptionSoin = (slug: string) => phrase(legendeLigne(ligneDuSoin(slug)));
 
