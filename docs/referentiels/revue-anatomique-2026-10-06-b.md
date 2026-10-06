@@ -175,3 +175,35 @@ Clés concernées : `heros:enfant:releve|pedagogique|ligne`, `heros:senior:relev
 
 Point resté hors périmètre : le DESSIN « senior » des fiches de soin (polygone d'appui + oscillations rouges + canne verticale) a les
 mêmes défauts que l'ancien héros ; à reprendre avec la scène du héros si Paul la valide.
+
+## D. Héros « senior » : pied arrière « tordu » (retour de Paul sur e478e8d)
+
+Retour de Paul : « J'adore les nouvelles illustrations mais tu vois bien que le pied ici est comme tordu non ? » (pied arrière,
+registre pédagogique paysage ; défaut présent dans les 3 registres et les 2 formats). Clés retouchées : `heros:senior:releve`,
+`heros:senior:pedagogique`, `heros:senior:ligne` (paysage et portrait) ; elles repassent « Modifié », rien n'est passé en « Validé ».
+Planche : `scratchpad/retouches-heros/senior-pied-v2.png`.
+
+| # | Point | Dessiné (e478e8d) | Réalité (décollement du talon) | Verdict |
+|---|---|---|---|---|
+| 1 | Sens de la rotation du pied arrière | chaussure tournée de 14° dans le MAUVAIS sens autour des têtes métatarsiennes : talon enfoncé sous la ligne du sol, pointe relevée | l'arrière-pied tourne autour de l'appui sous les têtes métatarsiennes, talon vers le HAUT | FAUX (bloquant) |
+| 2 | Avant-pied et orteils | soulevés avec le reste (pièce rigide) | restent à plat sur le sol ; la semelle se plie à l'avant-pied (MTP) | FAUX |
+| 3 | Amplitude | 14° | marche prudente à petits pas : talon décollé d'environ 3 cm (10° autour d'un pivot à ≈ 18 cm du talon) | À CORRIGER |
+| 4 | Cheville / jambe | jambe arrière tendue « par défaut » (cheville trop basse, cinématique clampée) | la cheville suit l'arrière-pied ; jambe presque tendue (genou ≈ 10°), sans jambe « qui rue » | À CORRIGER |
+| 5 | Pied avant | à plat, talon au sol, pointe vers l'avant (vue médiale du pied gauche, côté éloigné) | idem | JUSTE |
+| 6 | Embout de canne | au sol, ≈ 0,04 × H devant la pointe du pied avant | règle 7 (pied.ts) | JUSTE |
+| 7 | Gauche / droite | pied avant = gauche (éloigné, douloureux, avance avec la canne) ; pied arrière = droit (proche) ; canne dans la main droite | canne du côté opposé au membre douloureux | JUSTE |
+
+### Correction (packages/core/src/heros-scenes.ts, `sceneSenior`)
+
+- Le pied arrière est la MÊME chaussure que le pied avant (enveloppe de `piedDeProfil`, même échelle : même longueur), posée au
+  sol puis PLIÉE : chaque point en arrière du pivot (MTP de l'hallux, `prof.mtp`, x ≈ 88) tourne de 10° talon vers le haut ; la
+  rotation s'estompe (fondu de x ≈ 64 à 90) pour que la semelle se courbe à l'avant-pied sans cassure de l'empeigne ; en avant,
+  rien ne bouge (orteils à plat). Aucun dessin séparé.
+- La cheville (malléole) et la chaussette suivent la même transformation ; l'ourlet reste dans l'axe tibia–cheville.
+- Hanche placée pour que la jambe arrière reste presque tendue (distance hanche–cheville = 0,996 × (cuisse + jambe), hanche entre
+  0,49 et 0,53 × H) ; la jambe avant reste presque tendue aussi (mise en charge).
+- Relevé : l'appui du pied arrière n'est tramé que sous l'avant-pied posé.
+
+Contre-revue (auto-revue « illustrateur médical ») : JUSTE pour les 6 variantes. Lecture profane (2 s) : « une personne âgée qui
+marche à petits pas avec sa canne, le pied de derrière qui se déroule ». Points à faire valider par Paul : amplitude du décollement
+(10°), légère courbure de la semelle arrière.

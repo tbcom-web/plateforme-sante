@@ -252,23 +252,59 @@ function sceneSenior(format: FormatScene, registre: RegistreScene): string {
   const pas = (format === 'paysage' ? 0.24 : 0.2) * H;
   const largeur = pas + L + 0.06 * H;
   const xF = R.l / 2 - largeur / 2 + pas + 4.5 * k; // talon du pied avant
-  // Pied avant (gauche, côté éloigné : vue médiale, juste) à plat ; pied arrière (droit, côté proche) talon décollé de 14° autour de
-  // l'appui sous les têtes métatarsiennes
+  // Pied avant (gauche, côté éloigné : vue médiale, juste) à plat ; pied arrière (droit, côté proche) en DÉCOLLEMENT DU TALON : la
+  // MÊME chaussure, posée au sol, puis pliée à l'avant-pied (retour de Paul du 2026-10-06 : « le pied est comme tordu ») — l'arrière
+  // du pied tourne autour de l'appui sous les têtes métatarsiennes (MTP de l'hallux, x ≈ 88), talon vers le HAUT ; l'avant-pied et les
+  // orteils restent à plat sur le sol (la semelle se plie en douceur entre x ≈ 64 et 90, sans cassure de l'empeigne) ; la cheville suit l'arrière-pied (même rotation)
   const surSol = (dx: number): Affine => [k, 0, 0, k, dx + 4.5 * k, sol - c.sol * k];
   const avant = surSol(xF - 4.5 * k);
   const base = surSol(xF - pas - 4.5 * k);
-  const pivot = appliquer(base, 88, c.sol);
-  const t = (-14 * Math.PI) / 180, co = Math.cos(t), si = Math.sin(t);
-  const rot: Affine = [co, si, -si, co, pivot[0] - co * pivot[0] + si * pivot[1], pivot[1] - si * pivot[0] - co * pivot[1]];
-  const compose = (a: Affine, b: Affine): Affine => [a[0] * b[0] + a[2] * b[1], a[1] * b[0] + a[3] * b[1], a[0] * b[2] + a[2] * b[3], a[1] * b[2] + a[3] * b[3], a[0] * b[4] + a[2] * b[5] + a[4], a[1] * b[4] + a[3] * b[5] + a[5]];
-  const arriere = compose(rot, base);
   const prof = piedDeProfil();
+  const XM = prof.mtp[0];
+  // Petit pas prudent : talon décollé d'environ 3 cm (10° autour d'un pivot à ≈ 18 cm du talon)
+  const DECOLLEMENT = 10;
+  const plier = (x: number, y: number): P => {
+    const u = Math.max(0, Math.min(1, (XM + 2 - x) / 26)), w = u * u * (3 - 2 * u); // 1 en arrière de x ≈ 64, 0 en avant de x ≈ 90
+    const a = (DECOLLEMENT * w * Math.PI) / 180, co = Math.cos(a), si = Math.sin(a), dx = x - XM, dy = y - c.sol;
+    // Rotation qui SOULÈVE ce qui est en arrière du pivot (dx < 0 → y diminue ; à l'écran, y vers le bas)
+    return [XM + dx * co - dy * si, c.sol + dx * si + dy * co];
+  };
+  /** Placement d'un pied : point et chemin (le pied arrière est densifié avant pliage, pour que la semelle se courbe vraiment) */
+  type Placement = { pt: (x: number, y: number) => P; ch: (d: string) => string };
+  const aPlat = (m: Affine): Placement => ({ pt: (x, y) => appliquer(m, x, y), ch: (d) => tr(d, m) });
+  const plie = (m: Affine): Placement => {
+    const pt = (x: number, y: number) => appliquer(m, ...plier(x, y));
+    const ch = (d: string) => echantillonner(d, 2).map(({ pts, ferme }) => {
+      const dense: P[] = [];
+      const suite = ferme ? [...pts, pts[0]] : pts;
+      suite.forEach((q, i) => {
+        if (i === 0) { dense.push(q); return; }
+        const a = suite[i - 1], n = Math.max(1, Math.ceil(Math.hypot(q[0] - a[0], q[1] - a[1]) / 6));
+        for (let j = 1; j <= n; j++) dense.push([a[0] + ((q[0] - a[0]) * j) / n, a[1] + ((q[1] - a[1]) * j) / n]);
+      });
+      if (ferme) dense.pop();
+      // Courbe lisse (Catmull-Rom) au centième : une polyligne arrondie au dixième ferait des marches le long de la semelle inclinée
+      const q = dense.map(([x, y]) => pt(x, y)), n = q.length, f = (v: number) => +v.toFixed(2);
+      const at = (i: number) => (ferme ? q[(i + n) % n] : q[Math.max(0, Math.min(n - 1, i))]);
+      let d = `M${f(q[0][0])} ${f(q[0][1])}`;
+      for (let i = 0; i < (ferme ? n : n - 1); i++) {
+        const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+        d += ` C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+      }
+      return ferme ? `${d} Z` : d;
+    }).join(' ');
+    return { pt, ch };
+  };
+  const avantP = aPlat(avant), arriereP = plie(base);
   // Seul le bas de la jambe (sous l'ourlet du pantalon) est dessiné : le profil validé coupé à y = 12 (repère du profil)
-  const cheville = Object.assign((m: Affine) => appliquer(m, prof.malleoleMediale[0], prof.malleoleMediale[1]), { plein: couperSous(prof.peau, 12).plein });
-  const Aav = cheville(avant), Aar = cheville(arriere);
-  // Hanche : entre les deux chevilles, un peu fléchie (0,51 × H), légèrement en avant (appui sur la canne)
-  const Hh: P = [0.42 * Aar[0] + 0.58 * Aav[0], sol - 0.51 * H];
+  const cheville = Object.assign((m: Placement) => m.pt(prof.malleoleMediale[0], prof.malleoleMediale[1]), { plein: couperSous(prof.peau, 12).plein });
+  const Aav = cheville(avantP), Aar = cheville(arriereP);
+  // Hanche : entre les deux chevilles, légèrement en avant (appui sur la canne)
+  // Hauteur ajustée pour que la jambe arrière, au décollement du talon, reste presque tendue (genou fléchi d'environ 10°, jamais
+  // une jambe « qui rue ») : distance hanche–cheville arrière = 0,996 × (cuisse + jambe), hanche entre 0,49 et 0,53 × H (Winter : 0,53 × H debout)
   const l1 = 0.245 * H, l2 = 0.246 * H;
+  const xH = 0.42 * Aar[0] + 0.58 * Aav[0], dArr = 0.996 * (l1 + l2);
+  const Hh: P = [xH, Math.min(sol - 0.49 * H, Math.max(sol - 0.53 * H, Aar[1] - Math.sqrt(Math.max(0, dArr ** 2 - (xH - Aar[0]) ** 2))))];
   const Kav = genou(Hh, Aav, l1, l2), Kar = genou(Hh, Aar, l1, l2);
   // Jambe de pantalon : hanche → genou → ourlet (au-dessus de la malléole), demi-largeurs cuisse 0,05 H, genou 0,036 H, ourlet 0,034 H
   const ourlet = (K: P, A: P): P => { const v = [A[0] - K[0], A[1] - K[1]], l = Math.hypot(v[0], v[1]); return [A[0] - (v[0] / l) * 0.016 * H, A[1] - (v[1] / l) * 0.016 * H]; };
@@ -276,10 +312,10 @@ function sceneSenior(format: FormatScene, registre: RegistreScene): string {
     const haut: P = [Hh[0], Hh[1] - 0.04 * H];
     return tube([haut, Hh, K, ourlet(K, A)], [0.05 * H, 0.05 * H, 0.037 * H, 0.035 * H]);
   };
-  const piedChausse = (m: Affine) =>
+  const piedChausse = (m: Placement) =>
     // Cheville (chaussette unie) entre l'ourlet et le col : aplat seul, sans contour (aucun trait qui dépasse derrière le talon)
-    p.aplat(tr(cheville.plein, m), 'piece-coque') +
-    p.aplat(tr(c.tige, m), 'piece piece--forte') + p.trait(tr(c.tige, m)) + p.aplat(tr(c.semelle, m), 'piece-coque') + p.trait(tr(c.semelle, m), 'trait trait--moyen') + p.trait(tr(c.details, m), 'fin');
+    p.aplat(m.ch(cheville.plein), 'piece-coque') +
+    p.aplat(m.ch(c.tige), 'piece piece--forte') + p.trait(m.ch(c.tige)) + p.aplat(m.ch(c.semelle), 'piece-coque') + p.trait(m.ch(c.semelle), 'trait trait--moyen') + p.trait(m.ch(c.details), 'fin');
   const pantalon = (K: P, A: P) => {
     const j = jambe(K, A);
     // Contour ouvert en haut (le bassin continue), fermé en bas (ourlet)
@@ -331,14 +367,14 @@ function sceneSenior(format: FormatScene, registre: RegistreScene): string {
     const [a0, a1] = [appliquer(avant, 0, c.sol)[0], appliquer(avant, 126, c.sol)[0]];
     // Valeurs modérées (jamais un pic rouge isolé) : talon et avant-pied du pied avant, avant-pied du pied arrière, embout
     ajouter(a0, a1, (u) => Math.min(0.78, 0.5 * Math.exp(-(((u - 0.1) / 0.12) ** 2)) + 0.25 + 0.4 * Math.exp(-(((u - 0.68) / 0.1) ** 2))));
-    const [b0, b1] = [appliquer(arriere, 76, c.sol)[0], appliquer(arriere, 126, c.sol)[0]];
+    const [b0, b1] = [arriereP.pt(XM - 4, c.sol)[0], arriereP.pt(126, c.sol)[0]]; // seul l'avant-pied arrière touche le sol
     ajouter(b0, b1, (u) => 0.55 + 0.2 * Math.exp(-(((u - 0.3) / 0.25) ** 2)));
     ajouter(embout[0] - pasT * 0.6, embout[0] + pasT * 0.6, () => 0.45);
     appuis = `<g class="trame">${grouperTrame(pts, pasT).map((n) => `<path d="${n.d}" stroke="${n.couleur}" stroke-width="${n.epaisseur}"></path>`).join('')}</g>`;
   }
   // Ordre de peinture : jambe éloignée (avant), bassin, jambe proche (arrière), canne, main et manche
   return ligneSol + appuis +
-    `<g>${piedChausse(avant)}${pantalon(Kav, Aav)}</g>` + bassin + `<g>${piedChausse(arriere)}${pantalon(Kar, Aar)}</g>` + canne + manche + mainSvg;
+    `<g>${piedChausse(avantP)}${pantalon(Kav, Aav)}</g>` + bassin + `<g>${piedChausse(arriereP)}${pantalon(Kar, Aar)}</g>` + canne + manche + mainSvg;
 }
 
 /**
