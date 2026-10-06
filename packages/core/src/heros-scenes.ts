@@ -1,9 +1,8 @@
 // Scènes « héros » dessinées pour trois thèmes, d'après les retours de Paul du 2026-10-06 (chaîne SVG, aucune dépendance d'exécution) :
 //
-// - ENFANT (v2, après e478e8d : petits pieds et jambes en « tubes » face à l'adulte = composition confuse) : vue de dessus, les pas
-//   d'un adulte et, à côté, les petits pas d'un tout-petit qui avance avec lui (« on marche ensemble »), sans jambes. Géométries
-//   VALIDÉES seulement : adulte = trace d'appui EMPREINTE (POD-SC-0007) dans le contour CONTOUR_PIED plantaire (POD-AT-0002) ;
-//   enfant = PLANTE_ENFANT + ORTEILS_ENFANT (pied.ts, comme l'animation « premiers pas »). Pied de l'enfant ≈ 0,55 × pied adulte.
+// - ENFANT : les deux petits pieds de l'enfant vus de dessus (la jambe descend vers le bas du cadre), face aux deux pieds d'un
+//   adulte qui entrent par le haut, pour l'échelle ; en paysage, ses empreintes en points (relevé) ou en aplat doux (pédagogique).
+//   Version de e478e8d rétablie : Paul la préfère (2026-10-06) à la v2 « pas côte à côte » (0c9e722).
 // - DIABÈTE : l'examen au monofilament tenu en main (le matériel ne flotte plus) ; voir sceneDiabete.
 // - SENIOR : « pour les pieds avec canne yes mais il faut qu'on voit ». De profil, de la taille au sol, une personne qui marche à
 //   petits pas avec une canne : pieds chaussés (chaussure fermée, talon bas : la forme est l'ENVELOPPE du profil validé piedDeProfil,
@@ -60,45 +59,76 @@ function pinceau(registre: RegistreScene) {
 
 // ———————————————————————————————————————————————————— Enfant : on marche ensemble (empreintes vues de dessus)
 
-/** Longueur du pied dans son repère (talon → pulpe de l'hallux) et point d'ancrage d'une empreinte (milieu du pied) */
-const LONGUEUR_PIED = 216.5;
-const MILIEU: P = [48, 112];
-/** Pied de l'enfant ≈ 0,55 × pied de l'adulte (2-3 ans : ≈ 14 cm pour ≈ 26 cm) */
-const RAPPORT_ENFANT = 0.55;
-/** Valeurs de la trame ramenées à une plage douce (bleu → vert d'eau → jaune) : une trace de pas, pas une mesure ; jamais de rouge */
-const doux = (v: number) => (v > 0 ? 0.12 + 0.48 * Math.min(1, v) : 0);
-const PAS_ADULTE = 7;
-const PAS_ENFANT = PAS_ADULTE / RAPPORT_ENFANT;
-let memoAdulte: PointTrame[] | null = null;
-/** Points de l'empreinte de l'ADULTE (trace d'appui réelle EMPREINTE : talon, bande externe, têtes, pulpes ; voûte sans appui) */
-function pointsAdulte(): PointTrame[] {
-  return (memoAdulte ??= pointsTrame((x, y) => doux(pression('normal', x, y)), PAS_ADULTE));
+const PROLONGEMENT = 380; // la jambe (repère du pied, coupée à y = 219) se prolonge hors du cadre
+
+/** Rotation de l'ouverture autour de la cheville (49 ; 165), fondue de y = 160 à 190 : le pied tourne, la jambe reste dans l'axe */
+const ouvrir = (ouverture: number) => {
+  const t = (ouverture * Math.PI) / 180;
+  return (x: number, y: number): P => {
+    const w = y <= 160 ? 1 : y >= 190 ? 0 : 1 - (y - 160) / 30, a = t * w, c = Math.cos(a), s = Math.sin(a);
+    return [49 + (x - 49) * c - (y - 165) * s, 165 + (x - 49) * s + (y - 165) * c];
+  };
+};
+
+/** Pied d'ADULTE vu de dessus (CONTOUR_PIED dorsal, POD-AT-0001) posé par `m` : aplat, jambe prolongée hors du cadre, contour, ongles */
+function piedAdulte(m: Affine, registre: RegistreScene, ouverture: number): string {
+  const p = pinceau(registre);
+  const tr2 = (d: string) => tr(deformerChemin(d, ouvrir(ouverture)), m);
+  const [x1, x2] = [19.92, 77.16], ev = (x2 - x1) * 0.18;
+  const jambe = `M${x1},219 L${x1 - ev},${PROLONGEMENT} L${x2 + ev},${PROLONGEMENT} L${x2},219 Z`;
+  const bords = `M${x1},218 L${x1 - ev},${PROLONGEMENT} M${x2},218 L${x2 + ev},${PROLONGEMENT}`;
+  const peau = [...CONTOUR_PIED.dorsal.peaux, jambe].map((d) => p.aplat(tr2(d))).join('');
+  return `<g>${peau}${p.trait(tr2(`${CONTOUR_PIED.dorsal.trait} ${bords}`), 'trait trait--moyen')}${p.trait(tr2(CONTOUR_PIED.dorsal.ongles), 'ongle-dessus ongle-dessus--fin')}</g>`;
 }
-/** Empreinte de l'enfant (repère du pied) : plante comblée (coussinet graisseux) et orteils ronds */
+
+/**
+ * Petit pied de l'ENFANT vu de dessus posé par `m` : silhouette VALIDÉE du pied du tout-petit (PLANTE_ENFANT + ORTEILS_ENFANT, la
+ * même que l'animation « premiers pas » : avant-pied large, orteils courts et ronds, voûte comblée, talon rond), petits ongles au
+ * bout des orteils, et la jambe (cheville pleine) qui descend vers le bas du cadre en cachant le talon.
+ */
+function piedEnfant(m: Affine, registre: RegistreScene, ouverture: number): string {
+  const p = pinceau(registre);
+  const tr2 = (d: string) => tr(deformerChemin(d, ouvrir(ouverture)), m);
+  const pied = silhouette(PLANTE_ENFANT, ORTEILS_ENFANT);
+  const ongles = ORTEILS_ENFANT.map(([cx, cy, rx, ry, r]) => {
+    const t = (r * Math.PI) / 180, d = -ry * 0.42, ex = rx * (cx < 25 ? 0.5 : 0.46), ey = ry * 0.36;
+    return lisser(Array.from({ length: 10 }, (_, k) => {
+      const a = (k / 10) * 2 * Math.PI, X = ex * Math.cos(a), Y = ey * Math.sin(a);
+      return [r1(cx - Math.sin(t) * d + X * Math.cos(t) - Y * Math.sin(t)), r1(cy + Math.cos(t) * d + X * Math.sin(t) + Y * Math.cos(t))] as P;
+    }));
+  }).join(' ');
+  // Jambe : couvre le talon (sans trait de jonction : le dos du pied se continue dans la jambe), bords qui s'élargissent vers l'œil
+  const [x1, x2] = [16, 81], ev = (x2 - x1) * 0.3;
+  const jambe = `M${x1},162 C${x1},144 ${x2},144 ${x2},162 L${x2 + ev},${PROLONGEMENT} L${x1 - ev},${PROLONGEMENT} Z`;
+  const bords = `M${x1},162 L${x1 - ev},${PROLONGEMENT} M${x2},162 L${x2 + ev},${PROLONGEMENT}`;
+  const aplat = (d: string) => (p.L ? p.aplat(tr2(d)) : `<g class="peau-douce">${p.aplat(tr2(d))}</g>`);
+  return `<g>${aplat(pied)}${p.trait(tr2(pied))}${aplat(jambe)}${p.trait(tr2(bords))}${p.trait(tr2(ongles), 'fin')}</g>`;
+}
+
+/** Empreinte de l'enfant (repère du pied) : plante comblée et orteils ronds ; champ illustratif (talon, avant-pied, hallux) */
 const dansEmpreinteEnfant = (x: number, y: number) =>
   dansPolygone(PLANTE_ENFANT, x, y) || ORTEILS_ENFANT.some(([cx, cy, rx, ry]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1);
 const g2 = (x: number, y: number, cx: number, cy: number, sx: number, sy = sx) => Math.exp(-((x - cx) ** 2) / (2 * sx * sx) - ((y - cy) ** 2) / (2 * sy * sy));
-/** Appui du tout-petit (comme l'animation « premiers pas ») : talon, avant-pied, hallux ; la voûte comblée porte aussi */
-const champEnfant = (x: number, y: number) => doux(0.32 + 0.62 * g2(x, y, 48, 196, 15, 18) + 0.45 * g2(x, y, 44, 72, 18, 13) + 0.4 * g2(x, y, 22, 22, 8));
-let memoEnfant: PointTrame[] | null = null;
-/** Points de l'empreinte de l'enfant : plante, puis un petit amas par orteil (on lit des orteils, pas une tache) */
-function pointsEnfant(): PointTrame[] {
-  if (memoEnfant) return memoEnfant;
+const champEnfant = (x: number, y: number) => Math.min(1, 0.32 + 0.62 * g2(x, y, 48, 196, 15, 18) + 0.45 * g2(x, y, 44, 72, 18, 13) + 0.4 * g2(x, y, 22, 22, 8));
+let memoEmpreinte: PointTrame[] | null = null;
+const PAS_EMPREINTE = TRAME.pasEnfant * 1.4;
+/** Points de l'empreinte de l'enfant (comme l'animation « premiers pas » : plante, puis un amas par orteil) */
+function pointsEmpreinte(): PointTrame[] {
+  if (memoEmpreinte) return memoEmpreinte;
   const coussinets = ORTEILS_ENFANT.flatMap(([cx, cy, rx], i) =>
-    (i === 0 ? [[-0.38, 0.2], [0.38, 0.2], [0, -0.42]] : [[0, 0]]).map(([u, w]) => ({ x: r1(cx + u * rx), y: r1(cy + w * rx), v: doux(i === 0 ? 0.8 : 0.6) })),
+    (i === 0 ? [[-0.38, 0.2], [0.38, 0.2], [0, -0.42]] : [[0, 0]]).map(([u, w]) => ({ x: r1(cx + u * rx), y: r1(cy + w * rx), v: i === 0 ? 0.9 : 0.7 })),
   );
-  memoEnfant = [...pointsTrame(champEnfant, PAS_ENFANT, dansEmpreinteEnfant).filter((q) => q.y > 40), ...coussinets];
-  return memoEnfant;
+  memoEmpreinte = [...pointsTrame(champEnfant, PAS_EMPREINTE, dansEmpreinteEnfant).filter((q) => q.y > 40), ...coussinets];
+  return memoEmpreinte;
 }
-/** Trame posée par `m` (chaque point transformé : aucune matrice dans le SVG, rendu identique partout) */
-function trameEmpreinte(points: PointTrame[], pas: number, m: Affine): string {
+/** Empreinte de l'enfant posée par `m` : trame de points (relevé) ou aplat doux (pédagogique) */
+function empreinteEnfant(m: Affine, registre: RegistreScene): string {
   const e = Math.hypot(m[0], m[1]);
-  return grouperTrame(points, pas)
-    .map((n) => `<path d="${n.d.replace(/M(-?[\d.]+) (-?[\d.]+)h0/g, (_, x, y) => `M${appliquer(m, +x, +y).map(r1).join(' ')}h0`)}" stroke="${n.couleur}" stroke-width="${r1(n.epaisseur * e * 1.15)}"></path>`)
-    .join('');
-}
-/** Contours de l'empreinte de l'enfant (repère du pied) : plante comblée, orteils en petites ellipses séparées */
-function contoursEnfant(m: Affine): string {
+  if (registre === 'releve') {
+    return `<g class="trame">${grouperTrame(pointsEmpreinte(), PAS_EMPREINTE)
+      .map((n) => `<path d="${n.d.replace(/M(-?[\d.]+) (-?[\d.]+)h0/g, (_, x, y) => `M${appliquer(m, +x, +y).map(r1).join(' ')}h0`)}" stroke="${n.couleur}" stroke-width="${r1(n.epaisseur * e * 1.25)}"></path>`)
+      .join('')}</g>`;
+  }
   const plante = lisser(chaikin(PLANTE_ENFANT, 1).map(([x, y]) => appliquer(m, x, y)).map(([x, y]) => [r1(x), r1(y)] as P));
   const orteils = ORTEILS_ENFANT.map(([cx, cy, rx, ry, r]) => {
     const t = (r * Math.PI) / 180;
@@ -107,68 +137,32 @@ function contoursEnfant(m: Affine): string {
       return appliquer(m, cx + rx * Math.cos(a) * Math.cos(t) - ry * Math.sin(a) * Math.sin(t), cy + rx * Math.cos(a) * Math.sin(t) + ry * Math.sin(a) * Math.cos(t)).map(r1) as P;
     }));
   });
-  return `${plante} ${orteils.join(' ')}`;
+  return `<path class="empreinte" d="${plante} ${orteils.join(' ')}"></path>`;
 }
 
-/** Pulpes des orteils de l'empreinte adulte (EMPREINTE.pulpes) en polygones : les arcs SVG ne se transforment pas point à point */
-const pulpesAdulte = (m: Affine) =>
-  EMPREINTE.pulpes.map(([cx, cy, rx, ry]) => lisser(Array.from({ length: 10 }, (_, k) => {
-    const a = (k / 10) * 2 * Math.PI;
-    return appliquer(m, cx + rx * Math.cos(a), cy + ry * Math.sin(a)).map(r1) as P;
-  }))).join(' ');
-
-/**
- * Un pas (adulte ou enfant) posé par `m`, selon le registre. Adulte : relevé = trame de la trace d'appui réelle (EMPREINTE,
- * POD-SC-0007 : talon, bande externe, têtes, pulpes ; voûte sans appui) dans le contour léger en pointillés du pied (CONTOUR_PIED
- * plantaire, POD-AT-0002) ; pédagogique = la trace en aplat dans ce contour léger (comme le dessin « analyse ») ; ligne = la plante
- * (contour exact du pied vu de dessous). Enfant : plante comblée (coussinet graisseux, physiologique) et orteils ronds — trame,
- * aplat à l'accent, ou silhouette au trait (PLANTE_ENFANT + ORTEILS_ENFANT). `opacite` : les pas les plus anciens s'estompent.
- */
-function empreinte(qui: 'adulte' | 'enfant', m: Affine, registre: RegistreScene, opacite: number): string {
-  const p = pinceau(registre);
-  const o = `opacity="${r1(opacite * 100) / 100}"`;
-  const contourPied = tr(CONTOUR_PIED.plantaire.trait, m);
-  if (registre === 'releve') {
-    if (qui === 'enfant') return `<g class="trame" ${o}>${trameEmpreinte(pointsEnfant(), PAS_ENFANT, m)}</g>`;
-    return `<g ${o}><path class="pointille pointille--leger" d="${contourPied}"></path><g class="trame">${trameEmpreinte(pointsAdulte(), PAS_ADULTE, m)}</g></g>`;
-  }
-  if (p.L) return `<g ${o}>${qui === 'adulte' ? p.trait(contourPied) : p.trait(tr(silhouette(PLANTE_ENFANT, ORTEILS_ENFANT), m), 'trait', true)}</g>`;
-  // Pédagogique : adulte = trace d'appui en aplat léger dans le contour fin du pied ; enfant = plante comblée à l'accent, plus présente
-  if (qui === 'adulte') return `<g ${o}><path class="empreinte" d="${tr(EMPREINTE.contour, m)} ${pulpesAdulte(m)}"></path><path class="contour-pied" d="${contourPied}"></path></g>`;
-  return `<g ${o}><path class="empreinte" style="opacity:0.55" d="${contoursEnfant(m)}"></path></g>`;
-}
-
-/**
- * ENFANT (retour de Paul du 2026-10-06 sur e478e8d : petits pieds et jambes en « tubes » face à l'adulte = composition confuse) :
- * vue de dessus, les empreintes d'un adulte et, à côté, celles d'un tout-petit qui avance avec lui (on marche ensemble). Aucune jambe,
- * aucun chiffre. Adulte : 3 pas (pas ≈ 1,85 × la longueur du pied : marche lente, à l'allure de l'enfant), écartement ≈ 0,45 × L,
- * pointes ouvertes de 7°. Enfant : pied ≈ 0,55 × adulte, 4 petits pas (≈ 2,2 × SA longueur), base plus large (≈ 0,6 × L), pointes
- * ouvertes de 9°. L'enfant marche à la DROITE de l'adulte. Paysage : on marche vers la droite ; portrait : vers le haut.
- */
 function sceneEnfant(format: FormatScene, registre: RegistreScene): string {
-  const paysage = format === 'paysage';
-  // Longueur du pied adulte (repère de la scène), axe de chaque file, position du milieu du 1er pas, sens de la marche
-  const La = paysage ? 70 : 58, Le = La * RAPPORT_ENFANT;
-  const ea = La / LONGUEUR_PIED, ee = Le / LONGUEUR_PIED;
-  // Direction de marche (angle de la pointe du pied droit sans ouverture) : 90° = vers la droite, 0° = vers le haut
-  const cap = paysage ? 90 : 0;
-  const av = (u: number, w: number): P => (paysage ? [u, w] : [w, u]); // u : le long de la marche ; w : de gauche à droite de l'axe
-  const fil = paysage
-    ? { adulte: 76, enfant: 148, debutA: 50, debutE: 40, sens: 1 }
-    : { adulte: 82, enfant: 166, debutA: 280, debutE: 290, sens: -1 };
-  // Côté gauche du marcheur : vers le haut (paysage, marche vers la droite) ; vers la gauche (portrait, marche vers le haut)
-  const gauche = -1;
-  const pas = (qui: 'adulte' | 'enfant', n: number, longueur: number, ecart: number, ouverture: number, e: number, axe: number, debut: number) =>
-    Array.from({ length: n }, (_, i) => {
-      const droit = i % 2 === 1;
-      const [x, y] = av(debut + fil.sens * i * longueur, axe + (droit ? -gauche : gauche) * ecart);
-      const m = droit ? pose(MILIEU[0], MILIEU[1], x, y, e, cap + ouverture) : pose(MILIEU[0], MILIEU[1], x, y, e, cap - ouverture, true);
-      return empreinte(qui, m, registre, 0.42 + (0.58 * i) / (n - 1));
-    }).join('');
-  return pas('adulte', 3, 1.85 * La, 0.23 * La, 7, ea, fil.adulte, fil.debutA) + pas('enfant', 4, 2.2 * Le, 0.3 * Le, 9, ee, fil.enfant, fil.debutE);
+  const P_ = format === 'paysage'
+    ? { cx: 150, ea: 0.54, ya: 4, da: 36, ee: 0.3, ye: 172, de: 22, empreintes: true }
+    : { cx: 120, ea: 0.6, ya: 66, da: 40, ee: 0.33, ye: 246, de: 24, empreintes: false };
+  // Chaque pied est posé par sa CHEVILLE (49 ; 165 dans le repère du pied) : l'ouverture des pieds tourne autour de la cheville,
+  // jamais les jambes l'une vers l'autre. Adulte en face (orteils vers le bas), pieds ouverts de 8° ; enfant ouverts de 9°
+  const CHEVILLE = 165;
+  const adulteG = pose(49, CHEVILLE, P_.cx - P_.da, P_.ya, P_.ea, 180);
+  const adulteD = pose(49, CHEVILLE, P_.cx + P_.da, P_.ya, P_.ea, 180, true);
+  const enfantD = pose(49, CHEVILLE, P_.cx + P_.de, P_.ye, P_.ee, 0);
+  const enfantG = pose(49, CHEVILLE, P_.cx - P_.de, P_.ye, P_.ee, 0, true);
+  let empreintes = '';
+  if (P_.empreintes && registre !== 'ligne') {
+    // Les empreintes de l'enfant, à droite : un pas en avant de l'autre (pas ≈ 2 longueurs de son pied, ici raccourci de moitié
+    // pour tenir dans le cadre : deux traces côte à côte, décalées)
+    empreintes = empreinteEnfant(pose(48, 120, 300, 108, P_.ee, 7, true), registre) + empreinteEnfant(pose(48, 120, 332, 92, P_.ee, 9), registre);
+  }
+  // Ouverture dans le repère du pied droit (angle positif : orteils vers le bord latéral) ; le miroir fait le pied gauche
+  return empreintes + piedAdulte(adulteG, registre, 8) + piedAdulte(adulteD, registre, 8) + piedEnfant(enfantG, registre, 9) + piedEnfant(enfantD, registre, 9);
 }
 
-// ———————————————————————————————————————————————————— Diabète : examen au monofilament, tenu en main
+// ———————————————————————————————————————————————————— Senior : marche à petits pas avec une canne
+
 
 /**
  * DIABÈTE (retour de Paul : le monofilament et le diapason « flottent en l'air ») : le geste réel du dépistage (IWGDF 2019, HAS). Le

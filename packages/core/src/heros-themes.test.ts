@@ -62,10 +62,8 @@ test('héros enfant et senior : scènes dessinées (ni podoscope, ni plaque d’
   }
 });
 
-test('héros enfant (pas côte à côte, sans jambes), diabète (monofilament tenu en main), pédicurie (sans durillon en trame)', () => {
+test('héros diabète (monofilament tenu en main), pédicurie (sans durillon en trame)', () => {
   for (const f of ['paysage', 'portrait'] as const) for (const r of REGISTRES) {
-    const e = illustrationTheme('enfant', { format: f, registre: r });
-    assert.ok(!/ongle-dessus|peau-douce/.test(e), `enfant ${f} ${r} : pieds et jambes vus de dessus`);
     const d = illustrationTheme('diabete', { format: f, registre: r });
     assert.ok(d.includes('dessin--heros-diabete'), `diabète ${f} ${r} : scène`);
     assert.ok(r === 'ligne' || d.includes('class="filament"'), `diabète ${f} ${r} : filament`);
