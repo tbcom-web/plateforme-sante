@@ -1,7 +1,8 @@
 // Essai gratuit de 3 mois (« onboarding lead ») : fonctions pures, sans accès réseau ni horloge cachée.
-// Un pédicure-podologue s'inscrit depuis la page /essai, crée sa version d'essai dans le parcours guidé (/creer) et la voit
-// en APERÇU privé (branche Cloudflare « apercu », jamais indexée). La mise en ligne publique sur son domaine n'a lieu
-// qu'après validation manuelle par la commerciale (/admin/leads). Voir docs/onboarding-lead.md.
+// Un pédicure-podologue part de la page /essai, crée son site dans le parcours guidé (/creer) en session ANONYME (sans
+// formulaire préalable), laisse son e-mail pour voir le rendu (calculé dans le navigateur), puis crée son accès (mot de
+// passe + CGU) pour garder le site et le voir en APERÇU privé (branche Cloudflare « apercu », jamais indexée). La mise en
+// ligne publique n'a lieu qu'après validation manuelle par la commerciale (/admin/leads). Voir docs/onboarding-lead.md.
 //
 // Ce fichier calcule : dates d'essai, jours restants, progression du parcours, garde « essai = aperçu seulement »,
 // relances commerciales à faire (moteur de planification, sans envoi) et prochaine étape affichée au praticien.
@@ -109,10 +110,60 @@ export function gardeProduction(e: { enEssai: boolean; valideLe: string | null |
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// Session anonyme (migration 0025) : site commencé sans compte, rendu dans le navigateur, accès créé à la fin
+// ---------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Garde « anonyme = jamais de workflow » : l'aperçu privé complet (construction GitHub + Cloudflare), la demande de mise en
+ * ligne et la publication exigent un compte permanent (non anonyme) avec les CGU de l'essai acceptées. Avant, seul le
+ * rendu dans le navigateur est possible. Même règle en SQL (demander_apercu_essai, demander_mise_en_ligne_essai,
+ * valider_essai, demander_publication, proprietaire_sans_acces).
+ */
+export function gardeApercuEssai(e: { anonyme: boolean; cguAcceptees: boolean }): GardeProduction {
+  if (!e.anonyme && e.cguAcceptees) return { autorisee: true };
+  return { autorisee: false, raison: 'Créez votre accès (e-mail et mot de passe) pour obtenir le lien privé de votre site.' };
+}
+
+/**
+ * « Voir le rendu de mon site » disponible : modèle choisi et identité minimale saisie (nom du praticien ou du cabinet).
+ * Le rendu est calculé dans le navigateur (aucune construction).
+ */
+export function renduDisponible(d: { modele: string | null | undefined; nomPraticien: string | null | undefined; nomCabinet: string | null | undefined }): boolean {
+  return Boolean(String(d.modele ?? '').trim()) && Boolean(String(d.nomPraticien ?? '').trim() || String(d.nomCabinet ?? '').trim());
+}
+
+export type EtatEssaiId = 'site_commence' | 'rendu' | 'acces' | 'apercu' | 'demande' | 'publie';
+
+/**
+ * État d'un essai pour /admin/leads, du moins au plus avancé :
+ * site commencé sans coordonnées (anonyme, seulement compté) → rendu vu, coordonnées laissées, sans accès (étape N/6)
+ * → accès créé → aperçu privé généré → mise en ligne demandée → publié (validé).
+ */
+export function etatEssai(e: {
+  acces: boolean;
+  renduLe: string | null | undefined;
+  etape: number | null | undefined;
+  apercuGenereLe: string | null | undefined;
+  miseEnLigneDemandeeLe: string | null | undefined;
+  valideLe: string | null | undefined;
+}): { id: EtatEssaiId; libelle: string } {
+  const n = Math.max(0, Math.min(ETAPES_PARCOURS_ESSAI, Math.floor(Number(e.etape) || 0)));
+  const position = n >= 1 ? `, étape ${n}/${ETAPES_PARCOURS_ESSAI}` : '';
+  if (!e.acces) {
+    if (e.renduLe) return { id: 'rendu', libelle: `Rendu vu, accès non créé${(Number(e.etape) || 0) >= 7 ? ', parcours terminé' : position}` };
+    return { id: 'site_commence', libelle: `Site commencé sans coordonnées${position}` };
+  }
+  if (e.valideLe) return { id: 'publie', libelle: 'Validé et mis en ligne' };
+  if (e.miseEnLigneDemandeeLe) return { id: 'demande', libelle: 'Mise en ligne demandée' };
+  if (e.apercuGenereLe) return { id: 'apercu', libelle: 'Aperçu privé généré' };
+  return { id: 'acces', libelle: 'Accès créé' };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Relances commerciales (moteur de planification ; aucun envoi : la commerciale relance elle-même)
 // ---------------------------------------------------------------------------------------------------------------------
 
-export type CodeRelance = 'j1_parcours' | 'j7' | 'j60' | 'fin_moins_15' | 'fin_moins_1' | 'fin_essai' | 'manuelle';
+export type CodeRelance = 'r1_acces' | 'r3_acces' | 'j1_parcours' | 'j7' | 'j60' | 'fin_moins_15' | 'fin_moins_1' | 'fin_essai' | 'manuelle';
 
 export type EssaiPourRelances = {
   /** Début et fin de l'essai (horodatages ISO) */
@@ -128,6 +179,10 @@ export type EssaiPourRelances = {
   valideLe: string | null;
   paye: boolean;
   suspenduLe: string | null;
+  /** Accès créé (compte permanent, CGU acceptées). false : site commencé en session anonyme (0025). Défaut : true */
+  acces?: boolean;
+  /** Coordonnées laissées à la porte du rendu (horodatage ISO), pour un essai sans accès */
+  renduLe?: string | null;
 };
 
 export type Relance = {
@@ -143,6 +198,8 @@ export type Relance = {
 };
 
 const LIBELLES_RELANCES: Record<CodeRelance, string> = {
+  r1_acces: 'A vu le rendu, pas d’accès créé depuis 1 j',
+  r3_acces: 'A vu le rendu, pas d’accès créé depuis 3 j',
   j1_parcours: 'Lendemain de l’inscription : aider à terminer le parcours',
   j7: 'Une semaine : premier retour sur la version d’essai',
   j60: 'Deux mois : point sur le site et la mise en ligne',
@@ -163,6 +220,20 @@ const LIBELLES_RELANCES: Record<CodeRelance, string> = {
  */
 export function relancesEssai(e: EssaiPourRelances, aujourdhui: string): Relance[] {
   const faites = e.faites ?? {};
+  // Sans accès (session anonyme) : relances seulement si les coordonnées ont été laissées (porte du rendu), 1 et 3 jours
+  // après ; un site anonyme sans coordonnées n'est que compté. L'essai de 3 mois commence à la création de l'accès.
+  if (e.acces === false) {
+    if (!e.renduLe || e.statutCommercial === 'perdu') return [];
+    const rendu = jourParis(e.renduLe);
+    const prevues: { code: CodeRelance; date: string }[] = e.statutCommercial === 'gagne' ? [] : [{ code: 'r1_acces', date: ajouterJours(rendu, 1) }, { code: 'r3_acces', date: ajouterJours(rendu, 3) }];
+    if (e.prochaineRelance && /^\d{4}-\d{2}-\d{2}$/.test(e.prochaineRelance)) prevues.push({ code: 'manuelle', date: e.prochaineRelance });
+    return prevues
+      .map((r) => {
+        const faite = r.code === 'manuelle' ? false : Boolean(faites[r.code]);
+        return { code: r.code, date: r.date, libelle: LIBELLES_RELANCES[r.code], action: 'relancer' as const, faite, aFaire: !faite && r.date <= aujourdhui };
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
   const debut = jourParis(e.debut);
   const fin = jourParis(e.fin);
   const clos = e.statutCommercial === 'gagne' || e.statutCommercial === 'perdu' || Boolean(e.valideLe) || e.paye || Boolean(e.suspenduLe);
@@ -206,12 +277,24 @@ export function prochaineRelance(e: EssaiPourRelances, aujourdhui: string): Rela
  * Message proposé pour une relance (la commerciale le copie dans sa messagerie ; l'envoi automatique est désactivé).
  * Ton sobre, sans promesse ni superlatif.
  */
-export function messageRelance(code: CodeRelance, v: { prenom: string; finEssai: string; lienEssai: string | null; conseillere?: string }): { objet: string; corps: string } {
+export function messageRelance(code: CodeRelance, v: { prenom: string; finEssai: string; lienEssai: string | null; conseillere?: string; lienReprise?: string }): { objet: string; corps: string } {
   const bonjour = `Bonjour${v.prenom ? ` ${v.prenom}` : ''},`;
   const signature = `\n\nBien cordialement,\n${v.conseillere || 'Votre conseillère Webpodologue'}`;
   const lien = v.lienEssai ? `\n\nVotre version d’essai : ${v.lienEssai}` : '';
   const finLisible = v.finEssai;
+  // Le site d'une session sans accès ne s'ouvre que sur l'appareil (et le navigateur) où il a été commencé.
+  const reprise = v.lienReprise ? `, sur l’ordinateur ou le téléphone où vous l’avez commencé : ${v.lienReprise}` : ', sur l’ordinateur ou le téléphone où vous l’avez commencé.';
   switch (code) {
+    case 'r1_acces':
+      return {
+        objet: 'Le site de votre cabinet : le garder',
+        corps: `${bonjour}\n\nVous avez préparé hier le site de votre cabinet et vu son rendu. Pour le garder et obtenir votre lien privé, il reste à créer votre accès (un mot de passe), en rouvrant la page${reprise}\n\nSi vous préférez être accompagné(e), répondez simplement à ce message ; je peux aussi vous appeler.${signature}`,
+      };
+    case 'r3_acces':
+      return {
+        objet: 'Votre site de cabinet : puis-je vous aider ?',
+        corps: `${bonjour}\n\nJe reviens vers vous au sujet du site de votre cabinet. Votre brouillon est enregistré ; pour le conserver, il suffit de créer votre accès en rouvrant la page${reprise}\n\nSi ce n’est pas le moment, aucun problème : dites-le-moi et je ne vous relancerai plus.${signature}`,
+      };
     case 'j1_parcours':
       return {
         objet: 'Votre site de cabinet : reprendre la création',

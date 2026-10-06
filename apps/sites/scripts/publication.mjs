@@ -57,8 +57,16 @@ const runUrl = /^https:\/\/[^\s]+$/.test(RUN_URL ?? '') ? RUN_URL : null;
 async function essaiDuSite(siteId) {
   const [site] = await api(`sites?id=eq.${siteId}&select=owner,statut`);
   if (!site) return null;
-  const [essai] = await api(`essais?owner=eq.${site.owner}&select=owner,essai_fin,valide_le,suspendu_le,paiement_statut`).catch(() => []);
+  const [essai] = await api(`essais?owner=eq.${site.owner}&select=owner,essai_fin,valide_le,suspendu_le,paiement_statut,cgu_version`).catch(() => []);
   return essai ? { ...essai, statut: site.statut } : null;
+}
+
+/** Propriétaire sans accès (0025) : compte anonyme (profil sans e-mail) ou essai sans CGU. */
+async function sansAcces(siteId, essai) {
+  if (essai && essai.cgu_version == null) return true;
+  const [site] = await api(`sites?id=eq.${siteId}&select=owner`);
+  const [profil] = site?.owner ? await api(`profiles?id=eq.${site.owner}&select=email`).catch(() => []) : [];
+  return Boolean(profil) && !profil.email;
 }
 
 const sortie = async (ligne) => {
@@ -72,6 +80,10 @@ if (commande === 'preparer') {
   // Garde « essai = aperçu seulement » (aussi dans demander_publication et le back-office).
   if (production && essai && !essai.valide_le) {
     throw new Error('Version d’essai non validée : mise en ligne publique refusée (validation par la commerciale dans /admin/leads).');
+  }
+  // Garde « anonyme = jamais de workflow » (0025, aussi en SQL et côté serveur) : ni aperçu ni production sans accès.
+  if (await sansAcces(siteId, essai)) {
+    throw new Error('Propriétaire sans accès créé (session anonyme) : ni aperçu ni mise en ligne.');
   }
   // Sans config_publiee si la base n'a pas encore reçu la mise à jour 0017.
   const [site] = await api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config,config_publiee,publication_demandee_at`).catch(() =>

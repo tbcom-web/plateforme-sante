@@ -28,9 +28,9 @@ export function PiedEssai() {
   );
 }
 
-const ETAPES_FUNNEL = ['Vos coordonnées', 'Votre compte', 'Votre site', 'Mise en ligne'] as const;
+const ETAPES_FUNNEL = ['Votre site', 'Le rendu', 'Votre accès', 'Mise en ligne'] as const;
 
-/** Repère des 4 étapes de l'essai (coordonnées, compte, parcours guidé, mise en ligne avec la conseillère). */
+/** Repère des 4 étapes de l'essai (parcours guidé, rendu contre e-mail, accès, mise en ligne avec la conseillère). */
 export function EtapesEssai({ active }: { active: 1 | 2 | 3 | 4 }) {
   return (
     <ol className="grid grid-cols-4 gap-1.5 text-[11px] leading-tight text-neutral-600 sm:text-xs" aria-label={`Étape ${active} sur 4`}>

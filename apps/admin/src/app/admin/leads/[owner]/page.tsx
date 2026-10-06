@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { libelleArretParcours, libelleStatutCommercial, messageRelance } from '@plateforme/core';
+import { libelleArretParcours, libelleStatutCommercial, lienRepriseEssai, messageRelance } from '@plateforme/core';
 import { lireLead, lireNotes } from '@/lib/leads';
 import { dateCourte } from '@/lib/libelles';
 import { dateLongue, jourCourt } from '@/lib/essai';
@@ -19,18 +19,23 @@ export default async function FicheLead({ params }: PageProps<'/admin/leads/[own
   const nom = `${l.prenom} ${l.nom}`.trim() || l.email;
   const carte = 'grid content-start gap-3 rounded-2xl border border-black/5 bg-white p-5';
   const enCours = l.site?.publicationEtat === 'en_cours';
+  // Session anonyme (0025) : le site ne s'ouvre que sur l'appareil où il a été commencé, tant que l'accès n'est pas créé.
+  const reprise = l.acces ? `${origineEssai()}/creer (après connexion)` : `${lienRepriseEssai(origineEssai())} (même appareil et même navigateur seulement)`;
 
   const infos: [string, React.ReactNode][] = [
-    ['E-mail', <a key="m" className="text-teal-800 underline" href={`mailto:${l.email}`}>{l.email}</a>],
+    ['État', l.etat.libelle],
+    ['E-mail', l.email ? <a key="m" className="text-teal-800 underline" href={`mailto:${l.email}`}>{l.email}</a> : '—'],
     ['Téléphone', l.telephone ? <a key="t" className="text-teal-800 underline" href={`tel:${l.telephone.replace(/\s/g, '')}`}>{l.telephone}</a> : '—'],
     ['Ville', l.ville || '—'],
     ['Cabinet', l.site?.nomCabinet || '—'],
-    ['Inscription', dateCourte(l.debut)],
-    ['Fin d’essai', `${dateLongue(l.fin)}${l.valideLe || l.paiementStatut === 'paye' ? '' : ` (${l.joursRestants} j)`}`],
-    ['Parcours', `${l.progression} %${l.apercuGenereLe ? '' : ` · ${libelleArretParcours(l.etape)}`}`],
-    ['Lien de reprise', `${origineEssai()}/creer (après connexion)`],
+    ['Site commencé', dateCourte(l.creeLe)],
+    ['Rendu demandé', l.renduDemandeLe ? dateCourte(l.renduDemandeLe) : '—'],
+    ['Accès créé', l.accesCreeLe ? dateCourte(l.accesCreeLe) : 'Non (session anonyme : ni aperçu privé, ni publication)'],
+    ['Fin d’essai', l.acces ? `${dateLongue(l.fin)}${l.valideLe || l.paiementStatut === 'paye' ? '' : ` (${l.joursRestants} j)`}` : 'L’essai de 3 mois commence à la création de l’accès'],
+    ['Parcours', `${l.progression} %${l.apercuGenereLe ? '' : l.acces ? ` · ${libelleArretParcours(l.etape)}` : ''}`],
+    ['Lien de reprise', reprise],
     ['Provenance', [l.source, ...Object.entries(l.utm).map(([k, v]) => `${k}=${v}`)].filter(Boolean).join(' · ') || '—'],
-    ['CGU', `version ${l.cguVersion}, acceptées le ${dateCourte(l.cguAccepteesLe)}`],
+    ['CGU', l.cguVersion && l.cguAccepteesLe ? `version ${l.cguVersion}, acceptées le ${dateCourte(l.cguAccepteesLe)}` : 'Pas encore acceptées (à la création de l’accès)'],
     ['Conseils par e-mail', l.conseils ? 'Accepté' : 'Non'],
     ['Paiement', l.paiementStatut === 'paye' ? 'Abonnement réglé' : l.paiementStatut === 'impaye' ? 'Impayé' : l.paiementStatut === 'annule' ? 'Abonnement annulé' : 'Aucun'],
     ['Validation', l.valideLe ? `Validé le ${dateCourte(l.valideLe)}` : l.miseEnLigneDemandeeLe ? `Mise en ligne demandée le ${dateCourte(l.miseEnLigneDemandeeLe)}` : 'Non demandée'],
@@ -55,7 +60,8 @@ export default async function FicheLead({ params }: PageProps<'/admin/leads/[own
       <section className={carte} aria-labelledby="titre-actions">
         <h2 id="titre-actions" className="font-semibold">Actions</h2>
         <p className="text-sm text-neutral-600">Avant « Valider et mettre en ligne » : vérifier l’inscription au tableau de l’Ordre (annuaire de l’Ordre ou RPPS) et les informations du cabinet avec le praticien. La mise en ligne publie le site en production par le flux habituel.</p>
-        <ActionsEssai owner={l.owner} suspendu={Boolean(l.suspenduLe)} valide={Boolean(l.valideLe)} aSite={Boolean(l.site)} />
+        {!l.acces && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Accès pas encore créé : la validation, l’aperçu privé et la mise en ligne sont impossibles tant que le praticien n’a pas créé son accès (mot de passe et conditions de l’essai). S’il a un compte existant avec cette adresse, le site peut lui être rattaché (Super admin, liste des sites → « Changer de propriétaire » : lien de rattachement à usage unique).</p>}
+        <ActionsEssai owner={l.owner} suspendu={Boolean(l.suspenduLe)} valide={Boolean(l.valideLe)} aSite={Boolean(l.site) && l.acces} />
         {enCours && l.site && <SuiviPublication siteId={l.site.id} />}
         {l.test && (
           <div className="grid gap-1 border-t border-neutral-100 pt-3">
@@ -98,7 +104,7 @@ export default async function FicheLead({ params }: PageProps<'/admin/leads/[own
         <p className="text-sm text-neutral-600">{envoiActive() ? 'Envoi automatique configuré.' : 'Envoi automatique désactivé : relancez par téléphone ou copiez le message proposé dans votre messagerie, puis marquez la relance comme faite.'}</p>
         <ol className="grid gap-3">
           {l.relances.map((r) => {
-            const m = r.action === 'relancer' && r.code !== 'manuelle' ? messageRelance(r.code, { prenom: l.prenom, finEssai: dateLongue(l.fin), lienEssai: l.lienApercu }) : null;
+            const m = r.action === 'relancer' && r.code !== 'manuelle' ? messageRelance(r.code, { prenom: l.prenom, finEssai: dateLongue(l.fin), lienEssai: l.lienApercu, lienReprise: l.acces ? undefined : lienRepriseEssai(origineEssai()) }) : null;
             return (
               <li key={`${r.code}-${r.date}`} className={`grid gap-1 rounded-lg border p-3 text-sm ${r.aFaire ? 'border-amber-300 bg-amber-50/60' : 'border-neutral-200'}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">

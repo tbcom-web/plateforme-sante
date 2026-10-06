@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export type EtatLead = { ok: boolean; message: string } | null;
 const UUID = /^[0-9a-f-]{36}$/;
-const CODES = ['j1_parcours', 'j7', 'j60', 'fin_moins_15', 'fin_moins_1', 'fin_essai'];
+const CODES = ['r1_acces', 'r3_acces', 'j1_parcours', 'j7', 'j60', 'fin_moins_15', 'fin_moins_1', 'fin_essai'];
 
 const rafraichir = (owner: string) => {
   revalidatePath('/admin/leads');
@@ -148,7 +148,9 @@ export async function supprimerLeadTest(email: string): Promise<EtatLead> {
   }
   revalidatePath('/admin/leads');
   revalidatePath('/admin');
-  const r = (data ?? {}) as { prospects?: number; essais?: number; sites?: number; compte?: boolean };
-  const compte = r.compte ? ' Le compte de connexion existe encore : supprimez-le dans Supabase → Authentication → Users.' : '';
-  return { ok: true, message: `Lead de test supprimé (prospect : ${r.prospects ?? 0}, essai : ${r.essais ?? 0}, site : ${r.sites ?? 0}).${compte}` };
+  const r = (data ?? {}) as { prospects?: number; essais?: number; sites?: number; compte?: boolean; anonymes?: number };
+  const compte = r.compte || r.anonymes
+    ? ` Compte${r.anonymes ? ' anonyme' : ''} de connexion encore présent : supprimez-le dans Supabase → Authentication → Users${r.anonymes ? ' (filtre « Anonymous »)' : ''}.`
+    : '';
+  return { ok: true, message: `Lead de test supprimé (prospect : ${r.prospects ?? 0}, essai : ${r.essais ?? 0}, site : ${r.sites ?? 0}${r.anonymes ? `, dont ${r.anonymes} brouillon(s) anonyme(s)` : ''}).${compte}` };
 }

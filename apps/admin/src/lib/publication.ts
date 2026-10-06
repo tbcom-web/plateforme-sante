@@ -1,8 +1,8 @@
 import 'server-only';
-import { gardeProduction, normaliserDraft } from '@plateforme/core';
+import { gardeApercuEssai, gardeProduction, normaliserDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getRole } from '@/lib/admin';
-import { essaiBloqueProduction } from '@/lib/essai';
+import { essaiBloqueProduction, proprietaireSansAcces } from '@/lib/essai';
 
 type Resultat = { ok: boolean; message: string };
 
@@ -23,11 +23,27 @@ async function lancerWorkflow(fichier: string, inputs: Record<string, string>): 
 const UUID = /^[0-9a-f-]{36}$/;
 
 /**
+ * Garde « anonyme = jamais de workflow » (0025, aussi en SQL) : un site dont le propriétaire n'a pas créé son accès
+ * (session anonyme, ou essai sans CGU) n'a ni aperçu par workflow, ni publication, quel que soit le demandeur. Le
+ * praticien voit le rendu dans son navigateur. Renvoie le refus, ou null si l'action est permise.
+ */
+async function refusSansAcces(siteId: string): Promise<Resultat | null> {
+  const { data } = await (await createClient()).auth.getUser();
+  const sansAcces = Boolean(data.user?.is_anonymous) || (await proprietaireSansAcces(siteId));
+  const garde = gardeApercuEssai({ anonyme: sansAcces, cguAcceptees: !sansAcces });
+  if (garde.autorisee) return null;
+  if ((await getRole()) === 'admin') return { ok: false, message: 'Le praticien n’a pas encore créé son accès : ni aperçu privé ni publication pour ce site.' };
+  return { ok: false, message: garde.raison };
+}
+
+/**
  * Publie un site : fige le brouillon en version publiée (config → config_publiee, fonction demander_publication),
  * puis lance le workflow GitHub qui construit le site depuis cette version. Refusé pour un site suspendu.
  */
 export async function declencherPublication(siteId: string): Promise<Resultat> {
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
+  const refus = await refusSansAcces(siteId);
+  if (refus) return refus;
   // Garde « essai = aperçu seulement » (aussi en SQL dans demander_publication et dans le workflow) : un site d'essai
   // non validé n'est jamais publié en production. Pour le praticien, « Publier » met à jour sa version d'essai privée ;
   // l'admin passe par « Valider et mettre en ligne » (/admin/leads), qui valide d'abord l'essai.
@@ -64,12 +80,15 @@ export async function declencherPublication(siteId: string): Promise<Resultat> {
  */
 export async function declencherApercuEssai(siteId: string): Promise<Resultat> {
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
+  const refus = await refusSansAcces(siteId);
+  if (refus) return refus;
   const supabase = await createClient();
   const rattrapage = await supabase.rpc('rattraper_articles', { p_site: siteId });
   if (rattrapage.error && rattrapage.error.code !== 'PGRST202') console.error('rattraper_articles', rattrapage.error);
   const { error } = await supabase.rpc('demander_apercu_essai', { p_site: siteId });
   if (error) {
     if (/suspendu/i.test(error.message)) return { ok: false, message: 'Votre version d’essai est suspendue : contactez votre conseillère.' };
+    if (/accès requis/i.test(error.message)) return { ok: false, message: 'Créez votre accès (e-mail et mot de passe) pour obtenir le lien privé de votre site.' };
     if (/termin/i.test(error.message)) return { ok: false, message: 'Votre essai est terminé : passez à l’abonnement ou contactez votre conseillère.' };
     console.error('demander_apercu_essai', error);
     return { ok: false, message: 'La version d’essai n’a pas pu être préparée. Réessayez dans un instant.' };
@@ -85,6 +104,8 @@ export async function declencherApercuEssai(siteId: string): Promise<Resultat> {
 /** Construit l'aperçu privé du brouillon (éditeur visuel) : https://apercu.<slug>.pages.dev */
 export async function declencherApercu(siteId: string): Promise<Resultat> {
   if (UUID.test(siteId)) {
+    const refus = await refusSansAcces(siteId);
+    if (refus) return refus;
     const rattrapage = await (await createClient()).rpc('rattraper_articles', { p_site: siteId });
     if (rattrapage.error && rattrapage.error.code !== 'PGRST202') console.error('rattraper_articles', rattrapage.error);
   }

@@ -94,10 +94,13 @@ export async function lireEntonnoirs(leads: Lead[], prospects: Prospect[] | null
   const depuis7 = ajouterJours(aujourdhui, -6);
   const depuis30 = ajouterJours(aujourdhui, -29);
   const visites = prospects ? await lireVisites(depuis30) : [];
+  // Cohorte des sites commencés (sessions anonymes comprises, 0025) ; les anciens prospects sans site ne comptent pas.
   const donnees = {
     visites,
-    prospects: (prospects ?? []).map((p) => ({ creeLe: p.creeLe, email: p.email })),
-    essais: leads.map((l) => ({ debut: l.debut, email: l.email, etape: l.etape, apercuGenereLe: l.apercuGenereLe, miseEnLigneDemandeeLe: l.miseEnLigneDemandeeLe, valideLe: l.valideLe })),
+    essais: leads.map((l) => ({
+      creeLe: l.creeLe, email: l.email, renduLe: l.renduDemandeLe, accesLe: l.accesCreeLe, apercuGenereLe: l.apercuGenereLe,
+      miseEnLigneDemandeeLe: l.miseEnLigneDemandeeLe, valideLe: l.valideLe,
+    })),
   };
   return { j7: entonnoirEssai(donnees, depuis7), j30: entonnoirEssai(donnees, depuis30), mesureActive: prospects !== null };
 }

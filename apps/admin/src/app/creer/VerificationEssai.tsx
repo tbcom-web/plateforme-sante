@@ -3,14 +3,28 @@
 // Dernier écran du parcours pour un compte en essai : récapitulatif court et « Voir mon site », qui génère la version
 // d'essai en APERÇU privé (https://apercu.<slug>.pages.dev, non indexé) avec le suivi de publication habituel.
 // La mise en ligne publique se demande ensuite depuis le tableau de bord (validation par la conseillère).
+// Site commencé en session anonyme (0025) : « Voir le rendu de mon site » (porte de capture puis rendu dans le
+// navigateur), puis « Créez votre accès » (mot de passe + CGU) ; « Voir mon site » n'apparaît qu'avec l'accès.
 import Link from 'next/link';
+import CreerAcces from './CreerAcces';
 import type { ResultatControle, SiteDraft, Univers } from '@plateforme/core';
 import SuiviPublication from '@/components/SuiviPublication';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
+export type AccesEssai = {
+  /** Session anonyme : aucun accès créé */
+  anonyme: boolean;
+  /** Coordonnées laissées à la porte du rendu */
+  rendu: boolean;
+  /** E-mail confirmé mais mot de passe pas encore choisi */
+  mdpAChoisir: boolean;
+  /** E-mail laissé à la porte du rendu (pré-remplit l'accès) */
+  email: string;
+};
+
 export default function VerificationEssai({
-  d, siteId, controle, univers, enCours, publication, onModifier, onPublier,
+  d, siteId, controle, univers, enCours, publication, onModifier, onPublier, acces, onVoirRendu, onFinaliser, onAccesCree,
 }: {
   d: SiteDraft;
   siteId: string | null;
@@ -20,6 +34,10 @@ export default function VerificationEssai({
   publication: { ok: boolean; message: string } | null;
   onModifier: (etape: number) => void;
   onPublier: () => void | Promise<void>;
+  acces: AccesEssai;
+  onVoirRendu: () => void;
+  onFinaliser: () => Promise<{ ok: boolean; message: string }>;
+  onAccesCree: () => void;
 }) {
   const noms = d.praticiens.map((p) => `${p.prenom} ${p.nom}`.trim()).filter(Boolean);
   const lieu = d.lieux[0];
@@ -50,6 +68,33 @@ export default function VerificationEssai({
         )}
       </section>
 
+      {acces.anonyme && !acces.rendu && (
+        <section className="grid gap-3 rounded-2xl border border-black/5 bg-white p-5" aria-labelledby="titre-voir">
+          <h2 id="titre-voir" className="text-lg font-semibold">Le rendu de votre site</h2>
+          <p className="text-sm text-neutral-700">Votre site sur téléphone et sur ordinateur, avec vos informations. Il suffit de laisser votre adresse e-mail.</p>
+          <button type="button" onClick={onVoirRendu} className={`min-h-12 rounded-xl bg-teal-800 px-5 text-base font-semibold text-white hover:bg-teal-900 ${focus}`}>
+            Voir le rendu de mon site
+          </button>
+        </section>
+      )}
+
+      {acces.anonyme && acces.rendu && (
+        <section className="grid gap-3 rounded-2xl border border-teal-700/30 bg-white p-5" aria-labelledby="titre-acces">
+          <h2 id="titre-acces" className="text-lg font-semibold">Créez votre accès pour voir et garder votre site</h2>
+          <p className="text-sm text-neutral-700">Un mot de passe pour retrouver votre site sur n’importe quel appareil et l’ouvrir sur un lien privé, non indexé. Gratuit pendant 3 mois, sans carte bancaire.</p>
+          <CreerAcces email={acces.email} mode="creer" onFinaliser={onFinaliser} onTermine={onAccesCree} />
+          <button type="button" onClick={onVoirRendu} className={`min-h-11 justify-self-start rounded-lg px-1 text-sm font-semibold text-teal-800 underline ${focus}`}>Revoir le rendu</button>
+        </section>
+      )}
+
+      {!acces.anonyme && acces.mdpAChoisir && (
+        <section className="grid gap-3 rounded-2xl border border-teal-700/30 bg-white p-5" aria-labelledby="titre-mdp">
+          <h2 id="titre-mdp" className="text-lg font-semibold">Adresse confirmée : choisissez votre mot de passe</h2>
+          <CreerAcces email={acces.email} mode="mdp" onFinaliser={onFinaliser} onTermine={onAccesCree} />
+        </section>
+      )}
+
+      {!acces.anonyme && !acces.mdpAChoisir && (
       <section className="grid gap-3 rounded-2xl border border-black/5 bg-white p-5" aria-labelledby="titre-voir">
         <h2 id="titre-voir" className="text-lg font-semibold">Votre version d’essai</h2>
         <p className="text-sm text-neutral-700">Un lien privé, non indexé par les moteurs de recherche. Vous pourrez le modifier et le régénérer autant que vous voulez pendant l’essai.</p>
@@ -72,6 +117,7 @@ export default function VerificationEssai({
           </p>
         )}
       </section>
+      )}
     </div>
   );
 }

@@ -21,6 +21,8 @@ export const metadata = { title: 'Tableau de bord' };
 export default async function TableauDeBord() {
   const user = await getUser();
   if (!user) redirect('/connexion');
+  // Session anonyme (essai sans accès) : le site se poursuit dans le parcours, l'accès se crée au dernier écran.
+  if (user.is_anonymous) redirect('/creer');
 
   const [site, catalogue, role] = await Promise.all([getMonSite(), getCatalogue(), getRole()]);
   // Praticien sans site : parcours guidé de création

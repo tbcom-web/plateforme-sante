@@ -8,13 +8,16 @@ import { BoutonRelanceProspectFaite, BoutonSupprimerTest, MessageACopier } from 
 
 export const metadata = { title: 'Super admin · Essais' };
 
-// Back-office commercial : entonnoir de l'essai (7 et 30 jours, leads de test exclus), prospects sans compte (étape 1
-// du funnel), essais gratuits (leads) et relances « à faire aujourd'hui » calculées par les moteurs purs
-// (packages/core/src/essai.ts, prospects.ts). Aucun e-mail n'est envoyé : la commerciale relance elle-même.
+// Back-office commercial : entonnoir de l'essai (7 et 30 jours, leads de test exclus), essais gratuits (leads) et
+// relances « à faire aujourd'hui » calculées par les moteurs purs (packages/core/src/essai.ts, prospects.ts). Aucun
+// e-mail n'est envoyé : la commerciale relance elle-même.
+// Session anonyme (0025) : un lead existe à partir de la porte du rendu (e-mail + accord de recontact) ; avant, les
+// sites commencés sans coordonnées sont seulement comptés (entonnoir). Prospects sans compte : ancien parcours (0024).
 
 const FILTRES = {
   actifs: 'En cours',
   a_faire: 'À faire aujourd’hui',
+  sans_acces: 'Rendu vu, sans accès',
   prospects: 'Prospects sans compte',
   demandes: 'Mise en ligne demandée',
   fin_proche: 'Fin dans 15 jours',
@@ -30,6 +33,9 @@ function filtrer(leads: Lead[], filtre: Filtre, statut: string, q: string): Lead
   const recherche = q.toLowerCase();
   return leads.filter((l) => {
     if (filtre === 'prospects') return false;
+    // Site anonyme sans coordonnées : compté seulement, jamais listé (aucun contact possible).
+    if (!l.acces && !l.renduDemandeLe) return false;
+    if (filtre === 'sans_acces' && l.acces) return false;
     if (filtre === 'tests' && !l.test) return false;
     if (filtre === 'actifs' && (clos(l) || l.suspenduLe)) return false;
     if (filtre === 'a_faire' && !l.aFaire.length && !(l.miseEnLigneDemandeeLe && !l.valideLe)) return false;
@@ -54,6 +60,10 @@ function filtrerProspects(prospects: Prospect[], filtre: Filtre, q: string): Pro
 
 const pastille: Record<string, string> = {
   nouveau: 'bg-sky-100 text-sky-900', contacte: 'bg-amber-100 text-amber-900', rendez_vous: 'bg-violet-100 text-violet-900', gagne: 'bg-teal-100 text-teal-900', perdu: 'bg-neutral-200 text-neutral-700',
+};
+const etatCouleur: Record<string, string> = {
+  site_commence: 'bg-neutral-100 text-neutral-700', rendu: 'bg-amber-100 text-amber-900', acces: 'bg-sky-100 text-sky-900', apercu: 'bg-violet-100 text-violet-900',
+  demande: 'bg-orange-100 text-orange-900', publie: 'bg-teal-100 text-teal-900',
 };
 const BadgeTest = () => <span className="ml-1 rounded bg-fuchsia-100 px-1.5 py-0.5 align-middle text-[11px] font-semibold uppercase tracking-wide text-fuchsia-900">Test</span>;
 const provenance = (source: string, utm: Record<string, string>) => [source, ...Object.entries(utm).filter(([k]) => k !== 'utm_source').map(([k, v]) => `${k.replace('utm_', '')}=${v}`)].filter(Boolean).join(' · ') || '—';
@@ -148,13 +158,16 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
   }
 
   const entonnoirs = await lireEntonnoirs(leads, prospects);
+  // Sites commencés en session anonyme sans coordonnées : comptés seulement (nettoyage : nettoyer_anonymes, voir la doc).
+  const anonymesSansContact = leads.filter((l) => !l.acces && !l.renduDemandeLe).length;
+  const listes = leads.filter((l) => l.acces || l.renduDemandeLe);
   const sansCompte = (prospects ?? []).filter((x) => !x.owner && !x.compteCreeLe);
   const prospectsAFaire = sansCompte.filter((x) => x.aFaire);
-  const aFaire = leads.filter((l) => l.aFaire.length || (l.miseEnLigneDemandeeLe && !l.valideLe && !l.suspenduLe));
+  const aFaire = listes.filter((l) => l.aFaire.length || (l.miseEnLigneDemandeeLe && !l.valideLe && !l.suspenduLe));
   const liste = filtrer(leads, filtre, statut, q);
   const listeProspects = filtrerProspects(prospects ?? [], filtre, q);
   const lien = (f: Filtre) => `/admin/leads?${new URLSearchParams({ filtre: f, ...(statut ? { statut } : {}), ...(q ? { q } : {}) })}`;
-  const nbTests = leads.filter((l) => l.test).length + sansCompte.filter((x) => x.test).length;
+  const nbTests = listes.filter((l) => l.test).length + sansCompte.filter((x) => x.test).length;
 
   return (
     <div className="grid gap-6">
@@ -162,7 +175,7 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
         <div>
           <h1 className="text-2xl font-bold">Essais gratuits</h1>
           <p className="text-sm text-neutral-600">
-            {leads.length} essai{leads.length > 1 ? 's' : ''} · {sansCompte.length} prospect{sansCompte.length > 1 ? 's' : ''} sans compte{nbTests ? ` · dont ${nbTests} de test` : ''} · version d’essai en aperçu privé, mise en ligne publique après validation.
+            {listes.length} lead{listes.length > 1 ? 's' : ''} · {anonymesSansContact} site{anonymesSansContact > 1 ? 's' : ''} commencé{anonymesSansContact > 1 ? 's' : ''} sans coordonnées (comptés seulement) · {sansCompte.length} prospect{sansCompte.length > 1 ? 's' : ''} sans compte{nbTests ? ` · dont ${nbTests} de test` : ''} · version d’essai en aperçu privé, mise en ligne publique après validation.
           </p>
         </div>
         <a href="/essai" target="_blank" rel="noopener" className="text-sm font-semibold text-teal-800 underline">Page d’essai ↗</a>
@@ -219,7 +232,7 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
         {(Object.keys(FILTRES) as Filtre[]).map((f) => (
           <Link key={f} href={lien(f)} aria-current={f === filtre ? 'page' : undefined}
             className={`rounded-full px-3 py-1.5 ring-1 ring-black/10 ${f === filtre ? 'bg-teal-800 text-white' : 'bg-white hover:bg-neutral-50'}`}>
-            {FILTRES[f]}{f === 'prospects' ? ` (${sansCompte.length})` : ''}
+            {FILTRES[f]}{f === 'prospects' ? ` (${sansCompte.length})` : f === 'sans_acces' ? ` (${listes.filter((l) => !l.acces).length})` : ''}
           </Link>
         ))}
       </nav>
@@ -231,9 +244,10 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
           <table className="w-full min-w-[900px] text-left text-sm">
             <thead className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500">
               <tr>
-                <th className="px-3 py-2">Inscription</th>
+                <th className="px-3 py-2">Début</th>
                 <th className="px-3 py-2">Praticien</th>
                 <th className="px-3 py-2">Ville</th>
+                <th className="px-3 py-2">État</th>
                 <th className="px-3 py-2">Parcours</th>
                 <th className="px-3 py-2">Version d’essai</th>
                 <th className="px-3 py-2">Jours restants</th>
@@ -244,13 +258,15 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
             <tbody className="divide-y divide-neutral-100">
               {liste.map((l) => (
                 <tr key={l.owner} className="align-top">
-                  <td className="px-3 py-2 whitespace-nowrap">{dateCourte(l.debut)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{dateCourte(l.creeLe)}</td>
                   <td className="px-3 py-2">
                     <Link href={`/admin/leads/${l.owner}`} className="font-semibold text-teal-900 underline">{`${l.prenom} ${l.nom}`.trim() || '—'}</Link>
                     {l.test && <BadgeTest />}
                     <div className="text-xs text-neutral-500">{l.email}{l.telephone ? ` · ${l.telephone}` : ''}</div>
+                    {!l.acces && <div className="text-xs text-amber-800">Sans accès : brouillon lié à son navigateur</div>}
                   </td>
                   <td className="px-3 py-2">{l.ville || '—'}</td>
+                  <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${etatCouleur[l.etat.id] ?? ''}`}>{l.etat.libelle}</span></td>
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-neutral-100" aria-hidden="true"><div className="h-full bg-teal-700" style={{ width: `${l.progression}%` }} /></div>
@@ -262,7 +278,7 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
                     {l.valideLe && <div className="text-xs text-teal-800">Validé le {dateCourte(l.valideLe)}</div>}
                     {l.miseEnLigneDemandeeLe && !l.valideLe && <div className="text-xs font-semibold text-amber-800">Mise en ligne demandée</div>}
                   </td>
-                  <td className="px-3 py-2">{l.paiementStatut === 'paye' ? 'Payé' : l.valideLe ? '—' : l.joursRestants}</td>
+                  <td className="px-3 py-2">{l.paiementStatut === 'paye' ? 'Payé' : l.valideLe || !l.acces ? '—' : l.joursRestants}</td>
                   <td className="px-3 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${pastille[l.statutCommercial] ?? ''}`}>{libelleStatutCommercial(l.statutCommercial)}</span></td>
                   <td className="px-3 py-2">
                     {l.prochaine ? (
@@ -272,7 +288,7 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
                 </tr>
               ))}
               {!liste.length && (
-                <tr><td colSpan={8} className="px-3 py-6 text-center text-neutral-500">Aucun essai pour ce filtre.</td></tr>
+                <tr><td colSpan={9} className="px-3 py-6 text-center text-neutral-500">Aucun essai pour ce filtre.</td></tr>
               )}
             </tbody>
           </table>

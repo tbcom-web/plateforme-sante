@@ -2,11 +2,12 @@
 // entonnoir de l'essai et détection des leads de test : fonctions pures, sans accès réseau ni horloge cachée.
 // Voir docs/onboarding-lead.md (parcours) et docs/tester-parcours-lead.md (mode test).
 //
-// Étape 1 (/essai) : prénom, nom, e-mail, téléphone facultatif, ville, accord pour être recontacté → prospect enregistré
-// (fonction SQL capturer_prospect, migration 0024), même s'il ne va pas plus loin.
-// Étape 2 (/essai/inscription) : mot de passe et CGU → compte ; l'essai créé est rattaché au prospect (même e-mail).
+// Parcours (migration 0025) : /essai → site commencé en session anonyme (/creer, sans formulaire) → porte du rendu
+// (e-mail, téléphone du cabinet, accord de recontact : prospect enregistré par capturer_prospect_essai et lié au compte
+// anonyme) → rendu dans le navigateur → « Créez votre accès » (mot de passe + CGU).
+// Ancien parcours (0024, toujours accepté) : coordonnées sur /essai puis /essai/inscription (prospects « sans compte »).
 
-import { ajouterJours, jourParis, parcoursTermine } from './essai';
+import { ajouterJours, jourParis } from './essai';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Leads de test
@@ -84,7 +85,26 @@ export function validerCapture(s: SaisieCapture): ResultatCapture {
   return { ok: true, valeurs: { prenom, nom, email, telephone: telephone ?? '', ville, recontact: true, conseils: vrai(s.conseils) } };
 }
 
-const CLES_UTM = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
+export type PorteRendu = { email: string; telephone: string; recontact: true; conseils: boolean };
+export type ResultatPorteRendu = { ok: true; valeurs: PorteRendu } | { ok: false; erreurs: Partial<Record<keyof PorteRendu, string>> };
+
+/**
+ * Porte du rendu (« Voir le rendu de mon site ») : e-mail obligatoire, téléphone du cabinet facultatif (pré-rempli depuis
+ * le parcours), accord de recontact obligatoire, conseils facultatifs (case séparée, non cochée). Le prénom, le nom et
+ * la ville sont repris du brouillon côté serveur (capturer_prospect_essai).
+ */
+export function validerPorteRendu(s: { email?: unknown; telephone?: unknown; recontact?: unknown; conseils?: unknown }): ResultatPorteRendu {
+  const erreurs: Partial<Record<keyof PorteRendu, string>> = {};
+  const email = texte(s.email).toLowerCase();
+  const telephone = normaliserTelephone(texte(s.telephone));
+  if (!EMAIL.test(email) || email.length > LONGUEUR_MAX_EMAIL) erreurs.email = 'Adresse e-mail invalide.';
+  if (telephone === null) erreurs.telephone = 'Numéro de téléphone invalide (ex. 04 78 12 34 56).';
+  if (!vrai(s.recontact)) erreurs.recontact = 'Cochez la case pour que nous puissions vous recontacter au sujet de votre site.';
+  if (Object.keys(erreurs).length) return { ok: false, erreurs };
+  return { ok: true, valeurs: { email, telephone: telephone ?? '', recontact: true, conseils: vrai(s.conseils) } };
+}
+
+const CLES_UTM =['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
 /** Paramètres de campagne conservés : utm_* seulement, 100 caractères au plus chacun. */
 export function utmDepuis(p: { get(cle: string): string | null } | Record<string, unknown> | null | undefined): Record<string, string> {
@@ -97,12 +117,13 @@ export function utmDepuis(p: { get(cle: string): string | null } | Record<string
 // Prospects sans compte : étape atteinte et relances
 // ---------------------------------------------------------------------------------------------------------------------
 
-export type EtapeProspect = 'capture' | 'inscription' | 'compte';
+export type EtapeProspect = 'capture' | 'inscription' | 'rendu' | 'compte';
 
 export const LIBELLES_ETAPE_PROSPECT: Record<EtapeProspect, string> = {
   capture: 'Coordonnées laissées',
   inscription: 'Création du compte commencée',
-  compte: 'Compte créé',
+  rendu: 'Rendu vu, coordonnées laissées',
+  compte: 'Accès créé',
 };
 
 export const libelleEtapeProspect = (e: string | null | undefined) => LIBELLES_ETAPE_PROSPECT[(e as EtapeProspect)] ?? LIBELLES_ETAPE_PROSPECT.capture;
@@ -142,6 +163,12 @@ export function relanceProspectAFaire(p: ProspectPourRelances, aujourdhui: strin
   return dues.length ? dues[dues.length - 1] : null;
 }
 
+/**
+ * Lien de reprise d'un site commencé en session anonyme : la page reprend la session du navigateur (même appareil) et
+ * rouvre le parcours. Sur un autre appareil, la session anonyme n'existe pas : un nouveau site est commencé.
+ */
+export const lienRepriseEssai = (origine: string) => `${origine.replace(/\/$/, '')}/essai/commencer`;
+
 /** Lien de reprise d'un prospect : e-mail dans le fragment (#), jamais transmis au serveur ni aux journaux. */
 export const lienRepriseProspect = (origine: string, email: string) => `${origine.replace(/\/$/, '')}/essai/inscription#email=${encodeURIComponent(email)}`;
 
@@ -168,12 +195,23 @@ export function messageRelanceProspect(code: CodeRelanceProspect, v: { prenom: s
 export type DonneesEntonnoir = {
   /** Chargements de la page /essai par jour (AAAA-MM-JJ, Paris), compteur côté serveur */
   visites: { jour: string; nombre: number }[];
-  prospects: { creeLe: string; email: string }[];
-  essais: { debut: string; email: string; etape: number | null; apercuGenereLe: string | null; miseEnLigneDemandeeLe: string | null; valideLe: string | null }[];
+  /**
+   * Essais (un par site commencé, session anonyme comprise) : date de création, e-mail connu (compte ou porte du rendu,
+   * '' sinon), coordonnées laissées au rendu, accès créé, aperçu, demande, validation.
+   */
+  essais: {
+    creeLe: string;
+    email: string;
+    renduLe: string | null;
+    accesLe: string | null;
+    apercuGenereLe: string | null;
+    miseEnLigneDemandeeLe: string | null;
+    valideLe: string | null;
+  }[];
 };
 
 export type EtapeEntonnoir = {
-  id: 'visites' | 'captures' | 'comptes' | 'parcours' | 'apercu' | 'demande' | 'publie';
+  id: 'visites' | 'commences' | 'rendus' | 'acces' | 'apercu' | 'demande' | 'publie';
   libelle: string;
   nombre: number;
   /** Part de l'étape précédente (0-100), null pour la première ou si l'étape précédente est vide */
@@ -181,21 +219,23 @@ export type EtapeEntonnoir = {
 };
 
 /**
- * Entonnoir sur la période qui commence le jour `depuis` (inclus, Paris) : visites de /essai → coordonnées laissées →
- * comptes créés → parcours terminé → version d'essai générée → mise en ligne demandée → validé et mis en ligne.
- * Les étapes après « comptes » portent sur les essais commencés dans la période (cohorte). Leads de test exclus.
+ * Entonnoir sur la période qui commence le jour `depuis` (inclus, Paris) : visites de /essai → sites commencés (session
+ * anonyme) → rendu demandé (coordonnées laissées) → accès créé → aperçu privé généré → mise en ligne demandée → validé et
+ * mis en ligne. Les étapes après « visites » portent sur les sites commencés dans la période (cohorte). Leads de test
+ * exclus (un site anonyme sans e-mail n'est jamais un test reconnaissable : il est compté).
+ * Un essai créé par l'ancienne inscription (accès sans rendu) compte comme « rendu demandé ».
  */
 export function entonnoirEssai(d: DonneesEntonnoir, depuis: string): EtapeEntonnoir[] {
   const dans = (iso: string) => jourParis(iso) >= depuis;
-  const essais = d.essais.filter((e) => !estLeadTest(e.email) && dans(e.debut));
+  const essais = d.essais.filter((e) => !estLeadTest(e.email) && dans(e.creeLe));
   const valeurs: [EtapeEntonnoir['id'], string, number][] = [
     ['visites', 'Visites de la page d’essai', d.visites.filter((v) => v.jour >= depuis).reduce((s, v) => s + Math.max(0, v.nombre), 0)],
-    ['captures', 'Coordonnées laissées', d.prospects.filter((p) => !estLeadTest(p.email) && dans(p.creeLe)).length],
-    ['comptes', 'Comptes créés', essais.length],
-    ['parcours', 'Parcours terminé', essais.filter((e) => parcoursTermine({ etape: e.etape, apercuGenere: Boolean(e.apercuGenereLe) }) || (Number(e.etape) || 0) >= 7).length],
-    ['apercu', 'Version d’essai générée', essais.filter((e) => e.apercuGenereLe).length],
-    ['demande', 'Mise en ligne demandée', essais.filter((e) => e.miseEnLigneDemandeeLe).length],
-    ['publie', 'Validé et mis en ligne', essais.filter((e) => e.valideLe).length],
+    ['commences', 'Sites commencés', essais.length],
+    ['rendus', 'Rendu demandé (coordonnées laissées)', essais.filter((e) => e.renduLe || e.accesLe).length],
+    ['acces', 'Accès créé', essais.filter((e) => e.accesLe).length],
+    ['apercu', 'Aperçu privé généré', essais.filter((e) => e.accesLe && e.apercuGenereLe).length],
+    ['demande', 'Mise en ligne demandée', essais.filter((e) => e.accesLe && e.miseEnLigneDemandeeLe).length],
+    ['publie', 'Validé et mis en ligne', essais.filter((e) => e.accesLe && e.valideLe).length],
   ];
   return valeurs.map(([id, libelle, nombre], i) => {
     const avant = i ? valeurs[i - 1][2] : 0;

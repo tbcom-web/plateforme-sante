@@ -2,15 +2,15 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { universDuParcours } from '@plateforme/core';
 import { EnteteEssai, EtapesEssai, PiedEssai } from './Cadre';
-import CaptureProspect from './CaptureProspect';
 import { MARQUE } from '@/lib/marque';
 
 // Page d'essai gratuit (« Gratuit pendant 3 mois ») : page publique, rendue statique au build, mobile d'abord, sans
-// traceur ni cookie. Funnel en 4 étapes (docs/onboarding-lead.md) :
-//   1. ici, « Créer mon site gratuit » : prénom, nom, e-mail, téléphone facultatif, ville → prospect enregistré
-//      (route /api/essai/prospect), même s'il s'arrête là ;
-//   2. /essai/inscription : mot de passe et CGU ; 3. /creer : parcours guidé ; 4. aperçu privé puis mise en ligne
-//      demandée, validée par la conseillère.
+// traceur ni cookie. Funnel (docs/onboarding-lead.md, migration 0025) :
+//   1. ici, un seul bouton « Créer mon site gratuit » (aucun formulaire) → /essai/commencer : session anonyme Supabase
+//      (Turnstile si configuré) puis /creer, le parcours guidé où le praticien saisit lui-même ses informations ;
+//   2. « Voir le rendu de mon site » : e-mail, téléphone du cabinet et accord de recontact → rendu dans le navigateur ;
+//   3. « Créez votre accès » (mot de passe + CGU) → aperçu privé complet, puis mise en ligne demandée et validée par la
+//      conseillère.
 // Mesure : un signal au chargement (/api/essai/mesure), compté par jour côté serveur, sans identifiant.
 export const dynamic = 'force-static';
 
@@ -33,9 +33,9 @@ const POINTS = [
 ];
 
 const ETAPES = [
-  { titre: 'Vos coordonnées', texte: 'Nom, e-mail et ville du cabinet, puis un mot de passe. Aucune carte bancaire.' },
-  { titre: 'Questions guidées', texte: 'Vos sujets, le modèle, le cabinet, les horaires et les soins : une étape par écran, environ 10 minutes.' },
-  { titre: 'Votre site en aperçu privé', texte: 'Sur un lien non indexé. Quand il vous convient, vous demandez la mise en ligne ; votre conseillère vérifie les informations avec vous.' },
+  { titre: 'Votre site, guidé', texte: 'Sans inscription préalable : vos sujets, le modèle, le cabinet, les horaires et les soins, une étape par écran, environ 10 minutes.' },
+  { titre: 'Le rendu', texte: 'Laissez votre e-mail pour voir votre site sur téléphone et sur ordinateur. Aucune carte bancaire.' },
+  { titre: 'Votre accès, votre lien privé', texte: 'Un mot de passe pour garder votre site et l’ouvrir sur un lien privé non indexé. La mise en ligne se fait avec votre conseillère.' },
 ];
 
 const FAQ: { q: string; r: React.ReactNode }[] = [
@@ -52,8 +52,8 @@ const FAQ: { q: string; r: React.ReactNode }[] = [
     r: <>Elles servent à créer votre site et à vous accompagner. Elles sont hébergées dans l’Union européenne, ne sont ni vendues ni utilisées à des fins publicitaires, et sont supprimées 6 mois après la fin d’un essai sans suite. Aucune donnée de patient n’est demandée. Détails dans la <Link className="font-semibold underline underline-offset-2" href="/essai/confidentialite">politique de confidentialité</Link>.</>,
   },
   {
-    q: 'Pourquoi demander mon téléphone ?',
-    r: 'Il est facultatif. Il permet à votre conseillère de vous aider si vous restez bloqué(e) pendant la création. Il n’est jamais transmis à des tiers.',
+    q: 'Pourquoi demander mon e-mail et mon téléphone ?',
+    r: 'L’e-mail est demandé pour voir le rendu de votre site : il permet à votre conseillère de vous recontacter à son sujet, avec votre accord. Le téléphone du cabinet est facultatif. Rien n’est transmis à des tiers.',
   },
   {
     q: 'Et mon nom de domaine ?',
@@ -69,8 +69,6 @@ const boutonSecondaire = 'inline-flex min-h-12 items-center justify-center round
 
 export default function PageEssai() {
   const modeles = universDuParcours();
-  // Turnstile pour la capture seulement si les deux clés existent (la clé secrète reste côté serveur).
-  const turnstile = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.TURNSTILE_SECRET_KEY ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY : null;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
@@ -89,7 +87,7 @@ export default function PageEssai() {
     <div className="flex min-h-screen flex-col bg-neutral-50 text-neutral-900">
       <EnteteEssai />
       <main className="flex-1">
-        {/* Premier écran : promesse et formulaire de l'étape 1 */}
+        {/* Premier écran : promesse et bouton unique (aucun formulaire : le site se crée d'abord) */}
         <section className="bg-white">
           <div className="mx-auto grid max-w-5xl gap-6 px-4 pb-10 pt-6 sm:pt-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-12">
             <div className="grid gap-3 lg:pt-6">
@@ -104,10 +102,12 @@ export default function PageEssai() {
             </div>
             <div id="creer" className="grid scroll-mt-4 gap-4 rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:p-6">
               <div className="grid gap-3">
-                <h2 className="text-xl font-bold">Créer mon site gratuit</h2>
+                <h2 className="text-xl font-bold">Votre site en 10 minutes</h2>
                 <EtapesEssai active={1} />
               </div>
-              <CaptureProspect turnstile={turnstile} />
+              <p className="text-neutral-700">Commencez tout de suite, sans inscription : vous répondez à quelques questions et votre site se construit sous vos yeux.</p>
+              <a href="/essai/commencer" data-commencer className={boutonSecondaire}>Créer mon site gratuit</a>
+              <p className="text-xs text-neutral-600">Sans carte bancaire. Votre e-mail est demandé seulement pour voir le rendu ; un mot de passe, pour garder votre site. Déjà commencé sur cet appareil ? Le même bouton vous ramène où vous en étiez.</p>
             </div>
           </div>
         </section>
@@ -176,14 +176,15 @@ export default function PageEssai() {
         <section aria-labelledby="titre-fin" className="mx-auto grid max-w-3xl justify-items-start gap-3 px-4 py-12">
           <h2 id="titre-fin" className="text-2xl font-bold">Prêt à commencer ?</h2>
           <p className="text-neutral-700">Gratuit pendant 3 mois, sans carte bancaire. Une conseillère reste disponible si vous avez besoin d’aide.</p>
-          <a href="#creer" data-focus-capture className={boutonSecondaire}>Créer mon site gratuit</a>
+          <a href="/essai/commencer" data-commencer className={boutonSecondaire}>Créer mon site gratuit</a>
         </section>
       </main>
       <PiedEssai />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
-      {/* Bouton du bas : remonte au formulaire et place le curseur dans le premier champ. Signal de visite pour
-          l'entonnoir (compteur du jour côté serveur ; ni cookie, ni identifiant, ni service tiers). */}
-      <script dangerouslySetInnerHTML={{ __html: "document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[data-focus-capture]');if(a){var c=document.getElementById('prenom');if(c){e.preventDefault();document.getElementById('creer').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(function(){c.focus({preventScroll:true})},400);}}});try{navigator.sendBeacon&&navigator.sendBeacon('/api/essai/mesure')}catch(e){}" }} />
+      {/* Boutons « Créer mon site gratuit » : les paramètres de campagne (utm_*) de l'adresse sont transmis à
+          /essai/commencer. Signal de visite pour l'entonnoir (compteur du jour côté serveur ; ni cookie, ni identifiant,
+          ni service tiers). */}
+      <script dangerouslySetInnerHTML={{ __html: "(function(){var q=location.search;if(q)document.querySelectorAll('a[data-commencer]').forEach(function(a){a.href='/essai/commencer'+q});try{navigator.sendBeacon&&navigator.sendBeacon('/api/essai/mesure')}catch(e){}})()" }} />
     </div>
   );
 }

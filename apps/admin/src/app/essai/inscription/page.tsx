@@ -16,7 +16,7 @@ export default function PageInscription() {
     <div className="flex min-h-screen flex-col bg-neutral-50">
       <EnteteEssai />
       <main className="mx-auto grid w-full max-w-lg flex-1 content-start gap-4 px-4 py-6 sm:py-12">
-        <EtapesEssai active={2} />
+        <EtapesEssai active={3} />
         <Suspense>
           <Inscription turnstile={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null} />
         </Suspense>

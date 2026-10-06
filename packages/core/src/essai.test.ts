@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ajouterJours, ecartJours, finEssai, gardeProduction, jourParis, joursRestants, messageRelance, prochaineEtapeEssai, prochaineRelance,
+  ajouterJours, ecartJours, etatEssai, finEssai, gardeApercuEssai, gardeProduction, renduDisponible, jourParis, joursRestants, messageRelance, prochaineEtapeEssai, prochaineRelance,
   progressionParcours, prolongerEssai, relancesAFaire, relancesEssai, type EssaiPourRelances,
 } from './essai';
 import { verifierTexte } from './lexique';
@@ -101,4 +101,50 @@ test('prochaine étape du praticien en essai', () => {
   assert.equal(prochaineEtapeEssai({ ...e, apercuGenere: true, miseEnLigneDemandee: true }).id, 'attente_validation');
   assert.equal(prochaineEtapeEssai({ ...e, apercuGenere: true, joursRestants: 0 }).id, 'termine');
   assert.equal(prochaineEtapeEssai({ ...e, suspendu: true }).id, 'suspendu');
+});
+
+test('garde anonyme : jamais d’aperçu complet ni de publication sans accès (compte permanent + CGU)', () => {
+  assert.equal(gardeApercuEssai({ anonyme: true, cguAcceptees: false }).autorisee, false);
+  assert.equal(gardeApercuEssai({ anonyme: true, cguAcceptees: true }).autorisee, false);
+  assert.equal(gardeApercuEssai({ anonyme: false, cguAcceptees: false }).autorisee, false);
+  assert.equal(gardeApercuEssai({ anonyme: false, cguAcceptees: true }).autorisee, true);
+  const refus = gardeApercuEssai({ anonyme: true, cguAcceptees: false });
+  assert.ok(!refus.autorisee && /accès/.test(refus.raison));
+});
+
+test('rendu disponible : modèle choisi et nom du praticien ou du cabinet', () => {
+  assert.equal(renduDisponible({ modele: '', nomPraticien: 'Rousseau', nomCabinet: '' }), false);
+  assert.equal(renduDisponible({ modele: 'tableau', nomPraticien: ' ', nomCabinet: '' }), false);
+  assert.equal(renduDisponible({ modele: 'tableau', nomPraticien: 'Rousseau', nomCabinet: '' }), true);
+  assert.equal(renduDisponible({ modele: 'tableau', nomPraticien: null, nomCabinet: 'Cabinet du Parc' }), true);
+});
+
+test('état de l’essai pour /admin/leads', () => {
+  const base = { acces: false, renduLe: null, etape: 3, apercuGenereLe: null, miseEnLigneDemandeeLe: null, valideLe: null };
+  assert.deepEqual(etatEssai(base), { id: 'site_commence', libelle: 'Site commencé sans coordonnées, étape 3/6' });
+  assert.deepEqual(etatEssai({ ...base, renduLe: '2026-10-06T10:00:00Z', etape: 4 }), { id: 'rendu', libelle: 'Rendu vu, accès non créé, étape 4/6' });
+  assert.equal(etatEssai({ ...base, renduLe: '2026-10-06T10:00:00Z', etape: 7 }).libelle, 'Rendu vu, accès non créé, parcours terminé');
+  assert.equal(etatEssai({ ...base, acces: true }).id, 'acces');
+  assert.equal(etatEssai({ ...base, acces: true, apercuGenereLe: 'x' }).id, 'apercu');
+  assert.equal(etatEssai({ ...base, acces: true, apercuGenereLe: 'x', miseEnLigneDemandeeLe: 'y' }).id, 'demande');
+  assert.equal(etatEssai({ ...base, acces: true, valideLe: 'z' }).id, 'publie');
+});
+
+test('relances sans accès : 1 j et 3 j après le rendu, rien sans coordonnées', () => {
+  const e: EssaiPourRelances = {
+    debut: '2026-10-06T08:00:00Z', fin: '2027-01-06T08:00:00Z', etape: 5, apercuGenere: false, statutCommercial: 'nouveau', faites: {},
+    prochaineRelance: null, valideLe: null, paye: false, suspenduLe: null, acces: false, renduLe: null,
+  };
+  assert.deepEqual(relancesEssai(e, '2026-10-20'), []);
+  const r = relancesEssai({ ...e, renduLe: '2026-10-06T09:00:00Z' }, '2026-10-07');
+  assert.deepEqual(r.map((x) => [x.code, x.date, x.aFaire]), [['r1_acces', '2026-10-07', true], ['r3_acces', '2026-10-09', false]]);
+  assert.equal(r[0].libelle, 'A vu le rendu, pas d’accès créé depuis 1 j');
+  assert.deepEqual(relancesAFaire({ ...e, renduLe: '2026-10-06T09:00:00Z' }, '2026-10-10').map((x) => x.code), ['r3_acces']);
+  assert.deepEqual(relancesEssai({ ...e, renduLe: '2026-10-06T09:00:00Z', statutCommercial: 'perdu' }, '2026-10-10'), []);
+  for (const code of ['r1_acces', 'r3_acces'] as const) {
+    const m = messageRelance(code, { prenom: 'Camille', finEssai: '', lienEssai: null, lienReprise: 'https://essai.webpodologue.fr/essai/commencer' });
+    assert.match(m.corps, /^Bonjour Camille,/);
+    assert.ok(m.corps.includes('/essai/commencer'));
+    assert.deepEqual(verifierTexte(`${m.objet} ${m.corps}`, 'strict').filter((a) => a.bloquante), [], code);
+  }
 });

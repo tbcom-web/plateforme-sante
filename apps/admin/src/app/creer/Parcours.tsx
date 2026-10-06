@@ -7,6 +7,7 @@
 // navigateur). Fonctions pures dans packages/core/src/parcours.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   aideEtape,
   appliquerUniversParcours,
@@ -24,6 +25,7 @@ import {
   soinsSuggeresParcours,
   soinsEnAvantDesPriorites,
   avecPrioritesParcours,
+  renduDisponible,
   type Priorites,
 } from '@plateforme/core';
 import ChoixSujets from '@/components/ChoixSujets';
@@ -32,9 +34,11 @@ import SaisieGardee from '@/components/SaisieGardee';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
-import type { EtatParcours } from './actions';
+import type { EtatParcours, EtatPorte } from './actions';
 import { EtapeCabinet, EtapeContenus, EtapeCouleurs, EtapeSoinsImage, Verification } from './Etapes';
 import VerificationEssai from './VerificationEssai';
+import PorteRendu from './PorteRendu';
+import RenduPlein from './RenduPlein';
 
 export type ActionEnregistrer = (id: string | null, draft: SiteDraft, version?: string | null) => Promise<EtatParcours>;
 export type ActionChoisir = (id: string | null, draft: SiteDraft, version: string | null, universId: string) => Promise<EtatParcours>;
@@ -58,9 +62,28 @@ type Props = {
   lienAvance: string;
   /** Thèmes différés activés par le drapeau admin (THEMES_ACTIVES) */
   themesActives: string[];
-  actions: { sauvegarder: ActionEnregistrer; choisir: ActionChoisir; publier: ActionEnregistrer; progression?: (etape: number) => Promise<void> };
-  /** Compte en essai gratuit : bandeau d'accompagnement, « Voir mon site » en aperçu privé (jamais la production) */
-  essai?: { prenom: string; fin: string; joursRestants: number; suspendu: boolean } | null;
+  actions: {
+    sauvegarder: ActionEnregistrer;
+    choisir: ActionChoisir;
+    publier: ActionEnregistrer;
+    progression?: (etape: number) => Promise<void>;
+    /** Essai : porte du rendu (e-mail, téléphone, accord de recontact) */
+    capturer?: (s: { email: string; telephone: string; recontact: boolean; conseils: boolean }) => Promise<EtatPorte>;
+    /** Essai : CGU enregistrées après la conversion du compte anonyme */
+    finaliser?: () => Promise<{ ok: boolean; message: string }>;
+  };
+  /**
+   * Compte en essai gratuit : bandeau d'accompagnement, « Voir mon site » en aperçu privé (jamais la production).
+   * Session anonyme (0025) : rendu dans le navigateur après la porte de capture, puis « Créez votre accès ».
+   */
+  essai?: {
+    prenom: string; fin: string; joursRestants: number; suspendu: boolean;
+    anonyme: boolean; rendu: boolean; mdpAChoisir: boolean; email: string; telephone: string;
+  } | null;
+  /** Arrivée sur l'écran final (/creer?etape=fin : retour du lien de confirmation de l'accès) */
+  verifInitiale?: boolean;
+  /** Message à afficher à l'arrivée (ex. accès non finalisé) */
+  messageInitial?: string | null;
 };
 
 type Etat = { type: 'repos' | 'enCours' | 'ok' | 'erreur' | 'conflit'; message?: string };
@@ -78,13 +101,18 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions, essai = null }: Props) {
+export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
+  const router = useRouter();
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const proposes = useMemo(() => universDuParcours(univers), [univers]);
   const [etape, setEtape] = useState<number>(() => etapeInitiale ?? (siteId ? etapeDeReprise(initial) : 1));
-  const [verif, setVerif] = useState(false);
-  const [etat, setEtat] = useState<Etat>({ type: 'repos' });
+  const [verif, setVerif] = useState(verifInitiale && Boolean(siteId));
+  const [etat, setEtat] = useState<Etat>(messageInitial ? { type: 'erreur', message: messageInitial } : { type: 'repos' });
+  // Session anonyme : porte de capture puis rendu plein écran calculé dans le navigateur (aucune construction)
+  const [porte, setPorte] = useState(false);
+  const [rendu, setRendu] = useState(false);
+  const [contact, setContact] = useState(() => ({ rendu: Boolean(essai?.rendu), email: essai?.email ?? '', telephone: essai?.telephone ?? '' }));
   const [choixEnCours, setChoixEnCours] = useState<string | null>(null);
   const [publication, setPublication] = useState<{ ok: boolean; message: string } | null>(null);
   const etroit = useEtroit();
@@ -213,6 +241,14 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
     setPublication({ ok: r.ok, message: r.message });
   };
 
+  // « Voir le rendu de mon site » : brouillon enregistré, puis porte de capture (session anonyme sans coordonnées) ou rendu
+  const voirRendu = () => {
+    void sauvegarder();
+    if (essai?.anonyme && !contact.rendu && actions.capturer) setPorte(true);
+    else setRendu(true);
+  };
+  const renduPossible = renduDisponible({ modele: d.theme.univers ? d.theme.modele : '', nomPraticien: d.praticiens[0]?.nom, nomCabinet: d.cabinet.nom });
+
   const controle = useMemo(() => controlerPublication(d), [d]);
   // Soins suggérés : ceux des sujets choisis (soin « pivot » de chaque sujet principal d'abord), sinon ceux du modèle
   const suggestionsSoins = useMemo(() => {
@@ -245,7 +281,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
         </p>
       )}
 
-      {essai && <BandeauEssai essai={essai} etape={etape} verif={verif} />}
+      {essai && <BandeauEssai essai={essai} etape={etape} verif={verif} onVoirRendu={essai.anonyme && renduPossible && !verif ? voirRendu : null} />}
 
       <Progression etape={etape} pret={pret} onAller={aller} etat={etat} />
 
@@ -254,7 +290,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
           <h1 id="titre-etape" ref={titre} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none sm:text-3xl">
             {verif ? (essai ? 'Voir mon site' : 'Vérifier et publier') : infos.titre}
           </h1>
-          <p className="max-w-2xl text-base text-neutral-700">{verif && essai ? 'Relisez le récapitulatif, puis générez votre version d’essai : un lien privé, non indexé, que vous pouvez partager. Rien n’est publié sur internet sans votre demande.' : verif ? 'Relisez le récapitulatif. Les informations manquantes ne bloquent pas la mise en ligne : le site affiche une mention sobre à la place, complétez-les quand vous voulez.' : infos.consigne}</p>
+          <p className="max-w-2xl text-base text-neutral-700">{verif && essai?.anonyme ? 'Relisez le récapitulatif et voyez le rendu de votre site, puis créez votre accès pour le garder. Rien n’est publié sur internet.' : verif && essai ? 'Relisez le récapitulatif, puis générez votre version d’essai : un lien privé, non indexé, que vous pouvez partager. Rien n’est publié sur internet sans votre demande.' : verif ? 'Relisez le récapitulatif. Les informations manquantes ne bloquent pas la mise en ligne : le site affiche une mention sobre à la place, complétez-les quand vous voulez.' : infos.consigne}</p>
           {!verif && aide.length > 0 && (
             <details className="max-w-2xl rounded-xl bg-teal-50/70 px-4 py-3 text-sm text-teal-950">
               <summary className="cursor-pointer font-semibold">Conseil : {aide[0].titre}</summary>
@@ -333,6 +369,40 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
             publication={publication}
             onModifier={aller}
             onPublier={publier}
+            acces={{ anonyme: essai.anonyme, rendu: contact.rendu, mdpAChoisir: essai.mdpAChoisir, email: contact.email }}
+            onVoirRendu={voirRendu}
+            onFinaliser={actions.finaliser ?? (async () => ({ ok: true, message: '' }))}
+            onAccesCree={() => router.refresh()}
+          />
+        )}
+
+        {porte && actions.capturer && (
+          <PorteRendu
+            email={contact.email}
+            telephone={contact.telephone || d.cabinet.telephone}
+            onCapturer={actions.capturer}
+            onFermer={() => setPorte(false)}
+            onOk={(email, telephone) => {
+              setContact({ rendu: true, email, telephone });
+              // Téléphone du cabinet saisi à la porte : repris dans le site s'il n'y était pas
+              if (telephone && !dRef.current.cabinet.telephone) setD((x) => ({ ...x, cabinet: { ...x.cabinet, telephone } }));
+              setPorte(false);
+              setRendu(true);
+            }}
+          />
+        )}
+
+        {rendu && (
+          <RenduPlein
+            draft={draftApercu}
+            modele={modeleRendu}
+            catalogue={catalogue}
+            marquesImportees={marquesImportees}
+            jeuPhotos={jeuPhotos}
+            appareil={etroit ? 'mobile' : 'bureau'}
+            acces={!essai?.anonyme}
+            onFermer={() => setRendu(false)}
+            onGarder={() => { setRendu(false); void sauvegarder(); setEtape(ETAPES_PARCOURS.length); setVerif(true); }}
           />
         )}
 
@@ -380,7 +450,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
           <button type="button" onClick={() => { void sauvegarder(); setVerif(true); }} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
             Vérifier mon site →
           </button>
-        ) : (
+        ) : essai?.anonyme ? null : (
           <Link href="/tableau-de-bord" className="min-h-11 content-center rounded-lg px-4 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">
             Tableau de bord
           </Link>
@@ -391,7 +461,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
 }
 
 /** Bandeau de l'essai gratuit : ton encourageant, jours restants, rappel « privé tant que vous ne demandez pas » */
-function BandeauEssai({ essai, etape, verif }: { essai: NonNullable<Props['essai']>; etape: number; verif: boolean }) {
+function BandeauEssai({ essai, etape, verif, onVoirRendu }: { essai: NonNullable<Props['essai']>; etape: number; verif: boolean; onVoirRendu: (() => void) | null }) {
   const restantes = verif ? 0 : ETAPES_PARCOURS.length - etape + 1;
   const encouragement = verif
     ? 'Dernière étape : découvrez votre site.'
@@ -403,7 +473,16 @@ function BandeauEssai({ essai, etape, verif }: { essai: NonNullable<Props['essai
   return (
     <div className="grid gap-1 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-950 sm:flex sm:items-center sm:justify-between sm:gap-4">
       <p className="font-medium">{encouragement}</p>
-      <p className="text-teal-900/80">Version d’essai gratuite jusqu’au {essai.fin} · votre site reste privé</p>
+      {essai.anonyme ? (
+        <p className="text-teal-900/80">Enregistré dans ce navigateur : créez votre accès à la fin pour retrouver votre site.</p>
+      ) : (
+        <p className="text-teal-900/80">Version d’essai gratuite jusqu’au {essai.fin} · votre site reste privé</p>
+      )}
+      {onVoirRendu && (
+        <button type="button" onClick={onVoirRendu} className="min-h-11 justify-self-start rounded-lg border border-teal-800 bg-white px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 sm:shrink-0">
+          Voir le rendu
+        </button>
+      )}
     </div>
   );
 }
