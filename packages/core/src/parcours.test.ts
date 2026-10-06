@@ -5,8 +5,9 @@ import {
   appliquerHorairesSimplifies, appliquerUniversParcours, basculerEnAvant, basculerSoin, choisirCouleurLibre, choisirGamme, deplacerSoin,
   etapeDeReprise, gammesConseillees, horairesSimplifies, natureCouleur, normaliserCouleur, placerSoin, soinsEnAvantValides, soinsSuggeres,
   universApplicableAuParcours, universDuParcours, universRecommande, aideEtape, ETAPES_PARCOURS, UNIVERS_PARCOURS,
-  jalonProgressionEssai, soinsDeBaseParcours, encouragementParcours, SOINS_SPECIALISES, SOINS_DE_BASE_MAX,
+  jalonProgressionEssai, soinsDeBaseParcours, encouragementParcours,
 } from './parcours';
+import { SOINS_SPECIALISES, SOINS_DE_BASE_MAX } from './replis';
 import { CATALOGUE_UNIVERS, universCatalogue, type Univers } from './catalogue-univers';
 import { draftVide, type SiteDraft } from './draft';
 import { modeleIntegre } from './modeles';
@@ -161,16 +162,18 @@ test('horaires simplifiés : lecture et écriture', () => {
 test('étape de reprise', () => {
   const d = identite();
   assert.equal(etapeDeReprise(d), 1);
-  // Sujets choisis, modèle pas encore choisi : reprise au choix du site
+  // Sujets choisis, couleurs pas encore vues : reprise aux couleurs ; couleurs vues (même aucune) : au choix du site
   assert.equal(etapeDeReprise({ ...d, priorites: { principaux: ['ongles'], secondaires: [] } }), 2);
+  assert.equal(etapeDeReprise({ ...d, priorites: { principaux: ['ongles'], secondaires: [] }, couleursPreferees: [] }), 3);
   const u = appliquerUniversParcours(d, universCatalogue('clair-pratique')!).draft;
   assert.equal(etapeDeReprise(u), 7);
   assert.equal(etapeDeReprise({ ...u, soins: [] }), 6);
   assert.equal(etapeDeReprise({ ...u, cabinet: { ...u.cabinet, telephone: '' } }), 4);
 });
 
-test('sept étapes numérotées dans l’ordre, horaires à part', () => {
+test('sept étapes numérotées dans l’ordre : sujets, couleurs, site ; horaires à part', () => {
   assert.deepEqual(ETAPES_PARCOURS.map((e) => e.numero), [1, 2, 3, 4, 5, 6, 7]);
+  assert.deepEqual(ETAPES_PARCOURS.slice(0, 3).map((e) => e.titre), ['Vos sujets', 'Vos couleurs', 'Votre site']);
   assert.equal(ETAPES_PARCOURS[4].titre, 'Vos horaires');
   assert.ok(ETAPES_PARCOURS.every((e) => !/Quatre sites|prêts à l’emploi/.test(e.consigne)));
 });

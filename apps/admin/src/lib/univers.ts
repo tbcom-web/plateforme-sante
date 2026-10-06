@@ -1,5 +1,7 @@
 import 'server-only';
 import {
+  appliquerReglages,
+  type ReglagesSite,
   appliquerUnivers,
   avecPrioritesParcours,
   avecStatut,
@@ -50,7 +52,7 @@ export async function sitesParUnivers(supabase?: Client): Promise<Record<string,
 export async function appliquerUniversAuSite(
   siteId: string,
   universId: string,
-  opts: { admin?: boolean; version?: string | null; parcours?: boolean } = {},
+  opts: { admin?: boolean; version?: string | null; parcours?: boolean; reglages?: Partial<ReglagesSite> & { proposition?: string | null } } = {},
 ): Promise<{ ok: boolean; message: string; resultat?: Omit<ResultatUnivers, 'draft'>; version?: string; draft?: SiteDraft }> {
   const supabase = await createClient();
   const { univers } = await getUnivers(supabase);
@@ -70,6 +72,9 @@ export async function appliquerUniversAuSite(
   if (r.erreurs.length) return { ok: false, message: r.erreurs.join(' ') };
   // Parcours : les sujets choisis par le praticien (étape 1) priment sur le préréglage du modèle (spécialités, soins en avant).
   if (opts.parcours) r.draft = avecPrioritesParcours(r.draft, { soinsConnus: catalogue.map((c) => c.slug), themesActives: themesActives() });
+  // Proposition choisie (étape « Votre site ») ou réglages ajustés : gamme, style d'illustration, animation (valeurs contrôlées
+  // par appliquerReglages : gamme connue, style compatible avec la structure).
+  if (opts.reglages) r.draft = appliquerReglages(r.draft, opts.reglages);
   r.draft.theme.jeuPhotos = r.draft.theme.jeuPhotos || (await jeuPhotosAEnregistrer(supabase, siteId, avant.theme, r.draft.theme.specialite));
 
   const { data, error } = await supabase.from('sites').update({ config: r.draft }).eq('id', siteId).eq('updated_at', site.updated_at).select('updated_at').maybeSingle();

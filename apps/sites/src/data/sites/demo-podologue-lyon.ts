@@ -1,5 +1,5 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
-import { modeleIntegre, modeleDuSite, ordonnerSoins, packVisuel, universCatalogue, type SiteConfig } from '@plateforme/core';
+import { lotsPropositions, modeleIntegre, modeleDuSite, ordonnerSoins, packVisuel, themeParId, universCatalogue, type SiteConfig } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 // POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
@@ -553,7 +553,7 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   // Hiérarchie choisie par la praticienne (themes.ts) : sport, diabète, ongles en principaux ; enfants, seniors traités aussi.
   // PRIORITES=aucune : démo sans thème (navigation historique Soins · Le cabinet · Infos pratiques).
   // PRINCIPAUX=diabete,sport,ongles : autre ordre des thèmes principaux (essais du premier écran selon le thème n° 1).
-  ...(process.env.PRIORITES === 'aucune' ? {} : { priorites: { principaux: process.env.PRINCIPAUX ? process.env.PRINCIPAUX.split(',') : ['sport', 'diabete', 'ongles'], secondaires: ['enfant', 'senior'] } }),
+  ...(process.env.PRIORITES === 'aucune' ? {} : { priorites: { principaux: process.env.PRINCIPAUX ? process.env.PRINCIPAUX.split(',') : ['sport', 'diabete', 'ongles'], secondaires: process.env.SECONDAIRES !== undefined ? process.env.SECONDAIRES.split(',').filter(Boolean) : ['enfant', 'senior'] } }),
 };
 
 // CAS=solo : praticienne seule, voix « je », cabinet simple identifié par son quartier (cas le plus courant
@@ -584,5 +584,26 @@ if (univers) {
     ...(p.specialiteSecondaire ? { specialiteSecondaire: p.specialiteSecondaire } : {}),
   };
   site.soins = ordonnerSoins(site.soins, p.soinsEnAvant);
+}
+// PROPOSITION=<n> : la démo prend la n-ième proposition de site (propositions.ts) tirée de ses sujets (PRINCIPAUX) et de
+// COULEURS=corail,bleu ; LOT=<k> : lot « Charger plus » (0 = les 3 premières). Structure, gamme, style d'illustration et
+// animation de la proposition, spécialité du sujet n° 1 ; identité inchangée.
+if (process.env.PROPOSITION) {
+  const lot = Number(process.env.LOT ?? 0);
+  const entree = { priorites: site.priorites ?? null, couleursPreferees: process.env.COULEURS ? process.env.COULEURS.split(',') : [] };
+  const p = lotsPropositions(entree, lot + 1)[lot]?.[Number(process.env.PROPOSITION)];
+  if (!p) throw new Error(`Proposition introuvable : ${process.env.PROPOSITION} (lot ${lot})`);
+  const u = universCatalogue(p.univers)!;
+  const packP = packVisuel(p.heros ? (themeParId(p.heros)?.specialite ?? 'generale') : 'generale');
+  site.modele = modeleDuSite(modeleIntegre(u.preReglage.modele), { registre: p.registre });
+  site.theme = { ...site.theme, gamme: p.gamme, logo: { ...u.preReglage.logo }, modeVisuel: p.modeVisuel, styleIllustration: p.style };
+  site.visuels = {
+    specialite: packP.value,
+    animation: p.animation,
+    ...(p.animation ? { animationAccueil: p.animation } : {}),
+    photos: packP.photos,
+  };
+  site.soins = ordonnerSoins(site.soins, u.preReglage.soinsEnAvant);
+  console.log(`[demo] proposition « ${p.nom} » : ${p.univers} · ${p.gamme} · ${p.style} · ${p.animation ?? 'sans animation'}`);
 }
 export default site;

@@ -12,8 +12,9 @@ import { fondAnime, registre } from '../../lib/visuels';
 import { visuelPremierEcran } from '../../lib/vitrine';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme, aLaVille, suffixeVille, aTelephone, aAdresse, adresseLieu } from '../../lib/textes';
 
-// Sujet sans animation propre (diabète, ongles, seniors…) : l'animation de points de pression (podoscope), ADN du relevé.
-const visuel = visuelPremierEcran.type === 'dessin' ? { ...visuelPremierEcran, animation: visuelPremierEcran.animation ?? 'podoscope' as const } : visuelPremierEcran;
+// Animation choisie par le praticien (proposition : celle du sujet n° 1, ou du n° 2 en nuance) ; sinon celle du sujet n° 1 ;
+// sujet sans animation propre (diabète, ongles, seniors…) : l'animation de points de pression (podoscope), ADN du relevé.
+const visuel = visuelPremierEcran.type === 'dessin' ? { ...visuelPremierEcran, animation: site.visuels.animationAccueil ?? visuelPremierEcran.animation ?? 'podoscope' as const } : visuelPremierEcran;
 const choix: 'photo' | 'animation' | 'illustration' = visuel.type === 'photo' ? 'photo' : visuel.animation && registre === 'releve' && site.visuels.animation !== null ? 'animation' : 'illustration';
 // Animation ou illustration : titre à gauche, visuel à droite
 const anime = choix !== 'photo';
@@ -62,6 +63,8 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   .hero__illus :global(canvas), .hero__illus :global(svg) { background: none !important; }
   .hero__dessin { position: absolute; inset: 14% 4% 10% 52%; display: grid; place-items: stretch; }
   .hero--illustration .hero__dessin { inset: 18% 4% 16% 58%; }
+  /* Ordinateur : bord gauche de l'animation fondu (gros plans comme le meulage : jamais de coupe franche près du titre) */
+  @media (min-width: 900px) { .hero--animation .hero__dessin { -webkit-mask-image: linear-gradient(90deg, transparent 0, var(--blanc) 14%); mask-image: linear-gradient(90deg, transparent 0, var(--blanc) 14%); } }
   @media (max-width: 899px) {
     .hero--anime { min-height: auto; align-items: start; grid-template-rows: auto auto; }
     .hero--anime .hero__illus { position: relative; inset: auto; z-index: 0; height: min(52svh, 440px); margin-top: 74px; }
@@ -74,7 +77,9 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   /* Titre ajusté : le plus long mot insécable (--mot-long, Gabarit.astro) tient sur une ligne, à gauche de l'image sur ordinateur */
   .hero__contenu { container-type: inline-size; }
   h1 { color: var(--blanc); font-size: min(6.6rem, calc(100cqi / (var(--mot-long, 14) * 0.55))) !important; max-width: none; line-height: 0.98; }
-  @media (min-width: 900px) { h1 { font-size: min(6.6rem, calc(55cqi / (var(--mot-long, 14) * 0.55))) !important; } }
+  /* Ordinateur : le titre reste dans la moitié gauche du cadre (50cqi), l'animation ou le dessin commence à 52 % de l'écran :
+     jamais de chevauchement (retour du 2026-10-07 : la semelle animée recouvrait « à Lyon » en grand écran). */
+  @media (min-width: 900px) { h1 { font-size: min(6.6rem, calc(50cqi / (var(--mot-long, 14) * 0.55))) !important; max-width: 50cqi !important; } }
   h1 .pale { color: var(--sur-sombre-doux) !important; }
   .hero__chapo { max-width: 52ch; margin: 26px 0 36px; font-size: 1.15rem; color: var(--sur-sombre-doux); }
   .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }

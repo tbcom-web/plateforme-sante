@@ -43,7 +43,8 @@ export const cadrageLieuAccueil = photoLieuAccueil && photoLieuAccueil === jeu.a
 /** Dessin signature de la spécialité (accueil et panorama sans photo) */
 export const dessinSpecialite: NomDessin = jeu.accueil.dessin;
 
-const renduAccueil = rendreCase(jeu.accueil, modeVisuel, 'accueil', { photoPraticien: site.photos.accueil || undefined, animationActive: Boolean(site.visuels.animation) });
+// Animation choisie par le praticien (proposition) prioritaire sur celle du jeu de la spécialité
+const renduAccueil = rendreCase(site.visuels.animationAccueil ? { ...jeu.accueil, animation: site.visuels.animationAccueil } : jeu.accueil, modeVisuel, 'accueil', { photoPraticien: site.photos.accueil || undefined, animationActive: Boolean(site.visuels.animation) });
 /** Animation affichée à l'accueil : celle de la spécialité si la case est cochée, jamais en mode photos */
 export const animationAccueil = renduAccueil.type === 'animation' ? renduAccueil.animation : null;
 /** Photo d'accueil affichée : en mode illustrations, seulement celle du praticien */

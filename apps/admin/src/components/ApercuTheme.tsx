@@ -25,11 +25,11 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import {
   completerJeuVisuel, construireNavigation, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
-  avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS,
-  type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
+  avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS, illustrationTheme, themeIllustre, themeParId, packVisuel,
+  type Animation, type FormatHeros, type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
-import ApercuGabarit from './ApercuGabarit';
+import ApercuGabarit, { HerosVue, type HerosApercu } from './ApercuGabarit';
 
 type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
@@ -79,6 +79,9 @@ function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 
     </div>
   );
 }
+
+/** Animation du sujet n° 1 à l'accueil Technique (lib/vitrine.ts du site, DESSINS_THEME) */
+const ANIMATION_SUJET: Record<string, Animation> = { sport: 'coureur', enfant: 'premiers-pas', semelles: 'semelle' };
 
 export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false }: Props) {
   const [vue, setVue] = useState<Vue>('accueil');
@@ -143,7 +146,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const presentation = noms.length ? `${noms.join(', ')}, ${titre.toLowerCase()}.` : `${REPLIS.equipe} accueille les patients${suffixeVille}.`;
   // Soins cochés ; sans soin coché, ceux que le site présentera (soinsParDefaut) ; ceux mis en avant passent devant
   // (même règle que le site : ordonnerSoins).
-  const slugsSoins = d.soins.length ? d.soins : soinsParDefaut(d.theme, catalogue.map((c) => c.slug));
+  const slugsSoins = d.soins.length ? d.soins : soinsParDefaut({ ...d.theme, priorites: d.priorites }, catalogue.map((c) => c.slug));
   const soins = ordonnerSoins(catalogue.filter((s) => slugsSoins.includes(s.slug)), d.theme.soinsEnAvant);
   const soinsAffiches = soins.slice(0, 6);
   const soinPage = soinsAffiches[0];
@@ -162,23 +165,47 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const accueil = rendreCase(jeu.accueil, mode, 'accueil', { photoPraticien: d.photos.accueil || undefined, animationActive: d.theme.animation });
   const panorama = rendreCase(jeu.panorama, mode, 'liste', { photoPraticien: d.photos.panorama || d.photos.cabinet[0] || undefined });
   const galerie = mode === 'illustrations' ? d.photos.cabinet : [...d.photos.cabinet, ...jeu.galerie.map((g) => g.photo)].slice(0, 4);
+  // Héros du sujet n° 1 (même règle que le site : lib/vitrine.ts, VisuelTheme, HeroDiaporama) : photo du sujet en style
+  // « photos » (celle du praticien d'abord), sinon l'illustration composée du thème (heros-themes.ts) dans le registre du site ;
+  // accueil Technique en relevé : image fixe de l'animation choisie (proposition), sinon celle du sujet, sinon le podoscope.
+  const themeUn = construireNavigation(d, soins).principaux[0]?.theme.id ?? null;
+  const herosApercu = (format: FormatHeros, registreForce?: Registre, animer = false): HerosApercu | null => {
+    if (mode === 'photos') {
+      const spec = themeParId(themeUn)?.specialite ?? jeu.specialite;
+      const src = d.photos.accueil || (spec === jeu.specialite ? jeu.accueil.photo : packVisuel(spec).photos.accueil);
+      return src ? { type: 'photo', src } : null;
+    }
+    const r = registreForce ?? registre;
+    if (animer && r === 'releve' && d.theme.animation) {
+      const a: Animation = d.theme.animationAccueil ?? (themeUn ? ANIMATION_SUJET[themeUn] : undefined) ?? 'podoscope';
+      return { type: 'svg', html: svgAnimationFixe(a, { registre: 'releve', id: `ap-anim-${a}` }), sombre: true };
+    }
+    if (!themeUn || !themeIllustre(themeUn)) return null;
+    const gammeHeros = j.teinte === 'gamme' && r === 'releve' ? null : d.theme.gamme || null;
+    return { type: 'svg', html: illustrationTheme(themeUn, { format, registre: r, gamme: gammeHeros, id: `ap-h-${themeUn}-${format[0]}-${r[0]}` }), sombre: r === 'releve' };
+  };
   const transparent = m.entete === 'transparent' && (m.accueil.hero === 'plein' || m.accueil.hero === 'diaporama') && vue === 'accueil';
 
   const Sur = ({ n, children }: { n?: number; children: ReactNode }) => (
     <p className="ap-sur">{n !== undefined && !pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>}{children}</p>
   );
 
+  // Accueil « diaporama » (modèle Technique) : le héros du sujet n° 1 ; en style « photos », la photo du sujet plein cadre
+  const herosDiaporama = m.accueil.hero === 'diaporama' && mode !== 'photos' ? herosApercu(mobile ? 'portrait' : 'paysage', undefined, true) : null;
+  const photoDiaporama = m.accueil.hero === 'diaporama' && mode === 'photos' ? herosApercu('paysage') : null;
+  const renduPlein: Rendu = photoDiaporama?.type === 'photo' ? { type: 'photo', src: photoDiaporama.src, cadrage: '50% 50%' } : accueil;
   const titreHero = <>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}{r.aVille && <> <span className="ap-pale">{r.aVille}</span></>}</>;
   const heroPlein = (
     <section style={{ position: 'relative', minHeight: mobile ? 560 : 640, display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
       {/* Photo : plein cadre sous un voile ; dessin ou animation : fond plan, visuel à droite du titre */}
-      {accueil.type === 'photo'
-        ? <div style={{ position: 'absolute', inset: 0 }}><Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur="100%" /></div>
-        : <div className="surface-plan" style={{ position: 'absolute', inset: 0 }}><div style={{ position: 'absolute', inset: mobile ? '90px 0 260px 0' : '80px 0 0 44%' }}><Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur="100%" sombre /></div></div>}
-      {accueil.type === 'photo' && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgb(0 0 0 / ${m.accueil.voile / 200}) 0%, rgb(0 0 0 / ${m.accueil.voile / 100}) 100%)` }} />}
-      <div className="ap-cadre" style={{ position: 'relative', paddingBlock: mobile ? '120px 40px' : '160px 64px' }}>
+      {renduPlein.type === 'photo'
+        ? <div style={{ position: 'absolute', inset: 0 }}><Visuel registre={registre} rendu={renduPlein} filtre={filtre} hauteur="100%" /></div>
+        : <div className="surface-plan" style={{ position: 'absolute', inset: 0 }}><div style={herosDiaporama ? (mobile ? { position: 'absolute', top: 84, left: '4%', right: '4%', height: 330 } : { position: 'absolute', inset: '96px 3% 48px 52%' }) : { position: 'absolute', inset: mobile ? '90px 0 260px 0' : '80px 0 0 44%' }}>{herosDiaporama ? <HerosVue h={herosDiaporama} /> : <Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur="100%" sombre />}</div></div>}
+      {renduPlein.type === 'photo' && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgb(0 0 0 / ${m.accueil.voile / 200}) 0%, rgb(0 0 0 / ${m.accueil.voile / 100}) 100%)` }} />}
+      {/* Héros du sujet n° 1 (Technique) : bloc au-dessus du titre sur téléphone, moitié droite sur ordinateur (comme le site) */}
+      <div className="ap-cadre" style={{ position: 'relative', paddingBlock: mobile ? (herosDiaporama ? '430px 40px' : '120px 40px') : '160px 64px' }}>
         <p className="ap-sur" style={{ color: 'var(--blanc)' }}>{surTitre}</p>
-        <p className="ap-h1" style={{ color: 'var(--blanc)', maxWidth: '14ch' }}>{titreHero}</p>
+        <p className="ap-h1" style={{ color: 'var(--blanc)', maxWidth: herosDiaporama && !mobile ? '48%' : '14ch' }}>{titreHero}</p>
         <p style={{ maxWidth: '46ch', opacity: 0.88, marginTop: 18 }}>{presentation}</p>
         <span className="ap-bouton" style={{ background: 'var(--blanc)', color: 'var(--encre)', marginTop: 12 }}>{rdv}</span>
       </div>
@@ -454,7 +481,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             style={{ ...style, width: LARGEUR[appareil], transform: `scale(${echelle})`, transformOrigin: '0 0', position: 'absolute', top: 0, left: 0 }}
           >
             {gabaritModele(m) !== 'classique' ? (
-              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
+              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={herosApercu(gabaritModele(m) === 'village' ? 'paysage' : 'portrait', gabaritModele(m) === 'tableau' && !d.theme.styleIllustration ? 'releve' : undefined)} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
                 marque={d.theme.logoPerso.url ? <img src={d.theme.logoPerso.url} alt="" style={{ height: 40 }} /> : <span dangerouslySetInnerHTML={{ __html: marque }} />} />
             ) : (<>
             <header className={`ap-entete ${transparent ? 'ap-entete--transparent' : ''}`}>
@@ -472,7 +499,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                   )}
                 </span>
                 {!mobile && construireNavigation(d, soins).menu.map((l) => l.libelle).map((l) => <span key={l} style={{ fontSize: 15, opacity: 0.85 }}>{l}</span>)}
-                <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 42, padding: '0 18px', fontSize: 14, ...(transparent ? { background: 'var(--blanc)', color: 'var(--encre)' } : {}) }}>{rdv}</span>
+                {mobile
+                  ? <span aria-hidden="true" style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, flexShrink: 0, borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px currentColor', fontSize: 18 }}>☰</span>
+                  : <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 42, padding: '0 18px', fontSize: 14, ...(transparent ? { background: 'var(--blanc)', color: 'var(--encre)' } : {}) }}>{rdv}</span>}
               </div>
             </header>
             {/* Pas de <main> : l'aperçu est inclus dans une page de l'admin, qui a déjà le sien */}

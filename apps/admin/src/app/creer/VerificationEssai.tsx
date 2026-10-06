@@ -48,7 +48,7 @@ export default function VerificationEssai({
   const noms = d.praticiens.map((p) => `${p.prenom} ${p.nom}`.trim()).filter(Boolean);
   const lieu = d.lieux[0];
   const lignes: [string, string, number][] = [
-    ['Site', univers?.nom ?? '—', 2],
+    ['Site', univers?.nom ?? '—', 3],
     ['Cabinet', [d.cabinet.nom, [lieu?.adresse, lieu?.codePostal, lieu?.ville].filter(Boolean).join(' ')].filter(Boolean).join(' · ') || '—', 4],
     [d.praticiens.length > 1 ? 'Praticiens' : 'Praticien', noms.join(', ') || '—', 4],
     ['Horaires', lieu && horairesRenseignes(lieu.horaires) ? 'Renseignés' : 'Sur rendez-vous', 5],

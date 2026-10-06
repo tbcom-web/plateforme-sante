@@ -1,24 +1,29 @@
 'use client';
 
 // Parcours guidé de création du site : 7 étapes, une par écran, une recommandation par défaut à chaque étape.
-// Le praticien dit d'abord ses SUJETS (3 principaux dans l'ordre, 3 traités aussi : menu, accueil, modèle recommandé),
-// CHOISIT un modèle (4 sites) puis AFFINE couleurs, cabinet, horaires, soins et image, contenus ; il vérifie
-// puis publie. Sauvegarde automatique du brouillon (verrou optimiste : un enregistrement refusé garde la saisie dans ce
+// Le praticien dit d'abord ses SUJETS (3 principaux dans l'ordre, 3 traités aussi : menu, accueil), ses COULEURS aimées
+// (0 à 3), puis CHOISIT un site tout prêt parmi des propositions tirées de ses sujets et couleurs (propositions.ts,
+// « Ajuster » : style d'illustration, couleurs, structure) et AFFINE cabinet, horaires, soins et image, contenus ; il
+// vérifie puis publie. Sauvegarde automatique du brouillon (verrou optimiste : un enregistrement refusé garde la saisie dans ce
 // navigateur). Fonctions pures dans packages/core/src/parcours.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   aideEtape,
-  appliquerUniversParcours,
   controlerPublication,
   ETAPES_PARCOURS,
   etapeDeReprise,
   modeleDuSite,
   modeleIntegre,
   universDuParcours,
-  universRecommande,
+  animationPour,
+  styleDuTheme,
+  stylesCompatibles,
   type JeuPhotos,
+  type Proposition,
+  type ReglagesSite,
+  type Structure,
   type MarqueImportee,
   type SiteDraft,
   type Univers,
@@ -39,17 +44,18 @@ import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
 import type { EtatParcours, EtatPorte } from './actions';
-import { EtapeCabinet, EtapeContenus, EtapeCouleurs, EtapeHoraires, EtapeSoinsImage, Verification } from './Etapes';
+import { EtapeCabinet, EtapeContenus, EtapeHoraires, EtapeSoinsImage, Verification, nomProposition } from './Etapes';
+import { EtapeCouleursPreferees, EtapeVotreSite } from './EtapeSite';
 import VerificationEssai from './VerificationEssai';
 import PorteRendu from './PorteRendu';
 import RenduPlein from './RenduPlein';
 
 export type ActionEnregistrer = (id: string | null, draft: SiteDraft, version?: string | null) => Promise<EtatParcours>;
-export type ActionChoisir = (id: string | null, draft: SiteDraft, version: string | null, universId: string) => Promise<EtatParcours>;
+export type ActionChoisir = (id: string | null, draft: SiteDraft, version: string | null, universId: string, reglages?: Partial<ReglagesSite> & { proposition?: string | null }) => Promise<EtatParcours>;
 
 type Props = {
   siteId: string | null;
-  /** Étape d'arrivée imposée (/creer?etape=2 : « Changer de modèle » depuis /mon-site) */
+  /** Étape d'arrivée imposée (/creer?etape=3 : « Changer de modèle » ou « Revoir les propositions » depuis /mon-site) */
   etapeInitiale?: number;
   version: string | null;
   initial: SiteDraft;
@@ -208,40 +214,52 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
       setD((x) => ({ ...x, soins: s.soins, theme: { ...x.theme, soinsEnAvant: s.enAvant } }));
       setSuggestion(null);
     }
+    // Étape « Vos couleurs » quittée sans choix : « laissez-nous proposer » (étape vue, reprise au choix du site)
+    if (etape === 2 && n !== 2 && dRef.current.couleursPreferees === undefined) setD((x) => ({ ...x, couleursPreferees: [] }));
     void sauvegarder();
     setVerif(false);
     setEtape(Math.max(1, Math.min(ETAPES_PARCOURS.length, n)));
   };
 
-  // ---- Modèle choisi ----
+  // ---- Site choisi (structure + réglages de la proposition) ----
   const universCourant = proposes.find((u) => u.id === d.theme.univers);
-  const recommande = universRecommande(d, proposes);
   const modeleCourant = modeles.find((m) => m.id === d.theme.modele)?.manifeste ?? modeleIntegre(d.theme.modele);
   const modeleRendu = modeleDuSite(modeleCourant, d.theme);
-  const manifestes = useMemo(() => modeles.map((m) => m.manifeste), [modeles]);
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
 
-  const choisir = async (u: Univers) => {
-    if (d.theme.univers === u.id) return aller(3);
-    if (d.theme.univers && !confirm(`Passer au site « ${u.nom} » ? Vos informations sont gardées ; les couleurs et le logo proposés changent.`)) return;
-    setChoixEnCours(u.id);
+  /** Applique une structure (serveur : préréglage du modèle, identité gardée) puis les réglages donnés */
+  const appliquer = async (universId: string, reglages: Partial<ReglagesSite> & { proposition?: string | null }, cle: string, message: string) => {
+    setChoixEnCours(cle);
     if (minuteur.current) clearTimeout(minuteur.current);
     await file.current;
-    const r = await actions.choisir(idRef.current, dRef.current, versionRef.current, u.id);
+    const r = await actions.choisir(idRef.current, dRef.current, versionRef.current, universId, reglages);
     setChoixEnCours(null);
     if (!r.ok || !r.draft || !r.id) {
       if (r.conflit && idRef.current) { conflit.current = true; garderLocalement('parcours', idRef.current, dRef.current); }
       setEtat({ type: r.conflit ? 'conflit' : 'erreur', message: r.message });
-      return;
+      return false;
     }
     idRef.current = r.id;
     versionRef.current = r.version ?? null;
     dernier.current = JSON.stringify(r.draft);
     setId(r.id);
     setD(r.draft);
-    setEtat({ type: 'ok', message: 'Modèle appliqué, brouillon enregistré' });
+    setEtat({ type: 'ok', message });
     setVerif(false);
-    setEtape(3);
+    return true;
+  };
+
+  const choisir = async (p: Proposition) => {
+    if (d.theme.proposition === p.id) return aller(4);
+    if (d.theme.univers && !confirm(`Passer au site « ${p.nom} » ? Vos informations sont gardées ; la présentation, les couleurs et les illustrations changent.`)) return;
+    await appliquer(p.univers, { gamme: p.gamme, style: p.style, animation: p.animation, proposition: p.id }, p.id, `Site « ${p.nom} » choisi, brouillon enregistré`);
+  };
+
+  // « Ajuster » : autre structure, en gardant la gamme et le style (ramené au relevé s'il ne convient pas à la structure)
+  const changerStructure = async (u: Structure) => {
+    const style = styleDuTheme(d.theme);
+    const ok = stylesCompatibles(u).includes(style) ? style : 'releve';
+    await appliquer(u, { gamme: d.theme.gamme || undefined, style: ok, animation: animationPour(d, u, ok), proposition: d.theme.proposition ?? null }, `structure-${u}`, 'Structure changée, brouillon enregistré');
   };
 
   const publier = async () => {
@@ -283,11 +301,12 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
   const infos = ETAPES_PARCOURS[etape - 1];
   const aide = aideEtape(etape);
   const pret = Boolean(universCourant);
+  const nomSite = nomProposition(d) || universCourant?.nom || '';
 
   // Aperçu des étapes 3 à 7 et rendu : brouillon courant (l'étape 6 y ajoute les soins cochés d'office, visibles à
   // l'écran). Sans soin coché, l'aperçu applique le repli du site (soinsParDefaut, dans ApercuTheme) : rien d'autre.
   const draftApercu = !d.soins.length && suggestion ? { ...d, soins: suggestion.soins, theme: { ...d.theme, soinsEnAvant: suggestion.enAvant } } : d;
-  const libelleApercu = `Aperçu du site « ${universCourant?.nom ?? modeleCourant.nom} »${d.theme.gamme ? '' : ', couleur personnalisée'}`;
+  const libelleApercu = `Aperçu du site « ${nomSite || modeleCourant.nom} »${d.theme.gamme ? '' : ', couleur personnalisée'}`;
 
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-6">
@@ -339,29 +358,31 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
           </div>
         )}
 
-        {etape === 2 && (
-          <ChoixModeles
-            proposes={proposes}
-            d={d}
-            recommande={recommande}
-            choixEnCours={choixEnCours}
-            onChoisir={choisir}
-            apercu={(u) => {
-              const r = appliquerUniversParcours(d, u, { modeles: manifestes, soinsConnus: slugs, themesActives });
-              const soins = d.soins.length ? d.soins : soinsDeBaseParcours(d, u, slugs);
-              const m = modeles.find((x) => x.id === r.draft.theme.modele)?.manifeste ?? modeleIntegre(r.draft.theme.modele);
-              return { draft: { ...r.draft, soins }, modele: modeleDuSite(m, r.draft.theme) };
-            }}
-            catalogue={catalogue}
-            marquesImportees={marquesImportees}
-            jeuPhotos={jeuPhotos}
-          />
+        {etape === 2 && !verif && <EtapeCouleursPreferees valeur={d.couleursPreferees} onChange={(v) => maj({ couleursPreferees: v })} />}
+
+        {etape === 3 && !verif && (
+          proposes.length ? (
+            <EtapeVotreSite
+              d={d}
+              proposes={proposes}
+              modeles={modeles}
+              catalogue={catalogue}
+              marquesImportees={marquesImportees}
+              jeuPhotos={jeuPhotos}
+              slugs={slugs}
+              themesActives={themesActives}
+              etroit={etroit}
+              choixEnCours={choixEnCours}
+              onChoisir={choisir}
+              onMaj={(x) => setD(x)}
+              onStructure={changerStructure}
+            />
+          ) : <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Aucun modèle n’est disponible pour le moment. Contactez-nous.</p>
         )}
 
-        {etape > 2 && !verif && (
+        {etape > 3 && !verif && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-start">
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-6">
-              {etape === 3 && <EtapeCouleurs d={d} modele={modeleCourant} univers={universCourant} onTheme={(theme) => maj({ theme })} />}
               {etape === 4 && <EtapeCabinet d={d} controle={controle} maj={maj} lienAvance={lienAvance} />}
               {etape === 5 && <EtapeHoraires d={d} controle={controle} maj={maj} />}
               {etape === 6 && (
@@ -372,7 +393,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
                   suggestions={suggestionsSoins}
                   preCoches={soinsDeBase}
                   proposer={!toutDecoche}
-                  parDefaut={soinsParDefaut(d.theme, slugs)}
+                  parDefaut={soinsParDefaut({ ...d.theme, priorites: d.priorites }, slugs)}
                   modele={modeleCourant}
                   marquesImportees={marquesImportees}
                   maj={maj}
@@ -470,9 +491,13 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
             {d.priorites.principaux.length ? 'Continuer →' : 'Passer cette étape →'}
           </button>
         ) : etape === 2 ? (
+          <button type="button" onClick={() => aller(3)} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
+            {d.couleursPreferees?.length ? 'Voir les sites proposés →' : 'Laissez-nous proposer →'}
+          </button>
+        ) : etape === 3 ? (
           pret && (
-            <button type="button" onClick={() => aller(3)} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
-              Continuer avec « {universCourant!.nom} » →
+            <button type="button" onClick={() => aller(4)} className="min-h-11 rounded-lg bg-teal-800 px-5 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
+              Continuer avec « {nomSite} » →
             </button>
           )
         ) : etape < ETAPES_PARCOURS.length ? (
@@ -527,7 +552,7 @@ function Progression({ etape, pret, onAller, etat }: { etape: number; pret: bool
       </div>
       <ol className="grid grid-cols-7 gap-1.5" aria-label="Étapes de la création">
         {ETAPES_PARCOURS.map((e) => {
-          const accessible = e.numero <= 2 || pret;
+          const accessible = e.numero <= 3 || pret;
           const fait = e.numero < etape;
           return (
             <li key={e.numero}>
@@ -547,65 +572,5 @@ function Progression({ etape, pret, onAller, etat }: { etape: number; pret: bool
         })}
       </ol>
     </div>
-  );
-}
-
-/** Étape 2 : les quatre sites en grandes cartes, avec vignettes réelles ordinateur et mobile */
-function ChoixModeles({
-  proposes, d, recommande, choixEnCours, onChoisir, apercu, catalogue, marquesImportees, jeuPhotos,
-}: {
-  proposes: Univers[];
-  d: SiteDraft;
-  recommande?: Univers;
-  choixEnCours: string | null;
-  onChoisir: (u: Univers) => void;
-  apercu: (u: Univers) => { draft: SiteDraft; modele: ReturnType<typeof modeleDuSite> };
-  catalogue: SoinCatalogue[];
-  marquesImportees: MarqueImportee[];
-  jeuPhotos: JeuPhotos | null;
-}) {
-  if (!proposes.length) return <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Aucun modèle n’est disponible pour le moment. Contactez-nous.</p>;
-  // Le site recommandé d'abord (mise en avant par défaut)
-  const liste = recommande ? [recommande, ...proposes.filter((u) => u.id !== recommande.id)] : proposes;
-  return (
-    <>
-    <p className="text-sm text-neutral-600">Chaque site est montré sur ordinateur et sur téléphone, avec vos informations.</p>
-    <ul className="grid gap-5 md:grid-cols-2 2xl:grid-cols-4">
-      {liste.map((u) => {
-        const { draft, modele } = apercu(u);
-        const estRecommande = u.id === recommande?.id;
-        const actuel = d.theme.univers === u.id;
-        return (
-          <li key={u.id} className={`grid content-start gap-4 rounded-2xl border bg-white p-4 shadow-sm sm:p-5 ${estRecommande ? 'border-teal-700 ring-2 ring-teal-700/20' : 'border-black/10'}`}>
-            <div className="flex flex-wrap items-center gap-2">
-              {estRecommande && <span className="rounded-full bg-teal-800 px-2.5 py-1 text-xs font-semibold text-white">Recommandé pour vous</span>}
-              {actuel && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">Votre choix actuel</span>}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">{u.nom}</h2>
-              <p className="mt-1 text-sm text-neutral-700"><span className="font-medium">Pour qui : </span>{u.pourQui}</p>
-            </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_88px] items-start gap-3" aria-hidden="true">
-              <div className="overflow-hidden rounded-lg ring-1 ring-black/10">
-                <ApercuTheme vignette={190} appareil="bureau" draft={draft} modele={modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
-              </div>
-              <div className="overflow-hidden rounded-[14px] ring-4 ring-neutral-800">
-                <ApercuTheme vignette={182} appareil="mobile" draft={draft} modele={modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onChoisir(u)}
-              disabled={choixEnCours !== null}
-              aria-label={`Choisir le site « ${u.nom} »`}
-              className={`min-h-12 rounded-xl px-5 text-base font-semibold focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 disabled:opacity-60 ${estRecommande || actuel ? 'bg-teal-800 text-white hover:bg-teal-900' : 'border border-teal-800 text-teal-900 hover:bg-teal-50'}`}
-            >
-              {choixEnCours === u.id ? 'Préparation du site…' : actuel ? 'Garder ce modèle' : 'Choisir ce modèle'}
-            </button>
-          </li>
-        );
-      })}
-    </ul>
-    </>
   );
 }

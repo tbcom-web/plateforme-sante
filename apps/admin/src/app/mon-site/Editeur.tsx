@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { nomProposition } from '../creer/Etapes';
 import {
   controlerPublication,
   CATEGORIES_EQUIPEMENTS,
@@ -29,6 +30,11 @@ import {
   SPECIALITES,
   LIBELLES_ANIMATIONS,
   universCatalogue,
+  appliquerReglages,
+  LIBELLES_STYLES,
+  STYLES_ILLUSTRATION,
+  styleDuTheme,
+  stylesCompatibles,
   STATUTS,
   ficheConseil,
   THEMES_FLUX,
@@ -541,7 +547,12 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                 legende="Style visuel du site"
                 options={MODES_VISUELS.map((m) => ({ value: m.value, label: m.label, description: m.description }))}
                 valeur={d.theme.modeVisuel}
-                onChange={(v) => maj({ theme: { ...d.theme, modeVisuel: v as SiteDraft['theme']['modeVisuel'] } })}
+                onChange={(v) => {
+                  // Style d'illustration choisi gardé cohérent : « Photos » le devient ; quitter les photos retire ce choix
+                  const { styleIllustration, ...theme } = d.theme;
+                  const style = v === 'photos' ? 'photos' as const : styleIllustration === 'photos' ? undefined : styleIllustration;
+                  maj({ theme: { ...theme, modeVisuel: v as SiteDraft['theme']['modeVisuel'], ...(style ? { styleIllustration: style } : {}) } });
+                }}
               />
               <fieldset>
                 <legend className="font-medium">Logo</legend>
@@ -594,7 +605,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                   <div className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 p-3 text-sm">
                     <VignetteModele m={modeleCourant} />
                     <span className="grid content-start gap-0.5">
-                      <span className="font-semibold">{universCatalogue(d.theme.univers)?.nom ?? effetModele(modeleCourant)}</span>
+                      <span className="font-semibold">{nomProposition(d) ? `${nomProposition(d)} · ` : ''}{universCatalogue(d.theme.univers)?.nom ?? effetModele(modeleCourant)}</span>
                       <span className="text-[11px] text-neutral-400">Modèle « {modeleCourant.nom} »</span>
                     </span>
                     <Link
@@ -605,7 +616,28 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                       Changer de modèle
                     </Link>
                   </div>
+                  <Link
+                    href={lienChangerModele}
+                    onClick={(e) => { if (modifie && !confirm('Des modifications ne sont pas enregistrées. Revoir les propositions quand même ?')) e.preventDefault(); }}
+                    className="justify-self-start text-sm font-semibold text-teal-800 underline-offset-4 hover:underline"
+                  >
+                    Revoir les sites proposés d’après vos sujets et vos couleurs
+                  </Link>
                   <p className="text-xs text-neutral-500">Le modèle se change avec ses couleurs et son logo proposés, en comparant les sites prêts sur ordinateur et téléphone. Vos informations sont gardées.</p>
+                  {/* Style d'illustration (propositions.ts) : relevé, illustrations douces, trait fin ou photos */}
+                  <div role="radiogroup" aria-label="Style d’illustration" className="grid gap-2 sm:grid-cols-2">
+                    {STYLES_ILLUSTRATION.map((s) => {
+                      const ok = stylesCompatibles(d.theme.univers).includes(s);
+                      const actif = styleDuTheme(d.theme) === s;
+                      return (
+                        <button key={s} type="button" role="radio" aria-checked={actif} disabled={!ok} onClick={() => maj({ theme: appliquerReglages(d, { style: s }).theme })}
+                          className={`grid rounded-xl border px-3 py-2 text-left text-sm disabled:opacity-45 ${actif ? 'border-teal-700 bg-teal-50' : 'border-neutral-200 hover:bg-neutral-50'}`}>
+                          <span className="font-semibold">{LIBELLES_STYLES[s].nom}</span>
+                          <span className="text-xs text-neutral-600">{ok ? LIBELLES_STYLES[s].description : 'Pas avec la structure « Technique et précis »'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </fieldset>
               ) : (
                 <ChoixModele

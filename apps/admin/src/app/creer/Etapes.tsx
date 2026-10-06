@@ -40,6 +40,9 @@ import {
   type Univers,
   themeParId,
   horairesRenseignes,
+  LIBELLES_STYLES,
+  styleDuTheme,
+  REGLES_THEMES,
   soinsParDefaut,
 } from '@plateforme/core';
 import Photo from '@/components/Photo';
@@ -83,9 +86,13 @@ function Pastille({ g, actif, recommandee, onChoisir, petite = false }: { g: Gam
   );
 }
 
-export function EtapeCouleurs({ d, modele, univers, onTheme }: { d: SiteDraft; modele: ModeleManifeste; univers?: Univers; onTheme: (t: SiteDraft['theme']) => void }) {
-  const conseillees = gammesConseillees(modele);
-  const recommandee = univers?.preReglage.gamme ?? conseillees[0]?.id;
+/**
+ * Couleurs du site (réglage « Ajuster » de l'étape « Votre site ») : gammes conseillées (celles des couleurs aimées d'abord,
+ * puis celles du modèle), toutes les gammes, ou une couleur libre (contraste garanti par le core).
+ */
+export function EtapeCouleurs({ d, modele, univers, onTheme, prioritaires = [] }: { d: SiteDraft; modele: ModeleManifeste; univers?: Univers; onTheme: (t: SiteDraft['theme']) => void; prioritaires?: string[] }) {
+  const conseillees = [...new Map([...prioritaires.map((id) => GAMMES.find((g) => g.id === id)).filter((g): g is Gamme => Boolean(g)), ...gammesConseillees(modele)].map((g) => [g.id, g])).values()].slice(0, 6);
+  const recommandee = prioritaires[0] ?? univers?.preReglage.gamme ?? conseillees[0]?.id;
   const nature = natureCouleur(d.theme, modele);
   const [saisie, setSaisie] = useState(d.theme.couleur);
   useEffect(() => setSaisie(d.theme.couleur), [d.theme.couleur]);
@@ -96,7 +103,7 @@ export function EtapeCouleurs({ d, modele, univers, onTheme }: { d: SiteDraft; m
     <>
       <fieldset className={carte}>
         <legend className="sr-only">Couleurs conseillées</legend>
-        <p className="text-lg font-semibold">Couleurs conseillées pour ce site</p>
+        <p className="text-lg font-semibold">Couleurs conseillées</p>
         <div role="radiogroup" aria-label="Couleurs conseillées" className="grid gap-2 sm:grid-cols-2">
           {conseillees.map((g) => (
             <Pastille key={g.id} g={g} actif={d.theme.gamme === g.id} recommandee={g.id === recommandee} onChoisir={() => onTheme(choisirGamme(d.theme, g.id))} />
@@ -104,23 +111,7 @@ export function EtapeCouleurs({ d, modele, univers, onTheme }: { d: SiteDraft; m
         </div>
       </fieldset>
 
-      {/* Style des images (draft.theme.modeVisuel, le même réglage que dans /mon-site) : grande image de l'accueil et des sujets */}
-      <fieldset className={carte}>
-        <legend className="text-lg font-semibold">Style des images</legend>
-        <div role="radiogroup" aria-label="Style des images" className="grid gap-2 sm:grid-cols-2">
-          {([['illustrations', 'Illustrations', 'Dessins aux couleurs du cabinet', true], ['photos', 'Photos', 'Photos liées à vos sujets', false]] as const).map(([v, l, aide, reco]) => {
-            const actif = v === 'photos' ? d.theme.modeVisuel === 'photos' : d.theme.modeVisuel !== 'photos';
-            return (
-              <button key={v} type="button" role="radio" aria-checked={actif} onClick={() => onTheme({ ...d.theme, modeVisuel: v })} className={`flex min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm ${focus} ${actif ? 'border-teal-700 bg-teal-50' : 'border-neutral-200'}`}>
-                <span className="grid"><span className="font-semibold">{l}</span><span className="text-neutral-600">{aide}</span></span>
-                {reco && <Badge>Recommandé</Badge>}
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
-
-      <details className={carte} open={nature === 'autre'}>
+      <details className={carte} open={nature === 'autre' && !conseillees.some((g) => g.id === d.theme.gamme)}>
         <summary className={`cursor-pointer rounded font-semibold ${focus}`}>Plus de couleurs</summary>
         <div role="radiogroup" aria-label="Toutes les couleurs" className="grid gap-4">
           {[['Vives', autres(GAMMES_VITAMINEES)], ['Sobres', autres(GAMMES_SOBRES)]].map(([titre, liste]) => (
@@ -598,8 +589,14 @@ export function EtapeContenus({ d, univers, maj }: { d: SiteDraft; univers?: Uni
 export function resumeSoins(d: SiteDraft, catalogue: SoinCatalogue[]): string {
   const titre = (slug: string) => catalogue.find((c) => c.slug === slug)?.titre_court ?? slug;
   if (d.soins.length) return catalogue.filter((c) => d.soins.includes(c.slug)).map((c) => c.titre_court).join(', ') || d.soins.map(titre).join(', ');
-  const defaut = soinsParDefaut(d.theme, catalogue.map((c) => c.slug));
+  const defaut = soinsParDefaut({ ...d.theme, priorites: d.priorites }, catalogue.map((c) => c.slug));
   return `Aucun soin choisi : le site affichera ${defaut.length ? defaut.map(titre).join(', ') : 'les soins courants de votre spécialité'}`;
+}
+
+/** Nom de la proposition enregistrée (identifiant sujet~structure~gamme~style~animation, propositions.ts) */
+export function nomProposition(d: SiteDraft): string {
+  const [sujet, , , style] = (d.theme.proposition ?? '').split('~');
+  return REGLES_THEMES[sujet]?.noms[style as keyof (typeof REGLES_THEMES)[string]['noms']] ?? '';
 }
 
 /** Étape où se complète une information manquante */
@@ -628,7 +625,8 @@ export function Verification({
   const enAvant = soinsEnAvantValides(d.theme.soinsEnAvant, d.soins);
   const lignes: [string, ReactNode, number][] = [
     ['Sujets', d.priorites.principaux.length ? [...d.priorites.principaux.map((x, i) => `${i + 1}. ${themeParId(x)?.court ?? x}`), ...(d.priorites.secondaires.length ? [`aussi : ${d.priorites.secondaires.map((x) => themeParId(x)?.court ?? x).join(', ')}`] : [])].join(' · ') : 'Aucun', 1],
-    ['Site', univers?.nom ?? '—', 2],
+    ['Site', [univers?.nom, d.theme.proposition ? `proposition « ${nomProposition(d)} »` : ''].filter(Boolean).join(' · ') || '—', 3],
+    ['Illustrations', LIBELLES_STYLES[styleDuTheme(d.theme)].nom, 3],
     ['Couleurs', g ? g.nom : <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-4 rounded-full ring-1 ring-black/10" style={{ background: d.theme.couleur }} />Couleur personnalisée</span>, 3],
     ['Cabinet', [d.cabinet.nom, [lieu.adresse, lieu.codePostal, lieu.ville].filter(Boolean).join(' '), d.cabinet.telephone].filter(Boolean).join(' · ') || '—', 4],
     [d.praticiens.length > 1 ? 'Praticiens' : 'Praticien', noms.join(', ') || '—', 4],

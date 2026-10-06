@@ -9,6 +9,7 @@
 import { appliquerUnivers, CATALOGUE_UNIVERS, SUJETS_FICHES_CONSEILS, type ResultatUnivers, type Univers } from './catalogue-univers';
 import { FICHES_CONSEILS } from './conseils';
 import { controlerPublication } from './controles';
+import { soinsDeBase, SOINS_DE_BASE_MAX } from './replis';
 import { JOURS, type SiteDraft } from './draft';
 import { GAMMES, variantesGamme, type Gamme } from './gammes';
 import type { ModeleManifeste } from './modeles';
@@ -219,8 +220,9 @@ export type EtapeParcours = {
 
 /**
  * Les sept étapes. « Vos sujets » vient en premier : c'est la question la plus simple pour le praticien (« ce que je fais »)
- * et elle règle tout le reste — modèle recommandé (thème n° 1), spécialité des illustrations, soins suggérés, accueil et
- * menus. Les aperçus des modèles de l'étape 2 montrent donc déjà le bon menu.
+ * et elle règle tout le reste — spécialité des illustrations, soins suggérés, accueil et menus. Puis « Vos couleurs » (0 à 3
+ * couleurs aimées) et « Votre site » : des sites tout prêts (propositions.ts) tirés des sujets et des couleurs, avec un
+ * réglage « Ajuster » (style d'illustration, couleurs, structure). Les aperçus montrent donc déjà le bon menu.
  */
 export const ETAPES_PARCOURS: EtapeParcours[] = [
   {
@@ -232,17 +234,17 @@ export const ETAPES_PARCOURS: EtapeParcours[] = [
   },
   {
     numero: 2,
-    titre: 'Choisissez votre site',
-    consigne: 'Choisissez le site qui ressemble le plus à votre cabinet. Vous pourrez en changer plus tard.',
-    recommandation: 'Le site mis en avant convient à la plupart des cabinets comme le vôtre.',
-    aide: [['Photos et style', 'Style du site']],
+    titre: 'Vos couleurs',
+    consigne: 'Choisissez jusqu’à 3 couleurs que vous aimez, dans l’ordre. Sans choix, nous vous proposons des couleurs adaptées à vos sujets.',
+    recommandation: 'Une ou deux couleurs suffisent : les sites proposés à l’étape suivante les reprennent.',
+    aide: [['Photos et style', 'Vos couleurs']],
   },
   {
     numero: 3,
-    titre: 'Vos couleurs',
-    consigne: 'Choisissez deux couleurs pour votre site. L’aperçu se met à jour aussitôt.',
-    recommandation: 'Les couleurs conseillées sont choisies pour ce site ; leur lisibilité est vérifiée.',
-    aide: [['Photos et style', 'Gamme de couleurs']],
+    titre: 'Votre site',
+    consigne: 'Choisissez l’un des sites proposés d’après vos sujets et vos couleurs. Tout reste modifiable ensuite.',
+    recommandation: 'Le premier site proposé correspond le mieux à vos sujets ; « Voir d’autres propositions » en ajoute.',
+    aide: [['Photos et style', 'Propositions'], ['Photos et style', 'Style d’illustration']],
   },
   {
     numero: 4,
@@ -302,12 +304,15 @@ export function aideEtape(numero: number): { titre: string; conseil: string; exe
 export const MANQUE_IDENTITE = /ville|téléphone|adresse|Code postal|praticien|nom et le prénom|Ordre|RPPS|INAMI|rendez-vous|Texte provisoire/i;
 
 /**
- * Étape où reprendre la création : sans modèle du parcours, 1 (aucun sujet choisi) ou 2 ; 4 si l'identité est à
- * compléter, 6 sans soin, sinon 7. (L'étape 3 a une valeur par défaut : la gamme du modèle ; l'étape 5, les horaires,
- * a un repli « Sur rendez-vous ».)
+ * Étape où reprendre la création : sans modèle du parcours, 1 (aucun sujet choisi), 2 (couleurs pas encore vues) ou 3
+ * (site à choisir) ; 4 si l'identité est à compléter, 6 sans soin, sinon 7. (L'étape 5, les horaires, a un repli « Sur
+ * rendez-vous ».)
  */
-export function etapeDeReprise(d: SiteDraft): 1 | 2 | 4 | 6 | 7 {
-  if (!d.theme.univers || !(UNIVERS_PARCOURS as readonly string[]).includes(d.theme.univers)) return d.priorites?.principaux.length ? 2 : 1;
+export function etapeDeReprise(d: SiteDraft): 1 | 2 | 3 | 4 | 6 | 7 {
+  if (!d.theme.univers || !(UNIVERS_PARCOURS as readonly string[]).includes(d.theme.univers)) {
+    if (!d.priorites?.principaux.length) return 1;
+    return d.couleursPreferees === undefined ? 2 : 3;
+  }
   // Plus rien ne bloque la publication : on reprend à l'identité si une information y est remplacée par un repli.
   const { remplacements } = controlerPublication(d);
   if (remplacements.some((b) => MANQUE_IDENTITE.test(b) && !/compétence|Horaires/i.test(b))) return 4;
@@ -317,9 +322,11 @@ export function etapeDeReprise(d: SiteDraft): 1 | 2 | 4 | 6 | 7 {
 
 /**
  * Progression enregistrée pour la conseillère (noter_progression_essai, migration 0023) : la base borne la valeur à
- * 0..7 (1 à 6 = jalons du parcours, 7 = vérification atteinte). Le parcours a 7 étapes depuis que les horaires ont leur
- * propre écran : l'étape 5 « Vos horaires » compte comme le jalon 4 (« Votre cabinet »), les étapes 6 et 7 comme les
- * jalons 5 et 6. Les valeurs déjà enregistrées gardent leur sens (5 = soins, 6 = contenus) et le SQL n'est pas modifié.
+ * 0..7 (1 à 6 = jalons du parcours, 7 = vérification atteinte). Le parcours a 7 étapes (sujets, couleurs, site, cabinet,
+ * horaires, soins, contenus) : l'étape 5 « Vos horaires » compte comme le jalon 4 (« Votre cabinet »), les étapes 6 et 7
+ * comme les jalons 5 et 6 ; les jalons 2 et 3 sont désormais les couleurs puis le choix du site (avant : le modèle puis ses
+ * couleurs, même avancement). Les valeurs déjà enregistrées gardent leur sens (5 = soins, 6 = contenus) et le SQL n'est
+ * pas modifié.
  */
 export function jalonProgressionEssai(etape: number, verification: boolean): number {
   if (verification) return 7;
@@ -328,24 +335,12 @@ export function jalonProgressionEssai(etape: number, verification: boolean): num
 }
 
 /**
- * Soins jamais cochés d'office : actes spécialisés ou prestations que tous les cabinets ne proposent pas (le praticien
- * les coche lui-même s'il les pratique).
- */
-export const SOINS_SPECIALISES: readonly string[] = ['orthonyxie', 'onychoplastie', 'soins-a-domicile', 'k-taping', 'posturologie'];
-
-/** Nombre de soins cochés d'office au parcours (soins de base des sujets) */
-export const SOINS_DE_BASE_MAX = 4;
-
-/**
  * Soins cochés d'office à l'étape « Vos soins » : 4 soins de base au plus tirés des sujets (le soin pivot de chaque sujet
- * principal d'abord), sans acte spécialisé ; sans sujet, ceux du modèle. Les autres soins des sujets restent proposés,
- * non cochés.
+ * principal d'abord), sans acte spécialisé ; sans sujet, ceux du modèle. Même règle que le repli du site publié sans soin
+ * coché (soinsDeBase, replis.ts). Les autres soins des sujets restent proposés, non cochés.
  */
 export function soinsDeBaseParcours(d: Pick<SiteDraft, 'priorites'>, u: Pick<Univers, 'preReglage'> | undefined, soinsConnus: readonly string[], max = SOINS_DE_BASE_MAX): string[] {
-  const base = (l: readonly string[]) => l.filter((s) => !SOINS_SPECIALISES.includes(s));
-  const suggeres = base(soinsSuggeresParcours(d, u, soinsConnus));
-  const pivots = (d.priorites?.principaux ?? []).map((id) => base(themeParId(id)?.soins ?? []).find((s) => suggeres.includes(s))).filter((s): s is string => Boolean(s));
-  return [...new Set([...pivots, ...suggeres])].slice(0, max);
+  return soinsDeBase({ priorites: d.priorites, soinsEnAvant: u?.preReglage.soinsEnAvant }, soinsConnus, max);
 }
 
 /** Fiches conseils connues, dans l'ordre du catalogue, sans doublon */

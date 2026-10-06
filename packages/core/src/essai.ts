@@ -73,7 +73,7 @@ export function prolongerEssai(fin: Date | string | number, jours: number, maint
 
 /**
  * Nombre de JALONS du parcours guidé (/creer) suivis par la conseillère ; 7 = écran de vérification atteint. Le parcours
- * affiche 7 écrans (les horaires ont le leur) ramenés sur ces 6 jalons par jalonProgressionEssai (parcours.ts) : la
+ * affiche 7 écrans (sujets, couleurs, site, cabinet, horaires, soins, contenus) ramenés sur ces 6 jalons par jalonProgressionEssai (parcours.ts) : la
  * borne 0..7 de noter_progression_essai (migration 0023) reste inchangée.
  */
 export const ETAPES_PARCOURS_ESSAI = 6;

@@ -15,6 +15,7 @@ import { site } from '../../lib/site';
 import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche, aLaVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
 import { nomLieu } from '../../lib/gabarits';
 import { visuelPremierEcran } from '../../lib/vitrine';
+import { registre as registreSite } from '../../lib/visuels';
 
 interface Props { variante: 'carte' | 'notice' | 'figure' }
 const { variante } = Astro.props;
@@ -31,6 +32,10 @@ const principaux = site.soins.slice(0, 3).map((s) => s.titreCourt.toLowerCase())
 const soins = principaux.length ? `${principaux.slice(0, -1).join(', ')}${principaux.length > 1 ? ' et ' : ''}${principaux.at(-1)}.` : '';
 const soinsPhrase = soins.charAt(0).toUpperCase() + soins.slice(1);
 const visuel = visuelPremierEcran;
+// Carte (tableau) : « affiche » en relevé sur disque sombre par défaut ; un style d'illustration CHOISI par le praticien
+// (proposition ou « Ajuster » : illustrations douces, trait fin) est honoré, sur un disque clair.
+const registreCarte = site.theme.styleIllustration && site.theme.styleIllustration !== 'photos' ? registreSite : 'releve';
+const disqueClair = registreCarte !== 'releve';
 const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
 ---
 {variante === 'figure' ? (
@@ -54,7 +59,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   <section class="g-cadre pe pe--carte" aria-label="Le cabinet en bref"><div class="pe__grille">
     <p class="pe__sur">{sur}</p>
     <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-    <div class="pe__visuel"><span class="pe__disque surface-plan" aria-hidden="true"></span><VisuelTheme visuel={visuel} registre="releve" prioritaire sizes="(min-width: 900px) 45vw, 100vw" /></div>
+    <div class:list={['pe__visuel', { 'pe__visuel--clair': disqueClair }]}><span class:list={['pe__disque', { 'surface-plan': !disqueClair }]} aria-hidden="true"></span><VisuelTheme visuel={visuel} registre={registreCarte} prioritaire sizes="(min-width: 900px) 45vw, 100vw" /></div>
     <div class="pe__suite">
       <p class="pe__qui">{quiOu}</p>
       {soinsPhrase && <p class="pe__soins">{soinsPhrase}</p>}
@@ -129,7 +134,12 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   .pe--carte .pe__visuel :global(.vt--dessin) { padding: 15%; }
   .pe--carte .pe__visuel :global(.vt--heros) { inset: 6%; border-radius: 50%; }
   /* Jetons de dessin de la surface « plan » de la charte (SURFACES_CSS), le dessin étant posé sur le disque voisin */
-  .pe--carte .pe__visuel :global(.vt--dessin) { color: var(--papier); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-os: var(--signal); --dessin-os-opacite: 0.4; --dessin-os-aplat: 0; --dessin-os-secondaires: none; --dessin-fond: color-mix(in srgb, var(--plan), var(--nuit) 30%); }
+  /* Photo et héros posés en retrait du disque : la taille vient des marges (inset), pas du 100 % du composant (sinon l'image
+     dépasse du disque, coupée à droite et en bas) */
+  .pe--carte .pe__visuel :global(.vt--photo), .pe--carte .pe__visuel :global(.vt--heros) { width: auto; height: auto; }
+  .pe--carte .pe__visuel--clair .pe__disque { background: var(--g-carte); }
+  .pe--carte .pe__visuel--clair :global(.vt--heros) { inset: 12%; border-radius: 0; }
+  .pe--carte .pe__visuel:not(.pe__visuel--clair) :global(.vt--dessin) { color: var(--papier); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-os: var(--signal); --dessin-os-opacite: 0.4; --dessin-os-aplat: 0; --dessin-os-secondaires: none; --dessin-fond: color-mix(in srgb, var(--plan), var(--nuit) 30%); }
   .pe--carte .pe__visuel:has(:global(.vt--photo)) { border-radius: 50%; }
   .pe--carte .pe__visuel :global(.vt--photo) { inset: 6%; border-radius: 50%; }
   .pe--carte .pe__qui { font-size: 1.1rem; }

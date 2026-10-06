@@ -1,7 +1,7 @@
 // Brouillon de site édité dans le back-office (colonne sites.config), version 2.
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
 import { MODELES_INTEGRES } from './modeles';
-import { specialiteDuProfil } from './packs';
+import { ANIMATIONS, specialiteDuProfil, type Animation } from './packs';
 import { nettoyerEquipements, nettoyerEquipementsAutres } from './equipements';
 import type { Horaire, SiteConfig } from './types';
 import { horaireDe, normaliserHoraires, noteAvecNonLus, JOURS_SEMAINE } from './horaires';
@@ -136,6 +136,15 @@ export type SiteDraft = {
     sections?: SectionAccueil[];
     /** Registre des illustrations, s'il diffère de celui du modèle */
     registre?: Registre;
+    /**
+     * Style d'illustration CHOISI par le praticien (propositions.ts : relevé, illustrations douces, trait fin, photos) ;
+     * registre et modeVisuel en sont les réglages effectifs. Absent : site antérieur, le premier écran garde son rendu.
+     */
+    styleIllustration?: 'releve' | 'pedagogique' | 'ligne' | 'photos';
+    /** Animation d'accueil choisie (proposition, structure Technique) ; absente : celle du sujet n° 1 ou de la spécialité */
+    animationAccueil?: Animation;
+    /** Proposition de site choisie (identifiant de propositions.ts), facultatif */
+    proposition?: string;
   };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
@@ -147,6 +156,11 @@ export type SiteDraft = {
    * de la spécialité et des soins cochés (normaliserDraft).
    */
   priorites: Priorites;
+  /**
+   * Couleurs préférées du praticien (étape « Vos couleurs », 0 à 3, par ordre de préférence : COULEURS_PREFEREES de
+   * propositions.ts) ; absent = étape pas encore vue, [] = « laissez-nous proposer ».
+   */
+  couleursPreferees?: string[];
   /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
   /** Fiches conseils proposées aux patients (identifiants de SUJETS_FICHES_CONSEILS, catalogue-univers.ts), facultatif */
@@ -276,6 +290,17 @@ function lieuNormalise(l: Record<string, any>): LieuDraft {
   };
 }
 
+const STYLES = ['releve', 'pedagogique', 'ligne', 'photos'];
+
+/** Champs facultatifs du thème posés par les propositions : valeurs inconnues retirées (rétrocompatible) */
+function themeNormalise(t: SiteDraft['theme']): SiteDraft['theme'] {
+  const r = { ...t };
+  if (r.styleIllustration !== undefined && !STYLES.includes(r.styleIllustration)) delete r.styleIllustration;
+  if (r.animationAccueil !== undefined && (!(ANIMATIONS as readonly string[]).includes(r.animationAccueil) || r.animationAccueil === 'trajectoire')) delete r.animationAccueil;
+  if (r.proposition !== undefined && (typeof r.proposition !== 'string' || r.proposition.length > 120)) delete r.proposition;
+  return r;
+}
+
 /** Convertit un brouillon (v1 ou v2 partiel) en v2 complet. */
 export function normaliserDraft(brut: unknown): SiteDraft {
   const vide = draftVide();
@@ -291,7 +316,9 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       domicile: { ...vide.domicile, ...d.domicile, jours: Array.isArray(d.domicile?.jours) ? JOURS_SEMAINE.filter((j) => d.domicile.jours.includes(j)) : [] },
       message: { ...vide.message, ...d.message },
       // Brouillon enregistré sans style visuel : il garde l'ancien défaut (mélange), seul un nouveau site part en illustrations.
-      theme: { ...vide.theme, modeVisuel: 'mixte', specialite: specialiteDuProfil(d.profil), ...d.theme, jeuPhotos: typeof d.theme?.jeuPhotos === 'string' ? d.theme.jeuPhotos : '' },
+      theme: themeNormalise({ ...vide.theme, modeVisuel: 'mixte', specialite: specialiteDuProfil(d.profil), ...d.theme, jeuPhotos: typeof d.theme?.jeuPhotos === 'string' ? d.theme.jeuPhotos : '' }),
+      // Couleurs préférées : liste de 3 identifiants au plus (absente : étape pas encore vue)
+      ...(Array.isArray(d.couleursPreferees) ? { couleursPreferees: [...new Set((d.couleursPreferees as unknown[]).filter((x): x is string => typeof x === 'string' && /^[a-z-]{2,20}$/.test(x)))].slice(0, 3) } : { couleursPreferees: undefined }),
       flux: { ...vide.flux, ...d.flux, themes: Array.isArray(d.flux?.themes) ? d.flux.themes : [] },
       photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => lieuNormalise(l)) : vide.lieux,

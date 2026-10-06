@@ -17,14 +17,14 @@ export const metadata = { title: 'Créer mon site' };
 
 // /creer : parcours guidé du praticien (nouveau site, ou site pas encore publié : création à reprendre) ;
 // /creer?site=<id> : le site d'un client, préparé par le super admin.
-// /creer?etape=2 : changer de modèle (bouton « Changer de modèle » de /mon-site), y compris pour un site déjà publié :
-// modèle et univers changent ensemble.
+// /creer?etape=3 (ancien lien : etape=2) : revoir les propositions et changer de site (/mon-site, « Style du site »), y
+// compris pour un site déjà publié : structure, couleurs et illustrations changent ensemble.
 export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
   const user = await getUser();
   if (!user) redirect('/connexion');
 
   const { site: siteDemande, etape: etapeDemandee, erreur } = await searchParams;
-  const changerModele = etapeDemandee === '2';
+  const changerModele = etapeDemandee === '2' || etapeDemandee === '3';
   // /creer?etape=fin : dernier écran (retour du lien de confirmation de l'accès, /essai/acces)
   const fin = etapeDemandee === 'fin';
   const pourClient = typeof siteDemande === 'string' && siteDemande.length > 0;
@@ -75,7 +75,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
     <Shell email={user.email ?? ''} anonyme={Boolean(user.is_anonymous)}>
       <Parcours
         siteId={site.id}
-        etapeInitiale={changerModele ? 2 : fin ? 7 : undefined}
+        etapeInitiale={changerModele ? 3 : fin ? 7 : undefined}
         verifInitiale={fin}
         messageInitial={typeof erreur === 'string' ? erreur.slice(0, 200) : null}
         version={site.updatedAt}

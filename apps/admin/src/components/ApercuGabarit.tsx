@@ -24,11 +24,30 @@ type Props = {
   replis: ReplisApercu;
   /** Dessin d'un soin (jeu visuel de la spécialité) */
   dessinSoin: (slug: string) => NomDessin;
+  /** Visuel du sujet n° 1 au premier écran (comme le site : PremierEcran), sinon le dessin du premier soin */
+  heros?: HerosApercu | null;
 };
+
+/** Visuel du sujet n° 1 (calculé par ApercuTheme) : illustration composée (SVG) ou photo du sujet */
+export type HerosApercu = { type: 'svg'; html: string; sombre: boolean } | { type: 'photo'; src: string };
+
+/** Héros du sujet n° 1 : SVG composé (fond plan dans le dessin en relevé) ou photo teintée */
+export function HerosVue({ h, rayon = 0 }: { h: HerosApercu; rayon?: number | string }) {
+  if (h.type === 'photo') {
+    return (
+      <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: rayon, overflow: 'hidden' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={h.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <span style={{ position: 'absolute', inset: 0, background: 'var(--g-vif, var(--accent))', mixBlendMode: 'multiply', opacity: 0.16 }} />
+      </div>
+    );
+  }
+  return <div className="ap-svg" style={{ width: '100%', height: '100%', borderRadius: rayon, overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: h.html }} />;
+}
 
 const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'], [/diab/, 'Diabétiques'], [/senior|chute/, 'Seniors']];
 
-export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin }: Props) {
+export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null }: Props) {
   const village = gabaritModele(m) === 'village';
   const revue = gabaritModele(m) === 'revue';
   const ROMAINS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
@@ -112,7 +131,11 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           {enLigne && r.aTelephone && <span style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 1.5px var(--g-encre)' }}>{tel}</span>}
         </div>
       </div>
-      {!mobile && soins[0] && (
+      {heros ? (
+        <figure style={{ margin: 0, ...(mobile ? {} : { paddingLeft: 40, borderLeft: '1px solid var(--g-figure)' }), aspectRatio: '3 / 4', maxHeight: mobile ? 360 : 520, '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)' } as CSSProperties}>
+          <HerosVue h={heros} />
+        </figure>
+      ) : !mobile && soins[0] && (
         <figure style={{ margin: 0, paddingLeft: 40, borderLeft: '1px solid var(--g-figure)' }}>
           {figure(soins[0].slug, { width: '100%', aspectRatio: '4 / 3' })}
         </figure>
@@ -121,6 +144,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   ) : village ? (
     <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gap: 18, paddingBlock: mobile ? 28 : 48 }}>
       {titreH1}
+      {heros && <div style={{ aspectRatio: '16 / 9', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-page)' }}><HerosVue h={heros} /></div>}
       <div style={{ display: 'grid', gap: 8 }}>
         <span style={ligne}>{pid('rendez-vous')}{noms.length ? `${noms.join(' et ')}, ${titre.toLowerCase()}` : nomCabinet}</span>
         <span style={ligne}>{pid('itineraire')}{adresse}</span>
@@ -143,7 +167,11 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           {enLigne && r.aTelephone && <span style={bouton(false)}>{tel}</span>}
         </div>
       </div>
-      {!mobile && soins[0] && (
+      {heros ? (
+        <div style={{ position: 'relative', aspectRatio: '1 / 1', width: '100%', maxWidth: mobile ? 340 : undefined, justifySelf: 'center', alignSelf: 'center', borderRadius: '50%', background: heros.type === 'svg' && heros.sombre ? 'var(--plan)' : 'var(--g-carte)', boxShadow: '0 0 0 10px var(--g-vif)', overflow: 'hidden', margin: 10 }}>
+          <div style={{ position: 'absolute', inset: heros.type === 'photo' ? 0 : heros.sombre ? '6%' : '12%', borderRadius: heros.type === 'photo' || heros.sombre ? '50%' : 0, overflow: 'hidden' }}><HerosVue h={heros} /></div>
+        </div>
+      ) : !mobile && soins[0] && (
         <div style={{ borderRadius: 'var(--rayon)', background: 'var(--g-vif)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-vif-texte)', '--dessin-accent': 'var(--g-vif-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '72%', height: '80%' }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: 'ligne' }) }} /></div>
       )}
     </section>

@@ -86,6 +86,8 @@ export type SiteConfig = {
     logoPerso?: { url: string; complet: boolean };
     /** Style visuel : 'illustrations' | 'photos' | 'mixte' (par défaut) */
     modeVisuel?: import('./draft').ModeVisuel;
+    /** Style d'illustration choisi par le praticien (propositions.ts) : le premier écran honore alors le registre du site */
+    styleIllustration?: 'releve' | 'pedagogique' | 'ligne' | 'photos';
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };
@@ -133,6 +135,8 @@ export type SiteConfig = {
   visuels: {
     specialite: string;
     animation: import('./packs').Animation | null;
+    /** Animation d'accueil choisie (proposition) : prioritaire sur celle du sujet n° 1 et de la spécialité */
+    animationAccueil?: import('./packs').Animation;
     photos: import('./packs').PackVisuel['photos'];
     /** Spécialité secondaire (facultative) : complète le jeu visuel (jeux.ts) */
     specialiteSecondaire?: string;

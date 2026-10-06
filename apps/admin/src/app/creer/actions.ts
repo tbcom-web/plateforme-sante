@@ -1,6 +1,6 @@
 'use server';
 
-import { validerPorteRendu, type SiteDraft } from '@plateforme/core';
+import { validerPorteRendu, type ReglagesSite, type SiteDraft } from '@plateforme/core';
 import { getRole } from '@/lib/admin';
 import { appliquerUniversAuSite } from '@/lib/univers';
 import { enregistrerEtPublier, enregistrerSite, type EtatEnregistrement } from '../mon-site/actions';
@@ -19,16 +19,17 @@ export async function sauvegarderParcours(id: string | null, draft: SiteDraft, v
 }
 
 /**
- * « Celui-là » : enregistre la saisie (crée le site au premier choix), puis applique le modèle choisi au brouillon
- * (appliquerUniversAuSite : identité conservée, verrou optimiste). Renvoie le brouillon obtenu.
+ * « Choisir ce site » : enregistre la saisie (crée le site au premier choix), puis applique la structure choisie au brouillon
+ * (appliquerUniversAuSite : identité conservée, verrou optimiste) et les réglages de la proposition (gamme, style
+ * d'illustration, animation). Renvoie le brouillon obtenu.
  */
-export async function choisirModele(id: string | null, draft: SiteDraft, version: string | null, universId: string): Promise<EtatParcours> {
+export async function choisirModele(id: string | null, draft: SiteDraft, version: string | null, universId: string, reglages?: Partial<ReglagesSite> & { proposition?: string | null }): Promise<EtatParcours> {
   const r = await enregistrerSite(id, draft, version);
   if (!r.ok || !r.id) return r;
   const admin = (await getRole()) === 'admin';
-  const a = await appliquerUniversAuSite(r.id, universId, { admin, version: r.version, parcours: true });
+  const a = await appliquerUniversAuSite(r.id, universId, { admin, version: r.version, parcours: true, ...(reglages ? { reglages } : {}) });
   if (!a.ok || !a.draft) return { ok: false, message: a.message, id: r.id, version: r.version };
-  return { ok: true, message: 'Modèle appliqué. Votre brouillon est enregistré.', id: r.id, version: a.version, draft: a.draft, soinsACocher: a.resultat?.soinsACocher };
+  return { ok: true, message: 'Site appliqué. Votre brouillon est enregistré.', id: r.id, version: a.version, draft: a.draft, soinsACocher: a.resultat?.soinsACocher };
 }
 
 /** « Publier mon site » : enregistre puis publie par le chemin existant (manques vérifiés pour le praticien) */

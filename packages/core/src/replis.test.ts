@@ -1,7 +1,7 @@
 // Replis du site publié (replis.ts) : mentions sobres à la place des informations manquantes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { avecVille, aVille, retirerTextesProvisoires, ligneSansProvisoire, telephoneUtilisable, adresseUtilisable, nomAffiche, soinsParDefaut, modeContact, replisApercu, titreSoins, REPLIS } from './replis';
+import { avecVille, aVille, retirerTextesProvisoires, ligneSansProvisoire, telephoneUtilisable, adresseUtilisable, nomAffiche, soinsParDefaut, soinsDeBase, SOINS_DE_BASE_MAX, modeContact, replisApercu, titreSoins, REPLIS } from './replis';
 
 test('jeton {ville} : remplacé, ou retiré avec sa préposition', () => {
   assert.equal(avecVille('Bilan podologique à {ville}', 'Lyon'), 'Bilan podologique à Lyon');
@@ -38,8 +38,20 @@ test('soins par défaut : univers, spécialité, sinon podologie générale', ()
   const catalogue = ['bilan-podologique', 'soins-de-pedicurie', 'semelles-orthopediques', 'podologie-du-sport', 'k-taping'];
   assert.deepEqual(soinsParDefaut({ specialite: 'generale' }, catalogue), ['bilan-podologique', 'soins-de-pedicurie', 'semelles-orthopediques']);
   assert.equal(soinsParDefaut({ specialite: 'sport' }, catalogue)[0], 'podologie-du-sport');
-  assert.deepEqual(soinsParDefaut({ soinsEnAvant: ['k-taping'], specialite: 'inconnue' }, catalogue), ['k-taping']);
+  // Acte spécialisé seul (k-taping) : jamais présenté d'office, repli sur la podologie générale
+  assert.deepEqual(soinsParDefaut({ soinsEnAvant: ['k-taping'], specialite: 'inconnue' }, catalogue), ['bilan-podologique', 'soins-de-pedicurie', 'semelles-orthopediques']);
+  assert.ok(!soinsParDefaut({ specialite: 'sport' }, catalogue).includes('k-taping'));
   assert.deepEqual(soinsParDefaut({ specialite: 'inconnue' }, catalogue), ['bilan-podologique', 'soins-de-pedicurie', 'semelles-orthopediques']);
+});
+
+test('soins par défaut du site = soins de base du parcours (jamais « Soins à domicile »)', () => {
+  const connus = ['pied-diabetique', 'cors-durillons', 'ongles-epais', 'soins-a-domicile', 'podologie-du-senior', 'soins-de-pedicurie', 'semelles-orthopediques', 'bilan-podologique'];
+  const priorites = { principaux: ['senior'], secondaires: ['diabete'] };
+  const defaut = soinsParDefaut({ specialite: 'soins', soinsEnAvant: ['soins-a-domicile', 'podologie-du-senior'], priorites }, connus);
+  assert.ok(!defaut.includes('soins-a-domicile'), defaut.join());
+  assert.ok(defaut.length <= SOINS_DE_BASE_MAX && defaut[0] === 'podologie-du-senior');
+  assert.deepEqual(defaut, soinsDeBase({ priorites }, connus));
+  assert.ok(!soinsParDefaut({ specialite: 'soins' }, connus).includes('soins-a-domicile'));
 });
 
 test('prise de rendez-vous effective', () => {

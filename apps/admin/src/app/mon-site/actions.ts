@@ -11,7 +11,7 @@ import { declencherPublication } from '@/lib/publication';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
 import { textesAConserver } from '@/lib/personnalisation';
 import { themesActives } from '@/lib/themes';
-import { prioritesSelectionnables, nettoyerHoraires, NOTE_HORAIRES_MAX, JOURS_SEMAINE } from '@plateforme/core';
+import { normaliserCouleursPreferees, prioritesSelectionnables, nettoyerHoraires, NOTE_HORAIRES_MAX, JOURS_SEMAINE } from '@plateforme/core';
 
 /** version : date de dernière modification du brouillon après l'enregistrement (verrou optimiste) ; conflit : modifié ailleurs. */
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string; version?: string; conflit?: boolean };
@@ -116,10 +116,17 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
       ...(Array.isArray(d.theme.soinsEnAvant) ? { soinsEnAvant: d.theme.soinsEnAvant.filter((s) => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 12) } : {}),
       ...(Array.isArray(d.theme.sections) ? { sections: d.theme.sections.filter((s) => (SECTIONS_ACCUEIL as readonly string[]).includes(s)).slice(0, SECTIONS_ACCUEIL.length) } : {}),
       ...(REGISTRES_MODELE.includes(d.theme.registre as never) ? { registre: d.theme.registre } : {}),
+      // Proposition choisie (propositions.ts) et réglages effectifs : style d'illustration, animation d'accueil (déjà
+      // contrôlés par normaliserDraft : valeurs connues, jamais l'animation de posture).
+      ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}),
+      ...(d.theme.animationAccueil ? { animationAccueil: d.theme.animationAccueil } : {}),
+      ...(d.theme.proposition ? { proposition: t(d.theme.proposition, 120) } : {}),
     },
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },
     photos: { accueil: photo(d.photos.accueil), panorama: photo(d.photos.panorama), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
     ...(Array.isArray(d.fichesConseils) ? { fichesConseils: d.fichesConseils.filter((f) => SUJETS_FICHES_CONSEILS.some((x) => x.id === f)).slice(0, 12) } : {}),
+    // Couleurs aimées (étape « Vos couleurs ») : identifiants connus, 3 au plus ; absentes = étape pas encore vue.
+    ...(d.couleursPreferees !== undefined ? { couleursPreferees: normaliserCouleursPreferees(d.couleursPreferees) ?? [] } : {}),
     soins: d.soins.filter((s) => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 30),
     // Hiérarchie du site : thèmes connus, 3 + 3 au plus, sans doublon ; thèmes différés refusés sauf drapeau THEMES_ACTIVES.
     priorites: prioritesSelectionnables(d.priorites, themesActives()),

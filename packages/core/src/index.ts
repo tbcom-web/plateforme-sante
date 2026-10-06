@@ -36,3 +36,4 @@ export * from './suivi-publication';
 export * from './heros-themes';
 export * from './essai';
 export * from './prospects';
+export * from './propositions';

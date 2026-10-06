@@ -3,6 +3,7 @@
 // mention sobre, jamais un crochet, un « à compléter » ou un champ vide. Fonctions pures, utilisées au chargement des
 // données du site (apps/sites/src/lib/supabase.ts) et dans les textes communs des gabarits (apps/sites/src/lib/textes.ts).
 import { SPECIALITES } from './packs';
+import { themeParId } from './themes';
 import { formaterTelephone, lienRdvPrecis } from './format';
 
 /** Mentions affichées à la place d'une information absente. Ton métier, sans promesse. */
@@ -64,14 +65,45 @@ export function adresseUtilisable(l: { adresse: string; codePostal: string; vill
 export const nomAffiche = (p: { prenom: string; nom: string }) => (ligneSansProvisoire(p.nom) ? `${ligneSansProvisoire(p.prenom)} ${ligneSansProvisoire(p.nom)}`.trim() : '');
 
 /**
- * Soins présentés quand aucune compétence n'est cochée : soins mis en avant par l'univers, sinon ceux de la spécialité
- * (et de la secondaire), sinon ceux de la podologie générale ; seulement ceux qui existent dans le catalogue.
+ * Soins jamais cochés d'office ni présentés par défaut : actes spécialisés ou prestations que tous les cabinets ne proposent
+ * pas (le praticien les coche lui-même s'il les pratique).
  */
-export function soinsParDefaut(o: { specialite?: string; specialiteSecondaire?: string; soinsEnAvant?: string[] }, catalogue: string[]): string[] {
+export const SOINS_SPECIALISES: readonly string[] = ['orthonyxie', 'onychoplastie', 'soins-a-domicile', 'k-taping', 'posturologie'];
+
+/** Nombre de soins de base (cochés d'office au parcours, présentés par défaut sur le site) */
+export const SOINS_DE_BASE_MAX = 4;
+
+/**
+ * Soins de base d'un cabinet, source unique du parcours (soinsDeBaseParcours, cochés d'office) et du site publié sans soin
+ * coché (soinsParDefaut) : 4 au plus, jamais d'acte spécialisé, présents au catalogue. Le soin « pivot » de chaque sujet
+ * principal d'abord, puis les autres soins des sujets ; sans sujet, les soins mis en avant (univers) puis ceux de la
+ * spécialité et de la secondaire.
+ */
+export function soinsDeBase(
+  o: { priorites?: { principaux: readonly string[]; secondaires: readonly string[] } | null; soinsEnAvant?: readonly string[]; specialite?: string; specialiteSecondaire?: string },
+  catalogue: readonly string[],
+  max = SOINS_DE_BASE_MAX,
+): string[] {
+  const base = (l: readonly string[]) => l.filter((s) => !SOINS_SPECIALISES.includes(s) && catalogue.includes(s));
   const de = (v?: string) => SPECIALITES.find((s) => s.value === v)?.soins ?? [];
-  const candidats = [...(o.soinsEnAvant ?? []), ...de(o.specialite), ...de(o.specialiteSecondaire)];
-  const retenus = [...new Set(candidats)].filter((s) => catalogue.includes(s));
-  return retenus.length ? retenus : de('generale').filter((s) => catalogue.includes(s));
+  const p = o.priorites;
+  const theme = (id: string) => { const t = themeParId(id); return t && t.statut === 'actif' ? t : undefined; };
+  const duTheme = base([...(p?.principaux ?? []), ...(p?.secondaires ?? [])].flatMap((id) => theme(id)?.soins ?? []));
+  const suggeres = duTheme.length ? duTheme : base([...(o.soinsEnAvant ?? []), ...de(o.specialite), ...de(o.specialiteSecondaire)]);
+  const pivots = (p?.principaux ?? []).map((id) => base(theme(id)?.soins ?? []).find((s) => suggeres.includes(s))).filter((s): s is string => Boolean(s));
+  return [...new Set([...pivots, ...suggeres])].slice(0, max);
+}
+
+/**
+ * Soins présentés quand aucune compétence n'est cochée : les mêmes soins de base que ceux cochés d'office au parcours
+ * (soinsDeBase : jamais « Soins à domicile » ni un autre acte spécialisé), sinon ceux de la podologie générale.
+ */
+export function soinsParDefaut(
+  o: { specialite?: string; specialiteSecondaire?: string; soinsEnAvant?: readonly string[]; priorites?: { principaux: readonly string[]; secondaires: readonly string[] } | null },
+  catalogue: readonly string[],
+): string[] {
+  const retenus = soinsDeBase(o, catalogue);
+  return retenus.length ? retenus : soinsDeBase({ specialite: 'generale' }, catalogue);
 }
 
 /** Prise de rendez-vous effective : en ligne (lien précis), par téléphone, par e-mail, sinon au cabinet. */

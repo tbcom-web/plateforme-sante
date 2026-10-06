@@ -226,7 +226,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
 
   // Soins cochés (à défaut : ceux de l'univers ou de la spécialité), dans l'ordre du catalogue ; ceux mis en avant par
   // l'univers passent devant (theme.soinsEnAvant).
-  const slugsSoins = d.soins.length ? d.soins : soinsParDefaut(d.theme, catalogue.map((c) => c.slug));
+  const slugsSoins = d.soins.length ? d.soins : soinsParDefaut({ ...d.theme, priorites: d.priorites }, catalogue.map((c) => c.slug));
   const soins: Soin[] = ordonnerSoins(catalogue
     .filter((c) => slugsSoins.includes(c.slug))
     .map((c) => ({
@@ -312,7 +312,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       tarifs: [],
     },
     rdv: { url: rdvCabinet, plateforme: d.rdv.outil },
-    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, mise_en_page: 'sobre', style_images: 'minimal' },
+    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
       texte: `${enPhrase(titreMetier, lieuExercice)} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
@@ -353,7 +353,9 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
     textes: validerPersonnalisation(d.perso.textes, Boolean(s.options?.edition)).textes,
     visuels: {
       specialite: pack.value,
-      animation: d.theme.animation ? pack.animation : null,
+      // Animation choisie (proposition, structure Technique) prioritaire sur celle de la spécialité ; case décochée : aucune
+      animation: d.theme.animation ? (d.theme.animationAccueil ?? pack.animation) : null,
+      ...(d.theme.animation && d.theme.animationAccueil ? { animationAccueil: d.theme.animationAccueil } : {}),
       photos: visuelsSpecialite.photos,
       // Jeu visuel (jeux.ts) : secondaire et personnalisations de l'admin, recombinées au build.
       ...(d.theme.specialiteSecondaire ? { specialiteSecondaire: d.theme.specialiteSecondaire } : {}),

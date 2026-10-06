@@ -51,7 +51,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
           </span>
         </div>
       )}
-      <Editeur siteId={site.id} version={site.updatedAt} publicationEnCours={etatPublication(site.publication.etat, site.publication.debut)?.cle === 'en_cours'} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} lienChangerModele={pourClient ? `/creer?site=${site.id}&etape=2` : '/creer?etape=2'} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} themesActives={themesActives()} essai={essai} masquerSujetsIndisponibles={!admin} />
+      <Editeur siteId={site.id} version={site.updatedAt} publicationEnCours={etatPublication(site.publication.etat, site.publication.debut)?.cle === 'en_cours'} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} lienChangerModele={pourClient ? `/creer?site=${site.id}&etape=3` : '/creer?etape=3'} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} themesActives={themesActives()} essai={essai} masquerSujetsIndisponibles={!admin} />
     </Shell>
   );
 }
