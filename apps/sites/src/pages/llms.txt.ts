@@ -34,7 +34,7 @@ export const GET: APIRoute = () => {
     '',
     // Sujets choisis par le praticien (principaux dans son ordre, puis secondaires) : pages de thème
     ...(themesDuSite.length ? ['## Sujets du cabinet', '', ...themesDuSite.map((t) => lien(pageTheme(t).titre, md(t.href), t.theme.description)), ''] : []),
-    '## Compétences',
+    '## Soins',
     '',
     ...site.soins.map((s) => lien(s.titre, md(`/soins/${s.slug}`), s.resume)),
     ...(site.articles.length

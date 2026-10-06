@@ -1,7 +1,7 @@
 // Replis du site publié (replis.ts) : mentions sobres à la place des informations manquantes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { avecVille, aVille, retirerTextesProvisoires, ligneSansProvisoire, telephoneUtilisable, adresseUtilisable, nomAffiche, soinsParDefaut, modeContact } from './replis';
+import { avecVille, aVille, retirerTextesProvisoires, ligneSansProvisoire, telephoneUtilisable, adresseUtilisable, nomAffiche, soinsParDefaut, modeContact, replisApercu, titreSoins, REPLIS } from './replis';
 
 test('jeton {ville} : remplacé, ou retiré avec sa préposition', () => {
   assert.equal(avecVille('Bilan podologique à {ville}', 'Lyon'), 'Bilan podologique à Lyon');
@@ -56,4 +56,35 @@ test('lieu d’exercice sans ville : jamais de « à » orphelin', async () => {
   assert.equal(lieuEnClair('', 'Lyon'), 'à Lyon');
   assert.equal(lieuCourt('', ''), '');
   assert.equal(lieuCourt('Brotteaux', ''), 'quartier Brotteaux');
+});
+
+test('aperçu de l’admin : mêmes replis que le site (ville, adresse, téléphone, rendez-vous)', () => {
+  const vide = { pays: 'FR', cabinet: { nom: '', ville: '', telephone: '', email: '' }, lieux: [{ nom: '', adresse: '', codePostal: '', ville: '' }], praticiens: [{ prenom: '', nom: '' }], rdv: { mode: 'les_deux', url: '' } };
+  const r = replisApercu(vide);
+  assert.equal(r.ville, '');
+  assert.equal(r.titreCabinet, 'Cabinet de pédicurie-podologie');
+  assert.equal(r.adresse, REPLIS.adresse);
+  assert.equal(r.aTelephone, false);
+  assert.equal(r.telephone, '');
+  assert.equal(r.rdvEnLigne, false);
+  assert.equal(r.libelleContact, REPLIS.rdvCabinet);
+  assert.equal(r.nomCabinet, REPLIS.nomCabinet);
+  // Téléphone incomplet : jamais « Appeler le 0494123 »
+  assert.equal(replisApercu({ ...vide, cabinet: { ...vide.cabinet, telephone: '0494123' } }).telephone, '');
+  const plein = replisApercu({
+    ...vide,
+    cabinet: { nom: '', ville: 'Lyon', telephone: '0478000000', email: '' },
+    lieux: [{ nom: '', adresse: '1 rue A', codePostal: '69006', ville: 'Lyon' }],
+    praticiens: [{ prenom: 'Camille', nom: 'Rousseau' }],
+    rdv: { mode: 'les_deux', url: 'https://www.doctolib.fr/podologue/lyon/camille-rousseau', outil: 'Doctolib' },
+  });
+  assert.equal(plein.titreCabinet, 'Cabinet de pédicurie-podologie à Lyon');
+  assert.equal(plein.adresse, '1 rue A, 69006 Lyon');
+  assert.equal(plein.telephone, '04 78 00 00 00');
+  assert.equal(plein.rdvEnLigne, true);
+  assert.equal(plein.nomCabinet, 'Cabinet de Camille Rousseau');
+  // Lien vers l'accueil de la plateforme : pas de réservation en ligne, le bouton passe sur « Appeler »
+  assert.equal(replisApercu({ ...vide, cabinet: { ...vide.cabinet, telephone: '0478000000' }, rdv: { mode: 'les_deux', url: 'https://www.doctolib.fr/' } }).libelleMenu, 'Appeler');
+  assert.equal(titreSoins('je'), 'Mes soins');
+  assert.equal(titreSoins('tiers'), 'Soins du cabinet');
 });

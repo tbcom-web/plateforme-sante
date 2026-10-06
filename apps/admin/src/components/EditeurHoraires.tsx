@@ -48,10 +48,15 @@ const court = (j: string) => `${j.slice(0, 3)}.`;
 /** Choix d'heure : la liste au quart d'heure, plus la valeur actuelle si elle n'y est pas (ancien horaire). */
 function ChoixHeure({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   const options = HEURES_CHOIX.some((o) => o.value === value) ? HEURES_CHOIX : [{ value, label: formaterHeure(value) }, ...HEURES_CHOIX];
+  const id = useId();
+  // Étiquette associée (<label for>), lue par les lecteurs d'écran et la commande vocale ; masquée à l'écran.
   return (
-    <select aria-label={label} className={selection} value={value} onChange={(e) => onChange(e.target.value)}>
-      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
+    <>
+      <label htmlFor={id} className="sr-only">{label}</label>
+      <select id={id} className={selection} value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </>
   );
 }
 
@@ -90,9 +95,9 @@ function Jour({ jour, plages, alertes, onPlages, onCopier, autres }: {
         <>
           {plages.map((p, i) => (
             <div key={i} className="flex items-center gap-2">
-              <ChoixHeure label={`${jour}, plage ${i + 1} : début`} value={p.debut} onChange={(v) => majPlage(i, { debut: v })} />
+              <ChoixHeure label={`${jour}, plage ${i + 1} : heure de début`} value={p.debut} onChange={(v) => majPlage(i, { debut: v })} />
               <span aria-hidden="true" className="text-neutral-500">–</span>
-              <ChoixHeure label={`${jour}, plage ${i + 1} : fin`} value={p.fin} onChange={(v) => majPlage(i, { fin: v })} />
+              <ChoixHeure label={`${jour}, plage ${i + 1} : heure de fin`} value={p.fin} onChange={(v) => majPlage(i, { fin: v })} />
               {plages.length > 1 && (
                 <button type="button" aria-label={`Retirer la plage ${i + 1} du ${jour.toLowerCase()}`} className={`grid size-11 shrink-0 place-items-center rounded-lg text-xl text-neutral-500 hover:bg-neutral-100 ${focus}`} onClick={() => onPlages(plages.filter((_, j) => j !== i))}>
                   ×

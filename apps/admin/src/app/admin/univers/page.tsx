@@ -69,7 +69,7 @@ export default async function PageUnivers() {
               <p className="text-neutral-700">{u.pourQui}</p>
               {fiche && u.statut !== 'differe' && (
                 <div className="overflow-hidden rounded-lg ring-1 ring-black/5">
-                  <ApercuTheme draft={d} modele={modeleDuSite(fiche, d.theme)} catalogue={catalogue} marquesImportees={marquesImportees} />
+                  <ApercuTheme technique draft={d} modele={modeleDuSite(fiche, d.theme)} catalogue={catalogue} marquesImportees={marquesImportees} />
                 </div>
               )}
               <p className="text-xs text-neutral-600"><strong>Pourquoi :</strong> {u.justification}</p>

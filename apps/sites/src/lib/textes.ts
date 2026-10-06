@@ -1,6 +1,6 @@
 // Phrases du site accordées à la voix choisie (je / nous / 3e personne) et au nombre de praticiens.
 import { site } from './site';
-import { lieuEnClair, lieuCourt, lienRdvPrecis, REPLIS, aVille, telephoneUtilisable, modeContact, horairesRenseignes, regrouperHoraires, lignesHoraires, mentionsHoraires, libelleJours as libelleJoursCore, type Horaire } from '@plateforme/core';
+import { lieuEnClair, lieuCourt, lienRdvPrecis, REPLIS, titreSoins, aVille, telephoneUtilisable, modeContact, horairesRenseignes, regrouperHoraires, lignesHoraires, mentionsHoraires, libelleJours as libelleJoursCore, type Horaire } from '@plateforme/core';
 
 const enListe = (mots: string[]) =>
   mots.length > 1 ? `${mots.slice(0, -1).join(', ')} et ${mots.at(-1)}` : mots[0] ?? '';
@@ -41,8 +41,11 @@ export const phraseAccueil = (() => {
   return `${noms}, ${titreMetierPluriel}, accueille${pluriel ? 'nt' : ''} ${pluriel ? 'leurs' : 'ses'} patients${ou}.`;
 })();
 
-/** « Nos compétences » / « Mes compétences » / « Les compétences du cabinet ». */
-export const titreCompetences = site.voix === 'je' ? 'Mes compétences' : site.voix === 'nous' ? 'Nos compétences' : 'Compétences du cabinet';
+/**
+ * Titre des pages et sections « Soins » (même mot que le menu, côté patient) : « Mes soins », « Nos soins », « Soins du
+ * cabinet ». Nom historique conservé pour les imports.
+ */
+export const titreCompetences = titreSoins(site.voix);
 
 export const titrePraticiens = pluriel ? 'Les praticiens' : site.voix === 'je' ? 'Votre praticien' : 'Le praticien';
 

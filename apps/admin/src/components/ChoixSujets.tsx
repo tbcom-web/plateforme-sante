@@ -32,10 +32,15 @@ type Props = {
   themesActives?: readonly string[];
   /** Montrer la fiche conseil (parcours : déjà affichée par l'étape) */
   conseils?: boolean;
+  /**
+   * Praticien et lead : les sujets différés (faible niveau de preuve, ex. posture) ne sont pas montrés du tout ; l'admin les
+   * voit grisés « bientôt disponible », ou sélectionnables si le drapeau THEMES_ACTIVES les active.
+   */
+  masquerIndisponibles?: boolean;
 };
 
-export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, themesActives = [], conseils = false }: Props) {
-  const proposes = themesProposes(themesActives);
+export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, themesActives = [], conseils = false, masquerIndisponibles = false }: Props) {
+  const proposes = themesProposes(themesActives).filter((t) => t.disponible || !masquerIndisponibles);
   const plein = priorites.principaux.length >= PRINCIPAUX_MAX;
   // Aperçu : soins cochés, sinon ceux des sujets (que le praticien confirmera à l'étape « Vos soins »)
   const soinsApercu = (soins.length ? soins : soinsDesPriorites(priorites, soinsConnus)).map((slug) => ({ slug }));

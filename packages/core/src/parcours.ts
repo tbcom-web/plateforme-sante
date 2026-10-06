@@ -14,7 +14,7 @@ import { GAMMES, variantesGamme, type Gamme } from './gammes';
 import type { ModeleManifeste } from './modeles';
 import type { Horaire } from './types';
 import { horaireDe, lirePlages, plagesDe } from './horaires';
-import { appliquerPriorites, soinsDesPriorites, soinsEnAvantDesPriorites, universDesPriorites } from './themes';
+import { appliquerPriorites, soinsDesPriorites, soinsEnAvantDesPriorites, themeParId, universDesPriorites } from './themes';
 
 /**
  * Les quatre modèles du parcours, dans l'ordre d'affichage : quatre sites vraiment différents, personnalisables par les
@@ -127,7 +127,7 @@ export function natureCouleur(theme: Pick<SiteDraft['theme'], 'gamme'>, m: Pick<
   return gammesConseillees(m).some((g) => g.id === theme.gamme) ? 'conseillee' : 'autre';
 }
 
-// ---- Étape 5 : soins ----
+// ---- Étape 6 : soins ----
 
 /** Soins mis en avant dans le parcours (les plus visibles de l'accueil) */
 export const SOINS_EN_AVANT_MAX = 3;
@@ -179,7 +179,7 @@ export function placerSoin(enAvant: readonly string[], slug: string, vers: numbe
   return liste;
 }
 
-// ---- Étape 4 : horaires simplifiés ----
+// ---- Étape 5 : horaires simplifiés ----
 
 export const FERME = 'Fermé';
 export const HEURES_PAR_DEFAUT = '9h00–12h30, 14h00–19h00';
@@ -207,7 +207,7 @@ export function appliquerHorairesSimplifies(jours: readonly string[], heures: st
 // ---- Étapes, aide et reprise ----
 
 export type EtapeParcours = {
-  numero: 1 | 2 | 3 | 4 | 5 | 6;
+  numero: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   titre: string;
   /** Une phrase : ce que le praticien fait à cette étape */
   consigne: string;
@@ -218,7 +218,7 @@ export type EtapeParcours = {
 };
 
 /**
- * Les six étapes. « Vos sujets » vient en premier : c'est la question la plus simple pour le praticien (« ce que je fais »)
+ * Les sept étapes. « Vos sujets » vient en premier : c'est la question la plus simple pour le praticien (« ce que je fais »)
  * et elle règle tout le reste — modèle recommandé (thème n° 1), spécialité des illustrations, soins suggérés, accueil et
  * menus. Les aperçus des modèles de l'étape 2 montrent donc déjà le bon menu.
  */
@@ -233,7 +233,7 @@ export const ETAPES_PARCOURS: EtapeParcours[] = [
   {
     numero: 2,
     titre: 'Choisissez votre site',
-    consigne: 'Quatre sites prêts à l’emploi. Choisissez celui qui ressemble le plus à votre cabinet ; vous pourrez en changer.',
+    consigne: 'Choisissez le site qui ressemble le plus à votre cabinet. Vous pourrez en changer plus tard.',
     recommandation: 'Le site mis en avant convient à la plupart des cabinets comme le vôtre.',
     aide: [['Photos et style', 'Style du site']],
   },
@@ -247,25 +247,46 @@ export const ETAPES_PARCOURS: EtapeParcours[] = [
   {
     numero: 4,
     titre: 'Votre cabinet',
-    consigne: 'Vérifiez les informations essentielles : elles s’affichent sur toutes les pages.',
-    recommandation: 'Recopiez le n° d’Ordre et le lien de rendez-vous tels quels.',
-    aide: [['Praticiens', 'N° d’Ordre et RPPS'], ['Rendez-vous et infos', 'Lien de rendez-vous'], ['Horaires', 'Cohérence']],
+    consigne: 'Vos coordonnées : elles s’affichent sur toutes les pages. Le reste peut attendre.',
+    recommandation: 'Recopiez le lien de rendez-vous tel quel, depuis la page de votre agenda en ligne.',
+    aide: [['Rendez-vous et infos', 'Lien de rendez-vous'], ['Praticiens', 'N° d’Ordre et RPPS']],
   },
   {
     numero: 5,
-    titre: 'Vos soins et votre image',
-    consigne: 'Confirmez les soins que vous pratiquez, puis ajoutez un portrait et un logo si vous le souhaitez.',
-    recommandation: 'Gardez les soins suggérés que vous pratiquez chaque semaine, et la marque proposée si vous n’avez pas de logo.',
-    aide: [['Compétences', 'Choix'], ['Compétences', 'Ordre'], ['Praticiens', 'Portrait'], ['Photos et style', 'Logo']],
+    titre: 'Vos horaires',
+    consigne: 'Indiquez les jours et heures d’ouverture du cabinet. Sans horaires, le site affiche « Sur rendez-vous ».',
+    recommandation: 'Les mêmes heures pour tous les jours ouverts suffisent pour commencer.',
+    aide: [['Horaires', 'Cohérence']],
   },
   {
     numero: 6,
+    titre: 'Vos soins et votre image',
+    consigne: 'Cochez les soins que vous pratiquez, puis ajoutez un portrait et un logo si vous le souhaitez.',
+    recommandation: 'Quelques soins de base sont cochés d’après vos sujets : ajoutez ceux que vous pratiquez chaque semaine.',
+    aide: [['Compétences', 'Choix'], ['Compétences', 'Ordre'], ['Praticiens', 'Portrait'], ['Photos et style', 'Logo']],
+  },
+  {
+    numero: 7,
     titre: 'Vos contenus',
     consigne: 'Choisissez les articles et les fiches conseils proposés à vos patients, puis vérifiez avant de publier.',
     recommandation: 'Commencez par valider vous-même chaque article.',
     aide: [['Compétences', 'Actualités']],
   },
 ];
+
+/**
+ * Message d'accompagnement de l'essai, juste selon la progression réelle : étapes restant APRÈS l'écran courant
+ * (jamais « Bien avancé » au début du parcours).
+ */
+export function encouragementParcours(etape: number, verification: boolean, prenom = '', total = ETAPES_PARCOURS.length): string {
+  if (verification) return 'Dernière étape : découvrez votre site.';
+  if (etape <= 1) return `Bienvenue${prenom ? ` ${prenom}` : ''} : quelques questions courtes, environ 10 minutes. Tout est enregistré au fur et à mesure.`;
+  const apres = total - etape;
+  if (apres <= 0) return 'Dernière étape avant de voir votre site.';
+  if (apres <= 2) return `Presque terminé : encore ${apres === 1 ? 'une étape' : 'deux étapes'} après celle-ci.`;
+  if (etape * 2 > total) return `Plus de la moitié est faite : encore ${apres} étapes après celle-ci.`;
+  return `Encore ${apres} étapes courtes après celle-ci. Tout est enregistré au fur et à mesure.`;
+}
 
 /** Aide courte d'une étape : points des fiches conseils (même texte que le formulaire complet) */
 export function aideEtape(numero: number): { titre: string; conseil: string; exemple?: string }[] {
@@ -282,15 +303,49 @@ export const MANQUE_IDENTITE = /ville|téléphone|adresse|Code postal|praticien|
 
 /**
  * Étape où reprendre la création : sans modèle du parcours, 1 (aucun sujet choisi) ou 2 ; 4 si l'identité est à
- * compléter, 5 sans soin, sinon 6. (L'étape 3 a une valeur par défaut : la gamme du modèle.)
+ * compléter, 6 sans soin, sinon 7. (L'étape 3 a une valeur par défaut : la gamme du modèle ; l'étape 5, les horaires,
+ * a un repli « Sur rendez-vous ».)
  */
-export function etapeDeReprise(d: SiteDraft): 1 | 2 | 4 | 5 | 6 {
+export function etapeDeReprise(d: SiteDraft): 1 | 2 | 4 | 6 | 7 {
   if (!d.theme.univers || !(UNIVERS_PARCOURS as readonly string[]).includes(d.theme.univers)) return d.priorites?.principaux.length ? 2 : 1;
   // Plus rien ne bloque la publication : on reprend à l'identité si une information y est remplacée par un repli.
   const { remplacements } = controlerPublication(d);
   if (remplacements.some((b) => MANQUE_IDENTITE.test(b) && !/compétence|Horaires/i.test(b))) return 4;
-  if (!d.soins.length) return 5;
-  return 6;
+  if (!d.soins.length) return 6;
+  return 7;
+}
+
+/**
+ * Progression enregistrée pour la conseillère (noter_progression_essai, migration 0023) : la base borne la valeur à
+ * 0..7 (1 à 6 = jalons du parcours, 7 = vérification atteinte). Le parcours a 7 étapes depuis que les horaires ont leur
+ * propre écran : l'étape 5 « Vos horaires » compte comme le jalon 4 (« Votre cabinet »), les étapes 6 et 7 comme les
+ * jalons 5 et 6. Les valeurs déjà enregistrées gardent leur sens (5 = soins, 6 = contenus) et le SQL n'est pas modifié.
+ */
+export function jalonProgressionEssai(etape: number, verification: boolean): number {
+  if (verification) return 7;
+  const n = Math.max(0, Math.min(ETAPES_PARCOURS.length, Math.round(etape)));
+  return n <= 4 ? n : n - 1;
+}
+
+/**
+ * Soins jamais cochés d'office : actes spécialisés ou prestations que tous les cabinets ne proposent pas (le praticien
+ * les coche lui-même s'il les pratique).
+ */
+export const SOINS_SPECIALISES: readonly string[] = ['orthonyxie', 'onychoplastie', 'soins-a-domicile', 'k-taping', 'posturologie'];
+
+/** Nombre de soins cochés d'office au parcours (soins de base des sujets) */
+export const SOINS_DE_BASE_MAX = 4;
+
+/**
+ * Soins cochés d'office à l'étape « Vos soins » : 4 soins de base au plus tirés des sujets (le soin pivot de chaque sujet
+ * principal d'abord), sans acte spécialisé ; sans sujet, ceux du modèle. Les autres soins des sujets restent proposés,
+ * non cochés.
+ */
+export function soinsDeBaseParcours(d: Pick<SiteDraft, 'priorites'>, u: Pick<Univers, 'preReglage'> | undefined, soinsConnus: readonly string[], max = SOINS_DE_BASE_MAX): string[] {
+  const base = (l: readonly string[]) => l.filter((s) => !SOINS_SPECIALISES.includes(s));
+  const suggeres = base(soinsSuggeresParcours(d, u, soinsConnus));
+  const pivots = (d.priorites?.principaux ?? []).map((id) => base(themeParId(id)?.soins ?? []).find((s) => suggeres.includes(s))).filter((s): s is string => Boolean(s));
+  return [...new Set([...pivots, ...suggeres])].slice(0, max);
 }
 
 /** Fiches conseils connues, dans l'ordre du catalogue, sans doublon */

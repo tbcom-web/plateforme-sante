@@ -25,7 +25,7 @@ const { soin } = Astro.props as { soin: Soin };
 const path = `/soins/${soin.slug}`;
 const crumbs = [
   { name: 'Accueil', path: '/' },
-  { name: 'Compétences', path: '/soins' },
+  { name: 'Soins', path: '/soins' },
   { name: soin.titreCourt, path },
 ];
 const deux = (n: number) => String(n).padStart(2, '0');

@@ -20,7 +20,7 @@ import type { Soin } from '@plateforme/core';
 const groupes = navigation.groupesSoins.map((g) => ({ ...g, liste: g.soins.map(soinDuSite).filter((s): s is Soin => Boolean(s)) }));
 const groupe = groupes.length > 1;
 
-const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }];
+const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Soins', path: '/soins' }];
 const total = String(site.soins.length).padStart(2, '0');
 // Visuel d'en-tête : celui du bilan (examen qui ouvre toute prise en charge), sans animation.
 const bilan = visuelSoin('bilan-podologique');

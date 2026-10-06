@@ -1,6 +1,6 @@
 'use client';
 
-// Écrans des étapes 3 à 6 du parcours guidé (/creer ; l'étape 1 « Vos sujets » est components/ChoixSujets.tsx, la 2 dans Parcours.tsx) et vérification avant publication. Peu d'information à la fois,
+// Écrans des étapes 3 à 7 du parcours guidé (/creer ; l'étape 1 « Vos sujets » est components/ChoixSujets.tsx, la 2 dans Parcours.tsx) et vérification avant publication. Peu d'information à la fois,
 // une recommandation par défaut, libellés explicites ; les champs avancés restent dans le formulaire complet (/mon-site).
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import Link from 'next/link';
@@ -39,6 +39,8 @@ import {
   type SiteDraft,
   type Univers,
   themeParId,
+  horairesRenseignes,
+  soinsParDefaut,
 } from '@plateforme/core';
 import Photo from '@/components/Photo';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
@@ -209,68 +211,46 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
   const majLieu = (patch: Partial<typeof lieu>) => maj({ lieux: d.lieux.map((l, j) => (j === 0 ? { ...l, ...patch } : l)) });
   const majPraticien = (i: number, patch: Partial<PraticienDraft>) => maj({ praticiens: d.praticiens.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
   const idRdv = useId();
-  const reste = controle.remplacements.filter((b) => !/compétence/i.test(b));
+  const reste = controle.remplacements.filter((b) => !/compétence|Horaires/i.test(b));
+
+  const p0 = d.praticiens[0];
+  const majVille = (v: string) => maj({ lieux: d.lieux.map((l, j) => (j === 0 ? { ...l, ville: v } : l)), cabinet: { ...d.cabinet, ville: !d.cabinet.ville || d.cabinet.ville === lieu.ville ? v : d.cabinet.ville } });
+  // Identifiants professionnels d'un praticien (facultatifs, repliés dans « Compléter plus tard »)
+  const identifiants = (p: PraticienDraft, i: number) => (
+    <>
+      {d.pays === 'FR' && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Champ montrer={montrer} label="N° d’inscription à l’Ordre (facultatif)" aide="9 chiffres, sur annuaire.sante.fr" inputMode="numeric" value={p.numeroOrdre} onChange={(v) => majPraticien(i, { numeroOrdre: v.replace(/\D/g, '').slice(0, 11) })} avertissements={controle.conseils.filter((c) => /Ordre/.test(c) && c.includes(`(${qui(p, i)})`))} />
+          <Champ montrer={montrer} label="N° RPPS (facultatif)" aide="11 chiffres" inputMode="numeric" value={p.rpps} onChange={(v) => majPraticien(i, { rpps: v.replace(/\D/g, '').slice(0, 11) })} avertissements={controle.conseils.filter((c) => /^(Le RPPS|Vérifier le RPPS)/.test(c) && c.includes(`(${qui(p, i)})`))} />
+        </div>
+      )}
+      {d.pays === 'BE' && <Champ montrer={montrer} label="N° INAMI (facultatif)" placeholder="5-12345-12-123" value={p.inami} onChange={(v) => majPraticien(i, { inami: v })} avertissements={filtre(/INAMI/, qui(p, i))} />}
+      {d.pays === 'CH' && <Champ montrer={montrer} label="N° RCC / ZSR (facultatif)" value={p.rcc} onChange={(v) => majPraticien(i, { rcc: v })} />}
+    </>
+  );
 
   return (
     <>
+      {/* « Vous » d'abord : les quatre informations qui font le site (nom, ville, téléphone) */}
+      <fieldset className={carte}>
+        <legend className="sr-only">Vous</legend>
+        <p className="text-lg font-semibold">Vous</p>
+        {p0 && (
+          <div className="grid grid-cols-2 gap-3">
+            <Champ montrer={montrer} label="Prénom" autoComplete="given-name" value={p0.prenom} onChange={(v) => majPraticien(0, { prenom: v })} avertissements={filtre(/^Prénom non renseigné/, qui(p0, 0), true)} />
+            <Champ montrer={montrer} label="Nom" autoComplete="family-name" value={p0.nom} onChange={(v) => majPraticien(0, { nom: v })} avertissements={[...filtre(/^Nom de famille/, qui(p0, 0)), ...filtre(/^Aucun praticien nommé/)]} />
+          </div>
+        )}
+        <Champ montrer={montrer} label="Ville du cabinet" autoComplete="address-level2" value={lieu.ville} onChange={majVille} avertissements={filtre(/^Ville/, undefined, true)} />
+        <Champ montrer={montrer} label="Téléphone du cabinet" type="tel" inputMode="tel" autoComplete="tel" value={d.cabinet.telephone} onChange={(v) => maj({ cabinet: { ...d.cabinet, telephone: v } })} avertissements={filtre(/^Téléphone/)} aide="Sans numéro complet, le site n’affiche pas de bouton « Appeler »." />
+      </fieldset>
+
       <fieldset className={carte}>
         <legend className="sr-only">Le cabinet</legend>
         <p className="text-lg font-semibold">Le cabinet</p>
-        <Champ montrer={montrer} label="Nom du cabinet (facultatif)" aide="À défaut, « Cabinet de » suivi du nom des praticiens." value={d.cabinet.nom} onChange={(v) => maj({ cabinet: { ...d.cabinet, nom: v } })} avertissements={filtre(/Nom du cabinet/)} />
         <Champ montrer={montrer} label="Adresse" autoComplete="street-address" value={lieu.adresse} onChange={(v) => majLieu({ adresse: v })} avertissements={filtre(/^Adresse incomplète/)} />
-        <div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-3">
-          <Champ montrer={montrer} label="Code postal" inputMode="numeric" autoComplete="postal-code" value={lieu.codePostal} onChange={(v) => majLieu({ codePostal: v.replace(/[^\dA-Za-z -]/g, '').slice(0, 10) })} avertissements={filtre(/Code postal/)} />
-          <Champ
-            montrer={montrer}
-            label="Ville"
-            autoComplete="address-level2"
-            value={lieu.ville}
-            onChange={(v) => maj({ lieux: d.lieux.map((l, j) => (j === 0 ? { ...l, ville: v } : l)), cabinet: { ...d.cabinet, ville: !d.cabinet.ville || d.cabinet.ville === lieu.ville ? v : d.cabinet.ville } })}
-            avertissements={filtre(/^Ville/, undefined, true)}
-          />
-        </div>
-        <SuggestionsVoisinage d={d} maj={maj} avecChamps />
-        <Champ montrer={montrer} label="Téléphone du cabinet" type="tel" autoComplete="tel" value={d.cabinet.telephone} onChange={(v) => maj({ cabinet: { ...d.cabinet, telephone: v } })} avertissements={filtre(/^Téléphone/)} />
-      </fieldset>
-
-      <fieldset className={carte}>
-        <legend className="sr-only">Praticiens</legend>
-        <p className="text-lg font-semibold">{d.praticiens.length > 1 ? 'Les praticiens' : 'Le praticien'}</p>
-        {d.praticiens.map((p, i) => (
-          <div key={p.id} className="grid gap-3 rounded-xl bg-neutral-50 p-3">
-            <div className="flex items-center justify-between">
-              <p className="font-medium">{d.praticiens.length > 1 ? `Praticien ${i + 1}` : 'Vous'}</p>
-              {d.praticiens.length > 1 && (
-                <button type="button" className={`min-h-11 rounded px-2 text-sm text-red-700 ${focus}`} onClick={() => maj({ praticiens: d.praticiens.filter((_, j) => j !== i) })}>
-                  Retirer
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Champ montrer={montrer} label="Prénom" autoComplete="given-name" value={p.prenom} onChange={(v) => majPraticien(i, { prenom: v })} avertissements={filtre(/^Prénom non renseigné/, qui(p, i), true)} />
-              <Champ montrer={montrer} label="Nom" autoComplete="family-name" value={p.nom} onChange={(v) => majPraticien(i, { nom: v })} avertissements={[...filtre(/^Nom de famille/, qui(p, i)), ...(i === 0 ? filtre(/^Aucun praticien nommé/) : [])]} />
-            </div>
-            {d.pays === 'FR' && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Champ montrer={montrer} label="N° d’inscription à l’Ordre" aide="9 chiffres, sur annuaire.sante.fr" inputMode="numeric" value={p.numeroOrdre} onChange={(v) => majPraticien(i, { numeroOrdre: v.replace(/\D/g, '').slice(0, 11) })} avertissements={controle.conseils.filter((c) => /Ordre/.test(c) && c.includes(`(${qui(p, i)})`))} />
-                <Champ montrer={montrer} label="N° RPPS (facultatif)" aide="11 chiffres" inputMode="numeric" value={p.rpps} onChange={(v) => majPraticien(i, { rpps: v.replace(/\D/g, '').slice(0, 11) })} avertissements={controle.conseils.filter((c) => /^(Le RPPS|Vérifier le RPPS)/.test(c) && c.includes(`(${qui(p, i)})`))} />
-              </div>
-            )}
-            {d.pays === 'BE' && <Champ montrer={montrer} label="N° INAMI" placeholder="5-12345-12-123" value={p.inami} onChange={(v) => majPraticien(i, { inami: v })} avertissements={filtre(/INAMI/, qui(p, i))} />}
-            {d.pays === 'CH' && <Champ montrer={montrer} label="N° RCC / ZSR" value={p.rcc} onChange={(v) => majPraticien(i, { rcc: v })} />}
-          </div>
-        ))}
-        {d.praticiens.length < 6 && (
-          <button type="button" className={`min-h-11 justify-self-start rounded px-1 text-sm font-semibold text-teal-800 ${focus}`} onClick={() => maj({ praticiens: [...d.praticiens, praticienVide('collaborateur')] })}>
-            + Ajouter un praticien
-          </button>
-        )}
-      </fieldset>
-
-      <fieldset className={carte}>
-        <legend className="sr-only">Horaires</legend>
-        <p className="text-lg font-semibold">Horaires</p>
-        <EditeurHoraires lieux={d.lieux} onLieux={(lieux) => maj({ lieux })} domicile={d.domicile} onDomicileJours={(jours) => maj({ domicile: { ...d.domicile, jours } })} />
+        <Champ montrer={montrer} label="Code postal" inputMode="numeric" autoComplete="postal-code" value={lieu.codePostal} onChange={(v) => majLieu({ codePostal: v.replace(/[^\dA-Za-z -]/g, '').slice(0, 10) })} avertissements={filtre(/Code postal/)} />
+        <Champ montrer={montrer} label="Nom du cabinet (facultatif)" aide="À défaut, « Cabinet de » suivi du nom des praticiens." value={d.cabinet.nom} onChange={(v) => maj({ cabinet: { ...d.cabinet, nom: v } })} avertissements={filtre(/Nom du cabinet/)} />
       </fieldset>
 
       <fieldset className={carte}>
@@ -288,6 +268,41 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
         )}
       </fieldset>
 
+      {/* Facultatif, replié : identifiants, autres praticiens, voisinage (les suggestions automatiques restent actives) */}
+      <details className={carte}>
+        <summary className={`min-h-11 cursor-pointer content-center rounded ${focus}`}>
+          <span className="font-semibold">Compléter plus tard (facultatif)</span>
+          <span className="block text-sm text-neutral-600">N° d’Ordre, autres praticiens, communes voisines, transports et stationnement</span>
+        </summary>
+        <div className="mt-3 grid gap-4">
+          {d.praticiens.map((p, i) => (
+            <div key={p.id} className="grid gap-3 rounded-xl bg-neutral-50 p-3">
+              <div className="flex items-center justify-between">
+                <p className="font-medium">{i === 0 ? (d.praticiens.length > 1 ? `Vous (${qui(p, i)})` : 'Vos identifiants') : `Praticien ${i + 1}`}</p>
+                {i > 0 && (
+                  <button type="button" className={`min-h-11 rounded px-2 text-sm text-red-700 ${focus}`} onClick={() => maj({ praticiens: d.praticiens.filter((_, j) => j !== i) })}>
+                    Retirer
+                  </button>
+                )}
+              </div>
+              {i > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Champ montrer={montrer} label="Prénom" autoComplete="off" value={p.prenom} onChange={(v) => majPraticien(i, { prenom: v })} avertissements={filtre(/^Prénom non renseigné/, qui(p, i), true)} />
+                  <Champ montrer={montrer} label="Nom" autoComplete="off" value={p.nom} onChange={(v) => majPraticien(i, { nom: v })} avertissements={filtre(/^Nom de famille/, qui(p, i))} />
+                </div>
+              )}
+              {identifiants(p, i)}
+            </div>
+          ))}
+          {d.praticiens.length < 6 && (
+            <button type="button" className={`min-h-11 justify-self-start rounded px-1 text-sm font-semibold text-teal-800 ${focus}`} onClick={() => maj({ praticiens: [...d.praticiens, praticienVide('collaborateur')] })}>
+              + Ajouter un praticien
+            </button>
+          )}
+          <SuggestionsVoisinage d={d} maj={maj} avecChamps />
+        </div>
+      </details>
+
       <div className="grid gap-2 rounded-2xl bg-neutral-50 p-4 text-sm">
         {reste.length ? (
           <>
@@ -304,35 +319,61 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Étape 5 : soins et image
+// Étape 5 : horaires (écran à part : l'étape « Votre cabinet » reste courte sur téléphone)
+// ---------------------------------------------------------------------------------------------------------------
+
+export function EtapeHoraires({ d, controle, maj }: { d: SiteDraft; controle: ResultatControle; maj: Maj }) {
+  const manque = controle.remplacements.find((b) => /^Horaires non renseignés/.test(b));
+  return (
+    <fieldset className={carte}>
+      <legend className="sr-only">Horaires d’ouverture</legend>
+      <p className="text-lg font-semibold">Horaires d’ouverture</p>
+      {manque && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{manque}</p>}
+      <EditeurHoraires lieux={d.lieux} onLieux={(lieux) => maj({ lieux })} domicile={d.domicile} onDomicileJours={(jours) => maj({ domicile: { ...d.domicile, jours } })} />
+    </fieldset>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Étape 6 : soins et image
 // ---------------------------------------------------------------------------------------------------------------
 
 export function EtapeSoinsImage({
-  d, id, catalogue, suggestions, modele, marquesImportees, maj, onSuggestion,
+  d, id, catalogue, suggestions, preCoches, proposer, parDefaut, modele, marquesImportees, maj, onSuggestion, onToutDecoche,
 }: {
   d: SiteDraft;
   id: string | null;
   catalogue: SoinCatalogue[];
+  /** Soins des sujets choisis (sinon du modèle), montrés en premier */
   suggestions: string[];
+  /** Soins de base cochés d'office (3 ou 4, sans acte spécialisé : soinsDeBaseParcours) */
+  preCoches: string[];
+  /** Cocher d'office les soins de base (faux si le praticien a déjà tout décoché : rien n'est remis sans lui) */
+  proposer: boolean;
+  /** Soins que le site présentera si aucun n'est coché (repli du site : soinsParDefaut) */
+  parDefaut: string[];
   modele: ModeleManifeste;
   marquesImportees: MarqueImportee[];
   maj: Maj;
-  /** Soins suggérés affichés mais pas encore confirmés (aperçu ; « Continuer » les confirme) */
+  /** Soins cochés d'office mais pas encore enregistrés (aperçu ; « Continuer » les enregistre) */
   onSuggestion: (e: { soins: string[]; enAvant: string[] } | null) => void;
+  /** Le praticien a décoché tous les soins */
+  onToutDecoche: (vide: boolean) => void;
 }) {
-  // Aucun soin coché : les soins des sujets choisis (sinon du modèle) sont pré-cochés en suggestion, enregistrés seulement après confirmation
-  const [aConfirmer, setAConfirmer] = useState(d.soins.length === 0 && suggestions.length > 0);
+  // Aucun soin coché : les soins de base des sujets sont cochés d'office (bien visibles), enregistrés à « Continuer »
+  const [aConfirmer, setAConfirmer] = useState(proposer && d.soins.length === 0 && preCoches.length > 0);
   const etat = aConfirmer
-    ? { soins: suggestions, enAvant: suggestions.slice(0, SOINS_EN_AVANT_MAX) }
+    ? { soins: preCoches, enAvant: preCoches.slice(0, SOINS_EN_AVANT_MAX) }
     : { soins: d.soins, enAvant: soinsEnAvantValides(d.theme.soinsEnAvant, d.soins) };
   const ecrire = (e: { soins: string[]; enAvant: string[] }) => {
     setAConfirmer(false);
+    onToutDecoche(e.soins.length === 0);
     maj({ soins: e.soins, theme: { ...d.theme, soinsEnAvant: e.enAvant } });
   };
-  // Suggestion en attente : montrée dans l'aperçu, confirmée par « Je confirme » ou « Continuer » (Parcours)
-  const cle = aConfirmer ? suggestions.join(',') : '';
+  // Soins cochés d'office en attente : montrés dans l'aperçu, enregistrés par « Continuer » (Parcours)
+  const cle = aConfirmer ? preCoches.join(',') : '';
   useEffect(() => {
-    onSuggestion(aConfirmer ? { soins: suggestions, enAvant: suggestions.slice(0, SOINS_EN_AVANT_MAX) } : null);
+    onSuggestion(aConfirmer ? { soins: preCoches, enAvant: preCoches.slice(0, SOINS_EN_AVANT_MAX) } : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cle]);
 
@@ -347,7 +388,7 @@ export function EtapeSoinsImage({
       <label key={s.slug} className={`flex min-h-12 cursor-pointer items-start gap-3 rounded-xl border p-3 ${coche ? 'border-teal-700 bg-teal-50' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
         <input type="checkbox" className="mt-0.5 size-5 shrink-0 accent-teal-800" checked={coche} onChange={(e) => ecrire(basculerSoin(etat, s.slug, e.target.checked))} />
         <span className="grid gap-0.5">
-          <span className="font-semibold">{s.titre_court}{suggere && aConfirmer && <span className="ml-2 align-middle text-xs font-medium text-teal-800">suggéré</span>}</span>
+          <span className="font-semibold">{s.titre_court}{suggere && !coche && <span className="ml-2 align-middle text-xs font-medium text-teal-800">lié à vos sujets</span>}</span>
           <span className="text-sm text-neutral-600">{s.resume}</span>
         </span>
       </label>
@@ -371,8 +412,13 @@ export function EtapeSoinsImage({
       <section className={carte} aria-labelledby="titre-soins">
         <h2 id="titre-soins" className="text-lg font-semibold">Vos soins</h2>
         {aConfirmer && (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Suggestion d’après vos sujets et le modèle : décochez les soins que vous ne pratiquez pas. Chaque soin coché aura sa page sur votre site.
+          <p className="rounded-lg bg-teal-50 px-3 py-2 text-sm text-teal-950">
+            {preCoches.length} soins de base sont cochés d’après vos sujets. Cochez ceux que vous pratiquez aussi, décochez les autres. Chaque soin coché aura sa page sur votre site.
+          </p>
+        )}
+        {!aConfirmer && etat.soins.length === 0 && (
+          <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <strong>Aucun soin choisi</strong> : le site affichera les soins courants de votre spécialité{parDefaut.length ? ` (${parDefaut.map(titreSoin).join(', ')})` : ''}. Cochez vos soins pour choisir vous-même.
           </p>
         )}
         <div className="grid gap-2">{suggeres.map((s) => caseSoin(s, true))}</div>
@@ -383,11 +429,6 @@ export function EtapeSoinsImage({
           </details>
         )}
         {catalogue.length === 0 && <p className="text-sm text-red-700">Catalogue des soins indisponible pour le moment.</p>}
-        {aConfirmer && (
-          <button type="button" onClick={() => ecrire(etat)} className={`min-h-11 justify-self-start rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white ${focus}`}>
-            Je confirme ces soins
-          </button>
-        )}
       </section>
 
       {/* Soins mis en avant : pré-remplis par les sujets ; l'ordre manuel est un réglage avancé, replié par défaut */}
@@ -455,18 +496,17 @@ export function EtapeSoinsImage({
         </div>
         {modeLogo === 'marque' ? (
           <div role="radiogroup" aria-label="Marques dans le style du site" className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {[...marquesLogo('podologie'), ...marquesImportees].map((m) => (
+            {[...marquesLogo('podologie'), ...marquesImportees].map((m, k) => (
               <button
                 key={m.id}
                 type="button"
                 role="radio"
                 aria-checked={d.theme.logo.marque === m.id}
-                title={m.sens}
+                aria-label={`Marque ${k + 1}`}
                 onClick={() => maj({ theme: { ...d.theme, logo: { ...d.theme.logo, marque: m.id } } })}
                 className={`grid justify-items-center gap-1.5 rounded-xl border p-2.5 text-xs ${focus} ${d.theme.logo.marque === m.id ? 'border-teal-700 bg-teal-50 ring-1 ring-teal-700' : 'border-neutral-200 hover:bg-neutral-50'}`}
               >
                 <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: apercuMarque(m.id) }} />
-                <span className="font-semibold">{m.nom}</span>
               </button>
             ))}
           </div>
@@ -487,7 +527,7 @@ export function EtapeSoinsImage({
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Étape 6 : contenus
+// Étape 7 : contenus
 // ---------------------------------------------------------------------------------------------------------------
 
 export function EtapeContenus({ d, univers, maj }: { d: SiteDraft; univers?: Univers; maj: Maj }) {
@@ -552,8 +592,18 @@ export function EtapeContenus({ d, univers, maj }: { d: SiteDraft; univers?: Uni
 // Vérifier et publier
 // ---------------------------------------------------------------------------------------------------------------
 
+/**
+ * Soins du récapitulatif : les soins réellement cochés ; aucun : ce que le site affichera à la place (repli soinsParDefaut).
+ */
+export function resumeSoins(d: SiteDraft, catalogue: SoinCatalogue[]): string {
+  const titre = (slug: string) => catalogue.find((c) => c.slug === slug)?.titre_court ?? slug;
+  if (d.soins.length) return catalogue.filter((c) => d.soins.includes(c.slug)).map((c) => c.titre_court).join(', ') || d.soins.map(titre).join(', ');
+  const defaut = soinsParDefaut(d.theme, catalogue.map((c) => c.slug));
+  return `Aucun soin choisi : le site affichera ${defaut.length ? defaut.map(titre).join(', ') : 'les soins courants de votre spécialité'}`;
+}
+
 /** Étape où se complète une information manquante */
-const etapeDuManque = (m: string) => (/compétence/i.test(m) ? 5 : 4);
+const etapeDuManque = (m: string) => (/compétence/i.test(m) ? 6 : /Horaires/i.test(m) ? 5 : 4);
 
 export function Verification({
   d, siteId, controle, catalogue, univers, admin, enCours, publication, onModifier, onPublier, lienAvance,
@@ -583,10 +633,11 @@ export function Verification({
     ['Cabinet', [d.cabinet.nom, [lieu.adresse, lieu.codePostal, lieu.ville].filter(Boolean).join(' '), d.cabinet.telephone].filter(Boolean).join(' · ') || '—', 4],
     [d.praticiens.length > 1 ? 'Praticiens' : 'Praticien', noms.join(', ') || '—', 4],
     ['Rendez-vous', d.rdv.mode === 'telephone' ? 'Par téléphone' : d.rdv.url || 'Lien à indiquer', 4],
-    ['Soins', d.soins.length ? `${d.soins.length} soin${d.soins.length > 1 ? 's' : ''}${enAvant.length ? `, en avant : ${enAvant.map(titreSoin).join(', ')}` : ''}` : 'Aucun', 5],
-    ['Logo', d.theme.logoPerso.url ? 'Votre logo' : 'Marque proposée', 5],
-    ['Articles', `${d.flux.mode === 'manuel' ? 'Validés par vous' : 'Publication automatique'}${d.flux.themes.length ? ` · ${d.flux.themes.join(', ')}` : ''}`, 6],
-    ['Fiches conseils', `${(d.fichesConseils ?? []).length} fiche(s)`, 6],
+    ['Horaires', horairesRenseignes(lieu.horaires) ? 'Renseignés' : 'Sur rendez-vous (aucun horaire indiqué)', 5],
+    ['Soins', `${resumeSoins(d, catalogue)}${enAvant.length ? ` · en avant : ${enAvant.map(titreSoin).join(', ')}` : ''}`, 6],
+    ['Logo', d.theme.logoPerso.url ? 'Votre logo' : 'Marque proposée', 6],
+    ['Articles', `${d.flux.mode === 'manuel' ? 'Validés par vous' : 'Publication automatique'}${d.flux.themes.length ? ` · ${d.flux.themes.join(', ')}` : ''}`, 7],
+    ['Fiches conseils', `${(d.fichesConseils ?? []).length} fiche(s)`, 7],
   ];
   // Plus rien ne bloque la publication : avec des informations manquantes, une confirmation les liste (« Publier quand même »).
   const [confirmer, setConfirmer] = useState(false);

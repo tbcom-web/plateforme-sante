@@ -6,8 +6,9 @@
 // cabinet avec garde-fous de contraste (couleursGabarit). Le plan est ici schématique (le site publié dessine les vraies rues
 // d'OpenStreetMap au build). Revue : filet double, premier écran sur l'aplat pastel avec un dessin au trait légendé, sections en
 // colonnes de journal (chiffre romain et titre à gauche), bulles à filet, Bodoni Moda et Newsreader.
+// Informations manquantes : replis du site publié (replisApercu, calculés par ApercuTheme) ; aucune valeur fictive.
 import type { CSSProperties, ReactNode } from 'react';
-import { construireNavigation, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, type ModeleManifeste, type NomDessin, type SiteDraft } from '@plateforme/core';
+import { avecVille, construireNavigation, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -19,27 +20,34 @@ type Props = {
   marque: ReactNode;
   nomCabinet: string;
   titre: string;
-  ville: string;
+  /** Textes après replis (ville, adresse, téléphone, rendez-vous), mêmes règles que le site */
+  replis: ReplisApercu;
   /** Dessin d'un soin (jeu visuel de la spécialité) */
   dessinSoin: (slug: string) => NomDessin;
 };
 
 const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'], [/diab/, 'Diabétiques'], [/senior|chute/, 'Seniors']];
 
-export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, ville, dessinSoin }: Props) {
+export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin }: Props) {
   const village = gabaritModele(m) === 'village';
   const revue = gabaritModele(m) === 'revue';
   const ROMAINS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
   let folio = 0;
   const lieu = d.lieux[0];
-  const tel = d.cabinet.telephone || '00 00 00 00 00';
-  const enLigne = d.rdv.mode !== 'telephone';
+  const ville = r.ville;
+  const suffixeVille = r.aVille ? ` ${r.aVille}` : '';
+  const tel = r.telephone;
+  const enLigne = r.rdvEnLigne;
+  const libelleRdv = enLigne ? 'Prendre rendez-vous' : r.libelleContact;
+  const surTitre = [titre, ville].filter(Boolean).join(' · ');
   // Menu calculé comme sur le site (themes.ts, construireNavigation) : sujets principaux, Soins, Le cabinet, Infos pratiques
   const navigation = construireNavigation(d, soins);
   const menu = (mobile ? navigation.menuMobile : navigation.menu).map((l) => l.libelle);
-  const noms = d.praticiens.map((p) => [p.prenom, p.nom].filter(Boolean).join(' ')).filter(Boolean);
-  const phrase = noms.length ? `${noms.join(' et ')}, ${titre.toLowerCase()}${noms.length > 1 ? 's' : ''}, ${noms.length > 1 ? 'accueillent leurs' : 'accueille ses'} patients à ${ville}.` : `Votre cabinet à ${ville}.`;
-  const adresse = `${lieu?.adresse || 'Adresse du cabinet'}, ${lieu?.codePostal ?? ''} ${lieu?.ville || ville}`;
+  const noms = r.noms;
+  const qui = noms.join(' et ') || nomCabinet;
+  // Ligne courte « qui · où » (comme PremierEcran du site) : sans adresse complète, le nom seul
+  const quiOu = r.aAdresse ? `${qui} · ${r.rue}` : qui;
+  const adresse = r.adresse;
   const horaires = lieu?.horaires ?? [];
   const jour = horaires[0];
   const pourQui = soins.flatMap((s) => { const p = PUBLICS.find(([re]) => re.test(s.slug)); return p ? [p[1]] : []; });
@@ -57,28 +65,31 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const plan = (
     <div style={{ aspectRatio: '4 / 3', borderRadius: 'var(--rayon)', background: 'var(--g-plan-fond)', display: 'grid', placeItems: 'center', alignContent: 'center', gap: 12, boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
       <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--g-plan-point)', boxShadow: '0 0 0 6px var(--g-plan-rue)' }} />
-      <span style={{ fontWeight: 650, textAlign: 'center' }}>{lieu?.adresse || 'Adresse du cabinet'}<br />{lieu?.codePostal} {lieu?.ville || ville}</span>
+      <span style={{ fontWeight: 650, textAlign: 'center' }}>{r.rue}<br />{lieu?.codePostal} {lieu?.ville}</span>
       <span style={{ fontSize: 13, color: 'var(--g-encre-douce)' }}>Plan schématique (rues réelles sur le site publié)</span>
     </div>
   );
-  const titreH1 = <h1 className="ap-h1" style={h1}>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} {revue ? <em style={{ color: 'var(--g-accent-texte)' }}>à {ville}</em> : <>à {ville}</>}</h1>;
+  // Titre du site (pas de <h1> : l'aperçu est inclus dans une page de l'admin qui a le sien)
+  const titreH1 = <p className="ap-h1" style={{ ...h1, margin: 0 }}>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}{r.aVille && <> {revue ? <em style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</em> : r.aVille}</>}</p>;
+  // Menu et bouton sur une ligne : un nom de cabinet long se réduit, jamais « Rendez-/vous » sur deux lignes
+  const nomEntete: CSSProperties = { minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.2, fontSize: nomCabinet.length > 40 ? 16 : 18 };
   // Revue : dessin au trait continu du soin principal, légendé (sans animation)
   const figure = (slug: string, taille: CSSProperties) => <div className="ap-svg" style={{ ...taille, '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)', color: 'var(--g-figure)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgLigne(LIGNE_DESSIN[dessinSoin(slug)] ?? 'pied-dessous') }} />;
 
   const entete = revue ? (
     <header style={{ borderBottom: '3px double var(--g-encre)' }}>
       <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 76 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontStyle: 'italic', fontWeight: 500, fontSize: 20 }}>{nomCabinet}</strong></span>
-        {!mobile && <span style={{ display: 'flex', alignItems: 'center', gap: 26, fontSize: 17 }}>{menu.map((l) => <span key={l}>{l}</span>)}<span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none' }}>{enLigne ? 'Rendez-vous' : 'Appeler'}</span></span>}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontStyle: 'italic', fontWeight: 500, ...nomEntete, fontSize: nomCabinet.length > 40 ? 17 : 20 }}>{nomCabinet}</strong></span>
+        {!mobile && <span style={{ display: 'flex', alignItems: 'center', gap: 26, fontSize: 17, whiteSpace: 'nowrap', flexShrink: 0 }}>{menu.map((l) => <span key={l}>{l}</span>)}<span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap' }}>{r.libelleMenu}</span></span>}
       </div>
       {mobile && <nav style={{ ...cadre, display: 'flex', justifyContent: 'space-between', padding: '4px 0 10px' }}>{menu.map((l) => <span key={l}>{l}</span>)}</nav>}
     </header>
   ) : (
     <header style={{ padding: '12px 0 4px', borderBottom: village ? '1px solid var(--g-ligne)' : undefined }}>
       <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 64, ...(village ? {} : { background: 'var(--g-carte)', borderRadius: 999, padding: '8px 8px 8px 14px', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }) }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontSize: 18 }}>{nomCabinet}</strong></span>
-        {!mobile && !village && <span style={{ display: 'flex', gap: 22, fontWeight: 600, fontSize: 15 }}>{menu.map((l) => <span key={l}>{l}</span>)}</span>}
-        {village ? <span style={{ fontWeight: 750, fontSize: 20 }}>☏ {mobile ? 'Appeler' : tel}</span> : !mobile && <span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none' }}>{enLigne ? 'Rendez-vous' : 'Appeler'}</span>}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', ...nomEntete }}>{nomCabinet}</strong></span>
+        {!mobile && !village && <span style={{ display: 'flex', gap: 22, fontWeight: 600, fontSize: 15, whiteSpace: 'nowrap', flexShrink: 0 }}>{menu.map((l) => <span key={l}>{l}</span>)}</span>}
+        {village ? (r.aTelephone && !mobile && <span style={{ fontWeight: 750, fontSize: 20, whiteSpace: 'nowrap' }}>☏ {tel}</span>) : !mobile && <span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.libelleMenu}</span>}
       </div>
       {(village || mobile) && <nav style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: village ? '4px 20px' : 6, padding: '10px 0 8px' }}>{menu.map((l) => <span key={l} style={village ? { textDecoration: 'underline', fontWeight: 600 } : { padding: '10px 12px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontWeight: 600, fontSize: 15 }}>{l}</span>)}</nav>}
     </header>
@@ -92,13 +103,13 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const premier = revue ? (
     <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 4fr', gap: 64, alignItems: 'center', paddingBlock: mobile ? '40px 48px' : '88px 80px' }}>
       <div style={{ display: 'grid', justifyItems: 'start' }}>
-        <span style={{ fontSize: 15, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-aplat-doux)', marginBottom: 22 }}>{titre} · {ville}</span>
+        <span style={{ fontSize: 15, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-aplat-doux)', marginBottom: 22 }}>{surTitre}</span>
         {titreH1}
-        <span style={{ fontSize: 19, marginTop: 24 }}>{noms.join(' et ') || 'Vos praticiens'} · {lieu?.adresse || 'Adresse du cabinet'}</span>
+        <span style={{ fontSize: 19, marginTop: 24 }}>{quiOu}</span>
         {principaux && <span style={{ fontStyle: 'italic', color: 'var(--g-aplat-doux)' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 26 }}>
-          <span style={{ ...bouton(true), boxShadow: 'none' }}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
-          {enLigne && <span style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 1.5px var(--g-encre)' }}>{tel}</span>}
+          <span style={{ ...bouton(true), boxShadow: 'none' }}>{libelleRdv}</span>
+          {enLigne && r.aTelephone && <span style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 1.5px var(--g-encre)' }}>{tel}</span>}
         </div>
       </div>
       {!mobile && soins[0] && (
@@ -111,25 +122,25 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gap: 18, paddingBlock: mobile ? 28 : 48 }}>
       {titreH1}
       <div style={{ display: 'grid', gap: 8 }}>
-        <span style={ligne}>{pid('rendez-vous')}{noms.length ? `${noms.join(' et ')}, ${titre.toLowerCase()}` : 'Vos praticiens'}</span>
+        <span style={ligne}>{pid('rendez-vous')}{noms.length ? `${noms.join(' et ')}, ${titre.toLowerCase()}` : nomCabinet}</span>
         <span style={ligne}>{pid('itineraire')}{adresse}</span>
         {principaux && <span style={ligne}>{pid('bilan')}{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-        <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-plein)', color: 'var(--g-plein-texte)', fontWeight: 700 }}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
-        {enLigne && <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-encre)', fontWeight: 700 }}>Appeler le {tel}</span>}
+        <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-plein)', color: 'var(--g-plein-texte)', fontWeight: 700, textAlign: 'center', padding: '0 12px' }}>{libelleRdv}</span>
+        {enLigne && r.aTelephone && <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-encre)', fontWeight: 700 }}>Appeler le {tel}</span>}
       </div>
     </div></section>
   ) : (
     <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.45fr 1fr', gap: 16, paddingTop: 14 }}>
       <div style={{ borderRadius: 'var(--rayon)', background: mobile ? 'var(--g-aplat)' : 'var(--g-carte)', boxShadow: mobile ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', color: 'var(--g-encre)', padding: mobile ? 26 : 48, display: 'grid', gap: 16, justifyItems: 'start' }}>
-        <span style={{ padding: '6px 14px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontSize: 14, fontWeight: 600 }}>● {titre} · {ville}</span>
-        <h1 className="ap-h1" style={h1}>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} à {ville}</h1>
-        <span style={{ fontWeight: 600 }}>{noms.join(' et ') || 'Vos praticiens'} · {lieu?.adresse || 'Adresse du cabinet'}</span>
+        <span style={{ padding: '6px 14px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontSize: 14, fontWeight: 600 }}>● {surTitre}</span>
+        {titreH1}
+        <span style={{ fontWeight: 600 }}>{quiOu}</span>
         {principaux && <span style={{ color: mobile ? 'var(--g-aplat-doux)' : 'var(--g-encre-douce)' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <span style={bouton(true)}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
-          {enLigne && <span style={bouton(false)}>{tel}</span>}
+          <span style={bouton(true)}>{libelleRdv}</span>
+          {enLigne && r.aTelephone && <span style={bouton(false)}>{tel}</span>}
         </div>
       </div>
       {!mobile && soins[0] && (
@@ -173,7 +184,8 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       {rangee('Infos pratiques', infos.map((i) => ({ cle: i, texte: i })), 'var(--g-doux)', 'var(--g-encre)')}
     </div>
   ));
-  const horairesTable = (
+  // Sans horaires : « Sur rendez-vous » (repli du site), jamais une semaine « Fermé »
+  const horairesTable = !horairesRenseignes(horaires) ? <p style={{ margin: 0, fontWeight: 650 }}>{lieu?.surRendezVous ? 'Sur rendez-vous uniquement' : REPLIS.horaires}</p> : (
     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 16 }}><tbody>{horaires.map((h, k) => <tr key={h.jour} style={{ borderBottom: '1px solid var(--g-ligne)', background: k === 0 ? 'var(--g-bulle)' : undefined }}><th style={{ textAlign: 'left', padding: '8px 10px' }}>{h.jour}</th><td style={{ padding: '8px 0', color: h.heures ? 'var(--g-encre)' : 'var(--g-encre-douce)' }}>{h.heures || 'Fermé'}</td></tr>)}</tbody></table>
   );
   const volets = ['Prise de rendez-vous', 'Transports et stationnement', 'Tarifs', 'Moyens de règlement acceptés'];
@@ -181,7 +193,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     <div style={{ display: 'grid', gap: 22 }}>
       <div style={{ display: 'grid', gridTemplateColumns: mobile || village ? '1fr' : '1.1fr 0.9fr', gap: 28 }}>
         {horairesTable}
-        <div style={{ display: 'grid', gap: 8, alignContent: 'start' }}><strong>Adresse</strong><span>{adresse}</span><span style={{ color: 'var(--g-accent-texte)', fontWeight: 650 }}>{tel} · Itinéraire</span>{village && plan}</div>
+        <div style={{ display: 'grid', gap: 8, alignContent: 'start' }}><strong>Adresse</strong><span>{adresse}</span>{(r.aTelephone || r.aAdresse) && <span style={{ color: 'var(--g-accent-texte)', fontWeight: 650 }}>{[tel, r.aAdresse ? 'Itinéraire' : ''].filter(Boolean).join(' · ')}</span>}{village && r.aAdresse && plan}</div>
       </div>
       <div>{volets.map((v) => <div key={v} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 56, borderBottom: '1px solid var(--g-ligne)', fontWeight: 650 }}>{v}<span style={{ ...rond, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)' }}>+</span></div>)}</div>
     </div>
@@ -195,32 +207,32 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     <>
       <section style={{ ...cadre, paddingTop: mobile ? 32 : 72 }}>
         <div style={{ maxWidth: 760, marginInline: 'auto', display: 'grid', gap: 14 }}>
-          <p style={{ fontSize: 15, color: 'var(--g-encre-douce)', margin: 0 }}>Accueil / Compétences / {soins[0].titre_court}</p>
-          <h1 className="ap-h1" style={{ ...h1, fontSize: mobile ? 36 : 56 }}>{soins[0].titre?.replace('{ville}', ville) ?? soins[0].titre_court}</h1>
-          <p style={{ color: 'var(--g-encre-douce)', fontStyle: 'italic', margin: 0 }}>{soins[0].resume}</p>
-          <span style={{ ...bouton(true), justifySelf: 'start', boxShadow: 'none' }}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
+          <p style={{ fontSize: 15, color: 'var(--g-encre-douce)', margin: 0 }}>Accueil / Soins / {soins[0].titre_court}</p>
+          <p className="ap-h1" style={{ ...h1, margin: 0, fontSize: mobile ? 36 : 56 }}>{soins[0].titre ? avecVille(soins[0].titre, ville) : soins[0].titre_court}</p>
+          <p style={{ color: 'var(--g-encre-douce)', fontStyle: 'italic', margin: 0 }}>{avecVille(soins[0].resume, ville)}</p>
+          <span style={{ ...bouton(true), justifySelf: 'start', boxShadow: 'none' }}>{libelleRdv}</span>
         </div>
         <div style={{ marginTop: 40, aspectRatio: mobile ? '4 / 3' : '3 / 1', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{figure(soins[0].slug, { height: '82%', aspectRatio: '4 / 3' })}</div>
       </section>
-      <section style={{ ...cadre, paddingTop: 32 }}><div style={{ maxWidth: 760, marginInline: 'auto' }}><h2 className="ap-h2" style={{ ...h2, fontSize: 30 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre)' }}>{(soins[0].corps ?? soins[0].resume).replace(/\{ville\}/g, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div></section>
+      <section style={{ ...cadre, paddingTop: 32 }}><div style={{ maxWidth: 760, marginInline: 'auto' }}><h2 className="ap-h2" style={{ ...h2, fontSize: 30 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre)' }}>{avecVille(soins[0].corps ?? soins[0].resume, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div></section>
     </>
   ) : soins[0] && (
     <>
       <section style={{ ...cadre, paddingTop: 20 }}>
         <div style={{ ...(village ? { padding: '32px 0 0' } : carte), display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.15fr 0.85fr', gap: 28, alignItems: 'center' }}>
           <div style={{ display: 'grid', gap: 14 }}>
-            <p style={{ fontSize: 14, color: 'var(--g-encre-douce)', margin: 0 }}>Accueil / Compétences / {soins[0].titre_court}</p>
-            <p style={sur}>Compétences du cabinet</p>
-            <h1 className="ap-h1" style={{ ...h1, fontSize: mobile ? 36 : 52 }}>{soins[0].titre?.replace('{ville}', ville) ?? soins[0].titre_court}</h1>
-            <p style={{ color: 'var(--g-encre-douce)', margin: 0 }}>{soins[0].resume}</p>
-            <span style={{ ...bouton(true), justifySelf: 'start' }}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
+            <p style={{ fontSize: 14, color: 'var(--g-encre-douce)', margin: 0 }}>Accueil / Soins / {soins[0].titre_court}</p>
+            <p style={sur}>{titreSoins(d.voix)}</p>
+            <p className="ap-h1" style={{ ...h1, margin: 0, fontSize: mobile ? 36 : 52 }}>{soins[0].titre ? avecVille(soins[0].titre, ville) : soins[0].titre_court}</p>
+            <p style={{ color: 'var(--g-encre-douce)', margin: 0 }}>{avecVille(soins[0].resume, ville)}</p>
+            <span style={{ ...bouton(true), justifySelf: 'start' }}>{libelleRdv}</span>
           </div>
           <div style={{ aspectRatio: '4 / 3', borderRadius: 16, background: 'var(--g-doux)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: village ? 'pedagogique' : 'ligne' }) }} /></div>
         </div>
       </section>
       <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 300px', gap: 18, paddingTop: 18 }}>
-        <div style={{ ...carte, ...(village ? { background: 'transparent', padding: 0 } : {}) }}><h2 className="ap-h2" style={{ fontSize: 28 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre-douce)' }}>{(soins[0].corps ?? soins[0].resume).replace(/\{ville\}/g, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div>
-        <div style={{ ...carte, background: 'var(--g-doux)', boxShadow: 'none', display: 'grid', gap: 12, alignContent: 'start' }}><strong style={{ color: 'var(--g-accent-texte)' }}>En pratique</strong><span style={{ fontSize: 15 }}>{adresse}</span><span style={bouton(true)}>{enLigne ? 'Prendre rendez-vous' : 'Appeler'}</span></div>
+        <div style={{ ...carte, ...(village ? { background: 'transparent', padding: 0 } : {}) }}><h2 className="ap-h2" style={{ fontSize: 28 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre-douce)' }}>{avecVille(soins[0].corps ?? soins[0].resume, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div>
+        <div style={{ ...carte, background: 'var(--g-doux)', boxShadow: 'none', display: 'grid', gap: 12, alignContent: 'start' }}><strong style={{ color: 'var(--g-accent-texte)' }}>En pratique</strong><span style={{ fontSize: 15 }}>{adresse}</span><span style={{ ...bouton(true), textAlign: 'center' }}>{libelleRdv}</span></div>
       </section>
     </>
   );
@@ -230,7 +242,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       {entete}
       {vue === 'accueil' ? <>{premier}{soinsSection}{accesSection}{faqSection}</> : fiche}
       <footer style={{ marginTop: revue ? 0 : 64, padding: '44px 0 28px', background: revue ? 'var(--g-page)' : village ? 'var(--g-doux)' : 'var(--g-sombre)', color: village || revue ? 'var(--g-encre-douce)' : 'var(--g-sombre-doux)', borderTop: revue ? '3px double var(--g-encre)' : village ? '2px solid var(--g-encre)' : undefined }}>
-        <div style={cadre}><strong style={{ color: village || revue ? 'var(--g-encre)' : 'var(--g-sombre-texte)', fontFamily: revue ? 'var(--police-titres)' : undefined, fontStyle: revue ? 'italic' : undefined }}>{nomCabinet}</strong><p style={{ margin: '8px 0 0', fontSize: 15 }}>{adresse} · {tel}</p><p style={{ margin: '20px 0 0', fontSize: 13 }}>Illustrations : représentations schématiques, sans valeur de mesure</p></div>
+        <div style={cadre}><strong style={{ color: village || revue ? 'var(--g-encre)' : 'var(--g-sombre-texte)', fontFamily: revue ? 'var(--police-titres)' : undefined, fontStyle: revue ? 'italic' : undefined }}>{nomCabinet}</strong><p style={{ margin: '8px 0 0', fontSize: 15 }}>{[adresse, tel].filter(Boolean).join(' · ')}</p><p style={{ margin: '20px 0 0', fontSize: 13 }}>Illustrations : représentations schématiques, sans valeur de mesure</p></div>
       </footer>
     </div>
   );

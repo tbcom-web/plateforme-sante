@@ -5,6 +5,7 @@ import {
   appliquerHorairesSimplifies, appliquerUniversParcours, basculerEnAvant, basculerSoin, choisirCouleurLibre, choisirGamme, deplacerSoin,
   etapeDeReprise, gammesConseillees, horairesSimplifies, natureCouleur, normaliserCouleur, placerSoin, soinsEnAvantValides, soinsSuggeres,
   universApplicableAuParcours, universDuParcours, universRecommande, aideEtape, ETAPES_PARCOURS, UNIVERS_PARCOURS,
+  jalonProgressionEssai, soinsDeBaseParcours, encouragementParcours, SOINS_SPECIALISES, SOINS_DE_BASE_MAX,
 } from './parcours';
 import { CATALOGUE_UNIVERS, universCatalogue, type Univers } from './catalogue-univers';
 import { draftVide, type SiteDraft } from './draft';
@@ -163,9 +164,47 @@ test('étape de reprise', () => {
   // Sujets choisis, modèle pas encore choisi : reprise au choix du site
   assert.equal(etapeDeReprise({ ...d, priorites: { principaux: ['ongles'], secondaires: [] } }), 2);
   const u = appliquerUniversParcours(d, universCatalogue('clair-pratique')!).draft;
-  assert.equal(etapeDeReprise(u), 6);
-  assert.equal(etapeDeReprise({ ...u, soins: [] }), 5);
+  assert.equal(etapeDeReprise(u), 7);
+  assert.equal(etapeDeReprise({ ...u, soins: [] }), 6);
   assert.equal(etapeDeReprise({ ...u, cabinet: { ...u.cabinet, telephone: '' } }), 4);
+});
+
+test('sept étapes numérotées dans l’ordre, horaires à part', () => {
+  assert.deepEqual(ETAPES_PARCOURS.map((e) => e.numero), [1, 2, 3, 4, 5, 6, 7]);
+  assert.equal(ETAPES_PARCOURS[4].titre, 'Vos horaires');
+  assert.ok(ETAPES_PARCOURS.every((e) => !/Quatre sites|prêts à l’emploi/.test(e.consigne)));
+});
+
+test('progression de l’essai : 7 écrans ramenés sur la borne 0..7 de la base (migration 0023 inchangée)', () => {
+  assert.deepEqual([1, 2, 3, 4, 5, 6, 7].map((n) => jalonProgressionEssai(n, false)), [1, 2, 3, 4, 4, 5, 6]);
+  assert.equal(jalonProgressionEssai(7, true), 7);
+  assert.equal(jalonProgressionEssai(99, false), 6);
+  assert.equal(jalonProgressionEssai(-2, false), 0);
+  for (let n = 0; n <= 9; n++) for (const v of [true, false]) assert.ok(jalonProgressionEssai(n, v) >= 0 && jalonProgressionEssai(n, v) <= 7);
+});
+
+test('soins cochés d’office : quelques soins de base des sujets, jamais d’acte spécialisé', () => {
+  const connus = ['ongle-incarne', 'orthonyxie', 'onychoplastie', 'mycose-ongles', 'ongles-epais', 'pied-diabetique', 'cors-durillons', 'soins-a-domicile', 'soins-de-pedicurie', 'verrues-plantaires', 'podologie-du-sport', 'semelles-orthopediques', 'douleur-talon', 'k-taping'];
+  const d = { priorites: { principaux: ['diabete', 'ongles', 'pedicurie'], secondaires: ['sport'] } };
+  const base = soinsDeBaseParcours(d, undefined, connus);
+  assert.ok(base.length >= 3 && base.length <= SOINS_DE_BASE_MAX, base.join(','));
+  assert.ok(base.every((s) => !SOINS_SPECIALISES.includes(s)), base.join(','));
+  assert.equal(base[0], 'pied-diabetique', 'soin pivot du sujet n° 1 d’abord');
+  assert.ok(base.includes('ongle-incarne'));
+  // Sans sujet : soins du modèle, filtrés de la même façon
+  const u = universCatalogue('simple-proche')!;
+  assert.ok(soinsDeBaseParcours({ priorites: { principaux: [], secondaires: [] } }, u, connus).every((s) => !SOINS_SPECIALISES.includes(s)));
+});
+
+test('encouragement juste selon la progression réelle', () => {
+  assert.match(encouragementParcours(1, false, 'Catherine'), /^Bienvenue Catherine/);
+  assert.equal(encouragementParcours(2, false), 'Encore 5 étapes courtes après celle-ci. Tout est enregistré au fur et à mesure.');
+  assert.doesNotMatch(encouragementParcours(2, false), /Bien avancé|moitié/);
+  assert.match(encouragementParcours(4, false), /Plus de la moitié/);
+  assert.match(encouragementParcours(5, false), /deux étapes/);
+  assert.match(encouragementParcours(6, false), /une étape/);
+  assert.equal(encouragementParcours(7, false), 'Dernière étape avant de voir votre site.');
+  assert.equal(encouragementParcours(7, true), 'Dernière étape : découvrez votre site.');
 });
 
 test('aide de chaque étape reprise des fiches conseils', () => {

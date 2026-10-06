@@ -43,8 +43,10 @@ const actif = (href: string) => actifLarge === href || actifMobile === href;
 const classeActif = (href: string) => ({ 'c-nav__actif-large': actifLarge === href && actifMobile !== href, 'c-nav__actif-mobile': actifMobile === href && actifLarge !== href });
 const rdv = rdvEnLigne ? lienRendezVous : aTelephone ? telLien : lienContact;
 const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv === 'email' ? 'Écrire' : 'Rendez-vous';
+// Nom de cabinet long : réduit (deux lignes au plus) plutôt que de couper le bouton « Rendez-vous » sur deux lignes
+const nomLong = site.cabinet.nom.length > 34;
 ---
-<div class:list={['coquille', `coquille--${gabarit}`]}>
+<div class:list={['coquille', `coquille--${gabarit}`, { 'coquille--nom-long': nomLong }]}>
   <header class="c-entete">
     <div class="g-cadre c-entete__ligne">
       <Logo />
@@ -196,7 +198,10 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
   .c-nav a[aria-current='page']::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--g-accent-texte); }
   @media (max-width: 759px) { .c-nav a.c-nav__actif-large[aria-current='page'] { font-weight: inherit; } .c-nav a.c-nav__actif-large[aria-current='page']::after { display: none; } }
   @media (min-width: 760px) { .c-nav a.c-nav__actif-mobile[aria-current='page'] { font-weight: inherit; } .c-nav a.c-nav__actif-mobile[aria-current='page']::after { display: none; } }
-  .c-nav .c-nav__rdv a { margin-left: 8px; min-height: 48px; padding-inline: 20px; background: var(--g-vif); color: var(--g-vif-texte); box-shadow: none; }
+  .c-nav .c-nav__rdv a { margin-left: 8px; min-height: 48px; padding-inline: 20px; background: var(--g-vif); color: var(--g-vif-texte); box-shadow: none; white-space: nowrap; }
+  /* Le nom cède la place au menu : il se réduit et passe sur deux lignes au plus */
+  .c-entete__ligne :global(.logo) { min-width: 0; }
+  .coquille--nom-long .c-entete__ligne :global(.logo strong) { font-size: min(var(--logo-nom), 1.05rem); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .c-nav .c-nav__rdv a:hover { background: var(--g-vif); color: var(--g-vif-texte); text-decoration: underline; }
   /* Téléphone : le menu passe en une ligne sous le nom ; « Rendez-vous » est dans la barre du bas */
   /* Repli (règles de construireNavigation) : thèmes n° 2 et 3 sous 1200 px, menu « téléphone » seulement sous 760 px */
@@ -256,7 +261,9 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
   /* ———— Barre d'actions (téléphone) : Appeler / Rendez-vous ———— */
   .c-barre { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr; padding-bottom: env(safe-area-inset-bottom); background: var(--g-carte); box-shadow: 0 -1px 0 var(--g-ligne); }
   .c-barre a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 60px; padding-inline: 12px; color: var(--g-encre); font-weight: 650; font-size: 1rem; text-decoration: none; }
-  .c-barre a :global(.icone) { width: 22px; height: 22px; }
+  .c-barre a :global(.icone) { width: 22px; height: 22px; flex: none; }
+  /* Une seule action (ni téléphone ni itinéraire, ou l'un des deux) : toute la largeur, sur une ligne */
+  .c-barre > a:only-child { grid-column: 1 / -1; white-space: nowrap; }
   .c-barre__plein { background: var(--g-vif); color: var(--g-vif-texte) !important; }
   @media (min-width: 900px) { .c-barre { display: none; } }
   @media (prefers-reduced-motion: reduce) { .coquille :global(*) { transition: none !important; } }

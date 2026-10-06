@@ -3,6 +3,7 @@
 // mention sobre, jamais un crochet, un « à compléter » ou un champ vide. Fonctions pures, utilisées au chargement des
 // données du site (apps/sites/src/lib/supabase.ts) et dans les textes communs des gabarits (apps/sites/src/lib/textes.ts).
 import { SPECIALITES } from './packs';
+import { formaterTelephone, lienRdvPrecis } from './format';
 
 /** Mentions affichées à la place d'une information absente. Ton métier, sans promesse. */
 export const REPLIS = {
@@ -80,4 +81,80 @@ export function modeContact(o: { rdvEnLigne: boolean; telephone: string; email?:
   if (telephoneUtilisable(o.telephone)) return 'telephone';
   if (o.email && /^\S+@\S+\.\S+$/.test(o.email)) return 'email';
   return 'cabinet';
+}
+
+/** Titre des pages et sections « Soins » selon la voix : « Mes soins », « Nos soins », « Soins du cabinet ». */
+export const titreSoins = (voix: string | undefined) => (voix === 'je' ? 'Mes soins' : voix === 'nous' ? 'Nos soins' : 'Soins du cabinet');
+
+const enListe = (mots: string[]) => (mots.length > 1 ? `${mots.slice(0, -1).join(', ')} et ${mots.at(-1)}` : mots[0] ?? '');
+
+/** Textes du site après replis, pour l'aperçu dans l'admin (ApercuTheme, ApercuGabarit) : mêmes règles que le site. */
+export type ReplisApercu = {
+  /** Ville du cabinet ('' si absente) */
+  ville: string;
+  /** « à Lyon », '' sans ville */
+  aVille: string;
+  /** « Cabinet de pédicurie-podologie à Lyon » (sans « à » sans ville) */
+  titreCabinet: string;
+  /** Nom du cabinet : saisi, nom du lieu, « Cabinet de {noms} », sinon « Cabinet de pédicurie-podologie » */
+  nomCabinet: string;
+  /** Praticiens nommés (« Prénom Nom ») */
+  noms: string[];
+  /** Adresse complète publiable */
+  aAdresse: boolean;
+  /** Adresse sur une ligne ; sans adresse complète : « Adresse communiquée à la prise de rendez-vous » */
+  adresse: string;
+  /** Rue seule ('' sans adresse complète) */
+  rue: string;
+  /** Téléphone publiable (9 chiffres au moins) */
+  aTelephone: boolean;
+  /** Téléphone formaté, '' s'il n'est pas publiable (jamais de bouton « Appeler le 0494123 ») */
+  telephone: string;
+  /** Réservation en ligne effective (mode en ligne et lien vers une page précise) */
+  rdvEnLigne: boolean;
+  contact: ModeContact;
+  /** Bouton principal hors ligne : « Appeler le cabinet », « Écrire au cabinet », « Prise de rendez-vous au cabinet » */
+  libelleContact: string;
+  /** Bouton court du menu : « Rendez-vous », « Appeler », « Écrire » */
+  libelleMenu: string;
+  /** Phrase « Rendez-vous » : en ligne, par téléphone, par e-mail ou au cabinet */
+  phraseRdv: string;
+};
+
+export function replisApercu(d: {
+  pays?: string;
+  cabinet: { nom: string; ville: string; telephone: string; email?: string };
+  lieux: { nom?: string; adresse: string; codePostal: string; ville: string }[];
+  praticiens: { prenom: string; nom: string; rdvUrl?: string }[];
+  rdv: { mode: string; url: string; outil?: string };
+}): ReplisApercu {
+  const lieu = d.lieux[0] ?? { nom: '', adresse: '', codePostal: '', ville: '' };
+  const ville = ligneSansProvisoire(d.cabinet.ville) || ligneSansProvisoire(lieu.ville);
+  const aAdresse = adresseUtilisable(lieu, d.pays ?? 'FR');
+  const aTelephone = telephoneUtilisable(d.cabinet.telephone);
+  const telephone = aTelephone ? formaterTelephone(d.cabinet.telephone) : '';
+  const rdvEnLigne = d.rdv.mode !== 'telephone' && (lienRdvPrecis(d.rdv.url) || d.praticiens.some((p) => lienRdvPrecis(p.rdvUrl)));
+  const email = d.cabinet.email ?? '';
+  const contact = modeContact({ rdvEnLigne, telephone: d.cabinet.telephone, email });
+  const noms = d.praticiens.map(nomAffiche).filter(Boolean);
+  const nomLieu = ligneSansProvisoire(lieu.nom ?? '');
+  return {
+    ville,
+    aVille: aVille(ville),
+    titreCabinet: `Cabinet de ${(d.pays ?? 'FR') === 'FR' ? 'pédicurie-podologie' : 'podologie'}${ville ? ` ${aVille(ville)}` : ''}`,
+    nomCabinet: ligneSansProvisoire(d.cabinet.nom) || nomLieu || (noms.length ? `Cabinet de ${enListe(noms)}` : REPLIS.nomCabinet),
+    noms,
+    aAdresse,
+    adresse: aAdresse ? `${lieu.adresse.trim()}, ${lieu.codePostal.trim()} ${lieu.ville.trim()}` : REPLIS.adresse,
+    rue: aAdresse ? lieu.adresse.trim() : '',
+    aTelephone,
+    telephone,
+    rdvEnLigne,
+    contact,
+    libelleContact: aTelephone ? 'Appeler le cabinet' : contact === 'email' ? 'Écrire au cabinet' : REPLIS.rdvCabinet,
+    libelleMenu: rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contact === 'email' ? 'Écrire' : 'Rendez-vous',
+    phraseRdv: rdvEnLigne
+      ? `En ligne sur ${d.rdv.outil || 'la plateforme de rendez-vous'}, 24h/24`
+      : aTelephone ? `Par téléphone au ${telephone}` : contact === 'email' ? `Par e-mail : ${email}` : REPLIS.rdvCabinet,
+  };
 }

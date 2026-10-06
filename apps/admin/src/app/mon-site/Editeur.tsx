@@ -34,6 +34,7 @@ import {
   THEMES_FLUX,
   TYPES_LIEU,
   VOIX,
+  nomAffiche,
   type LieuDraft,
   type PraticienDraft,
   type JeuPhotos,
@@ -51,6 +52,7 @@ import type { ModeleDisponible } from '@/lib/modeles';
 import SaisieGardee from '@/components/SaisieGardee';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import { enregistrerEtPublier, enregistrerSite, type EtatEnregistrement } from './actions';
+import { publierApercuParcours } from '../creer/actions';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
 import SuiviPublication from '@/components/SuiviPublication';
 import SuggestionsVoisinage from '@/components/SuggestionsVoisinage';
@@ -59,11 +61,14 @@ const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et i
 
 // version : date de modification du brouillon lue (verrou optimiste) ; titre : « Site de … » quand l'admin édite un client ;
 // publicationEnCours : une publication est en cours à l'ouverture (son suivi reprend).
-type Props = { siteId: string | null; version?: string | null; titre?: string; publicationEnCours?: boolean; initial: SiteDraft; lienChangerModele: string; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null; themesActives?: string[] };
+// essai : compte en essai gratuit non validé — pas de « publier » : « Enregistrer » et « Mettre à jour ma version d'essai »
+// (aperçu privé), ou, sans accès créé (session anonyme), le lien pour créer son accès.
+// masquerSujetsIndisponibles : praticien (pas l'admin) — sujets différés (faible niveau de preuve) non montrés.
+type Props = { siteId: string | null; version?: string | null; titre?: string; publicationEnCours?: boolean; initial: SiteDraft; lienChangerModele: string; catalogue: SoinCatalogue[]; modeles: ModeleDisponible[]; marquesImportees: MarqueImportee[]; jeuPhotos?: JeuPhotos | null; themesActives?: string[]; essai?: { anonyme: boolean } | null; masquerSujetsIndisponibles?: boolean };
 
 const versListe = (texte: string, sep = /[,;\n]/) => texte.split(sep).map((x) => x.trim()).filter(Boolean);
 
-export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', publicationEnCours = false, initial, lienChangerModele, catalogue, modeles, marquesImportees, jeuPhotos, themesActives = [] }: Props) {
+export default function Editeur({ siteId, version: versionInitiale = null, titre = 'Mon site', publicationEnCours = false, initial, lienChangerModele, catalogue, modeles, marquesImportees, jeuPhotos, themesActives = [], essai = null, masquerSujetsIndisponibles = false }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const [etape, setEtape] = useState(0);
@@ -129,6 +134,19 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
     demarrer(async () => { await enregistrerPuisPublier(); });
   };
   const publier = () => (controle.remplacements.length ? setConfirmer(true) : publierMaintenant());
+  // Essai : jamais de publication ; la version d'essai (aperçu privé, non indexé) est régénérée à la demande.
+  const mettreAJourEssai = () =>
+    demarrer(async () => {
+      const r = await publierApercuParcours(id, d, version);
+      apresEnregistrement(r);
+      if (r.ok && r.id) setSuivi((n) => (n ?? 0) + 1);
+    });
+  const boutonEssai = (classe: string) =>
+    essai?.anonyme ? (
+      <Link href="/creer?etape=fin" className={classe}>Créer mon accès</Link>
+    ) : (
+      <button type="button" disabled={enCours} onClick={mettreAJourEssai} className={`${classe} disabled:opacity-60`}>Mettre à jour ma version d’essai</button>
+    );
 
   const derniere = etape === ETAPES.length - 1;
   const lieu = d.lieux[0];
@@ -179,7 +197,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                   spécialités. Le champ profil reste dans les brouillons (normaliserDraft), seule la voix se choisit ici. */}
               <Choix
                 legende="Façon de s’exprimer sur le site"
-                options={VOIX.map((v) => ({ value: v.value, label: v.label, description: v.exemple }))}
+                options={VOIX.map((v) => ({ value: v.value, label: v.label, description: v.value === 'tiers' ? `« ${nomAffiche(d.praticiens[0] ?? { prenom: '', nom: '' }) || 'Le praticien'}, ${pays.titre.toLowerCase()}, vous accueille… »` : v.exemple }))}
                 valeur={d.voix}
                 onChange={(v) => maj({ voix: v as SiteDraft['voix'] })}
               />
@@ -408,6 +426,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                 soins={d.soins}
                 soinsConnus={catalogue.map((c) => c.slug)}
                 themesActives={themesActives}
+                masquerIndisponibles={masquerSujetsIndisponibles}
                 conseils
               />
             </fieldset>
@@ -626,16 +645,20 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
             {derniere ? (
               <div className="flex gap-2">
                 <button type="submit" disabled={enCours} className="rounded-lg border border-teal-800 px-4 py-2.5 text-sm font-semibold text-teal-900 hover:bg-teal-50">Enregistrer</button>
-                <button type="button" disabled={enCours} onClick={publier} className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">Enregistrer et publier</button>
+                {essai
+                  ? boutonEssai('rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900')
+                  : <button type="button" disabled={enCours} onClick={publier} className="rounded-lg bg-teal-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">Enregistrer et publier</button>}
                 <Link href="/tableau-de-bord" onClick={(e) => { if (modifie && !confirm('Des modifications ne sont pas enregistrées. Quitter quand même ?')) e.preventDefault(); }} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100">Terminer</Link>
               </div>
             ) : (
               <div className="flex gap-2">
-                {id && (
+                {id && (essai
+                  ? boutonEssai('rounded-lg border border-teal-800 px-4 py-2.5 text-sm font-semibold text-teal-900 hover:bg-teal-50')
+                  : (
                   <button type="button" disabled={enCours} onClick={publier} className="rounded-lg border border-teal-800 px-4 py-2.5 text-sm font-semibold text-teal-900 hover:bg-teal-50 disabled:opacity-60">
                     Enregistrer et publier
                   </button>
-                )}
+                ))}
                 <button type="submit" disabled={enCours} className="rounded-lg bg-teal-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-60">
                   Enregistrer et continuer →
                 </button>

@@ -1,8 +1,8 @@
 'use client';
 
-// Parcours guidé de création du site : 6 étapes, une par écran, une recommandation par défaut à chaque étape.
+// Parcours guidé de création du site : 7 étapes, une par écran, une recommandation par défaut à chaque étape.
 // Le praticien dit d'abord ses SUJETS (3 principaux dans l'ordre, 3 traités aussi : menu, accueil, modèle recommandé),
-// CHOISIT un modèle (3 sites prêts) puis AFFINE couleurs, cabinet, soins et image, contenus ; il vérifie
+// CHOISIT un modèle (4 sites) puis AFFINE couleurs, cabinet, horaires, soins et image, contenus ; il vérifie
 // puis publie. Sauvegarde automatique du brouillon (verrou optimiste : un enregistrement refusé garde la saisie dans ce
 // navigateur). Fonctions pures dans packages/core/src/parcours.ts.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,6 +26,10 @@ import {
   soinsEnAvantDesPriorites,
   avecPrioritesParcours,
   renduDisponible,
+  jalonProgressionEssai,
+  encouragementParcours,
+  soinsDeBaseParcours,
+  soinsParDefaut,
   type Priorites,
 } from '@plateforme/core';
 import ChoixSujets from '@/components/ChoixSujets';
@@ -35,7 +39,7 @@ import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
 import type { EtatParcours, EtatPorte } from './actions';
-import { EtapeCabinet, EtapeContenus, EtapeCouleurs, EtapeSoinsImage, Verification } from './Etapes';
+import { EtapeCabinet, EtapeContenus, EtapeCouleurs, EtapeHoraires, EtapeSoinsImage, Verification } from './Etapes';
 import VerificationEssai from './VerificationEssai';
 import PorteRendu from './PorteRendu';
 import RenduPlein from './RenduPlein';
@@ -175,20 +179,31 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
   // ---- Navigation : focus sur le titre de l'étape à chaque changement ----
   const titre = useRef<HTMLHeadingElement>(null);
   const premier = useRef(true);
+  const accesAttendu = Boolean(verif && essai?.anonyme && contact.rendu);
   useEffect(() => {
     if (premier.current) { premier.current = false; return; }
+    // « Garder mon site » ou « Reprendre » : le formulaire d'accès, en tête de l'écran, reçoit le focus
+    const champ = accesAttendu ? document.getElementById('acces-email') : null;
+    if (champ) {
+      champ.focus({ preventScroll: true });
+      champ.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     titre.current?.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [etape, verif]);
-  // Essai : étape atteinte (7 = vérification), pour la progression suivie par la conseillère
+  }, [etape, verif, accesAttendu]);
+  // Essai : jalon atteint, pour la progression suivie par la conseillère (7 écrans ramenés sur la borne 0..7 de la
+  // migration 0023 : jalonProgressionEssai, le SQL n'est pas modifié)
   const noterProgression = actions.progression;
   useEffect(() => {
-    if (noterProgression) void noterProgression(verif ? 7 : etape).catch(() => undefined);
+    if (noterProgression) void noterProgression(jalonProgressionEssai(etape, verif)).catch(() => undefined);
   }, [etape, verif, noterProgression]);
-  // Soins suggérés (sujets, sinon modèle), affichés pré-cochés à l'étape 5 : « Continuer » vaut confirmation
+  // Soins de base cochés d'office à l'étape 6 (bien visibles) : quitter l'étape les enregistre. Si le praticien a tout
+  // décoché, rien n'est remis d'office (ni dans l'étape, ni dans le rendu).
   const [suggestion, setSuggestion] = useState<{ soins: string[]; enAvant: string[] } | null>(null);
+  const [toutDecoche, setToutDecoche] = useState(false);
   const aller = (n: number) => {
-    if (etape === 5 && n > 5 && suggestion && dRef.current.soins.length === 0) {
+    if (etape === 6 && n !== 6 && suggestion && dRef.current.soins.length === 0) {
       const s = suggestion;
       setD((x) => ({ ...x, soins: s.soins, theme: { ...x.theme, soinsEnAvant: s.enAvant } }));
       setSuggestion(null);
@@ -248,13 +263,20 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
     else setRendu(true);
   };
   const renduPossible = renduDisponible({ modele: d.theme.univers ? d.theme.modele : '', nomPraticien: d.praticiens[0]?.nom, nomCabinet: d.cabinet.nom });
+  // Sans ville, le rendu reste possible mais le titre du site n'a pas de lieu : on le dit à côté du bouton
+  const sansVille = !(d.cabinet.ville || d.lieux[0]?.ville || '').trim();
 
-  const controle = useMemo(() => controlerPublication(d), [d]);
-  // Soins suggérés : ceux des sujets choisis (soin « pivot » de chaque sujet principal d'abord), sinon ceux du modèle
+  // Contrôles sur le brouillon tel qu'il sera enregistré (soins cochés d'office compris : jamais « Aucune compétence
+  // choisie » quand des soins sont cochés à l'écran)
+  const dEffectif = useMemo(() => (suggestion && !d.soins.length ? { ...d, soins: suggestion.soins } : d), [d, suggestion]);
+  const controle = useMemo(() => controlerPublication(dEffectif), [dEffectif]);
+  // Soins des sujets choisis (soin « pivot » de chaque sujet principal d'abord), sinon ceux du modèle : montrés en premier
   const suggestionsSoins = useMemo(() => {
     const l = soinsSuggeresParcours(d, universCourant, slugs);
     return [...new Set([...soinsEnAvantDesPriorites(d.priorites, l), ...l])];
   }, [d, universCourant, slugs]);
+  // Seuls 3 ou 4 soins de base sont cochés d'office (aucun acte spécialisé)
+  const soinsDeBase = useMemo(() => soinsDeBaseParcours(d, universCourant, slugs), [d, universCourant, slugs]);
   // Sujets modifiés après le choix du modèle : spécialités et soins en avant recalculés (mêmes règles que le serveur)
   const majPriorites = (p: Priorites) =>
     setD((x) => (x.theme.univers ? avecPrioritesParcours({ ...x, priorites: p }, { soinsConnus: slugs, themesActives }) : { ...x, priorites: p }));
@@ -262,14 +284,9 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
   const aide = aideEtape(etape);
   const pret = Boolean(universCourant);
 
-  // Aperçu des étapes 3 à 6 : brouillon courant (l'étape 5 y injecte les soins suggérés à confirmer)
-  // Sans soin confirmé, l'aperçu montre les soins suggérés par le modèle (jamais tout le catalogue)
-  const suggeres = suggestionsSoins;
-  const draftApercu = d.soins.length
-    ? d
-    : suggestion
-      ? { ...d, soins: suggestion.soins, theme: { ...d.theme, soinsEnAvant: suggestion.enAvant } }
-      : suggeres.length ? { ...d, soins: suggeres } : d;
+  // Aperçu des étapes 3 à 7 et rendu : brouillon courant (l'étape 6 y ajoute les soins cochés d'office, visibles à
+  // l'écran). Sans soin coché, l'aperçu applique le repli du site (soinsParDefaut, dans ApercuTheme) : rien d'autre.
+  const draftApercu = !d.soins.length && suggestion ? { ...d, soins: suggestion.soins, theme: { ...d.theme, soinsEnAvant: suggestion.enAvant } } : d;
   const libelleApercu = `Aperçu du site « ${universCourant?.nom ?? modeleCourant.nom} »${d.theme.gamme ? '' : ', couleur personnalisée'}`;
 
   return (
@@ -281,16 +298,26 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
         </p>
       )}
 
-      {essai && <BandeauEssai essai={essai} etape={etape} verif={verif} onVoirRendu={essai.anonyme && renduPossible && !verif ? voirRendu : null} />}
+      {essai && <BandeauEssai essai={essai} etape={etape} verif={verif} sansVille={sansVille} onVoirRendu={essai.anonyme && renduPossible && !verif ? voirRendu : null} />}
+
+      {/* Reprise après abandon : rendu déjà vu, accès pas encore créé → l'action attendue en tête */}
+      {essai?.anonyme && contact.rendu && !verif && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-700/30 bg-white px-4 py-3">
+          <p className="text-sm text-neutral-800">Vous avez vu le rendu de votre site : créez votre accès pour le garder.</p>
+          <button type="button" onClick={() => { void sauvegarder(); setEtape(ETAPES_PARCOURS.length); setVerif(true); }} className="min-h-11 rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
+            Reprendre : créer mon accès
+          </button>
+        </div>
+      )}
 
       <Progression etape={etape} pret={pret} onAller={aller} etat={etat} />
 
       <section aria-labelledby="titre-etape" className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <div className="grid gap-2">
           <h1 id="titre-etape" ref={titre} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none sm:text-3xl">
-            {verif ? (essai ? 'Voir mon site' : 'Vérifier et publier') : infos.titre}
+            {verif ? (essai?.anonyme && contact.rendu ? 'Créez votre accès pour garder votre site' : essai ? 'Voir mon site' : 'Vérifier et publier') : infos.titre}
           </h1>
-          <p className="max-w-2xl text-base text-neutral-700">{verif && essai?.anonyme ? 'Relisez le récapitulatif et voyez le rendu de votre site, puis créez votre accès pour le garder. Rien n’est publié sur internet.' : verif && essai ? 'Relisez le récapitulatif, puis générez votre version d’essai : un lien privé, non indexé, que vous pouvez partager. Rien n’est publié sur internet sans votre demande.' : verif ? 'Relisez le récapitulatif. Les informations manquantes ne bloquent pas la mise en ligne : le site affiche une mention sobre à la place, complétez-les quand vous voulez.' : infos.consigne}</p>
+          <p className="max-w-2xl text-base text-neutral-700">{verif && essai?.anonyme && contact.rendu ? 'Une adresse e-mail et un mot de passe : vous retrouvez votre site sur n’importe quel appareil. Rien n’est publié sur internet.' : verif && essai?.anonyme ? 'Relisez le récapitulatif et voyez le rendu de votre site, puis créez votre accès pour le garder. Rien n’est publié sur internet.' : verif && essai ?'Relisez le récapitulatif, puis générez votre version d’essai : un lien privé, non indexé, que vous pouvez partager. Rien n’est publié sur internet sans votre demande.' : verif ? 'Relisez le récapitulatif. Les informations manquantes ne bloquent pas la mise en ligne : le site affiche une mention sobre à la place, complétez-les quand vous voulez.' : infos.consigne}</p>
           {!verif && aide.length > 0 && (
             <details className="max-w-2xl rounded-xl bg-teal-50/70 px-4 py-3 text-sm text-teal-950">
               <summary className="cursor-pointer font-semibold">Conseil : {aide[0].titre}</summary>
@@ -308,7 +335,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
 
         {etape === 1 && !verif && (
           <div className="max-w-3xl">
-            <ChoixSujets priorites={d.priorites} onChange={majPriorites} soins={d.soins} soinsConnus={slugs} themesActives={themesActives} />
+            <ChoixSujets priorites={d.priorites} onChange={majPriorites} soins={d.soins} soinsConnus={slugs} themesActives={themesActives} masquerIndisponibles={!admin} />
           </div>
         )}
 
@@ -321,7 +348,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
             onChoisir={choisir}
             apercu={(u) => {
               const r = appliquerUniversParcours(d, u, { modeles: manifestes, soinsConnus: slugs, themesActives });
-              const soins = d.soins.length ? d.soins : soinsSuggeresParcours(d, u, slugs);
+              const soins = d.soins.length ? d.soins : soinsDeBaseParcours(d, u, slugs);
               const m = modeles.find((x) => x.id === r.draft.theme.modele)?.manifeste ?? modeleIntegre(r.draft.theme.modele);
               return { draft: { ...r.draft, soins }, modele: modeleDuSite(m, r.draft.theme) };
             }}
@@ -336,19 +363,24 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
             <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-6">
               {etape === 3 && <EtapeCouleurs d={d} modele={modeleCourant} univers={universCourant} onTheme={(theme) => maj({ theme })} />}
               {etape === 4 && <EtapeCabinet d={d} controle={controle} maj={maj} lienAvance={lienAvance} />}
-              {etape === 5 && (
+              {etape === 5 && <EtapeHoraires d={d} controle={controle} maj={maj} />}
+              {etape === 6 && (
                 <EtapeSoinsImage
                   d={d}
                   id={id}
                   catalogue={catalogue}
                   suggestions={suggestionsSoins}
+                  preCoches={soinsDeBase}
+                  proposer={!toutDecoche}
+                  parDefaut={soinsParDefaut(d.theme, slugs)}
                   modele={modeleCourant}
                   marquesImportees={marquesImportees}
                   maj={maj}
                   onSuggestion={setSuggestion}
+                  onToutDecoche={setToutDecoche}
                 />
               )}
-              {etape === 6 && <EtapeContenus d={d} univers={universCourant} maj={maj} />}
+              {etape === 7 && <EtapeContenus d={d} univers={universCourant} maj={maj} />}
             </div>
             <div className="grid gap-2 lg:sticky lg:top-24">
               <p className="text-sm font-medium text-neutral-600" aria-live="polite">{libelleApercu}</p>
@@ -365,6 +397,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
             siteId={id}
             controle={controle}
             univers={universCourant}
+            catalogue={catalogue}
             enCours={etat.type === 'enCours'}
             publication={publication}
             onModifier={aller}
@@ -461,15 +494,8 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
 }
 
 /** Bandeau de l'essai gratuit : ton encourageant, jours restants, rappel « privé tant que vous ne demandez pas » */
-function BandeauEssai({ essai, etape, verif, onVoirRendu }: { essai: NonNullable<Props['essai']>; etape: number; verif: boolean; onVoirRendu: (() => void) | null }) {
-  const restantes = verif ? 0 : ETAPES_PARCOURS.length - etape + 1;
-  const encouragement = verif
-    ? 'Dernière étape : découvrez votre site.'
-    : etape === 1
-      ? `Bienvenue${essai.prenom ? ` ${essai.prenom}` : ''} : quelques questions courtes, environ 10 minutes. Tout est enregistré au fur et à mesure.`
-      : restantes <= 2
-        ? 'Presque terminé : encore une ou deux étapes.'
-        : `Bien avancé : encore ${restantes} étapes.`;
+function BandeauEssai({ essai, etape, verif, sansVille, onVoirRendu }: { essai: NonNullable<Props['essai']>; etape: number; verif: boolean; sansVille: boolean; onVoirRendu: (() => void) | null }) {
+  const encouragement = encouragementParcours(etape, verif, essai.prenom);
   return (
     <div className="grid gap-1 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-950 sm:flex sm:items-center sm:justify-between sm:gap-4">
       <p className="font-medium">{encouragement}</p>
@@ -479,15 +505,18 @@ function BandeauEssai({ essai, etape, verif, onVoirRendu }: { essai: NonNullable
         <p className="text-teal-900/80">Version d’essai gratuite jusqu’au {essai.fin} · votre site reste privé</p>
       )}
       {onVoirRendu && (
-        <button type="button" onClick={onVoirRendu} className="min-h-11 justify-self-start rounded-lg border border-teal-800 bg-white px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 sm:shrink-0">
-          Voir le rendu
-        </button>
+        <span className="grid justify-items-start gap-1 sm:shrink-0 sm:justify-items-end">
+          <button type="button" onClick={onVoirRendu} aria-describedby={sansVille ? 'rendu-sans-ville' : undefined} className="min-h-11 rounded-lg border border-teal-800 bg-white px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50">
+            Voir le rendu
+          </button>
+          {sansVille && <span id="rendu-sans-ville" className="text-xs text-amber-900">Ajoutez votre ville pour un rendu fidèle</span>}
+        </span>
       )}
     </div>
   );
 }
 
-/** Barre de progression : 6 étapes, retour possible, état de la sauvegarde automatique */
+/** Barre de progression : 7 étapes, retour possible, état de la sauvegarde automatique */
 function Progression({ etape, pret, onAller, etat }: { etape: number; pret: boolean; onAller: (n: number) => void; etat: Etat }) {
   const libelle = etat.type === 'enCours' ? 'Enregistrement…' : etat.type === 'ok' ? 'Brouillon enregistré' : etat.message ?? '';
   return (
@@ -496,7 +525,7 @@ function Progression({ etape, pret, onAller, etat }: { etape: number; pret: bool
         <p className="font-semibold text-teal-900">Étape {etape} sur {ETAPES_PARCOURS.length}</p>
         <p role="status" className={etat.type === 'erreur' || etat.type === 'conflit' ? 'text-red-700' : 'text-neutral-500'}>{libelle}</p>
       </div>
-      <ol className="grid grid-cols-6 gap-1.5" aria-label="Étapes de la création">
+      <ol className="grid grid-cols-7 gap-1.5" aria-label="Étapes de la création">
         {ETAPES_PARCOURS.map((e) => {
           const accessible = e.numero <= 2 || pret;
           const fait = e.numero < etape;
@@ -571,7 +600,7 @@ function ChoixModeles({
               aria-label={`Choisir le site « ${u.nom} »`}
               className={`min-h-12 rounded-xl px-5 text-base font-semibold focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2 disabled:opacity-60 ${estRecommande || actuel ? 'bg-teal-800 text-white hover:bg-teal-900' : 'border border-teal-800 text-teal-900 hover:bg-teal-50'}`}
             >
-              {choixEnCours === u.id ? 'Préparation du site…' : actuel ? 'Garder celui-là' : 'Celui-là'}
+              {choixEnCours === u.id ? 'Préparation du site…' : actuel ? 'Garder ce modèle' : 'Choisir ce modèle'}
             </button>
           </li>
         );

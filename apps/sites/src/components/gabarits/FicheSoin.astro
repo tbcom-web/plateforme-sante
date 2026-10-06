@@ -19,7 +19,7 @@ import { espacesFines, equipementsDuSoin, type Soin } from '@plateforme/core';
 
 interface Props { soin: Soin }
 const { soin } = Astro.props;
-const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/soins' }, { name: soin.titreCourt, path: `/soins/${soin.slug}` }];
+const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Soins', path: '/soins' }, { name: soin.titreCourt, path: `/soins/${soin.slug}` }];
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
 const v = visuelVariante(soin.slug, 'page');
 const revue = gabarit === 'revue';

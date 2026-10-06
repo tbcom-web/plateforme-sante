@@ -75,7 +75,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
     <Shell email={user.email ?? ''} anonyme={Boolean(user.is_anonymous)}>
       <Parcours
         siteId={site.id}
-        etapeInitiale={changerModele ? 2 : fin ? 6 : undefined}
+        etapeInitiale={changerModele ? 2 : fin ? 7 : undefined}
         verifInitiale={fin}
         messageInitial={typeof erreur === 'string' ? erreur.slice(0, 200) : null}
         version={site.updatedAt}

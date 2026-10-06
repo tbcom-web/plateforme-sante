@@ -4,6 +4,9 @@
 // l'accueil ou d'une fiche de soin, avec les mêmes sources que le générateur de sites : jetons du modèle,
 // gamme, charte, jeu visuel de la spécialité et règles du style visuel (rendreCase), marque du logo.
 // Le contenu est celui du formulaire ; seules les sections du modèle et leur ordre changent d'un modèle à l'autre.
+// Informations manquantes : mêmes REPLIS que le site publié (replisApercu, packages/core/src/replis.ts) : sans ville, titre
+// sans « à » ; sans téléphone publiable, pas de bouton « Appeler » ; adresse incomplète, « Adresse communiquée à la prise de
+// rendez-vous » ; aucun soin coché, soins par défaut de la spécialité (soinsParDefaut). Jamais de valeur fictive.
 import '@fontsource-variable/inter';
 import '@fontsource-variable/manrope';
 import '@fontsource-variable/fraunces';
@@ -22,6 +25,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import {
   completerJeuVisuel, construireNavigation, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
+  avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS,
   type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -35,6 +39,10 @@ type Props = {
   appareil?: Appareil;
   /** Vignette (catalogue du parcours) : haut de l'accueil seulement, sur cette hauteur en pixels, sans commandes */
   vignette?: number;
+  /** Rendu plein écran (RenduPlein) : page sur toute sa hauteur, sans défilement propre (une seule zone de défilement) */
+  plein?: boolean;
+  /** Admin : nom interne du modèle et jeu visuel affichés dans la barre (jamais côté praticien) */
+  technique?: boolean;
 };
 type Vue = 'accueil' | 'soin';
 export type Appareil = 'bureau' | 'mobile';
@@ -47,7 +55,7 @@ const FILTRES: Record<string, string> = {
   contraste: 'contrast(1.12) saturate(0.88) brightness(0.96)',
 };
 const SECTIONS_LIBELLES: Record<string, string> = {
-  faits: 'En bref', etapes: 'Premier rendez-vous', competences: 'Compétences', panorama: 'Le lieu', praticiens: 'Praticiens',
+  faits: 'En bref', etapes: 'Premier rendez-vous', competences: 'Soins', panorama: 'Le lieu', praticiens: 'Praticiens',
   galerie: 'Le cabinet', actualites: 'Actualités', acces: 'Accès et horaires', faq: 'Questions fréquentes',
 };
 
@@ -72,7 +80,7 @@ function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 
   );
 }
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette }: Props) {
+export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false }: Props) {
   const [vue, setVue] = useState<Vue>('accueil');
   const [appareil, setAppareil] = useState<Appareil>(appareilInitial);
   const boite = useRef<HTMLDivElement>(null);
@@ -123,17 +131,23 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     return v as CSSProperties;
   }, [m, j, pedago, d.theme.couleur, d.theme.gamme]);
 
-  // Contenu tiré du formulaire
+  // Contenu tiré du formulaire, avec les replis du site publié (jamais « Votre ville » ni « 00 00 00 00 00 »)
   const lieu = d.lieux[0];
-  const ville = d.cabinet.ville || lieu?.ville || 'Votre ville';
+  const r = replisApercu(d);
+  const ville = r.ville;
+  const suffixeVille = r.aVille ? ` ${r.aVille}` : '';
   const titre = PAYS.find((p) => p.value === d.pays)?.titre ?? 'Pédicure-podologue';
-  const noms = d.praticiens.map((p) => [p.prenom, p.nom].filter(Boolean).join(' ')).filter(Boolean);
-  const nomCabinet = d.cabinet.nom || noms[0] || 'Votre cabinet';
-  // Soins cochés ; ceux mis en avant par l'univers passent devant (même règle que le site : ordonnerSoins).
-  const soins = ordonnerSoins(catalogue.filter((s) => d.soins.includes(s.slug)), d.theme.soinsEnAvant);
-  const soinsAffiches = (soins.length ? soins : catalogue).slice(0, 6);
+  const noms = r.noms;
+  const nomCabinet = r.nomCabinet;
+  const surTitre = [titre, ville].filter(Boolean).join(' · ');
+  const presentation = noms.length ? `${noms.join(', ')}, ${titre.toLowerCase()}.` : `${REPLIS.equipe} accueille les patients${suffixeVille}.`;
+  // Soins cochés ; sans soin coché, ceux que le site présentera (soinsParDefaut) ; ceux mis en avant passent devant
+  // (même règle que le site : ordonnerSoins).
+  const slugsSoins = d.soins.length ? d.soins : soinsParDefaut(d.theme, catalogue.map((c) => c.slug));
+  const soins = ordonnerSoins(catalogue.filter((s) => slugsSoins.includes(s.slug)), d.theme.soinsEnAvant);
+  const soinsAffiches = soins.slice(0, 6);
   const soinPage = soinsAffiches[0];
-  const rdv = d.rdv.mode === 'telephone' ? 'Appeler' : 'Prendre RDV';
+  const rdv = r.rdvEnLigne ? 'Prendre rendez-vous' : r.libelleContact;
 
   // Logo : marque intégrée ou importée, traitée selon le modèle ; logo personnel s'il existe
   const traitement = traitementLogo(m);
@@ -154,7 +168,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     <p className="ap-sur">{n !== undefined && !pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>}{children}</p>
   );
 
-  const titreHero = <>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} <span className="ap-pale">à {ville}</span></>;
+  const titreHero = <>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}{r.aVille && <> <span className="ap-pale">{r.aVille}</span></>}</>;
   const heroPlein = (
     <section style={{ position: 'relative', minHeight: mobile ? 560 : 640, display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
       {/* Photo : plein cadre sous un voile ; dessin ou animation : fond plan, visuel à droite du titre */}
@@ -163,9 +177,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         : <div className="surface-plan" style={{ position: 'absolute', inset: 0 }}><div style={{ position: 'absolute', inset: mobile ? '90px 0 260px 0' : '80px 0 0 44%' }}><Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur="100%" sombre /></div></div>}
       {accueil.type === 'photo' && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgb(0 0 0 / ${m.accueil.voile / 200}) 0%, rgb(0 0 0 / ${m.accueil.voile / 100}) 100%)` }} />}
       <div className="ap-cadre" style={{ position: 'relative', paddingBlock: mobile ? '120px 40px' : '160px 64px' }}>
-        <p className="ap-sur" style={{ color: 'var(--blanc)' }}>{titre} · {ville}</p>
-        <h1 className="ap-h1" style={{ color: 'var(--blanc)', maxWidth: '14ch' }}>{titreHero}</h1>
-        <p style={{ maxWidth: '46ch', opacity: 0.88, marginTop: 18 }}>{noms.length ? `${noms.join(', ')}, ${titre.toLowerCase()}.` : 'Votre nom, votre métier.'}</p>
+        <p className="ap-sur" style={{ color: 'var(--blanc)' }}>{surTitre}</p>
+        <p className="ap-h1" style={{ color: 'var(--blanc)', maxWidth: '14ch' }}>{titreHero}</p>
+        <p style={{ maxWidth: '46ch', opacity: 0.88, marginTop: 18 }}>{presentation}</p>
         <span className="ap-bouton" style={{ background: 'var(--blanc)', color: 'var(--encre)', marginTop: 12 }}>{rdv}</span>
       </div>
     </section>
@@ -173,9 +187,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const heroScinde = (
     <section className="ap-cadre" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.05fr 0.95fr', gap: mobile ? 28 : 56, alignItems: 'center', paddingBlock: mobile ? '36px 48px' : '72px 96px' }}>
       <div>
-        <Sur>{titre} · {ville}</Sur>
-        <h1 className="ap-h1">{titreHero}</h1>
-        <p className="ap-chapo">{noms.length ? `${noms.join(', ')}, ${titre.toLowerCase()}.` : 'Votre nom, votre métier.'}</p>
+        <Sur>{surTitre}</Sur>
+        <p className="ap-h1">{titreHero}</p>
+        <p className="ap-chapo">{presentation}</p>
         <span className="ap-bouton ap-bouton--plein">{rdv}</span>
       </div>
       <Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur={mobile ? 300 : 460} rayon={Math.round(j.rayon * 1.3)} />
@@ -185,7 +199,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   // Accueil « lieu » (modèle Simple et pédagogique) : photo du lieu (praticien, sinon jeu de photos de la spécialité,
   // quel que soit le style visuel), carte claire avec titre, téléphone et rendez-vous ; sans photo, schéma pédagogique.
   const photoLieu = d.photos.accueil || d.photos.panorama || d.photos.cabinet[0] || jeu.accueil.photo;
-  const tel = d.cabinet.telephone || '00 00 00 00 00';
+  const tel = r.telephone;
   const heroLieu = (
     <section style={{ paddingTop: 16 }}>
       <div className="ap-cadre">
@@ -194,14 +208,16 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       <div className="ap-cadre" style={{ position: 'relative', marginTop: mobile ? -40 : -120 }}>
         <div style={{ background: 'var(--fond)', borderRadius: Math.round(j.rayon * 1.3), boxShadow: '0 18px 40px -24px rgb(0 0 0 / 0.35)', padding: mobile ? 22 : 40, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.25fr 0.75fr', gap: mobile ? 18 : 40, alignItems: 'end' }}>
           <div>
-            <p style={{ fontWeight: 700, color: 'var(--accent-vif)', margin: '0 0 8px' }}>{titre} à {ville}</p>
-            <h1 className="ap-h1">{titreHero}</h1>
-            <p className="ap-chapo" style={{ marginBottom: 0 }}>{noms.length ? `${noms.join(', ')}, ${titre.toLowerCase()}.` : 'Votre nom, votre métier.'}</p>
+            <p style={{ fontWeight: 700, color: 'var(--accent-vif)', margin: '0 0 8px' }}>{titre}{suffixeVille}</p>
+            <p className="ap-h1">{titreHero}</p>
+            <p className="ap-chapo" style={{ marginBottom: 0 }}>{presentation}</p>
           </div>
           <div style={{ display: 'grid', gap: 10 }}>
-            {d.rdv.mode !== 'telephone' && <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 58 }}>Prendre rendez-vous</span>}
-            <span className={`ap-bouton ${d.rdv.mode === 'telephone' ? 'ap-bouton--plein' : ''}`} style={{ minHeight: 58, boxShadow: d.rdv.mode === 'telephone' ? undefined : 'inset 0 0 0 1.5px var(--ligne)' }}>☏ {tel}</span>
-            <p style={{ margin: '8px 0 0', color: 'var(--encre-douce)', fontSize: 16 }}>{lieu?.adresse || 'Adresse du cabinet'}, {lieu?.codePostal} {lieu?.ville || ville}</p>
+            {r.rdvEnLigne && <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 58 }}>Prendre rendez-vous</span>}
+            {r.aTelephone
+              ? <span className={`ap-bouton ${r.rdvEnLigne ? '' : 'ap-bouton--plein'}`} style={{ minHeight: 58, boxShadow: r.rdvEnLigne ? 'inset 0 0 0 1.5px var(--ligne)' : undefined }}>☏ {tel}</span>
+              : !r.rdvEnLigne && <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 58 }}>{r.libelleContact}</span>}
+            <p style={{ margin: '8px 0 0', color: 'var(--encre-douce)', fontSize: 16 }}>{r.adresse}</p>
           </div>
         </div>
       </div>
@@ -215,8 +231,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           <Sur n={n}>{SECTIONS_LIBELLES.etapes}</Sur>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
             {[
-              ['Prendre rendez-vous', d.rdv.mode === 'telephone' ? `Par téléphone au ${tel}.` : `En ligne sur ${d.rdv.outil || 'la plateforme'}, ou par téléphone au ${tel}.`],
-              ['Venir au cabinet', `${lieu?.adresse || 'Adresse du cabinet'}, ${lieu?.codePostal ?? ''} ${lieu?.ville || ville}.`],
+              ['Prendre rendez-vous', `${r.phraseRdv}${r.rdvEnLigne && r.aTelephone ? `, ou par téléphone au ${tel}` : ''}.`],
+              ['Venir au cabinet', `${r.adresse}.`],
               ['La consultation', 'Chaque consultation commence par un échange et un examen, afin de proposer des soins adaptés à chacun.'],
             ].map(([t, x], k) => (
               <div key={t} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0 14px', padding: 20, borderRadius: j.rayon, background: douce ? 'var(--fond)' : 'var(--doux)' }}>
@@ -234,7 +250,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <div className="ap-cadre">
           <Sur n={n}>{SECTIONS_LIBELLES.faits}</Sur>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 0, borderTop: 'var(--filet-fort) solid var(--encre)' }}>
-            {[[String(d.praticiens.length), d.praticiens.length > 1 ? 'praticiens' : 'praticien'], [String(soins.length || 6), 'compétences'], [ville, 'ville'], [d.rdv.mode === 'telephone' ? 'Tél.' : '24h/24', 'rendez-vous']].map(([v, l]) => (
+            {[[String(Math.max(1, noms.length)), noms.length > 1 ? 'praticiens' : 'praticien'], [String(soins.length), 'soins'], ...(ville ? [[ville, 'ville']] : []), [r.rdvEnLigne ? '24h/24' : r.aTelephone ? 'Tél.' : 'Cabinet', 'rendez-vous']].map(([v, l]) => (
               <div key={l} style={{ padding: '18px 16px 0 0' }}>
                 <p className="ap-h2" style={{ fontSize: 34, margin: 0 }}>{v}</p>
                 <p className="ap-mono" style={{ color: 'var(--encre-douce)' }}>{l}</p>
@@ -249,7 +265,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       <section className={`ap-section ${douce ? 'ap-douce' : ''}`}>
         <div className="ap-cadre">
           <Sur n={n}>{SECTIONS_LIBELLES.competences}</Sur>
-          <h2 className="ap-h2">{d.voix === 'je' ? 'Mes compétences' : d.voix === 'nous' ? 'Nos compétences' : 'Compétences du cabinet'}</h2>
+          <h2 className="ap-h2">{titreSoins(d.voix)}</h2>
           {m.competences === 'cartes' ? (
             <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
               {soinsAffiches.map((s) => {
@@ -285,7 +301,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       <section className="ap-section ap-douce">
         <div className="ap-cadre">
           <Sur>Le lieu d’exercice</Sur>
-          <p className="ap-h2" style={{ margin: 0 }}>{lieu?.nom ? `${lieu.nom} à ${ville}` : `Le cabinet à ${ville}`}</p>
+          <p className="ap-h2" style={{ margin: 0 }}>{`${lieu?.nom || 'Le cabinet'}${suffixeVille}`}</p>
         </div>
       </section>
     ) : (
@@ -293,7 +309,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <Visuel registre={registre} rendu={panorama} filtre={filtre} hauteur={mobile ? 260 : 420} sombre />
         <div className="ap-cadre" style={{ position: 'absolute', left: 0, right: 0, bottom: 28, color: 'var(--blanc)' }}>
           <p className="ap-sur" style={{ color: 'var(--blanc)' }}><span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>Le lieu d’exercice</p>
-          <p className="ap-h2" style={{ color: 'var(--blanc)', margin: 0 }}>{lieu?.nom ? `${lieu.nom} à ${ville}` : `Le cabinet à ${ville}`}</p>
+          <p className="ap-h2" style={{ color: 'var(--blanc)', margin: 0 }}>{`${lieu?.nom || 'Le cabinet'}${suffixeVille}`}</p>
         </div>
       </section>
     ),
@@ -302,7 +318,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <div className="ap-cadre">
           <Sur n={n}>{SECTIONS_LIBELLES.praticiens}</Sur>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
-            {d.praticiens.map((p) => (
+            {d.praticiens.filter((p) => p.nom.trim()).map((p) => (
               <div key={p.id} className="ap-carte" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
                 <span style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--accent-pale)', color: 'var(--accent-fonce)', display: 'grid', placeItems: 'center', fontWeight: 700 }}>{initiales(`${p.prenom} ${p.nom}`) || '·'}</span>
                 <span><strong style={{ display: 'block' }}>{[p.prenom, p.nom].filter(Boolean).join(' ') || 'Praticien'}</strong><span className="ap-mono" style={{ color: 'var(--encre-douce)' }}>{titre}</span></span>
@@ -343,10 +359,10 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <div className="ap-cadre" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: 40 }}>
           <div>
             <Sur n={n}>{SECTIONS_LIBELLES.acces}</Sur>
-            <p className="ap-h3">{lieu?.adresse || 'Adresse du cabinet'}<br />{lieu?.codePostal} {lieu?.ville || ville}</p>
-            <p style={{ marginTop: 10 }}>{d.cabinet.telephone || '00 00 00 00 00'}</p>
+            <p className="ap-h3">{r.aAdresse ? <>{r.rue}<br />{lieu?.codePostal} {lieu?.ville}</> : r.adresse}</p>
+            {r.aTelephone && <p style={{ marginTop: 10 }}>{tel}</p>}
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
+          {!horairesRenseignes(lieu?.horaires ?? []) ? <p className="ap-h3">{lieu?.surRendezVous ? 'Sur rendez-vous uniquement' : REPLIS.horaires}</p> : <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
             <tbody>
               {(lieu?.horaires ?? []).map(({ jour, heures: h }) => {
                 return (
@@ -357,7 +373,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                 );
               })}
             </tbody>
-          </table>
+          </table>}
         </div>
       </section>
     ),
@@ -378,11 +394,11 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     return (
       <>
         <section className="ap-cadre" style={{ paddingBlock: mobile ? '24px 40px' : '40px 80px' }}>
-          <p className="ap-mono" style={{ color: 'var(--encre-pale)' }}>Accueil / Compétences / {soinPage.titre_court}</p>
+          <p className="ap-mono" style={{ color: 'var(--encre-pale)' }}>Accueil / Soins / {soinPage.titre_court}</p>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.1fr 0.9fr', gap: 40, alignItems: 'end', borderTop: 'var(--filet-fort) solid var(--encre)', paddingTop: 24, marginTop: 16 }}>
             <div>
-              <p className="ap-sur">{!pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>01 / {String(soinsAffiches.length).padStart(2, '0')} —</span>}Compétences</p>
-              <h1 className="ap-h1" style={{ fontSize: mobile ? 40 : 64 }}>{soinPage.titre?.replace('{ville}', ville) ?? soinPage.titre_court}</h1>
+              <p className="ap-sur">{!pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>01 / {String(soinsAffiches.length).padStart(2, '0')} —</span>}{titreSoins(d.voix)}</p>
+              <p className="ap-h1" style={{ fontSize: mobile ? 40 : 64 }}>{soinPage.titre ? avecVille(soinPage.titre, ville) : soinPage.titre_court}</p>
               <p className="ap-chapo">{soinPage.resume}</p>
             </div>
             <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={mobile ? 240 : 340} rayon={Math.round(j.rayon * 1.3)} />
@@ -391,7 +407,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <section className="ap-section ap-douce">
           <div className="ap-cadre" style={{ maxWidth: 760 }}>
             <h2 className="ap-h2" style={{ fontSize: 30 }}>Déroulement de la séance</h2>
-            <p style={{ color: 'var(--encre-douce)' }}>{(soinPage.corps ?? soinPage.resume).replace(/\{ville\}/g, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p>
+            <p style={{ color: 'var(--encre-douce)' }}>{avecVille(soinPage.corps ?? soinPage.resume, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p>
           </div>
         </section>
       </>
@@ -401,7 +417,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const pied = (
     <footer className="ap-pied" style={{ background: m.pied === 'clair' ? 'var(--doux)' : m.pied === 'accent' ? 'var(--accent-fonce)' : 'var(--encre)', color: m.pied === 'clair' ? 'var(--encre)' : 'var(--sur-sombre-doux)' }}>
       <div className="ap-cadre" style={{ paddingBlock: 48 }}>
-        <p className="ap-h2" style={{ color: 'inherit', fontSize: mobile ? 28 : 40 }}>{d.rdv.mode === 'telephone' ? 'Prendre rendez-vous par téléphone' : 'Prendre rendez-vous en ligne'}</p>
+        <p className="ap-h2" style={{ color: 'inherit', fontSize: mobile ? 28 : 40 }}>{r.rdvEnLigne ? 'Prendre rendez-vous en ligne' : r.aTelephone ? 'Prendre rendez-vous par téléphone' : REPLIS.rdvCabinet}</p>
         <p className="ap-mono" style={{ opacity: 0.7, marginTop: 24 }}>© {nomCabinet} · Illustrations : représentations schématiques, sans valeur de mesure</p>
       </div>
     </footer>
@@ -413,17 +429,21 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   return (
     <div className={vignette ? 'overflow-hidden bg-white' : 'overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm'}>
       <style>{CSS + SURFACES_CSS}</style>
+      {/* Commandes simples : la page montrée et l'appareil ; jamais le nom interne du modèle côté praticien */}
       {!vignette && <div className="flex flex-wrap items-center gap-2 border-b border-black/5 bg-neutral-50 px-3 py-2 text-xs">
-        <span className="mr-auto truncate text-neutral-500">Modèle <strong className="text-neutral-800">{m.nom}</strong> · {jeu.label}</span>
-        {(['accueil', 'soin'] as Vue[]).map((v) => (
-          <button key={v} type="button" onClick={() => setVue(v)} aria-pressed={vue === v} className={`rounded-md px-2 py-1 ${vue === v ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{v === 'accueil' ? 'Accueil' : 'Fiche soin'}</button>
-        ))}
-        <span className="mx-1 h-4 w-px bg-neutral-300" />
-        {(['bureau', 'mobile'] as Appareil[]).map((a) => (
-          <button key={a} type="button" onClick={() => setAppareil(a)} aria-pressed={appareil === a} className={`rounded-md px-2 py-1 ${appareil === a ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{a === 'bureau' ? 'Ordinateur' : 'Mobile'}</button>
-        ))}
+        {technique && <span className="mr-auto truncate text-neutral-500">Modèle <strong className="text-neutral-800">{m.nom}</strong> · {jeu.label}</span>}
+        <span role="group" aria-label="Page montrée" className={`flex gap-1 ${technique ? '' : 'mr-auto'}`}>
+          {(['accueil', 'soin'] as Vue[]).map((v) => (
+            <button key={v} type="button" onClick={() => setVue(v)} aria-pressed={vue === v} className={`min-h-9 rounded-md px-2.5 py-1 ${vue === v ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{v === 'accueil' ? 'Accueil' : 'Une page soin'}</button>
+          ))}
+        </span>
+        <span role="group" aria-label="Appareil" className="flex gap-1">
+          {(['bureau', 'mobile'] as Appareil[]).map((a) => (
+            <button key={a} type="button" onClick={() => setAppareil(a)} aria-pressed={appareil === a} className={`min-h-9 rounded-md px-2.5 py-1 ${appareil === a ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{a === 'bureau' ? 'Ordinateur' : 'Téléphone'}</button>
+          ))}
+        </span>
       </div>}
-      <div ref={boite} className={vignette ? 'overflow-hidden bg-neutral-100' : 'max-h-[78vh] overflow-y-auto overflow-x-hidden bg-neutral-100'} style={vignette ? { height: vignette } : undefined}>
+      <div ref={boite} className={vignette ? 'overflow-hidden bg-neutral-100' : plein ? 'overflow-x-hidden bg-neutral-100' : 'max-h-[78vh] overflow-y-auto overflow-x-hidden bg-neutral-100'} style={vignette ? { height: vignette } : undefined}>
         <div style={{ height: hauteur * echelle, width: LARGEUR[appareil] * echelle, margin: '0 auto', position: 'relative' }}>
           <div
             ref={page}
@@ -434,7 +454,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             style={{ ...style, width: LARGEUR[appareil], transform: `scale(${echelle})`, transformOrigin: '0 0', position: 'absolute', top: 0, left: 0 }}
           >
             {gabaritModele(m) !== 'classique' ? (
-              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} vue={vue} nomCabinet={nomCabinet} titre={titre} ville={ville} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
+              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
                 marque={d.theme.logoPerso.url ? <img src={d.theme.logoPerso.url} alt="" style={{ height: 40 }} /> : <span dangerouslySetInnerHTML={{ __html: marque }} />} />
             ) : (<>
             <header className={`ap-entete ${transparent ? 'ap-entete--transparent' : ''}`}>
@@ -447,7 +467,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                   {d.theme.logo.disposition !== 'monogramme' && !(d.theme.logoPerso.url && d.theme.logoPerso.complet) && (
                     <span style={{ lineHeight: 1.1 }}>
                       <strong style={{ display: 'block', fontFamily: traitement.police, fontWeight: traitement.graisse, fontSize: 18 }}>{nomCabinet}</strong>
-                      <span className="ap-mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.75 }}>{titre} · {ville}</span>
+                      <span className="ap-mono" style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.75 }}>{surTitre}</span>
                     </span>
                   )}
                 </span>
@@ -455,7 +475,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                 <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 42, padding: '0 18px', fontSize: 14, ...(transparent ? { background: 'var(--blanc)', color: 'var(--encre)' } : {}) }}>{rdv}</span>
               </div>
             </header>
-            <main>
+            {/* Pas de <main> : l'aperçu est inclus dans une page de l'admin, qui a déjà le sien */}
+            <div>
               {vue === 'accueil' ? (
                 <>
                   {m.accueil.hero === 'lieu' ? heroLieu : m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
@@ -465,7 +486,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                   })}
                 </>
               ) : ficheSoin}
-            </main>
+            </div>
             {pied}
             </>)}
           </div>
@@ -493,6 +514,7 @@ const CSS = `
 .ap[data-motif='trame'] .ap-douce::before { background-image: radial-gradient(circle, var(--trame-couleur) var(--trame-point), transparent calc(var(--trame-point) + 0.5px)), radial-gradient(circle, var(--trame-couleur) var(--trame-point), transparent calc(var(--trame-point) + 0.5px)); background-size: var(--trame-pas) calc(var(--trame-pas) * 0.866); background-position: 0 0, calc(var(--trame-pas) / 2) calc(var(--trame-pas) * 0.433); }
 .ap-h1, .ap-h2, .ap-h3 { font-family: var(--police-titres); font-weight: var(--graisse-titres); color: var(--encre); line-height: 1.05; letter-spacing: -0.035em; margin: 0; text-wrap: balance; }
 .ap-h1 { font-size: 64px; letter-spacing: -0.05em; }
+.ap p.ap-h1 { margin: 0; }
 .ap-h2 { font-size: 44px; margin-bottom: 28px; }
 .ap-h3 { font-size: 19px; letter-spacing: -0.02em; line-height: 1.25; }
 .ap[data-titres='instrument'] .ap-h1 { font-size: 76px; letter-spacing: -0.02em; line-height: 1; }

@@ -3,6 +3,7 @@
 // Rendu du site en plein écran, calculé dans le navigateur (ApercuTheme : mêmes modèles, couleurs, textes et dessins
 // que le générateur), sur téléphone et sur ordinateur. Aucune construction GitHub ni Cloudflare : c'est le rendu
 // proposé avant la création de l'accès. Le lien privé complet vient après « Créez votre accès ».
+// Une seule zone de défilement (le corps du dialogue) : l'aperçu s'y déploie sur toute sa hauteur (ApercuTheme plein).
 import { useEffect, useRef } from 'react';
 import type { JeuPhotos, MarqueImportee, ModeleManifeste, SiteDraft } from '@plateforme/core';
 import ApercuTheme, { type Appareil } from '@/components/ApercuTheme';
@@ -38,9 +39,9 @@ export default function RenduPlein({
         <h2 id="titre-rendu" className="text-base font-semibold">Le rendu de votre site</h2>
         <button ref={fermer} type="button" onClick={onFermer} className="min-h-11 rounded-lg px-3 text-sm font-semibold text-teal-800 hover:bg-teal-50">← Revenir au parcours</button>
       </header>
-      <div className="overflow-y-auto px-2 py-3 sm:px-6">
+      <div className="overflow-y-auto overscroll-contain px-2 py-3 sm:px-6">
         <div className="mx-auto max-w-6xl" role="region" aria-label="Rendu du site">
-          <ApercuTheme appareil={appareil} draft={draft} modele={modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
+          <ApercuTheme plein appareil={appareil} draft={draft} modele={modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
         </div>
         <p className="mx-auto mt-3 max-w-2xl text-center text-xs text-neutral-600">Rendu préparé dans votre navigateur. Sur le site, le plan d’accès montre les vraies rues.</p>
       </div>
