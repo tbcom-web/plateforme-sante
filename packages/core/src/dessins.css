@@ -121,6 +121,10 @@
 .dessin .zone { fill: var(--d-accent); stroke: none; opacity: 0.14; }
 .dessin .zone--forte { opacity: 0.32; }
 .dessin .etiquette { font-family: var(--police-texte, inherit); font-size: var(--taille-donnees-dessin); fill: currentColor; opacity: 0.85; }
+/* Durillon (plaque d'hyperkératose plantaire, 2026-10-06) : aplat d'accent très léger, hachures fines, bord fin ; jamais de point */
+.dessin .durillon { fill: var(--d-accent); fill-opacity: 0.16; stroke: none; }
+.dessin .durillon-hachures { stroke: var(--d-accent); stroke-width: var(--trait-filet); opacity: 0.85; }
+.dessin .durillon-bord { stroke: var(--d-accent); stroke-width: var(--trait-fin); opacity: 0.7; }
 /* Fenêtre d'un gros plan (ongle incarné) et flèche fine de pression (bord de la lame → peau) */
 .dessin .cadre { fill: none; stroke-width: var(--trait-fin); opacity: 0.5; }
 .dessin .fleche { fill: none; stroke: var(--d-accent); stroke-width: var(--trait-normal); }

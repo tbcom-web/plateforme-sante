@@ -2,8 +2,8 @@
 // onychoplastie, mycose de l'ongle, ongles épais, cors et durillons, orthoplastie. Aucune géométrie « à l'œil » quand une géométrie
 // validée existe : les variantes de l'ongle reprennent le gros plan de l'hallux (hallux-gros-plan.ts : même orteil, mêmes voisins,
 // même lame, seule la lame change), l'orthonyxie en coupe reprend POD-AT-0010 (ongle-coupe), l'ongle épais reprend l'état
-// « ongle-epais » de POD-AT-0003 (pied-profil-ongle-epais). Seule la coupe de l'orteil en griffe est construite ici (aucun atome
-// validé) : proportions réelles commentées (2e rayon, 1 cm ≈ 13 unités du dessin), À VALIDER par Paul.
+// « ongle-epais » de POD-AT-0003 (pied-profil-ongle-epais). L'orteil en griffe (refait le 2026-10-06, sans os) reprend la silhouette
+// du profil validé (piedDeProfil) ; seul l'orteil 2 est construit, proportions réelles commentées, À VALIDER par Paul.
 //
 // Références anatomiques et cliniques : docs/referentiels/anatomie-pied.md (§ Ongle, § Peau et hyperkératoses) ; HAS 2020, « Le pied
 // de la personne âgée » § 3.4.2 (orthonyxies : agrafe à fil, lamelle ; plaques unguéales hypertrophiques : fraisage en respectant la
@@ -11,6 +11,7 @@
 // Couleurs : jetons --ez-* uniquement (rendu.ts : orthese, resine, mycose, mycose-fonce, corne, noyau, silicone, metal).
 import { FORMES, type FormeEcranZen } from './formes';
 import { hallux, courbe, r, ep, trait, LAME, LUNULE, HALLUX_GROS_PLAN } from './hallux-gros-plan';
+import { piedDeProfil, echantillonner } from '../pied';
 
 type P = [number, number];
 const E = HALLUX_GROS_PLAN.echelle;
@@ -172,83 +173,172 @@ function ongleEpaisMeulage(): FormeEcranZen {
   return { viewBox: [342, 334, 136, 112], ids: false, corps };
 }
 
-// ———————————————————————————————————————————————————— Orteil en griffe, coupe sagittale du 2e rayon (construit, À VALIDER)
+// ———————————————————————————————————————————————————— Orteil en griffe, 2e rayon de profil (refait le 2026-10-06, À VALIDER)
 
 /**
- * Coupe sagittale schématique du 2e rayon (orteils à droite, sol y 100 ; 1 cm ≈ 13 u) : 2e métatarsien (déclinaison ≈ 13°, tête
- * Ø ≈ 1,5 cm, centre à ≈ 1,8 cm du sol : coussinet plantaire épais sous la tête), orteil EN GRIFFE : P1 en hyperextension (≈ 40°
- * au-dessus de l'horizontale, ≈ 2,2 cm), P2 fléchie (≈ 65° sous l'horizontale, ≈ 1,2 cm), P3 fléchie (≈ 80°, ≈ 0,8 cm) ; pulpe un peu
- * au-dessus du sol (griffe : l'appui pulpaire est réduit). Peau à ≈ 0,5 cm des os sur le dos, ongle sur le dos de P3.
+ * Refait le 2026-10-06 après le retour de Paul (« la figure du durillon est complètement fausse anatomiquement ») : revue dans
+ * docs/referentiels/revue-anatomique-2026-10-06-b.md. Plus AUCUN os dessiné (source des erreurs : orteil géant face à un métatarsien
+ * minuscule, tête trop haute, phalanges mal proportionnées) : seulement la SILHOUETTE DE LA PEAU, construite sur le profil validé
+ * (pied.ts : piedDeProfil, POD-AT-0003) — dos du pied et plante repris tels quels, l'orteil 2 accroché à l'avant-pied avec des
+ * proportions réelles (1 cm ≈ 5 u du profil) :
+ * - articulation métatarso-phalangienne (MTP) du 2e rayon à l'aplomb de celle de l'hallux (x 90), ≈ 3 cm au-dessus du sol (le
+ *   coussinet plantaire, ≈ 1,5 cm, est sous la tête) ; orteil de Ø ≈ 1,8 cm à la base, ≈ 1,4 cm à la pulpe ;
+ * - GRIFFE : P1 (≈ 2,5 cm) en hyperextension de 40° à la MTP ; P2 (≈ 1,7 cm) fléchie à l'IPP (≈ 105° par rapport à P1) ; P3 et la
+ *   pulpe (≈ 1,4 cm) fléchies à l'IPD ; la pulpe ne repose plus sur le sol (≈ 1 cm au-dessus) ;
+ * - COR : épaississement corné en lentille (≈ 0,8 cm, ≈ 1/4 de la largeur de l'orteil) sur la face DORSALE de l'IPP, là où l'empeigne
+ *   frotte, noyau conique à pointe mousse tourné vers l'articulation ;
+ * - DURILLON : plaque d'hyperkératose plantaire DIFFUSE (≈ 2 cm), sans noyau, sous la tête métatarsienne (zone d'appui) ;
+ * - chaussure : semelle intérieure = sol ; empeigne à distance du pied sauf au sommet de l'IPP.
+ * Les tracés exportés sont en unités du dessin de la forme (sol y 100, 1 cm ≈ 13 u, comme avant : mêmes noms, mêmes consommateurs —
+ * dessins.ts, ligne.ts, pictos.ts).
  */
 const SOL_G = 100;
-const OS_GRIFFE = {
-  // Métatarsien : diaphyse (sort du cadre à gauche) et tête arrondie
-  metatarsien: [[-12, 42.6], [40, 54.4], [90, 65.6], [104, 69.4], [110.4, 67.8], [117.6, 70.2], [121.6, 76.4], [120, 83.4], [113.4, 86.6], [105.4, 84.4], [90, 76.2], [40, 63.6], [-12, 51.8]] as P[],
-  p1: [[122.6, 70.6], [126, 66.6], [140, 54.8], [143.6, 50.6], [147, 52.6], [146.4, 57.4], [143, 59.8], [129.4, 71.8], [126.6, 76.2], [122.4, 75.8]] as P[],
-  p2: [[146.6, 54], [149.8, 52.8], [152.6, 54.6], [156.2, 64.6], [155.8, 68.4], [152.2, 68.8], [149.6, 66.8], [145.4, 58.6]] as P[],
-  p3: [[153.4, 70], [156.6, 69.6], [158, 72.4], [158.4, 79], [156.4, 80.6], [154, 79.8], [152.6, 74]] as P[],
+const K_G = 2.6; // unités de la forme par unité du profil
+/** Ne garde que des points espacés d'au moins d (allège le tracé : une courbe par point) */
+const espacer = (pts: P[], d = 1.1): P[] => pts.reduce<P[]>((acc, p, i, t) => (i === 0 || i === t.length - 1 || Math.hypot(p[0] - acc[acc.length - 1][0], p[1] - acc[acc.length - 1][1]) >= d ? [...acc, p] : acc), []);
+/** Profil (piedDeProfil) → unités de la forme : MTP (x 90) en X 112, sol (y 62) en Y 100 */
+const verForme = ([x, y]: P): P => [Math.round((112 + (x - 90) * K_G) * 10) / 10, Math.round((SOL_G - (62 - y) * K_G) * 10) / 10];
+const PROFIL = piedDeProfil();
+const SOUS = echantillonner(PROFIL.contour, 10);
+/** Plante (talon → avant-pied, y 62) et dos du pied (avant → jambe), du contour validé, bornés à l'avant-pied */
+const PLANTE_P = SOUS[0].pts.filter(([x, y]) => y > 50 && x > 30 && x <= 84.6);
+// Le 2e rayon est plus bas que le 1er : le dos du pied s'abaisse en avant (≈ 0,8 cm à la MTP) vers la base de l'orteil 2
+const DOS_P = SOUS[1].pts.filter(([x, y]) => x >= 44 && x <= 85 && y < 46).map(([x, y]) => { const t = Math.max(0, Math.min(1, (x - 66) / 19)); return [x, y + 4 * t * t * (3 - 2 * t)] as P; });
+
+// Axe de l'orteil : MTP → IPP → IPD → bout de P3 (unités du profil)
+const M_G: P = [90, 49];
+const dirG = (deg: number, l: number, o: P): P => [o[0] + l * Math.cos((deg * Math.PI) / 180), o[1] - l * Math.sin((deg * Math.PI) / 180)];
+const IPP: P = dirG(40, 12.5, M_G);
+const IPD: P = dirG(-62, 8.5, IPP);
+const BOUT: P = dirG(-84, 5.6, IPD);
+/** Axe échantillonné et rayon de l'orteil (bombé dorsal à l'IPP : saillie de l'articulation) */
+function axeOrteil(): { c: P[]; n: P[]; rd: number[]; rp: number[]; s: number[] } {
+  const seg: [P, P][] = [[M_G, IPP], [IPP, IPD], [IPD, BOUT]];
+  const c: P[] = [];
+  seg.forEach(([a, b], i) => { for (let k = i ? 1 : 0; k <= 8; k++) c.push([a[0] + ((b[0] - a[0]) * k) / 8, a[1] + ((b[1] - a[1]) * k) / 8]); });
+  // Lissage léger de l'axe (les articulations restent marquées mais sans angle vif)
+  const l = c.map((p, i) => (i === 0 || i === c.length - 1 ? p : ([(c[i - 1][0] + 2 * p[0] + c[i + 1][0]) / 4, (c[i - 1][1] + 2 * p[1] + c[i + 1][1]) / 4] as P)));
+  const s: number[] = [0];
+  for (let i = 1; i < l.length; i++) s.push(s[i - 1] + Math.hypot(l[i][0] - l[i - 1][0], l[i][1] - l[i - 1][1]));
+  const total = s[s.length - 1], sIpp = 12.5;
+  const n = l.map((_, i) => {
+    const a = l[Math.max(0, i - 1)], b = l[Math.min(l.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1;
+    return [dy / m, -dx / m] as P; // normale « dorsale » (gauche de la marche)
+  });
+  const base = (t: number) => 4.5 - 1.1 * (t / total);
+  const rd = s.map((t) => base(t) + 0.7 * Math.exp(-(((t - sIpp) / 2.6) ** 2)));
+  const rp = s.map((t) => base(t) * 0.92);
+  return { c: l, n, rd, rp, s };
+}
+const AXE = axeOrteil();
+const DORSAL_P: P[] = AXE.c.map((p, i) => [p[0] + AXE.n[i][0] * AXE.rd[i], p[1] + AXE.n[i][1] * AXE.rd[i]]);
+/** Retire la petite boucle d'un décalage intérieur à un pli (côté plantaire de l'IPP fléchie) : on coupe au point de croisement */
+function sansBoucle(pts: P[]): P[] {
+  const x = (a: P, b: P, c: P, d: P): P | null => {
+    const den = (b[0] - a[0]) * (d[1] - c[1]) - (b[1] - a[1]) * (d[0] - c[0]);
+    if (Math.abs(den) < 1e-9) return null;
+    const t = ((c[0] - a[0]) * (d[1] - c[1]) - (c[1] - a[1]) * (d[0] - c[0])) / den, u = ((c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0])) / den;
+    return t > 0 && t < 1 && u > 0 && u < 1 ? [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] : null;
+  };
+  for (let i = 0; i < pts.length - 1; i++) for (let j = pts.length - 2; j > i + 1; j--) {
+    const q = x(pts[i], pts[i + 1], pts[j], pts[j + 1]);
+    if (q) return sansBoucle([...pts.slice(0, i + 1), q, ...pts.slice(j + 1)]);
+  }
+  return pts;
+}
+/** Arrondit un angle rentrant (pli de flexion) : deux passes de Chaikin, extrémités conservées */
+const adoucir = (pts: P[], n = 2): P[] => { let q = pts; for (let k = 0; k < n; k++) q = [q[0], ...q.slice(0, -1).flatMap((a, i) => { const b = q[i + 1]; return [[0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]] as P[]; }), q[q.length - 1]]; return q; };
+const PLANTAIRE_P: P[] = adoucir(sansBoucle(AXE.c.map((p, i) => [p[0] - AXE.n[i][0] * AXE.rp[i], p[1] - AXE.n[i][1] * AXE.rp[i]])), 3);
+/** Bout de l'orteil (pulpe) : demi-cercle du côté dorsal au côté plantaire, en avant de l'axe */
+const PULPE_P: P[] = (() => {
+  const i = AXE.c.length - 1, c = AXE.c[i], n = AXE.n[i], r0 = AXE.rd[i], r1 = AXE.rp[i];
+  const a0 = Math.atan2(n[1], n[0]);
+  return Array.from({ length: 9 }, (_, k) => { const a = a0 + (k / 8) * Math.PI, rr = r0 + ((r1 - r0) * k) / 8; return [c[0] + rr * Math.cos(a), c[1] + rr * Math.sin(a)] as P; }).slice(1, -1);
+})();
+/** Indice de l'IPP sur l'axe (sommet de la saillie dorsale) */
+const I_IPP = AXE.s.findIndex((t) => t >= 12.5);
+
+/** Peau : dos du pied (depuis la gauche) → dos de l'orteil → pulpe → dessous de l'orteil → sillon → coussinet → plante (vers la gauche) */
+export const PEAU_GRIFFE: P[] = espacer([
+  ...DOS_P.slice().reverse(), [86.6, 45],
+  ...DORSAL_P, ...PULPE_P, ...PLANTAIRE_P.slice().reverse(),
+  // Sillon sous P1 puis coussinet plantaire sous la tête, posé sur le sol jusqu'à l'aplomb de la MTP
+  [93.4, 56.4], [92.4, 60], [90.4, 61.7], [87, 62],
+  ...PLANTE_P.slice().reverse(),
+]).map(verForme);
+
+// Cor : lentille sur la face dorsale de l'IPP (≈ 0,8 cm), noyau conique, pointe mousse vers l'articulation
+const lentille = (centre: number, demi: number, epais: number, dehors = 1): P[] => {
+  const pts: P[] = [];
+  for (let k = -demi; k <= demi; k++) { const i = centre + k, w = epais * (1 - (k / (demi + 0.6)) ** 2); pts.push([DORSAL_P[i][0] + AXE.n[i][0] * w * dehors, DORSAL_P[i][1] + AXE.n[i][1] * w * dehors]); }
+  for (let k = demi; k >= -demi; k--) { const i = centre + k, w = 0.45 * epais * (1 - (k / (demi + 0.6)) ** 2); pts.push([DORSAL_P[i][0] - AXE.n[i][0] * w, DORSAL_P[i][1] - AXE.n[i][1] * w]); }
+  return pts;
 };
-/** Peau : dos du pied → pli dorsal de la MTP → dos de P1 → saillie de l'IPP → P2 → ongle → pulpe → dessous de l'orteil → sillon → coussinet → sol */
-export const PEAU_GRIFFE: P[] = [
-  [-12, 34.8], [40, 46.4], [90, 57.4], [104, 60.8], [111, 62.8], [116.4, 64.8], [121.6, 61.6], [130, 54.4], [137.6, 48], [142.4, 45], [146.6, 44.8],
-  [150.6, 46.8], [154.4, 51.6], [158.4, 59.8], [160.8, 67.4], [162, 74.6], [161.8, 81], [159.6, 86.2], [156, 88.8], [151.6, 87.6], [148.6, 82.4],
-  [147.4, 75.6], [146.2, 69.4], [144, 63.2], [139, 66.4], [132.6, 71.6], [127.4, 77.4], [123.4, 83.8], [120.6, 91.6], [116.4, 97.8], [110, SOL_G],
-  [60, SOL_G], [20, 99.4], [-12, 98.6],
-];
-const ONGLE_GRIFFE: P[] = [[155.2, 54.2], [158.4, 59.6], [160.8, 67.4], [161.6, 72.6]];
+export const COR: P[] = lentille(I_IPP, 2, 1.0).map(verForme);
+export const NOYAU: P[] = (() => {
+  const i = I_IPP, p = DORSAL_P[i], n = AXE.n[i], t: P = [-n[1], n[0]];
+  const q = (u: number, v: number): P => [p[0] + n[0] * v + t[0] * u, p[1] + n[1] * v + t[1] * u];
+  return [q(-0.55, 0.7), q(0.55, 0.7), q(0.28, -0.5), q(0, -0.75), q(-0.28, -0.5)].map(verForme);
+})();
+// Durillon : plaque diffuse dans la peau de la plante, sous la tête métatarsienne (x 83,6 à 93,2), plus épaisse au centre, sans noyau
+export const DURILLON: P[] = [
+  ...Array.from({ length: 9 }, (_, k) => [83.6 + k * 1.2, 62] as P),
+  ...Array.from({ length: 9 }, (_, k) => { const x = 93.2 - k * 1.2, u = (x - 88.4) / 4.8; return [x, 62 - 1.25 * (1 - u * u)] as P; }),
+].map(verForme);
+// Chaussure : empeigne à ≈ 0,6 cm du dos du pied, qui ne touche le pied qu'au sommet du cor ; bout rond de la chaussure ; sol
+const SOMMET_COR: P = [DORSAL_P[I_IPP][0] + AXE.n[I_IPP][0] * 1.05, DORSAL_P[I_IPP][1] + AXE.n[I_IPP][1] * 1.05];
+export const EMPEIGNE: P[] = [
+  ...DOS_P.slice().reverse().filter((_, i) => i % 3 === 0).map(([x, y]) => [x, y - 3] as P),
+  [SOMMET_COR[0] - 5, SOMMET_COR[1] - 0.6], SOMMET_COR, [SOMMET_COR[0] + 6, SOMMET_COR[1] + 0.8], [116, 45.5], [121.5, 51.5], [123, 58], [122.4, 62],
+].map(verForme);
+// Orthoplastie : crête en silicone sous l'orteil (comble l'espace entre le dessous de l'orteil et la semelle) et anneau dorsal qui
+// coiffe l'IPP (protection du cor) : une seule pièce moulée, reliée entre l'orteil 2 et ses voisins (hors de la vue)
+export const CRETE_ORTHO: P[] = espacer([
+  ...PLANTAIRE_P.filter(([x]) => x >= 93.6).map(([x, y]) => [x, y + 0.3] as P), PULPE_P[PULPE_P.length - 1],
+  [BOUT[0] + 2.6, 61.6], [94.2, 61.6], [93.2, 58.4],
+], 0.9).map(verForme);
+export const ANNEAU_ORTHO: P[] = lentille(I_IPP, 4, 1.5).map(verForme);
 /** Repères désignés par les dessins (unités du dessin de la forme) */
 export const GRIFFE = {
   largeur: 200, hauteur: 110, sol: SOL_G,
-  cor: [145.2, 44.6] as P, noyau: [145.6, 49.8] as P, durillon: [109, 98.6] as P, tete: [112.4, 76.6] as P, chaussure: [144.6, 41.6] as P,
-  orthese: [152, 92] as P, anneau: [133, 50] as P,
+  cor: verForme(SOMMET_COR), noyau: NOYAU[3], durillon: verForme([88.4, 61.2]), tete: verForme(M_G), chaussure: verForme(SOMMET_COR),
+  orthese: verForme([97, 58.6]), anneau: ANNEAU_ORTHO[4],
 };
-// Cor dorsal sur la saillie de l'IPP : lentille de corne (≈ 0,8 cm, ≈ 1/4 de la largeur de l'orteil) et noyau conique qui appuie vers
-// l'articulation, pointe MOUSSE (jamais une écharde), matière plus dense que la corne
-export const COR: P[] = [[138.4, 48.4], [141.2, 43.6], [145.2, 42], [149.2, 43], [152.4, 46.8], [148.4, 46.4], [145.2, 45.8], [141.8, 46.6]];
-export const NOYAU: P[] = [[143.2, 44.6], [145.2, 43.9], [147.2, 44.6], [146.2, 49.2], [145.6, 50.4], [144.6, 50.2], [144, 49]];
-// Durillon : plaque diffuse dans la peau sous la tête du 2e métatarsien, plus épaisse au centre, bords effilés, sans noyau
-export const DURILLON: P[] = [[94, SOL_G - 0.4], [102, 97.2], [110, 96.4], [117, 97.2], [122.4, 99.2], [117, SOL_G - 0.4], [102, SOL_G - 0.4]];
-// Chaussure : empeigne (trait épais) qui ne touche le pied qu'au sommet de l'IPP, bout de la chaussure, semelle intérieure = sol
-export const EMPEIGNE: P[] = [[-12, 29.4], [40, 41], [92, 52.6], [118, 56.4], [134, 47.6], [142.6, 42.2], [147.6, 41.6], [156, 44], [168, 52], [176, 64], [180.6, 80], [181, 92], [178, SOL_G]];
-
-// Orthoplastie : crête sous l'orteil (comble l'espace sous P1-P3, posée sur la semelle) d'un seul bloc avec l'anneau dorsal qui
-// coiffe P1 et la saillie de l'IPP (protection) ; en coupe, les deux parties de la même pièce, reliées hors du plan de coupe
-export const CRETE_ORTHO: P[] = [[123.6, 86.4], [126.8, 79.2], [132.4, 73.2], [139, 68.2], [143.6, 65.6], [145.6, 70.4], [146.8, 77], [148.6, 84], [152.2, 89.6], [155.4, 91.2], [154.6, 96.4], [151, 99.6], [127, 99.6], [123.2, 96.8], [122.4, 91.4]];
-export const ANNEAU_ORTHO: P[] = [[124.2, 59.2], [130, 52.8], [137, 46.8], [142.4, 43.2], [147.2, 42.8], [151.4, 45.4], [149.6, 47.4], [146.6, 45.8], [142.6, 46], [138.4, 49], [131.2, 55.2], [126.2, 62]];
+/** Ongle sur le dos de P3 (près du bout, côté dorsal) */
+const ONGLE_GRIFFE: P[] = DORSAL_P.slice(-6, -1).map(([x, y], i) => [x + AXE.n[AXE.c.length - 6 + i][0] * 0.1, y] as P).map(verForme);
+/** Hallux en arrière-plan (plus long : formule égyptienne), repris du profil validé */
+const HALLUX_P = echantillonner(PROFIL.hallux, 8)[0].pts.map(verForme);
 
 function orteilGriffe(etat: 'cor' | 'orthoplastie'): FormeEcranZen {
   const peau = courbe(PEAU_GRIFFE);
-  const os = (pts: P[]) => courbe(pts, true);
-  const crete = CRETE_ORTHO, anneau = ANNEAU_ORTHO;
   const parties = [
-    // Peau (aplat fermé par le cadre à gauche) puis os en contour fin sur aplat teinté
-    `<path d="${peau} L${r(-12)},${r(34.8)} Z" style="fill:var(--ez-peau-2)"/>`,
-    ...Object.values(OS_GRIFFE).map((pts) => `<path d="${os(pts)}" style="fill:var(--ez-os);stroke:var(--ez-trait);stroke-width:var(--ez-ep-fin);stroke-opacity:0.55"/>`),
-    // Coussinet plantaire sous la tête (léger, teinte de la peau plus soutenue) : rien d'autre sur la peau
-    `<path d="${courbe([[96, 92], [104, 88.4], [113, 88], [120.4, 90.6]])}" style="stroke:var(--ez-peau-ombre);stroke-width:var(--ez-ep-normal)"/>`,
+    // Hallux derrière (même peau, contour fin et léger), puis la peau du 2e rayon (aplat fermé par le cadre à gauche)
+    `<path d="${courbe(HALLUX_P, true)}" style="fill:var(--ez-peau-2);fill-opacity:0.45"/>`, trait(courbe(HALLUX_P, true), 'fin', 0.3),
+    `<path d="${peau} Z" style="fill:var(--ez-peau-2)"/>`,
     // Ongle sur le dos de P3
     `<path d="${courbe(ONGLE_GRIFFE)}" style="stroke:var(--ez-ongle);stroke-width:var(--ez-ep-epais)"/>`, trait(courbe(ONGLE_GRIFFE), 'fin', 0.7),
   ];
   if (etat === 'cor') {
     parties.push(
-      `<path d="${courbe(DURILLON, true)}" style="fill:var(--ez-corne)"/>`, trait(courbe(DURILLON.slice(0, 5)), 'fin', 0.55),
+      `<path d="${courbe(DURILLON, true)}" style="fill:var(--ez-corne)"/>`, trait(courbe(DURILLON.slice(9)), 'fin', 0.55),
       `<path d="${courbe(COR, true)}" style="fill:var(--ez-corne)"/>`, `<path d="${courbe(NOYAU, true)}" style="fill:var(--ez-noyau)"/>`,
-      trait(courbe(NOYAU, true), 'fin', 0.6), trait(courbe(COR.slice(0, 5)), 'fin', 0.7),
+      trait(courbe(COR.slice(0, 5)), 'fin', 0.7),
     );
   } else {
     parties.push(
-      `<path d="${courbe(crete, true)}" style="fill:var(--ez-silicone);fill-opacity:0.92"/>`, trait(courbe(crete, true), 'fin', 0.8),
-      `<path d="${courbe(anneau, true)}" style="fill:var(--ez-silicone);fill-opacity:0.92"/>`, trait(courbe(anneau, true), 'fin', 0.8),
+      `<path d="${courbe(CRETE_ORTHO, true)}" style="fill:var(--ez-silicone);fill-opacity:0.92"/>`, trait(courbe(CRETE_ORTHO, true), 'fin', 0.8),
+      `<path d="${courbe(ANNEAU_ORTHO, true)}" style="fill:var(--ez-silicone);fill-opacity:0.92"/>`, trait(courbe(ANNEAU_ORTHO, true), 'fin', 0.8),
     );
   }
   parties.push(
     trait(peau, 'normal'),
-    // Semelle intérieure (sol) et empeigne de la chaussure, à distance du pied sauf au sommet de l'IPP
-    `<path d="${ligne([[-12, SOL_G], [184, SOL_G]])}" style="${ep('normal', 0.6)}"/>`,
+    // Semelle intérieure (sol) et empeigne de la chaussure, à distance du pied sauf au sommet du cor
+    `<path d="${ligne([[-40, SOL_G], [200, SOL_G]])}" style="${ep('normal', 0.6)}"/>`,
     `<path d="${courbe(EMPEIGNE)}" style="${ep('epais', 0.45)}"/>`,
   );
-  return { viewBox: [60 * E, 30 * E, 128 * E, 76 * E], ids: false, corps: `<g>${parties.join('')}</g>` };
+  return { viewBox: [56 * E, 18 * E, 144 * E, 88 * E], ids: false, corps: `<g>${parties.join('')}</g>` };
 }
+
 
 export const FORMES_SOINS_ONGLES: Record<string, FormeEcranZen> = {
   'hallux-gros-plan-orthonyxie': hallux(false, { dessus: agrafe() }),

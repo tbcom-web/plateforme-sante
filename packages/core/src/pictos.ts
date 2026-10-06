@@ -386,8 +386,13 @@ const DEFS: Record<string, Def> = {
   'cor-durillon': {
     libelle: 'Cor et durillon',
     famille: 'pathologies',
-    // Durillon : épaississement étalé sous les têtes métatarsiennes centrales (zone d'appui), contour à l'accent
-    parties: () => [...plante(40, [24, 24]), accent(ellipse(23.4, 15.6, 4.2, 2.1))],
+    // Durillon : épaississement étalé sous les têtes métatarsiennes CENTRALES (2e et 3e, zone d'appui), contour à l'accent. Revu le
+    // 2026-10-06 : la plaque est placée sur les têtes réelles (CONTOUR_PIED.mtp, même transformation que la plante), plus étalée
+    parties: () => {
+      const t = placer(40 / PIED_L, [PIED.cx, (PIED.haut + PIED.bas) / 2], [24, 24], { miroir: true });
+      const [a, b] = [CONTOUR_PIED.mtp[1], CONTOUR_PIED.mtp[2]].map(([x, y]) => t(x, y + 7));
+      return [...plante(40, [24, 24]), accent(ellipse((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 4.8, 2.4))];
+    },
   },
   'verrue-plantaire': {
     libelle: 'Verrue plantaire',

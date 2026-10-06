@@ -21,7 +21,7 @@
 import { CONTOUR_PIED, EMPREINTE, SEMELLE, SEMELLE_ELEMENTS, CHAUSSURE, PLANTE_ENFANT, ORTEILS_ENFANT, piedDeProfil, echantillonner, lisser, dansPolygone, type P } from './pied';
 import { LIGNE, type EpaisseurLigne, type BouclesLigne } from './charte';
 import { MEDIAL, LATERAL_NORMAL, VOISINS, LAME } from './bibliotheque/hallux-gros-plan';
-import { AGRAFE_Y, LAME_MYCOSE, FRONT_MYCOSE, PEAU_GRIFFE, COR, NOYAU, EMPEIGNE, CRETE_ORTHO, ANNEAU_ORTHO, contourFraise } from './bibliotheque/soins-ongles';
+import { AGRAFE_Y, LAME_MYCOSE, FRONT_MYCOSE, PEAU_GRIFFE, COR, NOYAU, EMPEIGNE, DURILLON, CRETE_ORTHO, ANNEAU_ORTHO, contourFraise } from './bibliotheque/soins-ongles';
 import { FORMES } from './bibliotheque/formes';
 
 export type { EpaisseurLigne, BouclesLigne } from './charte';
@@ -616,7 +616,8 @@ function parcoursSoin(nom: 'orthonyxie' | 'onychoplastie' | 'mycose' | 'ongle-ep
   };
   const lame = (pts: P[]) => partirDe(transf(echantillon(pts, true), mH), appliquer(mH, [22.4, 50]), 1.2);
   // Coupe du 2e orteil en griffe (unités du dessin de la forme, x 60 → 188) agrandie ×1,8, sol en y 164
-  const mG: Affine = [1.8, 0, 0, 1.8, 4 - 60 * 1.8, 164 - 100 * 1.8];
+  // Avant-pied et 2e orteil en griffe (soins-ongles.ts, refait le 2026-10-06 : unités x 56 → 200) agrandis ×1,6, sol en y 164
+  const mG: Affine = [1.6, 0, 0, 1.6, 4 - 56 * 1.6, 164 - 100 * 1.6];
   const peauGriffe = () => new Trait(b).ajouter(transf(echantillon(PEAU_GRIFFE), mG)).pts;
   switch (nom) {
     case 'orthonyxie': {
@@ -660,18 +661,18 @@ function parcoursSoin(nom: 'orthonyxie' | 'onychoplastie' | 'mycose' | 'ongle-ep
       return [peau, transf(dessous, m), transf(contourFraise(), m)];
     }
     case 'cor': {
-      // Peau de l'orteil en griffe : sous la tête, le trait suit le bord interne du durillon (lentille entre ce trait et le sol, sans
-      // boucle) ; chaussure : empeigne puis semelle intérieure (le sol) d'un seul trait ; cor : lentille de corne puis son noyau conique
-      const p = PEAU_GRIFFE, iSol = p.findIndex(([, yy]) => yy >= 100);
-      const durillon: P[] = [[122.4, 99.6], [117, 97.2], [110, 96.4], [102, 97.2], [94, 99.6]];
-      const peau = new Trait(b).ajouter(transf(echantillon([...p.slice(0, iSol - 1), ...durillon, [60, 100], [20, 99.4], [-12, 98.6]]), mG));
-      const chaussure = new Trait(b).ajouter(transf(echantillon(EMPEIGNE), mG)).ajouter(transf([[178, 100], [-12, 100]] as P[], mG), { tension: 0.2 });
+      // Refait le 2026-10-06 (silhouette sans os, soins-ongles.ts) : peau de l'avant-pied et du 2e orteil en griffe ; chaussure :
+      // empeigne puis semelle intérieure (le sol) d'un seul trait, qui remonte sur le bord interne du durillon sous la tête (lentille
+      // entre ce trait et le sol, sans boucle) ; cor : lentille de corne sur l'IPP puis son noyau conique
+      const iDur = DURILLON.length / 2;
+      const sol: P[] = [[DURILLON[iDur][0] + 0.2, 100], ...DURILLON.slice(iDur), [DURILLON[iDur - 1][0] - 0.2, 100], [-40, 100]];
+      const chaussure = new Trait(b).ajouter(transf(echantillon(EMPEIGNE), mG)).ajouter(transf(sol, mG), { tension: 0.2 });
       const cor = new Trait(b).ajouter(transf(echantillon(COR, true), mG)).ajouter(transf(echantillon(NOYAU, true), mG), { tension: 0.3 });
-      return [peau.pts, chaussure.pts, cor.pts];
+      return [peauGriffe(), chaussure.pts, cor.pts];
     }
     case 'orthoplastie': {
       // Peau de l'orteil en griffe ; crête en silicone sous l'orteil ; anneau qui coiffe le dessus (la même pièce, en coupe)
-      return [peauGriffe(), partirDe(transf(echantillon(CRETE_ORTHO, true), mG), appliquer(mG, [127, 99.6]), 1), partirDe(transf(echantillon(ANNEAU_ORTHO, true), mG), appliquer(mG, [124.2, 59.2]), 1)];
+      return [peauGriffe(), partirDe(transf(echantillon(CRETE_ORTHO, true), mG), appliquer(mG, CRETE_ORTHO[0]), 1), partirDe(transf(echantillon(ANNEAU_ORTHO, true), mG), appliquer(mG, ANNEAU_ORTHO[0]), 1)];
     }
     case 'domicile': {
       // Maison (sol, porte, murs, toit), puis la mallette posée au sol avec sa poignée, puis le micromoteur et sa pièce à main

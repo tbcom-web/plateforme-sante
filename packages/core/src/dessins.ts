@@ -751,30 +751,40 @@ function corps(nom: NomDessin, c: Contexte): string {
     }
 
     case 'cors-durillons': {
-      // Coupe du 2e orteil en griffe dans la chaussure : cor sur le dessus de l'articulation (noyau conique qui appuie vers
-      // l'intérieur), là où l'empeigne frotte ; durillon (plaque diffuse, sans noyau) sous la tête du métatarsien, zone d'appui.
-      // Relevé : la pression se lit SUR LE SOL (trame sous la ligne du sol, sous la tête), jamais sur la peau.
-      const E = 4, f = poserForme('orteil-griffe-cor', 4, 18, 232, { couleur: !R });
+      // Refait le 2026-10-06 (retour de Paul : « la figure du durillon est complètement fausse anatomiquement » ; revue :
+      // docs/referentiels/revue-anatomique-2026-10-06-b.md). Deux vues, AUCUN os, AUCUN texte (consigne de Paul : pas de légende
+      // dans l'image ; les libellés sont dans l'alt de la page) :
+      // - à gauche, la plante du pied droit vue de dessous (contour validé POD-AT-0002) : le DURILLON, plaque d'hyperkératose
+      //   diffuse sous les têtes des 2e et 3e métatarsiens (zone d'appui), hachurée, sans noyau ni point ;
+      // - à droite, l'avant-pied de profil (silhouette du profil validé POD-AT-0003, hallux en arrière-plan) : le 2e orteil EN
+      //   GRIFFE dans la chaussure, le COR sur la face dorsale de l'IPP, là où l'empeigne frotte, et le durillon sous la tête.
+      // Relevé : la pression se lit SUR LE SOL (trame sous la tête), jamais sur la peau.
+      const k = 0.66, m: Affine = [-k, 0, 0, k, 10 + 92 * k, 22];
+      const [t2, t3] = [TETES[1], TETES[2]], cxp = (t2[0] + t3[0]) / 2, cyp = (t2[1] + t3[1]) / 2 + 1.5;
+      const ang = Math.atan2(t3[1] - t2[1], t3[0] - t2[0]);
+      const plaque = Array.from({ length: 24 }, (_, i) => {
+        const a = (i / 24) * 2 * Math.PI, u = 11.5 * Math.cos(a), v = 6.2 * Math.sin(a) * (1 + 0.12 * Math.cos(a));
+        return appliquer(m, cxp + u * Math.cos(ang) - v * Math.sin(ang), cyp + u * Math.sin(ang) + v * Math.cos(ang));
+      });
+      const dPlaque = lisser(plaque.map(([x, y]) => [r1(x), r1(y)] as P));
+      const [px, py] = appliquer(m, cxp, cyp);
+      const hachures = Array.from({ length: 9 }, (_, i) => `M${r1(px - 14 + i * 3.4)} ${r1(py + 8)} L${r1(px - 8 + i * 3.4)} ${r1(py - 8)}`).join(' ');
+      const E = 4, f = poserForme('orteil-griffe-cor', 92, 34, 144, { couleur: !R });
       const s = (p: P) => f.sur(p[0] * E, p[1] * E);
-      const [cx, cy] = s(GRIFFE.cor), [dx, dy] = s(GRIFFE.durillon), [, sol] = s([0, GRIFFE.sol]), [ex, ey] = s([170, 57]);
-      return `<g>${f.svg}${R ? trameSol(dx, sol, 15) : ''}${renvoi(cx, cy - 3, 186, 14)}${renvoi(dx, dy + 3, dx, 166)}${renvoi(ex + 1, ey + 2, 194, 100)}${
-        R
-          ? `${mono(188, 12, 'cor · noyau', 'mono--accent')}${mono(dx, 174, 'durillon · zone d’appui', '', 'middle')}${mono(190, 110, 'frottement')}`
-          : `${etiquette2(188, 12, 'Cor :', 'noyau dur')}${etiquette(dx, 175, 'Durillon (corne étalée)', 'middle')}${etiquette2(190, 110, 'La chaussure', 'frotte')}`
-      }</g>`;
+      const [dx] = s(GRIFFE.durillon), [, sol] = s([0, GRIFFE.sol]);
+      return `<g><defs><clipPath id="${loupe}-dur"><path d="${dPlaque}"></path></clipPath><clipPath id="${loupe}-vue"><rect x="92" y="30" width="144" height="${r1(sol - 26)}" rx="6"></rect></clipPath></defs>` +
+        `${piedReel(m, 'plantaire')}${R ? '' : `<path class="durillon" d="${dPlaque}"></path>`}<path class="durillon-hachures" clip-path="url(#${loupe}-dur)" d="${hachures}"></path><path class="durillon-bord" d="${dPlaque}"></path>` +
+        `<g clip-path="url(#${loupe}-vue)">${f.svg}</g><rect class="cadre" x="92" y="30" width="144" height="${r1(sol - 26)}" rx="6"></rect>${R ? trameSol(dx, sol + 4, 11) : ''}</g>`;
     }
 
     case 'orthoplastie': {
-      // Même coupe du 2e orteil en griffe : orthèse en silicone moulée sur mesure, crête sous l'orteil et anneau qui coiffe le dessus
-      // (une seule pièce, reliée hors du plan de coupe). La déformation n'est pas corrigée à l'image (Ameli : elle ne disparaît pas).
-      const E = 4, f = poserForme('orteil-griffe-orthoplastie', 4, 18, 232, { couleur: !R });
-      const s = (p: P) => f.sur(p[0] * E, p[1] * E);
-      const [ax, ay] = s(GRIFFE.anneau), [ox, oy] = s([138, 88]);
-      return `<g>${f.svg}${renvoi(ax - 1, ay - 3, 96, 22)}${renvoi(ox, oy, 188, 132)}${
-        R
-          ? `${mono(94, 16, 'protection du dessus', '', 'end')}${mono(190, 130, 'silicone', 'mono--accent')}${mono(190, 140, 'sur mesure')}`
-          : `${etiquette(94, 18, 'Protège le dessus de l’orteil', 'end')}${etiquette2(190, 130, 'Orthèse en', 'silicone')}`
-      }</g>`;
+      // Refait le 2026-10-06 (même silhouette que « cors-durillons », AUCUN os, aucun texte) : l'avant-pied de profil, le 2e orteil
+      // en griffe et l'orthèse en silicone moulée sur mesure : crête sous l'orteil (posée sur la semelle) et anneau qui coiffe le
+      // dessus de l'IPP (une seule pièce, reliée entre les orteils hors de la vue). La griffe n'est pas corrigée à l'image (Ameli :
+      // l'orthoplastie réduit les pressions, elle ne redresse pas l'orteil).
+      const f = poserForme('orteil-griffe-orthoplastie', 12, 18, 216, { couleur: !R });
+      void GRIFFE;
+      return `<g>${f.svg}</g>`;
     }
 
     case 'domicile': {
