@@ -170,7 +170,7 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
   const nbTests = listes.filter((l) => l.test).length + sansCompte.filter((x) => x.test).length;
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Essais gratuits</h1>

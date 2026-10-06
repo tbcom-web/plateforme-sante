@@ -134,7 +134,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
   const lieu = d.lieux[0];
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <div>
         <SaisieGardee<SiteDraft> espace="formulaire" id={id} onReprendre={(x) => { setD(x); setModifie(true); setStatut({ ok: true, message: 'Saisie reprise : enregistrez pour la conserver.' }); }} />
         <h1 className="text-2xl font-bold">{titre}</h1>

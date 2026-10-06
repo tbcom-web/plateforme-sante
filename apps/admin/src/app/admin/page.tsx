@@ -221,6 +221,9 @@ export default async function AdminSites({ searchParams }: PageProps<'/admin'>) 
                     ) : (
                       <span className="text-neutral-400">jamais publié</span>
                     )}
+                    {(!s.domaine || s.domaine.endsWith('.pages.dev')) && (
+                      <a href="https://github.com/tbcom-web/plateforme-sante/blob/main/docs/procedure-domaine-praticien.md" target="_blank" rel="noopener" className="mt-1 block text-xs text-neutral-500 underline underline-offset-2 hover:text-teal-800">Brancher son nom de domaine ↗</a>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {reste.length === 0 ? <span className="text-teal-800">Complet</span> : (

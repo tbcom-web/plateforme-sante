@@ -276,7 +276,8 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
 
   return {
     id: s.id,
-    domaine: s.domaine ?? `${s.slug ?? s.id}.pages.dev`,
+    // Nom d'hôte seul (canonical, sitemap, robots, llms) : une saisie « https://www.exemple.fr/ » est ramenée à « www.exemple.fr ».
+    domaine: s.domaine?.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '').toLowerCase() || `${s.slug ?? s.id}.pages.dev`,
     demo: s.test || apercu,
     majLe: (apercu ? s.updated_at : (s.publiee_le ?? s.updated_at))?.slice(0, 10),
     profession: { slug: prof.slug, libelle: titreMetier, specialiteSchema: prof.specialite_schema },
