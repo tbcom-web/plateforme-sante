@@ -207,3 +207,55 @@ Planche : `scratchpad/retouches-heros/senior-pied-v2.png`.
 Contre-revue (auto-revue « illustrateur médical ») : JUSTE pour les 6 variantes. Lecture profane (2 s) : « une personne âgée qui
 marche à petits pas avec sa canne, le pied de derrière qui se déroule ». Points à faire valider par Paul : amplitude du décollement
 (10°), légère courbure de la semelle arrière.
+
+## E. Héros « enfant », « diabète », « pédicurie » (retours de Paul après 90abacb)
+
+Retours : enfant = composition confuse (petits pieds et jambes en « tubes » face aux pieds d'un adulte venant du haut) ; diabète =
+monofilament et diapason qui « flottent en l'air » ; pédicurie = la plante en points porte une tache orange-rouge lisible comme une
+plaie. Esprit à suivre : le héros « senior » (scène simple, lisible par un patient, géométries validées). Clés retouchées (elles
+repassent « Modifié », rien n'est passé en « Validé ») : `heros:enfant:releve|pedagogique|ligne`, `heros:diabete:releve|pedagogique|ligne`,
+`heros:pedicurie:releve|pedagogique|ligne` (paysage et portrait). Planche : `scratchpad/retouches-heros/enfant-diabete-pedicurie.png`.
+
+### Ce qui change
+
+- **Enfant** (`heros-scenes.ts`, `sceneEnfant`) : vue de dessus, sans jambes. 3 pas d'adulte et, à sa droite, 4 petits pas d'enfant
+  (paysage : on marche vers la droite ; portrait : vers le haut) ; les pas les plus anciens s'estompent (sens de la marche). Adulte :
+  trace d'appui EMPREINTE (POD-SC-0007) dans le contour léger du pied CONTOUR_PIED plantaire (POD-AT-0002) — trame de points en
+  relevé (contour en pointillés), aplat doux en pédagogique (comme le dessin « analyse »), contour de la plante en trait continu.
+  Enfant : PLANTE_ENFANT + ORTEILS_ENFANT (géométrie des « premiers pas ») — trame, aplat à l'accent, silhouette à l'accent. Trame
+  ramenée à une plage douce (bleu → vert d'eau → jaune), jamais d'orange-rouge : une trace de pas, pas une mesure.
+- **Diabète** (`sceneDiabete`) : patient allongé, pied de profil (piedDeProfil, POD-AT-0003, vue médiale), orteils en haut, plante
+  tournée vers le soignant ; la jambe sort du cadre à gauche, le mollet repose sur la table d'examen. Monofilament tenu par une main
+  simple (prise en pince : index sur le manche, pouce devant, sans ongle ni visage), manche de blouse vers la droite. Fil dans l'axe
+  du manche, PERPENDICULAIRE à la plante sous la tête de M1, plié en un seul C (flambage, flèche ≈ 0,42 × la corde, comme
+  `ligne:monofilament`). Le diapason est retiré (un instrument, un geste).
+- **Pédicurie** (`heros-themes.ts`, COMPOSITIONS) : le dessin « cors-durillons » sort du héros (il reste sur la fiche du soin).
+  Relevé et pédagogique : dessin « soin » (pied de dessus + médaillon de l'hallux) + `materiel:sachets-individuels` (instruments
+  stérilisés en sachets) ; ligne : `ligne:pieds-dessus` + `ligne:instruments`. Aucune couleur sur la peau.
+
+### Revue anatomique (auto-revue « illustrateur médical »)
+
+| # | Point | Dessiné | Référence | Verdict |
+|---|---|---|---|---|
+| 1 | Échelle enfant / adulte | pied de l'enfant = 0,55 × pied adulte | 2-3 ans ≈ 14 cm / adulte ≈ 26 cm | JUSTE |
+| 2 | Empreinte de l'enfant | plante comblée (pas de voûte), avant-pied large, orteils courts et ronds | coussinet graisseux physiologique jusqu'à 4-6 ans (anatomie-pied.md) | JUSTE |
+| 3 | Empreinte de l'adulte | talon, bande externe, têtes, pulpes ; voûte sans appui ; contour du pied autour | POD-SC-0007 ; règle « pression sur l'empreinte, jamais sur la peau » | JUSTE |
+| 4 | Latéralité des pas | pied gauche du côté gauche de la marche, hallux vers l'axe de marche (côté médial), pointes ouvertes (adulte 7°, enfant 9°) | angle du pas légèrement ouvert | JUSTE |
+| 5 | Longueur et largeur des pas | adulte ≈ 1,85 × L (marche lente, à l'allure de l'enfant), écartement ≈ 0,45 × L ; enfant ≈ 2,2 × SA longueur, base plus large (≈ 0,6 × L) | marche du tout-petit : base élargie, petits pas | JUSTE (simplification) |
+| 6 | Monofilament : site | sous la tête de M1, l'un des 3 sites | IWGDF 2019, HAS | JUSTE |
+| 7 | Monofilament : geste | fil perpendiculaire à la peau, plié en C, tenu dans l'axe du manche | IWGDF : appliquer perpendiculairement jusqu'à la flexion, ≈ 2 s | JUSTE |
+| 8 | Position du patient | allongé, mollet sur la table, talon juste au-dessus (creux du tendon d'Achille) | examen en décubitus | JUSTE |
+| 9 | Main | ≈ 0,7 × longueur du pied, index ≈ 7,5 cm, prise en pince, ni ongle ni visage | proportions main / pied | JUSTE (simplification : doigts repliés non détaillés) |
+| 10 | Pédicurie | aucune lésion dessinée ; pied de dessus et médaillon déjà revus ; sachets revus (section B) | — | JUSTE |
+
+Pièges (pieges-illustration.md) cochés : aucun texte, aucun rouge « pic », pas de pied nu qui marche (diabète), pas de jambes
+« tubes », pas de lésion colorée lisible « plaie », matériel jamais en l'air (tenu en main ou posé dans son sachet).
+
+Lecture profane (2 s) : enfant — « un adulte et un petit enfant qui marchent côte à côte » ; diabète — « on touche le dessous du pied
+avec un petit fil » ; pédicurie — « soin des pieds et des ongles, instruments stériles ».
+
+Points à faire valider par Paul : estompage des anciens pas (enfant), taille de la main et du manche de blouse (diabète), absence du
+diapason, remplacement des cors et durillons par les sachets stériles (pédicurie).
+
+Piège nouveau (à ajouter si Paul confirme) : une empreinte d'adulte réduite au seul contour de la trace d'appui (sans contour du
+pied ni orteils) se lit « crochet » ou « virgule » en petit : la poser dans le contour léger du pied.

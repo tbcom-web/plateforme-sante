@@ -11,9 +11,10 @@
 // lu par les outils et les agents, pas affiché), diabète sans rouge « pic » ni pied nu qui marche (examen au monofilament,
 // inspection des pieds), enfant sans courbes de données (premiers pas), pédicurie sans main ni visage.
 //
-// Exceptions (retours de Paul du 2026-10-06, heros-scenes.ts) : ENFANT et SENIOR ne sont plus des assemblages de deux pièces mais une
-// SCÈNE dessinée à partir des géométries validées. Enfant : le podoscope (« boîte avec des pieds en barres, vraiment basique ») est
-// remplacé par de petits pieds d'enfant face aux pieds d'un adulte (et leurs empreintes en points, en paysage). Senior : la plaque
+// Exceptions (retours de Paul du 2026-10-06, heros-scenes.ts) : ENFANT, SENIOR et DIABÈTE ne sont plus des assemblages de deux pièces
+// mais une SCÈNE dessinée à partir des géométries validées. Enfant : les pas d'un adulte et, à côté, les petits pas d'un tout-petit
+// (vue de dessus, sans jambes). Diabète : le monofilament tenu en main, appliqué sous la tête de M1 (pied de profil, patient
+// allongé) : monofilament et diapason ne flottent plus en l'air. Senior : la plaque
 // d'empreintes au point rouge central (incomprise) et la canne isolée en trait vertical sont remplacées par une marche à petits pas,
 // chaussée, avec une canne lisible (poignée en crosse tenue par une main, embout au sol en avant du pied).
 //
@@ -62,7 +63,7 @@ const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, [Piece, Piece]>> = {
     pedagogique: [{ type: 'dessin', nom: 'sport' }, { type: 'dessin', nom: 'taping' }],
     ligne: [{ type: 'ligne', nom: 'marche' }, { type: 'ligne', nom: 'chaussure-course' }],
   },
-  // Dépistage au monofilament (3 sites, fil plié en C) et matériel du test ; en trait : inspection des pieds (vus de dessus)
+  // Scène dessinée (SCENES ci-dessous : monofilament tenu en main) : ces pièces ne servent plus qu'en repli
   diabete: {
     releve: [{ type: 'dessin', nom: 'diabete' }, { type: 'materiel', id: 'monofilament-diapason' }],
     pedagogique: [{ type: 'dessin', nom: 'diabete' }, { type: 'materiel', id: 'monofilament-diapason' }],
@@ -92,16 +93,18 @@ const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, [Piece, Piece]>> = {
     pedagogique: [{ type: 'dessin', nom: 'semelle' }, { type: 'dessin', nom: 'analyse' }],
     ligne: [{ type: 'ligne', nom: 'semelle' }, { type: 'ligne', nom: 'empreintes' }],
   },
-  // Soin de l'ongle (pied vu de dessus et médaillon de l'hallux), cors et durillons ; en trait : instruments et cor
+  // Soin des pieds (pied vu de dessus et médaillon de l'hallux) et instruments stérilisés en sachets individuels ; en trait : les
+  // pieds vus de dessus et les instruments. Retour de Paul du 2026-10-06 : la plante en points du dessin « cors-durillons » (zone
+  // chaude orange-rouge sous l'avant-pied) se lisait « plaie » : retirée du héros (le dessin reste sur la fiche du soin).
   pedicurie: {
-    releve: [{ type: 'dessin', nom: 'soin' }, { type: 'dessin', nom: 'cors-durillons' }],
-    pedagogique: [{ type: 'dessin', nom: 'soin' }, { type: 'dessin', nom: 'cors-durillons' }],
-    ligne: [{ type: 'ligne', nom: 'instruments' }, { type: 'ligne', nom: 'cor' }],
+    releve: [{ type: 'dessin', nom: 'soin' }, { type: 'materiel', id: 'sachets-individuels' }],
+    pedagogique: [{ type: 'dessin', nom: 'soin' }, { type: 'materiel', id: 'sachets-individuels' }],
+    ligne: [{ type: 'ligne', nom: 'pieds-dessus' }, { type: 'ligne', nom: 'instruments' }],
   },
 };
 
 /** Thèmes dont le héros est une scène dessinée d'un seul tenant (heros-scenes.ts) plutôt qu'un assemblage de deux pièces */
-const SCENES: Partial<Record<ThemeIllustre, SceneHeros>> = { enfant: 'enfant', senior: 'senior' };
+const SCENES: Partial<Record<ThemeIllustre, SceneHeros>> = { enfant: 'enfant', senior: 'senior', diabete: 'diabete' };
 
 /** Sources d'une composition (inventaire, revue) : « dessin:sport », « animation:coureur », « ligne:marche », « materiel:podoscope » */
 export function sourcesTheme(id: ThemeIllustre, registre: Registre): string[] {
