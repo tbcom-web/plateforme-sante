@@ -13,7 +13,8 @@
     "generer": "node scripts/generer.mjs",
     "reel": "node scripts/reel.mjs",
     "verifier": "node scripts/generer.mjs --verifier",
-    "tsc": "tsc -p tsconfig.json"
+    "tsc": "tsc -p tsconfig.json",
+    "verifier:types": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@plateforme/core": "file:../core"

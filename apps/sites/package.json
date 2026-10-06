@@ -7,6 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "verifier:types": "astro check",
     "controle:seo": "node scripts/controle-seo.mjs",
     "controle:charte": "node scripts/controle-charte.mjs",
     "controle:agents": "node scripts/controle-agents.mjs",
@@ -33,8 +34,10 @@
     "subset-font": "^2.9.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "pixelmatch": "^7.2.0",
     "playwright": "^1.63.0",
-    "pngjs": "^7.0.0"
+    "pngjs": "^7.0.0",
+    "typescript": "^5.9.3"
   }
 }

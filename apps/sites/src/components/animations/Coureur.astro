@@ -25,7 +25,7 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
     const ctx = cv.getContext('2d')!;
     const sombre = cv.dataset.fond !== 'clair';
     const calme = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let accent = PRESSION[1];
+    let accent: string = PRESSION[1];
     const encre = sombre ? NEUTRES.papier : NEUTRES.encre;
     const trait = (a: number) => transparence(sombre ? NEUTRES.blanc : NEUTRES.encre, a);
     const ratio = Math.min(2, devicePixelRatio || 1);

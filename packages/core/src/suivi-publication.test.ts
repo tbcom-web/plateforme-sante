@@ -117,7 +117,7 @@ test('version en ligne : concordance de l’horodatage ou du run', () => {
 });
 
 const T0 = Date.parse('2026-10-05T07:28:35Z');
-const entree = (x: Partial<EntreeSuivi> & { base?: Partial<EntreeSuivi['base']> }): EntreeSuivi => ({
+const entree = (x: Partial<Omit<EntreeSuivi, 'base'>> & { base?: Partial<EntreeSuivi['base']> }): EntreeSuivi => ({
   job: null,
   versionConfirmee: null,
   maintenant: T0 + 20_000,

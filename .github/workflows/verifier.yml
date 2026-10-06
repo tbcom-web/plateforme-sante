@@ -1,0 +1,47 @@
+name: verifier
+
+# Vérifications avant chaque envoi (npm run verifier, scripts/verifier.mjs) : types (core, contenus, sites avec astro check,
+# admin), tests du core, constructions locales de la démo et du site de test « tous les soins » sur deux modèles,
+# contrôle de la charte. Aucun secret : les constructions de test n'utilisent ni Supabase ni Cloudflare, rien n'est publié.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/**'
+      - '.github/workflows/verifier.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/**'
+      - '.github/workflows/verifier.yml'
+
+concurrency:
+  group: verifier-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run verifier

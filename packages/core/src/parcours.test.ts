@@ -41,10 +41,12 @@ test('un univers retiré ou hors parcours n’est jamais proposé', () => {
 test('recommandation : sujet n° 1 actuel, sinon premier ; le choix enregistré ne la change pas', () => {
   const d = draftVide();
   assert.equal(universRecommande(d)?.id, 'clair-pratique');
-  assert.equal(universRecommande({ ...d, profil: 'prevention' })?.id, 'clair-pratique', 'le profil ne compte plus');
+  const avecProfil = { ...d, profil: 'prevention' };
+  assert.equal(universRecommande(avecProfil)?.id, 'clair-pratique', 'le profil ne compte plus');
   const diabete = { ...d, priorites: { principaux: ['diabete'], secondaires: [] } } as typeof d;
   assert.equal(universRecommande(diabete)?.id, 'simple-proche');
-  assert.equal(universRecommande({ ...diabete, theme: { ...d.theme, univers: 'elegant-sobre' } })?.id, 'simple-proche', 'badge séparé « Votre choix actuel »');
+  const avecChoix = { ...diabete, theme: { ...d.theme, univers: 'elegant-sobre' } };
+  assert.equal(universRecommande(avecChoix)?.id, 'simple-proche', 'badge séparé « Votre choix actuel »');
 });
 
 test('application d’un modèle : identité jamais écrasée', () => {

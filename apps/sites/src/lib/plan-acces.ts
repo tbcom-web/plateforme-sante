@@ -59,7 +59,8 @@ async function construire(): Promise<PlanAcces> {
   const kx = Math.cos((geo.lat * Math.PI) / 180) * 111320;
   // Le cabinet un peu à droite du centre : la photo ou la légende peuvent occuper la gauche sans le cacher.
   const cx = L * 0.56, cy = H * 0.5;
-  const proj = (p: { lat: number; lon: number }) => [cx + (p.lon - geo.lng) * kx * echelle, cy - (p.lat - geo.lat) * 110540 * echelle] as const;
+  const centre = geo; // copie locale : TypeScript ne garde pas la vérification « non nul » d'un import dans une fonction fléchée
+  const proj = (p: { lat: number; lon: number }) => [cx + (p.lon - centre.lng) * kx * echelle, cy - (p.lat - centre.lat) * 110540 * echelle] as const;
   const dedans = ([x, y]: readonly [number, number], marge = 40) => x > -marge && x < L + marge && y > -marge && y < H + marge;
   const rues: Rue[] = [];
   const longueurs = new Map<string, { l: number; x: number; y: number; angle: number }>();

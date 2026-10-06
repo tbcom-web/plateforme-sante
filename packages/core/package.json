@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "verifier:types": "tsc -p tsconfig.json",
+    "tests": "node scripts/tests.mjs"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./icones": "./src/icones.ts",
