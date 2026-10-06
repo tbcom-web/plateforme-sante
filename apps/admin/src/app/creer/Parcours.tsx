@@ -442,7 +442,7 @@ function Progression({ etape, pret, onAller, etat }: { etape: number; pret: bool
   );
 }
 
-/** Étape 2 : les trois sites en grandes cartes, avec vignettes réelles ordinateur et mobile */
+/** Étape 2 : les quatre sites en grandes cartes, avec vignettes réelles ordinateur et mobile */
 function ChoixModeles({
   proposes, d, recommande, choixEnCours, onChoisir, apercu, catalogue, marquesImportees, jeuPhotos,
 }: {
@@ -462,7 +462,7 @@ function ChoixModeles({
   return (
     <>
     <p className="text-sm text-neutral-600">Chaque site est montré sur ordinateur et sur téléphone, avec vos informations.</p>
-    <ul className="grid gap-5 lg:grid-cols-3">
+    <ul className="grid gap-5 md:grid-cols-2 2xl:grid-cols-4">
       {liste.map((u) => {
         const { draft, modele } = apercu(u);
         const estRecommande = u.id === recommande?.id;

@@ -35,7 +35,7 @@ export type Theme = {
   /** Spécialité liée (packs.ts) : visuels et illustrations quand le thème est n° 1 (principale) ou n° 2 (secondaire) */
   specialite: string;
   /** Modèle du parcours suggéré quand ce thème est le n° 1 (parcours.ts, UNIVERS_PARCOURS) */
-  univers: 'clair-pratique' | 'simple-proche' | 'elegant-sobre';
+  univers: 'clair-pratique' | 'simple-proche' | 'elegant-sobre' | 'technique-precis';
   /** Thèmes d'articles du flux rattachés (articles publiés sur le site, montrés sur la page du thème) ; [] = aucun (thème trop large) */
   themesFlux: readonly string[];
   /** Introduction pédagogique de la page du thème : neutre, sans superlatif ni promesse (vérifiée par le lexique) */
@@ -54,7 +54,7 @@ export const THEMES: readonly Theme[] = [
     picto: 'sport-course',
     soins: ['podologie-du-sport', 'semelles-orthopediques', 'douleur-talon', 'k-taping'],
     specialite: 'sport',
-    univers: 'clair-pratique',
+    univers: 'technique-precis',
     themesFlux: ['Sport'],
     intro:
       'Une douleur qui apparaît à l’effort ou une gêne qui revient à chaque sortie mérite d’être examinée. Le pédicure-podologue observe vos appuis, votre foulée et vos chaussures, puis propose si besoin des semelles ou un strapping adaptés à votre activité.',
@@ -124,7 +124,7 @@ export const THEMES: readonly Theme[] = [
     picto: 'semelle-orthopedique',
     soins: ['semelles-orthopediques', 'bilan-podologique', 'douleur-talon'],
     specialite: 'generale',
-    univers: 'clair-pratique',
+    univers: 'technique-precis',
     themesFlux: [],
     intro:
       'Des douleurs au talon, sous la voûte ou aux genoux peuvent être liées à la façon dont le pied prend appui. Après un examen, le pédicure-podologue peut proposer des semelles orthopédiques fabriquées sur mesure.',

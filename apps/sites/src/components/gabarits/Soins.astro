@@ -22,17 +22,20 @@ const groupes = complet && navigation.groupesSoins.length > 1
   : [{ etiquette: 'Soins', href: undefined, soins: site.soins }];
 // Accueil : les soins déjà portés par les cartes des sujets ne sont pas répétés ; rangée retirée s'il n'en reste aucun
 // (lien « Voir tous les soins » sous les rangées, Accueil.astro).
-if (accueil) groupes[0] = { ...groupes[0], etiquette: soinsAccueil.length < site.soins.length ? 'Autres soins' : 'Soins', soins: soinsAccueil };
+// Sans étiquette de rangée sur l'accueil (l'intertitre de la section suffit ; pas de catégorie écrite).
+if (accueil) groupes[0] = { ...groupes[0], etiquette: '', soins: soinsAccueil };
+// « Pour qui » : déjà porté par les grands blocs des sujets sur l'accueil quand le praticien en a choisi.
+const publics = pourQui.length >= 2 && !(accueil && navigation.principaux.length > 0);
 const rangees = [
   ...groupes.filter((g) => g.soins.length > 0).map((g) => ({ cle: 'soins', etiquette: g.etiquette, href: g.href, bulles: g.soins.map((s) => ({ libelle: s.titreCourt, href: `/soins/${s.slug}`, picto: pictoDuSoin(s.slug), resume: complet ? s.resume : '' })) })),
-  ...(pourQui.length >= 2 ? [{ cle: 'publics', etiquette: 'Pour qui', bulles: pourQui.map((p) => ({ ...p, resume: '' })) }] : []),
+  ...(publics ? [{ cle: 'publics', etiquette: 'Pour qui', bulles: pourQui.map((p) => ({ ...p, resume: '' })) }] : []),
   { cle: 'infos', etiquette: 'Infos pratiques', bulles: infos.map((i) => ({ libelle: i.libelle, href: i.href, picto: i.picto, resume: '' })) },
 ];
 ---
 <div class:list={['rangees', `rangees--${variante}`, { 'rangees--complet': complet }]}>
   {rangees.map((r) => (
     <div class:list={['rangee', `rangee--${r.cle}`]}>
-      <p class="rangee__etiquette">{'href' in r && r.href ? <a href={r.href}>{r.etiquette}</a> : r.etiquette}</p>
+      {r.etiquette && <p class="rangee__etiquette">{'href' in r && r.href ? <a href={r.href}>{r.etiquette}</a> : r.etiquette}</p>}
       <ul class="rangee__bulles">
         {r.bulles.map((b) => (
           <li>

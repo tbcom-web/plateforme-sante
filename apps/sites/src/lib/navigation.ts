@@ -29,6 +29,33 @@ export const soinsAccueilAllege = soinsAccueil.length < site.soins.length;
 /** Lien du menu actif sur la page courante (préfixe d'adresse) */
 export const lienActif = (href: string, courant: string) => (href === '/' ? courant === '/' : courant === href || courant.startsWith(`${href}/`));
 
+/** Adresse normalisée : sans « .html », sans barre finale (« /soins/bilan.html » → « /soins/bilan ») */
+const normaliser = (chemin: string) => (chemin.replace(/\.html$/, '').replace(/\/index$/, '').replace(/\/+$/, '') || '/');
+/** Rubrique de chaque page du site hors menu (pages du cabinet, accès) */
+const RUBRIQUES: [RegExp, string][] = [[/^\/(le-cabinet|a-propos)(\/|$)/, '/le-cabinet'], [/^\/(acces|rdv)(\/|$)/, '/acces']];
+
+/**
+ * Entrée de menu à marquer comme active (aria-current="page") pour la page courante, parmi `liens` (menu ordinateur, menu
+ * téléphone ou pied de page) : page de thème → son thème (ou « Soins » si le thème n'est pas dans ce menu) ; fiche d'un soin
+ * → le premier thème du menu qui porte ce soin, sinon « Soins » ; pages du cabinet et d'accès → leur entrée ; accueil →
+ * « Accueil » s'il est dans la liste. Calcul statique (aucun JavaScript).
+ */
+export function entreeActive(liens: readonly { href: string }[], courant: string): string | null {
+  const page = normaliser(courant);
+  const dans = (href: string) => liens.some((l) => l.href === href);
+  if (page === '/') return dans('/') ? '/' : null;
+  const exacte = liens.find((l) => l.href !== '/' && lienActif(l.href, page));
+  if (exacte && !page.startsWith('/soins/')) return exacte.href;
+  if (page.startsWith('/themes/')) return dans('/soins') ? '/soins' : null;
+  if (page.startsWith('/soins/')) {
+    const slug = page.slice('/soins/'.length);
+    const theme = navigation.principaux.find((t) => t.soins.includes(slug) && dans(t.href));
+    return theme ? theme.href : dans('/soins') ? '/soins' : null;
+  }
+  const rubrique = RUBRIQUES.find(([re]) => re.test(page));
+  return rubrique && dans(rubrique[1]) ? rubrique[1] : exacte?.href ?? null;
+}
+
 /** Soin du site par slug (pour les listes des pages de thème et des groupes) */
 export const soinDuSite = (slug: string) => site.soins.find((s) => s.slug === slug);
 

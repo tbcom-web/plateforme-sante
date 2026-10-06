@@ -340,6 +340,30 @@ export const CATALOGUE_UNIVERS: Univers[] = [
       fichesConseils: ['premier-rendez-vous', 'coupe-ongles', 'cors-durillons', 'semelles-entretien'],
     },
   },
+  // Quatrième site du parcours (2026-10-06, demande de Paul : « on a perdu le style technique avec les animations de points
+  // de pression ») : modèle classique « technique », registre relevé, animation d'accueil.
+  {
+    id: 'technique-precis',
+    nom: 'Technique et précis',
+    pourQui: 'Cabinet orienté bilan, sport ou semelles : l’examen et le matériel mis en avant, façon laboratoire d’analyse.',
+    justification: 'Modèle « Technique » (premier écran sombre plein écran, plan d’architecte, trame de points de pression, Schibsted Grotesk grasse) en cobalt, relevés de pression et animation du sujet principal (podoscope, coureur, semelle).',
+    statut: 'brouillon',
+    revu: false,
+    preReglage: {
+      modele: 'technique',
+      gamme: 'cobalt',
+      specialite: 'generale',
+      specialiteSecondaire: '',
+      registre: 'releve',
+      modeVisuel: 'illustrations',
+      animation: true,
+      logo: { marque: 'empreinte', disposition: 'horizontale' },
+      soinsEnAvant: ['bilan-podologique', 'semelles-orthopediques', 'podologie-du-sport', 'soins-de-pedicurie', 'douleur-talon'],
+      jeuPhotos: '',
+      themesFlux: ['Sport', 'Prévention', 'Saison'],
+      fichesConseils: ['premier-rendez-vous', 'semelles-entretien', 'course-chaussures', 'coupe-ongles'],
+    },
+  },
 ];
 
 export const universCatalogue = (id: string | undefined | null) => CATALOGUE_UNIVERS.find((u) => u.id === id);

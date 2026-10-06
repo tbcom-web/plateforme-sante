@@ -70,6 +70,14 @@ const anime = choix !== 'photo';
   .plein__dessin :global(.dessin) { width: 100%; height: 100%; }
   .plein__mention { position: absolute; right: clamp(20px, 4vw, 56px); bottom: 28px; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); letter-spacing: 0.02em; display: none; }
   @media (min-width: 900px) { .plein__dessin { left: 60%; right: 4%; opacity: 1; } .plein__mention { display: block; } }
+  /* Téléphone : l'animation ou le dessin en pleine opacité dans le haut du premier écran, le titre dessous (jamais d'image fantôme) */
+  @media (max-width: 899px) {
+    .plein--anime { place-items: end stretch; }
+    .plein__anim { inset: 70px 0 auto; height: 44svh; opacity: 1; }
+    .plein__dessin { inset: 90px 10% auto; height: 40svh; opacity: 1; }
+    .plein--anime::after { background: linear-gradient(180deg, rgb(var(--nuit-rgb) / 0) 45%, rgb(var(--nuit-rgb) / 0.5) 100%); }
+    .plein--anime .plein__contenu { padding-top: calc(70px + 46svh); padding-bottom: 72px; }
+  }
   .plein__sur { color: var(--sur-sombre-doux); }
   .plein__sur::before { display: none; }
   h1 { color: var(--blanc); font-size: clamp(2.6rem, 6.6vw, 5.8rem); max-width: 16ch; line-height: 1; }

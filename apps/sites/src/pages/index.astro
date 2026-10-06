@@ -85,7 +85,7 @@ const faqEnPlus = pedagogique
   {m.accueil.sections.map((section) => (
     <>
       {section === 'faits' && (
-        <ul class="cadre faits" aria-label="En bref">{faits.map((f, i) => <li><span class="faits__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{f}</li>)}</ul>
+        <ul class="cadre faits" aria-label="En bref">{faits.map((f) => <li>{f}</li>)}</ul>
       )}
 
       {section === 'etapes' && (
@@ -217,7 +217,6 @@ const faqEnPlus = pedagogique
 <style>
   .faits { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-top: var(--filet-fort) solid var(--encre); border-bottom: var(--filet) solid var(--ligne); margin-top: clamp(28px, 4vw, 48px); }
   .faits li { display: grid; gap: 6px; padding: 18px 20px 20px 0; font-size: 0.93rem; color: var(--encre); font-weight: 500; }
-  .faits__num { color: var(--accent-vif); font-weight: 450; }
   .faits li + li { border-top: var(--filet) solid var(--ligne); }
   @media (min-width: 760px) { .faits li + li { border-top: 0; border-left: var(--filet) solid var(--ligne); padding-left: 20px; } }
 

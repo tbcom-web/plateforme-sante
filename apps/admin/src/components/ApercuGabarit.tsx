@@ -104,7 +104,6 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       {!mobile && soins[0] && (
         <figure style={{ margin: 0, paddingLeft: 40, borderLeft: '1px solid var(--g-figure)' }}>
           {figure(soins[0].slug, { width: '100%', aspectRatio: '4 / 3' })}
-          <figcaption style={{ fontStyle: 'italic', fontSize: 15, marginTop: 12 }}>Fig. 1 — dessin au trait du soin principal.</figcaption>
         </figure>
       )}
     </div></section>
@@ -202,7 +201,6 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           <span style={{ ...bouton(true), justifySelf: 'start', boxShadow: 'none' }}>{enLigne ? 'Prendre rendez-vous' : 'Appeler le cabinet'}</span>
         </div>
         <div style={{ marginTop: 40, aspectRatio: mobile ? '4 / 3' : '3 / 1', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{figure(soins[0].slug, { height: '82%', aspectRatio: '4 / 3' })}</div>
-        <p style={{ fontStyle: 'italic', fontSize: 15, color: 'var(--g-encre-douce)', margin: '8px 0 0' }}>Fig. — dessin au trait du soin.</p>
       </section>
       <section style={{ ...cadre, paddingTop: 32 }}><div style={{ maxWidth: 760, marginInline: 'auto' }}><h2 className="ap-h2" style={{ ...h2, fontSize: 30 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre)' }}>{(soins[0].corps ?? soins[0].resume).replace(/\{ville\}/g, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div></section>
     </>

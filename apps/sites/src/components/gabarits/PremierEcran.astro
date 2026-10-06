@@ -1,17 +1,20 @@
 ---
-// Premier écran des gabarits tableau et village (règles de clarté) : qui (praticiens), où (lieu, adresse), soins principaux,
-// Rendez-vous / Appeler — rien d'autre (ni horaires, ni plan, ni chiffres). Le H1 est celui du gabarit classique.
-// - « carte » (tableau) : carte claire (aplat pastel de la gamme sur téléphone) et, à côté, le dessin du soin principal sur la
-//   couleur vive (masqué sur téléphone) : un seul aplat vif, court ;
-// - « notice » (village) : bandeau pleine largeur sur l'aplat pastel, titre, trois lignes à picto (qui, où, soins), deux gros boutons ;
-// - « figure » (revue) : bandeau sur l'aplat pastel, une colonne de texte (sur-titre, titre, qui · où, soins en italique, deux
-//   boutons) et, à côté, UN dessin au trait continu du soin principal, sans légende visible, sans animation, masqué sur téléphone.
-// Couleurs : rôles --g-* (packages/core/src/gabarits.ts) tirés de la gamme (vif, duo, aplat) ou de la couleur libre, AA garantis.
-import Icone from '../Icone.astro';
-import Dessin from '../dessins/Dessin.astro';
+// Premier écran des gabarits tableau, village et revue : qui (praticiens), où (lieu), soins principaux, Rendez-vous /
+// Appeler, et la GRANDE image du sujet n° 1 du praticien (lib/vitrine.ts : illustration validée, ou photo en style
+// « photos »). L'image est visible sur téléphone, juste sous le titre (jamais masquée) ; sa place est réservée (aucun
+// décalage). Le H1 est celui du gabarit classique (SEO identique).
+// - « carte » (tableau) : un grand panneau pastel quasi plein écran ; texte à gauche, à droite l'image sur un disque de
+//   la couleur vive de la gamme (composition « affiche »), bouton plein ;
+// - « notice » (village) : bandeau pastel, gros titre, l'image en grand panneau arrondi, trois lignes simples (qui, où,
+//   soins) sans pictos, deux gros boutons ;
+// - « figure » (revue) : bandeau sur l'aplat pastel, grand titre Bodoni, et la figure du sujet n° 1 au trait continu,
+//   encadrée d'un filet, sans légende visible (règle de Paul).
+// Couleurs : rôles --g-* (packages/core/src/gabarits.ts) tirés de la gamme, AA garantis.
+import VisuelTheme from '../accueil/VisuelTheme.astro';
 import { site } from '../../lib/site';
 import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche, aLaVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
-import { nomLieu, visuelVariante, ligneDuSoin } from '../../lib/gabarits';
+import { nomLieu } from '../../lib/gabarits';
+import { visuelPremierEcran } from '../../lib/vitrine';
 
 interface Props { variante: 'carte' | 'notice' | 'figure' }
 const { variante } = Astro.props;
@@ -27,120 +30,147 @@ const quiOu = `${noms} · ${nomLieu}${aAdresse ? `, ${lieu.adresse}` : ''}`;
 const principaux = site.soins.slice(0, 3).map((s) => s.titreCourt.toLowerCase());
 const soins = principaux.length ? `${principaux.slice(0, -1).join(', ')}${principaux.length > 1 ? ' et ' : ''}${principaux.at(-1)}.` : '';
 const soinsPhrase = soins.charAt(0).toUpperCase() + soins.slice(1);
-const visuel = site.soins[0] ? visuelVariante(site.soins[0].slug, 'liste') : null;
-// Revue : le dessin au trait continu qui correspond au dessin du soin principal.
-const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0].slug) : null;
+const visuel = visuelPremierEcran;
+const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
 ---
 {variante === 'figure' ? (
-  <section class="figure-bande" aria-label="Le cabinet en bref"><div class="g-cadre figure-accueil">
-    <div class="figure-accueil__texte">
-      <p class="figure-accueil__sur">{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
-      <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-      <p class="figure-accueil__qui">{quiOu}</p>
-      {soinsPhrase && <p class="figure-accueil__soins">{soinsPhrase}</p>}
-      <div class="figure-accueil__actions">
+  <section class="pe pe--figure" aria-label="Le cabinet en bref"><div class="g-cadre pe__grille">
+    <p class="pe__sur">{sur}</p>
+    <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
+    <figure class="pe__visuel">
+      <VisuelTheme visuel={visuel} prioritaire sizes="(min-width: 900px) 45vw, 100vw" />
+    </figure>
+    <div class="pe__suite">
+      <p class="pe__qui">{quiOu}</p>
+      {soinsPhrase && <p class="pe__soins">{soinsPhrase}</p>}
+      <div class="pe__actions">
         <a class="g-bouton g-bouton--plein" href={rdv}>{libelleRdv}</a>
-        {rdvEnLigne && aTelephone && <a class="g-bouton figure-accueil__tel" href={telLien}>{site.cabinet.telephone}</a>}
+        {rdvEnLigne && aTelephone && <a class="g-bouton pe__tel" href={telLien}>{site.cabinet.telephone}</a>}
       </div>
-      {rdvEnLigne && !plusieurs && viaPlateforme && <p class="figure-accueil__via">Réservation {viaPlateforme}, 24h/24</p>}
+      {rdvEnLigne && !plusieurs && viaPlateforme && <p class="pe__via">Réservation {viaPlateforme}, 24h/24</p>}
     </div>
-    {figure && (
-      <figure class="figure-accueil__figure" aria-hidden="true">
-        <Dessin ligne={figure} trace={false} />
-      </figure>
-    )}
   </div></section>
 ) : variante === 'carte' ? (
-  <section class="g-cadre carte-accueil" aria-label="Le cabinet en bref">
-    <div class="carte-accueil__texte">
-      <p class="carte-accueil__lieu"><span aria-hidden="true"></span>{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
-      <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-      <p class="carte-accueil__qui">{quiOu}</p>
-      {soinsPhrase && <p class="carte-accueil__soins">{soinsPhrase}</p>}
-      <div class="carte-accueil__actions">
-        <a class="carte-accueil__rdv" href={rdv}>{libelleRdv}</a>
-        {rdvEnLigne && aTelephone && <a class="carte-accueil__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
-      </div>
-      {rdvEnLigne && !plusieurs && viaPlateforme && <p class="carte-accueil__via">Réservation {viaPlateforme}, 24h/24</p>}
-    </div>
-    {visuel && (
-      <div class="carte-accueil__visuel" aria-hidden="true">
-        {visuel.type === 'photo'
-          ? <img src={visuel.src} alt="" width="800" height="900" loading="lazy" decoding="async" style={`object-position:${visuel.cadrage}`} />
-          : <Dessin nom={visuel.dessin} />}
-      </div>
-    )}
-  </section>
-) : (
-  <section class="notice-bande" aria-label="Le cabinet en bref"><div class="g-cadre notice">
+  <section class="g-cadre pe pe--carte" aria-label="Le cabinet en bref"><div class="pe__grille">
+    <p class="pe__sur">{sur}</p>
     <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-    <ul class="notice__lignes">
-      <li><Icone nom="lucide:users" />{qui}</li>
-      <li><Icone nom="picto:itineraire" secours="lucide:map-pin" />{ou}</li>
-      {soinsPhrase && <li><Icone nom="picto:bilan" secours="lucide:stethoscope" />{soinsPhrase}</li>}
-    </ul>
-    <div class="notice__actions">
-      <a class="notice__bouton notice__bouton--plein" href={rdv}>{libelleRdv}{rdvEnLigne && !plusieurs && viaPlateforme && <span>{viaPlateforme}</span>}</a>
-      {rdvEnLigne && aTelephone && <a class="notice__bouton" href={telLien}>Appeler le {site.cabinet.telephone}</a>}
+    <div class="pe__visuel"><span class="pe__disque surface-plan" aria-hidden="true"></span><VisuelTheme visuel={visuel} registre="releve" prioritaire sizes="(min-width: 900px) 45vw, 100vw" /></div>
+    <div class="pe__suite">
+      <p class="pe__qui">{quiOu}</p>
+      {soinsPhrase && <p class="pe__soins">{soinsPhrase}</p>}
+      <div class="pe__actions">
+        <a class="g-bouton g-bouton--plein" href={rdv}>{libelleRdv}</a>
+        {rdvEnLigne && aTelephone && <a class="g-bouton pe__tel" href={telLien}>{site.cabinet.telephone}</a>}
+      </div>
+      {rdvEnLigne && !plusieurs && viaPlateforme && <p class="pe__via">Réservation {viaPlateforme}, 24h/24</p>}
+    </div>
+  </div></section>
+) : (
+  <section class="pe pe--notice" aria-label="Le cabinet en bref"><div class="g-cadre pe__grille">
+    <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
+    <div class="pe__visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 900px) 45vw, 100vw" /></div>
+    <div class="pe__suite">
+      <ul class="pe__lignes">
+        <li><strong>{qui}</strong></li>
+        <li>{ou}</li>
+        {soinsPhrase && <li>{soinsPhrase}</li>}
+      </ul>
+      <div class="pe__actions">
+        <a class="pe__bouton pe__bouton--plein" href={rdv}>{libelleRdv}{rdvEnLigne && !plusieurs && viaPlateforme && <span>{viaPlateforme}</span>}</a>
+        {rdvEnLigne && aTelephone && <a class="pe__bouton" href={telLien}>Appeler le {site.cabinet.telephone}</a>}
+      </div>
     </div>
   </div></section>
 )}
 
 <style>
-  /* ———— Carte (tableau) ———— */
-  .carte-accueil { display: grid; gap: 14px; padding-top: 14px; }
-  @media (min-width: 900px) { .carte-accueil { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 16px; } }
-  .carte-accueil__texte { display: grid; gap: 16px; align-content: start; justify-items: start; padding: clamp(28px, 4.4vw, 56px); border-radius: var(--rayon-carte); background: var(--g-aplat); color: var(--g-encre); }
-  @media (min-width: 900px) { .carte-accueil__texte { background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); } }
-  .carte-accueil h1 { max-width: 12ch; }
-  .carte-accueil__lieu { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 999px; background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); font-size: 0.92rem; font-weight: 600; }
-  .carte-accueil__lieu span { width: 8px; height: 8px; border-radius: 50%; background: var(--g-bulle-picto); flex: none; }
-  .carte-accueil__qui { font-weight: 600; max-width: 34em; }
-  .carte-accueil__soins { color: var(--g-encre-douce); max-width: 34em; }
-  @media (max-width: 899px) { .carte-accueil__soins, .carte-accueil__via { color: var(--g-aplat-doux) !important; } }
-  .carte-accueil__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-  .carte-accueil__rdv, .carte-accueil__tel { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 24px; border-radius: var(--rayon-bouton); font-weight: 650; font-size: 1rem; text-decoration: none; }
-  .carte-accueil__rdv, .carte-accueil__rdv:hover { background: var(--g-plein); color: var(--g-plein-texte); }
-  .carte-accueil__rdv:hover { background: var(--g-plein-survol); }
-  .carte-accueil__tel, .carte-accueil__tel:hover { background: var(--g-carte); color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
-  .carte-accueil__tel :global(.icone) { width: 22px; height: 22px; }
-  .carte-accueil__via { font-size: 0.85rem; color: var(--g-encre-douce); }
-  .carte-accueil__visuel { position: relative; display: none; place-items: center; border-radius: var(--rayon-carte); background: var(--g-vif); overflow: hidden; color: var(--g-vif-texte); --dessin-trait: var(--g-vif-texte); --dessin-accent: var(--g-vif-texte); }
-  .carte-accueil__visuel :global(svg) { width: 72%; height: 80%; }
-  .carte-accueil__visuel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  @media (min-width: 900px) { .carte-accueil__visuel { display: grid; } }
-  @media (max-width: 559px) { .carte-accueil__actions { display: grid; width: 100%; } }
+  /* ———— Commun : grille titre / image / suite. Téléphone : sur-titre, titre, image, puis le reste ———— */
+  .pe__grille { display: grid; gap: 18px; align-content: center; container-type: inline-size; }
+  /* Titre ajusté à la colonne : le plus long mot insécable (« pédicurie-podologie », ville composée : --mot-long, Gabarit.astro)
+     tient toujours sur une ligne, sans césure ni débordement, de 360 px à l'ordinateur. */
+  .pe__grille > :global(h1) { font-size: min(var(--pe-h1), calc(100cqi / (var(--mot-long, 14) * 0.55))) !important; max-width: none !important; }
+  @media (min-width: 900px) {
+    .pe--carte .pe__grille { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+    .pe--carte .pe__grille > :global(h1) { font-size: min(var(--pe-h1), calc((55cqi - 48px) / (var(--mot-long, 14) * 0.5))) !important; }
+    .pe--figure .pe__grille > :global(h1) { font-size: min(var(--pe-h1), calc((58cqi - 48px) / (var(--mot-long, 14) * 0.48))) !important; }
+  }
+  .pe__visuel { position: relative; margin: 0; overflow: hidden; isolation: isolate; aspect-ratio: 4 / 3; color: var(--g-encre); --dessin-trait: var(--g-encre); --dessin-ligne: var(--g-encre); --dessin-accent: var(--g-accent-texte); }
+  .pe__visuel :global(.vt) { position: absolute; inset: 0; z-index: 1; }
+  .pe__visuel :global(.vt--dessin) { padding: 7% 9%; }
+  .pe__suite { display: grid; gap: 10px; justify-items: start; }
+  .pe__qui { font-weight: 600; max-width: 34em; }
+  .pe__soins { color: var(--g-aplat-doux); max-width: 34em; }
+  .pe__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .pe__via { font-size: 0.88rem; color: var(--g-aplat-doux); }
+  .pe__tel, .pe__tel:hover { background: transparent; color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
+  .pe__tel:hover { text-decoration: underline; }
+  @media (max-width: 559px) { .pe__actions { display: grid; width: 100%; } }
+  @media (min-width: 900px) {
+    .pe__grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: clamp(40px, 5vw, 80px); row-gap: 0; }
+    .pe__grille > :not(.pe__visuel) { grid-column: 1; }
+    .pe__visuel { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
+    .pe__grille > :global(h1) { margin-block: 18px 26px !important; }
+  }
+  /* Apparition douce du visuel (CSS seulement) */
+  @media (prefers-reduced-motion: no-preference) {
+    .pe__visuel :global(.vt) { animation: pe-entree var(--duree-lent, 0.9s) var(--courbe-sortie, ease-out) both; }
+    @keyframes pe-entree { from { opacity: 0; transform: scale(0.97); } }
+  }
 
-  /* ———— Notice (village) : bandeau sur l'aplat pastel ———— */
-  .notice-bande { background: var(--g-aplat); color: var(--g-encre); }
-  .notice { display: grid; gap: 20px; padding-block: clamp(32px, 5vw, 56px); }
-  .notice h1 { max-width: 16ch; }
-  .notice__lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .notice__lignes li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
-  .notice__lignes :global(.icone) { width: 28px; height: 28px; color: var(--g-encre); margin-top: 2px; }
-  .notice__actions { display: grid; gap: 12px; margin-top: 6px; }
-  @media (min-width: 760px) { .notice__actions { grid-template-columns: 1fr 1fr; } }
-  .notice__bouton { display: grid; place-items: center; align-content: center; min-height: 64px; padding: 8px 20px; border-radius: var(--rayon-carte); background: var(--g-carte); color: var(--g-encre); font-weight: 700; text-align: center; text-decoration: none; box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
-  .notice__bouton:hover { color: var(--g-encre); text-decoration: underline; }
-  .notice__bouton--plein, .notice__bouton--plein:hover { background: var(--g-plein); color: var(--g-plein-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
-  .notice__bouton span { font-size: 0.85rem; font-weight: 500; }
+  /* ———— Carte (tableau) : grand panneau pastel quasi plein écran, image sur un disque de couleur vive ———— */
+  .pe--carte { padding-top: 14px; }
+  .pe--carte .pe__grille { padding: clamp(24px, 5vw, 72px); border-radius: var(--rayon-carte); background: var(--g-aplat); color: var(--g-aplat-texte); }
+  .pe--carte .pe__sur { font-size: 0.95rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--g-aplat-doux); }
+  .pe--carte { --pe-h1: 5.2rem; }
+  .pe--carte :global(h1) { line-height: 0.98 !important; letter-spacing: -0.045em !important; }
+  .pe--carte .pe__visuel { aspect-ratio: 1 / 1; max-height: 64svh; width: 100%; justify-self: center; }
+  /* Disque « plan d'architecte » sombre de la gamme et dessin en relevé de pression (trame de points colorés) : l'affiche du cabinet */
+  .pe--carte .pe__disque { position: absolute; inset: 6%; border-radius: 50%; box-shadow: 0 0 0 10px var(--g-vif); }
+  .pe--carte .pe__visuel :global(.vt--dessin) { padding: 15%; }
+  .pe--carte .pe__visuel :global(.vt--heros) { inset: 6%; border-radius: 50%; }
+  /* Jetons de dessin de la surface « plan » de la charte (SURFACES_CSS), le dessin étant posé sur le disque voisin */
+  .pe--carte .pe__visuel :global(.vt--dessin) { color: var(--papier); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-os: var(--signal); --dessin-os-opacite: 0.4; --dessin-os-aplat: 0; --dessin-os-secondaires: none; --dessin-fond: color-mix(in srgb, var(--plan), var(--nuit) 30%); }
+  .pe--carte .pe__visuel:has(:global(.vt--photo)) { border-radius: 50%; }
+  .pe--carte .pe__visuel :global(.vt--photo) { inset: 6%; border-radius: 50%; }
+  .pe--carte .pe__qui { font-size: 1.1rem; }
+  @media (max-width: 899px) { .pe--carte .pe__visuel { max-width: 340px; } }
+  @media (min-width: 900px) { .pe--carte .pe__grille { min-height: min(calc(100svh - 110px), 760px); } }
 
-  /* ———— Figure (revue) : bandeau sur l'aplat pastel, texte et un dessin au trait sans légende ———— */
-  .figure-bande { background: var(--g-aplat); color: var(--g-encre); }
-  .figure-accueil { display: grid; gap: 40px; align-items: center; padding-block: clamp(44px, 7vw, 92px) clamp(52px, 7vw, 84px); }
-  @media (min-width: 900px) { .figure-accueil { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: 64px; } }
-  .figure-accueil__texte { display: grid; justify-items: start; }
-  .figure-accueil__sur { font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--g-aplat-doux); margin-bottom: 22px !important; }
-  .figure-accueil h1 { font-size: clamp(2.5rem, 5.2vw, 4.4rem); line-height: 1.04; letter-spacing: -0.01em; max-width: 14ch; }
-  .figure-accueil h1 .pale { font-style: italic; color: var(--g-accent-texte); }
-  .figure-accueil__qui { font-size: 1.2rem; margin-top: 26px !important; max-width: 34em; }
-  .figure-accueil__soins { font-style: italic; color: var(--g-aplat-doux); font-size: 1.15rem; margin-top: 4px !important; max-width: 34em; }
-  .figure-accueil__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
-  .figure-accueil__tel, .figure-accueil__tel:hover { background: transparent; color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
-  .figure-accueil__tel:hover { text-decoration: underline; }
-  .figure-accueil__via { font-size: 0.95rem; font-style: italic; color: var(--g-aplat-doux); margin-top: 10px !important; }
-  .figure-accueil__figure { display: none; margin: 0; padding-left: 40px; border-left: var(--filet) solid var(--g-figure); color: var(--g-figure); --dessin-ligne: var(--g-figure); --dessin-trait: var(--g-figure); --dessin-accent: var(--g-figure); }
-  .figure-accueil__figure :global(svg) { display: block; width: 100%; max-height: 300px; aspect-ratio: 4 / 3; margin-inline: auto; }
-  @media (min-width: 900px) { .figure-accueil__figure { display: block; } }
-  @media (max-width: 559px) { .figure-accueil__actions { display: grid; width: 100%; } .figure-accueil h1 { font-size: 2.5rem; } }
+  /* ———— Notice (village) : une colonne ; l'image en BANDEAU large en tête (sur l'aplat pastel), puis un très gros titre ———— */
+  .pe--notice { background: var(--g-page); color: var(--g-encre); }
+  .pe--notice .pe__grille { padding-block: clamp(16px, 3vw, 32px) clamp(28px, 5vw, 56px); }
+  .pe--notice { --pe-h1: 3.8rem; }
+  .pe--notice .pe__visuel { order: -1; aspect-ratio: 16 / 10; border-radius: var(--rayon-carte); background: var(--g-aplat); }
+  .pe--notice .pe__visuel :global(.vt--dessin) { padding: 5% 12%; }
+  .pe--notice .pe__soins { color: var(--g-encre-douce); }
+  .pe--notice .pe__lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 1.15rem; }
+  .pe--notice .pe__lignes li + li { padding-top: 6px; border-top: var(--filet) solid var(--g-ligne); }
+  .pe--notice .pe__actions { display: grid; gap: 12px; width: 100%; }
+  @media (min-width: 760px) { .pe--notice .pe__actions { grid-template-columns: 1fr 1fr; } }
+  .pe__bouton { display: grid; place-items: center; align-content: center; min-height: 64px; padding: 8px 20px; border-radius: var(--rayon-carte); background: var(--g-carte); color: var(--g-encre); font-weight: 700; text-align: center; text-decoration: none; box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
+  .pe__bouton:hover { color: var(--g-encre); text-decoration: underline; }
+  .pe__bouton--plein, .pe__bouton--plein:hover { background: var(--g-plein); color: var(--g-plein-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .pe__bouton span { font-size: 0.85rem; font-weight: 500; }
+  @media (min-width: 900px) {
+    .pe--notice .pe__grille { grid-template-columns: minmax(0, 1fr); }
+    .pe--notice .pe__visuel { grid-column: 1; grid-row: auto; aspect-ratio: 21 / 9; margin-bottom: 28px; }
+  }
+
+  /* ———— Figure (revue) : sur le papier, très grand titre, la figure au trait sur une planche pastel encadrée de filets ———— */
+  .pe--figure { background: var(--g-page); color: var(--g-encre); }
+  .pe--figure .pe__visuel :global(.vt) { background: var(--g-aplat); }
+  .pe--figure :is(.pe__sur, .pe__soins, .pe__via) { color: var(--g-encre-douce) !important; }
+  .pe--figure .pe__grille { padding-block: clamp(36px, 7vw, 96px) clamp(44px, 7vw, 88px); }
+  .pe--figure .pe__sur { font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--g-aplat-doux); }
+  .pe--figure { --pe-h1: 5rem; }
+  .pe--figure :global(h1) { line-height: 1.02 !important; letter-spacing: -0.015em !important; }
+  .pe--figure :global(h1 .pale) { font-style: italic; color: var(--g-accent-texte); }
+  .pe--figure .pe__visuel { aspect-ratio: auto; overflow: visible; color: var(--g-figure); --dessin-trait: var(--g-figure); --dessin-ligne: var(--g-figure); --dessin-accent: var(--g-figure); }
+  .pe--figure .pe__visuel { display: grid; gap: 10px; align-content: start; }
+  .pe--figure .pe__visuel :global(.vt) { position: relative; inset: auto; height: auto; aspect-ratio: 4 / 3; border-top: var(--filet) solid var(--g-figure); border-bottom: var(--filet) solid var(--g-figure); }
+  @media (max-width: 899px) { .pe--figure .pe__visuel { margin-bottom: 10px; } }
+  .pe--figure .pe__qui { font-size: 1.2rem; font-weight: 400; }
+  .pe--figure .pe__soins { font-style: italic; font-size: 1.12rem; }
+  .pe--figure .pe__via { font-style: italic; }
+  @media (min-width: 900px) { .pe--figure .pe__grille { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
 </style>

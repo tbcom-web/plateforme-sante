@@ -16,7 +16,7 @@ import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { gabaritModele } from '@plateforme/core';
 import { telLien, itineraire, lienRdv, titreCabinet, praticiens, lieu, rdvEnLigne, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact, contactRdv } from '../../lib/textes';
-import { navigation, lienActif } from '../../lib/navigation';
+import { navigation, entreeActive } from '../../lib/navigation';
 
 interface Props {
   courant: string;
@@ -34,7 +34,13 @@ const lienRendezVous = rdvGeneral ?? lienRdv('entete');
 const mobiles = new Set(navigation.menuMobile.map((l) => l.href));
 const nav = navigation.menu.map((l, i) => ({ href: l.href, label: l.libelle, mobile: mobiles.has(l.href), repli: l.cle === 'theme' && i > 0 }));
 const pied = navigation.pied.map((l) => ({ href: l.href, label: l.libelle }));
-const actif = (href: string) => lienActif(href, courant);
+// Rubrique courante (aria-current="page") : sur ordinateur parmi le menu complet ; sur téléphone, parmi les entrées qui y
+// restent (une fiche d'un soin du thème n° 2 active « Soins » sur téléphone, le thème n° 2 sur ordinateur).
+const actifLarge = entreeActive(nav, courant);
+const actifMobile = entreeActive(nav.filter((l) => l.mobile), courant);
+const actifPied = entreeActive(pied, courant);
+const actif = (href: string) => actifLarge === href || actifMobile === href;
+const classeActif = (href: string) => ({ 'c-nav__actif-large': actifLarge === href && actifMobile !== href, 'c-nav__actif-mobile': actifMobile === href && actifLarge !== href });
 const rdv = rdvEnLigne ? lienRendezVous : aTelephone ? telLien : lienContact;
 const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv === 'email' ? 'Écrire' : 'Rendez-vous';
 ---
@@ -46,7 +52,7 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
       {!village && (
         <nav class="c-nav" aria-label="Navigation principale">
           <ul>
-            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
+            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} class:list={classeActif(l.href)} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
             <li class="c-nav__rdv"><a class="g-bouton g-bouton--plein" href={rdv}>{libelle}</a></li>
           </ul>
         </nav>
@@ -56,7 +62,7 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
       <div class="c-bande">
         <nav class="g-cadre c-nav" aria-label="Navigation principale">
           <ul>
-            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
+            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} class:list={classeActif(l.href)} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
             <li class="c-nav__rdv"><a href={rdv}>{libelle}</a></li>
           </ul>
         </nav>
@@ -84,7 +90,7 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
       <div class="c-pied__bloc">
         <p class="c-pied__titre">Pages</p>
         <ul class="c-pied__liens">
-          {pied.map((l) => <li><a href={l.href}>{l.label}</a></li>)}
+          {pied.map((l) => <li><a href={l.href} aria-current={actifPied === l.href ? 'page' : undefined}>{l.label}</a></li>)}
           <li><a href="/mentions-legales">Mentions légales</a></li>
           {site.pays === 'FR' && <li><a href="https://www.onpp.fr" rel="noopener" target="_blank">Ordre national des pédicures-podologues</a></li>}
         </ul>
@@ -184,7 +190,12 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
   .c-nav ul { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; }
   .c-nav a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); padding: 0 14px; border-radius: 999px; color: var(--g-encre); font-weight: 600; font-size: 1rem; text-decoration: none; }
   .c-nav a:hover { color: var(--g-encre); background: var(--g-bulle); }
-  .c-nav a[aria-current='page'] { background: var(--g-bulle); color: var(--g-bulle-texte); }
+  /* Rubrique courante : graisse et trait de la couleur du cabinet sous le libellé (net, pas une simple nuance) */
+  .c-nav a { position: relative; }
+  .c-nav a[aria-current='page'] { color: var(--g-encre); font-weight: 750; background: none; }
+  .c-nav a[aria-current='page']::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: 6px; height: 3px; border-radius: 2px; background: var(--g-accent-texte); }
+  @media (max-width: 759px) { .c-nav a.c-nav__actif-large[aria-current='page'] { font-weight: inherit; } .c-nav a.c-nav__actif-large[aria-current='page']::after { display: none; } }
+  @media (min-width: 760px) { .c-nav a.c-nav__actif-mobile[aria-current='page'] { font-weight: inherit; } .c-nav a.c-nav__actif-mobile[aria-current='page']::after { display: none; } }
   .c-nav .c-nav__rdv a { margin-left: 8px; min-height: 48px; padding-inline: 20px; background: var(--g-vif); color: var(--g-vif-texte); box-shadow: none; }
   .c-nav .c-nav__rdv a:hover { background: var(--g-vif); color: var(--g-vif-texte); text-decoration: underline; }
   /* Téléphone : le menu passe en une ligne sous le nom ; « Rendez-vous » est dans la barre du bas */
@@ -207,7 +218,9 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
   .c-bande ul { justify-content: flex-start; }
   .c-bande a { border-radius: 0; padding-inline: 16px; min-height: 52px; }
   .c-bande li:first-child a { padding-left: 0; }
-  .c-bande a[aria-current='page'] { background: transparent; color: var(--g-encre); text-decoration: underline; text-decoration-thickness: var(--filet-fort); text-underline-offset: 6px; }
+  .c-bande a[aria-current='page'] { background: transparent; color: var(--g-encre); }
+  .c-bande a[aria-current='page']::after { left: 16px; right: 16px; bottom: 8px; }
+  .c-bande li:first-child a[aria-current='page']::after { left: 0; }
   .c-bande .c-nav__rdv { margin-left: auto; }
   .c-bande .c-nav__rdv a { margin: 0; min-height: 52px; border-radius: 0; background: var(--g-vif); color: var(--g-vif-texte); padding-inline: 22px; }
   .c-bande .c-nav__rdv a:hover { background: var(--g-vif); color: var(--g-vif-texte); text-decoration: underline; }
@@ -232,6 +245,7 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
   .c-pied ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
   .c-pied a { color: var(--g-sombre-texte); text-decoration: underline; text-decoration-thickness: var(--filet); }
   .c-pied a:hover { color: var(--g-sombre-accent); }
+  .c-pied a[aria-current='page'] { font-weight: 700; text-decoration-thickness: var(--filet-fort); }
   .coquille--village .c-pied a { color: var(--g-encre); }
   .coquille--village .c-pied a:hover { color: var(--g-accent-texte); }
   .c-pied__liens { gap: 0 !important; }
@@ -261,10 +275,18 @@ const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv
   /* En-tête : nom en italique à empattements, menu court, filet double */
   .coquille--revue .c-entete { padding: 0; background: var(--g-page); border-bottom: 3px double var(--g-encre); }
   .coquille--revue .c-entete__ligne { min-height: 76px; }
+  /* Ordinateur : en-tête de revue centré (nom du cabinet en titre, menu centré dessous), reconnaissable au premier coup d'œil */
+  @media (min-width: 760px) {
+    .coquille--revue .c-entete__ligne { flex-direction: column; justify-content: center; gap: 6px; padding-block: 22px 6px; }
+    .coquille--revue .c-entete :global(.logo strong) { font-size: 1.9rem; }
+    .coquille--revue .c-nav ul { justify-content: center; }
+  }
   .coquille--revue .c-entete :global(.logo strong) { font-family: var(--police-titres); font-style: italic; font-weight: 500; font-size: 1.3rem; letter-spacing: 0; }
   .coquille--revue .c-entete :global(.logo small) { font-size: 0.9rem; letter-spacing: 0.02em; }
   .coquille--revue .c-nav a { font-weight: 400; font-size: 1.05rem; }
-  .coquille--revue .c-nav a:hover, .coquille--revue .c-nav a[aria-current='page'] { background: none; color: var(--g-accent-texte); }
+  .coquille--revue .c-nav a:hover { background: none; color: var(--g-accent-texte); }
+  .coquille--revue .c-nav a[aria-current='page'] { font-weight: 600; font-style: italic; }
+  .coquille--revue .c-nav a[aria-current='page']::after { height: var(--filet-fort); bottom: 8px; }
   .coquille--revue .c-nav a:hover { text-decoration: underline; }
   .coquille--revue .c-nav .c-nav__rdv a { font-weight: 600; padding-inline: 22px; }
   @media (max-width: 759px) {

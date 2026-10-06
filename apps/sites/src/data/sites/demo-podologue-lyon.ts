@@ -552,7 +552,8 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   photos: { accueil: '', panorama: '', cabinet: [] },
   // Hiérarchie choisie par la praticienne (themes.ts) : sport, diabète, ongles en principaux ; enfants, seniors traités aussi.
   // PRIORITES=aucune : démo sans thème (navigation historique Soins · Le cabinet · Infos pratiques).
-  ...(process.env.PRIORITES === 'aucune' ? {} : { priorites: { principaux: ['sport', 'diabete', 'ongles'], secondaires: ['enfant', 'senior'] } }),
+  // PRINCIPAUX=diabete,sport,ongles : autre ordre des thèmes principaux (essais du premier écran selon le thème n° 1).
+  ...(process.env.PRIORITES === 'aucune' ? {} : { priorites: { principaux: process.env.PRINCIPAUX ? process.env.PRINCIPAUX.split(',') : ['sport', 'diabete', 'ongles'], secondaires: ['enfant', 'senior'] } }),
 };
 
 // CAS=solo : praticienne seule, voix « je », cabinet simple identifié par son quartier (cas le plus courant
@@ -562,6 +563,14 @@ if (process.env.CAS === 'solo') {
   site.voix = 'je';
   site.cabinet.quartier = 'Brotteaux';
   site.lieux = site.lieux.map((l) => ({ ...l, type: 'cabinet', nom: '' }));
+}
+// CAS=noms-longs : test de charge typographique (mots composés jamais coupés, aucun débordement à 360 px :
+// npm run controle:debordement) — praticienne, cabinet et ville aux noms longs et composés.
+if (process.env.CAS === 'noms-longs') {
+  site.praticien = { ...site.praticien, prenom: 'Marie-Dominique', nom: 'Delacroix-Montgolfier' };
+  site.praticiens = site.praticiens.map((p, i) => (i === 0 ? { ...p, prenom: 'Marie-Dominique', nom: 'Delacroix-Montgolfier' } : p));
+  site.cabinet = { ...site.cabinet, nom: 'Cabinet de pédicurie-podologie des Coteaux-du-Lyonnais', ville: 'Saint-Rémy-de-Provence', codePostal: '13210', quartier: '' };
+  site.lieux = site.lieux.map((l) => ({ ...l, nom: 'Maison de santé pluriprofessionnelle des Coteaux-du-Lyonnais', ville: 'Saint-Rémy-de-Provence', codePostal: '13210' }));
 }
 if (univers) {
   const p = univers.preReglage;

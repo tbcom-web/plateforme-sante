@@ -17,14 +17,15 @@ import { horaireDe, lirePlages, plagesDe } from './horaires';
 import { appliquerPriorites, soinsDesPriorites, soinsEnAvantDesPriorites, universDesPriorites } from './themes';
 
 /**
- * Les trois modèles du parcours, dans l'ordre d'affichage : trois sites vraiment différents, personnalisables par les
- * couleurs (Tableau « Clair et pratique », Village « Simple et proche », Revue « Élégant et sobre »).
+ * Les quatre modèles du parcours, dans l'ordre d'affichage : quatre sites vraiment différents, personnalisables par les
+ * couleurs (Tableau « Clair et pratique », Village « Simple et proche », Revue « Élégant et sobre », Technique « Technique
+ * et précis » : le style laboratoire d'analyse, animations de points de pression).
  */
-export const UNIVERS_PARCOURS = ['clair-pratique', 'simple-proche', 'elegant-sobre'] as const;
+export const UNIVERS_PARCOURS = ['clair-pratique', 'simple-proche', 'elegant-sobre', 'technique-precis'] as const;
 export type UniversParcours = (typeof UNIVERS_PARCOURS)[number];
 
 /**
- * Un univers du parcours est proposé au praticien s'il est validé, ou encore en brouillon : ces trois-là sont le
+ * Un univers du parcours est proposé au praticien s'il est validé, ou encore en brouillon : ces quatre-là sont le
  * catalogue de départ choisi par Paul. Retiré ou « plus tard » (validation déontologique) : jamais proposé.
  */
 export const universApplicableAuParcours = (u: Pick<Univers, 'id' | 'statut'>) =>
@@ -232,7 +233,7 @@ export const ETAPES_PARCOURS: EtapeParcours[] = [
   {
     numero: 2,
     titre: 'Choisissez votre site',
-    consigne: 'Trois sites prêts à l’emploi. Choisissez celui qui ressemble le plus à votre cabinet ; vous pourrez en changer.',
+    consigne: 'Quatre sites prêts à l’emploi. Choisissez celui qui ressemble le plus à votre cabinet ; vous pourrez en changer.',
     recommandation: 'Le site mis en avant convient à la plupart des cabinets comme le vôtre.',
     aide: [['Photos et style', 'Style du site']],
   },

@@ -1,46 +1,50 @@
 ---
-// Sujets du cabinet sur l'accueil, juste après le premier écran (tous les gabarits) : les thèmes principaux du praticien en
-// cartes, dans son ordre de préférence (picto, libellé, une ligne), puis une rangée plus discrète « Aussi au cabinet » avec
-// les thèmes secondaires. Peu d'information d'un coup : ni liste de soins ni bouton ; chaque carte mène à la page du thème.
+// Sujets du cabinet sur l'accueil, juste après le premier écran (tous les gabarits). La hiérarchie choisie par le praticien
+// (draft.priorites, themes.ts) se VOIT sans être écrite : aucun numéro, aucune étiquette « principal » ou « secondaire ».
+// - Thèmes principaux : grands blocs éditoriaux, chacun avec sa grande illustration (ou sa photo en style « photos »,
+//   lib/vitrine.ts) ; le premier, le plus grand, sur toute la largeur ; les deux suivants côte à côte.
+// - Thèmes secondaires : une simple rangée de liens, plus discrète, sans titre.
+// Peu d'information d'un coup : libellé, une ligne, un lien vers la page du thème ; ni liste de soins ni pictos alignés.
 // Aucun intertitre ajouté (H2) : SEO identique d'un modèle à l'autre (npm run controle:seo). Rien n'est affiché sans thème.
-// Variante `soins` : rangée « Par sujet » en tête de la page « Soins » (repli des thèmes n° 2 et 3 sur téléphone).
-import Icone from './Icone.astro';
-import { navigation, pictoTheme } from '../lib/navigation';
+// Variante `soins` : rangée de liens par sujet en tête de la page « Soins » (repli des thèmes n° 2 et 3 sur téléphone).
+import VisuelTheme from './accueil/VisuelTheme.astro';
+import { navigation } from '../lib/navigation';
 import { nouveauGabarit } from '../lib/gabarits';
+import { visuelsSujets } from '../lib/vitrine';
+import { site } from '../lib/site';
+import { registre } from '../lib/visuels';
 
 interface Props { variante?: 'accueil' | 'soins' }
 const { variante = 'accueil' } = Astro.props;
 const { principaux, secondaires } = navigation;
 const accueil = variante === 'accueil';
-const bulles = accueil ? secondaires : [...principaux, ...secondaires];
+const liens = accueil ? secondaires : [...principaux, ...secondaires];
+// Modèle « Technique » (classique, relevé, trame de points) : les grands blocs sur le plan d'architecte sombre, comme le premier écran.
+const plan = !nouveauGabarit && registre === 'releve' && site.modele.jetons.motif === 'trame';
 ---
 {(principaux.length > 0 || secondaires.length > 0) && (
   <section class:list={['sujets', `sujets--${variante}`, nouveauGabarit ? (accueil ? 'g-section g-bloc' : '') : accueil ? 'section section--sujets' : '']} aria-label={accueil ? 'Sujets du cabinet' : 'Soins par sujet'}>
     <div class:list={[accueil ? (nouveauGabarit ? 'g-cadre g-bloc__dedans' : 'cadre') : '', 'sujets__dedans']}>
       {accueil && principaux.length > 0 && (
-        <ul class="sujets__cartes">
+        <ul class:list={['sujets__blocs', `sujets__blocs--${principaux.length}`]}>
           {principaux.map((t, i) => (
-            <li>
-              <a class="sujet" href={t.href}>
-                <span class="sujet__picto" aria-hidden="true"><Icone nom={pictoTheme(t.theme.id)} secours="lucide:footprints" /></span>
+            <li class:list={['sujet', { 'sujet--une': i === 0 }]} style={`--i:${i}`}>
+              <a class="sujet__lien" href={t.href}>
+                <span class:list={['sujet__visuel', { 'surface-plan': plan && visuelsSujets[i]?.type === 'dessin' }]}><VisuelTheme visuel={visuelsSujets[i]} format="paysage" sizes={i === 0 ? '(min-width: 900px) 60vw, 100vw' : '(min-width: 900px) 40vw, 100vw'} /></span>
                 <span class="sujet__texte">
-                  <span class="sujet__titre"><span class="sujet__rang" aria-hidden="true">{i + 1}</span>{t.theme.libelle}</span>
+                  <span class="sujet__titre">{t.theme.libelle}</span>
                   <span class="sujet__ligne">{t.theme.description}</span>
+                  <span class="sujet__suite" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M4 10h12M11 5l5 5-5 5" /></svg></span>
                 </span>
               </a>
             </li>
           ))}
         </ul>
       )}
-      {bulles.length > 0 && (
-        <div class="sujets__aussi">
-          <p class="sujets__etiquette">{accueil ? 'Aussi au cabinet' : 'Par sujet'}</p>
-          <ul class="sujets__bulles">
-            {bulles.map((t) => (
-              <li><a class="sujets__bulle" href={t.href}><Icone nom={pictoTheme(t.theme.id)} secours="lucide:footprints" />{t.theme.libelle}</a></li>
-            ))}
-          </ul>
-        </div>
+      {liens.length > 0 && (
+        <ul class="sujets__liens">
+          {liens.map((t) => <li><a href={t.href}>{t.theme.libelle}</a></li>)}
+        </ul>
       )}
     </div>
   </section>
@@ -53,43 +57,102 @@ const bulles = accueil ? secondaires : [...principaux, ...secondaires];
     --s-douce: var(--g-encre-douce, var(--encre-douce));
     --s-ligne: var(--g-ligne, var(--ligne));
     --s-accent: var(--g-accent-texte, var(--accent-vif));
-    --s-carte: var(--g-carte, var(--blanc));
-    --s-bulle: var(--g-bulle, var(--accent-tres-pale, var(--doux)));
-    --s-bulle-texte: var(--g-bulle-texte, var(--encre));
-    --s-picto: var(--g-bulle-picto, var(--accent-vif));
-    --s-bord: var(--g-plein-bord, var(--accent-vif));
+    --s-fond-visuel: var(--g-aplat, var(--doux));
+    --s-trait: var(--g-encre, var(--encre));
     --picto-accent: var(--s-accent);
   }
-  .section--sujets { padding-block: clamp(28px, 4vw, 48px) 0; }
-  .sujets__dedans { display: grid; gap: 20px; }
-  .sujets--soins .sujets__dedans { margin-bottom: 8px; }
-  .sujets__cartes { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-  @media (min-width: 760px) { .sujets__cartes { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; } }
-  .sujet { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; align-items: center; height: 100%; min-height: 76px; padding: 14px 18px 14px 14px; border-radius: var(--rayon, 16px); background: var(--s-carte); box-shadow: inset 0 0 0 var(--filet, 1px) var(--s-ligne); color: var(--s-encre); text-decoration: none; transition: box-shadow var(--duree-court, 0.15s); }
-  .sujet:hover { color: var(--s-encre); box-shadow: inset 0 0 0 var(--filet-fort, 2px) var(--s-bord); }
-  .sujet:focus-visible { outline: 3px solid var(--s-accent); outline-offset: 2px; }
-  .sujet__picto { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--s-bulle); color: var(--s-picto); }
-  .sujet__picto :global(.icone) { width: 34px; height: 34px; }
-  .sujet__texte { display: grid; gap: 2px; }
-  .sujet__titre { display: flex; align-items: baseline; gap: 8px; font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: 1.18rem; line-height: 1.2; color: var(--s-encre); }
-  .sujet__rang { font-family: var(--police-texte); font-size: 0.8rem; font-weight: 700; color: var(--s-accent); }
-  .sujet__ligne { font-size: 0.98rem; line-height: 1.4; color: var(--s-douce); }
-  @media (min-width: 760px) {
-    .sujet { grid-template-columns: minmax(0, 1fr); align-content: start; gap: 12px; padding: 20px; }
+  .section--sujets { padding-block: clamp(48px, 7vw, 104px) 0; }
+  .sujets__dedans { display: grid; gap: clamp(28px, 4vw, 48px); }
+
+  /* ———— Grands blocs : le premier sur toute la largeur (visuel et texte côte à côte), les suivants en deux colonnes ———— */
+  .sujets__blocs { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(36px, 5vw, 56px) clamp(20px, 3vw, 40px); }
+  @media (min-width: 760px) { .sujets__blocs { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sujet--une, .sujets__blocs--1 .sujet, .sujets__blocs--2 .sujet { grid-column: 1 / -1; } }
+  .sujet__lien { display: grid; gap: 18px; height: 100%; color: var(--s-encre); text-decoration: none; }
+  .sujet__lien:hover { color: var(--s-encre); }
+  .sujet__lien:focus-visible { outline: 3px solid var(--s-accent); outline-offset: 6px; }
+  .sujet__visuel { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: var(--rayon-carte, var(--rayon, 16px)); overflow: hidden; }
+  .sujet__visuel:not(.surface-plan) { background: var(--s-fond-visuel); color: var(--s-trait); --dessin-trait: var(--s-trait); --dessin-ligne: var(--s-trait); --dessin-accent: var(--s-accent); }
+  .sujet__visuel :global(.vt) { position: absolute; inset: 0; }
+  .sujet__visuel :global(.vt--dessin) { padding: 8% 10%; }
+  .sujet__visuel :global(.vt img) { transition: transform var(--duree-moyen, 0.4s) var(--courbe-sortie, ease-out); }
+  .sujet__lien:hover .sujet__visuel :global(.vt img) { transform: scale(1.03); }
+  .sujet__texte { display: grid; gap: 8px; align-content: start; justify-items: start; }
+  .sujet__titre { font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(1.5rem, 2.6vw, 2.1rem); line-height: 1.08; letter-spacing: -0.03em; text-wrap: balance; }
+  .sujet__ligne { max-width: 36ch; color: var(--s-douce); font-size: 1.02rem; line-height: 1.5; }
+  .sujet__suite { display: grid; place-items: center; width: 44px; height: 44px; margin-top: 8px; border-radius: 50%; box-shadow: inset 0 0 0 var(--filet-fort, 2px) var(--s-encre); transition: background var(--duree-court, 0.15s), color var(--duree-court, 0.15s); }
+  .sujet__suite svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform var(--duree-court, 0.15s); }
+  .sujet__lien:hover .sujet__suite { background: var(--s-encre); color: var(--g-page, var(--fond)); }
+  .sujet__lien:hover .sujet__suite svg { transform: translateX(2px); }
+  /* Le premier sujet : le plus grand (visuel large, titre affiche) */
+  .sujet--une .sujet__visuel { aspect-ratio: 4 / 3; }
+  .sujet--une .sujet__titre { font-size: clamp(2rem, 4.6vw, 3.6rem); letter-spacing: -0.04em; }
+  .sujet--une .sujet__ligne { font-size: 1.12rem; max-width: 40ch; }
+  @media (min-width: 900px) {
+    .sujet--une .sujet__lien { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(32px, 4vw, 64px); align-items: center; }
+    .sujet--une .sujet__visuel { aspect-ratio: 16 / 11; }
+    .sujets__blocs > .sujet:not(.sujet--une) .sujet__visuel { aspect-ratio: 16 / 10; }
+    /* Deux sujets seulement : le second en miroir du premier, plus petit */
+    .sujets__blocs--2 .sujet:not(.sujet--une) .sujet__lien { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(32px, 4vw, 64px); align-items: center; }
+    .sujets__blocs--2 .sujet:not(.sujet--une) .sujet__visuel { order: 2; }
   }
-  /* « Aussi au cabinet » : rangée discrète de petites bulles */
-  .sujets__aussi { display: grid; gap: 8px; }
-  .sujets__etiquette { margin: 0; font-size: 0.95rem; font-weight: 650; color: var(--s-douce); }
-  .sujets__bulles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-  .sujets__bulle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 16px 4px 10px; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 var(--filet, 1px) var(--s-ligne); color: var(--s-encre); font-size: 0.98rem; font-weight: 600; line-height: 1.2; text-decoration: none; }
-  .sujets__bulle:hover { color: var(--s-encre); box-shadow: inset 0 0 0 var(--filet-fort, 2px) var(--s-bord); }
-  .sujets__bulle :global(.icone) { width: 24px; height: 24px; color: var(--s-accent); }
-  /* Revue : filets, titres à empattements sans graisse */
-  :global(.coquille--revue) .sujet { background: transparent; border-radius: 4px; }
-  :global(.coquille--revue) .sujet__picto { background: none; }
-  :global(.coquille--revue) .sujet__titre { font-weight: 500; }
-  :global(.coquille--revue) .sujets__etiquette { font-style: italic; font-weight: 400; font-size: 1.05rem; }
-  /* Village : encadrés teintés, gros caractères */
-  :global(.coquille--village) .sujet { background: var(--g-doux); box-shadow: inset 0 0 0 var(--filet-fort, 2px) var(--s-ligne); border-radius: calc(var(--rayon-carte, 16px) * 0.6); }
-  :global(.coquille--village) .sujet__titre { font-size: 1.25rem; }
+  @media (max-width: 759px) { .sujets__blocs > .sujet:not(.sujet--une) .sujet__visuel { aspect-ratio: 16 / 10; } }
+
+  /* ———— Sujets traités aussi : une rangée de liens discrète, sans titre ———— */
+  .sujets__liens { list-style: none; margin: 0; padding: 18px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; border-top: var(--filet, 1px) solid var(--s-ligne); }
+  .sujets__liens li { display: flex; align-items: center; }
+  .sujets__liens li + li::before { content: ''; width: 4px; height: 4px; margin-inline: 14px; border-radius: 50%; background: var(--s-ligne); }
+  .sujets__liens a { display: inline-flex; align-items: center; min-height: var(--cible-tactile, 44px); color: var(--s-encre); font-weight: 600; text-decoration: underline; text-decoration-color: var(--s-ligne); text-decoration-thickness: var(--filet-fort, 2px); text-underline-offset: 6px; transition: text-decoration-color var(--duree-court, 0.15s); }
+  .sujets__liens a:hover { color: var(--s-encre); text-decoration-color: var(--s-accent); }
+  .sujets--soins .sujets__liens { border-top: 0; padding-top: 0; margin-bottom: 8px; }
+
+  /* Apparition discrète au défilement (CSS seulement ; rien si le visiteur réduit les mouvements) */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .sujet { animation: sujet-entree linear both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
+      @keyframes sujet-entree { from { opacity: 0; transform: translateY(28px); } }
+    }
+  }
+
+  /* ———— Classique : schémas sur l'aplat doux de la gamme, titres affiche ———— */
+  :global(html:not([data-gabarit])) .sujet__visuel { border-radius: var(--rayon-grand, 28px); }
+
+  /* ———— Tableau : tuiles (bento) ; le premier sujet sur l'aplat vif de la gamme ———— */
+  :global(.coquille--tableau) .sujets > .g-bloc__dedans { padding: 0; background: none; box-shadow: none; }
+  :global(.coquille--tableau) .sujets__blocs { gap: 14px; }
+  :global(.coquille--tableau) .sujet__lien { padding: 14px 14px 26px; border-radius: var(--rayon-carte); background: var(--g-doux); }
+  :global(.coquille--tableau) .sujet__texte { padding-inline: 12px; }
+  :global(.coquille--tableau) .sujet__visuel { border-radius: calc(var(--rayon-carte) * 0.75); background: transparent; }
+  :global(.coquille--tableau) .sujet:not(.sujet--une) .sujet__visuel :global(.vt--photo) { border-radius: calc(var(--rayon-carte) * 0.75); }
+  :global(.coquille--tableau) .sujet--une .sujet__lien { background: var(--g-vif); color: var(--g-vif-texte); }
+  :global(.coquille--tableau) .sujet--une :is(.sujet__titre, .sujet__ligne) { color: var(--g-vif-texte); }
+  :global(.coquille--tableau) .sujet--une .sujet__suite { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-vif-texte); color: var(--g-vif-texte); }
+  :global(.coquille--tableau) .sujet--une .sujet__lien:hover .sujet__suite { background: var(--g-vif-texte); color: var(--g-vif); }
+  :global(.coquille--tableau) .sujet--une .sujet__visuel { background: var(--g-aplat); }
+  @media (min-width: 900px) { :global(.coquille--tableau) .sujet--une .sujet__lien { padding: 16px 40px 16px 16px; } :global(.coquille--tableau) .sujet:not(.sujet--une) .sujet__lien { padding-bottom: 32px; } }
+  :global(.coquille--tableau) .sujets__liens { border-top: 0; padding-top: 4px; }
+
+  /* ———— Village : grands panneaux pastel arrondis, gros caractères, alternance gauche / droite ———— */
+  :global(.coquille--village) .sujets__blocs { grid-template-columns: minmax(0, 1fr); gap: clamp(28px, 5vw, 44px); }
+  :global(.coquille--village) .sujet { grid-column: 1 / -1; }
+  :global(.coquille--village) .sujet__visuel { border-radius: var(--rayon-carte); background: var(--g-aplat); }
+  :global(.coquille--village) .sujet__titre { font-size: clamp(1.7rem, 3.6vw, 2.3rem); letter-spacing: -0.015em; }
+  :global(.coquille--village) .sujet--une .sujet__titre { font-size: clamp(2rem, 4.6vw, 2.9rem); }
+  :global(.coquille--village) .sujet__ligne { font-size: 1.12rem; color: var(--g-encre); }
+  @media (min-width: 760px) {
+    :global(.coquille--village) .sujet__lien { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: center; }
+    :global(.coquille--village) .sujet:nth-child(even) .sujet__visuel { order: 2; }
+    :global(.coquille--village) .sujet__visuel, :global(.coquille--village) .sujet--une .sujet__visuel { aspect-ratio: 4 / 3; }
+  }
+  :global(.coquille--village) .sujets__liens a { font-size: 1.12rem; }
+
+  /* ———— Revue : sujet à la une en figure encadrée d'un filet, titres Bodoni sans graisse, italique ———— */
+  :global(.coquille--revue) .sujet__visuel { border-radius: 0; background: var(--g-doux); color: var(--g-figure); --dessin-trait: var(--g-figure); --dessin-ligne: var(--g-figure); --dessin-accent: var(--g-figure); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  :global(.coquille--revue) .sujet__titre { font-weight: 500; letter-spacing: -0.01em; }
+  :global(.coquille--revue) .sujet--une .sujet__titre { font-size: clamp(2.2rem, 4.8vw, 3.8rem); letter-spacing: -0.015em; }
+  :global(.coquille--revue) .sujet__ligne { font-style: italic; font-size: 1.12rem; }
+  :global(.coquille--revue) .sujet__suite { border-radius: 0; width: auto; height: auto; box-shadow: none; padding-top: 6px; border-top: var(--filet) solid var(--g-encre); min-width: 64px; justify-items: start; }
+  :global(.coquille--revue) .sujet__lien:hover .sujet__suite { background: none; color: var(--g-accent-texte); }
+  @media (min-width: 900px) { :global(.coquille--revue) .sujets__blocs > .sujet:not(.sujet--une) { padding-top: 40px; border-top: var(--filet) solid var(--g-ligne); } }
+  :global(.coquille--revue) .sujets__liens a { font-weight: 400; font-style: italic; font-size: 1.12rem; }
+  @media (prefers-reduced-motion: reduce) { .sujet__visuel :global(.vt img), .sujet__suite, .sujet__suite svg { transition: none; } }
 </style>

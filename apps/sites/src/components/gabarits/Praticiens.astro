@@ -8,6 +8,7 @@ import { site } from '../../lib/site';
 import { zonePhoto } from '../../lib/edition';
 import { imagePortrait } from '../../lib/portraits';
 import { lienRdv, rdvEnLigne, viaPlateforme, libelleContact } from '../../lib/textes';
+import { motLePlusLong } from '../../lib/typo.mjs';
 
 interface Props { variante: 'cartes' | 'fiches' | 'liste' }
 const { variante } = Astro.props;
@@ -21,7 +22,7 @@ const plusieurs = site.praticiens.length > 1;
         {p.photo
           ? <img class="praticien__photo" {...imagePortrait(p, 'carre')} loading="lazy" decoding="async" {...zonePhoto(`praticien.${i}.photo`)} />
           : <span class="praticien__monogramme" aria-hidden="true">{p.prenom.charAt(0)}{p.nom.charAt(0)}</span>}
-        <div>
+        <div class="praticien__texte" style={`--mot:${Math.max(12, motLePlusLong(`${p.prenom} ${p.nom} ${p.titre} ${site.cabinet.ville}`))}`}>
           <h3>{p.prenom}{' '}{p.nom}</h3>
           <p class="praticien__titre">{p.titre}{site.cabinet.ville && ` à ${site.cabinet.ville}`}</p>
           <p class="praticien__statut">{STATUTS[p.statut]}{p.presence ? ` · ${p.presence}` : ''}</p>
@@ -57,7 +58,11 @@ const plusieurs = site.praticiens.length > 1;
   .praticien__monogramme, .praticien__photo { width: 64px; height: 64px; border-radius: 50%; }
   .praticien__monogramme { display: grid; place-items: center; background: var(--g-bulle); color: var(--g-bulle-texte); font-family: var(--police-titres); font-weight: var(--graisse-titres); font-size: 1.35rem; letter-spacing: -0.02em; }
   .praticien__photo { object-fit: cover; }
-  .praticien h3 { font-size: 1.35rem; }
+  /* Noms et villes composés longs (jamais coupés, lib/typo.mjs) : le nom et le titre se réduisent pour tenir dans la carte */
+  .praticien { grid-template-columns: minmax(0, 1fr); }
+  .praticien__texte { container-type: inline-size; min-width: 0; }
+  .praticien h3 { font-size: min(1.35rem, calc(100cqi / (var(--mot, 14) * 0.6))); }
+  .praticien__titre { font-size: min(1em, calc(100cqi / (var(--mot, 14) * 0.52))); }
   .praticien__titre { color: var(--g-encre-douce); }
   .praticien__statut { font-size: 0.92rem; color: var(--g-encre-douce); margin-top: 2px !important; }
   .praticien__orientations { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }

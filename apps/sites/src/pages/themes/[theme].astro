@@ -7,6 +7,8 @@ import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import TetePage from '../../components/gabarits/TetePage.astro';
 import Icone from '../../components/Icone.astro';
+import VisuelTheme from '../../components/accueil/VisuelTheme.astro';
+import { visuelTheme } from '../../lib/vitrine';
 import { site, dateFr } from '../../lib/site';
 import { breadcrumbSchema, themeSchema } from '../../lib/schema';
 import { titreCompetences, localisation, lienRdv, libelleRdv, rdvEnLigne, telLien, viaPlateforme, lieu, aLaVille, aAdresse, aTelephone, adresseLieu } from '../../lib/textes';
@@ -23,11 +25,14 @@ const p = pageTheme(t);
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: titreCompetences, path: '/soins' }, { name: t.theme.libelle, path: p.path }];
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`);
+// Grande image du sujet en tête de page (illustration validée, ou photo en style « photos ») : lib/vitrine.ts
+const visuel = visuelTheme(t.theme.id);
 ---
 <Gabarit title={p.title} description={p.description} path={p.path} schemas={[themeSchema({ nom: p.titre, description: p.description, path: p.path, soins: p.soins }), breadcrumbSchema(crumbs)]}>
   {nouveauGabarit ? (
     <TetePage crumbs={crumbs} sur={localisation} chapo={p.intro}>
       <h1 slot="titre">{espacesFines(t.theme.libelle)}{aLaVille && <>{' '}<span class="pale">{aLaVille}</span></>}</h1>
+      <Fragment slot="visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></Fragment>
     </TetePage>
   ) : (
     <section class="cadre tete-page">
@@ -38,6 +43,7 @@ const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`
           <h1>{espacesFines(t.theme.libelle)}{aLaVille && <>{' '}<span class="pale">{aLaVille}</span></>}</h1>
           <p class="chapo">{p.intro}</p>
         </div>
+        <div class="theme__visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 960px) 45vw, 100vw" /></div>
       </div>
     </section>
   )}
@@ -45,7 +51,7 @@ const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`
   <div class:list={['theme', nouveauGabarit ? 'g-section g-bloc' : 'section section--theme']}>
     <div class:list={[nouveauGabarit ? 'g-cadre g-bloc__dedans' : 'cadre', 'theme__dedans']}>
       <section aria-labelledby="titre-soins">
-        <h2 id="titre-soins" class="theme__titre"><span class="theme__picto" aria-hidden="true"><Icone nom={pictoTheme(t.theme.id)} secours="lucide:footprints" /></span>Les soins proposés</h2>
+        <h2 id="titre-soins" class="theme__titre">Les soins proposés</h2>
         <ul class="theme__soins">
           {p.soins.map((s) => (
             <li>
@@ -93,6 +99,10 @@ const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`
     --picto-accent: var(--t-accent);
   }
   .section--theme { padding-top: 0; }
+  /* Classique : grande image du sujet à droite du titre (au-dessous sur téléphone), sur l'aplat doux de la gamme */
+  .theme__visuel { position: relative; aspect-ratio: 4 / 3; border-radius: var(--rayon-grand, 28px); background: var(--doux); overflow: hidden; color: var(--encre); --dessin-accent: var(--accent-vif); }
+  .theme__visuel :global(.vt) { position: absolute; inset: 0; }
+  .theme__visuel :global(.vt--dessin) { padding: 8% 10%; }
   .theme__dedans { display: grid; gap: clamp(36px, 5vw, 56px); }
   .theme__titre { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
   .theme__picto { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--t-bulle); color: var(--t-picto); flex: none; }

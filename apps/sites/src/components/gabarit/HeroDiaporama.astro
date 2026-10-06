@@ -1,40 +1,33 @@
 ---
 // Accueil immersif : diaporama plein écran (fondu enchaîné + zoom lent), titre posé sur l'image.
 // Sans JavaScript ; animations coupées si le visiteur réduit les mouvements.
-// Selon le style visuel : animation de la spécialité, diaporama, ou dessin technique sur fond plan (lib/visuels).
+// Image principale : celle du sujet n° 1 du praticien (lib/vitrine.ts) — photo en style « photos », sinon son animation
+// validée (sport : coureur ; enfant : premiers pas ; semelles…) ou son dessin technique sur fond plan. Sur téléphone, l'image
+// est un vrai bloc en haut du premier écran (pleine opacité), le titre dessous ; sur ordinateur, à droite du titre.
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
-import AnimationAccueil from '../animations/AnimationAccueil.astro';
-import Dessin from '../dessins/Dessin.astro';
-import { photoResponsive, diaporamaAffiche as diapos, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
+import VisuelTheme from '../accueil/VisuelTheme.astro';
+import { fondAnime, registre } from '../../lib/visuels';
+import { visuelPremierEcran } from '../../lib/vitrine';
 import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
-import { CYCLES } from '@plateforme/core';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme, aLaVille, suffixeVille, aTelephone, aAdresse, adresseLieu } from '../../lib/textes';
 
-const choix = visuelAccueil(diapos);
-// Photos du praticien (son cabinet) : texte alternatif factuel ; photos d'illustration : décoratives.
-const photosPraticien = new Set([site.photos.accueil, site.photos.panorama, ...site.photos.cabinet].filter(Boolean));
-const altDiapo = (src: string) => (photosPraticien.has(src) ? `Le cabinet de ${site.titreMetier.toLowerCase()}${suffixeVille}` : '');
+// Sujet sans animation propre (diabète, ongles, seniors…) : l'animation de points de pression (podoscope), ADN du relevé.
+const visuel = visuelPremierEcran.type === 'dessin' ? { ...visuelPremierEcran, animation: visuelPremierEcran.animation ?? 'podoscope' as const } : visuelPremierEcran;
+const choix: 'photo' | 'animation' | 'illustration' = visuel.type === 'photo' ? 'photo' : visuel.animation && registre === 'releve' && site.visuels.animation !== null ? 'animation' : 'illustration';
 // Animation ou illustration : titre à gauche, visuel à droite
 const anime = choix !== 'photo';
-const duree = CYCLES.diapo; // ms par photo (charte)
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 ---
-<section class:list={['hero', { 'hero--anime': anime }]} style={`--n:${diapos.length};--d:${duree}ms;${choix === 'animation' ? `background:${fondAnime}` : ''}`}>
-  {choix === 'animation' && <div class="hero__anim" aria-hidden="true"><AnimationAccueil /></div>}
-  {choix === 'illustration' && (
-    <div class="hero__illus surface-plan" aria-hidden="true" {...zonePhoto('photos.accueil')}>
-      <span class="hero__dessin"><Dessin nom={dessinSpecialite} /></span>
+<section class:list={['hero', `hero--${choix}`, { 'hero--anime': anime }]} style={choix === 'animation' ? `background:${fondAnime}` : undefined}>
+  {choix === 'photo' ? (
+    <div class="hero__diapos" {...zonePhoto('photos.accueil')}><VisuelTheme visuel={visuel} prioritaire sizes="100vw" /></div>
+  ) : (
+    <div class:list={['hero__illus', { 'surface-plan': choix === 'illustration' }]} aria-hidden="true" {...zonePhoto('photos.accueil')}>
+      <span class="hero__dessin"><VisuelTheme visuel={visuel} animer={choix === 'animation'} /></span>
       <span class="hero__mention mono">{MENTION_ILLUSTRATIVE}</span>
-    </div>
-  )}
-  {choix === 'photo' && (
-    <div class="hero__diapos" {...zonePhoto('photos.accueil')}>
-      {diapos.map((src, i) => (
-        <img src={src} {...photoResponsive(src, '100vw')} alt={altDiapo(src)} style={`--i:${i}`} width="2000" height="1300" fetchpriority={i === 0 ? 'high' : 'low'} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
-      ))}
     </div>
   )}
   <div class="cadre hero__contenu">
@@ -50,7 +43,6 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
     </div>
     <p class="hero__lieu"><Icone nom="lucide:map-pin" />{lieu.nom || TYPES_LIEU[lieu.type]} · {aAdresse ? `${lieu.adresse}, ${lieu.ville}` : adresseLieu}</p>
   </div>
-  {!anime && diapos.length > 1 && <div class="hero__points" aria-hidden="true">{diapos.map((_, i) => <span style={`--i:${i}`}></span>)}</div>}
   <a class="hero__suite" href="#competences" aria-label="Découvrir le cabinet">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6" /></svg>
   </a>
@@ -58,34 +50,35 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
 
 <style>
   .hero { position: relative; min-height: 100svh; display: grid; align-items: end; color: var(--blanc); overflow: hidden; isolation: isolate; background: var(--nuit-haut); }
+  /* Photo du sujet n° 1 : plein cadre, sous un voile */
   .hero__diapos { position: absolute; inset: 0; z-index: -2; }
-  .hero__diapos img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; animation: diapo calc(var(--n) * var(--d)) infinite; animation-delay: calc(var(--i) * var(--d)); }
-  /* Une seule photo (celle du praticien) : fixe */
-  .hero__diapos img:only-child { animation: none; opacity: 1; }
-  /* 4 photos : chacune visible un quart du cycle, avec un fondu d'entrée et de sortie. */
-  @keyframes diapo {
-    0% { opacity: 0; transform: scale(1.12); }
-    5% { opacity: 1; }
-    25% { opacity: 1; }
-    31% { opacity: 0; transform: scale(1); }
-    100% { opacity: 0; transform: scale(1); }
-  }
-  .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background:
+  .hero__diapos :global(.vt) { position: absolute; inset: 0; }
+  .hero__diapos :global(.vt::after) { display: none; }
+  .hero::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background:
       linear-gradient(180deg, rgb(var(--nuit-rgb) / var(--voile, 0.55)) 0%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.55) * 0.1)) 30%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.55) * 0.45)) 55%, rgb(var(--nuit-rgb) / calc(var(--voile, 0.55) * 1.55)) 100%); }
   .hero__contenu { padding-block: 140px clamp(80px, 12vh, 140px); }
-  /* Accueil animé : l'animation occupe la droite, le titre reste à gauche (en fond atténué sur mobile). */
+  /* Animation ou dessin du sujet n° 1 : à droite du titre sur ordinateur ; sur téléphone, un vrai bloc en haut du premier
+     écran (pleine opacité), le titre dessous. */
   .hero--anime::after { background: linear-gradient(90deg, rgb(var(--nuit-rgb) / 0.7) 0%, rgb(var(--nuit-rgb) / 0) 60%); }
-  .hero__anim { position: absolute; inset: 0; z-index: -2; opacity: 0.35; }
-  .hero__anim :global(canvas), .hero__anim :global(svg) { background: none !important; }
-  @media (min-width: 900px) { .hero__anim { left: 50%; opacity: 1; } }
-  /* Illustration : fond plan d'architecte plein cadre, dessin de la spécialité à droite */
   .hero__illus { position: absolute; inset: 0; z-index: -2; }
-  .hero__dessin { position: absolute; inset: 18% 6% 16% 6%; display: grid; place-items: center; opacity: 0.3; }
-  .hero__dessin :global(.dessin) { width: 100%; height: 100%; }
+  .hero__illus :global(canvas), .hero__illus :global(svg) { background: none !important; }
+  .hero__dessin { position: absolute; inset: 14% 4% 10% 52%; display: grid; place-items: stretch; }
+  .hero--illustration .hero__dessin { inset: 18% 4% 16% 58%; }
   .hero__mention { position: absolute; right: clamp(20px, 4vw, 56px); bottom: 28px; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); letter-spacing: 0.02em; display: none; }
-  @media (min-width: 900px) { .hero__dessin { left: 60%; right: 4%; opacity: 1; } .hero__mention { display: block; } }
+  @media (min-width: 900px) { .hero__mention { display: block; } }
+  @media (max-width: 899px) {
+    .hero--anime { min-height: auto; align-items: start; grid-template-rows: auto auto; }
+    .hero--anime .hero__illus { position: relative; inset: auto; z-index: 0; height: min(52svh, 440px); margin-top: 74px; }
+    .hero--anime .hero__dessin { inset: 0 4%; }
+    .hero--illustration .hero__dessin { inset: 6% 10%; }
+    .hero--anime::after { background: linear-gradient(180deg, rgb(var(--nuit-rgb) / 0) 40%, rgb(var(--nuit-rgb) / 0.35) 100%); }
+    .hero--anime .hero__contenu { position: relative; padding-block: 8px 56px; }
+  }
   .hero__sur { color: var(--sur-sombre-doux); }
-  h1 { color: var(--blanc); font-size: clamp(2.8rem, 7.4vw, 6.6rem); max-width: 14ch; line-height: 0.98; }
+  /* Titre ajusté : le plus long mot insécable (--mot-long, Gabarit.astro) tient sur une ligne, à gauche de l'image sur ordinateur */
+  .hero__contenu { container-type: inline-size; }
+  h1 { color: var(--blanc); font-size: min(6.6rem, calc(100cqi / (var(--mot-long, 14) * 0.55))) !important; max-width: none; line-height: 0.98; }
+  @media (min-width: 900px) { h1 { font-size: min(6.6rem, calc(55cqi / (var(--mot-long, 14) * 0.55))) !important; } }
   h1 .pale { color: var(--sur-sombre-doux) !important; }
   .hero__chapo { max-width: 52ch; margin: 26px 0 36px; font-size: 1.15rem; color: var(--sur-sombre-doux); }
   .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -94,17 +87,9 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   .bouton--verre { color: var(--blanc); background: var(--sur-sombre-verre); box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); backdrop-filter: blur(10px); }
   .bouton--verre:hover { color: var(--blanc); background: var(--sur-sombre-filet); }
   .hero__lieu { display: flex; align-items: center; gap: 8px; margin: 32px 0 0; font-size: 0.9rem; color: var(--sur-sombre-doux); }
-  .hero__points { position: absolute; right: clamp(20px, 4vw, 56px); bottom: clamp(32px, 6vh, 56px); display: flex; gap: 8px; }
-  .hero__points span { width: 28px; height: 3px; border-radius: 2px; background: var(--sur-sombre-filet); overflow: hidden; position: relative; }
-  .hero__points span::after { content: ''; position: absolute; inset: 0; background: var(--blanc); transform: scaleX(0); transform-origin: left; animation: point calc(var(--n) * var(--d)) linear infinite; animation-delay: calc(var(--i) * var(--d)); }
-  @keyframes point { 0% { transform: scaleX(0); } 25% { transform: scaleX(1); } 25.01%, 100% { transform: scaleX(0); } }
   .hero__suite { position: absolute; left: 50%; bottom: 22px; translate: -50% 0; width: 44px; height: 44px; display: none; place-items: center; border-radius: 50%; color: var(--blanc); box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); animation: rebond var(--cycle-pouls) ease-in-out infinite; }
   @media (min-width: 900px) { .hero__suite { display: grid; } }
   .hero__suite svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: var(--trait-normal); stroke-linecap: round; stroke-linejoin: round; }
   @keyframes rebond { 50% { translate: -50% 6px; } }
-  @media (prefers-reduced-motion: reduce) {
-    .hero__diapos img { animation: none; }
-    .hero__diapos img:not(:first-child) { display: none; }
-    .hero__points { display: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { .hero__suite { animation: none; } }
 </style>

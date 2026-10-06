@@ -144,6 +144,28 @@ function stylesAlleges() {
 }
 
 /**
+ * Mots composés insécables (« pédicurie-podologie », « Saint-Rémy-de-Provence », « Marie-Dominique ») dans le texte de
+ * toutes les pages, après le build : src/lib/typo.mjs (le texte et le trait d'union restent les mêmes pour les moteurs).
+ */
+function insecablesPages() {
+  return {
+    name: 'insecables',
+    hooks: {
+      'astro:build:done': async ({ dir }) => {
+        const { insecablesHtml } = await import('./src/lib/typo.mjs');
+        const racine = fileURLToPath(dir);
+        for (const f of await fichiersDuSite(racine, '.html')) {
+          const chemin = join(racine, f);
+          const html = await readFile(chemin, 'utf8');
+          const page = insecablesHtml(html);
+          if (page !== html) await writeFile(chemin, page);
+        }
+      },
+    },
+  };
+}
+
+/**
  * En-têtes Cloudflare des versions Markdown des pages (après le build) : type text/markdown, jamais indexées
  * (X-Robots-Tag), rattachées à leur page HTML (Link canonical) ; pas de contenu dupliqué pour Google.
  * Copie aussi les en-têtes communs (règle « /* ») dans en-tetes.json, relu par functions/_middleware.js.
@@ -270,5 +292,5 @@ export default defineConfig({
       assetsInlineLimit: (fichier) => (/\.(woff2?|ttf|otf)$/.test(fichier) ? false : undefined),
     },
   },
-  integrations: [variantesPhotos(), enTetesMarkdown(), stylesAlleges(), policesReduites()],
+  integrations: [variantesPhotos(), enTetesMarkdown(), insecablesPages(), stylesAlleges(), policesReduites()],
 });

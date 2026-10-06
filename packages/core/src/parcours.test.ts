@@ -25,15 +25,15 @@ const identite = (): SiteDraft => {
   return d;
 };
 
-test('les trois modèles du parcours, dans l’ordre, y compris en brouillon', () => {
+test('les quatre modèles du parcours, dans l’ordre, y compris en brouillon', () => {
   const liste = universDuParcours();
   assert.deepEqual(liste.map((u) => u.id), [...UNIVERS_PARCOURS]);
-  assert.deepEqual(liste.map((u) => u.preReglage.modele), ['tableau', 'village', 'revue']);
+  assert.deepEqual(liste.map((u) => u.preReglage.modele), ['tableau', 'village', 'revue', 'technique']);
 });
 
 test('un univers retiré ou hors parcours n’est jamais proposé', () => {
   const retire = CATALOGUE_UNIVERS.map((u) => (u.id === 'simple-proche' ? { ...u, statut: 'retire' as const } : u));
-  assert.deepEqual(universDuParcours(retire).map((u) => u.id), ['clair-pratique', 'elegant-sobre']);
+  assert.deepEqual(universDuParcours(retire).map((u) => u.id), ['clair-pratique', 'elegant-sobre', 'technique-precis']);
   assert.equal(universApplicableAuParcours(universCatalogue('podologie-generale')!), false);
   assert.equal(universApplicableAuParcours(universCatalogue('posture-biomecanique')!), false);
 });

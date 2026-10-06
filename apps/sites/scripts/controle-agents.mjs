@@ -299,7 +299,8 @@ for (const f of pagesHtml.filter(indexable).filter((f) => f !== '404.html')) {
   if (texte.replace(/\s+/g, ' ').length < 500) problemesHtml.push(`${f} : moins de 500 caractères de texte sans JavaScript`);
 }
 // Contenus clés présents dans le HTML initial (pas injectés par script) : FAQ et horaires.
-const texteAccueil = htmlAccueil.replace(/<script[\s\S]*?<\/script>/g, ' ');
+// Les éléments en ligne des mots insécables (<mots-lies>, <mot-lie> : lib/typo.mjs) n'interrompent pas le texte lu.
+const texteAccueil = htmlAccueil.replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<\/?mots?-lies?[^>]*>/g, '');
 for (const q of ldAccueil.find((n) => n['@type'] === 'FAQPage')?.mainEntity ?? []) {
   const debut = q.name.slice(0, 20).replace(/[’']/g, '');
   if (!texteAccueil.replace(/&#39;|&rsquo;|[’']/g, '').includes(debut)) problemesHtml.push(`accueil : question « ${q.name} » absente du HTML`);

@@ -1,0 +1,58 @@
+---
+// Visuel d'un sujet du cabinet (lib/vitrine.ts, visuelTheme) : photo teintée par la gamme, illustration « héros » composée du
+// thème (core, heros-themes.ts : SVG sans texte, ≤ 12 Ko compressé, en ligne donc visible dès le premier affichage, format
+// portrait ou paysage selon le cadre), animation existante, ou dessin validé chargé à l'approche de l'écran. Décoratif
+// (aria-hidden) : le sujet est dit par le texte voisin. Le cadre réserve sa place (aucun décalage) ; la photo du premier
+// écran est chargée en priorité (fetchpriority, srcset), les autres paresseusement.
+import '@plateforme/core/dessins.css';
+import Dessin from '../dessins/Dessin.astro';
+import Animation from '../animations/Animation.astro';
+import { photoResponsive, registre as registreSite } from '../../lib/visuels';
+import { site } from '../../lib/site';
+import type { VisuelTheme } from '../../lib/vitrine';
+import { illustrationTheme, type FormatHeros, type Registre } from '@plateforme/core';
+
+interface Props {
+  visuel: VisuelTheme;
+  /** Premier écran : photo prioritaire */
+  prioritaire?: boolean;
+  /** Animation autorisée (premier écran du gabarit classique seulement) */
+  animer?: boolean;
+  /** Registre des dessins (par défaut : celui du modèle) */
+  registre?: Registre;
+  /** Format de l'illustration héros (portrait : cadres hauts et téléphone ; paysage : bandeaux) */
+  format?: FormatHeros;
+  sizes?: string;
+  class?: string;
+}
+const { visuel, prioritaire = false, animer = false, registre = registreSite, format = 'portrait', sizes = '100vw', class: classe } = Astro.props;
+const animation = visuel.type === 'dessin' && animer && registre === 'releve' ? visuel.animation : null;
+// Illustration héros du thème : gamme du site (sans gamme, couleur libre : les variables de la page s'appliquent)
+const heros = visuel.type === 'dessin' && visuel.heros && !animation
+  ? illustrationTheme(visuel.heros, { format, registre, gamme: site.theme.gamme || null, id: `h-${visuel.heros}-${format[0]}-${registre[0]}` })
+  : '';
+---
+<div class:list={['vt', `vt--${heros ? 'heros' : visuel.type}`, animation ? 'vt--anime' : '', classe]} aria-hidden="true">
+  {visuel.type === 'photo' ? (
+    <img src={visuel.src} {...photoResponsive(visuel.src, sizes)} alt="" width="1600" height="1067" style={`object-position:${visuel.cadrage}`} loading={prioritaire ? 'eager' : 'lazy'} fetchpriority={prioritaire ? 'high' : 'auto'} decoding={prioritaire ? 'sync' : 'async'} />
+  ) : animation ? (
+    <Animation nom={animation} releve />
+  ) : heros ? (
+    <Fragment set:html={heros} />
+  ) : registre === 'ligne' ? (
+    <Dessin ligne={visuel.ligne} />
+  ) : (
+    <Dessin nom={visuel.dessin} registre={registre} />
+  )}
+</div>
+
+<style>
+  .vt { position: relative; display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; isolation: isolate; }
+  .vt :global(.dessin) { width: 100%; height: 100%; }
+  .vt--heros > :global(svg) { display: block; width: 100%; height: 100%; }
+  .vt--photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* Teinte de la gamme sur la photo : voile coloré en mode « couleur douce », jamais au point de masquer la photo */
+  .vt--photo::after { content: ''; position: absolute; inset: 0; background: var(--vt-teinte, var(--g-vif, var(--accent))); mix-blend-mode: multiply; opacity: 0.16; pointer-events: none; }
+  .vt--anime { place-items: stretch; }
+  .vt--anime :global(canvas), .vt--anime :global(svg) { width: 100%; height: 100%; }
+</style>

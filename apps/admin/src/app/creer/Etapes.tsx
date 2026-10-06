@@ -102,6 +102,22 @@ export function EtapeCouleurs({ d, modele, univers, onTheme }: { d: SiteDraft; m
         </div>
       </fieldset>
 
+      {/* Style des images (draft.theme.modeVisuel, le même réglage que dans /mon-site) : grande image de l'accueil et des sujets */}
+      <fieldset className={carte}>
+        <legend className="text-lg font-semibold">Style des images</legend>
+        <div role="radiogroup" aria-label="Style des images" className="grid gap-2 sm:grid-cols-2">
+          {([['illustrations', 'Illustrations', 'Dessins aux couleurs du cabinet', true], ['photos', 'Photos', 'Photos liées à vos sujets', false]] as const).map(([v, l, aide, reco]) => {
+            const actif = v === 'photos' ? d.theme.modeVisuel === 'photos' : d.theme.modeVisuel !== 'photos';
+            return (
+              <button key={v} type="button" role="radio" aria-checked={actif} onClick={() => onTheme({ ...d.theme, modeVisuel: v })} className={`flex min-h-12 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm ${focus} ${actif ? 'border-teal-700 bg-teal-50' : 'border-neutral-200'}`}>
+                <span className="grid"><span className="font-semibold">{l}</span><span className="text-neutral-600">{aide}</span></span>
+                {reco && <Badge>Recommandé</Badge>}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
       <details className={carte} open={nature === 'autre'}>
         <summary className={`cursor-pointer rounded font-semibold ${focus}`}>Plus de couleurs</summary>
         <div role="radiogroup" aria-label="Toutes les couleurs" className="grid gap-4">

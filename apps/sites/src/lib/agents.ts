@@ -12,6 +12,7 @@ import { REPLIS } from '@plateforme/core';
 const lieuDit = lieuExercice ? ` ${lieuExercice}` : '';
 import { soinsLies, type Faq } from '@plateforme/core';
 import { navigation, themesDuSite, pageTheme } from './navigation';
+import { descriptionTheme, descriptionSoin } from './vitrine';
 
 /** Date de dernière mise à jour du contenu : fiche du site, sinon article le plus récent, sinon jour du build. */
 export const dateMaj =
@@ -124,6 +125,8 @@ export const pagesMarkdown = (): PageMd[] => [
       corps: [
         p.intro,
         '',
+        descriptionTheme(t.theme.id),
+        '',
         '## Les soins proposés',
         '',
         liste(p.soins.map(lienSoin)),
@@ -140,6 +143,8 @@ export const pagesMarkdown = (): PageMd[] => [
     titre: s.titre,
     resume: s.resume,
     corps: [
+      descriptionSoin(s.slug),
+      '',
       decaler(s.corps),
       ...(s.faq.length ? ['', '## Questions fréquentes', '', faqMd(s.faq)] : []),
       // Même bloc « À lire aussi » que la page HTML (soins proches proposés par le cabinet)

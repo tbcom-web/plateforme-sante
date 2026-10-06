@@ -320,6 +320,25 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     gammes: ['mangue', 'corail-nuit', 'menthe', 'tournesol'],
     jetons: { policeTitres: 'bodoni', policeTexte: 'newsreader', graisseTitres: 500, rayon: 4, boutons: 'pilule', accent: 'couleur', fond: '#fcfaf6', images: 'naturel', motif: 'aucun', logo: 'plein', registre: 'ligne' },
   },
+  {
+    // « Technique et précis » (2026-10-06, demande de Paul) : l'ADN « laboratoire d'analyse » de la marque dans le gabarit
+    // classique — premier écran plein écran sombre (plan d'architecte) avec l'animation de points de pression du sujet n° 1
+    // (podoscope, coureur, semelle, premiers pas), trame hexagonale de points en motif, grotesque grasse et serrée, relevés
+    // sobres ; sujets en grands blocs, menu transparent sur le premier écran.
+    id: 'technique',
+    nom: 'Technique',
+    effet: 'Technique et précis',
+    description: 'Plein écran sombre façon laboratoire d’analyse : trame de points de pression, animation du sujet principal, grotesque grasse.',
+    version: 1,
+    entete: 'transparent',
+    accueil: { hero: 'diaporama', voile: 55, sections: ['faits', 'competences', 'praticiens', 'panorama', 'galerie', 'actualites', 'acces', 'faq'] },
+    competences: 'cartes',
+    pied: 'sombre',
+    animations: 'douces',
+    couleurConseillee: '#1f4fbf',
+    gammes: ['cobalt', 'encre', 'canard', 'ardoise', 'cobalt-abricot', 'menthe', 'pasteque'],
+    jetons: { policeTitres: 'schibsted', policeTexte: 'inter', graisseTitres: 750, rayon: 10, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', fondDoux: '#eef1f4', motif: 'trame', signal: '#6ff2c2', logo: 'plein', registre: 'releve' },
+  },
 ];
 
 /** Effet recherché d'un modèle (choix dans le formulaire du praticien) : celui de la fiche, sinon son nom. */
