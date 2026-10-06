@@ -1,7 +1,9 @@
 import { notFound, redirect } from 'next/navigation';
 import Shell from '@/components/Shell';
 import Parcours from './Parcours';
-import { choisirModele, publierParcours, sauvegarderParcours } from './actions';
+import { choisirModele, noterProgressionEssai, publierApercuParcours, publierParcours, sauvegarderParcours } from './actions';
+import { joursRestants } from '@plateforme/core';
+import { dateLongue, getMonEssai } from '@/lib/essai';
 import { getUser } from '@/lib/supabase/server';
 import { getCatalogue, getMonSite, getSiteParId } from '@/lib/sites';
 import { getModelesDisponibles } from '@/lib/modeles';
@@ -35,6 +37,18 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
     getUnivers(),
   ]);
   if (!site) notFound();
+  // Compte en essai gratuit (non validé) : même parcours, pré-rempli avec le nom, « Voir mon site » en aperçu privé.
+  const monEssai = pourClient ? null : await getMonEssai();
+  const essai = monEssai && !monEssai.valideLe
+    ? { prenom: monEssai.prenom, fin: dateLongue(monEssai.fin), joursRestants: joursRestants(monEssai.fin, Date.now()), suspendu: Boolean(monEssai.suspenduLe) }
+    : null;
+  if (essai && !site.id) {
+    const p = site.draft.praticiens[0];
+    if (p && !p.prenom && !p.nom) site.draft.praticiens[0] = { ...p, prenom: monEssai!.prenom, nom: monEssai!.nom };
+    const lieu = site.draft.lieux[0];
+    if (lieu && !lieu.ville && monEssai!.ville) site.draft.lieux[0] = { ...lieu, ville: monEssai!.ville };
+    if (!site.draft.cabinet.ville && monEssai!.ville) site.draft.cabinet = { ...site.draft.cabinet, ville: monEssai!.ville };
+  }
   // Site déjà publié : le praticien le modifie dans le formulaire (le parcours sert à la création)
   if (site.dejaPublie && !admin && !changerModele) redirect('/mon-site');
   const jeuPhotos = site.draft.theme.jeuPhotos ? await lireJeuPhotos(site.draft.theme.jeuPhotos) : null;
@@ -58,7 +72,8 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
         admin={admin}
         themesActives={themesActives()}
         lienAvance={pourClient ? `/mon-site?site=${site.id}` : '/mon-site'}
-        actions={{ sauvegarder: sauvegarderParcours, choisir: choisirModele, publier: publierParcours }}
+        essai={essai}
+        actions={{ sauvegarder: sauvegarderParcours, choisir: choisirModele, publier: essai ? publierApercuParcours : publierParcours, ...(essai ? { progression: noterProgressionEssai } : {}) }}
       />
     </Shell>
   );

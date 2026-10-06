@@ -34,6 +34,7 @@ import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
 import type { EtatParcours } from './actions';
 import { EtapeCabinet, EtapeContenus, EtapeCouleurs, EtapeSoinsImage, Verification } from './Etapes';
+import VerificationEssai from './VerificationEssai';
 
 export type ActionEnregistrer = (id: string | null, draft: SiteDraft, version?: string | null) => Promise<EtatParcours>;
 export type ActionChoisir = (id: string | null, draft: SiteDraft, version: string | null, universId: string) => Promise<EtatParcours>;
@@ -57,7 +58,9 @@ type Props = {
   lienAvance: string;
   /** Thèmes différés activés par le drapeau admin (THEMES_ACTIVES) */
   themesActives: string[];
-  actions: { sauvegarder: ActionEnregistrer; choisir: ActionChoisir; publier: ActionEnregistrer };
+  actions: { sauvegarder: ActionEnregistrer; choisir: ActionChoisir; publier: ActionEnregistrer; progression?: (etape: number) => Promise<void> };
+  /** Compte en essai gratuit : bandeau d'accompagnement, « Voir mon site » en aperçu privé (jamais la production) */
+  essai?: { prenom: string; fin: string; joursRestants: number; suspendu: boolean } | null;
 };
 
 type Etat = { type: 'repos' | 'enCours' | 'ok' | 'erreur' | 'conflit'; message?: string };
@@ -75,7 +78,7 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions }: Props) {
+export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions, essai = null }: Props) {
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const proposes = useMemo(() => universDuParcours(univers), [univers]);
@@ -149,6 +152,11 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
     titre.current?.focus();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [etape, verif]);
+  // Essai : étape atteinte (7 = vérification), pour la progression suivie par la conseillère
+  const noterProgression = actions.progression;
+  useEffect(() => {
+    if (noterProgression) void noterProgression(verif ? 7 : etape).catch(() => undefined);
+  }, [etape, verif, noterProgression]);
   // Soins suggérés (sujets, sinon modèle), affichés pré-cochés à l'étape 5 : « Continuer » vaut confirmation
   const [suggestion, setSuggestion] = useState<{ soins: string[]; enAvant: string[] } | null>(null);
   const aller = (n: number) => {
@@ -237,14 +245,16 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
         </p>
       )}
 
+      {essai && <BandeauEssai essai={essai} etape={etape} verif={verif} />}
+
       <Progression etape={etape} pret={pret} onAller={aller} etat={etat} />
 
       <section aria-labelledby="titre-etape" className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <div className="grid gap-2">
           <h1 id="titre-etape" ref={titre} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none sm:text-3xl">
-            {verif ? 'Vérifier et publier' : infos.titre}
+            {verif ? (essai ? 'Voir mon site' : 'Vérifier et publier') : infos.titre}
           </h1>
-          <p className="max-w-2xl text-base text-neutral-700">{verif ? 'Relisez le récapitulatif. Les informations manquantes ne bloquent pas la mise en ligne : le site affiche une mention sobre à la place, complétez-les quand vous voulez.' : infos.consigne}</p>
+          <p className="max-w-2xl text-base text-neutral-700">{verif && essai ? 'Relisez le récapitulatif, puis générez votre version d’essai : un lien privé, non indexé, que vous pouvez partager. Rien n’est publié sur internet sans votre demande.' : verif ? 'Relisez le récapitulatif. Les informations manquantes ne bloquent pas la mise en ligne : le site affiche une mention sobre à la place, complétez-les quand vous voulez.' : infos.consigne}</p>
           {!verif && aide.length > 0 && (
             <details className="max-w-2xl rounded-xl bg-teal-50/70 px-4 py-3 text-sm text-teal-950">
               <summary className="cursor-pointer font-semibold">Conseil : {aide[0].titre}</summary>
@@ -313,7 +323,20 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
           </div>
         )}
 
-        {verif && (
+        {verif && essai && (
+          <VerificationEssai
+            d={d}
+            siteId={id}
+            controle={controle}
+            univers={universCourant}
+            enCours={etat.type === 'enCours'}
+            publication={publication}
+            onModifier={aller}
+            onPublier={publier}
+          />
+        )}
+
+        {verif && !essai && (
           <Verification
             d={d}
             siteId={id}
@@ -363,6 +386,24 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
           </Link>
         )}
       </nav>}
+    </div>
+  );
+}
+
+/** Bandeau de l'essai gratuit : ton encourageant, jours restants, rappel « privé tant que vous ne demandez pas » */
+function BandeauEssai({ essai, etape, verif }: { essai: NonNullable<Props['essai']>; etape: number; verif: boolean }) {
+  const restantes = verif ? 0 : ETAPES_PARCOURS.length - etape + 1;
+  const encouragement = verif
+    ? 'Dernière étape : découvrez votre site.'
+    : etape === 1
+      ? `Bienvenue${essai.prenom ? ` ${essai.prenom}` : ''} : quelques questions courtes, environ 10 minutes. Tout est enregistré au fur et à mesure.`
+      : restantes <= 2
+        ? 'Presque terminé : encore une ou deux étapes.'
+        : `Bien avancé : encore ${restantes} étapes.`;
+  return (
+    <div className="grid gap-1 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-950 sm:flex sm:items-center sm:justify-between sm:gap-4">
+      <p className="font-medium">{encouragement}</p>
+      <p className="text-teal-900/80">Version d’essai gratuite jusqu’au {essai.fin} · votre site reste privé</p>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   type VueSuivi,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { essaiBloqueProduction } from '@/lib/essai';
 
 // Suivi réel d'une publication (route /api/sites/[id]/publication) : état en base, étapes du job GitHub Actions, puis
 // vérification que le site en ligne sert la nouvelle version (/version.json). Le jeton GitHub reste côté serveur.
@@ -92,11 +93,15 @@ async function annotations(job: JobGithub): Promise<string[]> {
   return (liste ?? []).filter((a) => a.annotation_level === 'failure').map((a) => a.message);
 }
 
-/** Le site en ligne (https://<slug>.pages.dev) sert-il la version de cette demande ? */
-async function versionEnLigne(slug: string, demandeeLe: string | null, runId: number | null): Promise<boolean> {
+/**
+ * Le site en ligne (https://<slug>.pages.dev) sert-il la version de cette demande ? Version d'essai : aperçu privé
+ * (https://apercu.<slug>.pages.dev/apercu.json, qui porte aussi l'horodatage de la demande).
+ */
+async function versionEnLigne(slug: string, demandeeLe: string | null, runId: number | null, essai = false): Promise<boolean> {
   if (!SLUG.test(slug)) return false;
   try {
-    const r = await fetch(`https://${slug}.pages.dev/version.json?v=${Date.now()}`, { cache: 'no-store', signal: AbortSignal.timeout(4_000) });
+    const url = essai ? `https://apercu.${slug}.pages.dev/apercu.json` : `https://${slug}.pages.dev/version.json`;
+    const r = await fetch(`${url}?v=${Date.now()}`, { cache: 'no-store', signal: AbortSignal.timeout(4_000) });
     return r.ok && versionConcorde(await r.json(), demandeeLe, runId);
   } catch {
     return false;
@@ -130,6 +135,8 @@ export async function suiviPublication(siteId: string, admin = false): Promise<R
     .maybeSingle();
   const s = data as Ligne | null;
   if (!s) return null;
+  // Version d'essai non validée : la « publication » est l'aperçu privé (jamais la production).
+  const essai = await essaiBloqueProduction(siteId);
 
   const base = { etat: s.publication_etat, debut: s.publication_debut, fin: s.publication_fin, erreur: s.publication_erreur };
   const maintenant = Date.now();
@@ -142,7 +149,7 @@ export async function suiviPublication(siteId: string, admin = false): Promise<R
     if (trouve?.job.status === 'completed' && trouve.job.conclusion !== 'success') notes = await annotations(trouve.job);
   }
   const runId = trouve?.runId ?? idRunDepuisUrl(s.publication_run_url);
-  if (base.etat === 'ok' && s.slug) versionConfirmee = await versionEnLigne(s.slug, s.publication_demandee_at, runId);
+  if (base.etat === 'ok' && s.slug) versionConfirmee = await versionEnLigne(s.slug, s.publication_demandee_at, runId, essai);
 
   let vue = interpreterSuivi({ base, job: trouve?.job ?? null, annotations: notes, versionConfirmee, maintenant });
 
@@ -154,11 +161,20 @@ export async function suiviPublication(siteId: string, admin = false): Promise<R
     await supabase.rpc('signaler_echec_publication', { p_site: siteId, p_message: message });
   }
   // Workflow réussi, base pas encore à jour (dernière étape en cours d'écriture) : vérification en ligne directe.
-  if (vue.phase === 'verification' && base.etat === 'en_cours' && s.slug && (await versionEnLigne(s.slug, s.publication_demandee_at, runId))) {
+  if (vue.phase === 'verification' && base.etat === 'en_cours' && s.slug && (await versionEnLigne(s.slug, s.publication_demandee_at, runId, essai))) {
     vue = interpreterSuivi({ base: { ...base, etat: 'ok', fin: new Date(maintenant).toISOString() }, job: null, versionConfirmee: true, maintenant });
   }
 
-  const hote = s.domaine || (s.slug ? `${s.slug}.pages.dev` : null);
+  const hote = essai ? (s.slug ? `apercu.${s.slug}.pages.dev` : null) : s.domaine || (s.slug ? `${s.slug}.pages.dev` : null);
+  if (essai && (vue.phase === 'en_ligne' || vue.phase === 'en_ligne_propagation')) {
+    vue = {
+      ...vue,
+      titre: 'Votre version d’essai est prête',
+      detail: vue.phase === 'en_ligne'
+        ? 'Lien privé, non indexé par les moteurs de recherche : vous pouvez le partager.'
+        : 'Lien privé, non indexé. La mise à jour peut prendre encore quelques instants à apparaître.',
+    };
+  }
   return {
     ...vue,
     lien: hote ? `https://${hote}` : null,

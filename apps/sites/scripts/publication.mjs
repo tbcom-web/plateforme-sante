@@ -5,6 +5,10 @@
 //   node scripts/publication.mjs terminer <site_id> <domaine_pages_dev>  → publication réussie, site « en ligne »
 //                                                       (sauf site suspendu, dont le statut n'est jamais changé)
 //   node scripts/publication.mjs echec <site_id> [journal]  → publication échouée (message lisible tiré du journal)
+//   node scripts/publication.mjs terminer-apercu <site_id>  → version d'essai prête (aperçu privé ; statut inchangé)
+//   node scripts/publication.mjs page-suspendue <site_id> <dossier> → page « version d'essai suspendue » (noindex) à déployer
+// Essai gratuit (migration 0023, docs/onboarding-lead.md) : un site d'essai non validé n'est JAMAIS publié en
+// production (« preparer » échoue) ; en aperçu, il est suivi comme une publication (sorties « essai », « suspendu »).
 // Variables requises : SUPABASE_URL, SUPABASE_SECRET_KEY. Facultatives : RUN_URL (lien du run GitHub), APERCU=1.
 
 const { SUPABASE_URL, SUPABASE_SECRET_KEY, RUN_URL, APERCU } = process.env;
@@ -49,7 +53,26 @@ if (commande && !/^[0-9a-f-]{36}$/.test(siteId ?? '')) throw new Error('Identifi
 const production = APERCU !== '1';
 const runUrl = /^https:\/\/[^\s]+$/.test(RUN_URL ?? '') ? RUN_URL : null;
 
+/** Essai du propriétaire du site (null si aucun, ou si la base n'a pas la mise à jour 0023). */
+async function essaiDuSite(siteId) {
+  const [site] = await api(`sites?id=eq.${siteId}&select=owner,statut`);
+  if (!site) return null;
+  const [essai] = await api(`essais?owner=eq.${site.owner}&select=owner,essai_fin,valide_le,suspendu_le,paiement_statut`).catch(() => []);
+  return essai ? { ...essai, statut: site.statut } : null;
+}
+
+const sortie = async (ligne) => {
+  if (!process.env.GITHUB_OUTPUT) return;
+  const { appendFile } = await import('node:fs/promises');
+  await appendFile(process.env.GITHUB_OUTPUT, `${ligne}\n`);
+};
+
 if (commande === 'preparer') {
+  const essai = await essaiDuSite(siteId);
+  // Garde « essai = aperçu seulement » (aussi dans demander_publication et le back-office).
+  if (production && essai && !essai.valide_le) {
+    throw new Error('Version d’essai non validée : mise en ligne publique refusée (validation par la commerciale dans /admin/leads).');
+  }
   // Sans config_publiee si la base n'a pas encore reçu la mise à jour 0017.
   const [site] = await api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config,config_publiee,publication_demandee_at`).catch(() =>
     api(`sites?id=eq.${siteId}&select=id,slug,profession_slug,config`),
@@ -79,7 +102,31 @@ if (commande === 'preparer') {
     const { appendFile } = await import('node:fs/promises');
     await appendFile(process.env.GITHUB_OUTPUT, `version=${site.publication_demandee_at}\n`);
   }
+  // Version d'essai en aperçu : suivie comme une publication (le back-office affiche les étapes puis « Voir mon site »).
+  if (!production && essai && !essai.valide_le) {
+    await sortie('essai=1');
+    const termine = Date.parse(essai.essai_fin) < Date.now() && essai.paiement_statut !== 'paye';
+    if (essai.suspendu_le || essai.statut === 'suspendu' || termine) await sortie('suspendu=1');
+    await api(`sites?id=eq.${siteId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ publication_etat: 'en_cours', publication_run_url: runUrl, publication_erreur: null, publication_fin: null }),
+    }).catch((e) => console.error(`Suivi de l'aperçu non enregistré : ${e.message}`));
+    if (site.publication_demandee_at) await sortie(`version=${site.publication_demandee_at}`);
+  }
   console.log(slug);
+} else if (commande === 'terminer-apercu') {
+  const essai = await essaiDuSite(siteId);
+  if (!essai) {
+    console.log('Aperçu sans essai : rien à enregistrer.');
+  } else {
+    const maintenant = new Date().toISOString();
+    await api(`sites?id=eq.${siteId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ publication_etat: 'ok', publication_fin: maintenant, publication_erreur: null, ...(runUrl ? { publication_run_url: runUrl } : {}) }),
+    });
+    if (!essai.suspendu_le) await api(`essais?owner=eq.${essai.owner}`, { method: 'PATCH', body: JSON.stringify({ apercu_genere_le: maintenant }) });
+    console.log(`Version d'essai prête pour ${siteId}.`);
+  }
 } else if (commande === 'terminer') {
   const [site] = await api(`sites?id=eq.${siteId}&select=id,statut,domaine`);
   if (!site) throw new Error(`Site introuvable : ${siteId}`);
@@ -104,6 +151,19 @@ if (commande === 'preparer') {
   if (runUrl) maj.publication_run_url = runUrl;
   await api(`sites?id=eq.${siteId}`, { method: 'PATCH', body: JSON.stringify(maj) });
   console.log(`Échec de publication enregistré pour ${siteId}.`);
+} else if (commande === 'page-suspendue') {
+  // Remplace l'aperçu d'une version d'essai suspendue ou terminée par une page sobre, jamais indexée.
+  const { mkdir, writeFile } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const dossier = argument || 'dist';
+  await mkdir(dossier, { recursive: true });
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>Version d’essai suspendue</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font:17px/1.5 system-ui,sans-serif;background:#f7f7f5;color:#1c2731;padding:16px}main{max-width:32rem}h1{font-size:1.4rem}</style></head><body><main><h1>Version d’essai suspendue</h1><p>Cette version d’essai n’est plus disponible. Le praticien peut la réactiver auprès de sa conseillère.</p></main></body></html>`;
+  await writeFile(join(dossier, 'index.html'), html);
+  await writeFile(join(dossier, '404.html'), html);
+  await writeFile(join(dossier, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
+  await writeFile(join(dossier, '_headers'), '/*\n  X-Robots-Tag: noindex, nofollow\n');
+  await writeFile(join(dossier, 'apercu.json'), JSON.stringify({ genere: new Date().toISOString(), publication: process.env.PUBLICATION_VERSION || null, run: process.env.PUBLICATION_RUN || null, suspendu: true }));
+  console.log(`Page de version d'essai suspendue écrite dans ${dossier}.`);
 } else if (commande) {
   throw new Error(`Commande inconnue : ${commande}`);
 }

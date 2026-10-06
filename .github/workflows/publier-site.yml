@@ -81,11 +81,18 @@ jobs:
       # PUBLICATION_VERSION / PUBLICATION_RUN : écrits dans /version.json du site, que le back-office relit pour
       # n'annoncer « publié » qu'une fois la nouvelle version réellement servie en ligne.
       - name: Construire le site
+        if: steps.prep.outputs.suspendu != '1'
         shell: bash
         env:
           PUBLICATION_VERSION: ${{ steps.prep.outputs.version }}
           PUBLICATION_RUN: ${{ github.run_id }}
         run: npm run build -w apps/sites 2>&1 | tee "$RUNNER_TEMP/construction.log"
+
+      # Version d'essai suspendue ou terminée (docs/onboarding-lead.md) : l'aperçu est remplacé par une page sobre, noindex.
+      - name: Construire la page de version d'essai suspendue
+        if: steps.prep.outputs.suspendu == '1'
+        working-directory: apps/sites
+        run: node scripts/publication.mjs page-suspendue "$SITE_ID" dist
 
       - name: Créer le projet Cloudflare Pages si besoin
         working-directory: apps/sites
@@ -100,8 +107,14 @@ jobs:
         working-directory: apps/sites
         run: node scripts/publication.mjs terminer "$SITE_ID" "${{ steps.prep.outputs.slug }}.pages.dev"
 
+      # Version d'essai (aperçu privé, jamais la production) : prête, le back-office affiche « Voir mon site ».
+      - name: Publication réussie (version d'essai en aperçu)
+        if: inputs.mode == 'apercu' && steps.prep.outputs.essai == '1'
+        working-directory: apps/sites
+        run: node scripts/publication.mjs terminer-apercu "$SITE_ID"
+
       # Une étape a échoué : la publication passe « en échec » dans le back-office (pastille, lien, « Réessayer »).
       - name: Signaler l'échec de la publication
-        if: failure() && inputs.mode != 'apercu'
+        if: failure() && (inputs.mode != 'apercu' || steps.prep.outputs.essai == '1')
         working-directory: apps/sites
         run: node scripts/publication.mjs echec "$SITE_ID" "$RUNNER_TEMP/construction.log"

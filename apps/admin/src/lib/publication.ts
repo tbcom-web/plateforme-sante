@@ -1,6 +1,8 @@
 import 'server-only';
-import { normaliserDraft } from '@plateforme/core';
+import { gardeProduction, normaliserDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { getRole } from '@/lib/admin';
+import { essaiBloqueProduction } from '@/lib/essai';
 
 type Resultat = { ok: boolean; message: string };
 
@@ -26,6 +28,14 @@ const UUID = /^[0-9a-f-]{36}$/;
  */
 export async function declencherPublication(siteId: string): Promise<Resultat> {
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
+  // Garde « essai = aperçu seulement » (aussi en SQL dans demander_publication et dans le workflow) : un site d'essai
+  // non validé n'est jamais publié en production. Pour le praticien, « Publier » met à jour sa version d'essai privée ;
+  // l'admin passe par « Valider et mettre en ligne » (/admin/leads), qui valide d'abord l'essai.
+  const garde = gardeProduction({ enEssai: await essaiBloqueProduction(siteId), valideLe: null });
+  if (!garde.autorisee) {
+    if ((await getRole()) === 'admin') return { ok: false, message: 'Site en version d’essai : validez-le d’abord (Essais → « Valider et mettre en ligne »).' };
+    return declencherApercuEssai(siteId);
+  }
   const supabase = await createClient();
   // Derniers articles du flux pour un site créé après leur diffusion (rubrique Actualités) ; sans effet si la
   // fonction n'existe pas encore (base sans la mise à jour 0022) : la publication continue.
@@ -45,6 +55,31 @@ export async function declencherPublication(siteId: string): Promise<Resultat> {
     return erreur;
   }
   return { ok: true, message: 'Publication lancée.' };
+}
+
+/**
+ * Version d'essai : construit l'aperçu privé du brouillon (https://apercu.<slug>.pages.dev, jamais indexé) avec le suivi
+ * de publication (demander_apercu_essai : propriétaire ou admin, essai en cours, ni suspendu ni terminé). Jamais de
+ * production ici.
+ */
+export async function declencherApercuEssai(siteId: string): Promise<Resultat> {
+  if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
+  const supabase = await createClient();
+  const rattrapage = await supabase.rpc('rattraper_articles', { p_site: siteId });
+  if (rattrapage.error && rattrapage.error.code !== 'PGRST202') console.error('rattraper_articles', rattrapage.error);
+  const { error } = await supabase.rpc('demander_apercu_essai', { p_site: siteId });
+  if (error) {
+    if (/suspendu/i.test(error.message)) return { ok: false, message: 'Votre version d’essai est suspendue : contactez votre conseillère.' };
+    if (/termin/i.test(error.message)) return { ok: false, message: 'Votre essai est terminé : passez à l’abonnement ou contactez votre conseillère.' };
+    console.error('demander_apercu_essai', error);
+    return { ok: false, message: 'La version d’essai n’a pas pu être préparée. Réessayez dans un instant.' };
+  }
+  const erreur = await lancerWorkflow('publier-site.yml', { site_id: siteId, mode: 'apercu' });
+  if (erreur) {
+    await supabase.rpc('signaler_echec_publication', { p_site: siteId, p_message: erreur.message });
+    return erreur;
+  }
+  return { ok: true, message: 'Votre version d’essai est en préparation (environ une minute).' };
 }
 
 /** Construit l'aperçu privé du brouillon (éditeur visuel) : https://apercu.<slug>.pages.dev */

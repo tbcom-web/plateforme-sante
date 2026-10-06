@@ -12,6 +12,7 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
       <div className="mb-6 flex flex-wrap items-center gap-2 text-sm">
         <span className="mr-2 font-semibold text-amber-900">Super admin</span>
         <Link href="/admin" className="rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Sites</Link>
+        <Link href="/admin/leads" className="rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Essais</Link>
         <Link href="/admin/catalogue" className="rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Catalogue de soins</Link>
         <Link href="/admin/flux" className="rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Flux de contenus</Link>
         <Link href="/admin/univers" className="rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Univers</Link>

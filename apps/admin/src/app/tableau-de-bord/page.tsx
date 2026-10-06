@@ -13,6 +13,8 @@ import { publierSite } from './actions';
 import { getUser } from '@/lib/supabase/server';
 import { getCatalogue, getMonSite, manques } from '@/lib/sites';
 import { getRole } from '@/lib/admin';
+import { getMonEssai } from '@/lib/essai';
+import TableauEssai from './TableauEssai';
 
 export const metadata = { title: 'Tableau de bord' };
 
@@ -23,6 +25,9 @@ export default async function TableauDeBord() {
   const [site, catalogue, role] = await Promise.all([getMonSite(), getCatalogue(), getRole()]);
   // Praticien sans site : parcours guidé de création
   if (!site.id && role !== 'admin') redirect('/creer');
+  // Compte en essai gratuit non validé : tableau de bord de l'essai (aperçu privé, demande de mise en ligne, abonnement).
+  const essai = role === 'admin' ? null : await getMonEssai();
+  if (essai && !essai.valideLe) return <TableauEssai email={user.email ?? ''} essai={essai} site={site} />;
   // Site jamais publié : la création se reprend dans le parcours guidé
   const creationEnCours = Boolean(site.id) && !site.dejaPublie && site.statut !== 'en_ligne';
   const aFaire = manques(site.draft);
