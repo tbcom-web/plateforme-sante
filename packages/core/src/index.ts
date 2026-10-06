@@ -32,4 +32,5 @@ export * from './soins-lies';
 export * from './themes';
 export * from './illustrations';
 export * from './suivi-publication';
+export * from './heros-themes';
 export * from './essai';

@@ -32,6 +32,8 @@ export const DESSINS_LIGNE = [
   'premiers-pas', 'senior-canne', 'fauteuil', 'instruments', 'autoclave', 'podoscope', 'monofilament',
   // Fiches de soins de la migration 0020 (2026-10-05)
   'orthonyxie', 'onychoplastie', 'mycose', 'ongle-epais', 'cor', 'orthoplastie', 'domicile',
+  // Soins qui n'avaient qu'un trait générique (2026-10-06, brouillons)
+  'talon', 'taping', 'verrue', 'laser',
 ] as const;
 export type NomLigne = (typeof DESSINS_LIGNE)[number];
 
@@ -580,12 +582,80 @@ function parcours(nom: NomLigne, b: BouclesLigne, equipement: (id: string) => st
       manche.ajouter(filament.slice(1));
       return [pied, manche.pts, transf(p.malleole, m)];
     }
+    // ——— Soins sans trait continu dédié jusqu'ici (2026-10-06, brouillons) : mêmes géométries que les dessins relevé / pédagogique
+    case 'talon': {
+      // Douleur au talon : le pied de profil (comme « pied-profil ») et l'aponévrose plantaire (POD-AT-0008), bande fermée de la
+      // tubérosité du calcanéum à la base de P1, DANS le contour de la peau
+      const p = contourProfil(), k = 1.12, m: Affine = [k, 0, 0, k, 52, SOL - p.sol * k];
+      const apo = sousChemins(piedDeProfil().aponevrose, 0.4)[0].pts;
+      return [new Trait(b).ajouter(transf(p.trait, m)).pts, transf(p.malleole, m), transf(apo, m)];
+    }
+    case 'taping': {
+      // K-taping : le pied de profil, la bande du tendon d'Achille (du dessous du talon au mollet, queue en Y) et la bande de la
+      // voûte, chacune en contour fermé à largeur constante, DANS le contour de la peau (mêmes axes que le dessin « taping »)
+      const p = contourProfil(), k = 1.12, m: Affine = [k, 0, 0, k, 52, SOL - p.sol * k];
+      const achille: P[] = [[17, 58.6], [10, 58.2], [4.8, 55.6], [2.6, 50], [3.8, 44], [7, 36], [10.6, 26], [13, 15], [12.6, 4]];
+      const queues: P[][] = [[[12.6, 4], [11, -12], [9.4, -28]], [[12.6, 4], [15.6, -12], [19.2, -27]]];
+      const voute: P[] = [[23, 58.6], [32, 53.6], [44, 52.6], [56, 52.4], [67, 55.6], [75, 57.8], [83, 58.8]];
+      const tA = new Trait(b).ajouter(transf(bandeFermee(achille, 3), m));
+      for (const q of queues) tA.ajouter(transf(bandeFermee(q, 1.9), m), { tension: 0.3 });
+      return [transf(p.trait, m), tA.pts, transf(bandeFermee(voute, 2.5), m)];
+    }
+    case 'verrue': {
+      // Verrue plantaire : la plante du pied droit (vue de dessous) à gauche et, à droite, le médaillon : les lignes de la peau
+      // s'arrêtent au bord de la verrue (le trait contourne la lésion), puis la verrue elle-même. Un repère fin relie la 2e tête
+      // métatarsienne au médaillon (aucun anneau ni point posé sur la peau).
+      const mp = pose(46, 111, 66, 92, 0.7, 4, true);
+      const pied = new Trait(b).ajouter(partirDe(transf(contourPied(), mp), appliquer(mp, [76, 196]), 12)).pts;
+      const z = { x: 176, y: 86, r: 46 }, rv = 13;
+      const t = new Trait(b).ajouter(ellipse(z.x, z.y, z.r, z.r, 180, 1, 0, 64));
+      // Lignes de la peau en serpentin : chaque ligne horizontale va d'un bord du médaillon à l'autre ; celles qui croisent la
+      // verrue la contournent en suivant son bord (les lignes ne la traversent jamais)
+      // Ligne légèrement bombée (dermatoglyphes), échantillonnée de xa à xb
+      const ligneDe = (xa: number, xb: number, y: number): P[] => Array.from({ length: 13 }, (_, j) => { const x = xa + ((xb - xa) * j) / 12; return [x, y + 2.4 * (1 - ((x - z.x) / z.r) ** 2)] as P; });
+      for (let i = 0; i < 9; i++) {
+        const y = z.y - 36 + i * 8.6, w = Math.sqrt(Math.max(0, z.r ** 2 - (y - z.y) ** 2)) - 3, sens = i % 2 ? -1 : 1;
+        const x0 = z.x - sens * w, x1 = z.x + sens * w, dy = y - z.y;
+        if (Math.abs(dy) < rv + 2) {
+          const wv = Math.sqrt((rv + 2) ** 2 - dy ** 2), aG = Math.atan2(dy, -wv), aD = Math.atan2(dy, wv);
+          const [a0, a1] = sens > 0 ? [aG, aD] : [aD, aG];
+          const arc = Array.from({ length: 17 }, (_, j) => { const a = a0 + (j / 16) * (a1 - a0); return [z.x + (rv + 2) * Math.cos(a), z.y + (rv + 2) * Math.sin(a)] as P; });
+          t.ajouter(ligneDe(x0, z.x - sens * wv, y), { tension: 0.3 }).ajouter(arc).ajouter(ligneDe(z.x + sens * wv, x1, y));
+        } else t.ajouter(ligneDe(x0, x1, y), { tension: 0.3 });
+      }
+      const verrue = new Trait(b).ajouter(ellipse(z.x, z.y, rv, rv - 0.6, 200, 1, 0, 40)).ajouter(ellipse(z.x + 1, z.y + 1, 4, 3.4, 20, 1, 0, 20), { tension: 0.4 });
+      return [pied, t.pts, verrue.pts];
+    }
+    case 'laser': {
+      // Laser : la plante du pied droit (vue de dessous), la pièce à main (même gabarit que le dessin « laser ») et le faisceau
+      // étroit qui s'arrête à la surface, sous la 2e tête métatarsienne
+      const k = 0.72, mp: Affine = [-k, 0, 0, k, 34 + 92 * k, 16];
+      const pied = new Trait(b).ajouter(partirDe(transf(contourPied(), mp), appliquer(mp, [76, 196]), 12)).pts;
+      const [mx, my] = CONTOUR_PIED.mtp[1], s = appliquer(mp, [mx, my + 6]), tip: P = [150, 40];
+      const u = norme([s[0] - tip[0], s[1] - tip[1]]), ang = (Math.atan2(-u[1], -u[0]) * 180) / Math.PI;
+      const corps = sousChemins('M6 -4 L22 -6.5 L72 -6.5 C76 -6.5 78 -4 78 0 C78 4 76 6.5 72 6.5 L22 6.5 L6 4 C3 3.6 2 2 2 0 C2 -2 3 -3.6 6 -4 Z', 0.4)[0].pts;
+      const cable = sousChemins('M78 0 C88 0 92 8 98 16', 0.4)[0].pts;
+      const piece = new Trait(b).ajouter(transf(partirDe(corps, [78, 0], 1), pose(0, 0, tip[0], tip[1], 1, ang))).ajouter(transf(cable, pose(0, 0, tip[0], tip[1], 1, ang)));
+      const n: P = [-u[1], u[0]];
+      const faisceau: P[] = [[tip[0] + n[0] * 1.6, tip[1] + n[1] * 1.6], [s[0] + n[0] * 3, s[1] + n[1] * 3], [s[0] - n[0] * 3, s[1] - n[1] * 3], [tip[0] - n[0] * 1.6, tip[1] - n[1] * 1.6]];
+      return [pied, piece.pts, echantillon(faisceau)];
+    }
     case 'orthonyxie': case 'onychoplastie': case 'mycose': case 'ongle-epais': case 'cor': case 'orthoplastie': case 'domicile':
       return parcoursSoin(nom, b);
     case 'fauteuil': case 'autoclave': case 'podoscope':
       return parcoursEquipement(nom, b, equipement);
   }
   return [];
+}
+
+/** Bande de largeur constante (2 × demi) autour d'un axe (points de passage) : contour fermé, bouts arrondis */
+function bandeFermee(axe: P[], demi: number): P[] {
+  const c = echantillon(axe, false, 0.5);
+  const nrm = (i: number): P => { const a = c[Math.max(0, i - 1)], z = c[Math.min(c.length - 1, i + 1)]; const t = norme([z[0] - a[0], z[1] - a[1]]); return [-t[1], t[0]]; };
+  const gauche = c.map((p, i) => [p[0] + nrm(i)[0] * demi, p[1] + nrm(i)[1] * demi] as P), droite = c.map((p, i) => [p[0] - nrm(i)[0] * demi, p[1] - nrm(i)[1] * demi] as P);
+  const bout = (p: P, n: P, sens: number): P[] => Array.from({ length: 9 }, (_, j) => { const a = (j / 8) * Math.PI * sens; const ca = Math.cos(a), sa = Math.sin(a); return [p[0] + (n[0] * ca - n[1] * sa) * demi, p[1] + (n[0] * sa + n[1] * ca) * demi] as P; });
+  const nf = nrm(c.length - 1), nd = nrm(0);
+  return [...gauche, ...bout(c[c.length - 1], nf, -1).slice(1, -1), ...inverse(droite), ...bout(c[0], [-nd[0], -nd[1]], -1).slice(1, -1), gauche[0]];
 }
 
 /** Courbe lisse (Catmull-Rom → Bézier) passant par des points, en tracé SVG (unités du repère des points) */
@@ -820,8 +890,8 @@ export function svgLigne(nom: NomLigne, o: OptionsLigne & { classe?: string; nom
 /** Chaque dessin du registre relevé / pédagogique et son équivalent au trait continu */
 export const LIGNE_DESSIN: Record<string, NomLigne> = {
   analyse: 'empreintes', appuis: 'pied-dessous', semelle: 'semelle', soin: 'pieds-dessus', diabete: 'monofilament', sport: 'chaussure-course',
-  enfant: 'premiers-pas', equilibre: 'empreintes', talon: 'pied-profil', ongle: 'ongle', laser: 'pied-dessous', senior: 'senior-canne',
-  taping: 'pied-profil', verrue: 'pied-dessous', voutes: 'pied-profil', 'arriere-pied': 'pieds-dessus',
+  enfant: 'premiers-pas', equilibre: 'empreintes', talon: 'talon', ongle: 'ongle', laser: 'laser', senior: 'senior-canne',
+  taping: 'taping', verrue: 'verrue', voutes: 'pied-profil', 'arriere-pied': 'pieds-dessus',
   orthonyxie: 'orthonyxie', onychoplastie: 'onychoplastie', orthoplastie: 'orthoplastie', mycose: 'mycose', 'cors-durillons': 'cor',
   'ongles-epais': 'ongle-epais', domicile: 'domicile',
 };
@@ -841,6 +911,55 @@ export const LIGNE_FORME: Record<string, NomLigne> = {
   'hallux-gros-plan-orthonyxie': 'orthonyxie', 'ongle-coupe-orthonyxie': 'orthonyxie', 'hallux-gros-plan-onychoplastie': 'onychoplastie',
   'hallux-gros-plan-mycose': 'mycose', 'pied-profil-ongle-epais-meulage': 'ongle-epais', 'orteil-griffe-cor': 'cor', 'orteil-griffe-orthoplastie': 'orthoplastie',
 };
+
+/**
+ * Matériel dessiné le 2026-10-06 : ordre de parcours au trait continu (indices des morceaux de piecesEquipement du dessin
+ * pédagogique, 120 × 90) ; un groupe = un trait (3 au plus) ; « ~i » = morceau parcouru à l'envers, « a-b » = morceaux a à b dans
+ * l'ordre. Les détails fins (lignes de texte, graduations) sont omis : le trait garde la silhouette qui fait reconnaître l'objet.
+ */
+export const ORDRE_MATERIEL: Record<string, string[][]> = {
+  'sachets-individuels': [['4', '6'], ['7'], ['0', '2', '3']],
+  'tracabilite-sterilisation': [['0'], ['1'], ['6', '8', '12']],
+  'bac-ultrasons': [['1', '0', '2', '3'], ['5', '~6', '7'], ['8', '10']],
+  stabilometrie: [['0', '1', '2', '4', '3'], ['5-20'], ['21-36']],
+  'empreinte-mousse': [['0', '2', '4', '3'], ['6-21'], ['22-37']],
+  thermoformage: [['0', '1', '2'], ['7', '8']],
+  'touret-poncage': [['15', '7', '5', '1', '6', '8', '16'], ['0']],
+  laser: [['0', '6', '7'], ['1'], ['13', '9']],
+  'lampe-loupe': [['0', '1', '4', '9', '7'], ['8']],
+};
+
+/** Dessin au trait continu d'un équipement selon son ordre de parcours (ORDRE_MATERIEL), repère 120 × 90 */
+export function contenuLigneGroupes(svgPedagogique: string, groupes: string[][], o: OptionsLigne = {}): string {
+  const b = o.boucles ?? LIGNE.defaut.boucles;
+  const pieces = piecesEquipement(svgPedagogique);
+  const indices = (cle: string): { i: number; inv: boolean }[] => {
+    const inv = cle.startsWith('~'), c = cle.replace('~', '');
+    const [a, z] = c.includes('-') ? c.split('-').map(Number) : [Number(c), Number(c)];
+    return Array.from({ length: z - a + 1 }, (_, k) => ({ i: a + k, inv }));
+  };
+  const traits = groupes.map((g) => {
+    const t = new Trait(b);
+    for (const { i, inv } of g.flatMap(indices)) {
+      let p = pieces[i];
+      if (!p) continue;
+      if (ferme(p) && t.pts.length) p = partirDe(p, t.fin, 2);
+      t.ajouter(inv ? inverse(p) : p, { tension: 0.5 });
+    }
+    return t.pts;
+  }).filter((p) => p.length > 1);
+  return ecrireTraits(traits, o);
+}
+
+/** Chemins SVG (registre ligne) de polylignes déjà enchaînées : épaisseur, couleur et parts du tracé en attributs */
+function ecrireTraits(traits: P[][], o: OptionsLigne): string {
+  const ecrits = traits.map(ecrire);
+  const total = ecrits.reduce((s, x) => s + x.longueur, 0) || 1;
+  const ep = LIGNE.epaisseur[o.epaisseur ?? LIGNE.defaut.epaisseur] * (o.echelleTrait ?? 1);
+  const couleur = o.couleur === 'accent' ? 'var(--dessin-accent, var(--accent))' : 'var(--dessin-ligne, var(--dessin-trait, currentColor))';
+  let cumul = 0;
+  return ecrits.map((c) => { const debut = cumul / total; cumul += c.longueur; return `<path class="ligne" pathLength="1" d="${c.d}" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke:${couleur};stroke-width:${r1(ep * 100) / 100};--ligne-debut:${+debut.toFixed(3)};--ligne-part:${+(c.longueur / total).toFixed(3)}"></path>`; }).join('');
+}
 
 /**
  * Matériel sans dessin dédié : les traits du dessin revu (registre pédagogique) enchaînés automatiquement, du plus proche au plus

@@ -16,7 +16,7 @@ import { titreCabinet, phraseAccueil, titrePraticiens, noms, titreMetierAffiche,
 import TetePage from '../components/gabarits/TetePage.astro';
 import PraticiensVariantes from '../components/gabarits/Praticiens.astro';
 import VenirAuCabinet from '../components/gabarits/VenirAuCabinet.astro';
-import MaterielVariantes from '../components/gabarits/Materiel.astro';
+import MaterielCabinet from '../components/MaterielCabinet.astro';
 import { nouveauGabarit, variantes } from '../lib/gabarits';
 import { lieu } from '../lib/textes';
 
@@ -53,7 +53,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
       <section class="g-section g-bloc" id="materiel">
         <div class="g-cadre g-bloc__dedans">
           <div class="g-tete"><p class="g-sur">Le cabinet</p><h2>Matériel et hygiène</h2></div>
-          <MaterielVariantes />
+          <MaterielCabinet />
         </div>
       </section>
     )}

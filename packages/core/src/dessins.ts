@@ -24,7 +24,7 @@ import { svgForme } from './bibliotheque/rendu';
 import { HALLUX_GROS_PLAN, FLECHE_INCARNE } from './bibliotheque/hallux-gros-plan';
 import { GRIFFE } from './bibliotheque/soins-ongles';
 import type { Animation } from './packs';
-import { svgLigne, contenuLigne, contenuLigneAuto, brancherEquipements, LIGNE_DESSIN, LIGNE_EQUIPEMENT, LIGNE_ANIMATION, type OptionsLigne } from './ligne';
+import { svgLigne, contenuLigne, contenuLigneAuto, contenuLigneGroupes, ORDRE_MATERIEL, brancherEquipements, LIGNE_DESSIN, LIGNE_EQUIPEMENT, LIGNE_ANIMATION, type OptionsLigne } from './ligne';
 export * from './ligne';
 
 /** Registre graphique d'un dessin : relevé de podoscope (données), schéma pédagogique (trait et aplat) ou trait continu (ligne.ts) */
@@ -1141,7 +1141,13 @@ export function svgAnimationFixe(animation: Animation, opts: { id?: string; regi
 export const EQUIPEMENTS_DESSINES = [
   'tapis-de-course', 'iontophorese', 'podoscope', 'plateforme-pression', 'autoclave-classe-b',
   'fauteuil-soins', 'aspiration', 'scanner-3d', 'fraiseuse-numerique', 'monofilament-diapason',
+  // Compléments du 2026-10-06 (statut brouillon, à valider par Paul dans /admin/illustrations) : hygiène et traçabilité,
+  // analyse, fabrication des semelles, soins. Aucune marque, aucun modèle commercial identifiable : silhouettes génériques.
+  'sachets-individuels', 'tracabilite-sterilisation', 'bac-ultrasons', 'stabilometrie', 'empreinte-mousse',
+  'thermoformage', 'touret-poncage', 'laser', 'lampe-loupe',
 ] as const;
+/** Équipements dessinés le 2026-10-06 (brouillons) : listés dans l'inventaire et la planche de contrôle */
+export const EQUIPEMENTS_DESSINES_2026_10_06: readonly EquipementDessine[] = ['sachets-individuels', 'tracabilite-sterilisation', 'bac-ultrasons', 'stabilometrie', 'empreinte-mousse', 'thermoformage', 'touret-poncage', 'laser', 'lampe-loupe'];
 export type EquipementDessine = (typeof EQUIPEMENTS_DESSINES)[number];
 export const equipementDessine = (id: string): id is EquipementDessine => (EQUIPEMENTS_DESSINES as readonly string[]).includes(id);
 
@@ -1247,6 +1253,104 @@ function corpsEquipement(id: EquipementDessine, R: boolean, ident: string): stri
         R ? '<path class="faisceau-axe" d="M30 56 C36 54 40 60 46 61 C56 62 60 57 62 57"></path>' : '<path class="zone" d="M28 52 H92 V63 C80 62 74 57 66 57 C60 57 56 62 46 61 C38 60 34 54 28 56 Z"></path>'
       }<path class="trait" d="M14 80 V84 M106 80 V84"></path>`;
 
+    // ——— Compléments du 2026-10-06 (brouillons). Même grammaire : contour au trait fort sur aplat clair, détails au trait fin,
+    // accent pour l'eau, la chaleur, la lumière ; en relevé, les afficheurs portent la palette ; aucune annotation, aucun logo.
+    case 'sachets-individuels': {
+      // Deux sachets de stérilisation (papier + film) fermés par thermosoudure, bout pelable en chevron ; dans le sachet du
+      // premier plan, une pince à ongles fermée ; dans celui de derrière, une gouge ; l'indicateur de passage du cycle
+      // (pastille qui vire) imprimé sur le sachet. Le sachet reste fermé jusqu'au soin.
+      const indic = R
+        ? PRESSION.slice(0, 3).map((c, k) => `<path d="M${25 + k * 5} 77 h3.4" stroke="${c}" stroke-width="${TRAIT.marque}"></path>`).join('')
+        : '<path class="zone zone--forte" d="M24 75 H40 V79 H24 Z"></path>';
+      return `${sol(88)}<path class="trait peau" d="M48 12 H98 Q100 12 100 14 V74 Q100 76 98 76 H48 Q46 76 46 74 V14 Q46 12 48 12 Z"></path><path class="fin" d="M50 16 H96 V72 H50 Z M50 24 L73 18 L96 24"></path>` +
+        `<path class="trait trait--moyen" d="M83 26 C85.4 26 86.4 28.4 85.6 30.6 L84.4 34 V68 Q84.4 70 83 70 Q81.6 70 81.6 68 V34 L80.4 30.6 C79.6 28.4 80.6 26 83 26 Z"></path>` +
+        `<path class="trait peau" d="M18 24 H68 Q70 24 70 26 V84 Q70 86 68 86 H18 Q16 86 16 84 V26 Q16 24 18 24 Z"></path><path class="fin" d="M20 28 H66 V82 H20 Z M20 36 L43 30 L66 36"></path>` +
+        `<path class="trait trait--moyen" d="M37 70 C38.4 60 40.4 52 41.6 46 L42 42.4 C42.2 39 42.6 36.4 43 34.6 C43.4 36.4 43.8 39 44 42.4 L44.4 46 C45.6 52 47.6 60 49 70"></path><circle class="trait--fin" cx="43" cy="44.6" r="1.6"></circle>${indic}`;
+    }
+
+    case 'tracabilite-sterilisation':
+      // Ticket du cycle imprimé par le stérilisateur (courbe du cycle : montée, plateau, descente ; lignes du relevé) et registre
+      // de stérilisation où il est archivé (classeur à anneaux, étiquette). Aucune valeur lisible : illustration, pas un relevé.
+      return `${sol(88)}<path class="trait peau" d="M18 10 H62 V80 L58 84 L54 80 L50 84 L46 80 L42 84 L38 80 L34 84 L30 80 L26 84 L22 80 L18 84 Z"></path><path class="cote" d="M24 18 V44 H57"></path>${
+        R
+          ? `<path d="M24 42 C28 42 29 23 32 21 H47" stroke="${PRESSION[2]}" stroke-width="${TRAIT.normal}"></path><path d="M47 21 C50 21 51 42 57 42" stroke="${PRESSION[1]}" stroke-width="${TRAIT.normal}"></path><path d="M32 21 H47" stroke="${PRESSION[4]}" stroke-width="${TRAIT.fort}"></path>`
+          : '<path class="filament" d="M24 42 C28 42 29 23 32 21 H47 C50 21 51 42 57 42"></path>'
+      }<path class="fin" d="M24 52 H56 M24 58 H48 M24 64 H54 M24 70 H42"></path>` +
+        `<path class="trait peau" d="M74 22 H106 Q110 22 110 26 V82 Q110 86 106 86 H74 Z"></path><path class="trait" d="M74 22 V86 M80 22 V86"></path><path class="fin" d="M71 34 H77 M71 54 H77 M71 74 H77"></path><path class="trait--fin" d="M86 32 H104 V46 H86 Z"></path><path class="fin" d="M89 37 H101 M89 41 H97"></path>`;
+
+    case 'bac-ultrasons': {
+      // Bac de nettoyage à ultrasons vu en coupe : cuve, bain, panier perforé avec les instruments, ondes émises par le fond
+      // (transducteurs) ; à droite, le boîtier de commande (afficheur, bouton).
+      const vagues = `M15 48 ${Array.from({ length: 8 }, () => 'q3.8 -2 7.6 0').join(' ')}`;
+      return `${sol(86)}<path class="trait peau" d="M12 40 V80 Q12 84 16 84 H76 Q80 84 80 80 V40"></path><path class="trait" d="M9 40 H83"></path>${
+        R ? '' : `<path class="zone" d="${vagues} V80 Q76.8 81 74 81 H18 Q15 81 15 78 Z"></path>`
+      }<path class="eau" d="${vagues}"></path><path class="fin" d="M23 44 V30 H69 V44 M23 44 V72 H69 V44"></path><path class="tiret-fin" d="M23 72 H69"></path>` +
+        `<path class="trait trait--moyen" d="M34 68 C35 58 37 48 39.4 38 M47 68 C46 58 44 48 41.6 38"></path><path class="trait trait--moyen" d="M58 68 V36 Q58 34 59.4 34 Q60.8 34 60.8 36 V68"></path>` +
+        `<path class="vibration" d="M28 79 Q32 75.5 36 79 M42 79 Q46 75.5 50 79 M56 79 Q60 75.5 64 79"></path>` +
+        `<path class="trait peau" d="M88 56 H110 Q113 56 113 59 V81 Q113 84 110 84 H88 Q85 84 85 81 V59 Q85 56 88 56 Z"></path><path class="trait--fin" d="M89 60 H109 V67 H89 Z"></path>${
+          R ? PRESSION.slice(0, 4).map((c, k) => `<path d="M${91.5 + k * 4.6} 63.5 h2.6" stroke="${c}" stroke-width="${TRAIT.marque}"></path>`).join('') : '<path class="zone zone--forte" d="M90 61 H108 V66 H90 Z"></path>'
+        }<circle class="fin" cx="99" cy="76" r="3.4"></circle><path class="fin" d="M99 76 L101.2 73.6"></path>`;
+    }
+
+    case 'stabilometrie': {
+      // Plateforme de stabilométrie : pieds posés talons rapprochés, pointes ouvertes (norme de l'examen), écran où s'inscrit le
+      // tracé des oscillations du centre de pression (statokinésigramme illustratif).
+      const d = 22 / 222, a = 0.16;
+      const tourne = (deg: number): Affine => { const t = (deg * Math.PI) / 180, c = Math.cos(t), s = Math.sin(t); return [c, s, -s, c, 48 - c * 48 + s * 205, 205 - s * 48 - c * 205]; };
+      const compose = (A: Affine, B: Affine): Affine => [A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1], A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3], A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5]];
+      const gauche = compose(surPlateau(34, 52, a, d, 0.7, true), tourne(15)), droit = compose(surPlateau(56, 52, a, d, 0.7), tourne(15));
+      return `${sol(84)}<path class="trait peau" d="M12 50 H86 L102 66 H28 Z"></path><path class="trait peau" d="M28 66 H102 V70 H28 Z"></path>${empreinte(gauche, 0.12, 'reparti')}${empreinte(droit, 0.12, 'reparti')}<path class="trait" d="M102 68 C110 68 112 60 106 52"></path><path class="trait peau" d="M88 14 H114 V36 H88 Z"></path><path class="trait" d="M84 40 H118 L114 36 H88 Z"></path><path class="${R ? 'oscillation' : 'faisceau-axe'}" d="${oscillations(101, 25, 8, 6.4, 40, 5)}"></path>${[gauche, droit].map((m) => `<path class="${R ? 'pointille pointille--leger' : 'fin contour-pied'}" d="${transformer(PIED_TRACE, m)}"></path>`).join('')}`;
+    }
+
+    case 'empreinte-mousse': {
+      // Boîte de mousse à empreinte, couvercle ouvert : le pied y a laissé son moulage (contour du pied réel, plante enfoncée).
+      // Aucune trame de pression : une empreinte en mousse est un moulage, pas une mesure.
+      const d = 14 / 222, a = 0.13;
+      const creux = (m: Affine) => `<g transform="${matrice(m)}"><path class="peau-seule" d="${PIED_TRACE}"></path><path class="empreinte" d="${EMPREINTE_TRACE}"></path></g><path class="trait trait--moyen" d="${transformer(PIED_TRACE, m)}"></path>`;
+      return `${sol(86)}<path class="trait peau" d="M14 40 L20 12 H96 L90 40 Z"></path><path class="fin" d="M20 36 L25 16 H91 L86 36"></path><path class="trait peau" d="M14 40 H90 L104 56 H28 Z"></path><path class="trait peau" d="M28 56 H104 V82 H28 Z"></path><path class="trait peau" d="M14 40 L28 56 V82 L14 66 Z"></path><path class="fin" d="M50 40 L62 56"></path>${creux(surPlateau(29, 41, a, d, 0.95, true))}${creux(surPlateau(66, 41, a, d, 0.95))}`;
+    }
+
+    case 'thermoformage': {
+      // Four de thermoformage (porte vitrée, plaque de matériau sur sa grille, résistances) et, à droite, la coque de la semelle
+      // (profil POD-AT-0005, géométrie validée) mise en forme sur le moule du pied.
+      const k = 0.4, m: Affine = [k, 0, 0, k, 68, 66 - 62 * k];
+      const chaleur = `M18 42 ${Array.from({ length: 6 }, () => 'q2.8 -3 5.6 0').join(' ')}`;
+      return `${sol(86)}<path class="trait peau" d="M8 26 H60 Q64 26 64 30 V80 Q64 84 60 84 H12 Q8 84 8 80 V30 Q8 26 12 26 Z"></path><path class="miroir" d="M14 34 H58 V64 H14 Z"></path><path class="trait--fin" d="M14 34 H58 V64 H14 Z"></path>${
+        R ? `<path d="${chaleur}" stroke="${PRESSION[4]}" stroke-width="${TRAIT.normal}"></path>` : `<path class="eau" d="${chaleur}"></path>`
+      }<path class="trait trait--moyen" d="M18 56 H54"></path><path class="fin" d="M18 59 H54"></path><path class="trait" d="M22 70 H50"></path><circle class="fin" cx="20" cy="77" r="2.6"></circle><path class="fin" d="M30 77 H54"></path>` +
+        `<path class="trait peau" d="M70 84 V72 C70 68 73 66 78 66 H112 C115 66 117 68 117 72 V84 Z"></path><path class="piece-coque" d="${transformer(SEMELLE_PROFIL.coque, m)}"></path><path class="piece piece--forte" d="${transformer(SEMELLE_PROFIL.voute, m)}"></path><path class="trait trait--moyen" d="${transformer(SEMELLE_PROFIL.contour, m)}"></path>${
+          R ? `<path d="M84 54 q2 -3 0 -6 M94 54 q2 -3 0 -6 M104 54 q2 -3 0 -6" stroke="${PRESSION[3]}" stroke-width="${TRAIT.fin}"></path>` : '<path class="eau eau--fine" d="M84 54 q2 -3 0 -6 M94 54 q2 -3 0 -6 M104 54 q2 -3 0 -6"></path>'
+        }`;
+    }
+
+    case 'touret-poncage':
+      // Touret de ponçage des semelles : moteur central, arbre, deux tambours abrasifs, capots reliés à la captation des
+      // poussières (gaine vers le haut), socle posé sur l'établi.
+      return `${sol(84)}<path class="trait peau" d="M42 84 V74 H78 V84"></path><path class="trait peau" d="M46 46 H74 Q78 46 78 50 V70 Q78 74 74 74 H46 Q42 74 42 70 V50 Q42 46 46 46 Z"></path><path class="fin" d="M50 54 H70 M50 60 H70 M50 66 H70"></path><path class="trait" d="M24 60 H42 M78 60 H96"></path>` +
+        `<path class="trait peau" d="M12 52 Q12 50 14 50 H28 Q30 50 30 52 V68 Q30 70 28 70 H14 Q12 70 12 68 Z"></path><path class="trait peau" d="M90 52 Q90 50 92 50 H106 Q108 50 108 52 V68 Q108 70 106 70 H92 Q90 70 90 68 Z"></path><path class="tiret-fin" d="M16 52 V68 M21 52 V68 M26 52 V68 M94 52 V68 M99 52 V68 M104 52 V68"></path>` +
+        `<path class="trait" d="M8 54 C8 40 34 40 34 54 M86 54 C86 40 112 40 112 54"></path><path class="tuyau" d="M21 43 V24 Q21 20 25 20 H95 Q99 20 99 24 V43 M60 20 V6"></path>${
+          R ? '<path class="poussieres" d="M10 76h0 M14 80h0 M18 75h0 M104 76h0 M108 80h0 M112 75h0"></path>' : ''
+        }`;
+
+    case 'laser': {
+      // Laser du cabinet : console sur roulettes (écran, arrêt d'urgence), fibre souple et pièce à main rangée dans son support,
+      // embout vers le bas. Aucun faisceau dans le vide.
+      const piece = 'M6 -4 L22 -6.5 L72 -6.5 C76 -6.5 78 -4 78 0 C78 4 76 6.5 72 6.5 L22 6.5 L6 4 C3 3.6 2 2 2 0 C2 -2 3 -3.6 6 -4 Z';
+      const mp: Affine = [0, -0.42, 0.42, 0, 70, 72]; // pièce verticale : embout fin en bas, fibre en haut
+      return `${sol(86)}<path class="trait peau" d="M18 22 H50 Q54 22 54 26 V76 Q54 80 50 80 H22 Q18 80 18 76 V26 Q18 22 22 22 Z"></path><path class="trait--fin" d="M23 28 H49 V46 H23 Z"></path>${
+        R ? PRESSION.map((c, k) => `<path d="M${26 + k * 4.6} 42 v-${3 + k * 2}" stroke="${c}" stroke-width="${TRAIT.fort}"></path>`).join('') : '<path class="zone zone--forte" d="M24 29 H48 V45 H24 Z"></path>'
+      }<circle class="trait" cx="45" cy="56" r="3.2"></circle><path class="fin" d="M24 54 H36 M24 60 H32 M22 70 H50"></path><circle class="trait peau" cx="25" cy="83" r="3"></circle><circle class="trait peau" cx="47" cy="83" r="3"></circle>` +
+        `<path class="trait" d="M54 44 H66 V72 H62"></path><path class="trait peau" d="${transformer(piece, mp)}"></path><path class="fin" d="${transformer('M22 -6.5 L22 6.5 M30 -6.5 L30 6.5 M58 -6.5 L58 6.5', mp)}"></path><path class="trait" d="M70 38.8 C70 31 64 27 54 30"></path>`;
+    }
+
+    case 'lampe-loupe':
+      // Lampe-loupe sur pied roulant : bras articulé à deux segments, tête ovale (anneau d'éclairage autour de la lentille) et sa
+      // poignée ; cône de lumière vers la zone de soin.
+      return `${sol(86)}<path class="trait" d="M28 84 H58 M43 84 V34"></path><circle class="trait peau" cx="30" cy="84" r="2"></circle><circle class="trait peau" cx="56" cy="84" r="2"></circle><path class="trait" d="M43 34 L68 20 L88 36"></path><circle class="trait peau" cx="68" cy="20" r="2.6"></circle><circle class="trait peau" cx="43" cy="34" r="2.2"></circle>` +
+        `<path class="faisceau" d="M82 50 L76 84 H114 L108 50 Z"></path><path class="trait peau" d="M78 46 A17 8 0 1 0 112 46 A17 8 0 1 0 78 46 Z"></path><path class="trait--fin" d="M84 46 A11 4.6 0 1 0 106 46 A11 4.6 0 1 0 84 46 Z"></path><path class="trait" d="M88 36 V38.4 M112 46 L118 49"></path>${
+          R ? `<path d="M81 49 Q95 55 109 49" stroke="${PRESSION[3]}" stroke-width="${TRAIT.fin}"></path>` : ''
+        }`;
+
     case 'monofilament-diapason':
       // Monofilament 10 g : manche, filament PERPENDICULAIRE à la peau et plié en C au contact (on appuie jusqu'à la flexion) ;
       // diapason gradué (sensibilité vibratoire), à poser sur l'articulation interphalangienne dorsale de l'hallux.
@@ -1271,7 +1375,9 @@ export function svgEquipement(id: string, opts: { id?: string; classe?: string; 
     const dedie = LIGNE_EQUIPEMENT[id];
     const corpsLigne = dedie
       ? `<g transform="scale(0.5)">${contenuLigne(dedie, { ...opts.ligne, echelleTrait: 2 * (opts.ligne?.echelleTrait ?? 1) })}</g>`
-      : contenuLigneAuto(svgEquipement(id, { registre: 'pedagogique', id: ident }), opts.ligne);
+      : ORDRE_MATERIEL[id]
+        ? contenuLigneGroupes(svgEquipement(id, { registre: 'pedagogique', id: ident }), ORDRE_MATERIEL[id], opts.ligne)
+        : contenuLigneAuto(svgEquipement(id, { registre: 'pedagogique', id: ident }), opts.ligne);
     return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${corpsLigne}</svg>`;
   }
   return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${corpsEquipement(id, registre === 'releve', ident)}</svg>`;

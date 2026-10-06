@@ -287,10 +287,10 @@ export const DURILLON: P[] = [
 ].map(verForme);
 // Chaussure : empeigne à ≈ 0,6 cm du dos du pied, qui ne touche le pied qu'au sommet du cor ; bout rond de la chaussure ; sol
 const SOMMET_COR: P = [DORSAL_P[I_IPP][0] + AXE.n[I_IPP][0] * 1.05, DORSAL_P[I_IPP][1] + AXE.n[I_IPP][1] * 1.05];
-export const EMPEIGNE: P[] = [
+export const EMPEIGNE: P[] = ([
   ...DOS_P.slice().reverse().filter((_, i) => i % 3 === 0).map(([x, y]) => [x, y - 3] as P),
   [SOMMET_COR[0] - 5, SOMMET_COR[1] - 0.6], SOMMET_COR, [SOMMET_COR[0] + 6, SOMMET_COR[1] + 0.8], [116, 45.5], [121.5, 51.5], [123, 58], [122.4, 62],
-].map(verForme);
+] as P[]).map(verForme);
 // Orthoplastie : crête en silicone sous l'orteil (comble l'espace entre le dessous de l'orteil et la semelle) et anneau dorsal qui
 // coiffe l'IPP (protection du cor) : une seule pièce moulée, reliée entre l'orteil 2 et ses voisins (hors de la vue)
 export const CRETE_ORTHO: P[] = espacer([

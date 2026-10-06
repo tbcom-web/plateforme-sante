@@ -15,6 +15,8 @@ import { FAMILLES_PICTOS, PICTOS, PICTOS_SOINS, svgPicto, type Famille } from '.
 import { BIBLIOTHEQUE, svgElement, type StatutBibliotheque } from './bibliotheque/catalogue';
 import { VISUELS_SOINS } from './jeux';
 import { EQUIPEMENTS } from './equipements';
+import { THEMES_ILLUSTRES, illustrationTheme, sourcesTheme } from './heros-themes';
+import { THEMES } from './themes';
 
 /** Statut de revue d'une illustration (valeurs de la colonne `statut` de la migration 0021) */
 export type StatutIllustration = 'a_revoir' | 'valide' | 'a_retravailler' | 'retire';
@@ -36,13 +38,14 @@ export function illustrationUtilisable(statut: StatutIllustration | null | undef
   return statut !== 'retire';
 }
 
-export type TypeIllustration = 'dessin' | 'materiel' | 'picto' | 'animation' | 'bibliotheque';
+export type TypeIllustration = 'dessin' | 'materiel' | 'picto' | 'animation' | 'bibliotheque' | 'heros';
 export const LIBELLES_TYPES_ILLUSTRATION: Record<TypeIllustration, string> = {
   dessin: 'Dessin',
   materiel: 'Matériel',
   picto: 'Picto',
   animation: 'Animation',
   bibliotheque: 'Bibliothèque',
+  heros: 'Héros de thème',
 };
 export const LIBELLES_REGISTRES: Record<Registre, string> = { releve: 'Relevé', pedagogique: 'Pédagogique', ligne: 'Trait continu' };
 
@@ -130,6 +133,19 @@ export function inventaireIllustrations(): Illustration[] {
       statutParDefaut: 'a_revoir', fond: 'clair',
       svg: () => svgPicto(p.id, { taille: '100%', accent: true }) ?? '',
     });
+  }
+  // Héros des thèmes (heros-themes.ts, 2026-10-06) : une revue par thème et par registre ; vue agrandie = format portrait (téléphone)
+  for (const t of THEMES_ILLUSTRES) {
+    const theme = THEMES.find((x) => x.id === t);
+    for (const registre of ['releve', 'pedagogique', 'ligne'] as const) {
+      l.push({
+        cle: `heros:${t}:${registre}`, type: 'heros', registre, titre: theme?.libelle ?? t,
+        detail: `${LIBELLES_REGISTRES[registre]} · paysage 16:9 et portrait 3:4 · ${sourcesTheme(t, registre).join(' + ')}`,
+        source: `packages/core/src/heros-themes.ts — COMPOSITIONS.${t}.${registre}`, soins: [...(theme?.soins ?? [])], statutParDefaut: 'a_revoir', fond: 'clair',
+        svg: () => illustrationTheme(t, { format: 'paysage', registre, id: `rv-h-${t}-${registre}` }),
+        svgVariante: () => illustrationTheme(t, { format: 'portrait', registre, id: `rv-hp-${t}-${registre}` }),
+      });
+    }
   }
   const soinsConnus = new Set([...Object.keys(VISUELS_SOINS), ...Object.keys(PICTOS_SOINS)]);
   for (const e of BIBLIOTHEQUE) {

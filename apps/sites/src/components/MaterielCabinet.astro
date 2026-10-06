@@ -1,0 +1,67 @@
+---
+// Matériel et hygiène du cabinet (gabarits tableau, village, revue) : le matériel coché par le praticien, groupé par catégorie
+// (Hygiène et stérilisation, Examen et analyse, Fabrication des semelles, Soins), chaque équipement important illustré par son
+// dessin au trait continu (registre « ligne », core : svgEquipement, EQUIPEMENTS_DESSINES). But : montrer, sans un mot de
+// promotion, ce qui distingue un cabinet de soins (stérilisation, traçabilité, examen, fabrication) ; phrases factuelles du
+// catalogue (equipements.ts).
+// Consigne de Paul (2026-10-06) : AUCUNE légende sous les dessins. Le dessin est posé À CÔTÉ du texte (jamais au-dessus d'un nom
+// qui se lirait comme une légende de figure) ; le nom de l'équipement ouvre la phrase du texte ; il est aussi l'alt du dessin.
+// Sobre et mobile d'abord ; aucun JavaScript ; dessins en <img loading="lazy"> (fichiers /dessins/trait/*.svg,
+// lib/materiel-cabinet.ts) : rien n'est téléchargé avant l'approche de la section. Sans dessin : le pictogramme de l'équipement.
+import Icone from './Icone.astro';
+import { equipementsParCategorie, iconeOuPictoEquipement } from '@plateforme/core';
+import { site } from '../lib/site';
+import { urlTraitMateriel } from '../lib/materiel-cabinet';
+
+const groupes = equipementsParCategorie(site.equipements ?? []);
+const autres = (site.equipementsAutres ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+/** Phrase du catalogue placée après le nom (« Nom : les instruments… ») */
+const suite = (p: string) => p.charAt(0).toLowerCase() + p.slice(1);
+---
+<div class="mc">
+  {groupes.map((g) => (
+    <section class="mc__groupe" aria-label={g.categorie.label}>
+      <p class="mc__categorie">{g.categorie.label}</p>
+      <ul class="mc__liste">
+        {g.equipements.map((e) => {
+          const url = urlTraitMateriel(e.id);
+          return (
+            <li class="mc__item">
+              <span class="mc__visuel">
+                {url ? <img src={url} alt={e.libelle} width="120" height="90" loading="lazy" decoding="async" /> : <span class="mc__picto" aria-hidden="true"><Icone nom={iconeOuPictoEquipement(e.id, e.icone)} secours={e.icone} taille="26" /></span>}
+              </span>
+              <p class="mc__texte"><span class="mc__nom">{e.libelle}</span>{` : ${suite(e.phrase)}`}</p>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  ))}
+  {autres.length > 0 && (
+    <section class="mc__groupe" aria-label="Autres équipements">
+      <p class="mc__categorie">Autres équipements</p>
+      <ul class="mc__liste mc__liste--simple">{autres.map((a) => <li class="mc__item"><p class="mc__texte">{a}</p></li>)}</ul>
+    </section>
+  )}
+</div>
+
+<style>
+  .mc { display: grid; gap: 28px; max-width: 72rem; }
+  .mc__categorie { margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--g-ligne, var(--ligne)); font-weight: 650; }
+  .mc__liste { list-style: none; margin: 0; padding: 0; display: grid; }
+  .mc__item { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--g-ligne, var(--ligne)); }
+  .mc__liste--simple .mc__item { grid-template-columns: minmax(0, 1fr); }
+  .mc__visuel { display: grid; place-items: center; width: 96px; height: 72px; color: var(--g-encre, var(--encre)); }
+  .mc__visuel img { display: block; width: 96px; height: 72px; }
+  .mc__picto { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: var(--g-bulle, var(--doux)); }
+  .mc__texte { margin: 0; color: var(--g-encre-douce, var(--encre-pale)); font-size: 0.95rem; line-height: 1.55; }
+  .mc__nom { font-weight: 650; color: var(--g-encre, var(--encre)); }
+  /* Ordinateur : deux colonnes d'équipements par catégorie, dessin toujours à gauche du texte */
+  @media (min-width: 760px) {
+    .mc { gap: 40px; }
+    .mc__liste { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); column-gap: 32px; }
+    .mc__item { grid-template-columns: 120px minmax(0, 1fr); gap: 18px; }
+    .mc__visuel, .mc__visuel img { width: 120px; height: 90px; }
+    .mc__liste--simple { grid-template-columns: 1fr; }
+  }
+</style>

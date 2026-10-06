@@ -45,3 +45,58 @@ Retour de Paul : « la figure du durillon est complètement fausse anatomiquemen
 
 Points à faire valider par Paul : pli de flexion sous l'IPP (angle franc, voulu : la griffe), hauteur de la pulpe au-dessus du sol,
 hallux estompé derrière l'orteil 2 (vue du 2e rayon), taille de la plaque de durillon.
+
+## B. Matériel, traits continus des soins, héros des thèmes
+
+Auto-revue « illustrateur médical » (`.claude/agents/illustrateur-medical.md`) des créations du 2026-10-06, faites par le graphiste.
+Référentiels : `anatomie-pied.md`, `pieges-illustration.md`, `LISEZMOI.md`. Aucun retour de `/admin/illustrations` n'était
+disponible pour ces clés (toutes nouvelles) ; aucune illustration existante n'a été retouchée, aucune n'est passée en « Validé ».
+Planche : `scratchpad/illustrations-manquantes/planche.png` (session du 2026-10-06).
+
+### Ce qui est réutilisé (aucune géométrie anatomique redessinée)
+
+| Création | Géométries reprises |
+|---|---|
+| Héros des 7 thèmes | uniquement des dessins existants (dessins.ts, ligne.ts, images fixes des animations, matériel), assemblés ; lectures retirées |
+| `materiel:stabilometrie`, `materiel:empreinte-mousse` | contour du pied réel (CONTOUR_PIED, POD-AT-0002) et empreinte (POD-SC-0007) |
+| `materiel:thermoformage` | coque et soutien de voûte de la semelle de profil (POD-AT-0005) |
+| `materiel:laser` | pièce à main du dessin `laser` |
+| `ligne:talon` | profil médial (POD-AT-0003) + aponévrose plantaire (POD-AT-0008) |
+| `ligne:taping` | profil médial + axes des bandes du dessin `taping` (contre-revue du 2026-10-04) |
+| `ligne:verrue`, `ligne:laser` | plante du pied droit (CONTOUR_PIED), 2e tête métatarsienne (CONTOUR_PIED.mtp) |
+
+### Verdicts
+
+| Clé | Verdict | Lecture profane (2 s) |
+|---|---|---|
+| materiel:sachets-individuels | JUSTE | « des sachets d'instruments fermés, une pince dedans » (premier jet : bout en chevron lu « maison » → bords droits, chevron pelable imprimé à l'intérieur) |
+| materiel:tracabilite-sterilisation | JUSTE | « un ticket imprimé avec une courbe, et un classeur » ; courbe sans valeur lisible |
+| materiel:bac-ultrasons | JUSTE | « un bac d'eau avec un panier d'instruments, et un boîtier » |
+| materiel:stabilometrie | À CORRIGER (mineur) | « une plateforme, deux pieds, un écran » ; pieds petits en vue rasante, à agrandir si Paul le demande |
+| materiel:empreinte-mousse | JUSTE | « une boîte de mousse avec l'empreinte des pieds » ; aucune trame (moulage, pas mesure) |
+| materiel:thermoformage | À CORRIGER (mineur) | « un four et une semelle posée sur un moule » ; la coque de profil reste fine à 96 px |
+| materiel:touret-poncage | JUSTE | « une machine à deux meules avec des capots d'aspiration » |
+| materiel:laser | JUSTE | « une console sur roulettes et sa pièce à main rangée » ; aucun faisceau dans le vide (premier jet : pièce à l'envers, fibre sur l'embout → corrigé) |
+| materiel:lampe-loupe | JUSTE | « une lampe-loupe sur pied » (poignée et bras présents : pas de « hublot / machine à laver ») |
+| ligne:talon | JUSTE | aponévrose de la tubérosité médiale du calcanéum à la base de P1, dans la peau |
+| ligne:taping | JUSTE | bandes DANS le contour de la peau, bouts arrondis, queue en Y sur le mollet (piège « attelle » évité) |
+| ligne:verrue | À CORRIGER (mineur) | les lignes de la peau contournent la verrue (elles ne la traversent pas) ; en petit, le médaillon peut se lire « grille » |
+| ligne:laser | JUSTE | faisceau étroit qui s'arrête à la peau sous la 2e tête ; aucune couleur sur la peau |
+| heros:diabete:* | JUSTE | examen au monofilament (fil plié en C, perpendiculaire) ; aucun rouge « pic », aucun pied nu qui marche |
+| heros:enfant:* | JUSTE | premiers pas à côté des pas de l'adulte (≈ 0,5 × la longueur du pied adulte), aucune donnée chiffrée |
+| heros:sport:*, ongles, senior, semelles, pedicurie | JUSTE (compositions de dessins déjà revus) | — ; pédicurie : instruments sans main ni visage |
+
+### À faire valider par Paul (priorités)
+
+1. Les héros de thème (21 compositions × 2 formats) : choix des paires de dessins, couleurs de la gamme, surface « plan » en relevé.
+2. Les 9 dessins de matériel, surtout leur trait continu (c'est lui que montre la section « Matériel et hygiène ») : stabilométrie
+   (pieds petits), thermoformage (coque fine), sachets (sachet du fond visible par transparence : film transparent assumé).
+3. `ligne:verrue` : lecture « grille » possible du médaillon ; alternative : moins de lignes, plus courbées.
+4. Existant non retouché mais signalé : traits continus automatiques d'`aspiration` et d'`iontophorese` (raccords qui se croisent),
+   trait continu du `monofilament-diapason` (le pied couché se lit mal comme « matériel ») ; trait continu d'`arriere-pied` (vue de
+   dessus au lieu de dos).
+
+### Pièges nouveaux (à ajouter à pieges-illustration.md si Paul confirme)
+
+- Sachet de stérilisation dessiné avec son bout pelable en pointe = « maison » : bords droits, chevron imprimé à l'intérieur.
+- Pièce à main posée à l'envers (fibre sur l'embout) = l'objet « tire » par le mauvais bout : la fibre part de l'arrière, l'embout est fin.
