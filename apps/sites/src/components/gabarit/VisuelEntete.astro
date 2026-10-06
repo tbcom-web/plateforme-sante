@@ -4,10 +4,11 @@
 // - illustrations : planche du dessin, ou animation du soin quand elle existe, sur fond plan ;
 // - mixte : photo 16:9 et planche technique en encart, posée sur l'angle de la photo.
 // Le choix suit rendreCase (packages/core/src/jeux.ts), la même règle que l'aperçu de l'admin.
-// Décoratif : aria-hidden ; toute planche porte la mention illustrative de la charte.
+// Décoratif : aria-hidden. AUCUN texte incrusté (ni cartouche, ni légende, ni mention : règle de Paul du 2026-10-06) ;
+// legende et repere restent acceptés (rétrocompatibilité des appels) mais ne sont plus affichés.
 import Dessin from '../dessins/Dessin.astro';
 import Animation from '../animations/Animation.astro';
-import { MENTION_ILLUSTRATIVE, rendreCase, type Animation as NomAnimation, type NomDessin } from '@plateforme/core';
+import { rendreCase, type Animation as NomAnimation, type NomDessin } from '@plateforme/core';
 import { modeVisuel, photoResponsive, pedagogique } from '../../lib/visuels';
 
 interface Props {
@@ -28,7 +29,7 @@ interface Props {
   /** Texte alternatif de la photo du praticien (porteuse d'information) ; une photo d'illustration reste décorative */
   altPraticien?: string;
 }
-const { photo, cadrage = '50% 50%', dessin, animation = null, legende = '', repere = '', photoBonne = true, liste = false, photoPraticien, altPraticien = '' } = Astro.props;
+const { photo, cadrage = '50% 50%', dessin, animation = null, photoBonne = true, liste = false, photoPraticien, altPraticien = '' } = Astro.props;
 // Règle : illustrations dans les listes ; photo sur la fiche d'un soin si elle est bonne (mode mélange).
 const choix = rendreCase({ photo, cadrage, dessin, animation, photoBonne }, modeVisuel, liste ? 'liste' : 'page', { photoPraticien, animationActive: true });
 const image = choix.type === 'photo' ? choix : { src: photo, cadrage };
@@ -46,9 +47,7 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
 
 {rendu === 'illustrations' && (
   <figure class:list={['ve', 've--plan', 'surface-plan', { 've--anime': anime }]} aria-hidden="true">
-    <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>
     <span class="ve__scene">{anime ? <Animation nom={anime} fond="sombre" /> : <Dessin nom={dessin} />}</span>
-    <span class="ve__bas mono">{MENTION_ILLUSTRATIVE}</span>
   </figure>
 )}
 
@@ -58,10 +57,8 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
       <img src={image.src} {...photoResponsive(image.src, '(min-width: 960px) 52vw, calc(100vw - 40px)')} alt={alt} width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
     </span>
     <span class="ve__encart surface-grille" aria-hidden="true">
-      <span class="ve__haut mono"><span>{legende}</span><span>{repere}</span></span>
       <Dessin nom={dessin} />
     </span>
-    <span class="ve__mention mono" aria-hidden="true">{MENTION_ILLUSTRATIVE}</span>
   </figure>
 )}
 
@@ -73,11 +70,7 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
   .ve--photo { aspect-ratio: 16 / 9; border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); }
 
   /* Illustrations : cartouche sur fond plan d'architecte, scène 16:9 */
-  .ve--plan { display: grid; grid-template-rows: auto auto auto; padding: 14px 16px; border-radius: var(--rayon-grand); overflow: hidden; box-shadow: var(--ombre); }
-  .ve__haut, .ve__bas { display: flex; justify-content: space-between; gap: 12px; font-size: var(--taille-donnees-petit); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; }
-  .ve--plan .ve__haut { padding-bottom: 10px; border-bottom: var(--filet) solid var(--sur-sombre-filet); color: var(--sur-sombre-pale); }
-  .ve--plan .ve__haut span:first-child { color: var(--signal); }
-  .ve--plan .ve__bas { padding-top: 10px; border-top: var(--filet) solid var(--sur-sombre-filet); color: var(--sur-sombre-pale); text-transform: none; letter-spacing: 0.02em; }
+  .ve--plan { display: grid; grid-template-rows: auto; padding: 14px 16px; border-radius: var(--rayon-grand); overflow: hidden; box-shadow: var(--ombre); }
   .ve__scene { display: grid; place-items: center; aspect-ratio: 16 / 9; min-height: 0; padding: clamp(10px, 2vw, 22px); color: var(--sur-sombre-doux); }
   .ve__scene :global(.dessin) { height: 100%; width: auto; max-width: 100%; }
   .ve--anime .ve__scene { padding: 0; }
@@ -86,15 +79,11 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
   /* Mixte : photo 16:9 et planche en encart sur l'angle bas droit */
   .ve--mixte { display: grid; gap: 10px; }
   .ve__cadre { display: block; aspect-ratio: 16 / 9; border-radius: var(--rayon-grand); overflow: hidden; background: var(--doux); }
-  .ve__encart { position: absolute; right: 14px; bottom: calc(14px + 1.6em + 10px); width: min(42%, 250px); display: grid; gap: 6px; padding: 10px 12px 12px; border-radius: var(--rayon); background-color: var(--fond); box-shadow: var(--ombre); }
-  .ve--mixte .ve__haut { padding-bottom: 6px; border-bottom: var(--filet) solid var(--ligne); color: var(--encre-pale); }
-  .ve--mixte .ve__haut span:first-child { color: var(--accent-vif); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ve__mention { font-size: var(--taille-donnees-petit); color: var(--encre-pale); letter-spacing: 0.02em; }
+  .ve__encart { position: absolute; right: 14px; bottom: 14px; width: min(42%, 250px); display: grid; gap: 6px; padding: 10px 12px 12px; border-radius: var(--rayon); background-color: var(--fond); box-shadow: var(--ombre); }
   @media (min-width: 960px) {
-    .ve__encart { right: auto; left: -28px; bottom: calc(1.6em + 10px + 28px); width: min(40%, 260px); }
+    .ve__encart { right: auto; left: -28px; bottom: 28px; width: min(40%, 260px); }
   }
   @media (max-width: 520px) {
     .ve__encart { width: 46%; padding: 8px 9px 9px; }
-    .ve--mixte .ve__haut span:last-child { display: none; }
   }
 </style>

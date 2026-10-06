@@ -207,3 +207,16 @@ test('navigation : 3 principaux et 3 secondaires, thème sans soin coché ignor�
   const active = construireNavigation({ priorites: P(['posture']) }, soinsDe('posturologie'), { themesActives: ['posture'] });
   assert.deepEqual(active.pages, ['/themes/posture'], 'posture activée par le drapeau admin');
 });
+
+test('libellés des thèmes en mots de patient (relecture du 2026-10-06) : sans jargon, identifiants inchangés', () => {
+  assert.deepEqual(THEMES.map((t) => t.id), ['sport', 'diabete', 'ongles', 'enfant', 'senior', 'semelles', 'pedicurie', 'posture'], 'ids stables (brouillons)');
+  assert.equal(themeParId('semelles')?.libelle, 'Semelles orthopédiques');
+  assert.equal(themeParId('semelles')?.court, 'Semelles');
+  assert.equal(themeParId('pedicurie')?.libelle, 'Soins des pieds (pédicurie)');
+  assert.equal(themeParId('ongles')?.libelle, 'Ongles incarnés, épais ou abîmés');
+  for (const t of THEMES) {
+    const textes = `${t.libelle} ${t.description} ${t.intro}`;
+    assert.ok(!/\bappuis?\b|biomécani|hyperkérat|chaussage/i.test(textes), `${t.id} : jargon dans « ${textes} »`);
+    assert.ok(t.court.length <= 10, `${t.id} : libellé court trop long`);
+  }
+});

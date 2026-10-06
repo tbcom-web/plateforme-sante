@@ -139,3 +139,39 @@ bouton sur le 2e » ; orthoplastie : « une protection en silicone sur un orteil
 
 Points à faire valider par Paul : taille et teinte de la plaque, taille du cor (volontairement petit), choix du 2e orteil pour le cor et
 le manchon, picto de l'orthoplastie à 24 px.
+
+## B. Héros « enfant » et « senior », textes incrustés (retours de Paul sur le site Technique de Toulon)
+
+Clés concernées : `heros:enfant:releve|pedagogique|ligne`, `heros:senior:releve|pedagogique|ligne`, `animation:semelle`,
+`animation:premiers-pas`, `animation:trajectoire`, `animation:coureur`, et tous les `dessin:*` / `materiel:*` qui portaient un texte
+(empreinte du rendu changée : ils repassent « Modifié »). Rien n'est passé en « Validé ». Planche :
+`scratchpad/retouches-heros/planche.png`. Nouveau module : `packages/core/src/heros-scenes.ts`.
+
+| # | Élément | Constat | Correction | Verdict après |
+|---|---|---|---|---|
+| 1 | Héros enfant : podoscope (boîte, pieds en barres) | « vraiment basique » ; pieds en barres = faux | retiré ; petits pieds de l'enfant vus de dessus (silhouette VALIDÉE des premiers pas : PLANTE_ENFANT + ORTEILS_ENFANT), face aux pieds d'un adulte (CONTOUR_PIED dorsal, retourné), empreintes de l'enfant en points (paysage) | JUSTE (à valider) |
+| 2 | Proportions enfant | — | pied enfant ≈ 0,55 × adulte (2-3 ans), avant-pied large, orteils courts et ronds, voûte comblée (coussinet), talon rond caché par la jambe ; pieds ouverts de 8–9° autour de la CHEVILLE (la jambe reste dans l'axe) | JUSTE |
+| 3 | Latéralité | — | adulte face à l'enfant : son pied droit à gauche de l'image, hallux vers l'axe ; enfant : pied droit à droite, hallux vers l'axe | JUSTE |
+| 4 | Héros senior : plaque d'empreintes + point rouge central (statokinésigramme) | symbole non expliqué, incompris | retiré | — |
+| 5 | Héros senior : canne en trait vertical isolé | « il faut qu'on voie » | marche à petits pas, de profil, de la taille au sol : poignée en crosse tenue par un poing simple à hauteur de hanche (≈ 0,5 × H, grand trochanter), tige inclinée de 11°, embout au sol ≈ 0,04 × H en avant du pied avant (pied.ts, règle 7) ; canne dans la main du côté proche, qui avance avec le pied opposé (avant, à plat) ; pied arrière qui décolle le talon (14°) | JUSTE (à valider) |
+| 6 | Proportions senior | — | Winter 2009 : pied 0,152 H, hanche 0,51–0,53 H, cuisse 0,245 H, jambe 0,246 H (genou par cinématique inverse, fléchi vers l'avant) ; pas raccourci (0,2–0,24 H : marche prudente) | JUSTE |
+| 7 | Pieds du senior | jambe proche vue en face LATÉRALE : le profil médial validé n'y est pas juste | pieds CHAUSSÉS : chaussure fermée à talon bas = enveloppe du profil validé (POD-AT-0003) sous la malléole, semelle plate ≈ 1 cm ; seul un ruban de cheville (chaussette unie) entre l'ourlet et le col | JUSTE |
+| 8 | Silhouette | risque de caricature | ni visage ni buste (la taille sort du cadre), pas de dos voûté ; maison et mallette du domicile retirées (lisibilité) | JUSTE |
+| 9 | Relevé senior | — | appuis en points SUR LE SOL, valeurs modérées (jamais un pic rouge isolé) : pied avant, avant-pied arrière, embout | JUSTE |
+| 10 | Textes incrustés | « COURBES DE NIVEAU », « relief : bas → haut », « PREMIERS PAS », « CENTRE DE PRESSION », G/D, angle du genou et cadence du coureur, légende graduée et « Centre de pression » du podoscope, cartouches « Fig. », mentions en bas des planches, étiquettes et cotes des dessins | tous retirés (dessins.ts : `sansTextes` sur dessins et matériel ; animations ; composants des sites) ; le sujet reste dans le `<title>` / l'alt | JUSTE |
+| 11 | Dessin « sport » (relevé) | flèche de force rouge + point rouge sous la chaussure et courbe F(t) flottante, inexpliqués sans leurs textes | retirés | JUSTE |
+
+### Revue des 7 héros en registre « relevé » sur fond sombre (cobalt, modèle Technique)
+
+- **Sport** : coureur au marqueur de genou rouge et traces colorées (animation validée « laboratoire » : gardée). Chaussure : flèche
+  rouge et courbe F(t) retirées (n° 11).
+- **Diabète** : monofilament et diapason à droite, posés « en l'air » (le diapason flotte, ondes de vibration sans support) : À REVOIR
+  (poser le matériel sur un plan, ou ne garder que le pied et le médaillon).
+- **Ongles** : correct ; les deux gros plans couleur peau sur fond sombre sont lourds à côté du trait clair : À REVOIR (mineur).
+- **Enfant**, **Senior** : refaits (ci-dessus).
+- **Semelles** : semelle en courbes de relief + empreintes en points ; correct, sans texte.
+- **Pédicurie** : la plante en points du dessin « cors-durillons » porte une tache orange-rouge au centre (plaque du durillon rendue
+  en pression) : risque de lecture « point rouge / plaie » : À REVOIR (plaque en accent, comme le registre pédagogique).
+
+Point resté hors périmètre : le DESSIN « senior » des fiches de soin (polygone d'appui + oscillations rouges + canne verticale) a les
+mêmes défauts que l'ancien héros ; à reprendre avec la scène du héros si Paul la valide.

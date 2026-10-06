@@ -8,7 +8,6 @@ import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { photoResponsive, photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
-import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme, aLaVille, aTelephone, aAdresse, adresseLieu } from '../../lib/textes';
 
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
@@ -23,7 +22,6 @@ const anime = choix !== 'photo';
   {choix === 'illustration' && (
     <div class="plein__illus surface-plan" aria-hidden="true" {...zonePhoto('photos.accueil')}>
       <span class="plein__dessin"><Dessin nom={dessinSpecialite} /></span>
-      <span class="plein__mention mono">{MENTION_ILLUSTRATIVE}</span>
     </div>
   )}
   <div class="cadre plein__contenu">
@@ -68,8 +66,7 @@ const anime = choix !== 'photo';
   .plein__illus { position: absolute; inset: 0; z-index: -2; }
   .plein__dessin { position: absolute; inset: 18% 6% 16% 6%; display: grid; place-items: center; opacity: 0.3; }
   .plein__dessin :global(.dessin) { width: 100%; height: 100%; }
-  .plein__mention { position: absolute; right: clamp(20px, 4vw, 56px); bottom: 28px; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); letter-spacing: 0.02em; display: none; }
-  @media (min-width: 900px) { .plein__dessin { left: 60%; right: 4%; opacity: 1; } .plein__mention { display: block; } }
+  @media (min-width: 900px) { .plein__dessin { left: 60%; right: 4%; opacity: 1; } }
   /* Téléphone : l'animation ou le dessin en pleine opacité dans le haut du premier écran, le titre dessous (jamais d'image fantôme) */
   @media (max-width: 899px) {
     .plein--anime { place-items: end stretch; }

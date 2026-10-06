@@ -7,14 +7,12 @@
 // Décoratif : aria-hidden ; image fixe seulement si le visiteur réduit les mouvements.
 // Performance (mobile) : aucun calcul avant le premier affichage, points pré-rendus (pas d'ombre portée
 // recalculée à chaque image), mouvement lancé quand le navigateur est libre après le chargement.
-// `releve` (accueil) : habillage « relevé de podoscope » — ligne de scan, légende graduée de la pression,
-// tracé du centre de pression de chaque pied et mention illustrative. Animations actives seulement à l'écran.
-import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
+// `releve` (accueil) : habillage « relevé de podoscope » — ligne de scan et tracé du centre de pression de chaque pied ; AUCUN
+// texte, légende ni échelle (règle de Paul du 2026-10-06). Animations actives seulement à l'écran.
 import { pointsTrame } from '@plateforme/core/trame';
 import { TRAJET_POINTS } from '@plateforme/core/pied';
 interface Props { fond?: 'sombre' | 'clair'; releve?: boolean }
 const { fond = 'sombre', releve = false } = Astro.props;
-const NIVEAUX = ['Pic', 'Forte', 'Moyenne', 'Modérée', 'Faible'];
 // Empreinte (zone de contact, repère du pied) et trajet du centre de pression, calculés au build : le navigateur ne charge pas la géométrie.
 const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p.y, +p.v.toFixed(2)]), trajet: TRAJET_POINTS.map((p) => [+p.x.toFixed(1), +p.y.toFixed(1)]) });
 ---
@@ -22,12 +20,6 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
   <div class="releve anime-visible" aria-hidden="true">
     <canvas class:list={['podoscope', `podoscope--${fond}`, 'podoscope--cdp']} data-modele={modele}></canvas>
     <span class="releve__scan"></span>
-    <span class="releve__legende mono">
-      <span class="releve__echelle"></span>
-      <span class="releve__niveaux">{NIVEAUX.map((n) => <span>{n}</span>)}</span>
-    </span>
-    <span class="releve__cdp mono"><i></i>Centre de pression</span>
-    <span class="releve__mention mono">{MENTION_ILLUSTRATIVE}</span>
   </div>
 ) : (
   <canvas class:list={['podoscope', `podoscope--${fond}`]} data-modele={modele} aria-hidden="true"></canvas>
@@ -182,15 +174,6 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
   .releve__scan { position: absolute; left: 6%; right: 6%; top: 0; height: var(--filet-fort); background: linear-gradient(90deg, transparent, var(--signal), transparent); opacity: 0; }
   .en-vue .releve__scan { animation: scan var(--cycle-releve) var(--courbe-entree-sortie) infinite; }
   @keyframes scan { 0% { top: 12%; opacity: 0; } 10% { opacity: 0.9; } 90% { opacity: 0.9; } 100% { top: 88%; opacity: 0; } }
-  .releve__legende { position: absolute; right: clamp(14px, 3%, 28px); top: 50%; transform: translateY(-50%); display: flex; gap: 8px; height: min(46%, 220px); font-size: var(--taille-donnees-petit); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
-  .releve__echelle { width: 6px; border-radius: 3px; background: linear-gradient(0deg, var(--degrade-donnees)); }
-  .releve__niveaux { display: flex; flex-direction: column; justify-content: space-between; }
-  .releve__niveaux span { position: relative; padding-left: 8px; line-height: 1; }
-  .releve__niveaux span::before { content: ''; position: absolute; left: -6px; top: 50%; width: 10px; height: var(--filet); background: var(--sur-sombre-pale); }
-  .releve__cdp { position: absolute; left: clamp(14px, 3%, 28px); top: max(72px, 12%); display: inline-flex; align-items: center; gap: 8px; font-size: var(--taille-donnees-petit); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
-  .releve__cdp i { width: 14px; height: var(--filet-fort); background: var(--signal); }
-  .releve__mention { position: absolute; left: clamp(14px, 3%, 28px); right: clamp(14px, 3%, 28px); bottom: 12px; text-align: right; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); }
-  @media (max-width: 520px) { .releve__niveaux { display: none; } .releve__cdp { display: none; } }
   .podoscope--sombre { background: var(--fond-nuit); }
   .podoscope--clair { background: transparent; }
 </style>

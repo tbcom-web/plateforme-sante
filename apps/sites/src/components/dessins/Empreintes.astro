@@ -12,13 +12,13 @@ import { registre } from '../../lib/visuels';
 
 interface Props {
   appui?: Appui;
-  /** Légende graduée verticale à droite */
+  /** Légende graduée verticale à droite : planches de démonstration seulement (aucune échelle sur les sites, Paul 2026-10-06) */
   legende?: boolean;
   /** Ligne de scan animée */
   scan?: boolean;
   class?: string;
 }
-const { appui = 'normal', legende = true, scan = true, class: classe } = Astro.props;
+const { appui = 'normal', legende = false, scan = true, class: classe } = Astro.props;
 const id = `e-${Math.random().toString(36).slice(2, 8)}`;
 const largeur = legende ? 236 : 210;
 // Registres pédagogique et ligne (modèle) : pas de relevé de pression ; le schéma des appuis au trait le remplace.

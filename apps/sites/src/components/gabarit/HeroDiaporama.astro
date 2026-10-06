@@ -10,7 +10,6 @@ import { texte, champ, zonePhoto } from '../../lib/edition';
 import VisuelTheme from '../accueil/VisuelTheme.astro';
 import { fondAnime, registre } from '../../lib/visuels';
 import { visuelPremierEcran } from '../../lib/vitrine';
-import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme, aLaVille, suffixeVille, aTelephone, aAdresse, adresseLieu } from '../../lib/textes';
 
 // Sujet sans animation propre (diabète, ongles, seniors…) : l'animation de points de pression (podoscope), ADN du relevé.
@@ -27,7 +26,6 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   ) : (
     <div class:list={['hero__illus', { 'surface-plan': choix === 'illustration' }]} aria-hidden="true" {...zonePhoto('photos.accueil')}>
       <span class="hero__dessin"><VisuelTheme visuel={visuel} animer={choix === 'animation'} /></span>
-      <span class="hero__mention mono">{MENTION_ILLUSTRATIVE}</span>
     </div>
   )}
   <div class="cadre hero__contenu">
@@ -64,8 +62,6 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
   .hero__illus :global(canvas), .hero__illus :global(svg) { background: none !important; }
   .hero__dessin { position: absolute; inset: 14% 4% 10% 52%; display: grid; place-items: stretch; }
   .hero--illustration .hero__dessin { inset: 18% 4% 16% 58%; }
-  .hero__mention { position: absolute; right: clamp(20px, 4vw, 56px); bottom: 28px; font-size: var(--taille-donnees-petit); color: var(--sur-sombre-pale); letter-spacing: 0.02em; display: none; }
-  @media (min-width: 900px) { .hero__mention { display: block; } }
   @media (max-width: 899px) {
     .hero--anime { min-height: auto; align-items: start; grid-template-rows: auto auto; }
     .hero--anime .hero__illus { position: relative; inset: auto; z-index: 0; height: min(52svh, 440px); margin-top: 74px; }

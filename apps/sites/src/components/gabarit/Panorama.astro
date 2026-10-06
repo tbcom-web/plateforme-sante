@@ -6,7 +6,7 @@ import { site } from '../../lib/site';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import Empreintes from '../dessins/Empreintes.astro';
 import { photoPanoramaAffichee, photoResponsive, pedagogique } from '../../lib/visuels';
-import { MENTION_ILLUSTRATIVE, resumeHygiene } from '@plateforme/core';
+import { resumeHygiene } from '@plateforme/core';
 import { lieu, TYPES_LIEU, phraseRdv, suffixeVille } from '../../lib/textes';
 
 const atouts = [
@@ -40,7 +40,6 @@ const titreStandard = `${lieuNom}${lieu.ville ? ` à ${lieu.ville}` : suffixeVil
     : (
       <div class="panorama__illus surface-plan" aria-hidden="true" {...zonePhoto('photos.panorama')}>
         <span class="panorama__releve anime-visible"><Empreintes appui="reparti" /></span>
-        <span class="panorama__mention mono">{MENTION_ILLUSTRATIVE}</span>
       </div>
     )}
   <div class="cadre panorama__texte apparait">

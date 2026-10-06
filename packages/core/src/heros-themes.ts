@@ -11,10 +11,18 @@
 // lu par les outils et les agents, pas affiché), diabète sans rouge « pic » ni pied nu qui marche (examen au monofilament,
 // inspection des pieds), enfant sans courbes de données (premiers pas), pédicurie sans main ni visage.
 //
+// Exceptions (retours de Paul du 2026-10-06, heros-scenes.ts) : ENFANT et SENIOR ne sont plus des assemblages de deux pièces mais une
+// SCÈNE dessinée à partir des géométries validées. Enfant : le podoscope (« boîte avec des pieds en barres, vraiment basique ») est
+// remplacé par de petits pieds d'enfant face aux pieds d'un adulte (et leurs empreintes en points, en paysage). Senior : la plaque
+// d'empreintes au point rouge central (incomprise) et la canne isolée en trait vertical sont remplacées par une marche à petits pas,
+// chaussée, avec une canne lisible (poignée en crosse tenue par une main, embout au sol en avant du pied).
+//
 // Usage : illustrationTheme('sport', { format: 'portrait', registre: 'ligne', gamme: 'mangue' }). Les classes viennent de
 // dessins.css (feuille du site) ; les variables de la charte (--trait-*, --pression-*) de feuilleCharte(). `gamme` (identifiant ou
 // gamme) fixe les couleurs du dessin en variables sur la racine ; sans gamme, le héros suit les variables de la page.
-import { svgDessin, svgAnimationFixe, svgEquipement, svgLigne, type Registre } from './dessins';
+import { svgDessin, svgAnimationFixe, svgEquipement, svgLigne, sansTextes, type Registre } from './dessins';
+import { sceneHeros, type SceneHeros } from './heros-scenes';
+import { themeParId } from './themes';
 import { gamme as gammeParId, variantesGamme, type Gamme } from './gammes';
 import { NEUTRES, PLAN } from './charte';
 import type { NomDessin } from './univers';
@@ -32,11 +40,8 @@ export const THEMES_ILLUSTRES = ['sport', 'diabete', 'ongles', 'enfant', 'senior
 export type ThemeIllustre = (typeof THEMES_ILLUSTRES)[number];
 export const themeIllustre = (id: string): id is ThemeIllustre => (THEMES_ILLUSTRES as readonly string[]).includes(id);
 
-/** Sujet de chaque héros (contenu du <title>, non affiché) */
-const TITRES: Record<ThemeIllustre, string> = {
-  sport: 'Sport et course à pied', diabete: 'Pied diabétique', ongles: 'Ongles', enfant: 'Pieds de l’enfant',
-  senior: 'Pieds des seniors', semelles: 'Semelles et appuis', pedicurie: 'Soins de pédicurie',
-};
+/** Sujet de chaque héros (contenu du <title>, non affiché) : le libellé patient du thème (themes.ts) */
+const titreTheme = (id: ThemeIllustre) => themeParId(id)?.libelle ?? id;
 
 /** Pièce d'une composition : un dessin existant, dans un registre donné */
 type Piece =
@@ -69,13 +74,13 @@ const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, [Piece, Piece]>> = {
     pedagogique: [{ type: 'dessin', nom: 'orthonyxie' }, { type: 'dessin', nom: 'ongle' }],
     ligne: [{ type: 'ligne', nom: 'orthonyxie' }, { type: 'ligne', nom: 'ongle' }],
   },
-  // Premiers pas (empreintes de l'enfant à côté des pas de l'adulte) et podoscope de l'examen de la marche
+  // Scène dessinée (SCENES ci-dessous) : ces pièces ne servent plus qu'en repli
   enfant: {
-    releve: [{ type: 'animation', nom: 'premiers-pas' }, { type: 'materiel', id: 'podoscope' }],
-    pedagogique: [{ type: 'ligne', nom: 'premiers-pas' }, { type: 'materiel', id: 'podoscope' }],
+    releve: [{ type: 'animation', nom: 'premiers-pas' }, { type: 'ligne', nom: 'premiers-pas' }],
+    pedagogique: [{ type: 'ligne', nom: 'premiers-pas' }, { type: 'ligne', nom: 'empreintes' }],
     ligne: [{ type: 'ligne', nom: 'premiers-pas' }, { type: 'ligne', nom: 'empreintes' }],
   },
-  // Canne et pied de profil (polygone d'appui élargi) ; soins à domicile
+  // Scène dessinée (SCENES ci-dessous) : ces pièces ne servent plus qu'en repli
   senior: {
     releve: [{ type: 'dessin', nom: 'senior' }, { type: 'dessin', nom: 'domicile' }],
     pedagogique: [{ type: 'dessin', nom: 'senior' }, { type: 'dessin', nom: 'domicile' }],
@@ -95,16 +100,20 @@ const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, [Piece, Piece]>> = {
   },
 };
 
+/** Thèmes dont le héros est une scène dessinée d'un seul tenant (heros-scenes.ts) plutôt qu'un assemblage de deux pièces */
+const SCENES: Partial<Record<ThemeIllustre, SceneHeros>> = { enfant: 'enfant', senior: 'senior' };
+
 /** Sources d'une composition (inventaire, revue) : « dessin:sport », « animation:coureur », « ligne:marche », « materiel:podoscope » */
 export function sourcesTheme(id: ThemeIllustre, registre: Registre): string[] {
+  const scene = SCENES[id];
+  if (scene) return [`scene:${scene}`];
   return COMPOSITIONS[id][registre].map((p) => (p.type === 'materiel' ? `materiel:${p.id}` : `${p.type}:${p.nom}`));
 }
 
 const r1 = (v: number) => +v.toFixed(1);
 
 /** Retire d'une pièce toute lecture (textes, étiquettes et leurs renvois, légende graduée) : un héros ne montre que le dessin */
-const sansLectures = (svg: string) =>
-  svg.replace(/<text\b[\s\S]*?<\/text>/g, '').replace(/<path class="renvoi"[^>]*><\/path><circle class="ancre"[^>]*><\/circle>/g, '').replace(/<g class="legende">[\s\S]*?<\/g>/g, '');
+const sansLectures = sansTextes;
 const svgPiece = (p: Piece, registre: Registre, id: string, appui: boolean) => sansLectures(svgPieceBrute(p, registre, id, appui));
 
 /** SVG d'une pièce, dans le registre du héros ; la pièce d'appui en trait continu prend l'accent */
@@ -169,12 +178,16 @@ export function illustrationTheme(
     const grille = [...Array.from({ length: Math.floor(L / pas) }, (_, i) => `M${(i + 1) * pas} 0V${H}`), ...Array.from({ length: Math.floor(H / pas) }, (_, i) => `M0 ${(i + 1) * pas}H${L}`)].join('');
     fond = `<rect width="${L}" height="${H}" fill="var(--plan, ${PLAN.fond})"></rect><path d="${grille}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.07" stroke-width="1"></path><path d="M16 12H${L - 16}M16 ${H - 12}H${L - 16}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.28" stroke-width="1"></path>`;
   } else if (registre === 'pedagogique') {
-    const [x, y, l, h] = c.principale;
-    fond = `<rect x="${r1(x + l * 0.06)}" y="${r1(y + h * 0.04)}" width="${r1(l * 0.88)}" height="${r1(h * 0.92)}" rx="${r1(Math.min(l, h) * 0.12)}" fill="var(--aplat, var(--doux))"></rect>`;
+    // Scène : aplat doux centré (les pieds et les jambes le débordent) ; sinon derrière la pièce principale
+    const [x, y, l, h] = SCENES[themeId] ? [L * 0.1, H * 0.1, L * 0.8, H * 0.8] : c.principale;
+    fond =`<rect x="${r1(x + l * 0.06)}" y="${r1(y + h * 0.04)}" width="${r1(l * 0.88)}" height="${r1(h * 0.92)}" rx="${r1(Math.min(l, h) * 0.12)}" fill="var(--aplat, var(--doux))"></rect>`;
   }
   // Sujet dans le <title> (jamais affiché) : thème et pièces, pour l'accessibilité des outils et les agents
-  const titre = `<title>${TITRES[themeId]} — ${sourcesTheme(themeId, registre).join(', ')}</title>`;
-  const corps = poser(svgPiece(principale, registre, `${id}-a`, false), ...c.principale) + poser(svgPiece(appui, registre, `${id}-b`, true), ...c.appui);
+  const titre = `<title>${titreTheme(themeId)} — ${sourcesTheme(themeId, registre).join(', ')}</title>`;
+  const scene = SCENES[themeId];
+  const corps = scene
+    ? sceneHeros(scene, { format, registre })
+    : poser(svgPiece(principale, registre, `${id}-a`, false), ...c.principale) + poser(svgPiece(appui, registre, `${id}-b`, true), ...c.appui);
   const style = couleurs(g, registre);
   const classes = ['heros-theme', `heros-theme--${themeId}`, `heros-theme--${format}`, `heros-theme--${registre}`, o.classe].filter(Boolean).join(' ');
   return `<svg class="${classes}" viewBox="0 0 ${L} ${H}" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" fill="none"${style ? ` style="${style}"` : ''}>${titre}${fond}${corps}</svg>`;

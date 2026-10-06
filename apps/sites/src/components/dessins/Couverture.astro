@@ -1,13 +1,13 @@
 ---
 // Couverture générée d'un article (quand il n'a pas de photo) : planche technique sur fond plan
-// d'architecte, dessin choisi selon le thème de l'article, repères et lectures en mono. Décorative.
+// d'architecte, dessin choisi selon le thème de l'article, sans texte incrusté (ni cartouche, ni « Fig. », ni mention :
+// règle de Paul du 2026-10-06). Décorative.
 // En mode photos, la photo de la banque associée au même dessin (lib/visuels-soins.ts) la remplace ;
 // la photo propre de l'article, quand elle existe, reste prioritaire (gérée par la page).
 import Dessin from './Dessin.astro';
 import { dessinArticle } from '../../lib/dessins';
 import { photoDessin } from '../../lib/visuels-soins';
 import { enPhotos, photoResponsive } from '../../lib/visuels';
-import { MENTION_ILLUSTRATIVE } from '@plateforme/core';
 
 interface Props {
   theme?: string;
@@ -28,14 +28,12 @@ const photo = enPhotos && !dessinSeul ? photoDessin(nom) : null;
 </span>
 ) : (
 <span class:list={['couverture', 'surface-plan', classe]} aria-hidden="true">
-  <span class="couverture__haut mono"><span>{theme || 'Conseils'}</span><span>Fig. {String(numero).padStart(2, '0')}</span></span>
   <span class="couverture__dessin"><Dessin nom={nom} /></span>
-  <span class="couverture__bas mono">{MENTION_ILLUSTRATIVE}</span>
 </span>
 )}
 
 <style>
-  .couverture { position: relative; display: grid; grid-template-rows: auto 1fr auto; aspect-ratio: 16 / 9; padding: 12px 14px; overflow: hidden; }
+  .couverture { position: relative; display: grid; grid-template-rows: minmax(0, 1fr); aspect-ratio: 16 / 9; padding: 12px 14px; overflow: hidden; }
   .couverture--photo { display: block; padding: 0; }
   .couverture--photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .couverture__haut, .couverture__bas { display: flex; justify-content: space-between; gap: 12px; font-size: var(--taille-donnees-petit); letter-spacing: var(--interlettrage-donnees); text-transform: uppercase; color: var(--sur-sombre-doux); }

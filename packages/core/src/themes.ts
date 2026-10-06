@@ -12,6 +12,10 @@
 // montré grisé « bientôt disponible », jamais sélectionnable tant qu'un drapeau admin ne l'active pas (`themesActives`,
 // variable THEMES_ACTIVES côté admin et côté build des sites), jamais déduit d'une spécialité, jamais spécialité par défaut.
 //
+// Libellés (relecture « œil du patient », Paul, 2026-10-06) : les mots que le patient tape dans un moteur de recherche, sans
+// jargon (ni « appuis », ni « biomécanique », ni « hyperkératose », ni « chaussage ») ; le terme du métier, s'il aide, entre
+// parenthèses. Les identifiants ne changent jamais (brouillons et adresses /themes/<id>).
+//
 // Module pur, sans dépendance d'exécution (testé par scripts/tests.mjs : themes.test.ts).
 
 import type { IdPicto } from './pictos';
@@ -50,14 +54,14 @@ export const THEMES: readonly Theme[] = [
     id: 'sport',
     libelle: 'Sport et course à pied',
     court: 'Sport',
-    description: 'Douleurs à l’effort, chaussage et semelles adaptés à votre activité.',
+    description: 'Douleurs à l’effort, chaussures et semelles adaptées à votre activité.',
     picto: 'sport-course',
     soins: ['podologie-du-sport', 'semelles-orthopediques', 'douleur-talon', 'k-taping'],
     specialite: 'sport',
     univers: 'technique-precis',
     themesFlux: ['Sport'],
     intro:
-      'Une douleur qui apparaît à l’effort ou une gêne qui revient à chaque sortie mérite d’être examinée. Le pédicure-podologue observe vos appuis, votre foulée et vos chaussures, puis propose si besoin des semelles ou un strapping adaptés à votre activité.',
+      'Une douleur qui apparaît à l’effort ou une gêne qui revient à chaque sortie mérite d’être examinée. Le pédicure-podologue observe la façon dont vos pieds se posent, votre foulée et vos chaussures, puis propose si besoin des semelles ou un strapping adaptés à votre activité.',
     statut: 'actif',
   },
   {
@@ -76,9 +80,9 @@ export const THEMES: readonly Theme[] = [
   },
   {
     id: 'ongles',
-    libelle: 'Ongles',
+    libelle: 'Ongles incarnés, épais ou abîmés',
     court: 'Ongles',
-    description: 'Ongle incarné, ongles épais ou abîmés, mycose : soins et corrections.',
+    description: 'Ongle incarné, ongle épais, déformé ou atteint par une mycose : soins et corrections.',
     picto: 'ongle-incarne',
     soins: ['ongle-incarne', 'orthonyxie', 'onychoplastie', 'mycose-ongles', 'ongles-epais'],
     specialite: 'soins',
@@ -92,56 +96,56 @@ export const THEMES: readonly Theme[] = [
     id: 'enfant',
     libelle: 'Pieds de l’enfant',
     court: 'Enfants',
-    description: 'Marche, croissance et chaussage, des premiers pas à l’adolescence.',
+    description: 'Marche, croissance et chaussures, des premiers pas à l’adolescence.',
     picto: 'premiers-pas',
     soins: ['podologie-enfant', 'semelles-orthopediques', 'verrues-plantaires'],
     specialite: 'enfant',
     univers: 'clair-pratique',
     themesFlux: ['Enfants'],
     intro:
-      'Le pied de l’enfant change beaucoup pendant la croissance, et bien des particularités de la marche sont habituelles selon l’âge. En cas de doute, de douleur ou de chutes fréquentes, le pédicure-podologue examine la marche et conseille sur le chaussage.',
+      'Le pied de l’enfant change beaucoup pendant la croissance, et bien des particularités de la marche sont habituelles selon l’âge. En cas de doute, de douleur ou de chutes fréquentes, le pédicure-podologue examine la marche et conseille sur les chaussures.',
     statut: 'actif',
   },
   {
     id: 'senior',
     libelle: 'Pieds des seniors',
     court: 'Seniors',
-    description: 'Soins réguliers, chaussage et équilibre pour marcher à l’aise.',
+    description: 'Soins réguliers, chaussures adaptées et équilibre pour marcher à l’aise.',
     picto: 'senior-canne',
     soins: ['podologie-du-senior', 'ongles-epais', 'soins-a-domicile', 'cors-durillons'],
     specialite: 'soins',
     univers: 'simple-proche',
     themesFlux: ['Seniors'],
     intro:
-      'Avec l’âge, la peau s’affine, les ongles s’épaississent et il devient parfois difficile d’atteindre ses pieds. Des soins réguliers et un chaussage adapté aident à marcher à l’aise.',
+      'Avec l’âge, la peau s’affine, les ongles s’épaississent et il devient parfois difficile d’atteindre ses pieds. Des soins réguliers et des chaussures adaptées aident à marcher à l’aise.',
     statut: 'actif',
   },
   {
     id: 'semelles',
-    libelle: 'Semelles et appuis',
+    libelle: 'Semelles orthopédiques',
     court: 'Semelles',
-    description: 'Examen des appuis et semelles orthopédiques sur mesure.',
+    description: 'Semelles orthopédiques sur mesure, après un examen de vos pieds et de votre marche.',
     picto: 'semelle-orthopedique',
     soins: ['semelles-orthopediques', 'bilan-podologique', 'douleur-talon'],
     specialite: 'generale',
     univers: 'technique-precis',
     themesFlux: [],
     intro:
-      'Des douleurs au talon, sous la voûte ou aux genoux peuvent être liées à la façon dont le pied prend appui. Après un examen, le pédicure-podologue peut proposer des semelles orthopédiques fabriquées sur mesure.',
+      'Des douleurs au talon, sous la voûte du pied ou aux genoux peuvent venir de la façon dont vous posez le pied en marchant. Après un examen de vos pieds et de votre marche, le pédicure-podologue peut proposer des semelles orthopédiques fabriquées sur mesure.',
     statut: 'actif',
   },
   {
     id: 'pedicurie',
-    libelle: 'Soins de pédicurie',
+    libelle: 'Soins des pieds (pédicurie)',
     court: 'Pédicurie',
-    description: 'Cors, durillons, verrues et soins réguliers de la peau et des ongles.',
+    description: 'Cors, durillons, verrues, peau épaissie et soins réguliers des ongles.',
     picto: 'hallux-ongle',
     soins: ['soins-de-pedicurie', 'cors-durillons', 'verrues-plantaires'],
     specialite: 'soins',
     univers: 'simple-proche',
     themesFlux: [],
     intro:
-      'Cors, durillons, verrues ou peau épaissie : ces soins de pédicurie se font au cabinet avec du matériel stérilisé. Le pédicure-podologue vous indique aussi les gestes utiles entre deux séances.',
+      'Cors, durillons, verrues ou peau épaissie : ces soins des pieds se font au cabinet avec du matériel stérilisé. Le pédicure-podologue vous indique aussi les gestes utiles entre deux séances.',
     statut: 'actif',
   },
   {

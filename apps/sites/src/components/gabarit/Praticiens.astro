@@ -33,7 +33,6 @@ const seul = site.praticiens.length === 1;
           ? <img class="praticien__photo" {...imagePortrait(p, 'portrait')} loading="lazy" decoding="async" {...zonePhoto(`praticien.${i}.photo`)} />
           : (
             <div class="praticien__releve" aria-hidden="true">
-              <span class="praticien__repere mono"><span>Fiche {String(i + 1).padStart(2, '0')}</span><span>Relevé illustratif</span></span>
               <Empreintes appui={appui(p.orientations)} scan={false} legende={false} class="praticien__empreintes" />
               <span class="praticien__monogramme">{p.prenom.charAt(0)}{p.nom.charAt(0)}</span>
             </div>

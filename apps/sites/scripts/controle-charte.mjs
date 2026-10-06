@@ -100,7 +100,7 @@ const dessins = [
   ...core.DESSINS_PODOLOGIE.flatMap((n) => core.REGISTRES.flatMap((r) => {
     const svg = core.svgDessin(n, { registre: r });
     if (r === 'ligne') return defautsLigne(svg, `dessin « ${n} » (ligne)`);
-    return [...(invalide(svg) ? [`dessin « ${n} » (${r}) : valeur invalide`] : []), ...(elements(svg) < 8 ? [`dessin « ${n} » (${r}) : vide`] : [])];
+    return [...(invalide(svg) ? [`dessin « ${n} » (${r}) : valeur invalide`] : []), ...(elements(svg) < 5 ? [`dessin « ${n} » (${r}) : vide`] : [])]; // seuil 5 : sans étiquettes ni lectures (2026-10-06), un schéma sobre compte moins d'éléments
   })),
   ...core.DESSINS_LIGNE.flatMap((l) => ['discretes', 'marquees'].flatMap((b) => defautsLigne(core.svgLigne(l, { boucles: b }), `dessin ligne « ${l} » (boucles ${b})`))),
   ...core.ANIMATIONS.flatMap((a) => core.REGISTRES.flatMap((r) => {
@@ -228,7 +228,9 @@ const webkit = [];
   const feuille = readFileSync(join(racine, '../../packages/core/src/dessins.css'), 'utf8');
   for (const [nom, svg] of [['talon', fs2.fichierSvg(fs2.symboleDessin('talon'), feuille)], ['materiel-podoscope', fs2.fichierSvg(fs2.symboleEquipement('podoscope'), feuille)], ['talon-ligne', fs2.fichierSvg(fs2.symboleDessin('talon', { registre: 'ligne' }), feuille)], ['materiel-fauteuil-soins-ligne', fs2.fichierSvg(fs2.symboleEquipement('fauteuil-soins', { registre: 'ligne' }), feuille)]]) {
     if (/<style[s>]/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : <style> (ignoré par WebKit)`);
-    if (nom === 'talon' && !/class="mono[^"]*"[^>]*style="[^"]*font-size/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : styles des étiquettes absents des attributs`);
+    // Styles en attributs (WebKit) ; et AUCUN texte incrusté dans un dessin des sites (règle de Paul du 2026-10-06)
+    if (nom === 'talon' && !/class="trait[^"]*"[^>]*style="[^"]*stroke-width/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : styles des traits absents des attributs`);
+    if (/<text/.test(svg)) webkit.push(`fichier de dessin « ${nom} » : texte incrusté (interdit sur les sites)`);
     // Registre ligne : trait, épaisseur et couleur EN ATTRIBUTS (WebKit), aucune règle de la page reportée sur le trait (le pointillé
     // d'attente n'est posé que par la page, à l'apparition)
     if (nom.endsWith('-ligne') && (!/class="ligne"[^>]*style="stroke:[^"]*stroke-width:/.test(svg) || /stroke-dasharray/.test(svg))) webkit.push(`fichier de dessin « ${nom} » : trait du registre ligne sans styles en attributs, ou pointillé figé`);

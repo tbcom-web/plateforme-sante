@@ -35,3 +35,29 @@ test('matériel du 2026-10-06 : trois registres, et dans l’inventaire de /admi
   for (const t of THEMES_ILLUSTRES) for (const r of REGISTRES) assert.ok(cles.has(`heros:${t}:${r}`));
   for (const n of ['talon', 'taping', 'verrue', 'laser']) assert.ok(cles.has(`ligne:${n}`), n);
 });
+
+test('aucun texte incrusté dans les dessins, le matériel et les animations des sites (règle de Paul du 2026-10-06)', async () => {
+  const { DESSINS_PODOLOGIE } = await import('./univers');
+  const { ANIMATIONS } = await import('./packs');
+  const { svgDessin, svgAnimationFixe, contenuSemelle, contenuPremiersPas, contenuTrajectoire, EQUIPEMENTS_DESSINES } = await import('./dessins');
+  const sans = (s: string, ou: string) => {
+    assert.ok(!/<text\b/.test(s), `${ou} : <text>`);
+    assert.ok(!/class="legende"|<line class="cote"|class="renvoi"/.test(s), `${ou} : légende, cote ou renvoi`);
+  };
+  for (const n of DESSINS_PODOLOGIE) for (const r of REGISTRES) sans(svgDessin(n, { registre: r }), `dessin ${n} ${r}`);
+  for (const id of EQUIPEMENTS_DESSINES) for (const r of REGISTRES) sans(svgEquipement(id, { registre: r }), `matériel ${id} ${r}`);
+  for (const a of ANIMATIONS) for (const r of REGISTRES) sans(svgAnimationFixe(a, { registre: r }), `animation ${a} ${r}`);
+  for (const c of [contenuSemelle(), contenuPremiersPas(), contenuTrajectoire()]) sans(c, 'contenu animé');
+  assert.ok(!/rect x="\d+" y="268"/.test(contenuSemelle()), 'semelle : nuancier « relief » retiré');
+});
+
+test('héros enfant et senior : scènes dessinées (ni podoscope, ni plaque d’empreintes, ni point rouge isolé)', () => {
+  for (const f of ['paysage', 'portrait'] as const) for (const r of REGISTRES) {
+    const e = illustrationTheme('enfant', { format: f, registre: r });
+    assert.ok(e.includes('dessin--heros-enfant'), `enfant ${f} ${r}`);
+    assert.ok(!/podoscope/.test(e), `enfant ${f} ${r} : podoscope`);
+    const s = illustrationTheme('senior', { format: f, registre: r });
+    assert.ok(s.includes('dessin--heros-senior') && (r === 'ligne' || s.includes('class="canne"')), `senior ${f} ${r}`);
+    assert.ok(!/oscillation|polygone|--d-chaud/.test(s), `senior ${f} ${r} : plaque d’empreintes ou point rouge`);
+  }
+});

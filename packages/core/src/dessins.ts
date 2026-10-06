@@ -17,9 +17,9 @@
 import { CONTOUR_PIED, EMPREINTE, ORTEILS, PLANTE, PLANTE_ENFANT, ORTEILS_ENFANT, TRAJET, TRAJET_POINTS, SEMELLE, SEMELLE_POINTS, SEMELLE_ELEMENTS, SEMELLE_PROFIL, EMPREINTES, largeurA, piedCroissance, piedDeProfil, dansPolygone, dansPulpe, lisser, type P, type Voute } from './pied';
 import { trame, pointsTrame, grouperTrame, isolignes, dansPlante, pression, type Appui, type Champ } from './trame';
 import { PRESSION, ARRETS_PRESSION, couleurPression, type NomDessin } from './univers';
-import { TRAIT, TRAME, NEUTRES, PLAN, POINTILLE, POLICE_MONO, TYPO, CYCLES, transparence } from './charte';
+import { TRAIT, TRAME, NEUTRES, PLAN, POINTILLE, transparence } from './charte';
 import { pressionPas, PHASE_FIXE } from './pas';
-import { poseCoureur, reculParCycle, APPUI } from './foulee';
+import { poseCoureur, reculParCycle } from './foulee';
 import { svgForme } from './bibliotheque/rendu';
 import { HALLUX_GROS_PLAN, FLECHE_INCARNE } from './bibliotheque/hallux-gros-plan';
 import { PLAQUE_DURILLON, COR_DESSUS, MANCHON_ORTHO } from './bibliotheque/soins-ongles';
@@ -102,7 +102,7 @@ const memoSilhouette = new Map<string, string>();
  * l'avant, l'arrondi de chaque orteil (ellipses) du 5e à l'hallux, séparés par un petit pli, lissés en un seul tracé fermé. Même
  * structure de points que PLANTE (indice à indice).
  */
-function silhouette(plante: P[] = PLANTE, orteils: Orteils = ORTEILS, douce = false): string {
+export function silhouette(plante: P[] = PLANTE, orteils: Orteils = ORTEILS, douce = false): string {
   const cle = JSON.stringify([plante, orteils, douce]);
   const deja = memoSilhouette.get(cle);
   if (deja) return deja;
@@ -501,13 +501,9 @@ function corps(nom: NomDessin, c: Contexte): string {
     }
 
     case 'sport':
-      // Courbe de force verticale pendant l'appui (double bosse : impact puis propulsion), sol, semelle
-      // crantée (plus épaisse au talon : drop), tige, cotes des hauteurs de semelle, force de réaction du sol.
-      return `<g>${
-        R
-          ? `<g class="courbe"><line class="cote" x1="172" y1="44" x2="230" y2="44"></line><line class="cote" x1="172" y1="44" x2="172" y2="10"></line><path class="trace force-courbe" pathLength="1" d="M172 44 C176 44 177 22 181 20 C184 19 185 29 189 29 C195 29 197 12 204 12 C212 12 214 44 222 44"></path>${mono(174, 9, 'F(t)')}</g>`
-          : ''
-      }<line class="sol" x1="12" y1="${SOL}" x2="232" y2="${SOL}"></line><g class="hachures">${Array.from(
+      // Chaussure de course de profil : sol, semelle crantée (plus épaisse au talon : drop), tige, lacets.
+      // Sur les sites : ni courbe F(t), ni cotes, ni flèche de force rouge (aucun texte, aucun symbole non expliqué : Paul, 2026-10-06)
+      return `<g><line class="sol" x1="12" y1="${SOL}" x2="232" y2="${SOL}"></line><g class="hachures">${Array.from(
         { length: 22 },
         (_, k) => `<line x1="${16 + k * 10}" y1="${SOL + 2}" x2="${10 + k * 10}" y2="${SOL + 8}"></line>`,
       ).join(
@@ -516,7 +512,7 @@ function corps(nom: NomDessin, c: Contexte): string {
         ([x, y], k) => `<g><circle class="oeillet" cx="${x}" cy="${y}" r="1.5"></circle><line class="lacet" x1="${x + 2.4}" y1="${y - 4.6}" x2="${x - 2.4}" y2="${y + 4.6}" style="--k:${k}"></line></g>`,
       ).join('')}${
         R
-          ? `<line class="guide" x1="20" y1="126" x2="44" y2="126"></line><line class="cote" x1="24" y1="126" x2="24" y2="${SOL}"></line><line class="cote" x1="21" y1="126" x2="27" y2="126"></line>${mono(20, 141, '32', '', 'end')}<line class="guide" x1="172" y1="133" x2="230" y2="133"></line><line class="cote" x1="226" y1="133" x2="226" y2="${SOL}"></line><line class="cote" x1="223" y1="133" x2="229" y2="133"></line>${mono(231, 145, '24')}${mono(124, 172, 'drop 8 mm', 'mono--accent', 'middle')}<line class="trace force" pathLength="1" x1="62" y1="${SOL}" x2="55" y2="104"></line><path class="force-fleche" d="M51.2 112.8 L55 103.2 L60.6 111.8"></path><circle class="point" cx="62" cy="${SOL}" r="3" fill="var(--d-chaud)" style="--k:2"></circle>${mono(62, 112, 'FRS', 'mono--chaud')}`
+          ? ''
           : `<path class="zone zone--forte" d="M40 140 C40 146 43 148 48 148 L110 148 C110 144 108 141 104 140 Z"></path>${renvoi(80, 146, 96, 166)}${etiquette(100, 170, 'Semelle et amorti')}${renvoi(120, 92, 150, 62)}${etiquette(152, 60, 'Tige')}`
       }</g>`;
 
@@ -849,8 +845,20 @@ export function svgDessin(nom: NomDessin, opts: { id?: string; classe?: string; 
   const defs =
     `<defs>${R ? `<symbol id="${pied}" viewBox="0 0 92 222" width="92" height="222" overflow="visible"><path d="${opts.variante === 'contour-empreinte' ? EMPREINTE_TRACE : PIED_TRACE}"></path></symbol><linearGradient id="${degrade}" x1="0" y1="1" x2="0" y2="0">${PRESSION.map((c, k) => `<stop offset="${ARRETS_PRESSION[k]}" stop-color="${c}"></stop>`).join('')}</linearGradient>` : ''}` +
     `${zoom ? `<clipPath id="${loupe}"><circle cx="${zoom.x}" cy="${zoom.y}" r="${zoom.r - 1}"></circle></clipPath>` : ''}</defs>`;
-  return `<svg class="${echapper(classes)}" viewBox="0 0 240 180" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${defs}${corps(nom, { pied, degrade, loupe, R, variante: opts.variante })}</svg>`;
+  return `<svg class="${echapper(classes)}" viewBox="0 0 240 180" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${defs}${sansTextes(corps(nom, { pied, degrade, loupe, R, variante: opts.variante }))}</svg>`;
 }
+
+/**
+ * Retire d'un dessin tout texte visible : lectures mono, étiquettes et leurs renvois, légende graduée, cotes. Règle de Paul
+ * (2026-10-06) : AUCUN texte, cartouche, légende ni échelle dans les illustrations et animations des sites ; le sujet reste dans
+ * l'alt, le <title> ou l'aria-label (pieges-illustration.md, « texte incrusté »).
+ */
+export const sansTextes = (svg: string) =>
+  svg
+    .replace(/<text\b[\s\S]*?<\/text>/g, '')
+    .replace(/<path class="renvoi"[^>]*><\/path><circle class="ancre"[^>]*><\/circle>/g, '')
+    .replace(/<g class="legende">[\s\S]*?<\/g>/g, '')
+    .replace(/<line class="cote"[^>]*><\/line>/g, '');
 
 /**
  * Dessin en symbole autonome, pour un fichier SVG statique (site : /dessins/<nom>.svg, servi une fois et mis
@@ -886,10 +894,6 @@ const F = 'viewBox="0 0 400 300" aria-hidden="true" preserveAspectRatio="xMidYMi
 const ACCENT = `var(--accent-pale, var(--signal, ${PLAN.signal}))`;
 /** Trait et texte des animations : papier sur fond sombre (par défaut), encre si le composant est sur fond clair */
 const TRAIT_ANIM = `var(--anim-trait, ${NEUTRES.papier})`;
-/** Taille des lectures mono dans le repère 400 × 300 (même taille apparente que dans les dessins 240 × 180) */
-const TAILLE_MONO = r1((TYPO.donneesDessin * 400) / 240);
-const lecture = (x: number, y: number, t: string, opts: { gras?: boolean; ancre?: string; couleur?: string; opacite?: number } = {}) =>
-  `<text x="${r1(x)}" y="${r1(y)}" fill="${opts.couleur ?? TRAIT_ANIM}" fill-opacity="${opts.opacite ?? 0.72}" font-size="${TAILLE_MONO}" font-family="${echapper(POLICE_MONO)}"${opts.gras ? ' font-weight="600"' : ''}${opts.ancre ? ` text-anchor="${opts.ancre}"` : ''} letter-spacing="0.4" stroke="none">${t}</text>`;
 const contourPointille = (d: string, leger = false, opacite?: number) => {
   const p = leger ? POINTILLE.leger : POINTILLE.contour;
   return `<path d="${d}" stroke="${TRAIT_ANIM}" stroke-width="${p.point}" stroke-dasharray="0 ${p.ecart}" stroke-opacity="${opacite ?? p.opacite}"></path>`;
@@ -970,8 +974,7 @@ function coureurFixe(): string {
   if (ecart < -Math.PI) ecart += 2 * Math.PI;
   const ra = L * 0.12;
   const arc = `<path d="M${r1(d.g.x + ra * Math.cos(a1))} ${r1(d.g.y + ra * Math.sin(a1))} A${r1(ra)} ${r1(ra)} 0 0 ${ecart < 0 ? 0 : 1} ${r1(d.g.x + ra * Math.cos(a1 + ecart))} ${r1(d.g.y + ra * Math.sin(a1 + ecart))}" stroke="${COULEURS.genou}" stroke-width="${TRAIT.normal}"></path>`;
-  const police = Math.max(11, L / 11);
-  const mono = `font-family="${echapper(POLICE_MONO)}"`;
+  // Aucune lecture (angle du genou, « ANALYSE DE LA FOULÉE », cadence) : règle « aucun texte » (Paul, 2026-10-06)
   return (
     `<path d="${grille.join('')}" stroke="${trait(0.06)}" stroke-width="${TRAIT.fin}"></path>` +
     `<line x1="0" y1="${r1(sol + 2)}" x2="${l}" y2="${r1(sol + 2)}" stroke="${trait(0.35)}" stroke-width="${TRAIT.fort}" stroke-dasharray="0 ${POINTILLE.contour.ecart * 2.5}"></line>` +
@@ -989,9 +992,7 @@ function coureurFixe(): string {
     [g.g, g.c, g.o, bg.coude].map((m) => `<circle cx="${r1(m.x)}" cy="${r1(m.y)}" r="3" fill="${pale}"></circle>`).join('') +
     marq(bassin, 4.5) + marq(epaule, 4.5) +
     marq(d.g, 4.5, COULEURS.genou) + marq(d.c, 4.5, COULEURS.cheville) + marq(d.o, 4, COULEURS.orteil) + marq(bd.coude, 4) +
-    arc +
-    `<text x="${r1(d.g.x + L * 0.16)}" y="${r1(d.g.y + 4)}" fill="${COULEURS.genou}" font-weight="600" font-size="${r1(police)}" ${mono}>${Math.round(180 - pose.droite.angleGenou)}°</text>` +
-    `<g fill="${NEUTRES.papier}" opacity="0.75" font-size="${r1(police * 0.85)}" ${mono}><text x="${l * 0.05}" y="${h * 0.09}" font-weight="600">ANALYSE DE LA FOULÉE</text><text x="${l * 0.05}" y="${r1(h * 0.09 + police * 1.4)}">Cadence ${Math.round(120 / (CYCLES.foulee / 1000))} pas/min · appui ${Math.round(APPUI * 100)} %</text></g>`
+    arc
   );
 }
 
@@ -1020,11 +1021,7 @@ export function contenuTrajectoire(prefixe = 'tj'): string {
         [0, 1, 2, 3].map((z) => `<use class="tj-zone" style="--z:${z}" href="#${prefixe}-z${z}" transform="${matrice(p.m)}"></use>`).join('') +
         `<path class="tj-trajet" d="${transformer(TRAJET, p.m)}" pathLength="1" stroke="${ACCENT}" stroke-width="${TRAIT.fort}"></path>` +
         `<circle class="tj-point" r="4.5" fill="${NEUTRES.blanc}" cx="0" cy="0" style="offset-path: path('${transformer(TRAJET, p.m)}')"></circle></g>`,
-    ).join('') +
-    lecture(24, 32, 'CENTRE DE PRESSION', { gras: true }) +
-    lecture(24, 50, 'talon → bord externe → hallux', { couleur: ACCENT, opacite: 1 }) +
-    lecture(140, 284, 'G', { ancre: 'middle' }) +
-    lecture(260, 284, 'D', { ancre: 'middle' })
+    ).join('')
   );
 }
 
@@ -1083,11 +1080,7 @@ export function contenuPremiersPas(prefixe = 'pp'): string {
     defs +
     `<path d="${courbe(Array.from({ length: 21 }, (_, k) => ligne(k / 20)))}" stroke="${TRAIT_ANIM}" stroke-width="${TRAIT.fin}" stroke-dasharray="${POINTILLE.tiret}" stroke-opacity="0.3"></path>` +
     adulte.join('') +
-    empreintes.join('') +
-    lecture(24, 68, 'pas de l’enfant ≈ 2 longueurs de pied', { couleur: ACCENT, opacite: 1 }) +
-    lecture(24, 84, 'pas de l’adulte ≈ 2,75 longueurs de pied', { opacite: 0.55 }) +
-    lecture(24, 32, 'PREMIERS PAS', { gras: true }) +
-    lecture(24, 50, 'à côté des pas de l’adulte', { opacite: 0.55 })
+    empreintes.join('')
   );
 }
 
@@ -1114,8 +1107,9 @@ export function contenuSemelle(prefixe = 'sm', teinte: 'accent' | 'palette' = 'a
       `</g>`
     );
   }).join('');
-  const nuancier = courbes.map((_, k) => `<rect x="${24 + k * 14}" y="268" width="12" height="4" fill="${couleur(k)}" fill-opacity="${opacite(k)}"></rect>`).join('');
-  return defs + pieds + lecture(24, 32, 'COURBES DE NIVEAU', { gras: true }) + lecture(24, 50, 'relief de la semelle') + lecture(24, 66, 'thermoformée') + nuancier + lecture(24, 288, 'relief : bas → haut', { opacite: 0.5 });
+  // Aucun texte ni nuancier (Paul, 2026-10-06 : « COURBES DE NIVEAU » et la légende « relief : bas → haut » retirés) : le sujet est
+  // dans l'aria-label / le <title> de l'appelant
+  return defs + pieds;
 }
 
 /** Schéma pédagogique associé à chaque animation (image fixe calme du registre pédagogique) */
@@ -1397,7 +1391,7 @@ export function svgEquipement(id: string, opts: { id?: string; classe?: string; 
         : contenuLigneAuto(svgEquipement(id, { registre: 'pedagogique', id: ident }), opts.ligne);
     return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${corpsLigne}</svg>`;
   }
-  return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${corpsEquipement(id, registre === 'releve', ident)}</svg>`;
+  return `<svg class="${echapper(classes)}" viewBox="0 0 120 90" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">${sansTextes(corpsEquipement(id, registre === 'releve', ident))}</svg>`;
 }
 
 /** Équipement en symbole « d » pour un fichier statique (/dessins/materiel-<id>.svg), comme symboleDessin */
