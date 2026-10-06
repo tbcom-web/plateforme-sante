@@ -4,11 +4,13 @@
 // Registre « pedagogique » (modèle Simple et pédagogique) : image calme du schéma correspondant, sans mouvement,
 // sans trame, sans lecture ni ligne de scan (svgAnimationFixe, même règle que l'aperçu de l'admin). Registre « ligne » : le dessin
 // au trait continu du même sujet, dont le trait se dessine au chargement (.ligne-auto ; trait complet si mouvements réduits).
+// Exception : « meulage » (geste de soin en étapes) s'anime aussi en registre pédagogique (peau, ongle, fraise à l'accent).
 import Podoscope from './Podoscope.astro';
 import Coureur from './Coureur.astro';
 import Trajectoire from './Trajectoire.astro';
 import PremiersPas from './PremiersPas.astro';
 import Semelle from './Semelle.astro';
+import Meulage from './Meulage.astro';
 import { svgAnimationFixe, type Animation, type Registre } from '@plateforme/core';
 import { registre as registreSite } from '../../lib/visuels';
 
@@ -16,7 +18,7 @@ import { registre as registreSite } from '../../lib/visuels';
 interface Props { nom: Animation | null; fond?: 'sombre' | 'clair'; releve?: boolean; registre?: Registre }
 const { nom, fond = 'sombre', releve = false, registre = registreSite } = Astro.props;
 ---
-{nom && registre !== 'releve' ? (
+{nom && registre !== 'releve' && !(nom === 'meulage' && registre === 'pedagogique') ? (
   <span class="anim-calme" aria-hidden="true" set:html={svgAnimationFixe(nom, { registre, ligne: { trace: true } })} />
 ) : (
   <>
@@ -25,6 +27,7 @@ const { nom, fond = 'sombre', releve = false, registre = registreSite } = Astro.
     {nom === 'trajectoire' && <Trajectoire fond={fond} />}
     {nom === 'premiers-pas' && <PremiersPas fond={fond} />}
     {nom === 'semelle' && <Semelle fond={fond} />}
+    {nom === 'meulage' && <Meulage fond={fond} registre={registre} />}
   </>
 )}
 

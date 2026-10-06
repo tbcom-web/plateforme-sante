@@ -897,7 +897,7 @@ export const LIGNE_EQUIPEMENT: Record<string, NomLigne> = {
   'fauteuil-soins': 'fauteuil', 'autoclave-classe-b': 'autoclave', podoscope: 'podoscope', 'monofilament-diapason': 'monofilament',
 };
 /** Animations d'accueil : dessin au trait continu du même sujet */
-export const LIGNE_ANIMATION: Record<string, NomLigne> = { podoscope: 'empreintes', coureur: 'marche', trajectoire: 'pied-dessous', 'premiers-pas': 'premiers-pas', semelle: 'semelle' };
+export const LIGNE_ANIMATION: Record<string, NomLigne> = { podoscope: 'empreintes', coureur: 'marche', trajectoire: 'pied-dessous', 'premiers-pas': 'premiers-pas', semelle: 'semelle', meulage: 'ongle-epais' };
 /** Formes de la bibliothèque (bibliotheque/formes.ts) et leur équivalent au trait continu ; les autres gardent le rendu pédagogique */
 export const LIGNE_FORME: Record<string, NomLigne> = {
   'pied-dorsal': 'pied-dessus', 'pied-plantaire': 'pied-dessous', empreinte: 'empreintes', 'pied-profil-medial': 'pied-profil',

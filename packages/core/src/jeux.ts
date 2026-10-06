@@ -118,8 +118,8 @@ export const VISUELS_SOINS: Record<string, VisuelCase> = {
   'mycose-ongles': kase(P('examen-mains'), 'mycose', null, false),
   // Cors et durillons : cor sur l'orteil en griffe qui frotte dans la chaussure, durillon sous la tête du métatarsien
   'cors-durillons': kase(P('soin-talon'), 'cors-durillons', null, false),
-  // Ongles épais : ongle épaissi de profil et fraise de meulage
-  'ongles-epais': kase(P('examen-mains'), 'ongles-epais', null, false),
+  // Ongles épais : ongle épaissi de profil et fraise de meulage ; animation « meulage » en étapes (meulage.ts, à revoir par Paul)
+  'ongles-epais': kase(P('examen-mains'), 'ongles-epais', 'meulage', false),
   // Soins à domicile : maison, mallette et micromoteur des visites ; photo en complément seulement
   'soins-a-domicile': kase(P('soins-bandages'), 'domicile', null, false),
 };

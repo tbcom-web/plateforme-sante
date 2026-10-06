@@ -1,0 +1,20 @@
+---
+// Animation « meulage » (fiche « Ongles épais ») : l'hallux de profil, l'ongle épaissi, la fraise du micromoteur qui se pose sur le
+// dos de l'ongle et l'affine couche par couche, puis se retire (core : meulage.ts, une seule source avec la version ÉcranZen).
+// SVG + CSS en ligne (≈ 4 Ko compressés), aucun script ni fichier chargé : rien ne retarde le premier affichage. AUCUN texte incrusté
+// (règle de Paul) : le sujet est dit par la page ; décoratif (aria-hidden). Mouvement seulement à l'écran (.en-vue, posée par
+// Gabarit.astro sur .anime-visible, jamais si le visiteur réduit les mouvements) ; sinon l'image figée : fraise posée, ongle épais.
+// Registres relevé (aplat sombre, contour clair, fraise à l'accent) et pédagogique (peau, ongle, fraise à l'accent de la gamme).
+import { svgMeulage, type Registre } from '@plateforme/core';
+
+interface Props { fond?: 'sombre' | 'clair'; registre?: Registre }
+const { fond = 'sombre', registre = 'releve' } = Astro.props;
+const svg = svgMeulage({ registre: registre === 'pedagogique' ? 'pedagogique' : 'releve', anime: true, classe: `anime-visible meulage--fond-${fond}` });
+---
+<Fragment set:html={svg} />
+
+<style>
+  :global(.meulage--site) { display: block; width: 100%; height: 100%; }
+  /* Fond sombre hors « plan d'architecte » : mêmes couleurs que la surface plan (charte, SURFACES_CSS) */
+  :global(.meulage--fond-sombre.meulage--releve) { background: var(--fond-nuit); --dessin-trait: var(--papier); --dessin-accent: var(--signal); --dessin-fond: color-mix(in srgb, var(--plan), var(--nuit) 30%); }
+</style>

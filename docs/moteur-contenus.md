@@ -27,6 +27,7 @@ SUJET (contenu sourcé, rédigé et validé UNE fois, sans rien du cabinet)
 | Garde-fous | `garde-fous.ts` | refus de générer, liste claire des ✗ |
 | Générateur | `scripts/generer.mjs` | aperçu instantané, export PNG (Playwright), planches, `mois-type.json` |
 | Reels | `scripts/reel.mjs`, `reels/` | moteur de reels d'ÉcranZen (copie) personnalisé au cabinet → MP4 9:16 |
+| Animations du site en vidéo | `scripts/exporter-animation.mjs` | animation des sites (une source : `packages/core/src/meulage.ts`) → MP4 H.264 + WebM VP9, 16:9 et 9:16, boucle de 12 s, étiquettes facultatives (`--etiquettes`) ; page pilotée par `window.ezAller(t)` comme les reels |
 
 Le **site** et **ÉcranZen** sont branchés sur les mêmes couches : la charte (`packages/core/charte.ts`), les gammes, les modèles et
 les registres (relevé / pédagogique) du site ; la bibliothèque d'illustrations ÉcranZen déjà portée (`packages/core/src/bibliotheque`) ;
@@ -152,6 +153,7 @@ port progressif des semelles : seule la source NHS est citée, sans chiffre (pro
 node packages/contenus/scripts/generer.mjs --sortie <dossier>   # aperçu, PNG des 3 styles, planches, mois-type.json
 node packages/contenus/scripts/generer.mjs --verifier           # garde-fous seulement
 node packages/contenus/scripts/reel.mjs [<id>] --sortie <dossier> [--sans-mp4]
+node packages/contenus/scripts/exporter-animation.mjs meulage [--format 16x9|9x16|tous] [--etiquettes] [--registre pedagogique] [--sortie <dossier>] [--planche] [--images]
 cd packages/contenus && npx tsc -p tsconfig.json
 ```
 

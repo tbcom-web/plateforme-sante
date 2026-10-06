@@ -121,7 +121,7 @@ export function inventaireIllustrations(): Illustration[] {
   for (const a of ANIMATIONS as readonly Animation[]) {
     l.push({
       cle: `animation:${a}`, type: 'animation', registre: 'releve', titre: a, detail: LIBELLES_ANIMATIONS[a],
-      source: `packages/core/src/dessins.ts — svgAnimationFixe('${a}') (animation du site : apps/sites)`,
+      source: a === 'meulage' ? 'packages/core/src/meulage.ts — svgMeulage (animation du site : Meulage.astro ; ÉcranZen : packages/contenus/scripts/exporter-animation.mjs)' : `packages/core/src/dessins.ts — svgAnimationFixe('${a}') (animation du site : apps/sites)`,
       soins: Object.entries(VISUELS_SOINS).filter(([, c]) => c.animation === a).map(([slug]) => slug), statutParDefaut: 'a_revoir', fond: 'plan',
       svg: () => svgAnimationFixe(a, { id: `rv-a-${a}` }),
     });

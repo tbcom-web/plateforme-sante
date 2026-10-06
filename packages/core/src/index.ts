@@ -19,6 +19,7 @@ export * from './gammes';
 export * from './logos';
 export * from './marques-importees';
 export * from './dessins';
+export * from './meulage';
 export * from './jeux';
 export * from './conseils';
 export * from './equipements';

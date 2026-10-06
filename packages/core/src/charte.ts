@@ -237,6 +237,8 @@ export const CYCLES = {
   diapo: 7000,
   /** Cycle de foulée du coureur (2 pas) : cadence ≈ 167 pas/min */
   foulee: 720,
+  /** Geste de soin montré en étapes (meulage d'un ongle épaissi, meulage.ts) : lisible par un patient, en boucle douce */
+  geste: 10000,
 } as const;
 /** Courbes d'accélération */
 export const COURBES = {

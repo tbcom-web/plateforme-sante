@@ -12,7 +12,7 @@
 
 import type { NomDessin } from './univers';
 
-export const ANIMATIONS = ['podoscope', 'coureur', 'trajectoire', 'premiers-pas', 'semelle'] as const;
+export const ANIMATIONS = ['podoscope', 'coureur', 'trajectoire', 'premiers-pas', 'semelle', 'meulage'] as const;
 export type Animation = (typeof ANIMATIONS)[number];
 
 /** Libellés des animations, pour l'éditeur */
@@ -22,6 +22,7 @@ export const LIBELLES_ANIMATIONS: Record<Animation, string> = {
   trajectoire: 'trajet du centre de pression pendant le pas',
   'premiers-pas': 'petites empreintes de premiers pas',
   semelle: 'semelles tracées en courbes de niveau',
+  meulage: 'meulage d’un ongle épaissi à la fraise, en étapes',
 };
 
 /** Vidéo d'une spécialité : boucle courte et muette, avec image d'attente (rendu prévu plus tard) */

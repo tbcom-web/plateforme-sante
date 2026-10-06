@@ -24,6 +24,7 @@ import { svgForme } from './bibliotheque/rendu';
 import { HALLUX_GROS_PLAN, FLECHE_INCARNE } from './bibliotheque/hallux-gros-plan';
 import { PLAQUE_DURILLON, COR_DESSUS, MANCHON_ORTHO } from './bibliotheque/soins-ongles';
 import type { Animation } from './packs';
+import { svgMeulage } from './meulage';
 import { svgLigne, contenuLigne, contenuLigneAuto, contenuLigneGroupes, ORDRE_MATERIEL, brancherEquipements, LIGNE_DESSIN, LIGNE_EQUIPEMENT, LIGNE_ANIMATION, type OptionsLigne } from './ligne';
 export * from './ligne';
 
@@ -1118,7 +1119,7 @@ export function contenuSemelle(prefixe = 'sm', teinte: 'accent' | 'palette' = 'a
 }
 
 /** Schéma pédagogique associé à chaque animation (image fixe calme du registre pédagogique) */
-const SCHEMA_ANIMATION: Record<Animation, NomDessin> = { podoscope: 'analyse', coureur: 'sport', trajectoire: 'equilibre', 'premiers-pas': 'enfant', semelle: 'semelle' };
+const SCHEMA_ANIMATION: Record<Animation, NomDessin> = { podoscope: 'analyse', coureur: 'sport', trajectoire: 'equilibre', 'premiers-pas': 'enfant', semelle: 'semelle', meulage: 'ongles-epais' };
 
 /**
  * Image fixe d'une animation d'accueil (<svg>…</svg>, repère 400 × 300), fidèle à l'animation du site :
@@ -1132,6 +1133,8 @@ export function svgAnimationFixe(animation: Animation, opts: { id?: string; regi
     const dessin = svgLigne(LIGNE_ANIMATION[animation] ?? 'empreintes', opts.ligne).replace('<svg ', '<svg x="30" y="22.5" width="340" height="255" ');
     return `<svg id="${echapper(id)}" class="animation-fixe animation-fixe--${animation} animation-fixe--ligne" ${F}>${dessin}</svg>`;
   }
+  // Meulage : l'image figée de l'animation elle-même (fraise posée sur l'ongle épais), dans le registre demandé (meulage.ts)
+  if (animation === 'meulage') return svgMeulage({ registre: opts.registre === 'pedagogique' ? 'pedagogique' : 'releve', id: echapper(id), classe: `animation-fixe animation-fixe--meulage${opts.registre === 'pedagogique' ? ' animation-fixe--pedagogique' : ''}` });
   if (opts.registre === 'pedagogique') {
     const schema = svgDessin(SCHEMA_ANIMATION[animation], { id: `${id}-schema`, registre: 'pedagogique' }).replace('<svg ', '<svg x="30" y="22.5" width="340" height="255" ');
     return `<svg id="${echapper(id)}" class="animation-fixe animation-fixe--${animation} animation-fixe--pedagogique" ${F}>${schema}</svg>`;
