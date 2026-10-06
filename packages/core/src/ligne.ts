@@ -21,7 +21,7 @@
 import { CONTOUR_PIED, EMPREINTE, SEMELLE, SEMELLE_ELEMENTS, CHAUSSURE, PLANTE_ENFANT, ORTEILS_ENFANT, piedDeProfil, echantillonner, lisser, dansPolygone, type P } from './pied';
 import { LIGNE, type EpaisseurLigne, type BouclesLigne } from './charte';
 import { MEDIAL, LATERAL_NORMAL, VOISINS, LAME } from './bibliotheque/hallux-gros-plan';
-import { AGRAFE_Y, LAME_MYCOSE, FRONT_MYCOSE, PEAU_GRIFFE, COR, NOYAU, EMPEIGNE, DURILLON, CRETE_ORTHO, ANNEAU_ORTHO, contourFraise } from './bibliotheque/soins-ongles';
+import { AGRAFE_Y, LAME_MYCOSE, FRONT_MYCOSE, PLAQUE_DURILLON, MANCHON_ORTHO, contourFraise } from './bibliotheque/soins-ongles';
 import { FORMES } from './bibliotheque/formes';
 
 export type { EpaisseurLigne, BouclesLigne } from './charte';
@@ -685,10 +685,6 @@ function parcoursSoin(nom: 'orthonyxie' | 'onychoplastie' | 'mycose' | 'ongle-ep
     return R.final ? t.entree(R.queue * 0.6, 0.2).pts : t.pts;
   };
   const lame = (pts: P[]) => partirDe(transf(echantillon(pts, true), mH), appliquer(mH, [22.4, 50]), 1.2);
-  // Coupe du 2e orteil en griffe (unités du dessin de la forme, x 60 → 188) agrandie ×1,8, sol en y 164
-  // Avant-pied et 2e orteil en griffe (soins-ongles.ts, refait le 2026-10-06 : unités x 56 → 200) agrandis ×1,6, sol en y 164
-  const mG: Affine = [1.6, 0, 0, 1.6, 4 - 56 * 1.6, 164 - 100 * 1.6];
-  const peauGriffe = () => new Trait(b).ajouter(transf(echantillon(PEAU_GRIFFE), mG)).pts;
   switch (nom) {
     case 'orthonyxie': {
       // Contour, lame, puis l'agrafe : crochet sous le bord médial, fil, boucle d'activation (un tour), fil, crochet sous le bord latéral
@@ -731,18 +727,19 @@ function parcoursSoin(nom: 'orthonyxie' | 'onychoplastie' | 'mycose' | 'ongle-ep
       return [peau, transf(dessous, m), transf(contourFraise(), m)];
     }
     case 'cor': {
-      // Refait le 2026-10-06 (silhouette sans os, soins-ongles.ts) : peau de l'avant-pied et du 2e orteil en griffe ; chaussure :
-      // empeigne puis semelle intérieure (le sol) d'un seul trait, qui remonte sur le bord interne du durillon sous la tête (lentille
-      // entre ce trait et le sol, sans boucle) ; cor : lentille de corne sur l'IPP puis son noyau conique
-      const iDur = DURILLON.length / 2;
-      const sol: P[] = [[DURILLON[iDur][0] + 0.2, 100], ...DURILLON.slice(iDur), [DURILLON[iDur - 1][0] - 0.2, 100], [-40, 100]];
-      const chaussure = new Trait(b).ajouter(transf(echantillon(EMPEIGNE), mG)).ajouter(transf(sol, mG), { tension: 0.2 });
-      const cor = new Trait(b).ajouter(transf(echantillon(COR, true), mG)).ajouter(transf(echantillon(NOYAU, true), mG), { tension: 0.3 });
-      return [peauGriffe(), chaussure.pts, cor.pts];
+      // Schéma classique (v3, 2026-10-06) : la plante du pied droit vue de dessous (même pose que « pied-dessous »), puis le contour
+      // de la plaque du durillon sous les têtes des 2e et 3e métatarsiens (bibliotheque/soins-ongles.ts : PLAQUE_DURILLON)
+      const m = pose(46, 111, 122, 92, 0.7, 6, true);
+      const pied = new Trait(b).ajouter(partirDe(transf(contourPied(), m), appliquer(m, [76, 196]), 12));
+      if (R.final) pied.entree(R.queue, 0.35);
+      return [pied.pts, partirDe(transf(echantillon(PLAQUE_DURILLON, true), m), appliquer(m, PLAQUE_DURILLON[0]), 1.5)];
     }
     case 'orthoplastie': {
-      // Peau de l'orteil en griffe ; crête en silicone sous l'orteil ; anneau qui coiffe le dessus (la même pièce, en coupe)
-      return [peauGriffe(), partirDe(transf(echantillon(CRETE_ORTHO, true), mG), appliquer(mG, CRETE_ORTHO[0]), 1), partirDe(transf(echantillon(ANNEAU_ORTHO, true), mG), appliquer(mG, ANNEAU_ORTHO[0]), 1)];
+      // Schéma classique (v3, 2026-10-06) : l'avant-pied vu de dessus (contour et ongles d'un seul trait, comme « ongle »), les bords
+      // du pied sortent en bas ; puis le manchon en silicone qui coiffe le 2e orteil sur l'IPP (MANCHON_ORTHO)
+      const m = pose(49.3, 50, 120, 104, 1.9, 0);
+      const c = contourDos({ ongles: true }).filter(([, y]) => y < 110);
+      return [new Trait(b).ajouter(transf(c, m)).pts, partirDe(transf(echantillon(MANCHON_ORTHO, true), m), appliquer(m, MANCHON_ORTHO[0]), 1)];
     }
     case 'domicile': {
       // Maison (sol, porte, murs, toit), puis la mallette posée au sol avec sa poignée, puis le micromoteur et sa pièce à main

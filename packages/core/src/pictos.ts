@@ -37,7 +37,7 @@ import {
 } from './pied';
 import { PICTO } from './charte';
 import { MEDIAL, LATERAL_NORMAL, VOISINS, LAME } from './bibliotheque/hallux-gros-plan';
-import { PEAU_GRIFFE, CRETE_ORTHO, ANNEAU_ORTHO } from './bibliotheque/soins-ongles';
+import { PLAQUE_DURILLON } from './bibliotheque/soins-ongles';
 import { FORMES } from './bibliotheque/formes';
 
 // ———————————————————————————————————————————————————— Outils de tracé
@@ -330,15 +330,10 @@ const DEFS: Record<string, Def> = {
   orthoplastie: {
     libelle: 'Orthoplastie',
     famille: 'soins',
-    // Orteil en griffe de profil (coupe du 2e rayon) et orthèse en silicone à l'accent : crête sous l'orteil, anneau sur le dessus
-    parties: () => {
-      const t: Transfo = (x, y) => [3 + (x - 80) * 0.45, 4 + (y - 30) * 0.45];
-      return [
-        trait(simplifier(courbe(PEAU_GRIFFE, false), t, 0.3, (p) => p[0] >= 1.5 && p[0] <= 46.5)),
-        accent(simplifier(courbe(CRETE_ORTHO, true), t, 0.3)),
-        accent(simplifier(courbe(ANNEAU_ORTHO, true), t, 0.3)),
-      ];
-    },
+    // Schéma classique (v3, 2026-10-06), même sujet que le dessin : l'avant-pied vu de dessus (ORTEILS_DESSUS) et, à l'accent, le
+    // manchon en silicone qui coiffe le 2e orteil, réduit à sa bande (bombée vers le bout : elle entoure l'orteil) ; à 24-48 px, un
+    // manchon dessiné en entier se fond dans le contour de l'orteil
+    parties: () => [trait(ORTEILS_DESSUS.peau), trait(ORTEILS_DESSUS.ongle), accent('M19.2 14C21 13.4 23.5 13.4 25.3 14')],
   },
 
   // ——— Motifs de consultation
@@ -386,12 +381,12 @@ const DEFS: Record<string, Def> = {
   'cor-durillon': {
     libelle: 'Cor et durillon',
     famille: 'pathologies',
-    // Durillon : épaississement étalé sous les têtes métatarsiennes CENTRALES (2e et 3e, zone d'appui), contour à l'accent. Revu le
-    // 2026-10-06 : la plaque est placée sur les têtes réelles (CONTOUR_PIED.mtp, même transformation que la plante), plus étalée
+    // Schéma classique (v3, 2026-10-06) : la plante et un point plein à l'accent sous l'avant-pied, sur la plaque du durillon des
+    // dessins (PLAQUE_DURILLON, têtes des 2e et 3e métatarsiens, même transformation que la plante) ; un point, jamais un anneau
     parties: () => {
       const t = placer(40 / PIED_L, [PIED.cx, (PIED.haut + PIED.bas) / 2], [24, 24], { miroir: true });
-      const [a, b] = [CONTOUR_PIED.mtp[1], CONTOUR_PIED.mtp[2]].map(([x, y]) => t(x, y + 7));
-      return [...plante(40, [24, 24]), accent(ellipse((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 4.8, 2.4))];
+      const n = PLAQUE_DURILLON.length, [x, y] = t(PLAQUE_DURILLON.reduce((a, p) => a + p[0], 0) / n, PLAQUE_DURILLON.reduce((a, p) => a + p[1], 0) / n);
+      return [...plante(40, [24, 24]), plein(ellipse(x, y, 3.3, 2.3), true)];
     },
   },
   'verrue-plantaire': {

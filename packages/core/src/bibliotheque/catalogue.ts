@@ -213,7 +213,7 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     vue: 'coupe-sagittale', statut: 'brouillon', valide_par: null, version: '2026-10-05', source: 'dessin sites (bibliotheque/soins-ongles.ts, proportions réelles commentées), pas d’atome ÉcranZen équivalent', licence: LICENCE, compose_de: [],
     declinaisons: [d('coupe-sagittale', 'cor', 'orteil-griffe-cor'), d('coupe-sagittale', 'orthoplastie', 'orteil-griffe-orthoplastie')],
     usages_sites: ['Cors et durillons', 'Orthoplastie'],
-    limites: ['Schéma de compréhension en coupe : cor ≈ 1/4 de la largeur de l’orteil, teinte de peau à peine jaunie, jamais une boule colorée', 'La déformation n’est jamais corrigée à l’image (pas d’avant / après)'],
+    limites: ['Plus utilisée par les dessins des sites depuis le 2026-10-06 (v3) : coupe jugée illisible par Paul, remplacée par le schéma classique (plante et dessus des orteils, soins-ongles.ts)', 'Schéma de compréhension en coupe : cor ≈ 1/4 de la largeur de l’orteil, teinte de peau à peine jaunie, jamais une boule colorée', 'La déformation n’est jamais corrigée à l’image (pas d’avant / après)'],
   },
 ];
 

@@ -11,7 +11,7 @@
 // Couleurs : jetons --ez-* uniquement (rendu.ts : orthese, resine, mycose, mycose-fonce, corne, noyau, silicone, metal).
 import { FORMES, type FormeEcranZen } from './formes';
 import { hallux, courbe, r, ep, trait, LAME, LUNULE, HALLUX_GROS_PLAN } from './hallux-gros-plan';
-import { piedDeProfil, echantillonner } from '../pied';
+import { piedDeProfil, echantillonner, CONTOUR_PIED, largeurA } from '../pied';
 
 type P = [number, number];
 const E = HALLUX_GROS_PLAN.echelle;
@@ -339,6 +339,57 @@ function orteilGriffe(etat: 'cor' | 'orthoplastie'): FormeEcranZen {
   return { viewBox: [56 * E, 18 * E, 144 * E, 88 * E], ids: false, corps: `<g>${parties.join('')}</g>` };
 }
 
+// ———————————————————————————————————————————————————— Cors, durillons, orthoplastie : schéma classique (v3, 2026-10-06)
+//
+// Demande de Paul (après deux coupes de l'orteil en griffe jugées illisibles) : « un schéma classique, pas trop anatomique, une
+// représentation simple avec un point sur le pied ». Plus de profil ni de coupe : la plante et le dessus de l'avant-pied du pied
+// réel validé (CONTOUR_PIED, POD-AT-0001/0002), repère 92 × 222 du pied droit vu de dessus (hallux à gauche). Les dessins
+// (dessins.ts), le trait continu (ligne.ts) et les pictos posent ces repères avec la même transformation que le pied. Les formes
+// « orteil-griffe-* » ci-dessus restent au catalogue de la bibliothèque, elles ne sont plus utilisées par les dessins des sites.
+
+/** Arrondi au centième (repère du pied ; `r` ci-dessus convertit vers les unités des formes) */
+const r2 = (v: number) => Math.round(v * 100) / 100;
+/**
+ * Durillon : plaque d'hyperkératose DIFFUSE, sans noyau, sous les têtes des 2e et 3e métatarsiens (zone d'appui centrale de
+ * l'avant-pied), là où l'avant-pied s'élargit, en arrière du pli des orteils (jamais collée aux orteils). Ovale irrégulier allongé
+ * selon la ligne des têtes (≈ 3,2 × 1,9 cm ; 1 cm ≈ 8,5 u), centre ≈ 0,5 cm en arrière des têtes, bords doux. Repère du pied (vue de dessus ; la plante en est le miroir).
+ */
+export const PLAQUE_DURILLON: P[] = (() => {
+  const [t2, t3] = [CONTOUR_PIED.mtp[1], CONTOUR_PIED.mtp[2]].map(([x, y]) => [x, y + 6] as P);
+  const cx = (t2[0] + t3[0]) / 2 - 0.6, cy = (t2[1] + t3[1]) / 2 + 4.6, ang = Math.atan2(t3[1] - t2[1], t3[0] - t2[0]);
+  return Array.from({ length: 28 }, (_, i) => {
+    const a = (i / 28) * 2 * Math.PI;
+    // Bord irrégulier mais doux (harmoniques faibles) : plus large côté 3e tête, un peu aplati côté orteils
+    const k = 1 + 0.07 * Math.cos(2 * a + 0.7) + 0.05 * Math.sin(3 * a + 0.3) + 0.04 * Math.cos(a);
+    const u = 13.4 * Math.cos(a) * k, v = 7.9 * Math.sin(a) * k;
+    return [r2(cx + u * Math.cos(ang) - v * Math.sin(ang)), r2(cy + u * Math.sin(ang) + v * Math.cos(ang))] as P;
+  });
+})();
+/**
+ * Cor : petite lésion ronde sur la face dorsale de l'IPP du 2e orteil, là où la chaussure frotte. 2e orteil ≈ 5,4 cm (bout y 16 →
+ * MTP y 62,4) : P3 + P2 ≈ 3 cm depuis le bout, l'IPP tombe juste en avant de la commissure (y ≈ 38–41) ; diamètre ≈ 0,3 × la
+ * largeur de l'orteil (piège « cor en boule » : jamais plus gros). Centre sur l'axe de l'orteil (bout → MTP).
+ */
+export const COR_DESSUS = (() => {
+  const [bx, by] = CONTOUR_PIED.bouts[1], [mx, my] = CONTOUR_PIED.mtp[1], y = 38.4;
+  return { x: r2(bx + ((mx - bx) * (y - by)) / (my - by)), y, r: 2.3 };
+})();
+/**
+ * Orthoplastie vue de dessus : manchon (anneau) en silicone moulé qui coiffe le 2e orteil sur l'IPP (protection du cor), un peu plus
+ * large que l'orteil (épaisseur ≈ 1,5 mm de chaque côté), ≈ 1,1 cm de long ; bords proximal et distal légèrement bombés vers le
+ * bout (la pièce entoure un orteil cylindrique). L'orteil n'est ni redressé ni déplacé (Ameli : l'orthoplastie protège et répartit
+ * les pressions, elle ne corrige pas la déformation).
+ */
+export const MANCHON_ORTHO: P[] = (() => {
+  const poly = CONTOUR_PIED.polygonesOrteils[1], y0 = 31.6, y1 = 40.8, e = 1.3, n = 6;
+  const bord = (y: number) => { const l = largeurA(poly, y) ?? [33.4, 48.6]; return [l[0] - e, l[1] + e] as const; };
+  const gauche = Array.from({ length: n + 1 }, (_, k) => { const y = y0 + ((y1 - y0) * k) / n; return [bord(y)[0], y] as P; });
+  const droite = Array.from({ length: n + 1 }, (_, k) => { const y = y1 - ((y1 - y0) * k) / n; return [bord(y)[1], y] as P; });
+  // Bords bombés : bas (proximal) de gauche à droite, haut (distal) de droite à gauche
+  const arc = (y: number, xa: number, xb: number, f: number) => Array.from({ length: 5 }, (_, k) => { const t = (k + 1) / 6; return [xa + (xb - xa) * t, y - f * Math.sin(Math.PI * t)] as P; });
+  const [gb, db] = [gauche[n][0], droite[0][0]], [gh, dh] = [gauche[0][0], droite[n][0]];
+  return [...gauche, ...arc(y1, gb, db, 1.4), ...droite, ...arc(y0, dh, gh, 1.4)].map(([x, y]) => [r2(x), r2(y)] as P);
+})();
 
 export const FORMES_SOINS_ONGLES: Record<string, FormeEcranZen> = {
   'hallux-gros-plan-orthonyxie': hallux(false, { dessus: agrafe() }),

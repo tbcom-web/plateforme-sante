@@ -100,3 +100,42 @@ Planche : `scratchpad/illustrations-manquantes/planche.png` (session du 2026-10-
 
 - Sachet de stérilisation dessiné avec son bout pelable en pointe = « maison » : bords droits, chevron imprimé à l'intérieur.
 - Pièce à main posée à l'envers (fibre sur l'embout) = l'objet « tire » par le mauvais bout : la fibre part de l'arrière, l'embout est fin.
+
+## C. Cors et durillons, orthoplastie : schéma classique (v3, après le retour de Paul sur a3bcb1e)
+
+Retour de Paul (2e version, commit a3bcb1e : profil d'orteil en griffe illisible, « n » cubique dans un cadre) : « Pour le durillon
+utilise simplement un schéma classique. Pas besoin d'aller trop hardcore ou trop anatomique. Juste une représentation simple avec un
+point sur le pied. » Inspirations montrées (non copiées) : avant-pied vu de dessus avec une tache sur une articulation ; plante avec une
+plaque de corne sous l'avant-pied ; schéma de manuel plante + médaillons. Clés retouchées (toutes « À revoir », aucune « Validé ») :
+`dessin:cors-durillons:releve|pedagogique`, `ligne:cor`, `dessin:orthoplastie:releve|pedagogique`, `ligne:orthoplastie`,
+`picto:cor-durillon`, `picto:orthoplastie`. Planche : `scratchpad/illustrations-manquantes/cors-durillons-v3.png`.
+
+### Composition
+
+- **cors-durillons** : deux vues du même pied droit, géométrie validée CONTOUR_PIED (POD-AT-0001/0002), aucun os, aucune coupe, aucun
+  texte. À gauche la plante vue de dessous (hallux à droite) et la plaque du durillon ; à droite l'avant-pied vu de dessus (hallux à
+  gauche, 5 orteils et leurs ongles), petit cor rond sur l'IPP du 2e orteil ; l'avant-pied, agrandi, sort du cadre par le bas (ni
+  cadre ni fondu : le masque en dégradé n'est pas rendu par WebKit dans les fichiers de dessins). Relevé : l'empreinte en trame (convention des relevés, hallux à gauche), pression concentrée sous les têtes de M2–M3.
+- **orthoplastie** : l'avant-pied vu de dessus, plus grand, et un manchon en silicone (aplat d'eau doux) qui coiffe le 2e orteil sur
+  l'IPP (protection du cor). L'orteil n'est ni redressé ni déplacé.
+- Repères partagés (bibliotheque/soins-ongles.ts) : `PLAQUE_DURILLON`, `COR_DESSUS`, `MANCHON_ORTHO`, repère du pied ; mêmes
+  transformations que le pied dans les dessins, le trait continu et les pictos.
+
+### Revue anatomique (auto-revue « illustrateur médical »)
+
+| Point | Dessiné | Référence | Verdict |
+|---|---|---|---|
+| Proportions des orteils | contour exact de l'atome (CONTOUR_PIED), rien de redessiné ; formule égyptienne, hallux nettement plus large | POD-AT-0001/0002 | JUSTE |
+| Sens de l'hallux | plante (vue de dessous) : hallux à droite ; dessus : hallux à gauche ; relevé : hallux à gauche (convention) | pied droit, miroir pour la plante | JUSTE |
+| Plaque du durillon | ovale irrégulier ≈ 3,2 × 1,9 cm, centré entre les têtes de M2 et M3, ≈ 0,5 cm en arrière d'elles ; bord distal en arrière du pli des orteils (pas collée aux orteils) ; aplat ocre doux, contour léger, halo flou ; aucun noyau | anatomie-pied.md § Peau et hyperkératoses | JUSTE |
+| Cor | sur la face dorsale du 2e orteil, juste en avant de la commissure (IPP : P3 + P2 ≈ 3 cm depuis le bout), diamètre ≈ 0,3 × la largeur de l'orteil ; disque plein sans contour + halo rosé flou ; pas de point central (lecture « cible ») | anatomie-pied.md ; piège « cor en boule » | JUSTE (simplification : le noyau n'est pas montré à cette échelle) |
+| Relevé | zone chaude sous les têtes M2–M3, talon modéré, aucune trame sur la vue de dessus | règle « pression sur l'empreinte, jamais sur la peau » | JUSTE |
+| Orthoplastie | manchon ≈ 1,1 cm sur l'IPP du 2e orteil, débord ≈ 1,5 mm de chaque côté, bords bombés vers le bout | HAS 2020 § 3.5.2 ; Ameli (ne corrige pas la déformation) | JUSTE (simplification : la crête plantaire n'est pas visible de dessus) |
+| Trait continu `ligne:cor` | plante + contour de la plaque (ovale irrégulier, pas un cercle) | piège « rond creux sur la peau = douleur » | À CORRIGER (mineur, à arbitrer) : demandé tel quel ; si Paul le lit « douleur », remplacer par 2–3 hachures courtes |
+| Pictos | cor-durillon : plante + point plein à l'accent sur la plaque (lisible à 24 px) ; orthoplastie : avant-pied de dessus + bande à l'accent sur le 2e orteil | grammaire des pictos | JUSTE / À CORRIGER (mineur) : la bande de l'orthoplastie reste petite à 24 px |
+
+Lecture profane (2 s) : « un dessous de pied avec une tache de corne sous l'avant-pied, et des orteils vus de dessus avec un petit
+bouton sur le 2e » ; orthoplastie : « une protection en silicone sur un orteil ».
+
+Points à faire valider par Paul : taille et teinte de la plaque, taille du cor (volontairement petit), choix du 2e orteil pour le cor et
+le manchon, picto de l'orthoplastie à 24 px.

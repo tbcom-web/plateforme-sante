@@ -22,7 +22,7 @@ import { pressionPas, PHASE_FIXE } from './pas';
 import { poseCoureur, reculParCycle, APPUI } from './foulee';
 import { svgForme } from './bibliotheque/rendu';
 import { HALLUX_GROS_PLAN, FLECHE_INCARNE } from './bibliotheque/hallux-gros-plan';
-import { GRIFFE } from './bibliotheque/soins-ongles';
+import { PLAQUE_DURILLON, COR_DESSUS, MANCHON_ORTHO } from './bibliotheque/soins-ongles';
 import type { Animation } from './packs';
 import { svgLigne, contenuLigne, contenuLigneAuto, contenuLigneGroupes, ORDRE_MATERIEL, brancherEquipements, LIGNE_DESSIN, LIGNE_EQUIPEMENT, LIGNE_ANIMATION, type OptionsLigne } from './ligne';
 export * from './ligne';
@@ -322,6 +322,32 @@ function poserForme(cle: string, x: number, y: number, l: number, o: { id?: stri
 }
 /** Pression sur le sol (relevé) : demi-disque de trame SOUS la ligne du sol, centré en cx (jamais sur la peau) */
 const trameSol = (cx: number, sol: number, r: number) => trameDisque(cx, sol + 1, r, 2.8, (_, y) => y >= sol + 1.5);
+
+// Cors, durillons, orthoplastie : schéma classique (v3, 2026-10-06), repères de bibliotheque/soins-ongles.ts (repère du pied)
+/** Centre de la plaque du durillon (repère du pied) */
+const centrePlaque = (): P => [PLAQUE_DURILLON.reduce((a, p) => a + p[0], 0) / PLAQUE_DURILLON.length, PLAQUE_DURILLON.reduce((a, p) => a + p[1], 0) / PLAQUE_DURILLON.length];
+/** Plaque agrandie de `f` autour de son centre (halo), posée par `m` */
+const tracePlaque = (m: Affine, f = 1) => {
+  const [cx, cy] = centrePlaque();
+  return lisser(PLAQUE_DURILLON.map(([x, y]) => appliquer(m, cx + (x - cx) * f, cy + (y - cy) * f)).map(([x, y]) => [r1(x), r1(y)] as P));
+};
+/** Halo flou (dégradé radial du centre vers le bord, couleur par la classe des arrêts : halo-durillon ou halo-cor), identifiant `id` */
+const halo = (id: string, classe: string) =>
+  `<radialGradient id="${id}"><stop offset="0.4" class="${classe}" stop-opacity="0.6"></stop><stop offset="1" class="${classe}" stop-opacity="0"></stop></radialGradient>`;
+/** Plante (vue de dessous, posée par `m`) en aplat de peau doux, et la plaque du durillon : halo flou, aplat ocre doux, contour léger */
+const plaqueDurillon = (m: Affine, id: string) =>
+  `<defs>${halo(id, 'halo-durillon')}</defs><g class="peau-douce">${piedReel(m, 'plantaire')}</g><path class="halo" fill="url(#${id})" d="${tracePlaque(m, 1.5)}"></path><path class="durillon" d="${tracePlaque(m)}"></path>`;
+/** Cor sur le dessus du 2e orteil (posé par `m`) : halo flou discret puis la petite lésion ronde, sans contour ; jamais d'anneau creux ni de point central (cible) */
+const corDessus = (m: Affine, id: string) => {
+  const [x, y] = appliquer(m, COR_DESSUS.x, COR_DESSUS.y), e = Math.abs(m[0]);
+  return `<defs>${halo(id, 'halo-cor')}</defs><circle class="halo" fill="url(#${id})" cx="${r1(x)}" cy="${r1(y)}" r="${r1(COR_DESSUS.r * e * 2.4)}"></circle><circle class="cor" cx="${r1(x)}" cy="${r1(y)}" r="${r1(COR_DESSUS.r * e)}"></circle>`;
+};
+/**
+ * Avant-pied du pied droit vu de dessus (orteils, ongles ; CONTOUR_PIED dorsal) posé par `m`, aplat de peau doux en pédagogique ; le
+ * pied, agrandi, SORT DU CADRE par le bas (ni cadre, ni bord coupé, ni fondu : un masque en dégradé n'est pas rendu par WebKit dans les
+ * fichiers /dessins/*.svg référencés par <use>). `detail` : ce qui est posé sur l'avant-pied (cor, orthèse), dans le même repère.
+ */
+const avantPiedDessus = (m: Affine, detail: (m: Affine) => string) => `<g class="peau-douce">${piedReel(m, 'dorsal')}</g>${detail(m)}`;
 
 /** Point du médaillon de l'hallux (repère de l'atome 512) → repère du dessin */
 const surMedaillon = (cx: number, cy: number, r: number, X: number, Y: number): P => [cx + ((X - MED.centre) * r) / MED.rayon, cy + ((Y - MED.centre) * r) / MED.rayon];
@@ -751,40 +777,28 @@ function corps(nom: NomDessin, c: Contexte): string {
     }
 
     case 'cors-durillons': {
-      // Refait le 2026-10-06 (retour de Paul : « la figure du durillon est complètement fausse anatomiquement » ; revue :
-      // docs/referentiels/revue-anatomique-2026-10-06-b.md). Deux vues, AUCUN os, AUCUN texte (consigne de Paul : pas de légende
-      // dans l'image ; les libellés sont dans l'alt de la page) :
-      // - à gauche, la plante du pied droit vue de dessous (contour validé POD-AT-0002) : le DURILLON, plaque d'hyperkératose
-      //   diffuse sous les têtes des 2e et 3e métatarsiens (zone d'appui), hachurée, sans noyau ni point ;
-      // - à droite, l'avant-pied de profil (silhouette du profil validé POD-AT-0003, hallux en arrière-plan) : le 2e orteil EN
-      //   GRIFFE dans la chaussure, le COR sur la face dorsale de l'IPP, là où l'empeigne frotte, et le durillon sous la tête.
-      // Relevé : la pression se lit SUR LE SOL (trame sous la tête), jamais sur la peau.
-      const k = 0.66, m: Affine = [-k, 0, 0, k, 10 + 92 * k, 22];
-      const [t2, t3] = [TETES[1], TETES[2]], cxp = (t2[0] + t3[0]) / 2, cyp = (t2[1] + t3[1]) / 2 + 1.5;
-      const ang = Math.atan2(t3[1] - t2[1], t3[0] - t2[0]);
-      const plaque = Array.from({ length: 24 }, (_, i) => {
-        const a = (i / 24) * 2 * Math.PI, u = 11.5 * Math.cos(a), v = 6.2 * Math.sin(a) * (1 + 0.12 * Math.cos(a));
-        return appliquer(m, cxp + u * Math.cos(ang) - v * Math.sin(ang), cyp + u * Math.sin(ang) + v * Math.cos(ang));
-      });
-      const dPlaque = lisser(plaque.map(([x, y]) => [r1(x), r1(y)] as P));
-      const [px, py] = appliquer(m, cxp, cyp);
-      const hachures = Array.from({ length: 9 }, (_, i) => `M${r1(px - 14 + i * 3.4)} ${r1(py + 8)} L${r1(px - 8 + i * 3.4)} ${r1(py - 8)}`).join(' ');
-      const E = 4, f = poserForme('orteil-griffe-cor', 92, 34, 144, { couleur: !R });
-      const s = (p: P) => f.sur(p[0] * E, p[1] * E);
-      const [dx] = s(GRIFFE.durillon), [, sol] = s([0, GRIFFE.sol]);
-      return `<g><defs><clipPath id="${loupe}-dur"><path d="${dPlaque}"></path></clipPath><clipPath id="${loupe}-vue"><rect x="92" y="30" width="144" height="${r1(sol - 26)}" rx="6"></rect></clipPath></defs>` +
-        `${piedReel(m, 'plantaire')}${R ? '' : `<path class="durillon" d="${dPlaque}"></path>`}<path class="durillon-hachures" clip-path="url(#${loupe}-dur)" d="${hachures}"></path><path class="durillon-bord" d="${dPlaque}"></path>` +
-        `<g clip-path="url(#${loupe}-vue)">${f.svg}</g><rect class="cadre" x="92" y="30" width="144" height="${r1(sol - 26)}" rx="6"></rect>${R ? trameSol(dx, sol + 4, 11) : ''}</g>`;
+      // Schéma CLASSIQUE (v3, 2026-10-06 ; demande de Paul après deux coupes de l'orteil en griffe illisibles : « une représentation
+      // simple avec un point sur le pied ») : aucun os, aucune coupe, aucun texte. Deux vues du même pied droit (géométrie validée
+      // CONTOUR_PIED, repères de bibliotheque/soins-ongles.ts) :
+      // - à gauche, le DURILLON : plaque ovale irrégulière sous les têtes des 2e et 3e métatarsiens (là où l'avant-pied s'élargit, en
+      //   arrière des orteils). Pédagogique : plante vue de dessous (hallux à droite), aplat de peau doux, plaque ocre doux, contour
+      //   léger et halo. Relevé : l'empreinte en trame de points (convention des relevés, hallux à gauche), pression concentrée sur la
+      //   même zone d'appui ;
+      // - à droite, le COR : l'avant-pied vu de dessus (orteils et ongles), petit cor rond sur l'IPP du 2e orteil, halo discret ;
+      //   l'avant-pied, agrandi, sort du cadre par le bas (aucun cadre).
+      const k = 0.68;
+      const [cx, cy] = centrePlaque();
+      const gauche = R
+        ? `<g transform="${piedDroit(8, 10, k)}">${pointilles(true)}${traceChamp((x, y) => Math.min(1, 0.42 * pression('normal', x, y) + (dansPlante(x, y) ? 1.05 * g2(x, y, cx, cy, 9.5, 6) : 0)))}</g>`
+        : plaqueDurillon([-k, 0, 0, k, 8 + 92 * k, 10], `${loupe}-halo-d`);
+      return `<g>${gauche}${avantPiedDessus([1.5, 0, 0, 1.5, 93.8, 7.5], (m) => corDessus(m, `${loupe}-halo-c`))}</g>`;
     }
 
     case 'orthoplastie': {
-      // Refait le 2026-10-06 (même silhouette que « cors-durillons », AUCUN os, aucun texte) : l'avant-pied de profil, le 2e orteil
-      // en griffe et l'orthèse en silicone moulée sur mesure : crête sous l'orteil (posée sur la semelle) et anneau qui coiffe le
-      // dessus de l'IPP (une seule pièce, reliée entre les orteils hors de la vue). La griffe n'est pas corrigée à l'image (Ameli :
-      // l'orthoplastie réduit les pressions, elle ne redresse pas l'orteil).
-      const f = poserForme('orteil-griffe-orthoplastie', 12, 18, 216, { couleur: !R });
-      void GRIFFE;
-      return `<g>${f.svg}</g>`;
+      // Schéma classique (v3, 2026-10-06 ; même logique que « cors-durillons ») : l'avant-pied vu de dessus, plus grand, et l'orthèse
+      // en silicone moulée sur mesure : un manchon qui coiffe le 2e orteil sur l'IPP (protection du cor), aplat silicone doux. Aucun os,
+      // aucune coupe, aucun texte ; l'orteil n'est ni redressé ni déplacé (Ameli : l'orthoplastie protège, elle ne corrige pas).
+      return `<g>${avantPiedDessus([1.95, 0, 0, 1.95, 120 - 49.3 * 1.95, 8], (m) => `<path class="silicone" d="${lisser(MANCHON_ORTHO.map((p) => appliquer(m, p[0], p[1])).map(([x, y]) => [r1(x), r1(y)] as P))}"></path>`)}</g>`;
     }
 
     case 'domicile': {
