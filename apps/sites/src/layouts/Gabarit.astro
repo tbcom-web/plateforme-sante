@@ -402,6 +402,17 @@ const via = rdvGeneral ? '' : viaPlateforme;
   [data-images='contraste'] main img:not(.praticien__photo) { filter: contrast(1.12) saturate(0.88) brightness(0.96); }
 
   * { box-sizing: border-box; }
+  /* Aucune légende visible autour des illustrations, tous registres et gabarits (règle de Paul, 2026-10-06) : ni cartouche
+     « Fig. », ni nom du dessin, ni mention « représentation illustrative » à côté de l'image. Ce que représente chaque image
+     reste en base (inventaire des illustrations, /admin/illustrations) et dans la version Markdown des pages (agents) ; la
+     mention générale reste au pied de page. */
+  :is(.planche__haut, .planche__bas, .ve__haut, .ve__bas, .ve__mention, .couverture__haut, .couverture__bas, .praticien__repere, .panorama__mention, .plein__mention, .hero__mention, .releve__mention) { display: none !important; }
+  /* Planche sans cartouches : le dessin occupe toute la hauteur (centré), pas de case vide sous lui */
+  .planche { grid-template-rows: minmax(0, 1fr) !important; }
+  /* Annotations intérieures des schémas (étiquettes et leurs renvois, lectures chiffrées) : retirées, sauf sur la fiche d'un
+     soin où elles servent l'explication, et alors discrètes. */
+  .dessin :is(.etiquette, .renvoi, .ancre, .mono) { display: none; }
+  .dessins-annotes .dessin :is(.etiquette, .renvoi, .ancre, .mono) { display: inline; opacity: 0.6; }
   html { scroll-behavior: smooth; }
   body { margin: 0; font-family: var(--police-texte, system-ui, sans-serif); font-feature-settings: 'ss01', 'cv11'; color: var(--encre); background: var(--fond); font-size: 1.0625rem; line-height: 1.65; -webkit-font-smoothing: antialiased; padding-bottom: 82px; }
   @media (min-width: 900px) { body { padding-bottom: 0; } }
@@ -635,10 +646,8 @@ const via = rdvGeneral ? '' : viaPlateforme;
   /* Surfaces : « plan » devient un fond doux clair, « grille » un aplat doux, sans quadrillage */
   html[data-registre='pedagogique'] .surface-plan { --plan: var(--doux); --papier: var(--encre); --signal: var(--accent-vif); --sur-sombre: var(--encre); --sur-sombre-doux: var(--encre-douce); --sur-sombre-pale: var(--encre-pale); --sur-sombre-filet: var(--ligne); --sur-sombre-verre: var(--fond); --dessin-trait: var(--encre); --dessin-accent: var(--accent-vif); --dessin-fond: var(--fond); --dessin-os: var(--accent-vif); color: var(--encre); background-color: var(--doux); background-image: none; }
   html[data-registre='pedagogique'] .surface-grille { background-color: var(--doux); background-image: none; }
-  /* Cartouches techniques (légende, repère « Fig. », mention, coordonnées) : retirés */
-  html[data-registre='pedagogique'] :is(.planche__haut, .planche__bas, .ve__haut, .ve__bas, .ve__mention, .couverture__haut, .couverture__bas, .carte__haut, .carte__coordonnees, .praticien__repere, .panorama__mention, .plein__mention) { display: none !important; }
-  /* Planche sans cartouches : le dessin occupe toute la hauteur (centré), pas de case vide sous lui */
-  html[data-registre='pedagogique'] .planche { grid-template-rows: minmax(0, 1fr); }
+  /* Cartouches techniques des cartes (repère, coordonnées) : retirés en registre pédagogique */
+  html[data-registre='pedagogique'] :is(.carte__haut, .carte__coordonnees) { display: none !important; }
   html[data-registre='pedagogique'] .carte__etiquette { background: var(--fond); color: var(--encre); font-family: var(--police-texte); box-shadow: var(--ombre); }
   html[data-registre='pedagogique'] .carte__plan.surface-plan { background-image: linear-gradient(var(--quadrillage-clair) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--quadrillage-clair) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas-majeur) var(--quadrillage-pas-majeur); }
   html[data-registre='pedagogique'] .carte__point::after { animation: none !important; }

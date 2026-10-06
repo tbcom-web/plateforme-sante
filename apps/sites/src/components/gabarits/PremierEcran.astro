@@ -5,13 +5,13 @@
 //   couleur vive (masqué sur téléphone) : un seul aplat vif, court ;
 // - « notice » (village) : bandeau pleine largeur sur l'aplat pastel, titre, trois lignes à picto (qui, où, soins), deux gros boutons ;
 // - « figure » (revue) : bandeau sur l'aplat pastel, une colonne de texte (sur-titre, titre, qui · où, soins en italique, deux
-//   boutons) et, à côté, UN dessin au trait continu du soin principal, légendé « Fig. 1 — … », sans animation, masqué sur téléphone.
+//   boutons) et, à côté, UN dessin au trait continu du soin principal, sans légende visible, sans animation, masqué sur téléphone.
 // Couleurs : rôles --g-* (packages/core/src/gabarits.ts) tirés de la gamme (vif, duo, aplat) ou de la couleur libre, AA garantis.
 import Icone from '../Icone.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
 import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche, aLaVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
-import { nomLieu, visuelVariante, ligneDuSoin, legendeLigne } from '../../lib/gabarits';
+import { nomLieu, visuelVariante, ligneDuSoin } from '../../lib/gabarits';
 
 interface Props { variante: 'carte' | 'notice' | 'figure' }
 const { variante } = Astro.props;
@@ -28,7 +28,7 @@ const principaux = site.soins.slice(0, 3).map((s) => s.titreCourt.toLowerCase())
 const soins = principaux.length ? `${principaux.slice(0, -1).join(', ')}${principaux.length > 1 ? ' et ' : ''}${principaux.at(-1)}.` : '';
 const soinsPhrase = soins.charAt(0).toUpperCase() + soins.slice(1);
 const visuel = site.soins[0] ? visuelVariante(site.soins[0].slug, 'liste') : null;
-// Revue : le dessin au trait continu qui correspond au dessin du soin principal, et sa légende factuelle (ce qui est dessiné).
+// Revue : le dessin au trait continu qui correspond au dessin du soin principal.
 const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0].slug) : null;
 ---
 {variante === 'figure' ? (
@@ -47,7 +47,6 @@ const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0
     {figure && (
       <figure class="figure-accueil__figure" aria-hidden="true">
         <Dessin ligne={figure} trace={false} />
-        <figcaption>Fig. 1 — {legendeLigne(figure)}.</figcaption>
       </figure>
     )}
   </div></section>
@@ -126,7 +125,7 @@ const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0
   .notice__bouton--plein, .notice__bouton--plein:hover { background: var(--g-plein); color: var(--g-plein-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
   .notice__bouton span { font-size: 0.85rem; font-weight: 500; }
 
-  /* ———— Figure (revue) : bandeau sur l'aplat pastel, texte et un dessin au trait légendé ———— */
+  /* ———— Figure (revue) : bandeau sur l'aplat pastel, texte et un dessin au trait sans légende ———— */
   .figure-bande { background: var(--g-aplat); color: var(--g-encre); }
   .figure-accueil { display: grid; gap: 40px; align-items: center; padding-block: clamp(44px, 7vw, 92px) clamp(52px, 7vw, 84px); }
   @media (min-width: 900px) { .figure-accueil { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: 64px; } }
@@ -142,7 +141,6 @@ const figure = variante === 'figure' && site.soins[0] ? ligneDuSoin(site.soins[0
   .figure-accueil__via { font-size: 0.95rem; font-style: italic; color: var(--g-aplat-doux); margin-top: 10px !important; }
   .figure-accueil__figure { display: none; margin: 0; padding-left: 40px; border-left: var(--filet) solid var(--g-figure); color: var(--g-figure); --dessin-ligne: var(--g-figure); --dessin-trait: var(--g-figure); --dessin-accent: var(--g-figure); }
   .figure-accueil__figure :global(svg) { display: block; width: 100%; max-height: 300px; aspect-ratio: 4 / 3; margin-inline: auto; }
-  .figure-accueil__figure figcaption { margin-top: 12px; font-size: 0.95rem; font-style: italic; color: var(--g-encre); }
   @media (min-width: 900px) { .figure-accueil__figure { display: block; } }
   @media (max-width: 559px) { .figure-accueil__actions { display: grid; width: 100%; } .figure-accueil h1 { font-size: 2.5rem; } }
 </style>

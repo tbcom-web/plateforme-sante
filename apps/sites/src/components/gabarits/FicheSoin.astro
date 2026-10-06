@@ -14,8 +14,8 @@ import Dessin from '../dessins/Dessin.astro';
 import { site, md } from '../../lib/site';
 import { photoResponsive } from '../../lib/visuels';
 import { telLien, lienRdv, rdvEnLigne, titreCompetences, viaPlateforme, lieu, aTelephone, adresseLieu, lienContact, libelleContact, suffixeVille } from '../../lib/textes';
-import { pictoDuSoin, visuelVariante, nomLieu, gabarit, legendeLigne } from '../../lib/gabarits';
-import { espacesFines, equipementsDuSoin, LIGNE_DESSIN, type Soin } from '@plateforme/core';
+import { pictoDuSoin, visuelVariante, nomLieu, gabarit } from '../../lib/gabarits';
+import { espacesFines, equipementsDuSoin, type Soin } from '@plateforme/core';
 
 interface Props { soin: Soin }
 const { soin } = Astro.props;
@@ -23,8 +23,8 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Compétences', path: '/
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
 const v = visuelVariante(soin.slug, 'page');
 const revue = gabarit === 'revue';
-// Revue : légende factuelle de la figure (ce qui est dessiné ; pour une photo, le nom du soin)
-const legende = revue ? `Fig. — ${v.type === 'dessin' ? legendeLigne(LIGNE_DESSIN[v.dessin] ?? 'pied-dessous') : soin.titreCourt}.` : undefined;
+// Aucune légende visible sous la figure (règle de Paul) : ce que représente l'image est dit aux agents (lib/vitrine.ts,
+// descriptionSoin, version Markdown). Les annotations intérieures des schémas restent visibles ici, discrètes (dessins-annotes).
 const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = rdvEnLigne ? (plusieurs ? '/le-cabinet#praticiens' : lienRdv(`soin-${soin.slug}`)) : aTelephone ? telLien : lienContact;
@@ -41,8 +41,8 @@ const enPratique = [
   /^non\b/i.test(ordonnance) ? { titre: 'Ordonnance', texte: 'Pas nécessaire' } : /^oui\b/i.test(ordonnance) ? { titre: 'Ordonnance', texte: 'Nécessaire' } : null,
 ].filter(Boolean) as { titre: string; texte: string }[];
 ---
-<article>
-  <TetePage crumbs={crumbs} sur={titreCompetences} chapo={soin.resume} legende={legende}>
+<article class="dessins-annotes">
+  <TetePage crumbs={crumbs} sur={titreCompetences} chapo={soin.resume}>
     <h1 slot="titre">{espacesFines(soin.titre)}</h1>
     <div class="actions">
       <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : libelleContact}{rdvEnLigne && !plusieurs && viaPlateforme && <span class="g-via">{viaPlateforme}</span>}</a>
