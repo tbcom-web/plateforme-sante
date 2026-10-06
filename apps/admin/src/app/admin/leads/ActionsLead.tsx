@@ -1,8 +1,9 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { STATUTS_COMMERCIAUX } from '@plateforme/core';
-import { ajouterNote, majSuivi, marquerRelance, prolonger, suspendre, validerEtMettreEnLigne, type EtatLead } from './actions';
+import { ajouterNote, majSuivi, marquerRelance, marquerRelanceProspect, prolonger, supprimerLeadTest, suspendre, validerEtMettreEnLigne, type EtatLead } from './actions';
 
 const bouton = 'min-h-10 rounded-lg px-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60';
 const Message = ({ etat }: { etat: EtatLead }) => (etat ? <p role="status" className={`text-sm ${etat.ok ? 'text-teal-800' : 'text-red-700'}`}>{etat.message}</p> : null);
@@ -116,5 +117,47 @@ export function MessageACopier({ objet, corps }: { objet: string; corps: string 
         </button>
       </div>
     </details>
+  );
+}
+
+export function BoutonRelanceProspectFaite({ id, code }: { id: string; code: string }) {
+  const [etat, setEtat] = useState<EtatLead>(null);
+  const [enCours, demarrer] = useTransition();
+  return (
+    <span className="inline-flex items-center gap-2">
+      <button type="button" disabled={enCours || Boolean(etat?.ok)} onClick={() => demarrer(async () => setEtat(await marquerRelanceProspect(id, code)))}
+        className={`${bouton} border border-teal-800 text-teal-900 hover:bg-teal-50`}>
+        {etat?.ok ? 'Faite' : 'Marquer comme faite'}
+      </button>
+      {etat && !etat.ok && <span className="text-xs text-red-700">{etat.message}</span>}
+    </span>
+  );
+}
+
+/** « Supprimer ce lead de test » : prospect, essai et site de test (le compte de connexion se supprime dans Supabase). */
+export function BoutonSupprimerTest({ email, retour = false }: { email: string; retour?: boolean }) {
+  const router = useRouter();
+  const [etat, setEtat] = useState<EtatLead>(null);
+  const [enCours, demarrer] = useTransition();
+  const supprimer = () => {
+    if (!confirm(`Supprimer le lead de test ${email} (prospect, essai et site de test) ?
+
+Le compte de connexion éventuel est à supprimer ensuite dans Supabase → Authentication → Users.`)) return;
+    demarrer(async () => {
+      const r = await supprimerLeadTest(email);
+      setEtat(r);
+      if (r?.ok && retour) {
+        alert(r.message);
+        router.push('/admin/leads?filtre=tests');
+      }
+    });
+  };
+  return (
+    <span className="inline-grid gap-1">
+      <button type="button" disabled={enCours || Boolean(etat?.ok)} onClick={supprimer} className={`${bouton} border border-red-300 text-red-800 hover:bg-red-50`}>
+        {enCours ? 'Suppression…' : etat?.ok ? 'Supprimé' : 'Supprimer ce lead de test'}
+      </button>
+      <Message etat={etat} />
+    </span>
   );
 }

@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { libelleStatutCommercial, messageRelance } from '@plateforme/core';
+import { libelleArretParcours, libelleStatutCommercial, messageRelance } from '@plateforme/core';
 import { lireLead, lireNotes } from '@/lib/leads';
 import { dateCourte } from '@/lib/libelles';
 import { dateLongue, jourCourt } from '@/lib/essai';
 import { envoiActive } from '@/lib/courriels';
 import SuiviPublication from '@/components/SuiviPublication';
-import { ActionsEssai, BoutonRelanceFaite, FormNote, FormSuivi, MessageACopier } from '../ActionsLead';
+import { origineEssai } from '@/lib/prospects';
+import { ActionsEssai, BoutonRelanceFaite, BoutonSupprimerTest, FormNote, FormSuivi, MessageACopier } from '../ActionsLead';
 
 export const metadata = { title: 'Super admin · Fiche essai' };
 
@@ -21,11 +22,13 @@ export default async function FicheLead({ params }: PageProps<'/admin/leads/[own
 
   const infos: [string, React.ReactNode][] = [
     ['E-mail', <a key="m" className="text-teal-800 underline" href={`mailto:${l.email}`}>{l.email}</a>],
+    ['Téléphone', l.telephone ? <a key="t" className="text-teal-800 underline" href={`tel:${l.telephone.replace(/\s/g, '')}`}>{l.telephone}</a> : '—'],
     ['Ville', l.ville || '—'],
     ['Cabinet', l.site?.nomCabinet || '—'],
     ['Inscription', dateCourte(l.debut)],
     ['Fin d’essai', `${dateLongue(l.fin)}${l.valideLe || l.paiementStatut === 'paye' ? '' : ` (${l.joursRestants} j)`}`],
-    ['Parcours', `${l.progression} %`],
+    ['Parcours', `${l.progression} %${l.apercuGenereLe ? '' : ` · ${libelleArretParcours(l.etape)}`}`],
+    ['Lien de reprise', `${origineEssai()}/creer (après connexion)`],
     ['Provenance', [l.source, ...Object.entries(l.utm).map(([k, v]) => `${k}=${v}`)].filter(Boolean).join(' · ') || '—'],
     ['CGU', `version ${l.cguVersion}, acceptées le ${dateCourte(l.cguAccepteesLe)}`],
     ['Conseils par e-mail', l.conseils ? 'Accepté' : 'Non'],
@@ -39,7 +42,7 @@ export default async function FicheLead({ params }: PageProps<'/admin/leads/[own
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <Link href="/admin/leads" className="text-sm text-teal-800 underline">← Essais</Link>
-          <h1 className="mt-1 text-2xl font-bold">{nom}</h1>
+          <h1 className="mt-1 text-2xl font-bold">{nom}{l.test && <span className="ml-2 rounded bg-fuchsia-100 px-1.5 py-0.5 align-middle text-xs font-semibold uppercase tracking-wide text-fuchsia-900">Test</span>}</h1>
           {l.suspenduLe && <p className="text-sm font-semibold text-red-800">Version d’essai suspendue le {dateCourte(l.suspenduLe)}</p>}
         </div>
         <div className="flex flex-wrap gap-3 text-sm">
@@ -54,6 +57,12 @@ export default async function FicheLead({ params }: PageProps<'/admin/leads/[own
         <p className="text-sm text-neutral-600">Avant « Valider et mettre en ligne » : vérifier l’inscription au tableau de l’Ordre (annuaire de l’Ordre ou RPPS) et les informations du cabinet avec le praticien. La mise en ligne publie le site en production par le flux habituel.</p>
         <ActionsEssai owner={l.owner} suspendu={Boolean(l.suspenduLe)} valide={Boolean(l.valideLe)} aSite={Boolean(l.site)} />
         {enCours && l.site && <SuiviPublication siteId={l.site.id} />}
+        {l.test && (
+          <div className="grid gap-1 border-t border-neutral-100 pt-3">
+            <p className="text-sm text-neutral-600">Lead de test (e-mail @webpodologue.fr ou « +test ») : exclu des statistiques.</p>
+            <BoutonSupprimerTest email={l.email} retour />
+          </div>
+        )}
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">

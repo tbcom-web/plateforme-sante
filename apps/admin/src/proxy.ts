@@ -4,7 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 // /rattacher : lien de rattachement d'un site, ouvert avant connexion (le code est gardé pendant la connexion).
 // /essai : page d'essai gratuit, inscription et textes juridiques (publiques ; la page d'accueil de l'essai est statique et
 // exclue du proxy, voir config.matcher). /api/stripe/webhook : appelé par Stripe, sans session (signature vérifiée).
-const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher', '/essai', '/api/stripe/webhook'];
+// /api/essai/* : capture du prospect et compteur de visites de la page d'essai (sans session, hors proxy aussi).
+const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher', '/essai', '/api/stripe/webhook', '/api/essai/'];
 
 // Rafraîchit la session Supabase à chaque navigation et protège les pages privées.
 export async function proxy(request: NextRequest) {
@@ -41,6 +42,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // /essai (page statique servie telle quelle, sans appel à Supabase) et ses textes juridiques : hors proxy.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|essai$|essai/cgu|essai/confidentialite|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)'],
+  // /essai (page statique servie telle quelle, sans appel à Supabase), ses textes juridiques, ses images et ses routes
+  // de capture et de mesure (sans session) : hors proxy.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|essai$|essai/cgu|essai/confidentialite|api/essai/|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)'],
 };

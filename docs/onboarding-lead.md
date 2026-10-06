@@ -8,8 +8,8 @@ Décisions de Paul (2026-10-06) : page d’essai dédiée ; démo privée (lien 
 
 | Écran | Adresse | Ce qui se passe |
 | --- | --- | --- |
-| Page d’essai | `/essai` (plus tard `essai.webpodologue.fr`) | Page statique, sans traceur. Promesse, 3 bénéfices, les modèles (vignettes schématiques), 3 étapes, FAQ, liens CGU / confidentialité. Les paramètres `utm_*` sont transmis à l’inscription. |
-| Inscription | `/essai/inscription` | Prénom, nom, e-mail, mot de passe, profession (pédicure-podologue), ville facultative, CGU obligatoires, conseils par e-mail facultatifs (non cochés). `auth.signUp` côté navigateur avec la clé publique. Captcha Turnstile si configuré. |
+| 1. Page d’essai + coordonnées | `/essai` (plus tard `essai.webpodologue.fr`) | Page statique, sans traceur ni cookie. Promesse, formulaire « Créer mon site gratuit » dans le premier écran (prénom, nom, e-mail, téléphone facultatif, ville du cabinet, accord **obligatoire** pour être recontacté + lien confidentialité, conseils par e-mail facultatifs non cochés), captures réelles des 4 modèles, 3 étapes, FAQ (prix après 3 mois, engagement, données, téléphone, domaine), bouton du bas qui remonte au formulaire. **Le prospect est enregistré dès la validation** (route serveur `/api/essai/prospect` → `capturer_prospect`), même s’il ne va pas plus loin. Les `utm_*` sont conservés. |
+| 2. Compte | `/essai/inscription` | Coordonnées de l’étape 1 rappelées (modifiables), **mot de passe et CGU seulement**. Sans étape 1 (lien direct ou lien de reprise `#email=…`), formulaire complet. `auth.signUp` côté navigateur avec la clé publique. Captcha Turnstile de Supabase si configuré. Le prospect passe à « création du compte commencée », puis est rattaché à l’essai (même e-mail, téléphone repris). |
 | Vérifiez vos e-mails | (même page) | Seulement si la confirmation d’e-mail est activée dans Supabase. Le lien ramène sur `/auth/callback?next=/essai/demarrer`. |
 | Démarrage | `/essai/demarrer` ou action serveur | Fonction SQL `demarrer_essai()` : crée l’essai (fin = +3 mois), à partir des informations de l’inscription. Un seul essai par compte. |
 | Parcours guidé | `/creer` | Même parcours en 6 étapes, pré-rempli avec le nom et la ville, bandeau d’accompagnement (« encore N étapes »), progression enregistrée pour la commerciale. |
@@ -27,8 +27,19 @@ Un site d’essai non validé n’est **jamais** publié en production, à trois
 
 La commerciale passe par **/admin/leads → « Valider et mettre en ligne »** : `valider_essai` (valide_par = admin connecté, valide_le) puis publication production par le flux existant.
 
+## Capture précoce (migration `0024_prospects_entonnoir.sql`)
+
+- Table `prospects` (un par e-mail, dédoublonné : une nouvelle visite met à jour coordonnées, étape et date ; provenance d’origine conservée). Étapes : `capture` (coordonnées laissées), `inscription` (création du compte commencée), `compte` (essai démarré, rattachement par le déclencheur `essais_lier_prospect`).
+- Écriture **sans clé service_role** : fonction `capturer_prospect` (security definer) exécutable par `anon`, appelée par la route serveur `/api/essai/prospect` qui vérifie Turnstile (si `NEXT_PUBLIC_TURNSTILE_SITE_KEY` **et** `TURNSTILE_SECRET_KEY` sont définies) et transmet l’IP **hachée** (SHA-256 avec le jour et le sel facultatif `IP_HASH_SEL`). Contrôles SQL : format de l’e-mail et du téléphone, longueurs, accord de recontact, limitation de débit (30 captures par minute au total, 5 par IP et 5 par e-mail sur 10 minutes ; journal `prospects_journal` purgé au bout d’un jour). Champ piège invisible contre les robots simples.
+- Jeton facultatif : pour refuser les appels directs à la fonction par l’API publique (contournement de Turnstile), enregistrer un jeton `prospects` comme pour Stripe (`insert into public.jetons_webhooks (nom, jeton_hash) values ('prospects', encode(sha256(convert_to('LE_JETON', 'UTF8')), 'hex'))`) et mettre la même valeur dans la variable Vercel `PROSPECTS_JETON`. Sans jeton enregistré, la fonction reste ouverte (limitée en débit).
+- Base sans la mise à jour 0024 : le parcours continue (étape 2) sans enregistrer le prospect ; `/admin/leads` fonctionne sans les prospects ni les visites.
+- Mesure : `/essai` envoie un signal au chargement (`/api/essai/mesure` → `compter_visite_essai`, compteur par jour dans `essais_compteurs`) ; ni cookie, ni identifiant, robots ignorés.
+- Leads de test (e-mail `@webpodologue.fr` ou contenant `+test`) : colonne `prospects.test`, badge et filtre « Tests », exclus de l’entonnoir, supprimables par `supprimer_lead_test`. Guide : `docs/tester-parcours-lead.md`.
+
 ## Back-office commercial `/admin/leads`
 
+- En tête : **entonnoir** sur 7 et 30 jours (visites → coordonnées laissées → comptes → parcours terminé → version d’essai générée → mise en ligne demandée → validé et mis en ligne), leads de test exclus.
+- **Prospects sans compte** (filtre dédié, aussi dans « À faire », « Tests », « Tous ») : date, nom, e-mail, téléphone, ville, provenance/UTM, étape atteinte, relance « Prospect sans compte depuis 1 j / 3 j » avec message à copier et lien de reprise `/essai/inscription#email=…` (l’e-mail est dans le fragment : il n’est jamais envoyé au serveur ni écrit dans les journaux).
 - Liste : date, praticien, ville, progression du parcours (%), lien de la version d’essai, jours restants, statut commercial (nouveau, contacté, rendez-vous, gagné, perdu), prochaine relance. Filtres : en cours, à faire aujourd’hui, mise en ligne demandée, fin dans 15 jours, tous ; recherche ; statut.
 - « À faire aujourd’hui » : relances dues et demandes de mise en ligne.
 - Fiche : informations (provenance, CGU, accord conseils, paiement), suivi (statut, prochaine relance manuelle), notes, relances avec message proposé à copier, actions « Valider et mettre en ligne », « Prolonger l’essai » (15/30/60 jours), « Suspendre » / « Lever la suspension ».
@@ -38,7 +49,8 @@ La commerciale passe par **/admin/leads → « Valider et mettre en ligne »** :
 
 Moteur pur `relancesEssai` / `relancesAFaire` (packages/core/src/essai.ts, testé) :
 
-- J+1 si le parcours n’est pas terminé ;
+- prospect sans compte : J+1 et J+3 après les coordonnées (`relancesProspect`, packages/core/src/prospects.ts) ;
+- J+1 si le parcours n’est pas terminé (« Compte créé, parcours arrêté à l’étape N sur 6 ») ;
 - J+7 ; J+60 ;
 - 15 jours et 1 jour avant la fin d’essai ;
 - fin d’essai : suspendre l’aperçu, sauf paiement ou validation ;
@@ -58,7 +70,7 @@ Rien n’est proposé pour un essai gagné, perdu, validé, payé ou suspendu. *
 
 ### 1. Supabase
 
-1. Exécuter `0023_essais_leads.sql` dans l’éditeur SQL (rejouable).
+1. Exécuter `0023_essais_leads.sql` puis `0024_prospects_entonnoir.sql` dans l’éditeur SQL (rejouables).
 2. Authentication → Sign In / Providers → Email : **Allow new users to sign up** activé ; **Confirm email** activé (recommandé).
 3. Authentication → URL Configuration : Site URL `https://admin.webpodologue.fr` ; Redirect URLs : `https://admin.webpodologue.fr/auth/callback`, et plus tard `https://essai.webpodologue.fr/auth/callback`.
 4. (Recommandé) Modèle d’e-mail « Confirm signup » : lien `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup&next=/essai/demarrer` : la confirmation fonctionne alors aussi depuis un autre appareil que celui de l’inscription (sinon le lien par défaut ne marche que dans le même navigateur).
@@ -69,7 +81,7 @@ Rien n’est proposé pour un essai gagné, perdu, validé, payé ou suspendu. *
 
 1. Cloudflare → Turnstile → Add widget : domaines `admin.webpodologue.fr` (et `essai.webpodologue.fr`), mode « Managed ».
 2. Supabase → Authentication → Attack Protection → **Enable Captcha protection** → Turnstile, coller la **clé secrète** Turnstile.
-3. Vercel → variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = clé de site (publique). Sans elle, le formulaire fonctionne sans captcha. **Attention** : la captcha de Supabase Auth s’applique aussi à la connexion (mot de passe et lien), or la page `/connexion` n’a pas encore le widget. **Ne pas activer la captcha dans Supabase** avant d’avoir ajouté Turnstile à `/connexion` (petite évolution à demander) ; sinon plus personne ne peut se connecter. Le code de l’inscription est prêt.
+3. Vercel → variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = clé de site (publique) et `TURNSTILE_SECRET_KEY` = clé secrète Turnstile (serveur ; ce n’est pas une clé Supabase) pour vérifier l’étape 1 côté serveur. Redéployer (la page /essai est statique). Sans elle, le formulaire fonctionne sans captcha. **Attention** : la captcha de Supabase Auth s’applique aussi à la connexion (mot de passe et lien), or la page `/connexion` n’a pas encore le widget. **Ne pas activer la captcha dans Supabase** avant d’avoir ajouté Turnstile à `/connexion` (petite évolution à demander) ; sinon plus personne ne peut se connecter. Le code de l’inscription est prêt.
 
 ### 3. Domaine essai.webpodologue.fr (plus tard)
 

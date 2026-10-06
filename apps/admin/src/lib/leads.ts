@@ -1,5 +1,5 @@
 import 'server-only';
-import { jourParis, joursRestants, progressionParcours, prochaineRelance, relancesAFaire, relancesEssai, type EssaiPourRelances, type Relance } from '@plateforme/core';
+import { estLeadTest, jourParis, joursRestants, progressionParcours, prochaineRelance, relancesAFaire, relancesEssai, type EssaiPourRelances, type Relance } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { lienApercu } from '@/lib/essai';
 
@@ -8,6 +8,10 @@ import { lienApercu } from '@/lib/essai';
 export type Lead = {
   owner: string;
   email: string;
+  /** Téléphone laissé à l'étape 1 (migration 0024 ; vide sinon) */
+  telephone: string;
+  /** Lead de test (@webpodologue.fr ou « +test ») : exclu des statistiques, supprimable */
+  test: boolean;
   prenom: string;
   nom: string;
   ville: string;
@@ -37,15 +41,17 @@ export type Lead = {
   prochaine: Relance | null;
 };
 
-const COLONNES = `owner, prenom, nom, ville, source, utm, cgu_version, cgu_acceptees_le, conseils_opt_in, essai_debut, essai_fin, parcours_etape,
+const COLONNES_0023 = `owner, prenom, nom, ville, source, utm, cgu_version, cgu_acceptees_le, conseils_opt_in, essai_debut, essai_fin, parcours_etape,
   apercu_genere_le, mise_en_ligne_demandee_le, valide_le, suspendu_le, paiement_statut, statut_commercial, prochaine_relance, relances_faites,
   profil:profiles!essais_owner_fkey(email), site:sites!essais_site_id_fkey(id, slug, statut, publication_etat, config)`;
+// Avec la mise à jour 0024 : téléphone repris du prospect.
+const COLONNES = `${COLONNES_0023}, telephone`;
 
 type Ligne = {
   owner: string; prenom: string; nom: string; ville: string; source: string; utm: Record<string, string> | null; cgu_version: string; cgu_acceptees_le: string;
   conseils_opt_in: boolean; essai_debut: string; essai_fin: string; parcours_etape: number; apercu_genere_le: string | null; mise_en_ligne_demandee_le: string | null;
   valide_le: string | null; suspendu_le: string | null; paiement_statut: string | null; statut_commercial: string; prochaine_relance: string | null;
-  relances_faites: Record<string, string> | null; profil: { email: string } | null;
+  relances_faites: Record<string, string> | null; profil: { email: string } | null; telephone?: string | null;
   site: { id: string; slug: string | null; statut: string; publication_etat: string | null; config: { cabinet?: { nom?: string } } | null } | null;
 };
 
@@ -56,7 +62,7 @@ export const pourRelances = (l: Pick<Lead, 'debut' | 'fin' | 'etape' | 'apercuGe
 
 function versLead(l: Ligne, aujourdhui: string): Lead {
   const base = {
-    owner: l.owner, email: l.profil?.email ?? '', prenom: l.prenom, nom: l.nom, ville: l.ville, source: l.source, utm: l.utm ?? {}, cguVersion: l.cgu_version,
+    owner: l.owner, email: l.profil?.email ?? '', telephone: l.telephone ?? '', test: estLeadTest(l.profil?.email), prenom: l.prenom, nom: l.nom, ville: l.ville, source: l.source, utm: l.utm ?? {}, cguVersion: l.cgu_version,
     cguAccepteesLe: l.cgu_acceptees_le, conseils: l.conseils_opt_in, debut: l.essai_debut, fin: l.essai_fin, etape: l.parcours_etape,
     apercuGenereLe: l.apercu_genere_le, miseEnLigneDemandeeLe: l.mise_en_ligne_demandee_le, valideLe: l.valide_le, suspenduLe: l.suspendu_le,
     paiementStatut: l.paiement_statut, statutCommercial: l.statut_commercial, prochaineRelanceManuelle: l.prochaine_relance, relancesFaites: l.relances_faites ?? {},
@@ -77,7 +83,10 @@ function versLead(l: Ligne, aujourdhui: string): Lead {
 /** Tous les essais (du plus récent au plus ancien), ou null si la base n'a pas la mise à jour 0023. */
 export async function lireLeads(): Promise<Lead[] | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('essais').select(COLONNES).order('essai_debut', { ascending: false }).limit(1000);
+  const requete = (colonnes: string) => supabase.from('essais').select(colonnes).order('essai_debut', { ascending: false }).limit(1000);
+  let { data, error } = await requete(COLONNES);
+  // Base sans la mise à jour 0024 (colonne telephone absente) : lecture sans le téléphone.
+  if (error?.code === '42703') ({ data, error } = await requete(COLONNES_0023));
   if (error) {
     console.error('essais', error);
     return null;
@@ -89,7 +98,8 @@ export async function lireLeads(): Promise<Lead[] | null> {
 export async function lireLead(owner: string): Promise<Lead | null> {
   if (!/^[0-9a-f-]{36}$/.test(owner)) return null;
   const supabase = await createClient();
-  const { data } = await supabase.from('essais').select(COLONNES).eq('owner', owner).maybeSingle();
+  let { data, error } = await supabase.from('essais').select(COLONNES).eq('owner', owner).maybeSingle();
+  if (error?.code === '42703') ({ data, error } = await supabase.from('essais').select(COLONNES_0023).eq('owner', owner).maybeSingle());
   return data ? versLead(data as unknown as Ligne, jourParis(Date.now())) : null;
 }
 

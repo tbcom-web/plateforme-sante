@@ -34,3 +34,4 @@ export * from './illustrations';
 export * from './suivi-publication';
 export * from './heros-themes';
 export * from './essai';
+export * from './prospects';

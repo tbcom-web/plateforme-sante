@@ -27,3 +27,22 @@ export function PiedEssai() {
     </footer>
   );
 }
+
+const ETAPES_FUNNEL = ['Vos coordonnées', 'Votre compte', 'Votre site', 'Mise en ligne'] as const;
+
+/** Repère des 4 étapes de l'essai (coordonnées, compte, parcours guidé, mise en ligne avec la conseillère). */
+export function EtapesEssai({ active }: { active: 1 | 2 | 3 | 4 }) {
+  return (
+    <ol className="grid grid-cols-4 gap-1.5 text-[11px] leading-tight text-neutral-600 sm:text-xs" aria-label={`Étape ${active} sur 4`}>
+      {ETAPES_FUNNEL.map((e, i) => {
+        const n = i + 1;
+        return (
+          <li key={e} aria-current={n === active ? 'step' : undefined} className="grid gap-1">
+            <span className={`h-1.5 rounded-full ${n <= active ? 'bg-teal-700' : 'bg-neutral-200'}`} aria-hidden="true" />
+            <span className={n === active ? 'font-semibold text-teal-900' : ''}>{n}. {e}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}

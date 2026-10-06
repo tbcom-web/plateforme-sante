@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { prolongerEssai, STATUTS_COMMERCIAUX, jourParis } from '@plateforme/core';
+import { estLeadTest, prolongerEssai, STATUTS_COMMERCIAUX, jourParis } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { declencherApercu, declencherPublication } from '@/lib/publication';
 import { createClient } from '@/lib/supabase/server';
@@ -113,4 +113,42 @@ export async function validerEtMettreEnLigne(owner: string): Promise<EtatLead> {
   rafraichir(owner);
   revalidatePath('/admin');
   return r.ok ? { ok: true, message: 'Essai validé, mise en ligne lancée.' } : { ok: false, message: `Essai validé, mais la publication n’a pas démarré : ${r.message}` };
+}
+
+const CODES_PROSPECT = ['p1', 'p3'];
+
+/** Relance d'un prospect sans compte faite (par téléphone ou depuis la messagerie de la commerciale). */
+export async function marquerRelanceProspect(id: string, code: string): Promise<EtatLead> {
+  await exigerAdmin();
+  if (!UUID.test(id) || !CODES_PROSPECT.includes(code)) return { ok: false, message: 'Relance inconnue.' };
+  const supabase = await createClient();
+  const { data } = await supabase.from('prospects').select('relances_faites').eq('id', id).maybeSingle();
+  if (!data) return { ok: false, message: 'Prospect introuvable.' };
+  const faites = { ...((data.relances_faites as Record<string, string> | null) ?? {}), [code]: jourParis(Date.now()) };
+  const { error } = await supabase.from('prospects').update({ relances_faites: faites }).eq('id', id);
+  revalidatePath('/admin/leads');
+  return error ? { ok: false, message: 'Enregistrement impossible.' } : { ok: true, message: 'Relance notée comme faite.' };
+}
+
+/**
+ * Supprime un lead de TEST (e-mail @webpodologue.fr ou « +test ») : prospect, essai, notes et site de l'essai, par la
+ * fonction SQL supprimer_lead_test (refus pour un vrai lead ou un compte admin). Le compte de connexion reste : à
+ * supprimer dans Supabase → Authentication → Users (aucune clé service_role ici).
+ */
+export async function supprimerLeadTest(email: string): Promise<EtatLead> {
+  await exigerAdmin();
+  if (!estLeadTest(email)) return { ok: false, message: 'Seuls les leads de test peuvent être supprimés ici.' };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('supprimer_lead_test', { p_email: email });
+  if (error) {
+    console.error('supprimer_lead_test', error.code, error.message);
+    if (error.code === 'PGRST202') return { ok: false, message: 'La base n’a pas encore la mise à jour 0024.' };
+    if (error.code === '23503') return { ok: false, message: 'Suppression impossible : le site est lié à d’autres données (licences de photos).' };
+    return { ok: false, message: error.message.slice(0, 200) || 'Suppression impossible.' };
+  }
+  revalidatePath('/admin/leads');
+  revalidatePath('/admin');
+  const r = (data ?? {}) as { prospects?: number; essais?: number; sites?: number; compte?: boolean };
+  const compte = r.compte ? ' Le compte de connexion existe encore : supprimez-le dans Supabase → Authentication → Users.' : '';
+  return { ok: true, message: `Lead de test supprimé (prospect : ${r.prospects ?? 0}, essai : ${r.essais ?? 0}, site : ${r.sites ?? 0}).${compte}` };
 }

@@ -86,6 +86,15 @@ export function progressionParcours(p: { etape: number | null | undefined; aperc
 /** Parcours terminé : version d'essai générée au moins une fois. */
 export const parcoursTermine = (p: { etape: number | null | undefined; apercuGenere: boolean }) => progressionParcours(p) >= 100;
 
+/** Libellé de l'arrêt dans le parcours guidé d'un compte en essai (relance du lendemain). */
+export function libelleArretParcours(etape: number | null | undefined, apercuGenere = false): string {
+  const n = Math.max(0, Math.floor(Number(etape) || 0));
+  if (apercuGenere) return 'Version d’essai générée';
+  if (n <= 0) return 'Compte créé, parcours non commencé';
+  if (n >= 7) return 'Compte créé, parcours terminé, version d’essai non générée';
+  return `Compte créé, parcours arrêté à l’étape ${n} sur 6`;
+}
+
 export type GardeProduction = { autorisee: true } | { autorisee: false; raison: string };
 
 /**
@@ -174,7 +183,7 @@ export function relancesEssai(e: EssaiPourRelances, aujourdhui: string): Relance
     .filter((r) => r.code === 'manuelle' || r.date >= debut)
     .map((r) => {
       const faite = r.code === 'manuelle' ? false : Boolean(faites[r.code]);
-      return { code: r.code, date: r.date, libelle: LIBELLES_RELANCES[r.code], action: r.action ?? 'relancer', faite, aFaire: !faite && r.date <= aujourdhui };
+      return { code: r.code, date: r.date, libelle: r.code === 'j1_parcours' ? libelleArretParcours(e.etape, e.apercuGenere) : LIBELLES_RELANCES[r.code], action: r.action ?? 'relancer', faite, aFaire: !faite && r.date <= aujourdhui };
     })
     .sort((a, b) => a.date.localeCompare(b.date));
 }
