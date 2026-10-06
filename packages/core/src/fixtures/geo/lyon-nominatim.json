@@ -1,0 +1,38 @@
+[
+ {
+  "place_id": 89942119,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "way",
+  "osm_id": 4306140,
+  "lat": "45.7688071",
+  "lon": "4.8451354",
+  "category": "highway",
+  "type": "secondary",
+  "place_rank": 26,
+  "importance": 0.05341247196154723,
+  "addresstype": "road",
+  "name": "Cours Franklin Roosevelt",
+  "display_name": "Cours Franklin Roosevelt, Les Brotteaux, Lyon 6e Arrondissement, Lyon, Métropole de Lyon, Rhône, Auvergne-Rhône-Alpes, France métropolitaine, 69006, France",
+  "address": {
+   "road": "Cours Franklin Roosevelt",
+   "suburb": "Les Brotteaux",
+   "city": "Lyon",
+   "municipality": "Lyon",
+   "county": "Métropole de Lyon",
+   "ISO3166-2-lvl6": "FR-69M",
+   "state_district": "Rhône",
+   "state": "Auvergne-Rhône-Alpes",
+   "ISO3166-2-lvl4": "FR-ARA",
+   "region": "France métropolitaine",
+   "postcode": "69006",
+   "country": "France",
+   "country_code": "fr"
+  },
+  "boundingbox": [
+   "45.7686173",
+   "45.7690266",
+   "4.8429806",
+   "4.8472874"
+  ]
+ }
+]

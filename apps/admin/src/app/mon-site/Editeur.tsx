@@ -53,6 +53,7 @@ import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import { enregistrerEtPublier, enregistrerSite, type EtatEnregistrement } from './actions';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
 import SuiviPublication from '@/components/SuiviPublication';
+import SuggestionsVoisinage from '@/components/SuggestionsVoisinage';
 
 const ETAPES = ['Profil', 'Praticiens', 'Cabinet', 'Horaires', 'Rendez-vous et infos', 'Compétences', 'Photos et style'] as const;
 
@@ -286,6 +287,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
                   <Champ label="Ville" value={lieu.ville} onChange={(v) => majLieu(0, { ville: v })} />
                 </Grille>
               </fieldset>
+              <SuggestionsVoisinage d={d} maj={maj} />
               <fieldset className="grid gap-4 rounded-xl border border-neutral-200 p-4">
                 <legend className="px-1 font-semibold">Accès</legend>
                 <label className="flex items-center gap-3 text-sm">

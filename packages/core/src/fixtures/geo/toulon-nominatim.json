@@ -1,0 +1,37 @@
+[
+ {
+  "place_id": 83109012,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "way",
+  "osm_id": 26922908,
+  "lat": "43.1230458",
+  "lon": "5.9344442",
+  "category": "highway",
+  "type": "living_street",
+  "place_rank": 26,
+  "importance": 0.05340378652628363,
+  "addresstype": "road",
+  "name": "Rue Paul Lendrin",
+  "display_name": "Rue Paul Lendrin, Basse Ville, Toulon, Var, Provence-Alpes-Côte d'Azur, France métropolitaine, 83081, France",
+  "address": {
+   "road": "Rue Paul Lendrin",
+   "suburb": "Basse Ville",
+   "city": "Toulon",
+   "municipality": "Toulon",
+   "county": "Var",
+   "ISO3166-2-lvl6": "FR-83",
+   "state": "Provence-Alpes-Côte d'Azur",
+   "ISO3166-2-lvl4": "FR-PAC",
+   "region": "France métropolitaine",
+   "postcode": "83081",
+   "country": "France",
+   "country_code": "fr"
+  },
+  "boundingbox": [
+   "43.1227095",
+   "43.1233977",
+   "5.9339090",
+   "5.9349890"
+  ]
+ }
+]

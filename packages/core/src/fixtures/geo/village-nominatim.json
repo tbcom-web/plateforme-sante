@@ -1,0 +1,37 @@
+[
+ {
+  "place_id": 89576313,
+  "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+  "osm_type": "way",
+  "osm_id": 264430545,
+  "lat": "45.0328885",
+  "lon": "4.0627210",
+  "category": "highway",
+  "type": "primary",
+  "place_rank": 26,
+  "importance": 0.053393250171663964,
+  "addresstype": "road",
+  "name": "Place du Marché",
+  "display_name": "Place du Marché, Vio du Breuil, Saint-Julien-Chapteuil, Le Puy-en-Velay, Haute-Loire, Auvergne-Rhône-Alpes, France métropolitaine, 43260, France",
+  "address": {
+   "road": "Place du Marché",
+   "hamlet": "Vio du Breuil",
+   "village": "Saint-Julien-Chapteuil",
+   "municipality": "Le Puy-en-Velay",
+   "county": "Haute-Loire",
+   "ISO3166-2-lvl6": "FR-43",
+   "state": "Auvergne-Rhône-Alpes",
+   "ISO3166-2-lvl4": "FR-ARA",
+   "region": "France métropolitaine",
+   "postcode": "43260",
+   "country": "France",
+   "country_code": "fr"
+  },
+  "boundingbox": [
+   "45.0328407",
+   "45.0329270",
+   "4.0625419",
+   "4.0628979"
+  ]
+ }
+]

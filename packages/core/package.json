@@ -15,7 +15,9 @@
     "./pas": "./src/pas.ts",
     "./fichiers-svg": "./src/fichiers-svg.ts",
     "./pictos": "./src/pictos.ts",
-    "./portrait": "./src/portrait.ts"
+    "./portrait": "./src/portrait.ts",
+    "./geo-voisinage": "./src/geo-voisinage.ts",
+    "./geo-acces": "./src/geo-acces.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

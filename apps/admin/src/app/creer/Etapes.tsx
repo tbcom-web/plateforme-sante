@@ -44,6 +44,7 @@ import Photo from '@/components/Photo';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
 import SuiviPublication from '@/components/SuiviPublication';
 import PortraitPraticien from '@/components/PortraitPraticien';
+import SuggestionsVoisinage from '@/components/SuggestionsVoisinage';
 import EditeurHoraires from '@/components/EditeurHoraires';
 import type { SoinCatalogue } from '@/lib/sites';
 
@@ -212,6 +213,7 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
             avertissements={filtre(/^Ville/, undefined, true)}
           />
         </div>
+        <SuggestionsVoisinage d={d} maj={maj} avecChamps />
         <Champ montrer={montrer} label="Téléphone du cabinet" type="tel" autoComplete="tel" value={d.cabinet.telephone} onChange={(v) => maj({ cabinet: { ...d.cabinet, telephone: v } })} avertissements={filtre(/^Téléphone/)} />
       </fieldset>
 
