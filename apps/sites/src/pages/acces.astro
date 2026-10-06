@@ -16,6 +16,9 @@ import { nouveauGabarit, variantes } from '../lib/gabarits';
 import { itineraire, telLien } from '../lib/textes';
 
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path: '/acces' }];
+// Chapô : l'adresse. Sans adresse, le repli (« Adresse communiquée à la prise de rendez-vous ») est déjà dans le bloc
+// « Adresse » des informations : il n'est pas répété en tête de page (seul le nom du lieu y reste, s'il est connu).
+const chapo = aAdresse ? `${lieu.nom ? `${lieu.nom}, ` : ''}${adresseLieu}.` : lieu.nom ? `${lieu.nom}.` : '';
 ---
 <Gabarit
   title={`Plan d’accès – ${titreCabinet}`}
@@ -24,7 +27,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path:
   schemas={[breadcrumbSchema(crumbs)]}
 >
   {nouveauGabarit ? (<>
-    <TetePage crumbs={crumbs} sur="Plan d’accès" chapo={`${lieu.nom ? `${lieu.nom}, ` : ''}${adresseLieu}.`}>
+    <TetePage crumbs={crumbs} sur="Plan d’accès" chapo={chapo}>
       <h1 slot="titre">Venir au cabinet {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
       <div class="g-bulles">
         {itineraire && <a class="g-bouton g-bouton--plein" href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
@@ -45,7 +48,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Plan d’accès', path:
         <p class="sur sur--index">{site.cabinet.codePostal && <b aria-hidden="true">{site.cabinet.codePostal} —</b>} Plan d’accès</p>
         <h1>Venir au cabinet {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
       </div>
-      <p class="chapo">{lieu.nom ? `${lieu.nom}, ` : ''}{adresseLieu}.</p>
+      {chapo && <p class="chapo">{chapo}</p>}
     </div>
   </section>
   <section class="section section--serree">

@@ -293,6 +293,24 @@ peine teinté de la couleur), `carte` = `page` (aucune carte). Source : gamme vi
 ou encre, le plus lisible. `npm run controle:charte` vérifie chaque gabarit sur les 17 gammes et 5 couleurs libres
 extrêmes (jaune pâle, rouge saturé, bleu nuit, gris moyen, vert fluo). Aucune couleur littérale dans les composants.
 
+### Teinte « gamme » des surfaces sombres (modèle Technique, 2026-10-06)
+
+Retour de Paul : « du bleu et du vert mélangés » (signal menthe fixe et palette de pression bleu → rouge sur un site cobalt).
+Jeton `jetons.teinte: 'gamme'` : `teinteSombre({ couleur, gamme })` (`gammes.ts`) dérive **tout** le sombre de la gamme (ou de
+la couleur libre) — `--plan`, `--plan-profond`, `--nuit`, `--nuit-haut` (premier écran, animations), `--pied-fond` (pied de
+page), `--signal` (gamme sobre : teinte de l'accent éclaircie ; vitaminée : son signal), quadrillage et filets sombres à la
+teinte du signal, et une **échelle de pression monochrome** de la teinte du signal : `--pression-n` (fonds clairs, du pâle au
+soutenu) et `--pression-sombre-n` (fonds sombres, du discret au lumineux), reprise en `--pression-n` sur `.surface-plan`,
+`.pied`, `.hero` et les fonds `--sombre`. Les dessins du core gardent leurs couleurs en attributs (fichiers et empreintes de
+revue inchangés) : `CSS_TEINTE_GAMME` leur substitue, par une règle CSS prioritaire sur l'attribut, le niveau équivalent de
+l'échelle ; les canvas (podoscope, coureur) lisent `--pression-1…5` sur la page. Garanties (`verifierTeinteSombre`, dans
+`controle:charte`, 17 gammes + 5 couleurs extrêmes) : papier ≥ 9:1 et signal ≥ 4,5:1 sur plan, nuit et pied ; niveaux 2 à 5
+≥ 3:1 sur le plan, niveaux 3 à 5 ≥ 3:1 sur blanc.
+
+Pied de page (tous les modèles classiques) : un mot (« Rendez-vous »), la façon de le prendre, le bouton ; pas de second
+logo (l'en-tête le porte déjà) et jamais deux fois le même texte (sans lien en ligne ni téléphone, le repli « Prise de
+rendez-vous au cabinet » n'est que sur le bouton).
+
 ### Plan d'accès : jamais inventé
 
 `apps/sites/src/lib/plan-acces.ts` lit les vraies rues autour des coordonnées du cabinet dans OpenStreetMap au build

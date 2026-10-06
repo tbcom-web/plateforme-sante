@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele, verifierTeinteSombre } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -73,6 +73,13 @@ const couleursGabarits = nouveaux.flatMap((m) => [
   ...core.GAMMES.flatMap((g) => core.verifierCouleursGabarit(m, { couleur: g.accent, gamme: g.id })),
 ]);
 modeles.push(...couleursGabarits);
+// Modèles à teinte « gamme » (Technique) : surfaces sombres, signal et pression dérivés de la couleur du cabinet, AA pour chaque
+// gamme et pour les 5 couleurs libres extrêmes (packages/core/src/gammes.ts, teinteSombre).
+const teintes = core.MODELES_INTEGRES.filter((m) => m.jetons.teinte === 'gamme').flatMap((m) => [
+  ...core.COULEURS_EXTREMES.flatMap((couleur) => core.verifierTeinteSombre({ couleur })),
+  ...core.GAMMES.flatMap((g) => core.verifierTeinteSombre({ couleur: g.accent, gamme: g.id })),
+].map((e) => `${m.id} : ${e}`));
+modeles.push(...teintes);
 // Chaque marque de logo déclarée par un univers doit avoir son dessin (logos.ts)
 const marques = core.UNIVERS_LISTE.flatMap((u) => u.marques.filter((q) => !core.MARQUES_DESSINEES.includes(q.id)).map((q) => `${u.id} : marque de logo « ${q.id} » sans dessin`));
 // Dessins et images fixes des animations : chacun se dessine dans les deux registres (relevé, pédagogique),
@@ -320,5 +327,5 @@ for (const d of [...gammes, ...modeles, ...univers, ...inconnues, ...marques, ..
 const total = defauts.length + gammes.length + modeles.length + univers.length + inconnues.length + marques.length + dessins.length + bibliotheque.length + anatomie.length + webkit.length + contenus.length;
 console.log(total
   ? `\n${total} écart(s) à la charte.`
-  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides (gabarits ${nouveaux.map((m) => m.id).join(', ')} lisibles AA sur ${core.GAMMES.length} gammes et ${core.COULEURS_EXTREMES.length} couleurs libres extrêmes), ${core.CATALOGUE_UNIVERS.length} univers de catalogue valides (identité préservée), ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; ${core.DESSINS_LIGNE.length} dessins au trait continu (1 à 3 chemins, sans aplat) ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit) ; moteur de contenus : gabarits sans couleur littérale, ${nbSujets} sujets et leurs publications (4 formats × 4 identités) conformes aux garde-fous.`);
+  : `✓ Charte respectée : aucune couleur littérale, ${core.GAMMES.length} gammes conformes AA, ${core.MODELES_INTEGRES.length} modèles valides (gabarits ${nouveaux.map((m) => m.id).join(', ')} lisibles AA sur ${core.GAMMES.length} gammes et ${core.COULEURS_EXTREMES.length} couleurs libres extrêmes ; teinte « gamme » de ${core.MODELES_INTEGRES.filter((m) => m.jetons.teinte === 'gamme').map((m) => m.id).join(', ')} AA sur les mêmes couleurs), ${core.CATALOGUE_UNIVERS.length} univers de catalogue valides (identité préservée), ${core.UNIVERS_LISTE.reduce((t, u) => t + u.marques.length, 0)} marques de logo dessinées, ${core.DESSINS_PODOLOGIE.length} dessins, ${core.EQUIPEMENTS_DESSINES.length} dessins de matériel, ${core.ANIMATIONS.length} images fixes et ${core.FORMES_BIBLIOTHEQUE.length} formes de la bibliothèque dans ${core.REGISTRES.length} registres ; ${core.DESSINS_LIGNE.length} dessins au trait continu (1 à 3 chemins, sans aplat) ; règles anatomiques vérifiées (proportions du pied et de l’empreinte, semelle, profil, monofilament, coureur, podoscope) ; fichiers de dessins sans <style> (WebKit) ; moteur de contenus : gabarits sans couleur littérale, ${nbSujets} sujets et leurs publications (4 formats × 4 identités) conformes aux garde-fous.`);
 process.exit(total ? 1 : 0);

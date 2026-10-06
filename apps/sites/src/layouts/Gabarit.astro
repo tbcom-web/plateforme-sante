@@ -46,7 +46,7 @@ import Empreintes from '../components/dessins/Empreintes.astro';
 import Dessin from '../components/dessins/Dessin.astro';
 import { CONTOUR } from '../components/animations/pied';
 import { site, absUrl } from '../lib/site';
-import { feuilleCharte, variablesTheme, variablesGabarit, gabaritModele, POLICES, POLICE_MONO, NEUTRES, TRAIT, LOGO } from '@plateforme/core';
+import { feuilleCharte, variablesTheme, variablesGabarit, gabaritModele, POLICES, POLICE_MONO, NEUTRES, TRAIT, CSS_TEINTE_GAMME } from '@plateforme/core';
 import { businessSchema, personSchemas, websiteSchema, pageSchema, breadcrumbSchema } from '../lib/schema';
 import { aUneVersionMarkdown, cheminMarkdown } from '../lib/agents';
 import { navigation, entreeActive } from '../lib/navigation';
@@ -192,9 +192,14 @@ const actifPied = entreeActive(liensPied, courant);
 const rdvGeneral = site.praticiens.length > 1 && rdvEnLigne ? '/le-cabinet#praticiens' : null;
 // Mention « via Doctolib » seulement sur les boutons qui quittent le site (pas vers la liste des praticiens).
 const via = rdvGeneral ? '' : viaPlateforme;
+// Appel du pied de page : un mot (« Rendez-vous »), la façon de le prendre, puis le bouton. Le logo et le nom du cabinet ne sont
+// pas répétés (l'en-tête les porte déjà), et un même texte n'apparaît jamais deux fois : sans lien en ligne ni téléphone, le
+// repli « Prise de rendez-vous au cabinet » n'est que sur le bouton (retour de Paul, 2026-10-06).
+const precisionRdvBrute = rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : aTelephone ? `Au ${site.cabinet.telephone}` : phraseRdv;
+const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
 ---
 <!doctype html>
-<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-gabarit={nouveau ? gabarit : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-gabarit={nouveau ? gabarit : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -220,7 +225,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${policesRepli}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : ''}${policesRepli}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>
@@ -285,10 +290,9 @@ const via = rdvGeneral ? '' : viaPlateforme;
         </div>
         <div class="pied__haut">
           <div class="pied__gauche">
-            <Logo clair={m.pied !== 'clair'} taille={LOGO.tailles.pied} />
             <p class="pied__appel">
-              {libelleRdv}
-              <span>{rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : aTelephone ? `Au ${site.cabinet.telephone}` : phraseRdv}</span>
+              Rendez-vous
+              {precisionRdv && <span>{precisionRdv}</span>}
             </p>
             <a class="bouton bouton--clair" href={rdvGeneral ?? lienRdv('pied')}>{libelleRdv}{via && <span class="via">{via}</span>}</a>
           </div>
@@ -451,6 +455,8 @@ const via = rdvGeneral ? '' : viaPlateforme;
   .cadre { width: min(1180px, 100% - 40px); margin-inline: auto; }
   .section { padding-block: var(--espace-section); }
   .section--douce { background: var(--doux); }
+  /* Dernière section avant un pied de page sombre : la rupture de fond sépare déjà, pas de grand blanc vide avant lui */
+  html:not([data-pied='clair']) #contenu > .section:last-child { padding-bottom: var(--espace-bloc); }
   .sur { display: inline-flex; align-items: center; gap: 10px; font-size: var(--taille-donnees); font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-vif); margin: 0 0 18px; }
   .sur::before { content: ''; width: 20px; height: var(--filet-fort); background: currentColor; }
   /* Sur-titres numérotés de l'accueil, façon affiche : « 01 — Compétences » */
@@ -578,7 +584,7 @@ const via = rdvGeneral ? '' : viaPlateforme;
   .prose li::marker { color: var(--accent-vif); }
 
   /* Pied de page : affiche éditoriale sur fond quadrillé (plan d'architecte), filets, lectures en mono. */
-  .pied { --pied-ligne: var(--sur-sombre-filet); --pied-quadrillage: var(--quadrillage-sombre-fin); --pied-repere: var(--signal); background-color: var(--encre); background-image: linear-gradient(var(--pied-quadrillage) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--pied-quadrillage) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas) var(--quadrillage-pas); color: var(--sur-sombre-doux); padding-block: clamp(40px, 5vw, 64px) 28px; font-size: 0.92rem; overflow: hidden; }
+  .pied { --pied-ligne: var(--sur-sombre-filet); --pied-quadrillage: var(--quadrillage-sombre-fin); --pied-repere: var(--signal); background-color: var(--pied-fond, var(--encre)); background-image: linear-gradient(var(--pied-quadrillage) var(--filet), transparent var(--filet)), linear-gradient(90deg, var(--pied-quadrillage) var(--filet), transparent var(--filet)); background-size: var(--quadrillage-pas) var(--quadrillage-pas); color: var(--sur-sombre-doux); padding-block: clamp(40px, 5vw, 64px) 28px; font-size: 0.92rem; overflow: hidden; }
   [data-pied='accent'] .pied { --encre: var(--accent-fonce); }
   [data-pied='clair'] .pied { --pied-ligne: var(--ligne); --pied-quadrillage: var(--quadrillage-clair-fin); --pied-repere: var(--accent-vif); background-color: var(--fond); color: var(--encre-douce); border-top: var(--filet) solid var(--ligne); }
   [data-pied='clair'] .pied :is(a, a:hover, .pied__titre, .pied__appel, .pied__bandeau) { color: var(--encre); }
@@ -593,7 +599,6 @@ const via = rdvGeneral ? '' : viaPlateforme;
   .pied__haut { display: grid; gap: 36px; align-items: center; padding-block: clamp(36px, 5vw, 72px); margin-bottom: 44px; border-bottom: var(--filet) solid var(--pied-ligne); }
   @media (min-width: 860px) { .pied__haut { grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.65fr); } }
   .pied__gauche { display: grid; gap: 30px; justify-items: start; }
-  .pied__gauche > .logo { margin-bottom: 32px; }
   .pied__appel { margin: 0; font-family: var(--police-titres); font-size: clamp(2.4rem, 6.4vw, 5.4rem); font-weight: var(--graisse-titres, 560); letter-spacing: -0.045em; line-height: 0.95; color: var(--blanc); text-wrap: balance; }
   .pied__appel span { display: block; font-family: var(--police-mono); font-size: 0.86rem; font-weight: 450; letter-spacing: 0.02em; line-height: 1.5; color: var(--pied-repere); margin-top: 18px; }
   .pied__visuel { width: min(100%, 300px); justify-self: center; color: var(--sur-sombre-doux); }

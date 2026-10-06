@@ -18,7 +18,8 @@
 // `gammeLaPlusProche` permet de la rattacher à une gamme (migration de l'éditeur).
 
 import { contraste, distance, hex, melanger, rvb } from './couleurs';
-import { NEUTRES } from './charte';
+import { NEUTRES, QUADRILLAGE, SUR_SOMBRE, TRAME } from './charte';
+import { PRESSION, ARRETS_PRESSION, couleurPression } from './univers';
 import { buildTheme } from './theme';
 import type { ModeleManifeste } from './modeles';
 
@@ -243,6 +244,158 @@ export function variablesDuo(g: Gamme): Record<string, string> {
   };
 }
 
+// ———————————————————————————————————————————————————— Teinte « gamme » des surfaces sombres (modèle Technique)
+
+/**
+ * Surfaces sombres d'un modèle à teinte « gamme » (jeton `teinte: 'gamme'`, modèle Technique) : TOUT vient de la gamme du
+ * cabinet (ou de sa couleur libre) — aucun signal menthe ni palette bleu → rouge fixe ne s'y mêle (retour de Paul, 2026-10-06 :
+ * « du bleu et du vert mélangés »).
+ *   plan / planProfond   fond « plan d'architecte » : celui de la gamme (sinon la couleur assombrie) et sa version plus foncée
+ *   nuit / nuitHaut      fonds des animations et du premier écran : le plan presque noir, même teinte
+ *   pied                 pied de page sombre, entre la nuit et le plan
+ *   signal               lectures de données, filets actifs, ligne de scan : sobre → la teinte de l'accent éclaircie ;
+ *                        vitaminée → le signal de la gamme (sa couleur vive ou son duo)
+ *   pressionSombre       échelle de pression (5 niveaux) posée sur fond sombre : monochrome de la teinte du signal, du plus
+ *                        discret (faible appui) au plus lumineux (fort appui)
+ *   pressionClaire       même échelle posée sur fond clair : du plus pâle au plus soutenu
+ * Contrastes garantis (verifierTeinteSombre, npm run controle:charte) : papier ≥ 9:1 sur plan, nuit et pied ; signal ≥ 4,5:1 sur
+ * les trois ; niveaux 2 à 5 de pression ≥ 3:1 sur le plan (sombre) ou sur le blanc (claire, niveaux 3 à 5).
+ */
+export type TeinteSombre = {
+  plan: string; planProfond: string; nuit: string; nuitHaut: string; pied: string; signal: string;
+  pressionSombre: string[]; pressionClaire: string[];
+};
+
+/** Éclaircit `c` (luminosité seule, même teinte) jusqu'à `min` contre chacun des `fonds`. */
+function eclaircirJusqua(c: string, fonds: string[], min: number): string {
+  const pire = (x: string) => Math.min(...fonds.map((f) => contraste(x, f)));
+  const [t, s, l0] = tsl(c);
+  let x = c;
+  for (let l = l0; l < 0.97 && pire(x) < min; l += 0.01) x = depuisTsl(t, s, l);
+  return x;
+}
+/** Assombrit `c` (luminosité seule, même teinte) jusqu'à `min` contre chacun des `fonds`. */
+function assombrirJusqua(c: string, fonds: string[], min: number): string {
+  const pire = (x: string) => Math.min(...fonds.map((f) => contraste(x, f)));
+  const [t, s, l0] = tsl(c);
+  let x = c;
+  for (let l = l0; l > 0.02 && pire(x) < min; l -= 0.01) x = depuisTsl(t, s, l);
+  return x;
+}
+/** Même teinte, saturation bornée, luminosité `l` */
+const ton = (c: string, l: number, sMin = 0, sMax = 1) => {
+  const [t, s] = tsl(c);
+  return depuisTsl(t, s < 0.04 ? s : Math.min(sMax, Math.max(sMin, s)), l);
+};
+
+export function teinteSombre(choix: { couleur: string; gamme?: string | null }): TeinteSombre {
+  const g = gamme(choix.gamme);
+  const libre = /^#[0-9a-f]{6}$/i.test(choix.couleur) ? choix.couleur : (gamme('ardoise')?.accent ?? NEUTRES.encreNuit);
+  const base = g?.accent ?? libre;
+  const papier = NEUTRES.papier;
+  // Plan : celui de la gamme (déjà dans sa famille de couleurs), sinon la couleur du cabinet très assombrie (même teinte).
+  const plan = assombrirJusqua(g?.plan ?? ton(base, 0.2, 0, 0.7), [papier], 9);
+  const nuit = ton(plan, 0.055, 0, 0.6);
+  const nuitHaut = ton(plan, 0.12, 0, 0.6);
+  const pied = ton(plan, 0.085, 0, 0.6);
+  const planProfond = assombrirJusqua(ton(plan, tsl(plan)[2] * 0.72, 0, 0.75), [papier], 9);
+  const sombres = [plan, planProfond, nuit, nuitHaut, pied];
+  // Signal : gamme vitaminée → son signal (couleur vive ou duo) ; gamme sobre ou couleur libre → la teinte de l'accent, vive et claire.
+  const source = g?.famille === 'vitaminee' ? g.signal : ton(base, Math.max(tsl(base)[2], 0.62), 0.55, 0.9);
+  const signal = eclaircirJusqua(source, sombres, 4.8);
+  // Échelles de pression : monochromes de la teinte du signal (saturation bornée : ni fluo ni grisé), régulièrement espacées
+  // à partir du premier ton qui atteint 3:1 sur le fond (niveau 2 sur fond sombre, niveau 3 sur fond clair).
+  const sur = (fonds: string[], sens: 1 | -1, depart: number) => {
+    let l = depart;
+    while (l > 0.03 && l < 0.97 && Math.min(...fonds.map((f) => contraste(ton(signal, l, 0.45, 0.9), f))) < 3) l += 0.01 * sens;
+    return l;
+  };
+  const l3s = sur([plan, nuitHaut], 1, 0.3);
+  const pressionSombre = [l3s - 0.1, l3s, l3s + (0.9 - l3s) / 3, l3s + ((0.9 - l3s) * 2) / 3, 0.9].map((l) => ton(signal, l, 0.45, 0.9));
+  const l3c = sur([NEUTRES.blanc], -1, 0.8);
+  const pressionClaire = [0.86, (0.86 + l3c) / 2, l3c, l3c - 0.09, l3c - 0.18].map((l) => ton(signal, l, 0.45, 0.9));
+  return { plan, planProfond, nuit, nuitHaut, pied, signal, pressionSombre, pressionClaire };
+}
+
+/** Contrôles AA de la teinte « gamme » pour un cabinet (liste des défauts, vide si conforme). */
+export function verifierTeinteSombre(choix: { couleur: string; gamme?: string | null }): string[] {
+  const t = teinteSombre(choix);
+  const qui = choix.gamme || choix.couleur;
+  const tests: [string, string, string, number][] = [];
+  for (const [nom, f] of [['plan', t.plan], ['plan profond', t.planProfond], ['nuit', t.nuit], ['nuit haute', t.nuitHaut], ['pied de page', t.pied]] as const) {
+    tests.push([`papier sur ${nom}`, NEUTRES.papier, f, 9], [`signal sur ${nom}`, t.signal, f, 4.5]);
+  }
+  t.pressionSombre.slice(1).forEach((c, k) => tests.push([`pression ${k + 2} (fond sombre) sur plan`, c, t.plan, 3]));
+  t.pressionClaire.slice(2).forEach((c, k) => tests.push([`pression ${k + 3} (fond clair) sur blanc`, c, NEUTRES.blanc, 3]));
+  return tests
+    .map(([nom, a, b, min]) => [nom, contraste(a, b), min] as const)
+    .filter(([, c, min]) => c < min)
+    .map(([nom, c, min]) => `teinte « gamme » (${qui}) : ${nom} = ${c.toFixed(2)}:1 (minimum ${min}:1)`);
+}
+
+const canauxRvb = (h: string) => rvb(h).join(' ');
+
+/**
+ * Variables CSS de la teinte « gamme » : elles remplacent, sur <html>, les couleurs fixes de la charte (plan, nuit, signal,
+ * quadrillage sombre, palette de pression). --pression-n = échelle claire ; --pression-sombre-n = échelle des fonds sombres,
+ * que les surfaces sombres reprennent en --pression-n (CSS_TEINTE_GAMME). --pied-fond : fond du pied de page sombre.
+ */
+export function variablesTeinte(choix: { couleur: string; gamme?: string | null }): Record<string, string> {
+  const t = teinteSombre(choix);
+  const v: Record<string, string> = {
+    '--plan': t.plan,
+    '--plan-profond': t.planProfond,
+    '--nuit': t.nuit,
+    '--nuit-haut': t.nuitHaut,
+    '--nuit-rgb': canauxRvb(t.nuit),
+    '--pied-fond': t.pied,
+    '--signal': t.signal,
+    // Quadrillage et filets des fonds sombres : la teinte du signal, aux mêmes opacités que le blanc de la charte
+    '--quadrillage-sombre': `rgb(${canauxRvb(t.signal)} / ${QUADRILLAGE.sombre})`,
+    '--quadrillage-sombre-fin': `rgb(${canauxRvb(t.signal)} / ${QUADRILLAGE.sombreFin})`,
+    '--sur-sombre-filet': `rgb(${canauxRvb(t.signal)} / ${SUR_SOMBRE.filet})`,
+  };
+  t.pressionClaire.forEach((c, k) => { v[`--pression-${k + 1}`] = c; v[`--donnee-${k + 1}`] = c; });
+  t.pressionSombre.forEach((c, k) => { v[`--pression-sombre-${k + 1}`] = c; });
+  return v;
+}
+
+/**
+ * Feuille de la teinte « gamme » (html[data-teinte='gamme']) :
+ * 1. les dessins et relevés générés par le core (fichiers SVG statiques, images fixes des animations) portent les couleurs de
+ *    la palette de pression de la charte en attributs (stroke, fill, stop-color) : une règle CSS, prioritaire sur l'attribut,
+ *    leur substitue le niveau correspondant de l'échelle de la gamme (les fichiers et leurs empreintes de revue restent
+ *    inchangés) ;
+ * 2. sur les surfaces sombres (plan, pied de page, premier écran, animations sur fond nuit), --pression-n prend l'échelle sombre.
+ */
+export const CSS_TEINTE_GAMME = (() => {
+  // Couleurs littérales de la palette : les 5 arrêts et les niveaux de la trame (couleurPression au milieu de chaque niveau)
+  const valeurs = new Map<string, number>();
+  PRESSION.forEach((c, k) => valeurs.set(c.toLowerCase(), ARRETS_PRESSION[k]));
+  for (let k = 0; k < TRAME.niveaux; k++) {
+    const m = (k + 0.5) / TRAME.niveaux;
+    valeurs.set(couleurPression(m).toLowerCase(), m);
+  }
+  const niveau = (v: number) => {
+    for (let k = 1; k < ARRETS_PRESSION.length; k++) {
+      if (v <= ARRETS_PRESSION[k] + 1e-9) {
+        const u = (v - ARRETS_PRESSION[k - 1]) / (ARRETS_PRESSION[k] - ARRETS_PRESSION[k - 1]);
+        if (u < 0.01) return `var(--pression-${k})`;
+        if (u > 0.99) return `var(--pression-${k + 1})`;
+        return `color-mix(in srgb, var(--pression-${k}) ${Math.round((1 - u) * 100)}%, var(--pression-${k + 1}))`;
+      }
+    }
+    return 'var(--pression-5)';
+  };
+  const h = "html[data-teinte='gamme']";
+  const regles = [...valeurs].map(([c, v]) => {
+    const x = niveau(v);
+    return `${h} [stroke='${c}' i]{stroke:${x}}${h} [fill='${c}' i]{fill:${x}}${h} [stop-color='${c}' i]{stop-color:${x}}`;
+  });
+  const sombres = `${h} :is(.surface-plan,.pied,.hero,[class*='--sombre'],[class*='fond-sombre']){${[1, 2, 3, 4, 5].map((k) => `--pression-${k}:var(--pression-sombre-${k})`).join(';')}}`;
+  return regles.join('') + sombres;
+})();
+
 /**
  * Variables CSS du thème d'un site : jetons du modèle (couche 5), puis couleurs de la gamme choisie
  * (couche 4) ou, à défaut, de la couleur libre du cabinet. Les invariants viennent de la charte (:root).
@@ -264,6 +417,8 @@ export function variablesTheme(m: ModeleManifeste, choix: { couleur: string; gam
     '--plan': m.jetons.plan ?? `color-mix(in srgb, ${encre ? NEUTRES.encreNuitDouce : t['--brand-deep']} 64%, ${NEUTRES.nuit})`,
     ...(m.jetons.signal ? { '--signal': m.jetons.signal } : {}),
     ...(g ? variablesGamme(g) : {}),
+    // Teinte « gamme » (modèle Technique) : surfaces sombres, signal et pression dérivés de la gamme ou de la couleur libre
+    ...(m.jetons.teinte === 'gamme' ? variablesTeinte(choix) : {}),
   };
   if (encre) {
     v['--accent'] = 'var(--encre-nuit)';

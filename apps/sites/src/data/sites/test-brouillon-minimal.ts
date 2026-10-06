@@ -20,6 +20,8 @@ if (cas === 'provisoire') {
   d.message = { texte: 'Lorem ipsum dolor sit amet', jusquAu: '' };
 }
 d.theme.modele = process.env.MODELE ?? 'proximite';
+// GAMME=<gamme> (facultatif) : vérifier les couleurs d'un modèle avec une gamme précise
+if (process.env.GAMME) d.theme.gamme = process.env.GAMME;
 
 // Catalogue de soins : celui de la démo (mêmes textes que le catalogue de la profession, sans accès à Supabase).
 const catalogue: LigneSoin[] = demo.soins.map((s) => ({

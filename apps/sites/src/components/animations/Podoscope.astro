@@ -26,7 +26,7 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
 )}
 
 <script>
-  import { couleurPression, TRAME, TRAIT, CYCLES } from '@plateforme/core/charte';
+  import { PRESSION, ARRETS_PRESSION, interpoler, TRAME, TRAIT, CYCLES } from '@plateforme/core/charte';
   import { pressionPas, centrePas, PHASE_FIXE } from '@plateforme/core/pas';
 
   type Point = { x: number; y: number; px: number; py: number; b: number; gauche: boolean };
@@ -75,6 +75,10 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
     // Tracé du centre de pression (accueil) : barycentre des points pondérés par la pression, par pied.
     const cdp = cv.classList.contains('podoscope--cdp');
     let signal = 'white';
+    // Palette de pression lue sur la page (--pression-1 à 5) : celle de la charte, ou l'échelle de la gamme du cabinet
+    // (modèle à teinte « gamme ») ; repli sur la palette de la charte si une valeur n'est pas un #rrggbb.
+    let palette: string[] = [...PRESSION];
+    const couleurPression = (v: number) => interpoler(palette, ARRETS_PRESSION, v);
     const traces: { x: number; y: number }[][] = [[], []];
     let debut = 0;
     const ratio = Math.min(2, devicePixelRatio || 1);
@@ -112,7 +116,11 @@ const modele = JSON.stringify({ points: pointsTrame('normal').map((p) => [p.x, p
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ({ pts, pasPx } = construire(l, h, modele.points));
       traces[0] = []; traces[1] = [];
-      signal = getComputedStyle(cv).getPropertyValue('--signal').trim() || 'white';
+      const style = getComputedStyle(cv);
+      signal = style.getPropertyValue('--signal').trim() || 'white';
+      const lue = PRESSION.map((c, k) => style.getPropertyValue(`--pression-${k + 1}`).trim());
+      const nouvelle = lue.every((c) => /^#[0-9a-f]{6}$/i.test(c)) ? lue : [...PRESSION];
+      if (nouvelle.join() !== palette.join()) { palette = nouvelle; pasPrepare = -1; }
       if (pasPx !== pasPrepare) { preparerPoints(); pasPrepare = pasPx; }
       return true;
     }

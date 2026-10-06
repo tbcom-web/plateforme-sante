@@ -162,6 +162,12 @@ export type ModeleManifeste = {
     plan?: string;
     /** Couleur des lectures de données sur fond sombre : légendes, lignes de scan (#rrggbb), facultatif */
     signal?: string;
+    /**
+     * « gamme » : surfaces sombres (plan, nuit, pied de page), signal, quadrillage et palette de pression TOUS dérivés de la
+     * gamme du cabinet (ou de sa couleur libre) — aucune couleur fixe de la charte (signal menthe, palette bleu → rouge) ne
+     * s'y mêle. Voir teinteSombre (gammes.ts). Facultatif (défaut : couleurs fixes de la charte).
+     */
+    teinte?: 'gamme';
     /** Traitement de la marque du logo, facultatif (sinon déduit des autres jetons : voir traitementLogo) */
     logo?: TraitementMarque;
     /** Registre des illustrations, animations, matériel et bibliothèque (défaut : releve) */
@@ -337,7 +343,9 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     animations: 'douces',
     couleurConseillee: '#1f4fbf',
     gammes: ['cobalt', 'encre', 'canard', 'ardoise', 'cobalt-abricot', 'menthe', 'pasteque'],
-    jetons: { policeTitres: 'schibsted', policeTexte: 'inter', graisseTitres: 750, rayon: 10, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', fondDoux: '#eef1f4', motif: 'trame', signal: '#6ff2c2', logo: 'plein', registre: 'releve' },
+    // Teinte « gamme » (retour de Paul, 2026-10-06 : « du bleu et du vert mélangés ») : fonds sombres, signal, quadrillage et
+    // points de pression tirés de la gamme du cabinet, plus de signal menthe fixe.
+    jetons: { policeTitres: 'schibsted', policeTexte: 'inter', graisseTitres: 750, rayon: 10, boutons: 'pilule', accent: 'couleur', fond: '#ffffff', images: 'naturel', fondDoux: '#eef1f4', motif: 'trame', teinte: 'gamme', logo: 'plein', registre: 'releve' },
   },
 ];
 
@@ -413,6 +421,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
     if (j.motif !== undefined && !parmi(j.motif, MOTIFS)) e.push(`« jetons.motif » : ${MOTIFS.join(', ')}.`);
     if (j.plan !== undefined && !HEX.test(j.plan)) e.push('« jetons.plan » : couleur au format #rrggbb.');
     if (j.signal !== undefined && !HEX.test(j.signal)) e.push('« jetons.signal » : couleur au format #rrggbb.');
+    if (j.teinte !== undefined && j.teinte !== 'gamme') e.push('« jetons.teinte » : « gamme » (ou absent).');
     if (j.logo !== undefined && !parmi(j.logo, TRAITEMENTS_MARQUE)) e.push(`« jetons.logo » : ${TRAITEMENTS_MARQUE.join(', ')}.`);
     if (j.registre !== undefined && !parmi(j.registre, REGISTRES_MODELE)) e.push(`« jetons.registre » : ${REGISTRES_MODELE.join(' ou ')}.`);
   }
@@ -450,6 +459,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
         motif: v.jetons.motif ?? 'plan',
         ...(v.jetons.plan ? { plan: v.jetons.plan } : {}),
         ...(v.jetons.signal ? { signal: v.jetons.signal } : {}),
+        ...(v.jetons.teinte === 'gamme' ? { teinte: 'gamme' as const } : {}),
         ...(v.jetons.logo ? { logo: v.jetons.logo } : {}),
         registre: v.jetons.registre ?? 'releve',
       },

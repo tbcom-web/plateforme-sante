@@ -33,7 +33,9 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
     // Traces des marqueurs (cheville, genou, orteil de la jambe droite), décalées comme sur un tapis.
     const traces: Record<string, Pt[]> = { cheville: [], genou: [], orteil: [] };
     // Marqueurs suivis : couleurs de la palette de pression (genou = pic, cheville = moyenne, orteil = modérée)
+    // (lues sur la page : palette de la charte, ou échelle de la gamme du cabinet pour un modèle à teinte « gamme »)
     const COULEURS: Record<string, string> = { cheville: PRESSION[2], genou: PRESSION[4], orteil: PRESSION[1] };
+    const NIVEAUX_MARQUEURS: Record<string, number> = { cheville: 3, genou: 5, orteil: 2 };
 
     function dimensionner() {
       l = cv.clientWidth; h = cv.clientHeight;
@@ -43,6 +45,7 @@ const { fond = 'sombre', registre = 'releve' } = Astro.props;
       // Lecture des couleurs après la mise en page (aucun recalcul de style forcé avant le premier affichage)
       const style = getComputedStyle(cv);
       accent = style.getPropertyValue('--accent-pale').trim() || style.getPropertyValue('--signal').trim() || PRESSION[1];
+      for (const k in NIVEAUX_MARQUEURS) COULEURS[k] = style.getPropertyValue(`--pression-${NIVEAUX_MARQUEURS[k]}`).trim() || COULEURS[k];
     }
 
     function segment(a: Pt, b: Pt, largeur: number, couleur: string) {
