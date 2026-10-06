@@ -21,6 +21,7 @@ import {
   styleDuTheme,
   stylesCompatibles,
   type JeuPhotos,
+  type PoidsAtelier,
   type Proposition,
   type ReglagesSite,
   type Structure,
@@ -72,6 +73,8 @@ type Props = {
   lienAvance: string;
   /** Thèmes différés activés par le drapeau admin (THEMES_ACTIVES) */
   themesActives: string[];
+  /** Poids appris des notes de l'atelier (/admin/atelier), null tant qu'il n'y en a pas */
+  poidsAtelier?: PoidsAtelier | null;
   actions: {
     sauvegarder: ActionEnregistrer;
     choisir: ActionChoisir;
@@ -111,7 +114,7 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
+export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, poidsAtelier = null, actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
   const router = useRouter();
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
@@ -371,6 +374,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
               jeuPhotos={jeuPhotos}
               slugs={slugs}
               themesActives={themesActives}
+              poids={poidsAtelier}
               etroit={etroit}
               choixEnCours={choixEnCours}
               onChoisir={choisir}

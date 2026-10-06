@@ -21,7 +21,9 @@
 //    un « corail » ou un « rouge » choisi est servi en version adoucie (terracotta, sable). Posture (sujet différé) : jamais
 //    prise en compte, jamais d'animation « trajectoire ».
 // 6. Structure Technique : relevé ou photos seulement (ses surfaces sombres ne portent pas les schémas clairs).
-// 7. Déterminisme : mêmes sujets, mêmes couleurs, même graine → mêmes lots, dans le même ordre.
+// 7. Déterminisme : mêmes sujets, mêmes couleurs, même graine (et mêmes poids) → mêmes lots, dans le même ordre.
+// 8. Apprentissage (atelier-poids.ts, option `poids`) : les notes de l'atelier réordonnent les combinaisons et écartent les
+//    franchement mal notées, sans jamais lever une règle ci-dessus (elles ne portent que sur des combinaisons déjà permises).
 //
 // Module pur, sans dépendance d'exécution.
 
@@ -31,6 +33,7 @@ import type { Registre } from './dessins';
 import { GAMMES, gamme as gammeParId, type Gamme } from './gammes';
 import type { Animation } from './packs';
 import { themeParId, type Priorites } from './themes';
+import { BONUS_ATELIER, bonusAtelier, type PoidsAtelier } from './atelier-poids';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Styles d'illustration
@@ -283,7 +286,11 @@ export type Proposition = {
 };
 
 export type EntreePropositions = { priorites?: Priorites | null; couleursPreferees?: readonly string[] | null };
-export type OptionsPropositions = { graine?: number };
+export type OptionsPropositions = {
+  graine?: number;
+  /** Poids appris des notes de l'atelier (poidsAtelier) : réordonnent et écartent, sans lever aucun garde-fou */
+  poids?: PoidsAtelier | null;
+};
 
 /** Sujets pris en compte : principaux puis secondaires, sans le sujet différé (posture), dans l'ordre */
 function sujets(p: Priorites | null | undefined): string[] {
@@ -298,7 +305,7 @@ function hache(s: string): number {
   return (h >>> 0) / 4294967296;
 }
 
-type Candidat = Proposition & { cle: string };
+type Candidat = Proposition & { cle: string; /** bonus de l'atelier (étoiles) */ bonus: number };
 
 /** Toutes les combinaisons cohérentes avec les sujets, notées (pertinence décroissante) */
 function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candidat[] {
@@ -344,11 +351,13 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
           const base = 3 * aU + 3 * aS + (couleurs.length ? 1 * aG + 4 * aC : 2.5 * aG) + nuance + bonusAnim;
           const cle = `${n1}~${u}~${g.id}~${style}~${animation ?? '0'}`;
           const { registre, modeVisuel } = reglageStyle(style, u);
+          const bonus = opts.poids ? bonusAtelier({ structure: u, gamme: g.id, style, animation, theme1: n1, proposition: cle }, opts.poids) : 0;
           const nuances: string[] = [];
           if (n2 && animation && animation === r2?.animation && animation !== r1.animation) nuances.push(`Animation tirée de votre sujet « ${themeParId(n2)?.court} »`);
           if (n2 && r2?.gammes.slice(0, 3).includes(g.id) && !r1.gammes.slice(0, 2).includes(g.id)) nuances.push(`Couleurs proches de votre sujet « ${themeParId(n2)?.court} »`);
           sortie.push({
             cle,
+            bonus,
             id: cle,
             nom: r1.noms[style],
             phrase: `${TON[u]} : ${r1.montre[style]}.`,
@@ -363,7 +372,7 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
             heros: n1 === 'cabinet' ? null : n1,
             couleurs: couleursReprises,
             nuances,
-            score: Math.round((base + hache(`${graine}|${cle}`) * 0.4) * 1000) / 1000,
+            score: Math.round((base + BONUS_ATELIER.facteurScore * bonus + hache(`${graine}|${cle}`) * 0.4) * 1000) / 1000,
           });
         }
       }
@@ -376,6 +385,34 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
 const differentes = (a: Candidat, b: Candidat) => a.univers !== b.univers && a.style !== b.style && a.gamme !== b.gamme;
 
 /**
+ * Combinaisons écartées par l'apprentissage (bonus ≤ seuil). Pour que les lots restent variés (3 structures, 3 styles,
+ * 3 gammes, une sobre et une vitaminée), chaque couple structure × style permis garde au moins 4 gammes différentes et ses
+ * deux familles (sobre, vitaminée) quand il les avait : les meilleures sont rendues si l'apprentissage les avait toutes écartées.
+ */
+function ecarterMalNotes(tous: Candidat[]): Candidat[] {
+  const gardes = new Set(tous.filter((c) => c.bonus > BONUS_ATELIER.seuilEcart));
+  if (gardes.size === tous.length) return tous;
+  const groupes = new Map<string, Candidat[]>();
+  for (const c of tous) {
+    const k = `${c.univers}|${c.style}`;
+    groupes.set(k, [...(groupes.get(k) ?? []), c]);
+  }
+  for (const g of groupes.values()) {
+    // g est déjà trié par pertinence décroissante
+    const gammes = () => new Set(g.filter((c) => gardes.has(c)).map((c) => c.gamme));
+    const cible = Math.min(4, new Set(g.map((c) => c.gamme)).size);
+    for (const c of g) {
+      if (gammes().size >= cible) break;
+      if (!gammes().has(c.gamme)) gardes.add(c);
+    }
+    for (const f of ['sobre', 'vitaminee'] as const) {
+      if (g.some((c) => c.famille === f) && !g.some((c) => c.famille === f && gardes.has(c))) gardes.add(g.find((c) => c.famille === f)!);
+    }
+  }
+  return tous.filter((c) => gardes.has(c));
+}
+
+/**
  * Lots de 3 propositions, du plus pertinent au moins pertinent (« Charger plus » : nbLots croissant ; les lots déjà vus
  * ne changent jamais). Choix glouton : pour chaque place, la meilleure proposition restante qui respecte les contraintes du
  * lot (structures, styles, gammes différents ; une sobre et une vitaminée si possible ; premier lot : couverture des
@@ -383,7 +420,7 @@ const differentes = (a: Candidat, b: Candidat) => a.univers !== b.univers && a.s
  * beaucoup montrés reculent un peu (exploration progressive).
  */
 export function lotsPropositions(e: EntreePropositions, nbLots: number, opts: OptionsPropositions = {}): Proposition[][] {
-  const tous = candidats(e, opts);
+  const tous = opts.poids ? ecarterMalNotes(candidats(e, opts)) : candidats(e, opts);
   const couleurs = (e.couleursPreferees ?? []).filter((c) => couleurPreferee(c)).slice(0, COULEURS_PREFEREES_MAX);
   const vus = new Set<string>();
   const deja = new Map<string, number>();
@@ -421,7 +458,7 @@ export function lotsPropositions(e: EntreePropositions, nbLots: number, opts: Op
       deja.set(`${c.univers}|${c.style}`, (deja.get(`${c.univers}|${c.style}`) ?? 0) + 1);
       deja.set(c.gamme, (deja.get(c.gamme) ?? 0) + 1);
     }
-    lots.push(lot.map(({ cle: _cle, ...p }) => p));
+    lots.push(lot.map(({ cle: _cle, bonus: _bonus, ...p }) => p));
   }
   return lots;
 }
@@ -438,7 +475,7 @@ export function propositionsModeles(e: EntreePropositions, opts: OptionsProposit
 export function propositionParId(e: EntreePropositions, id: string, opts: OptionsPropositions = {}): Proposition | null {
   const c = candidats(e, opts).find((x) => x.cle === id);
   if (!c) return null;
-  const { cle: _cle, ...p } = c;
+  const { cle: _cle, bonus: _bonus, ...p } = c;
   return p;
 }
 

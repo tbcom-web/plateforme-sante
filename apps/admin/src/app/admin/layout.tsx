@@ -19,7 +19,8 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
         <Link href="/admin/univers" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Univers</Link>
         <Link href="/admin/modeles" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Modèles</Link>
         <Link href="/admin/visuels" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Banque visuelle</Link>
-        <Link href="/admin/illustrations" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Illustrations</Link>
+        <Link href="/admin/atelier" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Atelier</Link>
+        <Link href="/admin/illustrations"className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Illustrations</Link>
         <Link href="/admin/photos" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Jeux de photos</Link>
         <Link href="/admin/studio-portrait" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Studio portrait</Link>
         <Link href="/admin/logos" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Logos</Link>

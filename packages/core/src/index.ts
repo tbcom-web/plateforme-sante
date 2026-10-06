@@ -37,3 +37,4 @@ export * from './heros-themes';
 export * from './essai';
 export * from './prospects';
 export * from './propositions';
+export * from './atelier';

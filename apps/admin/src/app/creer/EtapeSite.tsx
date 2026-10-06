@@ -10,9 +10,7 @@
 // Le plein écran reste derrière « Voir le rendu » (porte de l'e-mail pour l'essai) : la carte réduite suffit avant.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  appliquerProposition,
   appliquerReglages,
-  appliquerUniversParcours,
   basculerCouleur,
   COULEURS_PREFEREES,
   COULEURS_PREFEREES_MAX,
@@ -24,10 +22,8 @@ import {
   LIBELLES_STRUCTURES,
   LIBELLES_STYLES,
   lotsPropositions,
-  modeleDuSite,
   modeleIntegre,
   pastilleGamme,
-  soinsDeBaseParcours,
   STRUCTURES,
   STYLES_ILLUSTRATION,
   styleDuTheme,
@@ -38,6 +34,7 @@ import {
   type JeuPhotos,
   type MarqueImportee,
   type ModeleManifeste,
+  type PoidsAtelier,
   type Proposition,
   type SiteDraft,
   type StyleIllustration,
@@ -45,6 +42,7 @@ import {
   type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
+import { apercuProposition } from '@/lib/apercu-proposition';
 import type { SoinCatalogue } from '@/lib/sites';
 import { EtapeCouleurs } from './Etapes';
 
@@ -135,6 +133,8 @@ type PropsSite = {
   jeuPhotos: JeuPhotos | null;
   slugs: string[];
   themesActives: string[];
+  /** Poids appris des notes de l'atelier (/admin/atelier) : réordonnent les propositions, sans lever aucun garde-fou */
+  poids?: PoidsAtelier | null;
   etroit: boolean;
   /** Proposition en cours d'application (serveur) */
   choixEnCours: string | null;
@@ -145,23 +145,17 @@ type PropsSite = {
   onStructure: (u: Structure) => void;
 };
 
-export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
+export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, poids = null, etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
   const entree = useMemo(() => ({ priorites: d.priorites, couleursPreferees: d.couleursPreferees ?? [] }), [d.priorites, d.couleursPreferees]);
   const [nbLots, setNbLots] = useState(1);
-  const lots = useMemo(() => lotsPropositions(entree, nbLots), [entree, nbLots]);
+  const lots = useMemo(() => lotsPropositions(entree, nbLots, { poids }), [entree, nbLots, poids]);
   const disponibles = new Set(proposes.map((u) => u.id));
   const liste = lots.flat().filter((p) => disponibles.has(p.univers));
   const epuise = lots.length < nbLots;
   const manifeste = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);
 
   // Aperçu d'une proposition : structure appliquée localement (comme le serveur), réglages de la proposition, soins de base
-  const apercu = (p: Proposition) => {
-    const u = proposes.find((x) => x.id === p.univers)!;
-    const r = appliquerUniversParcours(d, u, { modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives });
-    const x = appliquerProposition(r.draft, p);
-    const soins = d.soins.length ? d.soins : soinsDeBaseParcours(d, u, slugs);
-    return { draft: { ...x, soins }, modele: modeleDuSite(manifeste(x.theme.modele), x.theme) };
-  };
+  const apercu = (p: Proposition) => apercuProposition(d, p, { proposes, modeles, slugs, themesActives })!;
 
   const hauteur = etroit ? 460 : 300;
   const actuelle = d.theme.proposition;
