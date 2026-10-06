@@ -27,6 +27,10 @@ const UUID = /^[0-9a-f-]{36}$/;
 export async function declencherPublication(siteId: string): Promise<Resultat> {
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const supabase = await createClient();
+  // Derniers articles du flux pour un site créé après leur diffusion (rubrique Actualités) ; sans effet si la
+  // fonction n'existe pas encore (base sans la mise à jour 0022) : la publication continue.
+  const rattrapage = await supabase.rpc('rattraper_articles', { p_site: siteId });
+  if (rattrapage.error && rattrapage.error.code !== 'PGRST202') console.error('rattraper_articles', rattrapage.error);
   const { error } = await supabase.rpc('demander_publication', { p_site: siteId });
   // Fonction absente (base sans la mise à jour 0017) : publication à l'ancienne, depuis le brouillon.
   const sansSuivi = error?.code === 'PGRST202';
@@ -45,6 +49,10 @@ export async function declencherPublication(siteId: string): Promise<Resultat> {
 
 /** Construit l'aperçu privé du brouillon (éditeur visuel) : https://apercu.<slug>.pages.dev */
 export async function declencherApercu(siteId: string): Promise<Resultat> {
+  if (UUID.test(siteId)) {
+    const rattrapage = await (await createClient()).rpc('rattraper_articles', { p_site: siteId });
+    if (rattrapage.error && rattrapage.error.code !== 'PGRST202') console.error('rattraper_articles', rattrapage.error);
+  }
   const erreur = await lancerWorkflow('publier-site.yml', { site_id: siteId, mode: 'apercu' });
   return erreur ?? { ok: true, message: 'Aperçu en préparation (1 à 2 minutes).' };
 }
