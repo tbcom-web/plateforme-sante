@@ -1,6 +1,6 @@
 // Phrases du site accordées à la voix choisie (je / nous / 3e personne) et au nombre de praticiens.
 import { site } from './site';
-import { lieuEnClair, lieuCourt, lienRdvPrecis, REPLIS, aVille, telephoneUtilisable, modeContact } from '@plateforme/core';
+import { lieuEnClair, lieuCourt, lienRdvPrecis, REPLIS, aVille, telephoneUtilisable, modeContact, horairesRenseignes, regrouperHoraires, lignesHoraires, mentionsHoraires, libelleJours as libelleJoursCore, type Horaire } from '@plateforme/core';
 
 const enListe = (mots: string[]) =>
   mots.length > 1 ? `${mots.slice(0, -1).join(', ')} et ${mots.at(-1)}` : mots[0] ?? '';
@@ -57,8 +57,19 @@ export const adresseLieu = aAdresse ? `${lieu.adresse}, ${lieu.codePostal} ${lie
 /** Lien d'itinéraire ; vide sans adresse (pas de carte ni d'itinéraire). */
 export const itineraire = aAdresse ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lieu.nom ? `${lieu.nom}, ` : ''}${adresseLieu}`)}` : '';
 /** Horaires renseignés ; sinon les gabarits affichent « Sur rendez-vous ». */
-export const horairesConnus = lieu.horaires.some((h) => /\d/.test(h.heures));
+export const horairesConnus = horairesRenseignes(lieu.horaires);
 export const REPLI_HORAIRES = REPLIS.horaires;
+/** Mentions sous les horaires du lieu : « Sur rendez-vous uniquement », note courte (« Fermé en août »). */
+export const mentionsHorairesLieu = mentionsHoraires(lieu);
+/** Sans horaires : « Sur rendez-vous » (ou « Sur rendez-vous uniquement » si le praticien l'a coché). */
+export const repliHorairesLieu = lieu.surRendezVous ? 'Sur rendez-vous uniquement' : REPLIS.horaires;
+
+/**
+ * Lignes du tableau des horaires : jours consécutifs aux plages identiques réunis (« Lundi au mercredi »), plages en
+ * liste, numéros des jours JavaScript (dimanche = 0, séparés par des espaces) pour repérer « aujourd'hui » côté navigateur.
+ */
+export const semaineDe = (horaires: Horaire[]) =>
+  regrouperHoraires(horaires).map((g) => ({ jour: libelleJoursCore(g.jours), plages: g.ouvert ? g.texte.split(', ') : [], numero: g.numeros }));
 
 /**
  * Réservation en ligne : seulement si le lien mène à une page précise de la plateforme. Un lien vers son
@@ -86,16 +97,9 @@ export const phraseRdv = rdvEnLigne
   ? `En ligne sur ${site.rdv.plateforme}, 24h/24`
   : aTelephone ? `Par téléphone au ${site.cabinet.telephone}` : contactRdv === 'email' ? `Par e-mail : ${site.cabinet.email}` : REPLIS.rdvCabinet;
 
-/** Regroupe les jours consécutifs aux horaires identiques. */
-export const horairesRegroupes = (horaires = lieu.horaires) =>
-  horaires.reduce<{ jours: string[]; heures: string }[]>((acc, h) => {
-    const dernier = acc.at(-1);
-    if (dernier && dernier.heures === h.heures) dernier.jours.push(h.jour);
-    else acc.push({ jours: [h.jour], heures: h.heures });
-    return acc;
-  }, []);
-
-export const libelleJours = (jours: string[]) => (jours.length > 2 ? `${jours[0]} – ${jours.at(-1)}` : jours.join(', '));
+/** Horaires en lignes de texte (« Lundi au vendredi : 9h00–12h00, 14h00–19h00 », « Dimanche : fermé »), puis les mentions. */
+export const lignesHorairesLieu = (l: { horaires: Horaire[]; surRendezVous?: boolean; noteHoraires?: string } = lieu) =>
+  horairesRenseignes(l.horaires) ? [...lignesHoraires(l.horaires), ...mentionsHoraires(l)] : [l.surRendezVous ? 'Sur rendez-vous uniquement' : REPLIS.horaires, ...mentionsHoraires({ noteHoraires: l.noteHoraires })];
 
 export const TYPES_LIEU: Record<string, string> = {
   cabinet: 'Cabinet',

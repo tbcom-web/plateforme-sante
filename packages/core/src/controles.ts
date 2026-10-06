@@ -10,6 +10,7 @@ import { verifierTexte, type NiveauConformite } from './lexique';
 import { EQUIPEMENTS } from './equipements';
 import { REPLIS, TEXTE_PROVISOIRE, adresseUtilisable, telephoneUtilisable } from './replis';
 import { lienRdvPrecis } from './format';
+import { avertissementsHoraires, avertissementsNoteHoraires, horairesRenseignes } from './horaires';
 
 export type ResultatControle = {
   /**
@@ -78,7 +79,9 @@ export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 's
     } else if (!adresseUtilisable(l, d.pays)) {
       remplace(`Code postal invalide${n} : ${repli}.`);
     }
-    if (!l.horaires.some((h) => /\d/.test(h.heures))) remplace(`Horaires non renseignés${n} : le site indiquera « ${REPLIS.horaires} ».`);
+    if (!horairesRenseignes(l.horaires)) remplace(`Horaires non renseignés${n} : le site indiquera « ${REPLIS.horaires} ».`);
+    // Plages incohérentes et note des horaires : avertissements ambre, jamais bloquants (horaires.ts).
+    conseils.push(...avertissementsHoraires(l.horaires, n.trim()), ...avertissementsNoteHoraires(l.noteHoraires ?? '').map((a) => (n ? a.replace('Note des horaires', `Note des horaires${n}`) : a)));
   });
 
   // Praticiens

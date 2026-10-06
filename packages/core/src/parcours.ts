@@ -13,6 +13,7 @@ import { JOURS, type SiteDraft } from './draft';
 import { GAMMES, variantesGamme, type Gamme } from './gammes';
 import type { ModeleManifeste } from './modeles';
 import type { Horaire } from './types';
+import { horaireDe, lirePlages, plagesDe } from './horaires';
 import { appliquerPriorites, soinsDesPriorites, soinsEnAvantDesPriorites, universDesPriorites } from './themes';
 
 /**
@@ -182,14 +183,14 @@ export function placerSoin(enAvant: readonly string[], slug: string, vers: numbe
 export const FERME = 'Fermé';
 export const HEURES_PAR_DEFAUT = '9h00–12h30, 14h00–19h00';
 
-const ouvert = (h: string) => /\d/.test(h);
+const ouvert = (h: Horaire) => plagesDe(h).length > 0;
 
 /**
  * Lecture simplifiée des horaires : jours ouverts et heures communes. `uniformes` faux si les jours ouverts n'ont pas
  * tous les mêmes heures (le praticien les règle alors dans le formulaire complet).
  */
 export function horairesSimplifies(horaires: readonly Horaire[]): { jours: string[]; heures: string; uniformes: boolean } {
-  const ouverts = horaires.filter((h) => ouvert(h.heures));
+  const ouverts = horaires.filter(ouvert);
   const heures = ouverts[0]?.heures.trim() ?? HEURES_PAR_DEFAUT;
   return { jours: ouverts.map((h) => h.jour), heures, uniformes: ouverts.every((h) => h.heures.trim() === heures) };
 }
@@ -197,7 +198,9 @@ export function horairesSimplifies(horaires: readonly Horaire[]): { jours: strin
 /** Horaires de la semaine (7 jours, dans l'ordre) : les mêmes heures les jours cochés, « Fermé » les autres */
 export function appliquerHorairesSimplifies(jours: readonly string[], heures: string): Horaire[] {
   const h = heures.trim() || HEURES_PAR_DEFAUT;
-  return JOURS.map((jour) => ({ jour, heures: jours.includes(jour) ? h : FERME }));
+  // Heures lisibles : jour structuré (plages) ; sinon le texte est gardé tel quel (relu au chargement, horaires.ts).
+  const { plages, reste } = lirePlages(h);
+  return JOURS.map((jour) => (!jours.includes(jour) ? horaireDe(jour, []) : plages.length && !reste ? horaireDe(jour, plages) : { jour, heures: h }));
 }
 
 // ---- Étapes, aide et reprise ----

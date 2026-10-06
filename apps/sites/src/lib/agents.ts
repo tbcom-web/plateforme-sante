@@ -4,8 +4,8 @@
 import { site, absUrl, dateFr } from './site';
 import {
   praticiens, pluriel, noms, lieu, adresseLieu, titreCabinet, titreMetierAffiche, phraseAccueil, rdvEnLigne,
-  horairesRegroupes, libelleJours, TYPES_LIEU, itineraire, lieuExercice, telLien, aTelephone, aAdresse, contactRdv,
-  horairesConnus, REPLI_HORAIRES, suffixeVille,
+  lignesHorairesLieu, TYPES_LIEU, itineraire, lieuExercice, telLien, aTelephone, aAdresse, contactRdv,
+  suffixeVille,
 } from './textes';
 import { REPLIS } from '@plateforme/core';
 /** « pédicure-podologue à Lyon » ; sans ville : le métier seul (replis.ts). */
@@ -29,8 +29,8 @@ const rdv = () =>
     ? `en ligne sur ${site.rdv.plateforme} : ${site.rdv.url}${site.rdvMode !== 'en_ligne' && aTelephone ? ` ; ou par téléphone au ${site.cabinet.telephone}` : ''}.`
     : aTelephone ? `par téléphone au ${site.cabinet.telephone}.` : contactRdv === 'email' ? `par e-mail : ${site.cabinet.email}.` : 'directement au cabinet.';
 
-const horaires = () =>
-  !horairesConnus ? [REPLI_HORAIRES] : horairesRegroupes().map((h) => `${libelleJours(h.jours)} : ${/\d/.test(h.heures) ? h.heures : 'fermé'}`);
+/** Horaires regroupés et mentions (« Sur rendez-vous uniquement », note), identiques au tableau des pages HTML. */
+const horaires = () => lignesHorairesLieu();
 
 /** Bloc « informations pratiques » commun à l'accueil, au plan d'accès et à llms-full.txt. */
 const pratique = () =>
@@ -62,7 +62,7 @@ const pratique = () =>
       '',
       `### Autre lieu d'exercice : ${l.nom || TYPES_LIEU[l.type]}`,
       '',
-      liste([`Adresse : ${l.adresse && l.codePostal && l.ville ? `${l.adresse}${l.complement ? `, ${l.complement}` : ''}, ${l.codePostal} ${l.ville}` : REPLIS.adresse}`, ...horairesRegroupes(l.horaires).map((h) => `${libelleJours(h.jours)} : ${/\d/.test(h.heures) ? h.heures : 'fermé'}`)]),
+      liste([`Adresse : ${l.adresse && l.codePostal && l.ville ? `${l.adresse}${l.complement ? `, ${l.complement}` : ''}, ${l.codePostal} ${l.ville}` : REPLIS.adresse}`, ...lignesHorairesLieu(l)]),
     ]),
   ].join('\n');
 

@@ -28,7 +28,13 @@ export type Article = {
   imageAlt?: string;
 };
 
-export type Horaire = { jour: string; heures: string };
+/** Plage d'ouverture, heures « HH:MM » (pas de 15 minutes dans l'éditeur) */
+export type Plage = { debut: string; fin: string };
+/**
+ * Horaires d'un jour. `plages` : modèle structuré (horaires.ts) ; `heures` : texte affiché, recalculé à partir des plages
+ * (« 9h00–12h30, 14h00–19h00 » ou « Fermé »). Anciens horaires : `heures` seul, relu par plagesDe.
+ */
+export type Horaire = { jour: string; heures: string; plages?: Plage[] };
 
 export type SiteConfig = {
   id: string;
@@ -107,7 +113,8 @@ export type SiteConfig = {
   equipements?: string[];
   /** Autre matériel, texte libre (une ligne par élément) */
   equipementsAutres?: string;
-  domicile: { actif: boolean; creneaux: string; secteurs: string[] };
+  /** jours : jours de visites à domicile (facultatif) ; creneaux en tient compte au chargement */
+  domicile: { actif: boolean; creneaux: string; secteurs: string[]; jours?: string[] };
   /** Message temporaire (congés, déménagement), déjà filtré sur sa date de fin */
   message: string;
   communes: string[];
@@ -163,4 +170,8 @@ export type LieuPublic = {
   codePostal: string;
   ville: string;
   horaires: Horaire[];
+  /** Mention « Sur rendez-vous uniquement » sous les horaires */
+  surRendezVous?: boolean;
+  /** Note courte sous les horaires (« Fermé en août »), facultative */
+  noteHoraires?: string;
 };

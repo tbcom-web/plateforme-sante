@@ -34,6 +34,7 @@ import {
   type PersonnalisationPack,
   validerManifeste,
   normaliserDraft,
+  phraseJoursDomicile,
   PAYS,
   type Faq,
   type PraticienPublic,
@@ -206,6 +207,9 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       complement: complete ? ligneSansProvisoire(l.complement) : '',
       codePostal: complete ? l.codePostal.trim() : '',
       ville: complete ? l.ville.trim() : '',
+      // Horaires structurés (horaires.ts) : mentions sous le tableau, note sans texte provisoire.
+      surRendezVous: Boolean(l.surRendezVous),
+      noteHoraires: ligneSansProvisoire(l.noteHoraires ?? ''),
     };
   });
   const lieu = lieux[0];
@@ -336,7 +340,8 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
     paiements: d.paiements,
     equipements: d.equipements,
     equipementsAutres: retirerTextesProvisoires(d.equipementsAutres),
-    domicile: { ...d.domicile, creneaux: ligneSansProvisoire(d.domicile.creneaux) },
+    // Créneaux saisis, sinon les jours cochés dans l'éditeur d'horaires (« Le mardi et le jeudi »).
+    domicile: { ...d.domicile, creneaux: ligneSansProvisoire(d.domicile.creneaux) || phraseJoursDomicile(d.domicile.jours) },
     message: messageActif ? messageTexte : '',
     communes: d.cabinet.communes.map(ligneSansProvisoire).filter(Boolean),
     // Hiérarchie du site (thèmes principaux et secondaires) : navigation et pages de thème (lib/navigation.ts)

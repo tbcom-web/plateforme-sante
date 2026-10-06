@@ -10,7 +10,7 @@
 // `niveau` : titres des rubriques en h2 quand la page n'a pas d'autre intertitre (plan d'accès, comme le gabarit classique).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
-import { lieu, itineraire, TYPES_LIEU, aAdresse, adresseLieu, horairesConnus, REPLI_HORAIRES } from '../../lib/textes';
+import { lieu, itineraire, TYPES_LIEU, aAdresse, adresseLieu, horairesConnus, repliHorairesLieu, mentionsHorairesLieu } from '../../lib/textes';
 import RdvContact from '../RdvContact.astro';
 import { semaine, cabinetOuvert } from '../../lib/gabarits';
 
@@ -39,13 +39,15 @@ const acces = [
           ))}
         </tbody>
       </table>
-      <script is:inline>document.querySelectorAll('.horaires tr[data-jour="' + new Date().getDay() + '"]').forEach(function (l) { l.classList.add('aujourdhui'); var e = document.createElement('span'); e.className = 'horaires__jour'; e.textContent = 'aujourd’hui'; l.querySelector('th').appendChild(e); });</script>
+      {mentionsHorairesLieu.map((m) => <p class="horaires__mention">{m}.</p>)}
+      <script is:inline>document.querySelectorAll('.horaires tr[data-jour~="' + new Date().getDay() + '"]').forEach(function (l) { l.classList.add('aujourdhui'); var e = document.createElement('span'); e.className = 'horaires__jour'; e.textContent = 'aujourd’hui'; l.querySelector('th').appendChild(e); });</script>
     </div>
   )}
   {!horairesConnus && (
     <div class="info" id="horaires">
       <Titre class="info__titre"><Icone nom="picto:horaires" secours="lucide:clock" />Horaires</Titre>
-      <p>{REPLI_HORAIRES}.</p>
+      <p>{repliHorairesLieu}.</p>
+      {mentionsHorairesLieu.filter((m) => m !== repliHorairesLieu).map((m) => <p class="horaires__mention">{m}.</p>)}
     </div>
   )}
   <div class="info" id="rdv">
@@ -120,6 +122,7 @@ const acces = [
     .horaires td span { white-space: normal; }
   }
   .horaires .ferme :is(th, td) { color: var(--g-encre-douce); font-weight: 400; }
+  .horaires__mention { margin: 10px 0 0; color: var(--g-encre-douce); }
   .horaires :global(.aujourdhui) :is(th, td) { background: var(--g-bulle); color: var(--g-encre); }
   .horaires :global(.aujourdhui) th { padding-left: 12px; border-radius: 10px 0 0 10px; }
   .horaires :global(.aujourdhui) td { border-radius: 0 10px 10px 0; }

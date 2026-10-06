@@ -4,6 +4,7 @@ import { MODELES_INTEGRES } from './modeles';
 import { specialiteDuProfil } from './packs';
 import { nettoyerEquipements, nettoyerEquipementsAutres } from './equipements';
 import type { Horaire, SiteConfig } from './types';
+import { horaireDe, normaliserHoraires, noteAvecNonLus, JOURS_SEMAINE } from './horaires';
 import type { Voix } from './lexique';
 import type { SectionAccueil } from './modeles';
 import type { Registre } from './dessins';
@@ -62,7 +63,12 @@ export type LieuDraft = {
   complement: string;
   codePostal: string;
   ville: string;
+  /** Les 7 jours, lundi → dimanche, plages structurées (horaires.ts) */
   horaires: Horaire[];
+  /** « Sur rendez-vous uniquement » affiché sous les horaires */
+  surRendezVous: boolean;
+  /** Note courte sous les horaires (« Fermé en août »), contrôlée par le lexique ; garde aussi les anciens horaires non interprétés */
+  noteHoraires: string;
 };
 
 export type SiteDraft = {
@@ -93,7 +99,8 @@ export type SiteDraft = {
   equipements: string[];
   /** Autre matériel, texte libre facultatif (une ligne par élément) */
   equipementsAutres: string;
-  domicile: { actif: boolean; creneaux: string; secteurs: string[] };
+  /** jours : jours de visites possibles (cases de l'éditeur d'horaires) */
+  domicile: { actif: boolean; creneaux: string; secteurs: string[]; jours: string[] };
   message: { texte: string; jusquAu: string };
   conventionnement: string;
   /** Style (modèle), spécialité (pack visuel) et animation d'accueil */
@@ -219,7 +226,7 @@ export const STYLES_IMAGES: { value: StyleImages; label: string }[] = [
 const id = () => Math.random().toString(36).slice(2, 10);
 
 export const horairesParDefaut = (): Horaire[] =>
-  JOURS.map((jour) => ({ jour, heures: jour === 'Samedi' || jour === 'Dimanche' ? 'Fermé' : '9h00–12h30, 14h00–19h00' }));
+  JOURS.map((jour) => horaireDe(jour, jour === 'Samedi' || jour === 'Dimanche' ? [] : [{ debut: '09:00', fin: '12:30' }, { debut: '14:00', fin: '19:00' }]));
 
 export const praticienVide = (statut: StatutPraticien = 'titulaire'): PraticienDraft => ({
   id: id(), prenom: '', nom: '', statut, numeroOrdre: '', rpps: '', inami: '', membreSsp: false, rcc: '',
@@ -227,7 +234,7 @@ export const praticienVide = (statut: StatutPraticien = 'titulaire'): PraticienD
 });
 
 export const lieuVide = (): LieuDraft => ({
-  id: id(), type: 'cabinet', nom: '', adresse: '', complement: '', codePostal: '', ville: '', horaires: horairesParDefaut(),
+  id: id(), type: 'cabinet', nom: '', adresse: '', complement: '', codePostal: '', ville: '', horaires: horairesParDefaut(), surRendezVous: false, noteHoraires: '',
 });
 
 export const draftVide = (): SiteDraft => ({
@@ -243,7 +250,7 @@ export const draftVide = (): SiteDraft => ({
   paiements: ['Carte bancaire', 'Chèques', 'Espèces'],
   equipements: [],
   equipementsAutres: '',
-  domicile: { actif: false, creneaux: '', secteurs: [] },
+  domicile: { actif: false, creneaux: '', secteurs: [], jours: [] },
   message: { texte: '', jusquAu: '' },
   conventionnement: '',
   theme: { couleur: COULEURS_SUGGEREES[0], modele: 'proximite', specialite: 'generale', specialiteSecondaire: '', gamme: '', modeVisuel: 'illustrations', logo: { marque: 'empreinte', disposition: 'horizontale' }, logoPerso: { url: '', complet: true }, animation: true, jeuPhotos: '' },
@@ -253,6 +260,21 @@ export const draftVide = (): SiteDraft => ({
   soins: [],
   perso: { textes: {} },
 });
+
+/**
+ * Lieu complet, horaires structurés (7 jours, plages) : les anciens horaires en texte libre sont convertis, le texte non
+ * interprétable passe dans la note du lieu (rien n'est perdu, horaires.ts).
+ */
+function lieuNormalise(l: Record<string, any>): LieuDraft {
+  const { horaires, nonLus } = normaliserHoraires(Array.isArray(l?.horaires) ? l.horaires : horairesParDefaut());
+  return {
+    ...lieuVide(),
+    ...l,
+    horaires,
+    surRendezVous: Boolean(l?.surRendezVous),
+    noteHoraires: noteAvecNonLus(typeof l?.noteHoraires === 'string' ? l.noteHoraires : '', nonLus),
+  };
+}
 
 /** Convertit un brouillon (v1 ou v2 partiel) en v2 complet. */
 export function normaliserDraft(brut: unknown): SiteDraft {
@@ -266,13 +288,13 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       cabinet: { ...vide.cabinet, ...d.cabinet },
       acces: { ...vide.acces, ...d.acces },
       rdv: { ...vide.rdv, ...d.rdv },
-      domicile: { ...vide.domicile, ...d.domicile },
+      domicile: { ...vide.domicile, ...d.domicile, jours: Array.isArray(d.domicile?.jours) ? JOURS_SEMAINE.filter((j) => d.domicile.jours.includes(j)) : [] },
       message: { ...vide.message, ...d.message },
       // Brouillon enregistré sans style visuel : il garde l'ancien défaut (mélange), seul un nouveau site part en illustrations.
       theme: { ...vide.theme, modeVisuel: 'mixte', specialite: specialiteDuProfil(d.profil), ...d.theme, jeuPhotos: typeof d.theme?.jeuPhotos === 'string' ? d.theme.jeuPhotos : '' },
       flux: { ...vide.flux, ...d.flux, themes: Array.isArray(d.flux?.themes) ? d.flux.themes : [] },
       photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
-      lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => ({ ...lieuVide(), ...l })) : vide.lieux,
+      lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => lieuNormalise(l)) : vide.lieux,
       praticiens: Array.isArray(d.praticiens) && d.praticiens.length ? d.praticiens.map((p: any) => ({ ...praticienVide(), ...p })) : vide.praticiens,
       soins: Array.isArray(d.soins) ? d.soins : [],
       // Priorités enregistrées : normalisées ; absentes (brouillon antérieur) : déduites de la spécialité et des soins.
@@ -294,7 +316,7 @@ export function normaliserDraft(brut: unknown): SiteDraft {
   return {
     ...vide,
     cabinet: { ...vide.cabinet, nom: c1.nom ?? '', ville: c1.ville ?? '', quartier: c1.quartier ?? '', telephone: c1.telephone ?? '' },
-    lieux: [{ ...lieuVide(), adresse: c1.adresse ?? '', codePostal: c1.codePostal ?? '', ville: c1.ville ?? '', horaires: c1.horaires ?? horairesParDefaut() }],
+    lieux: [lieuNormalise({ adresse: c1.adresse ?? '', codePostal: c1.codePostal ?? '', ville: c1.ville ?? '', horaires: c1.horaires ?? horairesParDefaut() })],
     praticiens: [{ ...praticienVide(), prenom: p1.prenom ?? '', nom: p1.nom ?? '', rpps: rpps.length === 11 ? rpps : '', numeroOrdre: rpps.length === 9 ? rpps : '' }],
     acces: { ...vide.acces, pmr: Boolean(c1.pmr) },
     rdv: { mode: d.rdv?.url ? 'les_deux' : 'telephone', outil: d.rdv?.plateforme || 'Doctolib', url: d.rdv?.url ?? '' },

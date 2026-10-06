@@ -5,7 +5,7 @@ import { variantesModele, gabaritModele, pictoSoin, resumeHygiene, faitEquipemen
 import { site } from './site';
 import { cheminTheme } from '@plateforme/core';
 import { navigation } from './navigation';
-import { lieu, TYPES_LIEU, phraseRdv, suffixeVille } from './textes';
+import { lieu, TYPES_LIEU, phraseRdv, suffixeVille, semaineDe } from './textes';
 import { visuelSoin, photoPraticienSoin } from './visuels-soins';
 import { modeVisuel, registre } from './visuels';
 
@@ -36,10 +36,11 @@ export const pourQui = site.soins.flatMap((s) => {
   return [{ libelle: p[1], href: navigation.pages.includes(theme) ? theme : `/soins/${s.slug}`, picto: pictoDuSoin(s.slug) }];
 });
 
-/** Plages d'un jour (« 9h00–12h30, 14h00–19h00 » → deux plages) ; vide = fermé. */
-export const plagesDuJour = (heures: string) => (/\d/.test(heures) ? heures.split(/\s*,\s*/) : []);
-/** Horaires par jour, avec le numéro du jour JavaScript (dimanche = 0) pour repérer « aujourd'hui » côté navigateur. */
-export const semaine = lieu.horaires.map((h, i) => ({ jour: h.jour, plages: plagesDuJour(h.heures), numero: (i + 1) % 7 }));
+/**
+ * Horaires du tableau : jours consécutifs identiques réunis (« Lundi au mercredi »), plages, numéros des jours JavaScript
+ * (« 1 2 3 », dimanche = 0) pour repérer « aujourd'hui » côté navigateur (sélecteur [data-jour~="n"]).
+ */
+export const semaine = semaineDe(lieu.horaires);
 export const cabinetOuvert = semaine.some((j) => j.plages.length > 0);
 
 /** Atouts du lieu d'exercice (mêmes informations que le bandeau « lieu » du gabarit classique). */

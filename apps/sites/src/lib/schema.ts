@@ -3,33 +3,15 @@ import { site, absUrl, baseUrl } from './site';
 import { photoAccueil } from './visuels';
 import { dateMaj } from './agents';
 import { rdvEnLigne, itineraire, lieu, telLien, aTelephone, aAdresse } from './textes';
-import type { Faq, Soin, Article, PraticienPublic } from '@plateforme/core';
+import { specificationsHoraires, type Faq, type Soin, type Article, type PraticienPublic } from '@plateforme/core';
 
 const businessId = `${baseUrl}/#cabinet`;
 const siteId = `${baseUrl}/#site`;
 /** Premier praticien : « #praticien » (référencé par les soins et articles) ; suivants : « #praticien-2 »… */
 const personId = (i = 0) => `${baseUrl}/#praticien${i ? `-${i + 1}` : ''}`;
 
-const jours: Record<string, string> = {
-  Lundi: 'Monday', Mardi: 'Tuesday', Mercredi: 'Wednesday', Jeudi: 'Thursday',
-  Vendredi: 'Friday', Samedi: 'Saturday', Dimanche: 'Sunday',
-};
-
-/** « 9h », « 9h00 », « 14h30 », « 9:00 » → « 09:00 ». */
-const heure = (t: string) => {
-  const [, h, m] = t.match(/(\d{1,2})\s*[h:]\s*(\d{2})?/) ?? [];
-  return h ? `${h.padStart(2, '0')}:${m ?? '00'}` : '';
-};
-
-const openingHours = (horaires = lieu.horaires) =>
-  horaires
-    .filter((h) => /\d/.test(h.heures) && jours[h.jour])
-    .flatMap((h) =>
-      h.heures.split(/\s*[,/]\s*/).flatMap((plage) => {
-        const [opens, closes] = plage.split(/\s*[–—-]\s*/).map(heure);
-        return opens && closes ? [{ '@type': 'OpeningHoursSpecification', dayOfWeek: `https://schema.org/${jours[h.jour]}`, opens, closes }] : [];
-      }),
-    );
+/** Horaires schema.org exacts : une entrée par plage, jours aux plages identiques réunis (horaires.ts). */
+const openingHours = (horaires = lieu.horaires) => specificationsHoraires(horaires);
 
 /** Lien direct vers l'agenda en ligne (sans le compteur /rdv), seulement s'il mène à une page précise. */
 const agenda = rdvEnLigne ? site.rdv.url || site.praticiens.find((p) => p.rdvUrl)?.rdvUrl : undefined;

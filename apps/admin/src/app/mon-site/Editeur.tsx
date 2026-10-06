@@ -44,6 +44,7 @@ import ChoixSujets from '@/components/ChoixSujets';
 import Apercu from '@/components/Apercu';
 import ApercuTheme from '@/components/ApercuTheme';
 import Photo from '@/components/Photo';
+import EditeurHoraires from '@/components/EditeurHoraires';
 import PortraitPraticien from '@/components/PortraitPraticien';
 import type { SoinCatalogue } from '@/lib/sites';
 import type { ModeleDisponible } from '@/lib/modeles';
@@ -337,19 +338,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
           )}
 
           {etape === 3 && (
-            <div className="grid gap-3">
-              <p className="text-sm text-neutral-600">Exemple : « 9h00–12h30, 14h00–19h00 » ou « Fermé ».</p>
-              {lieu.horaires.map((h, i) => (
-                <label key={h.jour} className="grid grid-cols-[100px_1fr] items-center gap-3 text-sm">
-                  <span className="font-medium">{h.jour}</span>
-                  <input
-                    className={champClasse}
-                    value={h.heures}
-                    onChange={(e) => majLieu(0, { horaires: lieu.horaires.map((x, j) => (j === i ? { ...x, heures: e.target.value } : x)) })}
-                  />
-                </label>
-              ))}
-            </div>
+            <EditeurHoraires lieux={d.lieux} onLieux={(lieux) => maj({ lieux })} domicile={d.domicile} onDomicileJours={(jours) => maj({ domicile: { ...d.domicile, jours } })} />
           )}
 
           {etape === 4 && (

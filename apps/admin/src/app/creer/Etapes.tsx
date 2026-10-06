@@ -5,7 +5,6 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
-  appliquerHorairesSimplifies,
   basculerEnAvant,
   basculerSoin,
   choisirCouleurLibre,
@@ -16,9 +15,7 @@ import {
   GAMMES_SOBRES,
   GAMMES_VITAMINEES,
   gammesConseillees,
-  horairesSimplifies,
   initiales,
-  JOURS,
   marquesLogo,
   natureCouleur,
   normaliserCouleur,
@@ -47,6 +44,7 @@ import Photo from '@/components/Photo';
 import ConfirmationPublication from '@/components/ConfirmationPublication';
 import SuiviPublication from '@/components/SuiviPublication';
 import PortraitPraticien from '@/components/PortraitPraticien';
+import EditeurHoraires from '@/components/EditeurHoraires';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Maj = (patch: Partial<SiteDraft>) => void;
@@ -193,8 +191,6 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
     [...new Set([...controle.remplacements, ...(avecConseils ? controle.conseils : [])])].filter((b) => re.test(b) && (!personne || b.includes(`(${personne})`)));
   const majLieu = (patch: Partial<typeof lieu>) => maj({ lieux: d.lieux.map((l, j) => (j === 0 ? { ...l, ...patch } : l)) });
   const majPraticien = (i: number, patch: Partial<PraticienDraft>) => maj({ praticiens: d.praticiens.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
-  const h = horairesSimplifies(lieu.horaires);
-  const [heures, setHeures] = useState(h.heures);
   const idRdv = useId();
   const reste = controle.remplacements.filter((b) => !/compétence/i.test(b));
 
@@ -256,35 +252,7 @@ export function EtapeCabinet({ d, controle, maj, lienAvance }: { d: SiteDraft; c
       <fieldset className={carte}>
         <legend className="sr-only">Horaires</legend>
         <p className="text-lg font-semibold">Horaires</p>
-        {!h.uniformes ? (
-          <div className="grid gap-2 text-sm">
-            <p className="text-neutral-700">Vos horaires varient selon les jours. Ils sont gardés tels quels ; modifiez-les dans les <Link className="font-semibold text-teal-800 underline" href={lienAvance}>réglages avancés</Link>.</p>
-            <button type="button" className={`min-h-11 justify-self-start rounded-lg border border-neutral-300 px-3 font-medium ${focus}`} onClick={() => majLieu({ horaires: appliquerHorairesSimplifies(h.jours, h.heures) })}>
-              Remplacer par les mêmes heures chaque jour ouvert
-            </button>
-          </div>
-        ) : (
-          <>
-            <div role="group" aria-label="Jours d’ouverture" className="flex flex-wrap gap-2">
-              {JOURS.map((j) => {
-                const actif = h.jours.includes(j);
-                return (
-                  <button
-                    key={j}
-                    type="button"
-                    aria-pressed={actif}
-                    onClick={() => majLieu({ horaires: appliquerHorairesSimplifies(actif ? h.jours.filter((x) => x !== j) : [...h.jours, j], heures) })}
-                    className={`min-h-11 min-w-11 rounded-full px-3 text-sm font-semibold ring-1 ${focus} ${actif ? 'bg-teal-800 text-white ring-teal-800' : 'bg-white text-neutral-700 ring-neutral-300'}`}
-                  >
-                    <span aria-hidden="true">{j.slice(0, 3)}.</span>
-                    <span className="sr-only">{j}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <Champ montrer={false} label="Heures d’ouverture" aide="Exemple : 9h00–12h30, 14h00–19h00. Les autres jours sont affichés « Fermé »." value={heures} onChange={(v) => { setHeures(v); majLieu({ horaires: appliquerHorairesSimplifies(h.jours, v) }); }} />
-          </>
-        )}
+        <EditeurHoraires lieux={d.lieux} onLieux={(lieux) => maj({ lieux })} domicile={d.domicile} onDomicileJours={(jours) => maj({ domicile: { ...d.domicile, jours } })} />
       </fieldset>
 
       <fieldset className={carte}>

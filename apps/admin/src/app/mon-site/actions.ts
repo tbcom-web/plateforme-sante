@@ -11,7 +11,7 @@ import { declencherPublication } from '@/lib/publication';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
 import { textesAConserver } from '@/lib/personnalisation';
 import { themesActives } from '@/lib/themes';
-import { prioritesSelectionnables } from '@plateforme/core';
+import { prioritesSelectionnables, nettoyerHoraires, NOTE_HORAIRES_MAX, JOURS_SEMAINE } from '@plateforme/core';
 
 /** version : date de dernière modification du brouillon après l'enregistrement (verrou optimiste) ; conflit : modifié ailleurs. */
 export type EtatEnregistrement = { ok: boolean; message: string; id?: string; version?: string; conflit?: boolean };
@@ -56,7 +56,11 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
       complement: t(l.complement, 120),
       codePostal: t(l.codePostal, 10),
       ville: t(l.ville, 80),
-      horaires: l.horaires.slice(0, 7).map((h) => ({ jour: t(h.jour, 10), heures: t(h.heures, 80) })),
+      // Horaires structurés : 7 jours, plages « HH:MM » valides (horaires.ts) ; texte affiché recalculé.
+      horaires: nettoyerHoraires(l.horaires),
+      surRendezVous: Boolean(l.surRendezVous),
+      // Note courte (120 caractères conseillés) ; marge pour les anciens horaires non interprétés qui y ont été repris.
+      noteHoraires: t(l.noteHoraires, NOTE_HORAIRES_MAX * 3),
     })),
     praticiens: d.praticiens.slice(0, 10).map((p) => ({
       id: t(p.id, 20),
@@ -90,7 +94,7 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
     // Matériel et hygiène : identifiants du catalogue seulement, texte libre borné (300 caractères).
     equipements: nettoyerEquipements(d.equipements),
     equipementsAutres: nettoyerEquipementsAutres(d.equipementsAutres),
-    domicile: { actif: Boolean(d.domicile.actif), creneaux: t(d.domicile.creneaux, 160), secteurs: liste(d.domicile.secteurs, 15) },
+    domicile: { actif: Boolean(d.domicile.actif), creneaux: t(d.domicile.creneaux, 160), secteurs: liste(d.domicile.secteurs, 15), jours: JOURS_SEMAINE.filter((j) => d.domicile.jours.includes(j)) },
     message: { texte: t(d.message.texte, 240), jusquAu: /^\d{4}-\d{2}-\d{2}$/.test(d.message.jusquAu) ? d.message.jusquAu : '' },
     conventionnement: t(d.conventionnement, 160),
     theme: {
