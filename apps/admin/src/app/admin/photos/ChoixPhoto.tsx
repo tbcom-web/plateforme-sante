@@ -5,15 +5,17 @@ import { PHOTOS_INTEGREES } from '@plateforme/core';
 import { envoyerPhoto, TAILLE_MAX } from '@/lib/envoi-photo';
 
 // Choix d'une photo d'un jeu : dans la banque intégrée (/photos, copiée depuis apps/sites/public/photos), ou
-// envoi d'un fichier (WebP compressé, stockage Supabase, dossier banque/… réservé à l'admin).
+// envoi d'un fichier (WebP compressé, stockage Supabase, dossier banque/… réservé à l'admin), ou parmi les photos libres de
+// droits validées (Pexels / Pixabay, hébergées chez nous avec leur licence tracée : /admin/retours, « Photos à découvrir »).
 
-type Props = { label: string; valeur: string; onChange: (url: string) => void; dossier: string; type: string };
+type Props = { label: string; valeur: string; onChange: (url: string) => void; dossier: string; type: string; libres?: { url: string; legende: string }[] };
 
 const nomCourt = (url: string) => decodeURIComponent(url.split('/').pop() ?? '').replace(/\.webp$/, '');
 
-export default function ChoixPhoto({ label, valeur, onChange, dossier, type }: Props) {
+export default function ChoixPhoto({ label, valeur, onChange, dossier, type, libres = [] }: Props) {
   const entree = useRef<HTMLInputElement>(null);
   const [banque, setBanque] = useState(false);
+  const [libre, setLibre] = useState(false);
   const [etat, setEtat] = useState<string | null>(null);
 
   const envoyer = async (fichier: File) => {
@@ -40,6 +42,11 @@ export default function ChoixPhoto({ label, valeur, onChange, dossier, type }: P
         <button type="button" onClick={() => setBanque(!banque)} aria-expanded={banque} className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium hover:bg-neutral-50">
           Banque intégrée
         </button>
+        {libres.length > 0 && (
+          <button type="button" onClick={() => setLibre(!libre)} aria-expanded={libre} className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium hover:bg-neutral-50">
+            Libres de droits ({libres.length})
+          </button>
+        )}
         <button type="button" onClick={() => entree.current?.click()} className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-xs font-medium hover:bg-neutral-50">
           Envoyer
         </button>
@@ -64,6 +71,22 @@ export default function ChoixPhoto({ label, valeur, onChange, dossier, type }: P
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt={nomCourt(src)} loading="lazy" className="aspect-[4/3] w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+      {libre && (
+        <div className="grid grid-cols-3 gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-2 sm:grid-cols-5">
+          {libres.map((p) => (
+            <button
+              key={p.url}
+              type="button"
+              title={p.legende}
+              onClick={() => { onChange(p.url); setLibre(false); }}
+              className={`overflow-hidden rounded ring-2 ${p.url === valeur ? 'ring-teal-700' : 'ring-transparent hover:ring-neutral-400'}`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.url} alt={p.legende} loading="lazy" className="aspect-[4/3] w-full object-cover" />
             </button>
           ))}
         </div>

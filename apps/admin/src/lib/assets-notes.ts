@@ -1,48 +1,75 @@
 import 'server-only';
-import { estCleAsset, photosDuJeu, poidsAssets, jeuPhotosDepuisLigne, type LigneAppriseAsset, type PhotoDeJeu, type PoidsAssets } from '@plateforme/core';
+import { avecSujets, estCleAsset, photosDuJeu, SUJETS_VISUELS, surchargesDepuisLignes, type SurchargesSujets, poidsAssets, jeuPhotosDepuisLigne, type LigneAppriseAsset, type PhotoDeJeu, type PoidsAssets } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
 // Notes des assets (migration 0027) : journal lu par le super admin (/admin/retours, /admin/illustrations), poids appris
 // (assets_notes_apprentissage : clé, note, étiquettes, statuts — ni commentaire ni auteur) pour tout compte connecté.
 
-export type NoteAssetAdmin = { id: string; cle: string; note: number; etiquettes: string[]; commentaire: string | null; empreinte: string | null; le: string };
+export type NoteAssetAdmin = { id: string; cle: string; note: number; etiquettes: string[]; commentaire: string | null; positif: string | null; negatif: string | null; empreinte: string | null; le: string };
 
-type Ligne = { id: string; cle_asset: string; note: number; etiquettes: string[] | null; commentaire: string | null; empreinte: string | null; created_at: string };
+type Ligne = { id: string; cle_asset: string; note: number; etiquettes: string[] | null; commentaire: string | null; positif?: string | null; negatif?: string | null; empreinte: string | null; created_at: string };
 
 /** Journal des notes (plus récentes d'abord) ; `migrationManquante` : table absente (migration 0027 pas encore exécutée) */
 export async function getNotesAssets(): Promise<{ notes: NoteAssetAdmin[]; migrationManquante: boolean }> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('assets_notes')
-    .select('id, cle_asset, note, etiquettes, commentaire, empreinte, created_at')
-    .order('created_at', { ascending: false })
-    .limit(20000);
+  const lire = (colonnes: string) => supabase.from('assets_notes').select(colonnes).order('created_at', { ascending: false }).limit(20000);
+  // Remarques distinctes (0028) ; sans la migration 0028, lecture sans ces colonnes (l'instantané « apercu » n'est lu qu'à la demande)
+  let { data, error } = await lire('id, cle_asset, note, etiquettes, commentaire, positif, negatif, empreinte, created_at');
+  if (error) ({ data, error } = await lire('id, cle_asset, note, etiquettes, commentaire, empreinte, created_at'));
   if (error) return { notes: [], migrationManquante: true };
   return {
-    notes: ((data ?? []) as Ligne[]).map((l) => ({ id: l.id, cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes ?? [], commentaire: l.commentaire, empreinte: l.empreinte, le: l.created_at })),
+    notes: ((data ?? []) as unknown as Ligne[]).map((l) => ({
+      id: l.id, cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes ?? [], commentaire: l.commentaire, positif: l.positif ?? null, negatif: l.negatif ?? null,
+      empreinte: l.empreinte, le: l.created_at,
+    })),
     migrationManquante: false,
   };
 }
 
-/** Poids appris des assets ; null sans notes ni statut, ou si la migration 0027 manque (aucune erreur) */
+/** Surcharges de sujets des visuels (assets_sujets_effectifs, 0028) ; {} si la migration manque */
+export async function getSurchargesSujets(): Promise<SurchargesSujets> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('assets_sujets_effectifs');
+    if (error || !Array.isArray(data)) return {};
+    return surchargesDepuisLignes((data as { cle_asset: string; sujet: string; action: string }[]).map((l) => ({ cle: l.cle_asset, sujet: l.sujet, action: l.action })));
+  } catch {
+    return {};
+  }
+}
+
+/** Poids appris des assets (+ sujets ajoutés / retirés par Paul) ; null sans notes, statut ni surcharge, ou si les migrations manquent */
 export async function getPoidsAssets(): Promise<PoidsAssets | null> {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc('assets_notes_apprentissage', { p_limite: 20000 });
-    if (error || !Array.isArray(data)) return null;
-    return poidsAssets((data as { cle_asset: string; note: number | null; etiquettes: string[] | null; statut: string | null }[])
-      .map((l): LigneAppriseAsset => ({ cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes, statut: l.statut })));
+    const [{ data, error }, sujets] = await Promise.all([supabase.rpc('assets_notes_apprentissage', { p_limite: 20000 }), getSurchargesSujets()]);
+    if (error || !Array.isArray(data)) return avecSujets(null, sujets);
+    return avecSujets(poidsAssets((data as { cle_asset: string; note: number | null; etiquettes: string[] | null; statut: string | null }[])
+      .map((l): LigneAppriseAsset => ({ cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes, statut: l.statut }))), sujets);
   } catch {
     return null;
   }
 }
 
-/** Photos des jeux de photos (stockage) à ajouter à l'inventaire : URL, nom du jeu, spécialité */
+/**
+ * Photos des jeux de photos (stockage) à ajouter à l'inventaire : URL, nom du jeu, spécialité ; puis les photos libres de
+ * droits gardées (Pexels / Pixabay, migration 0028), non retirées : candidates visibles dans la bibliothèque et notables.
+ */
 export async function getPhotosDesJeux(): Promise<PhotoDeJeu[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('jeux_photos').select('id, nom, specialite, photos, source, site_id, actif').order('nom');
-  if (error || !data) return [];
-  return data.map(jeuPhotosDepuisLigne).flatMap((j) => photosDuJeu(j.photos).filter((u) => !u.startsWith('/photos/')).map((url) => ({ url, jeu: j.nom, specialite: j.specialite })));
+  const [{ data, error }, { data: libres }] = await Promise.all([
+    supabase.from('jeux_photos').select('id, nom, specialite, photos, source, site_id, actif').order('nom'),
+    supabase.from('photos_libres').select('url, source, sujet, statut').neq('statut', 'retiree').order('created_at'),
+  ]);
+  const desJeux = error || !data ? [] : data.map(jeuPhotosDepuisLigne).flatMap((j) => photosDuJeu(j.photos).filter((u) => !u.startsWith('/photos/')).map((url) => ({ url, jeu: j.nom, specialite: j.specialite })));
+  // Table absente (migration 0028 pas encore exécutée) : `libres` vaut null, aucune erreur
+  const desLibres = (libres ?? []).map((l: { url: string; source: string; sujet: string; statut: string }) => ({
+    url: l.url,
+    jeu: `Banque libre ${l.source === 'pexels' ? 'Pexels' : 'Pixabay'}${l.statut === 'a_valider' ? ' (à valider)' : ''}`,
+    sujet: l.sujet,
+    specialite: SUJETS_VISUELS.find((s) => s.id === l.sujet)?.specialite ?? 'generale',
+  }));
+  return [...desJeux, ...desLibres];
 }
 
 export const cleAssetValide = (cle: unknown): cle is string => estCleAsset(cle);

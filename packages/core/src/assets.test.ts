@@ -136,11 +136,11 @@ test('retours : tirage prioritaire, série de jours, paliers, changements', () =
     { cle: 'b', note: 3, empreinte: 'x', le: '1' }, { cle: 'b', note: 3, empreinte: 'x', le: '2' },
     { cle: 'c', note: 1, empreinte: '3' },
   ]);
-  assert.equal(prochaineCarte(c, etats)?.cle, 'd', 'jamais noté d’abord');
-  assert.equal(prochaineCarte(c, etats, new Set(['d']))?.cle, 'b', 'puis modifié');
+  assert.equal(prochaineCarte(c, etats)?.cle, 'b', 'modifié depuis la note d’abord (avant / après)');
+  assert.equal(prochaineCarte(c, etats, new Set(['b']))?.cle, 'd', 'puis jamais noté');
   assert.equal(prochaineCarte(c, etats, new Set(['d', 'b']))?.cle, 'c', 'puis incertain');
   assert.equal(prochaineCarte(c, etats, new Set(['a', 'b', 'c', 'd']))?.cle !== undefined, true, 'tout vu : on recommence');
-  assert.equal(prioriteAsset(undefined), 0);
+  assert.equal(prioriteAsset(undefined), 1);
   const m = new Date('2026-10-07T15:00:00Z');
   assert.deepEqual(serieAvis(['2026-10-07T08:00:00Z', '2026-10-07T09:00:00Z', '2026-10-06T09:00:00Z', '2026-10-05T09:00:00Z', '2026-10-01T09:00:00Z'], m), { aujourdhui: 2, serie: 3, jours: 4 });
   assert.equal(serieAvis(['2026-10-06T09:00:00Z'], m).serie, 1, 'hier compte encore');

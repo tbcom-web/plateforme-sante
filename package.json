@@ -10,6 +10,7 @@
     "dev:admin": "npm run dev -w apps/admin",
     "build": "npm run build -w apps/sites",
     "preview": "npm run preview -w apps/sites",
-    "verifier": "node scripts/verifier.mjs"
+    "verifier": "node scripts/verifier.mjs",
+    "archiver-assets": "node scripts/archiver-assets.mjs"
   }
 }

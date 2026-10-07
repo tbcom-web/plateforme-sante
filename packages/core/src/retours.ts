@@ -40,16 +40,19 @@ export const categorieDuType = (t: TypeAsset): CategorieRetours => CATEGORIES_RE
 /** État d'un asset vis-à-vis des notes : nombre, empreinte du rendu lors de la dernière note, notes extrêmes */
 export type EtatNotesAsset = { n: number; empreinte?: string | null; min: number; max: number };
 
-/** Palier de priorité : 0 jamais noté, 1 modifié depuis la dernière note, 2 note incertaine (1 seule, ou avis partagés), 3 le reste */
+/**
+ * Palier de priorité : 0 modifié depuis la dernière note (avant / après à juger, demande de Paul 2026-10-07), 1 jamais noté,
+ * 2 note incertaine (1 seule, ou avis partagés), 3 le reste
+ */
 export function prioriteAsset(e: EtatNotesAsset | undefined, empreinte?: string | null): 0 | 1 | 2 | 3 {
-  if (!e || !e.n) return 0;
-  if (empreinte && e.empreinte && e.empreinte !== empreinte) return 1;
+  if (!e || !e.n) return 1;
+  if (empreinte && e.empreinte && e.empreinte !== empreinte) return 0;
   if (e.n < 2 || e.max - e.min >= 2) return 2;
   return 3;
 }
 
 /**
- * Prochaine carte : au hasard dans le meilleur palier non vide (jamais notés, puis modifiés, puis incertains, puis le reste),
+ * Prochaine carte : au hasard dans le meilleur palier non vide (modifiés depuis la note, puis jamais notés, puis incertains, puis le reste),
  * sans les clés déjà vues dans la session (`exclues`) tant qu'il en reste d'autres.
  */
 export function prochaineCarte<T extends { cle: string; empreinte?: string | null }>(

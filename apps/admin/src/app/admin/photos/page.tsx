@@ -1,19 +1,28 @@
 import Link from 'next/link';
-import { jeuPhotosDepuisLigne, LIBELLES_SOURCES, normaliserDraft, SPECIALITES } from '@plateforme/core';
+import { jeuPhotosDepuisLigne, LIBELLES_SOURCES, libelleSujet, normaliserDraft, SPECIALITES, SUJETS_VISUELS } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { COLONNES_JEU } from '@/lib/jeux-photos';
+import { getPhotosLibres } from '@/lib/photos-libres';
 import { getCatalogue } from '@/lib/sites';
 import EditeurJeu from './EditeurJeu';
+import StatutPhotoLibre from './StatutPhotoLibre';
 
 export const metadata = { title: 'Super admin · Jeux de photos' };
 
 export default async function JeuxPhotos() {
   const supabase = await createClient();
-  const [{ data, error }, { data: sites }, catalogue] = await Promise.all([
+  const [{ data, error }, { data: sites }, catalogue, libres] = await Promise.all([
     supabase.from('jeux_photos').select(COLONNES_JEU).order('created_at'),
     supabase.from('sites').select('id, config'),
     getCatalogue(),
+    getPhotosLibres(),
   ]);
+  // Photos libres de droits validées, proposées dans le choix des jeux partagés (les sujets de la spécialité d'abord)
+  const libresDe = (spec: string) => {
+    const validees = libres.photos.filter((p) => p.statut === 'validee');
+    const duSujet = (p: (typeof validees)[number]) => SUJETS_VISUELS.find((x) => x.id === p.sujet)?.specialite === spec;
+    return [...validees.filter(duSujet), ...validees.filter((p) => !duSujet(p))].map((p) => ({ url: p.url, legende: `${libelleSujet(p.sujet)} · ${p.auteur} (${p.source === 'pexels' ? 'Pexels' : 'Pixabay'})` }));
+  };
   const jeux = (data ?? []).map(jeuPhotosDepuisLigne);
   const soins = catalogue.map((s) => ({ slug: s.slug, titre: s.titre_court }));
 
@@ -49,12 +58,48 @@ export default async function JeuxPhotos() {
               <span className="text-sm text-neutral-600">{actifs} jeu(x) actif(s) dans le tirage</span>
             </div>
             {partages.map((j) => (
-              <EditeurJeu key={j.id} jeu={j} specialite={spec.value} siteId={null} soins={soins} nbSites={utilisation.get(j.id) ?? 0} />
+              <EditeurJeu key={j.id} jeu={j} specialite={spec.value} siteId={null} soins={soins} nbSites={utilisation.get(j.id) ?? 0} libres={libresDe(spec.value)} />
             ))}
-            <EditeurJeu jeu={null} specialite={spec.value} siteId={null} soins={soins} />
+            <EditeurJeu jeu={null} specialite={spec.value} siteId={null} soins={soins} libres={libresDe(spec.value)} />
           </section>
         );
       })}
+
+      <section aria-labelledby="photos-libres" className="grid gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="photos-libres" className="text-lg font-semibold">Photos libres de droits (Pexels, Pixabay)</h2>
+          <a href="/admin/photos/licences.csv" className="flex min-h-11 items-center rounded-xl border border-neutral-300 bg-white px-3 text-sm font-semibold hover:bg-neutral-50">Exporter les licences (CSV)</a>
+        </div>
+        <p className="max-w-3xl text-sm text-neutral-600">
+          Gardées depuis « Donner mon avis » → Photos à découvrir : hébergées chez nous (WebP, sans métadonnées), jamais de lien vers la banque.
+          Validée, une photo est proposée dans le choix des jeux ci-dessus (« Libres de droits »). Chaque ligne garde sa preuve de licence.
+          Banque intégrée : photos Unsplash téléchargées et hébergées, crédits dans <code>apps/sites/public/photos/CREDITS.md</code> ;
+          Adobe Stock : licences sur la fiche du site. Le CSV réunit photos libres et licences Adobe Stock.
+        </p>
+        {libres.migrationManquante ? (
+          <p className="text-sm text-amber-900">Migration 0028 à exécuter (<code>supabase/migrations/0028_inspirations_photos_libres.sql</code>).</p>
+        ) : libres.photos.length === 0 ? (
+          <p className="text-sm text-neutral-500">Aucune photo gardée pour l’instant.</p>
+        ) : (
+          <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {libres.photos.map((p) => (
+              <li key={p.id} className={`grid min-w-0 content-start gap-2 rounded-xl border border-black/10 bg-white p-3 ${p.statut === 'retiree' ? 'opacity-60' : ''}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.url} alt={`${libelleSujet(p.sujet)} · photo de ${p.auteur}`} loading="lazy" className="aspect-[3/2] w-full rounded-lg bg-neutral-100 object-cover" />
+                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
+                  <dt className="text-neutral-500">Sujet</dt><dd>{libelleSujet(p.sujet)}</dd>
+                  <dt className="text-neutral-500">Source</dt><dd><a href={p.pageUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.source === 'pexels' ? 'Pexels' : 'Pixabay'} n° {p.idSource}</a></dd>
+                  <dt className="text-neutral-500">Auteur</dt><dd className="truncate">{p.auteurUrl ? <a href={p.auteurUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.auteur}</a> : p.auteur}</dd>
+                  <dt className="text-neutral-500">Licence</dt><dd><a href={p.licenceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.licence}</a>, {p.licenceVersion}</dd>
+                  <dt className="text-neutral-500">Téléchargée</dt><dd>{new Date(p.telechargeLe).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })} · {p.largeurs.join(', ')} px</dd>
+                  <dt className="text-neutral-500">Mots-clés</dt><dd className="truncate">{p.motsCles.join(', ')}</dd>
+                </dl>
+                <StatutPhotoLibre id={p.id} statut={p.statut} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="grid gap-2">
         <h2 className="text-lg font-semibold">Jeux exclusifs (photos premium)</h2>

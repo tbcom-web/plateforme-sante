@@ -1,7 +1,7 @@
 'use server';
 
 import {
-  cleCombinaison, estEtiquetteAtelier, ingredientsCanoniques, ingredientsProposition, propositionParId,
+  cleCombinaison, estEtiquetteAtelier, ingredientsCanoniques, ingredientsProposition, propositionParId, texteRemarques,
   type IngredientsAtelier,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -14,7 +14,7 @@ export type ResultatNoteAtelier = { ok: boolean; message: string; cle?: string; 
  * est retrouvée par son identifiant dans le scénario (sujets, couleurs), comme le fait le générateur ; une combinaison qui ne
  * correspond à rien est refusée.
  */
-export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, note: number, etiquettes: string[], commentaire: string): Promise<ResultatNoteAtelier> {
+export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, note: number, etiquettes: string[], commentaire: string, remarques: { positif?: string; negatif?: string } = {}): Promise<ResultatNoteAtelier> {
   await exigerAdmin();
   if (!Number.isInteger(note) || note < 1 || note > 5) return { ok: false, message: 'Note de 1 à 5.' };
   const i = ingredientsCanoniques(recus ?? {});
@@ -27,7 +27,15 @@ export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, not
   const etq = [...new Set((etiquettes ?? []).filter(estEtiquetteAtelier))];
   const user = await getUser();
   const supabase = await createClient();
-  const { error } = await supabase.from('atelier_notes').insert({ cle_combinaison: cle, ingredients, note, etiquettes: etq, commentaire: texte, auteur: user?.id ?? null });
+  const positif = String(remarques?.positif ?? '').trim().slice(0, 2000) || null;
+  const negatif = String(remarques?.negatif ?? '').trim().slice(0, 2000) || null;
+  const base = { cle_combinaison: cle, ingredients, note, etiquettes: etq, commentaire: texte, auteur: user?.id ?? null };
+  const ligne: Record<string, unknown> = positif || negatif ? { ...base, positif, negatif } : base;
+  let { error } = await supabase.from('atelier_notes').insert(ligne);
+  // Sans la migration 0028 (colonnes positif / negatif) : remarques regroupées dans le commentaire
+  if (error && (positif || negatif)) {
+    ({ error } = await supabase.from('atelier_notes').insert({ ...base, commentaire: texteRemarques({ positif, negatif, commentaire: texte }).slice(0, 2000) }));
+  }
   if (error) return { ok: false, message: 'Enregistrement impossible : migration 0026 à exécuter (supabase/migrations/0026_atelier_notes.sql).', migrationManquante: true };
-  return { ok: true, message: `${p.nom} : ${note}★ enregistrée${texte ? ' avec commentaire' : ''}.`, cle };
+  return { ok: true, message: `${p.nom} : ${note}★ enregistrée${texte || positif || negatif ? ' avec remarques' : ''}.`, cle };
 }

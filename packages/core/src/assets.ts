@@ -13,6 +13,7 @@
 // (assets_notes, 0027) et statuts (illustrations_revues / illustrations_statuts, 0021) l'enregistrent. Étiquettes rapides
 // adaptées à la famille de l'asset ; synthèse des tendances et retours en Markdown (page et export quotidien vers le dépôt).
 
+import { texteRemarques } from './remarques';
 import { CLE_ASSET, clePhoto, statsAssets, typeDeCle, LISSAGE_ASSETS, type TypeAsset } from './assets-poids';
 import { inventaireIllustrations, type StatutIllustration } from './illustrations';
 import { PHOTOS_INTEGREES } from './jeux-photos';
@@ -138,7 +139,7 @@ export interface Asset {
 }
 
 /** Photo d'un jeu de photos (table jeux_photos) */
-export type PhotoDeJeu = { url: string; jeu: string; specialite: string };
+export type PhotoDeJeu = { url: string; jeu: string; specialite: string; /** Sujet choisi (photos libres « Photos à découvrir ») */ sujet?: string };
 
 const nomFichier = (url: string) => url.split('?')[0].split('/').pop() ?? url;
 
@@ -195,7 +196,7 @@ export function inventaireAssets(opts: { photosJeux?: readonly PhotoDeJeu[] } = 
     vues.add(cle);
     ajout.push({
       cle, type: 'photo', titre: nomFichier(p.url), detail: `Jeu « ${p.jeu} » (${p.specialite})`, source: `Stockage Supabase « photos » — ${cle.slice(6)}`,
-      soins: [p.specialite], statutParDefaut: 'a_revoir', rendu: { kind: 'image', src: p.url, largeur: 1600, hauteur: 1067 },
+      soins: [p.sujet ?? p.specialite], statutParDefaut: 'a_revoir', rendu: { kind: 'image', src: p.url, largeur: 1600, hauteur: 1067 },
     });
   }
   return ajout.length ? [...l, ...ajout] : l;
@@ -213,7 +214,12 @@ export function titresAssets(): Record<string, string> {
 // Synthèse des tendances
 // ---------------------------------------------------------------------------------------------------------------
 
-export type NoteAssetLue = { cle: string; note: number; etiquettes?: readonly string[] | null; commentaire?: string | null; le?: string | null };
+export type NoteAssetLue = {
+  cle: string; note: number; etiquettes?: readonly string[] | null; commentaire?: string | null;
+  /** Champs libres « Ce qui va bien » / « Ce qui ne va pas » (0028) ; `commentaire` reste pour les notes plus anciennes */
+  positif?: string | null; negatif?: string | null; le?: string | null;
+};
+
 export type StatutAssetLu = { cle: string; statut: StatutIllustration | string; commentaire?: string | null; le?: string | null };
 
 export type LigneSyntheseAsset = { cle: string; titre: string; type: TypeAsset; n: number; moyenne: number; lissee: number; effet: number; etiquettes: [string, number][] };
@@ -228,7 +234,7 @@ export type SyntheseAssets = {
   etiquettes: { id: string; libelle: string; total: number; assets: { titre: string; nb: number }[] }[];
   aRetravailler: { cle: string; titre: string; commentaire: string | null; le: string | null }[];
   retires: { cle: string; titre: string }[];
-  commentaires: { cle: string; titre: string; note: number; etiquettes: string[]; commentaire: string; le: string | null }[];
+  commentaires: { cle: string; titre: string; note: number; etiquettes: string[]; commentaire: string; positif: string | null; negatif: string | null; le: string | null }[];
 };
 
 const arr2 = (x: number) => Math.round(x * 100) / 100;
@@ -265,9 +271,12 @@ export function syntheseAssets(
   const aRetravailler = statuts.filter((s) => s.statut === 'a_retravailler').map((s) => ({ cle: s.cle, titre: titre(s.cle), commentaire: s.commentaire?.trim() || null, le: s.le ?? null }))
     .sort((a, b) => String(b.le ?? '').localeCompare(String(a.le ?? '')) || (a.cle < b.cle ? -1 : 1));
   const retires = statuts.filter((s) => s.statut === 'retire').map((s) => ({ cle: s.cle, titre: titre(s.cle) })).sort((a, b) => (a.cle < b.cle ? -1 : 1));
-  const commentaires = notes.filter((x) => x.commentaire && x.commentaire.trim())
+  const commentaires = notes.filter((x) => texteRemarques(x))
     .slice().sort((a, b) => String(b.le ?? '').localeCompare(String(a.le ?? '')) || (a.cle < b.cle ? -1 : 1)).slice(0, 40)
-    .map((x) => ({ cle: x.cle, titre: titre(x.cle), note: x.note, etiquettes: [...(x.etiquettes ?? [])], commentaire: x.commentaire!.trim(), le: x.le ?? null }));
+    .map((x) => ({
+      cle: x.cle, titre: titre(x.cle), note: x.note, etiquettes: [...(x.etiquettes ?? [])], commentaire: (x.commentaire ?? '').trim(),
+      positif: x.positif?.trim() || null, negatif: x.negatif?.trim() || null, le: x.le ?? null,
+    }));
   return { total: n, moyenne: arr2(moyenne), repartition, parType, meilleures, pires, etiquettes, aRetravailler, retires, commentaires };
 }
 
@@ -307,8 +316,8 @@ export function markdownAssets(s: SyntheseAssets, opts: { date?: string; titre?:
     l.push(`### Retirés (${s.retires.length})`, '', s.retires.map((r) => `\`${r.cle}\``).join(', '), '');
   }
   if (s.commentaires.length) {
-    l.push('### Commentaires récents', '');
-    for (const c of s.commentaires) l.push(`- ${c.note}★ \`${c.cle}\` ${uneLigne(c.titre)}${c.etiquettes.length ? ` [${c.etiquettes.map(libelleEtiquetteAsset).join(', ')}]` : ''} : ${uneLigne(c.commentaire)}`);
+    l.push('### Remarques récentes (ce qui va bien / ce qui ne va pas / commentaire)', '');
+    for (const c of s.commentaires) l.push(`- ${c.note}★ \`${c.cle}\` ${uneLigne(c.titre)}${c.etiquettes.length ? ` [${c.etiquettes.map(libelleEtiquetteAsset).join(', ')}]` : ''} : ${texteRemarques(c)}`);
     l.push('');
   }
   l.push(`Formule : moyenne lissée = (somme + ${LISSAGE_ASSETS} × moyenne générale) / (n + ${LISSAGE_ASSETS}) ; « Retiré » et « À retravailler » pénalisent l’asset dans les propositions.`);

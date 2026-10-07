@@ -155,3 +155,17 @@ export async function retirerAuSort(siteId: string): Promise<Resultat> {
   const r = await ecrireJeuDuSite(siteId, site.config, jeu);
   return r?.ok && !jeu ? { ok: true, message: 'Aucun jeu partagé actif pour cette spécialité : photos intégrées.' } : r;
 }
+
+/**
+ * Statut d'une photo libre de droits gardée (Pexels / Pixabay, migration 0028) : « validée » = proposée dans le choix des
+ * jeux de photos ; « retirée » = plus proposée ni notée. La ligne de traçabilité n'est jamais supprimée (preuve de licence).
+ */
+export async function changerStatutPhotoLibre(id: string, statut: 'a_valider' | 'validee' | 'retiree'): Promise<Resultat> {
+  await exigerAdmin();
+  if (!UUID.test(id) || !['a_valider', 'validee', 'retiree'].includes(statut)) return { ok: false, message: 'Valeur invalide.' };
+  const supabase = await createClient();
+  const { error } = await supabase.from('photos_libres').update({ statut, updated_at: new Date().toISOString() }).eq('id', id);
+  revalidatePath('/admin/photos');
+  revalidatePath('/admin/illustrations');
+  return error ? { ok: false, message: 'Modification impossible (migration 0028 ?).' } : { ok: true, message: statut === 'validee' ? 'Validée : proposée dans le choix des jeux de photos.' : statut === 'retiree' ? 'Retirée (traçabilité conservée).' : 'Remise à valider.' };
+}

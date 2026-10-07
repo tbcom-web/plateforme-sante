@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { markdownAssets, syntheseAssets, titresAssets } from '@plateforme/core';
 import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { exigerAdmin } from '@/lib/admin';
-import { getNotesAssets, getPhotosDesJeux } from '@/lib/assets-notes';
+import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getRevuesIllustrations } from '@/lib/illustrations';
 import RevueIllustrations from './RevueIllustrations';
 import SyntheseAssets from './SyntheseAssets';
@@ -11,7 +11,10 @@ export const metadata = { title: 'Super admin · Bibliothèque & retours' };
 
 export default async function PageIllustrations() {
   await exigerAdmin();
-  const [{ statuts, revues, migrationManquante }, notes, photosJeux] = await Promise.all([getRevuesIllustrations(), getNotesAssets(), getPhotosDesJeux()]);
+  const [{ statuts, revues, migrationManquante }, notes, photosJeux, surchargesSujets] = await Promise.all([getRevuesIllustrations(), getNotesAssets(), getPhotosDesJeux(), getSurchargesSujets()]);
+  // Empreinte de la dernière note de chaque élément (avant / après dans la vue agrandie)
+  const empreintesNotees: Record<string, string | null> = {};
+  for (const x of notes.notes) if (!(x.cle in empreintesNotees)) empreintesNotees[x.cle] = x.empreinte;
   const moyennes: Record<string, { n: number; somme: number }> = {};
   for (const x of notes.notes) moyennes[x.cle] = { n: (moyennes[x.cle]?.n ?? 0) + 1, somme: (moyennes[x.cle]?.somme ?? 0) + x.note };
   const synthese = syntheseAssets(notes.notes, {
@@ -44,7 +47,7 @@ export default async function PageIllustrations() {
         </p>
       )}
       <SyntheseAssets synthese={synthese} markdown={markdownAssets(synthese, { date })} />
-      <RevueIllustrations statuts={statuts} revues={revues} migrationManquante={migrationManquante} photosJeux={photosJeux} moyennes={moyennes} migrationNotes={notes.migrationManquante} />
+      <RevueIllustrations statuts={statuts} revues={revues} migrationManquante={migrationManquante} photosJeux={photosJeux} moyennes={moyennes} migrationNotes={notes.migrationManquante} surchargesSujets={surchargesSujets} empreintesNotees={empreintesNotees} />
     </div>
   );
 }

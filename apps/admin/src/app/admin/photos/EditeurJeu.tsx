@@ -23,6 +23,8 @@ type Props = {
   nbSites?: number;
   /** Ouvert d'emblée (nouveau jeu) */
   ouvert?: boolean;
+  /** Photos libres de droits validées (Pexels / Pixabay, hébergées chez nous) proposées au choix : jeux partagés seulement */
+  libres?: { url: string; legende: string }[];
 };
 
 const VIDE: PhotosJeu = { accueil: '', panorama: '', galerie: [], soins: {} };
@@ -50,7 +52,7 @@ export function PlancheContact({ photos, soins }: { photos: PhotosJeu; soins: { 
   );
 }
 
-export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: licencesInitiales = {}, nbSites = 0, ouvert = false }: Props) {
+export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: licencesInitiales = {}, nbSites = 0, ouvert = false, libres = [] }: Props) {
   const router = useRouter();
   const [nom, setNom] = useState(jeu?.nom ?? '');
   const [source, setSource] = useState<SourceJeuPhotos>(jeu?.source ?? (siteId ? 'adobe' : 'banque'));
@@ -122,8 +124,8 @@ export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: l
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <ChoixPhoto label="Photo d’accueil" valeur={photos.accueil} onChange={(u) => maj({ accueil: u })} dossier={dossier} type="accueil" />
-            <ChoixPhoto label="Photo panoramique" valeur={photos.panorama} onChange={(u) => maj({ panorama: u })} dossier={dossier} type="panorama" />
+            <ChoixPhoto label="Photo d’accueil" valeur={photos.accueil} onChange={(u) => maj({ accueil: u })} dossier={dossier} libres={libres} type="accueil" />
+            <ChoixPhoto label="Photo panoramique" valeur={photos.panorama} onChange={(u) => maj({ panorama: u })} dossier={dossier} libres={libres} type="panorama" />
           </div>
 
           <fieldset className="grid gap-2">
@@ -134,7 +136,7 @@ export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: l
                   key={u || `nouvelle-${k}`}
                   label={`Photo ${k + 1}`}
                   valeur={u}
-                  dossier={dossier}
+                  dossier={dossier} libres={libres}
                   type="galerie"
                   onChange={(v) => maj({ galerie: v ? [...photos.galerie.slice(0, k), v, ...photos.galerie.slice(k + 1)] : photos.galerie.filter((_, j) => j !== k) })}
                 />
@@ -150,7 +152,7 @@ export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: l
                   key={s.slug}
                   label={s.titre}
                   valeur={photos.soins[s.slug] ?? ''}
-                  dossier={dossier}
+                  dossier={dossier} libres={libres}
                   type={`soin-${s.slug}`}
                   onChange={(v) => {
                     const suivant = { ...photos.soins };

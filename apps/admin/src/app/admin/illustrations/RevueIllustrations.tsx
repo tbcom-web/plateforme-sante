@@ -7,15 +7,23 @@ import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState, useTransition, type CSSProperties } from 'react';
 import {
-  empreinteSvg, GAMMES, gamme as gammeParId, inventaireAssets, LIBELLES_REGISTRES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, markdownRetours,
+  empreinteAsset, empreinteSvg, GAMMES, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, type SurchargesSujets, gamme as gammeParId, inventaireAssets, LIBELLES_REGISTRES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, markdownRetours,
   pastilleGamme, STATUTS_ILLUSTRATION, SURFACES_CSS, variablesCharte, variablesGamme,
   type Asset, type PhotoDeJeu, type Registre, type StatutIllustration, type TypeAsset,
 } from '@plateforme/core';
+import AvantApres from '@/components/AvantApres';
+import SujetsVisuel from '@/components/SujetsVisuel';
 import type { Revue, StatutEnregistre } from '@/lib/illustrations';
 import { ajouterNoteAsset } from '../retours/actions';
 import { ajouterRevue } from './actions';
 
-type Props = { statuts: StatutEnregistre[]; revues: Revue[]; migrationManquante: boolean; photosJeux: PhotoDeJeu[]; moyennes: Record<string, { n: number; somme: number }>; migrationNotes: boolean };
+type Props = {
+  statuts: StatutEnregistre[]; revues: Revue[]; migrationManquante: boolean; photosJeux: PhotoDeJeu[]; moyennes: Record<string, { n: number; somme: number }>; migrationNotes: boolean;
+  /** Sujets ajoutés / retirés par Paul (0028) */
+  surchargesSujets: SurchargesSujets;
+  /** Empreinte de la dernière note par clé (avant / après) */
+  empreintesNotees: Record<string, string | null>;
+};
 type Ligne = Asset & { empreinte: string; svgRendu: string; fond: 'grille' | 'plan' | 'doux' | 'clair'; registre?: Registre };
 type FiltreStatut = 'tous' | 'a_regarder' | StatutIllustration;
 
@@ -68,7 +76,9 @@ function Apercu({ html, fond, grand = false, petit = false }: { html: string; fo
 
 const registreDeCle = (cle: string): Registre | undefined => (cle.startsWith('ligne:') || cle.endsWith(':ligne') ? 'ligne' : cle.endsWith(':releve') || cle.startsWith('animation:') ? 'releve' : cle.endsWith(':pedagogique') || cle.startsWith('biblio:') ? 'pedagogique' : undefined);
 
-export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes }: Props) {
+export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes, surchargesSujets, empreintesNotees }: Props) {
+  const [surcharges, setSurcharges] = useState(surchargesSujets);
+  const [filtreSujet, setFiltreSujet] = useState('');
   const lignes = useMemo<Ligne[]>(() => inventaireAssets({ photosJeux }).map((a) => {
     const s = a.rendu.kind === 'svg' ? a.rendu.svg() : '';
     return { ...a, svgRendu: s, empreinte: s ? empreinteSvg(s) : '', fond: a.rendu.kind === 'svg' ? a.rendu.fond : 'clair', registre: registreDeCle(a.cle) };
@@ -78,7 +88,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
   const [notesMsg, setNotesMsg] = useState<Record<string, string>>({});
   const noterVite = async (l: Ligne, n: number) => {
     if (migrationNotes) { setNotesMsg((m) => ({ ...m, [l.cle]: 'Migration 0027 à exécuter.' })); return; }
-    const r = await ajouterNoteAsset(l.cle, n, [], '', l.empreinte || null).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
+    const r = await ajouterNoteAsset(l.cle, n, [], '', empreinteAsset(l, l.svgRendu || null), { apercu: instantaneAsset(l, l.svgRendu || null) }).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
     setNotesMsg((m) => ({ ...m, [l.cle]: r.message }));
     if (r.ok) setMoyennes((m) => ({ ...m, [l.cle]: { n: (m[l.cle]?.n ?? 0) + 1, somme: (m[l.cle]?.somme ?? 0) + n } }));
   };
@@ -134,10 +144,11 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
       if (filtreType !== 'tous' && l.type !== filtreType) return false;
       if (filtreRegistre !== 'tous' && l.registre !== filtreRegistre) return false;
       if (filtreSoin !== 'tous' && !l.soins.includes(filtreSoin)) return false;
+      if (filtreSujet && !sujetsDuVisuel(l, surcharges).sujets.includes(filtreSujet)) return false;
       if (q && ![l.cle, l.titre, l.detail ?? '', ...l.soins].some((t) => t.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [lignes, recherche, filtreStatut, filtreType, filtreRegistre, filtreSoin, statutDe, nouveau, modifie]);
+  }, [lignes, recherche, filtreStatut, filtreType, filtreRegistre, filtreSoin, filtreSujet, surcharges, statutDe, nouveau, modifie]);
 
   const compteurs = useMemo(() => {
     const c: Record<StatutIllustration, number> = { a_revoir: 0, valide: 0, a_retravailler: 0, retire: 0 };
@@ -247,6 +258,10 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
           <option value="tous">Tous les soins et fiches</option>
           {soins.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
+        <select value={filtreSujet} onChange={(e) => setFiltreSujet(e.target.value)} className={choix} aria-label="Sujet">
+          <option value="">Tous les sujets</option>
+          {SUJETS_VISUELS.map((x) => <option key={x.id} value={x.id}>{x.libelle}</option>)}
+        </select>
         <select value={gamme} onChange={(e) => choisirGamme(e.target.value)} className={choix} aria-label="Gamme de couleurs de l’aperçu">
           {GAMMES.map((x) => <option key={x.id} value={x.id}>Gamme {x.nom}</option>)}
         </select>
@@ -314,6 +329,16 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 <button type="button" onClick={() => setOuverte(null)} className="min-h-11 rounded-lg bg-neutral-900 px-4 text-sm font-semibold text-white">Fermer</button>
               </div>
             </div>
+            {(() => {
+              // Avant / après : la dernière note porte sur une autre version que l'actuelle
+              const notee = empreintesNotees[ligneOuverte.cle];
+              const actuelle = empreinteAsset(ligneOuverte, ligneOuverte.svgRendu || null);
+              return notee && actuelle && notee !== actuelle ? (
+                <AvantApres key={ligneOuverte.cle} cle={ligneOuverte.cle}>
+                  {ligneOuverte.rendu.kind === 'svg' ? <Apercu html={ligneOuverte.svgRendu} fond={ligneOuverte.fond} grand petit={ligneOuverte.type === 'picto'} /> : <ApercuAutre l={ligneOuverte} grand />}
+                </AvantApres>
+              ) : null;
+            })()}
             <div className={`grid gap-3 ${ligneOuverte.rendu.kind === 'svg' && ligneOuverte.rendu.svgVariante ? 'md:grid-cols-2' : ''}`}>
               {ligneOuverte.rendu.kind === 'svg' ? <Apercu html={ligneOuverte.svgRendu} fond={ligneOuverte.fond} grand petit={ligneOuverte.type === 'picto'} /> : <ApercuAutre l={ligneOuverte} grand />}
               {ligneOuverte.rendu.kind === 'svg' && ligneOuverte.rendu.svgVariante && (
@@ -332,7 +357,8 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 {etoilesRapides(ligneOuverte)}
                 {messages[ligneOuverte.cle] && <p className={`text-xs ${messages[ligneOuverte.cle].ok ? 'text-teal-800' : 'text-red-700'}`}>{messages[ligneOuverte.cle].message}</p>}
                 <p className="text-xs text-neutral-500">Source : <code className="break-all">{ligneOuverte.source}</code></p>
-                {ligneOuverte.soins.length > 0 && <p className="text-xs text-neutral-500">Soins et sujets : {ligneOuverte.soins.join(', ')}</p>}
+                <SujetsVisuel visuel={ligneOuverte} surcharges={surcharges} onChange={setSurcharges} compact />
+                {ligneOuverte.soins.length > 0 && <p className="text-xs text-neutral-500">Soins et fiches (code) : {ligneOuverte.soins.join(', ')}</p>}
               </div>
               <div className="grid content-start gap-2">
                 <p className="text-sm font-semibold">Historique</p>

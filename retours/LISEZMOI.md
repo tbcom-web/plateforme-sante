@@ -11,6 +11,8 @@ Retours de Paul sur les assets et les combinaisons, exportés automatiquement de
 | `atelier-notes.json` | Notes des combinaisons (table `atelier_notes`, 0026) : ingrédients, note, étiquettes, commentaire, jour. |
 | `illustrations-revues.json` | Journal des statuts (table `illustrations_revues`, 0021) : clé, statut, commentaire, empreinte, jour. |
 | `illustrations-statuts.json` | Statut courant par clé (table `illustrations_statuts`). |
+| `assets-sujets.json` | Sujets des visuels ajoutés / retirés par Paul (table `assets_sujets`, 0028) : état courant par clé (`ajouts`, `retraits`). |
+| `inspirations.json` | Inspirations (table `inspirations`, 0028) : étiquettes « ce qui plaît », ce qu'on veut en tirer, sujet, type, palette, domaine du lien, jour. Jamais l'image ni une URL signée : référence seulement, jamais réutilisée sur les sites. |
 | `CHANGEMENTS.md` | Tenu à la main par Claude : corrections faites d'après les retours (affichées dans /admin/retours). |
 
 Aucune donnée personnelle : ni auteur, ni e-mail, ni identifiant de compte, ni donnée de lead, de prospect ou de site

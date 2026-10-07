@@ -7,17 +7,23 @@
 // photo dans un cadre de site, gamme sur un mini site), « Ce qui va bien » / « Ce qui ne va pas », commentaire, 1 à 5 étoiles.
 // Clavier : 1-5 noter (et passer à la suivante), t étiquettes (puis 1-9), → ou Entrée passer, ← précédente, Échap accueil.
 // Téléphone : barre d'étoiles fixée en bas de l'écran (toujours visible). Assets → assets_notes (0027) ; thèmes complets → atelier_notes (0026).
+// 0028 : « Ce qui va bien (libre) » / « Ce qui ne va pas (libre) » distincts ; instantané du rendu noté ; élément modifié depuis la
+// note → avant / après côte à côte (et tiré en premier) ; sujets du visuel (+ / ×) et filtre « noter les visuels du sujet … ».
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  CATEGORIES_RETOURS, categorieDuType, cleCombinaison, empreinteSvg, ETIQUETTES_ATELIER, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
+  CATEGORIES_RETOURS, categorieDuType, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
   ingredientsProposition, inventaireAssets, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis, prochaineCarte,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
   type PoidsAtelier, type Proposition, type StatutIllustration, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
+import type { SourcePhotoLibre, SurchargesSujets } from '@plateforme/core';
+import AvantApres from '@/components/AvantApres';
+import SujetsVisuel from '@/components/SujetsVisuel';
+import type { Inspiration } from '@/lib/inspirations';
 import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { apercuProposition } from '@/lib/apercu-proposition';
 import type { ChangementClaude } from '@/lib/changements';
@@ -25,6 +31,8 @@ import type { SoinCatalogue } from '@/lib/sites';
 import { auHasard, draftDemo, type Scenario } from '../atelier/Atelier';
 import { ajouterNoteAtelier } from '../atelier/actions';
 import { ajouterNoteAsset } from './actions';
+import Inspirations from './Inspirations';
+import PhotosADecouvrir from './PhotosADecouvrir';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -49,7 +57,19 @@ type Props = {
   themesActives: string[];
   typeInitial: string | null;
   cleInitiale: string | null;
+  /** Inspirations (0028) : images de référence (URL signées), étiquettes, palette */
+  inspirations: Inspiration[];
+  migrationInspirations: boolean;
+  /** Photos à découvrir (0028) : sources dont la clé est configurée (booléens), mots-clés effectifs par sujet */
+  sourcesPhotos: Record<SourcePhotoLibre, boolean>;
+  motsClesPhotos: Record<string, string[]>;
+  migrationPhotos: boolean;
+  /** Sujets ajoutés / retirés par Paul (0028) */
+  surchargesSujets: SurchargesSujets;
 };
+
+/** Espaces hors notation : inspirations et photos à découvrir */
+type Espace = 'inspirations' | 'decouvrir';
 
 type Carte =
   | { kind: 'asset'; asset: Asset; empreinte: string | null; svg: string | null }
@@ -57,11 +77,11 @@ type Carte =
 
 const cleCarte = (c: Carte) => (c.kind === 'asset' ? c.asset.cle : `theme:${c.cle}`);
 
-/** Rendu et empreinte d'un asset (SVG seulement : les photos, modèles et gammes n'ont pas d'empreinte) */
+/** Rendu et empreinte d'un asset (SVG et gammes ; les photos et modèles n'ont pas d'empreinte : fichiers suivis par leur adresse) */
 function preparer(a: Asset): Extract<Carte, { kind: 'asset' }> {
-  if (a.rendu.kind !== 'svg') return { kind: 'asset', asset: a, empreinte: null, svg: null };
+  if (a.rendu.kind !== 'svg') return { kind: 'asset', asset: a, empreinte: empreinteAsset(a), svg: null };
   const svg = a.rendu.svg();
-  return { kind: 'asset', asset: a, empreinte: empreinteSvg(svg), svg };
+  return { kind: 'asset', asset: a, empreinte: empreinteAsset(a, svg), svg };
 }
 
 /** Écran étroit (téléphone) */
@@ -200,12 +220,20 @@ function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
 
 export default function Retours(props: Props) {
   const { statuts, photosJeux, markdown, changements, influents, changementsClaude, migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
-  const inventaire = useMemo(() => inventaireAssets({ photosJeux }), [photosJeux]);
+  const inventaireComplet = useMemo(() => inventaireAssets({ photosJeux }), [photosJeux]);
+  // Sujets des visuels (défauts du code ± surcharges de Paul) et filtre « noter les visuels du sujet … »
+  const [surcharges, setSurcharges] = useState<SurchargesSujets>(props.surchargesSujets);
+  const [filtreSujet, setFiltreSujet] = useState('');
+  const inventaire = useMemo(
+    () => (filtreSujet ? inventaireComplet.filter((a) => sujetsDuVisuel(a, surcharges).sujets.includes(filtreSujet)) : inventaireComplet),
+    [inventaireComplet, filtreSujet, surcharges],
+  );
   const [notes, setNotes] = useState<NoteLegere[]>(props.notesAssets);
   const [datesAtelier, setDatesAtelier] = useState<string[]>(props.datesAtelier);
   const [dejaNotees, setDejaNotees] = useState(props.dejaNotees);
   const etats = useMemo(() => etatsNotes(notes), [notes]);
   const etroit = useEtroit();
+  const [espace, setEspace] = useState<Espace | null>(props.typeInitial === 'inspirations' || props.typeInitial === 'decouvrir' ? props.typeInitial : null);
 
   // ---- Compteurs ----
   const serie = useMemo(() => serieAvis([...notes.map((n) => n.le), ...datesAtelier]), [notes, datesAtelier]);
@@ -229,7 +257,8 @@ export default function Retours(props: Props) {
   const [position, setPosition] = useState(-1);
   const vus = useRef(new Set<string>());
   const [etiquettes, setEtiquettes] = useState<string[]>([]);
-  const [commentaire, setCommentaire] = useState('');
+  const [positif, setPositif] = useState('');
+  const [negatif, setNegatif] = useState('');
   const [modeEtiquettes, setModeEtiquettes] = useState(false);
   const [statut, setStatut] = useState<{ ok: boolean; message: string } | null>(null);
   const [session, setSession] = useState(0);
@@ -264,14 +293,14 @@ export default function Retours(props: Props) {
   const tirer = useCallback((c: CategorieRetours): Carte | null => {
     if (c === 'themes' || (c === 'hasard' && !migrationAtelier && Math.random() < 0.2)) return tirerTheme();
     const liste = candidatsDe(c).map((a) => {
-      if (!cacheEmpreintes.current.has(a.cle)) cacheEmpreintes.current.set(a.cle, a.rendu.kind === 'svg' ? empreinteSvg(a.rendu.svg()) : null);
+      if (!cacheEmpreintes.current.has(a.cle)) cacheEmpreintes.current.set(a.cle, empreinteAsset(a));
       return { cle: a.cle, empreinte: cacheEmpreintes.current.get(a.cle) ?? null, a };
     });
     const x = prochaineCarte(liste, etats, vus.current);
     return x ? preparer(x.a) : null;
   }, [candidatsDe, etats, tirerTheme, migrationAtelier]);
 
-  const reinitialiserSaisie = () => { setEtiquettes([]); setCommentaire(''); setModeEtiquettes(false); };
+  const reinitialiserSaisie = () => { setEtiquettes([]); setPositif(''); setNegatif(''); setModeEtiquettes(false); };
 
   const suivante = useCallback(() => {
     reinitialiserSaisie();
@@ -299,7 +328,7 @@ export default function Retours(props: Props) {
   useEffect(() => {
     if (!categorie || historique.length) return;
     // ?cle= (lien « Noter » de la bibliothèque) : cet élément d'abord, une seule fois
-    const demandee = cleDemandee.current ? inventaire.find((a) => a.cle === cleDemandee.current) : undefined;
+    const demandee = cleDemandee.current ? inventaireComplet.find((a) => a.cle === cleDemandee.current) : undefined;
     cleDemandee.current = null;
     const carte = demandee ? preparer(demandee) : tirer(categorie);
     if (!carte) return;
@@ -319,7 +348,7 @@ export default function Retours(props: Props) {
   const noter = useCallback(async (n: number) => {
     if (!carte) return;
     const etq = etiquettes;
-    const com = commentaire;
+    const remarques = { positif, negatif };
     const le = new Date().toISOString();
     if (carte.kind === 'asset') {
       if (migrationAssets) { setStatut({ ok: false, message: 'Migration 0027 à exécuter : avis non enregistré.' }); return; }
@@ -328,7 +357,7 @@ export default function Retours(props: Props) {
       setSession((s) => s + 1);
       suivante();
       setEnvois((x) => x + 1);
-      const r = await ajouterNoteAsset(carte.asset.cle, n, etq, com, carte.empreinte).catch(() => ({ ok: false, message: 'Connexion perdue : avis non enregistré.' }));
+      const r = await ajouterNoteAsset(carte.asset.cle, n, etq, '', carte.empreinte, { ...remarques, apercu: instantaneAsset(carte.asset, carte.svg) }).catch(() => ({ ok: false, message: 'Connexion perdue : avis non enregistré.' }));
       setEnvois((x) => x - 1);
       if (!r.ok) { setNotes((l) => l.filter((x) => x !== locale)); setSession((s) => s - 1); }
       setStatut(r.ok ? { ok: true, message: `${carte.asset.titre} : ${r.message}` } : { ok: false, message: `${carte.asset.titre} : ${r.message}` });
@@ -339,12 +368,12 @@ export default function Retours(props: Props) {
       setSession((s) => s + 1);
       suivante();
       setEnvois((x) => x + 1);
-      const r = await ajouterNoteAtelier(carte.ingredients, n, etq, com).catch(() => ({ ok: false, message: 'Connexion perdue : avis non enregistré.' }));
+      const r = await ajouterNoteAtelier(carte.ingredients, n, etq, '', remarques).catch(() => ({ ok: false, message: 'Connexion perdue : avis non enregistré.' }));
       setEnvois((x) => x - 1);
       if (!r.ok) { setDatesAtelier((l) => l.filter((x) => x !== le)); setSession((s) => s - 1); }
       setStatut({ ok: r.ok, message: r.ok ? r.message : `${carte.p.nom} : ${r.message}` });
     }
-  }, [carte, etiquettes, commentaire, migrationAssets, migrationAtelier, suivante]);
+  }, [carte, etiquettes, positif, negatif, migrationAssets, migrationAtelier, suivante]);
 
   const basculer = (id: string) => setEtiquettes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
 
@@ -381,6 +410,10 @@ export default function Retours(props: Props) {
       <span><strong className="tabular-nums">{totalAvis}</strong> avis en tout</span>
     </p>
   );
+
+  // ======================= Inspirations / Photos à découvrir =======================
+  if (espace === 'inspirations') return <Inspirations inspirations={props.inspirations} migrationManquante={props.migrationInspirations} onRetour={() => setEspace(null)} />;
+  if (espace === 'decouvrir') return <PhotosADecouvrir sources={props.sourcesPhotos} motsCles={props.motsClesPhotos} migrationManquante={props.migrationPhotos} onRetour={() => setEspace(null)} />;
 
   // ======================= Accueil =======================
   if (!categorie || !carte) {
@@ -424,8 +457,37 @@ export default function Retours(props: Props) {
         </section>
 
         <section aria-labelledby="rt-types" className="grid gap-3">
-          <h2 id="rt-types" className="text-lg font-semibold">Que voulez-vous noter ?</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="rt-types" className="text-lg font-semibold">Que voulez-vous noter ?</h2>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="font-medium">Visuels du sujet</span>
+              <select value={filtreSujet} onChange={(e) => setFiltreSujet(e.target.value)} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm">
+                <option value="">Tous les sujets</option>
+                {SUJETS_VISUELS.map((x) => <option key={x.id} value={x.id}>{x.libelle}</option>)}
+              </select>
+            </label>
+          </div>
           <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-4">{CATEGORIES_RETOURS.map(tuile)}</ul>
+        </section>
+
+        <section aria-labelledby="rt-sources" className="grid gap-3">
+          <h2 id="rt-sources" className="text-lg font-semibold">Nourrir les visuels</h2>
+          <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
+            <li>
+              <button type="button" onClick={() => setEspace('inspirations')} className={`grid h-full w-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 text-left hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
+                <span className="text-lg font-bold">Inspirations</span>
+                <span className="text-sm text-neutral-600">Une image qui vous plaît : ce qui plaît, ce qu’on veut en tirer, sa palette. Référence seulement, jamais réutilisée.</span>
+                <span className="text-sm font-semibold text-neutral-800">{props.inspirations.length} inspiration{props.inspirations.length > 1 ? 's' : ''}{props.migrationInspirations ? ' · migration 0028 à exécuter' : ''}</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={() => setEspace('decouvrir')} className={`grid h-full w-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 text-left hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
+                <span className="text-lg font-bold">Photos à découvrir</span>
+                <span className="text-sm text-neutral-600">Photos libres de droits (Pexels, Pixabay), une à la fois : garder ou rejeter. Gardées, elles sont hébergées chez nous avec leur licence.</span>
+                <span className="text-sm font-semibold text-neutral-800">{Object.values(props.sourcesPhotos).some(Boolean) ? `Sources prêtes : ${Object.entries(props.sourcesPhotos).filter(([, v]) => v).map(([k]) => (k === 'pexels' ? 'Pexels' : 'Pixabay')).join(', ')}` : 'Clé API à configurer'}</span>
+              </button>
+            </li>
+          </ul>
         </section>
 
         <section aria-labelledby="rt-change" className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-2xl border border-black/10 bg-white p-4">
@@ -486,6 +548,7 @@ export default function Retours(props: Props) {
   const apercuTheme = carte.kind === 'theme'
     ? apercuProposition({ ...base, priorites: { principaux: carte.scenario.principaux, secondaires: carte.scenario.secondaires }, couleursPreferees: carte.scenario.couleurs }, carte.p, { proposes, modeles, slugs, themesActives })
     : null;
+  const modifieDepuis = Boolean(carte.kind === 'asset' && etat && carte.empreinte && etat.empreinte && etat.empreinte !== carte.empreinte);
   const positives = etiquettesCarte.filter((e) => e.positive);
   const negatives = etiquettesCarte.filter((e) => !e.positive);
   const puce = (e: { id: string; libelle: string; positive: boolean }) => {
@@ -523,7 +586,9 @@ export default function Retours(props: Props) {
 
       <section aria-label="Élément à noter" className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] md:items-start">
         <div className="grid min-w-0 gap-2">
-          {carte.kind === 'asset' ? <ApercuAsset c={carte} /> : apercuTheme && (
+          {carte.kind === 'asset' ? (
+            modifieDepuis ? <AvantApres key={carte.asset.cle} cle={carte.asset.cle}><ApercuAsset c={carte} /></AvantApres> : <ApercuAsset c={carte} />
+          ) : apercuTheme && (
             <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${etroit ? 'mx-auto w-[280px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}>
               <ApercuTheme key={carte.cle} vignette={etroit ? 480 : 520} appareil={etroit ? 'mobile' : 'bureau'} draft={apercuTheme.draft} modele={apercuTheme.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
             </div>
@@ -539,25 +604,31 @@ export default function Retours(props: Props) {
             ) : <p className="text-sm text-neutral-700">{carte.p.phrase}</p>}
             <div className="flex flex-wrap gap-1.5 text-xs">
               {carte.kind === 'asset' && !etat && <span className="rounded-full bg-sky-100 px-2 py-0.5 font-semibold text-sky-900">Jamais noté</span>}
+              {modifieDepuis && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-950">Modifié depuis votre note : comparez avant / après</span>}
               {etat && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">Déjà noté {etat.n} fois ({etat.min === etat.max ? `${etat.min}★` : `${etat.min} à ${etat.max}★`})</span>}
-              {etat && carte.kind === 'asset' && carte.empreinte && etat.empreinte && etat.empreinte !== carte.empreinte && <span className="rounded-full bg-sky-100 px-2 py-0.5 font-semibold text-sky-900">Modifié depuis</span>}
               {st && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">Statut : {LIBELLES_STATUTS_ILLUSTRATION[st]}</span>}
             </div>
           </div>
+          {carte.kind === 'asset' && <SujetsVisuel visuel={carte.asset} surcharges={surcharges} onChange={setSurcharges} />}
 
           <fieldset className="grid gap-1.5">
             <legend className="mb-1 text-sm font-medium text-teal-900">Ce qui va bien</legend>
             <div className={`flex flex-wrap gap-1.5 rounded-xl ${modeEtiquettes ? 'bg-amber-50 p-1.5 ring-2 ring-amber-300' : ''}`}>{positives.map(puce)}</div>
+            <label className="mt-1 grid gap-1 text-sm">
+              <span className="text-teal-900">Ce qui va bien (libre) <span className="text-neutral-500">facultatif</span></span>
+              <textarea value={positif} onChange={(e) => setPositif(e.target.value)} rows={2} maxLength={2000}
+                placeholder="Ex. le trait est net, la lumière est douce" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" />
+            </label>
           </fieldset>
           <fieldset className="grid gap-1.5">
             <legend className="mb-1 text-sm font-medium text-red-900">Ce qui ne va pas</legend>
             <div className={`flex flex-wrap gap-1.5 rounded-xl ${modeEtiquettes ? 'bg-amber-50 p-1.5 ring-2 ring-amber-300' : ''}`}>{negatives.map(puce)}</div>
+            <label className="mt-1 grid gap-1 text-sm">
+              <span className="text-red-900">Ce qui ne va pas (libre) <span className="text-neutral-500">facultatif</span></span>
+              <textarea value={negatif} onChange={(e) => setNegatif(e.target.value)} rows={2} maxLength={2000}
+                placeholder="Ex. le gros orteil est trop long, la photo fait banque d’images" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" />
+            </label>
           </fieldset>
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium">En quelques mots <span className="font-normal text-neutral-500">(facultatif)</span></span>
-            <textarea value={commentaire} onChange={(e) => setCommentaire(e.target.value)} rows={2} maxLength={2000}
-              placeholder="Ex. le gros orteil est trop long, la photo fait banque d’images…" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" />
-          </label>
 
           <div className="fixed inset-x-0 bottom-0 z-20 grid gap-2 border-t border-black/10 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:shadow-none">
             <div role="group" aria-label="Note de 1 à 5 (l’élément suivant s’affiche aussitôt)" className="grid grid-cols-5 gap-1.5">

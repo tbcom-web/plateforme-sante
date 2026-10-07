@@ -40,3 +40,8 @@ export * from './propositions';
 export * from './atelier';
 export * from './assets';
 export * from './retours';
+export * from './photos-libres';
+export * from './inspirations';
+export * from './remarques';
+export * from './sujets-visuels';
+export * from './avant-apres';

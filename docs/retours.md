@@ -9,6 +9,32 @@ Comment les avis donnés dans le back-office arrivent jusqu'à Claude, sans qu'a
 | `/admin/retours` « Donner mon avis » | Une carte à la fois, tirée au hasard (jamais notés d'abord, puis modifiés depuis la dernière note, puis notes incertaines) : thèmes complets, illustrations, icônes, photos, animations, couleurs, structures. « Ce qui va bien » / « Ce qui ne va pas », commentaire, 1 à 5 étoiles. | `assets_notes` (0027), `atelier_notes` (0026) |
 | `/admin/illustrations` « Bibliothèque & retours » | Inventaire complet, statut (Validé, À retravailler, À revoir, Retiré), note rapide. | `illustrations_revues` / `illustrations_statuts` (0021), `assets_notes` |
 | `/admin/atelier` | Combinaisons du générateur, scénario au choix. | `atelier_notes` |
+| `/admin/retours` → **Inspirations** | Image de référence (fichier, glisser-déposer ou capture collée, lien facultatif), « ce qui me plaît » (couleurs, composition, typographie, style d'illustration, ambiance, mise en page mobile, icônes), ce qu'on veut en tirer, sujet et type d'élément. Palette dominante extraite dans le navigateur ; synthèse « Palettes récurrentes » avec gammes candidates (AA vérifié, jamais ajoutées automatiquement). **Référence d'inspiration uniquement : jamais copiée ni réutilisée sur les sites.** | `inspirations` + bucket privé `inspirations` (0028) |
+| `/admin/retours` → **Photos à découvrir** | Photos libres de droits Pexels / Pixabay, une à la fois : GARDER (hébergée chez nous, licence tracée) ou REJETER, étiquettes, sujet cible. Voir `docs/photos-libres.md`. | `photos_libres`, `photos_libres_avis`, `photos_libres_mots_cles` (0028) |
+
+### Remarques, avant / après, sujets (migration 0028)
+
+- **Remarques libres distinctes** : sous « Ce qui va bien », un champ « Ce qui va bien (libre) » ; sous « Ce qui ne va pas »,
+  « Ce qui ne va pas (libre) » (colonnes `positif` / `negatif` de `assets_notes` et `atelier_notes`). L'ancien `commentaire`
+  reste lu pour les notes plus anciennes. Sans la migration 0028, les deux champs sont regroupés dans `commentaire`.
+- **Avant / après** : quand un élément noté a été modifié depuis (empreinte différente), la carte de « Donner mon avis » et la
+  vue agrandie de la bibliothèque montrent côte à côte « Avant (votre note, vos remarques) » et « Après ». Ces éléments sont
+  tirés **en premier**, avant les jamais notés. L'« avant » vient de l'instantané enregistré avec la note (`assets_notes.apercu` :
+  SVG minifié ≤ 60 Ko, adresse de la photo ou de la structure, couleurs de la gamme), sinon d'une **archive** des rendus d'un
+  commit (`apps/admin/public/archives/assets-<commit>.json.gz`, cherchée par clé + empreinte notée). Archive initiale : commit
+  `d07548f` (version notée le 2026-10-07).
+- **Archiver avant une grosse série de retouches** (Claude) : `npm run archiver-assets -- <commit>` (par défaut le commit à
+  archiver est celui donné ; d'habitude `HEAD` avant de retoucher). Le script crée un `git worktree` temporaire du commit (jamais
+  l'arbre de travail, qui peut contenir des retouches en cours), calcule les rendus et empreintes avec le code de CE commit,
+  écrit l'archive et `index.json`, puis retire le worktree. Option `--worktree <dossier>` pour choisir où le créer. Committer
+  l'archive avec les retouches.
+- **Sujets des visuels** : sur chaque carte et dans la vue agrandie, puces des sujets associés (défauts du code :
+  `packages/core/src/sujets-visuels.ts` — soins et fiches de la bibliothèque, thème des héros, spécialité des photos, sujet
+  choisi pour les photos libres). « × » retire un sujet, « + Sujet » en ajoute un (table `assets_sujets`, journal en ajout seul,
+  état courant = dernière action ; `assets_sujets_effectifs()` pour le générateur). Effet : un héros ou une photo retiré d'un
+  sujet n'est plus proposé pour ce sujet (propositions du parcours, tirage et galerie des jeux de photos des sites) ; si un
+  sujet n'a plus aucun visuel d'une famille, le générateur garde un repli et la synthèse le signale (« sujet sans visuel »).
+  Filtre « Visuels du sujet » dans « Donner mon avis » et dans la bibliothèque.
 
 Les notes servent tout de suite au générateur (`packages/core/src/atelier-poids.ts`, `assets-poids.ts`) : moyennes lissées,
 « Retiré » et « À retravailler » pénalisent l'asset ; les garde-fous (diversité, diabète sans rouge, posture jamais, AA)
@@ -25,7 +51,11 @@ Workflow `.github/workflows/exporter-retours.yml` :
   `retours/*.json` + `retours/SYNTHESE.md` ;
 - commit « Retours : export du AAAA-MM-JJ » par le bot github-actions, seulement s'il y a du nouveau.
 
-Exporté : clés d'assets, notes, étiquettes, commentaires, empreintes, ingrédients des combinaisons, statuts, dates au jour.
+Exporté : clés d'assets, notes, étiquettes, remarques « ce qui va bien » / « ce qui ne va pas » (séparées dans la synthèse),
+commentaires, `retours/assets-sujets.json` (sujets ajoutés / retirés par Paul, section « Sujets modifiés par Paul »), empreintes, ingrédients des combinaisons, statuts, dates au jour ;
+`retours/inspirations.json` (étiquettes, ce qu'on veut en tirer, sujet, type, palette, domaine du lien) et une section
+« Inspirations » dans la synthèse (couleurs récurrentes, gammes candidates avec leur code prêt à coller).
+**Jamais exporté pour les inspirations** : l'image, son chemin dans le stockage privé, une URL signée, l'adresse complète du lien.
 **Jamais exporté** : auteur, e-mail, identifiant de compte, leads, prospects, sites praticiens. Le dépôt est public :
 si les commentaires deviennent sensibles, repasser le dépôt en privé (GitHub → Settings → Danger zone → Change visibility) ;
 le workflow et le bouton continuent de fonctionner.
@@ -36,7 +66,8 @@ le workflow et le bouton continuent de fonctionner.
 git pull --rebase
 ```
 
-1. Lire `retours/SYNTHESE.md` (par type d'asset, meilleurs / pires, étiquettes fréquentes, à retravailler, combinaisons).
+1. Lire `retours/SYNTHESE.md` (par type d'asset, meilleurs / pires, étiquettes fréquentes, à retravailler, combinaisons,
+   inspirations). Une gamme candidate n'entre dans `packages/core/src/gammes.ts` qu'avec l'accord de Paul.
 2. Au besoin, le détail dans `retours/assets-notes.json`, `retours/atelier-notes.json`, `retours/illustrations-revues.json`.
    La clé (`picto:…`, `dessin:<nom>:<registre>`, `heros:<thème>:<registre>`, `photo:…`, `gamme:…`, `modele:…`) indique le
    fichier à retoucher (`source` dans `packages/core/src/assets.ts` / `illustrations.ts`).

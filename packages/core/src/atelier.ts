@@ -10,6 +10,7 @@ import {
   couleurPreferee, LIBELLES_STRUCTURES, LIBELLES_STYLES, REGLES_THEMES, type EntreePropositions, type Proposition, type StyleIllustration, type Structure,
 } from './propositions';
 import { themeParId } from './themes';
+import { texteRemarques } from './remarques';
 
 export * from './atelier-poids';
 
@@ -107,7 +108,7 @@ export function libelleCleAtelier(cle: string): string {
 // Synthèse des tendances
 // ---------------------------------------------------------------------------------------------------------------
 
-export type NoteAtelierLue = NoteAtelier & { commentaire?: string | null; le?: string | null };
+export type NoteAtelierLue = NoteAtelier & { commentaire?: string | null; positif?: string | null; negatif?: string | null; le?: string | null };
 
 export type LigneSyntheseAtelier = {
   cle: string; libelle: string; n: number; moyenne: number; lissee: number; effet: number;
@@ -126,7 +127,7 @@ export type SyntheseAtelier = {
   /** Pour chaque étiquette : total et ingrédients où elle revient le plus (part des notes de l'ingrédient) */
   etiquettes: { id: string; libelle: string; total: number; ingredients: { libelle: string; nb: number; part: number }[] }[];
   /** Derniers commentaires */
-  commentaires: { combinaison: string; note: number; etiquettes: string[]; commentaire: string; le: string | null }[];
+  commentaires: { combinaison: string; note: number; etiquettes: string[]; commentaire: string; positif: string | null; negatif: string | null; le: string | null }[];
 };
 
 const ligne = (s: StatCleAtelier): LigneSyntheseAtelier => ({
@@ -158,11 +159,14 @@ export function syntheseAtelier(notes: readonly NoteAtelierLue[]): SyntheseAteli
     return { id: e.id, libelle: e.libelle, total, ingredients: parIngredient };
   }).filter((e) => e.total > 0).sort((a, b) => b.total - a.total);
   const commentaires = notes
-    .filter((x) => x.commentaire && x.commentaire.trim())
+    .filter((x) => texteRemarques(x))
     .slice()
     .sort((a, b) => String(b.le ?? '').localeCompare(String(a.le ?? '')))
     .slice(0, 30)
-    .map((x) => ({ combinaison: libelleCombinaison(String(x.ingredients.proposition ?? '')), note: x.note, etiquettes: [...(x.etiquettes ?? [])], commentaire: x.commentaire!.trim(), le: x.le ?? null }));
+    .map((x) => ({
+      combinaison: libelleCombinaison(String(x.ingredients.proposition ?? '')), note: x.note, etiquettes: [...(x.etiquettes ?? [])],
+      commentaire: (x.commentaire ?? '').trim(), positif: x.positif?.trim() || null, negatif: x.negatif?.trim() || null, le: x.le ?? null,
+    }));
   return {
     total: n,
     moyenne: Math.round(moyenne * 100) / 100,
@@ -214,7 +218,7 @@ export function markdownAtelier(s: SyntheseAtelier, opts: { date?: string } = {}
   }
   if (s.commentaires.length) {
     l.push('## Commentaires', '');
-    for (const c of s.commentaires) l.push(`- ${c.note}★ ${c.combinaison}${c.etiquettes.length ? ` [${c.etiquettes.map(libelleEtiquette).join(', ')}]` : ''} : ${c.commentaire.replace(/\s+/g, ' ')}`);
+    for (const c of s.commentaires) l.push(`- ${c.note}★ ${c.combinaison}${c.etiquettes.length ? ` [${c.etiquettes.map(libelleEtiquette).join(', ')}]` : ''} : ${texteRemarques(c)}`);
     l.push('');
   }
   l.push('Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 par ingrédient, 12 par paire, 6 par combinaison ; effet = lissée − moyenne générale.');

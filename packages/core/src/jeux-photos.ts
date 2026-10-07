@@ -8,7 +8,14 @@
 // un client : un jeu « adobe » (ou « praticien ») n'est jamais partagé. Voir docs/jeux-photos.md.
 import { SPECIALITES, type PersonnalisationPack } from './packs';
 import { CADRAGES_PHOTOS, VISUEL_SOIN_PAR_DEFAUT, type JeuVisuel } from './jeux';
-import { clePhoto, ordonnerPhotos, scoreMoyen, type PoidsAssets } from './assets-poids';
+import { clePhoto, EFFETS_SUJET, ordonnerPhotos, retireDesSujets, scoreMoyen, type PoidsAssets } from './assets-poids';
+import { THEMES } from './themes';
+
+/** Sujets (thèmes actifs + « général ») d'une spécialité : surcharges de sujets de Paul sur les photos */
+export const sujetsDeSpecialite = (specialite: string): string[] => [
+  ...THEMES.filter((t) => t.statut === 'actif' && t.specialite === specialite).map((t) => t.id),
+  ...(specialite === 'generale' ? ['general'] : []),
+];
 
 export const SOURCES_JEU_PHOTOS = ['banque', 'adobe', 'praticien'] as const;
 export type SourceJeuPhotos = (typeof SOURCES_JEU_PHOTOS)[number];
@@ -163,7 +170,11 @@ export function choisirJeuPhotos(
   const masses = candidats.map((j) => {
     const photos = j.photos ? photosDuJeu(j.photos) : [];
     const cles = photos.map(clePhoto).filter((x): x is string => Boolean(x));
-    return poids && cles.length ? 2 ** scoreMoyen(cles, poids) : 1;
+    if (!poids || !cles.length) return 1;
+    // Photos retirées par Paul des sujets de la spécialité : comptées comme « retirées » (le jeu sort moins souvent)
+    const sujets = sujetsDeSpecialite(specialite);
+    const retirees = cles.filter((k) => retireDesSujets(k, sujets, poids)).length;
+    return 2 ** (scoreMoyen(cles, poids) + (EFFETS_SUJET.retrait * retirees) / cles.length);
   });
   const total = masses.reduce((a, b) => a + b, 0);
   let r = Math.min(0.999999, Math.max(0, aleatoire())) * total;
@@ -179,10 +190,11 @@ export function choisirJeuPhotos(
  * la banque visuelle (packs_visuels), dont l'animation est conservée ; les photos du jeu passent devant.
  * `poids` (notes des photos) : la galerie commence par les photos les mieux notées.
  */
-export function persoDuJeuPhotos(jeu: Pick<JeuPhotos, 'photos'> | null | undefined, base?: PersonnalisationPack | null, poids?: PoidsAssets | null): PersonnalisationPack | null {
+export function persoDuJeuPhotos(jeu: Pick<JeuPhotos, 'photos'> | null | undefined, base?: PersonnalisationPack | null, poids?: PoidsAssets | null, sujets?: readonly string[] | null): PersonnalisationPack | null {
   if (!jeu) return base ?? null;
-  // Notes des photos : galerie de la mieux à la moins bien notée, photos « retirées » enlevées (s'il en reste au moins 3)
-  const p = poids ? { ...jeu.photos, galerie: ordonnerPhotos(jeu.photos.galerie, poids, 3) } : jeu.photos;
+  // Notes des photos : galerie de la mieux à la moins bien notée, photos « retirées » (ou retirées par Paul des sujets du site)
+  // enlevées s'il en reste au moins 3
+  const p = poids ? { ...jeu.photos, galerie: ordonnerPhotos(jeu.photos.galerie, poids, 3, sujets) } : jeu.photos;
   const b = base?.photos ?? {};
   return {
     ...(base ?? {}),

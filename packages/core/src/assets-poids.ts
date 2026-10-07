@@ -40,10 +40,18 @@ export const estCleAsset = (cle: unknown): cle is string => typeof cle === 'stri
 export type LigneAppriseAsset = { cle: string; note?: number | null; etiquettes?: readonly string[] | null; statut?: string | null };
 
 /** Poids compacts (transmis au navigateur du praticien) : effets non nuls, statuts pénalisants seulement */
-export type PoidsAssets = { n: number; moyenne: number; effets: Record<string, number>; statuts: Record<string, 'a_retravailler' | 'retire'> };
+/**
+ * Sujets ajoutés / retirés à la main par Paul (table assets_sujets, migration 0028 ; sujets-visuels.ts) : état courant par clé.
+ * Un visuel retiré d'un sujet n'est plus proposé pour ce sujet (pénalité forte), un sujet ajouté le favorise un peu.
+ */
+export type SurchargesSujets = Record<string, { ajouts: string[]; retraits: string[] }>;
+
+export type PoidsAssets = { n: number; moyenne: number; effets: Record<string, number>; statuts: Record<string, 'a_retravailler' | 'retire'>; sujets?: SurchargesSujets };
 
 export const LISSAGE_ASSETS = 4;
 export const PENALITES_STATUT = { retire: -3, a_retravailler: -0.75 } as const;
+/** Visuel retiré d'un sujet par Paul : même poids qu'un visuel « retiré » ; ajouté à un sujet : léger bonus */
+export const EFFETS_SUJET = { retrait: -3, ajout: 0.5 } as const;
 export const COEFS_ASSETS = { heros: 0.8, animation: 0.6, gamme: 0.6, modele: 0.6, photos: 0.5, dessins: 0.3, min: -3, max: 1.5 } as const;
 
 const arrondi = (x: number, p = 1000) => Math.round(x * p) / p;
@@ -97,6 +105,18 @@ export function scoreAsset(cle: string, poids: PoidsAssets | null | undefined): 
 }
 
 /** Moyenne des scores d'une liste de clés (les inconnues comptent 0) */
+/** Score d'un asset pour un sujet donné : score général ± surcharge de sujet (retiré du sujet : -3 ; ajouté : +0,5) */
+export function scoreAssetPourSujet(cle: string, sujet: string | null | undefined, poids: PoidsAssets | null | undefined): number {
+  if (!poids) return 0;
+  const s = sujet ? poids.sujets?.[cle] : undefined;
+  const ajust = s ? (s.retraits.includes(sujet!) ? EFFETS_SUJET.retrait : s.ajouts.includes(sujet!) ? EFFETS_SUJET.ajout : 0) : 0;
+  return arrondi(scoreAsset(cle, poids) + ajust);
+}
+
+/** Retiré par Paul de TOUS les sujets donnés (au moins un) */
+export const retireDesSujets = (cle: string, sujets: readonly string[] | null | undefined, poids: PoidsAssets | null | undefined) =>
+  Boolean(sujets?.length && poids?.sujets?.[cle] && sujets.every((x) => poids.sujets![cle].retraits.includes(x)));
+
 export function scoreMoyen(cles: readonly string[], poids: PoidsAssets | null | undefined): number {
   if (!poids || !cles.length) return 0;
   return arrondi(cles.reduce((s, c) => s + scoreAsset(c, poids), 0) / cles.length);
@@ -131,6 +151,8 @@ export type AssetsProposition = {
   heros: string | null;
   /** URLs des photos montrées (style photos) */
   photos?: readonly string[];
+  /** Sujet n° 1 de la proposition (thème) : surcharges de sujets de Paul (héros, photos) */
+  sujet?: string | null;
 };
 
 /** Bonus d'une proposition selon les notes et statuts des assets qu'elle montre (en étoiles, borné) ; 0 sans poids */
@@ -141,9 +163,9 @@ export function bonusAssets(p: AssetsProposition, poids: PoidsAssets | null | un
   if (p.animation) b += c.animation * scoreAsset(`animation:${p.animation}`, poids);
   if (p.modeVisuel === 'photos') {
     const cles = (p.photos ?? []).map(clePhoto).filter((x): x is string => Boolean(x));
-    b += c.photos * scoreMoyen(cles, poids);
+    b += c.photos * (cles.length ? cles.reduce((s, k) => s + scoreAssetPourSujet(k, p.sujet, poids), 0) / cles.length : 0);
   } else {
-    if (p.heros) b += c.heros * scoreAsset(`heros:${p.heros}:${p.registre}`, poids);
+    if (p.heros) b += c.heros * scoreAssetPourSujet(`heros:${p.heros}:${p.registre}`, p.sujet ?? p.heros, poids);
     const r = p.registre;
     b += c.dessins * scorePrefixe(poids, (k) => (r === 'ligne' ? k.startsWith('ligne:') : k.startsWith('dessin:') && k.endsWith(`:${r}`)));
   }
@@ -163,16 +185,24 @@ export function normaliserPoidsAssets(v: unknown): PoidsAssets | null {
   for (const [k, s] of Object.entries((o.statuts && typeof o.statuts === 'object' ? o.statuts : {}) as Record<string, unknown>)) {
     if (estCleAsset(k) && (s === 'retire' || s === 'a_retravailler')) statuts[k] = s;
   }
-  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, statuts };
+  const sujets: SurchargesSujets = {};
+  for (const [k, s] of Object.entries((o.sujets && typeof o.sujets === 'object' ? o.sujets : {}) as Record<string, { ajouts?: unknown; retraits?: unknown }>)) {
+    const l = (x: unknown) => (Array.isArray(x) ? x.filter((y): y is string => typeof y === 'string' && /^[a-z0-9-]{2,30}$/.test(y)).slice(0, 20) : []);
+    if (estCleAsset(k) && s && typeof s === 'object') sujets[k] = { ajouts: l(s.ajouts), retraits: l(s.retraits) };
+  }
+  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, statuts, ...(Object.keys(sujets).length ? { sujets } : {}) };
 }
 
 /**
  * Photos ordonnées de la mieux à la moins bien notée (ordre d'origine à score égal) ; les photos « retirées » sont
  * enlevées tant qu'il en reste au moins `min`. Sans poids : liste inchangée.
  */
-export function ordonnerPhotos(urls: readonly string[], poids: PoidsAssets | null | undefined, min = 1): string[] {
+export function ordonnerPhotos(urls: readonly string[], poids: PoidsAssets | null | undefined, min = 1, sujets?: readonly string[] | null): string[] {
   if (!poids) return [...urls];
-  const s = urls.map((u, i) => ({ u, i, k: clePhoto(u) })).map((x) => ({ ...x, sc: x.k ? scoreAsset(x.k, poids) : 0, retire: Boolean(x.k && poids.statuts[x.k] === 'retire') }));
+  // `sujets` : sujets du site ; une photo retirée par Paul de tous ces sujets est traitée comme « retirée »
+  const s = urls.map((u, i) => ({ u, i, k: clePhoto(u) })).map((x) => ({
+    ...x, sc: x.k ? scoreAssetPourSujet(x.k, sujets?.[0], poids) : 0, retire: Boolean(x.k && (poids.statuts[x.k] === 'retire' || retireDesSujets(x.k, sujets, poids))),
+  }));
   const gardees = s.filter((x) => !x.retire);
   const liste = gardees.length >= Math.min(min, s.length) ? gardees : s;
   return liste.sort((a, b) => b.sc - a.sc || a.i - b.i).map((x) => x.u);

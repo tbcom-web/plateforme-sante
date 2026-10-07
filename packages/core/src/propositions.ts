@@ -365,7 +365,7 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
           const bonus = opts.poids
             ? Math.min(BONUS_ATELIER.max, Math.max(BONUS_ATELIER.min,
               bonusAtelier({ structure: u, gamme: g.id, style, animation, theme1: n1, proposition: cle }, opts.poids)
-              + bonusAssets({ structure: u, gamme: g.id, style, registre, modeVisuel, animation, heros: n1 === 'cabinet' ? null : n1, photos: photos ? photosSpecialite(photos) : [] }, opts.poids.assets)))
+              + bonusAssets({ structure: u, gamme: g.id, style, registre, modeVisuel, animation, heros: n1 === 'cabinet' ? null : n1, sujet: n1 === 'cabinet' ? null : n1, photos: photos ? photosSpecialite(photos) : [] }, opts.poids.assets)))
             : 0;
           const nuances: string[] = [];
           if (n2 && animation && animation === r2?.animation && animation !== r1.animation) nuances.push(`Animation tirée de votre sujet « ${themeParId(n2)?.court} »`);

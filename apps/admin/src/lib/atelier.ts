@@ -10,22 +10,21 @@ import { getPoidsAssets } from '@/lib/assets-notes';
 
 export type NoteAtelierAdmin = NoteAtelierLue & { id: string; cle: string };
 
-type Ligne = { id: string; cle_combinaison: string; ingredients: Partial<IngredientsAtelier> | null; note: number; etiquettes: string[] | null; commentaire: string | null; created_at: string };
+type Ligne = { id: string; cle_combinaison: string; ingredients: Partial<IngredientsAtelier> | null; note: number; etiquettes: string[] | null; commentaire: string | null; positif?: string | null; negatif?: string | null; created_at: string };
 
 /** Journal des notes (plus récentes d'abord) ; `migrationManquante` : table absente (migration 0026 pas encore exécutée) */
 export async function getNotesAtelier(): Promise<{ notes: NoteAtelierAdmin[]; migrationManquante: boolean }> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('atelier_notes')
-    .select('id, cle_combinaison, ingredients, note, etiquettes, commentaire, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5000);
+  const lire = (colonnes: string) => supabase.from('atelier_notes').select(colonnes).order('created_at', { ascending: false }).limit(5000);
+  // Remarques « ce qui va bien / ce qui ne va pas » (0028) ; sans la migration 0028, lecture sans ces colonnes
+  let { data, error } = await lire('id, cle_combinaison, ingredients, note, etiquettes, commentaire, positif, negatif, created_at');
+  if (error) ({ data, error } = await lire('id, cle_combinaison, ingredients, note, etiquettes, commentaire, created_at'));
   if (error) return { notes: [], migrationManquante: true };
-  const notes = ((data ?? []) as Ligne[])
+  const notes = ((data ?? []) as unknown as Ligne[])
     .filter((l) => l.ingredients && typeof l.ingredients === 'object')
     .map((l) => ({
       id: l.id, cle: l.cle_combinaison, ingredients: l.ingredients!, note: l.note,
-      etiquettes: (l.etiquettes ?? []).filter(estEtiquetteAtelier), commentaire: l.commentaire, le: l.created_at,
+      etiquettes: (l.etiquettes ?? []).filter(estEtiquetteAtelier), commentaire: l.commentaire, positif: l.positif ?? null, negatif: l.negatif ?? null, le: l.created_at,
     }));
   return { notes, migrationManquante: false };
 }
