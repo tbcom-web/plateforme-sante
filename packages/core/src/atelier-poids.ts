@@ -19,6 +19,8 @@
 // Toutes les notes égales (ou aucune note) : tous les effets sont nuls, les propositions sont exactement celles d'avant.
 // Les notes des ASSETS (assets-poids.ts, /admin/illustrations) voyagent avec ces poids (champ `assets`) : un seul objet
 // transmis au parcours et à l'atelier ; propositions.ts ajoute leur bonus à celui de l'atelier.
+// APPAREIL (migration 0034) : une note donnée sur le rendu téléphone pèse 1,25 dans ces sommes (mobile d'abord ; ordinateur et
+// « les-deux » : 1). Notes antérieures sans appareil = « les-deux » : poids inchangés.
 // Module pur, sans dépendance d'exécution (importé par propositions.ts : il ne doit rien importer de lui).
 
 import { normaliserPoidsAssets, type PoidsAssets } from './assets-poids';
@@ -52,7 +54,8 @@ export type IngredientsAtelier = {
 };
 
 /** Une note de l'atelier (ce que lit l'apprentissage : ni commentaire ni auteur) */
-export type NoteAtelier = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes?: readonly string[] | null };
+export type NoteAtelier = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes?: readonly string[] | null; appareil?: string | null };
+const poidsNote = (a: unknown) => (a === 'mobile' ? 1.25 : 1);
 
 /** Ingrédients agrégés un par un (le héros est le sujet n° 1 illustré : compté avec theme1) */
 export const DIMENSIONS_ATELIER = ['structure', 'gamme', 'style', 'animation', 'theme1'] as const;
@@ -88,7 +91,7 @@ export function clesAtelier(i: Partial<IngredientsAtelier>): { cle: string; type
   return r;
 }
 
-export type StatCleAtelier = { cle: string; type: TypeCleAtelier; n: number; somme: number; moyenne: number; lissee: number; effet: number; etiquettes: Record<string, number> };
+export type StatCleAtelier = { cle: string; type: TypeCleAtelier; n: number; poids: number; somme: number; moyenne: number; lissee: number; effet: number; etiquettes: Record<string, number> };
 
 const arrondi = (x: number, p = 1000) => Math.round(x * p) / p;
 const noteValide = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 5;
@@ -97,21 +100,24 @@ const noteValide = (n: unknown): n is number => typeof n === 'number' && Number.
 export function statsAtelier(notes: readonly NoteAtelier[]): { n: number; moyenne: number; cles: Map<string, StatCleAtelier> } {
   const ok = notes.filter((x) => noteValide(x.note) && x.ingredients && typeof x.ingredients === 'object');
   const n = ok.length;
-  const moyenne = n ? ok.reduce((s, x) => s + x.note, 0) / n : 0;
+  const poidsTotal = ok.reduce((s, x) => s + poidsNote(x.appareil), 0);
+  const moyenne = n ? ok.reduce((s, x) => s + poidsNote(x.appareil) * x.note, 0) / poidsTotal : 0;
   const cles = new Map<string, StatCleAtelier>();
   for (const x of ok) {
+    const w = poidsNote(x.appareil);
     for (const { cle, type } of clesAtelier(x.ingredients)) {
       let s = cles.get(cle);
-      if (!s) { s = { cle, type, n: 0, somme: 0, moyenne: 0, lissee: 0, effet: 0, etiquettes: {} }; cles.set(cle, s); }
+      if (!s) { s = { cle, type, n: 0, poids: 0, somme: 0, moyenne: 0, lissee: 0, effet: 0, etiquettes: {} }; cles.set(cle, s); }
       s.n++;
-      s.somme += x.note;
+      s.poids += w;
+      s.somme += w * x.note;
       for (const e of new Set(x.etiquettes ?? [])) s.etiquettes[e] = (s.etiquettes[e] ?? 0) + 1;
     }
   }
   for (const s of cles.values()) {
     const k = LISSAGE_ATELIER[s.type];
-    s.moyenne = s.somme / s.n;
-    s.lissee = (s.somme + k * moyenne) / (s.n + k);
+    s.moyenne = s.somme / s.poids;
+    s.lissee = (s.somme + k * moyenne) / (s.poids + k);
     s.effet = arrondi(s.lissee - moyenne);
     if (Object.is(s.effet, -0)) s.effet = 0;
   }

@@ -227,6 +227,8 @@ export function inventaireAssets(opts: { photosJeux?: readonly PhotoDeJeu[] } = 
 /** Fichiers à retoucher par famille d'élément (gabarits Astro et aperçu de l'admin) */
 const SOURCES_FAMILLES: Record<string, string> = {
   accueil: 'apps/sites/src/components/gabarits/PremierEcran.astro',
+  theme: 'apps/sites/src/pages/themes/[theme].astro (page-theme--<variante>) ; apps/admin/src/components/ApercuPages.tsx',
+  article: 'apps/sites/src/pages/actualites/[slug].astro (article--<variante>) ; apps/admin/src/components/ApercuPages.tsx',
   soins: 'apps/sites/src/components/gabarits/Soins.astro',
   sujets: 'apps/sites/src/components/SujetsAccueil.astro',
   horaires: 'apps/sites/src/components/gabarits/VenirAuCabinet.astro',

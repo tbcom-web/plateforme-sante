@@ -12,6 +12,9 @@
 // Animations (2026-10-07) : l'animation joue (LectureAnimation : Lecture / Pause / Rejouer, figée si mouvements réduits) ; ses
 // ingrédients de base (animations-sources.ts) et leur statut sont listés ; tant qu'un ingrédient n'est pas validé, l'animation est
 // « en attente », passe après tout le reste au tirage, et « Noter d'abord ses ingrédients » lance une session sur eux (avec statut).
+// Ordinateur ET mobile (0034) : chaque carte montre les deux rendus (côte à côte, bascule sur téléphone, DoubleRendu) ; la note
+// porte sur le CHOIX et garde l'appareil regardé ; zones signalées (z) sur l'un ou l'autre rendu ; bloc « Rendu mobile » à part
+// (Mobile OK / à revoir : défaut d'adaptation, jamais une pénalité du choix) ; liste « Rendu mobile à revoir » à l'accueil.
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
@@ -35,6 +38,10 @@ import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import { correspondHashtag, type HashtagsAssets } from '@plateforme/core';
 import type { Inspiration } from '@/lib/inspirations';
 import EnvoyerRetours from '@/components/EnvoyerRetours';
+import DoubleRendu from '@/components/DoubleRendu';
+import RenduMobile from '@/components/RenduMobile';
+import { empreinteMobile, etatsMobile, type AppareilRetour, type RetourMobile, type Zone } from '@plateforme/core';
+import RenduMobileARevoir from './RenduMobileARevoir';
 import { apercuProposition } from '@/lib/apercu-proposition';
 import type { ChangementClaude } from '@/lib/changements';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -87,6 +94,9 @@ type Props = {
   /** Juge du goût de Paul (retours/predictions.json) : prédictions par clé, et ligne de justesse calculée côté serveur */
   predictions?: Record<string, PredictionJuge[]>;
   ligneJuge?: string | null;
+  /** Retours « Rendu mobile » (0034) : liste de corrections et état mobile des cartes */
+  retoursMobile?: RetourMobile[];
+  migrationMobile?: boolean;
 };
 
 /** Espaces hors notation : inspirations et photos à découvrir */
@@ -164,6 +174,28 @@ function MiniSite({ gamme, photo }: { gamme: string; photo?: string }) {
       </div>
     </div>
   );
+}
+
+/** Rendu « téléphone » d'un asset hors studio : l'élément à la largeur d'un téléphone (icône 48 px dans une ligne, illustration
+ *  et photo pleine largeur, gamme en mini-site) */
+function ApercuAssetMobile({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
+  const a = c.asset;
+  if (a.rendu.kind === 'gamme') return <div className="grid justify-items-center bg-white p-3"><MiniSite gamme={a.rendu.gamme} /></div>;
+  if (a.rendu.kind === 'image') {
+    return a.type === 'modele'
+      ? <div className="relative w-full" style={{ aspectRatio: '600 / 1067' }}><Image src={a.rendu.src} alt="" fill sizes="300px" className="object-cover object-top" /></div>
+      : <div className="grid gap-3 bg-white p-3"><div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl"><Image src={a.rendu.src} alt="" fill sizes="300px" className="object-cover" /></div><p className="text-sm font-semibold">Bilan podologique</p><p className="text-xs text-neutral-600">Examen de la marche et des appuis, conseils de chaussage.</p></div>;
+  }
+  if (a.rendu.kind === 'studio') return null;
+  const svg = c.svg ?? '';
+  if (a.type === 'picto') {
+    return (
+      <div className="grid gap-2 bg-white p-4" style={{ color: 'var(--encre)' }}>
+        {['Bilan podologique', 'Soins des ongles'].map((t) => <div key={t} className="flex items-center gap-3 rounded-xl p-3 ring-1 ring-black/10"><Svg html={svg} style={{ width: 48, height: 48 }} /><span className="text-sm font-semibold">{t}</span></div>)}
+      </div>
+    );
+  }
+  return <div className={`grid aspect-[3/4] place-items-center p-4 ${a.rendu.fond === 'grille' ? 'surface-grille' : ''}`} style={{ background: a.rendu.fond === 'doux' ? 'var(--doux)' : a.rendu.fond === 'grille' ? undefined : 'var(--fond)', color: 'var(--encre)' }}><Svg html={svg} className="aspect-[4/3] w-full" /></div>;
 }
 
 function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
@@ -318,6 +350,11 @@ export default function Retours(props: Props) {
   const [gammeApercu, setGammeApercu] = useState('canard');
   // Prévision du juge : après la note de Paul seulement, sauf option « afficher avant » (désactivée par défaut)
   const [afficherAvant, setAfficherAvant] = useAfficherAvant();
+  // Zones signalées sur les rendus ordinateur / mobile, et appareil regardé (0034)
+  const [zonesOrdi, setZonesOrdi] = useState<Zone[]>([]);
+  const [zonesMobile, setZonesMobile] = useState<Zone[]>([]);
+  const [appareilVu, setAppareilVu] = useState<AppareilRetour>('les-deux');
+  const [retoursMobile, setRetoursMobile] = useState<RetourMobile[]>(props.retoursMobile ?? []);
 
   const base = useMemo(draftDemo, []);
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
@@ -348,6 +385,10 @@ export default function Retours(props: Props) {
 
   // Empreintes calculées une fois par catégorie (rendu SVG), pour repérer les assets modifiés depuis leur dernière note
   const cacheEmpreintes = useRef(new Map<string, string | null>());
+  const cacheEmpreinte = useCallback((a: Asset) => {
+    if (!cacheEmpreintes.current.has(a.cle)) cacheEmpreintes.current.set(a.cle, empreinteAsset(a));
+    return cacheEmpreintes.current.get(a.cle) ?? null;
+  }, []);
   const tirer = useCallback((c: CategorieRetours): Carte | null => {
     if (!selection && (c === 'themes' || (c === 'hasard' && !migrationAtelier && Math.random() < 0.2))) return tirerTheme();
     const liste = candidatsDe(c).map((a) => {
@@ -358,7 +399,7 @@ export default function Retours(props: Props) {
     return x ? preparer(x.a) : null;
   }, [candidatsDe, etats, tirerTheme, migrationAtelier, selection, enAttente]);
 
-  const reinitialiserSaisie = () => { setEtiquettes([]); setPositif(''); setNegatif(''); setModeEtiquettes(false); };
+  const reinitialiserSaisie = () => { setEtiquettes([]); setPositif(''); setNegatif(''); setModeEtiquettes(false); setZonesOrdi([]); setZonesMobile([]); };
 
   const suivante = useCallback(() => {
     reinitialiserSaisie();
@@ -411,7 +452,8 @@ export default function Retours(props: Props) {
   const noter = useCallback(async (n: number) => {
     if (!carte) return;
     const etq = etiquettes;
-    const remarques = { positif, negatif };
+    const toutes = [...zonesOrdi, ...zonesMobile];
+    const remarques = { positif, negatif, appareil: appareilVu, zones: toutes.length ? { appareil: appareilVu, empreinte: carte.kind === 'asset' ? carte.empreinte : null, zones: toutes } : null };
     const le = new Date().toISOString();
     if (carte.kind === 'asset') {
       if (migrationAssets) { setStatut({ ok: false, message: 'Migration 0027 à exécuter : avis non enregistré.' }); return; }
@@ -437,7 +479,7 @@ export default function Retours(props: Props) {
       if (!r.ok) { setDatesAtelier((l) => l.filter((x) => x !== le)); setSession((s) => s - 1); }
       setStatut({ ok: r.ok, message: r.ok ? r.message : `${carte.p.nom} : ${r.message}` });
     }
-  }, [carte, etiquettes, positif, negatif, migrationAssets, migrationAtelier, suivante, props.predictions]);
+  }, [carte, etiquettes, positif, negatif, migrationAssets, migrationAtelier, suivante, props.predictions, zonesOrdi, zonesMobile, appareilVu]);
 
   const basculer = (id: string) => setEtiquettes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
 
@@ -537,6 +579,9 @@ export default function Retours(props: Props) {
           </div>
           <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-4">{CATEGORIES_RETOURS.map(tuile)}</ul>
         </section>
+
+        <RenduMobileARevoir retours={retoursMobile} migrationManquante={Boolean(props.migrationMobile)} inventaire={inventaireComplet} empreinte={(a) => cacheEmpreinte(a)}
+          proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />
 
         <section aria-labelledby="rt-sources" className="grid gap-3">
           <h2 id="rt-sources" className="text-lg font-semibold">Nourrir les visuels</h2>
@@ -687,15 +732,16 @@ export default function Retours(props: Props) {
 
       <section aria-label="Élément à noter" className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] md:items-start">
         <div className="grid min-w-0 gap-2">
-          {carte.kind === 'asset' && carte.asset.rendu.kind === 'studio' ? (
-            <ApercuStudio cle={carte.asset.cle} mobile={etroit || /^composant:contact:(barre|flottant)$/.test(carte.asset.cle)} proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />
-          ) : carte.kind === 'asset' ? (
-            modifieDepuis ? <AvantApres key={carte.asset.cle} cle={carte.asset.cle}><ApercuAsset c={carte} /></AvantApres> : <ApercuAsset c={carte} />
-          ) : apercuTheme && (
-            <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${etroit ? 'mx-auto w-[280px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}>
-              <ApercuTheme key={carte.cle} vignette={etroit ? 480 : 520} appareil={etroit ? 'mobile' : 'bureau'} draft={apercuTheme.draft} modele={apercuTheme.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
-            </div>
-          )}
+          {carte.kind === 'asset' && modifieDepuis && carte.asset.rendu.kind !== 'studio' && <AvantApres key={`aa-${carte.asset.cle}`} cle={carte.asset.cle}><ApercuAsset c={carte} /></AvantApres>}
+          {/* Ordinateur ET mobile, annotables (z) ; la note porte sur le choix, l'adaptation mobile a son bloc à part */}
+          <DoubleRendu key={cleCarte(carte)} libelle={titre} onAppareil={setAppareilVu}
+            zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
+            mobileDabord={etroit}
+            rendu={(app) => carte.kind === 'asset' && carte.asset.rendu.kind === 'studio'
+              ? <ApercuStudio nu cle={carte.asset.cle} mobile={app === 'mobile'} proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />
+              : carte.kind === 'asset'
+                ? (app === 'mobile' ? <ApercuAssetMobile c={carte} /> : <div className="bg-white p-2"><ApercuAsset c={carte} /></div>)
+                : apercuTheme && <ApercuTheme key={`${carte.cle}|${app}`} sansCommandes vignette={app === 'mobile' ? 560 : 520} appareil={app} draft={apercuTheme.draft} modele={apercuTheme.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />} />
         </div>
 
         <div className="grid gap-3 md:sticky md:top-4">
@@ -751,6 +797,22 @@ export default function Retours(props: Props) {
             </label>
           </fieldset>
 
+          {(() => {
+            // Rendu mobile : défaut d'adaptation rattaché à l'élément (thème complet : sa structure), jamais au choix
+            const cleMobile = carte.kind === 'asset' ? carte.asset.cle : `modele:${carte.p.univers}`;
+            const em = empreinteMobile(cleMobile, carte.kind === 'asset' ? carte.empreinte : null);
+            const e = etatsMobile(retoursMobile.filter((x) => x.cle === cleMobile), () => em).get(cleMobile);
+            return (
+              <RenduMobile key={`rm-${cleCarte(carte)}`} cle={cleMobile} empreinte={em} libelle={titre}
+                zones={zonesMobile.length ? { appareil: 'mobile', empreinte: em, largeur: 390, zones: zonesMobile } : null}
+                ouverts={e?.ouverts.length ?? 0} modifie={e?.modifie ?? false}
+                onEnregistre={(v) => {
+                  setRetoursMobile((l) => [{ cle: cleMobile, verdict: v, etiquettes: [], statut: v === 'ok' ? 'sans_objet' : 'a_corriger', empreinte: em, le: new Date().toISOString(), zones: zonesMobile.length ? { appareil: 'mobile', empreinte: em, zones: zonesMobile } : null }, ...(v === 'ok' ? l.map((x) => (x.cle === cleMobile && x.statut === 'a_corriger' ? { ...x, statut: 'corrige' as const } : x)) : l)]);
+                  if (v === 'a_revoir') setZonesMobile([]);
+                }} />
+            );
+          })()}
+
           <div className="fixed inset-x-0 bottom-0 z-20 grid gap-2 border-t border-black/10 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:shadow-none">
             <div role="group" aria-label="Note de 1 à 5 (l’élément suivant s’affiche aussitôt)" className="grid grid-cols-5 gap-1.5">
               {[1, 2, 3, 4, 5].map((n) => (
@@ -767,7 +829,7 @@ export default function Retours(props: Props) {
             </div>
             <p role="status" className={`min-h-5 text-sm ${statut && !statut.ok ? 'text-red-800' : 'text-neutral-600'}`}>{statut?.message ?? ''}</p>
           </div>
-          <p className="hidden text-xs text-neutral-500 md:block">Clavier : 1 à 5 noter · t étiquettes (puis 1 à 9) · → ou Entrée passer · ← précédent · Échap accueil</p>
+          <p className="hidden text-xs text-neutral-500 md:block">Clavier : 1 à 5 noter · t étiquettes (puis 1 à 9) · z signaler une zone · → ou Entrée passer · ← précédent · Échap accueil</p>
           {carte.kind === 'asset' && <p className="text-xs text-neutral-500">Clé : <code className="break-all">{carte.asset.cle}</code> · Source : <code className="break-all">{carte.asset.source}</code></p>}
           {props.predictions && Object.keys(props.predictions).length > 0 && (
             <label className="flex min-h-11 items-center gap-2 text-xs text-neutral-500">

@@ -1,7 +1,7 @@
 // Données communes aux variantes de sections des gabarits autres que « classique » (components/gabarits/*) : variantes
 // effectives du modèle, bulles « pour qui », horaires du jour, atouts du lieu. Aucun texte nouveau qui serait un titre :
 // les intertitres (H1, H2) restent ceux du gabarit classique (SEO identique, npm run controle:seo).
-import { variantesModele, varianteSujets, formeDesCartes, gabaritModele, pictoSoin, resumeHygiene, faitEquipement, rendreCase, LIGNE_DESSIN, type Variantes, type NomDessin, type NomLigne } from '@plateforme/core';
+import { variantesModele, varianteSujets, varianteTheme, varianteArticle, formeDesCartes, gabaritModele, pictoSoin, resumeHygiene, faitEquipement, rendreCase, LIGNE_DESSIN, type Variantes, type NomDessin, type NomLigne } from '@plateforme/core';
 import { site } from './site';
 import { cheminTheme } from '@plateforme/core';
 import { navigation } from './navigation';
@@ -13,7 +13,7 @@ export const gabarit = gabaritModele(site.modele);
 /** Gabarit autre que « classique » : les pages passent par les variantes de sections. */
 export const nouveauGabarit = gabarit !== 'classique';
 /** Variantes de sections du modèle (gabarits autres que classique) */
-export const variantes: Variantes = variantesModele(site.modele) ?? { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: varianteSujets(site.modele), horaires: 'tableau', galerie: 'mosaique', 'soins-forme': formeDesCartes(site.modele), contact: 'barre', fiche: 'encadre' };
+export const variantes: Variantes = variantesModele(site.modele) ?? { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: varianteSujets(site.modele), horaires: 'tableau', galerie: 'mosaique', 'soins-forme': formeDesCartes(site.modele), contact: 'barre', fiche: 'encadre', theme: varianteTheme(site.modele), article: varianteArticle(site.modele) };
 
 /** Picto métier d'un soin (« picto:<id> »), sinon picto générique du pied. */
 export const pictoDuSoin = (slug: string) => `picto:${pictoSoin(slug) ?? 'pied-dessus'}`;

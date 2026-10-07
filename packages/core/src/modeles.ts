@@ -97,14 +97,27 @@ export const VARIANTES_SECTIONS = {
   contact: ['barre', 'bandeau', 'carte', 'flottant'],
   /** Forme des cartes de soins et de sujets (formes.ts), indépendante de leur disposition ; « gabarit » : celle du modèle */
   'soins-forme': ['gabarit', 'bulles', 'carres', 'arrondies', 'mosaique', 'pilules', 'organiques', 'tuiles', 'sans-cadre'],
+  /**
+   * Page d'un sujet (/themes/<id>, tous gabarits ; demande de Paul du 2026-10-07) : « liste » (historique : titre et visuel côte
+   * à côte, soins en liste à filets) ; « rangees » (intro, puis grandes rangées de soins au picto agrandi) ; « heros »
+   * (illustration du sujet pleine largeur sous le titre, puis la liste) ; « colonnes » (soins à gauche, conseils et rendez-vous
+   * à côté). MÊME balisage et mêmes titres (H1, H2) : seule la feuille de style change (SEO identique).
+   */
+  theme: ['liste', 'rangees', 'heros', 'colonnes'],
+  /**
+   * Page d'un article (/actualites/<slug>, tous gabarits) : « standard » (historique) ; « lecture » (colonne de lecture centrée,
+   * illustration en tête) ; « laterale » (illustration à côté du texte sur grand écran) ; « chapo » (chapô en grand et sommaire
+   * des intertitres). Mesure de lecture 60 à 75 caractères et interligne 1,7 dans toutes les présentations. Mêmes titres.
+   */
+  article: ['standard', 'lecture', 'laterale', 'chapo'],
 } as const;
 export type SectionVariable = keyof typeof VARIANTES_SECTIONS;
 export type Variantes = { [S in SectionVariable]: (typeof VARIANTES_SECTIONS)[S][number] };
 /** Variantes par défaut de chaque gabarit (la fiche peut en changer une partie). */
 export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
-  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre' },
-  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre' },
-  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre' },
+  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard' },
+  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard' },
+  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard' },
 };
 /** Gabarit d'un modèle (défaut : classique, pour les fiches antérieures au champ). */
 export const gabaritModele = (m: Pick<ModeleManifeste, 'gabarit'>): Gabarit => m.gabarit ?? 'classique';
@@ -114,13 +127,19 @@ export function variantesModele(m: Pick<ModeleManifeste, 'gabarit' | 'variantes'
   return g === 'classique' ? null : { ...VARIANTES_PAR_DEFAUT[g], ...(m.variantes ?? {}) };
 }
 /** Sections dont la variante s'applique aussi au gabarit classique (présentation des sujets seulement) */
-export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme'];
+export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme', 'theme', 'article'];
 /** Forme des cartes (tous gabarits) ; défaut : celle du modèle */
 export const formeDesCartes = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['soins-forme'] =>
   (VARIANTES_SECTIONS['soins-forme'] as readonly string[]).includes(m.variantes?.['soins-forme'] as string) ? m.variantes!['soins-forme']! : 'gabarit';
 /** Variante de présentation des sujets (tous gabarits, classique compris) ; défaut : « une » */
 export const varianteSujets = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['sujets'] =>
   (VARIANTES_SECTIONS.sujets as readonly string[]).includes(m.variantes?.sujets as string) ? m.variantes!.sujets! : 'une';
+/** Présentation de la page d'un sujet (tous gabarits, classique compris) ; défaut : « liste » */
+export const varianteTheme = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['theme'] =>
+  (VARIANTES_SECTIONS.theme as readonly string[]).includes(m.variantes?.theme as string) ? m.variantes!.theme! : 'liste';
+/** Présentation de la page d'un article (tous gabarits) ; défaut : « standard » */
+export const varianteArticle = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['article'] =>
+  (VARIANTES_SECTIONS.article as readonly string[]).includes(m.variantes?.article as string) ? m.variantes!.article! : 'standard';
 /** Variantes reçues (brouillon, recette) : sections et valeurs connues seulement ; classique : `sujets` seulement */
 export function variantesValides(v: unknown, gabarit: Gabarit = 'tableau'): Partial<Variantes> {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return {};

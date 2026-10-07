@@ -55,3 +55,6 @@ export * from './recettes';
 export * from './formes';
 export * from './sports';
 export * from './kits';
+export * from './zones';
+export * from './rendu-mobile';
+export * from './pages-demo';

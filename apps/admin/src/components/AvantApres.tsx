@@ -5,8 +5,9 @@
 // Animation (clé animation:…) : l'instantané est l'image figée (le SVG noté ne garde pas le mouvement) : posée sur le fond sombre
 // des animations, avec la mention ; la version actuelle, elle, joue (LectureAnimation).
 import { useEffect, useState, type ReactNode } from 'react';
-import { libelleEtiquetteAsset, rendusAvant, type ArchiveAssets, type IndexArchives, type Instantane } from '@plateforme/core';
+import { libelleEtiquetteAsset, ligneZone, rendusAvant, type ArchiveAssets, type IndexArchives, type Instantane } from '@plateforme/core';
 import { derniereNoteAsset, type NoteAvant } from '@/app/admin/retours/actions';
+import { SurimpressionZones } from './AnnotateurZones';
 
 let archivesChargees: Promise<ArchiveAssets[]> | null = null;
 
@@ -86,7 +87,7 @@ export default function AvantApres({ cle, children, note: noteInitiale }: Props)
     <div className="grid gap-3 md:grid-cols-2 md:items-start" aria-label="Avant / après">
       <figure className="grid gap-1.5 rounded-xl bg-amber-50/60 p-2 ring-1 ring-amber-200">
         <figcaption className="text-sm font-semibold text-amber-950">
-          Avant {note ? <>(votre note : {note.note}<span aria-hidden="true">★</span>{note.le ? `, le ${new Date(note.le).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}` : ''})</> : ''}
+          Avant{note?.zones?.zones.length ? ' : vos zones' : ''} {note ? <>(votre note : {note.note}<span aria-hidden="true">★</span>{note.le ? `, le ${new Date(note.le).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}` : ''})</> : ''}
         </figcaption>
         {avant === undefined ? <div className="grid aspect-[4/3] place-items-center rounded-xl bg-white text-xs text-neutral-500">Chargement de la version notée…</div>
           : avant ? (cle.startsWith('animation:') && avant.kind === 'svg' ? (
@@ -94,9 +95,12 @@ export default function AvantApres({ cle, children, note: noteInitiale }: Props)
               <div className="surface-plan rounded-xl"><RenduInstantane r={avant} fond="transparent" /></div>
               <p className="text-xs font-medium text-amber-950">Image figée de l’animation notée : l’instantané ne garde pas le mouvement.</p>
             </>
-          ) : <RenduInstantane r={avant} />)
+          ) : <SurimpressionZones zones={(note?.zones?.zones ?? []).filter((z) => z.appareil === 'ordinateur')}><RenduInstantane r={avant} /></SurimpressionZones>)
             : <div className="grid aspect-[4/3] place-items-center rounded-xl bg-white p-3 text-center text-xs text-neutral-600">Version notée introuvable (ni instantané ni archive pour cette empreinte).</div>}
         {note && note.etiquettes.length > 0 && <p className="text-xs text-neutral-700">{note.etiquettes.map(libelleEtiquetteAsset).join(' · ')}</p>}
+        {note?.zones && note.zones.zones.length > 0 && (
+          <ol className="grid gap-0.5 text-xs text-orange-950" aria-label="Avant : vos zones">{note.zones.zones.map((z, i) => <li key={i}>{ligneZone(z, i)}</li>)}</ol>
+        )}
         {remarques.map((r) => <p key={r.t} className={`text-xs ${r.c}`}><strong>{r.t} :</strong> {r.v}</p>)}
       </figure>
       <figure className="grid gap-1.5 rounded-xl bg-teal-50/60 p-2 ring-1 ring-teal-200">

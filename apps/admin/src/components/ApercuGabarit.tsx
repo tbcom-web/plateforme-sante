@@ -12,7 +12,7 @@
 // bulles à picto « façon annuaire » ; village = aplat tramé, titre expressif, illustration en cadre portrait sur ombre pleine ;
 // « pédicurie-podologie » insécable, titre ajusté à sa colonne.
 import type { CSSProperties, ReactNode } from 'react';
-import { avecVille, construireNavigation, variantesModele, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
+import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -20,7 +20,10 @@ type Props = {
   modele: ModeleManifeste;
   soins: SoinCatalogue[];
   mobile: boolean;
-  vue: 'accueil' | 'soin';
+  vue: VuePage;
+  /** Pages sujet et article (ApercuPages, calculées par ApercuTheme) */
+  pageSujet?: ReactNode;
+  pageArticle?: ReactNode;
   marque: ReactNode;
   nomCabinet: string;
   titre: string;
@@ -64,7 +67,7 @@ export function HerosVue({ h, rayon = 0 }: { h: HerosApercu; rayon?: number | st
 
 const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'], [/diab/, 'Diabétiques'], [/senior|chute/, 'Seniors']];
 
-export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null, registre = 'ligne', seul }: Props) {
+export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null, registre = 'ligne', seul, pageSujet = null, pageArticle = null }: Props) {
   const village = gabaritModele(m) === 'village';
   const revue = gabaritModele(m) === 'revue';
   const ROMAINS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
@@ -421,7 +424,12 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   return (
     <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
       {!seul && entete}
-      {vue === 'accueil' ? <>{montrer('premier') && premier}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</> : fiche}
+      {vue === 'accueil' ? <>{montrer('premier') && premier}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
+        : vue === 'soin' ? fiche
+        : vue === 'theme' ? pageSujet
+        : vue === 'article' ? pageArticle
+        // Pages internes (studio, onglets) : les blocs de la page, avec l'en-tête et le pied du site
+        : <div className="eff-section" style={{ paddingTop: 8 }}>{vue === 'actualites' ? actualitesSection : vue === 'cabinet' ? <>{equipeSection}{galerieSection}</> : vue === 'acces' ? accesSection : vue === 'questions' ? faqSection : <>{sujetsSection}{soinsSection}</>}</div>}
       {seul?.includes('actualites') && !blocs.includes('actualites') && actualitesSection}
       {seul?.includes('galerie') && !blocs.includes('galerie') && galerieSection}
       {montrer('contact') && contactBloc}

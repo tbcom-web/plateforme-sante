@@ -15,7 +15,7 @@
 
 import { animationPour, gammesDesCouleurs, LIBELLES_STRUCTURES, LIBELLES_STYLES, REGLES_THEMES, STRUCTURES, stylesCompatibles, reglageStyle, appliquerReglages, type Proposition, type StyleIllustration, type Structure } from './propositions';
 import { GAMMES, gamme as gammeParId } from './gammes';
-import { gabaritModele, modeleIntegre, PAIRES_POLICES, pairePolices, VARIANTES_SECTIONS, variantesModele, varianteSujets, type IdPairePolices, type ModeleManifeste, type SectionAccueil, type Variantes, type Gabarit } from './modeles';
+import { gabaritModele, modeleIntegre, PAIRES_POLICES, pairePolices, VARIANTES_SECTIONS, variantesModele, varianteSujets, varianteTheme, varianteArticle, type IdPairePolices, type ModeleManifeste, type SectionAccueil, type Variantes, type Gabarit } from './modeles';
 import { modeleDuSite, universCatalogue } from './catalogue-univers';
 import { appliquerUniversParcours } from './parcours';
 import { verifierCouleursGabarit, ajusterContraste } from './gabarits';
@@ -28,6 +28,7 @@ import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
 import { clePhoto, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets } from './assets-poids';
 import { clesAtelier, type PoidsAtelier } from './atelier-poids';
+import { FACTEUR_DEFAUT_MOBILE, appareilDe, poidsAppareil, type AppareilRetour } from './rendu-mobile';
 import type { Animation } from './packs';
 import type { SiteDraft } from './draft';
 import type { Univers } from './catalogue-univers';
@@ -77,13 +78,13 @@ export function sectionsSelonOrdre(base: readonly SectionAccueil[], ordre: Ordre
 
 /** Sections dont le studio tire la variante, selon le gabarit (classique : la présentation des sujets seulement) */
 export const sectionsVariables = (g: Gabarit): (keyof Variantes)[] =>
-  g === 'classique' ? ['sujets', 'soins-forme'] : ['accueil', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied'];
+  g === 'classique' ? ['sujets', 'soins-forme', 'theme', 'article'] : ['accueil', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article'];
 
 /**
  * Structures de PAGES (demande de Paul du 2026-10-07) : chaque type de page regroupe les sections et éléments qui le composent ;
  * le studio a un dé par type de page, et chaque structure est notable (clé `structure:<page>:<variantes>`). Les variantes sont
  * celles du site (partagées entre pages) : une page reprend la présentation de ses éléments, jamais un autre contenu.
- * Pages sujet et articles : présentation commune du gabarit pour l'instant (pas de variante propre).
+ * Pages sujet (`theme`) et articles (`article`) : variantes propres depuis le 2026-10-07 (même balisage, feuille de style seule).
  */
 export const PAGES_STRUCTURE = [
   { id: 'accueil', nom: 'Accueil', sections: ['accueil', 'sujets'] as (keyof Variantes)[], ordre: true },
@@ -92,12 +93,33 @@ export const PAGES_STRUCTURE = [
   { id: 'cabinet', nom: 'Le cabinet', sections: ['praticiens', 'galerie'] as (keyof Variantes)[], ordre: false },
   { id: 'questions', nom: 'Questions fréquentes', sections: ['faq'] as (keyof Variantes)[], ordre: false },
   { id: 'fiche', nom: 'Fiche d’un soin', sections: ['fiche'] as (keyof Variantes)[], ordre: false },
-  { id: 'actualites', nom: 'Actualités et articles', sections: ['actualites'] as (keyof Variantes)[], ordre: false },
+  { id: 'actualites', nom: 'Actualités', sections: ['actualites'] as (keyof Variantes)[], ordre: false },
+  { id: 'theme', nom: 'Page sujet', sections: ['theme'] as (keyof Variantes)[], ordre: false },
+  { id: 'article', nom: 'Article de blog', sections: ['article'] as (keyof Variantes)[], ordre: false },
 ] as const;
 export type PageStructure = (typeof PAGES_STRUCTURE)[number]['id'];
+export const estPageStructure = (x: unknown): x is PageStructure => PAGES_STRUCTURE.some((p) => p.id === x);
+
+/**
+ * Onglets du studio (demande de Paul du 2026-10-07 : « le lock / la note PAR PAGE ») : chaque type de page a son aperçu, son dé
+ * de structure, son verrou et sa note. `vue` : page montrée par l'aperçu (ApercuTheme).
+ */
+export type VuePage = 'accueil' | 'soin' | 'theme' | 'article' | 'actualites' | 'cabinet' | 'acces' | 'questions' | 'soins';
+export const ONGLETS_PAGES: readonly { page: PageStructure; nom: string; vue: VuePage }[] = [
+  { page: 'accueil', nom: 'Accueil', vue: 'accueil' },
+  { page: 'theme', nom: 'Page sujet', vue: 'theme' },
+  { page: 'fiche', nom: 'Fiche soin', vue: 'soin' },
+  { page: 'article', nom: 'Article de blog', vue: 'article' },
+  { page: 'actualites', nom: 'Actualités', vue: 'actualites' },
+  { page: 'cabinet', nom: 'Cabinet', vue: 'cabinet' },
+  { page: 'acces', nom: 'Contact et accès', vue: 'acces' },
+  { page: 'questions', nom: 'Questions', vue: 'questions' },
+  { page: 'soins', nom: 'Soins', vue: 'soins' },
+];
+export const vueDePage = (p: PageStructure): VuePage => ONGLETS_PAGES.find((o) => o.page === p)?.vue ?? 'accueil';
 
 /** Familles d'éléments notables (composants) : présentation de chaque élément, clé `composant:<famille>:<variante>` */
-export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'faq', 'soins', 'sujets', 'accueil', 'pied', 'actualites'];
+export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'faq', 'soins', 'sujets', 'accueil', 'pied', 'actualites', 'theme', 'article'];
 
 /** Libellés des variantes (studio) */
 export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
@@ -113,10 +135,12 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   fiche: { encadre: 'Texte et encadré « En pratique » à côté', colonne: 'Une colonne, encadré sous le texte', 'pratique-haut': 'Encadré « En pratique » en tête' },
   actualites: { liste: 'Liste de titres datés', cartes: 'Cartes illustrées', une: 'Le dernier à la une' },
   contact: { barre: 'Barre d’actions (téléphone)', bandeau: 'Bandeau « Écrire au cabinet »', carte: 'Carte de contact', flottant: 'Bouton flottant' },
+  theme: { liste: 'Titre et visuel côte à côte, liste à filets', rangees: 'Intro et grandes rangées de soins', heros: 'Illustration pleine largeur et liste', colonnes: 'Deux colonnes, conseils à côté' },
+  article: { standard: 'Titre, image puis texte', lecture: 'Colonne de lecture centrée, illustration en tête', laterale: 'Illustration à côté du texte', chapo: 'Chapô en grand et sommaire' },
   'soins-forme': Object.fromEntries(FORMES_CARTES.map((f) => [f.id, f.nom])),
 };
 export const NOMS_SECTIONS_VARIABLES: Record<string, string> = {
-  accueil: 'Premier écran', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes',
+  accueil: 'Premier écran', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -150,6 +174,11 @@ export type ContexteRecette = {
   photos?: readonly PhotoBanque[];
   /** Fiches des modèles (importées par l'admin), sinon intégrées */
   modele?: (id: string) => ModeleManifeste;
+  /**
+   * Clés dont l'adaptation mobile est à corriger (defauts_mobile, rendu-mobile.ts) : parcours des praticiens seulement. La
+   * variante concernée passe après les autres (FACTEUR_DEFAUT_MOBILE), sans être exclue ; le studio de Paul ne la fournit pas.
+   */
+  defautsMobile?: ReadonlySet<string>;
 };
 
 /** Sujets actifs (posture et sujets différés jamais pris en compte) */
@@ -340,7 +369,8 @@ function tirerStructure(x: CompositionRecette, c: ContexteRecette, r: () => numb
     const possibles = VARIANTES_SECTIONS[s] as readonly string[];
     const actuelle = x.sections.variantes[s] as string | undefined;
     if (fige(s)) { if (actuelle && possibles.includes(actuelle)) (variantes as Record<string, string>)[s] = actuelle; continue; }
-    (variantes as Record<string, string>)[s] = choisir(possibles.map((v) => ({ v, p: masse(effetAtelier(c, `variante=${s}:${v}`) + effetAsset(c, `composant:${s}:${v}`)) })), r)!;
+    const mobile = (v: string) => (c.defautsMobile?.has(`composant:${s}:${v}`) ? FACTEUR_DEFAUT_MOBILE : 1);
+    (variantes as Record<string, string>)[s] = choisir(possibles.map((v) => ({ v, p: mobile(v) * masse(effetAtelier(c, `variante=${s}:${v}`) + effetAsset(c, `composant:${s}:${v}`)) })), r)!;
   }
   return { structure, sections: { ordre, variantes } };
 }
@@ -390,7 +420,7 @@ export function reparerComposition(x: CompositionRecette, c: ContexteRecette): C
 
 /** Variantes du modèle (celles du gabarit), restreintes aux sections que le studio fait varier */
 const variantesDeDepart = (m: ModeleManifeste): Partial<Variantes> => {
-  const v = (variantesModele(m) ?? { sujets: varianteSujets(m) }) as Record<string, string>;
+  const v = (variantesModele(m) ?? { sujets: varianteSujets(m), theme: varianteTheme(m), article: varianteArticle(m) }) as Record<string, string>;
   return Object.fromEntries(sectionsVariables(gabaritModele(m)).filter((s) => v[s]).map((s) => [s, v[s]])) as Partial<Variantes>;
 };
 
@@ -492,8 +522,12 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   return { ...x, sections: { ordre: s.ordre ?? x.sections.ordre, variantes: { ...x.sections.variantes, ...s.variantes } } };
 }
 
-/** Vue de l'aperçu qui montre une clé : la fiche d'un soin pour sa structure, l'accueil sinon */
-export const vuePourCle = (cle: string): 'accueil' | 'soin' => (cle.startsWith('structure:fiche:') ? 'soin' : 'accueil');
+/** Vue de l'aperçu qui montre une clé : la page de sa structure ou de sa variante (fiche d'un soin, page sujet, article), l'accueil sinon */
+export function vuePourCle(cle: string): VuePage {
+  const [type, a] = cle.split(':');
+  if ((type === 'structure' || type === 'composant') && (a === 'fiche' || a === 'theme' || a === 'article')) return vueDePage(a);
+  return 'accueil';
+}
 
 /** Blocs de l'aperçu qui montrent un élément (ApercuGabarit, `seul`) ; undefined = la page entière (accueil, effets) */
 export function blocsPourCle(cle: string): string[] | undefined {
@@ -503,10 +537,11 @@ export function blocsPourCle(cle: string): string[] | undefined {
       accueil: ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
       galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], faq: ['faq'], pied: ['pied'], actualites: ['actualites'],
     };
+    // Page sujet, article, fiche : la page entière (vuePourCle)
     return blocs[a];
   }
   if (type === 'structure') {
-    const blocs: Record<string, string[] | undefined> = { accueil: undefined, soins: ['competences', 'sujets'], acces: ['acces', 'contact'], cabinet: ['praticiens', 'galerie'], questions: ['faq'], fiche: undefined, actualites: ['actualites'] };
+    const blocs: Record<string, string[] | undefined> = { accueil: undefined, soins: ['competences', 'sujets'], acces: ['acces', 'contact'], cabinet: ['praticiens', 'galerie'], questions: ['faq'], fiche: undefined, actualites: ['actualites'], theme: undefined, article: undefined };
     return blocs[a];
   }
   return undefined;
@@ -643,12 +678,17 @@ export function recetteDepuisLigne(l: Record<string, any>, modele?: (id: string)
   };
 }
 
-/** Recettes du parcours pour un scénario : actives, notées ≥ 4, qui visent le sujet n° 1 (ou sans sujet), meilleures d'abord */
-export function recettesPourScenario(recettes: readonly Recette[], sujets: readonly string[], min = 4): Recette[] {
+/**
+ * Recettes du parcours pour un scénario : actives, notées ≥ 4, qui visent le sujet n° 1 (ou sans sujet), meilleures d'abord.
+ * `defautsMobile` (praticiens) : une recette dont une page ou un élément a un défaut d'adaptation mobile ouvert passe après les
+ * autres (sa note de choix n'est pas touchée), jusqu'à la correction.
+ */
+export function recettesPourScenario(recettes: readonly Recette[], sujets: readonly string[], min = 4, defautsMobile?: ReadonlySet<string>): Recette[] {
   const s1 = sujetsActifs(sujets)[0] ?? null;
+  const mobileARevoir = (r: Recette) => (defautsMobile?.size ? clesStructure(r.composition).some((k) => defautsMobile.has(k)) : false);
   return recettes
     .filter((r) => r.statut === 'active' && (r.note ?? 0) >= min && (s1 ? r.sujets.includes(s1) : !sujetsActifs(r.sujets).length))
-    .sort((a, b) => (b.note ?? 0) - (a.note ?? 0) || (sujetsActifs(a.sujets)[0] === s1 ? -1 : 1) || (a.id < b.id ? -1 : 1));
+    .sort((a, b) => Number(mobileARevoir(a)) - Number(mobileARevoir(b)) || (b.note ?? 0) - (a.note ?? 0) || (sujetsActifs(a.sujets)[0] === s1 ? -1 : 1) || (a.id < b.id ? -1 : 1));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -734,14 +774,16 @@ export function clesRecette(x: CompositionRecette, sujets: readonly string[]): {
  * les poids ne font que réordonner des choix déjà permis.
  */
 export const RENFORT = { facteur: 0.4, lissage: { atelier: 10, assets: 4 }, plafond: 0.75 } as const;
-export type SourceRenfort = { note: number; atelier: readonly string[]; assets: readonly string[] };
+/** `poids` : poids de l'appareil regardé (rendu-mobile.ts : mobile 1,25 ; défaut 1) */
+export type SourceRenfort = { note: number; atelier: readonly string[]; assets: readonly string[]; poids?: number };
 
 export function renfortsPoids(sources: readonly SourceRenfort[], mu = 3): { atelier: Record<string, number>; assets: Record<string, number> } {
   const calc = (cle: 'atelier' | 'assets') => {
     const acc = new Map<string, { s: number; w: number }>();
     for (const x of sources) {
       if (!Number.isInteger(x.note) || x.note < 1 || x.note > 5) continue;
-      for (const k of new Set(x[cle])) { const a = acc.get(k) ?? { s: 0, w: 0 }; a.s += RENFORT.facteur * (x.note - mu); a.w += RENFORT.facteur; acc.set(k, a); }
+      const f = RENFORT.facteur * (x.poids ?? 1);
+      for (const k of new Set(x[cle])) { const a = acc.get(k) ?? { s: 0, w: 0 }; a.s += f * (x.note - mu); a.w += f; acc.set(k, a); }
     }
     const res: Record<string, number> = {};
     for (const k of [...acc.keys()].sort()) {
@@ -773,6 +815,60 @@ export function appliquerRenforts(poids: PoidsAtelier | null | undefined, r: { a
 /** Sources de renfort des recettes notées (actives) */
 export const sourcesRecettes = (recettes: readonly Pick<Recette, 'note' | 'composition' | 'sujets' | 'statut'>[]): SourceRenfort[] =>
   recettes.filter((r) => r.note && r.statut === 'active').map((r) => ({ note: r.note!, ...clesRecette(r.composition, r.sujets) }));
+
+/**
+ * Clés apprises d'UNE PAGE d'une recette (note par page, demande de Paul du 2026-10-07) : la structure de cette page, les
+ * éléments de ses sections et leurs variantes (et l'ordre de l'accueil pour l'accueil) — rien d'autre. Une structure aimée pour
+ * la page Contact ne renforce donc que la page Contact ; couleurs, polices et visuels restent appris par la note de la recette.
+ */
+export function clesPage(x: CompositionRecette, page: PageStructure): { atelier: string[]; assets: string[] } {
+  const p = PAGES_STRUCTURE.find((y) => y.id === page);
+  if (!p) return { atelier: [], assets: [] };
+  const v = x.sections.variantes as Record<string, string>;
+  const sections = (p.sections as readonly string[]).filter((sec) => v[sec]);
+  const atelier = [...(p.ordre ? [`ordre=${x.sections.ordre}`] : []), ...sections.map((sec) => `variante=${sec}:${v[sec]}`)];
+  const assets = [
+    ...clesStructure(x).filter((k) => k.startsWith(`structure:${page}:`)),
+    ...sections.filter((sec) => FAMILLES_COMPOSANTS.includes(sec as keyof Variantes)).map((sec) => `composant:${sec}:${v[sec]}`),
+  ];
+  return { atelier: [...new Set(atelier)], assets: [...new Set(assets)] };
+}
+
+/** Une note du journal recettes_notes (lecture d'apprentissage : ni auteur ni remarques) ; page nulle = recette entière */
+export type NoteRecette = { recette: string; note: number; etiquettes?: readonly string[]; page?: string | null; appareil?: AppareilRetour | string | null; composition: CompositionRecette; sujets: readonly string[] };
+
+/**
+ * Sources de renfort des notes PAR PAGE (journal recettes_notes, page non nulle) : chaque note ne renforce que les clés de sa page
+ * (clesPage), au poids de son appareil. Les notes de recette entière restent lues sur la recette (sourcesRecettes) : pas de
+ * double compte.
+ */
+export const sourcesNotesPages = (notes: readonly NoteRecette[]): SourceRenfort[] =>
+  notes.filter((n) => n.page && estPageStructure(n.page) && Number.isInteger(n.note))
+    .map((n) => ({ note: n.note, ...clesPage(n.composition, n.page as PageStructure), poids: poidsAppareil(n.appareil) }));
+
+/** Section « Par page » de SYNTHESE.md : notes par type de page (moyenne, appareil, étiquettes), puis le détail */
+export function markdownParPage(notes: readonly (Omit<NoteRecette, 'composition' | 'sujets'> & { nom?: string; positif?: string | null; negatif?: string | null; composition?: CompositionRecette; jour?: string | null; zones?: unknown })[], lignesZones?: (z: unknown) => string[]): string {
+  const l = ['## Par page', ''];
+  const parPage = notes.filter((n) => n.page && estPageStructure(n.page));
+  if (!parPage.length) { l.push('Aucune note par page pour l’instant (studio de recettes, onglets des pages).'); return l.join('\n'); }
+  for (const o of ONGLETS_PAGES) {
+    const ns = parPage.filter((n) => n.page === o.page);
+    if (!ns.length) continue;
+    const moy = Math.round((ns.reduce((sx, n) => sx + n.note, 0) / ns.length) * 10) / 10;
+    const mob = ns.filter((n) => appareilDe(n.appareil) === 'mobile').length;
+    l.push(`### ${o.nom} — ${ns.length} note(s), moyenne ${moy}★${mob ? ` (${mob} sur mobile)` : ''}`, '');
+    for (const n of ns) {
+      const vs = (n.composition?.sections.variantes ?? {}) as Record<string, string>;
+      const v = (PAGES_STRUCTURE.find((p) => p.id === n.page)!.sections as readonly string[]).filter((sec) => vs[sec]).map((sec) => LIBELLES_VARIANTES[sec]?.[vs[sec]] ?? vs[sec]);
+      l.push(`- ${n.jour ? `${n.jour} · ` : ''}${n.nom ? `${n.nom} · ` : ''}${n.note}★ (${appareilDe(n.appareil)})${v.length ? ` · ${v.join(', ')}` : ''}${n.etiquettes?.length ? ` · ${n.etiquettes.join(', ')}` : ''}`);
+      if (n.positif) l.push(`  - Ce qui va : ${n.positif}`);
+      if (n.negatif) l.push(`  - Ce qui ne va pas : ${n.negatif}`);
+      for (const z of lignesZones?.(n.zones) ?? []) l.push(`  - ${z}`);
+    }
+    l.push('');
+  }
+  return l.join('\n');
+}
 
 /** Libellé court d'une clé renforcée (« gamme Cobalt », « police Grotesque affirmée », « photo sport-course ») */
 export function libelleCleRenfort(k: string): string {

@@ -20,6 +20,8 @@ type Props = {
   marquesImportees: MarqueImportee[];
   themesActives: string[];
   mobile?: boolean;
+  /** Rendu nu (DoubleRendu : le cadre est fourni par le parent ; sans commandes) */
+  nu?: boolean;
 };
 
 /** Photos de démonstration de la galerie du cabinet (banque intégrée, jamais « posture ») */
@@ -37,7 +39,7 @@ export function draftStudio(principaux: string[], secondaires: string[] = [], co
   return d;
 }
 
-export default function ApercuStudio({ cle, proposes, modeles, catalogue, marquesImportees, themesActives, mobile = false }: Props) {
+export default function ApercuStudio({ cle, proposes, modeles, catalogue, marquesImportees, themesActives, mobile = false, nu = false }: Props) {
   const modele = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);
   // Structure rendue : la première dont le gabarit porte les variantes (tableau, village, revue), parmi celles du parcours
   const structure = useMemo<Structure>(() => STRUCTURES.find((s) => proposes.some((u) => u.id === s) && gabaritModele(modele(universCatalogue(s)?.preReglage.modele ?? 'tableau')) !== 'classique') ?? 'clair-pratique',
@@ -56,6 +58,7 @@ export default function ApercuStudio({ cle, proposes, modeles, catalogue, marque
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cle, structure, proposes, modeles, catalogue, themesActives]);
   if (!apercu) return <p className="text-sm text-neutral-600">Aperçu indisponible.</p>;
+  if (nu) return <ApercuTheme key={`${cle}|${mobile}`} sansCommandes vignette={mobile ? 600 : 560} vueInitiale={vuePourCle(cle)} survol={survol} seul={blocsPourCle(cle)} appareil={mobile ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
   return (
     <div className="grid gap-2">
       {effets && (

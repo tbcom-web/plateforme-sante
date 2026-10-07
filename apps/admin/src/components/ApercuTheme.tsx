@@ -26,10 +26,12 @@ import {
   completerJeuVisuel, construireNavigation, cssEffets, cssSurvolSimule, cssFormes, formeDesCartes, jeuEffets, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
   avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS, illustrationTheme, themeIllustre, themeParId, packVisuel, svgLigne, cssPressionGamme,
+  ARTICLE_DEMO, varianteArticle, varianteTheme, type VuePage,
   type Animation, type NomDessin, type NomLigne, type FormatHeros, type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 import ApercuGabarit, { HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
+import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
 
 type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
@@ -47,10 +49,12 @@ type Props = {
   survol?: boolean;
   /** Élément seul (Donner mon avis : structures de pages, éléments) : blocs montrés par ApercuGabarit, sans en-tête */
   seul?: readonly string[];
-  /** Vue affichée à l'ouverture (Donner mon avis : la fiche d'un soin pour sa structure) */
-  vueInitiale?: 'accueil' | 'soin';
+  /** Vue affichée à l'ouverture (Donner mon avis : la fiche d'un soin, la page sujet ou l'article pour leur structure) */
+  vueInitiale?: VuePage;
+  /** Studio (onglets des pages) et rendus doubles : page et appareil imposés, barre de commandes masquée */
+  sansCommandes?: boolean;
 };
-type Vue = 'accueil' | 'soin';
+type Vue = VuePage;
 export type Appareil = 'bureau' | 'mobile';
 
 const LARGEUR: Record<Appareil, number> = { bureau: 1280, mobile: 390 };
@@ -96,9 +100,12 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
   pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
 };
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil' }: Props) {
+export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false }: Props) {
   const [vue, setVue] = useState<Vue>(vueInitiale);
-  const [appareil, setAppareil] = useState<Appareil>(appareilInitial);
+  const [appareilChoisi, setAppareil] = useState<Appareil>(appareilInitial);
+  // Commandes masquées : la page et l'appareil suivent les propriétés (onglets du studio, rendus doubles)
+  const appareil = sansCommandes ? appareilInitial : appareilChoisi;
+  useEffect(() => { if (sansCommandes) setVue(vueInitiale); }, [sansCommandes, vueInitiale]);
   const boite = useRef<HTMLDivElement>(null);
   const page = useRef<HTMLDivElement>(null);
   const [echelle, setEchelle] = useState(0.4);
@@ -212,6 +219,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     return { type: 'svg', html: r === 'ligne' ? svgLigne(x.ligne) : svgDessin(x.dessin, { registre: r, id: `ap-seul-${x.dessin}` }), sombre: r === 'releve' };
   };
   const transparent = m.entete === 'transparent' && (m.accueil.hero === 'plein' || m.accueil.hero === 'diaporama') && vue === 'accueil';
+  const tel = r.telephone;
 
   const Sur = ({ n, children }: { n?: number; children: ReactNode }) => (
     <p className="ap-sur">{n !== undefined && !pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>}{children}</p>
@@ -258,7 +266,6 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   // Accueil « lieu » (modèle Simple et pédagogique) : photo du lieu (praticien, sinon jeu de photos de la spécialité,
   // quel que soit le style visuel), carte claire avec titre, téléphone et rendez-vous ; sans photo, schéma pédagogique.
   const photoLieu = d.photos.accueil || d.photos.panorama || d.photos.cabinet[0] || jeu.accueil.photo;
-  const tel = r.telephone;
   const heroLieu = (
     <section style={{ paddingTop: 16 }}>
       <div className="ap-cadre">
@@ -473,6 +480,21 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     );
   })();
 
+  // Pages sujet et article (toutes présentations ; gabarit classique ici, les autres dans ApercuGabarit)
+  const commun = { mobile, nomCabinet, libelleRdv: rdv, adresse: r.aAdresse ? r.adresse : '', telephone: r.aTelephone ? tel : null, ville: ville || null };
+  const themePage = themeParId(themeUn ?? principauxIds[0] ?? 'sport');
+  const pageSujet = themePage && (
+    <ApercuPageSujet {...commun} theme={themePage} variante={varianteTheme(m)} visuel={herosApercu('paysage')}
+      soins={catalogue.filter((s) => themePage.soins.includes(s.slug)).slice(0, 6)} conseils={[{ titre: ARTICLE_DEMO.titre, date: '22 septembre 2026' }]} />
+  );
+  const pageArticle = <ApercuArticle {...commun} variante={varianteArticle(m)} auteur={noms.length === 1 ? `${noms[0]}, ${titre.toLowerCase()}` : nomCabinet}
+    autres={[{ titre: 'Diabète : 5 gestes quotidiens pour protéger vos pieds', theme: 'Diabète' }, { titre: 'Bien choisir les chaussures de son enfant', theme: 'Enfants' }]} />;
+  const pageSimple = (b: string[]) => { let dd = false; return b.map((s, k) => { dd = !dd; return <div key={s}>{sections[s]?.(k + 1, dd)}</div>; }); };
+  const pageClassique: Partial<Record<Vue, ReactNode>> = {
+    soin: ficheSoin, theme: pageSujet, article: pageArticle,
+    actualites: pageSimple(['actualites']), cabinet: pageSimple(['praticiens', 'galerie']), acces: pageSimple(['acces']), questions: pageSimple(['faq']), soins: pageSimple(['competences']),
+  };
+
   const pied = (
     <footer className="ap-pied" style={{ background: m.pied === 'clair' ? 'var(--doux)' : m.pied === 'accent' ? 'var(--accent-fonce)' : 'var(--encre)', color: m.pied === 'clair' ? 'var(--encre)' : 'var(--sur-sombre-doux)' }}>
       <div className="ap-cadre" style={{ paddingBlock: 48 }}>
@@ -489,11 +511,11 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     <div className={vignette ? 'overflow-hidden bg-white' : 'overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm'}>
       <style>{CSS + SURFACES_CSS + CSS_PRESSION}</style>
       {/* Commandes simples : la page montrée et l'appareil ; jamais le nom interne du modèle côté praticien */}
-      {!vignette && <div className="flex flex-wrap items-center gap-2 border-b border-black/5 bg-neutral-50 px-3 py-2 text-xs">
+      {!vignette && !sansCommandes && <div className="flex flex-wrap items-center gap-2 border-b border-black/5 bg-neutral-50 px-3 py-2 text-xs">
         {technique && <span className="mr-auto truncate text-neutral-500">Modèle <strong className="text-neutral-800">{m.nom}</strong> · {jeu.label}</span>}
         <span role="group" aria-label="Page montrée" className={`flex gap-1 ${technique ? '' : 'mr-auto'}`}>
-          {(['accueil', 'soin'] as Vue[]).map((v) => (
-            <button key={v} type="button" onClick={() => setVue(v)} aria-pressed={vue === v} className={`min-h-9 rounded-md px-2.5 py-1 ${vue === v ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{v === 'accueil' ? 'Accueil' : 'Une page soin'}</button>
+          {([...new Set<Vue>(['accueil', 'soin', vueInitiale])]).map((v) => (
+            <button key={v} type="button" onClick={() => setVue(v)} aria-pressed={vue === v} className={`min-h-9 rounded-md px-2.5 py-1 ${vue === v ? 'bg-white font-semibold shadow-sm ring-1 ring-black/10' : 'text-neutral-600'}`}>{LIBELLES_VUES[v]}</button>
           ))}
         </span>
         <span role="group" aria-label="Appareil" className="flex gap-1">
@@ -518,7 +540,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             {cssFormes(formeDesCartes(m)) && <style dangerouslySetInnerHTML={{ __html: cssFormes(formeDesCartes(m)) }} />}
             {jeuEffets(d.theme.effets) && <style dangerouslySetInnerHTML={{ __html: cssEffets(d.theme.effets).replace(/@view-transition\{[^}]*\}/g, '') + cssSurvolSimule(d.theme.effets) }} />}
             {gabaritModele(m) !== 'classique' ? (
-              <ApercuGabarit seul={seul} draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={gabaritModele(m) === 'tableau' ? herosSeul(!d.theme.styleIllustration ? 'releve' : undefined) : herosApercu('portrait')} registre={registre} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
+              <ApercuGabarit seul={seul} pageSujet={pageSujet} pageArticle={pageArticle} draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={gabaritModele(m) === 'tableau' ? herosSeul(!d.theme.styleIllustration ? 'releve' : undefined) : herosApercu('portrait')} registre={registre} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
                 marque={d.theme.logoPerso.url ? <img src={d.theme.logoPerso.url} alt="" style={{ height: 40 }} /> : <span dangerouslySetInnerHTML={{ __html: marque }} />} />
             ) : (<>
             <header className={`ap-entete ${transparent ? 'ap-entete--transparent' : ''}`}>
@@ -551,7 +573,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                     return <div key={s}>{sections[s]?.(k + 1, s !== 'panorama' && douce)}</div>;
                   })}
                 </>
-              ) : ficheSoin}
+              ) : pageClassique[vue]}
             </div>
             {pied}
             </>)}
@@ -566,6 +588,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     </div>
   );
 }
+
+const LIBELLES_VUES: Record<Vue, string> = { accueil: 'Accueil', soin: 'Une page soin', theme: 'Page sujet', article: 'Article', actualites: 'Actualités', cabinet: 'Le cabinet', acces: 'Contact et accès', questions: 'Questions', soins: 'Soins' };
 
 // Styles de l'aperçu, repris du gabarit des sites (apps/sites/src/layouts/Gabarit.astro), limités à .ap
 const CSS = `

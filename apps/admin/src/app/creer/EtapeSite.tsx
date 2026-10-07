@@ -142,6 +142,8 @@ type PropsSite = {
   poids?: PoidsAtelier | null;
   /** Recettes du studio bien notées : celles du sujet n° 1 passent en premier, puis le générateur */
   recettes?: Recette[];
+  /** Clés dont l'adaptation mobile est à corriger (0034) : recettes concernées après les autres */
+  defautsMobile?: string[];
   etroit: boolean;
   /** Proposition en cours d'application (serveur) */
   choixEnCours: string | null;
@@ -152,13 +154,13 @@ type PropsSite = {
   onStructure: (u: Structure) => void;
 };
 
-export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, poids = null, recettes = [], etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
+export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, poids = null, recettes = [], defautsMobile = [], etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
   const entree = useMemo(() => ({ priorites: d.priorites, couleursPreferees: d.couleursPreferees ?? [] }), [d.priorites, d.couleursPreferees]);
   const [nbLots, setNbLots] = useState(1);
   const lots = useMemo(() => lotsPropositions(entree, nbLots, { poids }), [entree, nbLots, poids]);
   const disponibles = new Set(proposes.map((u) => u.id));
   // Recettes du studio (bien notées, du sujet n° 1) d'abord, puis les propositions du générateur
-  const duStudio = useMemo(() => recettesPourScenario(recettes, [...d.priorites.principaux, ...d.priorites.secondaires]).slice(0, 6).map(propositionDeRecette), [recettes, d.priorites]);
+  const duStudio = useMemo(() => recettesPourScenario(recettes, [...d.priorites.principaux, ...d.priorites.secondaires], 4, new Set(defautsMobile)).slice(0, 6).map(propositionDeRecette), [recettes, d.priorites, defautsMobile]);
   const liste: Proposition[] = [...duStudio, ...lots.flat()].filter((p) => disponibles.has(p.univers));
   const epuise = lots.length < nbLots;
   const manifeste = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);

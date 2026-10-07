@@ -1,8 +1,8 @@
 'use server';
 
 import {
-  cleCombinaison, estCleAsset, estEtiquetteAtelier, ingredientsCanoniques, ingredientsProposition, propositionParId, texteRemarques,
-  type IngredientsAtelier,
+  appareilDe, cleCombinaison, estCleAsset, estEtiquetteAtelier, ingredientsCanoniques, ingredientsProposition, normaliserZones, propositionParId, serialiserZones, texteRemarques,
+  type AppareilRetour, type IngredientsAtelier, type ZonesNote,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { createClient, getUser } from '@/lib/supabase/server';
@@ -14,7 +14,7 @@ export type ResultatNoteAtelier = { ok: boolean; message: string; cle?: string; 
  * est retrouvée par son identifiant dans le scénario (sujets, couleurs), comme le fait le générateur ; une combinaison qui ne
  * correspond à rien est refusée.
  */
-export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, note: number, etiquettes: string[], commentaire: string, remarques: { positif?: string; negatif?: string } = {}): Promise<ResultatNoteAtelier> {
+export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, note: number, etiquettes: string[], commentaire: string, remarques: { positif?: string; negatif?: string; appareil?: AppareilRetour; zones?: ZonesNote | null } = {}): Promise<ResultatNoteAtelier> {
   await exigerAdmin();
   if (!Number.isInteger(note) || note < 1 || note > 5) return { ok: false, message: 'Note de 1 à 5.' };
   const i = ingredientsCanoniques(recus ?? {});
@@ -33,7 +33,10 @@ export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, not
   const negatif = String(remarques?.negatif ?? '').trim().slice(0, 2000) || null;
   const base = { cle_combinaison: cle, ingredients, note, etiquettes: etq, commentaire: texte, auteur: user?.id ?? null };
   const ligne: Record<string, unknown> = positif || negatif ? { ...base, positif, negatif } : base;
-  let { error } = await supabase.from('atelier_notes').insert(ligne);
+  // Appareil regardé et zones signalées (0034) ; sans la migration, note enregistrée sans eux
+  const zones = serialiserZones(normaliserZones(remarques?.zones));
+  let { error } = await supabase.from('atelier_notes').insert({ ...ligne, appareil: appareilDe(remarques?.appareil), zones: zones ? JSON.parse(zones) : null });
+  if (error) ({ error } = await supabase.from('atelier_notes').insert(ligne));
   // Sans la migration 0028 (colonnes positif / negatif) : remarques regroupées dans le commentaire
   if (error && (positif || negatif)) {
     ({ error } = await supabase.from('atelier_notes').insert({ ...base, commentaire: texteRemarques({ positif, negatif, commentaire: texte }).slice(0, 2000) }));

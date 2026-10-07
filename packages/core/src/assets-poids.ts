@@ -19,6 +19,9 @@
 // propositions.ts l'ajoute au bonus de l'atelier : il réordonne et écarte, sans jamais lever un garde-fou (exclusions par
 // sujet, diabète sans rouge, posture jamais, contrastes AA, diversité des lots).
 //
+// APPAREIL (migration 0034, rendu-mobile.ts) : chaque note de choix compte avec le poids de l'appareil regardé (mobile 1,25,
+// ordinateur et « les-deux » 1) dans les sommes ci-dessus (n(a) devient la somme des poids). Les notes antérieures, sans
+// appareil, valent « les-deux » : résultats inchangés. Les retours « Rendu mobile » (adaptation téléphone) ne passent JAMAIS ici.
 // Module pur, sans dépendance d'exécution (importé par propositions.ts et jeux-photos.ts).
 
 /** Préfixes de clé (= type d'asset enregistré dans assets_notes.type) */
@@ -40,8 +43,11 @@ export function typeDeCle(cle: string): TypeAsset | null {
 export const CLE_ASSET = /^[a-z]+:[^\s]{1,200}$/;
 export const estCleAsset = (cle: unknown): cle is string => typeof cle === 'string' && CLE_ASSET.test(cle) && typeDeCle(cle) !== null;
 
-/** Une ligne lue pour l'apprentissage : une note (1 à 5) ou un statut courant (note nulle) */
-export type LigneAppriseAsset = { cle: string; note?: number | null; etiquettes?: readonly string[] | null; statut?: string | null };
+/** Une ligne lue pour l'apprentissage : une note (1 à 5) ou un statut courant (note nulle) ; appareil regardé (0034) */
+export type LigneAppriseAsset = { cle: string; note?: number | null; etiquettes?: readonly string[] | null; statut?: string | null; appareil?: string | null };
+
+/** Poids d'une note selon l'appareil (mobile d'abord : 1,25 ; voir rendu-mobile.ts, POIDS_APPAREIL) */
+const poidsNote = (a: unknown) => (a === 'mobile' ? 1.25 : 1);
 
 /** Poids compacts (transmis au navigateur du praticien) : effets non nuls, statuts pénalisants seulement */
 /**
@@ -61,24 +67,28 @@ export const COEFS_ASSETS = { heros: 0.8, animation: 0.6, gamme: 0.6, modele: 0.
 const arrondi = (x: number, p = 1000) => Math.round(x * p) / p;
 const noteValide = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 5;
 
-export type StatAsset = { cle: string; type: TypeAsset; n: number; somme: number; moyenne: number; lissee: number; effet: number; etiquettes: Record<string, number> };
+/** n : nombre de notes ; poids : somme des poids d'appareil ; somme : somme pondérée des notes */
+export type StatAsset = { cle: string; type: TypeAsset; n: number; poids: number; somme: number; moyenne: number; lissee: number; effet: number; etiquettes: Record<string, number> };
 
 /** Statistiques par asset (synthèse et poids) */
 export function statsAssets(lignes: readonly LigneAppriseAsset[]): { n: number; moyenne: number; cles: Map<string, StatAsset> } {
   const ok = lignes.filter((x) => noteValide(x.note) && estCleAsset(x.cle)) as (LigneAppriseAsset & { note: number })[];
   const n = ok.length;
-  const moyenne = n ? ok.reduce((s, x) => s + x.note, 0) / n : 0;
+  const poidsTotal = ok.reduce((s, x) => s + poidsNote(x.appareil), 0);
+  const moyenne = n ? ok.reduce((s, x) => s + poidsNote(x.appareil) * x.note, 0) / poidsTotal : 0;
   const cles = new Map<string, StatAsset>();
   for (const x of ok) {
     let s = cles.get(x.cle);
-    if (!s) { s = { cle: x.cle, type: typeDeCle(x.cle)!, n: 0, somme: 0, moyenne: 0, lissee: 0, effet: 0, etiquettes: {} }; cles.set(x.cle, s); }
+    if (!s) { s = { cle: x.cle, type: typeDeCle(x.cle)!, n: 0, poids: 0, somme: 0, moyenne: 0, lissee: 0, effet: 0, etiquettes: {} }; cles.set(x.cle, s); }
+    const w = poidsNote(x.appareil);
     s.n++;
-    s.somme += x.note;
+    s.poids += w;
+    s.somme += w * x.note;
     for (const e of new Set(x.etiquettes ?? [])) s.etiquettes[e] = (s.etiquettes[e] ?? 0) + 1;
   }
   for (const s of cles.values()) {
-    s.moyenne = s.somme / s.n;
-    s.lissee = (s.somme + LISSAGE_ASSETS * moyenne) / (s.n + LISSAGE_ASSETS);
+    s.moyenne = s.somme / s.poids;
+    s.lissee = (s.somme + LISSAGE_ASSETS * moyenne) / (s.poids + LISSAGE_ASSETS);
     s.effet = arrondi(s.lissee - moyenne);
     if (Object.is(s.effet, -0)) s.effet = 0;
   }

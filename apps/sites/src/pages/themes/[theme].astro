@@ -3,6 +3,9 @@
 // Intro courte pré-écrite (neutre, conforme au lexique), soins du thème cochés par le cabinet (liens vers leurs pages),
 // conseils publiés du même thème s'il y en a, rendez-vous. Construite seulement pour un thème qui a au moins un soin coché
 // (navigation.pages) : jamais de page vide ni de lien mort. Mêmes textes et données structurées pour tous les gabarits.
+// Présentation (variante « theme » du modèle ou de la recette, studio de recettes 2026-10-07) : liste (historique), rangées
+// (grandes rangées de soins), héros (illustration pleine largeur), colonnes (conseils et rendez-vous à côté). MÊME balisage
+// pour toutes : seule la classe page-theme--<variante> change la mise en page (SEO identique, npm run controle:seo).
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import TetePage from '../../components/gabarits/TetePage.astro';
@@ -12,7 +15,7 @@ import { visuelTheme } from '../../lib/vitrine';
 import { site, dateFr } from '../../lib/site';
 import { breadcrumbSchema, themeSchema } from '../../lib/schema';
 import { titreCompetences, localisation, lienRdv, libelleRdv, rdvEnLigne, telLien, viaPlateforme, lieu, aLaVille, aAdresse, aTelephone, adresseLieu } from '../../lib/textes';
-import { nouveauGabarit, pictoDuSoin } from '../../lib/gabarits';
+import { nouveauGabarit, pictoDuSoin, variantes } from '../../lib/gabarits';
 import { themesDuSite, pageTheme, pictoTheme } from '../../lib/navigation';
 import { espacesFines, type ThemeDuSite } from '@plateforme/core';
 
@@ -27,8 +30,10 @@ const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`);
 // Grande image du sujet en tête de page (illustration validée, ou photo en style « photos ») : lib/vitrine.ts
 const visuel = visuelTheme(t.theme.id);
+const presentation = variantes.theme ?? 'liste';
 ---
 <Gabarit title={p.title} description={p.description} path={p.path} schemas={[themeSchema({ nom: p.titre, description: p.description, path: p.path, soins: p.soins }), breadcrumbSchema(crumbs)]}>
+  <div class:list={['page-theme', `page-theme--${presentation}`]}>
   {nouveauGabarit ? (
     <TetePage crumbs={crumbs} sur={localisation} chapo={p.intro}>
       <h1 slot="titre">{espacesFines(t.theme.libelle)}{aLaVille && <>{' '}<span class="pale">{aLaVille}</span></>}</h1>
@@ -83,6 +88,7 @@ const visuel = visuelTheme(t.theme.id);
       </section>
     </div>
   </div>
+  </div>
 </Gabarit>
 
 <style>
@@ -131,4 +137,32 @@ const visuel = visuelTheme(t.theme.id);
   :global(.coquille--revue) .theme__titre { font-weight: 500; }
   :global(.coquille--revue) .theme__picto { background: none; }
   :global(.coquille--revue) .theme__soins { border-top-width: var(--filet, 1px); }
+
+  /* ———— Présentations de la page (variante « theme ») : même contenu, même balisage ———— */
+  /* Rangées : intro puis grandes rangées de soins, picto agrandi dans une pastille de la gamme */
+  .page-theme--rangees .theme__soins { grid-template-columns: minmax(0, 1fr); }
+  .page-theme--rangees .theme__soins a { grid-template-columns: 72px minmax(0, 1fr); gap: 20px; align-items: center; padding: 22px 0; }
+  .page-theme--rangees .theme__soin-picto { display: grid; place-items: center; width: 72px; height: 72px; border-radius: var(--rayon, 18px); background: var(--t-bulle); }
+  .page-theme--rangees .theme__soin-picto :global(.icone) { width: 40px; height: 40px; }
+  .page-theme--rangees .theme__soin-nom { font-size: clamp(1.15rem, 2vw, 1.4rem); }
+  .page-theme--rangees .theme__soin-resume { font-size: 1.05rem; max-width: 62ch; }
+  @media (max-width: 559px) {
+    .page-theme--rangees .theme__soins a { grid-template-columns: 56px minmax(0, 1fr); gap: 14px; }
+    .page-theme--rangees .theme__soin-picto { width: 56px; height: 56px; }
+    .page-theme--rangees .theme__soin-picto :global(.icone) { width: 32px; height: 32px; }
+  }
+  /* Héros : l'illustration du sujet en pleine largeur sous le titre (ordinateur), puis la liste en une colonne */
+  @media (min-width: 900px) {
+    .page-theme--heros :global(.tete-page__grille), .page-theme--heros :global(.tete__carte--visuel) { grid-template-columns: minmax(0, 1fr); }
+    .page-theme--heros .theme__visuel, .page-theme--heros :global(.tete__visuel) { aspect-ratio: 21 / 8; }
+    .page-theme--heros :global(.tete-page h1), .page-theme--heros :global(.tete__texte h1) { max-width: 24ch; }
+  }
+  .page-theme--heros .theme__soins { grid-template-columns: minmax(0, 1fr); }
+  /* Colonnes : soins à gauche, conseils et rendez-vous à côté (rendez-vous en encadré) */
+  @media (min-width: 960px) {
+    .page-theme--colonnes .theme__dedans { grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); align-items: start; column-gap: clamp(32px, 4vw, 64px); }
+    .page-theme--colonnes .theme__dedans > section:first-child { grid-row: span 2; }
+    .page-theme--colonnes .theme__soins { grid-template-columns: minmax(0, 1fr); }
+  }
+  .page-theme--colonnes .theme__rdv { padding: clamp(20px, 3vw, 28px); border-radius: var(--rayon, 18px); background: var(--t-bulle); }
 </style>

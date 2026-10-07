@@ -14,6 +14,9 @@
 //   --notes <f.json>      notes à comparer (défaut : retours/assets-notes.json de l'arbre de travail)
 //   --gamme <id>          gamme des aperçus (défaut : canard, comme « Donner mon avis »)
 //   --types picto,dessin  limite aux types donnés
+//   --zones               ajoute <clé>.zones.png : le rendu avec les ZONES signalées par Paul (dernière note qui en porte, dans
+//                         --notes) dessinées en surimpression numérotée (zones.ts, svgSurimpression), pour voir exactement où
+//                         corriger ; seules, les clés qui ont des zones sont rendues si aucune autre clé n'est demandée
 // Sortie : <dossier>/<clé>.png (icône : 24/48/96 px côte à côte ; illustration : 640 px ; photo : vignette 640 px ; structure :
 // 300 px ; gamme : pastilles + mini-site), chaque fois sur fond clair ET fond sombre (plan), et <dossier>/manifeste.json
 // (clé, type, titre, empreinte rendue, version, fichier). Aucun réseau sauf photos distantes des jeux de photos (non incluses
@@ -55,7 +58,7 @@ try {
     bundle: true, platform: 'node', format: 'esm', logLevel: 'warning', loader: { '.svg': 'text', '.css': 'empty' },
     nodePaths: [join(racine, 'node_modules')], outfile: bundle,
     stdin: {
-      contents: "export { inventaireAssets } from './assets'; export { empreinteAsset } from './avant-apres'; export { GAMMES, gamme as gammeParId, variablesGamme, variantesGamme } from './gammes'; export { SURFACES_CSS, variablesCharte } from './charte';",
+      contents: "export { inventaireAssets } from './assets'; export { empreinteAsset } from './avant-apres'; export { GAMMES, gamme as gammeParId, variablesGamme, variantesGamme } from './gammes'; export { SURFACES_CSS, variablesCharte } from './charte'; export { svgSurimpression, normaliserZones, lignesZones } from './zones';",
       resolveDir: src, loader: 'ts',
     },
   });
@@ -69,6 +72,9 @@ try {
   const notes = existsSync(cheminNotes) ? JSON.parse(readFileSync(cheminNotes, 'utf8')) : [];
   const derniereNote = new Map();
   for (const n of notes) { const p = derniereNote.get(n.cle); if (!p || String(n.jour ?? '') >= String(p.jour ?? '')) derniereNote.set(n.cle, n); }
+  // Zones signalées (0034) : celles de la dernière note qui en porte, par clé
+  const zonesParCle = new Map();
+  if (drapeau('--zones')) for (const n of notes) { const z = core.normaliserZones(n.zones); if (z) zonesParCle.set(n.cle, z); }
 
   const empreinteActuelle = (a) => {
     if (a.rendu.kind === 'image') return `img:${a.rendu.src.split('?')[0]}`;
@@ -92,6 +98,7 @@ try {
     const alea = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648);
     cles.push(...inventaire.map((a) => ({ a, r: alea() })).sort((x, y) => x.r - y.r).slice(0, nEch).map((x) => x.a.cle));
   }
+  if (drapeau('--zones') && !cles.length) cles.push(...zonesParCle.keys());
   const types = opt('--types')?.split(',');
   cles = [...new Set(cles)].filter((c) => !types || types.includes(parCle.get(c)?.type ?? c.split(':')[0]));
   if (!cles.length) throw new Error('Aucune clé à rendre.');
@@ -186,7 +193,29 @@ try {
     await page.goto('http://rendu.local/', { waitUntil: 'networkidle' });
     const fichier = nomFichier(cle);
     await page.locator('#planche').screenshot({ path: join(sortie, fichier) });
-    manifeste.push({ cle, type: a.type, titre: a.titre, empreinte, version, fichier });
+    const zones = zonesParCle.get(cle);
+    let fichierZones;
+    if (zones) {
+      // Surimpression sur la surface notée (rangée des rendus ordinateur) ; les zones du rendu mobile sont listées à part
+      const ordi = zones.zones.filter((z) => z.appareil !== 'mobile');
+      const selecteur = (await page.locator('#planche .rangee').count()) ? '#planche .rangee' : '#planche .panneau';
+      const boite = await page.locator(selecteur).first().boundingBox();
+      if (boite) {
+        // Surimpression aux dimensions réelles de la surface (pastilles rondes, traits non déformés)
+        await page.evaluate(({ sel, svg }) => {
+          const cible = document.querySelector(sel);
+          if (!cible) return;
+          cible.style.position = 'relative';
+          const calque = document.createElement('div');
+          calque.style.cssText = 'position:absolute;inset:0;pointer-events:none';
+          calque.innerHTML = svg;
+          cible.appendChild(calque);
+        }, { sel: selecteur, svg: core.svgSurimpression(ordi, Math.round(boite.width), Math.round(boite.height)) });
+      }
+      fichierZones = fichier.replace(/\.png$/, '.zones.png');
+      await page.locator('#planche').screenshot({ path: join(sortie, fichierZones) });
+    }
+    manifeste.push({ cle, type: a.type, titre: a.titre, empreinte, version, fichier, ...(zones ? { fichierZones, zones: core.lignesZones(zones), empreinteZones: zones.empreinte } : {}) });
   }
   await navigateur.close();
   writeFileSync(join(sortie, 'manifeste.json'), `${JSON.stringify(manifeste, null, 2)}\n`);

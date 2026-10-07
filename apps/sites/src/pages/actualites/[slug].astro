@@ -1,12 +1,17 @@
 ---
 // Article du flux de contenus : mise en page éditoriale, image 16:9 optimisée (dimensions fixes, priorité
 // de chargement, og:image et ImageObject dans les données structurées), liens vers les autres conseils.
+// Présentation (variante « article » du modèle ou de la recette, studio de recettes 2026-10-07) : standard (historique),
+// lecture (colonne centrée, image en tête), latérale (image à côté du texte sur grand écran), chapô (chapô en grand et sommaire
+// des intertitres). Même texte et mêmes titres (H1, H2) pour toutes ; les intertitres reçoivent une ancre (id) pour le sommaire.
+// Lisibilité : mesure de 60 à 75 caractères (68ch) et interligne 1,7 dans toutes les présentations.
 import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import { site, md, dateFr } from '../../lib/site';
 import { articleSchema, breadcrumbSchema } from '../../lib/schema';
 import { titreCabinet, praticiens, lienRdv, libelleRdv, lieu } from '../../lib/textes';
-import { espacesFines } from '@plateforme/core';
+import { ancrerIntertitres, espacesFines, minutesLecture, sommaireMarkdown } from '@plateforme/core';
+import { variantes } from '../../lib/gabarits';
 import { photoResponsive } from '../../lib/visuels';
 import type { Article } from '@plateforme/core';
 
@@ -22,7 +27,10 @@ const crumbs = [
   { name: article.titre, path },
 ];
 const auteur = praticiens.length === 1 ? `${`${praticiens[0].prenom} ${praticiens[0].nom}`.trim()}, ${praticiens[0].titre.toLowerCase()}` : titreCabinet;
-const minutes = Math.max(1, Math.round(article.corps.split(/\s+/).length / 200));
+const minutes = minutesLecture(article.corps);
+const presentation = variantes.article ?? 'standard';
+const sommaire = sommaireMarkdown(article.corps);
+const corps = ancrerIntertitres(md(article.corps), sommaire);
 const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
 ---
 <Gabarit
@@ -33,7 +41,7 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
   image={article.image ? { src: article.image, alt: article.imageAlt, largeur: 1600, hauteur: 900 } : undefined}
   article={{ date: article.date, theme: article.theme }}
 >
-  <article class="section article">
+  <article class:list={['section', 'article', `article--${presentation}`, { 'article--avec-image': Boolean(article.image) }]}>
     <header class="cadre article__tete">
       <Breadcrumb items={crumbs} />
       <p class="sur">{article.theme} · <time datetime={article.date}>{dateFr(article.date)}</time> · {minutes} min de lecture</p>
@@ -41,6 +49,13 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
       <p class="chapo">{article.resume}</p>
       <p class="article__auteur">Par <a href="/le-cabinet">{auteur}</a></p>
     </header>
+
+    {presentation === 'chapo' && sommaire.length >= 2 && (
+      <nav class="cadre article__sommaire" aria-label="Sommaire de l’article">
+        <p class="sur">Sommaire</p>
+        <ol>{sommaire.map((s) => <li><a href={`#${s.id}`}>{s.titre}</a></li>)}</ol>
+      </nav>
+    )}
 
     {article.image && (
       <figure class="cadre article__image">
@@ -57,7 +72,7 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
     )}
 
     <div class="cadre article__corps">
-      <div class="prose" set:html={md(article.corps)} />
+      <div class="prose" set:html={corps} />
 
       <aside class="article__rdv" aria-label="Rendez-vous">
         <p><strong>Une question sur vos pieds ?</strong><span>{titreCabinet}{lieu.nom ? `, ${lieu.nom}` : ''}, {lieu.adresse}.</span></p>
@@ -89,7 +104,9 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
   .article__image img { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--rayon-grand); background: var(--doux); }
 
   .article__corps { max-width: 860px; }
-  .article__corps .prose { font-size: 1.08rem; }
+  /* Lisibilité (toutes présentations) : 60 à 75 caractères par ligne, interligne 1,7 */
+  .article__corps .prose { font-size: 1.08rem; max-width: 68ch; line-height: 1.7; }
+  .article__corps .prose :global(h2) { scroll-margin-top: 96px; }
   .article__corps .prose :global(h2) { font-size: clamp(1.4rem, 2.4vw, 1.9rem); margin-top: 2em; }
   .article__corps .prose :global(p:first-child) { font-size: 1.18rem; color: var(--encre); }
 
@@ -103,6 +120,31 @@ const autres = [...site.articles].filter((a) => a.slug !== article.slug).sort((a
   .article__autres a { display: grid; gap: 4px; padding: 18px 0; text-decoration: none; color: var(--encre); font-size: 1.15rem; font-weight: 600; letter-spacing: -0.02em; }
   .article__autres a span { font-size: var(--taille-donnees-petit); font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-vif); }
   .article__autres a:hover { color: var(--accent-fonce); }
+  /* ———— Présentations (variante « article ») : même balisage, mise en page seule ———— */
+  /* Lecture : colonne centrée, image en tête */
+  .article--lecture { display: flex; flex-direction: column; }
+  .article--lecture .article__image { order: -1; max-width: 1040px; margin-block: 0 clamp(28px, 4vw, 48px); }
+  .article--lecture :is(.article__tete, .article__corps, .article__autres) { max-width: calc(68ch + 40px); margin-inline: auto; }
+  .article--lecture .article__tete { text-align: center; }
+  .article--lecture .article__tete :global(.breadcrumb ol) { justify-content: center; }
+  .article--lecture .article__tete .sur { justify-content: center; }
+  .article--lecture .article__tete .chapo { margin-inline: auto; }
+  .article--lecture .prose { margin-inline: auto; }
+  /* Latérale : image à côté du texte (grand écran), collée pendant la lecture */
+  @media (min-width: 1040px) {
+    .article--laterale.article--avec-image { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.62fr); column-gap: clamp(32px, 4vw, 56px); width: min(1180px, 100% - 40px); margin-inline: auto; align-items: start; }
+    .article--laterale.article--avec-image > :is(.article__tete, .article__corps, .article__autres) { grid-column: 1; width: auto; margin-inline: 0; }
+    .article--laterale.article--avec-image .article__image { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 96px; width: auto; margin: clamp(28px, 4vw, 48px) 0 0; }
+    .article--laterale.article--avec-image .article__image img { aspect-ratio: 4 / 5; }
+  }
+  /* Chapô : chapô en grand, filet d'accent, sommaire des intertitres */
+  .article--chapo .article__tete .chapo { font-size: clamp(1.3rem, 2.4vw, 1.75rem); line-height: 1.45; color: var(--encre); padding-left: 18px; border-left: var(--filet-fort) solid var(--accent-vif); max-width: 46ch; }
+  .article__sommaire { max-width: 860px; margin-top: clamp(24px, 3vw, 36px); }
+  .article__sommaire ol { margin: 6px 0 0; padding: 0 0 0 1.2em; display: grid; gap: 2px; }
+  .article__sommaire li::marker { color: var(--accent-vif); font-weight: 700; }
+  .article__sommaire a { display: inline-flex; align-items: center; min-height: var(--cible-tactile, 44px); font-weight: 600; color: var(--encre); }
+  .article__sommaire a:hover { color: var(--accent-fonce); }
+
   /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
   @media (max-width: 759px) {
     .article__auteur { font-size: var(--taille-texte-telephone); }

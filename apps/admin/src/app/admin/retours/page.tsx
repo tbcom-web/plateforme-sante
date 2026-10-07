@@ -4,7 +4,7 @@ import {
   resumeRenforts,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
-import { getRecettesLecture } from '@/lib/recettes';
+import { getRecettesLecture, getRetoursMobile } from '@/lib/recettes';
 import { getNotesAtelier, getPoidsAtelier } from '@/lib/atelier';
 import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getChangementsClaude } from '@/lib/changements';
@@ -30,6 +30,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   // Hashtags des visuels (0029) : lus en parallèle du reste
   const lectureHashtags = getHashtagsAssets();
+  // Retours « Rendu mobile » (0034) : liste « Rendu mobile à revoir » et état mobile des cartes
+  const lectureMobile = getRetoursMobile();
   const [assets, atelier, revues, photosJeux, poids, changementsClaude, catalogue, modeles, marquesImportees, { univers }, inspirations, motsCles, surchargesSujets, recettes] = await Promise.all([
     getNotesAssets(), getNotesAtelier(), getRevuesIllustrations(), getPhotosDesJeux(), getPoidsAtelier(), getChangementsClaude(),
     getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getInspirations(), getMotsClesEnBase(), getSurchargesSujets(),
@@ -38,6 +40,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   ]);
   const titres = titresAssets();
   const hashtags = await lectureHashtags;
+  const mobile = await lectureMobile;
   // Juge du goût de Paul : prédictions (retours/predictions.json) et justesse contre les notes en base
   const juge = await getJuge(assets.notes.map((n) => ({ cle: n.cle, note: n.note, empreinte: n.empreinte, le: n.le, etiquettes: n.etiquettes })), photosJeux);
   // Statut courant + dernier commentaire de revue (synthèse « à retravailler »)
@@ -109,6 +112,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         migrationHashtags={hashtags.migrationManquante}
         predictions={juge.predictions}
         ligneJuge={juge.ligne}
+        retoursMobile={mobile.retours}
+        migrationMobile={mobile.migrationManquante}
       />
     </div>
   );

@@ -6,17 +6,25 @@
 // « Tout changer » (espace) lance les dés non verrouillés. Les tirages sont déterministes (graine affichée) et pondérés par
 // les notes ; les garde-fous du core (recettes.ts) passent toujours avant. « Enregistrer cette recette » : nom proposé,
 // note, étiquettes, ce qui va / ne va pas ; « Mes recettes » : ouvrir, dupliquer, archiver.
+// PAR PAGE (demande de Paul du 2026-10-07) : onglets Accueil, Page sujet, Fiche soin, Article de blog, Actualités, Cabinet,
+// Contact et accès, Questions, Soins ; pour chacun, l'aperçu de CETTE page (contenu de démonstration : sujet n° 1, article de
+// démonstration), son dé de structure et son verrou 🔒 (verrouiller Contact sans verrouiller l'Accueil), sa note (étoiles,
+// étiquettes, va bien / ne va pas) en plus de celle de la recette, ses zones (z) et son bloc « Rendu mobile ». Rendus ordinateur
+// ET mobile côte à côte (bascule sur téléphone).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   appliquerRecette, basculerCouleur, clesStructure, compositionInitiale, controlerComposition, COULEURS_PREFEREES, DIMENSIONS_RECETTE, draftVide,
   ETIQUETTES_RECETTE, ETIQUETTES_STUDIO, FAMILLES_COMPOSANTS, gabaritModele, libelleCleRenfort, libellesComposition, LIBELLES_VARIANTES, modeleIntegre,
   nomRecette, NOMS_SECTIONS_VARIABLES, reparerComposition, PAGES_STRUCTURE, PAIRES_POLICES, sectionsVariables, THEMES, themeParId, tirerDimension, tirerPage, toutChanger,
-  universCatalogue, type CompositionRecette, type ContexteRecette, type DimensionRecette, type MarqueImportee, type ModeleManifeste, type PageStructure,
+  universCatalogue, ONGLETS_PAGES, vueDePage, empreinteMobile, type AppareilRetour, type Zone,
+  type CompositionRecette, type ContexteRecette, type DimensionRecette, type MarqueImportee, type ModeleManifeste, type PageStructure,
   type PhotoBanque, type PoidsAtelier, type Recette, type SiteDraft, type Univers, type Variantes,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
+import DoubleRendu from '@/components/DoubleRendu';
+import RenduMobile from '@/components/RenduMobile';
 import type { SoinCatalogue } from '@/lib/sites';
-import { changerStatutRecette, enregistrerRecette, noterElementStudio } from './actions';
+import { changerStatutRecette, enregistrerRecette, lireNotesPages, noterElementStudio, noterPageRecette } from './actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const petitBase = `inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border px-2 text-sm disabled:opacity-40 ${focus}`;
@@ -127,6 +135,17 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   // Téléphone : l'aperçu s'ouvre en vue téléphone
   const [etroit, setEtroit] = useState(false);
   useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const f = () => setEtroit(mq.matches); f(); mq.addEventListener('change', f); return () => mq.removeEventListener('change', f); }, []);
+  // ---- Pages (onglets) : aperçu, dé, verrou, note, zones et rendu mobile de chaque page ----
+  const [page, setPage] = useState<PageStructure>('accueil');
+  const [zonesOrdi, setZonesOrdi] = useState<Zone[]>([]);
+  const [zonesMobile, setZonesMobile] = useState<Zone[]>([]);
+  const [appareilVu, setAppareilVu] = useState<AppareilRetour>('les-deux');
+  const [notePage, setNotePage] = useState<number | null>(null);
+  const [etqPage, setEtqPage] = useState<string[]>([]);
+  const [positifPage, setPositifPage] = useState('');
+  const [negatifPage, setNegatifPage] = useState('');
+  const [notesPages, setNotesPages] = useState<{ page: string; note: number; appareil: string; le: string }[]>([]);
+  const changerPage = (p: PageStructure) => { setPage(p); setZonesOrdi([]); setZonesMobile([]); setNotePage(null); setEtqPage([]); setPositifPage(''); setNegatifPage(''); };
   // Démonstration des effets : survol simulé en boucle, apparition rejouée (l'aperçu est recréé)
   const [demoSurvol, setDemoSurvol] = useState(false);
   const [survolActif, setSurvolActif] = useState(false);
@@ -149,7 +168,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const nomPropose = nomRecette(comp, ctx.sujets);
   const enregistrer = async () => {
     setStatut(null);
-    const r = await enregistrerRecette({ id: ouverte.id, origine: ouverte.origine, nom: nom || nomPropose, sujets: scenario.principaux, secondaires: scenario.secondaires, couleurs: scenario.couleurs, composition: comp, note, etiquettes, positif, negatif })
+    const r = await enregistrerRecette({ id: ouverte.id, origine: ouverte.origine, nom: nom || nomPropose, sujets: scenario.principaux, secondaires: scenario.secondaires, couleurs: scenario.couleurs, composition: comp, note, etiquettes, positif, negatif, appareil: appareilVu })
       .catch(() => ({ ok: false, message: 'Connexion perdue : recette non enregistrée.' } as { ok: boolean; message: string; id?: string }));
     setStatut(r);
     if (r.ok && r.id) setOuverte({ id: r.id, origine: null });
@@ -164,9 +183,27 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
     setNegatif(dupliquer ? '' : r.negatif ?? '');
     setOuverte(dupliquer ? { id: null, origine: r.id } : { id: r.id, origine: null });
     setHistorique({});
+    setNotesPages([]);
+    if (!dupliquer) void lireNotesPages(r.id).then(setNotesPages).catch(() => undefined);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const nouvelle = () => { setOuverte({ id: null, origine: null }); setNom(''); setNote(null); setEtiquettes([]); setPositif(''); setNegatif(''); };
+  const nouvelle = () => { setOuverte({ id: null, origine: null }); setNom(''); setNote(null); setEtiquettes([]); setPositif(''); setNegatif(''); setNotesPages([]); };
+
+  // ---- Note de la page affichée ----
+  const noterPage = async () => {
+    if (!notePage) return;
+    const toutes = [...zonesOrdi, ...zonesMobile];
+    const r = await noterPageRecette({
+      recette: ouverte.id, page, sujets: [...scenario.principaux, ...scenario.secondaires], couleurs: scenario.couleurs, composition: comp, note: notePage, etiquettes: etqPage,
+      positif: positifPage, negatif: negatifPage, appareil: appareilVu,
+      zones: toutes.length ? { appareil: appareilVu, empreinte: null, page, largeur: appareilVu === 'mobile' ? 390 : 1280, zones: toutes } : null,
+    }).catch(() => ({ ok: false, message: 'Connexion perdue : note de la page non enregistrée.' }));
+    setStatut({ ok: r.ok, message: `${ONGLETS_PAGES.find((o) => o.page === page)?.nom} : ${r.message}` });
+    if (r.ok) {
+      if (ouverte.id) setNotesPages((l) => [{ page, note: notePage, appareil: appareilVu, le: new Date().toISOString() }, ...l]);
+      setZonesOrdi([]); setZonesMobile([]); setNotePage(null); setEtqPage([]); setPositifPage(''); setNegatifPage('');
+    }
+  };
 
   // ---- Notes d'éléments (structures de pages, éléments, effets) ----
   const cles = clesStructure(comp);
@@ -242,8 +279,19 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
       </section>
 
       <section aria-label="Recette en cours" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-start">
-        {/* ---- Aperçu vivant ---- */}
+        {/* ---- Aperçu vivant, page par page ---- */}
         <div className="grid min-w-0 gap-2">
+          <div role="tablist" aria-label="Page de la recette" className="flex gap-1 overflow-x-auto pb-1">
+            {ONGLETS_PAGES.map((o) => {
+              const n = notesPages.filter((x) => x.page === o.page);
+              return (
+                <button key={o.page} type="button" role="tab" aria-selected={page === o.page} aria-controls="st-page" id={`st-onglet-${o.page}`} onClick={() => changerPage(o.page)}
+                  className={`flex min-h-11 shrink-0 items-center gap-1 rounded-lg border px-3 text-sm ${focus} ${page === o.page ? 'border-teal-800 bg-teal-800 font-semibold text-white' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
+                  {o.nom}{verrous.includes(`page:${o.page}`) && <span aria-label="verrouillée">🔒</span>}{n.length > 0 && <span className={`rounded-full px-1.5 text-xs ${page === o.page ? 'bg-white/20' : 'bg-teal-50 text-teal-900'}`}>{n[0].note}★</span>}
+                </button>
+              );
+            })}
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-neutral-600" aria-live="polite">{ouverte.id ? 'Recette ouverte' : ouverte.origine ? 'Copie d’une recette' : 'Nouvelle recette'}{derniereGraine !== null ? ` · graine ${derniereGraine}` : ''}</p>
             <button type="button" onClick={tout} className={`min-h-11 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 ${focus}`}>🎲 Tout changer <kbd className="ml-1 rounded bg-white/20 px-1">espace</kbd></button>
@@ -255,8 +303,52 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
             <span className="text-xs text-neutral-500">Transition entre pages : visible sur le site publié (navigateurs compatibles).</span>
           </div>
           {defauts.length > 0 && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-900">{defauts.join(' ')}</p>}
-          <div aria-hidden="true" className="overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-black/10">
-            {apercu && <ApercuTheme key={`${scenario.principaux.join()}|${comp.structure}|${etroit}|${rejouer}`} survol={survolActif} appareil={etroit ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />}
+          <div role="tabpanel" id="st-page" aria-labelledby={`st-onglet-${page}`} className="grid min-w-0 gap-3">
+            {apercu && (
+              <DoubleRendu key={`${page}|${scenario.principaux.join()}|${comp.structure}|${rejouer}`} libelle={ONGLETS_PAGES.find((o) => o.page === page)?.nom} onAppareil={setAppareilVu} mobileDabord={etroit}
+                zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
+                rendu={(app) => <ApercuTheme sansCommandes vueInitiale={vueDePage(page)} survol={survolActif} appareil={app} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />} />
+            )}
+            {(() => {
+              const p = PAGES_STRUCTURE.find((x) => x.id === page)!;
+              const variablesPage = p.sections.filter((s) => variables.includes(s));
+              const nomPage = ONGLETS_PAGES.find((o) => o.page === page)?.nom ?? page;
+              const cleStructurePage = cles.find((k) => k.startsWith(`structure:${page}:`)) ?? `modele:${comp.structure}`;
+              const em = empreinteMobile(cleStructurePage);
+              return (
+                <section aria-label={`Page ${nomPage}`} className="grid gap-3 rounded-2xl border border-black/10 bg-white p-3 md:grid-cols-2 md:items-start">
+                  <div className="grid content-start gap-2">
+                    <h2 className="px-2 text-base font-semibold">Page « {nomPage} »</h2>
+                    {p.ordre || variablesPage.length ? (
+                      <ul className="grid gap-0.5">
+                        <Ligne cle={`page:${page}`} titre={`Structure de la page${verrous.includes('structure') ? ' (structure verrouillée)' : ''}`} valeur={[p.ordre ? valeur('Sections').split(' · ')[0] : '', ...variablesPage.filter((s) => v[s]).map((s) => LIBELLES_VARIANTES[s]?.[v[s]] ?? v[s])].filter(Boolean).join(' · ')} onDe={() => lancerSous({ page })} />
+                      </ul>
+                    ) : <p className="px-2 text-sm text-neutral-600">Pas de présentation variable sur ce modèle pour cette page.</p>}
+                    <p className="px-2 text-xs text-neutral-500">🔒 verrouille cette page seulement : « Tout changer » et les autres dés la laissent telle quelle.</p>
+                    <RenduMobile key={`rm-${page}-${cleStructurePage}`} cle={cleStructurePage} empreinte={em} page={page} recette={ouverte.id} libelle={nomPage}
+                      zones={zonesMobile.length ? { appareil: 'mobile', empreinte: em, page, largeur: 390, zones: zonesMobile } : null}
+                      onEnregistre={(x) => { if (x === 'a_revoir') setZonesMobile([]); }} />
+                  </div>
+                  <div className="grid content-start gap-2">
+                    <p className="text-sm font-semibold">Noter cette page <span className="font-normal text-neutral-500">({appareilVu === 'les-deux' ? 'ordinateur et mobile' : appareilVu})</span></p>
+                    <div role="group" aria-label={`Note de la page ${nomPage}`} className="grid grid-cols-5 gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" aria-pressed={notePage === n} onClick={() => setNotePage(notePage === n ? null : n)} className={`min-h-11 rounded-xl border text-base font-bold ${focus} ${notePage === n ? 'border-teal-800 bg-teal-800 text-white' : 'border-neutral-300 bg-white'}`}>{n}<span aria-hidden="true" className="text-amber-500">★</span></button>)}
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {ETIQUETTES_STUDIO.map((e) => (
+                        <button key={e.id} type="button" aria-pressed={etqPage.includes(e.id)} onClick={() => setEtqPage((l) => (l.includes(e.id) ? l.filter((x) => x !== e.id) : [...l, e.id]))}
+                          className={`min-h-11 rounded-full border px-2.5 text-xs ${focus} ${etqPage.includes(e.id) ? (e.positive ? 'border-teal-700 bg-teal-700 text-white' : 'border-red-800 bg-red-800 text-white') : 'border-neutral-200 bg-white'}`}>{e.libelle}</button>
+                      ))}
+                    </div>
+                    <label className="grid gap-1 text-sm"><span className="text-teal-900">Ce qui va bien</span><textarea value={positifPage} onChange={(e) => setPositifPage(e.target.value)} rows={2} maxLength={2000} className="rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" /></label>
+                    <label className="grid gap-1 text-sm"><span className="text-red-900">Ce qui ne va pas</span><textarea value={negatifPage} onChange={(e) => setNegatifPage(e.target.value)} rows={2} maxLength={2000} className="rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" /></label>
+                    <p className="text-xs text-neutral-500">{zonesOrdi.length + zonesMobile.length ? `${zonesOrdi.length + zonesMobile.length} zone(s) partiront avec la note. ` : ''}{ouverte.id ? 'Note rattachée à la recette ouverte, pour cette page seulement.' : 'Recette non enregistrée : la note porte sur la structure de la page.'}</p>
+                    <button type="button" disabled={!notePage} onClick={() => void noterPage()} className={`min-h-11 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>Enregistrer la note de la page</button>
+                    {notesPages.some((x) => x.page === page) && <p className="text-xs text-neutral-600">Déjà notée : {notesPages.filter((x) => x.page === page).slice(0, 5).map((x) => `${x.note}★ (${x.appareil})`).join(', ')}</p>}
+                  </div>
+                </section>
+              );
+            })()}
           </div>
         </div>
 

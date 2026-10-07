@@ -146,6 +146,12 @@ Plafond indiqué entre parenthèses ; le juge les nomme dans `eliminatoire`.
 - R8.3 Un objet doit être reconnu tel quel : `ligne:laser` 4 ★ (« on dirait pas trop un laser ») ; objets du quotidien
   actuels (sneaker plutôt que chaussure de ville).
 - R8.4 Petite taille : « attention à la finesse du trait sinon on comprend pas » (`materiel:tapis-de-course:ligne` 4 ★).
+- R8.5 Nouvelle dimension (2026-10-07, migration 0034) : chaque note porte l'**appareil** regardé (`ordinateur`, `mobile`,
+  `les-deux` ; les notes antérieures valent `les-deux`) et peut porter des **zones** signalées. Paul sépare le CHOIX (la note)
+  de l'**adaptation mobile** (retours « Rendu mobile », `retours/defauts-mobile.json`) : « Mobile à revoir » ne dit rien du
+  goût, seulement de la déclinaison téléphone. Le juge prédit encore une seule note par élément ; il prédira par appareil
+  quand assez de notes `mobile` existeront (à mesurer dans CALIBRATION.md). Les zones disent OÙ est le défaut : à lire avant
+  de prédire une retouche (R9).
 
 ### 9. Retouches et icônes (v2)
 

@@ -3,8 +3,10 @@
 // Atelier des propositions (super admin) : un scénario (sujets, couleurs préférées) ou « Au hasard », puis les combinaisons
 // du générateur une par une, exactement comme le parcours les produit (lotsPropositions, mêmes poids appris, même aperçu
 // apercuProposition). Notation : 1 à 5 étoiles, étiquettes rapides, commentaire facultatif ; passage automatique à la
-// suivante. Ordinateur : 1-5 = note, t = étiquettes (puis 1-8), ← → = précédente / suivante, m = ordinateur / téléphone.
+// suivante. Ordinateur : 1-5 = note, t = étiquettes (puis 1-8), ← → = précédente / suivante, z = signaler une zone.
 // Téléphone : gros boutons, barre de notation fixée en bas. Une seule carte rendue à la fois (rendu paresseux).
+// Ordinateur ET mobile (0034) : les deux rendus côte à côte (bascule sur téléphone), annotables ; la note du CHOIX garde
+// l'appareil regardé ; bloc « Rendu mobile » à part (défaut d'adaptation rattaché à la structure, jamais au choix).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   basculerCouleur, cleCombinaison, COULEURS_PREFEREES, couleurPreferee, draftVide, ETIQUETTES_ATELIER, gamme as gammeParId, ingredientsProposition,
@@ -12,6 +14,9 @@ import {
   type PhotoBanque, type MarqueImportee, type ModeleManifeste, type PoidsAtelier, type SiteDraft, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
+import DoubleRendu from '@/components/DoubleRendu';
+import RenduMobile from '@/components/RenduMobile';
+import { empreinteMobile, type AppareilRetour, type Zone } from '@plateforme/core';
 import { apercuProposition } from '@/lib/apercu-proposition';
 import type { SoinCatalogue } from '@/lib/sites';
 import { ajouterNoteAtelier } from './actions';
@@ -33,7 +38,6 @@ type Props = {
 };
 
 export type Scenario = { principaux: string[]; secondaires: string[]; couleurs: string[] };
-type Appareil = 'bureau' | 'mobile';
 
 const ACTIFS = THEMES.filter((t) => t.statut === 'actif').map((t) => t.id);
 
@@ -75,8 +79,9 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
   const [nbLots, setNbLots] = useState(1);
   const [index, setIndex] = useState(0);
   const etroit = useEtroit();
-  const [appareilChoisi, setAppareil] = useState<Appareil | null>(null);
-  const appareil: Appareil = appareilChoisi ?? (etroit ? 'mobile' : 'bureau');
+  const [appareilVu, setAppareilVu] = useState<AppareilRetour>('les-deux');
+  const [zonesOrdi, setZonesOrdi] = useState<Zone[]>([]);
+  const [zonesMobile, setZonesMobile] = useState<Zone[]>([]);
   const [etiquettes, setEtiquettes] = useState<string[]>([]);
   const [commentaire, setCommentaire] = useState('');
   const [modeEtiquettes, setModeEtiquettes] = useState(false);
@@ -124,6 +129,8 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
     setEtiquettes([]);
     setCommentaire('');
     setModeEtiquettes(false);
+    setZonesOrdi([]);
+    setZonesMobile([]);
   }, [liste.length]);
 
   const noter = useCallback(async (note: number) => {
@@ -136,11 +143,12 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
     setSession((s) => ({ ...s, [cle]: note }));
     aller(1);
     setEnvois((n) => n + 1);
-    const r = await ajouterNoteAtelier(ingredients, note, etq, com).catch(() => ({ ok: false, message: 'Connexion perdue : note non enregistrée.' }));
+    const toutes = [...zonesOrdi, ...zonesMobile];
+    const r = await ajouterNoteAtelier(ingredients, note, etq, com, { appareil: appareilVu, zones: toutes.length ? { appareil: appareilVu, empreinte: null, zones: toutes } : null }).catch(() => ({ ok: false, message: 'Connexion perdue : note non enregistrée.' }));
     setEnvois((n) => n - 1);
     if (!r.ok) setSession((s) => { const x = { ...s }; delete x[cle]; return x; });
     setStatut(r.ok ? { ok: true, message: r.message } : { ok: false, message: `${nom} : ${r.message}` });
-  }, [p, ingredients, migrationManquante, etiquettes, commentaire, cle, aller]);
+  }, [p, ingredients, migrationManquante, etiquettes, commentaire, cle, aller, zonesOrdi, zonesMobile, appareilVu]);
 
   const basculerEtiquette = (id: string) => setEtiquettes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
 
@@ -155,7 +163,6 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
     if (e.key === 'Escape') { setModeEtiquettes(false); return; }
     if (e.key === 'ArrowRight') { e.preventDefault(); aller(1); return; }
     if (e.key === 'ArrowLeft') { e.preventDefault(); aller(-1); return; }
-    if (e.key === 'm' || e.key === 'M') { e.preventDefault(); setAppareil(appareil === 'bureau' ? 'mobile' : 'bureau'); }
   };
   useEffect(() => {
     const f = (e: KeyboardEvent) => touches.current(e);
@@ -169,7 +176,6 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
   const deja = dejaNotees[cle];
   const noteSession = session[cle];
   const sujets = sujetsPris(entree);
-  const hauteur = appareil === 'mobile' ? 560 : etroit ? 260 : 520;
 
   return (
     <div className="grid gap-5">
@@ -238,20 +244,12 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
           <div className="grid min-w-0 gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-neutral-600" aria-live="polite">Lot {lot} · proposition {(index % 3) + 1} sur 3 · n° {index + 1}{epuise && index >= liste.length - 1 ? ' (dernière)' : ''}</p>
-              <div role="radiogroup" aria-label="Appareil de l’aperçu" className="flex rounded-xl border border-neutral-200 bg-white p-0.5 text-sm">
-                {(['bureau', 'mobile'] as const).map((a) => (
-                  <button key={a} type="button" role="radio" aria-checked={appareil === a} onClick={() => setAppareil(a)}
-                    className={`min-h-10 rounded-lg px-3 font-medium ${focus} ${appareil === a ? 'bg-teal-800 text-white' : 'text-neutral-700 hover:bg-neutral-50'}`}>
-                    {a === 'bureau' ? 'Ordinateur' : 'Téléphone'}
-                  </button>
-                ))}
-              </div>
             </div>
-            <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${appareil === 'mobile' ? 'mx-auto w-[280px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}>
-              {apercu && (
-                <ApercuTheme key={`${p.id}|${appareil}|${scenario.couleurs.join()}|${sujets.join()}`} vignette={hauteur} appareil={appareil} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
-              )}
-            </div>
+            {apercu && (
+              <DoubleRendu key={`${p.id}|${scenario.couleurs.join()}|${sujets.join()}`} libelle={p.nom} onAppareil={setAppareilVu} mobileDabord={etroit}
+                zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
+                rendu={(app) => <ApercuTheme sansCommandes vignette={app === 'mobile' ? 560 : 520} appareil={app} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />} />
+            )}
           </div>
 
           <div className="grid gap-3 md:sticky md:top-4">
@@ -294,6 +292,10 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
                 placeholder="Ex. le héros est coupé en mobile, la gamme manque de contraste…" className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" />
             </label>
 
+            <RenduMobile key={`rm-${p.id}|${sujets.join()}`} cle={`modele:${p.univers}`} empreinte={empreinteMobile(`modele:${p.univers}`)} libelle={p.nom}
+              zones={zonesMobile.length ? { appareil: 'mobile', empreinte: empreinteMobile(`modele:${p.univers}`), largeur: 390, zones: zonesMobile } : null}
+              onEnregistre={(v) => { if (v === 'a_revoir') setZonesMobile([]); }} />
+
             {/* Barre de notation : fixée en bas sur téléphone */}
             <div className="sticky bottom-0 z-10 -mx-4 grid gap-2 border-t border-black/10 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
               <div role="group" aria-label="Note de 1 à 5 (la suivante s’affiche aussitôt)" className="grid grid-cols-5 gap-1.5">
@@ -311,7 +313,7 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
               </div>
               <p role="status" className={`min-h-5 text-sm ${statut && !statut.ok ? 'text-red-800' : 'text-neutral-600'}`}>{statut?.message ?? ''}</p>
             </div>
-            <p className="hidden text-xs text-neutral-500 md:block">Clavier : 1 à 5 noter · t étiquettes · ← → naviguer · m ordinateur / téléphone</p>
+            <p className="hidden text-xs text-neutral-500 md:block">Clavier : 1 à 5 noter · t étiquettes · ← → naviguer · z signaler une zone</p>
           </div>
         </section>
       )}

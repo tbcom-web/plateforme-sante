@@ -45,8 +45,9 @@ export async function getPoidsAssets(): Promise<PoidsAssets | null> {
     const supabase = await createClient();
     const [{ data, error }, sujets] = await Promise.all([supabase.rpc('assets_notes_apprentissage', { p_limite: 20000 }), getSurchargesSujets()]);
     if (error || !Array.isArray(data)) return avecSujets(null, sujets);
-    return avecSujets(poidsAssets((data as { cle_asset: string; note: number | null; etiquettes: string[] | null; statut: string | null }[])
-      .map((l): LigneAppriseAsset => ({ cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes, statut: l.statut }))), sujets);
+    // Appareil regardé (0034) : une note donnée sur le rendu mobile pèse un peu plus (rendu-mobile.ts) ; absent avant 0034
+    return avecSujets(poidsAssets((data as { cle_asset: string; note: number | null; etiquettes: string[] | null; statut: string | null; appareil?: string | null }[])
+      .map((l): LigneAppriseAsset => ({ cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes, statut: l.statut, appareil: l.appareil ?? null }))), sujets);
   } catch {
     return null;
   }

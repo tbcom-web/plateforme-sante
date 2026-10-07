@@ -14,6 +14,8 @@ import {
   type Asset, type PhotoDeJeu, type Registre, type StatutIllustration, type TypeAsset,
 } from '@plateforme/core';
 import AvantApres from '@/components/AvantApres';
+import AnnotateurZones from '@/components/AnnotateurZones';
+import type { Zone } from '@plateforme/core';
 import IngredientsAnimation from '@/components/IngredientsAnimation';
 import LectureAnimation from '@/components/LectureAnimation';
 import SujetsVisuel from '@/components/SujetsVisuel';
@@ -110,9 +112,14 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
   // Notes (0027) : moyenne par clé, mise à jour localement après une note rapide
   const [moyennes, setMoyennes] = useState(moyennesInitiales);
   const [notesMsg, setNotesMsg] = useState<Record<string, string>>({});
+  // Zones signalées dans la vue agrandie (0034) : envoyées avec la note de l'élément ouvert
+  const [zonesVue, setZonesVue] = useState<{ cle: string; zones: Zone[] }>({ cle: '', zones: [] });
   const noterVite = async (l: Ligne, n: number) => {
     if (migrationNotes) { setNotesMsg((m) => ({ ...m, [l.cle]: 'Migration 0027 à exécuter.' })); return; }
-    const r = await ajouterNoteAsset(l.cle, n, [], '', empreinteAsset(l, l.svgRendu || null), { apercu: instantaneAsset(l, l.svgRendu || null) }).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
+    const em = empreinteAsset(l, l.svgRendu || null);
+    const zones = zonesVue.cle === l.cle && zonesVue.zones.length ? { appareil: 'ordinateur' as const, empreinte: em, zones: zonesVue.zones } : null;
+    const r = await ajouterNoteAsset(l.cle, n, [], '', em, { apercu: instantaneAsset(l, l.svgRendu || null), appareil: 'ordinateur', zones }).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
+    if (r.ok && zones) setZonesVue({ cle: '', zones: [] });
     setNotesMsg((m) => ({ ...m, [l.cle]: r.message }));
     if (r.ok) setMoyennes((m) => ({ ...m, [l.cle]: { n: (m[l.cle]?.n ?? 0) + 1, somme: (m[l.cle]?.somme ?? 0) + n } }));
     if (r.ok) setNoteesIci((s) => new Set(s).add(l.cle));
@@ -392,7 +399,11 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
               ) : null;
             })()}
             <div className={`grid gap-3 ${ligneOuverte.rendu.kind === 'svg' && ligneOuverte.rendu.svgVariante ? 'md:grid-cols-2' : ''}`}>
-              {ligneOuverte.rendu.kind === 'svg' ? <Apercu html={ligneOuverte.svgRendu} fond={ligneOuverte.fond} grand petit={ligneOuverte.type === 'picto'} /> : <ApercuAutre l={ligneOuverte} grand />}
+              {/* Zones à revoir (z) : tracées ici, envoyées avec la prochaine note (étoiles) de l'élément */}
+              <AnnotateurZones key={`z-${ligneOuverte.cle}`} appareil="ordinateur" libelle={ligneOuverte.titre}
+                zones={zonesVue.cle === ligneOuverte.cle ? zonesVue.zones : []} onChange={(z) => setZonesVue({ cle: ligneOuverte.cle, zones: z })}>
+                {ligneOuverte.rendu.kind === 'svg' ? <Apercu html={ligneOuverte.svgRendu} fond={ligneOuverte.fond} grand petit={ligneOuverte.type === 'picto'} /> : <ApercuAutre l={ligneOuverte} grand />}
+              </AnnotateurZones>
               {ligneOuverte.rendu.kind === 'svg' && ligneOuverte.rendu.svgVariante && (
                 <div className="grid gap-1">
                   <Apercu html={ligneOuverte.rendu.svgVariante()} fond="grille" grand />
@@ -407,6 +418,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 {champCommentaire(ligneOuverte, true)}
                 {boutonsStatut(ligneOuverte, true)}
                 {etoilesRapides(ligneOuverte)}
+                {zonesVue.cle === ligneOuverte.cle && zonesVue.zones.length > 0 && <p className="text-xs text-orange-900">{zonesVue.zones.length} zone{zonesVue.zones.length > 1 ? 's' : ''} signalée{zonesVue.zones.length > 1 ? 's' : ''} : elles partent avec votre note (étoiles).</p>}
                 {prevision(ligneOuverte)}
                 {messages[ligneOuverte.cle] && <p className={`text-xs ${messages[ligneOuverte.cle].ok ? 'text-teal-800' : 'text-red-700'}`}>{messages[ligneOuverte.cle].message}</p>}
                 <p className="text-xs text-neutral-500">Source : <code className="break-all">{ligneOuverte.source}</code></p>

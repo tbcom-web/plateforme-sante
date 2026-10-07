@@ -13,7 +13,7 @@ import { getUnivers } from '@/lib/univers';
 import { lireJeuPhotos } from '@/lib/jeux-photos';
 import { themesActives } from '@/lib/themes';
 import { getPoidsAtelier } from '@/lib/atelier';
-import { getRecettesLecture } from '@/lib/recettes';
+import { getDefautsMobileOuverts, getRecettesLecture } from '@/lib/recettes';
 
 export const metadata = { title: 'Créer mon site' };
 
@@ -34,7 +34,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
   if (pourClient && !admin) redirect('/creer');
 
   // Poids appris des notes de l'atelier (/admin/atelier) : réordonnent les propositions de « Votre site »
-  const [site, catalogue, modeles, marquesImportees, { univers }, poidsAtelier, recettes] = await Promise.all([
+  const [site, catalogue, modeles, marquesImportees, { univers }, poidsAtelier, recettes, defautsMobile] = await Promise.all([
     pourClient ? getSiteParId(siteDemande) : getMonSite(),
     getCatalogue(),
     getModelesDisponibles(),
@@ -42,6 +42,8 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
     getUnivers(),
     getPoidsAtelier(),
     getRecettesLecture(4),
+    // Défauts d'adaptation mobile ouverts (0034) : les recettes concernées passent après les autres, jusqu'à correction
+    getDefautsMobileOuverts(),
   ]);
   if (!site) notFound();
   // Compte en essai gratuit (non validé) : même parcours, pré-rempli avec le nom, « Voir mon site » en aperçu privé.
@@ -95,6 +97,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
         themesActives={themesActives()}
         poidsAtelier={poidsAtelier}
         recettes={recettes}
+        defautsMobile={defautsMobile}
         lienAvance={pourClient ? `/mon-site?site=${site.id}` : '/mon-site'}
         essai={essai}
         actions={{

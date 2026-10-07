@@ -79,6 +79,8 @@ type Props = {
   poidsAtelier?: PoidsAtelier | null;
   /** Recettes du studio bien notées (recettes_lecture) : proposées en premier pour les sujets du praticien */
   recettes?: Recette[];
+  /** Clés dont l'adaptation mobile est à corriger (0034) : les recettes concernées passent après les autres */
+  defautsMobile?: string[];
   actions: {
     sauvegarder: ActionEnregistrer;
     choisir: ActionChoisir;
@@ -118,7 +120,7 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, poidsAtelier = null, recettes = [], actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
+export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, poidsAtelier = null, recettes = [], defautsMobile = [], actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
   const router = useRouter();
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
@@ -382,6 +384,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
               themesActives={themesActives}
               poids={poidsAtelier}
               recettes={recettes}
+              defautsMobile={defautsMobile}
               etroit={etroit}
               choixEnCours={choixEnCours}
               onChoisir={choisir}
