@@ -33,4 +33,9 @@ Une recette = des données (identifiants d'ingrédients + style) : elle se rend 
 - [ ] Niveau 1 : avant / après, champs libres « va bien / ne va pas », sujets tagués, inspirations, flux de photos libres.
 - [ ] Niveau 2 : kits de visuels par sujet (proposés par Claude d'après les notes ; Paul garde, retire ou remplace) ; les générateurs puisent dans les kits.
 - [ ] Niveau 3 : recettes nommées (kit × style) ; « Charger plus » = recettes ; recettes favorites réutilisables.
+- [ ] Remplissage automatique (demande de Paul du 2026-10-07) :
+  - chaque emplacement d'un site (héros, illustration d'une page sujet ou d'une fiche soin, photos d'accueil et de galerie, icônes) est rempli à partir des sujets et hashtags des visuels, de leurs notes et de leur statut ;
+  - un bouton « Changer » sur chaque emplacement, pour le praticien comme pour l'admin, tire un autre visuel compatible jusqu'à ce qu'il plaise ;
+  - « Garder celui-ci » fige le choix dans le brouillon ;
+  - les choix et rejets des praticiens alimentent les notes.
 - [ ] Sorties : rendu d'une recette en 9:16 (écran ÉcranZen et Reels / stories, même format) et en 1:1, 4:5 pour les publications, depuis le même moteur.
