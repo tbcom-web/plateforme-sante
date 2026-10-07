@@ -362,5 +362,334 @@
     "commentaire": null,
     "empreinte": "7d0250d4",
     "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:taping:pedagogique",
+    "statut": "a_revoir",
+    "commentaire": "Je pense que pour le taping il ne faut pas voir les os du pied sinon on pense que le taping est a l'interieur du pied.",
+    "empreinte": "4ab51cd6",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:taping:releve",
+    "statut": "a_revoir",
+    "commentaire": "Je pense que pour le taping il ne faut pas voir les os du pied sinon on pense que le taping est a l'interieur du pied.",
+    "empreinte": "4b7a38c7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:arriere-pied:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "56f5913e",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:arriere-pied:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "78b562d7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:voutes:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "5a481177",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:voutes:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "1c6e3458",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:orthonyxie:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "3af4c81b",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:orthonyxie:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "17e6ea7e",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:onychoplastie:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "cf664c38",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:onychoplastie:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "b21bf8c2",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:diabete:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "69fce5eb",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:sport:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "d43cd86a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:sport:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "9052d02d",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:enfant:releve",
+    "statut": "a_revoir",
+    "commentaire": "doigts de pieds un peu trop petits",
+    "empreinte": "d7283d79",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:talon:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "809364d9",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:appuis:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "ea5636ed",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:talon:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "c5d366bf",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:ongle:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "15090798",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:laser:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "2c2eec0a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:senior:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "4bf9fc66",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:orthoplastie:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "236e4eac",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:orthoplastie:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "af43b9a8",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:mycose:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "7883e07c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:mycose:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "a93b0ddd",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:ongles-epais:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "d279edc7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:domicile:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "8593677e",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:domicile:pedagogique",
+    "statut": "a_revoir",
+    "commentaire": "pas sur que ce soit le kit embarqué par le podologue a domicile.",
+    "empreinte": "eb3f7951",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:empreintes",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "0b79ebb2",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:pieds-dessus",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "ffad747c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:marche",
+    "statut": "a_revoir",
+    "commentaire": "pas de molets sur ces jambes c'est bizarre",
+    "empreinte": "db0d79f2",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:pied-profil",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "447c9c96",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:pied-dessous",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "5aa5f805",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:orthoplastie",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "b4844e5c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:sport-football",
+    "statut": "a_revoir",
+    "commentaire": "il faut faire un ballon pour ce kit d'illustration",
+    "empreinte": "71f8dcfd",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:sport-ski:pedagogique",
+    "statut": "a_revoir",
+    "commentaire": "faire juste un / des skis ou une botte de ski",
+    "empreinte": "4fe2ce7b",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:semelles:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "af3118fa",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:senior:ligne",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "eb67f299",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:pedicurie:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "82b8a4e9",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:pedicurie:ligne",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "0c730bcd",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0002",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "03c6e1f2",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009:dorsale:incarne-sites",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "fa63775a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009:dorsale:incarne",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "623c4dd5",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009:dorsale-gros-plan:mycose",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "654b5c20",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:EZ-HTML/praticien",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "ef8a7379",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:SITES/orteil-griffe:coupe-sagittale:orthoplastie",
+    "statut": "retire",
+    "commentaire": null,
+    "empreinte": "a981547b",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:SITES/orteil-griffe",
+    "statut": "retire",
+    "commentaire": null,
+    "empreinte": "d8339f87",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "photo:cabinet-lumiere",
+    "statut": "retire",
+    "commentaire": null,
+    "empreinte": null,
+    "jour": "2026-10-07"
   }
 ]

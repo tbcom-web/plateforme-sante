@@ -1,0 +1,324 @@
+[
+  {
+    "id": "60ca5e06-6f7c-4da5-aa81-25f641999271",
+    "nom": "Sport · Simple et proche · Encre · Douce arrondie",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [
+      "rose"
+    ],
+    "composition": {
+      "structure": "simple-proche",
+      "gamme": "encre",
+      "couleur": "#0b1c24",
+      "police": "douce",
+      "visuels": {
+        "style": "photos",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [
+        "/photos/generale-pied-sol.webp",
+        "/photos/generale-pieds-nus.webp",
+        "/photos/soins-pied-tenu.webp",
+        "/photos/cabinet-lumiere.webp",
+        "/photos/sport-course.webp"
+      ],
+      "sections": {
+        "ordre": "questions-haut",
+        "variantes": {
+          "faq": "ouverte",
+          "pied": "simple",
+          "fiche": "pratique-haut",
+          "infos": "volets",
+          "soins": "grille",
+          "theme": "colonnes",
+          "sujets": "rangees",
+          "accueil": "figure",
+          "article": "chapo",
+          "contact": "bandeau",
+          "galerie": "defilement",
+          "horaires": "tableau",
+          "actualites": "cartes",
+          "praticiens": "liste",
+          "soins-forme": "organiques"
+        }
+      },
+      "effets": "sobre"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "cb3e9092-5ec6-44c9-8c62-3721dd62aa98",
+    "nom": "Sport · Technique et précis · Encre · Ronde pédagogique",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "technique-precis",
+      "gamme": "encre",
+      "couleur": "#0b1c24",
+      "police": "ronde",
+      "visuels": {
+        "style": "photos",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [
+        "/photos/sport-lacage.webp",
+        "/photos/sport-course.webp",
+        "/photos/generale-pieds-nus.webp",
+        "/photos/accueil-observation-marche.webp",
+        "/photos/generale-pied-profil.webp"
+      ],
+      "sections": {
+        "ordre": "infos-haut",
+        "variantes": {
+          "theme": "liste",
+          "sujets": "colonnes",
+          "article": "laterale",
+          "soins-forme": "gabarit"
+        }
+      },
+      "effets": "vivant"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "496bc574-b5e2-4dd2-92bd-1d23e05fee3e",
+    "nom": "Sport · Simple et proche · Canard · Grotesque affirmée",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "simple-proche",
+      "gamme": "canard",
+      "couleur": "#1f6b64",
+      "police": "grotesque",
+      "visuels": {
+        "style": "pedagogique",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "equipe-haut",
+        "variantes": {
+          "faq": "colonnes",
+          "pied": "simple",
+          "fiche": "pratique-haut",
+          "infos": "volets",
+          "soins": "bulles",
+          "theme": "colonnes",
+          "sujets": "liste",
+          "accueil": "figure",
+          "article": "lecture",
+          "contact": "bandeau",
+          "galerie": "defilement",
+          "horaires": "liste",
+          "actualites": "liste",
+          "praticiens": "fiches",
+          "soins-forme": "sans-cadre"
+        }
+      },
+      "effets": "sobre"
+    },
+    "note": null,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "5bbb3eb7-e914-4e5d-99b3-fc0c9503ee26",
+    "nom": "Sport · Clair et pratique · Menthe glacée & prune · Revue à empattements",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "clair-pratique",
+      "gamme": "menthe",
+      "couleur": "#0f7563",
+      "police": "revue",
+      "visuels": {
+        "style": "photos",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [
+        "/photos/analyse-plateforme.webp",
+        "/photos/cabinet-lumiere.webp",
+        "/photos/sport-chaussure.webp",
+        "/photos/generale-pied-profil.webp",
+        "/photos/accueil-observation-marche.webp"
+      ],
+      "sections": {
+        "ordre": "soins-puis-infos",
+        "variantes": {
+          "faq": "ouverte",
+          "pied": "simple",
+          "fiche": "encadre",
+          "infos": "colonnes",
+          "soins": "grille",
+          "theme": "rangees",
+          "sujets": "liste",
+          "accueil": "carte",
+          "article": "standard",
+          "contact": "barre",
+          "galerie": "bande",
+          "horaires": "bandeau",
+          "actualites": "cartes",
+          "praticiens": "liste",
+          "soins-forme": "carres"
+        }
+      },
+      "effets": "sobre"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "4be6efb0-8e09-4dea-a798-f55df5b64803",
+    "nom": "Sport · Technique et précis · Pastèque & menthe · Serif fine",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "technique-precis",
+      "gamme": "pasteque",
+      "couleur": "#b3264a",
+      "police": "serif-fine",
+      "visuels": {
+        "style": "releve",
+        "herosSujet": "sport",
+        "animation": "coureur"
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "equipe-haut",
+        "variantes": {
+          "theme": "colonnes",
+          "sujets": "colonnes",
+          "article": "laterale",
+          "soins-forme": "carres"
+        }
+      },
+      "effets": "sobre"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "4a0a4527-269c-4671-9c0d-c9ebbbe866a1",
+    "nom": "Sport · Simple et proche · Pistache & framboise · Éditoriale chaleureuse",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "simple-proche",
+      "gamme": "pistache",
+      "couleur": "#4a6b12",
+      "police": "editoriale",
+      "visuels": {
+        "style": "photos",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [
+        "https://images.pexels.com/photos/30307746/pexels-photo-30307746.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/7880214/pexels-photo-7880214.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/8693984/pexels-photo-8693984.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/11156954/pexels-photo-11156954.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/32289808/pexels-photo-32289808.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+      ],
+      "sections": {
+        "ordre": "modele",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "simple",
+          "fiche": "colonne",
+          "infos": "notice",
+          "soins": "filets",
+          "theme": "rangees",
+          "sujets": "une",
+          "accueil": "carte",
+          "article": "lecture",
+          "contact": "flottant",
+          "galerie": "mosaique",
+          "horaires": "carte",
+          "actualites": "cartes",
+          "praticiens": "fiches",
+          "soins-forme": "organiques"
+        }
+      },
+      "effets": "sobre"
+    },
+    "note": null,
+    "etiquettes": [],
+    "positif": "j'adore l'agencement",
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "47f42661-d10f-47c9-b48b-d4c9595fd6a9",
+    "nom": "Enfants · Technique et précis · Pastèque & menthe · Éditoriale chaleureuse",
+    "sujets": [
+      "enfant"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "technique-precis",
+      "gamme": "pasteque",
+      "couleur": "#b3264a",
+      "police": "editoriale",
+      "visuels": {
+        "style": "releve",
+        "herosSujet": "enfant",
+        "animation": "premiers-pas"
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "equipe-haut",
+        "variantes": {
+          "theme": "rangees",
+          "sujets": "rangees",
+          "article": "chapo",
+          "soins-forme": "pilules"
+        }
+      },
+      "effets": "sobre"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  }
+]

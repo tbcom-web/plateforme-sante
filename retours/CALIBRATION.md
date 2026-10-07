@@ -56,13 +56,13 @@ La justesse de v1 se mesure sur les prochaines notes de Paul (80 prédictions su
 <!-- mesure-auto -->
 ## Mesure automatique (export quotidien)
 
-Notes comparables jusqu’au 2026-10-07 : 98.
+Notes comparables jusqu’au 2026-10-07 : 105.
 
 | Profil | Notes | Exactes | À ±1 | Écart moyen | Biais | Corrélation | Accord éliminatoires |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 2026-10-07.v1 | 66 | 22 (33 %) | 54 (82 %) | 0,91 | +0,18 | 0,57 | 50/66 |
-| 2026-10-07.v0 | 32 | 12 (38 %) | 30 (94 %) | 0,69 | -0,19 | 0,67 | 28/32 |
-| 20 dernières | 20 | 9 (45 %) | 18 (90 %) | 0,65 | +0,15 | 0,67 | 17/20 |
+| 2026-10-07.v1 | 73 | 24 (33 %) | 58 (79 %) | 0,95 | +0,18 | 0,51 | 54/73 |
+| 2026-10-07.v0 | 32 | 11 (34 %) | 30 (94 %) | 0,72 | -0,22 | 0,68 | 28/32 |
+| 20 dernières | 20 | 9 (45 %) | 19 (95 %) | 0,60 | +0,00 | 0,64 | 18/20 |
 
 Plus gros écarts récents :
 
@@ -70,8 +70,8 @@ Plus gros écarts récents :
 - `photo:chaussage` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
 - `photo:enfant-baskets` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
 - `photo:posture-marche-sable` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
+- `picto:chaussure-enfant` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
 - `biblio:POD-AT-0006:dorsal:tong-posee` : prédit 4 ★, Paul 2 ★ (2026-10-07, profil 2026-10-07.v1)
 - `dessin:senior:pedagogique` : prédit 3 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v0)
 - `heros:enfant:ligne` : prédit 3 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v0)
-- `ligne:empreintes` : prédit 3 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v1)
 <!-- /mesure-auto -->

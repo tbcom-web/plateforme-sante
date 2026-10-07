@@ -1,0 +1,74 @@
+[
+  {
+    "cle": "structure:fiche:pratique-haut",
+    "page": "fiche",
+    "verdict": "ok",
+    "etiquettes": [],
+    "remarque": null,
+    "note": null,
+    "zones": null,
+    "empreinte": "252073f9",
+    "statut": "sans_objet",
+    "le": "2026-10-07"
+  },
+  {
+    "cle": "structure:accueil:questions-haut-figure-rangees",
+    "page": "accueil",
+    "verdict": "ok",
+    "etiquettes": [],
+    "remarque": null,
+    "note": null,
+    "zones": null,
+    "empreinte": "b6d20237",
+    "statut": "sans_objet",
+    "le": "2026-10-07"
+  },
+  {
+    "cle": "structure:theme:liste",
+    "page": null,
+    "verdict": "ok",
+    "etiquettes": [],
+    "remarque": null,
+    "note": null,
+    "zones": null,
+    "empreinte": "ebfde560",
+    "statut": "sans_objet",
+    "le": "2026-10-07"
+  },
+  {
+    "cle": "structure:theme:liste",
+    "page": null,
+    "verdict": "ok",
+    "etiquettes": [],
+    "remarque": null,
+    "note": null,
+    "zones": null,
+    "empreinte": "ebfde560",
+    "statut": "sans_objet",
+    "le": "2026-10-07"
+  },
+  {
+    "cle": "modele:technique-precis",
+    "page": "actualites",
+    "verdict": "ok",
+    "etiquettes": [],
+    "remarque": null,
+    "note": null,
+    "zones": null,
+    "empreinte": "ca74f582",
+    "statut": "sans_objet",
+    "le": "2026-10-07"
+  },
+  {
+    "cle": "structure:accueil:modele-carte-une",
+    "page": "accueil",
+    "verdict": "ok",
+    "etiquettes": [],
+    "remarque": null,
+    "note": null,
+    "zones": null,
+    "empreinte": "e2ce14c1",
+    "statut": "sans_objet",
+    "le": "2026-10-07"
+  }
+]

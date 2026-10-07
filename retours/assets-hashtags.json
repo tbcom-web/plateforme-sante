@@ -4,6 +4,10 @@
     "senior",
     "woman"
   ],
+  "photo:banque/libres/sport/pexels-11156954-1920.webp": [
+    "child",
+    "skiing"
+  ],
   "photo:banque/libres/sport/pexels-1325681-1920.webp": [
     "golf"
   ],
@@ -21,6 +25,9 @@
   ],
   "photo:banque/libres/sport/pexels-29732064-1920.webp": [
     "golf"
+  ],
+  "photo:banque/libres/sport/pexels-32289808-1920.webp": [
+    "tennis"
   ],
   "photo:banque/libres/sport/pexels-33974329-1920.webp": [
     "runner",
@@ -52,8 +59,21 @@
   "photo:banque/libres/sport/pexels-8542685-1920.webp": [
     "tennis"
   ],
+  "photo:libre:pexels-11156954": [
+    "child",
+    "skiing"
+  ],
+  "photo:libre:pexels-11831855": [
+    "basketball"
+  ],
+  "photo:libre:pexels-12955703": [
+    "child"
+  ],
   "photo:libre:pexels-14353976": [
     "soccer"
+  ],
+  "photo:libre:pexels-21050394": [
+    "tennis"
   ],
   "photo:libre:pexels-32289808": [
     "tennis"
@@ -61,10 +81,32 @@
   "photo:libre:pexels-32289819": [
     "tennis"
   ],
+  "photo:libre:pexels-32941076": [
+    "soccer"
+  ],
   "photo:libre:pexels-33874841": [
     "nature",
     "runner",
     "trail"
+  ],
+  "photo:libre:pexels-38503110": [
+    "tennis"
+  ],
+  "photo:libre:pexels-38503137": [
+    "tennis"
+  ],
+  "photo:libre:pexels-4920429": [
+    "runner-feet"
+  ],
+  "photo:libre:pexels-5067702": [
+    "racetrack"
+  ],
+  "photo:libre:pexels-5067813": [
+    "tennis"
+  ],
+  "photo:libre:pexels-5310739": [
+    "runner",
+    "runner-feet"
   ],
   "photo:libre:pexels-5687405": [
     "bicycles",
@@ -84,10 +126,46 @@
     "bike",
     "mountain"
   ],
+  "photo:libre:pexels-6542395": [
+    "golf"
+  ],
+  "photo:libre:pexels-6716655": [
+    "ballerinas"
+  ],
+  "photo:libre:pexels-7406289": [
+    "basketball"
+  ],
+  "photo:libre:pexels-7787409": [
+    "hiking"
+  ],
+  "photo:libre:pexels-8223918": [
+    "tennis"
+  ],
+  "photo:libre:pexels-8224483": [
+    "tennis"
+  ],
+  "photo:libre:pexels-8224655": [
+    "tennis"
+  ],
   "photo:libre:pexels-9367717": [
     "soccer"
   ],
   "photo:libre:pexels-9405210": [
     "soccer"
+  ],
+  "photo:libre:pexels-9648681": [
+    "children"
+  ],
+  "photo:libre:pixabay-1977372": [
+    "handball"
+  ],
+  "photo:libre:pixabay-2647068": [
+    "badminton"
+  ],
+  "photo:libre:pixabay-6143052": [
+    "handball"
+  ],
+  "photo:libre:pixabay-858206": [
+    "basketball"
   ]
 }
