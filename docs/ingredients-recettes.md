@@ -15,7 +15,7 @@ Chaque niveau ne puise que dans le niveau du dessous **validé** ou **bien noté
 ## Sorties (même recette, plusieurs supports)
 
 - **Site** : gabarits `apps/sites` (en place).
-- **Écran de salle d'attente (ÉcranZen)** : diaporama 16:9 à partir du kit (héros, animations comme « meulage », fiches conseils). Exports vidéo déjà possibles via `packages/contenus/scripts/exporter-animation.mjs`.
+- **Écran de salle d'attente (ÉcranZen)** : format **vertical 9:16** (écran en mode portrait), exactement comme les Reels : même rendu que les réseaux sociaux, à partir du kit (héros, animations comme « meulage », fiches conseils). Exports vidéo déjà possibles via `packages/contenus/scripts/exporter-animation.mjs` (le 9:16 est le format de référence ; le 16:9 n'est pas utilisé pour ÉcranZen).
 - **Réseaux sociaux** : publications et Reels 1:1, 4:5 et 9:16, depuis le moteur `packages/contenus` (sujets, calendrier, Reels).
 
 Une recette = des données (identifiants d'ingrédients + style) : elle se rend pareil sur les trois supports, aux couleurs et au nom du praticien.
@@ -33,4 +33,4 @@ Une recette = des données (identifiants d'ingrédients + style) : elle se rend 
 - [ ] Niveau 1 : avant / après, champs libres « va bien / ne va pas », sujets tagués, inspirations, flux de photos libres.
 - [ ] Niveau 2 : kits de visuels par sujet (proposés par Claude d'après les notes ; Paul garde, retire ou remplace) ; les générateurs puisent dans les kits.
 - [ ] Niveau 3 : recettes nommées (kit × style) ; « Charger plus » = recettes ; recettes favorites réutilisables.
-- [ ] Sorties : rendu d'une recette en écran ÉcranZen 16:9 et en publications sociales (1:1, 4:5, 9:16) depuis le même moteur.
+- [ ] Sorties : rendu d'une recette en 9:16 (écran ÉcranZen et Reels / stories, même format) et en 1:1, 4:5 pour les publications, depuis le même moteur.
