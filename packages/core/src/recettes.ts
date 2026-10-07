@@ -2,7 +2,7 @@
 //
 // Une RECETTE = une composition complète de site, en identifiants seulement (rien n'est dessiné ni écrit ici) :
 //   structure (4 modèles du parcours) × couleurs (gamme ou couleur libre dérivée, AA) × paire de polices (PAIRES_POLICES) ×
-//   visuels (style d'illustration, sujet du héros, animation) × photos (banque : jeux de photos, photos libres validées,
+//   visuels (style d'illustration, sujet du héros, animation) × photos (banque : jeux de photos, photos libres importées,
 //   photos intégrées) × composition des sections (ordre de l'accueil, variantes) × jeu d'effets (effets.ts).
 // Le studio lance des « dés » dimension par dimension (avec verrous et retour en arrière) ; chaque tirage est DÉTERMINISTE
 // (graine) et pondéré par les notes (atelier-poids.ts, assets-poids.ts). Les garde-fous passent toujours avant le hasard :
@@ -26,7 +26,10 @@ import { themeIllustre } from './heros-themes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
-import { clePhoto, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets } from './assets-poids';
+import { clePhoto, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
+import { estSujetDeVisuel, sujetsEffectifs } from './sujets-visuels';
+import { urlImageAutorisee, type SourcePhotoLibre } from './photos-libres';
+import type { HashtagsAssets } from './hashtags';
 import { clesAtelier, type PoidsAtelier } from './atelier-poids';
 import { FACTEUR_DEFAUT_MOBILE, appareilDe, poidsAppareil, type AppareilRetour } from './rendu-mobile';
 import type { Animation } from './packs';
@@ -41,7 +44,7 @@ import type { Univers } from './catalogue-univers';
 export const DIMENSIONS_RECETTE = [
   { id: 'couleurs', nom: 'Couleurs', touche: 'c' },
   { id: 'polices', nom: 'Polices', touche: 'p' },
-  { id: 'visuels', nom: 'Visuels', touche: 'v' },
+  { id: 'visuels', nom: 'Style des illustrations', touche: 'v' },
   { id: 'photos', nom: 'Photos', touche: 'f' },
   { id: 'structure', nom: 'Structure', touche: 's' },
   { id: 'effets', nom: 'Effets', touche: 'e' },
@@ -172,6 +175,8 @@ export type ContexteRecette = {
   poids?: PoidsAtelier | null;
   /** Photos de la banque disponibles */
   photos?: readonly PhotoBanque[];
+  /** Studio seulement : les photos gardées non importées (aperçus Pexels / Pixabay) peuvent être tirées */
+  nonImportees?: boolean;
   /** Fiches des modèles (importées par l'admin), sinon intégrées */
   modele?: (id: string) => ModeleManifeste;
   /**
@@ -278,8 +283,57 @@ function tirerCouleurLibre(c: ContexteRecette, s: Structure, r: () => number): s
 // Photos de la banque
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Photo disponible pour les tirages : URL, sujets effectifs, origine (jeu de photos, photo libre validée, photo intégrée) */
-export type PhotoBanque = { url: string; sujets: readonly string[]; origine: 'jeu' | 'libre' | 'integree' };
+/**
+ * Photo disponible pour les tirages : URL, sujets effectifs, origine (jeu de photos, photo libre, photo intégrée).
+ * `importee: false` (studio seulement, retour de Paul du 2026-10-07) : photo libre GARDÉE mais pas encore importée (statut
+ * « à valider », aperçu servi par Pexels / Pixabay) ; jamais tirée hors du studio (`nonImportees` du contexte), jamais posée
+ * sur un site (appliquerRecette, photosImportees). `cle` : clé de l'inventaire (photo:… ; candidate : photo:libre:<source>-<id>) ;
+ * `idLibre` : identifiant photos_libres (bouton « Valider et importer »).
+ */
+export type PhotoBanque = { url: string; sujets: readonly string[]; origine: 'jeu' | 'libre' | 'integree'; importee?: boolean; cle?: string | null; idLibre?: string; source?: SourcePhotoLibre };
+
+/** Aperçu d'une photo libre non importée (https, hôtes d'images de Pexels / Pixabay) */
+export const estApercuPhotoLibre = (url: string) => typeof url === 'string' && url.length <= 500 && (urlImageAutorisee('pexels', url) || urlImageAutorisee('pixabay', url));
+/** Photo hébergée chez nous (photo intégrée ou stockage « photos ») : seule utilisable sur un site */
+export const estPhotoHebergee = (url: string) => Boolean(clePhoto(url));
+/** Photos d'une recette utilisables sur un site (importées) */
+export const photosImportees = (photos: readonly string[]) => photos.filter(estPhotoHebergee);
+/** Photos d'une recette encore à importer (aperçus Pexels / Pixabay) : avertissement du studio, import requis avant tout usage */
+export const photosAImporter = (photos: readonly string[]) => photos.filter((u) => !estPhotoHebergee(u));
+
+/** Entrée brute de la banque (jeux, photos libres, photos intégrées) avant sujets effectifs */
+export type EntreeBanquePhotos = {
+  url: string;
+  origine: PhotoBanque['origine'];
+  /** Sujets par défaut (sujet de la photo libre, spécialité du jeu, nom de la photo intégrée) */
+  sujets: readonly string[];
+  importee?: boolean;
+  /** Clé de l'inventaire (sinon clePhoto(url)) */
+  cle?: string | null;
+  idLibre?: string;
+  source?: SourcePhotoLibre;
+};
+
+/**
+ * Banque de photos du studio et de l'atelier : sujets EFFECTIFS de chaque photo = défauts ± sujets ajoutés / retirés par Paul
+ * (assets_sujets_effectifs) + hashtags qui nomment un sujet (#sport, #enfant… : assets_hashtags_effectifs). Une photo sans
+ * aucun sujet effectif sort de la banque ; une URL présente deux fois n'est gardée qu'une fois (importée d'abord). Pur.
+ */
+export function banquePhotos(entrees: readonly EntreeBanquePhotos[], opts: { surcharges?: SurchargesSujets | null; hashtags?: HashtagsAssets | null } = {}): PhotoBanque[] {
+  const vues = new Map<string, PhotoBanque>();
+  for (const e of [...entrees].sort((a, b) => Number(a.importee === false) - Number(b.importee === false))) {
+    if (!e.url || vues.has(e.url)) continue;
+    const cle = e.cle ?? clePhoto(e.url);
+    const tags = (cle ? opts.hashtags?.[cle] ?? [] : []).filter(estSujetDeVisuel);
+    const sujets = sujetsEffectifs([...e.sujets, ...tags], cle ? opts.surcharges?.[cle] : null).sujets;
+    if (!sujets.length) continue;
+    vues.set(e.url, {
+      url: e.url, sujets, origine: e.origine, ...(e.importee === false ? { importee: false } : {}), ...(cle ? { cle } : {}),
+      ...(e.idLibre ? { idLibre: e.idLibre } : {}), ...(e.source ? { source: e.source } : {}),
+    });
+  }
+  return [...vues.values()];
+}
 
 /** Sujets des photos intégrées (nom du fichier) ; « posture » : jamais (sujet différé) */
 function sujetsPhotoIntegree(nom: string): string[] {
@@ -303,10 +357,30 @@ export const photosIntegreesBanque = (): PhotoBanque[] =>
 export function photosCompatibles(pool: readonly PhotoBanque[], c: ContexteRecette): { p: PhotoBanque; masse: number }[] {
   const sujets = sujetsActifs(c.sujets);
   const a = c.poids?.assets;
+  const cle = (p: PhotoBanque) => p.cle ?? clePhoto(p.url);
   return pool
-    .filter((p) => !p.sujets.includes('posture') && p.sujets.some((s) => s === 'general' || sujets.includes(s)))
-    .filter((p) => { const k = clePhoto(p.url); return !k || !(a?.statuts[k] === 'retire' || retireDesSujets(k, sujets.length ? sujets : ['general'], a)); })
-    .map((p) => { const k = clePhoto(p.url); return { p, masse: masse(k ? scoreAssetPourSujet(k, sujets[0], a) : 0) * (sujets[0] && p.sujets.includes(sujets[0]) ? 2 : 1) }; });
+    // Photos non importées : studio seulement (case « photos gardées non importées »)
+    .filter((p) => p.importee !== false || c.nonImportees === true)
+    .filter((p) => !p.sujets.includes('posture') && !/posture/.test(p.url) && p.sujets.some((s) => s === 'general' || sujets.includes(s)))
+    .filter((p) => { const k = cle(p); return !k || !(a?.statuts[k] === 'retire' || retireDesSujets(k, sujets.length ? sujets : ['general'], a)); })
+    .map((p) => { const k = cle(p); return { p, masse: masse(k ? scoreAssetPourSujet(k, sujets[0], a) : 0) * (sujets[0] && p.sujets.includes(sujets[0]) ? 2 : 1) }; });
+}
+
+/**
+ * Photos disponibles pour le scénario (studio : compteur, message si zéro), meilleures d'abord : `importees` (tout ce qu'un
+ * site peut recevoir, photos intégrées et « général » comprises), `bibliotheque` (photos importées de la banque — jeux, photos
+ * libres — rattachées à l'un des sujets du scénario, hors « général » seul : zéro → « importez-en depuis /admin/photos »),
+ * `nonImportees` (gardées, à valider et importer).
+ */
+export function photosDuScenario(c: ContexteRecette): { importees: PhotoBanque[]; bibliotheque: PhotoBanque[]; nonImportees: PhotoBanque[] } {
+  const l = photosCompatibles(c.photos ?? photosIntegreesBanque(), { ...c, nonImportees: true }).sort((x, y) => y.masse - x.masse);
+  const sujets = sujetsActifs(c.sujets);
+  const importees = l.filter((x) => x.p.importee !== false).map((x) => x.p);
+  return {
+    importees,
+    bibliotheque: importees.filter((p) => p.origine !== 'integree' && p.sujets.some((s) => sujets.includes(s))),
+    nonImportees: l.filter((x) => x.p.importee === false).map((x) => x.p),
+  };
 }
 
 /** Tirage de `n` photos sans remise (accueil d'abord), pondéré ; déterministe pour une graine */
@@ -356,6 +430,46 @@ function tirerVisuels(x: CompositionRecette, c: ContexteRecette, r: () => number
 }
 const animationDe = (c: ContexteRecette, s: Structure, style: StyleIllustration) =>
   animationPour({ priorites: { principaux: sujetsActifs(c.sujets), secondaires: [] } }, s, style);
+
+/**
+ * Styles d'illustration du sélecteur du studio (retour de Paul du 2026-10-07 : « la possibilité de changer le style des
+ * illustrations ») : un style vaut pour tout le site (héros, illustrations des soins, pages sujet, fiches, articles).
+ */
+export const STYLES_STUDIO: readonly { id: StyleIllustration; nom: string; detail: string }[] = [
+  { id: 'releve', nom: 'Relevé', detail: 'points de pression' },
+  { id: 'pedagogique', nom: 'Illustrations douces', detail: 'schémas pédagogiques' },
+  { id: 'ligne', nom: 'Trait fin', detail: 'dessin au trait' },
+  { id: 'photos', nom: 'Photos', detail: 'photos de la banque' },
+];
+
+/** Chaque style du sélecteur : permis ou non pour ce scénario et cette structure, avec la raison affichée quand il est grisé */
+export function stylesDuStudio(c: ContexteRecette, structure: Structure): { id: StyleIllustration; nom: string; detail: string; permis: boolean; raison: string | null }[] {
+  const s1 = sujetUn(c);
+  const compatibles = stylesCompatibles(structure);
+  const nom = (id: StyleIllustration) => STYLES_STUDIO.find((x) => x.id === id)?.nom ?? id;
+  return STYLES_STUDIO.map((st) => {
+    const raison = !compatibles.includes(st.id)
+      ? `Structure « ${LIBELLES_STRUCTURES[structure]} » : ${compatibles.map(nom).join(' ou ')} seulement.`
+      : avecDiabete(c) && st.id === 'releve'
+        ? 'Diabète : jamais le relevé (points de pression).'
+        : REGLES_THEMES[s1].styles[st.id] === undefined
+          ? `Exclu pour le sujet « ${themeParId(s1)?.court ?? s1} ».`
+          : null;
+    return { ...st, permis: !raison, raison };
+  });
+}
+
+/**
+ * Style choisi directement (bouton du studio) : seulement s'il est permis (sinon la composition est rendue telle quelle),
+ * animation qui en découle ; passage au style « Photos » : la recette reçoit aussitôt ses photos. Les verrous ne bloquent
+ * pas un choix explicite (ils protègent des dés).
+ */
+export function choisirStyle(x: CompositionRecette, style: StyleIllustration, c: ContexteRecette, graine = 0): CompositionRecette {
+  if (!stylesPermis(c, x.structure).includes(style)) return x;
+  let y = reparerComposition({ ...x, visuels: { ...x.visuels, style } }, c);
+  if (y.visuels.style === 'photos' && !y.photos.length) y = { ...y, photos: tirerPhotos(c, alea(graine, 'photos+')) };
+  return y;
+}
 
 function tirerStructure(x: CompositionRecette, c: ContexteRecette, r: () => number, changerModele = true, garder: readonly string[] = []): Pick<CompositionRecette, 'structure' | 'sections'> {
   const permises = structuresPermises(c);
@@ -608,7 +722,7 @@ export function libellesComposition(x: CompositionRecette): { dimension: string;
     { dimension: 'Couleurs', valeur: libelleCouleurRecette(x) },
     { dimension: 'Polices', valeur: `${pairePolices(x.police)?.nom ?? x.police} (${pairePolices(x.police)?.description ?? ''})` },
     { dimension: 'Visuels', valeur: `${LIBELLES_STYLES[x.visuels.style].nom}${x.visuels.herosSujet ? ` · héros ${themeParId(x.visuels.herosSujet)?.court}` : ''}${x.visuels.animation ? ` · animation ${x.visuels.animation}` : ''}` },
-    { dimension: 'Photos', valeur: x.photos.length ? x.photos.map((u) => u.split('/').pop()).join(', ') : 'aucune' },
+    { dimension: 'Photos', valeur: x.photos.length ? x.photos.map((u) => `${u.split('/').pop()?.split('?')[0]}${estPhotoHebergee(u) ? '' : ' (non importée)'}`).join(', ') : 'aucune' },
     { dimension: 'Sections', valeur: [ordreAccueil(x.sections.ordre)?.nom, ...v].filter(Boolean).join(' · ') },
     { dimension: 'Effets', valeur: jeuEffets(x.effets)?.nom ?? x.effets },
   ];
@@ -630,7 +744,8 @@ export function normaliserComposition(brut: unknown, c: ContexteRecette): Compos
       herosSujet: txt(o.visuels?.herosSujet, 30) || null,
       animation: null,
     },
-    photos: Array.isArray(o.photos) ? o.photos.filter((u: unknown): u is string => typeof u === 'string' && Boolean(clePhoto(u))).slice(0, 8) : [],
+    // Photos hébergées, ou aperçus de photos libres gardées non importées (studio : avertissement, import requis avant un site)
+    photos: Array.isArray(o.photos) ? [...new Set(o.photos.filter((u: unknown): u is string => typeof u === 'string' && (Boolean(clePhoto(u)) || estApercuPhotoLibre(u))))].slice(0, 8) : [],
     sections: { ordre: ordreAccueil(o.sections?.ordre) ? o.sections.ordre : 'modele', variantes: o.sections?.variantes && typeof o.sections.variantes === 'object' ? { ...o.sections.variantes } : {} },
     effets: jeuEffets(o.effets) ? o.effets : 'sobre',
   };
@@ -703,7 +818,7 @@ export function recettesPourScenario(recettes: readonly Recette[], sujets: reado
 export function appliquerRecette(
   d: SiteDraft,
   brut: CompositionRecette,
-  opts: { id?: string | null; proposes?: readonly Univers[]; modeles?: readonly ModeleManifeste[]; soinsConnus?: readonly string[]; themesActives?: readonly string[] } = {},
+  opts: { id?: string | null; proposes?: readonly Univers[]; modeles?: readonly ModeleManifeste[]; soinsConnus?: readonly string[]; themesActives?: readonly string[]; photosNonImportees?: boolean } = {},
 ): { draft: SiteDraft; modele: ModeleManifeste } | null {
   const modele = (id: string) => opts.modeles?.find((m) => m.id === id) ?? modeleIntegre(id);
   const c: ContexteRecette = { sujets: [...(d.priorites?.principaux ?? []), ...(d.priorites?.secondaires ?? [])], principaux: d.priorites?.principaux.length ?? 0, couleursPreferees: d.couleursPreferees, modele };
@@ -719,7 +834,9 @@ export function appliquerRecette(
   if (Object.keys(x.sections.variantes).length) theme.variantes = { ...x.sections.variantes }; else delete theme.variantes;
   if (infosEnTete) theme.infosEnTete = true; else delete theme.infosEnTete;
   if (x.visuels.herosSujet) theme.herosSujet = x.visuels.herosSujet; else delete theme.herosSujet;
-  if (x.photos.length) theme.photosRecette = [...x.photos]; else delete theme.photosRecette;
+  // Sites (et parcours) : photos importées seulement ; l'aperçu du studio montre aussi les photos non importées
+  const photos = opts.photosNonImportees ? x.photos : photosImportees(x.photos);
+  if (photos.length) theme.photosRecette = [...photos]; else delete theme.photosRecette;
   theme.effets = x.effets;
   if (opts.id) theme.recette = opts.id; else delete theme.recette;
   y = { ...y, theme };

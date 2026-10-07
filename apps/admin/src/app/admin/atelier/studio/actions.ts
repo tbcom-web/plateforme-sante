@@ -3,9 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import {
   appareilDe, clesStructure, estCleStudio, estEtiquetteStudio, estPageStructure, ETIQUETTES_RECETTE, modeleIntegre, nomRecette, normaliserComposition, normaliserZones,
-  serialiserComposition, serialiserZones, sujetsActifs, typeDeCle, type AppareilRetour, type PageStructure, type ZonesNote,
+  photosAImporter, serialiserComposition, serialiserZones, sujetsActifs, typeDeCle, type AppareilRetour, type PageStructure, type ZonesNote,
 } from '@plateforme/core';
 import { getNotesPagesRecette } from '@/lib/recettes';
+import { importerPhotoLibre } from '../../photos/actions';
 import { exigerAdmin } from '@/lib/admin';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { createClient, getUser } from '@/lib/supabase/server';
@@ -68,7 +69,24 @@ export async function enregistrerRecette(s: SaisieRecette): Promise<ResultatRece
     if (error) await supabase.from('recettes_notes').insert(journal);
   }
   revalidatePath('/admin/atelier/studio');
-  return { ok: true, message: `Recette « ${ligne.nom} » enregistrée${note ? ` (${note}★)` : ''}.`, id };
+  // Photo gardée non importée (aperçu Pexels / Pixabay) : la recette est enregistrée, mais l'import est requis avant tout usage sur un site
+  const aImporter = photosAImporter(composition.photos).length;
+  return { ok: true, message: `Recette « ${ligne.nom} » enregistrée${note ? ` (${note}★)` : ''}.${aImporter ? ` Attention : ${aImporter} photo${aImporter > 1 ? 's' : ''} non importée${aImporter > 1 ? 's' : ''}, à valider et importer avant tout usage sur un site (ignorée${aImporter > 1 ? 's' : ''} d’ici là).` : ''}`, id };
+}
+
+/**
+ * « Valider et importer » depuis le studio : l'action de /admin/photos (importerPhotoLibre : relue à la source, WebP hébergé,
+ * traçabilité, thèmes et hashtags reportés), puis l'URL hébergée, que le studio substitue à l'aperçu dans la recette.
+ */
+export async function importerPhotoStudio(id: string): Promise<ResultatRecette & { url?: string }> {
+  await exigerAdmin();
+  if (!UUID.test(id)) return { ok: false, message: 'Photo inconnue.' };
+  const r = await importerPhotoLibre(id);
+  if (!r?.ok) return { ok: false, message: r?.message ?? 'Import impossible.' };
+  const supabase = await createClient();
+  const { data } = await supabase.from('photos_libres').select('url, statut').eq('id', id).maybeSingle();
+  revalidatePath('/admin/atelier/studio');
+  return data?.url && data.statut === 'validee' ? { ok: true, message: r.message, url: data.url as string } : { ok: false, message: 'Import non confirmé : voir /admin/photos.' };
 }
 
 /** Archive (ou réactive) une recette : jamais supprimée */

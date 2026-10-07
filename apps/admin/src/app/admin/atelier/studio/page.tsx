@@ -18,7 +18,7 @@ export const metadata = { title: 'Super admin · Studio de recettes' };
 export default async function PageStudio() {
   await exigerAdmin();
   const [modeles, catalogue, marquesImportees, { univers }, poids, photos, { recettes, migrationManquante }] = await Promise.all([
-    getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(), getRecettes(),
+    getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque({ nonImportees: true }), getRecettes(),
   ]);
   return (
     <div className="grid gap-6">

@@ -1,17 +1,19 @@
 import 'server-only';
 import {
-  appareilDe, estPageStructure, modeleIntegre, normaliserComposition, photosIntegreesBanque, recetteDepuisLigne, retourMobileDepuisLigne, sujetsDeSpecialite, SUJETS_VISUELS,
-  type ModeleManifeste, type NoteRecette, type PhotoBanque, type Recette, type RetourMobile,
+  apercuAutorise, appareilDe, banquePhotos, cleCandidatePhoto, estPageStructure, estPhotoImportee, estSourcePhotoLibre, modeleIntegre, normaliserComposition, photosIntegreesBanque,
+  recetteDepuisLigne, retourMobileDepuisLigne, sujetsDeSpecialite, SUJETS_VISUELS,
+  type EntreeBanquePhotos, type ModeleManifeste, type NoteRecette, type PhotoBanque, type Recette, type RetourMobile,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
-import { getPhotosDesJeux } from '@/lib/assets-notes';
+import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
+import { getHashtagsAssets } from '@/lib/hashtags';
 
 // Recettes du studio côté serveur (migration 0032) :
 // - getRecettes : toutes les recettes (super admin, /admin/atelier/studio), avec remarques ;
 // - getRecettesLecture : recettes actives notées (fonction recettes_lecture : sans auteur ni remarques), pour le parcours /creer
 //   et l'apprentissage (renforts des ingrédients) ;
-// - getPhotosBanque : photos utilisables par les tirages (jeux de photos partagés, photos libres importées et validées, photos
-//   intégrées), avec leurs sujets.
+// - getPhotosBanque : photos utilisables par les tirages (jeux de photos partagés, photos libres validées et importées, photos
+//   intégrées), avec leurs sujets effectifs ; studio : aussi les photos gardées non importées (marquées).
 
 export const COLONNES_RECETTE = 'id, nom, sujets, couleurs_preferees, composition, note, etiquettes, positif, negatif, statut, created_at, updated_at';
 
@@ -83,15 +85,48 @@ export async function getDefautsMobileOuverts(): Promise<string[]> {
   }
 }
 
-/** Photos de la banque pour les tirages : jeux partagés, photos libres importées et validées, photos intégrées */
-export async function getPhotosBanque(): Promise<PhotoBanque[]> {
-  const photos = await getPhotosDesJeux().catch(() => []);
-  const banque: PhotoBanque[] = photos
-    .filter((p) => !/à valider/.test(p.jeu))
-    .map((p) => {
-      const sujet = 'sujet' in p && typeof p.sujet === 'string' && SUJETS_VISUELS.some((s) => s.id === p.sujet) ? [p.sujet] : null;
-      const sujets = sujet ?? (p.specialite === 'generale' ? ['general'] : sujetsDeSpecialite(p.specialite));
-      return { url: p.url, sujets, origine: p.jeu.startsWith('Banque libre') ? 'libre' as const : 'jeu' as const };
-    });
-  return [...banque, ...photosIntegreesBanque()];
+type LigneLibre = { id: string; source: string; id_source: string; sujet: string; statut: string; chemin: string | null; url: string | null; apercu_url?: string | null };
+/** Photos libres non retirées ; sans les colonnes de 0031 (aperçu), lecture sans elles ; table absente (0028) : aucune */
+async function lirePhotosLibres(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ data: LigneLibre[] | null }> {
+  const lire = (colonnes: string) => supabase.from('photos_libres').select(colonnes).neq('statut', 'retiree').order('created_at', { ascending: false }).limit(2000);
+  try {
+    let { data, error } = await lire('id, source, id_source, sujet, statut, chemin, url, apercu_url');
+    if (error) ({ data, error } = await lire('id, source, id_source, sujet, statut, chemin, url'));
+    return { data: error ? null : (data as unknown as LigneLibre[]) };
+  } catch {
+    return { data: null };
+  }
+}
+
+/**
+ * Photos de la banque pour les tirages (retour de Paul du 2026-10-07 : « il manque l'inclusion des photos sélectionnées dans la
+ * bibliothèque ») : jeux de photos partagés, photos libres VALIDÉES ET IMPORTÉES (statut « validée », fichier hébergé), photos
+ * intégrées ; sujets EFFECTIFS (défauts ± sujets ajoutés / retirés par Paul, assets_sujets_effectifs, + hashtags qui nomment un
+ * sujet, assets_hashtags_effectifs) ; les notes pondèrent ensuite les tirages (photosCompatibles).
+ * `nonImportees` (studio seulement) : aussi les photos libres GARDÉES pas encore importées (statut « à valider »), servies par
+ * leur aperçu Pexels / Pixabay et marquées `importee: false` ; jamais pour l'atelier, le parcours ni les sites.
+ */
+export async function getPhotosBanque(opts: { nonImportees?: boolean } = {}): Promise<PhotoBanque[]> {
+  const supabase = await createClient();
+  const [jeux, { data: libres }, surcharges, { hashtags }] = await Promise.all([
+    getPhotosDesJeux().catch(() => []),
+    lirePhotosLibres(supabase),
+    getSurchargesSujets(),
+    getHashtagsAssets(),
+  ]);
+  const sujetsJeu = (specialite: string) => (specialite === 'generale' ? ['general'] : sujetsDeSpecialite(specialite));
+  const entrees: EntreeBanquePhotos[] = [
+    // Jeux de photos partagés (les photos libres sont lues à part, avec leur statut)
+    ...jeux.filter((p) => !p.jeu.startsWith('Banque libre')).map((p) => ({ url: p.url, origine: 'jeu' as const, sujets: sujetsJeu(p.specialite) })),
+    ...((libres ?? []) as LigneLibre[]).flatMap((l): EntreeBanquePhotos[] => {
+      if (!estSourcePhotoLibre(l.source)) return [];
+      const sujets = SUJETS_VISUELS.some((x) => x.id === l.sujet) ? [l.sujet] : ['general'];
+      if (estPhotoImportee(l)) return [{ url: l.url!, origine: 'libre', sujets, idLibre: l.id, source: l.source }];
+      // Gardée, pas encore importée : aperçu de la source, clé de la candidate (sujets et hashtags saisis au « Garder »)
+      if (!opts.nonImportees || l.statut !== 'a_valider' || l.url || !l.apercu_url || !apercuAutorise(l.source, l.apercu_url)) return [];
+      return [{ url: l.apercu_url, origine: 'libre', sujets, importee: false, cle: cleCandidatePhoto(l.source, l.id_source), idLibre: l.id, source: l.source }];
+    }),
+    ...photosIntegreesBanque().map((p) => ({ url: p.url, origine: 'integree' as const, sujets: p.sujets })),
+  ];
+  return banquePhotos(entrees, { surcharges, hashtags });
 }

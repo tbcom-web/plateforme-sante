@@ -16,7 +16,7 @@ import {
   appliquerRecette, basculerCouleur, clesStructure, compositionInitiale, controlerComposition, COULEURS_PREFEREES, DIMENSIONS_RECETTE, draftVide,
   ETIQUETTES_RECETTE, ETIQUETTES_STUDIO, FAMILLES_COMPOSANTS, gabaritModele, libelleCleRenfort, libellesComposition, LIBELLES_VARIANTES, modeleIntegre,
   nomRecette, NOMS_SECTIONS_VARIABLES, reparerComposition, PAGES_STRUCTURE, PAIRES_POLICES, sectionsVariables, THEMES, themeParId, tirerDimension, tirerPage, toutChanger,
-  universCatalogue, ONGLETS_PAGES, vueDePage, empreinteMobile, type AppareilRetour, type Zone,
+  universCatalogue, ONGLETS_PAGES, vueDePage, empreinteMobile, choisirStyle, stylesDuStudio, photosDuScenario, photosAImporter, estPhotoHebergee, type AppareilRetour, type Zone,
   type CompositionRecette, type ContexteRecette, type DimensionRecette, type MarqueImportee, type ModeleManifeste, type PageStructure,
   type PhotoBanque, type PoidsAtelier, type Recette, type SiteDraft, type Univers, type Variantes,
 } from '@plateforme/core';
@@ -24,7 +24,8 @@ import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
 import RenduMobile from '@/components/RenduMobile';
 import type { SoinCatalogue } from '@/lib/sites';
-import { changerStatutRecette, enregistrerRecette, lireNotesPages, noterElementStudio, noterPageRecette } from './actions';
+import Link from 'next/link';
+import { changerStatutRecette, enregistrerRecette, importerPhotoStudio, lireNotesPages, noterElementStudio, noterPageRecette } from './actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const petitBase = `inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border px-2 text-sm disabled:opacity-40 ${focus}`;
@@ -72,7 +73,10 @@ const lire = (x: CompositionRecette, d: DimensionRecette): Partial<CompositionRe
 export default function Studio({ proposes, modeles, catalogue, marquesImportees, themesActives, poids, photos, recettes, renforts, migrationManquante }: Props) {
   const [scenario, setScenario] = useState<Scenario>({ principaux: ['sport'], secondaires: [], couleurs: [] });
   const modele = useCallback((id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id), [modeles]);
-  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos, modele }), [scenario, poids, photos, modele]);
+  // Banque de photos (importées + gardées non importées) ; une photo importée depuis le studio y remplace son aperçu
+  const [banque, setBanque] = useState<PhotoBanque[]>(photos);
+  const [avecNonImportees, setAvecNonImportees] = useState(true);
+  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos: banque, nonImportees: avecNonImportees, modele }), [scenario, poids, banque, avecNonImportees, modele]);
   const [comp, setComp] = useState<CompositionRecette>(() => compositionInitiale({ sujets: ['sport'], principaux: 1, photos, modele: modeleIntegre }));
   const [historique, setHistorique] = useState<Record<string, Partial<CompositionRecette>[]>>({});
   const [verrous, setVerrous] = useState<string[]>([]);
@@ -153,11 +157,51 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   useEffect(() => { if (!demoSurvol) { setSurvolActif(false); return; } const t = setInterval(() => setSurvolActif((x) => !x), 1400); return () => clearInterval(t); }, [demoSurvol]);
   const base = useMemo(() => draftDemo(scenario), [scenario]);
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
-  const apercu = useMemo(() => appliquerRecette(base, comp, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives }), [base, comp, proposes, modeles, slugs, themesActives]);
+  // Aperçu du studio : les photos non importées sont montrées (aperçu de la source) ; jamais sur un site (appliquerRecette par défaut)
+  const apercu = useMemo(() => appliquerRecette(base, comp, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives, photosNonImportees: true }), [base, comp, proposes, modeles, slugs, themesActives]);
   const defauts = controlerComposition(comp, ctx);
   const gabarit = gabaritModele(modele(universCatalogue(comp.structure)?.preReglage.modele ?? 'tableau'));
   const variables = sectionsVariables(gabarit);
   const libelles = libellesComposition(comp);
+
+  // ---- Style des illustrations (sélecteur explicite, pour tout le site) ----
+  const styles = stylesDuStudio(ctx, comp.structure);
+  const choisir = (id: CompositionRecette['visuels']['style']) => {
+    if (id === comp.visuels.style) return;
+    memoriser('visuels', 'visuels');
+    setComp((x) => choisirStyle(x, id, ctx, suivante()));
+  };
+
+  // ---- Photos du scénario (importées, gardées non importées) ----
+  const dispo = useMemo(() => photosDuScenario(ctx), [ctx]);
+  const pool = avecNonImportees ? [...dispo.importees, ...dispo.nonImportees] : dispo.importees;
+  const aImporter = photosAImporter(comp.photos);
+  const photoDe = (url: string) => banque.find((p) => p.url === url);
+  const basculerPhoto = (url: string) => setComp((x) => ({ ...x, photos: x.photos.includes(url) ? x.photos.filter((u) => u !== url) : [...x.photos, url].slice(0, 8) }));
+  const [importEnCours, setImportEnCours] = useState<string | null>(null);
+  const importer = async (url: string) => {
+    const p = photoDe(url);
+    if (!p?.idLibre) { setStatut({ ok: false, message: 'Photo introuvable dans la banque : importez-la depuis /admin/photos.' }); return; }
+    setImportEnCours(url);
+    const r = await importerPhotoStudio(p.idLibre).catch(() => ({ ok: false, message: 'Connexion perdue : photo non importée.' } as { ok: boolean; message: string; url?: string }));
+    setImportEnCours(null);
+    setStatut({ ok: r.ok, message: r.message });
+    if (r.ok && r.url) {
+      const nouvelle = r.url;
+      setBanque((l) => l.map((x) => (x.url === url ? { ...x, url: nouvelle, importee: true, cle: null } : x)));
+      setComp((x) => ({ ...x, photos: x.photos.map((u) => (u === url ? nouvelle : u)) }));
+    }
+  };
+  const Vignette = ({ url, choisie }: { url: string; choisie?: boolean }) => {
+    const nonImportee = !estPhotoHebergee(url);
+    return (
+      <span className="relative block shrink-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" loading="lazy" className={`h-14 w-20 rounded-md object-cover ${choisie ? 'ring-2 ring-teal-700 ring-offset-1' : ''}`} />
+        {nonImportee && <span className="absolute inset-x-0 bottom-0 rounded-b-md bg-amber-100/95 px-1 text-center text-[10px] font-semibold leading-4 text-amber-950">non importée</span>}
+      </span>
+    );
+  };
 
   // ---- Enregistrement ----
   const [nom, setNom] = useState('');
@@ -359,14 +403,68 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
             <ul className="grid gap-0.5">
               <Ligne cle="couleurs" dim="couleurs" titre="Couleurs" valeur={valeur('Couleurs')} onDe={() => lancer('couleurs')} />
               <Ligne cle="polices" dim="polices" titre="Polices" valeur={PAIRES_POLICES.find((p) => p.id === comp.police)?.description ?? ''} onDe={() => lancer('polices')} />
-              <Ligne cle="visuels" dim="visuels" titre="Visuels" valeur={valeur('Visuels')} onDe={() => lancer('visuels')} />
-              <Ligne cle="photos" dim="photos" titre="Photos" valeur={comp.visuels.style === 'photos' ? valeur('Photos') : 'Style « Photos » seulement'} onDe={() => lancer('photos')} />
+              <Ligne cle="visuels" dim="visuels" titre="Style des illustrations" valeur={valeur('Visuels')} onDe={() => lancer('visuels')} />
+              <li className="px-2 pb-1">
+                <div role="radiogroup" aria-label="Style des illustrations (tout le site : héros, soins, pages sujet, fiches)" className="grid grid-cols-2 gap-1">
+                  {styles.map((st) => (
+                    <button key={st.id} type="button" role="radio" aria-checked={comp.visuels.style === st.id} disabled={!st.permis} onClick={() => choisir(st.id)}
+                      title={st.raison ?? `${st.nom} : ${st.detail}`}
+                      className={`grid min-h-11 content-center rounded-lg border px-2 py-1 text-left text-sm ${focus} disabled:cursor-not-allowed disabled:opacity-50 ${comp.visuels.style === st.id ? 'border-teal-800 bg-teal-800 font-semibold text-white' : 'border-neutral-300 bg-white hover:bg-neutral-50'}`}>
+                      <span>{st.nom}</span><span className={`text-xs font-normal ${comp.visuels.style === st.id ? 'text-white/85' : 'text-neutral-500'}`}>{st.detail}</span>
+                    </button>
+                  ))}
+                </div>
+                {styles.some((st) => !st.permis) && (
+                  <ul className="mt-1 grid gap-0.5 text-xs text-neutral-600">{styles.filter((st) => !st.permis).map((st) => <li key={st.id}><span className="font-semibold">{st.nom} grisé</span> : {st.raison}</li>)}</ul>
+                )}
+                <p className="mt-1 text-xs text-neutral-500">Appliqué à tout le site (héros, illustrations des soins, pages sujet, fiches, articles) et enregistré dans la recette. 🔒 protège le style des dés, pas de vos choix.</p>
+              </li>
+              <Ligne cle="photos" dim="photos" titre="Photos" valeur={comp.visuels.style === 'photos' ? valeur('Photos') : 'Choisissez le style « Photos »'} onDe={() => lancer('photos')} />
               <Ligne cle="effets" dim="effets" titre="Effets" valeur={valeur('Effets')} onDe={() => lancer('effets')} />
               <Ligne cle="structure" dim="structure" titre="Structure (modèle et tout)" valeur={valeur('Structure')} onDe={() => lancer('structure')} />
             </ul>
-            {comp.visuels.style === 'photos' && comp.photos.length > 0 && (
-              <div className="flex gap-1.5 overflow-x-auto px-2 pb-1">{comp.photos.map((u) => <img key={u} src={u} alt="" className="h-14 w-20 shrink-0 rounded-md object-cover" />)}</div>
-            )}
+            <div className="grid gap-2 px-2 pb-1" role="group" aria-label="Photos du scénario">
+              <p className="text-sm" aria-live="polite">
+                <strong>{dispo.bibliotheque.length}</strong> photo{dispo.bibliotheque.length > 1 ? 's' : ''} importée{dispo.bibliotheque.length > 1 ? 's' : ''} pour ces sujets
+                {dispo.nonImportees.length > 0 && <> · <strong>{dispo.nonImportees.length}</strong> gardée{dispo.nonImportees.length > 1 ? 's' : ''} non importée{dispo.nonImportees.length > 1 ? 's' : ''}</>}
+                <span className="block text-xs text-neutral-500">{dispo.importees.length} utilisable{dispo.importees.length > 1 ? 's' : ''} sur un site en tout (photos générales et intégrées comprises).</span>
+              </p>
+              {dispo.bibliotheque.length === 0 && (
+                <p role="alert" className="rounded-lg bg-amber-50 p-2 text-sm text-amber-950 ring-1 ring-amber-200">Aucune photo importée pour ces sujets : importez-en depuis <Link href="/admin/photos" className="font-semibold underline">/admin/photos</Link>.</p>
+              )}
+              <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={avecNonImportees} onChange={(e) => setAvecNonImportees(e.target.checked)} className="size-5" />Inclure les photos gardées non importées (studio seulement)</label>
+              {comp.visuels.style === 'photos' && comp.photos.length > 0 && (
+                <ul className="grid gap-1.5">
+                  {comp.photos.map((u) => (
+                    <li key={u} className="flex items-center gap-2">
+                      <Vignette url={u} />
+                      {estPhotoHebergee(u) ? <span className="min-w-0 truncate text-xs text-neutral-600" title={u}>{u.split('/').pop()}</span> : (
+                        <span className="grid min-w-0 gap-1">
+                          <span className="text-xs text-amber-900">Non importée : aperçu {photoDe(u)?.source === 'pixabay' ? 'Pixabay' : 'Pexels'}, jamais sur un site avant l’import.</span>
+                          <button type="button" onClick={() => void importer(u)} disabled={importEnCours !== null} className={`min-h-11 justify-self-start rounded-lg border border-teal-800 px-3 text-sm font-semibold text-teal-900 disabled:opacity-50 ${focus}`}>{importEnCours === u ? 'Import en cours…' : 'Valider et importer'}</button>
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {pool.length > 0 && (
+                <details>
+                  <summary className={`min-h-11 cursor-pointer content-center text-sm font-semibold ${focus}`}>Photos disponibles ({pool.length})</summary>
+                  <p className="text-xs text-neutral-500">{comp.visuels.style === 'photos' ? 'Touchez une photo pour l’ajouter à la recette ou l’en retirer (8 au plus).' : 'Passez au style « Photos » pour les utiliser.'}</p>
+                  <ul className="mt-1 grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                    {pool.slice(0, 48).map((p) => (
+                      <li key={p.url}>
+                        <button type="button" disabled={comp.visuels.style !== 'photos'} aria-pressed={comp.photos.includes(p.url)} onClick={() => basculerPhoto(p.url)} className={`block rounded-md ${focus} disabled:cursor-default`}
+                          aria-label={`${comp.photos.includes(p.url) ? 'Retirer' : 'Ajouter'} la photo ${p.url.split('/').pop()?.split('?')[0]}${p.importee === false ? ' (non importée)' : ''}`}>
+                          <Vignette url={p.url} choisie={comp.photos.includes(p.url)} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
             <details className="px-2" open>
               <summary className={`min-h-11 cursor-pointer content-center text-sm font-semibold ${focus}`}>Structure par type de page</summary>
               <ul className="grid gap-0.5">
@@ -422,6 +520,9 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
             </div>
             <label className="grid gap-1 text-sm"><span className="font-medium">Ce qui va</span><textarea value={positif} onChange={(e) => setPositif(e.target.value)} rows={2} maxLength={2000} className="rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" /></label>
             <label className="grid gap-1 text-sm"><span className="font-medium">Ce qui ne va pas</span><textarea value={negatif} onChange={(e) => setNegatif(e.target.value)} rows={2} maxLength={2000} className="rounded-lg border border-neutral-300 px-3 py-2 text-base md:text-sm" /></label>
+            {aImporter.length > 0 && (
+              <p role="alert" className="rounded-lg bg-amber-50 p-2 text-sm text-amber-950 ring-1 ring-amber-200">⚠ {aImporter.length} photo{aImporter.length > 1 ? 's' : ''} non importée{aImporter.length > 1 ? 's' : ''} dans cette recette : la recette peut être enregistrée, mais l’import est requis avant tout usage sur un site (photos ignorées d’ici là).</p>
+            )}
             <button type="button" onClick={() => void enregistrer()} disabled={defauts.length > 0} className={`min-h-12 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>{ouverte.id ? 'Enregistrer les modifications' : 'Enregistrer cette recette'}</button>
             <p role="status" className={`min-h-5 text-sm ${statut && !statut.ok ? 'text-red-800' : 'text-neutral-600'}`}>{statut?.message ?? (migrationManquante ? 'Migration 0032 à exécuter pour enregistrer.' : '')}</p>
           </section>
@@ -451,6 +552,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
                 <div className="flex items-start justify-between gap-2"><strong className="min-w-0">{r.nom}</strong><span className="shrink-0 text-sm">{r.note ? `${r.note}★` : 'non notée'}</span></div>
                 <p className="text-xs text-neutral-600">{r.sujets.map((s) => themeParId(s)?.court ?? s).join(', ') || 'Sans sujet'}{r.etiquettes.length ? ` · ${r.etiquettes.join(', ')}` : ''}</p>
                 <p className="text-xs text-neutral-500">{libellesComposition(r.composition).map((l) => l.valeur).slice(0, 4).join(' · ')}</p>
+                {photosAImporter(r.composition.photos).length > 0 && <p className="text-xs font-semibold text-amber-900">⚠ {photosAImporter(r.composition.photos).length} photo(s) non importée(s) : import requis avant tout usage sur un site.</p>}
                 <div className="flex flex-wrap gap-1.5">
                   <button type="button" onClick={() => ouvrir(r)} className={`min-h-11 rounded-lg border border-teal-800 px-3 text-sm font-semibold text-teal-900 ${focus}`}>Ouvrir</button>
                   <button type="button" onClick={() => ouvrir(r, true)} className={`min-h-11 rounded-lg border border-neutral-300 px-3 text-sm ${focus}`}>Dupliquer</button>

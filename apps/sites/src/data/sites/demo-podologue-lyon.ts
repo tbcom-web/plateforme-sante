@@ -1,6 +1,6 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
 import { readFileSync } from 'node:fs';
-import { libellesComposition, lotsPropositions, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
+import { libellesComposition, lotsPropositions, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 // POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
@@ -636,7 +636,9 @@ if (process.env.RECETTE) {
   site.modele = modeleDuSite(base, { registre, sections, police: x.police, variantes: x.sections.variantes, infosEnTete });
   site.theme = { ...site.theme, couleur: x.couleur, ...(x.gamme ? { gamme: x.gamme } : { gamme: undefined }), logo: { ...u.preReglage.logo }, modeVisuel, styleIllustration: x.visuels.style, ...(x.visuels.herosSujet ? { herosSujet: x.visuels.herosSujet } : {}), effets: x.effets };
   // Spécialité et jeu de photos : ceux du site (ils viennent des sujets, pas de la recette) ; la recette pose l'animation et ses photos
-  site.visuels = { ...site.visuels, animation: x.visuels.animation, ...(x.visuels.animation ? { animationAccueil: x.visuels.animation } : {}), ...(x.photos.length ? { photosRecette: x.photos } : {}) };
+  // Photos importées seulement (une photo gardée non importée, aperçu Pexels / Pixabay, ne va jamais sur un site)
+  const photosSite = photosImportees(x.photos);
+  site.visuels = { ...site.visuels, animation: x.visuels.animation, ...(x.visuels.animation ? { animationAccueil: x.visuels.animation } : {}), ...(photosSite.length ? { photosRecette: photosSite } : {}) };
   // Ordre des soins : celui du site (les soins mis en avant viennent des sujets du praticien, pas de la recette)
   console.log(`[demo] recette : ${libellesComposition(x).map((l) => `${l.dimension} ${l.valeur}`).join(' | ')}`);
 }
