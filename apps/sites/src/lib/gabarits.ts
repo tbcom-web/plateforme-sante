@@ -13,7 +13,7 @@ export const gabarit = gabaritModele(site.modele);
 /** Gabarit autre que « classique » : les pages passent par les variantes de sections. */
 export const nouveauGabarit = gabarit !== 'classique';
 /** Variantes de sections du modèle (gabarits autres que classique) */
-export const variantes: Variantes = variantesModele(site.modele) ?? { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: varianteSujets(site.modele), horaires: 'tableau', galerie: 'mosaique', 'soins-forme': formeDesCartes(site.modele), contact: 'barre', fiche: 'encadre', theme: varianteTheme(site.modele), article: varianteArticle(site.modele) };
+export const variantes: Variantes = variantesModele(site.modele) ?? { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: varianteSujets(site.modele), horaires: 'tableau', galerie: 'mosaique', 'soins-forme': formeDesCartes(site.modele), contact: 'barre', fiche: 'encadre', theme: varianteTheme(site.modele), article: varianteArticle(site.modele), transition: 'fondu', sections: 'aucune' };
 
 /** Picto métier d'un soin (« picto:<id> »), sinon picto générique du pied. */
 export const pictoDuSoin = (slug: string) => `picto:${pictoSoin(slug) ?? 'pied-dessus'}`;

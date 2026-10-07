@@ -15,6 +15,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, actionsRapides, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import { facteurChasse, facteurTitres, menuABouton, normaliserHabillage } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
+import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
 
 type Props = {
   draft: SiteDraft;
@@ -377,7 +378,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const sujetsPrincipaux = navigation.principaux;
   const sujetsSection = sujetsPrincipaux.length ? (
     <section style={{ ...cadre, paddingTop: 28 }}>
-      <ul className="eff-grille forme-grille" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: v.sujets === 'liste' ? 0 : 18, gridTemplateColumns: mobile || v.sujets === 'liste' || v.sujets === 'rangees' ? '1fr' : v.sujets === 'cartes' ? `repeat(${Math.min(3, sujetsPrincipaux.length)}, 1fr)` : '1fr 1fr', borderTop: v.sujets === 'liste' ? '2px solid var(--g-encre)' : undefined }}>
+      <ul className="eff-grille forme-grille ap-sujets" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: v.sujets === 'liste' ? 0 : 18, gridTemplateColumns: mobile || v.sujets === 'liste' || v.sujets === 'rangees' ? '1fr' : v.sujets === 'cartes' ? `repeat(${Math.min(3, sujetsPrincipaux.length)}, 1fr)` : '1fr 1fr', borderTop: v.sujets === 'liste' ? '2px solid var(--g-encre)' : undefined }}>
         {sujetsPrincipaux.map((t, i) => {
           const une = v.sujets === 'une' && i === 0;
           const ligneVisuel = v.sujets === 'liste' || (!mobile && (v.sujets === 'rangees' || une));
@@ -491,7 +492,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   return (
     <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
       {!seul && entete}
-      {vue === 'accueil' ? <>{montrer('premier') && premier}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
+      {vue === 'accueil' ? <>{montrer('premier') && (herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soins} replis={r} sur={surTitre} registre={registre} illustration={heros?.type === 'svg' ? heros.html : ''} /> : premier)}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
         : vue === 'soin' ? fiche
         : vue === 'theme' ? pageSujet
         : vue === 'article' ? pageArticle

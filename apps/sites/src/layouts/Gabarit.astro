@@ -1,6 +1,7 @@
 ---
 // Gabarit commun à toutes les pages d'un site praticien.
 // La présentation suit la fiche du modèle (site.modele) ; tout ce qui sert le SEO est produit ici, quel que soit le modèle.
+import { cssTransitionsSections } from '@plateforme/core';
 import { cssEffets, cssFormes, formeDesCartes, jeuEffets, couleursTraitement, cssTraitementPhotos, normaliserTraitementPhotos, svgTraitementPhotos, traitementNeutre, voileTraitement } from '@plateforme/core';
 import '@fontsource-variable/inter';
 // Fraunces : axes graisse + taille optique (droit) et graisse + « wonk » (italique des mots en retrait), soit
@@ -313,7 +314,7 @@ const scriptMenu = nouveau && menuABouton(habillage.menu, gabarit) ? SCRIPT_MENU
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}${cssHab}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}${cssTransitionsSections(site.modele.variantes?.sections)}${cssHab}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>

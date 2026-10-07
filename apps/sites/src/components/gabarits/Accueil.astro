@@ -6,6 +6,8 @@
 // SEO identique (npm run controle:seo). Tableau : une carte blanche par section ; village : sections séparées par un filet.
 import FaqListe from './Faq.astro';
 import PremierEcran from './PremierEcran.astro';
+import HerosPhoto from './HerosPhoto.astro';
+import { varianteHeros, accueilGabarit } from '../../lib/heros-photo';
 import Soins from './Soins.astro';
 import Praticiens from './Praticiens.astro';
 import VenirAuCabinet from './VenirAuCabinet.astro';
@@ -27,7 +29,7 @@ const metier = site.titreMetier.toLowerCase();
 const infosEnTete = Boolean(site.modele.accueil.infosEnTete) && site.modele.accueil.sections.includes('acces');
 const blocsAccueil = [...(infosEnTete ? ['acces' as const] : []), 'sujets' as const, ...site.modele.accueil.sections.filter((s) => !(infosEnTete && s === 'acces'))];
 ---
-<PremierEcran variante={variantes.accueil} />
+{varianteHeros ? <HerosPhoto /> : <PremierEcran variante={accueilGabarit(variantes.accueil)} />}
 {blocsAccueil.map((section) => (
   <>
     {section === 'sujets' && <SujetsAccueil />}

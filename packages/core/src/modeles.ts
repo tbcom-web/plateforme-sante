@@ -9,6 +9,7 @@
 
 import { GAMMES } from './gammes';
 import type { Registre } from './dessins';
+import { PREMIERS_ECRANS_NOUVEAUX, TRANSITIONS_DIAPORAMA, TRANSITIONS_SECTIONS, estPremierEcranNouveau } from './heros-photo-variantes';
 
 /**
  * Sections possibles de l'accueil. « etapes » : premier rendez-vous en trois étapes (rendez-vous, venue,
@@ -52,7 +53,12 @@ export type Gabarit = (typeof GABARITS)[number];
 export const VARIANTES_SECTIONS = {
   /** Premier écran (qui, où, soin principal, Rendez-vous / Appeler) : dans une carte à aplat de couleur avec une illustration, ou en notice (lignes à picto) */
   /** … ou en « figure » (revue) : une colonne de texte sur l'aplat pastel et un seul dessin au trait légendé, masqué sur téléphone */
-  accueil: ['carte', 'notice', 'figure'],
+  /** … ou l'un des premiers écrans de heros-photo-variantes.ts (typographique, maillé, bento, photo plein écran, diaporama, scindé) */
+  accueil: ['carte', 'notice', 'figure', ...PREMIERS_ECRANS_NOUVEAUX],
+  /** Transition du diaporama du premier écran (diaporama, scindé) : CSS seulement (heros-photo.ts) */
+  transition: TRANSITIONS_DIAPORAMA,
+  /** Transitions entre les sections (toutes pages) : vague, chevauchement, révélation au défilement, cartes empilées */
+  sections: TRANSITIONS_SECTIONS,
   /** Soins : trois rangées (Soins, Pour qui, Infos pratiques) en bulles à picto, ou en grille de boutons */
   /** … ou en « filets » (revue) : bulles à filet fin, texte encre, picto de la couleur de la rangée */
   soins: ['bulles', 'grille', 'filets'],
@@ -115,9 +121,9 @@ export type SectionVariable = keyof typeof VARIANTES_SECTIONS;
 export type Variantes = { [S in SectionVariable]: (typeof VARIANTES_SECTIONS)[S][number] };
 /** Variantes par défaut de chaque gabarit (la fiche peut en changer une partie). */
 export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
-  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard' },
-  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard' },
-  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard' },
+  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard', transition: 'fondu', sections: 'aucune' },
+  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard', transition: 'fondu', sections: 'aucune' },
+  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard', transition: 'fondu', sections: 'aucune' },
 };
 /** Gabarit d'un modèle (défaut : classique, pour les fiches antérieures au champ). */
 export const gabaritModele = (m: Pick<ModeleManifeste, 'gabarit'>): Gabarit => m.gabarit ?? 'classique';
@@ -127,7 +133,7 @@ export function variantesModele(m: Pick<ModeleManifeste, 'gabarit' | 'variantes'
   return g === 'classique' ? null : { ...VARIANTES_PAR_DEFAUT[g], ...(m.variantes ?? {}) };
 }
 /** Sections dont la variante s'applique aussi au gabarit classique (présentation des sujets seulement) */
-export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme', 'theme', 'article'];
+export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme', 'theme', 'article', 'accueil', 'transition', 'sections'];
 /** Forme des cartes (tous gabarits) ; défaut : celle du modèle */
 export const formeDesCartes = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['soins-forme'] =>
   (VARIANTES_SECTIONS['soins-forme'] as readonly string[]).includes(m.variantes?.['soins-forme'] as string) ? m.variantes!['soins-forme']! : 'gabarit';
@@ -148,6 +154,8 @@ export function variantesValides(v: unknown, gabarit: Gabarit = 'tableau'): Part
     const possibles = (VARIANTES_SECTIONS as Record<string, readonly string[]>)[s];
     if (!possibles || typeof x !== 'string' || !possibles.includes(x)) continue;
     if (gabarit === 'classique' && !VARIANTES_CLASSIQUE.includes(s as SectionVariable)) continue;
+    // Classique : premier écran du modèle (accueil.hero), sauf l'un des nouveaux premiers écrans (heros-photo.ts)
+    if (gabarit === 'classique' && s === 'accueil' && !estPremierEcranNouveau(x)) continue;
     r[s] = x;
   }
   return r as Partial<Variantes>;

@@ -1,0 +1,20 @@
+---
+// Nouveaux premiers écrans de l'accueil (tous gabarits) : photo plein écran (texte à gauche, centré, en bas), diaporama plein
+// écran (transitions en CSS), photo d'un côté et texte de l'autre, typographique, dégradé maillé et visuel masqué, bento.
+// Balisage et feuille de style viennent du core (heros-photo.ts) : l'aperçu de l'admin rend exactement le même HTML.
+// Première photo = élément LCP (préchargée, <img> réel, fetchpriority="high") ; photos suivantes chargées après l'événement
+// load par le script du core (≤ 1 Ko). Sans photo : illustration du sujet n° 1 (VisuelTheme) dans l'emplacement prévu.
+import VisuelTheme from '../accueil/VisuelTheme.astro';
+import { CSS_HEROS, SCRIPT_HEROS, htmlHeros } from '@plateforme/core';
+import { donneesHeros } from '../../lib/heros-photo';
+import { visuelPremierEcran } from '../../lib/vitrine';
+
+const d = donneesHeros!;
+const { avant, apres, fente, css } = htmlHeros(d);
+const premiere = d.photos[0];
+---
+{premiere && <link rel="preload" as="image" href={premiere.src} imagesrcset={premiere.srcset} imagesizes={premiere.srcset ? (d.variante === 'scinde-photo' ? '(min-width: 900px) 50vw, 100vw' : d.variante === 'maille' ? '(min-width: 900px) 45vw, 100vw' : d.variante === 'bento' ? '(min-width: 900px) 40vw, 100vw' : '100vw') : undefined} fetchpriority="high" />}
+<Fragment set:html={`<style>${CSS_HEROS}${css}</style>${avant}`} />
+{fente && <VisuelTheme visuel={visuelPremierEcran} format={d.variante === 'bento' ? 'paysage' : 'portrait'} />}
+{fente && <Fragment set:html={apres} />}
+{avant.includes('data-hp-diapos') && <script is:inline type="module" set:html={SCRIPT_HEROS} />}

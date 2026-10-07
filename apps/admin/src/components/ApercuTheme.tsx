@@ -35,6 +35,8 @@ import {
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 import ApercuGabarit, { ActionsRapidesApercu, HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
+import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
+import { cssTransitionsSections } from '@plateforme/core';
 import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
 import CadreApercu from './CadreApercu';
 
@@ -230,7 +232,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     if (!x) return herosApercu('portrait', registreForce);
     return { type: 'svg', html: r === 'ligne' ? svgLigne(x.ligne) : svgDessin(x.dessin, { registre: r, id: `ap-seul-${x.dessin}` }), sombre: r === 'releve' };
   };
-  const transparent = m.entete === 'transparent' && (m.accueil.hero === 'plein' || m.accueil.hero === 'diaporama') && vue === 'accueil';
+  const transparent = m.entete === 'transparent' && (m.accueil.hero === 'plein' || m.accueil.hero === 'diaporama') && vue === 'accueil' && !herosPhotoActif(d, m);
   const tel = r.telephone;
 
   const Sur = ({ n, children }: { n?: number; children: ReactNode }) => (
@@ -557,6 +559,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             {habillage.css && <style dangerouslySetInnerHTML={{ __html: habillage.css }} />}
             {avecTraitement && <><span aria-hidden="true" ref={(el) => { const u = el?.ownerDocument?.URL; if (u && u !== docFiltre) setDocFiltre(u); }} dangerouslySetInnerHTML={{ __html: svgTraitementPhotos(traitementPh, couleursTp, idFiltre) }} /><style dangerouslySetInnerHTML={{ __html: cssTraitementPhotos(traitementPh, '.ap[data-photos]', { id: idFiltre, important: true, document: docFiltre }) }} /></>}
             {cssFormes(formeDesCartes(m)) && <style dangerouslySetInnerHTML={{ __html: cssFormes(formeDesCartes(m)) }} />}
+            {cssTransitionsSections(m.variantes?.sections) && <style dangerouslySetInnerHTML={{ __html: cssTransitionsSections(m.variantes?.sections) }} />}
             {jeuEffets(d.theme.effets) && <style dangerouslySetInnerHTML={{ __html: cssEffets(d.theme.effets).replace(/@view-transition\{[^}]*\}/g, '') + cssSurvolSimule(d.theme.effets) }} />}
             {gabaritModele(m) !== 'classique' ? (
               <ApercuGabarit seul={seul} pageSujet={pageSujet} pageArticle={pageArticle} draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={gabaritModele(m) === 'tableau' ? herosSeul(!d.theme.styleIllustration ? 'releve' : undefined) : herosApercu('portrait')} registre={registre} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
@@ -586,7 +589,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             <div>
               {vue === 'accueil' ? (
                 <>
-                  {m.accueil.hero === 'lieu' ? heroLieu : m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
+                  {herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soinsAffiches} replis={r} sur={surTitre} registre={registre} illustration={(() => { const h = herosApercu('portrait'); return h?.type === 'svg' ? h.html : ''; })()} /> : m.accueil.hero === 'lieu' ? heroLieu : m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
                   {ordre.map((s, k) => {
                     if (s !== 'panorama') douce = !douce;
                     return <div key={s}>{sections[s]?.(k + 1, s !== 'panorama' && douce)}</div>;

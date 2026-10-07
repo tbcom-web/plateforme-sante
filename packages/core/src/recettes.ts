@@ -23,6 +23,7 @@ import { contraste, hex, rvb } from './couleurs';
 import { NEUTRES } from './charte';
 import { themeParId } from './themes';
 import { themeIllustre } from './heros-themes';
+import { estPremierEcranAnime, estPremierEcranPhoto, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
@@ -93,7 +94,18 @@ export function sectionsSelonOrdre(base: readonly SectionAccueil[], ordre: Ordre
 
 /** Sections dont le studio tire la variante, selon le gabarit (classique : la présentation des sujets seulement) */
 export const sectionsVariables = (g: Gabarit): (keyof Variantes)[] =>
-  g === 'classique' ? ['sujets', 'soins-forme', 'theme', 'article'] : ['accueil', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article'];
+  g === 'classique' ? ['accueil', 'transition', 'sujets', 'soins-forme', 'theme', 'article', 'sections'] : ['accueil', 'transition', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article', 'sections'];
+
+/**
+ * Valeurs qu'un dé peut tirer pour une section (premier écran : les variantes à photos seulement avec des photos, style
+ * « Photos » ; classique : le premier écran du modèle, '' , ou l'un des nouveaux premiers écrans de heros-photo.ts).
+ */
+export function valeursTirables(s: keyof Variantes, g: Gabarit, avecPhotos: boolean): string[] {
+  const toutes = VARIANTES_SECTIONS[s] as readonly string[];
+  if (s !== 'accueil') return [...toutes];
+  const base = g === 'classique' ? ['', ...PREMIERS_ECRANS_NOUVEAUX] : [...toutes];
+  return base.filter((v) => avecPhotos || !estPremierEcranPhoto(v));
+}
 
 /**
  * Structures de PAGES (demande de Paul du 2026-10-07) : chaque type de page regroupe les sections et éléments qui le composent ;
@@ -134,11 +146,13 @@ export const ONGLETS_PAGES: readonly { page: PageStructure; nom: string; vue: Vu
 export const vueDePage = (p: PageStructure): VuePage => ONGLETS_PAGES.find((o) => o.page === p)?.vue ?? 'accueil';
 
 /** Familles d'éléments notables (composants) : présentation de chaque élément, clé `composant:<famille>:<variante>` */
-export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'faq', 'soins', 'sujets', 'accueil', 'pied', 'actualites', 'theme', 'article'];
+export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'faq', 'soins', 'sujets', 'accueil', 'transition', 'sections', 'pied', 'actualites', 'theme', 'article'];
 
 /** Libellés des variantes (studio) */
 export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
-  accueil: { carte: 'Carte et disque', notice: 'Notice tramée', figure: 'Figure de revue' },
+  accueil: { carte: 'Carte et disque', notice: 'Notice tramée', figure: 'Figure de revue', ...LIBELLES_PREMIERS_ECRANS },
+  transition: { ...LIBELLES_TRANSITIONS_DIAPORAMA },
+  sections: { ...LIBELLES_TRANSITIONS_SECTIONS },
   soins: { bulles: 'Cartes illustrées', grille: 'Rangées larges', filets: 'Bulles à filet' },
   sujets: { une: 'Le premier à la une', rangees: 'Grandes rangées illustrées', cartes: 'Cartes égales', liste: 'Liste éditoriale', colonnes: 'Deux colonnes' },
   horaires: { tableau: 'Tableau compact', bandeau: 'Bandeau', carte: 'Carte encadrée', liste: 'Liste, jour courant en évidence' },
@@ -155,7 +169,7 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   'soins-forme': Object.fromEntries(FORMES_CARTES.map((f) => [f.id, f.nom])),
 };
 export const NOMS_SECTIONS_VARIABLES: Record<string, string> = {
-  accueil: 'Premier écran', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
+  accueil: 'Premier écran', transition: 'Transition du diaporama', sections: 'Transitions entre sections', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -538,7 +552,10 @@ function tirerStructure(x: CompositionRecette, c: ContexteRecette, r: () => numb
     const actuelle = x.sections.variantes[s] as string | undefined;
     if (fige(s)) { if (actuelle && possibles.includes(actuelle)) (variantes as Record<string, string>)[s] = actuelle; continue; }
     const mobile = (v: string) => (c.defautsMobile?.has(`composant:${s}:${v}`) ? FACTEUR_DEFAUT_MOBILE : 1);
-    (variantes as Record<string, string>)[s] = choisir(possibles.map((v) => ({ v, p: mobile(v) * masse(effetAtelier(c, `variante=${s}:${v}`) + effetAsset(c, `composant:${s}:${v}`)) })), r)!;
+    // Premier écran : variantes à photos seulement en style « Photos » ; classique : '' = premier écran du modèle
+    const tirables = valeursTirables(s, g, x.visuels.style === 'photos');
+    const v = choisir(tirables.map((v) => ({ v, p: (v === '' ? 2 : 1) * mobile(v) * masse(v === '' ? 0 : effetAtelier(c, `variante=${s}:${v}`) + effetAsset(c, `composant:${s}:${v}`)) })), r)!;
+    if (v) (variantes as Record<string, string>)[s] = v;
   }
   return { structure, sections: { ordre, variantes } };
 }
@@ -579,6 +596,11 @@ export function reparerComposition(x: CompositionRecette, c: ContexteRecette): C
   const permisesVar = sectionsVariables(g);
   const variantes = Object.fromEntries(Object.entries(x.sections.variantes).filter(([s, v]) => permisesVar.includes(s as keyof Variantes) && (VARIANTES_SECTIONS[s as keyof Variantes] as readonly string[]).includes(v as string))) as Partial<Variantes>;
   const heros = herosPossibles(c);
+  // Premier écran (heros-photo.ts) : à photos seulement en style « Photos » ; classique : nouveaux premiers écrans seulement ;
+  // transition du diaporama seulement quand les photos défilent
+  if (variantes.accueil && (!valeursTirables('accueil', g, style === 'photos').includes(variantes.accueil))) delete variantes.accueil;
+  if (!estPremierEcranAnime(variantes.accueil)) delete variantes.transition;
+  else if (!variantes.transition) variantes.transition = 'fondu';
   const herosSujet = x.visuels.herosSujet && heros.includes(x.visuels.herosSujet) ? x.visuels.herosSujet : heros[0] ?? null;
   return {
     structure,
@@ -703,11 +725,20 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   if (estCleDetails(cle)) return { ...x, details: detailsPourCle(habillageDe(x).details, cle) };
   if (estCleMenu(cle)) return { ...x, menu: menuPourCle(habillageDe(x).menu, cle) };
   if (type === 'composant' && (VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) {
-    return { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, [a]: b } } };
+    // Transition du diaporama : montrée sur le diaporama plein écran (sauf premier écran scindé déjà choisi)
+    const accueil = a === 'transition' && !estPremierEcranAnime(x.sections.variantes.accueil) ? { accueil: 'diaporama' as const } : {};
+    const y = { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, ...accueil, [a]: b } } };
+    return estPremierEcranPhoto(y.sections.variantes.accueil) ? avecPhotosDemo(y) : y;
   }
   const s = lireCleStructure(cle);
   if (!s) return x;
-  return { ...x, sections: { ordre: s.ordre ?? x.sections.ordre, variantes: { ...x.sections.variantes, ...s.variantes } } };
+  const y = { ...x, sections: { ordre: s.ordre ?? x.sections.ordre, variantes: { ...x.sections.variantes, ...s.variantes } } };
+  return estPremierEcranPhoto(y.sections.variantes.accueil) ? avecPhotosDemo(y) : y;
+}
+
+/** Premier écran à photos montré seul (tuiles de notation) : style « Photos » et photos de démonstration si la recette n'en a pas */
+function avecPhotosDemo(x: CompositionRecette): CompositionRecette {
+  return x.photos.length ? x : { ...x, visuels: { ...x.visuels, style: 'photos', animation: null }, photos: [...PHOTOS_DEMO_HEROS] };
 }
 
 /** Vue de l'aperçu qui montre une clé : la page de sa structure ou de sa variante (fiche d'un soin, page sujet, article), l'accueil sinon */
@@ -722,7 +753,7 @@ export function blocsPourCle(cle: string): string[] | undefined {
   const [type, a] = cle.split(':');
   if (type === 'composant') {
     const blocs: Record<string, string[]> = {
-      accueil: ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
+      accueil: ['premier'], transition: ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
       galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], faq: ['faq'], pied: ['pied'], actualites: ['actualites'],
     };
     // Page sujet, article, fiche : la page entière (vuePourCle)

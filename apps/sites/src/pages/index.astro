@@ -8,6 +8,8 @@ import HeroDiaporama from '../components/gabarit/HeroDiaporama.astro';
 import HeroScinde from '../components/gabarit/HeroScinde.astro';
 import HeroPlein from '../components/gabarit/HeroPlein.astro';
 import HeroLieu from '../components/gabarit/HeroLieu.astro';
+import HerosPhoto from '../components/gabarits/HerosPhoto.astro';
+import { varianteHeros } from '../lib/heros-photo';
 import Icone from '../components/Icone.astro';
 import { pedagogique } from '../lib/visuels';
 import Expertises from '../components/gabarit/Expertises.astro';
@@ -80,9 +82,9 @@ const faqEnPlus = pedagogique
 const infosEnTete = Boolean(site.modele.accueil.infosEnTete) && site.modele.accueil.sections.includes('acces');
 const blocsAccueil = [...(infosEnTete ? ['acces' as const] : []), 'sujets' as const, ...site.modele.accueil.sections.filter((s) => !(infosEnTete && s === 'acces'))];
 ---
-<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale, { nom: title, description, path: '/' })]} immersif={m.accueil.hero === 'diaporama' || m.accueil.hero === 'plein'}>
+<Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale, { nom: title, description, path: '/' })]} immersif={!varianteHeros && (m.accueil.hero === 'diaporama' || m.accueil.hero === 'plein')}>
   {nouveauGabarit ? <AccueilVariantes articles={articles} /> : (<>
-  {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : m.accueil.hero === 'lieu' ? <HeroLieu /> : <HeroScinde />}
+  {varianteHeros ? <HerosPhoto /> : m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : m.accueil.hero === 'lieu' ? <HeroLieu /> : <HeroScinde />}
   {blocsAccueil.map((section) => (
     <>
       {section === 'sujets' && <SujetsAccueil />}
