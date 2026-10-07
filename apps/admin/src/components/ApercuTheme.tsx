@@ -21,17 +21,18 @@ import '@fontsource-variable/bodoni-moda/wght-italic.css';
 import '@fontsource-variable/newsreader/wght.css';
 import '@fontsource-variable/newsreader/wght-italic.css';
 import '@plateforme/core/dessins.css';
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   completerJeuVisuel, construireNavigation, cssEffets, cssSurvolSimule, cssFormes, formeDesCartes, jeuEffets, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
   avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS, illustrationTheme, themeIllustre, themeParId, packVisuel, svgLigne, cssPressionGamme,
-  ARTICLE_DEMO, varianteArticle, varianteTheme, type VuePage,
+  ARTICLE_DEMO, varianteArticle, varianteTheme, type VuePage, APPAREILS_APERCU, MARGE_BARRE_MOBILE, actionsRapides, svgPicto,
   type Animation, type NomDessin, type NomLigne, type FormatHeros, type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
-import ApercuGabarit, { HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
+import ApercuGabarit, { ActionsRapidesApercu, HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
 import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
+import CadreApercu from './CadreApercu';
 
 type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
@@ -57,7 +58,8 @@ type Props = {
 type Vue = VuePage;
 export type Appareil = 'bureau' | 'mobile';
 
-const LARGEUR: Record<Appareil, number> = { bureau: 1280, mobile: 390 };
+// Largeurs réelles des appareils (cadre en iframe : CadreApercu)
+const LARGEUR: Record<Appareil, number> = { bureau: APPAREILS_APERCU.bureau.largeur, mobile: APPAREILS_APERCU.mobile.largeur };
 const FILTRES: Record<string, string> = {
   naturel: 'none',
   chaud: 'sepia(0.22) saturate(1.1) hue-rotate(-8deg) contrast(1.02)',
@@ -106,23 +108,6 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   // Commandes masquées : la page et l'appareil suivent les propriétés (onglets du studio, rendus doubles)
   const appareil = sansCommandes ? appareilInitial : appareilChoisi;
   useEffect(() => { if (sansCommandes) setVue(vueInitiale); }, [sansCommandes, vueInitiale]);
-  const boite = useRef<HTMLDivElement>(null);
-  const page = useRef<HTMLDivElement>(null);
-  const [echelle, setEchelle] = useState(0.4);
-  const [hauteur, setHauteur] = useState(800);
-
-  useEffect(() => {
-    const maj = () => {
-      if (boite.current) setEchelle(Math.min(1, boite.current.clientWidth / LARGEUR[appareil]));
-      if (page.current) setHauteur(page.current.scrollHeight);
-    };
-    maj();
-    const ro = new ResizeObserver(maj);
-    if (boite.current) ro.observe(boite.current);
-    if (page.current) ro.observe(page.current);
-    return () => ro.disconnect();
-  }, [appareil, vue]);
-
   const mobile = appareil === 'mobile';
   const j = m.jetons;
   // Registre des illustrations du modèle : relevé (trame, lectures, plan sombre) ou pédagogique (schémas au trait, fonds clairs)
@@ -236,7 +221,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const taillePlein = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : herosDiaporama ? 1180 * 0.48 : 1180 * 0.6, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
   const tailleScinde = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : 1180 * 0.5, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
   const heroPlein = (
-    <section style={{ position: 'relative', minHeight: mobile ? 560 : 640, display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
+    <section style={{ position: 'relative', minHeight: '100svh', display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
       {/* Photo : plein cadre sous un voile ; dessin ou animation : fond plan, visuel à droite du titre */}
       {renduPlein.type === 'photo'
         ? <div style={{ position: 'absolute', inset: 0 }}><Visuel registre={registre} rendu={renduPlein} filtre={filtre} hauteur="100%" /></div>
@@ -509,7 +494,6 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
 
   return (
     <div className={vignette ? 'overflow-hidden bg-white' : 'overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm'}>
-      <style>{CSS + SURFACES_CSS + CSS_PRESSION}</style>
       {/* Commandes simples : la page montrée et l'appareil ; jamais le nom interne du modèle côté praticien */}
       {!vignette && !sansCommandes && <div className="flex flex-wrap items-center gap-2 border-b border-black/5 bg-neutral-50 px-3 py-2 text-xs">
         {technique && <span className="mr-auto truncate text-neutral-500">Modèle <strong className="text-neutral-800">{m.nom}</strong> · {jeu.label}</span>}
@@ -524,10 +508,10 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           ))}
         </span>
       </div>}
-      <div ref={boite} className={vignette ? 'overflow-hidden bg-neutral-100' : plein ? 'overflow-x-hidden bg-neutral-100' : 'max-h-[78vh] overflow-y-auto overflow-x-hidden bg-neutral-100'} style={vignette ? { height: vignette } : undefined}>
-        <div style={{ height: hauteur * echelle, width: LARGEUR[appareil] * echelle, margin: '0 auto', position: 'relative' }}>
+      {/* Iframe de la largeur réelle de l'appareil (CadreApercu) : media queries, position fixe et défilement comme sur l'appareil */}
+      <div className={vignette ? 'overflow-hidden bg-neutral-100' : 'bg-neutral-100'}>
+        <CadreApercu appareil={appareil} vignette={vignette} plein={plein} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>
           <div
-            ref={page}
             className="ap"
             data-motif={j.motif ?? 'plan'}
             data-titres={j.policeTitres}
@@ -535,8 +519,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             data-effets={jeuEffets(d.theme.effets)?.id}
             data-forme={formeDesCartes(m)}
             data-survol={survol || undefined}
-            style={{ ...style, width: LARGEUR[appareil], transform: `scale(${echelle})`, transformOrigin: '0 0', position: 'absolute', top: 0, left: 0 }}
+            style={{ ...style, minHeight: '100vh', paddingBottom: mobile ? MARGE_BARRE_MOBILE : undefined }}
           >
+            <style>{CSS + SURFACES_CSS + CSS_PRESSION}</style>
             {cssFormes(formeDesCartes(m)) && <style dangerouslySetInnerHTML={{ __html: cssFormes(formeDesCartes(m)) }} />}
             {jeuEffets(d.theme.effets) && <style dangerouslySetInnerHTML={{ __html: cssEffets(d.theme.effets).replace(/@view-transition\{[^}]*\}/g, '') + cssSurvolSimule(d.theme.effets) }} />}
             {gabaritModele(m) !== 'classique' ? (
@@ -559,7 +544,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                 </span>
                 {!mobile && construireNavigation(d, soins).menu.map((l) => l.libelle).map((l) => <span key={l} style={{ fontSize: 15, opacity: 0.85 }}>{l}</span>)}
                 {mobile
-                  ? <span aria-hidden="true" style={{ display: 'grid', placeItems: 'center', width: 44, height: 44, flexShrink: 0, borderRadius: '50%', boxShadow: 'inset 0 0 0 1.5px currentColor', fontSize: 18 }}>☰</span>
+                  ? <span aria-hidden="true" className="ap-menu"><i /><b style={{ fontWeight: 'inherit' }}>Menu</b></span>
                   : <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 42, padding: '0 18px', fontSize: 14, ...(transparent ? { background: 'var(--blanc)', color: 'var(--encre)' } : {}) }}>{rdv}</span>}
               </div>
             </header>
@@ -576,9 +561,10 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
               ) : pageClassique[vue]}
             </div>
             {pied}
+            {mobile && <ActionsRapidesApercu a={actionsRapides({ gabarit: 'classique', rdvEnLigne: r.rdvEnLigne, aTelephone: r.aTelephone, aAdresse: r.aAdresse, email: d.cabinet.email, libelleContact: r.libelleContact, via: r.rdvEnLigne && !d.rdv.url && d.rdv.outil ? `via ${d.rdv.outil}` : '' })} />}
             </>)}
           </div>
-        </div>
+        </CadreApercu>
       </div>
       {!vignette && (
         <p className="border-t border-black/5 px-3 py-2 text-[11px] text-neutral-500">
@@ -593,7 +579,7 @@ const LIBELLES_VUES: Record<Vue, string> = { accueil: 'Accueil', soin: 'Une page
 
 // Styles de l'aperçu, repris du gabarit des sites (apps/sites/src/layouts/Gabarit.astro), limités à .ap
 const CSS = `
-.ap { font-family: var(--police-texte); color: var(--encre); background: var(--fond); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.ap { font-family: var(--police-texte); color: var(--encre); background: var(--g-page, var(--fond)); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
 .ap * { box-sizing: border-box; }
 .ap p { margin: 0 0 1em; }
 .ap-cadre { width: min(1180px, 100% - 40px); margin-inline: auto; }
@@ -618,8 +604,22 @@ const CSS = `
 .ap-bouton { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; border-radius: var(--rayon-bouton); font-weight: 600; font-size: 16px; white-space: nowrap; }
 .ap-bouton--plein { background: var(--accent); color: var(--blanc); }
 .ap-carte { background: var(--fond); border: var(--filet) solid var(--ligne); border-radius: var(--rayon); padding: 16px; }
-.ap-entete { position: relative; z-index: 2; background: color-mix(in srgb, var(--fond) 92%, transparent); border-bottom: var(--filet) solid var(--ligne); }
-.ap-entete--transparent { position: absolute; left: 0; right: 0; background: transparent; border-color: transparent; color: var(--blanc); }
+/* En-tête collé en haut au défilement (Gabarit.astro .entete : sticky) ; transparent sur visuel plein écran : fixe, opaque
+   progressivement sur 260 px de défilement (le site le fait en script ; ici par animation liée au défilement si disponible) */
+.ap-entete { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--fond) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6); border-bottom: var(--filet) solid var(--ligne); }
+.ap-entete--transparent { position: absolute; left: 0; right: 0; background: transparent; border-color: transparent; color: var(--blanc); -webkit-backdrop-filter: none; backdrop-filter: none; }
+@supports (animation-timeline: scroll()) {
+  .ap-entete--transparent { position: fixed; top: 0; animation: ap-entete-opaque linear both; animation-timeline: scroll(root); animation-range: 0 260px; }
+  @keyframes ap-entete-opaque { 0%, 54% { color: var(--blanc); } 56%, 100% { color: var(--encre); } 100% { background: color-mix(in srgb, var(--fond) 90%, transparent); border-color: rgb(var(--encre-rgb) / 0.1); } }
+}
+/* Bouton du menu (téléphone, sous 960 px) : traits + « Menu », comme .menu-bouton du site */
+.ap-menu { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px 0 14px; border-radius: var(--rayon-bouton, 999px); box-shadow: inset 0 0 0 var(--filet) var(--ligne); font-weight: 600; font-size: 15.6px; flex-shrink: 0; }
+.ap-entete--transparent .ap-menu { box-shadow: inset 0 0 0 var(--filet) var(--sur-sombre-pale); }
+.ap-menu > i { position: relative; width: 16px; height: var(--filet-fort); background: currentColor; }
+.ap-menu > i::before, .ap-menu > i::after { content: ''; position: absolute; left: 0; width: 16px; height: var(--filet-fort); background: currentColor; }
+.ap-menu > i::before { top: -5px; }
+.ap-menu > i::after { top: 5px; width: 10px; }
+@media (max-width: 479px) { .ap-menu { justify-content: center; min-width: 44px; padding: 0; } .ap-menu > b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 .ap-svg svg { width: 100%; height: 100%; }
 .ap-mot { white-space: nowrap; }
 /* Trame de points des relevés : respiration douce niveau par niveau (comme le site, Gabarit.astro) */

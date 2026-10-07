@@ -12,7 +12,7 @@
 // bulles à picto « façon annuaire » ; village = aplat tramé, titre expressif, illustration en cadre portrait sur ombre pleine ;
 // « pédicurie-podologie » insécable, titre ajusté à sa colonne.
 import type { CSSProperties, ReactNode } from 'react';
-import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
+import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, actionsRapides, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -63,6 +63,59 @@ export function HerosVue({ h, rayon = 0 }: { h: HerosApercu; rayon?: number | st
     );
   }
   return <div className="ap-svg" style={{ width: '100%', height: '100%', borderRadius: rayon, overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: h.html }} />;
+}
+
+// Actions rapides du téléphone (retour de Paul du 2026-10-07 : « boutons flottants pas du tout bien placés ») : mêmes règles et
+// même CSS que le site (Coquille.astro .c-barre / .c-flottant, Gabarit.astro .barre-mobile), en position FIXE dans l'iframe
+// de l'aperçu (CadreApercu) : collées en bas de la fenêtre du téléphone, au-dessus du contenu, masquées à partir de 900 px.
+const LUCIDE: Record<string, string> = {
+  telephone: '<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233a14 14 0 0 0 6.392 6.384"/>',
+  'rendez-vous': '<path d="M8 2v3m8-3v3"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/>',
+  itineraire: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  courriel: '<path d="m22 7l-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect width="20" height="16" x="2" y="4" rx="2"/>',
+};
+const lucide = (nom: string, taille: string | number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${taille}" height="${taille}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${LUCIDE[nom] ?? ''}</svg>`;
+/** Icône d'une action : picto métier (gabarits), sinon Lucide (gabarit classique, courriel) — comme Icone.astro */
+const iconeAction = (nom: IconeAction, taille: string | number, picto: boolean) => (picto && nom !== 'courriel' && svgPicto(nom, { taille })) || lucide(nom, taille);
+const CSS_ACTIONS = `
+.apb-barre{position:fixed;z-index:40;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr 1fr;background:var(--g-carte);box-shadow:0 -1px 0 var(--g-ligne)}
+.apb-barre>span{display:flex;align-items:center;justify-content:center;gap:8px;min-height:60px;padding-inline:12px;color:var(--g-encre);font-weight:650;font-size:16px;line-height:1.6}
+.apb-barre>span>svg{width:22px;height:22px;flex:none}
+.apb-barre>span:only-child{grid-column:1/-1;white-space:nowrap}
+.apb-barre>.apb-plein{background:var(--g-vif);color:var(--g-vif-texte)}
+.apb-flottant{position:fixed;z-index:40;right:16px;bottom:16px}
+.apb-flottant>span{display:grid;place-items:center;width:60px;height:60px;border-radius:50%;background:var(--g-vif);color:var(--g-vif-texte);box-shadow:0 6px 18px color-mix(in srgb,var(--g-encre) 22%,transparent)}
+.apb-flottant svg{width:26px;height:26px}
+.apb-classique{position:fixed;z-index:40;left:12px;right:12px;bottom:12px;display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:8px;padding:8px;border-radius:20px;background:rgb(var(--blanc-rgb) / .94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--ombre)}
+.apb-classique>span{display:flex;align-items:center;justify-content:center;gap:6px;min-height:48px;border-radius:14px;font-weight:600;font-size:14.4px;line-height:1.15;color:var(--encre)}
+.apb-classique svg{width:1.1em;height:1.1em;flex:none;vertical-align:-.125em}
+.apb-classique.apb-appel{grid-template-columns:1.6fr 1fr}
+.apb-classique:not(.apb-appel){grid-template-columns:auto minmax(0,1fr) auto}
+.apb-classique:not(.apb-appel)>span:not(.apb-rdv){padding-inline:8px;white-space:nowrap}
+.apb-rdv>span{display:grid}
+.apb-classique .apb-via{font-size:var(--taille-donnees-petit,12px)}
+.apb-classique>.apb-rdv{background:var(--accent);color:var(--blanc)}
+.ap[data-registre='pedagogique'] .apb-classique>span{font-size:13.6px}
+@media (min-width:900px){.apb-barre,.apb-flottant,.apb-classique{display:none}}`;
+
+/** Barre d'actions ou bouton flottant du téléphone (éléments décoratifs de l'aperçu : aucun lien) */
+export function ActionsRapidesApercu({ a }: { a: ActionsRapides | null }) {
+  if (!a) return null;
+  const icone = (nom: IconeAction, taille: string | number, picto: boolean) => <span aria-hidden="true" style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: iconeAction(nom, taille, picto) }} />;
+  return (
+    <>
+      <style>{CSS_ACTIONS}</style>
+      {a.forme === 'flottant' ? (
+        <div className="apb-flottant" aria-label="Accès rapide"><span title={a.action.libelle}>{icone(a.action.icone, 26, true)}</span></div>
+      ) : a.forme === 'barre' ? (
+        <div className="apb-barre" aria-label="Accès rapide">{a.actions.map((x) => <span key={x.libelle} className={x.plein ? 'apb-plein' : undefined}>{icone(x.icone, 22, true)}{x.libelle}</span>)}</div>
+      ) : (
+        <div className={`apb-classique ${a.appel ? 'apb-appel' : ''}`} aria-label="Accès rapide">
+          {a.actions.map((x) => <span key={x.libelle} className={x.plein ? 'apb-rdv' : undefined}>{icone(x.icone, '1em', false)}{x.via ? <span>{x.libelle}<span className="apb-via">{x.via}</span></span> : x.libelle}</span>)}
+        </div>
+      )}
+    </>
+  );
 }
 
 const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'], [/diab/, 'Diabétiques'], [/senior|chute/, 'Seniors']];
@@ -131,13 +184,26 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       {mobile && <nav style={{ ...cadre, display: 'flex', justifyContent: 'space-between', padding: '4px 0 10px' }}>{menu.map((l) => <span key={l}>{l}</span>)}</nav>}
     </header>
   ) : (
-    <header style={{ padding: '12px 0 4px', borderBottom: village ? '1px solid var(--g-ligne)' : undefined }}>
-      <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 64, ...(village ? {} : { background: 'var(--g-carte)', borderRadius: 999, padding: '8px 8px 8px 14px', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }) }}>
+    // Comme Coquille.astro (.c-entete) : nom à gauche, menu en liens (tableau : une ligne pleine largeur sous le nom sur
+    // téléphone, « Rendez-vous » dans la barre du bas) ; village : téléphone en grand, menu dans une bande sous le nom
+    <header style={{ paddingTop: 10 }}>
+      <div style={{ ...cadre, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '4px 16px', minHeight: 64 }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', ...nomEntete }}>{nomCabinet}</strong></span>
-        {!mobile && !village && <span style={{ display: 'flex', gap: 22, fontWeight: 600, fontSize: 15, whiteSpace: 'nowrap', flexShrink: 0 }}>{menu.map((l) => <span key={l}>{l}</span>)}</span>}
-        {village ? (r.aTelephone && !mobile && <span style={{ fontWeight: 750, fontSize: 20, whiteSpace: 'nowrap' }}>☏ {tel}</span>) : !mobile && <span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.libelleMenu}</span>}
+        {village
+          ? r.aTelephone && !mobile && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '0 14px', fontWeight: 750, fontSize: 20.8, whiteSpace: 'nowrap' }}><span aria-hidden="true" style={{ display: 'grid', color: 'var(--g-accent-texte)' }} dangerouslySetInnerHTML={{ __html: svgPicto('telephone', { taille: 28 }) ?? '' }} />{tel}</span>
+          : <span style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', ...(mobile ? { flexBasis: '100%', justifyContent: 'space-between' } : { flexShrink: 0 }) }}>
+              {menu.map((l) => <span key={l} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: mobile ? '0 10px' : '0 14px', fontWeight: 600, fontSize: 16 }}>{l}</span>)}
+              {!mobile && <span style={{ ...bouton(true), marginLeft: 8, minHeight: 48, padding: '0 20px', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap' }}>{r.libelleMenu}</span>}
+            </span>}
       </div>
-      {(village || mobile) && <nav style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: village ? '4px 20px' : 6, padding: '10px 0 8px' }}>{menu.map((l) => <span key={l} style={village ? { textDecoration: 'underline', fontWeight: 600 } : { padding: '10px 12px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontWeight: 600, fontSize: 15 }}>{l}</span>)}</nav>}
+      {village && (
+        <nav style={{ marginTop: 8, background: 'var(--g-bulle)', borderBlock: 'var(--filet) solid var(--g-ligne)' }}>
+          <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: mobile ? 'space-between' : 'flex-start' }}>
+            {menu.map((l, k) => <span key={l} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: mobile ? `0 ${k === menu.length - 1 ? 0 : 8}px 0 ${k === 0 ? 0 : 8}px` : `0 16px 0 ${k === 0 ? 0 : 16}px`, fontWeight: 600, fontSize: 16 }}>{l}</span>)}
+            {!mobile && <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: '0 22px', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', fontWeight: 600 }}>{r.libelleMenu}</span>}
+          </div>
+        </nav>
+      )}
     </header>
   );
 
@@ -147,26 +213,26 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const ligne: CSSProperties = { display: 'grid', gridTemplateColumns: '30px 1fr', gap: 12, alignItems: 'start' };
   const principaux = soins.slice(0, 3).map((s) => s.titre_court.toLowerCase()).join(', ');
   const premier = v.accueil === 'figure' ? (
-    <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 4fr', gap: 64, alignItems: 'center', paddingBlock: mobile ? '40px 48px' : '88px 80px' }}>
-      <div style={{ display: 'grid', justifyItems: 'start' }}>
-        <span style={{ fontSize: 15, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-aplat-doux)', marginBottom: 22 }}>{surTitre}</span>
-        {titreH1}
-        <span style={{ fontSize: 19, marginTop: 24 }}>{quiOu}</span>
-        {principaux && <span style={{ fontStyle: 'italic', color: 'var(--g-aplat-doux)' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 26 }}>
-          <span style={{ ...bouton(true), boxShadow: 'none' }}>{libelleRdv}</span>
-          {enLigne && r.aTelephone && <span style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 1.5px var(--g-encre)' }}>{tel}</span>}
-        </div>
-      </div>
-      {heros ? (
-        <figure style={{ margin: 0, ...(mobile ? {} : { paddingLeft: 40, borderLeft: '1px solid var(--g-figure)' }), aspectRatio: '3 / 4', maxHeight: mobile ? 360 : 520, '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)' } as CSSProperties}>
-          <HerosVue h={heros} />
-        </figure>
-      ) : !mobile && soins[0] && (
-        <figure style={{ margin: 0, paddingLeft: 40, borderLeft: '1px solid var(--g-figure)' }}>
-          {figure(soins[0].slug, { width: '100%', aspectRatio: '4 / 3' })}
+    // Comme PremierEcran.astro (.pe--figure) : sur le papier ; téléphone = sur-titre, titre, figure, puis le reste ; ordinateur =
+    // texte à gauche, figure à droite (planche pastel 4/3 entre deux filets)
+    <section style={{ background: 'var(--g-page)', color: 'var(--g-encre)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'minmax(0, 7fr) minmax(0, 5fr)', columnGap: 64, rowGap: mobile ? 18 : 0, alignContent: 'center', paddingBlock: mobile ? '36px 44px' : '96px 88px' }}>
+      <span style={{ gridColumn: mobile ? undefined : 1, fontSize: 15.2, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-encre-douce)' }}>{surTitre}</span>
+      <div style={{ gridColumn: mobile ? undefined : 1, margin: mobile ? 0 : '18px 0 26px' }}>{titreH1}</div>
+      {(heros || soins[0]) && (
+        <figure style={{ margin: mobile ? '0 0 10px' : 0, ...(mobile ? {} : { gridColumn: 2, gridRow: '1 / span 4', alignSelf: 'center' }), color: 'var(--g-figure)', '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)' } as CSSProperties}>
+          <div style={{ aspectRatio: '4 / 3', background: 'var(--g-aplat)', borderBlock: 'var(--filet) solid var(--g-figure)', padding: heros?.type === 'photo' ? 0 : '7% 9%', overflow: 'hidden' }}>
+            {heros ? <HerosVue h={heros} /> : figure(soins[0].slug, { width: '100%', height: '100%' })}
+          </div>
         </figure>
       )}
+      <div style={{ gridColumn: mobile ? undefined : 1, display: 'grid', gap: 10, justifyItems: 'start' }}>
+        <span style={{ fontSize: 19.2, maxWidth: '34em' }}>{quiOu}</span>
+        {principaux && <span style={{ fontStyle: 'italic', fontSize: 17.9, color: 'var(--g-encre-douce)', maxWidth: '34em' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
+        <div style={{ display: mobile ? 'grid' : 'flex', width: mobile ? '100%' : undefined, flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+          <span style={{ ...bouton(true), boxShadow: 'none' }}>{libelleRdv}</span>
+          {enLigne && r.aTelephone && <span style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 var(--filet-fort) var(--g-encre)' }}>{tel}</span>}
+        </div>
+      </div>
     </div></section>
   ) : v.accueil === 'notice' ? (
     <section style={{ position: 'relative', background: 'var(--g-aplat)', color: 'var(--g-aplat-texte)' }}>
@@ -362,15 +428,9 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       </div></aside>
     )
   ) : null;
-  // Téléphone : barre d'actions (barre, bandeau, carte) ou bouton flottant, collés en bas de l'aperçu
-  const principale = (k: number) => (enLigne ? k === 1 : k === 0);
-  const barreMobile = mobile && actionsContact.length ? (
-    v.contact === 'flottant' ? (
-      <div style={{ position: 'sticky', bottom: 16, display: 'flex', justifyContent: 'flex-end', paddingRight: 16, pointerEvents: 'none' }}><span title={actionsContact[0]} style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', display: 'grid', placeItems: 'center', fontSize: 26, boxShadow: '0 6px 18px color-mix(in srgb, var(--g-encre) 22%, transparent)' }}>{enLigne ? '📅' : r.aTelephone ? '☏' : '✉'}</span></div>
-    ) : (
-      <div style={{ position: 'sticky', bottom: 0, display: 'grid', gridTemplateColumns: actionsContact.length > 1 ? '1fr 1fr' : '1fr', background: 'var(--g-carte)', boxShadow: '0 -1px 0 var(--g-ligne)' }}>{actionsContact.slice(0, 2).map((a, k) => <span key={a} style={{ display: 'grid', placeItems: 'center', minHeight: 60, fontWeight: 650, background: principale(k) ? 'var(--g-vif)' : undefined, color: principale(k) ? 'var(--g-vif-texte)' : 'var(--g-encre)' }}>{a === 'Appeler le cabinet' && enLigne ? 'Appeler' : a}</span>)}</div>
-    )
-  ) : null;
+  // Téléphone : barre d'actions (barre, bandeau, carte) ou bouton flottant, en position fixe en bas de la fenêtre du téléphone
+  // (iframe de l'aperçu), exactement comme Coquille.astro
+  const barreMobile = mobile ? <ActionsRapidesApercu a={actionsRapides({ gabarit: village ? 'village' : revue ? 'revue' : 'tableau', contact: v.contact, rdvEnLigne: enLigne, aTelephone: r.aTelephone, aAdresse: r.aAdresse, email: d.cabinet.email, libelleContact: r.libelleContact })} /> : null;
   const montrer = (b: string) => !seul || seul.includes(b);
   // Conseils et actualités (Actus.astro) : liste de titres datés, cartes illustrées, ou le dernier à la une
   const articlesDemo = [{ t: 'Bien choisir ses chaussures de course', s: 'sport', d: '2 octobre 2026', r: 'Amorti, maintien du talon, pointure : les repères avant l’achat.' }, { t: 'Ongle incarné chez l’enfant : les bons gestes', s: 'enfant', d: '18 septembre 2026', r: 'Coupe droite, chaussures à la bonne taille et quand consulter.' }];

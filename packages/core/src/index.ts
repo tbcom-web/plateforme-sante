@@ -58,4 +58,5 @@ export * from './kits';
 export * from './zones';
 export * from './rendu-mobile';
 export * from './pages-demo';
+export * from './cadre-apercu';
 export * from './styles-experimentaux';
