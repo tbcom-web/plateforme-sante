@@ -23,8 +23,10 @@ interface Props {
   courant: string;
   /** Lien de rendez-vous général (plusieurs praticiens : liste des praticiens) */
   rdvGeneral: string | null;
+  /** Bouton « Menu » du téléphone (habillage d'une recette : panneau ou tiroir, packages/core/src/menus.ts) : script en ligne */
+  scriptMenu?: string;
 }
-const { courant, rdvGeneral } = Astro.props;
+const { courant, rdvGeneral, scriptMenu = '' } = Astro.props;
 const gabarit = gabaritModele(site.modele);
 const village = gabarit === 'village';
 const lienRendezVous = rdvGeneral ?? lienRdv('entete');
@@ -59,30 +61,33 @@ const actionsContact = [
 const principale = actionsContact[0];
 ---
 <div class:list={['coquille', `coquille--${gabarit}`, { 'coquille--nom-long': nomLong }]}>
-  <header class="c-entete">
-    <div class="g-cadre c-entete__ligne">
+  <!-- Crochets mn-* : styles de menus d'une recette (packages/core/src/menus.ts), CSS seul ; balisage et liens inchangés -->
+  <header class="c-entete mn-entete">
+    <div class="g-cadre c-entete__ligne mn-ligne">
       <Logo />
       {village && aTelephone && <a class="c-entete__tel" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" /><span class="c-entete__tel-libelle">Appeler</span><span class="c-entete__numero">{site.cabinet.telephone}</span></a>}
       {!village && (
-        <nav class="c-nav" aria-label="Navigation principale">
-          <ul>
-            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} class:list={classeActif(l.href)} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
-            <li class="c-nav__rdv"><a class="g-bouton g-bouton--plein" href={rdv}>{libelle}</a></li>
+        <nav class="c-nav mn-nav" id="menu-principal" aria-label="Navigation principale">
+          <ul class="mn-liste">
+            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} class:list={['mn-lien', classeActif(l.href)]} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
+            <li class="c-nav__rdv mn-rdv"><a class="g-bouton g-bouton--plein" href={rdv}>{libelle}</a></li>
           </ul>
         </nav>
       )}
+      {scriptMenu && <button class="mn-burger" type="button" aria-expanded="false" aria-controls="menu-principal" hidden><span class="mn-burger__traits" aria-hidden="true"></span><span>Menu</span></button>}
     </div>
     {village && (
       <div class="c-bande">
-        <nav class="g-cadre c-nav" aria-label="Navigation principale">
-          <ul>
-            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} class:list={classeActif(l.href)} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
-            <li class="c-nav__rdv"><a href={rdv}>{libelle}</a></li>
+        <nav class="g-cadre c-nav mn-nav" id="menu-principal" aria-label="Navigation principale">
+          <ul class="mn-liste">
+            {nav.map((l) => <li class:list={{ 'c-nav__large': !l.mobile, 'c-nav__repli': l.repli }}><a href={l.href} class:list={['mn-lien', classeActif(l.href)]} aria-current={actif(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
+            <li class="c-nav__rdv mn-rdv"><a href={rdv}>{libelle}</a></li>
           </ul>
         </nav>
       </div>
     )}
   </header>
+  {scriptMenu && <script is:inline set:html={scriptMenu} />}
 
   <main id="contenu" class="c-principal">
     <slot />

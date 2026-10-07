@@ -37,6 +37,47 @@ import policeBodoni from '@fontsource-variable/bodoni-moda/files/bodoni-moda-lat
 import policeBodoniItalique from '@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-wght-italic.woff2?url';
 import policeNewsreader from '@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url';
 import policeNewsreaderItalique from '@fontsource-variable/newsreader/files/newsreader-latin-wght-italic.woff2?url';
+// Catalogue étendu du studio (typo.ts, FICHES_POLICES : OFL / Apache) : feuilles @fontsource (les @font-face inutilisées sont
+// retirées de chaque page au build, styles-alleges) et fichiers latins (préchargement de la police des titres seulement).
+import '@fontsource-variable/playfair-display/wght.css';
+import '@fontsource-variable/playfair-display/wght-italic.css';
+import '@fontsource/dm-serif-display/400.css';
+import '@fontsource/dm-serif-display/400-italic.css';
+import '@fontsource/young-serif/400.css';
+import '@fontsource-variable/lora/wght.css';
+import '@fontsource-variable/lora/wght-italic.css';
+import '@fontsource-variable/cormorant-garamond/wght.css';
+import '@fontsource-variable/cormorant-garamond/wght-italic.css';
+import '@fontsource-variable/roboto-slab/wght.css';
+import '@fontsource-variable/space-grotesk/wght.css';
+import '@fontsource-variable/outfit/wght.css';
+import '@fontsource-variable/oswald/wght.css';
+import '@fontsource-variable/quicksand/wght.css';
+import '@fontsource-variable/plus-jakarta-sans/wght.css';
+import '@fontsource-variable/figtree/wght.css';
+import '@fontsource-variable/dm-sans/wght.css';
+import '@fontsource-variable/work-sans/wght.css';
+import '@fontsource-variable/source-sans-3/wght.css';
+import policePlayfair from '@fontsource-variable/playfair-display/files/playfair-display-latin-wght-normal.woff2?url';
+import policePlayfairItalique from '@fontsource-variable/playfair-display/files/playfair-display-latin-wght-italic.woff2?url';
+import policeDmSerif from '@fontsource/dm-serif-display/files/dm-serif-display-latin-400-normal.woff2?url';
+import policeDmSerifItalique from '@fontsource/dm-serif-display/files/dm-serif-display-latin-400-italic.woff2?url';
+import policeYoungSerif from '@fontsource/young-serif/files/young-serif-latin-400-normal.woff2?url';
+import policeLora from '@fontsource-variable/lora/files/lora-latin-wght-normal.woff2?url';
+import policeLoraItalique from '@fontsource-variable/lora/files/lora-latin-wght-italic.woff2?url';
+import policeCormorant from '@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-normal.woff2?url';
+import policeCormorantItalique from '@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-italic.woff2?url';
+import policeRobotoSlab from '@fontsource-variable/roboto-slab/files/roboto-slab-latin-wght-normal.woff2?url';
+import policeSpaceGrotesk from '@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2?url';
+import policeOutfit from '@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2?url';
+import policeOswald from '@fontsource-variable/oswald/files/oswald-latin-wght-normal.woff2?url';
+import policeQuicksand from '@fontsource-variable/quicksand/files/quicksand-latin-wght-normal.woff2?url';
+import policeJakarta from '@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2?url';
+import policeFigtree from '@fontsource-variable/figtree/files/figtree-latin-wght-normal.woff2?url';
+import policeDmSans from '@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2?url';
+import policeWorkSans from '@fontsource-variable/work-sans/files/work-sans-latin-wght-normal.woff2?url';
+import policeSourceSans from '@fontsource-variable/source-sans-3/files/source-sans-3-latin-wght-normal.woff2?url';
+import { BUDGET_POLICES, REDUCTION, poidsPolices, paireDuModele, accentEffectif, attributsHabillage, cssHabillage, facteurChasse, menuABouton, normaliserHabillage, SCRIPT_MENU } from '@plateforme/core';
 import Coquille from '../components/gabarits/Coquille.astro';
 import Icone from '../components/Icone.astro';
 import Logo from '../components/Logo.astro';
@@ -104,6 +145,22 @@ const REPLIS: Record<string, Repli> = {
   // Gabarit revue (même calcul, repli Times New Roman et son italique)
   'Bodoni Moda Variable': { sources: SERIF, taille: 114.22, haut: 98.5, bas: 35.02, italique: { taille: 106.93, haut: 105.21, bas: 37.41 } },
   'Newsreader Variable': { sources: SERIF, taille: 105.48, haut: 69.68, bas: 25.12, italique: { taille: 98.48, haut: 74.63, bas: 26.91 } },
+  // Catalogue étendu du studio (même calcul : @capsizecss/unpack sur les fichiers latins, largeur moyenne ÷ Arial ou Times)
+  'Playfair Display Variable': { sources: SERIF, taille: 113.03, haut: 95.73, bas: 22.21 },
+  'DM Serif Display': { sources: SERIF, taille: 111.53, haut: 92.89, bas: 30.04 },
+  'Young Serif': { sources: SERIF, taille: 127.78, haut: 81.86, bas: 28.64 },
+  'Lora Variable': { sources: SERIF, taille: 117.03, haut: 85.96, bas: 23.41 },
+  'Cormorant Garamond Variable': { sources: SERIF, taille: 98.02, haut: 94.26, bas: 29.28 },
+  'Roboto Slab Variable': { sources: SERIF, taille: 118.68, haut: 88.29, bas: 22.83 },
+  'Space Grotesk Variable': { sources: SANS, taille: 110.56, haut: 89, bas: 26.41 },
+  'Outfit Variable': { sources: SANS, taille: 100.13, haut: 99.87, bas: 25.97 },
+  'Oswald Variable': { sources: SANS, taille: 82.24, haut: 145.07, bas: 35.14 },
+  'Quicksand Variable': { sources: SANS, taille: 103.53, haut: 96.59, bas: 24.15 },
+  'Plus Jakarta Sans Variable': { sources: SANS, taille: 106.02, haut: 97.9, bas: 20.94 },
+  'Figtree Variable': { sources: SANS, taille: 100.59, haut: 94.45, bas: 24.85 },
+  'DM Sans Variable': { sources: SANS, taille: 105.57, haut: 93.96, bas: 29.36 },
+  'Work Sans Variable': { sources: SANS, taille: 113.05, haut: 82.27, bas: 21.5 },
+  'Source Sans 3 Variable': { sources: SANS, taille: 90.17, haut: 113.57, bas: 44.36 },
 };
 /** Première famille d'une pile : « 'Inter Variable', system-ui » → « Inter Variable ». */
 const famille = (pile: string) => pile.match(/'([^']+)'/)?.[1] ?? '';
@@ -146,19 +203,34 @@ const couleurs = [
   `--voile:${Math.min(0.9, Math.round((m.accueil.voile / 100 + voileTraitement(traitementPhotosSite, couleursPhotosSite)) * 100) / 100)}`,
   ...Object.entries(variablesGabarit(m, site.theme)).map(([k, v]) => `${k}:${v}`),
 ].join(';');
-const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito, geist: policeGeist, publicsans: policePublicSans, bodoni: policeBodoni, newsreader: policeNewsreader } as const;
-// Italique des titres (mots en retrait « .pale » du titre principal) : seulement pour les titres à empattements.
-const ITALIQUES: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { fraunces: policeFrauncesItalique, instrument: policeInstrumentItalique, bodoni: policeBodoniItalique };
+const FICHIERS_POLICES = {
+  inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito, geist: policeGeist, publicsans: policePublicSans, bodoni: policeBodoni, newsreader: policeNewsreader,
+  playfair: policePlayfair, dmserif: policeDmSerif, youngserif: policeYoungSerif, lora: policeLora, cormorant: policeCormorant, robotoslab: policeRobotoSlab, spacegrotesk: policeSpaceGrotesk, outfit: policeOutfit, oswald: policeOswald,
+  quicksand: policeQuicksand, jakarta: policeJakarta, figtree: policeFigtree, dmsans: policeDmSans, worksans: policeWorkSans, sourcesans: policeSourceSans, mono: policeMono,
+} as const;
+// Italique des titres (mots en retrait « .pale » du titre principal, nom du cabinet en revue) : titres à empattements seulement.
+const ITALIQUES: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { fraunces: policeFrauncesItalique, instrument: policeInstrumentItalique, bodoni: policeBodoniItalique, playfair: policePlayfairItalique, dmserif: policeDmSerifItalique, lora: policeLoraItalique, cormorant: policeCormorantItalique };
 // Italique du texte (gabarit revue : chapô et légendes en italique dès le premier écran)
 const ITALIQUES_TEXTE: Partial<Record<keyof typeof FICHIERS_POLICES, string>> = { newsreader: policeNewsreaderItalique };
-const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTexte], FICHIERS_POLICES[m.jetons.policeTitres], ITALIQUES[m.jetons.policeTitres], ITALIQUES_TEXTE[m.jetons.policeTexte], sansMono ? '' : policeMono].filter(Boolean))];
+// Habillage d'une recette du studio (packages/core/src/habillage.ts : typographie, jeu de détails, menu) : CSS seul, en ligne
+const habillage = normaliserHabillage(site.theme, gabarit);
+const paireSite = paireDuModele(m)?.id;
+const accentTitre = accentEffectif(paireSite, habillage.typo, { mono: !sansMono });
+// Italique des titres réellement employé : mot d'accent en italique (habillage), « .pale » italique du classique (Fraunces,
+// Instrument), nom du cabinet en italique (revue). Sinon le fichier n'est ni préchargé ni demandé (budget polices).
+// Revue : nom du cabinet en italique — vrai italique pour Bodoni (modèle) ou si le budget polices le permet (sinon oblique).
+const revueItalique = gabarit === 'revue' && (m.jetons.policeTitres === 'bodoni' || poidsPolices(paireSite, { italique: true }) * REDUCTION <= BUDGET_POLICES);
+const italiqueTitres = ITALIQUES[m.jetons.policeTitres] && (accentTitre === 'italique' || revueItalique || (!nouveau && (m.jetons.policeTitres === 'fraunces' || m.jetons.policeTitres === 'instrument'))) ? ITALIQUES[m.jetons.policeTitres] : '';
+// Préchargement : la police des TITRES seulement (élément LCP du premier écran : le titre), et son italique si le titre l'emploie ;
+// le texte et la mono sont demandés dès le début du corps (policesAvantAffichage) sans concurrencer la police du titre.
+const prechargees = [...new Set([FICHIERS_POLICES[m.jetons.policeTitres], italiqueTitres].filter(Boolean))];
 // Chargement des mêmes polices lancé dès le début du corps de page : un fichier préchargé n'est appliqué
 // qu'après décodage, et la première mise en page se ferait sinon avec la police de secours (le texte se
 // recompose ensuite et décale la page).
 const policesAvantAffichage = [
   `400 1em "${famille(POLICES[m.jetons.policeTexte])}"`,
   `${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`,
-  ...(ITALIQUES[m.jetons.policeTitres] ? [`italic ${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`] : []),
+  ...(italiqueTitres ? [`italic ${m.jetons.graisseTitres} 1em "${famille(POLICES[m.jetons.policeTitres])}"`] : []),
   ...(ITALIQUES_TEXTE[m.jetons.policeTexte] ? [`italic 400 1em "${famille(POLICES[m.jetons.policeTexte])}"`] : []),
   ...(sansMono ? [] : [`400 1em "${famille(POLICE_MONO)}"`]),
 ];
@@ -186,7 +258,8 @@ const versionMarkdown = !noindex && aUneVersionMarkdown(path) ? cheminMarkdown(p
 const courant = Astro.url.pathname;
 // Plus long mot insécable du titre de la page (pédicurie-podologie, noms et villes composés) : les titres se réduisent sur
 // petit écran pour qu'il tienne sur une ligne, sans césure ni débordement (lib/typo.mjs, règle --mot-long ci-dessous).
-const motLong = Math.min(26, Math.max(12, motLePlusLong(title) + 1));
+// Titres en capitales (habillage) : plus larges, le plus long mot compte pour davantage (facteurChasse, typo.ts).
+const motLong = Math.min(34, Math.max(12, Math.round((motLePlusLong(title) + 1) * facteurChasse(habillage.typo))));
 // Menus calculés par le core (lib/navigation.ts, construireNavigation) : thèmes principaux du praticien, Soins, Le cabinet,
 // Infos pratiques ; sur téléphone (tiroir), 3 entrées au plus avec l'Accueil et le bouton de rendez-vous.
 const liens = navigation.menu.map((l) => ({ href: l.href, label: l.libelle, cle: l.cle }));
@@ -208,9 +281,13 @@ const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
 const effets = jeuEffets(site.theme.effets)?.id ?? '';
 // Forme des cartes de soins et de sujets (formes.ts, variante « soins-forme ») : CSS seul, en ligne
 const forme = formeDesCartes(site.modele);
+const cssHab = cssHabillage(habillage, { police: paireSite, gabarit, mono: !sansMono });
+const attrsHab = attributsHabillage(habillage, gabarit);
+// Bouton « Menu » du téléphone (panneau ou tiroir, gabarits coquille) : script en ligne < 1 Ko après l'en-tête (Coquille.astro)
+const scriptMenu = nouveau && menuABouton(habillage.menu, gabarit) ? SCRIPT_MENU : '';
 ---
 <!doctype html>
-<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-photos={avecTraitementPhotos ? traitementPhotosSite!.id : undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" {...attrsHab} style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-photos={avecTraitementPhotos ? traitementPhotosSite!.id : undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -236,7 +313,7 @@ const forme = formeDesCartes(site.modele);
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}${cssHab}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>
@@ -247,7 +324,7 @@ const forme = formeDesCartes(site.modele);
     {site.message && <div class="message" role="status"><Icone nom="lucide:info" />{site.message}</div>}
 
     {nouveau ? (
-      <Coquille courant={courant} rdvGeneral={rdvGeneral}><slot /></Coquille>
+      <Coquille courant={courant} rdvGeneral={rdvGeneral} scriptMenu={scriptMenu}><slot /></Coquille>
     ) : (<>
     {!transparent && <div class="infobarre">
       <div class="cadre infobarre__contenu">
@@ -256,13 +333,13 @@ const forme = formeDesCartes(site.modele);
       </div>
     </div>}
 
-    <header class="entete">
-      <div class="cadre entete__contenu">
+    <header class="entete mn-entete">
+      <div class="cadre entete__contenu mn-ligne">
         <Logo />
-        <nav class="liens" aria-label="Navigation principale">
-          {liens.map((l, i) => <a href={l.href} data-rang={l.cle === 'theme' ? i + 1 : undefined} aria-current={actifMenu === l.href ? 'page' : undefined}>{l.label}</a>)}
+        <nav class="liens mn-nav mn-liste" aria-label="Navigation principale">
+          {liens.map((l, i) => <a class="mn-lien" href={l.href} data-rang={l.cle === 'theme' ? i + 1 : undefined} aria-current={actifMenu === l.href ? 'page' : undefined}>{l.label}</a>)}
         </nav>
-        <a class="bouton bouton--plein bouton--petit entete__rdv" href={rdvGeneral ?? lienRdv('entete')}>
+        <a class="bouton bouton--plein bouton--petit entete__rdv mn-rdv" href={rdvGeneral ?? lienRdv('entete')}>
           {rdvEnLigne ? 'Prendre RDV' : aTelephone ? 'Appeler' : contactRdv === 'email' ? 'Écrire' : 'Rendez-vous'}
         </a>
         <button class="menu-bouton" type="button" aria-expanded="false" aria-controls="tiroir" aria-haspopup="dialog">

@@ -10,6 +10,7 @@ import {
   STRUCTURES, type MarqueImportee, type ModeleManifeste, type SiteDraft, type Structure, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
+import SpecimenHabillage from '@/components/SpecimenHabillage';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -57,6 +58,8 @@ export default function ApercuStudio({ cle, proposes, modeles, catalogue, marque
     return appliquerRecette(d, x, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: catalogue.map((c) => c.slug), themesActives });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cle, structure, proposes, modeles, catalogue, themesActives]);
+  // Typographies et détails : spécimen lisible (titre, surtitre, paragraphe, bouton, carte, citation) ; menus : l'accueil (en-tête)
+  if (/^(typo|details):/.test(cle)) return nu ? <SpecimenHabillage cle={cle} mobile={mobile} vignette={mobile ? 600 : 560} /> : <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${mobile ? 'mx-auto w-[300px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}><SpecimenHabillage cle={cle} mobile={mobile} /></div>;
   if (!apercu) return <p className="text-sm text-neutral-600">Aperçu indisponible.</p>;
   if (nu) return <ApercuTheme key={`${cle}|${mobile}`} sansCommandes vignette={mobile ? 600 : 560} vueInitiale={vuePourCle(cle)} survol={survol} seul={blocsPourCle(cle)} appareil={mobile ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
   return (

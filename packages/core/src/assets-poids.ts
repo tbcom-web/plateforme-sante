@@ -28,8 +28,10 @@
 /**
  * … + studio de recettes (migration 0032) : `structure:<page>:<variantes>` (structure d'un type de page), `effets:<jeu>` (jeu
  * d'effets), `composant:<famille>:<variante>` (présentation d'un élément : horaires, plan d'accès, galerie, questions…).
+ * … + habillage (migration 0036) : `typo:<axe>:<valeur>` (typographie, `typo:police:<paire>`), `details:<élément>:<valeur>`
+ * (`details:jeu:<id>`), `menu:<axe>:<variante>` (menus ordinateur, téléphone, rendez-vous).
  */
-export const TYPES_ASSET = ['picto', 'dessin', 'ligne', 'materiel', 'animation', 'heros', 'biblio', 'photo', 'modele', 'gamme', 'structure', 'effets', 'composant'] as const;
+export const TYPES_ASSET = ['picto', 'dessin', 'ligne', 'materiel', 'animation', 'heros', 'biblio', 'photo', 'modele', 'gamme', 'structure', 'effets', 'composant', 'typo', 'details', 'menu'] as const;
 export type TypeAsset = (typeof TYPES_ASSET)[number];
 export const estTypeAsset = (x: unknown): x is TypeAsset => typeof x === 'string' && (TYPES_ASSET as readonly string[]).includes(x);
 

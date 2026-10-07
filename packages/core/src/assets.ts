@@ -23,6 +23,9 @@ import { STRUCTURES, LIBELLES_STRUCTURES } from './propositions';
 import { universCatalogue } from './catalogue-univers';
 import { ETIQUETTES_STUDIO, FAMILLES_COMPOSANTS, LIBELLES_VARIANTES, NOMS_SECTIONS_VARIABLES, ORDRES_ACCUEIL, PAGES_STRUCTURE } from './recettes';
 import { JEUX_EFFETS } from './effets';
+import { libelleCleTypo, toutesClesTypo } from './typo';
+import { libelleCleDetails, toutesClesDetails } from './details';
+import { libelleCleMenu, toutesClesMenu } from './menus';
 import { VARIANTES_SECTIONS } from './modeles';
 
 export * from './assets-poids';
@@ -41,6 +44,9 @@ export const LIBELLES_TYPES_ASSET: Record<TypeAsset, string> = {
   structure: 'Structures de pages',
   effets: 'Jeux d’effets',
   composant: 'Éléments (présentation)',
+  typo: 'Typographies',
+  details: 'Détails',
+  menu: 'Menus',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -115,7 +121,7 @@ export const ETIQUETTES_ASSETS: Record<FamilleEtiquettes, readonly EtiquetteAsse
 /** Famille d'étiquettes d'un type d'asset */
 export function familleEtiquettes(t: TypeAsset): FamilleEtiquettes {
   if (t === 'picto') return 'icone';
-  if (t === 'structure' || t === 'composant' || t === 'effets') return 'studio';
+  if (t === 'structure' || t === 'composant' || t === 'effets' || t === 'typo' || t === 'details' || t === 'menu') return 'studio';
   if (t === 'photo' || t === 'modele' || t === 'gamme') return t;
   return 'illustration';
 }
@@ -288,6 +294,11 @@ export function inventaireStudio(): Asset[] {
       source: 'packages/core/src/effets.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle: `effets:${j.id}` },
     });
   }
+  // Habillage (habillage.ts) : chaque paire de polices et chaque valeur de typographie, chaque jeu et élément de détails, chaque
+  // menu ; rendus en spécimen (typo, détails) ou en premier écran (menus) par l'aperçu de l'admin
+  for (const cle of toutesClesTypo()) l.push({ cle, type: 'typo', titre: libelleCleTypo(cle), detail: 'Typographie', source: 'packages/core/src/typo.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle } });
+  for (const cle of toutesClesDetails()) l.push({ cle, type: 'details', titre: libelleCleDetails(cle), detail: 'Détails', source: 'packages/core/src/details.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle } });
+  for (const cle of toutesClesMenu()) l.push({ cle, type: 'menu', titre: libelleCleMenu(cle), detail: 'Menu', source: 'packages/core/src/menus.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle } });
   studio = l;
   return l;
 }

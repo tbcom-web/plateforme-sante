@@ -15,7 +15,7 @@
 
 import { animationPour, gammesDesCouleurs, LIBELLES_STRUCTURES, LIBELLES_STYLES, REGLES_THEMES, STRUCTURES, stylesCompatibles, reglageStyle, appliquerReglages, type Proposition, type StyleIllustration, type Structure } from './propositions';
 import { GAMMES, gamme as gammeParId } from './gammes';
-import { gabaritModele, modeleIntegre, PAIRES_POLICES, pairePolices, VARIANTES_SECTIONS, variantesModele, varianteSujets, varianteTheme, varianteArticle, type IdPairePolices, type ModeleManifeste, type SectionAccueil, type Variantes, type Gabarit } from './modeles';
+import { gabaritModele, modeleIntegre, PAIRES_POLICES, pairePolices, paireDuModele, VARIANTES_SECTIONS, variantesModele, varianteSujets, varianteTheme, varianteArticle, type IdPairePolices, type ModeleManifeste, type SectionAccueil, type Variantes, type Gabarit } from './modeles';
 import { modeleDuSite, universCatalogue } from './catalogue-univers';
 import { appliquerUniversParcours } from './parcours';
 import { verifierCouleursGabarit, ajusterContraste } from './gabarits';
@@ -34,6 +34,10 @@ import type { HashtagsAssets } from './hashtags';
 import { clesAtelier, type PoidsAtelier } from './atelier-poids';
 import { FACTEUR_DEFAUT_MOBILE, appareilDe, poidsAppareil, type AppareilRetour } from './rendu-mobile';
 import type { Animation } from './packs';
+import { estHabillageParDefaut, normaliserHabillage, tirerHabillage, clesAtelierHabillage, clesNotablesHabillage, libellesHabillage, verrouAxe, type AxeHabillage, type Habillage } from './habillage';
+import { AXES_TYPO, policePermise, estCleTypo, libelleCleTypo, typoPourCle, type AxeTypo, type ReglagesTypo } from './typo';
+import { estCleDetails, libelleCleDetails, detailsPourCle, type ReglagesDetails } from './details';
+import { AXES_MENU, estCleMenu, libelleCleMenu, menuPourCle, type AxeMenu, type ReglagesMenu } from './menus';
 import { cleTraitementPhotos, libelleTraitementPhotos, lireCleTraitementPhotos, normaliserTraitementPhotos, traitementNeutre, TRAITEMENTS_PHOTOS, TRAITEMENT_PHOTOS_DEFAUT, type TraitementPhotos } from './traitements-photos';
 import { niveauProximite, normaliserScenario, proximiteScenarios, RANG_PROXIMITE, scenarioDeRecette, type ScenarioRecette } from './simulateur';
 import type { SiteDraft } from './draft';
@@ -52,6 +56,10 @@ export const DIMENSIONS_RECETTE = [
   { id: 'structure', nom: 'Structure', touche: 's' },
   { id: 'effets', nom: 'Effets', touche: 'e' },
   { id: 'traitement', nom: 'Traitement des photos', touche: 't' },
+  // Habillage (habillage.ts) : panneau « Typographie & détails »
+  { id: 'typo', nom: 'Typographie', touche: 'y' },
+  { id: 'details', nom: 'Jeu de détails', touche: 'd' },
+  { id: 'menu', nom: 'Menu', touche: 'm' },
 ] as const;
 export type DimensionRecette = (typeof DIMENSIONS_RECETTE)[number]['id'];
 export const estDimensionRecette = (x: unknown): x is DimensionRecette => DIMENSIONS_RECETTE.some((d) => d.id === x);
@@ -168,6 +176,14 @@ export type CompositionRecette = {
   effets: IdJeuEffets;
   /** Traitement uniforme de toutes les photos du site (traitements-photos.ts) ; absent des anciennes recettes = modèle */
   traitement: TraitementPhotos;
+  /**
+   * Habillage (2026-10-07, habillage.ts) : typographie (échelle, casse, graisse…), jeu de détails (séparateurs, coins, ombres,
+   * boutons…) et menu (ordinateur, téléphone, rendez-vous). Facultatifs : absents des anciennes recettes = rendu du modèle ;
+   * reparerComposition les remplit toujours.
+   */
+  typo?: ReglagesTypo;
+  details?: ReglagesDetails;
+  menu?: ReglagesMenu;
 };
 
 /** Scénario et données du studio (tirages) */
@@ -434,7 +450,9 @@ function tirerCouleurs(x: CompositionRecette, c: ContexteRecette, r: () => numbe
 }
 
 function tirerPolices(x: CompositionRecette, c: ContexteRecette, r: () => number): IdPairePolices {
-  return choisir(PAIRES_POLICES.map((p) => ({ v: p.id, p: masse(effetAtelier(c, `police=${p.id}`)) })), r, (v) => v === x.police) ?? x.police;
+  // Budget polices : paires permises par le gabarit (revue : italique des titres compris, typo.ts policePermise)
+  const g = gabaritDe(c, x.structure);
+  return choisir(PAIRES_POLICES.filter((p) => policePermise(p.id, g)).map((p) => ({ v: p.id, p: masse(effetAtelier(c, `police=${p.id}`)) })), r, (v) => v === x.police) ?? x.police;
 }
 
 function tirerVisuels(x: CompositionRecette, c: ContexteRecette, r: () => number): CompositionRecette['visuels'] {
@@ -566,13 +584,14 @@ export function reparerComposition(x: CompositionRecette, c: ContexteRecette): C
     structure,
     gamme,
     couleur,
-    police: pairePolices(x.police) ? x.police : 'grotesque',
+    police: pairePolices(x.police) && policePermise(x.police, g) ? x.police : (paireDuModele(modeleDe(c, structure))?.id ?? 'grotesque'),
     // Animation d'accueil : celle choisie (dé du studio) si elle reste permise, sinon celle du sujet
     visuels: { style, herosSujet, animation: x.visuels.animation && animationsPermises(c, structure, style).includes(x.visuels.animation) ? x.visuels.animation : animationDe(c, structure, style) },
     photos: style === 'photos' ? x.photos.slice(0, 8) : [],
     sections: { ordre: ordreAccueil(x.sections.ordre) ? x.sections.ordre : 'modele', variantes },
     effets: jeuEffets(x.effets) ? x.effets : 'sobre',
     traitement: normaliserTraitementPhotos(x.traitement),
+    ...normaliserHabillage(x, g),
   };
 }
 
@@ -614,6 +633,7 @@ export function tirerDimension(x: CompositionRecette, dim: DimensionRecette, c: 
     case 'structure': y = { ...x, ...tirerStructure(x, c, r) }; break;
     case 'effets': y = { ...x, effets: tirerEffets(x, c, r) }; break;
     case 'traitement': y = { ...x, traitement: tirerTraitement(x, c, r) }; break;
+    case 'typo': case 'details': case 'menu': y = tirerHabillageRecette(x, dim, c, graine); break;
   }
   y = reparerComposition(y, c);
   // Passage au style « photos » : la recette reçoit aussitôt ses photos
@@ -647,7 +667,7 @@ export function clesStructure(x: CompositionRecette): string[] {
     return parts.length ? `structure:${p.id}:${parts.join('-')}` : '';
   }).filter(Boolean);
   const composants = Object.entries(v).filter(([s]) => FAMILLES_COMPOSANTS.includes(s as keyof Variantes)).map(([s, k]) => `composant:${s}:${k}`);
-  return [...pages, ...composants, `effets:${x.effets}`, cleTraitementPhotos(x.traitement ?? TRAITEMENT_PHOTOS_DEFAUT)];
+  return [...pages, ...composants, `effets:${x.effets}`, cleTraitementPhotos(x.traitement ?? TRAITEMENT_PHOTOS_DEFAUT), ...clesNotablesHabillage(habillageDe(x), x.police)];
 }
 
 /** Valeurs d'une clé de structure de page, dans l'ordre de clesStructure (ordre de l'accueil, puis variantes) ; null si inconnue */
@@ -678,6 +698,10 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   const tp = lireCleTraitementPhotos(cle);
   if (tp) return { ...x, traitement: tp };
   if (type === 'effets' && jeuEffets(a)) return { ...x, effets: a as IdJeuEffets };
+  // Habillage : la valeur de la clé posée sur l'habillage de `x` (paire de polices pour typo:police:<id>)
+  if (estCleTypo(cle)) { const t = typoPourCle(habillageDe(x).typo, cle); return { ...x, typo: t.typo, ...(t.police ? { police: t.police as IdPairePolices } : {}) }; }
+  if (estCleDetails(cle)) return { ...x, details: detailsPourCle(habillageDe(x).details, cle) };
+  if (estCleMenu(cle)) return { ...x, menu: menuPourCle(habillageDe(x).menu, cle) };
   if (type === 'composant' && (VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) {
     return { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, [a]: b } } };
   }
@@ -711,15 +735,36 @@ export function blocsPourCle(cle: string): string[] | undefined {
   return undefined;
 }
 
+/** Habillage d'une composition (réglages par défaut pour les anciennes recettes) */
+export const habillageDe = (x: Pick<CompositionRecette, 'typo' | 'details' | 'menu'>): Habillage => normaliserHabillage(x);
+/** Axes d'une dimension d'habillage : toute la typographie, le jeu de détails, tout le menu */
+const AXES_DIMENSION = {
+  typo: (Object.keys(AXES_TYPO) as AxeTypo[]).map((axe) => ({ groupe: 'typo' as const, axe })),
+  details: [{ groupe: 'details' as const, axe: 'jeu' as const }],
+  menu: (Object.keys(AXES_MENU) as AxeMenu[]).map((axe) => ({ groupe: 'menu' as const, axe })),
+} satisfies Record<'typo' | 'details' | 'menu', AxeHabillage[]>;
+/**
+ * Dé de l'habillage (panneau « Typographie & détails ») : une dimension entière (`typo`, `details` = jeu, `menu`) ou UN axe
+ * (`{ groupe, axe }` : échelle, casse, séparateurs, menu téléphone…), axes verrouillés (`hab:<groupe>:<axe>`) jamais touchés ;
+ * pondéré par les notes (clés atelier typo= / details= / menu=). Déterministe pour une graine.
+ */
+export function tirerHabillageRecette(x: CompositionRecette, cible: 'typo' | 'details' | 'menu' | AxeHabillage, c: ContexteRecette, graine: number, verrous: readonly string[] = []): CompositionRecette {
+  const axes = typeof cible === 'string' ? AXES_DIMENSION[cible] : [cible];
+  const sel = typeof cible === 'string' ? cible : verrouAxe(cible);
+  const h = tirerHabillage(habillageDe(x), alea(graine, sel), { axes, verrous, effet: (k) => effetAtelier(c, k), gabarit: gabaritDe(c, x.structure) });
+  return reparerComposition({ ...x, ...h }, c);
+}
+
 /** « Tout changer » : un dé sur chaque dimension non verrouillée (structure d'abord : elle conditionne styles et couleurs) */
 export function toutChanger(x: CompositionRecette, verrous: readonly string[], c: ContexteRecette, graine: number): CompositionRecette {
   // Harmonie (harmonie.ts) : une famille de style d'abord (sujet n° 1, notes, verrous), puis chaque dimension dans la famille
   if (!c.horsRegles) return toutChangerHarmonieux(x, verrous, c, graine, { ...outilsHarmonie(c), brut: (y, g) => toutChanger(y, verrous, { ...c, horsRegles: true }, g) });
   let y = x;
   const sousVerrous = verrous.filter((v) => v.startsWith('page:') || v.startsWith('composant:'));
-  for (const d of ['structure', 'couleurs', 'polices', 'visuels', 'photos', 'effets', 'traitement'] as const) {
+  for (const d of ['structure', 'couleurs', 'polices', 'visuels', 'photos', 'effets', 'traitement', 'typo', 'details', 'menu'] as const) {
     if (verrous.includes(d)) continue;
-    y = d === 'structure' && sousVerrous.length
+    y = d === 'typo' || d === 'details' || d === 'menu' ? tirerHabillageRecette(y, d, c, hache(`${graine}|${d}`), verrous)
+      : d === 'structure' && sousVerrous.length
       ? reparerComposition({ ...y, ...tirerStructure(y, c, alea(hache(`${graine}|${d}`), d), true, sousVerrous) }, c)
       : tirerDimension(y, d, c, hache(`${graine}|${d}`));
   }
@@ -797,6 +842,7 @@ export function libellesComposition(x: CompositionRecette): { dimension: string;
     { dimension: 'Sections', valeur: [ordreAccueil(x.sections.ordre)?.nom, ...v].filter(Boolean).join(' · ') },
     { dimension: 'Effets', valeur: jeuEffets(x.effets)?.nom ?? x.effets },
     { dimension: 'Traitement des photos', valeur: libelleTraitementPhotos(x.traitement ?? TRAITEMENT_PHOTOS_DEFAUT) },
+    ...libellesHabillage(habillageDe(x)),
   ];
 }
 
@@ -822,6 +868,8 @@ export function normaliserComposition(brut: unknown, c: ContexteRecette): Compos
     effets: jeuEffets(o.effets) ? o.effets : 'sobre',
     // Anciennes recettes (sans traitement) : traitement du modèle
     traitement: normaliserTraitementPhotos(o.traitement),
+    // Habillage (anciennes recettes : rendu du modèle) : normalisé par reparerComposition
+    typo: o.typo, details: o.details, menu: o.menu,
   };
   if (!x.gamme && !/^#[0-9a-f]{6}$/i.test(txt(o.couleur))) return null;
   return reparerComposition(x, c);
@@ -830,7 +878,7 @@ export function normaliserComposition(brut: unknown, c: ContexteRecette): Compos
 /** Forme stockée (table recettes.composition) : clés dans un ordre stable, variantes triées */
 export function serialiserComposition(x: CompositionRecette): string {
   const variantes = Object.fromEntries(Object.entries(x.sections.variantes).sort(([a], [b]) => (a < b ? -1 : 1)));
-  return JSON.stringify({ structure: x.structure, gamme: x.gamme, couleur: x.couleur, police: x.police, visuels: x.visuels, photos: x.photos, sections: { ordre: x.sections.ordre, variantes }, effets: x.effets, traitement: normaliserTraitementPhotos(x.traitement) });
+  return JSON.stringify({ structure: x.structure, gamme: x.gamme, couleur: x.couleur, police: x.police, visuels: x.visuels, photos: x.photos, sections: { ordre: x.sections.ordre, variantes }, effets: x.effets, traitement: normaliserTraitementPhotos(x.traitement), ...habillageDe(x) });
 }
 
 /**
@@ -934,6 +982,9 @@ export function appliquerRecette(
   theme.effets = x.effets;
   const tp = normaliserTraitementPhotos(x.traitement);
   if (traitementNeutre(tp)) delete theme.traitementPhotos; else theme.traitementPhotos = tp;
+  // Habillage (typographie, détails, menu) : posé seulement s'il change quelque chose (sites antérieurs inchangés)
+  const hab = habillageDe(x);
+  if (estHabillageParDefaut(hab)) { delete theme.typo; delete theme.details; delete theme.menu; } else { theme.typo = hab.typo; theme.details = hab.details; theme.menu = hab.menu; }
   if (opts.id) theme.recette = opts.id; else delete theme.recette;
   y = { ...y, theme };
   return { draft: y, modele: modeleDuSite(base, theme) };
@@ -965,7 +1016,7 @@ export function clesRecette(x: CompositionRecette, sujets: readonly string[]): {
   const gamme = x.gamme || 'libre';
   const atelier = [
     ...clesAtelier({ structure: x.structure, gamme, style: x.visuels.style, animation: x.visuels.animation, theme1: s1 }).filter((k) => k.type !== 'combinaison').map((k) => k.cle),
-    `police=${x.police}`, `ordre=${x.sections.ordre}`, `effets=${x.effets}`,
+    `police=${x.police}`, `ordre=${x.sections.ordre}`, `effets=${x.effets}`, ...clesAtelierHabillage(habillageDe(x)),
     ...Object.entries(x.sections.variantes).map(([s, v]) => `variante=${s}:${v}`),
   ];
   const assets = [
@@ -1094,6 +1145,10 @@ export function libelleCleRenfort(k: string): string {
   if (k.startsWith('ordre=')) return `ordre « ${ordreAccueil(k.slice(6))?.nom ?? k.slice(6)} »`;
   if (lireCleTraitementPhotos(k)) return `photos « ${libelleTraitementPhotos(lireCleTraitementPhotos(k)!)} »`;
   if (k.startsWith('effets:')) return `effets ${jeuEffets(k.slice(7))?.nom ?? k.slice(7)}`;
+  if (estCleTypo(k)) return libelleCleTypo(k).toLowerCase();
+  if (estCleDetails(k)) return libelleCleDetails(k).toLowerCase();
+  if (estCleMenu(k)) return libelleCleMenu(k).toLowerCase();
+  if (/^(typo|details|menu)=/.test(k)) { const [g, reste] = k.split('='); return (g === 'typo' ? libelleCleTypo : g === 'details' ? libelleCleDetails : libelleCleMenu)(`${g}:${reste}`).toLowerCase(); }
   if (k.startsWith('composant:')) { const [, f, v] = k.split(':'); return `${(NOMS_SECTIONS_VARIABLES[f] ?? f).toLowerCase()} « ${LIBELLES_VARIANTES[f]?.[v] ?? v} »`; }
   if (k.startsWith('structure:')) return `structure ${PAGES_STRUCTURE.find((p) => p.id === k.split(':')[1])?.nom ?? k.split(':')[1]}`;
   if (k.startsWith('variante=')) { const [s, v] = k.slice(9).split(':'); return `${(NOMS_SECTIONS_VARIABLES[s] ?? s).toLowerCase()} « ${LIBELLES_VARIANTES[s]?.[v] ?? v} »`; }
@@ -1171,6 +1226,9 @@ export function estCleStudio(k: unknown): k is string {
   if (typeof k !== 'string' || k.length > 200) return false;
   const [type, a, b] = k.split(':');
   if (type === 'effets') return (Boolean(jeuEffets(a)) && b === undefined) || Boolean(lireCleTraitementPhotos(k));
+  if (type === 'typo') return estCleTypo(k);
+  if (type === 'details') return estCleDetails(k);
+  if (type === 'menu') return estCleMenu(k);
   if (type === 'composant') return Boolean((VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) && k.split(':').length === 3;
   if (type === 'structure') {
     const p = PAGES_STRUCTURE.find((x) => x.id === a);

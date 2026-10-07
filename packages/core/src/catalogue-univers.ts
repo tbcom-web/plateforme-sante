@@ -12,8 +12,9 @@
 // Sujets à faible niveau de preuve (posturologie, réflexologie, semelles « posturales »…) : jamais proposés dans
 // un univers du catalogue tant qu'ils n'ont pas été validés sur le plan déontologique (statut « differe »).
 
-import { MODELES_INTEGRES, SECTIONS_ACCUEIL, REGISTRES_MODELE, avecPolices, gabaritModele, pairePolices, variantesValides, type ModeleManifeste, type SectionAccueil } from './modeles';
+import { MODELES_INTEGRES, SECTIONS_ACCUEIL, REGISTRES_MODELE, avecPolices, gabaritModele, pairePolices, paireDuModele, variantesValides, type ModeleManifeste, type SectionAccueil } from './modeles';
 import { GAMMES } from './gammes';
+import { graisseTitres, normaliserTypo } from './typo';
 import { SPECIALITES } from './packs';
 import { marquesLogo, DISPOSITIONS_LOGO, type DispositionLogo } from './logos';
 import { THEMES_FLUX, type ModeVisuel, type SiteDraft } from './draft';
@@ -450,7 +451,7 @@ export function sectionsCompatibles(m: Pick<ModeleManifeste, 'accueil'>, section
  */
 export function modeleDuSite(
   m: ModeleManifeste,
-  t: { sections?: unknown; registre?: unknown; police?: unknown; variantes?: unknown; infosEnTete?: unknown } | null | undefined,
+  t: { sections?: unknown; registre?: unknown; police?: unknown; variantes?: unknown; infosEnTete?: unknown; typo?: unknown } | null | undefined,
 ): ModeleManifeste {
   if (!t) return m;
   const sections = sectionsCompatibles(m, t.sections) ? t.sections : null;
@@ -459,7 +460,9 @@ export function modeleDuSite(
   const nbVariantes = Object.keys(variantes).length;
   const police = pairePolices(t.police);
   const infos = t.infosEnTete === true && (sections ?? m.accueil.sections).includes('acces');
-  if (!sections && !registre && !nbVariantes && !police && !infos) return m;
+  // Graisse des titres choisie dans la typographie de la recette (typo.ts), bornée à l'axe réel de la police
+  const graisse = t.typo ? graisseTitres(police?.id ?? paireDuModele(m)?.id, normaliserTypo(t.typo)) : null;
+  if (!sections && !registre && !nbVariantes && !police && !infos && !graisse) return m;
   // Registre pédagogique : ni trame ni plan (docs/charte-graphique.md, « Deux registres ») ; texture des sections retirée.
   const jetons = registre ? { ...m.jetons, registre, ...(registre === 'pedagogique' ? { motif: 'aucun' as const } : {}) } : m.jetons;
   const r: ModeleManifeste = {
@@ -468,7 +471,8 @@ export function modeleDuSite(
     jetons,
     ...(nbVariantes ? { variantes: { ...(m.variantes ?? {}), ...variantes } } : {}),
   };
-  return police ? avecPolices(r, police.id) : r;
+  const p = police ? avecPolices(r, police.id) : r;
+  return graisse ? { ...p, jetons: { ...p.jetons, graisseTitres: graisse } } : p;
 }
 
 /** Soins du site dans l'ordre : ceux mis en avant d'abord (dans leur ordre), puis les autres dans l'ordre reçu. */

@@ -15,7 +15,7 @@ import { jourParis } from './essai';
 // Catégories (tuiles de l'accueil)
 // ---------------------------------------------------------------------------------------------------------------
 
-export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets';
+export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets' | 'typographies' | 'details' | 'menus';
 
 export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: string; description: string; types: readonly TypeAsset[] }[] = [
   { id: 'hasard', libelle: 'Tout au hasard', description: 'Un peu de tout, les jamais notés d’abord', types: [] },
@@ -30,6 +30,10 @@ export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: strin
   { id: 'pages', libelle: 'Structures de pages', description: 'Accueil, soins, accès, cabinet, questions : ordre et présentation', types: ['structure'] },
   { id: 'elements', libelle: 'Éléments', description: 'Horaires, plan d’accès, galerie, contact, formes des cartes…', types: ['composant'] },
   { id: 'effets', libelle: 'Effets', description: 'Survol, apparition, transitions : Sobre, Doux, Vivant, Éditorial', types: ['effets'] },
+  // Habillage (habillage.ts) : spécimens (titre, surtitre, paragraphe, bouton) en ordinateur et mobile
+  { id: 'typographies', libelle: 'Typographies', description: 'Paires de polices, échelle, casse, graisse, surtitres', types: ['typo'] },
+  { id: 'details', libelle: 'Détails', description: 'Jeux de détails : séparateurs, soulignés, coins, ombres, boutons, cadres…', types: ['details'] },
+  { id: 'menus', libelle: 'Menus', description: 'En-têtes et menus : ordinateur, téléphone, bouton de rendez-vous', types: ['menu'] },
 ];
 
 export const categorieRetours = (id: string | null | undefined) => CATEGORIES_RETOURS.find((c) => c.id === id);

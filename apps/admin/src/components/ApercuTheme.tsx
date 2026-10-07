@@ -20,9 +20,11 @@ import '@fontsource-variable/bodoni-moda/wght.css';
 import '@fontsource-variable/bodoni-moda/wght-italic.css';
 import '@fontsource-variable/newsreader/wght.css';
 import '@fontsource-variable/newsreader/wght-italic.css';
+import './polices-studio';
 import '@plateforme/core/dessins.css';
 import { useContext, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { couleursTraitement, cssTraitementPhotos, normaliserTraitementPhotos, refFiltre, svgTraitementPhotos, traitementNeutre, voileTraitement } from '@plateforme/core';
+import { attributsHabillage, cssHabillage, menuABouton, normaliserHabillage, paireDuModele } from '@plateforme/core';
 import { ContexteAnimations, cssAnimationsApercu, htmlAnimationApercu, useAnimationsCanvas } from './AnimationsApercu';
 import {
   completerJeuVisuel, construireNavigation, cssEffets, cssSurvolSimule, cssFormes, formeDesCartes, jeuEffets, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
@@ -144,6 +146,12 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     return completerJeuVisuel(jeuVisuel(d.theme.specialite, d.theme.specialiteSecondaire || null, perso), perso);
   }, [d.theme.specialite, d.theme.specialiteSecondaire, d.theme.modeVisuel, d.theme.photosRecette, jeuPhotos]);
 
+  // Habillage de la recette (typographie, jeu de détails, menu) : feuille CSS, attributs data-td / data-mn, bouton « Menu »
+  const habillage = useMemo(() => {
+    const g = gabaritModele(m);
+    const h = normaliserHabillage(d.theme, g);
+    return { css: cssHabillage(h, { police: paireDuModele(m)?.id, gabarit: g, mono: g === 'classique' && registreModele(m) !== 'pedagogique' }), attributs: attributsHabillage(h, g), bouton: menuABouton(h.menu, g) };
+  }, [m, d.theme]);
   const style = useMemo(() => {
     const v: Record<string, string> = {
       ...variablesCharte(),
@@ -533,7 +541,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           <ContexteAnimations.Provider value={reglageAnim}>
           <div
             ref={racineAp}
-            className="ap"
+            className={`ap${habillage.bouton ? ' mn-js' : ''}`}
+            {...habillage.attributs}
             data-motif={j.motif ?? 'plan'}
             data-titres={j.policeTitres}
             data-registre={registre}
@@ -544,6 +553,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             style={{ ...style, minHeight: '100vh', paddingBottom: mobile ? MARGE_BARRE_MOBILE : undefined }}
           >
             <style>{CSS + SURFACES_CSS + CSS_PRESSION}</style>
+            {/* Habillage d'une recette (typographie, détails, menu : habillage.ts) : même feuille que le site publié */}
+            {habillage.css && <style dangerouslySetInnerHTML={{ __html: habillage.css }} />}
             {avecTraitement && <><span aria-hidden="true" ref={(el) => { const u = el?.ownerDocument?.URL; if (u && u !== docFiltre) setDocFiltre(u); }} dangerouslySetInnerHTML={{ __html: svgTraitementPhotos(traitementPh, couleursTp, idFiltre) }} /><style dangerouslySetInnerHTML={{ __html: cssTraitementPhotos(traitementPh, '.ap[data-photos]', { id: idFiltre, important: true, document: docFiltre }) }} /></>}
             {cssFormes(formeDesCartes(m)) && <style dangerouslySetInnerHTML={{ __html: cssFormes(formeDesCartes(m)) }} />}
             {jeuEffets(d.theme.effets) && <style dangerouslySetInnerHTML={{ __html: cssEffets(d.theme.effets).replace(/@view-transition\{[^}]*\}/g, '') + cssSurvolSimule(d.theme.effets) }} />}

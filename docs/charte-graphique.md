@@ -212,11 +212,83 @@ registres (aucune couleur littérale, aucun jeton sans correspondance, ≤ 64 ko
 
 | Rôle | Police | Règle |
 |---|---|---|
-| Titres | `--police-titres` (au choix du modèle : Schibsted, Inter, Manrope, Fraunces, Instrument, Nunito) | grandes tailles, interlettrage serré |
+| Titres | `--police-titres` (au choix du modèle ou de la recette : 23 paires, catalogue ci-dessous) | grandes tailles, interlettrage serré |
 | Texte | `--police-texte` (Inter, Manrope ou Nunito) | 1,0625 rem, interligne 1,65 (registre pédagogique : 18 px au moins) |
 | Données | `--police-mono` (JetBrains Mono), identique sur tous les modèles | sur-titres numérotés « 01 — », lectures, cotes, légendes, fil d'Ariane, numéros |
 
 L'échelle comprend `--taille-affiche`, `-h1`, `-h2`, `-h3`, `-chapo`, `-texte`, `-note`, `-donnees` (0,8 rem, soit 12,8 px) et `-donnees-petit` (0,75 rem, 12 px ; aucun texte d'interface en dessous de 12 px). En capitales, les données prennent un interlettrage de `--interlettrage-donnees` (0,08 em).
+
+### Catalogue des polices du studio (2026-10-07)
+
+Demande de Paul : « plus de combinaisons de polices, de tailles, MAJUSCULES vs minuscules ». 23 paires titre / texte
+(`PAIRES_POLICES`, modeles.ts) sur 26 polices, toutes **libres (OFL-1.1, Roboto Slab : Apache-2.0)** et **auto-hébergées** :
+paquets @fontsource déclarés dans `apps/sites` et `apps/admin`, servies par nos sites depuis `/_astro/` (aucun appel à Google Fonts :
+contrôlé par `habillage.test.ts`), sous-ensemble latin, woff2, `font-display: swap`, polices **variables** quand elles existent (un
+fichier pour toutes les graisses), polices de secours recalées (`size-adjust`, `ascent-override` : `REPLIS`, Gabarit.astro, mesurés
+avec @capsizecss/unpack) pour un CLS nul. Fiches (genre, axe de graisse, italique, poids) : `FICHES_POLICES` (typo.ts).
+
+Règles de chargement : **2 familles et 3 fichiers au plus par site, budget ≤ 90 Ko** (fichiers réduits aux caractères du site par
+l'intégration `polices-reduites`) ; seule la police des titres (élément LCP du premier écran) est préchargée, et son italique si le
+titre l'emploie ; le texte et la mono sont demandés dès le début du corps sans concurrencer le titre (mesure en 4G lente : LCP égal ou
+meilleur qu'avec l'ancien préchargement de toutes les polices). L'italique du mot d'accent n'est servi que s'il tient dans le budget
+(sinon le mot passe en couleur, `accentEffectif`) ; en gabarit « revue » (italique des titres dès le premier écran), seules les paires
+dont titres + texte + italique tiennent dans le budget sont tirées (`policePermise`). Exclues : polices à licence non libre
+(General Sans / Fontshare…), polices fantaisie. Veille 2026 couverte : serifs éditoriales (Instrument, Fraunces, Newsreader, Playfair),
+grotesques neutres (Inter, Geist, Manrope, DM Sans, Schibsted), géométriques amicales (Outfit, Plus Jakarta, Figtree), condensée
+(Oswald), mono en accent (JetBrains Mono), rondes « cosy » (Nunito, Quicksand). Non retenues pour l'instant : Bricolage Grotesque,
+Archivo (fichiers plus lourds), Poppins (pas de version variable).
+
+| Police | Genre | Licence | Source (npm, auto-hébergée) | Fichier latin brut | Servi (réduit, mesuré) | Italique brut / servi |
+|---|---|---|---|---|---|---|
+| Inter | grotesque | OFL-1.1 | `@fontsource-variable/inter` | 47,1 Ko | 31,5 Ko | — |
+| Manrope | géométrique | OFL-1.1 | `@fontsource-variable/manrope` | 24,3 Ko | — | — |
+| Fraunces | serif éditoriale | OFL-1.1 | `@fontsource-variable/fraunces` | 65,7 Ko | — | 44,7 Ko / — |
+| Instrument Serif | serif éditoriale | OFL-1.1 | `@fontsource/instrument-serif` | 20,5 Ko | — | 21,6 Ko / — |
+| Schibsted Grotesk | grotesque | OFL-1.1 | `@fontsource-variable/schibsted-grotesk` | 45,7 Ko | — | — |
+| Nunito | ronde | OFL-1.1 | `@fontsource-variable/nunito` | 38,2 Ko | — | — |
+| Geist | géométrique | OFL-1.1 | `@fontsource-variable/geist` | 28,7 Ko | — | — |
+| Public Sans | grotesque | OFL-1.1 | `@fontsource-variable/public-sans` | 26,2 Ko | — | — |
+| Bodoni Moda | didone | OFL-1.1 | `@fontsource-variable/bodoni-moda` | 25,3 Ko | — | 29,6 Ko / — |
+| Newsreader | serif éditoriale | OFL-1.1 | `@fontsource-variable/newsreader` | 56,7 Ko | 42,2 Ko | 63,0 Ko / 47,0 Ko |
+| Playfair Display | didone | OFL-1.1 | `@fontsource-variable/playfair-display` | 37,5 Ko | 28,3 Ko | 37,9 Ko / 29,5 Ko |
+| DM Serif Display | didone (affiche) | OFL-1.1 | `@fontsource/dm-serif-display` | 24,2 Ko | 18,9 Ko | 24,0 Ko / 18,9 Ko |
+| Young Serif | serif ronde | OFL-1.1 | `@fontsource/young-serif` | 26,4 Ko | 20,8 Ko | — |
+| Lora | serif humaniste | OFL-1.1 | `@fontsource-variable/lora` | 36,9 Ko | 27,7 Ko | 39,8 Ko / 30,3 Ko |
+| Cormorant Garamond | garamond (titres seulement) | OFL-1.1 | `@fontsource-variable/cormorant-garamond` | 36,8 Ko | 25,5 Ko | 38,3 Ko / 27,1 Ko |
+| Roboto Slab | slab | Apache-2.0 | `@fontsource-variable/roboto-slab` | 33,4 Ko | — | — |
+| Space Grotesk | grotesque à caractère | OFL-1.1 | `@fontsource-variable/space-grotesk` | 21,8 Ko | 15,7 Ko | — |
+| Outfit | géométrique ronde | OFL-1.1 | `@fontsource-variable/outfit` | 31,5 Ko | 24,3 Ko | — |
+| Oswald | condensée | OFL-1.1 | `@fontsource-variable/oswald` | 27,8 Ko | 20,9 Ko | — |
+| Quicksand | ronde | OFL-1.1 | `@fontsource-variable/quicksand` | 27,6 Ko | 19,4 Ko | — |
+| Plus Jakarta Sans | géométrique | OFL-1.1 | `@fontsource-variable/plus-jakarta-sans` | 26,7 Ko | 19,7 Ko | — |
+| Figtree | géométrique | OFL-1.1 | `@fontsource-variable/figtree` | 19,7 Ko | 14,7 Ko | — |
+| DM Sans | géométrique douce | OFL-1.1 | `@fontsource-variable/dm-sans` | 36,1 Ko | 28,2 Ko | — |
+| Work Sans | grotesque | OFL-1.1 | `@fontsource-variable/work-sans` | 49,1 Ko | 36,9 Ko | — |
+| Source Sans 3 | humaniste | OFL-1.1 | `@fontsource-variable/source-sans-3` | 28,1 Ko | 19,3 Ko | — |
+| JetBrains Mono | mono | OFL-1.1 | `@fontsource-variable/jetbrains-mono` | 39,5 Ko | 33,0 Ko | — |
+
+Poids servi mesuré sur les 12 combinaisons de la planche (build réel, réduit) : 20 à 90 Ko par site, 1 à 3 fichiers.
+
+### Typographie, jeux de détails et menus (habillage des recettes, 2026-10-07)
+
+Indépendants de la paire de polices ; une feuille CSS par recette (`cssHabillage`, ≤ 4 Ko gzip, mesuré 1,3 à 2,1 Ko), mêmes règles
+sur le site (`<html data-td data-mn>`) et dans l'aperçu de l'admin (racine `.ap`), aucun JS (sauf le bouton « Menu » du panneau et
+du tiroir du téléphone : script en ligne < 1 Ko, Échap, piège de focus ; sans script, les liens restent visibles).
+- **Typographie** (`typo.ts`) : échelle (modeste 1,2 · affirmée 1,333 · spectaculaire 1,5, titres bornés par le plus long mot :
+  `--mot-long`), casse (normale · MAJUSCULES espacées · surtitres en petites capitales — toujours en `text-transform`, le texte source
+  reste en casse normale), graisse (celle de la paire · fine · normale · grasse · noire, bornée à l'axe réel de la police), interlettrage,
+  mot d'accent du titre (italique ou couleur : la ville, `.pale`), alignement des têtes de section, surtitres (simple, filet, numéroté —
+  jamais en registre pédagogique —, pastille). Capitales : `--mot-long` × 1,45, interligne 1,1, intertitres ≤ 1,4 rem sous 480 px.
+- **Détails** (`details.ts`) : séparateurs (filet, double filet, ondulation, points de pression `--pression-1…4`), soulignés des
+  intertitres (trait décalé, surligneur, vague), encadrés et citations (filet, grands guillemets, aplat), étiquettes, motif de fond des
+  sections paires (trame, grain, formes floues de la gamme, grille ≤ 9 % d'opacité), coins, ombres (douce, portée pleine couleur —
+  jamais sur fond sombre), boutons (contour, flèche animée, pilule), densité, cadres d'images (arrondi, organique, décalé ; la forme des
+  cartes de formes.ts prime). Six jeux : Éditorial chic, Graphique pop, Doux et rond, Technique net, Classique sobre, Magazine affirmé.
+- **Menus** (`menus.ts`) : ordinateur (logo centré entre les liens, barre fine collante, pastilles, soulignés animés, transparente puis
+  pleine, menu latéral — revue et classique seulement), téléphone (liens défilants, panneau plein écran, tiroir, barre d'onglets qui
+  REMPLACE la barre d'actions), bouton de rendez-vous (plein, contour, flottant). Mêmes entrées, ordre et `aria-current` que
+  `construireNavigation` ; cibles ≥ 44 px ; mouvement au défilement en amélioration progressive (`animation-timeline`), coupé avec
+  `prefers-reduced-motion`.
 
 ## Espacements et téléphone
 

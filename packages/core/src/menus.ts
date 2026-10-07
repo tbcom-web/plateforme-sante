@@ -97,7 +97,7 @@ export function cssMenu(brut: unknown, g: Gabarit = 'tableau'): string {
   const ordi: string[] = [];
   switch (m.ordinateur) {
     case 'centre':
-      ordi.push(imp(`${r} .mn-ligne{display:flex;flex-wrap:nowrap;justify-content:center;align-items:center;gap:6px 18px}${r} :is(.mn-nav,.mn-liste){display:contents}${r} .mn-ligne>:is(.logo,.mn-logo){order:2;flex:none;margin-inline:28px;text-align:center}${r} .mn-liste>*{order:1}${r} .mn-liste>:nth-child(n+3){order:3}${r} .mn-liste>.mn-rdv,${r} .mn-ligne>.mn-rdv{order:4;margin-left:24px}`));
+      ordi.push(imp(`${r} .mn-ligne{display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:center;align-items:center;gap:6px 18px}${r} :is(.mn-nav,.mn-liste){display:contents}${r} .mn-ligne>:is(.logo,.mn-logo){order:2;flex:none;margin-inline:28px;text-align:center}${r} .mn-liste>*{order:1}${r} .mn-liste>:nth-child(n+3){order:3}${r} .mn-liste>.mn-rdv,${r} .mn-ligne>.mn-rdv{order:4;margin-left:24px}`));
       break;
     case 'collante':
       ordi.push(imp(`${r} .mn-entete{position:sticky;top:0;z-index:30;background:${FOND};padding-block:0;box-shadow:0 1px 0 ${LIGNE}}${r} .mn-ligne{min-height:58px}${r} .mn-ligne>:is(.logo,.mn-logo){transform-origin:left center}`));

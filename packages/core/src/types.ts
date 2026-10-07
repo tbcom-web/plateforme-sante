@@ -93,6 +93,10 @@ export type SiteConfig = {
     effets?: string;
     /** Traitement uniforme des photos d'une recette (traitements-photos.ts) ; absent = traitement du modèle */
     traitementPhotos?: { id: string; grain?: boolean };
+    /** Habillage d'une recette (habillage.ts) : typographie, jeu de détails, menu ; absents = rendu du modèle */
+    typo?: import('./typo').ReglagesTypo;
+    details?: import('./details').ReglagesDetails;
+    menu?: import('./menus').ReglagesMenu;
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };

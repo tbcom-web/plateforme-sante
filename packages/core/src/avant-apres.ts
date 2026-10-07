@@ -12,6 +12,7 @@ import { empreinteSvg } from './illustrations';
 import { GAMMES, type Gamme } from './gammes';
 import type { Asset } from './assets';
 import { cssEffets } from './effets';
+import { cssHabillage, normaliserHabillage } from './habillage';
 import { cssFormes } from './formes';
 
 export const APERCU_MAX = 60 * 1024;
@@ -27,6 +28,12 @@ export function empreinteStudio(cle: string): string | null {
   const [type, a, b] = cle.split(':');
   if (type === 'effets') { const css = cssEffets(a); return css ? empreinteSvg(css) : null; }
   if (type === 'composant' && a === 'soins-forme') { const css = cssFormes(b); return css ? empreinteSvg(css) : null; }
+  // Habillage : la feuille CSS de la valeur (typographie, détails, menu) ; une retouche de la feuille → « Modifié » à revoir
+  if (type === 'typo' || type === 'details' || type === 'menu') {
+    const h = normaliserHabillage(type === 'typo' ? { typo: { [a]: b } } : type === 'details' ? { details: a === 'jeu' ? { jeu: b } : { [a]: b } } : { menu: { [a]: b } });
+    const css = cssHabillage(h, { police: type === 'typo' && a === 'police' ? b : undefined }) + (type === 'typo' && a === 'police' ? b : '');
+    return css ? empreinteSvg(css) : null;
+  }
   return null;
 }
 

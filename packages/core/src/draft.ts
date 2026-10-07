@@ -2,6 +2,9 @@
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
 import { MODELES_INTEGRES, pairePolices, variantesValides } from './modeles';
 import { jeuEffets } from './effets';
+import { estTypoParDefaut, normaliserTypo } from './typo';
+import { estDetailsParDefaut, normaliserDetails } from './details';
+import { estMenuParDefaut, normaliserMenu } from './menus';
 import { normaliserTraitementPhotos, traitementNeutre } from './traitements-photos';
 import { ANIMATIONS, specialiteDuProfil, type Animation } from './packs';
 import { nettoyerEquipements, nettoyerEquipementsAutres } from './equipements';
@@ -161,6 +164,10 @@ export type SiteDraft = {
     effets?: string;
     /** Traitement uniforme des photos (traitements-photos.ts) ; absent = traitement du modèle */
     traitementPhotos?: { id: string; grain?: boolean };
+    /** Habillage d'une recette (habillage.ts) : typographie, jeu de détails, menu ; absents = rendu du modèle */
+    typo?: import('./typo').ReglagesTypo;
+    details?: import('./details').ReglagesDetails;
+    menu?: import('./menus').ReglagesMenu;
   };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
@@ -329,6 +336,10 @@ function themeNormalise(t: SiteDraft['theme']): SiteDraft['theme'] {
     const t = normaliserTraitementPhotos(r.traitementPhotos);
     if (traitementNeutre(t)) delete r.traitementPhotos; else r.traitementPhotos = t;
   }
+  // Habillage (habillage.ts) : valeurs connues seulement ; réglages par défaut retirés
+  if (r.typo !== undefined) { const t = normaliserTypo(r.typo); if (estTypoParDefaut(t)) delete r.typo; else r.typo = t; }
+  if (r.details !== undefined) { const x = normaliserDetails(r.details); if (estDetailsParDefaut(x)) delete r.details; else r.details = x; }
+  if (r.menu !== undefined) { const x = normaliserMenu(r.menu); if (estMenuParDefaut(x)) delete r.menu; else r.menu = x; }
   return r;
 }
 

@@ -26,11 +26,13 @@ import {
   appliquerPriorites, draftPourOnglet, libelleTraitementPhotos, niveauProximite, normaliserScenario, ongletsDuScenario, scenarioDeRecette, soinsDuScenario,
   TRAITEMENTS_PHOTOS, photosCompatibles, tirerPhotos, alea, respecterVerrous, suivreScenario, animationsPermises, tirerAnimation, LIBELLES_ANIMATIONS, type ScenarioRecette,
 } from '@plateforme/core';
-import IndicateurHarmonie from './IndicateurHarmonie';
-import { apprendreHarmonie } from '@plateforme/core';
 import SimulateurClient, { type CabinetDemo } from './SimulateurClient';
 import RecetteVignette from './RecetteVignette';
+import PanneauHabillage from './PanneauHabillage';
+import { tirerHabillageRecette, verrouAxe, type AxeHabillage } from '@plateforme/core';
 import ApercusCoteACote from './ApercusCoteACote';
+import IndicateurHarmonie from './IndicateurHarmonie';
+import { apprendreHarmonie } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
 import RenduMobile from '@/components/RenduMobile';
@@ -83,6 +85,10 @@ const lire = (x: CompositionRecette, d: DimensionRecette): Partial<CompositionRe
     case 'structure': return { structure: x.structure, sections: x.sections };
     case 'effets': return { effets: x.effets };
     case 'traitement': return { traitement: x.traitement };
+    // Habillage (panneau « Typographie & détails ») : le groupe entier
+    case 'typo': return { typo: x.typo };
+    case 'details': return { details: x.details };
+    case 'menu': return { menu: x.menu };
   }
 };
 
@@ -135,6 +141,19 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verrous, ctx, comp]);
   const basculerVerrou = (cle: string) => setVerrous((v) => (v.includes(cle) ? v.filter((x) => x !== cle) : [...v, cle]));
+  // Habillage (typographie, détails, menu) : dé d'un groupe ou d'un axe, choix direct ; historique par clé (← Précédent)
+  const lancerHabillage = (cible: 'polices' | 'typo' | 'details' | 'menu' | AxeHabillage) => {
+    if (typeof cible === 'string') { lancer(cible); return; }
+    const cle = verrouAxe(cible);
+    if (verrous.includes(cle) || (cible.groupe !== 'details' && verrous.includes(cible.groupe))) return;
+    memoriser(cle, cible.groupe);
+    setComp((x) => tirerHabillageRecette(x, cible, ctx, suivante()));
+  };
+  const choisirHabillage = (y: Partial<CompositionRecette>, cle: string) => {
+    const d = cle.startsWith('hab:') ? (cle.split(':')[1] as DimensionRecette) : (cle as DimensionRecette);
+    memoriser(cle, d);
+    setComp((x) => reparerComposition({ ...x, ...y }, ctx));
+  };
 
   // Changement de scénario : composition remise dans les garde-fous du nouveau scénario (héros, gammes exclues…)
   const changerScenario = (s: Scenario) => {
@@ -417,6 +436,10 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
                 </section>
               );
   })();
+  const habillageJsx = (
+    <PanneauHabillage comp={comp} gabarit={gabarit} verrous={verrous} onDe={lancerHabillage} onChoix={choisirHabillage}
+      onPrecedent={precedent} peutRevenir={(cle) => (historique[cle] ?? []).length > 0} onVerrou={basculerVerrou} />
+  );
   const desJsx = (
     <>
           <section aria-labelledby="st-des" className="grid gap-1 rounded-2xl border border-black/10 bg-white p-3">
@@ -620,6 +643,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
             {blocPage}
           </details>
           {desJsx}
+          {habillageJsx}
         </aside>
         {/* ---- Aperçus ordinateur et téléphone côte à côte, défilement complet ---- */}
         <div role="tabpanel" id="st-page" aria-labelledby={`st-onglet-${onglet.id.replace(/[^a-z0-9-]/g, '-')}`} className="sticky top-[4.5rem] min-w-0">
@@ -657,6 +681,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
         {/* ---- Dés ---- */}
         <div className="grid gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
           {desJsx}
+          {habillageJsx}
         </div>
       </section>
 

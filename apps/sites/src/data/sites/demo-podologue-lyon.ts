@@ -633,8 +633,8 @@ if (process.env.RECETTE) {
   const base = modeleIntegre(u.preReglage.modele);
   const { registre, modeVisuel } = reglageStyle(x.visuels.style, x.structure);
   const { sections, infosEnTete } = sectionsSelonOrdre(base.accueil.sections, x.sections.ordre);
-  site.modele = modeleDuSite(base, { registre, sections, police: x.police, variantes: x.sections.variantes, infosEnTete });
-  site.theme = { ...site.theme, couleur: x.couleur, ...(x.gamme ? { gamme: x.gamme } : { gamme: undefined }), logo: { ...u.preReglage.logo }, modeVisuel, styleIllustration: x.visuels.style, ...(x.visuels.herosSujet ? { herosSujet: x.visuels.herosSujet } : {}), effets: x.effets };
+  site.modele = modeleDuSite(base, { registre, sections, police: x.police, variantes: x.sections.variantes, infosEnTete, typo: x.typo });
+  site.theme = { ...site.theme, couleur: x.couleur, ...(x.gamme ? { gamme: x.gamme } : { gamme: undefined }), logo: { ...u.preReglage.logo }, modeVisuel, styleIllustration: x.visuels.style, ...(x.visuels.herosSujet ? { herosSujet: x.visuels.herosSujet } : {}), effets: x.effets, ...(x.typo ? { typo: x.typo } : {}), ...(x.details ? { details: x.details } : {}), ...(x.menu ? { menu: x.menu } : {}) };
   // Spécialité et jeu de photos : ceux du site (ils viennent des sujets, pas de la recette) ; la recette pose l'animation et ses photos
   // Photos importées seulement (une photo gardée non importée, aperçu Pexels / Pixabay, ne va jamais sur un site)
   const photosSite = photosImportees(x.photos);

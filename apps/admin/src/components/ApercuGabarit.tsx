@@ -13,6 +13,7 @@
 // « pédicurie-podologie » insécable, titre ajusté à sa colonne.
 import type { CSSProperties, ReactNode } from 'react';
 import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, actionsRapides, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
+import { facteurChasse, facteurTitres, menuABouton, normaliserHabillage } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -138,6 +139,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   // (components/gabarits/*) — premier écran, soins, sujets, horaires, plan d'accès, équipe, questions ; ordre des sections.
   const v = variantesModele(m)!;
   const menu = (mobile ? navigation.menuMobile : navigation.menu).map((l) => l.libelle);
+  // Habillage de la recette (habillage.ts) : la feuille CSS commune est posée par ApercuTheme ; ici, les tailles calculées en pixels
+  // (titre du premier écran) suivent l'échelle et la casse, et le bouton « Menu » du téléphone s'affiche (classes mn-*, td-*, ap-*)
+  const habillage = normaliserHabillage(d.theme, gabaritModele(m));
+  const burger = mobile && menuABouton(habillage.menu, gabaritModele(m)) ? <span className="mn-burger"><span className="mn-burger__traits" aria-hidden="true" /><span>Menu</span></span> : null;
   const noms = r.noms;
   const qui = noms.join(' et ') || nomCabinet;
   // Ligne courte « qui · où » (comme PremierEcran du site) : sans adresse complète, le nom seul
@@ -168,39 +173,41 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const metier = d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
   // Largeur de la colonne du titre (premier écran) : le plus long mot insécable y tient toujours sur une ligne
   const colonneTitre = mobile ? 390 - 40 - (village ? 0 : 52) : revue ? 1120 * 0.6 : village ? 880 * 0.56 : 1180 * 0.52 - 96;
-  const tailleH1 = tailleTitre(`Cabinet de ${metier} ${r.aVille ?? ''}`, colonneTitre, (h1.fontSize as number) ?? 60, revue ? 0.52 : 0.6);
-  const titreH1 = <p className="ap-h1" style={{ ...h1, fontSize: tailleH1, margin: 0 }}>Cabinet de <span className="ap-mot">{metier}</span>{r.aVille && <> {revue ? <em style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</em> : village ? <span style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</span> : r.aVille}</>}</p>;
+  const tailleH1 = tailleTitre(`Cabinet de ${metier} ${r.aVille ?? ''}`, colonneTitre, ((h1.fontSize as number) ?? 60) * facteurTitres(habillage.typo), (revue ? 0.52 : 0.6) * facteurChasse(habillage.typo));
+  const titreH1 = <p className="ap-h1" style={{ ...h1, fontSize: tailleH1, margin: 0 }}>Cabinet de <span className="ap-mot">{metier}</span>{r.aVille && <> {revue ? <em className="ap-pale" style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</em> : village ? <span className="ap-pale" style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</span> : <span className="ap-pale">{r.aVille}</span>}</>}</p>;
   // Menu et bouton sur une ligne : un nom de cabinet long se réduit, jamais « Rendez-/vous » sur deux lignes
   const nomEntete: CSSProperties = { minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.2, fontSize: nomCabinet.length > 40 ? 16 : 18 };
   // Revue : dessin au trait continu du soin principal, légendé (sans animation)
   const figure = (slug: string, taille: CSSProperties) => <div className="ap-svg" style={{ ...taille, '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)', color: 'var(--g-figure)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgLigne(LIGNE_DESSIN[dessinSoin(slug)] ?? 'pied-dessous') }} />;
 
   const entete = revue ? (
-    <header style={{ borderBottom: '3px double var(--g-encre)' }}>
-      <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 76 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontStyle: 'italic', fontWeight: 500, ...nomEntete, fontSize: nomCabinet.length > 40 ? 17 : 20 }}>{nomCabinet}</strong></span>
-        {!mobile && <span style={{ display: 'flex', alignItems: 'center', gap: 26, fontSize: 17, whiteSpace: 'nowrap', flexShrink: 0 }}>{menu.map((l) => <span key={l}>{l}</span>)}<span style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap' }}>{r.libelleMenu}</span></span>}
+    <header className="mn-entete" style={{ borderBottom: '3px double var(--g-encre)' }}>
+      <div className="mn-ligne" style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, minHeight: 76 }}>
+        <span className="mn-logo" style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', fontStyle: 'italic', fontWeight: 500, ...nomEntete, fontSize: nomCabinet.length > 40 ? 17 : 20 }}>{nomCabinet}</strong></span>
+        {!mobile && <span className="mn-nav mn-liste" style={{ display: 'flex', alignItems: 'center', gap: 26, fontSize: 17, whiteSpace: 'nowrap', flexShrink: 0 }}>{menu.map((l) => <span key={l} className="mn-lien">{l}</span>)}<span className="mn-rdv" style={{ ...bouton(true), minHeight: 46, background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap' }}>{r.libelleMenu}</span></span>}
+        {burger}
       </div>
-      {mobile && <nav style={{ ...cadre, display: 'flex', justifyContent: 'space-between', padding: '4px 0 10px' }}>{menu.map((l) => <span key={l}>{l}</span>)}</nav>}
+      {mobile && <nav className="mn-nav mn-liste" style={{ ...cadre, display: 'flex', justifyContent: 'space-between', padding: '4px 0 10px' }}>{menu.map((l) => <span key={l} className="mn-lien">{l}</span>)}</nav>}
     </header>
   ) : (
     // Comme Coquille.astro (.c-entete) : nom à gauche, menu en liens (tableau : une ligne pleine largeur sous le nom sur
     // téléphone, « Rendez-vous » dans la barre du bas) ; village : téléphone en grand, menu dans une bande sous le nom
-    <header style={{ paddingTop: 10 }}>
-      <div style={{ ...cadre, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '4px 16px', minHeight: 64 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', ...nomEntete }}>{nomCabinet}</strong></span>
+    <header className="mn-entete" style={{ paddingTop: 10 }}>
+      <div className="mn-ligne" style={{ ...cadre, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '4px 16px', minHeight: 64 }}>
+        <span className="mn-logo" style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>{marque}<strong style={{ fontFamily: 'var(--police-titres)', ...nomEntete }}>{nomCabinet}</strong></span>
         {village
           ? r.aTelephone && !mobile && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '0 14px', fontWeight: 750, fontSize: 20.8, whiteSpace: 'nowrap' }}><span aria-hidden="true" style={{ display: 'grid', color: 'var(--g-accent-texte)' }} dangerouslySetInnerHTML={{ __html: svgPicto('telephone', { taille: 28 }) ?? '' }} />{tel}</span>
-          : <span style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', ...(mobile ? { flexBasis: '100%', justifyContent: 'space-between' } : { flexShrink: 0 }) }}>
-              {menu.map((l) => <span key={l} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: mobile ? '0 10px' : '0 14px', fontWeight: 600, fontSize: 16 }}>{l}</span>)}
-              {!mobile && <span style={{ ...bouton(true), marginLeft: 8, minHeight: 48, padding: '0 20px', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap' }}>{r.libelleMenu}</span>}
+          : <span className="mn-nav mn-liste" style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', ...(mobile ? { flexBasis: '100%', justifyContent: 'space-between' } : { flexShrink: 0 }) }}>
+              {menu.map((l) => <span key={l} className="mn-lien" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: mobile ? '0 10px' : '0 14px', fontWeight: 600, fontSize: 16 }}>{l}</span>)}
+              {!mobile && <span className="mn-rdv" style={{ ...bouton(true), marginLeft: 8, minHeight: 48, padding: '0 20px', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', boxShadow: 'none', whiteSpace: 'nowrap' }}>{r.libelleMenu}</span>}
             </span>}
+        {burger}
       </div>
       {village && (
-        <nav style={{ marginTop: 8, background: 'var(--g-bulle)', borderBlock: 'var(--filet) solid var(--g-ligne)' }}>
-          <div style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: mobile ? 'space-between' : 'flex-start' }}>
-            {menu.map((l, k) => <span key={l} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: mobile ? `0 ${k === menu.length - 1 ? 0 : 8}px 0 ${k === 0 ? 0 : 8}px` : `0 16px 0 ${k === 0 ? 0 : 16}px`, fontWeight: 600, fontSize: 16 }}>{l}</span>)}
-            {!mobile && <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: '0 22px', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', fontWeight: 600 }}>{r.libelleMenu}</span>}
+        <nav className="mn-nav" style={{ marginTop: 8, background: 'var(--g-bulle)', borderBlock: 'var(--filet) solid var(--g-ligne)' }}>
+          <div className="mn-liste" style={{ ...cadre, display: 'flex', alignItems: 'center', justifyContent: mobile ? 'space-between' : 'flex-start' }}>
+            {menu.map((l, k) => <span key={l} className="mn-lien" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: mobile ? `0 ${k === menu.length - 1 ? 0 : 8}px 0 ${k === 0 ? 0 : 8}px` : `0 16px 0 ${k === 0 ? 0 : 16}px`, fontWeight: 600, fontSize: 16 }}>{l}</span>)}
+            {!mobile && <span className="mn-rdv" style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', minHeight: 52, padding: '0 22px', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', fontWeight: 600 }}>{r.libelleMenu}</span>}
           </div>
         </nav>
       )}
@@ -216,7 +223,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     // Comme PremierEcran.astro (.pe--figure) : sur le papier ; téléphone = sur-titre, titre, figure, puis le reste ; ordinateur =
     // texte à gauche, figure à droite (planche pastel 4/3 entre deux filets)
     <section style={{ background: 'var(--g-page)', color: 'var(--g-encre)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'minmax(0, 7fr) minmax(0, 5fr)', columnGap: 64, rowGap: mobile ? 18 : 0, alignContent: 'center', paddingBlock: mobile ? '36px 44px' : '96px 88px' }}>
-      <span style={{ gridColumn: mobile ? undefined : 1, fontSize: 15.2, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-encre-douce)' }}>{surTitre}</span>
+      <span className="td-sur" style={{ gridColumn: mobile ? undefined : 1, fontSize: 15.2, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-encre-douce)' }}>{surTitre}</span>
       <div style={{ gridColumn: mobile ? undefined : 1, margin: mobile ? 0 : '18px 0 26px' }}>{titreH1}</div>
       {(heros || soins[0]) && (
         <figure style={{ margin: mobile ? '0 0 10px' : 0, ...(mobile ? {} : { gridColumn: 2, gridRow: '1 / span 4', alignSelf: 'center' }), color: 'var(--g-figure)', '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)' } as CSSProperties}>
@@ -229,8 +236,8 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         <span style={{ fontSize: 19.2, maxWidth: '34em' }}>{quiOu}</span>
         {principaux && <span style={{ fontStyle: 'italic', fontSize: 17.9, color: 'var(--g-encre-douce)', maxWidth: '34em' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
         <div style={{ display: mobile ? 'grid' : 'flex', width: mobile ? '100%' : undefined, flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
-          <span style={{ ...bouton(true), boxShadow: 'none' }}>{libelleRdv}</span>
-          {enLigne && r.aTelephone && <span style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 var(--filet-fort) var(--g-encre)' }}>{tel}</span>}
+          <span className="td-bouton" style={{ ...bouton(true), boxShadow: 'none' }}>{libelleRdv}</span>
+          {enLigne && r.aTelephone && <span className="td-bouton" style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 var(--filet-fort) var(--g-encre)' }}>{tel}</span>}
         </div>
       </div>
     </div></section>
@@ -239,7 +246,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       <span aria-hidden="true" style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--g-encre) 14%, transparent) var(--trame-point), transparent calc(var(--trame-point) + 0.6px))', backgroundSize: 'var(--trame-pas) var(--trame-pas)', WebkitMaskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)', maskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)' }} />
       <div style={{ ...cadre, position: 'relative', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 5fr', columnGap: 48, rowGap: 18, alignItems: 'center', paddingBlock: mobile ? '28px 36px' : '64px 72px' }}>
       <div style={{ display: 'grid', gap: 18 }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: 15, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}><span style={{ width: 28, height: 2, background: 'currentColor' }} />{surTitre}</span>
+      <span className="td-sur" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: 15, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}><span style={{ width: 28, height: 2, background: 'currentColor' }} />{surTitre}</span>
       {titreH1}
       {heros && mobile && <div style={{ aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: '6%' }}><HerosVue h={heros} /></div>}
       <div style={{ display: 'grid', gap: 8 }}>
@@ -257,13 +264,13 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   ) : (
     <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.45fr 1fr', gap: mobile ? 20 : 64, paddingTop: 14, alignItems: 'center' }}>
       <div style={{ borderRadius: 'var(--rayon)', background: mobile ? 'var(--g-aplat)' : 'var(--g-carte)', boxShadow: mobile ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', color: 'var(--g-encre)', padding: mobile ? 26 : 48, display: 'grid', gap: 16, justifyItems: 'start' }}>
-        <span style={{ padding: '6px 14px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontSize: 14, fontWeight: 600 }}>● {surTitre}</span>
+        <span className="td-sur" style={{ padding: '6px 14px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontSize: 14, fontWeight: 600 }}>● {surTitre}</span>
         {titreH1}
         <span style={{ fontWeight: 600 }}>{quiOu}</span>
         {principaux && <span style={{ color: mobile ? 'var(--g-aplat-doux)' : 'var(--g-encre-douce)' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <span style={bouton(true)}>{libelleRdv}</span>
-          {enLigne && r.aTelephone && <span style={bouton(false)}>{tel}</span>}
+          <span className="td-bouton" style={bouton(true)}>{libelleRdv}</span>
+          {enLigne && r.aTelephone && <span className="td-bouton" style={bouton(false)}>{tel}</span>}
         </div>
       </div>
       {heros ? (
@@ -277,15 +284,15 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   );
 
   const section = (titreSection: string, contenu: ReactNode, fond?: string) => revue ? (
-    <section style={{ borderTop: '1px solid var(--g-ligne)', padding: `${mobile ? 56 : 96}px 0` }}>
+    <section className="ap-section" style={{ borderTop: '1px solid var(--g-ligne)', padding: `${mobile ? 56 : 96}px 0` }}>
       <div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '4fr 8fr', columnGap: 64, rowGap: 24, alignItems: 'start' }}>
         <div><span style={{ display: 'block', fontFamily: 'var(--police-titres)', fontStyle: 'italic', color: 'var(--g-accent-texte)', marginBottom: 10 }}>{ROMAINS[folio++] ?? ''}</span><h2 className="ap-h2" style={h2}>{titreSection}</h2></div>
         {contenu}
       </div>
     </section>
   ) : (
-    <section style={village ? { borderTop: '1px solid var(--g-ligne)', padding: `${mobile ? 44 : 60}px 0`, background: fond } : { ...cadre, paddingTop: 14 }}>
-      <div style={village ? cadre : { ...carte, padding: mobile ? 26 : 48 }}>
+    <section className={village ? 'ap-section' : 'ap-section ap-section--carte'} style={village ? { borderTop: '1px solid var(--g-ligne)', padding: `${mobile ? 44 : 60}px 0`, background: fond } : { ...cadre, paddingTop: 14 }}>
+      <div className={village ? 'td-tete-section' : 'ap-bloc ap-carte'} style={village ? cadre : { ...carte, padding: mobile ? 26 : 48 }}>
         <h2 className="ap-h2" style={{ ...h2, marginBottom: 24 }}>{titreSection}</h2>
         {contenu}
       </div>
@@ -417,7 +424,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const actionsContact = [
     ...(enLigne ? ['Prendre rendez-vous'] : []), ...(r.aTelephone ? ['Appeler le cabinet'] : []), ...(d.cabinet.email ? ['Écrire au cabinet'] : []), ...(r.aAdresse ? ['Itinéraire'] : []),
   ];
-  const actionContact = (a: string, k: number) => <span key={a} className={k === 0 ? 'eff-bouton' : undefined} style={{ ...bouton(k === 0), minHeight: 52 }}>{a}</span>;
+  const actionContact = (a: string, k: number) => <span key={a} className={k === 0 ? 'eff-bouton td-bouton' : 'td-bouton'} style={{ ...bouton(k === 0), minHeight: 52 }}>{a}</span>;
   const contactBloc = (v.contact === 'bandeau' || v.contact === 'carte') && actionsContact.length ? (
     v.contact === 'bandeau' ? (
       <aside style={{ marginTop: 56, padding: mobile ? '28px 0' : '40px 0', background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: mobile ? 'flex-start' : 'center' }}>{actionsContact.map(actionContact)}</div></aside>
@@ -454,7 +461,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           <p style={{ fontSize: 15, color: 'var(--g-encre-douce)', margin: 0 }}>Accueil / Soins / {soins[0].titre_court}</p>
           <p className="ap-h1" style={{ ...h1, margin: 0, fontSize: mobile ? 36 : 56 }}>{soins[0].titre ? avecVille(soins[0].titre, ville) : soins[0].titre_court}</p>
           <p style={{ color: 'var(--g-encre-douce)', fontStyle: 'italic', margin: 0 }}>{avecVille(soins[0].resume, ville)}</p>
-          <span style={{ ...bouton(true), justifySelf: 'start', boxShadow: 'none' }}>{libelleRdv}</span>
+          <span className="td-bouton" style={{ ...bouton(true), justifySelf: 'start', boxShadow: 'none' }}>{libelleRdv}</span>
         </div>
         <div style={{ marginTop: 40, aspectRatio: mobile ? '4 / 3' : '3 / 1', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{figure(soins[0].slug, { height: '82%', aspectRatio: '4 / 3' })}</div>
       </section>
@@ -466,17 +473,17 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         <div style={{ ...(village ? { padding: '32px 0 0' } : carte), display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.15fr 0.85fr', gap: 28, alignItems: 'center' }}>
           <div style={{ display: 'grid', gap: 14 }}>
             <p style={{ fontSize: 14, color: 'var(--g-encre-douce)', margin: 0 }}>Accueil / Soins / {soins[0].titre_court}</p>
-            <p style={sur}>{titreSoins(d.voix)}</p>
+            <p className="td-sur" style={sur}>{titreSoins(d.voix)}</p>
             <p className="ap-h1" style={{ ...h1, margin: 0, fontSize: mobile ? 36 : 52 }}>{soins[0].titre ? avecVille(soins[0].titre, ville) : soins[0].titre_court}</p>
             <p style={{ color: 'var(--g-encre-douce)', margin: 0 }}>{avecVille(soins[0].resume, ville)}</p>
-            <span style={{ ...bouton(true), justifySelf: 'start' }}>{libelleRdv}</span>
+            <span className="td-bouton" style={{ ...bouton(true), justifySelf: 'start' }}>{libelleRdv}</span>
           </div>
           <div style={{ aspectRatio: '4 / 3', borderRadius: 16, background: 'var(--g-doux)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: village ? 'pedagogique' : 'ligne' }) }} /></div>
         </div>
       </section>
       <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile || v.fiche !== 'encadre' ? '1fr' : '1fr 300px', gap: 18, paddingTop: 18, maxWidth: v.fiche !== 'encadre' && !mobile ? 832 : undefined }}>
         <div style={{ ...carte, ...(village || v.fiche === 'pratique-haut' ? { background: 'transparent', padding: 0, boxShadow: 'none' } : {}) }}><h2 className="ap-h2" style={{ fontSize: 28 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre-douce)' }}>{avecVille(soins[0].corps ?? soins[0].resume, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div>
-        <div style={{ ...carte, background: 'var(--g-doux)', boxShadow: 'none', display: v.fiche === 'encadre' ? 'grid' : 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, alignContent: 'start', order: v.fiche === 'pratique-haut' ? -1 : undefined }}><strong style={{ color: 'var(--g-accent-texte)', flexBasis: v.fiche === 'encadre' ? undefined : '100%' }}>En pratique</strong><span style={{ fontSize: 15 }}>{adresse}</span><span style={{ ...bouton(true), textAlign: 'center' }}>{libelleRdv}</span></div>
+        <div className="td-encadre" style={{ ...carte, background: 'var(--g-doux)', boxShadow: 'none', display: v.fiche === 'encadre' ? 'grid' : 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, alignContent: 'start', order: v.fiche === 'pratique-haut' ? -1 : undefined }}><strong style={{ color: 'var(--g-accent-texte)', flexBasis: v.fiche === 'encadre' ? undefined : '100%' }}>En pratique</strong><span style={{ fontSize: 15 }}>{adresse}</span><span style={{ ...bouton(true), textAlign: 'center' }}>{libelleRdv}</span></div>
       </section>
     </>
   );

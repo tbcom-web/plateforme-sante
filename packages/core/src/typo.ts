@@ -30,14 +30,14 @@ export type FichePolice = { id: PoliceTitres | PoliceTexte; famille: string; gen
 export const FICHES_POLICES: readonly FichePolice[] = [
   { id: 'inter', famille: 'Inter Variable', genre: 'grotesque', licence: 'OFL-1.1', paquet: '@fontsource-variable/inter', graisses: [100, 900], italique: false, octets: 48256 },
   { id: 'manrope', famille: 'Manrope Variable', genre: 'geometrique', licence: 'OFL-1.1', paquet: '@fontsource-variable/manrope', graisses: [200, 800], italique: false, octets: 24836 },
-  { id: 'fraunces', famille: 'Fraunces Variable', genre: 'serif-editoriale', licence: 'OFL-1.1', paquet: '@fontsource-variable/fraunces', graisses: [100, 900], italique: true, octets: 67304, octetsItalique: 45656 },
-  { id: 'instrument', famille: 'Instrument Serif', genre: 'serif-editoriale', licence: 'OFL-1.1', paquet: '@fontsource/instrument-serif', graisses: [400, 400], italique: true, octets: 22000, octetsItalique: 23000 },
-  { id: 'schibsted', famille: 'Schibsted Grotesk Variable', genre: 'grotesque', licence: 'OFL-1.1', paquet: '@fontsource-variable/schibsted-grotesk', graisses: [400, 900], italique: false, octets: 30000 },
-  { id: 'nunito', famille: 'Nunito Variable', genre: 'ronde', licence: 'OFL-1.1', paquet: '@fontsource-variable/nunito', graisses: [200, 1000], italique: false, octets: 38000 },
+  { id: 'fraunces', famille: 'Fraunces Variable', genre: 'serif-editoriale', licence: 'OFL-1.1', paquet: '@fontsource-variable/fraunces', graisses: [100, 900], italique: true, octets: 67304, octetsItalique: 45816 },
+  { id: 'instrument', famille: 'Instrument Serif', genre: 'serif-editoriale', licence: 'OFL-1.1', paquet: '@fontsource/instrument-serif', graisses: [400, 400], italique: true, octets: 21032, octetsItalique: 22128 },
+  { id: 'schibsted', famille: 'Schibsted Grotesk Variable', genre: 'grotesque', licence: 'OFL-1.1', paquet: '@fontsource-variable/schibsted-grotesk', graisses: [400, 900], italique: false, octets: 46752 },
+  { id: 'nunito', famille: 'Nunito Variable', genre: 'ronde', licence: 'OFL-1.1', paquet: '@fontsource-variable/nunito', graisses: [200, 1000], italique: false, octets: 39128 },
   { id: 'geist', famille: 'Geist Variable', genre: 'geometrique', licence: 'OFL-1.1', paquet: '@fontsource-variable/geist', graisses: [100, 900], italique: false, octets: 29400 },
-  { id: 'publicsans', famille: 'Public Sans Variable', genre: 'grotesque', licence: 'OFL-1.1', paquet: '@fontsource-variable/public-sans', graisses: [100, 900], italique: false, octets: 30000 },
-  { id: 'bodoni', famille: 'Bodoni Moda Variable', genre: 'didone', licence: 'OFL-1.1', paquet: '@fontsource-variable/bodoni-moda', graisses: [400, 900], italique: true, octets: 40000, octetsItalique: 42000 },
-  { id: 'newsreader', famille: 'Newsreader Variable', genre: 'serif-editoriale', licence: 'OFL-1.1', paquet: '@fontsource-variable/newsreader', graisses: [200, 800], italique: true, octets: 40000, octetsItalique: 42000 },
+  { id: 'publicsans', famille: 'Public Sans Variable', genre: 'grotesque', licence: 'OFL-1.1', paquet: '@fontsource-variable/public-sans', graisses: [100, 900], italique: false, octets: 26832 },
+  { id: 'bodoni', famille: 'Bodoni Moda Variable', genre: 'didone', licence: 'OFL-1.1', paquet: '@fontsource-variable/bodoni-moda', graisses: [400, 900], italique: true, octets: 25884, octetsItalique: 30328 },
+  { id: 'newsreader', famille: 'Newsreader Variable', genre: 'serif-editoriale', licence: 'OFL-1.1', paquet: '@fontsource-variable/newsreader', graisses: [200, 800], italique: true, octets: 58084, octetsItalique: 64520 },
   { id: 'playfair', famille: 'Playfair Display Variable', genre: 'didone', licence: 'OFL-1.1', paquet: '@fontsource-variable/playfair-display', graisses: [400, 900], italique: true, octets: 38404, octetsItalique: 38804 },
   { id: 'dmserif', famille: 'DM Serif Display', genre: 'didone', licence: 'OFL-1.1', paquet: '@fontsource/dm-serif-display', graisses: [400, 400], italique: true, octets: 24744, octetsItalique: 24572 },
   { id: 'youngserif', famille: 'Young Serif', genre: 'serif-editoriale', licence: 'OFL-1.1', paquet: '@fontsource/young-serif', graisses: [400, 400], italique: false, octets: 26992 },
@@ -53,7 +53,7 @@ export const FICHES_POLICES: readonly FichePolice[] = [
   { id: 'dmsans', famille: 'DM Sans Variable', genre: 'geometrique', licence: 'OFL-1.1', paquet: '@fontsource-variable/dm-sans', graisses: [100, 1000], italique: false, octets: 36932 },
   { id: 'worksans', famille: 'Work Sans Variable', genre: 'grotesque', licence: 'OFL-1.1', paquet: '@fontsource-variable/work-sans', graisses: [100, 900], italique: false, octets: 50316 },
   { id: 'sourcesans', famille: 'Source Sans 3 Variable', genre: 'humaniste', licence: 'OFL-1.1', paquet: '@fontsource-variable/source-sans-3', graisses: [200, 900], italique: false, octets: 28740 },
-  { id: 'mono', famille: 'JetBrains Mono Variable', genre: 'mono', licence: 'OFL-1.1', paquet: '@fontsource-variable/jetbrains-mono', graisses: [100, 800], italique: false, octets: 40000 },
+  { id: 'mono', famille: 'JetBrains Mono Variable', genre: 'mono', licence: 'OFL-1.1', paquet: '@fontsource-variable/jetbrains-mono', graisses: [100, 800], italique: false, octets: 40404 },
 ];
 export const fichePolice = (id: string) => FICHES_POLICES.find((f) => f.id === id);
 /** Budget polices d'un site (octets, fichiers réduits aux caractères du site, mesuré au build) */
@@ -151,6 +151,16 @@ export function fichiersPolices(police: unknown, opts: { italique?: boolean; mon
   const p = pairePolices(police) ?? PAIRES_POLICES[0];
   return [...new Set([p.titres, p.texte, ...(opts.italique ? [`${p.titres}-italique`] : []), ...(opts.mono ? ['mono'] : [])])];
 }
+/**
+ * Paire permise pour un gabarit : le gabarit « revue » emploie l'italique des titres dès le premier écran (ville du titre, nom du
+ * cabinet) ; une paire n'y est permise que si titres + texte + italique tiennent dans le budget (sinon : 4e fichier ou > 90 Ko).
+ */
+export function policePermise(police: unknown, g: string): boolean {
+  const p = pairePolices(police);
+  if (!p) return false;
+  if (g !== 'revue' || !fichePolice(p.titres)?.italique) return true;
+  return poidsPolices(p.id, { italique: true }) * REDUCTION <= BUDGET_POLICES;
+}
 /** Poids estimé des polices d'un site avant réduction (octets) : contrôle du budget (le build mesure le poids réduit) */
 export function poidsPolices(police: unknown, opts: { italique?: boolean; mono?: boolean } = {}): number {
   return fichiersPolices(police, opts).reduce((s, id) => {
@@ -192,7 +202,8 @@ export function cssTypo(brut: unknown, opts: { police?: unknown; mono?: boolean 
     const h2min = t.echelle === 'spectaculaire' ? 1.9 : 1.55;
     css.push(`${r} :is(.pe--carte,.pe--notice,.pe--figure){--pe-h1:${h1}rem!important}`);
     css.push(`${r} ${H2}{font-size:clamp(${h2min}rem,${(k ** 3 * 1.6).toFixed(1)}vw,${h2}rem)!important;line-height:${t.echelle === 'spectaculaire' ? 1.02 : 1.18}!important}`);
-    css.push(`${r} ${H1}:not(.pe__grille>h1){font-size:min(${h1}rem,calc((100vw - 40px) / (var(--mot-long,14) * .58)))!important}`);
+    // Titres des pages intérieures (gabarits coquille ; le classique garde les formules de ses premiers écrans)
+    css.push(`${r}[data-gabarit] h1:not(.pe__grille>h1){font-size:min(${(+h1 * 0.8).toFixed(2)}rem,calc((100vw - 40px) / (var(--mot-long,14) * .58)))!important}`);
   }
   // Interlettrage (titres) ; les capitales s'espacent toujours un peu
   const em = INTERLETTRAGES.find((i) => i.id === t.interlettrage)!.em + (t.casse === 'majuscules' ? 0.05 : 0);
