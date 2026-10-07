@@ -8,6 +8,7 @@ import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
+import { gzipSync } from 'node:zlib';
 
 const racine = fileURLToPath(new URL('..', import.meta.url));
 const DOSSIERS = ['src/components', 'src/layouts', 'src/pages'];
@@ -57,7 +58,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele, verifierTeinteSombre, SPORTS, svgSport } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele, verifierTeinteSombre, SPORTS, svgSport, STYLES_EXPERIMENTAUX, SUJETS_STYLES, svgStyleExperimental } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -128,6 +129,14 @@ const dessins = [
     ...['discretes', 'marquees'].flatMap((b) => defautsLigne(core.svgSport(s, 'ligne', { boucles: b }), `sport « ${s} » (ligne, boucles ${b})`)),
     ...((svg) => [...(invalide(svg) || elements(svg) < 5 ? [`sport « ${s} » (pédagogique) : vide ou invalide`] : []), ...(/<text/.test(svg) ? [`sport « ${s} » (pédagogique) : texte`] : []), ...(/#[0-9a-f]{3,8}|rgba?\(\s*\d/i.test(svg) ? [`sport « ${s} » (pédagogique) : couleur littérale`] : [])])(core.svgSport(s, 'pedagogique')),
   ]),
+  // Registres expérimentaux (packages/core/src/styles-experimentaux.ts, brouillons) : sans texte, sans <style> (WebKit), sans couleur
+  // littérale (variables de la gamme et de la charte), sans valeur invalide, ≤ 25 ko compressé par image (vignette et portrait)
+  ...core.STYLES_EXPERIMENTAUX.flatMap((st) => core.SUJETS_STYLES.flatMap((s) => ['vignette', 'portrait'].flatMap((format) => {
+    const svg = core.svgStyleExperimental(s, st, { format }), quoi = `style expérimental « ${st} » / ${s} (${format})`;
+    const ko = gzipSync(svg).length / 1024;
+    return [...(invalide(svg) || elements(svg) < 5 ? [`${quoi} : vide ou invalide`] : []), ...(/<text|<style[\s>]/.test(svg) ? [`${quoi} : texte ou <style>`] : []),
+      ...([HEX, FONCTION].some((re) => [...svg.matchAll(re)].length) ? [`${quoi} : couleur littérale`] : []), ...(ko > 25 ? [`${quoi} : ${ko.toFixed(1)} ko compressé (> 25 ko)`] : [])];
+  }))),
   ...core.DESSINS_PODOLOGIE.filter((n) => !core.PHOTOS_DESSINS[n]).map((n) => `dessin « ${n} » sans photo associée (PHOTOS_DESSINS)`),
   ...Object.entries(core.VISUELS_SOINS).filter(([, c]) => !core.DESSINS_PODOLOGIE.includes(c.dessin)).map(([s, c]) => `soin « ${s} » : dessin inconnu « ${c.dessin} »`),
 ];

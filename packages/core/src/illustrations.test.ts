@@ -5,6 +5,8 @@ import { illustrationUtilisable, inventaireIllustrations, markdownRetours, empre
 import { PICTOS } from './pictos';
 import { DESSINS_PODOLOGIE } from './univers';
 import { SPORTS } from './sports';
+import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, hashtagsStyleExperimental } from './styles-experimentaux';
+import { HASHTAGS_PAR_DEFAUT } from './kits';
 
 test('clés uniques et rendus non vides', () => {
   const l = inventaireIllustrations();
@@ -12,7 +14,21 @@ test('clés uniques et rendus non vides', () => {
   for (const i of l) assert.match(i.svg(), /^<svg/, i.cle);
   assert.equal(l.filter((i) => i.type === 'picto').length, PICTOS.length);
   assert.ok(l.some((i) => i.cle === 'dessin:orthonyxie:releve') && l.some((i) => i.cle === 'picto:orthonyxie'));
-  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne').length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length);
+  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne' && !i.style).length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length);
+});
+
+test('registres expérimentaux : 5 sujets × 4 styles, clés stables, sans texte ni couleur littérale', () => {
+  const l = inventaireIllustrations().filter((i) => i.style);
+  assert.equal(l.length, SUJETS_STYLES.length * STYLES_EXPERIMENTAUX.length);
+  for (const i of l) {
+    assert.match(i.cle, /^dessin:[a-z-]+:(decoupe|riso|volume|geometrique)$/);
+    assert.equal(i.statutParDefaut, 'a_revoir');
+    for (const svg of [i.svg(), i.svgVariante!()]) {
+      assert.ok(!/<text|<style|NaN|undefined/.test(svg), i.cle);
+      assert.ok(!/(?<![\w-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})(?![\w-])|\b(?:rgba?|hsla?)\(\s*[\d.]/i.test(svg), i.cle);
+    }
+  }
+  for (const s of SUJETS_STYLES) for (const st of STYLES_EXPERIMENTAUX) assert.deepEqual(HASHTAGS_PAR_DEFAUT[`dessin:${s}:${st}`], hashtagsStyleExperimental(s, st));
 });
 
 test('statuts', () => {

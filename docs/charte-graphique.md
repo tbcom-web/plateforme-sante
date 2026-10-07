@@ -95,6 +95,30 @@ Troisième registre, `registre: 'ligne'` (rétrocompatible : `releve` reste le d
 
 **Registre par modèle** (jeton `jetons.registre`, défaut `releve` : les fiches antérieures ne changent pas ; `registreModele(m)`). Sur le site, `lib/visuels.ts` expose `registre` et `pedagogique`, valeurs par défaut de `Dessin`, `Animation`, `Empreintes` (remplacées par le schéma `appuis`), `Materiel` (fichiers `materiel-<id>-pedagogique.svg`) et de l'accueil. `<html data-registre="pedagogique">` règle le reste dans `Gabarit.astro` : texte à 18 px au moins (`font-size: 112,5 %` sur la racine), aucun sur-titre numéroté ni numéro décoratif en mono, pas de police mono chargée (`--police-mono` = police du texte), surfaces `.surface-plan` redéfinies en fond doux clair (mêmes composants ; `--sur-sombre-*`, `--papier`, `--signal`, `--dessin-*` ramenées à l'encre et à l'accent), `.surface-grille` sans quadrillage, cartouches techniques (légende, « Fig. », mention, coordonnées) retirés, filets de survol et pastilles à l'accent (jamais la palette de données sur l'interface), rien qui pulse. Fiche d'un soin : le dessin du soin plutôt que l'image de l'animation. Aperçu de l'admin : même règle (`ApercuTheme`, `data-registre`).
 
+### Registres expérimentaux (2026-10-07, brouillons non branchés)
+
+Quatre directions radicalement différentes des registres relevé, pédagogique et ligne, à noter par Paul avant tout
+développement (`packages/core/src/styles-experimentaux.ts`, `svgStyleExperimental(sujet, style, { id, format })`, formats
+vignette 4:3 et portrait 3:4). Mêmes géométries validées pour tous ; seul le rendu change.
+
+- **Papier découpé** (`decoupe`) — chaleureux, artisanal : pièces à plat aux bords francs sans contour, ombre portée courte et
+  douce (lumière en haut à gauche), grande forme organique de fond (`--aplat`), bande de sol au bord ondulé, peau en `--peau-clair`
+  / `--peau`, objets en `--vif`, détails en `--duo-pale`, incisions courtes pour les plis, grain de papier léger (feTurbulence).
+- **Risographie** (`riso`) — éditorial, imprimeur : deux encres (`--vif`, `--duo-fonce`), peau en trame de points à 15°, second
+  plan / autre personne en trame serrée de la seconde encre, contours sur la seconde passe décalée de ≈ 1,5 % (mauvais repérage),
+  passe 2 en produit (mix-blend-mode multiply), ongles et reflets en réserve, mouchetures de papier. Gamme sobre : monochrome.
+- **Volume doux** (`volume`) — tactile, apaisant : dégradés radiaux par pièce (clair → teinte → ombre), liseré léger pour séparer
+  les pièces, ombre floue sous le sujet, halo de fond, sans brillance.
+- **Géométrique graphique** (`geometrique`) — affiche suisse / Bauhaus : grand disque `--vif`, rectangle de sol ou quart de disque
+  `--duo`, sujet en silhouette pleine `--encre-gamme`, détails en négatif, trois couleurs au plus ; le sujet reste entier et d'une
+  seule couleur (jamais de couleur partielle sur la peau).
+
+Règles communes : aucun texte, aucun visage, couleurs uniquement par variables (gamme + teintes anatomiques), styles en ligne
+(pas de `<style>`), identifiants préfixés, un flou et un grain au plus, ≤ 25 ko compressé. Pièges propres à ces styles : une
+forme de fond rose près de la peau se lit « rougeur » (la petite pièce du papier découpé est placée loin du sujet, dans le duo
+pâle) ; une trame ajourée laisse voir le plan de derrière (réserve de papier sous chaque pièce) ; les contours des orteils
+latéraux sont masqués par l'hallux (sinon « anneaux / bagues »). Revue : `docs/referentiels/revue-anatomique-2026-10-07-styles.md`.
+
 ### Modèle « Simple et pédagogique » (`simple`)
 
 Pour les praticiens qui veulent un site simple et rassurant (patientèle âgée, cabinet de village) : registre pédagogique ; accueil `lieu` (`HeroLieu.astro` : grande photo du lieu — photo d'accueil, panorama ou cabinet du praticien, sinon photo d'accueil du jeu de la spécialité, sinon schéma pédagogique — et carte claire avec le titre, le téléphone et le rendez-vous en gros boutons, l'adresse et les jours d'ouverture) ; section `etapes` (premier rendez-vous en trois étapes composées des informations déjà saisies, sans intertitre) ; FAQ complétée à l'affichage par les questions des fiches sur l'ordonnance et le remboursement (données structurées inchangées) ; lieu d'exercice en section claire ; police Nunito (titres et texte), motif `aucun`, boutons arrondis, photos `naturel`, gammes douces (sauge, canard, sable, ardoise), pied de page clair, aucune apparition au défilement. Toutes les sections à intertitre sont présentes : `controle:seo` reste identique sur les 6 modèles. Dans le formulaire, les modèles se choisissent par leur effet (champ `effet` de la fiche : « Simple et rassurant », « Moderne et technique »…), avec une phrase et une vignette.

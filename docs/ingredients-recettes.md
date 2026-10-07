@@ -36,6 +36,28 @@ Un kit est une donnée du core (`packages/core/src/kits.ts`), sans interface dé
 - Kit Sports (2026-10-07) : course à pied, trail, randonnée, football, rugby, basket, tennis et padel, handball, danse, cyclisme, ski, golf. Scènes dans `packages/core/src/sports.ts` (pied validé `piedDeProfil` chaussé par enveloppe, cinématique du coureur `foulee.ts`), revue dans `docs/referentiels/revue-anatomique-2026-10-07-sports.md`. Aucune animation tant que les ingrédients ne sont pas validés (règle 6 du graphiste).
 - Prochaines étapes : tuile « Kits » dans `/admin/retours` (garder, retirer, remplacer un élément), héros et photos du sujet ajoutés au kit, générateurs qui puisent dans les kits validés.
 
+## Registres expérimentaux (2026-10-07, brouillons)
+
+Demande de Paul : « une nouvelle planche d'illustrations dans un style RADICALEMENT différent… les mêmes ingrédients ». Quatre
+directions, chacune appliquée aux MÊMES cinq sujets, eux-mêmes construits avec les géométries validées (aucun pied redessiné) :
+`packages/core/src/styles-experimentaux.ts`.
+
+- **Ingrédients communs** : une composition par sujet = des pièces à RÔLE (peau, peau-2 = second plan du même corps, peau-autre =
+  une autre personne, objet, détail d'objet, tissu, ongle, reflet) et des traits (contour, détail). Sujets : pied de profil
+  (`piedDeProfil`), ongle de l'hallux (gros plan sain), paire de semelles (`SEMELLE`, `SEMELLE_ELEMENTS`), coureur (`poseCoureur`),
+  pieds d'enfant face aux pieds d'adulte (composition du héros « enfant »).
+- **Cuisines** (un style traduit les rôles en matières) : `decoupe` Papier découpé, `riso` Risographie, `volume` Volume doux,
+  `geometrique` Géométrique graphique — règles dans `FICHES_STYLES` et dans `docs/charte-graphique.md`.
+- **Notables** : 20 éléments dans l'inventaire (`illustrations.ts`), clé `dessin:<sujet>:<style>` (sujets : `pied-profil`,
+  `ongle-hallux`, `semelle-paire`, `coureur`, `enfant-adulte`), statut « À revoir », tuile **Illustrations** de /admin/retours ;
+  vue agrandie en portrait (premier écran téléphone). Sujets par défaut (général, ongles, semelles, sport, enfant) et hashtags par
+  défaut (`HASHTAGS_PAR_DEFAUT`, kits.ts) : `#style-<style>`, `#style-experimental` et le sujet — filtre « #style-riso » pour ne noter
+  qu'une direction.
+- **Non branchés** : ni générateur, ni sites, ni sélecteur de style du Studio. Paul choisit d'abord la ou les directions à
+  développer ; ensuite seulement : registre de modèle, fichiers servis (contrôle WebKit), animations (règle 6 : ingrédients validés).
+- Contrôles : test `illustrations.test.ts` (20 clés, sans texte ni couleur littérale, hashtags), `controle:charte` (sans texte ni
+  `<style>`, variables seulement, ≤ 25 ko compressé par image ; mesuré : 5,4 ko au plus).
+
 ## Boucle avec Claude
 
 1. Paul note (niveaux 1 à 3).

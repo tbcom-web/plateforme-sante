@@ -8,6 +8,7 @@
 // /admin/illustrations et /admin/retours, comme pour tout ingrédient. Un kit reste « brouillon » tant que Paul n'a pas validé ses
 // ingrédients ; seul Paul passe un ingrédient en « Validé ».
 import { SPORTS, FICHES_SPORTS, idPictoSport, type Sport } from './sports';
+import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, cleStyleExperimental, hashtagsStyleExperimental } from './styles-experimentaux';
 
 export type StatutKit = 'brouillon' | 'valide' | 'retire';
 
@@ -69,6 +70,8 @@ export const sujetsDesKits = (cle: string): string[] => [...new Set(kitsDeCle(cl
  * Hashtags par défaut, dans le code (clé → hashtags triés) : ceux des éléments des kits. Paul les voit comme les autres et peut en
  * retirer (le journal assets_hashtags enregistre le retrait) ou en ajouter (hashtags.ts, hashtagsDepuisLignes(lignes, défauts)).
  */
-export const HASHTAGS_PAR_DEFAUT: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
-  KITS.flatMap((k) => k.elements.flatMap((e) => [e.picto, e.ligne, e.pedagogique].map((cle) => [cle, [...new Set(e.hashtags)].sort()] as const))),
-);
+export const HASHTAGS_PAR_DEFAUT: Readonly<Record<string, readonly string[]>> = Object.fromEntries([
+  ...KITS.flatMap((k) => k.elements.flatMap((e) => [e.picto, e.ligne, e.pedagogique].map((cle) => [cle, [...new Set(e.hashtags)].sort()] as const))),
+  // Registres expérimentaux (styles-experimentaux.ts) : #style-<style>, #style-experimental et le sujet (filtre de /admin/retours)
+  ...STYLES_EXPERIMENTAUX.flatMap((st) => SUJETS_STYLES.map((s) => [cleStyleExperimental(s, st), hashtagsStyleExperimental(s, st)] as const)),
+]);

@@ -19,6 +19,7 @@ import { THEMES_ILLUSTRES, illustrationTheme, sourcesTheme } from './heros-theme
 import { THEMES } from './themes';
 import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
 import { clesSport, sujetsDesKits } from './kits';
+import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, FICHES_STYLES, LIBELLES_SUJETS_STYLES, SUJET_VISUEL_STYLES, cleStyleExperimental, svgStyleExperimental, type StyleExperimental } from './styles-experimentaux';
 
 /** Statut de revue d'une illustration (valeurs de la colonne `statut` de la migration 0021) */
 export type StatutIllustration = 'a_revoir' | 'valide' | 'a_retravailler' | 'retire';
@@ -72,6 +73,8 @@ export interface Illustration {
   svg: () => string;
   /** Rendu complémentaire montré dans la vue agrandie (bibliothèque : registre relevé) */
   svgVariante?: () => string;
+  /** Registre EXPÉRIMENTAL (styles-experimentaux.ts, brouillon : ni générateur, ni sites, ni Studio) ; `registre` absent */
+  style?: StyleExperimental;
 }
 
 /** Statut du catalogue de la bibliothèque → statut de revue par défaut */
@@ -122,6 +125,20 @@ export function inventaireIllustrations(): Illustration[] {
       source: `packages/core/src/sports.ts — scene('${sport}')`, soins: ['sport'], statutParDefaut: 'a_revoir', fond: 'doux',
       svg: () => svgSport(sport, 'pedagogique'),
     });
+  }
+  // Registres expérimentaux (2026-10-07, brouillons à noter) : 5 sujets × 4 styles, clé dessin:<sujet>:<style>, hashtag #style-<style>
+  // (HASHTAGS_PAR_DEFAUT, kits.ts) ; vue agrandie = format portrait (premier écran téléphone)
+  for (const style of STYLES_EXPERIMENTAUX) {
+    for (const sujet of SUJETS_STYLES) {
+      l.push({
+        cle: cleStyleExperimental(sujet, style), type: 'dessin', style, titre: `${LIBELLES_SUJETS_STYLES[sujet]} (${FICHES_STYLES[style].nom})`,
+        detail: `Style expérimental « ${FICHES_STYLES[style].nom} » · brouillon, non branché sur les sites`,
+        source: `packages/core/src/styles-experimentaux.ts — style${style[0].toUpperCase()}${style.slice(1)} / compo '${sujet}'`, soins: [SUJET_VISUEL_STYLES[sujet]],
+        statutParDefaut: 'a_revoir', fond: 'clair',
+        svg: () => svgStyleExperimental(sujet, style, { id: `rv-se-${sujet}-${style}` }),
+        svgVariante: () => svgStyleExperimental(sujet, style, { id: `rv-sep-${sujet}-${style}`, format: 'portrait' }),
+      });
+    }
   }
   for (const id of EQUIPEMENTS_DESSINES) {
     const e = EQUIPEMENTS.find((x) => x.id === id);
