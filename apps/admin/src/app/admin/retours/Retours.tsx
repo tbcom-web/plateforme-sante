@@ -9,12 +9,15 @@
 // Téléphone : barre d'étoiles fixée en bas de l'écran (toujours visible). Assets → assets_notes (0027) ; thèmes complets → atelier_notes (0026).
 // 0028 : « Ce qui va bien (libre) » / « Ce qui ne va pas (libre) » distincts ; instantané du rendu noté ; élément modifié depuis la
 // note → avant / après côte à côte (et tiré en premier) ; sujets du visuel (+ / ×) et filtre « noter les visuels du sujet … ».
+// Animations (2026-10-07) : l'animation joue (LectureAnimation : Lecture / Pause / Rejouer, figée si mouvements réduits) ; ses
+// ingrédients de base (animations-sources.ts) et leur statut sont listés ; tant qu'un ingrédient n'est pas validé, l'animation est
+// « en attente », passe après tout le reste au tirage, et « Noter d'abord ses ingrédients » lance une session sur eux (avec statut).
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  CATEGORIES_RETOURS, categorieDuType, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
-  ingredientsProposition, inventaireAssets, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis, prochaineCarte,
+  animationDeCle, CATEGORIES_RETOURS, categorieDuType, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
+  ingredientsProposition, inventaireAssets, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
   type PoidsAtelier, type Proposition, type StatutIllustration, type Univers,
@@ -22,6 +25,8 @@ import {
 import ApercuTheme from '@/components/ApercuTheme';
 import type { SourcePhotoLibre, SurchargesSujets } from '@plateforme/core';
 import AvantApres from '@/components/AvantApres';
+import IngredientsAnimation from '@/components/IngredientsAnimation';
+import LectureAnimation from '@/components/LectureAnimation';
 import SujetsVisuel from '@/components/SujetsVisuel';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import { correspondHashtag, type HashtagsAssets } from '@plateforme/core';
@@ -32,6 +37,7 @@ import type { ChangementClaude } from '@/lib/changements';
 import type { SoinCatalogue } from '@/lib/sites';
 import { auHasard, draftDemo, type Scenario } from '../atelier/Atelier';
 import { ajouterNoteAtelier } from '../atelier/actions';
+import { ajouterRevue } from '../illustrations/actions';
 import { ajouterNoteAsset } from './actions';
 import Inspirations from './Inspirations';
 import PhotosADecouvrir from './PhotosADecouvrir';
@@ -59,6 +65,8 @@ type Props = {
   themesActives: string[];
   typeInitial: string | null;
   cleInitiale: string | null;
+  /** ?ingredients=animation:<nom> : session sur les ingrédients non validés de cette animation */
+  ingredientsDe?: string | null;
   /** Inspirations (0028) : images de référence (URL signées), étiquettes, palette */
   inspirations: Inspiration[];
   migrationInspirations: boolean;
@@ -206,6 +214,21 @@ function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
       </div>
     );
   }
+  const anim = a.type === 'animation' ? animationDeCle(a.cle) : null;
+  if (anim) {
+    // L'animation elle-même (comme sur le site), puis son image figée (mouvements réduits, aperçus)
+    return (
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] md:items-start">
+        <figure className="grid gap-1">
+          <LectureAnimation key={anim} nom={anim} />
+          <figcaption className="text-xs text-neutral-500">Animation, telle que les sites la jouent</figcaption>
+        </figure>
+        <Panneau titre="Image figée (mouvements réduits, aperçus)" className="surface-plan">
+          <Svg html={svg} className="aspect-[4/3] w-[88%]" />
+        </Panneau>
+      </div>
+    );
+  }
   const fondClair = a.rendu.fond === 'grille' ? 'surface-grille' : '';
   return (
     <div className="grid gap-3 md:grid-cols-2">
@@ -224,7 +247,7 @@ function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
 // ---------------------------------------------------------------------------------------------------------------
 
 export default function Retours(props: Props) {
-  const { statuts, photosJeux, markdown, changements, influents, changementsClaude, migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
+  const { photosJeux, markdown, changements, influents, changementsClaude, migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
   const inventaireComplet = useMemo(() => inventaireAssets({ photosJeux }), [photosJeux]);
   // Sujets des visuels (défauts du code ± surcharges de Paul) et filtre « noter les visuels du sujet … »
   const [surcharges, setSurcharges] = useState<SurchargesSujets>(props.surchargesSujets);
@@ -240,6 +263,14 @@ export default function Retours(props: Props) {
   const [datesAtelier, setDatesAtelier] = useState<string[]>(props.datesAtelier);
   const [dejaNotees, setDejaNotees] = useState(props.dejaNotees);
   const etats = useMemo(() => etatsNotes(notes), [notes]);
+  // Statuts de la bibliothèque (illustrations_statuts), mis à jour localement depuis une session « ingrédients »
+  const [statuts, setStatuts] = useState<Record<string, StatutIllustration>>(props.statuts);
+  // Session limitée à une liste de clés (ingrédients d'une animation en attente)
+  const [selection, setSelection] = useState<{ titre: string; cles: string[] } | null>(() => {
+    const a = props.ingredientsDe ? animationDeCle(props.ingredientsDe) : null;
+    const e = a ? etatAnimation(a, props.statuts) : null;
+    return e?.aValider.length ? { titre: `Ingrédients de « ${e.titre} »`, cles: e.aValider.map((i) => i.cle) } : null;
+  });
   const etroit = useEtroit();
   const [espace, setEspace] = useState<Espace | null>(props.typeInitial === 'inspirations' || props.typeInitial === 'decouvrir' ? props.typeInitial : null);
 
@@ -260,7 +291,7 @@ export default function Retours(props: Props) {
   }, [inventaire, etats]);
 
   // ---- Boucle de notation ----
-  const [categorie, setCategorie] = useState<CategorieRetours | null>(() => (CATEGORIES_RETOURS.some((c) => c.id === props.typeInitial) ? props.typeInitial as CategorieRetours : props.cleInitiale ? 'hasard' : null));
+  const [categorie, setCategorie] = useState<CategorieRetours | null>(() => (selection ? 'hasard' : CATEGORIES_RETOURS.some((c) => c.id === props.typeInitial) ? props.typeInitial as CategorieRetours : props.cleInitiale ? 'hasard' : null));
   const [historique, setHistorique] = useState<Carte[]>([]);
   const [position, setPosition] = useState(-1);
   const vus = useRef(new Set<string>());
@@ -292,21 +323,24 @@ export default function Retours(props: Props) {
   }, [poids, disponibles, dejaNotees]);
 
   const candidatsDe = useCallback((c: CategorieRetours) => {
+    if (selection) return inventaireComplet.filter((a) => selection.cles.includes(a.cle));
     const cat = CATEGORIES_RETOURS.find((x) => x.id === c)!;
     return cat.types.length ? inventaire.filter((a) => cat.types.includes(a.type)) : inventaire;
-  }, [inventaire]);
+  }, [inventaire, inventaireComplet, selection]);
+  // Animation dont un ingrédient de base n'est pas validé : tirée après tout le reste
+  const enAttente = useCallback((a: Asset) => { const x = a.type === 'animation' ? animationDeCle(a.cle) : null; return x ? etatAnimation(x, statuts).enAttente : false; }, [statuts]);
 
   // Empreintes calculées une fois par catégorie (rendu SVG), pour repérer les assets modifiés depuis leur dernière note
   const cacheEmpreintes = useRef(new Map<string, string | null>());
   const tirer = useCallback((c: CategorieRetours): Carte | null => {
-    if (c === 'themes' || (c === 'hasard' && !migrationAtelier && Math.random() < 0.2)) return tirerTheme();
+    if (!selection && (c === 'themes' || (c === 'hasard' && !migrationAtelier && Math.random() < 0.2))) return tirerTheme();
     const liste = candidatsDe(c).map((a) => {
       if (!cacheEmpreintes.current.has(a.cle)) cacheEmpreintes.current.set(a.cle, empreinteAsset(a));
       return { cle: a.cle, empreinte: cacheEmpreintes.current.get(a.cle) ?? null, a };
     });
-    const x = prochaineCarte(liste, etats, vus.current);
+    const x = prochaineCarteAvecAttente(liste, etats, vus.current, (l) => enAttente(l.a));
     return x ? preparer(x.a) : null;
-  }, [candidatsDe, etats, tirerTheme, migrationAtelier]);
+  }, [candidatsDe, etats, tirerTheme, migrationAtelier, selection, enAttente]);
 
   const reinitialiserSaisie = () => { setEtiquettes([]); setPositif(''); setNegatif(''); setModeEtiquettes(false); };
 
@@ -323,8 +357,13 @@ export default function Retours(props: Props) {
 
   const precedente = () => { reinitialiserSaisie(); setPosition((p) => Math.max(0, p - 1)); };
 
+  // Retour à l'accueil : fin de la session « ingrédients »
+  useEffect(() => { if (!categorie) setSelection(null); }, [categorie]);
+
   // Démarrage d'une catégorie (et carte demandée par ?cle=)
-  const demarrer = (c: CategorieRetours) => {
+  const demarrer = (c: CategorieRetours, cles: { titre: string; cles: string[] } | null = null) => {
+    cleDemandee.current = null;
+    setSelection(cles);
     setCategorie(c);
     setHistorique([]);
     setPosition(-1);
@@ -335,9 +374,9 @@ export default function Retours(props: Props) {
   const cleDemandee = useRef(props.cleInitiale);
   useEffect(() => {
     if (!categorie || historique.length) return;
-    // ?cle= (lien « Noter » de la bibliothèque) : cet élément d'abord, une seule fois
+    // ?cle= (lien « Noter » de la bibliothèque) : cet élément d'abord, une seule fois (oublié au démarrage d'une autre catégorie ;
+    // pas ici : en développement, React rejoue l'effet et la 2e passe tirait une autre carte)
     const demandee = cleDemandee.current ? inventaireComplet.find((a) => a.cle === cleDemandee.current) : undefined;
-    cleDemandee.current = null;
     const carte = demandee ? preparer(demandee) : tirer(categorie);
     if (!carte) return;
     vus.current.add(cleCarte(carte));
@@ -550,7 +589,9 @@ export default function Retours(props: Props) {
 
   // ======================= Carte =======================
   const cat = CATEGORIES_RETOURS.find((c) => c.id === categorie)!;
-  const prog = categorie === 'themes' ? null : categorie === 'hasard'
+  const prog = selection
+    ? { total: selection.cles.length, notes: selection.cles.filter((k) => etats.has(k)).length }
+    : categorie === 'themes' ? null : categorie === 'hasard'
     ? [...parCategorie.values()].reduce((s, v) => ({ total: s.total + v.total, notes: s.notes + v.notes }), { total: 0, notes: 0 })
     : parCategorie.get(categorie);
   const pct = prog && prog.total ? Math.round((prog.notes / prog.total) * 100) : 0;
@@ -560,6 +601,21 @@ export default function Retours(props: Props) {
   const apercuTheme = carte.kind === 'theme'
     ? apercuProposition({ ...base, priorites: { principaux: carte.scenario.principaux, secondaires: carte.scenario.secondaires }, couleursPreferees: carte.scenario.couleurs }, carte.p, { proposes, modeles, slugs, themesActives })
     : null;
+  const animCarte = carte.kind === 'asset' && carte.asset.type === 'animation' ? animationDeCle(carte.asset.cle) : null;
+  const etatAnim = animCarte ? etatAnimation(animCarte, statuts) : null;
+  const noterIngredients = () => {
+    if (!etatAnim) return;
+    demarrer('hasard', { titre: `Ingrédients de « ${etatAnim.titre} »`, cles: etatAnim.aValider.map((i) => i.cle) });
+  };
+  // Session « ingrédients » : statut dans la bibliothèque (Validé / À retravailler / À revoir), comme dans /admin/illustrations
+  const changerStatut = async (s: StatutIllustration) => {
+    if (carte.kind !== 'asset') return;
+    const cleA = carte.asset.cle;
+    const commentaire = s === 'a_retravailler' ? negatif : s === 'valide' ? positif : '';
+    const r = await ajouterRevue(cleA, s, commentaire, carte.svg ? empreinteSvg(carte.svg) : null).catch(() => ({ ok: false, message: 'Connexion perdue : statut non enregistré.' }));
+    if (r.ok) setStatuts((m) => ({ ...m, [cleA]: s }));
+    setStatut({ ok: r.ok, message: `${carte.asset.titre} : ${r.message}` });
+  };
   const modifieDepuis = Boolean(carte.kind === 'asset' && etat && carte.empreinte && etat.empreinte && etat.empreinte !== carte.empreinte);
   const positives = etiquettesCarte.filter((e) => e.positive);
   const negatives = etiquettesCarte.filter((e) => !e.positive);
@@ -581,7 +637,7 @@ export default function Retours(props: Props) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button type="button" onClick={() => setCategorie(null)} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Accueil</button>
         <div className="grid min-w-[200px] flex-1 gap-1 sm:max-w-sm">
-          <p className="text-sm"><strong>{cat.libelle}</strong> · {session} avis cette session</p>
+          <p className="text-sm"><strong>{selection ? selection.titre : cat.libelle}</strong> · {session} avis cette session</p>
           {prog && (
             <>
               <span aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-neutral-200"><span className="block h-full rounded-full bg-teal-700" style={{ width: `${pct}%` }} /></span>
@@ -619,8 +675,24 @@ export default function Retours(props: Props) {
               {modifieDepuis && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-950">Modifié depuis votre note : comparez avant / après</span>}
               {etat && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">Déjà noté {etat.n} fois ({etat.min === etat.max ? `${etat.min}★` : `${etat.min} à ${etat.max}★`})</span>}
               {st && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">Statut : {LIBELLES_STATUTS_ILLUSTRATION[st]}</span>}
+              {etatAnim?.enAttente && <span className="rounded-full bg-amber-200 px-2 py-0.5 font-semibold text-amber-950">En attente d’ingrédients validés</span>}
             </div>
           </div>
+          {etatAnim && <IngredientsAnimation etat={etatAnim} onNoterIngredients={noterIngredients} />}
+          {selection && carte.kind === 'asset' && (
+            <div className="grid gap-1.5 rounded-xl bg-neutral-50 p-3 ring-1 ring-black/10">
+              <p className="text-sm font-medium">Statut dans la bibliothèque <span className="text-xs font-normal text-neutral-500">(une animation attend sa validation)</span></p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(['valide', 'a_retravailler', 'a_revoir'] as const).map((s) => (
+                  <button key={s} type="button" onClick={() => void changerStatut(s)} aria-pressed={statuts[carte.asset.cle] === s}
+                    className={`min-h-11 rounded-lg px-2 text-xs font-semibold ring-1 ${focus} ${statuts[carte.asset.cle] === s ? (s === 'valide' ? 'bg-teal-700 text-white ring-teal-700' : s === 'a_retravailler' ? 'bg-rose-600 text-white ring-rose-600' : 'bg-amber-500 text-white ring-amber-500') : 'bg-white ring-black/15 hover:bg-neutral-100'}`}>
+                    {LIBELLES_STATUTS_ILLUSTRATION[s]}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-neutral-500">« Ce qui va bien » part avec « Validé », « Ce qui ne va pas » avec « À retravailler ».</p>
+            </div>
+          )}
           {carte.kind === 'asset' && <SujetsVisuel visuel={carte.asset} surcharges={surcharges} onChange={setSurcharges} />}
           {carte.kind === 'asset' && <HashtagsVisuel cle={carte.asset.cle} etat={hashtags} onChange={setHashtags} migrationManquante={props.migrationHashtags} />}
 

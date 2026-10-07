@@ -230,8 +230,10 @@ const ES = COURBES.entreeSortie, SO = COURBES.sortie, LIN = 'linear';
  * Feuille d'animation. Le mouvement ne joue que sur `.meulage.en-vue` (posée à l'écran par le gabarit, jamais si le visiteur réduit
  * les mouvements ni si le modèle n'anime pas) ou sur `.meulage--lecture` (export vidéo, pilotée image par image). Durée du cycle :
  * --mg-duree si le parent la pose (ÉcranZen : 12 s), sinon --cycle-geste (site). Départ du site décalé sur la pose de l'image figée (--mg-depart).
+ * Admin (lecture forcée, animations-lecture.ts) : `selecteur` remplace le déclencheur (ex. `.al-joue .meulage`) et `toujours` retire
+ * la condition prefers-reduced-motion (l'admin la gère lui-même : bouton « Voir l'animation »). Sans option : feuille du site, inchangée.
  */
-export function cssMeulage(): string {
+export function cssMeulage(o: { selecteur?: string; toujours?: boolean } = {}): string {
   const S = ARRIVEE[1];
   // Fraise : arrive dans son axe, balaie chaque couche (milieu → bord libre → arrière → milieu, un niveau plus bas), se retire
   const outil: Cle[] = [[0, `${tr(HORS)};${op(0)}`], [ARRIVEE[0], `${tr(HORS)};${op(0)}`, SO], [ARRIVEE[0] + 0.3, op(1)], [S, `${tr(decalage(contact(0, 446)))};${op(1)}`, ES]];
@@ -257,7 +259,7 @@ export function cssMeulage(): string {
     '@keyframes mg-tour{to{transform:rotate(360deg)}}',
     '@keyframes mg-poussiere{0%{transform:translate(0px,0px);opacity:0}15%{opacity:0.9}100%{transform:translate(13px,1.5px);opacity:0}}',
   ];
-  const J = ':is(.meulage.en-vue,.meulage--lecture)';
+  const J = o.selecteur ?? ':is(.meulage.en-vue,.meulage--lecture)';
   const regles = [
     `.meulage{--mg-cycle:var(--mg-duree,var(--cycle-geste,${CYCLES.geste}ms));--mg-depart:calc(var(--mg-cycle) * -${+(DEPART_SITE / BASE).toFixed(4)})}`,
     '.meulage--lecture{--mg-depart:0s}',
@@ -271,5 +273,6 @@ export function cssMeulage(): string {
     `${J} .mg-poussiere{animation:mg-poussiere calc(var(--mg-cycle) / 20) ${COURBES.sortie} infinite both}`,
     [0, 1, 2, 3, 4].map((i) => `${J} .mg-poussiere--${i}{animation-delay:calc(var(--mg-cycle) / -100 * ${i})}`).join(''),
   ];
+  if (o.toujours) return `${css.join('')}${regles.slice(3).join('')}${regles.slice(0, 3).join('')}`;
   return `${css.join('')}@media (prefers-reduced-motion:no-preference){${regles.slice(3).join('')}}${regles.slice(0, 3).join('')}`;
 }

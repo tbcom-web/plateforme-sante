@@ -6,7 +6,8 @@
 //   assets-hashtags.json : hashtags libres des visuels (état courant par clé, table assets_hashtags, 0029 ; hashtags.ts)
 //   inspirations.json : métadonnées des inspirations (étiquettes, objectif, sujet, type, palette, domaine du lien) — JAMAIS
 //   l'image, son chemin dans le stockage privé, une URL signée ni l'adresse complète du lien
-//   SYNTHESE.md : tendances lisibles (fonctions pures du core : syntheseAssets, markdownAssets, syntheseAtelier, markdownAtelier)
+//   SYNTHESE.md : tendances lisibles (fonctions pures du core : syntheseAssets, markdownAssets, syntheseAtelier, markdownAtelier),
+//   et « Animations en attente d'ingrédients validés » (markdownAnimationsEnAttente, animations-sources.ts)
 // Le dépôt est PUBLIC : seules des colonnes explicites sont lues — jamais d'auteur, d'e-mail, d'identifiant de compte, ni
 // aucune table de leads, prospects ou sites. Dates réduites au jour. Aucune date d'export dans les fichiers : un export
 // sans nouveau retour ne change rien (pas de commit).
@@ -50,7 +51,7 @@ let core;
 try {
   await build({
     stdin: {
-      contents: "export { syntheseAssets, markdownAssets, titresAssets, typeDeCle, estEtiquetteDuType } from './assets'; export { syntheseAtelier, markdownAtelier, estEtiquetteAtelier } from './atelier'; export { inspirationPourExport, markdownInspirations } from './inspirations'; export { surchargesDepuisLignes, markdownSujets, sujetsSansVisuel } from './sujets-visuels'; export { inventaireAssets } from './assets';",
+      contents: "export { syntheseAssets, markdownAssets, titresAssets, typeDeCle, estEtiquetteDuType } from './assets'; export { syntheseAtelier, markdownAtelier, estEtiquetteAtelier } from './atelier'; export { inspirationPourExport, markdownInspirations } from './inspirations'; export { surchargesDepuisLignes, markdownSujets, sujetsSansVisuel } from './sujets-visuels'; export { inventaireAssets } from './assets'; export { markdownAnimationsEnAttente } from './animations-sources';",
       resolveDir: join(racine, 'packages', 'core', 'src'), loader: 'ts',
     },
     bundle: true, platform: 'node', format: 'esm', outfile: join(tmp, 'core.mjs'), logLevel: 'warning', loader: { '.svg': 'text' },
@@ -132,6 +133,8 @@ const md = [
   coreHashtags.markdownHashtags(hashtagsAssets, { titres }),
   '',
   core.markdownSujets(surchargesSujets, { titres, sansVisuel: core.sujetsSansVisuel(core.inventaireAssets(), surchargesSujets) }),
+  '',
+  core.markdownAnimationsEnAttente(Object.fromEntries(courants.map((x) => [x.cle, x.statut]))),
   '',
   core.markdownInspirations(listeInspirations, { titre: '## Inspirations (références seulement, jamais réutilisées)' }),
   '',

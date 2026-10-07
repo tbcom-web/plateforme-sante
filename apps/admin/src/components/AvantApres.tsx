@@ -2,6 +2,8 @@
 
 // Avant / après : version notée (instantané enregistré avec la note, sinon archive du commit dont l'empreinte correspond :
 // apps/admin/public/archives, scripts/archiver-assets.mjs) à côté de la version actuelle, avec la note et les remarques.
+// Animation (clé animation:…) : l'instantané est l'image figée (le SVG noté ne garde pas le mouvement) : posée sur le fond sombre
+// des animations, avec la mention ; la version actuelle, elle, joue (LectureAnimation).
 import { useEffect, useState, type ReactNode } from 'react';
 import { libelleEtiquetteAsset, rendusAvant, type ArchiveAssets, type IndexArchives, type Instantane } from '@plateforme/core';
 import { derniereNoteAsset, type NoteAvant } from '@/app/admin/retours/actions';
@@ -87,7 +89,12 @@ export default function AvantApres({ cle, children, note: noteInitiale }: Props)
           Avant {note ? <>(votre note : {note.note}<span aria-hidden="true">★</span>{note.le ? `, le ${new Date(note.le).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })}` : ''})</> : ''}
         </figcaption>
         {avant === undefined ? <div className="grid aspect-[4/3] place-items-center rounded-xl bg-white text-xs text-neutral-500">Chargement de la version notée…</div>
-          : avant ? <RenduInstantane r={avant} />
+          : avant ? (cle.startsWith('animation:') && avant.kind === 'svg' ? (
+            <>
+              <div className="surface-plan rounded-xl"><RenduInstantane r={avant} fond="transparent" /></div>
+              <p className="text-xs font-medium text-amber-950">Image figée de l’animation notée : l’instantané ne garde pas le mouvement.</p>
+            </>
+          ) : <RenduInstantane r={avant} />)
             : <div className="grid aspect-[4/3] place-items-center rounded-xl bg-white p-3 text-center text-xs text-neutral-600">Version notée introuvable (ni instantané ni archive pour cette empreinte).</div>}
         {note && note.etiquettes.length > 0 && <p className="text-xs text-neutral-700">{note.etiquettes.map(libelleEtiquetteAsset).join(' · ')}</p>}
         {remarques.map((r) => <p key={r.t} className={`text-xs ${r.c}`}><strong>{r.t} :</strong> {r.v}</p>)}

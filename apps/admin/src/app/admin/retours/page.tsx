@@ -1,5 +1,5 @@
 import {
-  assetsInfluents, changementsGenerateur, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
+  assetsInfluents, changementsGenerateur, markdownAnimationsEnAttente, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
   markdownHashtags, universDuParcours,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -45,11 +45,14 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
     markdownAtelier(syntheseAtelier(atelier.notes), { date }),
     '',
     markdownSujets(surchargesSujets, { titres, sansVisuel: sujetsSansVisuel(inventaireAssets({ photosJeux }), surchargesSujets) }),
+    '',
+    markdownAnimationsEnAttente(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut]))),
   ].join('\n');
   const dejaNotees: Record<string, number> = {};
   for (const x of atelier.notes) dejaNotees[x.cle] = (dejaNotees[x.cle] ?? 0) + 1;
   const type = typeof sp.type === 'string' ? sp.type : null;
   const cle = typeof sp.cle === 'string' ? sp.cle : null;
+  const ingredients = typeof sp.ingredients === 'string' ? sp.ingredients : null;
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
@@ -87,6 +90,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         themesActives={themesActives()}
         typeInitial={type}
         cleInitiale={cle}
+        ingredientsDe={ingredients}
         inspirations={inspirations.inspirations}
         migrationInspirations={inspirations.migrationManquante}
         sourcesPhotos={sourcesConfigurees()}

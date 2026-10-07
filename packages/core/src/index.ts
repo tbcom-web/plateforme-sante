@@ -46,3 +46,5 @@ export * from './remarques';
 export * from './sujets-visuels';
 export * from './avant-apres';
 export * from './hashtags';
+export * from './animations-sources';
+export * from './animations-lecture';

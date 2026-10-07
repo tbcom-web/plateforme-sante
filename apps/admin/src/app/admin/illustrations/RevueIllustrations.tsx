@@ -3,15 +3,19 @@
 // Bibliothèque & retours : inventaire unifié du core (inventaireAssets : illustrations, photos, modèles, gammes), aperçu dans
 // une gamme au choix (mêmes variables que les sites : charte + gamme), statut et commentaires enregistrés dans le journal
 // (migration 0021), note rapide 1 à 5 étoiles (migration 0027 ; avis détaillé dans /admin/retours), export Markdown.
+// Animations (2026-10-07) : la vue agrandie joue l'animation (LectureAnimation) et liste ses ingrédients de base avec leur statut
+// (animations-sources.ts) ; ?cle=<clé> ouvre directement la vue agrandie d'un élément (liens « ingrédient »).
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState, useTransition, type CSSProperties } from 'react';
 import {
-  empreinteAsset, empreinteSvg, GAMMES, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, type SurchargesSujets, gamme as gammeParId, inventaireAssets, LIBELLES_REGISTRES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, markdownRetours,
+  animationDeCle, empreinteAsset, empreinteSvg, etatAnimation, GAMMES, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, type SurchargesSujets, gamme as gammeParId, inventaireAssets, LIBELLES_REGISTRES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, markdownRetours,
   pastilleGamme, STATUTS_ILLUSTRATION, SURFACES_CSS, variablesCharte, variablesGamme,
   type Asset, type PhotoDeJeu, type Registre, type StatutIllustration, type TypeAsset,
 } from '@plateforme/core';
 import AvantApres from '@/components/AvantApres';
+import IngredientsAnimation from '@/components/IngredientsAnimation';
+import LectureAnimation from '@/components/LectureAnimation';
 import SujetsVisuel from '@/components/SujetsVisuel';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import { correspondHashtag, hashtagsDe, type HashtagsAssets } from '@plateforme/core';
@@ -26,6 +30,8 @@ type Props = {
   surchargesSujets: SurchargesSujets;
   /** Empreinte de la dernière note par clé (avant / après) */
   empreintesNotees: Record<string, string | null>;
+  /** ?cle= : élément ouvert en vue agrandie au chargement */
+  cleInitiale?: string | null;
 };
 type Ligne = Asset & { empreinte: string; svgRendu: string; fond: 'grille' | 'plan' | 'doux' | 'clair'; registre?: Registre };
 type FiltreStatut = 'tous' | 'a_regarder' | StatutIllustration;
@@ -79,7 +85,7 @@ function Apercu({ html, fond, grand = false, petit = false }: { html: string; fo
 
 const registreDeCle = (cle: string): Registre | undefined => (cle.startsWith('ligne:') || cle.endsWith(':ligne') ? 'ligne' : cle.endsWith(':releve') || cle.startsWith('animation:') ? 'releve' : cle.endsWith(':pedagogique') || cle.startsWith('biblio:') ? 'pedagogique' : undefined);
 
-export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes, surchargesSujets, empreintesNotees }: Props) {
+export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes, surchargesSujets, empreintesNotees, cleInitiale = null }: Props) {
   const [surcharges, setSurcharges] = useState(surchargesSujets);
   const [filtreSujet, setFiltreSujet] = useState('');
   // Hashtags des visuels (0029), chargés après l'affichage ; filtre « #… » (saisie partielle acceptée) et recherche
@@ -135,6 +141,9 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
     return m;
   }, [revues]);
   const statutDe = useCallback((l: Ligne): StatutIllustration => courants.get(l.cle)?.statut ?? l.statutParDefaut, [courants]);
+  // Animations : état de leurs ingrédients de base (statuts courants)
+  const statutsCourants = useMemo(() => Object.fromEntries([...courants].map(([k, v]) => [k, v.statut])), [courants]);
+  const etatAnim = useCallback((l: Ligne) => { const a = l.type === 'animation' ? animationDeCle(l.cle) : null; return a ? etatAnimation(a, statutsCourants) : null; }, [statutsCourants]);
   // « Nouveau » : jamais revu (et pas déjà validé par le catalogue) ; « Modifié » : le rendu a changé depuis le dernier retour
   const nouveau = useCallback((l: Ligne) => !courants.has(l.cle) && l.statutParDefaut === 'a_revoir', [courants]);
   const modifie = useCallback((l: Ligne) => { const e = courants.get(l.cle)?.empreinte; return Boolean(e && e !== l.empreinte); }, [courants]);
@@ -187,7 +196,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
   };
 
   // Vue agrandie et raccourcis clavier (1 à 4 : statut, ← → : précédente / suivante, Échap : fermer)
-  const [ouverte, setOuverte] = useState<string | null>(null);
+  const [ouverte, setOuverte] = useState<string | null>(cleInitiale);
   const indexOuverte = ouverte ? visibles.findIndex((l) => l.cle === ouverte) : -1;
   const ligneOuverte = ouverte ? lignes.find((l) => l.cle === ouverte) ?? null : null;
   useEffect(() => {
@@ -309,6 +318,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                   <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${COULEURS[s]}`}>{LIBELLES_STATUTS_ILLUSTRATION[s]}</span>
                   {nouveau(l) && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-900">Nouveau</span>}
                   {modifie(l) && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-900">Modifié</span>}
+                  {etatAnim(l)?.enAttente && <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[11px] font-semibold text-amber-950" title="Un ingrédient de base n’est pas encore validé">Ingrédients à valider</span>}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate font-semibold" title={l.titre}>{l.titre}</p>
@@ -350,6 +360,17 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 <AvantApres key={ligneOuverte.cle} cle={ligneOuverte.cle}>
                   {ligneOuverte.rendu.kind === 'svg' ? <Apercu html={ligneOuverte.svgRendu} fond={ligneOuverte.fond} grand petit={ligneOuverte.type === 'picto'} /> : <ApercuAutre l={ligneOuverte} grand />}
                 </AvantApres>
+              ) : null;
+            })()}
+            {(() => {
+              // Animation : elle joue (comme sur le site), avec ses ingrédients de base et leur statut
+              const a = ligneOuverte.type === 'animation' ? animationDeCle(ligneOuverte.cle) : null;
+              const e = etatAnim(ligneOuverte);
+              return a && e ? (
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] md:items-start">
+                  <LectureAnimation key={a} nom={a} />
+                  <IngredientsAnimation etat={e} onNoterIngredients={() => { window.location.href = `/admin/retours?ingredients=${encodeURIComponent(ligneOuverte.cle)}`; }} />
+                </div>
               ) : null;
             })()}
             <div className={`grid gap-3 ${ligneOuverte.rendu.kind === 'svg' && ligneOuverte.rendu.svgVariante ? 'md:grid-cols-2' : ''}`}>

@@ -9,8 +9,10 @@ import SyntheseAssets from './SyntheseAssets';
 
 export const metadata = { title: 'Super admin · Bibliothèque & retours' };
 
-export default async function PageIllustrations() {
+export default async function PageIllustrations({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await exigerAdmin();
+  const sp = await searchParams;
+  const cle = typeof sp.cle === 'string' ? sp.cle : null;
   const [{ statuts, revues, migrationManquante }, notes, photosJeux, surchargesSujets] = await Promise.all([getRevuesIllustrations(), getNotesAssets(), getPhotosDesJeux(), getSurchargesSujets()]);
   // Empreinte de la dernière note de chaque élément (avant / après dans la vue agrandie)
   const empreintesNotees: Record<string, string | null> = {};
@@ -47,7 +49,7 @@ export default async function PageIllustrations() {
         </p>
       )}
       <SyntheseAssets synthese={synthese} markdown={markdownAssets(synthese, { date })} />
-      <RevueIllustrations statuts={statuts} revues={revues} migrationManquante={migrationManquante} photosJeux={photosJeux} moyennes={moyennes} migrationNotes={notes.migrationManquante} surchargesSujets={surchargesSujets} empreintesNotees={empreintesNotees} />
+      <RevueIllustrations statuts={statuts} revues={revues} migrationManquante={migrationManquante} photosJeux={photosJeux} moyennes={moyennes} migrationNotes={notes.migrationManquante} surchargesSujets={surchargesSujets} empreintesNotees={empreintesNotees} cleInitiale={cle} />
     </div>
   );
 }

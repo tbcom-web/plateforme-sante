@@ -71,6 +71,25 @@ export function prochaineCarte<T extends { cle: string; empreinte?: string | nul
   return p[Math.min(p.length - 1, Math.floor(aleatoire() * p.length))];
 }
 
+/**
+ * Comme prochaineCarte, mais les candidats « en attente » (animations dont les ingrédients de base ne sont pas validés :
+ * animations-sources.ts) ne sortent qu'après tous les autres : seulement quand tous les autres ont été vus dans la session.
+ */
+export function prochaineCarteAvecAttente<T extends { cle: string; empreinte?: string | null }>(
+  candidats: readonly T[],
+  etats: ReadonlyMap<string, EtatNotesAsset> | Record<string, EtatNotesAsset>,
+  exclues: ReadonlySet<string>,
+  enAttente: (c: T) => boolean,
+  aleatoire: () => number = Math.random,
+): T | null {
+  const prets = candidats.filter((c) => !enAttente(c));
+  const attente = candidats.filter((c) => enAttente(c));
+  const libre = (l: readonly T[]) => l.some((c) => !exclues.has(c.cle));
+  if (libre(prets)) return prochaineCarte(prets, etats, exclues, aleatoire);
+  if (libre(attente)) return prochaineCarte(attente, etats, exclues, aleatoire);
+  return prochaineCarte(prets.length ? prets : attente, etats, exclues, aleatoire);
+}
+
 /** États par clé à partir des notes (plus récentes d'abord ou non : l'empreinte retenue est celle de la note la plus récente) */
 export function etatsNotes(notes: readonly { cle: string; note: number; empreinte?: string | null; le?: string | null }[]): Map<string, EtatNotesAsset> {
   const m = new Map<string, EtatNotesAsset & { le: string }>();

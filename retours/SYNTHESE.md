@@ -197,3 +197,41 @@ Formule : moyenne lissée = (somme + 4 × moyenne générale) / (n + 4) ; « Ret
 - 4★ Pédicurie · Élégant et sobre · Sable · Trait fin : Super mais enlever les instruments
 
 Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 par ingrédient, 12 par paire, 6 par combinaison ; effet = lissée − moyenne générale.
+
+## Animations en attente d’ingrédients validés
+
+Règle de Paul : aucune animation créée ni modifiée tant que ses images de base ne sont pas « Validé » dans /admin/illustrations ;
+une animation se construit À PARTIR des ingrédients validés (mêmes géométries). Source : packages/core/src/animations-sources.ts.
+
+### `animation:podoscope` — empreintes de podoscope en points de pression (3 ingrédients sur 4 à valider)
+- [ ] `materiel:podoscope:releve` — Le podoscope (relevé) : plateau et lecture des appuis : À revoir
+- [x] `biblio:POD-SC-0007` — Empreinte plantaire (trace d’appui) : forme des deux empreintes : Validé
+- [ ] `dessin:analyse:releve` — Dessin « analyse » (relevé) : trame de points colorés par la pression : À revoir
+- [ ] `dessin:analyse:pedagogique` — Dessin « analyse » (pédagogique) : image calme de l’animation : À revoir
+
+### `animation:coureur` — coureur en pleine foulée (3 ingrédients sur 3 à valider)
+- [ ] `dessin:sport:releve` — Dessin « sport » (relevé) : foulée, chaussure de course : À revoir
+- [ ] `dessin:sport:pedagogique` — Dessin « sport » (pédagogique) : image calme de l’animation : À revoir
+- [ ] `materiel:tapis-de-course:releve` — Tapis de course (relevé) : laboratoire d’analyse de la foulée : À revoir
+
+### `animation:trajectoire` — trajet du centre de pression pendant le pas (3 ingrédients sur 4 à valider)
+- [ ] `dessin:equilibre:releve` — Dessin « équilibre » (relevé) : appuis et centre de pression : À revoir
+- [ ] `dessin:equilibre:pedagogique` — Dessin « équilibre » (pédagogique) : image calme de l’animation : À revoir
+- [x] `biblio:POD-SC-0007` — Empreinte plantaire (trace d’appui) : contour des deux pieds : Validé
+- [ ] `materiel:stabilometrie:releve` — Plateforme de stabilométrie (relevé) : tracé du centre de pression : À revoir
+
+### `animation:premiers-pas` — petites empreintes de premiers pas (2 ingrédients sur 2 à valider)
+- [ ] `dessin:enfant:releve` — Dessin « enfant » (relevé) : empreintes d’enfant en trame de points : À revoir
+- [ ] `dessin:enfant:pedagogique` — Dessin « enfant » (pédagogique) : image calme de l’animation : À revoir
+
+### `animation:semelle` — semelles tracées en courbes de niveau (2 ingrédients sur 4 à valider)
+- [ ] `dessin:semelle:releve` — Dessin « semelle » (relevé) : courbes de relief de la semelle : À revoir
+- [ ] `dessin:semelle:pedagogique` — Dessin « semelle » (pédagogique) : image calme de l’animation : À revoir
+- [x] `biblio:POD-AT-0004` — Semelle orthopédique (bibliothèque, vue de dessus) : contour de la semelle : Validé
+- [x] `biblio:EZ-HTML/semelle-ortho` — Semelle orthopédique en couleur (bibliothèque) : pièces de la semelle : Validé
+
+### `animation:meulage` — meulage d’un ongle épaissi à la fraise, en étapes (4 ingrédients sur 4 à valider)
+- [ ] `biblio:POD-AT-0003:profil-medial:ongle-epais` — Hallux de profil, ongle épaissi (bibliothèque) : géométrie de la scène : À revoir
+- [ ] `biblio:POD-AT-0003:profil-medial:ongle-epais-meulage` — Fraise et pièce à main du micromoteur (bibliotheque/soins-ongles.ts) : À revoir
+- [ ] `dessin:ongles-epais:releve` — Dessin « ongles épais » (relevé) : À revoir
+- [ ] `dessin:ongles-epais:pedagogique` — Dessin « ongles épais » (pédagogique) : À revoir
