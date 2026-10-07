@@ -13,6 +13,9 @@ import {
 } from '@plateforme/core';
 import AvantApres from '@/components/AvantApres';
 import SujetsVisuel from '@/components/SujetsVisuel';
+import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
+import { correspondHashtag, hashtagsDe, type HashtagsAssets } from '@plateforme/core';
+import { lireHashtagsAssets } from '../retours/actions-hashtags';
 import type { Revue, StatutEnregistre } from '@/lib/illustrations';
 import { ajouterNoteAsset } from '../retours/actions';
 import { ajouterRevue } from './actions';
@@ -79,6 +82,13 @@ const registreDeCle = (cle: string): Registre | undefined => (cle.startsWith('li
 export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes, surchargesSujets, empreintesNotees }: Props) {
   const [surcharges, setSurcharges] = useState(surchargesSujets);
   const [filtreSujet, setFiltreSujet] = useState('');
+  // Hashtags des visuels (0029), chargés après l'affichage ; filtre « #… » (saisie partielle acceptée) et recherche
+  const [hashtags, setHashtags] = useState<HashtagsAssets>({});
+  const [migrationHashtags, setMigrationHashtags] = useState(false);
+  const [filtreHashtag, setFiltreHashtag] = useState('');
+  useEffect(() => {
+    void lireHashtagsAssets().then((r) => { setHashtags(r.hashtags); setMigrationHashtags(r.migrationManquante); }).catch(() => undefined);
+  }, []);
   const lignes = useMemo<Ligne[]>(() => inventaireAssets({ photosJeux }).map((a) => {
     const s = a.rendu.kind === 'svg' ? a.rendu.svg() : '';
     return { ...a, svgRendu: s, empreinte: s ? empreinteSvg(s) : '', fond: a.rendu.kind === 'svg' ? a.rendu.fond : 'clair', registre: registreDeCle(a.cle) };
@@ -145,10 +155,11 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
       if (filtreRegistre !== 'tous' && l.registre !== filtreRegistre) return false;
       if (filtreSoin !== 'tous' && !l.soins.includes(filtreSoin)) return false;
       if (filtreSujet && !sujetsDuVisuel(l, surcharges).sujets.includes(filtreSujet)) return false;
-      if (q && ![l.cle, l.titre, l.detail ?? '', ...l.soins].some((t) => t.toLowerCase().includes(q))) return false;
+      if (!correspondHashtag(hashtags, l.cle, filtreHashtag, true)) return false;
+      if (q && ![l.cle, l.titre, l.detail ?? '', ...l.soins, ...hashtagsDe(hashtags, l.cle).map((h) => `#${h}`)].some((t) => t.toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [lignes, recherche, filtreStatut, filtreType, filtreRegistre, filtreSoin, filtreSujet, surcharges, statutDe, nouveau, modifie]);
+  }, [lignes, recherche, filtreStatut, filtreType, filtreRegistre, filtreSoin, filtreSujet, surcharges, hashtags, filtreHashtag, statutDe, nouveau, modifie]);
 
   const compteurs = useMemo(() => {
     const c: Record<StatutIllustration, number> = { a_revoir: 0, valide: 0, a_retravailler: 0, retire: 0 };
@@ -245,7 +256,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
-        <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher (clé, nom, soin)" className={`${choix} lg:col-span-2`} />
+        <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher (clé, nom, soin, #hashtag)" className={`${choix} lg:col-span-2`} />
         <select value={filtreType} onChange={(e) => setFiltreType(e.target.value as typeof filtreType)} className={choix} aria-label="Type">
           <option value="tous">Tous les types</option>
           {(Object.keys(LIBELLES_TYPES_ASSET) as TypeAsset[]).map((t) => <option key={t} value={t}>{LIBELLES_TYPES_ASSET[t]}</option>)}
@@ -262,6 +273,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
           <option value="">Tous les sujets</option>
           {SUJETS_VISUELS.map((x) => <option key={x.id} value={x.id}>{x.libelle}</option>)}
         </select>
+        <FiltreHashtag valeur={filtreHashtag} onChange={setFiltreHashtag} etat={hashtags} className={choix} />
         <select value={gamme} onChange={(e) => choisirGamme(e.target.value)} className={choix} aria-label="Gamme de couleurs de l’aperçu">
           {GAMMES.map((x) => <option key={x.id} value={x.id}>Gamme {x.nom}</option>)}
         </select>
@@ -302,6 +314,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                   <p className="truncate font-semibold" title={l.titre}>{l.titre}</p>
                   <p className="truncate text-[11px] text-neutral-500" title={l.detail}>{l.detail}</p>
                   <code className="block truncate text-[10px] text-neutral-400" title={l.cle}>{l.cle}</code>
+                  {hashtagsDe(hashtags, l.cle).length > 0 && <p className="truncate text-[11px] text-sky-800">{hashtagsDe(hashtags, l.cle).map((h) => `#${h}`).join(' ')}</p>}
                 </div>
                 {derniere && <p className="line-clamp-2 text-xs text-neutral-700" title={derniere.commentaire ?? ''}>« {derniere.commentaire} »</p>}
                 {etoilesRapides(l)}
@@ -358,6 +371,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 {messages[ligneOuverte.cle] && <p className={`text-xs ${messages[ligneOuverte.cle].ok ? 'text-teal-800' : 'text-red-700'}`}>{messages[ligneOuverte.cle].message}</p>}
                 <p className="text-xs text-neutral-500">Source : <code className="break-all">{ligneOuverte.source}</code></p>
                 <SujetsVisuel visuel={ligneOuverte} surcharges={surcharges} onChange={setSurcharges} compact />
+                <HashtagsVisuel cle={ligneOuverte.cle} etat={hashtags} onChange={setHashtags} migrationManquante={migrationHashtags} compact />
                 {ligneOuverte.soins.length > 0 && <p className="text-xs text-neutral-500">Soins et fiches (code) : {ligneOuverte.soins.join(', ')}</p>}
               </div>
               <div className="grid content-start gap-2">

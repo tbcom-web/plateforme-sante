@@ -2,20 +2,22 @@ import Link from 'next/link';
 import { jeuPhotosDepuisLigne, LIBELLES_SOURCES, libelleSujet, normaliserDraft, SPECIALITES, SUJETS_VISUELS } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { COLONNES_JEU } from '@/lib/jeux-photos';
+import { getHashtagsAssets } from '@/lib/hashtags';
 import { getPhotosLibres } from '@/lib/photos-libres';
 import { getCatalogue } from '@/lib/sites';
 import EditeurJeu from './EditeurJeu';
-import StatutPhotoLibre from './StatutPhotoLibre';
+import PhotosLibresListe from './PhotosLibresListe';
 
 export const metadata = { title: 'Super admin · Jeux de photos' };
 
 export default async function JeuxPhotos() {
   const supabase = await createClient();
-  const [{ data, error }, { data: sites }, catalogue, libres] = await Promise.all([
+  const [{ data, error }, { data: sites }, catalogue, libres, hashtags] = await Promise.all([
     supabase.from('jeux_photos').select(COLONNES_JEU).order('created_at'),
     supabase.from('sites').select('id, config'),
     getCatalogue(),
     getPhotosLibres(),
+    getHashtagsAssets(),
   ]);
   // Photos libres de droits validées, proposées dans le choix des jeux partagés (les sujets de la spécialité d'abord)
   const libresDe = (spec: string) => {
@@ -81,23 +83,7 @@ export default async function JeuxPhotos() {
         ) : libres.photos.length === 0 ? (
           <p className="text-sm text-neutral-500">Aucune photo gardée pour l’instant.</p>
         ) : (
-          <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {libres.photos.map((p) => (
-              <li key={p.id} className={`grid min-w-0 content-start gap-2 rounded-xl border border-black/10 bg-white p-3 ${p.statut === 'retiree' ? 'opacity-60' : ''}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt={`${libelleSujet(p.sujet)} · photo de ${p.auteur}`} loading="lazy" className="aspect-[3/2] w-full rounded-lg bg-neutral-100 object-cover" />
-                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
-                  <dt className="text-neutral-500">Sujet</dt><dd>{libelleSujet(p.sujet)}</dd>
-                  <dt className="text-neutral-500">Source</dt><dd><a href={p.pageUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.source === 'pexels' ? 'Pexels' : 'Pixabay'} n° {p.idSource}</a></dd>
-                  <dt className="text-neutral-500">Auteur</dt><dd className="truncate">{p.auteurUrl ? <a href={p.auteurUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.auteur}</a> : p.auteur}</dd>
-                  <dt className="text-neutral-500">Licence</dt><dd><a href={p.licenceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.licence}</a>, {p.licenceVersion}</dd>
-                  <dt className="text-neutral-500">Téléchargée</dt><dd>{new Date(p.telechargeLe).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })} · {p.largeurs.join(', ')} px</dd>
-                  <dt className="text-neutral-500">Mots-clés</dt><dd className="truncate">{p.motsCles.join(', ')}</dd>
-                </dl>
-                <StatutPhotoLibre id={p.id} statut={p.statut} />
-              </li>
-            ))}
-          </ul>
+          <PhotosLibresListe photos={libres.photos} hashtags={hashtags.hashtags} migrationHashtags={hashtags.migrationManquante} />
         )}
       </section>
 

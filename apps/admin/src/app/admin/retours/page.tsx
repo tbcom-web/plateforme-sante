@@ -1,11 +1,12 @@
 import {
   assetsInfluents, changementsGenerateur, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
-  universDuParcours,
+  markdownHashtags, universDuParcours,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getNotesAtelier, getPoidsAtelier } from '@/lib/atelier';
 import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getChangementsClaude } from '@/lib/changements';
+import { getHashtagsAssets } from '@/lib/hashtags';
 import { getInspirations } from '@/lib/inspirations';
 import { getMotsClesEnBase, sourcesConfigurees } from '@/lib/photos-libres';
 import { getRevuesIllustrations } from '@/lib/illustrations';
@@ -24,11 +25,14 @@ export const metadata = { title: 'Super admin · Donner mon avis' };
 export default async function PageRetours({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await exigerAdmin();
   const sp = await searchParams;
+  // Hashtags des visuels (0029) : lus en parallèle du reste
+  const lectureHashtags = getHashtagsAssets();
   const [assets, atelier, revues, photosJeux, poids, changementsClaude, catalogue, modeles, marquesImportees, { univers }, inspirations, motsCles, surchargesSujets] = await Promise.all([
     getNotesAssets(), getNotesAtelier(), getRevuesIllustrations(), getPhotosDesJeux(), getPoidsAtelier(), getChangementsClaude(),
     getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getInspirations(), getMotsClesEnBase(), getSurchargesSujets(),
   ]);
   const titres = titresAssets();
+  const hashtags = await lectureHashtags;
   // Statut courant + dernier commentaire de revue (synthèse « à retravailler »)
   const statuts = revues.statuts.map((s) => {
     const r = revues.revues.find((x) => x.cle === s.cle && x.commentaire);
@@ -69,7 +73,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         dejaNotees={dejaNotees}
         statuts={Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut]))}
         photosJeux={photosJeux}
-        markdown={markdown}
+        markdown={`${markdown}\n\n${markdownHashtags(hashtags.hashtags, { titres })}`}
         changements={changementsGenerateur(poids)}
         influents={assetsInfluents(poids, titres)}
         changementsClaude={changementsClaude}
@@ -89,6 +93,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         motsClesPhotos={Object.fromEntries(SUJETS_VISUELS.map((s) => [s.id, motsClesDuSujet(s.id, motsCles.motsCles)]))}
         migrationPhotos={motsCles.migrationManquante}
         surchargesSujets={surchargesSujets}
+        hashtagsAssets={hashtags.hashtags}
+        migrationHashtags={hashtags.migrationManquante}
       />
     </div>
   );

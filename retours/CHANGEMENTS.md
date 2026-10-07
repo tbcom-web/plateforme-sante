@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-07 : Photos à découvrir : plusieurs thèmes par photo (Sport, Seniors, Pédicurie…, le thème de la recherche est pré-coché, au moins un pour garder) et des hashtags libres (#trail, #sneakers) avec autocomplétion et suggestions tirées des tags de Pexels / Pixabay. Hashtags aussi ajoutables à tous les visuels (bibliothèque, Jeux de photos, cartes de « Donner mon avis ») et filtre « #hashtag » partout (migration 0029 à exécuter).
 - 2026-10-07 : illustrations, suite à vos notes des 76 assets : chaque élément retouché ci-dessous repasse « Modifié » dans /admin/retours pour que vous le renotiez.
 - 2026-10-07 : Héros des 7 thèmes : une seule grande illustration par héros, plus jamais deux images côte à côte. Sport : les jambes d'un coureur en pleine foulée, genou et cheville pliés (« jambes trop droites ») ; ongles : le gros orteil en gros plan, ongle sain ; semelles : la semelle seule (paire de semelles ou semelle au trait) ; pédicurie : les deux pieds soignés, sans aucun instrument (« il faut rassurer ») ; enfant : les empreintes posées à côté sont retirées (le trait continu que vous adorez est inchangé) ; seniors : la main tient maintenant vraiment la poignée de la canne (le crochet qui dépassait est remplacé par une poignée que le poing serre) ; diabète inchangé.
 - 2026-10-07 : Orteil en griffe (bibliothèque, « à jeter ») : retiré, il n'apparaît plus nulle part.

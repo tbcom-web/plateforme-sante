@@ -1,16 +1,19 @@
 'use client';
 
 // Tuile « Photos à découvrir » : une photo candidate Pexels / Pixabay à la fois (vignette servie par la source pendant
-// l'évaluation, ce que les deux licences autorisent), auteur, source et lien ; GARDER / REJETER, étiquettes, sujet cible.
+// l'évaluation, ce que les deux licences autorisent), auteur, source et lien ; GARDER / REJETER, étiquettes, THÈMES (plusieurs,
+// pré-sélection = thème de la recherche, au moins un pour Garder) et HASHTAGS libres (#trail, #sneakers : autocomplétion,
+// suggestions tirées des tags de la source ; table assets_hashtags, migration 0029 ; sans elle, la photo est gardée sans eux).
 // GARDER : la photo est hébergée chez nous (WebP, sans EXIF) avec sa traçabilité, statut « à valider » (Jeux de photos).
 // Les sites n'utilisent jamais un lien direct vers Pexels ou Pixabay. Charte : pas de visage reconnaissable mis en avant,
 // rien qui laisse croire à un patient réel (étiquettes bloquantes).
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  cleCandidat, ETIQUETTES_BLOQUANTES, ETIQUETTES_DECOUVERTE, LICENCES_SOURCES, orientation, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, APERCUS_TRAITEMENTS_IMAGES,
-  type SourcePhotoLibre,
+  cleCandidat, ETIQUETTES_BLOQUANTES, ETIQUETTES_DECOUVERTE, LICENCES_SOURCES, normaliserHashtag, orientation, SOURCES_PHOTOS_LIBRES, suggestionsHashtags, SUJETS_VISUELS,
+  APERCUS_TRAITEMENTS_IMAGES, type SourcePhotoLibre,
 } from '@plateforme/core';
-import { candidatsPhotos, deciderPhoto, enregistrerMotsCles, type CandidatAffiche } from './actions-photos';
+import { SaisieHashtags } from '@/components/HashtagsVisuel';
+import { candidatsPhotos, deciderPhoto, enregistrerMotsCles, hashtagsConnus, type CandidatAffiche } from './actions-photos';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -33,9 +36,25 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   const [motsCles, setMotsCles] = useState(motsClesInitiaux);
   const [edition, setEdition] = useState(false);
   const [texteMots, setTexteMots] = useState('');
+  // Thèmes et hashtags de la photo affichée (remis à zéro à chaque photo : thème de la recherche pré-coché)
+  const [themes, setThemes] = useState<string[]>([sujet]);
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [frequences, setFrequences] = useState<Record<string, number>>({});
+  const [migrationHashtags, setMigrationHashtags] = useState(false);
   const vues = useRef(new Set<string>());
   const sujetCourant = useRef(sujet);
   sujetCourant.current = sujet;
+
+  // Hashtags déjà utilisés (autocomplétion) ; sans la migration 0029 : bandeau, la saisie reste possible
+  useEffect(() => {
+    void hashtagsConnus().then((r) => { setFrequences(r.frequences); setMigrationHashtags(r.migrationManquante); }).catch(() => undefined);
+  }, []);
+  // Autocomplétion : hashtags utilisés (fréquence) + mots-clés de recherche de tous les thèmes
+  const connus = useMemo(() => {
+    const f: Record<string, number> = { ...frequences };
+    for (const l of Object.values(motsCles)) for (const m of l) { const h = normaliserHashtag(m); if (h && !(h in f)) f[h] = 0; }
+    return f;
+  }, [frequences, motsCles]);
 
   const charger = useCallback(async (s: string) => {
     setChargement(true);
@@ -51,10 +70,14 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
 
   const carte = file[0] ?? null;
   const bloquee = etiquettes.some((e) => (ETIQUETTES_BLOQUANTES as readonly string[]).includes(e));
+  const sansTheme = themes.length === 0;
+  const suggestions = useMemo(() => (carte ? suggestionsHashtags(carte, hashtags) : []), [carte, hashtags]);
 
   const suivante = () => {
     if (carte) vues.current.add(cleCandidat(carte));
     setEtiquettes([]);
+    setThemes([sujet]);
+    setHashtags([]);
     const reste = file.slice(1);
     setFile(reste);
     if (reste.length < 2 && !chargement) void charger(sujet);
@@ -62,17 +85,24 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
 
   const decider = async (decision: 'garder' | 'rejeter') => {
     if (!carte) return;
-    if (decision === 'garder' && bloquee) return;
+    if (decision === 'garder' && (bloquee || sansTheme)) return;
     const c = carte;
     const etq = etiquettes;
+    const ths = themes.length ? themes : [sujet];
+    const tags = hashtags;
     setStatut({ ok: true, message: decision === 'garder' ? 'Téléchargement, conversion WebP et hébergement…' : 'Rejet…' });
     suivante();
-    const r = await deciderPhoto({ source: c.source, idSource: c.idSource, decision, etiquettes: etq, sujet, requete: c.requete }).catch(() => ({ ok: false, message: 'Connexion perdue : décision non enregistrée.' }));
-    if (r.ok && decision === 'garder') setGardees((n) => n + 1);
+    const r = await deciderPhoto({ source: c.source, idSource: c.idSource, decision, etiquettes: etq, sujets: ths, hashtags: decision === 'garder' ? tags : [], requete: c.requete })
+      .catch(() => ({ ok: false, message: 'Connexion perdue : décision non enregistrée.' }));
+    if (r.ok && decision === 'garder') {
+      setGardees((n) => n + 1);
+      if (!migrationHashtags) setFrequences((f) => { const g = { ...f }; for (const h of tags) g[h] = (g[h] ?? 0) + 1; return g; });
+    }
     setStatut({ ok: r.ok, message: `${LICENCES_SOURCES[c.source].libelle} ${c.idSource} : ${r.message}` });
   };
 
   const basculer = (id: string) => setEtiquettes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
+  const basculerTheme = (id: string) => setThemes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
   const ouvrirEdition = () => { setTexteMots((motsCles[sujet] ?? []).join('\n')); setEdition(true); };
   const enregistrerMots = async () => {
     const r = await enregistrerMotsCles(sujet, texteMots).catch(() => ({ ok: false, message: 'Connexion perdue.', motsCles: undefined }));
@@ -95,8 +125,8 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button type="button" onClick={onRetour} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Accueil</button>
         <label className="flex items-center gap-2 text-sm">
-          <span className="font-medium">Sujet cible</span>
-          <select value={sujet} onChange={(e) => { setSujet(e.target.value); setFile([]); setEdition(false); setStatut(null); }} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm">
+          <span className="font-medium">Rechercher</span>
+          <select value={sujet} onChange={(e) => { setSujet(e.target.value); setThemes([e.target.value]); setFile([]); setEdition(false); setStatut(null); }} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm">
             {SUJETS_VISUELS.map((s) => <option key={s.id} value={s.id}>{s.libelle}</option>)}
           </select>
         </label>
@@ -112,6 +142,9 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
       </div>
       {migrationManquante && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">Migration 0028 à exécuter (<code>supabase/migrations/0028_inspirations_photos_libres.sql</code>) : décisions et traçabilité ne peuvent pas encore être enregistrées.</p>
+      )}
+      {migrationHashtags && !migrationManquante && (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">Migration 0029 à exécuter (<code>supabase/migrations/0029_assets_hashtags.sql</code>) : les photos et leurs thèmes sont gardés, mais les hashtags ne sont pas encore enregistrés.</p>
       )}
 
       <section aria-label="Sources" className="flex flex-wrap gap-2 text-sm">
@@ -161,6 +194,22 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
               Charte : pas de visage reconnaissable mis en avant, rien qui laisse croire à un patient réel. {LICENCES_SOURCES[carte.source].nom} (<a href={LICENCES_SOURCES[carte.source].url} target="_blank" rel="noopener noreferrer" className="underline">texte officiel</a>).
             </p>
             <fieldset className="grid gap-1.5">
+              <legend className="mb-1 text-sm font-medium">Thèmes <span className="font-normal text-neutral-500">· au moins un pour garder ; le premier coché range la photo</span></legend>
+              <div className="flex flex-wrap gap-1.5">
+                {SUJETS_VISUELS.map((s) => {
+                  const actif = themes.includes(s.id);
+                  return (
+                    <button key={s.id} type="button" aria-pressed={actif} onClick={() => basculerTheme(s.id)}
+                      className={`min-h-11 rounded-full border px-3 text-sm ${focus} ${actif ? 'border-teal-800 bg-teal-800 text-white' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
+                      {actif ? '✓ ' : ''}{s.libelle}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <SaisieHashtags valeurs={hashtags} connus={connus} suggestions={suggestions}
+              onAjout={(h) => setHashtags((l) => [...l, ...h.filter((x) => !l.includes(x))])} onRetrait={(h) => setHashtags((l) => l.filter((x) => x !== h))} />
+            <fieldset className="grid gap-1.5">
               <legend className="mb-1 text-sm font-medium text-teal-900">Ce qui va bien</legend>
               <div className="flex flex-wrap gap-1.5">{ETIQUETTES_DECOUVERTE.filter((e) => e.positive).map(puce)}</div>
             </fieldset>
@@ -171,14 +220,14 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
             <div className="fixed inset-x-0 bottom-0 z-20 grid gap-2 border-t border-black/10 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:shadow-none">
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => void decider('rejeter')} className={`min-h-14 rounded-xl border border-red-800 bg-white text-base font-bold text-red-900 hover:bg-red-50 ${focus}`}>Rejeter</button>
-                <button type="button" onClick={() => void decider('garder')} disabled={bloquee || migrationManquante} className={`min-h-14 rounded-xl bg-teal-800 text-base font-bold text-white hover:bg-teal-900 disabled:opacity-40 ${focus}`}>Garder</button>
+                <button type="button" onClick={() => void decider('garder')} disabled={bloquee || sansTheme || migrationManquante} className={`min-h-14 rounded-xl bg-teal-800 text-base font-bold text-white hover:bg-teal-900 disabled:opacity-40 ${focus}`}>Garder</button>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-neutral-500">{file.length - 1} autre{file.length - 1 > 1 ? 's' : ''} en attente</span>
                 <button type="button" onClick={suivante} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 ${focus}`}>Passer →</button>
               </div>
-              <p role="status" className={`min-h-5 text-sm ${(statut && !statut.ok) || bloquee ? 'text-red-800' : 'text-neutral-600'}`}>
-                {bloquee ? 'Visage visible ou patient suggéré : cette photo ne peut pas être gardée, rejetez-la.' : statut?.message ?? ''}
+              <p role="status" className={`min-h-5 text-sm ${(statut && !statut.ok) || bloquee || sansTheme ? 'text-red-800' : 'text-neutral-600'}`}>
+                {bloquee ? 'Visage visible ou patient suggéré : cette photo ne peut pas être gardée, rejetez-la.' : sansTheme ? 'Cochez au moins un thème pour garder la photo.' : statut?.message ?? ''}
               </p>
             </div>
           </div>

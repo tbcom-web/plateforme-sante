@@ -3,6 +3,7 @@
 // retours/ (ou $RETOURS_DIR) :
 //   assets-notes.json, atelier-notes.json, illustrations-revues.json, illustrations-statuts.json : données brutes, triées
 //   assets-sujets.json : sujets des visuels ajoutés / retirés par Paul (état courant par clé, table assets_sujets, 0028)
+//   assets-hashtags.json : hashtags libres des visuels (état courant par clé, table assets_hashtags, 0029 ; hashtags.ts)
 //   inspirations.json : métadonnées des inspirations (étiquettes, objectif, sujet, type, palette, domaine du lien) — JAMAIS
 //   l'image, son chemin dans le stockage privé, une URL signée ni l'adresse complète du lien
 //   SYNTHESE.md : tendances lisibles (fonctions pures du core : syntheseAssets, markdownAssets, syntheseAtelier, markdownAtelier)
@@ -59,10 +60,20 @@ try {
   rmSync(tmp, { recursive: true, force: true });
 }
 
+// Hashtags des visuels (0029) : fonctions pures de hashtags.ts, assemblées à part
+const tmpHashtags = mkdtempSync(join(tmpdir(), 'exporter-hashtags-'));
+let coreHashtags;
+try {
+  await build({ entryPoints: [join(racine, 'packages', 'core', 'src', 'hashtags.ts')], bundle: true, platform: 'node', format: 'esm', outfile: join(tmpHashtags, 'hashtags.mjs'), logLevel: 'warning' });
+  coreHashtags = await import(pathToFileURL(join(tmpHashtags, 'hashtags.mjs')).href);
+} finally {
+  rmSync(tmpHashtags, { recursive: true, force: true });
+}
+
 const jour = (d) => (typeof d === 'string' ? d.slice(0, 10) : null);
 const texte = (t) => (typeof t === 'string' && t.trim() ? t.trim() : null);
 
-const [assets, atelier, revues, statuts, inspirations, sujets] = await Promise.all([
+const [assets, atelier, revues, statuts, inspirations, sujets, hashtags] = await Promise.all([
   // Remarques « ce qui va bien / ce qui ne va pas » (0028) ; jamais l'instantané « apercu » (lourd, inutile à Claude)
   lireTout('assets_notes', 'cle_asset,type,note,etiquettes,commentaire,positif,negatif,empreinte,created_at', 'created_at.asc,cle_asset.asc', 'cle_asset,type,note,etiquettes,commentaire,empreinte,created_at'),
   lireTout('atelier_notes', 'cle_combinaison,ingredients,note,etiquettes,commentaire,positif,negatif,created_at', 'created_at.asc,cle_combinaison.asc', 'cle_combinaison,ingredients,note,etiquettes,commentaire,created_at'),
@@ -72,6 +83,8 @@ const [assets, atelier, revues, statuts, inspirations, sujets] = await Promise.a
   lireTout('inspirations', 'etiquettes,objectif,sujet,type_element,lien,palette,created_at', 'created_at.asc,objectif.asc'),
   // Journal des sujets (sans auteur) → état courant
   lireTout('assets_sujets', 'cle_asset,sujet,action,created_at', 'created_at.asc,cle_asset.asc,sujet.asc'),
+  // Journal des hashtags (sans auteur) → état courant
+  lireTout('assets_hashtags', 'cle_asset,hashtag,action,created_at', 'created_at.asc,cle_asset.asc,hashtag.asc'),
 ]);
 
 const notesAssets = (assets ?? []).map((l) => ({ cle: l.cle_asset, type: l.type, note: l.note, etiquettes: l.etiquettes ?? [], commentaire: texte(l.commentaire), positif: texte(l.positif), negatif: texte(l.negatif), empreinte: l.empreinte ?? null, jour: jour(l.created_at) }));
@@ -89,6 +102,8 @@ ecrire('illustrations-revues.json', journal);
 ecrire('illustrations-statuts.json', courants);
 ecrire('inspirations.json', listeInspirations);
 ecrire('assets-sujets.json', surchargesSujets);
+const hashtagsAssets = coreHashtags.hashtagsDepuisLignes((hashtags ?? []).map((l) => ({ cle: l.cle_asset, hashtag: l.hashtag, action: l.action, le: l.created_at })));
+ecrire('assets-hashtags.json', hashtagsAssets);
 
 // Synthèse : dernier commentaire de revue par clé pour « à retravailler » ; dates au jour (ordre des commentaires)
 const derniers = new Map();
@@ -101,7 +116,7 @@ const sAssets = core.syntheseAssets(notesAssets.map((n) => ({ ...n, le: n.jour }
 const sAtelier = core.syntheseAtelier(notesAtelier.map((n) => ({ ...n, le: n.jour })));
 const dernierJour = [...notesAssets, ...notesAtelier, ...journal].map((x) => x.jour).filter(Boolean).sort().pop() ?? null;
 const descendre = (md) => md.split('\n').map((l) => (/^#{1,5} /.test(l) ? `#${l}` : l)).join('\n');
-const manquantes = [[assets, 'assets_notes (0027)'], [atelier, 'atelier_notes (0026)'], [revues, 'illustrations_revues (0021)'], [inspirations, 'inspirations (0028)'], [sujets, 'assets_sujets (0028)']].filter(([d]) => d === null).map(([, n]) => n);
+const manquantes = [[assets, 'assets_notes (0027)'], [atelier, 'atelier_notes (0026)'], [revues, 'illustrations_revues (0021)'], [inspirations, 'inspirations (0028)'], [sujets, 'assets_sujets (0028)'], [hashtags, 'assets_hashtags (0029)']].filter(([d]) => d === null).map(([, n]) => n);
 
 const md = [
   '# Retours de Paul — synthèse',
@@ -113,6 +128,8 @@ const md = [
   core.markdownAssets(sAssets, { titre: '## Assets (icônes, illustrations, photos, gammes, structures)' }),
   '',
   descendre(core.markdownAtelier(sAtelier)),
+  '',
+  coreHashtags.markdownHashtags(hashtagsAssets, { titres }),
   '',
   core.markdownSujets(surchargesSujets, { titres, sansVisuel: core.sujetsSansVisuel(core.inventaireAssets(), surchargesSujets) }),
   '',

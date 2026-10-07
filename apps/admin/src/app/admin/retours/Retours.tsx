@@ -23,6 +23,8 @@ import ApercuTheme from '@/components/ApercuTheme';
 import type { SourcePhotoLibre, SurchargesSujets } from '@plateforme/core';
 import AvantApres from '@/components/AvantApres';
 import SujetsVisuel from '@/components/SujetsVisuel';
+import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
+import { correspondHashtag, type HashtagsAssets } from '@plateforme/core';
 import type { Inspiration } from '@/lib/inspirations';
 import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { apercuProposition } from '@/lib/apercu-proposition';
@@ -66,6 +68,9 @@ type Props = {
   migrationPhotos: boolean;
   /** Sujets ajoutés / retirés par Paul (0028) */
   surchargesSujets: SurchargesSujets;
+  /** Hashtags des visuels (0029) : état courant ; migration manquante = non enregistrés */
+  hashtagsAssets?: HashtagsAssets;
+  migrationHashtags?: boolean;
 };
 
 /** Espaces hors notation : inspirations et photos à découvrir */
@@ -224,9 +229,12 @@ export default function Retours(props: Props) {
   // Sujets des visuels (défauts du code ± surcharges de Paul) et filtre « noter les visuels du sujet … »
   const [surcharges, setSurcharges] = useState<SurchargesSujets>(props.surchargesSujets);
   const [filtreSujet, setFiltreSujet] = useState('');
+  // Hashtags (0029) : état courant et filtre « noter les visuels #… » (saisie partielle acceptée)
+  const [hashtags, setHashtags] = useState<HashtagsAssets>(props.hashtagsAssets ?? {});
+  const [filtreHashtag, setFiltreHashtag] = useState('');
   const inventaire = useMemo(
-    () => (filtreSujet ? inventaireComplet.filter((a) => sujetsDuVisuel(a, surcharges).sujets.includes(filtreSujet)) : inventaireComplet),
-    [inventaireComplet, filtreSujet, surcharges],
+    () => inventaireComplet.filter((a) => (!filtreSujet || sujetsDuVisuel(a, surcharges).sujets.includes(filtreSujet)) && correspondHashtag(hashtags, a.cle, filtreHashtag, true)),
+    [inventaireComplet, filtreSujet, surcharges, hashtags, filtreHashtag],
   );
   const [notes, setNotes] = useState<NoteLegere[]>(props.notesAssets);
   const [datesAtelier, setDatesAtelier] = useState<string[]>(props.datesAtelier);
@@ -466,6 +474,10 @@ export default function Retours(props: Props) {
                 {SUJETS_VISUELS.map((x) => <option key={x.id} value={x.id}>{x.libelle}</option>)}
               </select>
             </label>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="font-medium">Hashtag</span>
+              <FiltreHashtag valeur={filtreHashtag} onChange={setFiltreHashtag} etat={hashtags} className="min-h-11 w-40 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm" />
+            </label>
           </div>
           <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-4">{CATEGORIES_RETOURS.map(tuile)}</ul>
         </section>
@@ -610,6 +622,7 @@ export default function Retours(props: Props) {
             </div>
           </div>
           {carte.kind === 'asset' && <SujetsVisuel visuel={carte.asset} surcharges={surcharges} onChange={setSurcharges} />}
+          {carte.kind === 'asset' && <HashtagsVisuel cle={carte.asset.cle} etat={hashtags} onChange={setHashtags} migrationManquante={props.migrationHashtags} />}
 
           <fieldset className="grid gap-1.5">
             <legend className="mb-1 text-sm font-medium text-teal-900">Ce qui va bien</legend>

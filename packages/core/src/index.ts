@@ -45,3 +45,4 @@ export * from './inspirations';
 export * from './remarques';
 export * from './sujets-visuels';
 export * from './avant-apres';
+export * from './hashtags';
