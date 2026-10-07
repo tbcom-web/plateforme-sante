@@ -17,6 +17,7 @@
 // (Mobile OK / à revoir : défaut d'adaptation, jamais une pénalité du choix) ; liste « Rendu mobile à revoir » à l'accueil.
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   animationDeCle, CATEGORIES_RETOURS, categorieDuType, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
@@ -582,6 +583,24 @@ export default function Retours(props: Props) {
 
         <RenduMobileARevoir retours={retoursMobile} migrationManquante={Boolean(props.migrationMobile)} inventaire={inventaireComplet} empreinte={(a) => cacheEmpreinte(a)}
           proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />
+
+        <section aria-labelledby="rt-entrainer" className="grid gap-3">
+          <h2 id="rt-entrainer" className="text-lg font-semibold">Trier et comparer</h2>
+          <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
+            <li>
+              <Link href="/admin/retours/tri" className={`grid h-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
+                <span className="text-lg font-bold">Trier par sujet</span>
+                <span className="text-sm text-neutral-600">Un visuel à la fois (les non étiquetés d’abord), gros boutons des sujets, sélection multiple, couverture par sujet et ses manques.</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/retours/duel" className={`grid h-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
+                <span className="text-lg font-bold">Duel : A ou B ?</span>
+                <span className="text-sm text-neutral-600">Deux propositions pour le même client, une seule chose change : choisissez. Classements par sujet (meilleures photos, polices…).</span>
+              </Link>
+            </li>
+          </ul>
+        </section>
 
         <section aria-labelledby="rt-sources" className="grid gap-3">
           <h2 id="rt-sources" className="text-lg font-semibold">Nourrir les visuels</h2>

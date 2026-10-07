@@ -40,6 +40,28 @@ Les notes servent tout de suite au générateur (`packages/core/src/atelier-poid
 « Retiré » et « À retravailler » pénalisent l'asset ; les garde-fous (diversité, diabète sans rouge, posture jamais, AA)
 priment toujours.
 
+### Trier par sujet et duels « A ou B ? » (2026-10-08)
+
+- **Trier par sujet** (`/admin/retours/tri`, `packages/core/src/couverture-sujets.ts`) : file des visuels (illustrations,
+  héros, icônes, photos des jeux et photos libres importées, animations) — sans sujet, seulement « général », pouvant compléter
+  un sujet mal couvert (suggestion), jamais trié, déjà trié ; gros boutons des sujets (1-8), suggestions `suggererClassement`
+  pré-cochées en pointillé, hashtags suggérés, Entrée = « Suivant » (ajouts / retraits dans `assets_sujets`, suggestions
+  acceptées / refusées dans `classement_suggestions`) ; sélection multiple (« Ajouter le sujet X à la sélection ») ; tableau de
+  **couverture par sujet** (héros, illustrations par style, icônes, photos importées / intégrées, animations validées, retirés
+  exclus) et manques avec lien vers le tri filtré (`?sujet=senior&famille=photos`). Export : section « Couverture par sujet » de
+  `SYNTHESE.md` et bloc automatique de `MANQUES.md` (entre `<!-- couverture-auto -->` et `<!-- /couverture-auto -->`).
+- **Duel « A ou B ? »** (`/admin/retours/duel`, `packages/core/src/duels.ts`, table `duels`, migration 0037, journal en ajout
+  seul ; `duels_apprentissage()` sans auteur ni remarque) : thèmes complets, typographies, traitements photo, éléments d'une
+  page, photos (même sujet, même emplacement, même traitement), illustrations et héros (même dessin en deux styles, ou deux
+  dessins du même style). Paires : même scénario ; une seule dimension différente (contrôlée champ par champ), environ 15 % de
+  duels libres entre deux recettes bien classées ; paire déjà jouée évitée ; éléments incertains et dimensions peu jouées
+  d'abord. Classement : Bradley-Terry bayésien (a priori N(0, 1), égalité = demi-victoire, « les deux sont mauvais » = défaite
+  de chacun contre l'élément moyen, poids 0,35), affiché en Elo ± incertitude par famille × sujet n° 1. Apprentissage :
+  Δduel(k) = clamp(0,5 · θk, ±0,5 ★) sur les clés qui diffèrent (duel libre : poids 0,5 ; mobile : 1,25), cumulé aux renforts
+  des notes dans la limite de ±1 ★ (`fusionnerRenforts`, `lib/atelier.ts`). Juge : « Claude prévoyait A » après le choix
+  (`predireDuel`, colonne `prediction`), accord dans la page et dans la synthèse. Export : `retours/duels.json` et section
+  « Duels : classements par sujet » de `SYNTHESE.md`. Sans la migration : duels gardés dans le navigateur.
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

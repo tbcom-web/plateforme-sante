@@ -242,4 +242,46 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
   if (avis !== null) ecrire('directeur-avis.json', avis.map((l) => ({ nature: l.nature, cle: l.cle, decision: l.decision, remarque: texte(l.remarque), profil: l.profil ?? null, jour: jour(l.created_at) })));
 }
 
+// Duels « A ou B ? » (0037, duels.ts) et couverture par sujet (couverture-sujets.ts) : duels.json (sans auteur, dates au jour),
+// sections « Duels : classements par sujet » et « Couverture par sujet » de SYNTHESE.md, section automatique de MANQUES.md
+// (entre <!-- couverture-auto --> et <!-- /couverture-auto -->, ajoutée en fin de fichier la première fois ; le reste est conservé)
+{
+  const tmpDuels = mkdtempSync(join(tmpdir(), 'exporter-duels-'));
+  let cd;
+  try {
+    await build({
+      stdin: { contents: "export { duelDepuisLigne, duelPourExport, markdownDuels } from './duels'; export { couvertureParSujet, markdownCouverture } from './couverture-sujets'; export { inventaireAssets, titresAssets } from './assets'; export { SUJETS_VISUELS } from './photos-libres'; export { NOMS_SECTIONS_VARIABLES } from './recettes'; export { jeuPhotosDepuisLigne, photosDuJeu } from './jeux-photos';", resolveDir: join(racine, 'packages', 'core', 'src'), loader: 'ts' },
+      bundle: true, platform: 'node', format: 'esm', outfile: join(tmpDuels, 'duels.mjs'), logLevel: 'warning', loader: { '.svg': 'text' },
+    });
+    cd = await import(pathToFileURL(join(tmpDuels, 'duels.mjs')).href);
+  } finally {
+    rmSync(tmpDuels, { recursive: true, force: true });
+  }
+  const [lignesDuels, libresCouv, jeuxCouv] = await Promise.all([
+    lireTout('duels', 'type,scenario,a_cle,b_cle,a_ingredients,b_ingredients,dimension_differente,resultat,etiquettes,remarque,appareil,prediction,created_at', 'created_at.asc,a_cle.asc'),
+    // Photos importées (comptes seulement : aucune adresse n'est écrite dans les fichiers)
+    lireTout('photos_libres', 'url,sujet,statut', 'created_at.asc'),
+    lireTout('jeux_photos', 'nom,specialite,photos,site_id', 'nom.asc'),
+  ]);
+  const libelleSujetCouv = (id) => cd.SUJETS_VISUELS.find((s) => s.id === id)?.libelle ?? id;
+  const titresCouv = cd.titresAssets();
+  const duels = (lignesDuels ?? []).map((l) => { const d = cd.duelDepuisLigne(l); return d ? { ...d, remarque: texte(l.remarque) } : null; }).filter(Boolean);
+  if (lignesDuels !== null) ecrire('duels.json', duels.map((d) => cd.duelPourExport(d)));
+  const photosCouv = [
+    ...(jeuxCouv ?? []).filter((j) => !j.site_id).flatMap((j) => { const x = cd.jeuPhotosDepuisLigne({ ...j, id: '', source: 'banque', actif: true }); return x.photos ? cd.photosDuJeu(x.photos).filter((u) => !u.startsWith('/photos/')).map((url) => ({ url, jeu: j.nom, specialite: j.specialite })) : []; }),
+    ...(libresCouv ?? []).filter((l) => l.url && l.statut !== 'retiree').map((l) => ({ url: l.url, jeu: 'Banque libre', sujet: l.sujet, specialite: 'generale' })),
+  ];
+  const couverture = cd.couvertureParSujet(cd.inventaireAssets({ photosJeux: photosCouv }).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins, statut: courants.find((s) => s.cle === a.cle)?.statut ?? null })), surchargesSujets);
+  const synthese = readFileSync(join(sortie, 'SYNTHESE.md'), 'utf8').replace(/\n+$/, '');
+  ecrire('SYNTHESE.md', `${synthese}\n\n${cd.markdownDuels(duels, { libelleSujet: libelleSujetCouv, titres: titresCouv, nomsSections: cd.NOMS_SECTIONS_VARIABLES })}\n\n${cd.markdownCouverture(couverture)}\n`);
+  const cheminManques = join(sortie, 'MANQUES.md');
+  if (existsSync(cheminManques)) {
+    const ancien = readFileSync(cheminManques, 'utf8');
+    const debut = '<!-- couverture-auto -->', fin = '<!-- /couverture-auto -->';
+    const bloc = `${debut}\n${cd.markdownCouverture(couverture, { titre: '## Couverture par sujet (export automatique)' })}\n${fin}`;
+    const i = ancien.indexOf(debut), j = ancien.indexOf(fin);
+    writeFileSync(cheminManques, i >= 0 && j > i ? `${ancien.slice(0, i)}${bloc}${ancien.slice(j + fin.length)}` : `${ancien.replace(/\n+$/, '')}\n\n${bloc}\n`);
+  }
+}
+
 console.log(`Retours exportés dans ${sortie} : ${notesAssets.length} notes d’assets, ${notesAtelier.length} notes de l’atelier, ${journal.length} revues, ${courants.length} statuts, ${listeInspirations.length} inspirations.`);
