@@ -26,6 +26,8 @@ import ApercuTheme from '@/components/ApercuTheme';
 import type { SourcePhotoLibre, SurchargesSujets } from '@plateforme/core';
 import AvantApres from '@/components/AvantApres';
 import IngredientsAnimation from '@/components/IngredientsAnimation';
+import PredictionClaude, { empreintePourJuge, textePrediction, useAfficherAvant } from '@/components/PredictionClaude';
+import { predictionPour, type PredictionJuge } from '@plateforme/core/juge';
 import LectureAnimation from '@/components/LectureAnimation';
 import SujetsVisuel from '@/components/SujetsVisuel';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
@@ -79,6 +81,9 @@ type Props = {
   /** Hashtags des visuels (0029) : état courant ; migration manquante = non enregistrés */
   hashtagsAssets?: HashtagsAssets;
   migrationHashtags?: boolean;
+  /** Juge du goût de Paul (retours/predictions.json) : prédictions par clé, et ligne de justesse calculée côté serveur */
+  predictions?: Record<string, PredictionJuge[]>;
+  ligneJuge?: string | null;
 };
 
 /** Espaces hors notation : inspirations et photos à découvrir */
@@ -303,6 +308,8 @@ export default function Retours(props: Props) {
   const [session, setSession] = useState(0);
   const [envois, setEnvois] = useState(0);
   const [gammeApercu, setGammeApercu] = useState('canard');
+  // Prévision du juge : après la note de Paul seulement, sauf option « afficher avant » (désactivée par défaut)
+  const [afficherAvant, setAfficherAvant] = useAfficherAvant();
 
   const base = useMemo(draftDemo, []);
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
@@ -407,7 +414,8 @@ export default function Retours(props: Props) {
       const r = await ajouterNoteAsset(carte.asset.cle, n, etq, '', carte.empreinte, { ...remarques, apercu: instantaneAsset(carte.asset, carte.svg) }).catch(() => ({ ok: false, message: 'Connexion perdue : avis non enregistré.' }));
       setEnvois((x) => x - 1);
       if (!r.ok) { setNotes((l) => l.filter((x) => x !== locale)); setSession((s) => s - 1); }
-      setStatut(r.ok ? { ok: true, message: `${carte.asset.titre} : ${r.message}` } : { ok: false, message: `${carte.asset.titre} : ${r.message}` });
+      const prevue = r.ok ? predictionPour(props.predictions?.[carte.asset.cle] ?? [], carte.asset.cle, empreintePourJuge(carte.empreinte, carte.asset.rendu.kind === 'image' ? carte.asset.rendu.src : null)) : null;
+      setStatut(r.ok ? { ok: true, message: `${carte.asset.titre} : ${r.message}${prevue ? ` · ${textePrediction(prevue)}` : ''}` } : { ok: false, message: `${carte.asset.titre} : ${r.message}` });
     } else {
       if (migrationAtelier) { setStatut({ ok: false, message: 'Migration 0026 à exécuter : avis non enregistré.' }); return; }
       setDatesAtelier((l) => [le, ...l]);
@@ -420,7 +428,7 @@ export default function Retours(props: Props) {
       if (!r.ok) { setDatesAtelier((l) => l.filter((x) => x !== le)); setSession((s) => s - 1); }
       setStatut({ ok: r.ok, message: r.ok ? r.message : `${carte.p.nom} : ${r.message}` });
     }
-  }, [carte, etiquettes, positif, negatif, migrationAssets, migrationAtelier, suivante]);
+  }, [carte, etiquettes, positif, negatif, migrationAssets, migrationAtelier, suivante, props.predictions]);
 
   const basculer = (id: string) => setEtiquettes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
 
@@ -573,6 +581,7 @@ export default function Retours(props: Props) {
             {changementsClaude.length ? (
               <ul className="grid gap-1 text-sm">{changementsClaude.slice(0, 8).map((c, i) => <li key={i}><span className="tabular-nums text-neutral-500">{c.date.split('-').reverse().join('/')}</span> · {c.texte}</li>)}</ul>
             ) : <p className="text-xs text-neutral-500">Rien encore : envoyez vos retours, Claude les lira à la prochaine séance.</p>}
+            {props.ligneJuge && <p className="text-xs text-neutral-600" title="Le juge prédit votre note avant que vous la donniez (même élément, même version). Objectif avant toute autonomie : 8 sur 10 à ±1.">{props.ligneJuge}</p>}
           </div>
         </section>
 
@@ -617,6 +626,9 @@ export default function Retours(props: Props) {
     setStatut({ ok: r.ok, message: `${carte.asset.titre} : ${r.message}` });
   };
   const modifieDepuis = Boolean(carte.kind === 'asset' && etat && carte.empreinte && etat.empreinte && etat.empreinte !== carte.empreinte);
+  // Juge : Paul a-t-il noté CETTE version (même empreinte ; photos : la clé suffit) ?
+  const empreinteJuge = carte.kind === 'asset' ? empreintePourJuge(carte.empreinte, carte.asset.rendu.kind === 'image' ? carte.asset.rendu.src : null) : null;
+  const noteeCetteVersion = carte.kind === 'asset' && notes.some((n) => n.cle === carte.asset.cle && (n.empreinte ?? null) === (carte.empreinte ?? null));
   const positives = etiquettesCarte.filter((e) => e.positive);
   const negatives = etiquettesCarte.filter((e) => !e.positive);
   const puce = (e: { id: string; libelle: string; positive: boolean }) => {
@@ -677,6 +689,7 @@ export default function Retours(props: Props) {
               {st && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">Statut : {LIBELLES_STATUTS_ILLUSTRATION[st]}</span>}
               {etatAnim?.enAttente && <span className="rounded-full bg-amber-200 px-2 py-0.5 font-semibold text-amber-950">En attente d’ingrédients validés</span>}
             </div>
+            {carte.kind === 'asset' && <PredictionClaude predictions={props.predictions} cle={carte.asset.cle} empreinte={empreinteJuge} notee={noteeCetteVersion} afficherAvant={afficherAvant} />}
           </div>
           {etatAnim && <IngredientsAnimation etat={etatAnim} onNoterIngredients={noterIngredients} />}
           {selection && carte.kind === 'asset' && (
@@ -733,6 +746,12 @@ export default function Retours(props: Props) {
           </div>
           <p className="hidden text-xs text-neutral-500 md:block">Clavier : 1 à 5 noter · t étiquettes (puis 1 à 9) · → ou Entrée passer · ← précédent · Échap accueil</p>
           {carte.kind === 'asset' && <p className="text-xs text-neutral-500">Clé : <code className="break-all">{carte.asset.cle}</code> · Source : <code className="break-all">{carte.asset.source}</code></p>}
+          {props.predictions && Object.keys(props.predictions).length > 0 && (
+            <label className="flex min-h-11 items-center gap-2 text-xs text-neutral-500">
+              <input type="checkbox" checked={afficherAvant} onChange={(e) => setAfficherAvant(e.target.checked)} className="h-4 w-4" />
+              Afficher la prévision de Claude avant de noter
+            </label>
+          )}
         </div>
       </section>
     </div>

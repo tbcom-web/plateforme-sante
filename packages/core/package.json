@@ -22,7 +22,8 @@
     "./portrait": "./src/portrait.ts",
     "./geo-voisinage": "./src/geo-voisinage.ts",
     "./geo-acces": "./src/geo-acces.ts",
-    "./prospects": "./src/prospects.ts"
+    "./prospects": "./src/prospects.ts",
+    "./juge": "./src/juge.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

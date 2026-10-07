@@ -4,6 +4,8 @@ import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { exigerAdmin } from '@/lib/admin';
 import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getRevuesIllustrations } from '@/lib/illustrations';
+import { getPredictions } from '@/lib/predictions';
+import { predictionsParCle } from '@plateforme/core/juge';
 import RevueIllustrations from './RevueIllustrations';
 import SyntheseAssets from './SyntheseAssets';
 
@@ -13,7 +15,7 @@ export default async function PageIllustrations({ searchParams }: { searchParams
   await exigerAdmin();
   const sp = await searchParams;
   const cle = typeof sp.cle === 'string' ? sp.cle : null;
-  const [{ statuts, revues, migrationManquante }, notes, photosJeux, surchargesSujets] = await Promise.all([getRevuesIllustrations(), getNotesAssets(), getPhotosDesJeux(), getSurchargesSujets()]);
+  const [{ statuts, revues, migrationManquante }, notes, photosJeux, surchargesSujets, predictions] = await Promise.all([getRevuesIllustrations(), getNotesAssets(), getPhotosDesJeux(), getSurchargesSujets(), getPredictions()]);
   // Empreinte de la dernière note de chaque élément (avant / après dans la vue agrandie)
   const empreintesNotees: Record<string, string | null> = {};
   for (const x of notes.notes) if (!(x.cle in empreintesNotees)) empreintesNotees[x.cle] = x.empreinte;
@@ -49,7 +51,7 @@ export default async function PageIllustrations({ searchParams }: { searchParams
         </p>
       )}
       <SyntheseAssets synthese={synthese} markdown={markdownAssets(synthese, { date })} />
-      <RevueIllustrations statuts={statuts} revues={revues} migrationManquante={migrationManquante} photosJeux={photosJeux} moyennes={moyennes} migrationNotes={notes.migrationManquante} surchargesSujets={surchargesSujets} empreintesNotees={empreintesNotees} cleInitiale={cle} />
+      <RevueIllustrations statuts={statuts} revues={revues} migrationManquante={migrationManquante} photosJeux={photosJeux} moyennes={moyennes} migrationNotes={notes.migrationManquante} surchargesSujets={surchargesSujets} empreintesNotees={empreintesNotees} cleInitiale={cle} predictions={predictionsParCle(predictions)} />
     </div>
   );
 }

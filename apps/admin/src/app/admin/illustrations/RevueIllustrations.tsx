@@ -17,6 +17,8 @@ import AvantApres from '@/components/AvantApres';
 import IngredientsAnimation from '@/components/IngredientsAnimation';
 import LectureAnimation from '@/components/LectureAnimation';
 import SujetsVisuel from '@/components/SujetsVisuel';
+import PredictionClaude, { empreintePourJuge, useAfficherAvant } from '@/components/PredictionClaude';
+import type { PredictionJuge } from '@plateforme/core/juge';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import { correspondHashtag, hashtagsDe, type HashtagsAssets } from '@plateforme/core';
 import { lireHashtagsAssets } from '../retours/actions-hashtags';
@@ -32,6 +34,8 @@ type Props = {
   empreintesNotees: Record<string, string | null>;
   /** ?cle= : élément ouvert en vue agrandie au chargement */
   cleInitiale?: string | null;
+  /** Juge du goût de Paul (retours/predictions.json) : prédictions par clé, affichées après la note */
+  predictions?: Record<string, PredictionJuge[]>;
 };
 type Ligne = Asset & { empreinte: string; svgRendu: string; fond: 'grille' | 'plan' | 'doux' | 'clair'; registre?: Registre };
 type FiltreStatut = 'tous' | 'a_regarder' | StatutIllustration;
@@ -85,7 +89,7 @@ function Apercu({ html, fond, grand = false, petit = false }: { html: string; fo
 
 const registreDeCle = (cle: string): Registre | undefined => (cle.startsWith('ligne:') || cle.endsWith(':ligne') ? 'ligne' : cle.endsWith(':releve') || cle.startsWith('animation:') ? 'releve' : cle.endsWith(':pedagogique') || cle.startsWith('biblio:') ? 'pedagogique' : undefined);
 
-export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes, surchargesSujets, empreintesNotees, cleInitiale = null }: Props) {
+export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes, surchargesSujets, empreintesNotees, cleInitiale = null, predictions }: Props) {
   const [surcharges, setSurcharges] = useState(surchargesSujets);
   const [filtreSujet, setFiltreSujet] = useState('');
   // Hashtags des visuels (0029), chargés après l'affichage ; filtre « #… » (saisie partielle acceptée) et recherche
@@ -107,6 +111,15 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
     const r = await ajouterNoteAsset(l.cle, n, [], '', empreinteAsset(l, l.svgRendu || null), { apercu: instantaneAsset(l, l.svgRendu || null) }).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
     setNotesMsg((m) => ({ ...m, [l.cle]: r.message }));
     if (r.ok) setMoyennes((m) => ({ ...m, [l.cle]: { n: (m[l.cle]?.n ?? 0) + 1, somme: (m[l.cle]?.somme ?? 0) + n } }));
+    if (r.ok) setNoteesIci((s) => new Set(s).add(l.cle));
+  };
+  // Juge : prévision de Claude affichée seulement quand Paul a noté CETTE version (ou vient de la noter)
+  const [noteesIci, setNoteesIci] = useState<Set<string>>(new Set());
+  const [afficherAvant] = useAfficherAvant();
+  const prevision = (l: Ligne, className = '') => {
+    const e = empreinteAsset(l, l.svgRendu || null);
+    const notee = noteesIci.has(l.cle) || (l.cle in empreintesNotees && (l.rendu.kind === 'image' || empreintesNotees[l.cle] === e));
+    return <PredictionClaude predictions={predictions} cle={l.cle} empreinte={empreintePourJuge(e, l.rendu.kind === 'image' ? l.rendu.src : null)} notee={notee} afficherAvant={afficherAvant} className={className} />;
   };
   const etoilesRapides = (l: Ligne) => {
     const m = moyennes[l.cle];
@@ -327,6 +340,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                   {hashtagsDe(hashtags, l.cle).length > 0 && <p className="truncate text-[11px] text-sky-800">{hashtagsDe(hashtags, l.cle).map((h) => `#${h}`).join(' ')}</p>}
                 </div>
                 {derniere && <p className="line-clamp-2 text-xs text-neutral-700" title={derniere.commentaire ?? ''}>« {derniere.commentaire} »</p>}
+                {prevision(l, 'line-clamp-2')}
                 {etoilesRapides(l)}
                 {boutonsStatut(l)}
                 {champCommentaire(l)}
@@ -389,6 +403,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 {champCommentaire(ligneOuverte, true)}
                 {boutonsStatut(ligneOuverte, true)}
                 {etoilesRapides(ligneOuverte)}
+                {prevision(ligneOuverte)}
                 {messages[ligneOuverte.cle] && <p className={`text-xs ${messages[ligneOuverte.cle].ok ? 'text-teal-800' : 'text-red-700'}`}>{messages[ligneOuverte.cle].message}</p>}
                 <p className="text-xs text-neutral-500">Source : <code className="break-all">{ligneOuverte.source}</code></p>
                 <SujetsVisuel visuel={ligneOuverte} surcharges={surcharges} onChange={setSurcharges} compact />

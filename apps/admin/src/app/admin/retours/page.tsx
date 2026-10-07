@@ -6,6 +6,7 @@ import { exigerAdmin } from '@/lib/admin';
 import { getNotesAtelier, getPoidsAtelier } from '@/lib/atelier';
 import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getChangementsClaude } from '@/lib/changements';
+import { getJuge } from '@/lib/predictions';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getInspirations } from '@/lib/inspirations';
 import { getMotsClesEnBase, sourcesConfigurees } from '@/lib/photos-libres';
@@ -33,6 +34,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   ]);
   const titres = titresAssets();
   const hashtags = await lectureHashtags;
+  // Juge du goût de Paul : prédictions (retours/predictions.json) et justesse contre les notes en base
+  const juge = await getJuge(assets.notes.map((n) => ({ cle: n.cle, note: n.note, empreinte: n.empreinte, le: n.le, etiquettes: n.etiquettes })), photosJeux);
   // Statut courant + dernier commentaire de revue (synthèse « à retravailler »)
   const statuts = revues.statuts.map((s) => {
     const r = revues.revues.find((x) => x.cle === s.cle && x.commentaire);
@@ -99,6 +102,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         surchargesSujets={surchargesSujets}
         hashtagsAssets={hashtags.hashtags}
         migrationHashtags={hashtags.migrationManquante}
+        predictions={juge.predictions}
+        ligneJuge={juge.ligne}
       />
     </div>
   );

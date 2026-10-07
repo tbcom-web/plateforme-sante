@@ -6,6 +6,8 @@
 //   assets-hashtags.json : hashtags libres des visuels (état courant par clé, table assets_hashtags, 0029 ; hashtags.ts)
 //   inspirations.json : métadonnées des inspirations (étiquettes, objectif, sujet, type, palette, domaine du lien) — JAMAIS
 //   l'image, son chemin dans le stockage privé, une URL signée ni l'adresse complète du lien
+//   CALIBRATION.md : section « Mesure automatique » recalculée (prédictions du juge, predictions.json, vs notes de Paul ;
+//   juge.ts) ; le reste du fichier, tenu à la main, est conservé
 //   SYNTHESE.md : tendances lisibles (fonctions pures du core : syntheseAssets, markdownAssets, syntheseAtelier, markdownAtelier),
 //   et « Animations en attente d'ingrédients validés » (markdownAnimationsEnAttente, animations-sources.ts)
 // Le dépôt est PUBLIC : seules des colonnes explicites sont lues — jamais d'auteur, d'e-mail, d'identifiant de compte, ni
@@ -13,7 +15,7 @@
 // sans nouveau retour ne change rien (pas de commit).
 // Variables : SUPABASE_URL, SUPABASE_SECRET_KEY (requises), RETOURS_DIR (facultative). Usage : node scripts/exporter-retours.mjs
 import { build } from 'esbuild';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -51,7 +53,7 @@ let core;
 try {
   await build({
     stdin: {
-      contents: "export { syntheseAssets, markdownAssets, titresAssets, typeDeCle, estEtiquetteDuType } from './assets'; export { syntheseAtelier, markdownAtelier, estEtiquetteAtelier } from './atelier'; export { inspirationPourExport, markdownInspirations } from './inspirations'; export { surchargesDepuisLignes, markdownSujets, sujetsSansVisuel } from './sujets-visuels'; export { inventaireAssets } from './assets'; export { markdownAnimationsEnAttente } from './animations-sources';",
+      contents: "export { syntheseAssets, markdownAssets, titresAssets, typeDeCle, estEtiquetteDuType } from './assets'; export { syntheseAtelier, markdownAtelier, estEtiquetteAtelier } from './atelier'; export { inspirationPourExport, markdownInspirations } from './inspirations'; export { surchargesDepuisLignes, markdownSujets, sujetsSansVisuel } from './sujets-visuels'; export { inventaireAssets } from './assets'; export { markdownAnimationsEnAttente } from './animations-sources'; export { lirePredictions, pairesJuge, markdownCalibration, empreinteImage } from './juge';",
       resolveDir: join(racine, 'packages', 'core', 'src'), loader: 'ts',
     },
     bundle: true, platform: 'node', format: 'esm', outfile: join(tmp, 'core.mjs'), logLevel: 'warning', loader: { '.svg': 'text' },
@@ -140,4 +142,18 @@ const md = [
   '',
 ].join('\n');
 ecrire('SYNTHESE.md', md);
+
+// Juge du goût de Paul (juge.ts) : prédictions de retours/predictions.json comparées aux notes sur le même élément (clé +
+// empreinte ; photos et structures : adresse de l'image) → section automatique de CALIBRATION.md, entre les marqueurs
+const cheminPredictions = [join(sortie, 'predictions.json'), join(racine, 'retours', 'predictions.json')].find((c) => existsSync(c));
+const cheminCalibration = join(sortie, 'CALIBRATION.md');
+if (cheminPredictions && existsSync(cheminCalibration)) {
+  const predictions = core.lirePredictions(JSON.parse(readFileSync(cheminPredictions, 'utf8')));
+  const images = new Map(core.inventaireAssets().filter((a) => a.rendu.kind === 'image').map((a) => [a.cle, core.empreinteImage(a.rendu.src)]));
+  const paires = core.pairesJuge(predictions, notesAssets.map((n) => ({ ...n, le: n.jour })), (cle) => images.get(cle) ?? null);
+  const ancien = readFileSync(cheminCalibration, 'utf8');
+  const debut = '<!-- mesure-auto -->', fin = '<!-- /mesure-auto -->';
+  const i = ancien.indexOf(debut), j = ancien.indexOf(fin);
+  if (i >= 0 && j > i) writeFileSync(cheminCalibration, `${ancien.slice(0, i + debut.length)}\n${core.markdownCalibration(paires, { jour: dernierJour })}${ancien.slice(j)}`);
+}
 console.log(`Retours exportés dans ${sortie} : ${notesAssets.length} notes d’assets, ${notesAtelier.length} notes de l’atelier, ${journal.length} revues, ${courants.length} statuts, ${listeInspirations.length} inspirations.`);
