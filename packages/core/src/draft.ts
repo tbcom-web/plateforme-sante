@@ -2,6 +2,7 @@
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
 import { MODELES_INTEGRES, pairePolices, variantesValides } from './modeles';
 import { jeuEffets } from './effets';
+import { normaliserTraitementPhotos, traitementNeutre } from './traitements-photos';
 import { ANIMATIONS, specialiteDuProfil, type Animation } from './packs';
 import { nettoyerEquipements, nettoyerEquipementsAutres } from './equipements';
 import type { Horaire, SiteConfig } from './types';
@@ -158,6 +159,8 @@ export type SiteDraft = {
     herosSujet?: string;
     photosRecette?: string[];
     effets?: string;
+    /** Traitement uniforme des photos (traitements-photos.ts) ; absent = traitement du modèle */
+    traitementPhotos?: { id: string; grain?: boolean };
   };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
@@ -322,6 +325,10 @@ function themeNormalise(t: SiteDraft['theme']): SiteDraft['theme'] {
     if (l.length) r.photosRecette = l; else delete r.photosRecette;
   }
   if (r.effets !== undefined && !jeuEffets(r.effets)) delete r.effets;
+  if (r.traitementPhotos !== undefined) {
+    const t = normaliserTraitementPhotos(r.traitementPhotos);
+    if (traitementNeutre(t)) delete r.traitementPhotos; else r.traitementPhotos = t;
+  }
   return r;
 }
 

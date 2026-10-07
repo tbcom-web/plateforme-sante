@@ -11,23 +11,31 @@
 // démonstration), son dé de structure et son verrou 🔒 (verrouiller Contact sans verrouiller l'Accueil), sa note (étoiles,
 // étiquettes, va bien / ne va pas) en plus de celle de la recette, ses zones (z) et son bloc « Rendu mobile ». Rendus ordinateur
 // ET mobile côte à côte (bascule sur téléphone).
+// SIMULATEUR DE RENDU (demande de Paul du 2026-10-07) : « Simuler un client » (SimulateurClient.tsx, mêmes contrôles que /creer) ;
+// le rendu reste dans ce scénario (visuels des seuls sujets choisis, onglets = pages que ce client aurait : simulateur.ts) ; une
+// recette garde son scénario complet ; « Mes recettes » se filtre par scénario, en vignettes (RecetteVignette.tsx). Dé « t » :
+// traitement uniforme des photos (traitements-photos.ts).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  appliquerRecette, basculerCouleur, clesStructure, compositionInitiale, controlerComposition, COULEURS_PREFEREES, DIMENSIONS_RECETTE, draftVide,
+  appliquerRecette, clesStructure, compositionInitiale, controlerComposition, DIMENSIONS_RECETTE, draftVide,
   ETIQUETTES_RECETTE, ETIQUETTES_STUDIO, FAMILLES_COMPOSANTS, gabaritModele, libelleCleRenfort, libellesComposition, LIBELLES_VARIANTES, modeleIntegre,
   nomRecette, NOMS_SECTIONS_VARIABLES, reparerComposition, PAGES_STRUCTURE, PAIRES_POLICES, sectionsVariables, THEMES, themeParId, tirerDimension, tirerPage, toutChanger,
   universCatalogue, ONGLETS_PAGES, vueDePage, empreinteMobile, choisirStyle, stylesDuStudio, photosDuScenario, photosAImporter, estPhotoHebergee, type AppareilRetour, type Zone,
   type CompositionRecette, type ContexteRecette, type DimensionRecette, type MarqueImportee, type ModeleManifeste, type PageStructure,
   type PhotoBanque, type PoidsAtelier, type Recette, type SiteDraft, type Univers, type Variantes,
-  respecterVerrous, suivreScenario,
+  appliquerPriorites, draftPourOnglet, libelleTraitementPhotos, niveauProximite, normaliserScenario, ongletsDuScenario, scenarioDeRecette, soinsDuScenario,
+  TRAITEMENTS_PHOTOS, photosCompatibles, tirerPhotos, alea, respecterVerrous, suivreScenario, animationsPermises, tirerAnimation, LIBELLES_ANIMATIONS, type ScenarioRecette,
 } from '@plateforme/core';
+import SimulateurClient, { type CabinetDemo } from './SimulateurClient';
+import RecetteVignette from './RecetteVignette';
+import ApercusCoteACote from './ApercusCoteACote';
 import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
 import RenduMobile from '@/components/RenduMobile';
 import type { SoinCatalogue } from '@/lib/sites';
 import { EVENEMENT_OUVRIR, type DetailOuvrir } from './PropositionsClaude';
 import Link from 'next/link';
-import { changerStatutRecette, enregistrerRecette, importerPhotoStudio, lireNotesPages, noterElementStudio, noterPageRecette } from './actions';
+import { changerStatutRecette, enregistrerRecette, lireAnimationsEnAttente, importerPhotoStudio, lireNotesPages, noterElementStudio, noterPageRecette } from './actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const petitBase = `inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border px-2 text-sm disabled:opacity-40 ${focus}`;
@@ -46,18 +54,21 @@ type Props = {
   migrationManquante: boolean;
 };
 
-type Scenario = { principaux: string[]; secondaires: string[]; couleurs: string[] };
+// Scénario = client simulé (simulateur.ts : sujets principaux ordonnés, secondaires, couleurs, soins)
+type Scenario = ScenarioRecette;
 const ACTIFS = THEMES.filter((t) => t.statut === 'actif').map((t) => t.id);
+const CABINET_DEMO: CabinetDemo = { nom: 'Cabinet de podologie', ville: 'Lyon' };
 
-/** Cabinet fictif de l'aperçu (seule l'apparence vient de la recette) */
-function draftDemo(s: Scenario): SiteDraft {
+/** Cabinet fictif de l'aperçu : nom, ville et soins du client simulé ; l'apparence vient de la recette */
+function draftDemo(s: Scenario, cabinet: CabinetDemo = CABINET_DEMO, slugs: readonly string[] = []): SiteDraft {
   const d = draftVide();
-  d.cabinet = { ...d.cabinet, nom: 'Cabinet de podologie', ville: 'Lyon', quartier: 'Brotteaux', telephone: '04 00 00 00 00' };
-  d.lieux[0] = { ...d.lieux[0], adresse: '10 rue de la Démo', codePostal: '69006', ville: 'Lyon' };
+  const ville = cabinet.ville.trim() || 'Lyon';
+  d.cabinet = { ...d.cabinet, nom: cabinet.nom.trim() || 'Cabinet de podologie', ville, quartier: ville === 'Lyon' ? 'Brotteaux' : '', telephone: '04 00 00 00 00' };
+  d.lieux[0] = { ...d.lieux[0], adresse: '10 rue de la Démo', codePostal: ville === 'Lyon' ? '69006' : '', ville };
   d.praticiens = [{ ...d.praticiens[0], prenom: 'Camille', nom: 'Rousseau' }, { ...d.praticiens[0], id: 'demo2', prenom: 'Julien', nom: 'Bernard' }];
-  d.priorites = { principaux: s.principaux, secondaires: s.secondaires };
   d.couleursPreferees = s.couleurs;
-  return d;
+  d.soins = soinsDuScenario(s, slugs);
+  return appliquerPriorites(d, { principaux: s.principaux, secondaires: s.secondaires });
 }
 
 /** Valeur d'une dimension (historique « ← Précédent ») et sa remise */
@@ -69,17 +80,20 @@ const lire = (x: CompositionRecette, d: DimensionRecette): Partial<CompositionRe
     case 'photos': return { photos: x.photos };
     case 'structure': return { structure: x.structure, sections: x.sections };
     case 'effets': return { effets: x.effets };
+    case 'traitement': return { traitement: x.traitement };
   }
 };
 
 export default function Studio({ proposes, modeles, catalogue, marquesImportees, themesActives, poids, photos, recettes, renforts, migrationManquante }: Props) {
-  const [scenario, setScenario] = useState<Scenario>({ principaux: ['sport'], secondaires: [], couleurs: [] });
+  const [scenario, setScenario] = useState<Scenario>({ principaux: ['sport'], secondaires: [], couleurs: [], soins: [] });
+  const [cabinet, setCabinet] = useState<CabinetDemo>(CABINET_DEMO);
   const modele = useCallback((id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id), [modeles]);
   // Banque de photos (importées + gardées non importées) ; une photo importée depuis le studio y remplace son aperçu
   const [banque, setBanque] = useState<PhotoBanque[]>(photos);
   const [avecNonImportees, setAvecNonImportees] = useState(true);
-  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos: banque, nonImportees: avecNonImportees, modele }), [scenario, poids, banque, avecNonImportees, modele]);
-  const [comp, setComp] = useState<CompositionRecette>(() => compositionInitiale({ sujets: ['sport'], principaux: 1, photos, modele: modeleIntegre }));
+  // Simulateur : visuels (héros, photos) tirés SEULEMENT des sujets du client simulé (sujetsSeulement)
+  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos: banque, nonImportees: avecNonImportees, sujetsSeulement: true, modele }), [scenario, poids, banque, avecNonImportees, modele]);
+  const [comp, setComp] = useState<CompositionRecette>(() => compositionInitiale({ sujets: ['sport'], principaux: 1, photos, sujetsSeulement: true, modele: modeleIntegre }));
   const [historique, setHistorique] = useState<Record<string, Partial<CompositionRecette>[]>>({});
   const [verrous, setVerrous] = useState<string[]>([]);
   const graine = useRef(Math.floor(Math.random() * 1e6));
@@ -111,7 +125,8 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   };
   const tout = useCallback(() => {
     setHistorique((h) => { const n = { ...h }; for (const d of DIMENSIONS_RECETTE) if (!verrous.includes(d.id)) n[d.id] = [...(n[d.id] ?? []), lire(comp, d.id)].slice(-30); return n; });
-    setComp((x) => respecterVerrous(x, toutChanger(x, verrous, ctx, suivante()), verrous, ctx));
+    // Animation d'accueil verrouillée : gardée si elle reste permise (reparerComposition)
+    setComp((x) => { const y = respecterVerrous(x, toutChanger(x, verrous, ctx, suivante()), verrous, ctx); return verrous.includes('animation') ? reparerComposition({ ...y, visuels: { ...y.visuels, animation: x.visuels.animation } }, ctx) : y; });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verrous, ctx, comp]);
   const basculerVerrou = (cle: string) => setVerrous((v) => (v.includes(cle) ? v.filter((x) => x !== cle) : [...v, cle]));
@@ -123,6 +138,8 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
     // La composition SUIT le scénario (suivi-scenario.ts) : couleurs choisies → gamme, sujets → photos et héros ; verrous respectés
     const g = suivante();
     setComp((x) => suivreScenario(x, ctx, c2, verrous, g));
+    // Onglet d'une page que ce client n'a plus : retour à l'accueil
+    if (!ongletsDuScenario(s, catalogue, { themesActives }).some((o) => o.id === ongletId)) changerOnglet('accueil');
   };
 
   // Raccourcis clavier (ignorés pendant la saisie)
@@ -143,9 +160,16 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
 
   // Téléphone : l'aperçu s'ouvre en vue téléphone
   const [etroit, setEtroit] = useState(false);
+  // Grand écran (≥ 1200 px) : paramètres à gauche, aperçus ordinateur et téléphone côte à côte (ApercusCoteACote)
+  const [large, setLarge] = useState(false);
+  useEffect(() => { const mq = window.matchMedia('(min-width: 1200px)'); const f = () => setLarge(mq.matches); f(); mq.addEventListener('change', f); return () => mq.removeEventListener('change', f); }, []);
   useEffect(() => { const mq = window.matchMedia('(max-width: 767px)'); const f = () => setEtroit(mq.matches); f(); mq.addEventListener('change', f); return () => mq.removeEventListener('change', f); }, []);
   // ---- Pages (onglets) : aperçu, dé, verrou, note, zones et rendu mobile de chaque page ----
-  const [page, setPage] = useState<PageStructure>('accueil');
+  // Onglets = pages qu'aurait CE client (simulateur.ts) : accueil, une page par sujet principal, ses fiches de soins…
+  const onglets = useMemo(() => ongletsDuScenario(scenario, catalogue, { themesActives }), [scenario, catalogue, themesActives]);
+  const [ongletId, setOngletId] = useState('accueil');
+  const onglet = onglets.find((o) => o.id === ongletId) ?? onglets[0];
+  const page = onglet.page as PageStructure;
   const [zonesOrdi, setZonesOrdi] = useState<Zone[]>([]);
   const [zonesMobile, setZonesMobile] = useState<Zone[]>([]);
   const [appareilVu, setAppareilVu] = useState<AppareilRetour>('les-deux');
@@ -154,14 +178,19 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const [positifPage, setPositifPage] = useState('');
   const [negatifPage, setNegatifPage] = useState('');
   const [notesPages, setNotesPages] = useState<{ page: string; note: number; appareil: string; le: string }[]>([]);
-  const changerPage = (p: PageStructure) => { setPage(p); setZonesOrdi([]); setZonesMobile([]); setNotePage(null); setEtqPage([]); setPositifPage(''); setNegatifPage(''); };
+  const changerOnglet = (id: string) => { setOngletId(id); setZonesOrdi([]); setZonesMobile([]); setNotePage(null); setEtqPage([]); setPositifPage(''); setNegatifPage(''); };
   // Démonstration des effets : survol simulé en boucle, apparition rejouée (l'aperçu est recréé)
   const [demoSurvol, setDemoSurvol] = useState(false);
+  // Animations JOUÉES dans les aperçus (désactivées d'office si le système demande moins de mouvements ; la case force la lecture)
+  const [animer, setAnimer] = useState(true);
+  useEffect(() => { if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setAnimer(false); }, []);
+  const [animationsEnAttente, setAnimationsEnAttente] = useState<string[]>([]);
+  useEffect(() => { void lireAnimationsEnAttente().then(setAnimationsEnAttente).catch(() => undefined); }, []);
   const [survolActif, setSurvolActif] = useState(false);
   const [rejouer, setRejouer] = useState(0);
   useEffect(() => { if (!demoSurvol) { setSurvolActif(false); return; } const t = setInterval(() => setSurvolActif((x) => !x), 1400); return () => clearInterval(t); }, [demoSurvol]);
-  const base = useMemo(() => draftDemo(scenario), [scenario]);
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
+  const base = useMemo(() => draftDemo(scenario, cabinet, slugs), [scenario, cabinet, slugs]);
   // Aperçu du studio : les photos non importées sont montrées (aperçu de la source) ; jamais sur un site (appliquerRecette par défaut)
   const apercu = useMemo(() => appliquerRecette(base, comp, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives, photosNonImportees: true }), [base, comp, proposes, modeles, slugs, themesActives]);
   const defauts = controlerComposition(comp, ctx);
@@ -217,14 +246,15 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const nomPropose = nomRecette(comp, ctx.sujets);
   const enregistrer = async () => {
     setStatut(null);
-    const r = await enregistrerRecette({ id: ouverte.id, origine: ouverte.origine, nom: nom || nomPropose, sujets: scenario.principaux, secondaires: scenario.secondaires, couleurs: scenario.couleurs, composition: comp, note, etiquettes, positif, negatif, appareil: appareilVu })
+    const r = await enregistrerRecette({ id: ouverte.id, origine: ouverte.origine, nom: nom || nomPropose, sujets: scenario.principaux, secondaires: scenario.secondaires, couleurs: scenario.couleurs, scenario: { ...scenario, soins: soinsDuScenario(scenario, slugs) }, composition: comp, note, etiquettes, positif, negatif, appareil: appareilVu })
       .catch(() => ({ ok: false, message: 'Connexion perdue : recette non enregistrée.' } as { ok: boolean; message: string; id?: string }));
     setStatut(r);
     if (r.ok && r.id) setOuverte({ id: r.id, origine: null });
   };
   const ouvrir = (r: Recette, dupliquer = false) => {
-    setScenario({ principaux: r.sujets.slice(0, 3), secondaires: r.sujets.slice(3), couleurs: r.couleursPreferees });
+    setScenario(scenarioDeRecette(r));
     setComp(r.composition);
+    changerOnglet('accueil');
     setNom(dupliquer ? `${r.nom} (copie)` : r.nom);
     setNote(dupliquer ? null : r.note);
     setEtiquettes(dupliquer ? [] : r.etiquettes);
@@ -241,7 +271,8 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   useEffect(() => {
     const f = (e: Event) => {
       const d = (e as CustomEvent<DetailOuvrir>).detail;
-      setScenario({ principaux: d.sujets.slice(0, 3), secondaires: d.sujets.slice(3), couleurs: d.couleurs });
+      // Même format de scénario que les recettes (simulateur.ts) : { principaux, secondaires, couleurs, soins } ou ancien { sujets, couleurs }
+      setScenario(normaliserScenario((d as { scenario?: unknown }).scenario ?? { sujets: d.sujets, couleurs: d.couleurs }));
       setComp(d.composition); setVerrous([]); setHistorique({}); nouvelle(); setNom(d.nom);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -281,7 +312,12 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const [filtreSujet, setFiltreSujet] = useState('');
   const [filtreNote, setFiltreNote] = useState(0);
   const [archivees, setArchivees] = useState(false);
-  const liste = recettes.filter((r) => (archivees || r.statut === 'active') && (!filtreSujet || r.sujets.includes(filtreSujet)) && (r.note ?? 0) >= filtreNote);
+  // Filtre par scénario (simulateur.ts) : recettes de ce client simulé, ou aussi des clients proches
+  const [filtreScenario, setFiltreScenario] = useState<'tous' | 'identique' | 'proche'>('tous');
+  const auNiveau = (r: Recette) => { const n = niveauProximite(scenario, scenarioDeRecette(r)); return filtreScenario === 'tous' || n === 'identique' || (filtreScenario === 'proche' && n === 'proche'); };
+  const liste = recettes.filter((r) => (archivees || r.statut === 'active') && (!filtreSujet || r.sujets.includes(filtreSujet)) && (r.note ?? 0) >= filtreNote && auNiveau(r));
+  // Vignettes : chaque recette rendue avec SON scénario (cabinet de démonstration courant)
+  const apercuRecette = (r: Recette) => appliquerRecette(draftDemo(scenarioDeRecette(r), cabinet, slugs), r.composition, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives });
 
   const Ligne = ({ cle, titre, valeur, onDe, dim }: { cle: string; titre: string; valeur: string; onDe: () => void; dim?: DimensionRecette }) => {
     const verrou = verrous.includes(cle);
@@ -300,84 +336,49 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const valeur = (titre: string) => libelles.find((l) => l.dimension === titre)?.valeur ?? '';
   const v = comp.sections.variantes as Record<string, string>;
 
-  return (
-    <div className="grid gap-5">
-      {/* ---- Scénario ---- */}
-      <section aria-labelledby="st-scenario" className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4">
-        <h2 id="st-scenario" className="text-lg font-semibold">Scénario</h2>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Sujets (1er appui : principal, 2e : secondaire, 3e : retiré)">
-          {THEMES.map((t) => {
-            const rang = scenario.principaux.indexOf(t.id);
-            const sec = scenario.secondaires.includes(t.id);
-            const differe = !ACTIFS.includes(t.id);
-            const cycle = () => {
-              const sans = { principaux: scenario.principaux.filter((x) => x !== t.id), secondaires: scenario.secondaires.filter((x) => x !== t.id) };
-              if (rang < 0 && !sec) changerScenario(scenario.principaux.length < 3 ? { ...scenario, ...sans, principaux: [...sans.principaux, t.id] } : { ...scenario, ...sans, secondaires: [...sans.secondaires, t.id].slice(0, 3) });
-              else if (rang >= 0) changerScenario({ ...scenario, ...sans, secondaires: [...sans.secondaires, t.id].slice(0, 3) });
-              else changerScenario({ ...scenario, ...sans });
-            };
-            return (
-              <button key={t.id} type="button" onClick={cycle} disabled={differe} aria-pressed={rang >= 0 || sec}
-                className={`flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm ${focus} disabled:opacity-40 ${rang >= 0 ? 'border-teal-700 bg-teal-50 font-semibold' : sec ? 'border-dashed border-teal-700 bg-white' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
-                {rang >= 0 && <span className="grid size-5 place-items-center rounded-full bg-teal-800 text-xs text-white">{rang + 1}</span>}
-                {sec && <span className="text-xs text-teal-800">+</span>}
-                {t.court}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Couleurs préférées (3 au plus)">
-          {COULEURS_PREFEREES.map((c) => {
-            const rang = scenario.couleurs.indexOf(c.id);
-            return (
-              <button key={c.id} type="button" aria-pressed={rang >= 0} onClick={() => changerScenario({ ...scenario, couleurs: basculerCouleur(scenario.couleurs, c.id) })}
-                className={`flex min-h-11 items-center gap-1.5 rounded-full border px-2.5 text-sm ${focus} ${rang >= 0 ? 'border-teal-700 bg-teal-50 font-semibold' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
-                <span aria-hidden="true" className="size-5 rounded-full ring-1 ring-black/10" style={{ background: c.hex }} />{c.nom}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section aria-label="Recette en cours" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-start">
-        {/* ---- Aperçu vivant, page par page ---- */}
-        <div className="grid min-w-0 gap-2">
-          <div role="tablist" aria-label="Page de la recette" className="flex gap-1 overflow-x-auto pb-1">
-            {ONGLETS_PAGES.map((o) => {
+  // ---- Morceaux de la page (deux mises en page : grand écran ≥ 1200 px, paramètres à gauche ; sinon la mise en page empilée) ----
+  const ongletsJsx = (
+          <div role="tablist" aria-label="Pages de ce client" className={large ? 'flex flex-wrap gap-1' : 'flex gap-1 overflow-x-auto pb-1'}>
+            {onglets.map((o) => {
               const n = notesPages.filter((x) => x.page === o.page);
+              const actif = onglet.id === o.id;
               return (
-                <button key={o.page} type="button" role="tab" aria-selected={page === o.page} aria-controls="st-page" id={`st-onglet-${o.page}`} onClick={() => changerPage(o.page)}
-                  className={`flex min-h-11 shrink-0 items-center gap-1 rounded-lg border px-3 text-sm ${focus} ${page === o.page ? 'border-teal-800 bg-teal-800 font-semibold text-white' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
-                  {o.nom}{verrous.includes(`page:${o.page}`) && <span aria-label="verrouillée">🔒</span>}{n.length > 0 && <span className={`rounded-full px-1.5 text-xs ${page === o.page ? 'bg-white/20' : 'bg-teal-50 text-teal-900'}`}>{n[0].note}★</span>}
+                <button key={o.id} type="button" role="tab" aria-selected={actif} aria-controls="st-page" id={`st-onglet-${o.id.replace(/[^a-z0-9-]/g, '-')}`} onClick={() => changerOnglet(o.id)}
+                  title={o.page === 'fiche' ? 'Fiche d’un soin' : o.page === 'theme' ? 'Page sujet' : undefined}
+                  className={`flex min-h-11 shrink-0 items-center gap-1 rounded-lg border px-3 text-sm ${focus} ${actif ? 'border-teal-800 bg-teal-800 font-semibold text-white' : o.page === 'fiche' ? 'border-dashed border-neutral-300 bg-white hover:bg-neutral-50' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
+                  {o.page === 'theme' && <span aria-hidden="true" className="text-xs opacity-70">Sujet :</span>}{o.page === 'fiche' && <span aria-hidden="true" className="text-xs opacity-70">Soin :</span>}
+                  {o.nom}{verrous.includes(`page:${o.page}`) && <span aria-label="verrouillée">🔒</span>}{n.length > 0 && <span className={`rounded-full px-1.5 text-xs ${actif ? 'bg-white/20' : 'bg-teal-50 text-teal-900'}`}>{n[0].note}★</span>}
                 </button>
               );
             })}
           </div>
+  );
+  const barreJsx = (
+    <>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-neutral-600" aria-live="polite">{ouverte.id ? 'Recette ouverte' : ouverte.origine ? 'Copie d’une recette' : 'Nouvelle recette'}{derniereGraine !== null ? ` · graine ${derniereGraine}` : ''}</p>
             <button type="button" onClick={tout} className={`min-h-11 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 ${focus}`}>🎲 Tout changer <kbd className="ml-1 rounded bg-white/20 px-1">espace</kbd></button>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="text-neutral-600">Effets :</span>
+            <label className="flex min-h-11 items-center gap-2" title="Illustrations animées jouées comme sur le site (pause hors écran)"><input type="checkbox" checked={animer} onChange={(e) => setAnimer(e.target.checked)} className="size-5 accent-teal-800" />Animer</label>
             <button type="button" aria-pressed={demoSurvol} onClick={() => setDemoSurvol((x) => !x)} className={`min-h-11 rounded-lg border px-3 ${focus} ${demoSurvol ? 'border-teal-700 bg-teal-50 font-semibold' : 'border-neutral-300 bg-white'}`}>Survol en boucle</button>
             <button type="button" onClick={() => setRejouer((n) => n + 1)} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 ${focus}`}>Rejouer l’apparition</button>
             <span className="text-xs text-neutral-500">Transition entre pages : visible sur le site publié (navigateurs compatibles).</span>
           </div>
           {defauts.length > 0 && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-900">{defauts.join(' ')}</p>}
-          <div role="tabpanel" id="st-page" aria-labelledby={`st-onglet-${page}`} className="grid min-w-0 gap-3">
-            {apercu && (
-              <DoubleRendu key={`${page}|${scenario.principaux.join()}|${comp.structure}|${rejouer}`} libelle={ONGLETS_PAGES.find((o) => o.page === page)?.nom} onAppareil={setAppareilVu} mobileDabord={etroit}
-                zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
-                rendu={(app) => <ApercuTheme sansCommandes vueInitiale={vueDePage(page)} survol={survolActif} appareil={app} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />} />
-            )}
-            {(() => {
+
+    </>
+  );
+  const rendu = (app: 'bureau' | 'mobile', hauteur?: number) => apercu && <ApercuTheme sansCommandes hauteurCadre={hauteur} animer={animer} animationsEnAttente={animationsEnAttente} vueInitiale={vueDePage(page)} survol={survolActif} appareil={app} draft={draftPourOnglet(apercu.draft, onglet)} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
+  const blocPage = (() => {
               const p = PAGES_STRUCTURE.find((x) => x.id === page)!;
               const variablesPage = p.sections.filter((s) => variables.includes(s));
               const nomPage = ONGLETS_PAGES.find((o) => o.page === page)?.nom ?? page;
               const cleStructurePage = cles.find((k) => k.startsWith(`structure:${page}:`)) ?? `modele:${comp.structure}`;
               const em = empreinteMobile(cleStructurePage);
               return (
-                <section aria-label={`Page ${nomPage}`} className="grid gap-3 rounded-2xl border border-black/10 bg-white p-3 md:grid-cols-2 md:items-start">
+                <section aria-label={`Page ${nomPage}`} className={`grid gap-3 rounded-2xl border border-black/10 bg-white p-3 ${large ? '' : 'md:grid-cols-2 md:items-start'}`}>
                   <div className="grid content-start gap-2">
                     <h2 className="px-2 text-base font-semibold">Page « {nomPage} »</h2>
                     {p.ordre || variablesPage.length ? (
@@ -409,12 +410,9 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
                   </div>
                 </section>
               );
-            })()}
-          </div>
-        </div>
-
-        {/* ---- Dés ---- */}
-        <div className="grid gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+  })();
+  const desJsx = (
+    <>
           <section aria-labelledby="st-des" className="grid gap-1 rounded-2xl border border-black/10 bg-white p-3">
             <h2 id="st-des" className="px-2 text-base font-semibold">Dés</h2>
             <ul className="grid gap-0.5">
@@ -436,8 +434,25 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
                 )}
                 <p className="mt-1 text-xs text-neutral-500">Appliqué à tout le site (héros, illustrations des soins, pages sujet, fiches, articles) et enregistré dans la recette. 🔒 protège le style des dés, pas de vos choix.</p>
               </li>
+              <Ligne cle="animation" titre="Animation d’accueil"
+                valeur={comp.visuels.animation ? `${LIBELLES_ANIMATIONS[comp.visuels.animation] ?? comp.visuels.animation}${animationsEnAttente.includes(comp.visuels.animation) ? ' (en attente de validation)' : ''}` : animationsPermises(ctx, comp.structure, comp.visuels.style).length ? 'aucune' : 'Structure Technique + Relevé seulement'}
+                onDe={() => { if (verrous.includes('animation')) return; memoriser('animation', 'visuels'); setComp((x) => tirerAnimation(x, ctx, suivante())); }} />
               <Ligne cle="photos" dim="photos" titre="Photos" valeur={comp.visuels.style === 'photos' ? valeur('Photos') : 'Choisissez le style « Photos »'} onDe={() => lancer('photos')} />
               <Ligne cle="effets" dim="effets" titre="Effets" valeur={valeur('Effets')} onDe={() => lancer('effets')} />
+              <Ligne cle="traitement" dim="traitement" titre="Traitement des photos" valeur={libelleTraitementPhotos(comp.traitement)} onDe={() => lancer('traitement')} />
+              <li className="px-2 pb-1">
+                <div role="radiogroup" aria-label="Traitement de toutes les photos du site (premier écran, cabinet, galerie, pages sujet, soins)" className="grid grid-cols-2 gap-1">
+                  {TRAITEMENTS_PHOTOS.map((t) => (
+                    <button key={t.id} type="button" role="radio" aria-checked={comp.traitement.id === t.id} title={t.detail}
+                      onClick={() => { if (comp.traitement.id !== t.id) { memoriser('traitement', 'traitement'); setComp((x) => ({ ...x, traitement: { ...x.traitement, id: t.id } })); } }}
+                      className={`grid min-h-11 content-center rounded-lg border px-2 py-1 text-left text-sm ${focus} ${comp.traitement.id === t.id ? 'border-teal-800 bg-teal-800 font-semibold text-white' : 'border-neutral-300 bg-white hover:bg-neutral-50'}`}>
+                      <span>{t.nom}</span><span className={`text-xs font-normal ${comp.traitement.id === t.id ? 'text-white/85' : 'text-neutral-500'}`}>{t.detail}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-1 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={comp.traitement.grain} onChange={(e) => { memoriser('traitement', 'traitement'); setComp((x) => ({ ...x, traitement: { ...x.traitement, grain: e.target.checked } })); }} className="size-5" />Grain fin</label>
+                <p className="text-xs text-neutral-500">Même voile sur toutes les photos du site, couleurs tirées de la gamme ; CSS seul (aucun fichier retraité).</p>
+              </li>
               <Ligne cle="structure" dim="structure" titre="Structure (modèle et tout)" valeur={valeur('Structure')} onDe={() => lancer('structure')} />
             </ul>
             <div className="grid gap-2 px-2 pb-1" role="group" aria-label="Photos du scénario">
@@ -543,14 +558,14 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
             <button type="button" onClick={() => void enregistrer()} disabled={defauts.length > 0} className={`min-h-12 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>{ouverte.id ? 'Enregistrer les modifications' : 'Enregistrer cette recette'}</button>
             <p role="status" className={`min-h-5 text-sm ${statut && !statut.ok ? 'text-red-800' : 'text-neutral-600'}`}>{statut?.message ?? (migrationManquante ? 'Migration 0032 à exécuter pour enregistrer.' : '')}</p>
           </section>
-        </div>
-      </section>
-
-      {/* ---- Mes recettes ---- */}
+    </>
+  );
+  const mesRecettes = (
       <section aria-labelledby="st-mes" className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <h2 id="st-mes" className="text-lg font-semibold">Mes recettes <span className="text-sm font-normal text-neutral-500">({liste.length})</span></h2>
           <div className="flex flex-wrap items-center gap-2 text-sm">
+            <label className="flex items-center gap-1">Scénario <select value={filtreScenario} onChange={(e) => setFiltreScenario(e.target.value as typeof filtreScenario)} className="min-h-11 rounded-lg border border-neutral-300 px-2"><option value="tous">Tous</option><option value="identique">Ce client</option><option value="proche">Ce client et proches</option></select></label>
             <label className="flex items-center gap-1">Sujet <select value={filtreSujet} onChange={(e) => setFiltreSujet(e.target.value)} className="min-h-11 rounded-lg border border-neutral-300 px-2"><option value="">Tous</option>{ACTIFS.map((id) => <option key={id} value={id}>{themeParId(id)?.court}</option>)}</select></label>
             <label className="flex items-center gap-1">Note ≥ <select value={filtreNote} onChange={(e) => setFiltreNote(Number(e.target.value))} className="min-h-11 rounded-lg border border-neutral-300 px-2">{[0, 1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n || 'toutes'}</option>)}</select></label>
             <label className="flex min-h-11 items-center gap-1"><input type="checkbox" checked={archivees} onChange={(e) => setArchivees(e.target.checked)} className="size-5" />Archivées</label>
@@ -565,21 +580,81 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
         {!liste.length ? <p className="text-sm text-neutral-500">Aucune recette{filtreSujet || filtreNote ? ' pour ce filtre' : ' enregistrée pour l’instant'}.</p> : (
           <ul className="grid gap-2 md:grid-cols-2">
             {liste.map((r) => (
-              <li key={r.id} className={`grid gap-1.5 rounded-xl border p-3 ${r.statut === 'archivee' ? 'border-dashed border-neutral-300 opacity-70' : 'border-black/10'}`}>
-                <div className="flex items-start justify-between gap-2"><strong className="min-w-0">{r.nom}</strong><span className="shrink-0 text-sm">{r.note ? `${r.note}★` : 'non notée'}</span></div>
-                <p className="text-xs text-neutral-600">{r.sujets.map((s) => themeParId(s)?.court ?? s).join(', ') || 'Sans sujet'}{r.etiquettes.length ? ` · ${r.etiquettes.join(', ')}` : ''}</p>
-                <p className="text-xs text-neutral-500">{libellesComposition(r.composition).map((l) => l.valeur).slice(0, 4).join(' · ')}</p>
+              <RecetteVignette key={r.id} recette={r} apercu={apercuRecette(r)} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} onOuvrir={() => ouvrir(r)}>
+                {filtreScenario !== 'tous' && <p className="text-xs font-semibold text-teal-900">{niveauProximite(scenario, scenarioDeRecette(r)) === 'identique' ? 'Même scénario' : 'Scénario proche'}</p>}
                 {photosAImporter(r.composition.photos).length > 0 && <p className="text-xs font-semibold text-amber-900">⚠ {photosAImporter(r.composition.photos).length} photo(s) non importée(s) : import requis avant tout usage sur un site.</p>}
                 <div className="flex flex-wrap gap-1.5">
                   <button type="button" onClick={() => ouvrir(r)} className={`min-h-11 rounded-lg border border-teal-800 px-3 text-sm font-semibold text-teal-900 ${focus}`}>Ouvrir</button>
                   <button type="button" onClick={() => ouvrir(r, true)} className={`min-h-11 rounded-lg border border-neutral-300 px-3 text-sm ${focus}`}>Dupliquer</button>
                   <button type="button" onClick={async () => setStatut(await changerStatutRecette(r.id, r.statut === 'active' ? 'archivee' : 'active'))} className={`min-h-11 rounded-lg border border-neutral-300 px-3 text-sm ${focus}`}>{r.statut === 'active' ? 'Archiver' : 'Réactiver'}</button>
                 </div>
-              </li>
+              </RecetteVignette>
             ))}
           </ul>
         )}
       </section>
+  );
+
+  if (large) return (
+    <div className="grid gap-5">
+      <div className="grid grid-cols-[360px_minmax(0,1fr)] items-start gap-4" style={{ marginInline: 'calc(50% - 50vw + 24px)' }}>
+        {/* ---- Paramètres (colonne gauche, défilement interne) ---- */}
+        <aside aria-label="Paramètres du studio" className="sticky top-[4.5rem] grid max-h-[calc(100dvh-5rem)] min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 overflow-y-auto overflow-x-hidden overscroll-contain pb-4 pr-1">
+          <details open className="rounded-2xl border border-black/10 bg-white">
+            <summary className={`min-h-11 cursor-pointer content-center px-4 text-base font-semibold ${focus}`}>Simuler un client</summary>
+            <SimulateurClient compact scenario={scenario} onChange={changerScenario} cabinet={cabinet} onCabinet={setCabinet} catalogue={catalogue} themesActives={themesActives} />
+          </details>
+          <section aria-label="Pages de ce client" className="grid gap-2 rounded-2xl border border-black/10 bg-white p-3">
+            <h2 className="text-base font-semibold">Pages de ce client</h2>
+            {ongletsJsx}
+            {barreJsx}
+          </section>
+          <details open className="rounded-2xl">
+            <summary className={`min-h-11 cursor-pointer content-center px-1 text-base font-semibold ${focus}`}>Cette page : structure et note</summary>
+            {blocPage}
+          </details>
+          {desJsx}
+        </aside>
+        {/* ---- Aperçus ordinateur et téléphone côte à côte, défilement complet ---- */}
+        <div role="tabpanel" id="st-page" aria-labelledby={`st-onglet-${onglet.id.replace(/[^a-z0-9-]/g, '-')}`} className="sticky top-[4.5rem] min-w-0">
+          {apercu && (
+            <ApercusCoteACote key={`${onglet.id}|${scenario.principaux.join()}|${comp.structure}|${rejouer}`} libelle={onglet.nom} onAppareil={setAppareilVu}
+              zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile} rendu={rendu}
+              entete={<p className="text-sm font-semibold">{onglet.nom}</p>} />
+          )}
+        </div>
+      </div>
+      {mesRecettes}
+    </div>
+  );
+
+  return (
+    <div className="grid gap-5">
+      {/* ---- Simuler un client (mêmes contrôles que le parcours /creer) ---- */}
+      <SimulateurClient scenario={scenario} onChange={changerScenario} cabinet={cabinet} onCabinet={setCabinet} catalogue={catalogue} themesActives={themesActives} />
+
+      <section aria-label="Recette en cours" className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,400px)] lg:items-start">
+        {/* ---- Aperçu vivant, page par page ---- */}
+        <div className="grid min-w-0 gap-2">
+          {ongletsJsx}
+          {barreJsx}
+          <div role="tabpanel" id="st-page" aria-labelledby={`st-onglet-${onglet.id.replace(/[^a-z0-9-]/g, '-')}`} className="grid min-w-0 gap-3">
+            {apercu && (
+              <DoubleRendu key={`${onglet.id}|${scenario.principaux.join()}|${comp.structure}|${rejouer}`} libelle={onglet.nom} onAppareil={setAppareilVu} mobileDabord={etroit}
+                zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
+                rendu={rendu} />
+            )}
+            {blocPage}
+          </div>
+        </div>
+
+        {/* ---- Dés ---- */}
+        <div className="grid gap-3 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+          {desJsx}
+        </div>
+      </section>
+
+      {mesRecettes}
     </div>
   );
 }

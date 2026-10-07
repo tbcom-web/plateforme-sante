@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import {
   appareilDe, clesStructure, estCleStudio, estEtiquetteStudio, estPageStructure, ETIQUETTES_RECETTE, modeleIntegre, nomRecette, normaliserComposition, normaliserZones,
   photosAImporter, serialiserComposition, serialiserZones, sujetsActifs, typeDeCle, type AppareilRetour, type PageStructure, type ZonesNote,
+  normaliserScenario, serialiserRecetteAvecScenario, type ScenarioRecette, estStatutIllustration, etatsAnimations, type StatutIllustration,
 } from '@plateforme/core';
 import { getNotesPagesRecette } from '@/lib/recettes';
 import { importerPhotoLibre } from '../../photos/actions';
@@ -32,23 +33,29 @@ export type SaisieRecette = {
   negatif?: string;
   /** Appareil regardé pour la note de la recette (0034) */
   appareil?: AppareilRetour;
+  /** Scénario complet du client simulé (principaux ordonnés, secondaires, couleurs, soins), gardé dans la composition jsonb */
+  scenario?: ScenarioRecette | null;
 };
 export type ResultatRecette = { ok: boolean; message: string; id?: string; migrationManquante?: boolean };
 
 /** Enregistre (crée ou modifie) une recette ; une note donnée est aussi ajoutée au journal recettes_notes */
 export async function enregistrerRecette(s: SaisieRecette): Promise<ResultatRecette> {
   await exigerAdmin();
-  const sujets = [...new Set((s.sujets ?? []).filter((x) => typeof x === 'string' && /^[a-z-]{2,30}$/.test(x)))].slice(0, 6);
-  const couleurs = [...new Set((s.couleurs ?? []).filter((x) => typeof x === 'string' && /^[a-z-]{2,20}$/.test(x)))].slice(0, 3);
+  // Scénario du simulateur (principaux puis secondaires dans `sujets`) ; sans lui (propositions, anciens appels) : sujets reçus
+  const scenario = s.scenario ? normaliserScenario(s.scenario) : null;
+  const brutsSujets = scenario ? [...scenario.principaux, ...scenario.secondaires] : [...(s.sujets ?? []), ...(s.secondaires ?? [])];
+  const sujets = [...new Set(brutsSujets.filter((x) => typeof x === 'string' && /^[a-z-]{2,30}$/.test(x)))].slice(0, 6);
+  const couleurs = scenario ? scenario.couleurs : [...new Set((s.couleurs ?? []).filter((x) => typeof x === 'string' && /^[a-z-]{2,20}$/.test(x)))].slice(0, 3);
   const modeles = await getModelesDisponibles();
   const modele = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);
-  const composition = normaliserComposition(s.composition, { sujets, principaux: Math.min(3, sujets.length), couleursPreferees: couleurs, modele });
+  const principaux = scenario ? scenario.principaux.length : Math.min(3, (s.sujets ?? []).length || sujets.length);
+  const composition = normaliserComposition(s.composition, { sujets, principaux, couleursPreferees: couleurs, modele });
   if (!composition) return { ok: false, message: 'Composition illisible.' };
   if (!sujetsActifs(sujets).length && sujets.length) return { ok: false, message: 'Sujets inconnus ou différés.' };
   const note = Number.isInteger(s.note) && (s.note as number) >= 1 && (s.note as number) <= 5 ? (s.note as number) : null;
   const etiquettes = [...new Set((s.etiquettes ?? []).filter((e) => (ETIQUETTES_RECETTE as readonly string[]).includes(e)))];
   const ligne = {
-    nom: texte(s.nom, 120) ?? nomRecette(composition, sujets), sujets, couleurs_preferees: couleurs, composition: JSON.parse(serialiserComposition(composition)),
+    nom: texte(s.nom, 120) ?? nomRecette(composition, sujets), sujets, couleurs_preferees: couleurs, composition: serialiserRecetteAvecScenario(composition, scenario),
     note, etiquettes, positif: texte(s.positif), negatif: texte(s.negatif),
   };
   const user = await getUser();
@@ -153,6 +160,18 @@ export async function noterPageRecette(s: SaisieNotePage): Promise<ResultatRecet
   if (error) ({ error } = await supabase.from('assets_notes').insert(base));
   if (error) return { ok: false, message: MIGRATION, migrationManquante: true };
   return { ok: true, message: `Structure de la page notée ${s.note}★ (enregistrez la recette pour noter ses pages dans la recette).` };
+}
+
+/**
+ * Animations dont les ingrédients ne sont pas encore tous validés (statuts de la bibliothèque, illustrations_statuts) : elles jouent
+ * dans le Studio avec un badge « en attente de validation ». Sans la migration 0021 : statuts par défaut des assets.
+ */
+export async function lireAnimationsEnAttente(): Promise<string[]> {
+  await exigerAdmin();
+  const supabase = await createClient();
+  const { data } = await supabase.from('illustrations_statuts').select('cle, statut');
+  const statuts = Object.fromEntries(((data ?? []) as { cle: string; statut: string }[]).filter((l) => estStatutIllustration(l.statut)).map((l) => [l.cle, l.statut as StatutIllustration]));
+  return etatsAnimations(statuts).filter((e) => e.enAttente).map((e) => e.animation);
 }
 
 /** Notes déjà données aux pages d'une recette (onglets du studio) */

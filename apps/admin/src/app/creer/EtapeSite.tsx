@@ -159,8 +159,9 @@ export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImporte
   const [nbLots, setNbLots] = useState(1);
   const lots = useMemo(() => lotsPropositions(entree, nbLots, { poids }), [entree, nbLots, poids]);
   const disponibles = new Set(proposes.map((u) => u.id));
-  // Recettes du studio (bien notées, du sujet n° 1) d'abord, puis les propositions du générateur
-  const duStudio = useMemo(() => recettesPourScenario(recettes, [...d.priorites.principaux, ...d.priorites.secondaires], 4, new Set(defautsMobile)).slice(0, 6).map(propositionDeRecette), [recettes, d.priorites, defautsMobile]);
+  // Recettes du studio (bien notées) d'abord : celles d'un scénario identique ou proche de ce client (mêmes sujets ordonnés,
+  // couleurs identiques ou voisines : simulateur.ts, proximiteScenarios), puis du sujet n° 1, puis génériques ; puis le générateur
+  const duStudio = useMemo(() => recettesPourScenario(recettes, { principaux: d.priorites.principaux, secondaires: d.priorites.secondaires, couleurs: d.couleursPreferees ?? [], soins: d.soins }, 4, new Set(defautsMobile)).slice(0, 6).map(propositionDeRecette), [recettes, d.priorites, d.couleursPreferees, d.soins, defautsMobile]);
   const liste: Proposition[] = [...duStudio, ...lots.flat()].filter((p) => disponibles.has(p.univers));
   const epuise = lots.length < nbLots;
   const manifeste = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);

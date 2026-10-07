@@ -91,6 +91,8 @@ export type SiteConfig = {
     /** Recette du studio : sujet dont le héros illustre le premier écran (sinon le sujet n° 1) et jeu d'effets (effets.ts) */
     herosSujet?: string;
     effets?: string;
+    /** Traitement uniforme des photos d'une recette (traitements-photos.ts) ; absent = traitement du modèle */
+    traitementPhotos?: { id: string; grain?: boolean };
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };

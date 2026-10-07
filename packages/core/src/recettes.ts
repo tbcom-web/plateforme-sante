@@ -33,6 +33,8 @@ import type { HashtagsAssets } from './hashtags';
 import { clesAtelier, type PoidsAtelier } from './atelier-poids';
 import { FACTEUR_DEFAUT_MOBILE, appareilDe, poidsAppareil, type AppareilRetour } from './rendu-mobile';
 import type { Animation } from './packs';
+import { cleTraitementPhotos, libelleTraitementPhotos, lireCleTraitementPhotos, normaliserTraitementPhotos, traitementNeutre, TRAITEMENTS_PHOTOS, TRAITEMENT_PHOTOS_DEFAUT, type TraitementPhotos } from './traitements-photos';
+import { niveauProximite, normaliserScenario, proximiteScenarios, RANG_PROXIMITE, scenarioDeRecette, type ScenarioRecette } from './simulateur';
 import type { SiteDraft } from './draft';
 import type { Univers } from './catalogue-univers';
 
@@ -48,6 +50,7 @@ export const DIMENSIONS_RECETTE = [
   { id: 'photos', nom: 'Photos', touche: 'f' },
   { id: 'structure', nom: 'Structure', touche: 's' },
   { id: 'effets', nom: 'Effets', touche: 'e' },
+  { id: 'traitement', nom: 'Traitement des photos', touche: 't' },
 ] as const;
 export type DimensionRecette = (typeof DIMENSIONS_RECETTE)[number]['id'];
 export const estDimensionRecette = (x: unknown): x is DimensionRecette => DIMENSIONS_RECETTE.some((d) => d.id === x);
@@ -162,6 +165,8 @@ export type CompositionRecette = {
   photos: string[];
   sections: { ordre: OrdreAccueil; variantes: Partial<Variantes> };
   effets: IdJeuEffets;
+  /** Traitement uniforme de toutes les photos du site (traitements-photos.ts) ; absent des anciennes recettes = modèle */
+  traitement: TraitementPhotos;
 };
 
 /** Scénario et données du studio (tirages) */
@@ -177,6 +182,11 @@ export type ContexteRecette = {
   photos?: readonly PhotoBanque[];
   /** Studio seulement : les photos gardées non importées (aperçus Pexels / Pixabay) peuvent être tirées */
   nonImportees?: boolean;
+  /**
+   * Simulateur du studio (« on RESTE dans ce thème ») : les photos viennent SEULEMENT des sujets du scénario (sujets effectifs et
+   * hashtags qui nomment un sujet), jamais des photos « générales ».
+   */
+  sujetsSeulement?: boolean;
   /** Fiches des modèles (importées par l'admin), sinon intégrées */
   modele?: (id: string) => ModeleManifeste;
   /**
@@ -361,7 +371,7 @@ export function photosCompatibles(pool: readonly PhotoBanque[], c: ContexteRecet
   return pool
     // Photos non importées : studio seulement (case « photos gardées non importées »)
     .filter((p) => p.importee !== false || c.nonImportees === true)
-    .filter((p) => !p.sujets.includes('posture') && !/posture/.test(p.url) && p.sujets.some((s) => s === 'general' || sujets.includes(s)))
+    .filter((p) => !p.sujets.includes('posture') && !/posture/.test(p.url) && p.sujets.some((s) => (s === 'general' && !c.sujetsSeulement) || sujets.includes(s)))
     .filter((p) => { const k = cle(p); return !k || !(a?.statuts[k] === 'retire' || retireDesSujets(k, sujets.length ? sujets : ['general'], a)); })
     .map((p) => { const k = cle(p); return { p, masse: masse(k ? scoreAssetPourSujet(k, sujets[0], a) : 0) * (sujets[0] && p.sujets.includes(sujets[0]) ? 2 : 1) }; });
 }
@@ -432,6 +442,24 @@ const animationDe = (c: ContexteRecette, s: Structure, style: StyleIllustration)
   animationPour({ priorites: { principaux: sujetsActifs(c.sujets), secondaires: [] } }, s, style);
 
 /**
+ * Animations d'accueil permises (dé « Animation d'accueil » du studio) : structure Technique en relevé seulement ; celle du sujet n° 1,
+ * celles des sujets principaux et leurs voisines (REGLES_THEMES), le podoscope ; jamais la trajectoire (posture).
+ */
+export function animationsPermises(c: ContexteRecette, s: Structure, style: StyleIllustration): Animation[] {
+  if (s !== 'technique-precis' || style !== 'releve') return [];
+  const ids = sujetsActifs(c.sujets).slice(0, c.principaux ?? 3);
+  const l = [animationDe(c, s, style), ...ids.flatMap((id) => [REGLES_THEMES[id]?.animation ?? null, ...(REGLES_THEMES[id]?.animationsVoisines ?? [])]), 'podoscope' as Animation];
+  return [...new Set(l.filter((a): a is Animation => Boolean(a)))].filter((a) => a !== 'trajectoire');
+}
+
+/** Dé de l'animation d'accueil : une autre animation permise (pondérée par les notes de sa clé), déterministe ; sinon inchangé */
+export function tirerAnimation(x: CompositionRecette, c: ContexteRecette, graine: number): CompositionRecette {
+  const l = animationsPermises(c, x.structure, x.visuels.style);
+  if (l.length < 2) return x;
+  const a = choisir(l.map((v) => ({ v, p: masse(effetAsset(c, `animation:${v}`)) })), alea(graine, 'animation'), (v) => v === x.visuels.animation) ?? x.visuels.animation;
+  return { ...x, visuels: { ...x.visuels, animation: a } };
+}
+/**
  * Styles d'illustration du sélecteur du studio (retour de Paul du 2026-10-07 : « la possibilité de changer le style des
  * illustrations ») : un style vaut pour tout le site (héros, illustrations des soins, pages sujet, fiches, articles).
  */
@@ -493,6 +521,12 @@ function tirerEffets(x: CompositionRecette, c: ContexteRecette, r: () => number)
   return choisir(JEUX_EFFETS.map((j) => ({ v: j.id, p: masse(effetAtelier(c, `effets=${j.id}`)) })), r, (v) => v === x.effets) ?? x.effets;
 }
 
+/** Traitement des photos : un des jeux (pondéré par les notes de sa clé), grain une fois sur quatre environ */
+function tirerTraitement(x: CompositionRecette, c: ContexteRecette, r: () => number): TraitementPhotos {
+  const options = TRAITEMENTS_PHOTOS.map((t) => ({ v: t.id, p: masse(effetAsset(c, cleTraitementPhotos({ id: t.id, grain: false }))) }));
+  const id = choisir(options, r, (v) => v === x.traitement.id) ?? x.traitement.id;
+  return { id, grain: r() < 0.25 };
+}
 /**
  * Remet une composition dans les garde-fous (après un tirage ou à la relecture) : structure permise, style permis et animation
  * qui en découle, gamme non exclue (sinon la première gamme conseillée du sujet), couleur libre valide, variantes du gabarit,
@@ -525,10 +559,12 @@ export function reparerComposition(x: CompositionRecette, c: ContexteRecette): C
     gamme,
     couleur,
     police: pairePolices(x.police) ? x.police : 'grotesque',
-    visuels: { style, herosSujet, animation: animationDe(c, structure, style) },
+    // Animation d'accueil : celle choisie (dé du studio) si elle reste permise, sinon celle du sujet
+    visuels: { style, herosSujet, animation: x.visuels.animation && animationsPermises(c, structure, style).includes(x.visuels.animation) ? x.visuels.animation : animationDe(c, structure, style) },
     photos: style === 'photos' ? x.photos.slice(0, 8) : [],
     sections: { ordre: ordreAccueil(x.sections.ordre) ? x.sections.ordre : 'modele', variantes },
     effets: jeuEffets(x.effets) ? x.effets : 'sobre',
+    traitement: normaliserTraitementPhotos(x.traitement),
   };
 }
 
@@ -547,7 +583,7 @@ export function compositionInitiale(c: ContexteRecette, graine = 0): Composition
     structure, gamme: r1.gammes[0], couleur: gammeParId(r1.gammes[0])?.accent ?? '#2d5bff',
     police: (PAIRES_POLICES.find((p) => p.titres === m.jetons.policeTitres && p.texte === m.jetons.policeTexte)?.id ?? 'grotesque'),
     visuels: { style: stylesPermis(c, structure)[0], herosSujet: herosPossibles(c)[0] ?? null, animation: null },
-    photos: [], sections: { ordre: 'modele', variantes: variantesDeDepart(m) }, effets: 'sobre',
+    photos: [], sections: { ordre: 'modele', variantes: variantesDeDepart(m) }, effets: 'sobre', traitement: { ...TRAITEMENT_PHOTOS_DEFAUT },
   };
   const x = reparerComposition(base, c);
   return x.visuels.style === 'photos' ? { ...x, photos: tirerPhotos(c, alea(graine, 'photos')) } : x;
@@ -567,6 +603,7 @@ export function tirerDimension(x: CompositionRecette, dim: DimensionRecette, c: 
     case 'photos': y = { ...x, photos: tirerPhotos(c, r, 5, x.photos) }; break;
     case 'structure': y = { ...x, ...tirerStructure(x, c, r) }; break;
     case 'effets': y = { ...x, effets: tirerEffets(x, c, r) }; break;
+    case 'traitement': y = { ...x, traitement: tirerTraitement(x, c, r) }; break;
   }
   y = reparerComposition(y, c);
   // Passage au style « photos » : la recette reçoit aussitôt ses photos
@@ -599,7 +636,7 @@ export function clesStructure(x: CompositionRecette): string[] {
     return parts.length ? `structure:${p.id}:${parts.join('-')}` : '';
   }).filter(Boolean);
   const composants = Object.entries(v).filter(([s]) => FAMILLES_COMPOSANTS.includes(s as keyof Variantes)).map(([s, k]) => `composant:${s}:${k}`);
-  return [...pages, ...composants, `effets:${x.effets}`];
+  return [...pages, ...composants, `effets:${x.effets}`, cleTraitementPhotos(x.traitement ?? TRAITEMENT_PHOTOS_DEFAUT)];
 }
 
 /** Valeurs d'une clé de structure de page, dans l'ordre de clesStructure (ordre de l'accueil, puis variantes) ; null si inconnue */
@@ -627,6 +664,8 @@ export function lireCleStructure(cle: string): { page: PageStructure; ordre: Ord
  */
 export function compositionPourCle(x: CompositionRecette, cle: string): CompositionRecette {
   const [type, a, b] = cle.split(':');
+  const tp = lireCleTraitementPhotos(cle);
+  if (tp) return { ...x, traitement: tp };
   if (type === 'effets' && jeuEffets(a)) return { ...x, effets: a as IdJeuEffets };
   if (type === 'composant' && (VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) {
     return { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, [a]: b } } };
@@ -665,7 +704,7 @@ export function blocsPourCle(cle: string): string[] | undefined {
 export function toutChanger(x: CompositionRecette, verrous: readonly string[], c: ContexteRecette, graine: number): CompositionRecette {
   let y = x;
   const sousVerrous = verrous.filter((v) => v.startsWith('page:') || v.startsWith('composant:'));
-  for (const d of ['structure', 'couleurs', 'polices', 'visuels', 'photos', 'effets'] as const) {
+  for (const d of ['structure', 'couleurs', 'polices', 'visuels', 'photos', 'effets', 'traitement'] as const) {
     if (verrous.includes(d)) continue;
     y = d === 'structure' && sousVerrous.length
       ? reparerComposition({ ...y, ...tirerStructure(y, c, alea(hache(`${graine}|${d}`), d), true, sousVerrous) }, c)
@@ -725,6 +764,7 @@ export function libellesComposition(x: CompositionRecette): { dimension: string;
     { dimension: 'Photos', valeur: x.photos.length ? x.photos.map((u) => `${u.split('/').pop()?.split('?')[0]}${estPhotoHebergee(u) ? '' : ' (non importée)'}`).join(', ') : 'aucune' },
     { dimension: 'Sections', valeur: [ordreAccueil(x.sections.ordre)?.nom, ...v].filter(Boolean).join(' · ') },
     { dimension: 'Effets', valeur: jeuEffets(x.effets)?.nom ?? x.effets },
+    { dimension: 'Traitement des photos', valeur: libelleTraitementPhotos(x.traitement ?? TRAITEMENT_PHOTOS_DEFAUT) },
   ];
 }
 
@@ -748,6 +788,8 @@ export function normaliserComposition(brut: unknown, c: ContexteRecette): Compos
     photos: Array.isArray(o.photos) ? [...new Set(o.photos.filter((u: unknown): u is string => typeof u === 'string' && (Boolean(clePhoto(u)) || estApercuPhotoLibre(u))))].slice(0, 8) : [],
     sections: { ordre: ordreAccueil(o.sections?.ordre) ? o.sections.ordre : 'modele', variantes: o.sections?.variantes && typeof o.sections.variantes === 'object' ? { ...o.sections.variantes } : {} },
     effets: jeuEffets(o.effets) ? o.effets : 'sobre',
+    // Anciennes recettes (sans traitement) : traitement du modèle
+    traitement: normaliserTraitementPhotos(o.traitement),
   };
   if (!x.gamme && !/^#[0-9a-f]{6}$/i.test(txt(o.couleur))) return null;
   return reparerComposition(x, c);
@@ -756,9 +798,17 @@ export function normaliserComposition(brut: unknown, c: ContexteRecette): Compos
 /** Forme stockée (table recettes.composition) : clés dans un ordre stable, variantes triées */
 export function serialiserComposition(x: CompositionRecette): string {
   const variantes = Object.fromEntries(Object.entries(x.sections.variantes).sort(([a], [b]) => (a < b ? -1 : 1)));
-  return JSON.stringify({ structure: x.structure, gamme: x.gamme, couleur: x.couleur, police: x.police, visuels: x.visuels, photos: x.photos, sections: { ordre: x.sections.ordre, variantes }, effets: x.effets });
+  return JSON.stringify({ structure: x.structure, gamme: x.gamme, couleur: x.couleur, police: x.police, visuels: x.visuels, photos: x.photos, sections: { ordre: x.sections.ordre, variantes }, effets: x.effets, traitement: normaliserTraitementPhotos(x.traitement) });
 }
 
+/**
+ * Forme stockée AVEC le scénario du client simulé (clé `scenario` de la composition jsonb : aucune migration) ; relue par
+ * recetteDepuisLigne (normaliserComposition ignore la clé).
+ */
+export function serialiserRecetteAvecScenario(x: CompositionRecette, s: ScenarioRecette | null | undefined): Record<string, unknown> {
+  const o = JSON.parse(serialiserComposition(x)) as Record<string, unknown>;
+  return s ? { ...o, scenario: normaliserScenario(s) } : o;
+}
 export const ETIQUETTES_RECETTE = ['waouh', 'pro', 'harmonieux', 'lisible', 'bien-dans-le-sujet', 'fade', 'trop-charge', 'couleurs-jurent', 'pas-pro', 'illisible-mobile'] as const;
 export const STATUTS_RECETTE = ['active', 'archivee'] as const;
 
@@ -768,6 +818,8 @@ export type Recette = {
   nom: string;
   sujets: string[];
   couleursPreferees: string[];
+  /** Scénario du client simulé (studio, simulateur.ts) ; anciennes recettes : déduit des sujets et couleurs (scenarioDeRecette) */
+  scenario?: ScenarioRecette;
   composition: CompositionRecette;
   note: number | null;
   etiquettes: string[];
@@ -784,8 +836,11 @@ export function recetteDepuisLigne(l: Record<string, any>, modele?: (id: string)
   const couleurs = Array.isArray(l.couleurs_preferees) ? l.couleurs_preferees.filter((x: unknown): x is string => typeof x === 'string').slice(0, 3) : [];
   const composition = normaliserComposition(l.composition, { sujets, couleursPreferees: couleurs, modele });
   if (!composition || typeof l.id !== 'string') return null;
+  // Scénario enregistré avec la recette (composition.scenario), sinon déduit des sujets et des couleurs (rétrocompatible)
+  const brut = l.composition && typeof l.composition === 'object' ? (l.composition as Record<string, unknown>).scenario : undefined;
+  const scenario = brut && typeof brut === 'object' ? normaliserScenario(brut) : scenarioDeRecette({ sujets, couleursPreferees: couleurs });
   return {
-    id: l.id, nom: String(l.nom ?? '').slice(0, 120) || nomRecette(composition, sujets), sujets, couleursPreferees: couleurs, composition,
+    id: l.id, nom: String(l.nom ?? '').slice(0, 120) || nomRecette(composition, sujets), sujets, couleursPreferees: couleurs, scenario, composition,
     note: Number.isInteger(l.note) && l.note >= 1 && l.note <= 5 ? l.note : null,
     etiquettes: Array.isArray(l.etiquettes) ? l.etiquettes.filter((x: unknown): x is string => typeof x === 'string').slice(0, 12) : [],
     ...(l.positif !== undefined ? { positif: l.positif ?? null } : {}), ...(l.negatif !== undefined ? { negatif: l.negatif ?? null } : {}),
@@ -794,16 +849,23 @@ export function recetteDepuisLigne(l: Record<string, any>, modele?: (id: string)
 }
 
 /**
- * Recettes du parcours pour un scénario : actives, notées ≥ 4, qui visent le sujet n° 1 (ou sans sujet), meilleures d'abord.
+ * Recettes du parcours pour un client : actives, notées ≥ 4, qui visent son sujet n° 1 (ou sans sujet : génériques).
+ * Ordre (simulateur.ts, niveauProximite / proximiteScenarios) : d'abord les recettes d'un scénario IDENTIQUE, puis PROCHE (même
+ * sujet n° 1, proximité ≥ 0,6 : couleurs identiques ou voisines, sujets qui se recouvrent), puis celles qui visent le sujet n° 1,
+ * puis les génériques ; à niveau égal, la meilleure note, puis la plus grande proximité.
+ * `client` : scénario du client (ou, forme historique, la liste de ses sujets : 3 premiers principaux, sans couleur).
  * `defautsMobile` (praticiens) : une recette dont une page ou un élément a un défaut d'adaptation mobile ouvert passe après les
  * autres (sa note de choix n'est pas touchée), jusqu'à la correction.
  */
-export function recettesPourScenario(recettes: readonly Recette[], sujets: readonly string[], min = 4, defautsMobile?: ReadonlySet<string>): Recette[] {
-  const s1 = sujetsActifs(sujets)[0] ?? null;
+export function recettesPourScenario(recettes: readonly Recette[], client: readonly string[] | ScenarioRecette, min = 4, defautsMobile?: ReadonlySet<string>): Recette[] {
+  const sc: ScenarioRecette = Array.isArray(client) ? normaliserScenario({ sujets: sujetsActifs(client as readonly string[]) }) : normaliserScenario(client);
+  const s1 = sujetsActifs([...sc.principaux, ...sc.secondaires])[0] ?? null;
   const mobileARevoir = (r: Recette) => (defautsMobile?.size ? clesStructure(r.composition).some((k) => defautsMobile.has(k)) : false);
+  const cle = new Map(recettes.map((r) => { const s = scenarioDeRecette(r); return [r.id, { rang: RANG_PROXIMITE[niveauProximite(sc, s)], prox: proximiteScenarios(sc, s) }]; }));
   return recettes
-    .filter((r) => r.statut === 'active' && (r.note ?? 0) >= min && (s1 ? r.sujets.includes(s1) : !sujetsActifs(r.sujets).length))
-    .sort((a, b) => Number(mobileARevoir(a)) - Number(mobileARevoir(b)) || (b.note ?? 0) - (a.note ?? 0) || (sujetsActifs(a.sujets)[0] === s1 ? -1 : 1) || (a.id < b.id ? -1 : 1));
+    .filter((r) => r.statut === 'active' && (r.note ?? 0) >= min && ((s1 && r.sujets.includes(s1)) || !sujetsActifs(r.sujets).length))
+    .sort((a, b) => Number(mobileARevoir(a)) - Number(mobileARevoir(b)) || cle.get(a.id)!.rang - cle.get(b.id)!.rang || (b.note ?? 0) - (a.note ?? 0)
+      || cle.get(b.id)!.prox - cle.get(a.id)!.prox || (a.id < b.id ? -1 : 1));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -838,6 +900,8 @@ export function appliquerRecette(
   const photos = opts.photosNonImportees ? x.photos : photosImportees(x.photos);
   if (photos.length) theme.photosRecette = [...photos]; else delete theme.photosRecette;
   theme.effets = x.effets;
+  const tp = normaliserTraitementPhotos(x.traitement);
+  if (traitementNeutre(tp)) delete theme.traitementPhotos; else theme.traitementPhotos = tp;
   if (opts.id) theme.recette = opts.id; else delete theme.recette;
   y = { ...y, theme };
   return { draft: y, modele: modeleDuSite(base, theme) };
@@ -996,6 +1060,7 @@ export function libelleCleRenfort(k: string): string {
   if (k.startsWith('police=')) return `police ${pairePolices(k.slice(7))?.nom ?? k.slice(7)}`;
   if (k.startsWith('effets=')) return `effets ${jeuEffets(k.slice(7))?.nom ?? k.slice(7)}`;
   if (k.startsWith('ordre=')) return `ordre « ${ordreAccueil(k.slice(6))?.nom ?? k.slice(6)} »`;
+  if (lireCleTraitementPhotos(k)) return `photos « ${libelleTraitementPhotos(lireCleTraitementPhotos(k)!)} »`;
   if (k.startsWith('effets:')) return `effets ${jeuEffets(k.slice(7))?.nom ?? k.slice(7)}`;
   if (k.startsWith('composant:')) { const [, f, v] = k.split(':'); return `${(NOMS_SECTIONS_VARIABLES[f] ?? f).toLowerCase()} « ${LIBELLES_VARIANTES[f]?.[v] ?? v} »`; }
   if (k.startsWith('structure:')) return `structure ${PAGES_STRUCTURE.find((p) => p.id === k.split(':')[1])?.nom ?? k.split(':')[1]}`;
@@ -1073,7 +1138,7 @@ export const estEtiquetteStudio = (x: unknown): x is string => ETIQUETTES_STUDIO
 export function estCleStudio(k: unknown): k is string {
   if (typeof k !== 'string' || k.length > 200) return false;
   const [type, a, b] = k.split(':');
-  if (type === 'effets') return Boolean(jeuEffets(a)) && b === undefined;
+  if (type === 'effets') return (Boolean(jeuEffets(a)) && b === undefined) || Boolean(lireCleTraitementPhotos(k));
   if (type === 'composant') return Boolean((VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) && k.split(':').length === 3;
   if (type === 'structure') {
     const p = PAGES_STRUCTURE.find((x) => x.id === a);

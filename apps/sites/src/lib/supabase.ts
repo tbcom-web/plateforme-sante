@@ -331,7 +331,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       tarifs: [],
     },
     rdv: { url: rdvCabinet, plateforme: d.rdv.outil },
-    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}), ...(d.theme.herosSujet ? { herosSujet: d.theme.herosSujet } : {}), ...(d.theme.effets ? { effets: d.theme.effets } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
+    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}), ...(d.theme.herosSujet ? { herosSujet: d.theme.herosSujet } : {}), ...(d.theme.effets ? { effets: d.theme.effets } : {}), ...(d.theme.traitementPhotos ? { traitementPhotos: d.theme.traitementPhotos } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
       texte: `${enPhrase(titreMetier, lieuExercice)} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,

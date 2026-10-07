@@ -21,7 +21,9 @@ import '@fontsource-variable/bodoni-moda/wght-italic.css';
 import '@fontsource-variable/newsreader/wght.css';
 import '@fontsource-variable/newsreader/wght-italic.css';
 import '@plateforme/core/dessins.css';
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useContext, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { couleursTraitement, cssTraitementPhotos, normaliserTraitementPhotos, refFiltre, svgTraitementPhotos, traitementNeutre, voileTraitement } from '@plateforme/core';
+import { ContexteAnimations, cssAnimationsApercu, htmlAnimationApercu, useAnimationsCanvas } from './AnimationsApercu';
 import {
   completerJeuVisuel, construireNavigation, cssEffets, cssSurvolSimule, cssFormes, formeDesCartes, jeuEffets, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
@@ -54,6 +56,11 @@ type Props = {
   vueInitiale?: VuePage;
   /** Studio (onglets des pages) et rendus doubles : page et appareil imposés, barre de commandes masquée */
   sansCommandes?: boolean;
+  /** Hauteur affichée du cadre (Studio grand écran) */
+  hauteurCadre?: number;
+  /** Studio : animations JOUÉES (sinon image figée) ; animationsEnAttente : badge « en attente de validation » */
+  animer?: boolean;
+  animationsEnAttente?: readonly string[];
 };
 type Vue = VuePage;
 export type Appareil = 'bureau' | 'mobile';
@@ -78,7 +85,8 @@ function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 
     // eslint-disable-next-line @next/next/no-img-element
     return <div style={cadre}><img src={rendu.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: rendu.cadrage, filter: filtre }} /></div>;
   }
-  const svg = rendu.type === 'animation' ? svgAnimationFixe(rendu.animation, { registre }) : svgDessin(rendu.dessin, { registre });
+  const anim = useContext(ContexteAnimations);
+  const svg = rendu.type === 'animation' ? htmlAnimationApercu(rendu.animation, registre, anim) : svgDessin(rendu.dessin, { registre });
   // Registre pédagogique : schéma calme sur fond doux, jamais de plan sombre ni d'indication « animé »
   if (registre === 'pedagogique') {
     return <div style={{ ...cadre, display: 'grid', placeItems: 'center', background: 'var(--doux)' }}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svg }} /></div>;
@@ -102,7 +110,11 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
   pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
 };
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false }: Props) {
+export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [] }: Props) {
+  // Animations jouées (Studio) : contexte lu par les visuels, canvas pilotés dans l'iframe de l'aperçu
+  const reglageAnim = useMemo(() => ({ jouer: animer, enAttente: animationsEnAttente }), [animer, animationsEnAttente]);
+  const racineAp = useRef<HTMLDivElement>(null);
+  useAnimationsCanvas(racineAp, animer, `${vueInitiale}|${appareilInitial}|${d.theme.animationAccueil ?? ''}|${d.theme.styleIllustration ?? ''}|${m.id}|${d.theme.modeVisuel ?? ''}`);
   const [vue, setVue] = useState<Vue>(vueInitiale);
   const [appareilChoisi, setAppareil] = useState<Appareil>(appareilInitial);
   // Commandes masquées : la page et l'appareil suivent les propriétés (onglets du studio, rendus doubles)
@@ -113,7 +125,14 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   // Registre des illustrations du modèle : relevé (trame, lectures, plan sombre) ou pédagogique (schémas au trait, fonds clairs)
   const registre = registreModele(m);
   const pedago = registre === 'pedagogique';
-  const filtre = FILTRES[j.images] ?? 'none';
+  // Traitement uniforme des photos d'une recette (traitements-photos.ts) : même matrice SVG que le site, filtre propre à l'aperçu
+  const idFiltre = `tp-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const traitementPh = d.theme.traitementPhotos ? normaliserTraitementPhotos(d.theme.traitementPhotos) : null;
+  const avecTraitement = !traitementNeutre(traitementPh);
+  const couleursTp = couleursTraitement(d.theme.gamme, d.theme.couleur);
+  // Adresse du document qui porte le filtre (iframe srcdoc de CadreApercu : « url(#id) » seul y viserait la page parente)
+  const [docFiltre, setDocFiltre] = useState<string | undefined>(undefined);
+  const filtre = avecTraitement ? refFiltre(idFiltre, docFiltre) : FILTRES[j.images] ?? 'none';
   const mode = d.theme.modeVisuel;
   const jeu = useMemo(() => {
     // Jeu de photos du site : un jeu partagé ne vaut que pour sa spécialité (un nouveau tirage suit l'enregistrement).
@@ -189,7 +208,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     const r = registreForce ?? registre;
     if (animer && r === 'releve' && d.theme.animation) {
       const a: Animation = d.theme.animationAccueil ?? (themeUn ? ANIMATION_SUJET[themeUn] : undefined) ?? 'podoscope';
-      return { type: 'svg', html: svgAnimationFixe(a, { registre: 'releve', id: `ap-anim-${a}` }), sombre: true };
+      return { type: 'svg', html: htmlAnimationApercu(a, 'releve', reglageAnim, `ap-anim-${a}`), sombre: true };
     }
     if (!themeUn || !themeIllustre(themeUn)) return null;
     const gammeHeros = j.teinte === 'gamme' && r === 'releve' ? null : d.theme.gamme || null;
@@ -226,7 +245,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       {renduPlein.type === 'photo'
         ? <div style={{ position: 'absolute', inset: 0 }}><Visuel registre={registre} rendu={renduPlein} filtre={filtre} hauteur="100%" /></div>
         : <div className="surface-plan" style={{ position: 'absolute', inset: 0 }}><div style={herosDiaporama ? (mobile ? { position: 'absolute', top: 84, left: '4%', right: '4%', height: 330 } : { position: 'absolute', inset: '96px 3% 48px 52%' }) : { position: 'absolute', inset: mobile ? '90px 0 260px 0' : '80px 0 0 44%' }}>{herosDiaporama ? <HerosVue h={herosDiaporama} /> : <Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur="100%" sombre />}</div></div>}
-      {renduPlein.type === 'photo' && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgb(0 0 0 / ${m.accueil.voile / 200}) 0%, rgb(0 0 0 / ${m.accueil.voile / 100}) 100%)` }} />}
+      {renduPlein.type === 'photo' && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgb(0 0 0 / ${(m.accueil.voile / 100 + voileTraitement(traitementPh, couleursTp)) / 2}) 0%, rgb(0 0 0 / ${Math.min(0.9, m.accueil.voile / 100 + voileTraitement(traitementPh, couleursTp))}) 100%)` }} />}
       {/* Héros du sujet n° 1 (Technique) : bloc au-dessus du titre sur téléphone, moitié droite sur ordinateur (comme le site) */}
       <div className="ap-cadre" style={{ position: 'relative', paddingBlock: mobile ? (herosDiaporama ? '430px 40px' : '120px 40px') : '160px 64px' }}>
         <p className="ap-sur" style={{ color: 'var(--blanc)' }}>{surTitre}</p>
@@ -510,8 +529,10 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       </div>}
       {/* Iframe de la largeur réelle de l'appareil (CadreApercu) : media queries, position fixe et défilement comme sur l'appareil */}
       <div className={vignette ? 'overflow-hidden bg-neutral-100' : 'bg-neutral-100'}>
-        <CadreApercu appareil={appareil} vignette={vignette} plein={plein} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>
+        <CadreApercu appareil={appareil} vignette={vignette} plein={plein} hauteur={hauteurCadre} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>
+          <ContexteAnimations.Provider value={reglageAnim}>
           <div
+            ref={racineAp}
             className="ap"
             data-motif={j.motif ?? 'plan'}
             data-titres={j.policeTitres}
@@ -519,9 +540,11 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             data-effets={jeuEffets(d.theme.effets)?.id}
             data-forme={formeDesCartes(m)}
             data-survol={survol || undefined}
+            data-photos={avecTraitement ? traitementPh!.id : undefined}
             style={{ ...style, minHeight: '100vh', paddingBottom: mobile ? MARGE_BARRE_MOBILE : undefined }}
           >
             <style>{CSS + SURFACES_CSS + CSS_PRESSION}</style>
+            {avecTraitement && <><span aria-hidden="true" ref={(el) => { const u = el?.ownerDocument?.URL; if (u && u !== docFiltre) setDocFiltre(u); }} dangerouslySetInnerHTML={{ __html: svgTraitementPhotos(traitementPh, couleursTp, idFiltre) }} /><style dangerouslySetInnerHTML={{ __html: cssTraitementPhotos(traitementPh, '.ap[data-photos]', { id: idFiltre, important: true, document: docFiltre }) }} /></>}
             {cssFormes(formeDesCartes(m)) && <style dangerouslySetInnerHTML={{ __html: cssFormes(formeDesCartes(m)) }} />}
             {jeuEffets(d.theme.effets) && <style dangerouslySetInnerHTML={{ __html: cssEffets(d.theme.effets).replace(/@view-transition\{[^}]*\}/g, '') + cssSurvolSimule(d.theme.effets) }} />}
             {gabaritModele(m) !== 'classique' ? (
@@ -563,7 +586,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             {pied}
             {mobile && <ActionsRapidesApercu a={actionsRapides({ gabarit: 'classique', rdvEnLigne: r.rdvEnLigne, aTelephone: r.aTelephone, aAdresse: r.aAdresse, email: d.cabinet.email, libelleContact: r.libelleContact, via: r.rdvEnLigne && !d.rdv.url && d.rdv.outil ? `via ${d.rdv.outil}` : '' })} />}
             </>)}
+            {animer && <style>{cssAnimationsApercu()}</style>}
           </div>
+          </ContexteAnimations.Provider>
         </CadreApercu>
       </div>
       {!vignette && (

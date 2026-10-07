@@ -22,6 +22,8 @@ type Props = {
   plein?: boolean;
   /** Montage seulement à l'écran (défaut : vignettes) */
   paresseux?: boolean;
+  /** Hauteur affichée imposée, défilement conservé (Studio grand écran : aperçus remplissant la hauteur de l'écran) */
+  hauteur?: number;
   /** Titre accessible de l'iframe */
   titre?: string;
   children: ReactNode;
@@ -97,7 +99,7 @@ function Iframe({ largeur, hauteurVue, echelle, defile, mobile, titre, children 
   );
 }
 
-export default function CadreApercu({ appareil, vignette, plein = false, paresseux = Boolean(vignette), titre = 'Aperçu du site', children }: Props) {
+export default function CadreApercu({ appareil, vignette, plein = false, paresseux = Boolean(vignette), hauteur: hauteurImposee, titre = 'Aperçu du site', children }: Props) {
   const boite = useRef<HTMLDivElement>(null);
   const [mesure, setMesure] = useState<{ largeur: number; hauteur: number } | null>(null);
   const [visible, setVisible] = useState(!paresseux);
@@ -110,7 +112,7 @@ export default function CadreApercu({ appareil, vignette, plein = false, paresse
       // Hauteur disponible : plein écran = du haut du cadre au bas de la fenêtre, moins le pied du dialogue et la note
       // (≈ 120 px) ; sinon 78 % de la fenêtre
       const haut = Math.max(0, el.getBoundingClientRect().top);
-      const hauteur = plein ? Math.max(360, Math.round(window.innerHeight - haut - 120)) : Math.round(window.innerHeight * 0.78);
+      const hauteur = hauteurImposee ? Math.round(hauteurImposee) : plein ? Math.max(360, Math.round(window.innerHeight - haut - 120)) : Math.round(window.innerHeight * 0.78);
       setMesure((m) => (m && m.largeur === largeur && m.hauteur === hauteur ? m : { largeur, hauteur }));
     };
     maj();
@@ -118,7 +120,7 @@ export default function CadreApercu({ appareil, vignette, plein = false, paresse
     ro.observe(el);
     window.addEventListener('resize', maj);
     return () => { ro.disconnect(); window.removeEventListener('resize', maj); };
-  }, [plein]);
+  }, [plein, hauteurImposee]);
 
   useEffect(() => {
     if (!paresseux) { setVisible(true); return; }
@@ -138,7 +140,7 @@ export default function CadreApercu({ appareil, vignette, plein = false, paresse
     largeurDispo: mesure.largeur - (bord ? 2 * bord.cote : 0),
     hauteurMax: vignette ? undefined : mesure.hauteur - (bord ? bord.haut + bord.bas : 0),
     vignette,
-    remplir: plein,
+    remplir: plein || Boolean(hauteurImposee),
   }) : null;
 
   const ecran = d && (

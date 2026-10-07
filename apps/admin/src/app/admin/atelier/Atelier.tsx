@@ -16,7 +16,7 @@ import {
 import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
 import RenduMobile from '@/components/RenduMobile';
-import { empreinteMobile, type AppareilRetour, type Zone } from '@plateforme/core';
+import { empreinteMobile, type AppareilRetour, type ScenarioRecette, type Zone } from '@plateforme/core';
 import { apercuProposition } from '@/lib/apercu-proposition';
 import type { SoinCatalogue } from '@/lib/sites';
 import { ajouterNoteAtelier } from './actions';
@@ -37,7 +37,8 @@ type Props = {
   photos?: PhotoBanque[];
 };
 
-export type Scenario = { principaux: string[]; secondaires: string[]; couleurs: string[] };
+/** Même format de scénario que le Studio et les recettes (simulateur.ts) : soins = [] → soins de base des sujets */
+export type Scenario = ScenarioRecette;
 
 const ACTIFS = THEMES.filter((t) => t.statut === 'actif').map((t) => t.id);
 
@@ -48,7 +49,7 @@ export function auHasard(): Scenario {
   const np = 1 + Math.floor(Math.random() * 3);
   const ns = Math.floor(Math.random() * 3);
   const nc = Math.floor(Math.random() * 4);
-  return { principaux: t.slice(0, np), secondaires: t.slice(np, np + ns), couleurs: melange(COULEURS_PREFEREES.map((c) => c.id)).slice(0, nc) };
+  return { principaux: t.slice(0, np), secondaires: t.slice(np, np + ns), couleurs: melange(COULEURS_PREFEREES.map((c) => c.id)).slice(0, nc), soins: [] };
 }
 
 /** Cabinet fictif de l'aperçu (seule l'apparence vient de la proposition) */
@@ -74,7 +75,7 @@ function useEtroit() {
 }
 
 export default function Atelier({ proposes, modeles, catalogue, marquesImportees, themesActives, poids, dejaNotees, migrationManquante, photos = [] }: Props) {
-  const [scenario, setScenario] = useState<Scenario>({ principaux: ['sport'], secondaires: [], couleurs: [] });
+  const [scenario, setScenario] = useState<Scenario>({ principaux: ['sport'], secondaires: [], couleurs: [], soins: [] });
   const [apprentissage, setApprentissage] = useState(true);
   const [nbLots, setNbLots] = useState(1);
   const [index, setIndex] = useState(0);

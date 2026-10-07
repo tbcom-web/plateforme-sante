@@ -33,7 +33,7 @@ export default async function PageStudio() {
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
           Lancez les dés dimension par dimension (verrouillez ce qui vous plaît) jusqu’à un site qui vous convient, puis enregistrez la recette.
           Les garde-fous restent toujours actifs : contrastes AA, diabète sans rouge vif, posture jamais, mots métier insécables, illustrations sans texte.
-          Clavier : c couleurs · p polices · v visuels · f photos · s structure · e effets · espace tout changer.
+          Clavier : c couleurs · p polices · v visuels · f photos · s structure · e effets · t traitement des photos · espace tout changer.
         </p>
       </div>
       {migrationManquante && (

@@ -61,6 +61,8 @@ export * from './pages-demo';
 export * from './cadre-apercu';
 export * from './styles-experimentaux';
 export * from './suivi-scenario';
+export * from './traitements-photos';
+export * from './simulateur';
 export * from './typo';
 export * from './details';
 export * from './menus';

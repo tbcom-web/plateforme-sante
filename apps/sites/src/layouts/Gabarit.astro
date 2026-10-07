@@ -1,7 +1,7 @@
 ---
 // Gabarit commun à toutes les pages d'un site praticien.
 // La présentation suit la fiche du modèle (site.modele) ; tout ce qui sert le SEO est produit ici, quel que soit le modèle.
-import { cssEffets, cssFormes, formeDesCartes, jeuEffets } from '@plateforme/core';
+import { cssEffets, cssFormes, formeDesCartes, jeuEffets, couleursTraitement, cssTraitementPhotos, normaliserTraitementPhotos, svgTraitementPhotos, traitementNeutre, voileTraitement } from '@plateforme/core';
 import '@fontsource-variable/inter';
 // Fraunces : axes graisse + taille optique (droit) et graisse + « wonk » (italique des mots en retrait), soit
 // 110 Ko au lieu de 270 Ko pour la version complète ; l'axe SOFT n'est pas chargé (mobile d'abord).
@@ -126,6 +126,11 @@ const policesRepli = [...new Set(piles.map(famille))]
   })
   .join('');
 const transparent = immersif && m.entete === 'transparent';
+// Traitement uniforme des photos d'une recette (packages/core/src/traitements-photos.ts) : une matrice SVG en ligne, réutilisée par
+// toutes les photos du contenu (CSS filter:url) ; absent = traitement du modèle (data-images)
+const traitementPhotosSite = site.theme.traitementPhotos ? normaliserTraitementPhotos(site.theme.traitementPhotos) : null;
+const couleursPhotosSite = couleursTraitement(site.theme.gamme, site.theme.couleur);
+const avecTraitementPhotos = !traitementNeutre(traitementPhotosSite);
 // Couches 4 et 5 de la charte : gamme (ou couleur libre du cabinet) et jetons du modèle. Les invariants
 // (couche 1) sont injectés une seule fois dans l’en-tête du document par feuilleCharte().
 const couleurs = [
@@ -137,7 +142,8 @@ const couleurs = [
   `--police-texte:${avecRepli(POLICES[m.jetons.policeTexte])}`,
   `--police-mono:${sansMono ? 'var(--police-texte)' : avecRepli(POLICE_MONO)}`,
   `--rayon-bouton:${{ pilule: '999px', arrondi: '12px', carre: '2px' }[m.jetons.boutons]}`,
-  `--voile:${m.accueil.voile / 100}`,
+  // Voile du premier écran, renforcé de l'éclaircissement maximal du traitement des photos (AA du titre posé sur la photo)
+  `--voile:${Math.min(0.9, Math.round((m.accueil.voile / 100 + voileTraitement(traitementPhotosSite, couleursPhotosSite)) * 100) / 100)}`,
   ...Object.entries(variablesGabarit(m, site.theme)).map(([k, v]) => `${k}:${v}`),
 ].join(';');
 const FICHIERS_POLICES = { inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito, geist: policeGeist, publicsans: policePublicSans, bodoni: policeBodoni, newsreader: policeNewsreader } as const;
@@ -204,7 +210,7 @@ const effets = jeuEffets(site.theme.effets)?.id ?? '';
 const forme = formeDesCartes(site.modele);
 ---
 <!doctype html>
-<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-photos={avecTraitementPhotos ? traitementPhotosSite!.id : undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -230,10 +236,11 @@ const forme = formeDesCartes(site.modele);
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>
+    {avecTraitementPhotos && <Fragment set:html={svgTraitementPhotos(traitementPhotosSite, couleursPhotosSite)} />}
     <script is:inline set:html={`document.fonts&&${JSON.stringify(policesAvantAffichage)}.forEach(function(p){document.fonts.load(p)})`} />
     <a class="evitement" href="#contenu">Aller au contenu</a>
 
