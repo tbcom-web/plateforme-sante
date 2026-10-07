@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  cleCandidatePhoto, clePhoto, estPhotoImportee, estPhotoIntegree, estSourcePhotoLibre, hashtagsDepuisLignes, jeuPhotosAutorise, normaliserDraft, photosDuJeu,
+  cheminStockagePhoto, cleCandidatePhoto, clePhoto, estPhotoImportee, LIBELLES_PROVENANCES, validerSourcePhoto, estPhotoIntegree, estSourcePhotoLibre, hashtagsDepuisLignes, jeuPhotosAutorise, normaliserDraft, photosDuJeu,
   surchargesDepuisLignes, validerJeuPhotos, type JeuPhotos,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -231,4 +231,30 @@ export async function importerPhotoLibre(id: string): Promise<Resultat> {
   revalidatePath('/admin/illustrations');
   revalidatePath('/admin/retours');
   return { ok: true, message: `Importée et validée : hébergée chez nous (${r.ligne.largeurs.join(', ')} px, sans métadonnées), proposée dans le choix des jeux.${complement}` };
+}
+
+/**
+ * Source d'une photo envoyée à la main dans la banque (migration 0031, table photos_sources) : provenance obligatoire
+ * (Adobe Stock + référence, photo personnelle + auteur, autre banque + nom, page, licence). Sert à l'envoi et pour compléter
+ * une photo « Source à renseigner ».
+ */
+export async function enregistrerSourcePhoto(urlOuChemin: string, entree: unknown): Promise<Resultat> {
+  await exigerAdmin();
+  const brut = String(urlOuChemin ?? '');
+  const chemin = brut.startsWith('banque/') ? brut : cheminStockagePhoto(brut);
+  if (!chemin || !chemin.startsWith('banque/') || chemin.startsWith('banque/libres/') || chemin.includes('..') || /\s/.test(chemin) || chemin.length > 307) return { ok: false, message: 'Photo inconnue (seules les photos envoyées dans la banque ont une source à renseigner ici).' };
+  const { source, erreurs } = validerSourcePhoto(entree);
+  if (!source) return { ok: false, message: erreurs.join(' ') };
+  const supabase = await createClient();
+  const user = await getUser();
+  const { error } = await supabase.from('photos_sources').upsert({
+    chemin, provenance: source.provenance, reference_licence: source.referenceLicence ?? null, auteur_nom: source.auteur ?? null, banque_nom: source.banque ?? null,
+    url_source: source.urlSource ?? null, licence: source.licence ?? null, licence_url: source.licenceUrl ?? null, auteur: user?.id ?? null, updated_at: new Date().toISOString(),
+  }, { onConflict: 'chemin' });
+  if (error) {
+    console.error('Sources des photos : enregistrement', error);
+    return { ok: false, message: /photos_sources|schema cache|does not exist/i.test(error.message) ? `Source non enregistrée. ${MIGRATION_0031}` : `Source non enregistrée : ${error.message}` };
+  }
+  revalidatePath('/admin/photos');
+  return { ok: true, message: `Source enregistrée : ${LIBELLES_PROVENANCES[source.provenance]}.` };
 }

@@ -4,20 +4,23 @@ import { createClient } from '@/lib/supabase/server';
 import { COLONNES_JEU } from '@/lib/jeux-photos';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getPhotosLibres } from '@/lib/photos-libres';
+import { getRecapSources } from '@/lib/sources-photos';
 import { getCatalogue } from '@/lib/sites';
 import EditeurJeu from './EditeurJeu';
 import PhotosLibresListe from './PhotosLibresListe';
+import SourcesLicences from './SourcesLicences';
 
 export const metadata = { title: 'Super admin · Jeux de photos' };
 
 export default async function JeuxPhotos() {
   const supabase = await createClient();
-  const [{ data, error }, { data: sites }, catalogue, libres, hashtags] = await Promise.all([
+  const [{ data, error }, { data: sites }, catalogue, libres, hashtags, recap] = await Promise.all([
     supabase.from('jeux_photos').select(COLONNES_JEU).order('created_at'),
     supabase.from('sites').select('id, config'),
     getCatalogue(),
     getPhotosLibres(),
     getHashtagsAssets(),
+    getRecapSources(),
   ]);
   // Photos libres de droits validées, proposées dans le choix des jeux partagés (les sujets de la spécialité d'abord)
   const libresDe = (spec: string) => {
@@ -77,8 +80,7 @@ export default async function JeuxPhotos() {
           Gardées depuis « Donner mon avis » → Photos à découvrir : rien n’est téléchargé, seul le lien est enregistré (aperçu servi par Pexels
           ou Pixabay, pour l’évaluation). « Valider et importer » télécharge alors la photo et l’héberge chez nous (WebP, sans métadonnées) : seule
           une photo importée est proposée dans le choix des jeux ci-dessus et utilisée par les sites. Chaque ligne garde sa preuve de licence.
-          Banque intégrée : photos Unsplash téléchargées et hébergées, crédits dans <code>apps/sites/public/photos/CREDITS.md</code> ;
-          Adobe Stock : licences sur la fiche du site. Le CSV réunit photos libres et licences Adobe Stock.
+          Les sources et licences de toutes les autres images sont plus bas (« Sources et licences »).
         </p>
         {libres.migrationManquante ? (
           <p className="text-sm text-amber-900">Migration 0028 à exécuter (<code>supabase/migrations/0028_inspirations_photos_libres.sql</code>).</p>
@@ -87,6 +89,19 @@ export default async function JeuxPhotos() {
         ) : (
           <PhotosLibresListe photos={libres.photos} hashtags={hashtags.hashtags} migrationHashtags={hashtags.migrationManquante} migration0031={libres.migration0031} />
         )}
+      </section>
+
+      <section aria-labelledby="sources-licences" className="grid gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="sources-licences" className="text-lg font-semibold">Sources et licences</h2>
+          <a href="/admin/photos/licences.csv" className="flex min-h-11 items-center rounded-xl border border-neutral-300 bg-white px-3 text-sm font-semibold hover:bg-neutral-50">Export CSV complet</a>
+        </div>
+        <p className="max-w-3xl text-sm text-neutral-600">
+          Toutes les images : banque intégrée (Unsplash, photographe et page d’origine), photos libres (Pexels, Pixabay), photos envoyées
+          dans la banque (provenance obligatoire à l’envoi), Adobe Stock (licence au nom du client) et photos fournies par les praticiens.
+          Une photo envoyée sans provenance apparaît « Source à renseigner » : complétez-la ici.
+        </p>
+        <SourcesLicences lignes={recap.lignes} migration0031={recap.migration0031} />
       </section>
 
       <section className="grid gap-2">

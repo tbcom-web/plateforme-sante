@@ -124,8 +124,8 @@ export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: l
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <ChoixPhoto label="Photo d’accueil" valeur={photos.accueil} onChange={(u) => maj({ accueil: u })} dossier={dossier} libres={libres} type="accueil" />
-            <ChoixPhoto label="Photo panoramique" valeur={photos.panorama} onChange={(u) => maj({ panorama: u })} dossier={dossier} libres={libres} type="panorama" />
+            <ChoixPhoto label="Photo d’accueil" valeur={photos.accueil} onChange={(u) => maj({ accueil: u })} dossier={dossier} libres={libres} type="accueil" exigeSource={source === 'banque'} />
+            <ChoixPhoto label="Photo panoramique" valeur={photos.panorama} onChange={(u) => maj({ panorama: u })} dossier={dossier} libres={libres} type="panorama" exigeSource={source === 'banque'} />
           </div>
 
           <fieldset className="grid gap-2">
@@ -136,7 +136,7 @@ export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: l
                   key={u || `nouvelle-${k}`}
                   label={`Photo ${k + 1}`}
                   valeur={u}
-                  dossier={dossier} libres={libres}
+                  dossier={dossier} libres={libres} exigeSource={source === 'banque'}
                   type="galerie"
                   onChange={(v) => maj({ galerie: v ? [...photos.galerie.slice(0, k), v, ...photos.galerie.slice(k + 1)] : photos.galerie.filter((_, j) => j !== k) })}
                 />
@@ -152,7 +152,7 @@ export default function EditeurJeu({ jeu, specialite, siteId, soins, licences: l
                   key={s.slug}
                   label={s.titre}
                   valeur={photos.soins[s.slug] ?? ''}
-                  dossier={dossier} libres={libres}
+                  dossier={dossier} libres={libres} exigeSource={source === 'banque'}
                   type={`soin-${s.slug}`}
                   onChange={(v) => {
                     const suivant = { ...photos.soins };

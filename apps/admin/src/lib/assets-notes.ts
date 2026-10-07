@@ -1,5 +1,6 @@
 import 'server-only';
 import { avecSujets, estCleAsset, photosDuJeu, SUJETS_VISUELS, surchargesDepuisLignes, type SurchargesSujets, poidsAssets, jeuPhotosDepuisLigne, type LigneAppriseAsset, type PhotoDeJeu, type PoidsAssets } from '@plateforme/core';
+import { getCreditsImages } from '@/lib/sources-photos';
 import { createClient } from '@/lib/supabase/server';
 
 // Notes des assets (migration 0027) : journal lu par le super admin (/admin/retours, /admin/illustrations), poids appris
@@ -57,10 +58,12 @@ export async function getPoidsAssets(): Promise<PoidsAssets | null> {
  */
 export async function getPhotosDesJeux(): Promise<PhotoDeJeu[]> {
   const supabase = await createClient();
-  const [{ data, error }, { data: libres }] = await Promise.all([
+  const [{ data, error }, { data: libres }, credits] = await Promise.all([
     supabase.from('jeux_photos').select('id, nom, specialite, photos, source, site_id, actif').order('nom'),
     // Photos importées seulement (fichiers hébergés) : une candidate gardée sans import (0031) n'est pas un visuel utilisable
     supabase.from('photos_libres').select('url, source, sujet, statut').neq('statut', 'retiree').not('url', 'is', null).order('created_at'),
+    // Source et licence de chaque image (affichées sur les cartes : bibliothèque, Donner mon avis)
+    getCreditsImages(),
   ]);
   const desJeux = error || !data ? [] : data.map(jeuPhotosDepuisLigne).flatMap((j) => photosDuJeu(j.photos).filter((u) => !u.startsWith('/photos/')).map((url) => ({ url, jeu: j.nom, specialite: j.specialite })));
   // Table absente (migration 0028 pas encore exécutée) : `libres` vaut null, aucune erreur
@@ -70,7 +73,7 @@ export async function getPhotosDesJeux(): Promise<PhotoDeJeu[]> {
     sujet: l.sujet,
     specialite: SUJETS_VISUELS.find((s) => s.id === l.sujet)?.specialite ?? 'generale',
   }));
-  return [...desJeux, ...desLibres];
+  return [...desJeux, ...desLibres].map((p) => ({ ...p, credit: credits[p.url] }));
 }
 
 export const cleAssetValide = (cle: unknown): cle is string => estCleAsset(cle);

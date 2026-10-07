@@ -1,4 +1,4 @@
--- 0031 : photos libres gardées SANS import (demande de Paul, 2026-10-07 : « on ne télécharge pas l'image complète :
+-- 0031 : photos libres gardées SANS import, et sources des photos envoyées à la main (photos_sources, en fin de fichier) (demande de Paul, 2026-10-07 : « on ne télécharge pas l'image complète :
 -- on utilise juste le lien, et une fois validée on peut importer »). Rejouable.
 --
 -- « Garder » (Photos à découvrir) enregistre seulement la candidate : traçabilité (source, identifiant, auteur, page, licence
@@ -49,3 +49,45 @@ alter table public.photos_libres add constraint photos_libres_import_coherent ch
 
 -- Photos importées avant 0031 : date d'import = date de téléchargement
 update public.photos_libres set importe_le = telecharge_le where importe_le is null and chemin is not null and telecharge_le is not null;
+
+-- ---------------------------------------------------------------------------------------------------------------
+-- Sources des photos envoyées à la main par l'admin (demande de Paul, 2026-10-07 : « assure-toi que les images enregistrées
+-- enregistrent la source et éventuellement la licence associée »). Dossiers banque/jeux/<spécialité>/ et banque/sites/<site>/
+-- (jeux « banque ») : provenance OBLIGATOIRE à l'envoi. Adobe Stock (référence de licence), photo personnelle / réalisée
+-- pour le cabinet (auteur), autre banque (nom, page, licence). Une photo sans ligne apparaît « Source à renseigner » dans
+-- /admin/photos → Sources et licences, avec un bouton pour compléter. Aucune suppression (preuve conservée).
+-- ---------------------------------------------------------------------------------------------------------------
+
+create table if not exists public.photos_sources (
+  chemin text primary key check (chemin ~ '^banque/[^[:space:]]{1,300}$' and chemin !~ '^banque/libres/' and position('..' in chemin) = 0),
+  provenance text not null check (provenance in ('adobe-stock', 'personnelle', 'autre-banque')),
+  reference_licence text check (reference_licence is null or char_length(reference_licence) between 1 and 80),
+  auteur_nom text check (auteur_nom is null or char_length(auteur_nom) between 1 and 120),
+  banque_nom text check (banque_nom is null or char_length(banque_nom) between 1 and 80),
+  url_source text check (url_source is null or (char_length(url_source) <= 400 and url_source ~ '^https://')),
+  licence text check (licence is null or char_length(licence) between 1 and 120),
+  licence_url text check (licence_url is null or (char_length(licence_url) <= 400 and licence_url ~ '^https://')),
+  auteur uuid default auth.uid() references public.profiles (id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint photos_sources_champs check (
+    (provenance = 'adobe-stock' and reference_licence is not null)
+    or (provenance = 'personnelle' and auteur_nom is not null)
+    or (provenance = 'autre-banque' and banque_nom is not null and url_source is not null and licence is not null)
+  )
+);
+
+alter table public.photos_sources enable row level security;
+drop policy if exists "photos sources : lecture admin" on public.photos_sources;
+drop policy if exists "photos sources : ajout admin" on public.photos_sources;
+drop policy if exists "photos sources : modification admin" on public.photos_sources;
+create policy "photos sources : lecture admin" on public.photos_sources
+  for select to authenticated using (public.is_admin());
+create policy "photos sources : ajout admin" on public.photos_sources
+  for insert to authenticated with check (public.is_admin());
+create policy "photos sources : modification admin" on public.photos_sources
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+revoke all on public.photos_sources from anon, authenticated;
+grant select, insert, update on public.photos_sources to authenticated;
+grant select, insert, update, delete on public.photos_sources to service_role;

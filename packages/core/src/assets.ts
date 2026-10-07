@@ -17,6 +17,7 @@ import { texteRemarques } from './remarques';
 import { CLE_ASSET, clePhoto, statsAssets, typeDeCle, LISSAGE_ASSETS, type TypeAsset } from './assets-poids';
 import { inventaireIllustrations, type StatutIllustration } from './illustrations';
 import { PHOTOS_INTEGREES } from './jeux-photos';
+import { creditPhotoIntegree, libelleCreditIntegree } from './credits-photos';
 import { GAMMES } from './gammes';
 import { STRUCTURES, LIBELLES_STRUCTURES } from './propositions';
 import { universCatalogue } from './catalogue-univers';
@@ -139,7 +140,11 @@ export interface Asset {
 }
 
 /** Photo d'un jeu de photos (table jeux_photos) */
-export type PhotoDeJeu = { url: string; jeu: string; specialite: string; /** Sujet choisi (photos libres « Photos à découvrir ») */ sujet?: string };
+export type PhotoDeJeu = {
+  url: string; jeu: string; specialite: string; /** Sujet choisi (photos libres « Photos à découvrir ») */ sujet?: string;
+  /** Source et licence (sources-photos.ts : photo libre, envoyée avec sa provenance, Adobe Stock, praticien, « Source à renseigner ») */
+  credit?: string;
+};
 
 const nomFichier = (url: string) => url.split('?')[0].split('/').pop() ?? url;
 
@@ -162,7 +167,9 @@ function assetsDuCode(): Asset[] {
     const cle = clePhoto(url)!;
     const nom = cle.slice('photo:'.length);
     l.push({
-      cle, type: 'photo', titre: nom, detail: 'Banque intégrée', source: `apps/sites/public/photos/${nomFichier(url)} (crédits : CREDITS.md)`,
+      // Source et licence affichées sur la carte (bibliothèque, Donner mon avis) : crédit Unsplash typé (credits-photos.ts)
+      cle, type: 'photo', titre: nom, detail: 'Banque intégrée',
+      source: (() => { const c = creditPhotoIntegree(url); return c ? `${libelleCreditIntegree(c)} — apps/sites/public/photos/${nomFichier(url)}` : `apps/sites/public/photos/${nomFichier(url)} · Source à renseigner`; })(),
       soins: [nom.split('-')[0]], statutParDefaut: 'a_revoir', rendu: { kind: 'image', src: url, largeur: 1600, hauteur: 1067 },
     });
   }
@@ -195,7 +202,7 @@ export function inventaireAssets(opts: { photosJeux?: readonly PhotoDeJeu[] } = 
     if (!cle || vues.has(cle)) continue;
     vues.add(cle);
     ajout.push({
-      cle, type: 'photo', titre: nomFichier(p.url), detail: `Jeu « ${p.jeu} » (${p.specialite})`, source: `Stockage Supabase « photos » — ${cle.slice(6)}`,
+      cle, type: 'photo', titre: nomFichier(p.url), detail: `Jeu « ${p.jeu} » (${p.specialite})`, source: `${p.credit ? `${p.credit} — ` : ''}Stockage Supabase « photos » — ${cle.slice(6)}`,
       soins: [p.sujet ?? p.specialite], statutParDefaut: 'a_revoir', rendu: { kind: 'image', src: p.url, largeur: 1600, hauteur: 1067 },
     });
   }

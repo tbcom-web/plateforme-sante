@@ -102,3 +102,17 @@ dans un fichier `.env` versionné ni dans une conversation. Elles ne sont lues q
 
 Exécuter `supabase/migrations/0028_inspirations_photos_libres.sql` (SQL Editor de Supabase) : tables `photos_libres`,
 `photos_libres_avis`, `photos_libres_mots_cles`, `inspirations`, et bucket privé `inspirations`.
+
+## Sources et licences de toutes les images (/admin/photos)
+
+Demande de Paul (2026-10-07) : chaque image enregistrée garde sa source et, le cas échéant, sa licence. Écran unique
+« Sources et licences » (filtre par source, « Source à renseigner », recherche) et **Export CSV complet** :
+
+- banque intégrée (`apps/sites/public/photos`) : crédits Unsplash typés dans `packages/core/src/credits-photos.ts`
+  (photographe, page d'origine, Unsplash License, date d'ajout) — un test vérifie qu'aucun fichier n'est sans crédit, et
+  inversement ; affichés aussi sur les cartes (bibliothèque, Donner mon avis) ;
+- photos libres Pexels / Pixabay : traçabilité de `photos_libres` dès « Garder » ;
+- photos envoyées à la main dans un jeu « banque » : **provenance obligatoire avant l'envoi** (Adobe Stock + référence de
+  licence, photo personnelle / réalisée pour le cabinet + auteur, autre banque + nom, page, licence), table `photos_sources`
+  (migration 0031) ; une photo envoyée sans provenance apparaît « Source à renseigner » avec « Compléter la source » ;
+- Adobe Stock d'un jeu exclusif : `licences_photos` (0016) ; photos des praticiens : « Photo fournie par le praticien ».
