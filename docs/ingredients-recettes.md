@@ -65,6 +65,35 @@ directions, chacune appliquée aux MÊMES cinq sujets, eux-mêmes construits ave
 3. Claude lit, corrige (illustrations, règles, kits, recettes) et inscrit chaque changement dans `retours/CHANGEMENTS.md`.
 4. Les éléments modifiés reviennent en « avant / après » pour que Paul les note à nouveau.
 
+## Directeur artistique (2026-10-07)
+
+Demande de Paul : « un agent qui sélectionne lui-même les meilleures recettes possibles en changeant les éléments pour que ce
+soit vraiment harmonieux […] et s'il voit des manques, il les signale ». Agent : `.claude/agents/directeur-artistique.md`.
+
+- **Méthode** : pour un scénario (sujets + couleurs préférées), il part des propositions du générateur (`lotsPropositions`,
+  poids appris des exports) et des combinaisons préférées de `retours/SYNTHESE.md`, puis améliore par **recherche locale** :
+  une seule dimension changée à la fois (gamme → paire de polices → style → visuels / photos → structure par page → éléments →
+  effets), rendu réel, jugement avec la grille de `juge-gout-paul.md`, on garde si c'est mieux. 15 à 25 essais rendus par
+  scénario, journal des essais (score, raisons, décision) dans le scratchpad.
+- **Ingrédients** : jamais un élément retiré, « à retravailler » ou noté ≤ 2 ★ quand un équivalent existe ; photos importées
+  ET notées ≥ 4 ★ seulement ; garde-fous du core vérifiés à l'œil (AA, diabète sans rouge, posture jamais, mots métier
+  insécables, pas d'instrument en premier écran).
+- **Rendu** : `node scripts/rendre-recettes.mjs --sortie <scratchpad> <composition.json>…` (site de démo construit avec la recette
+  injectée hors de `apps/sites/dist`, `PLAN_OSM=non` ; captures accueil, page sujet et accès en 1440 et 375 px ; planche par
+  essai).
+- **Livrables** : `retours/recettes-proposees.json` (N meilleures recettes par scénario : composition complète au format du
+  Studio, score prédit, raisons « pourquoi c'est harmonieux », réserves, noms des captures, version du profil ; dépôt public :
+  rien de personnel) et `retours/MANQUES.md` (manque, impact, proposition, qui, priorité).
+- **Studio** (`/admin/atelier/studio`) : section « Propositions de Claude » (lue par l'API GitHub comme `predictions.json`,
+  repli sur le fichier local) : « Ouvrir dans le Studio » charge la composition et son scénario, verrous à zéro ; « Enregistrer
+  comme recette » l'enregistre sans note (Paul la note ensuite) ; « Pas convaincu » (+ remarque). Section « Manques signalés »
+  (`retours/MANQUES.md`) : « À faire » / « Pas utile ». Avis journalisés dans `directeur_avis` (migration 0035, rejouable ;
+  sans elle : navigateur + « Exporter mes avis »), exportés dans `retours/directeur-avis.json` : le directeur les lit avant sa
+  passe suivante.
+- **Circuit d'un manque** : Paul valide (« À faire ») → création par l'agent compétent (graphiste, illustrateur, intégrateur ;
+  photos : Paul) → revue dans « Donner mon avis » → implémentation, ligne dans `retours/CHANGEMENTS.md`, manque retiré.
+- Le directeur ne crée aucun élément graphique et ne passe jamais rien en « Validé ».
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

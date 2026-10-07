@@ -9,6 +9,9 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import Studio from './Studio';
+import { getAvisDirecteur, getManques, getPropositionsClaude } from '@/lib/directeur';
+import ManquesSignales from './ManquesSignales';
+import PropositionsClaude from './PropositionsClaude';
 
 export const metadata = { title: 'Super admin · Studio de recettes' };
 
@@ -20,6 +23,8 @@ export default async function PageStudio() {
   const [modeles, catalogue, marquesImportees, { univers }, poids, photos, { recettes, migrationManquante }] = await Promise.all([
     getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque({ nonImportees: true }), getRecettes(),
   ]);
+  // Directeur artistique (.claude/agents/directeur-artistique.md) : propositions de recettes et manques signalés
+  const [lotClaude, manques, { avis, migrationManquante: avisSansTable }] = await Promise.all([getPropositionsClaude(), getManques(), getAvisDirecteur()]);
   return (
     <div className="grid gap-6">
       <div>
@@ -36,6 +41,7 @@ export default async function PageStudio() {
           Migration 0032 à exécuter (<code>supabase/migrations/0032_recettes.sql</code>) : le studio fonctionne, mais les recettes et les notes d’éléments ne peuvent pas encore être enregistrées.
         </p>
       )}
+      <PropositionsClaude lot={lotClaude} avis={avis} migrationManquante={avisSansTable} />
       <Studio
         proposes={universDuParcours(univers)}
         modeles={modeles}
@@ -48,6 +54,7 @@ export default async function PageStudio() {
         renforts={resumeRenforts(recettes, 8)}
         migrationManquante={migrationManquante}
       />
+      <ManquesSignales manques={manques} avis={avis} />
     </div>
   );
 }

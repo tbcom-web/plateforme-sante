@@ -25,6 +25,7 @@ import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
 import RenduMobile from '@/components/RenduMobile';
 import type { SoinCatalogue } from '@/lib/sites';
+import { EVENEMENT_OUVRIR, type DetailOuvrir } from './PropositionsClaude';
 import Link from 'next/link';
 import { changerStatutRecette, enregistrerRecette, importerPhotoStudio, lireNotesPages, noterElementStudio, noterPageRecette } from './actions';
 
@@ -236,6 +237,18 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const nouvelle = () => { setOuverte({ id: null, origine: null }); setNom(''); setNote(null); setEtiquettes([]); setPositif(''); setNegatif(''); setNotesPages([]); };
+  // « Propositions de Claude » (PropositionsClaude.tsx) : composition chargée avec son scénario, nouvelle recette, verrous à zéro
+  useEffect(() => {
+    const f = (e: Event) => {
+      const d = (e as CustomEvent<DetailOuvrir>).detail;
+      setScenario({ principaux: d.sujets.slice(0, 3), secondaires: d.sujets.slice(3), couleurs: d.couleurs });
+      setComp(d.composition); setVerrous([]); setHistorique({}); nouvelle(); setNom(d.nom);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    window.addEventListener(EVENEMENT_OUVRIR, f);
+    return () => window.removeEventListener(EVENEMENT_OUVRIR, f);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---- Note de la page affichée ----
   const noterPage = async () => {

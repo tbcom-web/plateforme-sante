@@ -1,0 +1,645 @@
+{
+  "version": 1,
+  "profil": "2026-10-07.v2",
+  "le": "2026-10-07",
+  "methode": "Recherche locale depuis les propositions du générateur : une dimension changée à la fois, rendu réel (accueil, page sujet, accès en 1440 et 375 px), jugement avec la grille du juge du goût. Scores prédits : seule la note de Paul compte.",
+  "propositions": [
+    {
+      "id": "sport-1",
+      "scenario": {
+        "id": "sport-corail-bleu",
+        "libelle": "Sport, corail et bleu",
+        "principaux": [
+          "sport"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "corail",
+          "bleu"
+        ],
+        "sujets": [
+          "sport"
+        ]
+      },
+      "rang": 1,
+      "nom": "Foulée éditoriale · Cobalt & abricot · Grotesque",
+      "score": 4.1,
+      "raisons": [
+        "Couleurs : cobalt froid pour le texte et les boutons, abricot chaud en aplat derrière le coureur et en trait sur la chaussure ; contraste chaud/froid net, une combinaison de couleurs que vous avez dit adorer.",
+        "Police et structure : Élégant et sobre (la structure la mieux notée avec le trait fin) mais titres en Grotesque affirmée : la page reste aérée tout en ayant l’énergie du sport.",
+        "Sujet : la foulée au trait fin en premier écran, la chaussure de course en carte ; une seule idée par écran.",
+        "Téléphone : titres sans coupure, « pédicurie-podologie » insécable, Rendez-vous en barre fixe."
+      ],
+      "reserves": [
+        "Jambes du coureur un peu droites (déjà relevé : « Jambes trop droites »).",
+        "Sur téléphone, le haut du héros est coupé (jambes sans le haut du corps) : manque M5."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "cobalt-abricot",
+        "couleur": "#2449d8",
+        "police": "grotesque",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "sport",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "sport-1-accueil-1440.png",
+        "sport-1-accueil-375.png",
+        "sport-1-theme-375.png",
+        "sport-1-acces-375.png"
+      ],
+      "essais": 19
+    },
+    {
+      "id": "sport-2",
+      "scenario": {
+        "id": "sport-corail-bleu",
+        "libelle": "Sport, corail et bleu",
+        "principaux": [
+          "sport"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "corail",
+          "bleu"
+        ],
+        "sujets": [
+          "sport"
+        ]
+      },
+      "rang": 2,
+      "nom": "Foulée éditoriale · Corail & bleu nuit · Grotesque",
+      "score": 4.1,
+      "raisons": [
+        "Les deux couleurs demandées : fond rosé très pâle, boutons corail, texte et traits bleu nuit ; températures équilibrées.",
+        "Grotesque affirmée sur Élégant et sobre : dynamique sans faire « fiche ».",
+        "Trait fin partout (héros, chaussure) : une seule grammaire, aucune juxtaposition d’images."
+      ],
+      "reserves": [
+        "Le corail des boutons est vif : à voir s’il vous paraît trop commercial.",
+        "Mêmes réserves de héros que la proposition 1."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "corail-nuit",
+        "couleur": "#2a3f7a",
+        "police": "grotesque",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "sport",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "sport-2-accueil-1440.png",
+        "sport-2-accueil-375.png",
+        "sport-2-theme-375.png",
+        "sport-2-acces-375.png"
+      ],
+      "essais": 19
+    },
+    {
+      "id": "sport-3",
+      "scenario": {
+        "id": "sport-corail-bleu",
+        "libelle": "Sport, corail et bleu",
+        "principaux": [
+          "sport"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "corail",
+          "bleu"
+        ],
+        "sujets": [
+          "sport"
+        ]
+      },
+      "rang": 3,
+      "nom": "Terrain clair · Corail & bleu nuit · Grotesque",
+      "score": 3.9,
+      "raisons": [
+        "Version plus tonique : grands aplats corail, carte sujet corail franc, boutons bleu nuit.",
+        "Grotesque affirmée dense dans les titres, accordée aux aplats francs de Clair et pratique.",
+        "Cartes de soins illustrées au trait, même famille que le héros."
+      ],
+      "reserves": [
+        "Clair et pratique est moins aimé (« fiche ») : beaucoup de cartes sous le premier écran.",
+        "Le disque du héros réduit le coureur aux jambes."
+      ],
+      "composition": {
+        "structure": "clair-pratique",
+        "gamme": "corail-nuit",
+        "couleur": "#2a3f7a",
+        "police": "grotesque",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "sport",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "sport-3-accueil-1440.png",
+        "sport-3-accueil-375.png",
+        "sport-3-theme-375.png",
+        "sport-3-acces-375.png"
+      ],
+      "essais": 19
+    },
+    {
+      "id": "diabete-1",
+      "scenario": {
+        "id": "diabete-sans-couleur",
+        "libelle": "Diabète, sans couleur choisie",
+        "principaux": [
+          "diabete"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "diabete"
+        ]
+      },
+      "rang": 1,
+      "nom": "Prévention calme · Canard · Douce arrondie",
+      "score": 3.8,
+      "raisons": [
+        "Couleurs : canard apaisant sur fond aqua très pâle, aucune teinte rouge ni rose (garde-fou diabète).",
+        "Police : Douce arrondie (Manrope), titres ronds et calmes, lecture très confortable, accordée au trait fin et au ton rassurant.",
+        "Structure Élégant et sobre (Diabète × Clair et pratique est mal noté) : peu de blocs, une idée par écran.",
+        "Pieds au trait canard en carte sujet : simples, nets, sans couleur de peau inquiétante."
+      ],
+      "reserves": [
+        "Le héros du diabète montre encore le monofilament et la main (instrument en premier écran) : manque M1."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "canard",
+        "couleur": "#1f6b64",
+        "police": "douce",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "diabete",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "diabete-1-accueil-1440.png",
+        "diabete-1-accueil-375.png",
+        "diabete-1-theme-375.png",
+        "diabete-1-acces-375.png"
+      ],
+      "essais": 16
+    },
+    {
+      "id": "diabete-2",
+      "scenario": {
+        "id": "diabete-sans-couleur",
+        "libelle": "Diabète, sans couleur choisie",
+        "principaux": [
+          "diabete"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "diabete"
+        ]
+      },
+      "rang": 2,
+      "nom": "Prévention douce · Canard · Illustrations douces",
+      "score": 3.7,
+      "raisons": [
+        "Même accord canard + Douce arrondie, avec des illustrations douces : pieds couleur peau cernés de canard, plus chaleureux et pédagogique.",
+        "Texte très contrasté, aucun rouge."
+      ],
+      "reserves": [
+        "Héros pédagogique du diabète noté 3 ★ (« main bizarre », monofilament) : c’est lui qui plafonne la note (M1)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "canard",
+        "couleur": "#1f6b64",
+        "police": "douce",
+        "visuels": {
+          "style": "pedagogique",
+          "herosSujet": "diabete",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "diabete-2-accueil-1440.png",
+        "diabete-2-accueil-375.png",
+        "diabete-2-theme-375.png",
+        "diabete-2-acces-375.png"
+      ],
+      "essais": 16
+    },
+    {
+      "id": "diabete-3",
+      "scenario": {
+        "id": "diabete-sans-couleur",
+        "libelle": "Diabète, sans couleur choisie",
+        "principaux": [
+          "diabete"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "diabete"
+        ]
+      },
+      "rang": 3,
+      "nom": "Prévention nette · Cobalt · Douce arrondie",
+      "score": 3.7,
+      "raisons": [
+        "Cobalt franc et rassurant, très lisible ; pieds au trait bleu.",
+        "Douce arrondie garde le ton calme malgré un bleu plus institutionnel."
+      ],
+      "reserves": [
+        "Plus froid que le canard.",
+        "Même héros au monofilament (M1)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "cobalt",
+        "couleur": "#1f4fbf",
+        "police": "douce",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "diabete",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "diabete-3-accueil-1440.png",
+        "diabete-3-accueil-375.png",
+        "diabete-3-theme-375.png",
+        "diabete-3-acces-375.png"
+      ],
+      "essais": 16
+    },
+    {
+      "id": "enfant-1",
+      "scenario": {
+        "id": "enfant-jaune-vert",
+        "libelle": "Enfants, jaune et vert",
+        "principaux": [
+          "enfant"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "jaune",
+          "vert"
+        ],
+        "sujets": [
+          "enfant"
+        ]
+      },
+      "rang": 1,
+      "nom": "Petits pas · Pistache & framboise · Ronde",
+      "score": 4.3,
+      "raisons": [
+        "Héros au trait fin : pieds d’adulte face aux pieds d’enfant (5 ★ « J’adore ») sur aplat pistache.",
+        "Couleurs : pistache (le vert demandé) et framboise en accent sur les empreintes et les boutons : vitaminé mais propre.",
+        "Police : Ronde pédagogique (Nunito), titres ronds et doux, accordés à l’enfant et au trait fin.",
+        "Formes organiques autour des cartes sujet : rondeur cohérente avec la police, sans ajouter d’élément."
+      ],
+      "reserves": [
+        "Sur téléphone, le haut des pieds d’adulte est coupé (M5).",
+        "Pas de jaune (il est dans la proposition 2)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "pistache",
+        "couleur": "#4a6b12",
+        "police": "ronde",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "enfant",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {
+            "soins-forme": "organiques"
+          }
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "enfant-1-accueil-1440.png",
+        "enfant-1-accueil-375.png",
+        "enfant-1-theme-375.png",
+        "enfant-1-acces-375.png"
+      ],
+      "essais": 17
+    },
+    {
+      "id": "enfant-2",
+      "scenario": {
+        "id": "enfant-jaune-vert",
+        "libelle": "Enfants, jaune et vert",
+        "principaux": [
+          "enfant"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "jaune",
+          "vert"
+        ],
+        "sujets": [
+          "enfant"
+        ]
+      },
+      "rang": 2,
+      "nom": "Petits pas · Tournesol & ardoise · Ronde",
+      "score": 4.2,
+      "raisons": [
+        "Même composition en tournesol (le jaune demandé) : jaune pâle chaleureux, empreintes au trait ardoise, boutons ardoise lisibles.",
+        "Ronde pédagogique + formes organiques : tout est doux, rien de criard.",
+        "Héros adulte/enfant 5 ★, une seule idée."
+      ],
+      "reserves": [
+        "Pas de vert.",
+        "Héros coupé en haut sur téléphone (M5)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "tournesol",
+        "couleur": "#3e5568",
+        "police": "ronde",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "enfant",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {
+            "soins-forme": "organiques"
+          }
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "enfant-2-accueil-1440.png",
+        "enfant-2-accueil-375.png",
+        "enfant-2-theme-375.png",
+        "enfant-2-acces-375.png"
+      ],
+      "essais": 17
+    },
+    {
+      "id": "enfant-3",
+      "scenario": {
+        "id": "enfant-jaune-vert",
+        "libelle": "Enfants, jaune et vert",
+        "principaux": [
+          "enfant"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "jaune",
+          "vert"
+        ],
+        "sujets": [
+          "enfant"
+        ]
+      },
+      "rang": 3,
+      "nom": "Petits pas éditorial · Tournesol & ardoise · Revue",
+      "score": 4.1,
+      "raisons": [
+        "Variante plus élégante : Revue à empattements avec le tournesol, ambiance de livre pour enfants.",
+        "Forme organique jaune pâle autour des empreintes au trait."
+      ],
+      "reserves": [
+        "Moins « enfant » que la Ronde.",
+        "Héros coupé en haut sur téléphone (M5)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "tournesol",
+        "couleur": "#3e5568",
+        "police": "revue",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "enfant",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {
+            "soins-forme": "organiques"
+          }
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "enfant-3-accueil-1440.png",
+        "enfant-3-accueil-375.png",
+        "enfant-3-theme-375.png",
+        "enfant-3-acces-375.png"
+      ],
+      "essais": 17
+    },
+    {
+      "id": "senior-1",
+      "scenario": {
+        "id": "senior-bleu",
+        "libelle": "Seniors, bleu",
+        "principaux": [
+          "senior"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "bleu"
+        ],
+        "sujets": [
+          "senior"
+        ]
+      },
+      "rang": 1,
+      "nom": "Marche lisible · Cobalt · Publique",
+      "score": 4.2,
+      "raisons": [
+        "Part de la combinaison que vous aimez (Seniors · Élégant et sobre · Encre · Trait fin : « là j’aime beaucoup ») en remplaçant l’encre par le cobalt demandé.",
+        "Police Publique lisible : titres épais et grands, bien plus lisibles que la serif fine pour des seniors.",
+        "Héros de la marche à la canne au trait fin (4 ★), canne bleue sur bleu très pâle ; une seule idée.",
+        "Téléphone et Rendez-vous toujours accessibles (barre fixe)."
+      ],
+      "reserves": [
+        "Carte sujet « maison » au trait trop simple et peu parlante (M3).",
+        "Main et canne déjà jugées « un peu bizarres » (4 ★)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "cobalt",
+        "couleur": "#1f4fbf",
+        "police": "publique",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "senior",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "senior-1-accueil-1440.png",
+        "senior-1-accueil-375.png",
+        "senior-1-theme-375.png",
+        "senior-1-acces-375.png"
+      ],
+      "essais": 15
+    },
+    {
+      "id": "senior-2",
+      "scenario": {
+        "id": "senior-bleu",
+        "libelle": "Seniors, bleu",
+        "principaux": [
+          "senior"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "bleu"
+        ],
+        "sujets": [
+          "senior"
+        ]
+      },
+      "rang": 2,
+      "nom": "Marche chaleureuse · Cobalt & abricot · Publique",
+      "score": 4.1,
+      "raisons": [
+        "Cobalt & abricot : héros sur abricot chaud, accents bleus, contraste chaud/froid réussi.",
+        "Publique lisible : gros caractères, contraste marqué."
+      ],
+      "reserves": [
+        "Maison au trait orange trop simple (M3)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "cobalt-abricot",
+        "couleur": "#2449d8",
+        "police": "publique",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "senior",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "senior-2-accueil-1440.png",
+        "senior-2-accueil-375.png",
+        "senior-2-theme-375.png",
+        "senior-2-acces-375.png"
+      ],
+      "essais": 15
+    },
+    {
+      "id": "senior-3",
+      "scenario": {
+        "id": "senior-bleu",
+        "libelle": "Seniors, bleu",
+        "principaux": [
+          "senior"
+        ],
+        "secondaires": [],
+        "couleurs": [
+          "bleu"
+        ],
+        "sujets": [
+          "senior"
+        ]
+      },
+      "rang": 3,
+      "nom": "Marche sobre · Encre · Publique",
+      "score": 4,
+      "raisons": [
+        "Votre combinaison aimée (Encre, Élégant et sobre, trait fin) avec une police plus lisible : même calme, meilleure lecture pour des seniors."
+      ],
+      "reserves": [
+        "Fond gris : risque de « gris éteint » ; pas le bleu demandé.",
+        "Maison au trait (M3)."
+      ],
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "encre",
+        "couleur": "#0b1c24",
+        "police": "publique",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": "senior",
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {}
+        },
+        "effets": "sobre"
+      },
+      "captures": [
+        "senior-3-accueil-1440.png",
+        "senior-3-accueil-375.png",
+        "senior-3-theme-375.png",
+        "senior-3-acces-375.png"
+      ],
+      "essais": 15
+    }
+  ]
+}

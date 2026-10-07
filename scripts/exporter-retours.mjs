@@ -235,4 +235,11 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
   }
 }
 
+// Avis sur le directeur artistique (0035) : propositions « Pas convaincu » / enregistrées, manques « À faire » / « Pas utile »
+// (sans auteur) ; absent tant que la migration n'est pas exécutée
+{
+  const avis = await lireTout('directeur_avis', 'nature,cle,decision,remarque,profil,created_at', 'created_at.asc,cle.asc');
+  if (avis !== null) ecrire('directeur-avis.json', avis.map((l) => ({ nature: l.nature, cle: l.cle, decision: l.decision, remarque: texte(l.remarque), profil: l.profil ?? null, jour: jour(l.created_at) })));
+}
+
 console.log(`Retours exportés dans ${sortie} : ${notesAssets.length} notes d’assets, ${notesAtelier.length} notes de l’atelier, ${journal.length} revues, ${courants.length} statuts, ${listeInspirations.length} inspirations.`);
