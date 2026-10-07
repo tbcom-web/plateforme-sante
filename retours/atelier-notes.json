@@ -3548,5 +3548,235 @@
     "positif": null,
     "negatif": null,
     "jour": "2026-10-07"
+  },
+  {
+    "cle": "2595a9ffac62b276",
+    "ingredients": {
+      "gamme": "sable",
+      "heros": "diabete",
+      "style": "photos",
+      "theme1": "diabete",
+      "themes": [
+        "diabete",
+        "pedicurie"
+      ],
+      "couleurs": [
+        "bleu",
+        "rouge",
+        "terracotta"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "photos",
+      "proposition": "diabete~clair-pratique~sable~photos~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "6f331d505ae82861",
+    "ingredients": {
+      "gamme": "cobalt-abricot",
+      "heros": "ongles",
+      "style": "pedagogique",
+      "theme1": "ongles",
+      "themes": [
+        "ongles",
+        "sport",
+        "semelles",
+        "senior"
+      ],
+      "couleurs": [
+        "rose",
+        "bleu",
+        "gris"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "ongles~elegant-sobre~cobalt-abricot~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "a09088878a4d87aa",
+    "ingredients": {
+      "gamme": "cobalt-abricot",
+      "heros": "senior",
+      "style": "photos",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "sport",
+        "diabete"
+      ],
+      "couleurs": [
+        "bleu",
+        "violet"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "photos",
+      "proposition": "senior~elegant-sobre~cobalt-abricot~photos~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "9058dacb7c3e1ee0",
+    "ingredients": {
+      "gamme": "terracotta",
+      "heros": "diabete",
+      "style": "ligne",
+      "theme1": "diabete",
+      "themes": [
+        "diabete"
+      ],
+      "couleurs": [
+        "rouge",
+        "corail",
+        "vert"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "diabete~simple-proche~terracotta~ligne~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "e93c0655d1ff62a4",
+    "ingredients": {
+      "gamme": "mangue",
+      "heros": "semelles",
+      "style": "pedagogique",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "enfant"
+      ],
+      "couleurs": [
+        "jaune"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~elegant-sobre~mangue~pedagogique~0"
+    },
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "4c846ac3b748d122",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "enfant",
+      "style": "photos",
+      "theme1": "enfant",
+      "themes": [
+        "enfant",
+        "sport",
+        "senior",
+        "diabete"
+      ],
+      "couleurs": [
+        "vert"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "photos",
+      "proposition": "enfant~elegant-sobre~menthe~photos~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "5398d2aeab769b03",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "pedicurie",
+      "style": "ligne",
+      "theme1": "pedicurie",
+      "themes": [
+        "pedicurie",
+        "enfant",
+        "sport",
+        "diabete",
+        "semelles"
+      ],
+      "couleurs": [],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "pedicurie~simple-proche~menthe~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "9508af092393241e",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "enfant",
+        "ongles",
+        "pedicurie",
+        "senior"
+      ],
+      "couleurs": [],
+      "registre": "releve",
+      "animation": "semelle",
+      "structure": "technique-precis",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~technique-precis~cobalt~releve~semelle"
+    },
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "jour": "2026-10-07"
   }
 ]
