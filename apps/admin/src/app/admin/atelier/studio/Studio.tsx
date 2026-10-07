@@ -19,6 +19,7 @@ import {
   universCatalogue, ONGLETS_PAGES, vueDePage, empreinteMobile, choisirStyle, stylesDuStudio, photosDuScenario, photosAImporter, estPhotoHebergee, type AppareilRetour, type Zone,
   type CompositionRecette, type ContexteRecette, type DimensionRecette, type MarqueImportee, type ModeleManifeste, type PageStructure,
   type PhotoBanque, type PoidsAtelier, type Recette, type SiteDraft, type Univers, type Variantes,
+  respecterVerrous, suivreScenario,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
@@ -91,7 +92,8 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const lancer = useCallback((d: DimensionRecette) => {
     if (verrous.includes(d)) return;
     memoriser(d, d);
-    setComp((x) => tirerDimension(x, d, ctx, suivante()));
+    // Verrous respectés : une dimension verrouillée n'est jamais changée par la réparation qui suit un dé (suivi-scenario.ts)
+    setComp((x) => respecterVerrous(x, tirerDimension(x, d, ctx, suivante()), verrous, ctx));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verrous, ctx, comp]);
   const lancerSous = (cible: { page: PageStructure } | { composant: keyof Variantes }) => {
@@ -108,7 +110,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   };
   const tout = useCallback(() => {
     setHistorique((h) => { const n = { ...h }; for (const d of DIMENSIONS_RECETTE) if (!verrous.includes(d.id)) n[d.id] = [...(n[d.id] ?? []), lire(comp, d.id)].slice(-30); return n; });
-    setComp((x) => toutChanger(x, verrous, ctx, suivante()));
+    setComp((x) => respecterVerrous(x, toutChanger(x, verrous, ctx, suivante()), verrous, ctx));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verrous, ctx, comp]);
   const basculerVerrou = (cle: string) => setVerrous((v) => (v.includes(cle) ? v.filter((x) => x !== cle) : [...v, cle]));
@@ -117,7 +119,9 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const changerScenario = (s: Scenario) => {
     setScenario(s);
     const c2 = { ...ctx, sujets: [...s.principaux, ...s.secondaires], principaux: s.principaux.length, couleursPreferees: s.couleurs };
-    setComp((x) => reparerComposition(x, c2));
+    // La composition SUIT le scénario (suivi-scenario.ts) : couleurs choisies → gamme, sujets → photos et héros ; verrous respectés
+    const g = suivante();
+    setComp((x) => suivreScenario(x, ctx, c2, verrous, g));
   };
 
   // Raccourcis clavier (ignorés pendant la saisie)

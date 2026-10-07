@@ -60,6 +60,7 @@ export * from './rendu-mobile';
 export * from './pages-demo';
 export * from './cadre-apercu';
 export * from './styles-experimentaux';
+export * from './suivi-scenario';
 export * from './typo';
 export * from './details';
 export * from './menus';
