@@ -1,5 +1,6 @@
 import 'server-only';
-import { estEtiquetteAtelier, poidsAtelier, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { appliquerRenforts, estEtiquetteAtelier, poidsAtelier, renfortsPoids, sourcesCombinaisons, sourcesRecettes, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { getRecettesLecture } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
 import { getPoidsAssets } from '@/lib/assets-notes';
 
@@ -34,18 +35,23 @@ export async function getNotesAtelier(): Promise<{ notes: NoteAtelierAdmin[]; mi
  * aucune note ni statut, ou si les migrations manquent (aucune erreur).
  */
 export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
-  const [atelier, assets] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets()]);
-  if (!atelier && !assets) return null;
-  return { ...(atelier ?? { n: 0, moyenne: 0, effets: {} }), ...(assets ? { assets } : {}) };
+  const [atelier, assets, recettes] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets(), getRecettesLecture(1)]);
+  const base = !atelier?.poids && !assets ? null : { ...(atelier?.poids ?? { n: 0, moyenne: 0, effets: {} }), ...(assets ? { assets } : {}) };
+  // Renforts (recettes.ts) : une recette ou une combinaison notée renforce (ou affaiblit) un peu chacun de ses ingrédients
+  const sources = [...sourcesRecettes(recettes), ...sourcesCombinaisons(atelier?.lignes ?? [])];
+  return sources.length ? appliquerRenforts(base, renfortsPoids(sources, base?.moyenne || 3)) : base;
 }
 
-async function poidsDesCombinaisons(): Promise<PoidsAtelier | null> {
+type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null };
+
+async function poidsDesCombinaisons(): Promise<{ poids: PoidsAtelier | null; lignes: LigneApprentissage[] } | null> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('atelier_notes_apprentissage', { p_limite: 5000 });
     if (error || !Array.isArray(data) || !data.length) return null;
-    const poids = poidsAtelier((data as { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null }[]).map((l) => ({ ingredients: l.ingredients ?? {}, note: l.note, etiquettes: l.etiquettes })));
-    return poids.n ? poids : null;
+    const lignes = (data as LigneApprentissage[]).map((l) => ({ ingredients: l.ingredients ?? {}, note: l.note, etiquettes: l.etiquettes }));
+    const poids = poidsAtelier(lignes);
+    return { poids: poids.n ? poids : null, lignes };
   } catch {
     return null;
   }

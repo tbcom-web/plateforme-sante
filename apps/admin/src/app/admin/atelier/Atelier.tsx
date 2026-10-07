@@ -8,8 +8,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   basculerCouleur, cleCombinaison, COULEURS_PREFEREES, couleurPreferee, draftVide, ETIQUETTES_ATELIER, gamme as gammeParId, ingredientsProposition,
-  LIBELLES_ANIMATIONS, LIBELLES_STRUCTURES, LIBELLES_STYLES, lotsPropositions, pastilleGamme, sujetsPris, THEMES, themeParId,
-  type MarqueImportee, type ModeleManifeste, type PoidsAtelier, type SiteDraft, type Univers,
+  LIBELLES_ANIMATIONS, LIBELLES_STRUCTURES, LIBELLES_STYLES, lotsPropositions, pastilleGamme, sujetsPris, THEMES, themeParId, alea, tirerPhotos,
+  type PhotoBanque, type MarqueImportee, type ModeleManifeste, type PoidsAtelier, type SiteDraft, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import { apercuProposition } from '@/lib/apercu-proposition';
@@ -28,6 +28,8 @@ type Props = {
   poids: PoidsAtelier | null;
   dejaNotees: Record<string, { n: number; derniere: number }>;
   migrationManquante: boolean;
+  /** Photos de la banque (jeux de photos, photos libres validées, photos intégrées) : montrées en style « photos » */
+  photos?: PhotoBanque[];
 };
 
 export type Scenario = { principaux: string[]; secondaires: string[]; couleurs: string[] };
@@ -67,7 +69,7 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Atelier({ proposes, modeles, catalogue, marquesImportees, themesActives, poids, dejaNotees, migrationManquante }: Props) {
+export default function Atelier({ proposes, modeles, catalogue, marquesImportees, themesActives, poids, dejaNotees, migrationManquante, photos = [] }: Props) {
   const [scenario, setScenario] = useState<Scenario>({ principaux: ['sport'], secondaires: [], couleurs: [] });
   const [apprentissage, setApprentissage] = useState(true);
   const [nbLots, setNbLots] = useState(1);
@@ -98,9 +100,15 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
     if (!epuise && index >= liste.length - 1) setNbLots((n) => n + 1);
   }, [index, liste.length, epuise]);
 
-  const ingredients = useMemo(() => (p ? ingredientsProposition(p, entree) : null), [p, entree]);
+  // Style « photos » : de VRAIES photos de la banque, tirées pour les sujets et pondérées par les notes ; elles font partie des
+  // ingrédients notés (clé de combinaison) — même tirage pour une même proposition (graine : son identifiant)
+  const photosP = useMemo(() => (p && p.modeVisuel === 'photos' && photos.length ? tirerPhotos({ sujets: sujetsPris(entree), principaux: scenario.principaux.length, poids, photos }, alea(0, p.id)) : []), [p, photos, entree, scenario.principaux.length, poids]);
+  const ingredients = useMemo(() => (p ? ingredientsProposition(p, entree, photosP) : null), [p, entree, photosP]);
   const cle = useMemo(() => (ingredients ? cleCombinaison(ingredients) : ''), [ingredients]);
-  const apercu = useMemo(() => (p ? apercuProposition(d, p, { proposes, modeles, slugs, themesActives }) : null), [p, d, proposes, modeles, slugs, themesActives]);
+  const apercu = useMemo(() => {
+    const a = p ? apercuProposition(d, p, { proposes, modeles, slugs, themesActives }) : null;
+    return a && photosP.length ? { ...a, draft: { ...a.draft, theme: { ...a.draft.theme, photosRecette: photosP } } } : a;
+  }, [p, d, proposes, modeles, slugs, themesActives, photosP]);
 
   const changerScenario = (s: Scenario) => {
     setScenario(s);

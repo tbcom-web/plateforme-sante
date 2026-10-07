@@ -15,7 +15,7 @@ import { jourParis } from './essai';
 // Catégories (tuiles de l'accueil)
 // ---------------------------------------------------------------------------------------------------------------
 
-export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures';
+export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets';
 
 export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: string; description: string; types: readonly TypeAsset[] }[] = [
   { id: 'hasard', libelle: 'Tout au hasard', description: 'Un peu de tout, les jamais notés d’abord', types: [] },
@@ -25,7 +25,11 @@ export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: strin
   { id: 'photos', libelle: 'Photos', description: 'Banque intégrée et jeux de photos', types: ['photo'] },
   { id: 'animations', libelle: 'Animations', description: 'Images d’accueil animées', types: ['animation'] },
   { id: 'couleurs', libelle: 'Couleurs', description: 'Gammes de couleurs', types: ['gamme'] },
-  { id: 'structures', libelle: 'Structures', description: 'Les 4 modèles du parcours', types: ['modele'] },
+  { id: 'structures', libelle: 'Modèles de site', description: 'Les 4 modèles du parcours', types: ['modele'] },
+  // Studio de recettes (inventaireStudio, assets.ts) : présentation des pages, des éléments et des effets, aperçus vivants
+  { id: 'pages', libelle: 'Structures de pages', description: 'Accueil, soins, accès, cabinet, questions : ordre et présentation', types: ['structure'] },
+  { id: 'elements', libelle: 'Éléments', description: 'Horaires, plan d’accès, galerie, contact, formes des cartes…', types: ['composant'] },
+  { id: 'effets', libelle: 'Effets', description: 'Survol, apparition, transitions : Sobre, Doux, Vivant, Éditorial', types: ['effets'] },
 ];
 
 export const categorieRetours = (id: string | null | undefined) => CATEGORIES_RETOURS.find((c) => c.id === id);

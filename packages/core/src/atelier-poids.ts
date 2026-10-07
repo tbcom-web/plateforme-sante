@@ -44,6 +44,11 @@ export type IngredientsAtelier = {
   couleurs: string[];
   /** Identifiant de la proposition (sujet~structure~gamme~style~animation) */
   proposition: string;
+  /**
+   * Photos montrées par l'aperçu (style « photos » : clés `photo:…` de la banque, accueil d'abord), pour que la note porte aussi
+   * sur elles (recettes.ts, sourcesCombinaisons). Absent ou vide : clé de combinaison inchangée (notes antérieures).
+   */
+  photos?: string[];
 };
 
 /** Une note de l'atelier (ce que lit l'apprentissage : ni commentaire ni auteur) */
@@ -174,6 +179,9 @@ export function ingredientsCanoniques(i: Partial<IngredientsAtelier>): Ingredien
     themes: liste(i.themes),
     couleurs: liste(i.couleurs),
     proposition: txt(i.proposition).slice(0, 200),
+    // Photos : seulement si présentes (la clé des combinaisons notées sans photo ne change pas)
+    ...(Array.isArray(i.photos) && i.photos.some((x) => typeof x === 'string' && /^photo:[^\s]{1,200}$/.test(x))
+      ? { photos: [...new Set(i.photos.filter((x): x is string => typeof x === 'string' && /^photo:[^\s]{1,200}$/.test(x)))].slice(0, 8) } : {}),
   };
 }
 

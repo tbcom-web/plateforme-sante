@@ -76,14 +76,16 @@ const etapes = [
 const faqEnPlus = pedagogique
   ? site.soins.flatMap((s) => s.faq).filter((f, i, toutes) => /ordonnance|prescription|rembours/i.test(f.q) && !site.faqGenerale.some((g) => g.q === f.q) && toutes.findIndex((x) => x.q === f.q) === i).slice(0, 2)
   : [];
+// Recette du studio : « Venir au cabinet » juste sous le premier écran, avant les sujets (même contenu, mêmes H2).
+const infosEnTete = Boolean(site.modele.accueil.infosEnTete) && site.modele.accueil.sections.includes('acces');
+const blocsAccueil = [...(infosEnTete ? ['acces' as const] : []), 'sujets' as const, ...site.modele.accueil.sections.filter((s) => !(infosEnTete && s === 'acces'))];
 ---
 <Gabarit title={title} description={description} path="/" schemas={[faqSchema(site.faqGenerale, { nom: title, description, path: '/' })]} immersif={m.accueil.hero === 'diaporama' || m.accueil.hero === 'plein'}>
   {nouveauGabarit ? <AccueilVariantes articles={articles} /> : (<>
   {m.accueil.hero === 'diaporama' ? <HeroDiaporama /> : m.accueil.hero === 'plein' ? <HeroPlein /> : m.accueil.hero === 'lieu' ? <HeroLieu /> : <HeroScinde />}
-  <SujetsAccueil />
-
-  {m.accueil.sections.map((section) => (
+  {blocsAccueil.map((section) => (
     <>
+      {section === 'sujets' && <SujetsAccueil />}
       {section === 'faits' && (
         <ul class="cadre faits" aria-label="En bref">{faits.map((f) => <li>{f}</li>)}</ul>
       )}

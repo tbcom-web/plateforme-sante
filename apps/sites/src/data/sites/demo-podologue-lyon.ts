@@ -1,5 +1,6 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
-import { lotsPropositions, modeleIntegre, modeleDuSite, ordonnerSoins, packVisuel, reglageStyle, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
+import { readFileSync } from 'node:fs';
+import { libellesComposition, lotsPropositions, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 // POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
@@ -619,5 +620,24 @@ if (process.env.COMBINAISON) {
   site.theme = { ...site.theme, gamme, logo: { ...u.preReglage.logo }, modeVisuel, styleIllustration: style as StyleIllustration };
   site.visuels = { specialite: packC.value, animation: (animation || null) as SiteConfig['visuels']['animation'], ...(animation ? { animationAccueil: animation as NonNullable<SiteConfig['visuels']['animation']> } : {}), photos: packC.photos };
   site.soins = ordonnerSoins(site.soins, u.preReglage.soinsEnAvant);
+}
+// RECETTE=<json> ou RECETTE=<chemin d'un fichier .json> : une recette du studio (composition, recettes.ts), rendue exactement comme
+// sur un site publié (structure, gamme ou couleur libre, paire de polices, style, héros, photos, ordre et variantes des sections,
+// effets) ; sujets = PRINCIPAUX / SECONDAIRES. Ex. : RECETTE=scratch/recette-a.json PRINCIPAUX=sport npx astro build.
+if (process.env.RECETTE) {
+  const brut = process.env.RECETTE.trim().startsWith('{') ? process.env.RECETTE : readFileSync(process.env.RECETTE, 'utf8');
+  const sujets = [...(site.priorites?.principaux ?? []), ...(site.priorites?.secondaires ?? [])];
+  const x = normaliserComposition(JSON.parse(brut), { sujets, principaux: site.priorites?.principaux.length ?? 0 });
+  if (!x) throw new Error('Recette illisible (RECETTE)');
+  const u = universCatalogue(x.structure)!;
+  const base = modeleIntegre(u.preReglage.modele);
+  const { registre, modeVisuel } = reglageStyle(x.visuels.style, x.structure);
+  const { sections, infosEnTete } = sectionsSelonOrdre(base.accueil.sections, x.sections.ordre);
+  site.modele = modeleDuSite(base, { registre, sections, police: x.police, variantes: x.sections.variantes, infosEnTete });
+  site.theme = { ...site.theme, couleur: x.couleur, ...(x.gamme ? { gamme: x.gamme } : { gamme: undefined }), logo: { ...u.preReglage.logo }, modeVisuel, styleIllustration: x.visuels.style, ...(x.visuels.herosSujet ? { herosSujet: x.visuels.herosSujet } : {}), effets: x.effets };
+  // Spécialité et jeu de photos : ceux du site (ils viennent des sujets, pas de la recette) ; la recette pose l'animation et ses photos
+  site.visuels = { ...site.visuels, animation: x.visuels.animation, ...(x.visuels.animation ? { animationAccueil: x.visuels.animation } : {}), ...(x.photos.length ? { photosRecette: x.photos } : {}) };
+  // Ordre des soins : celui du site (les soins mis en avant viennent des sujets du praticien, pas de la recette)
+  console.log(`[demo] recette : ${libellesComposition(x).map((l) => `${l.dimension} ${l.valeur}`).join(' | ')}`);
 }
 export default site;

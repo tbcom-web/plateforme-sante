@@ -40,6 +40,9 @@ export const vitrinePhoto = modeVisuel === 'photos';
 
 /** Photos candidates d'un sujet, dans l'ordre : jeu du site s'il est de la même spécialité, sinon jeu intégré de la spécialité */
 function photosTheme(id: string | null): { src: string; cadrage: string }[] {
+  // Recette du studio : ses photos (tirées de la banque pour les sujets) d'abord
+  const recette = (site.visuels.photosRecette ?? []).map((src) => ({ src, cadrage: '50% 50%' }));
+  if (recette.length) return recette;
   const specialite = themeParId(id)?.specialite ?? site.visuels.specialite;
   if (specialite === site.visuels.specialite) return [jeu.accueil, ...jeu.galerie].map((p) => ({ src: p.photo, cadrage: p.cadrage ?? '50% 50%' })).filter((p) => p.src);
   const p = packVisuel(specialite).photos;
@@ -73,11 +76,14 @@ export const descriptionSoin = (slug: string) => phrase(legendeLigne(ligneDuSoin
 /** Thème n° 1 du praticien, sinon null */
 export const themeUn = navigation.principaux[0]?.theme.id ?? null;
 
+/** Sujet du héros du premier écran : celui choisi par une recette du studio (parmi les sujets principaux), sinon le n° 1 */
+export const themeHeros = navigation.principaux.some((t) => t.theme.id === site.theme.herosSujet) ? site.theme.herosSujet! : themeUn;
+
 // Accueil : premier écran puis blocs des sujets principaux, sans répéter une photo.
 const montrees = new Set<string>();
 /** Visuel du premier écran : photo d'accueil du praticien d'abord (style « photos »), sinon le visuel du thème n° 1 */
 export const visuelPremierEcran: VisuelTheme = vitrinePhoto && site.photos.accueil
   ? (montrees.add(site.photos.accueil), { type: 'photo', src: site.photos.accueil, cadrage: '50% 50%' })
-  : visuelTheme(themeUn, 'principal', montrees);
-/** Visuels des blocs des sujets principaux de l'accueil, dans l'ordre de préférence */
-export const visuelsSujets: VisuelTheme[] = navigation.principaux.map((t, i) => visuelTheme(t.theme.id, i === 0 && !(vitrinePhoto && site.photos.accueil) ? 'second' : 'principal', montrees));
+  : visuelTheme(themeHeros, 'principal', montrees);
+/** Visuels des blocs des sujets principaux de l'accueil, dans l'ordre de préférence (le sujet du héros prend son second visuel) */
+export const visuelsSujets: VisuelTheme[] = navigation.principaux.map((t) => visuelTheme(t.theme.id, t.theme.id === themeHeros && !(vitrinePhoto && site.photos.accueil) ? 'second' : 'principal', montrees));

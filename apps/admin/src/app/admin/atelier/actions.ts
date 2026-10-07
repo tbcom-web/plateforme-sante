@@ -1,7 +1,7 @@
 'use server';
 
 import {
-  cleCombinaison, estEtiquetteAtelier, ingredientsCanoniques, ingredientsProposition, propositionParId, texteRemarques,
+  cleCombinaison, estCleAsset, estEtiquetteAtelier, ingredientsCanoniques, ingredientsProposition, propositionParId, texteRemarques,
   type IngredientsAtelier,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -21,7 +21,9 @@ export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, not
   const entree = { priorites: { principaux: i.themes, secondaires: [] }, couleursPreferees: i.couleurs };
   const p = propositionParId(entree, i.proposition);
   if (!p) return { ok: false, message: 'Combinaison inconnue du générateur (scénario modifié ?).' };
-  const ingredients = ingredientsProposition(p, entree);
+  // Photos montrées (style « photos ») : clés de la banque reçues, gardées si bien formées (la note porte aussi sur elles)
+  const photos = p.modeVisuel === 'photos' ? (i.photos ?? []).filter((k) => estCleAsset(k) && k.startsWith('photo:')) : [];
+  const ingredients = ingredientsCanoniques({ ...ingredientsProposition(p, entree), ...(photos.length ? { photos } : {}) });
   const cle = cleCombinaison(ingredients);
   const texte = String(commentaire ?? '').trim().slice(0, 2000) || null;
   const etq = [...new Set((etiquettes ?? []).filter(estEtiquetteAtelier))];

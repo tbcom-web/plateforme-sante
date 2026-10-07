@@ -12,7 +12,7 @@
 // bulles à picto « façon annuaire » ; village = aplat tramé, titre expressif, illustration en cadre portrait sur ombre pleine ;
 // « pédicurie-podologie » insécable, titre ajusté à sa colonne.
 import type { CSSProperties, ReactNode } from 'react';
-import { avecVille, construireNavigation, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
+import { avecVille, construireNavigation, variantesModele, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -32,6 +32,11 @@ type Props = {
   heros?: HerosApercu | null;
   /** Registre des dessins du site (illustrations des cartes de soins) */
   registre?: Registre;
+  /**
+   * Aperçu d'un élément seul (Donner mon avis, tuiles « Structures de pages » et « Éléments ») : blocs à montrer, parmi
+   * premier, sujets, competences, acces, faq, praticiens, galerie, contact, pied ; absent = la page entière.
+   */
+  seul?: readonly string[];
 };
 
 /** Longueur du plus long mot insécable d'un titre (« pédicurie-podologie », ville composée) : taille du titre (lib/typo.mjs) */
@@ -59,7 +64,7 @@ export function HerosVue({ h, rayon = 0 }: { h: HerosApercu; rayon?: number | st
 
 const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'], [/diab/, 'Diabétiques'], [/senior|chute/, 'Seniors']];
 
-export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null, registre = 'ligne' }: Props) {
+export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null, registre = 'ligne', seul }: Props) {
   const village = gabaritModele(m) === 'village';
   const revue = gabaritModele(m) === 'revue';
   const ROMAINS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
@@ -73,6 +78,9 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const surTitre = [titre, ville].filter(Boolean).join(' · ');
   // Menu calculé comme sur le site (themes.ts, construireNavigation) : sujets principaux, Soins, Le cabinet, Infos pratiques
   const navigation = construireNavigation(d, soins);
+  // Variantes de sections (fiche du modèle + recette du studio, modeleDuSite) : chaque section suit SA variante, comme le site
+  // (components/gabarits/*) — premier écran, soins, sujets, horaires, plan d'accès, équipe, questions ; ordre des sections.
+  const v = variantesModele(m)!;
   const menu = (mobile ? navigation.menuMobile : navigation.menu).map((l) => l.libelle);
   const noms = r.noms;
   const qui = noms.join(' et ') || nomCabinet;
@@ -135,7 +143,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const pid = (id: string) => <span aria-hidden="true" style={{ color: 'var(--g-accent-texte)', display: 'grid' }} dangerouslySetInnerHTML={{ __html: svgPicto(id, { taille: 26 }) ?? '' }} />;
   const ligne: CSSProperties = { display: 'grid', gridTemplateColumns: '30px 1fr', gap: 12, alignItems: 'start' };
   const principaux = soins.slice(0, 3).map((s) => s.titre_court.toLowerCase()).join(', ');
-  const premier = revue ? (
+  const premier = v.accueil === 'figure' ? (
     <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 4fr', gap: 64, alignItems: 'center', paddingBlock: mobile ? '40px 48px' : '88px 80px' }}>
       <div style={{ display: 'grid', justifyItems: 'start' }}>
         <span style={{ fontSize: 15, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-aplat-doux)', marginBottom: 22 }}>{surTitre}</span>
@@ -157,7 +165,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         </figure>
       )}
     </div></section>
-  ) : village ? (
+  ) : v.accueil === 'notice' ? (
     <section style={{ position: 'relative', background: 'var(--g-aplat)', color: 'var(--g-aplat-texte)' }}>
       <span aria-hidden="true" style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--g-encre) 14%, transparent) var(--trame-point), transparent calc(var(--trame-point) + 0.6px))', backgroundSize: 'var(--trame-pas) var(--trame-pas)', WebkitMaskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)', maskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)' }} />
       <div style={{ ...cadre, position: 'relative', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 5fr', columnGap: 48, rowGap: 18, alignItems: 'center', paddingBlock: mobile ? '28px 36px' : '64px 72px' }}>
@@ -238,7 +246,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const illustrationSoin = (slug: string) => <div className="ap-svg" style={{ width: village ? '92%' : '80%', height: village ? '92%' : '88%', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)', color: 'var(--g-encre)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(slug), { registre, id: `ap-soin-${slug}` }) }} />;
   const soinsEditorial = (
     <div style={{ display: 'grid', gap: 32 }}>
-      {village ? (
+      {v.soins === 'grille' ? (
         <div style={{ borderTop: '2px solid var(--g-encre)' }}>{soins.map((s) => (
           <div key={s.slug} style={{ display: 'grid', gridTemplateColumns: `${mobile ? 104 : 168}px 1fr`, gap: mobile ? 16 : 28, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--g-ligne)' }}>
             <div style={{ aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
@@ -246,10 +254,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           </div>
         ))}</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>{soins.slice(0, mobile ? 3 : 6).map((s) => (
-          <div key={s.slug} style={{ borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
-            <div style={{ aspectRatio: '16 / 10', background: 'var(--g-bulle)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
-            <div style={{ display: 'grid', gap: 8, padding: '18px 20px 20px' }}><strong style={{ fontFamily: 'var(--police-titres)', fontSize: 23, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{s.titre_court}</strong><span style={{ color: 'var(--g-encre-douce)', fontSize: 15, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.resume}</span><span style={{ color: 'var(--g-accent-texte)', fontWeight: 700, fontSize: 19 }}>→</span></div>
+        <div className="forme-grille eff-grille" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>{soins.slice(0, mobile ? 3 : 6).map((s) => (
+          <div key={s.slug} className="eff-carte forme-carte" style={{ borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
+            <div className="eff-visuel forme-visuel" style={{ aspectRatio: '16 / 10', background: 'var(--g-bulle)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
+            <div style={{ display: 'grid', gap: 8, padding: '18px 20px 20px' }}><strong className="forme-texte eff-titre" style={{ fontFamily: 'var(--police-titres)', fontSize: 23, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{s.titre_court}</strong><span className="forme-texte" style={{ color: 'var(--g-encre-douce)', fontSize: 15, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.resume}</span><span style={{ color: 'var(--g-accent-texte)', fontWeight: 700, fontSize: 19 }}>→</span></div>
           </div>
         ))}</div>
       )}
@@ -257,7 +265,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       {liens('Infos pratiques', infos)}
     </div>
   );
-  const soinsSection = section('Une prise en charge du pied, à tout âge.', !revue ? soinsEditorial : (
+  const soinsSection = section('Une prise en charge du pied, à tout âge.', v.soins !== 'filets' ? soinsEditorial : (
     <div style={{ display: 'grid', gap: 22 }}>
       {rangee('Soins', soins.map((s) => ({ cle: s.slug, texte: s.titre_court, picto: s.slug })), 'var(--g-bulle)', 'var(--g-bulle-texte)')}
       {pourQui.length >= 2 && rangee('Pour qui', pourQui.map((p) => ({ cle: p, texte: p })), 'var(--g-duo-bulle)', 'var(--g-duo-texte)')}
@@ -266,22 +274,101 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   ));
   // Sans horaires : « Sur rendez-vous » (repli du site), jamais une semaine « Fermé »
   const horairesTable = !horairesRenseignes(horaires) ? <p style={{ margin: 0, fontWeight: 650 }}>{lieu?.surRendezVous ? 'Sur rendez-vous uniquement' : REPLIS.horaires}</p> : (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 16 }}><tbody>{horaires.map((h, k) => <tr key={h.jour} style={{ borderBottom: '1px solid var(--g-ligne)', background: k === 0 ? 'var(--g-bulle)' : undefined }}><th style={{ textAlign: 'left', padding: '8px 10px' }}>{h.jour}</th><td style={{ padding: '8px 0', color: h.heures ? 'var(--g-encre)' : 'var(--g-encre-douce)' }}>{h.heures || 'Fermé'}</td></tr>)}</tbody></table>
+    v.horaires === 'bandeau' && !mobile ? (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 8 }}>{horaires.map((h, k) => <div key={h.jour} style={{ display: 'grid', gap: 4, padding: '12px 14px', borderRadius: 'calc(var(--rayon) * 0.6)', background: k === 0 ? 'var(--g-bulle)' : 'var(--g-doux)', fontSize: 15 }}><strong>{h.jour}</strong><span style={{ color: h.heures ? 'var(--g-encre)' : 'var(--g-encre-douce)' }}>{h.heures || 'Fermé'}</span></div>)}</div>
+    ) : (
+      <div style={v.horaires === 'carte' ? { padding: mobile ? 18 : 26, borderRadius: 'var(--rayon)', background: 'var(--g-doux)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' } : undefined}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: v.horaires === 'liste' ? 18 : 16 }}><tbody>{horaires.map((h, k) => <tr key={h.jour} style={{ borderBottom: '1px solid var(--g-ligne)', background: k === 0 ? (v.horaires === 'liste' ? 'var(--g-aplat)' : 'var(--g-bulle)') : undefined, fontWeight: k === 0 && v.horaires === 'liste' ? 700 : undefined }}><th style={{ textAlign: 'left', padding: v.horaires === 'liste' ? '14px 10px' : '8px 10px' }}>{h.jour}</th><td style={{ padding: v.horaires === 'liste' ? '14px 0' : '8px 0', color: h.heures ? 'var(--g-encre)' : 'var(--g-encre-douce)' }}>{h.heures || 'Fermé'}</td></tr>)}</tbody></table>
+      </div>
+    )
   );
   const volets = ['Prise de rendez-vous', 'Transports et stationnement', 'Tarifs', 'Moyens de règlement acceptés'];
   const accesSection = section('Venir au cabinet.', (
     <div style={{ display: 'grid', gap: 22 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: mobile || village ? '1fr' : '1.1fr 0.9fr', gap: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: mobile || v.infos === 'notice' || v.horaires === 'bandeau' ? '1fr' : v.infos === 'colonnes' ? '0.9fr 1.1fr' : '1.1fr 0.9fr', gap: 28 }}>
         {horairesTable}
-        <div style={{ display: 'grid', gap: 8, alignContent: 'start' }}><strong>Adresse</strong><span>{adresse}</span>{(r.aTelephone || r.aAdresse) && <span style={{ color: 'var(--g-accent-texte)', fontWeight: 650 }}>{[tel, r.aAdresse ? 'Itinéraire' : ''].filter(Boolean).join(' · ')}</span>}{village && r.aAdresse && plan}</div>
+        <div style={{ display: 'grid', gap: 8, alignContent: 'start' }}><strong>Adresse</strong><span>{adresse}</span>{(r.aTelephone || r.aAdresse) && <span style={{ color: 'var(--g-accent-texte)', fontWeight: 650 }}>{[tel, r.aAdresse ? 'Itinéraire' : ''].filter(Boolean).join(' · ')}</span>}{v.infos !== 'volets' && r.aAdresse && plan}</div>
       </div>
       <div>{volets.map((v) => <div key={v} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: 56, borderBottom: '1px solid var(--g-ligne)', fontWeight: 650 }}>{v}<span style={{ ...rond, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)' }}>+</span></div>)}</div>
     </div>
   ));
   const faqSection = section('Bon à savoir avant de venir.', (
-    <div style={{ display: 'grid', gap: 10, maxWidth: 820 }}>{['Comment prendre rendez-vous ?', 'Les consultations sont-elles remboursées ?'].map((q) => <div key={q} style={revue ? { padding: '16px 0', borderBottom: '1px solid var(--g-ligne)', display: 'flex', justifyContent: 'space-between', fontWeight: 500 } : { padding: '18px 22px', borderRadius: 'var(--rayon)', background: village ? 'var(--g-doux)' : 'var(--g-carte)', boxShadow: village ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', display: 'flex', justifyContent: 'space-between', fontWeight: 650 }}>{q}<span style={revue ? {} : { ...rond, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)' }}>+</span></div>)}</div>
+    <div style={{ display: 'grid', gap: 10, maxWidth: v.faq === 'colonnes' && !mobile ? 'none' : 820, gridTemplateColumns: v.faq === 'colonnes' && !mobile ? '1fr 1fr' : '1fr' }}>{['Comment prendre rendez-vous ?', 'Les consultations sont-elles remboursées ?'].map((q) => v.faq === 'ouverte' ? <div key={q} style={{ padding: '14px 0', borderBottom: '1px solid var(--g-ligne)' }}><strong>{q}</strong><p style={{ margin: '8px 0 0', color: 'var(--g-encre-douce)' }}>{q.startsWith('Comment') ? `En ligne ou par téléphone${r.aTelephone ? ` au ${tel}` : ''}.` : 'Selon la prescription et votre situation : renseignez-vous auprès de votre caisse.'}</p></div> : <div key={q} style={revue ? { padding: '16px 0', borderBottom: '1px solid var(--g-ligne)', display: 'flex', justifyContent: 'space-between', fontWeight: 500 } : { padding: '18px 22px', borderRadius: 'var(--rayon)', background: village ? 'var(--g-doux)' : 'var(--g-carte)', boxShadow: village ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', display: 'flex', justifyContent: 'space-between', fontWeight: 650 }}>{q}<span style={revue ? {} : { ...rond, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)' }}>+</span></div>)}</div>
   ));
 
+
+  // Sujets du cabinet (SujetsAccueil) : présentation selon la variante (une, rangées, cartes, liste, colonnes)
+  const sujetsPrincipaux = navigation.principaux;
+  const sujetsSection = sujetsPrincipaux.length ? (
+    <section style={{ ...cadre, paddingTop: 28 }}>
+      <ul className="eff-grille forme-grille" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: v.sujets === 'liste' ? 0 : 18, gridTemplateColumns: mobile || v.sujets === 'liste' || v.sujets === 'rangees' ? '1fr' : v.sujets === 'cartes' ? `repeat(${Math.min(3, sujetsPrincipaux.length)}, 1fr)` : '1fr 1fr', borderTop: v.sujets === 'liste' ? '2px solid var(--g-encre)' : undefined }}>
+        {sujetsPrincipaux.map((t, i) => {
+          const une = v.sujets === 'une' && i === 0;
+          const ligneVisuel = v.sujets === 'liste' || (!mobile && (v.sujets === 'rangees' || une));
+          return (
+            <li key={t.theme.id} className="eff-carte forme-carte" style={{ gridColumn: une && !mobile ? '1 / -1' : undefined, display: 'grid', gridTemplateColumns: ligneVisuel ? (v.sujets === 'liste' ? `${mobile ? 96 : 150}px 1fr` : '1fr 1fr') : '1fr', gap: v.sujets === 'liste' ? 18 : 20, alignItems: 'center', padding: v.sujets === 'liste' ? '16px 0' : 0, borderBottom: v.sujets === 'liste' ? '1px solid var(--g-ligne)' : undefined }}>
+              <div className="eff-visuel forme-visuel" style={{ order: v.sujets === 'rangees' && i % 2 && !mobile ? 2 : 0, aspectRatio: v.sujets === 'liste' ? '1 / 1' : '16 / 10', borderRadius: 'var(--rayon)', background: 'var(--g-aplat)', overflow: 'hidden', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}>
+                <div className="ap-svg" style={{ width: '86%', height: '86%' }} dangerouslySetInnerHTML={{ __html: themeIllustre(t.theme.id) ? illustrationTheme(t.theme.id, { format: 'paysage', registre, id: `ap-suj-${t.theme.id}` }) : '' }} />
+              </div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                <strong className="eff-titre forme-texte" style={{ fontFamily: 'var(--police-titres)', fontWeight: 'var(--graisse-titres)' as unknown as number, fontSize: une ? (mobile ? 30 : 44) : v.sujets === 'liste' ? 22 : 26, lineHeight: 1.1, letterSpacing: '-0.03em', justifySelf: 'start' }}>{t.theme.libelle}</strong>
+                <span className="forme-texte" style={{ color: 'var(--g-encre-douce)', fontSize: 16 }}>{t.theme.description}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  ) : null;
+  // Équipe : cartes, fiches ou liste (comme Praticiens.astro)
+  const equipeSection = noms.length ? section(noms.length > 1 ? `Une équipe de ${noms.length} praticiens.` : `Votre ${titre.toLowerCase()}${suffixeVille}.`, (
+    <div style={{ display: 'grid', gap: v.praticiens === 'liste' ? 0 : 14, gridTemplateColumns: v.praticiens === 'cartes' && !mobile ? 'repeat(auto-fill, minmax(260px, 1fr))' : '1fr' }}>
+      {noms.map((n) => <div key={n} className="eff-carte" style={v.praticiens === 'liste' ? { padding: '14px 0', borderBottom: '1px solid var(--g-ligne)', fontWeight: 650 } : { padding: 20, borderRadius: 'var(--rayon)', background: v.praticiens === 'fiches' ? 'var(--g-doux)' : 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}><strong>{n}</strong><span style={{ display: 'block', color: 'var(--g-encre-douce)', fontSize: 15 }}>{titre}</span></div>)}
+    </div>
+  )) : null;
+  // Ordre des blocs de l'accueil (fiche + recette) : « Venir au cabinet » avant les sujets si demandé
+  const infosEnTete = Boolean(m.accueil.infosEnTete) && m.accueil.sections.includes('acces');
+  const blocs = [...(infosEnTete ? ['acces'] : []), 'sujets', ...m.accueil.sections.filter((x) => !(infosEnTete && x === 'acces'))];
+  // Galerie du cabinet (photos du praticien seulement, comme le site) : mosaïque, diaporama au doigt, grande photo, bande
+  const photosCabinet = (d.photos?.cabinet ?? []).filter(Boolean).slice(0, 4);
+  const imgGalerie = (src: string, ratio = '4 / 3', rayon: string | number = 'var(--rayon)') => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" style={{ width: '100%', aspectRatio: ratio, objectFit: 'cover', borderRadius: rayon, display: 'block' }} />
+  );
+  const galerieSection = photosCabinet.length ? section('En images', v.galerie === 'defilement' ? (
+    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: 8 }}>{photosCabinet.map((src, k) => <div key={k} className="eff-visuel" style={{ flex: `0 0 ${mobile ? '80%' : '360px'}`, scrollSnapAlign: 'start' }}>{imgGalerie(src)}</div>)}</div>
+  ) : v.galerie === 'grande' && !mobile ? (
+    <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(3, 1fr)' }}>{photosCabinet.map((src, k) => <div key={k} className="eff-visuel" style={{ gridColumn: k === 0 ? '1 / -1' : undefined }}>{imgGalerie(src, k === 0 ? '16 / 7' : '4 / 3')}</div>)}</div>
+  ) : v.galerie === 'bande' ? (
+    <div style={{ display: 'grid', gap: 4, gridTemplateColumns: mobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>{photosCabinet.map((src, k) => <div key={k} className="eff-visuel">{imgGalerie(src, '3 / 4', 0)}</div>)}</div>
+  ) : (
+    <div style={{ display: 'grid', gap: 12, gridTemplateColumns: mobile ? '1fr' : 'repeat(auto-fill, minmax(220px, 1fr))' }}>{photosCabinet.map((src, k) => <div key={k} className="eff-visuel">{imgGalerie(src)}</div>)}</div>
+  )) : null;
+  // Rendez-vous et contact (Coquille.astro, variante « contact ») : actions en liens, jamais de formulaire
+  const actionsContact = [
+    ...(enLigne ? ['Prendre rendez-vous'] : []), ...(r.aTelephone ? ['Appeler le cabinet'] : []), ...(d.cabinet.email ? ['Écrire au cabinet'] : []), ...(r.aAdresse ? ['Itinéraire'] : []),
+  ];
+  const actionContact = (a: string, k: number) => <span key={a} className={k === 0 ? 'eff-bouton' : undefined} style={{ ...bouton(k === 0), minHeight: 52 }}>{a}</span>;
+  const contactBloc = (v.contact === 'bandeau' || v.contact === 'carte') && actionsContact.length ? (
+    v.contact === 'bandeau' ? (
+      <aside style={{ marginTop: 56, padding: mobile ? '28px 0' : '40px 0', background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: mobile ? 'flex-start' : 'center' }}>{actionsContact.map(actionContact)}</div></aside>
+    ) : (
+      <aside style={{ ...cadre, marginTop: 56 }}><div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr auto', gap: 18, alignItems: 'center', padding: mobile ? 24 : 40, borderRadius: 'var(--rayon)', background: 'var(--g-doux)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
+        <div style={{ display: 'grid', gap: 6, minWidth: 0 }}><strong style={{ fontFamily: 'var(--police-titres)', fontWeight: 'var(--graisse-titres)' as unknown as number, fontSize: mobile ? 22 : 27 }}>{nomCabinet}</strong>{tel && <span style={{ fontWeight: 650, fontSize: 20 }}>{tel}</span>}{d.cabinet.email && <span style={{ fontWeight: 650, fontSize: 19, overflowWrap: 'anywhere' }}>{d.cabinet.email}</span>}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>{actionsContact.map(actionContact)}</div>
+      </div></aside>
+    )
+  ) : null;
+  // Téléphone : barre d'actions (barre, bandeau, carte) ou bouton flottant, collés en bas de l'aperçu
+  const principale = (k: number) => (enLigne ? k === 1 : k === 0);
+  const barreMobile = mobile && actionsContact.length ? (
+    v.contact === 'flottant' ? (
+      <div style={{ position: 'sticky', bottom: 16, display: 'flex', justifyContent: 'flex-end', paddingRight: 16, pointerEvents: 'none' }}><span title={actionsContact[0]} style={{ width: 60, height: 60, borderRadius: '50%', background: 'var(--g-vif)', color: 'var(--g-vif-texte)', display: 'grid', placeItems: 'center', fontSize: 26, boxShadow: '0 6px 18px color-mix(in srgb, var(--g-encre) 22%, transparent)' }}>{enLigne ? '📅' : r.aTelephone ? '☏' : '✉'}</span></div>
+    ) : (
+      <div style={{ position: 'sticky', bottom: 0, display: 'grid', gridTemplateColumns: actionsContact.length > 1 ? '1fr 1fr' : '1fr', background: 'var(--g-carte)', boxShadow: '0 -1px 0 var(--g-ligne)' }}>{actionsContact.slice(0, 2).map((a, k) => <span key={a} style={{ display: 'grid', placeItems: 'center', minHeight: 60, fontWeight: 650, background: principale(k) ? 'var(--g-vif)' : undefined, color: principale(k) ? 'var(--g-vif-texte)' : 'var(--g-encre)' }}>{a === 'Appeler le cabinet' && enLigne ? 'Appeler' : a}</span>)}</div>
+    )
+  ) : null;
+  const montrer = (b: string) => !seul || seul.includes(b);
 
   const fiche = soins[0] && revue ? (
     <>
@@ -319,11 +406,15 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
 
   return (
     <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
-      {entete}
-      {vue === 'accueil' ? <>{premier}{soinsSection}{accesSection}{faqSection}</> : fiche}
-      <footer style={{ marginTop: revue ? 0 : 64, padding: '44px 0 28px', background: revue ? 'var(--g-page)' : village ? 'var(--g-doux)' : 'var(--g-sombre)', color: village || revue ? 'var(--g-encre-douce)' : 'var(--g-sombre-doux)', borderTop: revue ? '3px double var(--g-encre)' : village ? '2px solid var(--g-encre)' : undefined }}>
+      {!seul && entete}
+      {vue === 'accueil' ? <>{montrer('premier') && premier}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : null}</div>)}</> : fiche}
+      {seul?.includes('galerie') && !blocs.includes('galerie') && galerieSection}
+      {montrer('contact') && contactBloc}
+      {montrer('pied') && <footer style={{ marginTop: revue ? 0 : 64, padding: '44px 0 28px', background: revue ? 'var(--g-page)' : village ? 'var(--g-doux)' : 'var(--g-sombre)', color: village || revue ? 'var(--g-encre-douce)' : 'var(--g-sombre-doux)', borderTop: revue ? '3px double var(--g-encre)' : village ? '2px solid var(--g-encre)' : undefined }}>
         <div style={cadre}><strong style={{ color: village || revue ? 'var(--g-encre)' : 'var(--g-sombre-texte)', fontFamily: revue ? 'var(--police-titres)' : undefined, fontStyle: revue ? 'italic' : undefined }}>{nomCabinet}</strong><p style={{ margin: '8px 0 0', fontSize: 15 }}>{[adresse, tel].filter(Boolean).join(' · ')}</p><p style={{ margin: '20px 0 0', fontSize: 13 }}>Illustrations : représentations schématiques, sans valeur de mesure</p></div>
-      </footer>
+      </footer>}
+      {montrer('contact') && barreMobile}
+      {seul?.includes('contact') && !contactBloc && !barreMobile && <p style={{ ...cadre, padding: '24px 0', color: 'var(--g-encre-douce)' }}>{v.contact === 'flottant' ? 'Bouton flottant : visible sur téléphone.' : 'Barre d’actions : visible sur téléphone.'}</p>}
     </div>
   );
 }

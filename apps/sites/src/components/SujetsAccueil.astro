@@ -9,7 +9,7 @@
 // Variante `soins` : rangée de liens par sujet en tête de la page « Soins » (repli des thèmes n° 2 et 3 sur téléphone).
 import VisuelTheme from './accueil/VisuelTheme.astro';
 import { navigation } from '../lib/navigation';
-import { nouveauGabarit } from '../lib/gabarits';
+import { nouveauGabarit, variantes } from '../lib/gabarits';
 import { visuelsSujets } from '../lib/vitrine';
 import { site } from '../lib/site';
 import { registre } from '../lib/visuels';
@@ -23,7 +23,7 @@ const liens = accueil ? secondaires : [...principaux, ...secondaires];
 const plan = !nouveauGabarit && registre === 'releve' && site.modele.jetons.motif === 'trame';
 ---
 {(principaux.length > 0 || secondaires.length > 0) && (
-  <section class:list={['sujets', `sujets--${variante}`, nouveauGabarit ? (accueil ? 'g-section g-bloc' : '') : accueil ? 'section section--sujets' : '']} aria-label={accueil ? 'Sujets du cabinet' : 'Soins par sujet'}>
+  <section class:list={['sujets', `sujets--${variante}`, accueil && variantes.sujets !== 'une' && ['sujets--v', `sujets--v-${variantes.sujets}`], nouveauGabarit ? (accueil ? 'g-section g-bloc' : '') : accueil ? 'section section--sujets' : '']} aria-label={accueil ? 'Sujets du cabinet' : 'Soins par sujet'}>
     <div class:list={[accueil ? (nouveauGabarit ? 'g-cadre g-bloc__dedans' : 'cadre') : '', 'sujets__dedans']}>
       {accueil && principaux.length > 0 && (
         <ul class:list={['sujets__blocs', `sujets__blocs--${principaux.length}`]}>
@@ -104,6 +104,32 @@ const plan = !nouveauGabarit && registre === 'releve' && site.modele.jetons.moti
   .sujets__liens a { display: inline-flex; align-items: center; min-height: var(--cible-tactile, 44px); color: var(--s-encre); font-weight: 600; text-decoration: underline; text-decoration-color: var(--s-ligne); text-decoration-thickness: var(--filet-fort, 2px); text-underline-offset: 6px; transition: text-decoration-color var(--duree-court, 0.15s); }
   .sujets__liens a:hover { color: var(--s-encre); text-decoration-color: var(--s-accent); }
   .sujets--soins .sujets__liens { border-top: 0; padding-top: 0; margin-bottom: 8px; }
+
+  /* ———— Variantes de présentation (studio de recettes : variantes.sujets) : même contenu, mise en page seule ————
+     Préfixe html : elles priment sur la présentation propre au gabarit (« une »). */
+  :global(html) .sujets--v .sujets__blocs { grid-template-columns: minmax(0, 1fr); }
+  :global(html) .sujets--v .sujet { grid-column: auto; }
+  :global(html) .sujets--v .sujet__lien { grid-template-columns: minmax(0, 1fr); }
+  :global(html) .sujets--v .sujet__visuel { order: 0; aspect-ratio: 16 / 10; }
+  :global(html) .sujets--v .sujet--une .sujet__titre { font-size: clamp(1.5rem, 2.6vw, 2.1rem); letter-spacing: -0.03em; }
+  @media (min-width: 760px) {
+    /* Grandes rangées illustrées, alternées gauche / droite */
+    :global(html) .sujets--v-rangees .sujet__lien { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 56px); align-items: center; }
+    :global(html) .sujets--v-rangees .sujet:nth-child(even) .sujet__visuel { order: 2; }
+    :global(html) .sujets--v-rangees .sujet__visuel { aspect-ratio: 4 / 3; }
+    /* Cartes égales (trois par ligne au plus) */
+    :global(html) .sujets--v-cartes .sujets__blocs { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+    /* Deux colonnes égales */
+    :global(html) .sujets--v-colonnes .sujets__blocs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  /* Liste éditoriale : petit visuel, titre, une ligne ; filets entre les sujets */
+  :global(html) .sujets--v-liste .sujets__blocs { gap: 0; border-top: var(--filet-fort, 2px) solid var(--s-encre); }
+  :global(html) .sujets--v-liste .sujet { border-bottom: var(--filet, 1px) solid var(--s-ligne); }
+  :global(html) .sujets--v-liste .sujet__lien { grid-template-columns: clamp(96px, 22vw, 168px) minmax(0, 1fr); gap: clamp(16px, 3vw, 32px); align-items: center; padding: 18px 0; background: none; color: var(--s-encre); }
+  :global(html) .sujets--v-liste .sujet__visuel { aspect-ratio: 1 / 1; }
+  :global(html) .sujets--v-liste :is(.sujet__titre, .sujet__ligne) { color: var(--s-encre); }
+  :global(html) .sujets--v-liste .sujet__suite { display: none; }
+  :global(html) .sujets--v-liste .sujet__titre { font-size: clamp(1.3rem, 2vw, 1.7rem); }
 
   /* Apparition discrète au défilement (CSS seulement ; rien si le visiteur réduit les mouvements) */
   @supports (animation-timeline: view()) {

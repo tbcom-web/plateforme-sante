@@ -88,6 +88,9 @@ export type SiteConfig = {
     modeVisuel?: import('./draft').ModeVisuel;
     /** Style d'illustration choisi par le praticien (propositions.ts) : le premier écran honore alors le registre du site */
     styleIllustration?: 'releve' | 'pedagogique' | 'ligne' | 'photos';
+    /** Recette du studio : sujet dont le héros illustre le premier écran (sinon le sujet n° 1) et jeu d'effets (effets.ts) */
+    herosSujet?: string;
+    effets?: string;
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };
@@ -138,6 +141,8 @@ export type SiteConfig = {
     /** Animation d'accueil choisie (proposition) : prioritaire sur celle du sujet n° 1 et de la spécialité */
     animationAccueil?: import('./packs').Animation;
     photos: import('./packs').PackVisuel['photos'];
+    /** Photos d'une recette du studio (style « photos ») : premier écran et blocs des sujets ; jeu et données structurées inchangés */
+    photosRecette?: string[];
     /** Spécialité secondaire (facultative) : complète le jeu visuel (jeux.ts) */
     specialiteSecondaire?: string;
     /** Personnalisations de l'admin (table packs_visuels) de la principale et de la secondaire */

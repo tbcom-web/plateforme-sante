@@ -23,7 +23,7 @@ import '@fontsource-variable/newsreader/wght-italic.css';
 import '@plateforme/core/dessins.css';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  completerJeuVisuel, construireNavigation, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
+  completerJeuVisuel, construireNavigation, cssEffets, cssSurvolSimule, cssFormes, formeDesCartes, jeuEffets, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
   avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS, illustrationTheme, themeIllustre, themeParId, packVisuel, svgLigne, cssPressionGamme,
   type Animation, type NomDessin, type NomLigne, type FormatHeros, type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
@@ -43,6 +43,10 @@ type Props = {
   plein?: boolean;
   /** Admin : nom interne du modèle et jeu visuel affichés dans la barre (jamais côté praticien) */
   technique?: boolean;
+  /** Studio de recettes : démonstration du survol des effets (règles « au survol » appliquées sans souris) */
+  survol?: boolean;
+  /** Élément seul (Donner mon avis : structures de pages, éléments) : blocs montrés par ApercuGabarit, sans en-tête */
+  seul?: readonly string[];
 };
 type Vue = 'accueil' | 'soin';
 export type Appareil = 'bureau' | 'mobile';
@@ -90,7 +94,7 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
   pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
 };
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false }: Props) {
+export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul }: Props) {
   const [vue, setVue] = useState<Vue>('accueil');
   const [appareil, setAppareil] = useState<Appareil>(appareilInitial);
   const boite = useRef<HTMLDivElement>(null);
@@ -119,9 +123,13 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const mode = d.theme.modeVisuel;
   const jeu = useMemo(() => {
     // Jeu de photos du site : un jeu partagé ne vaut que pour sa spécialité (un nouveau tirage suit l'enregistrement).
-    const perso = jeuPhotos && (jeuPhotos.siteId || jeuPhotos.specialite === d.theme.specialite) ? persoDuJeuPhotos(jeuPhotos) : null;
+    // Recette du studio (style « photos ») : ses photos tirées de la banque passent devant le jeu (comme le site : lib/vitrine.ts)
+    const pr = d.theme.modeVisuel === 'photos' ? d.theme.photosRecette ?? [] : [];
+    const perso = pr.length
+      ? persoDuJeuPhotos({ photos: { accueil: pr[0], panorama: pr[1] ?? pr[0], galerie: pr.slice(1).length ? pr.slice(1) : pr, soins: {} } })
+      : jeuPhotos && (jeuPhotos.siteId || jeuPhotos.specialite === d.theme.specialite) ? persoDuJeuPhotos(jeuPhotos) : null;
     return completerJeuVisuel(jeuVisuel(d.theme.specialite, d.theme.specialiteSecondaire || null, perso), perso);
-  }, [d.theme.specialite, d.theme.specialiteSecondaire, jeuPhotos]);
+  }, [d.theme.specialite, d.theme.specialiteSecondaire, d.theme.modeVisuel, d.theme.photosRecette, jeuPhotos]);
 
   const style = useMemo(() => {
     const v: Record<string, string> = {
@@ -175,7 +183,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   // Héros du sujet n° 1 (même règle que le site : lib/vitrine.ts, VisuelTheme, HeroDiaporama) : photo du sujet en style
   // « photos » (celle du praticien d'abord), sinon l'illustration composée du thème (heros-themes.ts) dans le registre du site ;
   // accueil Technique en relevé : image fixe de l'animation choisie (proposition), sinon celle du sujet, sinon le podoscope.
-  const themeUn = construireNavigation(d, soins).principaux[0]?.theme.id ?? null;
+  // Héros : sujet choisi par une recette du studio (parmi les principaux), sinon le n° 1 (comme le site : themeHeros)
+  const principauxIds = construireNavigation(d, soins).principaux.map((x) => x.theme.id);
+  const themeUn = d.theme.herosSujet && principauxIds.includes(d.theme.herosSujet) ? d.theme.herosSujet : principauxIds[0] ?? null;
   const herosApercu = (format: FormatHeros, registreForce?: Registre, animer = false): HerosApercu | null => {
     if (mode === 'photos') {
       const spec = themeParId(themeUn)?.specialite ?? jeu.specialite;
@@ -498,10 +508,15 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             data-motif={j.motif ?? 'plan'}
             data-titres={j.policeTitres}
             data-registre={registre}
+            data-effets={jeuEffets(d.theme.effets)?.id}
+            data-forme={formeDesCartes(m)}
+            data-survol={survol || undefined}
             style={{ ...style, width: LARGEUR[appareil], transform: `scale(${echelle})`, transformOrigin: '0 0', position: 'absolute', top: 0, left: 0 }}
           >
+            {cssFormes(formeDesCartes(m)) && <style dangerouslySetInnerHTML={{ __html: cssFormes(formeDesCartes(m)) }} />}
+            {jeuEffets(d.theme.effets) && <style dangerouslySetInnerHTML={{ __html: cssEffets(d.theme.effets).replace(/@view-transition\{[^}]*\}/g, '') + cssSurvolSimule(d.theme.effets) }} />}
             {gabaritModele(m) !== 'classique' ? (
-              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={gabaritModele(m) === 'tableau' ? herosSeul(!d.theme.styleIllustration ? 'releve' : undefined) : herosApercu('portrait')} registre={registre} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
+              <ApercuGabarit seul={seul} draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={gabaritModele(m) === 'tableau' ? herosSeul(!d.theme.styleIllustration ? 'releve' : undefined) : herosApercu('portrait')} registre={registre} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
                 marque={d.theme.logoPerso.url ? <img src={d.theme.logoPerso.url} alt="" style={{ height: 40 }} /> : <span dangerouslySetInnerHTML={{ __html: marque }} />} />
             ) : (<>
             <header className={`ap-entete ${transparent ? 'ap-entete--transparent' : ''}`}>

@@ -1,8 +1,10 @@
 import {
   assetsInfluents, changementsGenerateur, markdownAnimationsEnAttente, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
   markdownHashtags, universDuParcours,
+  resumeRenforts,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
+import { getRecettesLecture } from '@/lib/recettes';
 import { getNotesAtelier, getPoidsAtelier } from '@/lib/atelier';
 import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getChangementsClaude } from '@/lib/changements';
@@ -28,9 +30,11 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   // Hashtags des visuels (0029) : lus en parallèle du reste
   const lectureHashtags = getHashtagsAssets();
-  const [assets, atelier, revues, photosJeux, poids, changementsClaude, catalogue, modeles, marquesImportees, { univers }, inspirations, motsCles, surchargesSujets] = await Promise.all([
+  const [assets, atelier, revues, photosJeux, poids, changementsClaude, catalogue, modeles, marquesImportees, { univers }, inspirations, motsCles, surchargesSujets, recettes] = await Promise.all([
     getNotesAssets(), getNotesAtelier(), getRevuesIllustrations(), getPhotosDesJeux(), getPoidsAtelier(), getChangementsClaude(),
     getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getInspirations(), getMotsClesEnBase(), getSurchargesSujets(),
+    // Recettes du studio notées (0032) : « Recette X validée : renforce gamme Y, police Z, photo W »
+    getRecettesLecture(1),
   ]);
   const titres = titresAssets();
   const hashtags = await lectureHashtags;
@@ -83,6 +87,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         changements={changementsGenerateur(poids)}
         influents={assetsInfluents(poids, titres)}
         changementsClaude={changementsClaude}
+        renfortsRecettes={resumeRenforts(recettes, 6)}
         migrationAssets={assets.migrationManquante}
         migrationAtelier={atelier.migrationManquante}
         poids={poids}

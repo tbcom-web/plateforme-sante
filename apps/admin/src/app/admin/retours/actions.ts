@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { clePhoto, estAssetDuCode, estCleAsset, estEtiquetteDuType, estSujetDeVisuel, lireInstantane, texteRemarques, typeDeCle } from '@plateforme/core';
+import { clePhoto, estAssetDuCode, estCleAsset, estCleStudio, estEtiquetteDuType, estSujetDeVisuel, lireInstantane, texteRemarques, typeDeCle } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux } from '@/lib/assets-notes';
 import { lancerWorkflow } from '@/lib/publication';
@@ -20,7 +20,8 @@ export async function ajouterNoteAsset(
   await exigerAdmin();
   const type = typeof cle === 'string' ? typeDeCle(cle) : null;
   if (!type) return { ok: false, message: 'Élément inconnu.' };
-  if (!estAssetDuCode(cle)) {
+  // Structures de pages, éléments et jeux d'effets du studio (tuiles dédiées) : clé connue du studio (recettes.ts)
+  if (!estAssetDuCode(cle) && !estCleStudio(cle)) {
     const photos = type === 'photo' ? await getPhotosDesJeux() : [];
     if (!photos.some((p) => clePhoto(p.url) === cle)) return { ok: false, message: 'Élément inconnu.' };
   }

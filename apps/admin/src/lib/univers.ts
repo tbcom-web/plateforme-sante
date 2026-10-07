@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+  appliquerRecette,
   appliquerReglages,
   type ReglagesSite,
   appliquerUnivers,
@@ -19,6 +20,7 @@ import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
 import { themesActives } from '@/lib/themes';
+import { getRecettesLecture } from '@/lib/recettes';
 
 // Univers du catalogue côté serveur : statuts enregistrés (table univers_statuts, migration 0018), nombre de sites
 // qui les utilisent, et application d'un univers au brouillon d'un site (parcours praticien, phase B).
@@ -52,7 +54,7 @@ export async function sitesParUnivers(supabase?: Client): Promise<Record<string,
 export async function appliquerUniversAuSite(
   siteId: string,
   universId: string,
-  opts: { admin?: boolean; version?: string | null; parcours?: boolean; reglages?: Partial<ReglagesSite> & { proposition?: string | null } } = {},
+  opts: { admin?: boolean; version?: string | null; parcours?: boolean; reglages?: Partial<ReglagesSite> & { proposition?: string | null; recette?: string | null } } = {},
 ): Promise<{ ok: boolean; message: string; resultat?: Omit<ResultatUnivers, 'draft'>; version?: string; draft?: SiteDraft }> {
   const supabase = await createClient();
   const { univers } = await getUnivers(supabase);
@@ -75,6 +77,12 @@ export async function appliquerUniversAuSite(
   // Proposition choisie (étape « Votre site ») ou réglages ajustés : gamme, style d'illustration, animation (valeurs contrôlées
   // par appliquerReglages : gamme connue, style compatible avec la structure).
   if (opts.reglages) r.draft = appliquerReglages(r.draft, opts.reglages);
+  // Recette du studio choisie (parcours) : relue côté serveur (recettes_lecture, actives et bien notées), jamais reçue telle quelle
+  if (opts.reglages?.recette) {
+    const recette = (await getRecettesLecture(4)).find((x) => x.id === opts.reglages!.recette);
+    const a = recette ? appliquerRecette(r.draft, recette.composition, { id: recette.id, proposes: [u], modeles: modeles.map((m) => m.manifeste), soinsConnus: catalogue.map((c) => c.slug), themesActives: themesActives() }) : null;
+    if (a) r.draft = { ...a.draft, theme: { ...a.draft.theme, proposition: `recette~${recette!.id}` } };
+  }
   r.draft.theme.jeuPhotos = r.draft.theme.jeuPhotos || (await jeuPhotosAEnregistrer(supabase, siteId, avant.theme, r.draft.theme.specialite));
 
   const { data, error } = await supabase.from('sites').update({ config: r.draft }).eq('id', siteId).eq('updated_at', site.updated_at).select('updated_at').maybeSingle();

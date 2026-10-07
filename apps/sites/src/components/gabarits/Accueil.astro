@@ -23,12 +23,14 @@ interface Props { articles: Article[] }
 const { articles } = Astro.props;
 const m = site.modele;
 const metier = site.titreMetier.toLowerCase();
+// Recette du studio : « Venir au cabinet » juste sous le premier écran, avant les sujets (même contenu, mêmes H2).
+const infosEnTete = Boolean(site.modele.accueil.infosEnTete) && site.modele.accueil.sections.includes('acces');
+const blocsAccueil = [...(infosEnTete ? ['acces' as const] : []), 'sujets' as const, ...site.modele.accueil.sections.filter((s) => !(infosEnTete && s === 'acces'))];
 ---
 <PremierEcran variante={variantes.accueil} />
-<SujetsAccueil />
-
-{m.accueil.sections.map((section) => (
+{blocsAccueil.map((section) => (
   <>
+    {section === 'sujets' && <SujetsAccueil />}
     {section === 'competences' && (
       <section class="g-section g-bloc" id="competences" aria-label={titreCompetences}>
         <div class="g-cadre g-bloc__dedans">
@@ -76,7 +78,7 @@ const metier = site.titreMetier.toLowerCase();
       <section class="g-section g-bloc">
         <div class="g-cadre g-bloc__dedans">
           <div class="g-tete"><h2>En images</h2></div>
-          <ul class="galerie">
+          <ul class:list={['galerie', `galerie--${variantes.galerie}`]}>
             {site.photos.cabinet.slice(0, 4).map((src) => <li><img src={src} {...photoResponsive(src, '(min-width: 900px) 280px, 50vw')} alt="" width="800" height="600" loading="lazy" decoding="async" /></li>)}
           </ul>
         </div>
@@ -117,5 +119,13 @@ const metier = site.titreMetier.toLowerCase();
     :global(.coquille--revue) .lieu > :not(.lieu__pastilles) { grid-column: 1; }
     :global(.coquille--revue) .lieu__pastilles { grid-column: 2; grid-row: 1 / span 3; margin: 0; }
   }
+  /* Galerie : défilement horizontal au doigt (scroll-snap, sans script) ; grande photo et vignettes */
+  .galerie--defilement { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; padding-bottom: 8px; }
+  .galerie--defilement li { flex: 0 0 min(80%, 360px); scroll-snap-align: start; }
+  @media (min-width: 700px) { .galerie--grande { grid-template-columns: repeat(3, minmax(0, 1fr)); } .galerie--grande li:first-child { grid-column: 1 / -1; } .galerie--grande li:first-child img { aspect-ratio: 16 / 7; } }
   .galerie img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--rayon-carte); }
+  /* Bande : quatre photos serrées en portrait (deux sur téléphone), bord à bord */
+  .galerie--bande { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+  @media (min-width: 700px) { .galerie--bande { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .galerie--bande img { aspect-ratio: 3 / 4; border-radius: 0; }
 </style>

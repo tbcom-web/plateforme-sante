@@ -11,11 +11,24 @@
 import { empreinteSvg } from './illustrations';
 import { GAMMES, type Gamme } from './gammes';
 import type { Asset } from './assets';
+import { cssEffets } from './effets';
+import { cssFormes } from './formes';
 
 export const APERCU_MAX = 60 * 1024;
 
 /** SVG minifié (espaces entre balises et répétés) */
 export const minifierSvg = (svg: string) => svg.replace(/>\s+</g, '><').replace(/\s{2,}/g, ' ').trim();
+
+/**
+ * Empreinte d'un élément du studio : sa feuille CSS quand elle vit dans le core (jeu d'effets, forme des cartes), pour que
+ * Paul le revoie « modifié » après retouche ; null pour les autres (présentations des gabarits Astro).
+ */
+export function empreinteStudio(cle: string): string | null {
+  const [type, a, b] = cle.split(':');
+  if (type === 'effets') { const css = cssEffets(a); return css ? empreinteSvg(css) : null; }
+  if (type === 'composant' && a === 'soins-forme') { const css = cssFormes(b); return css ? empreinteSvg(css) : null; }
+  return null;
+}
 
 /** Empreinte d'une gamme : ses couleurs (une gamme retouchée change d'empreinte) */
 export const empreinteGamme = (g: Gamme) => empreinteSvg(JSON.stringify(g));
@@ -27,6 +40,7 @@ export const empreinteGamme = (g: Gamme) => empreinteSvg(JSON.stringify(g));
 export function empreinteAsset(a: Asset, svg?: string | null, gammes: readonly Gamme[] = GAMMES): string | null {
   if (a.rendu.kind === 'svg') return empreinteSvg(svg ?? a.rendu.svg());
   if (a.rendu.kind === 'gamme') { const id = a.rendu.gamme; const g = gammes.find((x) => x.id === id); return g ? empreinteGamme(g) : null; }
+  if (a.rendu.kind === 'studio') return empreinteStudio(a.rendu.cle);
   return null;
 }
 
@@ -42,6 +56,7 @@ export function instantaneAsset(a: Asset, svg?: string | null, gammes: readonly 
     return s.length <= APERCU_MAX ? s : null;
   }
   if (a.rendu.kind === 'image') return a.rendu.src.slice(0, 400);
+  if (a.rendu.kind === 'studio') return null; // élément du studio : rendu vivant, pas d'instantané
   const id = a.rendu.gamme;
   const g = gammes.find((x) => x.id === id);
   return g ? JSON.stringify(g) : null;
@@ -73,7 +88,7 @@ export type IndexArchives = { archives: { commit: string; date: string; fichier:
 export function archiverInventaire(inventaire: readonly Asset[], commit: string, date: string, gammes: readonly Gamme[] = GAMMES): ArchiveAssets {
   const assets: ArchiveAssets['assets'] = {};
   for (const a of inventaire) {
-    if (a.rendu.kind === 'image') continue; // photos et structures : l'adresse suffit, le fichier n'est pas archivé
+    if (a.rendu.kind === 'image' || a.rendu.kind === 'studio') continue; // photos et structures : l'adresse suffit, le fichier n'est pas archivé
     const svg = a.rendu.kind === 'svg' ? a.rendu.svg() : null;
     const e = empreinteAsset(a, svg, gammes);
     const ap = instantaneAsset(a, svg, gammes);

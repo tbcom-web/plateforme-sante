@@ -22,7 +22,11 @@
 // Module pur, sans dépendance d'exécution (importé par propositions.ts et jeux-photos.ts).
 
 /** Préfixes de clé (= type d'asset enregistré dans assets_notes.type) */
-export const TYPES_ASSET = ['picto', 'dessin', 'ligne', 'materiel', 'animation', 'heros', 'biblio', 'photo', 'modele', 'gamme'] as const;
+/**
+ * … + studio de recettes (migration 0032) : `structure:<page>:<variantes>` (structure d'un type de page), `effets:<jeu>` (jeu
+ * d'effets), `composant:<famille>:<variante>` (présentation d'un élément : horaires, plan d'accès, galerie, questions…).
+ */
+export const TYPES_ASSET = ['picto', 'dessin', 'ligne', 'materiel', 'animation', 'heros', 'biblio', 'photo', 'modele', 'gamme', 'structure', 'effets', 'composant'] as const;
 export type TypeAsset = (typeof TYPES_ASSET)[number];
 export const estTypeAsset = (x: unknown): x is TypeAsset => typeof x === 'string' && (TYPES_ASSET as readonly string[]).includes(x);
 

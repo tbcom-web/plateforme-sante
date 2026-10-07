@@ -11,6 +11,7 @@ import {
 } from './propositions';
 import { themeParId } from './themes';
 import { texteRemarques } from './remarques';
+import { clePhoto } from './assets-poids';
 
 export * from './atelier-poids';
 
@@ -48,7 +49,7 @@ export function sujetsPris(e: EntreePropositions): string[] {
 }
 
 /** Ingrédients notés d'une proposition, dans son scénario (sujets, couleurs) */
-export function ingredientsProposition(p: Proposition, e: EntreePropositions): IngredientsAtelier {
+export function ingredientsProposition(p: Proposition, e: EntreePropositions, photos: readonly string[] = []): IngredientsAtelier {
   const themes = sujetsPris(e);
   return ingredientsCanoniques({
     structure: p.univers,
@@ -62,6 +63,8 @@ export function ingredientsProposition(p: Proposition, e: EntreePropositions): I
     themes,
     couleurs: (e.couleursPreferees ?? []).filter((c) => couleurPreferee(c)).slice(0, 3),
     proposition: p.id,
+    // Photos réellement montrées (style « photos ») : clés de la banque, la note porte aussi sur elles
+    ...(p.modeVisuel === 'photos' && photos.length ? { photos: photos.map(clePhoto).filter((k): k is string => Boolean(k)) } : {}),
   });
 }
 

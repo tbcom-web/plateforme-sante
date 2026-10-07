@@ -122,6 +122,9 @@ const rangees = [
     .ed--bulles .soin__texte { padding: 14px 16px; gap: 4px; }
     .ed--bulles .soin__resume { -webkit-line-clamp: 2; font-size: 0.92rem; }
     .ed--bulles .soin__suite { display: none; }
+    /* Cartes de même hauteur (la plus haute) : liste régulière, et rendu identique WebKit / Chromium quand un titre passe à la
+       ligne d'un côté seulement (gros corps du gabarit village avec ces cartes : studio de recettes) */
+    .ed--bulles .ed__soins { grid-auto-rows: 1fr; }
   }
   .ed__liens { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 28px; }
   .ed__lien { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; font-size: 1.08rem; color: var(--g-encre); text-decoration: underline; text-decoration-thickness: var(--filet-fort); text-underline-offset: 6px; text-decoration-color: var(--g-plein-bord); }

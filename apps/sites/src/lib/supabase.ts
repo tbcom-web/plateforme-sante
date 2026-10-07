@@ -143,6 +143,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     poidsAssets(notesAssets.map((l) => ({ cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes, statut: l.statut }))),
     surchargesDepuisLignes((Array.isArray(sujetsAssets) ? sujetsAssets : []).map((l) => ({ cle: l.cle_asset, sujet: l.sujet, action: l.action }))),
   );
+  // Recette du studio (style « photos ») : ses photos tirées de la banque passent devant celles du jeu (accueil, panorama, diaporama)
+  // (vitrine : premier écran et blocs des sujets, lib/vitrine.ts) ; le jeu et les données structurées ne changent pas.
   const persoPack = persoDuJeuPhotos(jeuPhotos, persoBanque, poidsPhotos, sujetsDeSpecialite(d.theme.specialite));
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);
   // Spécialité secondaire : complète les visuels de la principale (avec sa propre personnalisation admin).
@@ -329,7 +331,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       tarifs: [],
     },
     rdv: { url: rdvCabinet, plateforme: d.rdv.outil },
-    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
+    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}), ...(d.theme.herosSujet ? { herosSujet: d.theme.herosSujet } : {}), ...(d.theme.effets ? { effets: d.theme.effets } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
       texte: `${enPhrase(titreMetier, lieuExercice)} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,
@@ -373,6 +375,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       // Animation choisie (proposition, structure Technique) prioritaire sur celle de la spécialité ; case décochée : aucune
       animation: d.theme.animation ? (d.theme.animationAccueil ?? pack.animation) : null,
       ...(d.theme.animation && d.theme.animationAccueil ? { animationAccueil: d.theme.animationAccueil } : {}),
+      ...(d.theme.modeVisuel === 'photos' && d.theme.photosRecette?.length ? { photosRecette: d.theme.photosRecette } : {}),
       photos: visuelsSpecialite.photos,
       // Jeu visuel (jeux.ts) : secondaire et personnalisations de l'admin, recombinées au build.
       ...(d.theme.specialiteSecondaire ? { specialiteSecondaire: d.theme.specialiteSecondaire } : {}),

@@ -53,7 +53,7 @@ let core;
 try {
   await build({
     stdin: {
-      contents: "export { syntheseAssets, markdownAssets, titresAssets, typeDeCle, estEtiquetteDuType } from './assets'; export { syntheseAtelier, markdownAtelier, estEtiquetteAtelier } from './atelier'; export { inspirationPourExport, markdownInspirations } from './inspirations'; export { surchargesDepuisLignes, markdownSujets, sujetsSansVisuel } from './sujets-visuels'; export { inventaireAssets } from './assets'; export { markdownAnimationsEnAttente } from './animations-sources'; export { lirePredictions, pairesJuge, markdownCalibration, empreinteImage } from './juge';",
+      contents: "export { syntheseAssets, markdownAssets, titresAssets, typeDeCle, estEtiquetteDuType } from './assets'; export { syntheseAtelier, markdownAtelier, estEtiquetteAtelier } from './atelier'; export { inspirationPourExport, markdownInspirations } from './inspirations'; export { surchargesDepuisLignes, markdownSujets, sujetsSansVisuel } from './sujets-visuels'; export { inventaireAssets } from './assets'; export { markdownAnimationsEnAttente } from './animations-sources'; export { lirePredictions, pairesJuge, markdownCalibration, empreinteImage } from './juge'; export { markdownRecettes, recetteDepuisLigne, resumeRenforts } from './recettes';",
       resolveDir: join(racine, 'packages', 'core', 'src'), loader: 'ts',
     },
     bundle: true, platform: 'node', format: 'esm', outfile: join(tmp, 'core.mjs'), logLevel: 'warning', loader: { '.svg': 'text' },
@@ -76,7 +76,7 @@ try {
 const jour = (d) => (typeof d === 'string' ? d.slice(0, 10) : null);
 const texte = (t) => (typeof t === 'string' && t.trim() ? t.trim() : null);
 
-const [assets, atelier, revues, statuts, inspirations, sujets, hashtags] = await Promise.all([
+const [assets, atelier, revues, statuts, inspirations, sujets, hashtags, recettesBrutes] = await Promise.all([
   // Remarques « ce qui va bien / ce qui ne va pas » (0028) ; jamais l'instantané « apercu » (lourd, inutile à Claude)
   lireTout('assets_notes', 'cle_asset,type,note,etiquettes,commentaire,positif,negatif,empreinte,created_at', 'created_at.asc,cle_asset.asc', 'cle_asset,type,note,etiquettes,commentaire,empreinte,created_at'),
   lireTout('atelier_notes', 'cle_combinaison,ingredients,note,etiquettes,commentaire,positif,negatif,created_at', 'created_at.asc,cle_combinaison.asc', 'cle_combinaison,ingredients,note,etiquettes,commentaire,created_at'),
@@ -88,6 +88,8 @@ const [assets, atelier, revues, statuts, inspirations, sujets, hashtags] = await
   lireTout('assets_sujets', 'cle_asset,sujet,action,created_at', 'created_at.asc,cle_asset.asc,sujet.asc'),
   // Journal des hashtags (sans auteur) → état courant
   lireTout('assets_hashtags', 'cle_asset,hashtag,action,created_at', 'created_at.asc,cle_asset.asc,hashtag.asc'),
+  // Recettes du studio (0032) : sans auteur
+  lireTout('recettes', 'id,nom,sujets,couleurs_preferees,composition,note,etiquettes,positif,negatif,statut,created_at,updated_at', 'created_at.asc,id.asc'),
 ]);
 
 const notesAssets = (assets ?? []).map((l) => ({ cle: l.cle_asset, type: l.type, note: l.note, etiquettes: l.etiquettes ?? [], commentaire: texte(l.commentaire), positif: texte(l.positif), negatif: texte(l.negatif), empreinte: l.empreinte ?? null, jour: jour(l.created_at) }));
@@ -97,10 +99,13 @@ const journal = (revues ?? []).map((l) => ({ cle: l.cle, statut: l.statut, comme
 const courants = (statuts ?? []).map((l) => ({ cle: l.cle, statut: l.statut, empreinte: l.empreinte ?? null, jour: jour(l.maj_le) }));
 const listeInspirations = (inspirations ?? []).map((l) => core.inspirationPourExport(l));
 
+const recettes = (recettesBrutes ?? []).map((l) => core.recetteDepuisLigne(l)).filter(Boolean);
+
 mkdirSync(sortie, { recursive: true });
 const ecrire = (nom, contenu) => writeFileSync(join(sortie, nom), typeof contenu === 'string' ? contenu : `${JSON.stringify(contenu, null, 2)}\n`);
 ecrire('assets-notes.json', notesAssets);
 ecrire('atelier-notes.json', notesAtelier);
+ecrire('recettes.json', recettes.map((r) => ({ id: r.id, nom: r.nom, sujets: r.sujets, couleursPreferees: r.couleursPreferees, composition: r.composition, note: r.note, etiquettes: r.etiquettes, positif: texte(r.positif), negatif: texte(r.negatif), statut: r.statut, jour: jour(r.modifieLe) })));
 ecrire('illustrations-revues.json', journal);
 ecrire('illustrations-statuts.json', courants);
 ecrire('inspirations.json', listeInspirations);
@@ -119,7 +124,7 @@ const sAssets = core.syntheseAssets(notesAssets.map((n) => ({ ...n, le: n.jour }
 const sAtelier = core.syntheseAtelier(notesAtelier.map((n) => ({ ...n, le: n.jour })));
 const dernierJour = [...notesAssets, ...notesAtelier, ...journal].map((x) => x.jour).filter(Boolean).sort().pop() ?? null;
 const descendre = (md) => md.split('\n').map((l) => (/^#{1,5} /.test(l) ? `#${l}` : l)).join('\n');
-const manquantes = [[assets, 'assets_notes (0027)'], [atelier, 'atelier_notes (0026)'], [revues, 'illustrations_revues (0021)'], [inspirations, 'inspirations (0028)'], [sujets, 'assets_sujets (0028)'], [hashtags, 'assets_hashtags (0029)']].filter(([d]) => d === null).map(([, n]) => n);
+const manquantes = [[assets, 'assets_notes (0027)'], [atelier, 'atelier_notes (0026)'], [revues, 'illustrations_revues (0021)'], [inspirations, 'inspirations (0028)'], [sujets, 'assets_sujets (0028)'], [hashtags, 'assets_hashtags (0029)'], [recettesBrutes, 'recettes (0032)']].filter(([d]) => d === null).map(([, n]) => n);
 
 const md = [
   '# Retours de Paul — synthèse',
@@ -139,6 +144,9 @@ const md = [
   core.markdownAnimationsEnAttente(Object.fromEntries(courants.map((x) => [x.cle, x.statut]))),
   '',
   core.markdownInspirations(listeInspirations, { titre: '## Inspirations (références seulement, jamais réutilisées)' }),
+  '',
+  core.markdownRecettes(recettes, { titre: '## Recettes du studio (/admin/atelier/studio)' }),
+  ...(recettes.length ? ['', 'Renforts des ingrédients (recettes notées) :', ...core.resumeRenforts(recettes, 10).map((x) => `- ${x}`)] : []),
   '',
 ].join('\n');
 ecrire('SYNTHESE.md', md);

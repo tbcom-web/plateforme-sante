@@ -1,6 +1,7 @@
 // Brouillon de site édité dans le back-office (colonne sites.config), version 2.
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
-import { MODELES_INTEGRES } from './modeles';
+import { MODELES_INTEGRES, pairePolices, variantesValides } from './modeles';
+import { jeuEffets } from './effets';
 import { ANIMATIONS, specialiteDuProfil, type Animation } from './packs';
 import { nettoyerEquipements, nettoyerEquipementsAutres } from './equipements';
 import type { Horaire, SiteConfig } from './types';
@@ -145,6 +146,18 @@ export type SiteDraft = {
     animationAccueil?: Animation;
     /** Proposition de site choisie (identifiant de propositions.ts), facultatif */
     proposition?: string;
+    /**
+     * Réglages posés par une RECETTE du studio (recettes.ts), tous facultatifs (sites antérieurs inchangés) :
+     * identifiant de la recette, paire de polices (PAIRES_POLICES), variantes de sections, « Venir au cabinet » sous le premier
+     * écran, sujet dont le héros illustre le premier écran, photos tirées de la banque (style « photos »), jeu d'effets.
+     */
+    recette?: string;
+    police?: string;
+    variantes?: Partial<import('./modeles').Variantes>;
+    infosEnTete?: boolean;
+    herosSujet?: string;
+    photosRecette?: string[];
+    effets?: string;
   };
   /** Réception des articles du flux de contenus */
   flux: { mode: 'manuel' | 'auto'; themes: string[] };
@@ -298,6 +311,17 @@ function themeNormalise(t: SiteDraft['theme']): SiteDraft['theme'] {
   if (r.styleIllustration !== undefined && !STYLES.includes(r.styleIllustration)) delete r.styleIllustration;
   if (r.animationAccueil !== undefined && (!(ANIMATIONS as readonly string[]).includes(r.animationAccueil) || r.animationAccueil === 'trajectoire')) delete r.animationAccueil;
   if (r.proposition !== undefined && (typeof r.proposition !== 'string' || r.proposition.length > 120)) delete r.proposition;
+  // Réglages d'une recette (studio) : valeurs inconnues retirées
+  if (r.recette !== undefined && (typeof r.recette !== 'string' || !/^[0-9a-f-]{8,40}$/i.test(r.recette))) delete r.recette;
+  if (r.police !== undefined && !pairePolices(r.police)) delete r.police;
+  if (r.variantes !== undefined) { const v = variantesValides(r.variantes); if (Object.keys(v).length) r.variantes = v; else delete r.variantes; }
+  if (r.infosEnTete !== undefined && r.infosEnTete !== true) delete r.infosEnTete;
+  if (r.herosSujet !== undefined && (typeof r.herosSujet !== 'string' || !/^[a-z-]{2,30}$/.test(r.herosSujet))) delete r.herosSujet;
+  if (r.photosRecette !== undefined) {
+    const l = Array.isArray(r.photosRecette) ? [...new Set(r.photosRecette.filter((x): x is string => typeof x === 'string' && x.length <= 400 && (/^\/photos\/[a-z0-9-]+\.webp$/.test(x) || /^https:\/\/[^\s]+\/storage\/v1\/object\/public\/photos\/[^\s]+$/.test(x))))].slice(0, 8) : [];
+    if (l.length) r.photosRecette = l; else delete r.photosRecette;
+  }
+  if (r.effets !== undefined && !jeuEffets(r.effets)) delete r.effets;
   return r;
 }
 

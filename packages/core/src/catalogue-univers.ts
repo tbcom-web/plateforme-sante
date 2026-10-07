@@ -12,7 +12,7 @@
 // Sujets à faible niveau de preuve (posturologie, réflexologie, semelles « posturales »…) : jamais proposés dans
 // un univers du catalogue tant qu'ils n'ont pas été validés sur le plan déontologique (statut « differe »).
 
-import { MODELES_INTEGRES, SECTIONS_ACCUEIL, REGISTRES_MODELE, type ModeleManifeste, type SectionAccueil } from './modeles';
+import { MODELES_INTEGRES, SECTIONS_ACCUEIL, REGISTRES_MODELE, avecPolices, gabaritModele, pairePolices, variantesValides, type ModeleManifeste, type SectionAccueil } from './modeles';
 import { GAMMES } from './gammes';
 import { SPECIALITES } from './packs';
 import { marquesLogo, DISPOSITIONS_LOGO, type DispositionLogo } from './logos';
@@ -445,16 +445,30 @@ export function sectionsCompatibles(m: Pick<ModeleManifeste, 'accueil'>, section
 
 /**
  * Modèle effectivement rendu pour un site : ordre des sections et registre posés par l'univers, s'ils sont
- * compatibles avec la fiche. Le SEO ne change pas : l'ensemble des sections (et donc des intertitres) est le même.
+ * compatibles avec la fiche ; paire de polices, variantes de sections, « Venir au cabinet » en tête et jeu d'effets posés par
+ * une recette du studio (recettes.ts). Le SEO ne change pas : l'ensemble des sections (et donc des intertitres) est le même.
  */
-export function modeleDuSite(m: ModeleManifeste, t: { sections?: unknown; registre?: unknown } | null | undefined): ModeleManifeste {
+export function modeleDuSite(
+  m: ModeleManifeste,
+  t: { sections?: unknown; registre?: unknown; police?: unknown; variantes?: unknown; infosEnTete?: unknown } | null | undefined,
+): ModeleManifeste {
   if (!t) return m;
   const sections = sectionsCompatibles(m, t.sections) ? t.sections : null;
   const registre = REGISTRES_MODELE.includes(t.registre as Registre) ? (t.registre as Registre) : null;
-  if (!sections && !registre) return m;
+  const variantes = variantesValides(t.variantes, gabaritModele(m));
+  const nbVariantes = Object.keys(variantes).length;
+  const police = pairePolices(t.police);
+  const infos = t.infosEnTete === true && (sections ?? m.accueil.sections).includes('acces');
+  if (!sections && !registre && !nbVariantes && !police && !infos) return m;
   // Registre pédagogique : ni trame ni plan (docs/charte-graphique.md, « Deux registres ») ; texture des sections retirée.
   const jetons = registre ? { ...m.jetons, registre, ...(registre === 'pedagogique' ? { motif: 'aucun' as const } : {}) } : m.jetons;
-  return { ...m, accueil: sections ? { ...m.accueil, sections: [...sections] } : m.accueil, jetons };
+  const r: ModeleManifeste = {
+    ...m,
+    accueil: { ...m.accueil, ...(sections ? { sections: [...sections] } : {}), ...(infos ? { infosEnTete: true } : {}) },
+    jetons,
+    ...(nbVariantes ? { variantes: { ...(m.variantes ?? {}), ...variantes } } : {}),
+  };
+  return police ? avecPolices(r, police.id) : r;
 }
 
 /** Soins du site dans l'ordre : ceux mis en avant d'abord (dans leur ordre), puis les autres dans l'ordre reçu. */

@@ -17,12 +17,13 @@ import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   animationDeCle, CATEGORIES_RETOURS, categorieDuType, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
-  ingredientsProposition, inventaireAssets, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
+  ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
   type PoidsAtelier, type Proposition, type StatutIllustration, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
+import ApercuStudio from '@/components/ApercuStudio';
 import type { SourcePhotoLibre, SurchargesSujets } from '@plateforme/core';
 import AvantApres from '@/components/AvantApres';
 import IngredientsAnimation from '@/components/IngredientsAnimation';
@@ -57,6 +58,8 @@ type Props = {
   changements: { total: number; sujets: ChangementGenerateur[] };
   influents: { favorises: { cle: string; titre: string; score: number }[]; evites: { cle: string; titre: string; score: number }[] };
   changementsClaude: ChangementClaude[];
+  /** Recettes du studio notées : ce qu'elles renforcent ou affaiblissent (recettes.ts, resumeRenforts) */
+  renfortsRecettes?: string[];
   migrationAssets: boolean;
   migrationAtelier: boolean;
   poids: PoidsAtelier | null;
@@ -205,6 +208,8 @@ function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
       </div>
     );
   }
+  // Éléments du studio : rendus par ApercuStudio (composant principal), jamais ici
+  if (a.rendu.kind === 'studio') return null;
   const svg = c.svg ?? '';
   if (a.type === 'picto') {
     return (
@@ -252,8 +257,11 @@ function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
 // ---------------------------------------------------------------------------------------------------------------
 
 export default function Retours(props: Props) {
-  const { photosJeux, markdown, changements, influents, changementsClaude, migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
-  const inventaireComplet = useMemo(() => inventaireAssets({ photosJeux }), [photosJeux]);
+  const { photosJeux, markdown, changements, influents, changementsClaude, renfortsRecettes = [], migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
+  // Inventaire : bibliothèque (illustrations, photos, modèles, gammes) + studio de recettes (structures de pages, éléments, effets)
+  const inventaireComplet = useMemo(() => [...inventaireAssets({ photosJeux }), ...inventaireStudio()], [photosJeux]);
+  // Tuile « Éléments » : filtre par famille (horaires, plan d'accès, galerie, contact, forme des cartes…)
+  const [famille, setFamille] = useState('');
   // Sujets des visuels (défauts du code ± surcharges de Paul) et filtre « noter les visuels du sujet … »
   const [surcharges, setSurcharges] = useState<SurchargesSujets>(props.surchargesSujets);
   const [filtreSujet, setFiltreSujet] = useState('');
@@ -332,8 +340,9 @@ export default function Retours(props: Props) {
   const candidatsDe = useCallback((c: CategorieRetours) => {
     if (selection) return inventaireComplet.filter((a) => selection.cles.includes(a.cle));
     const cat = CATEGORIES_RETOURS.find((x) => x.id === c)!;
-    return cat.types.length ? inventaire.filter((a) => cat.types.includes(a.type)) : inventaire;
-  }, [inventaire, inventaireComplet, selection]);
+    const l = cat.types.length ? inventaire.filter((a) => cat.types.includes(a.type)) : inventaire;
+    return c === 'elements' && famille ? l.filter((a) => a.soins.includes(famille)) : l;
+  }, [inventaire, inventaireComplet, selection, famille]);
   // Animation dont un ingrédient de base n'est pas validé : tirée après tout le reste
   const enAttente = useCallback((a: Asset) => { const x = a.type === 'animation' ? animationDeCle(a.cle) : null; return x ? etatAnimation(x, statuts).enAttente : false; }, [statuts]);
 
@@ -576,6 +585,12 @@ export default function Retours(props: Props) {
               ) : <p className="text-xs text-neutral-500">Les premières propositions sont encore celles d’origine.</p>}
             </div>
           </div>
+          {renfortsRecettes.length > 0 && (
+            <div className="grid gap-1.5 border-t border-black/5 pt-3">
+              <h3 className="text-sm font-semibold">Recettes du studio</h3>
+              <ul className="grid gap-1 text-sm">{renfortsRecettes.map((x) => <li key={x}>{x}</li>)}</ul>
+            </div>
+          )}
           <div className="grid gap-1.5 border-t border-black/5 pt-3">
             <h3 className="text-sm font-semibold">Corrigé par Claude d’après vos retours</h3>
             {changementsClaude.length ? (
@@ -657,6 +672,12 @@ export default function Retours(props: Props) {
             </>
           )}
         </div>
+        {categorie === 'elements' && (
+          <select value={famille} onChange={(e) => { setFamille(e.target.value); setHistorique([]); setPosition(-1); vus.current = new Set(); }} className="min-h-11 rounded-lg bg-white px-3 text-sm ring-1 ring-black/10" aria-label="Famille d’éléments">
+            <option value="">Toutes les familles</option>
+            {FAMILLES_COMPOSANTS.map((f) => <option key={f} value={f}>{NOMS_SECTIONS_VARIABLES[f] ?? f}</option>)}
+          </select>
+        )}
         {carte.kind === 'asset' && carte.asset.rendu.kind === 'svg' && (
           <select value={gammeApercu} onChange={(e) => setGammeApercu(e.target.value)} className="min-h-11 rounded-lg bg-white px-3 text-sm ring-1 ring-black/10" aria-label="Gamme de couleurs de l’aperçu">
             {GAMMES.map((x) => <option key={x.id} value={x.id}>Gamme {x.nom}</option>)}
@@ -666,7 +687,9 @@ export default function Retours(props: Props) {
 
       <section aria-label="Élément à noter" className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] md:items-start">
         <div className="grid min-w-0 gap-2">
-          {carte.kind === 'asset' ? (
+          {carte.kind === 'asset' && carte.asset.rendu.kind === 'studio' ? (
+            <ApercuStudio cle={carte.asset.cle} mobile={etroit || /^composant:contact:(barre|flottant)$/.test(carte.asset.cle)} proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />
+          ) : carte.kind === 'asset' ? (
             modifieDepuis ? <AvantApres key={carte.asset.cle} cle={carte.asset.cle}><ApercuAsset c={carte} /></AvantApres> : <ApercuAsset c={carte} />
           ) : apercuTheme && (
             <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${etroit ? 'mx-auto w-[280px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}>
@@ -706,8 +729,8 @@ export default function Retours(props: Props) {
               <p className="text-xs text-neutral-500">« Ce qui va bien » part avec « Validé », « Ce qui ne va pas » avec « À retravailler ».</p>
             </div>
           )}
-          {carte.kind === 'asset' && <SujetsVisuel visuel={carte.asset} surcharges={surcharges} onChange={setSurcharges} />}
-          {carte.kind === 'asset' && <HashtagsVisuel cle={carte.asset.cle} etat={hashtags} onChange={setHashtags} migrationManquante={props.migrationHashtags} />}
+          {carte.kind === 'asset' && carte.asset.rendu.kind !== 'studio' && <SujetsVisuel visuel={carte.asset} surcharges={surcharges} onChange={setSurcharges} />}
+          {carte.kind === 'asset' && carte.asset.rendu.kind !== 'studio' && <HashtagsVisuel cle={carte.asset.cle} etat={hashtags} onChange={setHashtags} migrationManquante={props.migrationHashtags} />}
 
           <fieldset className="grid gap-1.5">
             <legend className="mb-1 text-sm font-medium text-teal-900">Ce qui va bien</legend>

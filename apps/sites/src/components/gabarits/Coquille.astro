@@ -17,6 +17,7 @@ import { site } from '../../lib/site';
 import { gabaritModele } from '@plateforme/core';
 import { telLien, itineraire, lienRdv, titreCabinet, praticiens, lieu, rdvEnLigne, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact, contactRdv } from '../../lib/textes';
 import { navigation, entreeActive } from '../../lib/navigation';
+import { variantes } from '../../lib/gabarits';
 
 interface Props {
   courant: string;
@@ -45,6 +46,17 @@ const rdv = rdvEnLigne ? lienRendezVous : aTelephone ? telLien : lienContact;
 const libelle = rdvEnLigne ? 'Rendez-vous' : aTelephone ? 'Appeler' : contactRdv === 'email' ? 'Écrire' : 'Rendez-vous';
 // Nom de cabinet long : réduit (deux lignes au plus) plutôt que de couper le bouton « Rendez-vous » sur deux lignes
 const nomLong = site.cabinet.nom.length > 34;
+// Rendez-vous et contact (variante « contact », studio de recettes) : bandeau ou carte d'actions avant le pied de page, ou bouton
+// flottant sur téléphone à la place de la barre. Liens seulement (aucun formulaire) ; aucun intertitre (SEO identique).
+const contact = variantes.contact ?? 'barre';
+const actionsContact = [
+  ...(rdvEnLigne ? [{ href: lienRendezVous, libelle: 'Prendre rendez-vous', icone: 'picto:rendez-vous', secours: 'lucide:calendar', ext: false }] : []),
+  ...(aTelephone ? [{ href: telLien, libelle: 'Appeler le cabinet', icone: 'picto:telephone', secours: 'lucide:phone', ext: false }] : []),
+  ...(site.cabinet.email ? [{ href: `mailto:${site.cabinet.email}`, libelle: 'Écrire au cabinet', icone: 'lucide:mail', secours: 'lucide:mail', ext: false }] : []),
+  ...(itineraire ? [{ href: itineraire, libelle: 'Itinéraire', icone: 'picto:itineraire', secours: 'lucide:map-pin', ext: true }] : []),
+];
+// Bouton flottant : l'action principale (rendez-vous en ligne, sinon appeler, sinon écrire)
+const principale = actionsContact[0];
 ---
 <div class:list={['coquille', `coquille--${gabarit}`, { 'coquille--nom-long': nomLong }]}>
   <header class="c-entete">
@@ -76,6 +88,23 @@ const nomLong = site.cabinet.nom.length > 34;
     <slot />
   </main>
 
+  {(contact === 'bandeau' || contact === 'carte') && actionsContact.length > 0 && (
+    <aside class:list={['c-contact', `c-contact--${contact}`]} aria-label="Contacter le cabinet">
+      <div class="g-cadre c-contact__dedans">
+        {contact === 'carte' && (
+          <div class="c-contact__coord">
+            <p class="c-contact__nom">{titreCabinet}</p>
+            {aTelephone && <p class="c-contact__ligne"><a href={telLien}>{site.cabinet.telephone}</a></p>}
+            {site.cabinet.email && <p class="c-contact__ligne"><a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></p>}
+          </div>
+        )}
+        <ul class="c-contact__actions">
+          {actionsContact.map((a, i) => <li><a class:list={['c-contact__action', { 'c-contact__action--plein': i === 0 }]} href={a.href} {...(a.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icone nom={a.icone} secours={a.secours} />{a.libelle}</a></li>)}
+        </ul>
+      </div>
+    </aside>
+  )}
+
   <footer class="c-pied">
     <div class="g-cadre c-pied__grille">
       <div class="c-pied__bloc">
@@ -101,6 +130,11 @@ const nomLong = site.cabinet.nom.length > 34;
     <p class="g-cadre c-pied__bas"><span>© {new Date().getFullYear()} {titreCabinet}</span><span>Illustrations : représentations schématiques, sans valeur de mesure</span></p>
   </footer>
 
+  {contact === 'flottant' && principale ? (
+    <nav class="c-flottant" aria-label="Accès rapide">
+      <a href={principale.href} class="c-flottant__bouton" aria-label={principale.libelle}><Icone nom={principale.icone} secours={principale.secours} /></a>
+    </nav>
+  ) : (
   <nav class="c-barre" aria-label="Accès rapide">
     {aTelephone
       ? <a href={telLien} class:list={{ 'c-barre__plein': !rdvEnLigne }}><Icone nom="picto:telephone" secours="lucide:phone" />{rdvEnLigne ? 'Appeler' : 'Appeler le cabinet'}</a>
@@ -109,6 +143,7 @@ const nomLong = site.cabinet.nom.length > 34;
       ? <a href={lienRendezVous} class="c-barre__plein"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Rendez-vous</a>
       : itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
   </nav>
+  )}
 </div>
 
 <style>
@@ -266,6 +301,31 @@ const nomLong = site.cabinet.nom.length > 34;
   .c-barre > a:only-child { grid-column: 1 / -1; white-space: nowrap; }
   .c-barre__plein { background: var(--g-vif); color: var(--g-vif-texte) !important; }
   @media (min-width: 900px) { .c-barre { display: none; } }
+  /* ———— Rendez-vous et contact (variante « contact ») : liens seulement, cibles ≥ 44 px, couleurs des rôles --g-* ———— */
+  .c-contact { margin-top: clamp(40px, 6vw, 72px); }
+  .c-contact + .c-pied { margin-top: 0; }
+  .c-contact__dedans { display: grid; gap: 18px; }
+  .c-contact__actions { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+  .c-contact__action { display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 22px; border-radius: var(--rayon-bouton); font-weight: 650; text-decoration: none; background: var(--g-carte); color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-ligne); }
+  .c-contact__action:hover { color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .c-contact__action--plein { background: var(--g-plein); color: var(--g-plein-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  .c-contact__action--plein:hover { background: var(--g-plein-survol); color: var(--g-plein-texte); }
+  .c-contact__action :global(.icone) { width: 22px; height: 22px; flex: none; }
+  /* Bandeau : aplat de la couleur du cabinet sur toute la largeur */
+  .c-contact--bandeau { padding-block: clamp(28px, 4vw, 44px); background: var(--g-aplat); }
+  @media (min-width: 760px) { .c-contact--bandeau .c-contact__actions { justify-content: center; } }
+  /* Carte : coordonnées en grand à gauche, actions à droite */
+  .c-contact--carte .c-contact__dedans { padding: clamp(24px, 4vw, 44px); border-radius: var(--rayon-carte); background: var(--g-doux); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  @media (min-width: 860px) { .c-contact--carte .c-contact__dedans { grid-template-columns: minmax(0, 1fr) auto; align-items: center; } }
+  .c-contact__nom { font-family: var(--police-titres); font-weight: var(--graisse-titres); font-size: clamp(1.3rem, 2.4vw, 1.7rem); line-height: 1.2; }
+  .c-contact__coord { display: grid; gap: 6px; min-width: 0; }
+  .c-contact__ligne a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); font-size: clamp(1.1rem, 2vw, 1.3rem); font-weight: 650; color: var(--g-encre); overflow-wrap: anywhere; }
+  /* Bouton flottant (téléphone) : action principale, en bas à droite, au-dessus du contenu (position fixe : aucun décalage de mise en page) */
+  .c-flottant { position: fixed; z-index: 40; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .c-flottant__bouton { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: var(--g-vif); color: var(--g-vif-texte); box-shadow: 0 6px 18px color-mix(in srgb, var(--g-encre) 22%, transparent); }
+  .c-flottant__bouton:hover { color: var(--g-vif-texte); }
+  .c-flottant__bouton :global(.icone) { width: 26px; height: 26px; }
+  @media (min-width: 900px) { .c-flottant { display: none; } }
   @media (prefers-reduced-motion: reduce) { .coquille :global(*) { transition: none !important; } }
   /* ———— Revue : éditorial sobre (Bodoni Moda pour les titres, Newsreader pour le texte) ———— */
   .coquille--revue { --largeur: 1120px; --gouttiere: 64px; font-size: 1.1875rem; line-height: 1.6; }

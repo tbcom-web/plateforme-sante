@@ -23,7 +23,7 @@ export async function sauvegarderParcours(id: string | null, draft: SiteDraft, v
  * (appliquerUniversAuSite : identité conservée, verrou optimiste) et les réglages de la proposition (gamme, style
  * d'illustration, animation). Renvoie le brouillon obtenu.
  */
-export async function choisirModele(id: string | null, draft: SiteDraft, version: string | null, universId: string, reglages?: Partial<ReglagesSite> & { proposition?: string | null }): Promise<EtatParcours> {
+export async function choisirModele(id: string | null, draft: SiteDraft, version: string | null, universId: string, reglages?: Partial<ReglagesSite> & { proposition?: string | null; recette?: string | null }): Promise<EtatParcours> {
   const r = await enregistrerSite(id, draft, version);
   if (!r.ok || !r.id) return r;
   const admin = (await getRole()) === 'admin';

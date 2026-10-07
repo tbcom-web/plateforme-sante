@@ -21,6 +21,9 @@ import { creditPhotoIntegree, libelleCreditIntegree } from './credits-photos';
 import { GAMMES } from './gammes';
 import { STRUCTURES, LIBELLES_STRUCTURES } from './propositions';
 import { universCatalogue } from './catalogue-univers';
+import { ETIQUETTES_STUDIO, FAMILLES_COMPOSANTS, LIBELLES_VARIANTES, NOMS_SECTIONS_VARIABLES, ORDRES_ACCUEIL, PAGES_STRUCTURE } from './recettes';
+import { JEUX_EFFETS } from './effets';
+import { VARIANTES_SECTIONS } from './modeles';
 
 export * from './assets-poids';
 
@@ -35,13 +38,16 @@ export const LIBELLES_TYPES_ASSET: Record<TypeAsset, string> = {
   photo: 'Photos',
   modele: 'Modèles de structure',
   gamme: 'Gammes de couleurs',
+  structure: 'Structures de pages',
+  effets: 'Jeux d’effets',
+  composant: 'Éléments (présentation)',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
 // Étiquettes rapides par famille
 // ---------------------------------------------------------------------------------------------------------------
 
-export type FamilleEtiquettes = 'icone' | 'illustration' | 'photo' | 'modele' | 'gamme';
+export type FamilleEtiquettes = 'icone' | 'illustration' | 'photo' | 'modele' | 'gamme' | 'studio';
 export type EtiquetteAsset = { id: string; libelle: string; positive: boolean };
 
 /** « Ce qui va bien » (positive) et « Ce qui ne va pas » : deux rangées d'étiquettes cliquables par famille d'asset */
@@ -102,11 +108,14 @@ export const ETIQUETTES_ASSETS: Record<FamilleEtiquettes, readonly EtiquetteAsse
     { id: 'pas-pro', libelle: 'Pas assez pro', positive: false },
     { id: 'contraste-faible', libelle: 'Contraste faible', positive: false },
   ],
+  /** Structures de pages, éléments et jeux d'effets (studio de recettes, recettes.ts) */
+  studio: ETIQUETTES_STUDIO,
 };
 
 /** Famille d'étiquettes d'un type d'asset */
 export function familleEtiquettes(t: TypeAsset): FamilleEtiquettes {
   if (t === 'picto') return 'icone';
+  if (t === 'structure' || t === 'composant' || t === 'effets') return 'studio';
   if (t === 'photo' || t === 'modele' || t === 'gamme') return t;
   return 'illustration';
 }
@@ -124,7 +133,9 @@ export const libelleEtiquetteAsset = (id: string) => TOUTES_ETIQUETTES.get(id) ?
 export type RenduAsset =
   | { kind: 'svg'; svg: () => string; svgVariante?: () => string; fond: 'grille' | 'plan' | 'doux' | 'clair'; petit?: boolean }
   | { kind: 'image'; src: string; largeur: number; hauteur: number }
-  | { kind: 'gamme'; gamme: string };
+  | { kind: 'gamme'; gamme: string }
+  /** Structure de page, élément ou jeu d'effets (studio de recettes) : rendu par l'aperçu de site de l'admin */
+  | { kind: 'studio'; cle: string };
 
 export interface Asset {
   cle: string;
@@ -209,12 +220,81 @@ export function inventaireAssets(opts: { photosJeux?: readonly PhotoDeJeu[] } = 
   return ajout.length ? [...l, ...ajout] : l;
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Studio de recettes : structures de pages, éléments, jeux d'effets (tuiles de « Donner mon avis »)
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Fichiers à retoucher par famille d'élément (gabarits Astro et aperçu de l'admin) */
+const SOURCES_FAMILLES: Record<string, string> = {
+  accueil: 'apps/sites/src/components/gabarits/PremierEcran.astro',
+  soins: 'apps/sites/src/components/gabarits/Soins.astro',
+  sujets: 'apps/sites/src/components/SujetsAccueil.astro',
+  horaires: 'apps/sites/src/components/gabarits/VenirAuCabinet.astro',
+  infos: 'apps/sites/src/components/gabarits/VenirAuCabinet.astro, PlanAcces.astro',
+  galerie: 'apps/sites/src/components/gabarits/Accueil.astro (galerie)',
+  contact: 'apps/sites/src/components/gabarits/Coquille.astro (c-contact, c-flottant)',
+  praticiens: 'apps/sites/src/components/gabarits/Praticiens.astro',
+  faq: 'apps/sites/src/components/gabarits/Faq.astro',
+  pied: 'apps/sites/src/components/gabarits/Coquille.astro (c-pied)',
+  'soins-forme': 'packages/core/src/formes.ts',
+};
+const libelleVariante = (f: string, v: string) => LIBELLES_VARIANTES[f]?.[v] ?? v;
+
+let studio: Asset[] | null = null;
+
+/**
+ * Inventaire du studio (tuiles « Structures de pages », « Éléments » et « Effets » de /admin/retours) : chaque présentation
+ * d'élément (`composant:<famille>:<variante>`), chaque structure de page des gabarits tableau, village, revue
+ * (`structure:<page>:<ordre et variantes>`, même découpage que clesStructure) et chaque jeu d'effets (`effets:<jeu>`).
+ * Hors de la bibliothèque des illustrations (inventaireAssets) : ces éléments ne sont pas des images.
+ */
+export function inventaireStudio(): Asset[] {
+  if (studio) return studio;
+  const l: Asset[] = [];
+  for (const f of FAMILLES_COMPOSANTS) {
+    for (const v of VARIANTES_SECTIONS[f] as readonly string[]) {
+      if (f === 'soins-forme' && v === 'gabarit') continue; // « celle du modèle » : pas une forme à juger seule
+      l.push({
+        cle: `composant:${f}:${v}`, type: 'composant', titre: `${NOMS_SECTIONS_VARIABLES[f] ?? f} : ${libelleVariante(f, v)}`,
+        detail: `Élément · ${NOMS_SECTIONS_VARIABLES[f] ?? f}`, source: SOURCES_FAMILLES[f] ?? 'apps/sites/src/components/gabarits', soins: [f],
+        statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle: `composant:${f}:${v}` },
+      });
+    }
+  }
+  for (const p of PAGES_STRUCTURE) {
+    // Combinaisons des variantes de la page (et de l'ordre de l'accueil) : produit cartésien, dans l'ordre de clesStructure
+    const axes: { f: string; valeurs: readonly string[] }[] = [
+      ...(p.ordre ? [{ f: 'ordre', valeurs: ORDRES_ACCUEIL.map((o) => o.id as string) }] : []),
+      ...p.sections.map((f) => ({ f: f as string, valeurs: VARIANTES_SECTIONS[f] as readonly string[] })),
+    ];
+    let combos: string[][] = [[]];
+    for (const a of axes) combos = combos.flatMap((c) => a.valeurs.map((v) => [...c, v]));
+    for (const c of combos) {
+      const cle = `structure:${p.id}:${c.join('-')}`;
+      const libelles = c.map((v, i) => (axes[i].f === 'ordre' ? ORDRES_ACCUEIL.find((o) => o.id === v)?.nom ?? v : `${NOMS_SECTIONS_VARIABLES[axes[i].f] ?? axes[i].f} ${libelleVariante(axes[i].f, v).toLowerCase()}`));
+      l.push({
+        cle, type: 'structure', titre: `${p.nom} : ${libelles.join(' · ')}`, detail: `Structure de page · ${p.nom}`,
+        source: 'packages/core/src/recettes.ts (PAGES_STRUCTURE) ; apps/sites/src/components/gabarits', soins: [p.id],
+        statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle },
+      });
+    }
+  }
+  for (const j of JEUX_EFFETS) {
+    l.push({
+      cle: `effets:${j.id}`, type: 'effets', titre: `Effets « ${j.nom} »`, detail: j.description,
+      source: 'packages/core/src/effets.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle: `effets:${j.id}` },
+    });
+  }
+  studio = l;
+  return l;
+}
+
 /** Clé connue de l'inventaire (sans les photos des jeux : celles-ci sont vérifiées à part) */
 export const estAssetDuCode = (cle: string) => CLE_ASSET.test(cle) && assetsDuCode().some((a) => a.cle === cle);
 
 /** Titres de l'inventaire du code (synthèse, export) */
 export function titresAssets(): Record<string, string> {
-  return Object.fromEntries(assetsDuCode().map((a) => [a.cle, a.detail && a.type !== 'photo' ? `${a.titre} (${a.detail.split(' · ')[0]})` : a.titre]));
+  return Object.fromEntries([...assetsDuCode(), ...inventaireStudio()].map((a) => [a.cle, a.detail && a.type !== 'photo' ? `${a.titre} (${a.detail.split(' · ')[0]})` : a.titre]));
 }
 
 // ---------------------------------------------------------------------------------------------------------------

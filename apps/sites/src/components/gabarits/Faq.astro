@@ -3,15 +3,16 @@
 // réponse dépliée à la demande (information progressive). Questions en h3, comme le gabarit classique.
 import type { Faq } from '@plateforme/core';
 import { texte, champ } from '../../lib/edition';
+import { variantes } from '../../lib/gabarits';
 
 interface Props { items: Faq[]; cle?: string }
 const { items, cle } = Astro.props;
 const reponse = (f: Faq, i: number) => (cle ? texte(`${cle}.${i + 1}.reponse`, f.r) : f.r);
 const zone = (i: number) => (cle ? champ(`${cle}.${i + 1}.reponse`) : {});
 ---
-<div class="accordeon">
+<div class:list={['accordeon', `accordeon--${variantes.faq}`]}>
   {items.map((f, i) => (
-    <details>
+    <details open={variantes.faq === 'ouverte' || undefined}>
       <summary><h3>{f.q}</h3><span class="accordeon__signe" aria-hidden="true"></span></summary>
       <p {...zone(i)}>{reponse(f, i)}</p>
     </details>
@@ -30,5 +31,11 @@ const zone = (i: number) => (cle ? champ(`${cle}.${i + 1}.reponse`) : {});
   .accordeon__signe::after { rotate: 90deg; transition: rotate var(--duree-court) var(--courbe-sortie); }
   details[open] .accordeon__signe::after { rotate: 0deg; }
   summary:hover .accordeon__signe { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
+  /* Variantes (studio de recettes) : deux colonnes (ordinateur) ; liste ouverte (réponses dépliées, mêmes balises) */
+  @media (min-width: 900px) { .accordeon--colonnes { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: none; align-items: start; } }
+  .accordeon--ouverte details { background: none; box-shadow: none; border-bottom: var(--filet) solid var(--g-ligne); border-radius: 0; }
+  .accordeon--ouverte summary { padding-inline: 0; }
+  .accordeon--ouverte p { padding-inline: 0; }
+  .accordeon--ouverte .accordeon__signe { display: none; }
   p { padding: 0 22px 22px; color: var(--g-encre-douce); max-width: 40em; }
 </style>

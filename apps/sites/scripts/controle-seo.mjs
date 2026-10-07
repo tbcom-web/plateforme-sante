@@ -11,7 +11,13 @@ import { fileURLToPath } from 'node:url';
 const modeles = process.argv.slice(2).length ? process.argv.slice(2) : ['proximite', 'premium', 'prestige', 'zen', 'atelier', 'simple', 'tableau', 'village', 'revue', 'technique'];
 const modes = (process.env.MODES_VISUELS ?? '').split(',').map((m) => m.trim()).filter(Boolean);
 // Variantes construites : chaque modèle, dans chaque style visuel demandé (sinon le style par défaut).
-const variantes = modeles.flatMap((modele) => (modes.length ? modes : [null]).map((mode) => ({ modele, mode, nom: mode ? `${modele}/${mode}` : modele })));
+// Recettes du studio : RECETTES=a.json,b.json (chemins de compositions, recettes.ts) — chacune comparée au premier modèle
+// (même contenu : seuls l'ordre, la présentation des sections, les polices, couleurs, visuels et effets changent).
+const recettes = (process.env.RECETTES ?? '').split(',').map((r) => r.trim()).filter(Boolean);
+const variantes = [
+  ...(recettes.length ? modeles.slice(0, 1) : modeles).flatMap((modele) => (modes.length ? modes : [null]).map((mode) => ({ modele, mode, nom: mode ? `${modele}/${mode}` : modele }))),
+  ...recettes.map((recette) => ({ modele: modeles[0], mode: null, recette, nom: `recette ${recette.split(/[\/]/).pop()}` })),
+];
 const dist = fileURLToPath(new URL('../dist/', import.meta.url)); // jamais .pathname (« /C:/… », espaces en %20)
 
 const fichiers = (dossier) =>
@@ -49,9 +55,10 @@ function signature() {
 }
 
 const resultats = {};
-for (const { modele, mode, nom } of variantes) {
-  console.log(`→ Construction avec le modèle « ${modele} »${mode ? `, style visuel « ${mode} »` : ''}…`);
-  execSync('npx astro build', { stdio: 'ignore', env: { ...process.env, MODELE: modele, ...(mode ? { MODE_VISUEL: mode } : {}) } });
+for (const { modele, mode, nom, recette } of variantes) {
+  console.log(`→ Construction ${recette ? `de la ${nom}` : `avec le modèle « ${modele} »`}${mode ? `, style visuel « ${mode} »` : ''}…`);
+  const { RECETTE: _r, RECETTES: _rs, ...env } = process.env;
+  execSync('npx astro build', { stdio: 'ignore', env: { ...env, MODELE: modele, ...(mode ? { MODE_VISUEL: mode } : {}), ...(recette ? { RECETTE: recette } : {}) } });
   resultats[nom] = signature();
 }
 
@@ -72,5 +79,5 @@ for (const autre of autres) {
     }
   }
 }
-console.log(ecarts ? `\n${ecarts} écart(s) SEO détecté(s).` : `\n✓ SEO identique sur ${modeles.length} modèles${modes.length ? ` × ${modes.length} styles visuels` : ''} (${Object.keys(resultats[reference]).length} fichiers comparés).`);
+console.log(ecarts ? `\n${ecarts} écart(s) SEO détecté(s).` : `\n✓ SEO identique sur ${recettes.length ? `${recettes.length} recette(s) et le modèle ${modeles[0]}` : `${modeles.length} modèles`}${modes.length ? ` × ${modes.length} styles visuels` : ''} (${Object.keys(resultats[reference]).length} fichiers comparés).`);
 process.exit(ecarts ? 1 : 0);

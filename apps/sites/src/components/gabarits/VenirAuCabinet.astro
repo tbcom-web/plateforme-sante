@@ -8,9 +8,9 @@ import Icone from '../Icone.astro';
 import PlanAcces from './PlanAcces.astro';
 import { site } from '../../lib/site';
 import { lieu, telLien, itineraire, rdvEnLigne, aTelephone, aAdresse, adresseLieu, phraseRdv, lienContact, contactRdv, horairesConnus, repliHorairesLieu, mentionsHorairesLieu } from '../../lib/textes';
-import { semaine, cabinetOuvert, nomLieu } from '../../lib/gabarits';
+import { semaine, cabinetOuvert, nomLieu, variantes } from '../../lib/gabarits';
 
-interface Props { variante: 'volets' | 'notice' }
+interface Props { variante: 'volets' | 'notice' | 'colonnes' }
 const { variante } = Astro.props;
 const transports = [site.accesDetail.parking, site.accesDetail.pmr ? 'Accès facile pour les personnes à mobilité réduite' : '', site.accesDetail.transports, ...site.accesDetail.autres].filter(Boolean);
 const volets = [
@@ -21,7 +21,7 @@ const volets = [
   ...(site.paiements.length ? [{ id: 'volet-reglement', titre: 'Moyens de règlement acceptés', lignes: [`${site.paiements.join(', ')}.`, site.praticien.conventionnement ? `${site.praticien.conventionnement}.` : ''].filter(Boolean) }] : []),
 ].filter((v) => v.lignes.length > 0);
 ---
-<div class:list={['venir', `venir--${variante}`]}>
+<div class:list={['venir', `venir--${variante}`, `venir--h-${variantes.horaires}`]}>
   <div class="venir__haut">
     {cabinetOuvert && (
       <div class="venir__bloc" id="horaires">
@@ -54,7 +54,7 @@ const volets = [
         {aTelephone ? <a href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a> : contactRdv === 'email' && <a href={lienContact}><Icone nom="lucide:mail" />{site.cabinet.email}</a>}
         {itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="lucide:navigation" />Itinéraire</a>}
       </p>
-      {variante === 'notice' && aAdresse && <PlanAcces class="venir__plan" />}
+      {variante !== 'volets' && aAdresse && <PlanAcces class="venir__plan" />}
     </div>
   </div>
   <div class="volets">
@@ -95,6 +95,25 @@ const volets = [
   .horaires :global(.aujourdhui) th { padding-left: 12px; border-radius: 10px 0 0 10px; }
   .horaires :global(.aujourdhui) td { border-radius: 0 10px 10px 0; }
   .horaires :global(.horaires__jour) { display: block; font-size: 0.85rem; font-weight: 600; color: var(--g-bulle-texte); }
+  /* Variantes du bloc horaires (studio de recettes) : même tableau, présentation seule ; lecture jour / heures inchangée */
+  .venir--h-carte #horaires { padding: clamp(18px, 3vw, 28px); border-radius: var(--rayon-carte); background: var(--g-doux); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
+  .venir--h-carte .horaires tr:last-child :is(th, td) { border-bottom: 0; }
+  @media (min-width: 760px) {
+    .venir--h-bandeau .venir__haut { grid-template-columns: minmax(0, 1fr); }
+    .venir--h-bandeau .horaires tbody { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+    .venir--h-bandeau .horaires tr { display: grid; align-content: start; gap: 4px; padding: 12px 14px; border-radius: calc(var(--rayon-carte) * 0.6); background: var(--g-doux); }
+    .venir--h-bandeau .horaires :is(th, td) { display: block; width: auto; padding: 0; border: 0; }
+    .venir--h-bandeau .horaires td span { display: block; }
+    .venir--h-bandeau .horaires :global(.aujourdhui) { background: var(--g-bulle); }
+    .venir--h-bandeau .horaires :global(.aujourdhui) :is(th, td) { padding: 0; background: none; }
+  }
+  /* « colonnes » : horaires à gauche, adresse et plan à droite */
+  @media (min-width: 900px) { .venir--colonnes .venir__haut { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 48px; align-items: start; } }
+  /* Horaires « liste » : un jour par ligne, en grand ; le jour courant en évidence (texte « aujourd’hui » + fond) */
+  .venir--h-liste .horaires th, .venir--h-liste .horaires td { padding-block: 14px; font-size: 1.08rem; }
+  .venir--h-liste .horaires th { width: 46%; }
+  .venir--h-liste .horaires :global(.aujourdhui) :is(th, td) { background: var(--g-aplat); color: var(--g-aplat-texte); font-weight: 700; }
+  .venir--h-liste .horaires :global(.aujourdhui .horaires__jour) { color: var(--g-aplat-doux); }
   .volets { display: grid; border-top: var(--filet) solid var(--g-ligne); }
   details { border-bottom: var(--filet) solid var(--g-ligne); scroll-margin-top: 100px; }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 60px; cursor: pointer; font-weight: 650; list-style: none; }

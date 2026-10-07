@@ -14,7 +14,7 @@ import { lieu, itineraire, TYPES_LIEU, aAdresse, adresseLieu, horairesConnus, re
 import RdvContact from '../RdvContact.astro';
 import { semaine, cabinetOuvert } from '../../lib/gabarits';
 
-interface Props { variante: 'volets' | 'notice'; sansAdresse?: boolean; niveau?: 2 | 3 }
+interface Props { variante: 'volets' | 'notice' | 'colonnes'; sansAdresse?: boolean; niveau?: 2 | 3 }
 const { variante, sansAdresse = false, niveau = 3 } = Astro.props;
 const Titre = niveau === 2 ? 'h2' : 'h3';
 const acces = [

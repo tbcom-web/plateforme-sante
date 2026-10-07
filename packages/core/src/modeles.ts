@@ -60,21 +60,42 @@ export const VARIANTES_SECTIONS = {
   /** … ou en « liste » (revue) : une ligne par praticien, séparées par un filet, sans carte */
   praticiens: ['cartes', 'fiches', 'liste'],
   /** Venir au cabinet : horaires et accès côte à côte puis volets repliés, ou notice en une colonne avec plan schématique */
-  infos: ['volets', 'notice'],
-  /** Questions fréquentes : accordéon */
-  faq: ['accordeon'],
+  /** … ou en « colonnes » : horaires à gauche, adresse et plan d'accès à droite (plan SVG statique, jamais de tuiles) */
+  infos: ['volets', 'notice', 'colonnes'],
+  /** Questions fréquentes : accordéon ; deux colonnes d'accordéon (ordinateur) ; liste ouverte (réponses dépliées) */
+  faq: ['accordeon', 'colonnes', 'ouverte'],
   /** Actualités : liste de titres datés, ou cartes */
   actualites: ['liste', 'cartes'],
   /** Pied de page : sobre (coordonnées, liens) */
   pied: ['simple'],
+  /**
+   * Sujets du cabinet sous le premier écran (SujetsAccueil, studio de recettes 2026-10-07) : « une » = présentation propre au
+   * gabarit (le premier sujet en grand) ; « rangees » = grandes rangées illustrées alternées ; « cartes » = cartes égales ;
+   * « liste » = liste éditoriale (petit visuel, titre, une ligne, filets) ; « colonnes » = deux colonnes égales. Même contenu.
+   */
+  sujets: ['une', 'rangees', 'cartes', 'liste', 'colonnes'],
+  /** Bloc horaires de « Venir au cabinet » : tableau jour / heures, bandeau (jours côte à côte), ou carte encadrée */
+  horaires: ['tableau', 'bandeau', 'carte', 'liste'],
+  /** Galerie du cabinet (photos du praticien) : mosaïque ; défilement horizontal au doigt ; grande photo et vignettes ; bande de 4 */
+  galerie: ['mosaique', 'defilement', 'grande', 'bande'],
+  /**
+   * Rendez-vous et contact (coquille des gabarits tableau, village, revue ; studio de recettes, lot 1) : « barre » = barre
+   * d'actions en bas de l'écran sur téléphone (historique) ; « bandeau » = bandeau d'actions à la couleur du cabinet avant le pied
+   * de page (Appeler, Écrire au cabinet, Rendez-vous, Itinéraire) ; « carte » = carte « Écrire au cabinet » encadrée (e-mail et
+   * téléphone en grand) ; « flottant » = bouton rond flottant sur téléphone au lieu de la barre. Aucun formulaire (stockage, RGPD,
+   * anti-spam à décider par Paul) : « Écrire au cabinet » reste un lien e-mail. Aucun intertitre (SEO identique).
+   */
+  contact: ['barre', 'bandeau', 'carte', 'flottant'],
+  /** Forme des cartes de soins et de sujets (formes.ts), indépendante de leur disposition ; « gabarit » : celle du modèle */
+  'soins-forme': ['gabarit', 'bulles', 'carres', 'arrondies', 'mosaique', 'pilules', 'organiques', 'tuiles', 'sans-cadre'],
 } as const;
 export type SectionVariable = keyof typeof VARIANTES_SECTIONS;
 export type Variantes = { [S in SectionVariable]: (typeof VARIANTES_SECTIONS)[S][number] };
 /** Variantes par défaut de chaque gabarit (la fiche peut en changer une partie). */
 export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
-  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
-  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
-  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple' },
+  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre' },
+  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre' },
+  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre' },
 };
 /** Gabarit d'un modèle (défaut : classique, pour les fiches antérieures au champ). */
 export const gabaritModele = (m: Pick<ModeleManifeste, 'gabarit'>): Gabarit => m.gabarit ?? 'classique';
@@ -83,11 +104,61 @@ export function variantesModele(m: Pick<ModeleManifeste, 'gabarit' | 'variantes'
   const g = gabaritModele(m);
   return g === 'classique' ? null : { ...VARIANTES_PAR_DEFAUT[g], ...(m.variantes ?? {}) };
 }
+/** Sections dont la variante s'applique aussi au gabarit classique (présentation des sujets seulement) */
+export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme'];
+/** Forme des cartes (tous gabarits) ; défaut : celle du modèle */
+export const formeDesCartes = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['soins-forme'] =>
+  (VARIANTES_SECTIONS['soins-forme'] as readonly string[]).includes(m.variantes?.['soins-forme'] as string) ? m.variantes!['soins-forme']! : 'gabarit';
+/** Variante de présentation des sujets (tous gabarits, classique compris) ; défaut : « une » */
+export const varianteSujets = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['sujets'] =>
+  (VARIANTES_SECTIONS.sujets as readonly string[]).includes(m.variantes?.sujets as string) ? m.variantes!.sujets! : 'une';
+/** Variantes reçues (brouillon, recette) : sections et valeurs connues seulement ; classique : `sujets` seulement */
+export function variantesValides(v: unknown, gabarit: Gabarit = 'tableau'): Partial<Variantes> {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  const r: Record<string, string> = {};
+  for (const [s, x] of Object.entries(v as Record<string, unknown>)) {
+    const possibles = (VARIANTES_SECTIONS as Record<string, readonly string[]>)[s];
+    if (!possibles || typeof x !== 'string' || !possibles.includes(x)) continue;
+    if (gabarit === 'classique' && !VARIANTES_CLASSIQUE.includes(s as SectionVariable)) continue;
+    r[s] = x;
+  }
+  return r as Partial<Variantes>;
+}
 
 export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito', 'geist', 'publicsans', 'bodoni'] as const;
 export type PoliceTitres = (typeof POLICES_TITRES)[number];
 export const POLICES_TEXTE = ['inter', 'manrope', 'nunito', 'geist', 'publicsans', 'newsreader'] as const;
 export type PoliceTexte = (typeof POLICES_TEXTE)[number];
+/**
+ * Paires de polices du studio de recettes (titre / texte), toutes déjà auto-hébergées (@fontsource, sous-ensemble latin, une
+ * police variable par famille) : 2 familles au plus par site (une seule pour les paires « mono-famille »), plus la mono du
+ * registre relevé seulement (lectures de données). Appliquées par les jetons policeTitres / policeTexte / graisseTitres
+ * (variables CSS --police-titres, --police-texte, --graisse-titres : gabarits Astro et aperçu de l'admin). Sobres et pro :
+ * aucune police fantaisie. Ajouter une paire = deux polices déjà installées (POLICES_TITRES / POLICES_TEXTE).
+ */
+export const PAIRES_POLICES = [
+  { id: 'grotesque', nom: 'Grotesque affirmée', titres: 'schibsted', texte: 'inter', graisse: 750, description: 'Schibsted Grotesk / Inter : net, technique' },
+  { id: 'geometrique', nom: 'Géométrique nette', titres: 'geist', texte: 'geist', graisse: 650, description: 'Geist seule : moderne, très lisible sur téléphone' },
+  { id: 'publique', nom: 'Publique lisible', titres: 'publicsans', texte: 'publicsans', graisse: 750, description: 'Public Sans seule : institutionnelle, gros caractères' },
+  { id: 'revue', nom: 'Revue à empattements', titres: 'bodoni', texte: 'newsreader', graisse: 500, description: 'Bodoni Moda / Newsreader : éditorial élégant' },
+  { id: 'editoriale', nom: 'Éditoriale chaleureuse', titres: 'fraunces', texte: 'inter', graisse: 420, description: 'Fraunces / Inter : serif douce, texte neutre' },
+  { id: 'douce', nom: 'Douce arrondie', titres: 'manrope', texte: 'manrope', graisse: 600, description: 'Manrope seule : arrondie, apaisante' },
+  { id: 'serif-fine', nom: 'Serif fine', titres: 'instrument', texte: 'inter', graisse: 400, description: 'Instrument Serif / Inter : grands titres fins' },
+  { id: 'ronde', nom: 'Ronde pédagogique', titres: 'nunito', texte: 'nunito', graisse: 750, description: 'Nunito seule : ronde, rassurante' },
+  { id: 'clinique', nom: 'Clinique sobre', titres: 'inter', texte: 'inter', graisse: 560, description: 'Inter seule : clinique, neutre' },
+] as const satisfies readonly { id: string; nom: string; titres: PoliceTitres; texte: PoliceTexte; graisse: number; description: string }[];
+export type PairePolices = (typeof PAIRES_POLICES)[number];
+export type IdPairePolices = PairePolices['id'];
+export const pairePolices = (id: unknown): PairePolices | undefined => PAIRES_POLICES.find((p) => p.id === id);
+/** Paire de polices d'un modèle (celle dont titres et texte correspondent), sinon undefined */
+export const paireDuModele = (m: Pick<ModeleManifeste, 'jetons'>): PairePolices | undefined =>
+  PAIRES_POLICES.find((p) => p.titres === m.jetons.policeTitres && p.texte === m.jetons.policeTexte);
+/** Modèle avec une paire de polices (jetons de police et graisse des titres) ; paire inconnue : inchangé */
+export function avecPolices<M extends Pick<ModeleManifeste, 'jetons'>>(m: M, id: unknown): M {
+  const p = pairePolices(id);
+  return p ? { ...m, jetons: { ...m.jetons, policeTitres: p.titres, policeTexte: p.texte, graisseTitres: p.graisse } } : m;
+}
+
 /** Traitement appliqué aux photos pour l'unité graphique du style */
 export const TRAITEMENTS_IMAGES = ['naturel', 'chaud', 'doux', 'contraste'] as const;
 export type TraitementImages = (typeof TRAITEMENTS_IMAGES)[number];
@@ -129,6 +200,11 @@ export type ModeleManifeste = {
     voile: number;
     /** Ordre des sections sous l'en-tête d'accueil */
     sections: SectionAccueil[];
+    /**
+     * « Venir au cabinet » (horaires, adresse) juste sous le premier écran, avant les sujets (studio de recettes) ; facultatif.
+     * Même contenu et mêmes intertitres (H2 au même niveau) : seul l'ordre change.
+     */
+    infosEnTete?: boolean;
   };
   competences: 'liste' | 'cartes';
   /** Pied de page : sombre (encre), à la couleur du cabinet, ou clair */
@@ -377,7 +453,7 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
   if (!parmi(gabarit, GABARITS)) e.push(`« gabarit » : ${GABARITS.join(', ')}.`);
   if (m.variantes !== undefined) {
     if (!m.variantes || typeof m.variantes !== 'object' || Array.isArray(m.variantes)) e.push('« variantes » : objet { section: variante }.');
-    else if (gabarit === 'classique') e.push('« variantes » : réservées aux gabarits autres que « classique ».');
+    else if (gabarit === 'classique' && Object.keys(m.variantes).some((s) => !VARIANTES_CLASSIQUE.includes(s as SectionVariable))) e.push('« variantes » : réservées aux gabarits autres que « classique » (sauf « sujets »).');
     else {
       for (const [s, v] of Object.entries(m.variantes)) {
         const possibles = (VARIANTES_SECTIONS as Record<string, readonly string[]>)[s];
@@ -440,9 +516,9 @@ export function validerManifeste(brut: unknown): { erreurs: string[]; modele?: M
       ...(v.effet?.trim() ? { effet: v.effet.trim() } : {}),
       version: v.version,
       ...(gabarit !== 'classique' ? { gabarit } : {}),
-      ...(gabarit !== 'classique' && v.variantes && Object.keys(v.variantes).length ? { variantes: { ...v.variantes } } : {}),
+      ...(v.variantes && Object.keys(v.variantes).length ? { variantes: { ...v.variantes } } : {}),
       entete: v.entete,
-      accueil: { hero: v.accueil.hero, voile, sections: v.accueil.sections },
+      accueil: { hero: v.accueil.hero, voile, sections: v.accueil.sections, ...(v.accueil.infosEnTete === true ? { infosEnTete: true } : {}) },
       competences: v.competences,
       pied,
       animations,

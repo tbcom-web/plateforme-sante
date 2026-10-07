@@ -23,6 +23,8 @@ import {
   type JeuPhotos,
   type PoidsAtelier,
   type Proposition,
+  type PropositionRecette,
+  type Recette,
   type ReglagesSite,
   type Structure,
   type MarqueImportee,
@@ -52,7 +54,7 @@ import PorteRendu from './PorteRendu';
 import RenduPlein from './RenduPlein';
 
 export type ActionEnregistrer = (id: string | null, draft: SiteDraft, version?: string | null) => Promise<EtatParcours>;
-export type ActionChoisir = (id: string | null, draft: SiteDraft, version: string | null, universId: string, reglages?: Partial<ReglagesSite> & { proposition?: string | null }) => Promise<EtatParcours>;
+export type ActionChoisir = (id: string | null, draft: SiteDraft, version: string | null, universId: string, reglages?: Partial<ReglagesSite> & { proposition?: string | null; recette?: string | null }) => Promise<EtatParcours>;
 
 type Props = {
   siteId: string | null;
@@ -75,6 +77,8 @@ type Props = {
   themesActives: string[];
   /** Poids appris des notes de l'atelier (/admin/atelier), null tant qu'il n'y en a pas */
   poidsAtelier?: PoidsAtelier | null;
+  /** Recettes du studio bien notées (recettes_lecture) : proposées en premier pour les sujets du praticien */
+  recettes?: Recette[];
   actions: {
     sauvegarder: ActionEnregistrer;
     choisir: ActionChoisir;
@@ -114,7 +118,7 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, poidsAtelier = null, actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
+export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, poidsAtelier = null, recettes = [], actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
   const router = useRouter();
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
@@ -231,7 +235,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
 
   /** Applique une structure (serveur : préréglage du modèle, identité gardée) puis les réglages donnés */
-  const appliquer = async (universId: string, reglages: Partial<ReglagesSite> & { proposition?: string | null }, cle: string, message: string) => {
+  const appliquer = async (universId: string, reglages: Partial<ReglagesSite> & { proposition?: string | null; recette?: string | null }, cle: string, message: string) => {
     setChoixEnCours(cle);
     if (minuteur.current) clearTimeout(minuteur.current);
     await file.current;
@@ -255,7 +259,9 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
   const choisir = async (p: Proposition) => {
     if (d.theme.proposition === p.id) return aller(4);
     if (d.theme.univers && !confirm(`Passer au site « ${p.nom} » ? Vos informations sont gardées ; la présentation, les couleurs et les illustrations changent.`)) return;
-    await appliquer(p.univers, { gamme: p.gamme, style: p.style, animation: p.animation, proposition: p.id }, p.id, `Site « ${p.nom} » choisi, brouillon enregistré`);
+    // Recette du studio : le serveur relit la recette (recettes_lecture) et pose tous ses réglages (polices, sections, effets…)
+    const recette = 'recette' in p ? (p as PropositionRecette).recette.id : null;
+    await appliquer(p.univers, { gamme: p.gamme, style: p.style, animation: p.animation, proposition: p.id, ...(recette ? { recette } : {}) }, p.id, `Site « ${p.nom} » choisi, brouillon enregistré`);
   };
 
   // « Ajuster » : autre structure, en gardant la gamme et le style (ramené au relevé s'il ne convient pas à la structure)
@@ -375,6 +381,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
               slugs={slugs}
               themesActives={themesActives}
               poids={poidsAtelier}
+              recettes={recettes}
               etroit={etroit}
               choixEnCours={choixEnCours}
               onChoisir={choisir}

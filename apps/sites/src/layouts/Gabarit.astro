@@ -1,6 +1,7 @@
 ---
 // Gabarit commun à toutes les pages d'un site praticien.
 // La présentation suit la fiche du modèle (site.modele) ; tout ce qui sert le SEO est produit ici, quel que soit le modèle.
+import { cssEffets, cssFormes, formeDesCartes, jeuEffets } from '@plateforme/core';
 import '@fontsource-variable/inter';
 // Fraunces : axes graisse + taille optique (droit) et graisse + « wonk » (italique des mots en retrait), soit
 // 110 Ko au lieu de 270 Ko pour la version complète ; l'axe SOFT n'est pas chargé (mobile d'abord).
@@ -197,9 +198,13 @@ const via = rdvGeneral ? '' : viaPlateforme;
 // repli « Prise de rendez-vous au cabinet » n'est que sur le bouton (retour de Paul, 2026-10-06).
 const precisionRdvBrute = rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h/24` : aTelephone ? `Au ${site.cabinet.telephone}` : phraseRdv;
 const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
+// Jeu d'effets d'une recette du studio (packages/core/src/effets.ts) : CSS seul, en ligne, seulement celui du site.
+const effets = jeuEffets(site.theme.effets)?.id ?? '';
+// Forme des cartes de soins et de sujets (formes.ts, variante « soins-forme ») : CSS seul, en ligne
+const forme = formeDesCartes(site.modele);
 ---
 <!doctype html>
-<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -225,7 +230,7 @@ const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>

@@ -13,6 +13,7 @@ import { getUnivers } from '@/lib/univers';
 import { lireJeuPhotos } from '@/lib/jeux-photos';
 import { themesActives } from '@/lib/themes';
 import { getPoidsAtelier } from '@/lib/atelier';
+import { getRecettesLecture } from '@/lib/recettes';
 
 export const metadata = { title: 'Créer mon site' };
 
@@ -33,13 +34,14 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
   if (pourClient && !admin) redirect('/creer');
 
   // Poids appris des notes de l'atelier (/admin/atelier) : réordonnent les propositions de « Votre site »
-  const [site, catalogue, modeles, marquesImportees, { univers }, poidsAtelier] = await Promise.all([
+  const [site, catalogue, modeles, marquesImportees, { univers }, poidsAtelier, recettes] = await Promise.all([
     pourClient ? getSiteParId(siteDemande) : getMonSite(),
     getCatalogue(),
     getModelesDisponibles(),
     getMarquesImportees(),
     getUnivers(),
     getPoidsAtelier(),
+    getRecettesLecture(4),
   ]);
   if (!site) notFound();
   // Compte en essai gratuit (non validé) : même parcours, pré-rempli avec le nom, « Voir mon site » en aperçu privé.
@@ -92,6 +94,7 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
         admin={admin}
         themesActives={themesActives()}
         poidsAtelier={poidsAtelier}
+        recettes={recettes}
         lienAvance={pourClient ? `/mon-site?site=${site.id}` : '/mon-site'}
         essai={essai}
         actions={{

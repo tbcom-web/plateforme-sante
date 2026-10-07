@@ -10,8 +10,13 @@
 // Le plein écran reste derrière « Voir le rendu » (porte de l'e-mail pour l'essai) : la carte réduite suffit avant.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  appliquerRecette,
   appliquerReglages,
   basculerCouleur,
+  propositionDeRecette,
+  recettesPourScenario,
+  type PropositionRecette,
+  type Recette,
   COULEURS_PREFEREES,
   COULEURS_PREFEREES_MAX,
   couleurPreferee,
@@ -135,6 +140,8 @@ type PropsSite = {
   themesActives: string[];
   /** Poids appris des notes de l'atelier (/admin/atelier) : réordonnent les propositions, sans lever aucun garde-fou */
   poids?: PoidsAtelier | null;
+  /** Recettes du studio bien notées : celles du sujet n° 1 passent en premier, puis le générateur */
+  recettes?: Recette[];
   etroit: boolean;
   /** Proposition en cours d'application (serveur) */
   choixEnCours: string | null;
@@ -145,17 +152,21 @@ type PropsSite = {
   onStructure: (u: Structure) => void;
 };
 
-export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, poids = null, etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
+export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, poids = null, recettes = [], etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
   const entree = useMemo(() => ({ priorites: d.priorites, couleursPreferees: d.couleursPreferees ?? [] }), [d.priorites, d.couleursPreferees]);
   const [nbLots, setNbLots] = useState(1);
   const lots = useMemo(() => lotsPropositions(entree, nbLots, { poids }), [entree, nbLots, poids]);
   const disponibles = new Set(proposes.map((u) => u.id));
-  const liste = lots.flat().filter((p) => disponibles.has(p.univers));
+  // Recettes du studio (bien notées, du sujet n° 1) d'abord, puis les propositions du générateur
+  const duStudio = useMemo(() => recettesPourScenario(recettes, [...d.priorites.principaux, ...d.priorites.secondaires]).slice(0, 6).map(propositionDeRecette), [recettes, d.priorites]);
+  const liste: Proposition[] = [...duStudio, ...lots.flat()].filter((p) => disponibles.has(p.univers));
   const epuise = lots.length < nbLots;
   const manifeste = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);
 
   // Aperçu d'une proposition : structure appliquée localement (comme le serveur), réglages de la proposition, soins de base
-  const apercu = (p: Proposition) => apercuProposition(d, p, { proposes, modeles, slugs, themesActives })!;
+  const apercu = (p: Proposition) => ('recette' in p
+    ? appliquerRecette(d, (p as PropositionRecette).recette.composition, { id: (p as PropositionRecette).recette.id, proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives })
+    : apercuProposition(d, p, { proposes, modeles, slugs, themesActives }))!;
 
   const hauteur = etroit ? 460 : 300;
   const actuelle = d.theme.proposition;

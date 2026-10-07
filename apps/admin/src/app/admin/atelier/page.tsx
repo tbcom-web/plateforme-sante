@@ -9,6 +9,7 @@ import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
+import { getPhotosBanque } from '@/lib/recettes';
 import Atelier from './Atelier';
 import Synthese from './Synthese';
 
@@ -18,8 +19,8 @@ export const metadata = { title: 'Super admin · Atelier des propositions' };
 // fonctions), les note, et le générateur apprend de ses notes (packages/core/src/atelier-poids.ts).
 export default async function PageAtelier() {
   await exigerAdmin();
-  const [{ notes, migrationManquante }, catalogue, modeles, marquesImportees, { univers }, assets] = await Promise.all([
-    getNotesAtelier(), getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getPoidsAssets(),
+  const [{ notes, migrationManquante }, catalogue, modeles, marquesImportees, { univers }, assets, photos] = await Promise.all([
+    getNotesAtelier(), getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getPoidsAssets(), getPhotosBanque(),
   ]);
   const synthese = syntheseAtelier(notes);
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
@@ -45,7 +46,10 @@ export default async function PageAtelier() {
           Pour noter au hasard, avec « ce qui va bien / ce qui ne va pas » : <Link href="/admin/retours?type=themes" className="font-semibold text-teal-900 underline">Donner mon avis</Link>.
         </p>
       </div>
-      <EnvoyerRetours compact />
+      <div className="flex flex-wrap items-center gap-2">
+        <Link href="/admin/atelier/studio" className="flex min-h-11 items-center rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900">Studio de recettes →</Link>
+        <EnvoyerRetours compact />
+      </div>
       </div>
       {migrationManquante && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
@@ -62,6 +66,7 @@ export default async function PageAtelier() {
         poids={poids.n || poids.assets ? poids : null}
         dejaNotees={dejaNotees}
         migrationManquante={migrationManquante}
+        photos={photos}
       />
     </div>
   );

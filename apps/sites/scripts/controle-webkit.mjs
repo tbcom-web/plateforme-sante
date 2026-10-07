@@ -13,7 +13,7 @@
 //    iPhone) ignore les feuilles d'un document SVG externe référencé par <use href="/dessins/x.svg#d"> : les traits,
 //    pointillés, étiquettes et couleurs d'accent disparaissent. Les styles doivent être en attributs style="".
 // 2. Visuel : chaque page est capturée en WebKit et en Chromium (descripteur iPhone 15, 393 px), sections révélées,
-//    animations figées, texte HTML rendu transparent (seuls les visuels comptent ; le texte SVG des dessins reste visible) (le WebKit de Playwright sous Windows
+//    animations figées (apparitions au défilement des jeux d'effets ramenées à leur état final : WebKit ne les joue pas), texte HTML rendu transparent (seuls les visuels comptent ; le texte SVG des dessins reste visible) (le WebKit de Playwright sous Windows
 //    n'applique pas les axes des polices variables : sans cela, tout texte gras ressortirait). Différence de pixels
 //    par zone de 300 px CSS ; une zone au-dessus du seuil fait échouer le contrôle. Planches WebKit | Chromium | diff
 //    écrites dans le dossier de sortie.
@@ -64,7 +64,7 @@ if (!base) {
   base = `http://localhost:${serveur.address().port}`;
 }
 
-const FIGER = `*{-webkit-text-fill-color:transparent!important;text-shadow:none!important;font-family:Arial,Helvetica,sans-serif!important;font-variation-settings:normal!important;content-visibility:visible!important;animation-play-state:paused!important;animation-delay:-1s!important;transition:none!important;caret-color:transparent!important}canvas,video,.empreintes__scan{visibility:hidden!important}.barre-mobile,.consentement,[data-consent]{display:none!important}`;
+const FIGER = `*{-webkit-text-fill-color:transparent!important;text-shadow:none!important;font-family:Arial,Helvetica,sans-serif!important;font-variation-settings:normal!important;content-visibility:visible!important;animation-play-state:paused!important;animation-delay:-1s!important;animation-timeline:auto!important;transition:none!important;caret-color:transparent!important}canvas,video,.empreintes__scan{visibility:hidden!important}.barre-mobile,.consentement,[data-consent]{display:none!important}`;
 
 async function capturer(type, chemin) {
   const nav = await type.launch();
