@@ -14,7 +14,7 @@ import Dessin from '../dessins/Dessin.astro';
 import { site, md } from '../../lib/site';
 import { photoResponsive } from '../../lib/visuels';
 import { telLien, lienRdv, rdvEnLigne, titreCompetences, viaPlateforme, lieu, aTelephone, adresseLieu, lienContact, libelleContact, suffixeVille } from '../../lib/textes';
-import { pictoDuSoin, visuelVariante, nomLieu, gabarit } from '../../lib/gabarits';
+import { pictoDuSoin, visuelVariante, nomLieu, gabarit, variantes } from '../../lib/gabarits';
 import { espacesFines, equipementsDuSoin, type Soin } from '@plateforme/core';
 
 interface Props { soin: Soin }
@@ -61,7 +61,7 @@ const enPratique = [
     </ul>
   )}
 
-  <div class="g-cadre fiche">
+  <div class:list={['g-cadre', 'fiche', !revue && `fiche--${variantes.fiche ?? 'encadre'}`]}>
     <div class="fiche__corps">
       <div class="prose fiche__prose" set:html={md(soin.corps)} />
       {materiel.length > 0 && (
@@ -136,6 +136,14 @@ const enPratique = [
   .fiche__lieu { color: var(--g-encre-douce); font-size: 1rem; }
   .fiche__lieu strong { color: var(--g-encre); }
   .fiche__horaires { margin-top: 0 !important; }
+
+  /* ———— Variantes (studio de recettes) : même balisage, mise en page seule ———— */
+  /* Une colonne de lecture, l'encadré « En pratique » en bandeau sous le texte ; ou en tête, avant le texte */
+  @media (min-width: 960px) { :is(.fiche--colonne, .fiche--pratique-haut) { grid-template-columns: minmax(0, 1fr); max-width: 52rem; } }
+  :is(.fiche--colonne, .fiche--pratique-haut) .fiche__cote { position: static; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  :is(.fiche--colonne, .fiche--pratique-haut) .fiche__cote .fiche__etiquette { flex-basis: 100%; }
+  .fiche--pratique-haut .fiche__cote { order: -1; }
+  .fiche--pratique-haut .fiche__corps { padding-inline: 0; background: none; box-shadow: none; }
 
   /* ———— Revue : colonne de lecture centrée, filets fins ———— */
   :global(.coquille--revue) article :global(.tete__texte) { width: min(760px, 100%); margin-inline: auto; }

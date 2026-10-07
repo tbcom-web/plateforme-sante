@@ -77,7 +77,7 @@ export function sectionsSelonOrdre(base: readonly SectionAccueil[], ordre: Ordre
 
 /** Sections dont le studio tire la variante, selon le gabarit (classique : la présentation des sujets seulement) */
 export const sectionsVariables = (g: Gabarit): (keyof Variantes)[] =>
-  g === 'classique' ? ['sujets', 'soins-forme'] : ['accueil', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'infos', 'faq', 'galerie', 'contact'];
+  g === 'classique' ? ['sujets', 'soins-forme'] : ['accueil', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied'];
 
 /**
  * Structures de PAGES (demande de Paul du 2026-10-07) : chaque type de page regroupe les sections et éléments qui le composent ;
@@ -91,11 +91,13 @@ export const PAGES_STRUCTURE = [
   { id: 'acces', nom: 'Contact et accès', sections: ['infos', 'horaires', 'contact'] as (keyof Variantes)[], ordre: false },
   { id: 'cabinet', nom: 'Le cabinet', sections: ['praticiens', 'galerie'] as (keyof Variantes)[], ordre: false },
   { id: 'questions', nom: 'Questions fréquentes', sections: ['faq'] as (keyof Variantes)[], ordre: false },
+  { id: 'fiche', nom: 'Fiche d’un soin', sections: ['fiche'] as (keyof Variantes)[], ordre: false },
+  { id: 'actualites', nom: 'Actualités et articles', sections: ['actualites'] as (keyof Variantes)[], ordre: false },
 ] as const;
 export type PageStructure = (typeof PAGES_STRUCTURE)[number]['id'];
 
 /** Familles d'éléments notables (composants) : présentation de chaque élément, clé `composant:<famille>:<variante>` */
-export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'faq', 'soins', 'sujets', 'accueil'];
+export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'faq', 'soins', 'sujets', 'accueil', 'pied', 'actualites'];
 
 /** Libellés des variantes (studio) */
 export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
@@ -107,11 +109,14 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   infos: { volets: 'Adresse et itinéraire', notice: 'Notice et plan', colonnes: 'Horaires | adresse et plan' },
   faq: { accordeon: 'Accordéon', colonnes: 'Deux colonnes', ouverte: 'Liste ouverte' },
   galerie: { mosaique: 'Mosaïque', defilement: 'Diaporama au doigt', grande: 'Grande photo et vignettes', bande: 'Bande de quatre photos' },
+  pied: { simple: 'Trois colonnes', centre: 'Centré, liens en ligne', large: 'Nom du cabinet en grand' },
+  fiche: { encadre: 'Texte et encadré « En pratique » à côté', colonne: 'Une colonne, encadré sous le texte', 'pratique-haut': 'Encadré « En pratique » en tête' },
+  actualites: { liste: 'Liste de titres datés', cartes: 'Cartes illustrées', une: 'Le dernier à la une' },
   contact: { barre: 'Barre d’actions (téléphone)', bandeau: 'Bandeau « Écrire au cabinet »', carte: 'Carte de contact', flottant: 'Bouton flottant' },
   'soins-forme': Object.fromEntries(FORMES_CARTES.map((f) => [f.id, f.nom])),
 };
 export const NOMS_SECTIONS_VARIABLES: Record<string, string> = {
-  accueil: 'Premier écran', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', 'soins-forme': 'Forme des cartes',
+  accueil: 'Premier écran', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -487,18 +492,21 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   return { ...x, sections: { ordre: s.ordre ?? x.sections.ordre, variantes: { ...x.sections.variantes, ...s.variantes } } };
 }
 
+/** Vue de l'aperçu qui montre une clé : la fiche d'un soin pour sa structure, l'accueil sinon */
+export const vuePourCle = (cle: string): 'accueil' | 'soin' => (cle.startsWith('structure:fiche:') ? 'soin' : 'accueil');
+
 /** Blocs de l'aperçu qui montrent un élément (ApercuGabarit, `seul`) ; undefined = la page entière (accueil, effets) */
 export function blocsPourCle(cle: string): string[] | undefined {
   const [type, a] = cle.split(':');
   if (type === 'composant') {
     const blocs: Record<string, string[]> = {
       accueil: ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
-      galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], faq: ['faq'], pied: ['pied'],
+      galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], faq: ['faq'], pied: ['pied'], actualites: ['actualites'],
     };
     return blocs[a];
   }
   if (type === 'structure') {
-    const blocs: Record<string, string[] | undefined> = { accueil: undefined, soins: ['competences', 'sujets'], acces: ['acces', 'contact'], cabinet: ['praticiens', 'galerie'], questions: ['faq'] };
+    const blocs: Record<string, string[] | undefined> = { accueil: undefined, soins: ['competences', 'sujets'], acces: ['acces', 'contact'], cabinet: ['praticiens', 'galerie'], questions: ['faq'], fiche: undefined, actualites: ['actualites'] };
     return blocs[a];
   }
   return undefined;

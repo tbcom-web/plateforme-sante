@@ -64,10 +64,19 @@ export const VARIANTES_SECTIONS = {
   infos: ['volets', 'notice', 'colonnes'],
   /** Questions fréquentes : accordéon ; deux colonnes d'accordéon (ordinateur) ; liste ouverte (réponses dépliées) */
   faq: ['accordeon', 'colonnes', 'ouverte'],
-  /** Actualités : liste de titres datés, ou cartes */
-  actualites: ['liste', 'cartes'],
-  /** Pied de page : sobre (coordonnées, liens) */
-  pied: ['simple'],
+  /** Actualités : liste de titres datés, cartes, ou « une » (le dernier article en grand avec son visuel, les autres en liste) */
+  actualites: ['liste', 'cartes', 'une'],
+  /**
+   * Pied de page : « simple » (trois colonnes : coordonnées, praticiens, pages) ; « centre » (une colonne centrée, liens en
+   * ligne) ; « large » (nom du cabinet en grand en tête, puis les colonnes). Même contenu, mêmes liens (studio de recettes).
+   */
+  pied: ['simple', 'centre', 'large'],
+  /**
+   * Fiche d'un soin (FicheSoin.astro, gabarits tableau et village) : « encadre » (texte et encadré « En pratique » à côté,
+   * historique) ; « colonne » (une colonne de lecture, l'encadré en bandeau sous le texte) ; « pratique-haut » (l'encadré en
+   * bandeau avant le texte). Même balisage, mêmes titres : seule la mise en page change.
+   */
+  fiche: ['encadre', 'colonne', 'pratique-haut'],
   /**
    * Sujets du cabinet sous le premier écran (SujetsAccueil, studio de recettes 2026-10-07) : « une » = présentation propre au
    * gabarit (le premier sujet en grand) ; « rangees » = grandes rangées illustrées alternées ; « cartes » = cartes égales ;
@@ -93,9 +102,9 @@ export type SectionVariable = keyof typeof VARIANTES_SECTIONS;
 export type Variantes = { [S in SectionVariable]: (typeof VARIANTES_SECTIONS)[S][number] };
 /** Variantes par défaut de chaque gabarit (la fiche peut en changer une partie). */
 export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
-  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre' },
-  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre' },
-  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre' },
+  tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre' },
+  village: { accueil: 'notice', soins: 'grille', praticiens: 'fiches', infos: 'notice', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre' },
+  revue: { accueil: 'figure', soins: 'filets', praticiens: 'liste', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre' },
 };
 /** Gabarit d'un modèle (défaut : classique, pour les fiches antérieures au champ). */
 export const gabaritModele = (m: Pick<ModeleManifeste, 'gabarit'>): Gabarit => m.gabarit ?? 'classique';

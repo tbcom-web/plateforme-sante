@@ -47,6 +47,8 @@ type Props = {
   survol?: boolean;
   /** Élément seul (Donner mon avis : structures de pages, éléments) : blocs montrés par ApercuGabarit, sans en-tête */
   seul?: readonly string[];
+  /** Vue affichée à l'ouverture (Donner mon avis : la fiche d'un soin pour sa structure) */
+  vueInitiale?: 'accueil' | 'soin';
 };
 type Vue = 'accueil' | 'soin';
 export type Appareil = 'bureau' | 'mobile';
@@ -94,8 +96,8 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
   pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
 };
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul }: Props) {
-  const [vue, setVue] = useState<Vue>('accueil');
+export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil' }: Props) {
+  const [vue, setVue] = useState<Vue>(vueInitiale);
   const [appareil, setAppareil] = useState<Appareil>(appareilInitial);
   const boite = useRef<HTMLDivElement>(null);
   const page = useRef<HTMLDivElement>(null);

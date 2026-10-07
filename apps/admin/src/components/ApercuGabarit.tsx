@@ -369,6 +369,20 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     )
   ) : null;
   const montrer = (b: string) => !seul || seul.includes(b);
+  // Conseils et actualités (Actus.astro) : liste de titres datés, cartes illustrées, ou le dernier à la une
+  const articlesDemo = [{ t: 'Bien choisir ses chaussures de course', s: 'sport', d: '2 octobre 2026', r: 'Amorti, maintien du talon, pointure : les repères avant l’achat.' }, { t: 'Ongle incarné chez l’enfant : les bons gestes', s: 'enfant', d: '18 septembre 2026', r: 'Coupe droite, chaussures à la bonne taille et quand consulter.' }];
+  const visuelArticle = (s: string) => <div className="eff-visuel" style={{ aspectRatio: '16 / 9', borderRadius: 'calc(var(--rayon) * 0.65)', background: 'var(--g-doux)', display: 'grid', placeItems: 'center', overflow: 'hidden', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '70%', height: '90%' }} dangerouslySetInnerHTML={{ __html: themeIllustre(s) ? illustrationTheme(s, { format: 'paysage', registre, id: `ap-art-${s}` }) : '' }} /></div>;
+  const actualitesSection = section('Conseils et actualités.', v.actualites === 'cartes' ? (
+    <div style={{ display: 'grid', gap: 14, gridTemplateColumns: mobile ? '1fr' : '1fr 1fr' }}>{articlesDemo.map((a) => <div key={a.t} className="eff-carte" style={{ display: 'grid', gap: 8, padding: '14px 14px 22px', borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>{visuelArticle(a.s)}<span style={{ fontSize: 14, fontWeight: 600, color: 'var(--g-accent-texte)' }}>{a.d}</span><strong className="eff-titre" style={{ fontFamily: 'var(--police-titres)', fontSize: 20, lineHeight: 1.25, justifySelf: 'start' }}>{a.t}</strong><span style={{ color: 'var(--g-encre-douce)', fontSize: 16 }}>{a.r}</span></div>)}</div>
+  ) : (
+    <div style={{ borderTop: v.actualites === 'liste' ? '1px solid var(--g-ligne)' : undefined }}>{articlesDemo.map((a, k) => (
+      v.actualites === 'une' && k === 0
+        ? <div key={a.t} style={{ display: 'grid', gap: 8, paddingBottom: 22 }}>{visuelArticle(a.s)}<span style={{ fontSize: 14, fontWeight: 600, color: 'var(--g-accent-texte)' }}>{a.d}</span><strong style={{ fontFamily: 'var(--police-titres)', fontSize: mobile ? 24 : 30, lineHeight: 1.15 }}>{a.t}</strong></div>
+        : <div key={a.t} style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '11em 1fr', gap: '4px 24px', padding: '16px 0', borderBottom: '1px solid var(--g-ligne)' }}><span style={{ color: 'var(--g-encre-douce)' }}>{a.d}</span><strong>{a.t}</strong></div>
+    ))}</div>
+  ));
+  // Pied de page (Coquille.astro) : trois colonnes, centré, ou nom du cabinet en grand
+  const piedSimple = v.pied === 'simple' || !v.pied;
 
   const fiche = soins[0] && revue ? (
     <>
@@ -397,9 +411,9 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           <div style={{ aspectRatio: '4 / 3', borderRadius: 16, background: 'var(--g-doux)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: village ? 'pedagogique' : 'ligne' }) }} /></div>
         </div>
       </section>
-      <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 300px', gap: 18, paddingTop: 18 }}>
-        <div style={{ ...carte, ...(village ? { background: 'transparent', padding: 0 } : {}) }}><h2 className="ap-h2" style={{ fontSize: 28 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre-douce)' }}>{avecVille(soins[0].corps ?? soins[0].resume, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div>
-        <div style={{ ...carte, background: 'var(--g-doux)', boxShadow: 'none', display: 'grid', gap: 12, alignContent: 'start' }}><strong style={{ color: 'var(--g-accent-texte)' }}>En pratique</strong><span style={{ fontSize: 15 }}>{adresse}</span><span style={{ ...bouton(true), textAlign: 'center' }}>{libelleRdv}</span></div>
+      <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile || v.fiche !== 'encadre' ? '1fr' : '1fr 300px', gap: 18, paddingTop: 18, maxWidth: v.fiche !== 'encadre' && !mobile ? 832 : undefined }}>
+        <div style={{ ...carte, ...(village || v.fiche === 'pratique-haut' ? { background: 'transparent', padding: 0, boxShadow: 'none' } : {}) }}><h2 className="ap-h2" style={{ fontSize: 28 }}>Déroulement de la séance</h2><p style={{ color: 'var(--g-encre-douce)' }}>{avecVille(soins[0].corps ?? soins[0].resume, ville).replace(/[#*_>]/g, '').slice(0, 420)}…</p></div>
+        <div style={{ ...carte, background: 'var(--g-doux)', boxShadow: 'none', display: v.fiche === 'encadre' ? 'grid' : 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, alignContent: 'start', order: v.fiche === 'pratique-haut' ? -1 : undefined }}><strong style={{ color: 'var(--g-accent-texte)', flexBasis: v.fiche === 'encadre' ? undefined : '100%' }}>En pratique</strong><span style={{ fontSize: 15 }}>{adresse}</span><span style={{ ...bouton(true), textAlign: 'center' }}>{libelleRdv}</span></div>
       </section>
     </>
   );
@@ -407,11 +421,12 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   return (
     <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
       {!seul && entete}
-      {vue === 'accueil' ? <>{montrer('premier') && premier}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : null}</div>)}</> : fiche}
+      {vue === 'accueil' ? <>{montrer('premier') && premier}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</> : fiche}
+      {seul?.includes('actualites') && !blocs.includes('actualites') && actualitesSection}
       {seul?.includes('galerie') && !blocs.includes('galerie') && galerieSection}
       {montrer('contact') && contactBloc}
       {montrer('pied') && <footer style={{ marginTop: revue ? 0 : 64, padding: '44px 0 28px', background: revue ? 'var(--g-page)' : village ? 'var(--g-doux)' : 'var(--g-sombre)', color: village || revue ? 'var(--g-encre-douce)' : 'var(--g-sombre-doux)', borderTop: revue ? '3px double var(--g-encre)' : village ? '2px solid var(--g-encre)' : undefined }}>
-        <div style={cadre}><strong style={{ color: village || revue ? 'var(--g-encre)' : 'var(--g-sombre-texte)', fontFamily: revue ? 'var(--police-titres)' : undefined, fontStyle: revue ? 'italic' : undefined }}>{nomCabinet}</strong><p style={{ margin: '8px 0 0', fontSize: 15 }}>{[adresse, tel].filter(Boolean).join(' · ')}</p><p style={{ margin: '20px 0 0', fontSize: 13 }}>Illustrations : représentations schématiques, sans valeur de mesure</p></div>
+        <div style={{ ...cadre, textAlign: v.pied === 'centre' ? 'center' : undefined }}><strong style={{ display: 'block', color: village || revue ? 'var(--g-encre)' : 'var(--g-sombre-texte)', fontFamily: revue || v.pied === 'large' ? 'var(--police-titres)' : undefined, fontStyle: revue ? 'italic' : undefined, fontSize: v.pied === 'large' ? (mobile ? 28 : 42) : undefined, lineHeight: v.pied === 'large' ? 1.1 : undefined, letterSpacing: v.pied === 'large' ? '-0.025em' : undefined }}>{nomCabinet}</strong><p style={{ margin: '8px 0 0', fontSize: 15 }}>{[adresse, tel].filter(Boolean).join(' · ')}</p>{!piedSimple && <p style={{ margin: '14px 0 0', fontSize: 15, display: 'flex', flexWrap: 'wrap', gap: '4px 22px', justifyContent: v.pied === 'centre' ? 'center' : 'flex-start', textDecoration: 'underline' }}>{menu.map((l) => <span key={l}>{l}</span>)}<span>Mentions légales</span></p>}<p style={{ margin: '20px 0 0', fontSize: 13 }}>Illustrations : représentations schématiques, sans valeur de mesure</p></div>
       </footer>}
       {montrer('contact') && barreMobile}
       {seul?.includes('contact') && !contactBloc && !barreMobile && <p style={{ ...cadre, padding: '24px 0', color: 'var(--g-encre-douce)' }}>{v.contact === 'flottant' ? 'Bouton flottant : visible sur téléphone.' : 'Barre d’actions : visible sur téléphone.'}</p>}

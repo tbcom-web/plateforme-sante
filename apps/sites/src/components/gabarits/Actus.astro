@@ -9,15 +9,15 @@ import { dessinArticle } from '../../lib/dessins';
 import { photoResponsive } from '../../lib/visuels';
 import { espacesFines, type Article } from '@plateforme/core';
 
-interface Props { articles: Article[]; variante: 'cartes' | 'liste'; titres?: 'h2' | 'texte' }
+interface Props { articles: Article[]; variante: 'cartes' | 'liste' | 'une'; titres?: 'h2' | 'texte' }
 const { articles, variante, titres = 'texte' } = Astro.props;
 const Titre = titres === 'h2' ? 'h2' : 'span';
 ---
 <ul class:list={['actus', `actus--${variante}`]}>
-  {articles.map((a) => (
+  {articles.map((a, i) => (
     <li>
       <a class="actu" href={`/actualites/${a.slug}`}>
-        {variante === 'cartes' && (
+        {(variante === 'cartes' || (variante === 'une' && i === 0)) && (
           <span class="actu__visuel" aria-hidden="true">
             {a.image
               ? <img src={a.image} {...photoResponsive(a.image, '(min-width: 900px) 380px, 100vw')} alt="" width="1600" height="900" loading="lazy" decoding="async" />
@@ -53,4 +53,11 @@ const Titre = titres === 'h2' ? 'h2' : 'span';
   .actus--liste .actu__meta { color: var(--g-encre-douce); font-weight: 500; }
   .actus--liste .actu__titre { font-family: var(--police-texte); font-size: 1.05rem !important; font-weight: 650; }
   @media (max-width: 559px) { .actus--liste .actu { grid-template-columns: minmax(0, 1fr); } }
+  /* « Une » : le dernier article en grand (visuel et titre), les suivants en liste de titres datés */
+  .actus--une { gap: 0; }
+  .actus--une li:first-child .actu { padding-bottom: 22px; }
+  .actus--une li:first-child .actu__titre { font-size: clamp(1.5rem, 3vw, 2rem) !important; line-height: 1.15 !important; }
+  .actus--une li + li { border-top: var(--filet) solid var(--g-ligne); }
+  .actus--une li + li .actu { padding: 16px 0; }
+  .actus--une li + li .actu__titre { font-family: var(--police-texte); font-size: 1.05rem !important; font-weight: 650; }
 </style>

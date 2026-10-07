@@ -236,6 +236,7 @@ const SOURCES_FAMILLES: Record<string, string> = {
   praticiens: 'apps/sites/src/components/gabarits/Praticiens.astro',
   faq: 'apps/sites/src/components/gabarits/Faq.astro',
   pied: 'apps/sites/src/components/gabarits/Coquille.astro (c-pied)',
+  actualites: 'apps/sites/src/components/gabarits/Actus.astro',
   'soins-forme': 'packages/core/src/formes.ts',
 };
 const libelleVariante = (f: string, v: string) => LIBELLES_VARIANTES[f]?.[v] ?? v;
@@ -271,7 +272,7 @@ export function inventaireStudio(): Asset[] {
     for (const a of axes) combos = combos.flatMap((c) => a.valeurs.map((v) => [...c, v]));
     for (const c of combos) {
       const cle = `structure:${p.id}:${c.join('-')}`;
-      const libelles = c.map((v, i) => (axes[i].f === 'ordre' ? ORDRES_ACCUEIL.find((o) => o.id === v)?.nom ?? v : `${NOMS_SECTIONS_VARIABLES[axes[i].f] ?? axes[i].f} ${libelleVariante(axes[i].f, v).toLowerCase()}`));
+      const libelles = c.map((v, i) => (axes[i].f === 'ordre' ? ORDRES_ACCUEIL.find((o) => o.id === v)?.nom ?? v : axes.length === 1 ? libelleVariante(axes[i].f, v) : `${NOMS_SECTIONS_VARIABLES[axes[i].f] ?? axes[i].f} ${libelleVariante(axes[i].f, v).toLowerCase()}`));
       l.push({
         cle, type: 'structure', titre: `${p.nom} : ${libelles.join(' · ')}`, detail: `Structure de page · ${p.nom}`,
         source: 'packages/core/src/recettes.ts (PAGES_STRUCTURE) ; apps/sites/src/components/gabarits', soins: [p.id],

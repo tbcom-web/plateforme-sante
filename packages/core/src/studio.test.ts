@@ -17,7 +17,7 @@ test('studio : inventaire des structures de pages, éléments et effets, clés u
     assert.equal(a.rendu.kind, 'studio');
   }
   // Chaque famille d'éléments (dont rendez-vous / contact et formes des cartes) a 3 variantes au moins dans la tuile « Éléments »
-  for (const f of FAMILLES_COMPOSANTS) assert.ok(l.filter((a) => a.type === 'composant' && a.soins.includes(f)).length >= (f === 'soins' || f === 'accueil' || f === 'praticiens' || f === 'faq' || f === 'infos' ? 3 : 4), f);
+  for (const f of FAMILLES_COMPOSANTS) assert.ok(l.filter((a) => a.type === 'composant' && a.soins.includes(f)).length >= (['soins', 'accueil', 'praticiens', 'faq', 'infos', 'pied', 'actualites'].includes(f) ? 3 : 4), f);
   assert.equal(l.filter((a) => a.type === 'effets').length, 4);
   // Hors de la bibliothèque des illustrations
   assert.ok(!inventaireAssets().some((a) => a.rendu.kind === 'studio'));

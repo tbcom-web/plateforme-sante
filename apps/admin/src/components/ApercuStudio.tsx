@@ -6,7 +6,7 @@
 // (blocsPourCle) ; les effets jouent : survol simulé en boucle et apparition rejouable (comme le studio).
 import { useEffect, useMemo, useState } from 'react';
 import {
-  appliquerRecette, blocsPourCle, compositionInitiale, compositionPourCle, draftVide, gabaritModele, modeleIntegre, universCatalogue,
+  appliquerRecette, blocsPourCle, vuePourCle, compositionInitiale, compositionPourCle, draftVide, gabaritModele, modeleIntegre, universCatalogue,
   STRUCTURES, type MarqueImportee, type ModeleManifeste, type SiteDraft, type Structure, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
@@ -65,7 +65,7 @@ export default function ApercuStudio({ cle, proposes, modeles, catalogue, marque
         </div>
       )}
       <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${mobile ? 'mx-auto w-[300px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}>
-        <ApercuTheme key={`${cle}|${rejouer}|${mobile}`} survol={survol} seul={blocsPourCle(cle)} appareil={mobile ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
+        <ApercuTheme key={`${cle}|${rejouer}|${mobile}`} vueInitiale={vuePourCle(cle)} survol={survol} seul={blocsPourCle(cle)} appareil={mobile ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
       </div>
     </div>
   );
