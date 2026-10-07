@@ -1,7 +1,9 @@
 # Le goût de Paul : profil pour le juge
 
-Version **2026-10-07.v1** — ajustement après la calibration en aveugle du 2026-10-07 (voir `retours/CALIBRATION.md`).
-Sources : les 76 avis d'éléments et les 37 avis de thèmes complets de l'export du 2026-10-07 (`retours/assets-notes.json`,
+Version **2026-10-07.v2** — ajustement après la deuxième mesure (66 prédictions du profil v1 comparées aux notes de l'export
+de 12 h 44, que le juge n'avait pas vues ; voir `retours/CALIBRATION.md`). v1 : ajustement après la calibration en aveugle.
+Sources : les 76 avis d'éléments et les 37 avis de thèmes complets du premier export du 2026-10-07, puis les notes du second
+export du même jour (photos, icônes, éléments retouchés) (`retours/assets-notes.json`,
 `retours/atelier-notes.json`, `retours/SYNTHESE.md`), et les règles déjà validées (`.claude/agents/graphiste-sante.md`,
 `docs/charte-graphique.md`, `docs/referentiels/pieges-illustration.md`). `illustrations-statuts.json` est vide (aucun statut
 encore posé) ; `inspirations.json` n'existe pas encore.
@@ -23,7 +25,8 @@ jamais Paul : statut « Validé », anatomie et mises en ligne restent à Paul.
 - Un petit défaut anatomique ou de lecture coûte **un point** (5 → 4, ou 4 → 3), pas plus : « Top mais il faut se focus sur le
   talon » = 4 ★ ; « anatomie de l'orteil un peu bizarre » = 3 ★.
 - Les thèmes complets sont notés plus sévèrement (moyenne 3,2 ★, aucun 5 ★) : la mise en page compte autant que les images.
-- Sans commentaire ni étiquette, la note est presque toujours 4 ou 5 ★ (22 sur 22 dans l'échantillon mesuré).
+- Sans commentaire ni étiquette, une **illustration** a presque toujours 4 ou 5 ★ (22 sur 22 dans l'échantillon mesuré).
+  Ce n'est pas vrai des **photos** : Paul en a mis 15 à 1 ★ sans un mot (R4).
 
 ## Grille de notation (1 à 5)
 
@@ -98,11 +101,20 @@ Plafond indiqué entre parenthèses ; le juge les nomme dans `eliminatoire`.
 
 ### 4. Photos
 
-- R4.1 Aucune photo encore notée une à une : confiance **faible** obligatoire. Règles validées : photo seulement si elle est
-  vraiment bonne (fiche de soin), jamais pour remplir, pas de visage qui passerait pour le praticien, gestes rassurants en
-  accueil. Thèmes « Photos » : 2,8 ★ en moyenne (atelier).
-- R4.2 Indices probables (à confirmer) : nette, lumineuse, cadrage serré sur le pied ou le geste, sujet évident → 4 ★ ;
-  banale ou stock « médecin au stéthoscope » → 2-3 ★.
+- R4.1 **Paul est très sévère sur les photos** (v2, 27 photos notées : 15 à 1 ★). Le juge v1 les surnotait de près d'un point
+  (biais +0,85). Par défaut : **1 ★**, sauf preuve du contraire. Règles validées : photo seulement si elle est vraiment bonne
+  (fiche de soin), jamais pour remplir, pas de visage qui passerait pour le praticien, gestes rassurants en accueil.
+- R4.2 1 ★ : pieds nus d'adulte en gros plan (peau, veines, orteils en griffe : `photo:generale-pied-profil`,
+  `photo:generale-pied-sol`), tatouages (`photo:posture-marche-sable`, `photo:posture-escalier`), sombre ou flou de bougé
+  (`photo:sport-trail`, `photo:sport-foulee-herbe`, `photo:generale-parquet`), cadrage qui coupe le sujet
+  (`photo:posture-pieds-herbe`, `photo:soins-pied-tenu`), photo de soin datée (`photo:soins-bandages`), décor vide
+  (`photo:cabinet-lumiere`), visages (`photo:accueil-observation-marche`), même une scène lisible si l'objet est banal
+  (`photo:chaussage` 1 ★, `photo:enfant-baskets` 1 ★ : baskets sales).
+- R4.3 4 ★ : enfants et bébés tendres et nets (`photo:enfant-bebe`, `photo:enfant-chaussons`, `photo:enfant-herbe`,
+  `photo:enfant-pied`), premières chaussures (`photo:enfant-chaussures`), course nette en chaussures de sport
+  (`photo:sport-course`), empreintes dans le sable (`photo:posture-empreintes`). Pas encore de 5 ★.
+- R4.4 2-3 ★ : geste réel mais froid ou instrument visible (`photo:examen-mains` 3 ★, `photo:soin-talon` 2 ★,
+  `photo:sport-lacage` 2 ★), trop sombre (`photo:generale-pieds-nus` 2 ★ : « Trop sombre »).
 
 ### 5. Typographie et structure (thèmes)
 
@@ -135,7 +147,22 @@ Plafond indiqué entre parenthèses ; le juge les nomme dans `eliminatoire`.
   actuels (sneaker plutôt que chaussure de ville).
 - R8.4 Petite taille : « attention à la finesse du trait sinon on comprend pas » (`materiel:tapis-de-course:ligne` 4 ★).
 
+### 9. Retouches et icônes (v2)
+
+- R9.1 Une retouche qui corrige **exactement** la remarque de Paul monte à 5 ★ (`materiel:thermoformage:ligne` 3 → 5,
+  `ligne:empreintes` 2 → 5, `materiel:podoscope:pedagogique` 2 → 5, `dessin:senior:pedagogique` 1 → 5, `heros:ongles:ligne`
+  3 → 5) : le juge v1 restait trop prudent (biais −0,8 sur le matériel).
+- R9.2 Une retouche qui ne règle pas la remarque redescend : `ligne:taping` 2 ★ (le taping reste peu lisible),
+  `biblio:POD-AT-0006:dorsal:tong-posee` 4 → 2 (le haut de la tong toujours faux), `biblio:TRV-AT-0009` 2 ★ (« Chaussure
+  beaucoup trop plate »), `ligne:laser` 3 ★ (toujours pas un laser).
+- R9.3 Icônes : trait trop épais ou illisible en petit → 2 ★ (`picto:empreintes` : Trait épais, Illisible en petit ;
+  `picto:analyse-marche` 2 ★) ; 3 ★ si seulement épais (`picto:pied-diabetique`). Simple et net → 4 ★ (`picto:pied-profil`).
+
 ## Historique
+
+- 2026-10-07.v2 : **ajustement après la deuxième mesure** (profil v1 sur 66 notes que le juge n'avait pas vues : 22 exactes,
+  54 à ±1 (82 %), écart moyen 0,91, biais +0,18 ; photos +0,85, matériel −1,1) : photos 1 ★ par défaut (R4), retouches qui
+  corrigent la remarque à 5 ★, icônes épaisses à 2 ★ (R9).
 
 - 2026-10-07.v1 : **ajustement après calibration** (aveugle sur 40 éléments : 17 exacts, 38 à ±1, erreur moyenne 0,63) :
   les pièces propres montent à 5 ★, l'incompréhensible descend à 1 ★, exception adulte/enfant à la juxtaposition, règles

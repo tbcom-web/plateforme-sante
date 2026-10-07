@@ -12,7 +12,8 @@ notes de Paul sur le **même élément** (même clé, même empreinte). Le reste
 | Date | Profil | Échantillon | Exactes | À ±1 | Écart moyen | Corrélation | Éliminatoires (accord) | Remarque |
 |---|---|---:|---:|---:|---:|---:|---:|---|
 | 2026-10-07 | 2026-10-07.v0 | 40 (aveugle) | 17 (43 %) | 38 (95 %) | 0,63 | 0,64 | 36/40 | Première mesure ; biais −0,13 (le juge sous-note). Repère « toujours 4 ★ » : 15 exactes, 35 à ±1, écart 0,80. |
-| 2026-10-07 | 2026-10-07.v1 | — | — | — | — | — | — | Ajustement après calibration ; se mesure sur les prochaines notes de Paul (80 prédictions faites). |
+| 2026-10-07 | 2026-10-07.v1 | 66 (non vues) | 22 (33 %) | 54 (82 %) | 0,91 | 0,57 | 50/66 | Notes de l'export de 12 h 44 (photos, icônes, retouches), jamais lues avant les prédictions. Hors photos : 14/39 exactes, 34/39 à ±1 (87 %). Photos sur-notées (+0,85), matériel retouché sous-noté (−1,1). |
+| 2026-10-07 | 2026-10-07.v2 | — | — | — | — | — | — | Ajustement après la mesure de v1 (photos 1 ★ par défaut, retouche qui corrige la remarque → 5 ★, icônes épaisses 2 ★) ; à mesurer sur les prochaines notes. |
 
 ## 2026-10-07 — première mesure en aveugle (profil v0)
 
@@ -55,21 +56,22 @@ La justesse de v1 se mesure sur les prochaines notes de Paul (80 prédictions su
 <!-- mesure-auto -->
 ## Mesure automatique (export quotidien)
 
-Notes comparables jusqu’au 2026-10-07 : 32.
+Notes comparables jusqu’au 2026-10-07 : 98.
 
 | Profil | Notes | Exactes | À ±1 | Écart moyen | Biais | Corrélation | Accord éliminatoires |
 |---|---:|---:|---:|---:|---:|---:|---:|
+| 2026-10-07.v1 | 66 | 22 (33 %) | 54 (82 %) | 0,91 | +0,18 | 0,57 | 50/66 |
 | 2026-10-07.v0 | 32 | 12 (38 %) | 30 (94 %) | 0,69 | -0,19 | 0,67 | 28/32 |
-| 20 dernières | 20 | 9 (45 %) | 18 (90 %) | 0,65 | -0,05 | 0,65 | 19/20 |
+| 20 dernières | 20 | 9 (45 %) | 18 (90 %) | 0,65 | +0,15 | 0,67 | 17/20 |
 
 Plus gros écarts récents :
 
+- `materiel:thermoformage:ligne` : prédit 2 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v1)
+- `photo:chaussage` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
+- `photo:enfant-baskets` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
+- `photo:posture-marche-sable` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
+- `biblio:POD-AT-0006:dorsal:tong-posee` : prédit 4 ★, Paul 2 ★ (2026-10-07, profil 2026-10-07.v1)
 - `dessin:senior:pedagogique` : prédit 3 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v0)
 - `heros:enfant:ligne` : prédit 3 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v0)
-- `biblio:POD-AT-0010:coupe-transversale:orthonyxie` : prédit 4 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v0)
-- `biblio:SITES/orteil-griffe` : prédit 2 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v0)
-- `dessin:arriere-pied:pedagogique` : prédit 4 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v0)
-- `dessin:ongle:pedagogique` : prédit 4 ★, Paul 3 ★ (2026-10-07, profil 2026-10-07.v0)
-- `dessin:ongle:releve` : prédit 4 ★, Paul 3 ★ (2026-10-07, profil 2026-10-07.v0)
-- `dessin:talon:releve` : prédit 5 ★, Paul 4 ★ (2026-10-07, profil 2026-10-07.v0)
+- `ligne:empreintes` : prédit 3 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v1)
 <!-- /mesure-auto -->
