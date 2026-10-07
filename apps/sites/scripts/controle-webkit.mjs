@@ -6,7 +6,8 @@
 //   node scripts/controle-webkit.mjs                      → sert dist/ sur un port libre, contrôle les pages clés
 //   node scripts/controle-webkit.mjs --dist ../chemin/dist
 //   node scripts/controle-webkit.mjs --url https://podologue-truchot-toulon.pages.dev --pages /,/soins
-//   options : --seuil 4 (% de pixels différents tolérés par zone de 300 px), --sortie controle-webkit/
+//   options : --seuil 4 (% de pixels différents tolérés par zone de 300 px), --derive 4 (recalage vertical par zone, px),
+//             --sortie controle-webkit/
 //
 // Deux contrôles :
 // 1. Statique : aucun fichier dist/dessins/*.svg ne doit contenir de <style>. WebKit (Safari, tous les navigateurs
@@ -39,6 +40,7 @@ const SEUIL = +(args.seuil || 4);
 const SORTIE = sortieAutorisee(args.sortie || join(racine, 'controle-webkit')); // jamais C:c… (chemin MSYS), jamais hors du dépôt / du temporaire
 const PAGES = (args.pages || '/,/soins,/le-cabinet,/acces,/modeles/dessins,/modeles/animations,/modeles/bibliotheque').split(',');
 const BANDE = 300;
+const DERIVE = +(args.derive ?? 4); // recalage vertical toléré par zone (px), comme l’écart de hauteur totale
 const defauts = [];
 
 // 1. Contrôle statique des fichiers de dessins
@@ -101,12 +103,28 @@ for (const chemin of PAGES) {
   const w = Math.max(a.width, b.width), h = Math.max(a.height, b.height);
   const cadre = (img) => { const o = new PNG({ width: w, height: h }); o.data.fill(255); PNG.bitblt(img, o, 0, 0, img.width, img.height, 0, 0); return o; };
   const A = cadre(a), B = cadre(b), D = new PNG({ width: w, height: h });
-  pixelmatch(A.data, B.data, D.data, w, h, { threshold: 0.15, includeAA: false, alpha: 0.2 });
-  const zones = [];
+  // Comparaison par zone, avec recalage vertical de ±DERIVE px : WebKit tronque chaque ligne de texte au 1/64 px quand
+  // l'interligne est un rapport (1.55) d'une taille fractionnaire (15,2 px), Chromium l'arrondit ; l'écart (≤ 1/32 px par
+  // ligne) s'accumule en 2-3 px vers le bas d'une page longue et, sur un visuel très contrasté (plan d'accès, rues fines),
+  // dépassait le seuil sans aucun défaut de rendu. Même tolérance que pour la hauteur totale (4 px) ; un vrai défaut
+  // (trait, couleur, style perdu) reste différent quel que soit le recalage. Décalage retenu par zone : bilan.json.
+  const zones = [], decalages = [];
   for (let y0 = 0; y0 < h; y0 += BANDE) {
-    let n = 0, t = 0;
-    for (let y = y0; y < Math.min(y0 + BANDE, h); y++) for (let x = 0; x < w; x++) { t++; const i = (y * w + x) * 4; if (D.data[i] === 255 && D.data[i + 1] === 0 && D.data[i + 2] === 0) n++; }
-    zones.push(+(100 * n / t).toFixed(2));
+    const hb = Math.min(BANDE, h - y0), t = hb * w;
+    const zA = new PNG({ width: w, height: hb }); PNG.bitblt(A, zA, 0, y0, w, hb, 0, 0);
+    let mieux = null;
+    for (const dy of [0, ...Array.from({ length: DERIVE }, (_, k) => [k + 1, -(k + 1)]).flat()]) {
+      const zB = new PNG({ width: w, height: hb }); zB.data.fill(255);
+      const s0 = Math.max(0, y0 + dy), s1 = Math.min(h, y0 + dy + hb);
+      if (s1 > s0) PNG.bitblt(B, zB, 0, s0, w, s1 - s0, 0, s0 - (y0 + dy));
+      const zD = new PNG({ width: w, height: hb });
+      const n = pixelmatch(zA.data, zB.data, zD.data, w, hb, { threshold: 0.15, includeAA: false, alpha: 0.2 });
+      if (!mieux || n < mieux.n) mieux = { n, dy, zD };
+      if (n === 0) break;
+    }
+    PNG.bitblt(mieux.zD, D, 0, 0, w, hb, 0, y0);
+    zones.push(+(100 * mieux.n / t).toFixed(2));
+    decalages.push(mieux.dy);
   }
   const P = new PNG({ width: w * 3 + 24, height: h }); P.data.fill(60);
   [A, B, D].forEach((img, k) => PNG.bitblt(img, P, 0, 0, w, h, k * (w + 12), 0));
@@ -114,7 +132,7 @@ for (const chemin of PAGES) {
   const hors = zones.map((v, i) => [i * BANDE, v]).filter(([, v]) => v > SEUIL);
   if (Math.abs(a.height - b.height) > 4) defauts.push(`${chemin} : hauteur WebKit ${a.height} px ≠ Chromium ${b.height} px`);
   hors.forEach(([y, v]) => defauts.push(`${chemin} : zone ${y}-${y + BANDE} px, ${v} % de pixels différents (seuil ${SEUIL} %) → ${nom}.png`));
-  bilan.push({ chemin, hauteurs: [a.height, b.height], max: Math.max(...zones), zones });
+  bilan.push({ chemin, hauteurs: [a.height, b.height], max: Math.max(...zones), zones, decalages });
   console.log(`${hors.length ? '✗' : '✓'} ${chemin}  max ${Math.max(...zones)} %`);
 }
 serveur?.close();
