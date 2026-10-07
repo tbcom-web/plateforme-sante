@@ -5,7 +5,7 @@
 //   (hashtags déjà utilisés, mots-clés de recherche) et suggestions non cochées (tags de la source) ; rien n'est enregistré.
 // - HashtagsVisuel (défaut) : hashtags d'un asset enregistrés à chaque ajout / retrait (même logique que SujetsVisuel).
 // - FiltreHashtag : champ de filtre « #hashtag » avec autocomplétion (bibliothèque, Donner mon avis).
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { appliquerHashtag, completerHashtag, debutHashtag, HASHTAGS_MAX, hashtagsDe, lireHashtags, type HashtagsAssets } from '@plateforme/core';
 import { basculerHashtagAsset } from '@/app/admin/retours/actions-hashtags';
 
@@ -33,6 +33,9 @@ export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], sugge
   const [texte, setTexte] = useState('');
   const [ouvert, setOuvert] = useState(false);
   const [alerte, setAlerte] = useState('');
+  // Fermeture différée au blur (laisse le temps de cliquer une proposition), annulée si le champ reprend la main
+  const fermeture = useRef<number | undefined>(undefined);
+  const ouvrir = () => { window.clearTimeout(fermeture.current); setOuvert(true); };
   const plein = valeurs.length >= HASHTAGS_MAX;
   const propositions = useMemo(() => (ouvert && debutHashtag(texte) ? completerHashtag(texte, connus, valeurs, 6) : []), [ouvert, texte, connus, valeurs]);
   const sugg = suggestions.filter((s) => !valeurs.includes(s));
@@ -50,7 +53,7 @@ export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], sugge
     const m = /^([\s\S]*)[\s,;]+([^\s,;]*)$/.exec(v);
     if (m && m[1].replace(/[#\s,;]/g, '')) { valider(m[1]); setTexte(m[2]); return; }
     setTexte(v);
-    setOuvert(true);
+    ouvrir();
   };
 
   return (
@@ -72,7 +75,7 @@ export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], sugge
       <div className="relative">
         <input id={id} type="text" value={texte} disabled={desactive || plein} autoComplete="off" autoCapitalize="none" spellCheck={false} enterKeyHint="done"
           placeholder={plein ? `${HASHTAGS_MAX} hashtags au plus` : '#trail #sneakers ou trail, sneakers'}
-          onChange={(e) => changer(e.target.value)} onFocus={() => setOuvert(true)} onBlur={() => window.setTimeout(() => setOuvert(false), 150)}
+          onChange={(e) => changer(e.target.value)} onFocus={ouvrir} onBlur={() => { fermeture.current = window.setTimeout(() => setOuvert(false), 150); }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') { e.preventDefault(); if (texte.trim()) { valider(texte); setTexte(''); } }
             else if (e.key === 'Backspace' && !texte && valeurs.length) onRetrait(valeurs[valeurs.length - 1]);

@@ -1,26 +1,59 @@
 'use client';
 
-// Photos libres de droits gardées (traçabilité, statut) avec leurs thèmes et HASHTAGS (migration 0029) : filtre « #… »,
-// recherche (auteur, thème, mot-clé, hashtag) et ajout / retrait de hashtags sur chaque photo.
-import { useMemo, useState } from 'react';
-import { clePhoto, correspondHashtag, hashtagsDe, libelleSujet, type HashtagsAssets } from '@plateforme/core';
+// Photos libres de droits gardées : candidates NON importées (aperçu servi par Pexels / Pixabay, rien d'hébergé, migration
+// 0031) avec « Valider et importer » / « Retirer », puis photos importées (fichiers WebP chez nous) avec leur statut.
+// Thèmes et HASHTAGS (0029) : filtre « #… », recherche (auteur, thème, mot-clé, hashtag), ajout / retrait sur chaque photo.
+import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { cleCandidatePhoto, clePhoto, correspondHashtag, hashtagsDe, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import type { PhotoLibre } from '@/lib/photos-libres';
+import { changerStatutPhotoLibre, importerPhotoLibre } from './actions';
 import StatutPhotoLibre from './StatutPhotoLibre';
 
 const champ = 'min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-base md:text-sm';
+const jour = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }) : '—');
 
-export default function PhotosLibresListe({ photos, hashtags: initiaux, migrationHashtags }: { photos: PhotoLibre[]; hashtags: HashtagsAssets; migrationHashtags: boolean }) {
+/** Candidate non importée : « Valider et importer » (téléchargement côté serveur) ou « Retirer » (sans import) */
+function ActionsCandidate({ id, onResultat }: { id: string; onResultat: (r: { ok: boolean; texte: string }) => void }) {
+  const router = useRouter();
+  const [enCours, demarrer] = useTransition();
+  const [message, setMessage] = useState<{ ok: boolean; texte: string } | null>(null);
+  const agir = (f: () => Promise<{ ok: boolean; message: string } | null>, attente: string) => demarrer(async () => {
+    setMessage({ ok: true, texte: attente });
+    const r = await f().catch(() => ({ ok: false, message: 'Connexion perdue.' }));
+    setMessage({ ok: Boolean(r?.ok), texte: r?.message ?? '' });
+    // Message gardé au-dessus de la liste : la carte change (importée) après le rafraîchissement
+    onResultat({ ok: Boolean(r?.ok), texte: r?.message ?? '' });
+    router.refresh();
+  });
+  return (
+    <div className="grid gap-1">
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2">
+        <button type="button" disabled={enCours} onClick={() => agir(() => importerPhotoLibre(id), 'Téléchargement, conversion WebP et hébergement…')}
+          className="min-h-11 rounded-xl bg-teal-800 px-3 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50">Valider et importer</button>
+        <button type="button" disabled={enCours} onClick={() => agir(() => changerStatutPhotoLibre(id, 'retiree'), 'Retrait…')}
+          className="min-h-11 rounded-xl border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-800 hover:bg-neutral-50 disabled:opacity-50">Retirer</button>
+      </div>
+      {message && <p role="status" className={`text-xs ${message.ok ? 'text-neutral-700' : 'text-red-800'}`}>{message.texte}</p>}
+    </div>
+  );
+}
+
+export default function PhotosLibresListe({ photos, hashtags: initiaux, migrationHashtags, migration0031 = false }: { photos: PhotoLibre[]; hashtags: HashtagsAssets; migrationHashtags: boolean; migration0031?: boolean }) {
   const [hashtags, setHashtags] = useState(initiaux);
   const [filtre, setFiltre] = useState('');
   const [recherche, setRecherche] = useState('');
-  const lignes = useMemo(() => photos.map((p) => ({ p, cle: clePhoto(p.url) })), [photos]);
+  const [resultat, setResultat] = useState<{ ok: boolean; texte: string } | null>(null);
+  // Clé d'asset : photo importée → clé de l'inventaire ; candidate → photo:libre:<source>-<id> (reportée à l'import)
+  const lignes = useMemo(() => photos.map((p) => ({ p, cle: p.url ? clePhoto(p.url) : cleCandidatePhoto(p.source, p.idSource) })), [photos]);
   const visibles = lignes.filter(({ p, cle }) => {
     if (filtre && (!cle || !correspondHashtag(hashtags, cle, filtre, true))) return false;
     const q = recherche.trim().toLowerCase().replace(/^#/, '');
     if (!q) return true;
     return [p.auteur, libelleSujet(p.sujet), p.sujet, p.source, p.idSource, ...p.motsCles, ...(cle ? hashtagsDe(hashtags, cle) : [])].some((t) => t.toLowerCase().includes(q));
   });
+  const aImporter = visibles.filter(({ p }) => !p.url && p.statut !== 'retiree').length;
 
   return (
     <div className="grid gap-3">
@@ -28,25 +61,41 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
         <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher (auteur, thème, mot-clé, #hashtag)" aria-label="Rechercher une photo" className={champ} />
         <FiltreHashtag valeur={filtre} onChange={setFiltre} etat={hashtags} className={champ} />
       </div>
+      {migration0031 && <p className="text-sm text-amber-900">Migration 0031 à exécuter (<code>supabase/migrations/0031_photos_libres_import_differe.sql</code>) : « Garder » sans import et « Valider et importer » ne fonctionnent pas encore.</p>}
       {migrationHashtags && <p className="text-sm text-amber-900">Migration 0029 à exécuter (<code>supabase/migrations/0029_assets_hashtags.sql</code>) : hashtags non enregistrés.</p>}
-      <p className="text-xs text-neutral-500">{visibles.length} photo{visibles.length > 1 ? 's' : ''} sur {photos.length}</p>
+      {resultat && <p role="status" className={`rounded-lg p-3 text-sm ring-1 ${resultat.ok ? 'bg-teal-50 text-teal-950 ring-teal-200' : 'bg-red-50 text-red-900 ring-red-200'}`}>{resultat.texte}</p>}
+      <p className="text-xs text-neutral-500">{visibles.length} photo{visibles.length > 1 ? 's' : ''} sur {photos.length}{aImporter ? ` · ${aImporter} à valider et importer` : ''}</p>
       <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {visibles.map(({ p, cle }) => (
-          <li key={p.id} className={`grid min-w-0 content-start gap-2 rounded-xl border border-black/10 bg-white p-3 ${p.statut === 'retiree' ? 'opacity-60' : ''}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.url} alt={`${libelleSujet(p.sujet)} · photo de ${p.auteur}`} loading="lazy" className="aspect-[3/2] w-full rounded-lg bg-neutral-100 object-cover" />
-            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
-              <dt className="text-neutral-500">Sujet</dt><dd>{libelleSujet(p.sujet)}</dd>
-              <dt className="text-neutral-500">Source</dt><dd><a href={p.pageUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.source === 'pexels' ? 'Pexels' : 'Pixabay'} n° {p.idSource}</a></dd>
-              <dt className="text-neutral-500">Auteur</dt><dd className="truncate">{p.auteurUrl ? <a href={p.auteurUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.auteur}</a> : p.auteur}</dd>
-              <dt className="text-neutral-500">Licence</dt><dd><a href={p.licenceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.licence}</a>, {p.licenceVersion}</dd>
-              <dt className="text-neutral-500">Téléchargée</dt><dd>{new Date(p.telechargeLe).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' })} · {p.largeurs.join(', ')} px</dd>
-              <dt className="text-neutral-500">Mots-clés</dt><dd className="truncate">{p.motsCles.join(', ')}</dd>
-            </dl>
-            {cle && <HashtagsVisuel cle={cle} etat={hashtags} onChange={setHashtags} migrationManquante={migrationHashtags} compact />}
-            <StatutPhotoLibre id={p.id} statut={p.statut} />
-          </li>
-        ))}
+        {visibles.map(({ p, cle }) => {
+          const importee = Boolean(p.url);
+          const src = p.url ?? p.apercuUrl;
+          return (
+            <li key={p.id} className={`grid min-w-0 content-start gap-2 rounded-xl border bg-white p-3 ${importee ? 'border-black/10' : 'border-dashed border-amber-300'} ${p.statut === 'retiree' ? 'opacity-60' : ''}`}>
+              <figure className="relative grid gap-1">
+                {src ? (
+                  // Candidate : aperçu servi par la source (évaluation seulement, jamais utilisé sur un site) ; importée : notre copie
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={src} alt={`${libelleSujet(p.sujet)} · photo de ${p.auteur}`} loading="lazy" referrerPolicy="no-referrer" className="aspect-[3/2] w-full rounded-lg bg-neutral-100 object-cover" />
+                ) : <div className="grid aspect-[3/2] w-full place-items-center rounded-lg bg-neutral-100 text-xs text-neutral-500">Aperçu indisponible</div>}
+                {!importee && (
+                  <figcaption className="absolute left-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-300">
+                    Aperçu {LICENCES_SOURCES[p.source].libelle}, non importée
+                  </figcaption>
+                )}
+              </figure>
+              <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
+                <dt className="text-neutral-500">Sujet</dt><dd>{libelleSujet(p.sujet)}</dd>
+                <dt className="text-neutral-500">Source</dt><dd><a href={p.pageUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{LICENCES_SOURCES[p.source].libelle} n° {p.idSource}</a> · {p.largeurOriginale} × {p.hauteurOriginale} px</dd>
+                <dt className="text-neutral-500">Auteur</dt><dd className="truncate">{p.auteurUrl ? <a href={p.auteurUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.auteur}</a> : p.auteur}</dd>
+                <dt className="text-neutral-500">Licence</dt><dd><a href={p.licenceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.licence}</a>, {p.licenceVersion}</dd>
+                <dt className="text-neutral-500">Importée</dt><dd>{importee ? `${jour(p.importeLe ?? p.telechargeLe)} · ${p.largeurs.join(', ')} px` : 'non (lien seulement)'}</dd>
+                <dt className="text-neutral-500">Mots-clés</dt><dd className="truncate">{p.motsCles.join(', ')}</dd>
+              </dl>
+              {cle && <HashtagsVisuel cle={cle} etat={hashtags} onChange={setHashtags} migrationManquante={migrationHashtags} compact />}
+              {importee ? <StatutPhotoLibre id={p.id} statut={p.statut} /> : p.statut === 'retiree' ? <p className="text-xs text-neutral-600">Retirée sans import (traçabilité conservée).</p> : <ActionsCandidate id={p.id} onResultat={setResultat} />}
+            </li>
+          );
+        })}
       </ul>
       {!visibles.length && <p className="text-sm text-neutral-500">Aucune photo pour ces filtres.</p>}
     </div>

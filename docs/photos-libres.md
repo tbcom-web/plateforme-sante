@@ -1,8 +1,8 @@
 # Photos libres de droits (Pexels, Pixabay)
 
 Flux de photos pour enrichir la banque des sites : `/admin/retours` → **Photos à découvrir**. Une photo candidate à la fois,
-GARDER ou REJETER. Une photo gardée est **téléchargée et hébergée chez nous** avec sa licence tracée ; les sites n'utilisent
-que nos copies, **jamais un lien direct** vers Pexels ou Pixabay.
+GARDER ou REJETER. Une photo gardée n'enregistre que son **lien et sa licence** ; « Valider et importer » la télécharge et
+l'héberge chez nous. Les sites n'utilisent que nos copies importées, **jamais un lien direct** vers Pexels ou Pixabay.
 
 Pas d'Unsplash pour ce flux : son API impose d'afficher les photos depuis ses serveurs (lien direct), incompatible avec des
 sites qui doivent rester rapides et autonomes. (La banque intégrée historique, `apps/sites/public/photos`, contient des photos
@@ -25,29 +25,40 @@ Résumé de travail : **le texte officiel fait foi**, à relire en cas de doute 
 Ce que fait l'admin pour s'y conformer :
 
 - chaque candidate affiche « Photo : *auteur* sur *Pexels/Pixabay* » avec les liens vers la page et l'auteur ;
-- la vignette de la source n'est utilisée que pendant l'évaluation ; seul GARDER télécharge (une photo à la fois, jamais en masse) ;
+- la vignette de la source n'est utilisée que pendant l'évaluation ; seul « Valider et importer » télécharge (une photo à la fois, jamais en masse) ;
 - recherches en cache 24 h (cache mémoire + cache de données de Next) et limite de débit avec marge (180 / h, 90 / min) ;
 - la charte va plus loin que les licences : **pas de visage reconnaissable mis en avant, rien qui laisse croire à un patient
   réel** (étiquettes « Visage visible » et « Laisse croire à un patient » : GARDER est refusé), photos « trop banque d'images »
   écartées par l'étiquette du même nom.
 
-## Ce qui se passe quand Paul clique GARDER
+## Ce qui se passe quand Paul clique GARDER (lien seulement, migration 0031)
 
-1. La photo est **relue à la source** côté serveur (les informations du navigateur ne font jamais foi).
-2. Téléchargement de la grande taille (hôtes de la source seulement, 30 Mo au plus).
-3. Conversion **WebP** (qualité 80) en 640, 1280 et 1920 px de large au plus, jamais agrandie, orientation appliquée puis
-   **toutes les métadonnées (EXIF, GPS…) retirées** (sharp, installé avec Next).
-4. Envoi dans le stockage public `photos`, dossier `banque/libres/<sujet>/<source>-<id>-<largeur>.webp` (dossier `banque/`
-   réservé à l'admin, migration 0011).
-5. **Traçabilité** dans la table `photos_libres` (migration 0028) : source, identifiant, auteur (+ lien), page de la photo,
-   licence (nom, « texte en vigueur au AAAA-MM-JJ », lien officiel), date et heure de téléchargement, mots-clés du sujet, requête,
-   sujet, fichiers produits. Statut **« à valider »**. Aucune suppression possible depuis l'application : la preuve de licence reste.
-6. La photo apparaît dans « Donner mon avis » → Photos (notable) et dans la bibliothèque. Sur `/admin/photos`, section
-   « Photos libres de droits » : source, auteur, licence de chaque photo, statut (À valider / Validée / Retirée), et
-   **Exporter les licences (CSV)** (photos libres + licences Adobe Stock, pour la conformité). Validée, la photo est proposée
-   dans le choix des jeux de photos (« Libres de droits »).
-7. Sur les sites, le traitement de teinte du modèle s'applique comme pour toutes les photos (`data-images` : naturel, chaud,
-   doux, contrasté) ; la copie hébergée reste neutre.
+Demande de Paul (2026-10-07) : « on ne télécharge pas l'image complète : on utilise juste le lien, et une fois validée on
+peut importer ». Moins de stockage, aucune photo rejetée ou abandonnée importée.
+
+1. La photo est **relue à la source** côté serveur (les informations du navigateur ne font jamais foi). **Aucune image n'est
+   téléchargée.**
+2. **Traçabilité** dans `photos_libres` : source, identifiant, auteur (+ lien), page, licence (nom, « texte en vigueur au
+   AAAA-MM-JJ », lien officiel), mots-clés, requête, sujet (premier thème coché), dimensions d'origine et **aperçu servi par la
+   source** (`apercu_url` : `images.pexels.com`, `pixabay.com` / `cdn.pixabay.com`, https). `chemin`, `url`, `largeurs`,
+   `telecharge_le` restent vides. Statut **« à valider »**. Thèmes et hashtags enregistrés sous la clé `photo:libre:<source>-<id>`.
+3. Sur `/admin/photos`, la candidate s'affiche avec son aperçu et la mention « Aperçu Pexels/Pixabay, non importée » ; elle
+   n'est **ni dans la bibliothèque, ni dans les jeux, ni sur les sites** (licence Pexels : affichage depuis leur CDN autorisé ;
+   Pixabay : affichage temporaire pour l'évaluation, import obligatoire avant tout usage durable).
+
+## « Valider et importer » (/admin/photos)
+
+1. Relecture à la source côté serveur ; photo disparue : message clair, statut **« retirée »**, rien n'est importé.
+2. Téléchargement de la grande taille (hôtes de la source seulement, 30 Mo au plus), conversion **WebP** (qualité 80) en 640,
+   1280 et 1920 px au plus, jamais agrandie, **toutes les métadonnées retirées** (sharp, dépendance déclarée de l'admin).
+3. Envoi dans `photos/banque/libres/<sujet>/<source>-<id>-<largeur>.webp` (dossier `banque/` réservé à l'admin, 0011 / 0030).
+4. Traçabilité complétée : `chemin`, `url`, `largeurs`, `telecharge_le` = `importe_le` = date d'import, version de licence du
+   jour. Statut **« validée »** (contrainte de 0031 : une photo validée a toujours ses fichiers). Thèmes et hashtags de la
+   candidate reportés sur la clé de la photo importée.
+5. Seule une photo importée entre dans la bibliothèque, « Donner mon avis », le choix des jeux de photos (« Libres de droits »)
+   et donc les sites. « Retirer » écarte une candidate sans l'importer. **Exporter les licences (CSV)** liste aussi les
+   candidates (statut) et la date d'import.
+6. Sur les sites, le traitement de teinte du modèle s'applique comme pour toutes les photos ; la copie hébergée reste neutre.
 
 REJETER enregistre seulement la décision (`photos_libres_avis`) : la photo n'est plus jamais proposée. Les photos trop petites
 (grand côté < 1600 px ou petit côté < 900 px) sont écartées d'office, le paysage passe en premier.

@@ -4,7 +4,8 @@
 // l'évaluation, ce que les deux licences autorisent), auteur, source et lien ; GARDER / REJETER, étiquettes, THÈMES (plusieurs,
 // pré-sélection = thème de la recherche, au moins un pour Garder) et HASHTAGS libres (#trail, #sneakers : autocomplétion,
 // suggestions tirées des tags de la source ; table assets_hashtags, migration 0029 ; sans elle, la photo est gardée sans eux).
-// GARDER : la photo est hébergée chez nous (WebP, sans EXIF) avec sa traçabilité, statut « à valider » (Jeux de photos).
+// GARDER : rien n'est téléchargé ; seuls la traçabilité et le lien d'aperçu de la source sont enregistrés, statut « à valider ».
+// « Valider et importer » (/admin/photos) héberge ensuite la photo chez nous (WebP, sans EXIF).
 // Les sites n'utilisent jamais un lien direct vers Pexels ou Pixabay. Charte : pas de visage reconnaissable mis en avant,
 // rien qui laisse croire à un patient réel (étiquettes bloquantes).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -90,7 +91,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
     const etq = etiquettes;
     const ths = themes.length ? themes : [sujet];
     const tags = hashtags;
-    setStatut({ ok: true, message: decision === 'garder' ? 'Téléchargement, conversion WebP et hébergement…' : 'Rejet…' });
+    setStatut({ ok: true, message: decision === 'garder' ? 'Enregistrement du lien et de la licence…' : 'Rejet…' });
     suivante();
     const r = await deciderPhoto({ source: c.source, idSource: c.idSource, decision, etiquettes: etq, sujets: ths, hashtags: decision === 'garder' ? tags : [], requete: c.requete })
       .catch(() => ({ ok: false, message: 'Connexion perdue : décision non enregistrée.' }));
@@ -136,8 +137,8 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
       <div className="grid gap-1">
         <h2 className="text-2xl font-bold">Photos à découvrir</h2>
         <p className="max-w-3xl text-sm text-neutral-700">
-          Photos libres de droits de Pexels et Pixabay, une à la fois. Gardée, la photo est téléchargée et hébergée chez nous avec sa licence
-          tracée ; les sites n’utilisent que nos copies, jamais un lien vers la banque.
+          Photos libres de droits de Pexels et Pixabay, une à la fois. Gardée, seul son lien est enregistré avec sa licence : rien n’est
+          téléchargé. « Valider et importer » (Jeux de photos) l’héberge ensuite chez nous ; les sites n’utilisent que nos copies importées.
         </p>
       </div>
       {migrationManquante && (

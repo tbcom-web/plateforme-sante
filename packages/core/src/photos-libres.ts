@@ -380,6 +380,78 @@ export function construireTracabilite(e: {
   };
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Candidates gardées SANS import (demande de Paul, 2026-10-07 : « on utilise juste le lien, et une fois validée on peut
+// importer ») : « Garder » n'enregistre que la traçabilité et l'aperçu fourni par la source (migration 0031) ; « Valider et
+// importer » (/admin/photos) télécharge, convertit et héberge la photo. Seule une photo importée est utilisable.
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Clé d'asset d'une candidate non importée : thèmes et hashtags saisis à « Garder », recopiés sur la photo importée */
+export const cleCandidatePhoto = (source: SourcePhotoLibre, idSource: string) => `photo:libre:${source}-${idSource}`;
+
+/** Aperçu de la source (vignette ou taille moyenne), affiché pendant l'évaluation seulement : https, hôtes de la source */
+export const apercuAutorise = (source: SourcePhotoLibre, url: string | null | undefined): url is string => Boolean(url) && urlImageAutorisee(source, String(url));
+
+/** Ligne d'une candidate gardée, non importée (migration 0031 : chemin, url, largeurs, telecharge_le vides) */
+export type CandidateGardee = Omit<TracabilitePhoto, 'chemin' | 'url' | 'largeurs' | 'telecharge_le'> & {
+  chemin: null; url: null; largeurs: number[]; telecharge_le: null; importe_le: null; apercu_url: string;
+};
+
+/**
+ * Traçabilité d'une candidate gardée sans téléchargement : source, identifiant, auteur, page, licence (version datée du
+ * jour où elle est gardée ; redatée à l'import), mots-clés, requête, sujet, dimensions d'origine et aperçu de la source.
+ */
+export function construireCandidate(e: {
+  candidat: CandidatPhoto;
+  sujet: string;
+  motsCles: readonly string[];
+  requete: string;
+  gardeLe: Date;
+  etiquettes?: readonly string[];
+}): { ligne: CandidateGardee | null; erreurs: string[] } {
+  const c = e.candidat;
+  const erreurs: string[] = [];
+  if (!estSourcePhotoLibre(c.source)) erreurs.push('Source inconnue.');
+  if (!ID.test(c.idSource)) erreurs.push('Identifiant de la source invalide.');
+  if (!estSujetVisuel(e.sujet)) erreurs.push('Sujet inconnu.');
+  if (!c.auteur.trim()) erreurs.push('Auteur manquant.');
+  if (estSourcePhotoLibre(c.source) && !urlPageAutorisee(c.source, c.pageUrl)) erreurs.push('Page de la photo invalide.');
+  if (estSourcePhotoLibre(c.source) && !apercuAutorise(c.source, c.apercu)) erreurs.push('Aperçu de la source invalide.');
+  if (!(c.largeur > 0 && c.hauteur > 0)) erreurs.push('Dimensions d’origine inconnues.');
+  if (Number.isNaN(e.gardeLe.getTime())) erreurs.push('Date invalide.');
+  if (erreurs.length) return { ligne: null, erreurs };
+  const lic = LICENCES_SOURCES[c.source];
+  return {
+    erreurs,
+    ligne: {
+      source: c.source,
+      id_source: c.idSource,
+      auteur_nom: c.auteur.trim().slice(0, 120),
+      auteur_url: c.auteurUrl,
+      page_url: c.pageUrl,
+      licence: lic.nom,
+      licence_version: versionLicence(e.gardeLe),
+      licence_url: lic.url,
+      telecharge_le: null,
+      importe_le: null,
+      mots_cles: normaliserMotsCles(e.motsCles),
+      requete: normaliserMotsCles([e.requete])[0] ?? '',
+      sujet: e.sujet,
+      chemin: null,
+      url: null,
+      largeurs: [],
+      largeur_originale: c.largeur,
+      hauteur_originale: c.hauteur,
+      etiquettes: etiquettesDecouverteValides(e.etiquettes ?? []),
+      apercu_url: c.apercu,
+      statut: 'a_valider',
+    },
+  };
+}
+
+/** Photo importée chez nous (fichier hébergé) : la seule forme utilisable par les jeux, le générateur et les sites */
+export const estPhotoImportee = (p: { statut: string; chemin?: string | null; url?: string | null }) => p.statut === 'validee' && Boolean(p.chemin) && Boolean(p.url);
+
 export const STATUTS_PHOTO_LIBRE = ['a_valider', 'validee', 'retiree'] as const;
 export type StatutPhotoLibre = (typeof STATUTS_PHOTO_LIBRE)[number];
 export const LIBELLES_STATUTS_PHOTO_LIBRE: Record<StatutPhotoLibre, string> = { a_valider: 'À valider', validee: 'Validée', retiree: 'Retirée' };
@@ -400,11 +472,14 @@ export type LigneLicenceCsv = {
   sujet: string;
   fichier: string;
   statut: string;
+  /** Date d'import chez nous (vide : candidate non importée, aperçu de la source seulement) */
+  importe?: string;
 };
 
 const COLONNES_CSV: [keyof LigneLicenceCsv, string][] = [
   ['fournisseur', 'Fournisseur'], ['identifiant', 'Identifiant'], ['auteur', 'Auteur'], ['page', 'Page de la photo'], ['licence', 'Licence'],
   ['version', 'Version'], ['lienLicence', 'Lien de la licence'], ['date', 'Date'], ['sujet', 'Sujet / site'], ['fichier', 'Fichier hébergé'], ['statut', 'Statut'],
+  ['importe', 'Importée le'],
 ];
 
 const cellule = (v: string) => {
@@ -417,7 +492,7 @@ const cellule = (v: string) => {
 /** CSV (séparateur point-virgule, BOM UTF-8 pour les tableurs français) */
 export function csvLicences(lignes: readonly LigneLicenceCsv[]): string {
   const entete = COLONNES_CSV.map(([, t]) => cellule(t)).join(';');
-  const corps = lignes.map((l) => COLONNES_CSV.map(([k]) => cellule(l[k])).join(';'));
+  const corps = lignes.map((l) => COLONNES_CSV.map(([k]) => cellule(l[k] ?? '')).join(';'));
   return `﻿${[entete, ...corps].join('\r\n')}\r\n`;
 }
 

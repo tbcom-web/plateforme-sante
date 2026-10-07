@@ -1,10 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { estPhotoIntegree, jeuPhotosAutorise, normaliserDraft, photosDuJeu, validerJeuPhotos, type JeuPhotos } from '@plateforme/core';
+import {
+  cleCandidatePhoto, clePhoto, estPhotoImportee, estPhotoIntegree, estSourcePhotoLibre, hashtagsDepuisLignes, jeuPhotosAutorise, normaliserDraft, photosDuJeu,
+  surchargesDepuisLignes, validerJeuPhotos, type JeuPhotos,
+} from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { lireJeuPhotos, PREFIXE_STOCKAGE, tirerJeuPhotos, UUID } from '@/lib/jeux-photos';
-import { createClient } from '@/lib/supabase/server';
+import { importerDepuisSource, MIGRATION_0031 } from '@/lib/photos-libres';
+import { createClient, getUser } from '@/lib/supabase/server';
 
 export type Resultat = { ok: boolean; message: string; id?: string } | null;
 
@@ -164,8 +168,67 @@ export async function changerStatutPhotoLibre(id: string, statut: 'a_valider' | 
   await exigerAdmin();
   if (!UUID.test(id) || !['a_valider', 'validee', 'retiree'].includes(statut)) return { ok: false, message: 'Valeur invalide.' };
   const supabase = await createClient();
+  // « Validée » exige une photo importée (fichiers hébergés) : sinon, passer par « Valider et importer »
+  if (statut === 'validee') {
+    const { data } = await supabase.from('photos_libres').select('statut, chemin, url').eq('id', id).maybeSingle();
+    if (!data || !estPhotoImportee({ statut: 'validee', chemin: data.chemin, url: data.url })) return { ok: false, message: 'Photo non importée : utilisez « Valider et importer ».' };
+  }
   const { error } = await supabase.from('photos_libres').update({ statut, updated_at: new Date().toISOString() }).eq('id', id);
   revalidatePath('/admin/photos');
   revalidatePath('/admin/illustrations');
   return error ? { ok: false, message: 'Modification impossible (migration 0028 ?).' } : { ok: true, message: statut === 'validee' ? 'Validée : proposée dans le choix des jeux de photos.' : statut === 'retiree' ? 'Retirée (traçabilité conservée).' : 'Remise à valider.' };
+}
+
+/**
+ * « Valider et importer » une photo libre gardée (candidate, migration 0031) : relue à la source côté serveur, téléchargée,
+ * convertie en WebP 640 / 1280 / 1920 px sans EXIF, hébergée dans photos/banque/libres/<sujet>/ ; traçabilité complétée
+ * (chemin, url, largeurs, date d'import = date de téléchargement, version de licence du jour), statut « validée ». Thèmes et
+ * hashtags saisis sur la candidate recopiés sur la photo importée. Photo disparue de la source : statut « retirée ».
+ */
+export async function importerPhotoLibre(id: string): Promise<Resultat> {
+  await exigerAdmin();
+  if (!UUID.test(id)) return { ok: false, message: 'Valeur invalide.' };
+  const supabase = await createClient();
+  const { data: p, error: eLecture } = await supabase.from('photos_libres').select('id, source, id_source, sujet, requete, etiquettes, statut, chemin, url').eq('id', id).maybeSingle();
+  if (eLecture || !p) return { ok: false, message: 'Photo introuvable.' };
+  if (!estSourcePhotoLibre(p.source)) return { ok: false, message: 'Source inconnue.' };
+  if (p.chemin && p.url) {
+    const { error } = await supabase.from('photos_libres').update({ statut: 'validee', updated_at: new Date().toISOString() }).eq('id', id);
+    revalidatePath('/admin/photos');
+    return error ? { ok: false, message: `Modification impossible : ${error.message}` } : { ok: true, message: 'Déjà importée : validée.' };
+  }
+  const r = await importerDepuisSource(supabase, { source: p.source, idSource: p.id_source, sujet: p.sujet, requete: p.requete ?? '', etiquettes: p.etiquettes ?? [] });
+  if (!r.ok) {
+    if (r.introuvable) await supabase.from('photos_libres').update({ statut: 'retiree', updated_at: new Date().toISOString() }).eq('id', id);
+    revalidatePath('/admin/photos');
+    return { ok: false, message: r.message };
+  }
+  const maintenant = r.ligne.telecharge_le;
+  const { error } = await supabase.from('photos_libres').update({
+    auteur_nom: r.ligne.auteur_nom, auteur_url: r.ligne.auteur_url, page_url: r.ligne.page_url, licence: r.ligne.licence, licence_version: r.ligne.licence_version,
+    licence_url: r.ligne.licence_url, telecharge_le: maintenant, importe_le: maintenant, chemin: r.ligne.chemin, url: r.ligne.url, largeurs: r.ligne.largeurs,
+    largeur_originale: r.ligne.largeur_originale, hauteur_originale: r.ligne.hauteur_originale, statut: 'validee', updated_at: new Date().toISOString(),
+  }).eq('id', id);
+  if (error) {
+    console.error('Photos libres : import non enregistré', error);
+    return { ok: false, message: /importe_le|schema cache/i.test(error.message) ? `Fichiers hébergés mais import non enregistré. ${MIGRATION_0031}` : `Fichiers hébergés mais import non enregistré : ${error.message}` };
+  }
+  // Thèmes et hashtags de la candidate → photo importée (clé de l'inventaire : photo:banque/libres/…)
+  const cleFinale = clePhoto(r.ligne.url);
+  const cleCandidate = cleCandidatePhoto(p.source, p.id_source);
+  let complement = '';
+  if (cleFinale) {
+    const user = await getUser();
+    const auteur = user?.id ?? null;
+    const [{ data: s }, { data: h }] = await Promise.all([supabase.rpc('assets_sujets_effectifs'), supabase.rpc('assets_hashtags_effectifs')]);
+    const sujets = surchargesDepuisLignes(((s ?? []) as { cle_asset: string; sujet: string; action: string }[]).filter((l) => l.cle_asset === cleCandidate).map((l) => ({ cle: l.cle_asset, sujet: l.sujet, action: l.action })))[cleCandidate]?.ajouts ?? [];
+    const tags = hashtagsDepuisLignes(((h ?? []) as { cle_asset: string; hashtag: string; action: string }[]).filter((l) => l.cle_asset === cleCandidate).map((l) => ({ cle: l.cle_asset, hashtag: l.hashtag, action: l.action })))[cleCandidate] ?? [];
+    if (sujets.length) await supabase.from('assets_sujets').insert(sujets.map((x) => ({ cle_asset: cleFinale, sujet: x, action: 'ajout', auteur })));
+    if (tags.length) await supabase.from('assets_hashtags').insert(tags.map((x) => ({ cle_asset: cleFinale, hashtag: x, action: 'ajout', auteur })));
+    if (sujets.length || tags.length) complement = ` Thèmes et hashtags reportés (${[...sujets, ...tags.map((t) => `#${t}`)].join(', ')}).`;
+  }
+  revalidatePath('/admin/photos');
+  revalidatePath('/admin/illustrations');
+  revalidatePath('/admin/retours');
+  return { ok: true, message: `Importée et validée : hébergée chez nous (${r.ligne.largeurs.join(', ')} px, sans métadonnées), proposée dans le choix des jeux.${complement}` };
 }

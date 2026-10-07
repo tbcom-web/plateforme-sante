@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { jeuPhotosDepuisLigne, LIBELLES_SOURCES, libelleSujet, normaliserDraft, SPECIALITES, SUJETS_VISUELS } from '@plateforme/core';
+import { estPhotoImportee, jeuPhotosDepuisLigne, LIBELLES_SOURCES, libelleSujet, normaliserDraft, SPECIALITES, SUJETS_VISUELS } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { COLONNES_JEU } from '@/lib/jeux-photos';
 import { getHashtagsAssets } from '@/lib/hashtags';
@@ -21,7 +21,8 @@ export default async function JeuxPhotos() {
   ]);
   // Photos libres de droits validées, proposées dans le choix des jeux partagés (les sujets de la spécialité d'abord)
   const libresDe = (spec: string) => {
-    const validees = libres.photos.filter((p) => p.statut === 'validee');
+    // Seules les photos IMPORTÉES (fichiers hébergés chez nous) entrent dans un jeu
+    const validees = libres.photos.filter(estPhotoImportee).map((p) => ({ ...p, url: p.url! }));
     const duSujet = (p: (typeof validees)[number]) => SUJETS_VISUELS.find((x) => x.id === p.sujet)?.specialite === spec;
     return [...validees.filter(duSujet), ...validees.filter((p) => !duSujet(p))].map((p) => ({ url: p.url, legende: `${libelleSujet(p.sujet)} · ${p.auteur} (${p.source === 'pexels' ? 'Pexels' : 'Pixabay'})` }));
   };
@@ -73,8 +74,9 @@ export default async function JeuxPhotos() {
           <a href="/admin/photos/licences.csv" className="flex min-h-11 items-center rounded-xl border border-neutral-300 bg-white px-3 text-sm font-semibold hover:bg-neutral-50">Exporter les licences (CSV)</a>
         </div>
         <p className="max-w-3xl text-sm text-neutral-600">
-          Gardées depuis « Donner mon avis » → Photos à découvrir : hébergées chez nous (WebP, sans métadonnées), jamais de lien vers la banque.
-          Validée, une photo est proposée dans le choix des jeux ci-dessus (« Libres de droits »). Chaque ligne garde sa preuve de licence.
+          Gardées depuis « Donner mon avis » → Photos à découvrir : rien n’est téléchargé, seul le lien est enregistré (aperçu servi par Pexels
+          ou Pixabay, pour l’évaluation). « Valider et importer » télécharge alors la photo et l’héberge chez nous (WebP, sans métadonnées) : seule
+          une photo importée est proposée dans le choix des jeux ci-dessus et utilisée par les sites. Chaque ligne garde sa preuve de licence.
           Banque intégrée : photos Unsplash téléchargées et hébergées, crédits dans <code>apps/sites/public/photos/CREDITS.md</code> ;
           Adobe Stock : licences sur la fiche du site. Le CSV réunit photos libres et licences Adobe Stock.
         </p>
@@ -83,7 +85,7 @@ export default async function JeuxPhotos() {
         ) : libres.photos.length === 0 ? (
           <p className="text-sm text-neutral-500">Aucune photo gardée pour l’instant.</p>
         ) : (
-          <PhotosLibresListe photos={libres.photos} hashtags={hashtags.hashtags} migrationHashtags={hashtags.migrationManquante} />
+          <PhotosLibresListe photos={libres.photos} hashtags={hashtags.hashtags} migrationHashtags={hashtags.migrationManquante} migration0031={libres.migration0031} />
         )}
       </section>
 

@@ -4,7 +4,8 @@ import { getPhotosLibres } from '@/lib/photos-libres';
 import { createClient } from '@/lib/supabase/server';
 
 // Export CSV des licences pour la conformité (/admin/photos/licences.csv, admin seulement) : photos libres de droits
-// (Pexels / Pixabay, traçabilité 0028) puis licences Adobe Stock (licences_photos, 0016).
+// (Pexels / Pixabay, traçabilité 0028 : candidates non importées comprises, avec leur statut et la date d'import, 0031)
+// puis licences Adobe Stock (licences_photos, 0016).
 
 export const dynamic = 'force-dynamic';
 
@@ -24,10 +25,12 @@ export async function GET() {
       licence: p.licence,
       version: p.licenceVersion,
       lienLicence: p.licenceUrl,
-      date: p.telechargeLe.slice(0, 10),
+      date: (p.telechargeLe ?? '').slice(0, 10),
       sujet: libelleSujet(p.sujet),
-      fichier: p.url,
-      statut: LIBELLES_STATUTS_PHOTO_LIBRE[p.statut],
+      // Candidate non importée : aucun fichier chez nous (aperçu de la source seulement)
+      fichier: p.url ?? 'non importée (aperçu de la source seulement)',
+      statut: p.url ? LIBELLES_STATUTS_PHOTO_LIBRE[p.statut] : `${LIBELLES_STATUTS_PHOTO_LIBRE[p.statut]} (candidate non importée)`,
+      importe: (p.importeLe ?? '').slice(0, 10),
     })),
     ...((adobe ?? []) as { site_id: string; photo_url: string; fournisseur: string; reference_licence: string; date_achat: string | null; transferee_au_client: boolean }[]).map((l) => ({
       fournisseur: 'Adobe Stock',

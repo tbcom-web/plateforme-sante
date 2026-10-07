@@ -5,7 +5,7 @@ import {
   palettesRecurrentes, quantifierPalette, validerInspiration,
 } from './inspirations';
 import {
-  candidatPexels, candidatPixabay, candidatsDepuisReponse, cheminPhotoLibre, cleCandidat, construireTracabilite, csvLicences, filtrerCandidats,
+  candidatPexels, candidatPixabay, candidatsDepuisReponse, cheminPhotoLibre, cleCandidat, construireTracabilite, csvLicences, construireCandidate, cleCandidatePhoto, apercuAutorise, estPhotoImportee, filtrerCandidats,
   largeursAProduire, MOTS_CLES_DEFAUT, motsClesDuSujet, normaliserMotsCles, orientation, peutAppeler, refusDecision, SUJETS_VISUELS,
   urlImageAutorisee, urlRecherchePexels, urlRecherchePixabay, type CandidatPhoto,
 } from './photos-libres';
@@ -182,4 +182,28 @@ test('photos libres : décision, traçabilité obligatoire, fichiers, CSV', () =
   assert.ok(csv.startsWith('﻿Fournisseur;Identifiant;'));
   assert.ok(csv.includes('"A; ""B"""'));
   assert.ok(csv.includes(";'=1+1"), 'formule neutralisée');
+  assert.ok(csv.split('\r\n')[0].endsWith(';Importée le'), 'colonne « Importée le »');
+  assert.ok(csv.split('\r\n')[1].endsWith(';'), 'candidate non importée : date d’import vide');
+});
+
+test('photos libres : candidate gardée sans import (aperçu de la source, rien d’hébergé)', () => {
+  const c = candidatPexels(pexels(123, 4000, 2667))!;
+  const { ligne, erreurs } = construireCandidate({ candidat: c, sujet: 'senior', motsCles: ['Trail running'], requete: 'trail running', gardeLe: new Date('2026-10-07T09:00:00Z'), etiquettes: ['parfaite'] });
+  assert.deepEqual(erreurs, []);
+  assert.equal(ligne?.chemin, null);
+  assert.equal(ligne?.url, null);
+  assert.deepEqual(ligne?.largeurs, []);
+  assert.equal(ligne?.telecharge_le, null);
+  assert.equal(ligne?.importe_le, null);
+  assert.equal(ligne?.apercu_url, c.apercu);
+  assert.equal(ligne?.statut, 'a_valider');
+  assert.equal(ligne?.largeur_originale, 4000);
+  assert.equal(ligne?.licence_version, 'texte en vigueur au 2026-10-07');
+  assert.equal(cleCandidatePhoto('pexels', '123'), 'photo:libre:pexels-123');
+  assert.ok(!apercuAutorise('pexels', 'https://ailleurs.fr/x.jpg'));
+  assert.ok(!apercuAutorise('pexels', 'http://images.pexels.com/x.jpg'), 'https seulement');
+  assert.ok(construireCandidate({ candidat: { ...c, apercu: 'https://ailleurs.fr/x.jpg' }, sujet: 'sport', motsCles: [], requete: '', gardeLe: new Date() }).erreurs.length);
+  assert.ok(!estPhotoImportee({ statut: 'a_valider', chemin: null, url: null }));
+  assert.ok(!estPhotoImportee({ statut: 'validee', chemin: null, url: null }), 'validée sans fichier : inutilisable');
+  assert.ok(estPhotoImportee({ statut: 'validee', chemin: 'banque/libres/sport/pexels-1-640.webp', url: 'https://x/y.webp' }));
 });

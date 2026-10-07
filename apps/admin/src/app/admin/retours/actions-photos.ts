@@ -2,19 +2,19 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  cheminPhotoLibre, clePhoto, construireTracabilite, estSourcePhotoLibre, estSujetVisuel, etiquettesDecouverteValides, filtrerCandidats, frequencesHashtags, hashtagsValides,
-  largeursAProduire, LICENCES_SOURCES, motsClesDuSujet, normaliserMotsCles, refusDecision, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type CandidatPhoto, type DecisionPhoto,
-  type SourcePhotoLibre,
+  cleCandidatePhoto, construireCandidate, estSourcePhotoLibre, estSujetVisuel, etiquettesDecouverteValides, filtrerCandidats, frequencesHashtags, hashtagsValides,
+  motsClesDuSujet, normaliserMotsCles, refusDecision, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type CandidatPhoto, type DecisionPhoto, type SourcePhotoLibre,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import {
-  convertirWebp, detailPhoto, ErreurSource, getMotsClesEnBase, largeurImage, rechercher, sourcesConfigurees, telechargerImage,
+  detailPhoto, ErreurSource, getMotsClesEnBase, MIGRATION_0031, rechercher, sourcesConfigurees,
 } from '@/lib/photos-libres';
 import { getHashtagsAssets, MIGRATION_HASHTAGS } from '@/lib/hashtags';
 import { createClient, getUser } from '@/lib/supabase/server';
 
-// « Photos à découvrir » (/admin/retours) : candidates Pexels / Pixabay, une à la fois ; GARDER = téléchargement, WebP en
-// plusieurs largeurs sans EXIF, hébergement dans le bucket « photos » (banque/libres/<sujet>/) et traçabilité (0028).
+// « Photos à découvrir » (/admin/retours) : candidates Pexels / Pixabay, une à la fois ; GARDER = traçabilité et aperçu de la
+// source SEULEMENT (aucun téléchargement, migration 0031) ; l'import (WebP sans EXIF, banque/libres/<sujet>/) se fait à la
+// validation dans /admin/photos (importerPhotoLibre).
 // Thèmes (plusieurs) : une entrée assets_sujets « ajout » par thème (0028) ; hashtags libres : assets_hashtags (0029).
 
 const MIGRATION = 'Migration 0028 à exécuter (supabase/migrations/0028_inspirations_photos_libres.sql).';
@@ -67,8 +67,8 @@ export type ResultatDecision = { ok: boolean; message: string; url?: string };
 
 /**
  * GARDER ou REJETER une candidate. Garder : la photo est relue à la source (les informations du navigateur ne font pas
- * foi), téléchargée, convertie en WebP (640, 1280, 1920 px au plus, sans EXIF), hébergée chez nous, puis tracée
- * (photos_libres, statut « à valider »). Refusé si une étiquette bloquante de la charte est cochée.
+ * foi) et tracée avec l'aperçu fourni par la source (photos_libres, statut « à valider », aucun fichier téléchargé ;
+ * import à la validation). Refusé si une étiquette bloquante de la charte est cochée.
  */
 export async function deciderPhoto(entree: {
   source: string; idSource: string; decision: DecisionPhoto; etiquettes: string[];
@@ -99,57 +99,37 @@ export async function deciderPhoto(entree: {
     return error ? { ok: false, message: `Rejet non enregistré. ${MIGRATION}` } : { ok: true, message: 'Rejetée : elle ne sera plus proposée.' };
   }
 
+  // GARDER = aucune image téléchargée : traçabilité + aperçu fourni par la source (relus à la source, le navigateur ne
+  // fait pas foi), statut « à valider ». L'import (fichiers WebP hébergés) se fait à la validation, dans /admin/photos.
+  let candidat: CandidatPhoto | null;
   try {
-    const candidat = await detailPhoto(source, idSource);
-    if (!candidat) return { ok: false, message: 'Photo introuvable à la source (retirée ?).' };
-    const original = await telechargerImage(candidat);
-    let largeurs: number[];
-    let fichiers: { largeur: number; donnees: Buffer }[];
-    try {
-      largeurs = largeursAProduire(await largeurImage(original));
-      fichiers = await convertirWebp(original, largeurs);
-    } catch (e) {
-      console.error('Photos libres : conversion WebP impossible', e);
-      return { ok: false, message: 'Conversion WebP impossible sur le serveur (sharp). Réessayez ; si cela persiste, prévenez Claude.' };
-    }
-    const stockage = supabase.storage.from('photos');
-    for (const f of fichiers) {
-      // Sans « upsert » : le remplacement exigerait en plus un droit de lecture sur storage.objects. Un fichier déjà présent
-      // (photo gardée une seconde fois) est accepté tel quel.
-      const { error } = await stockage.upload(cheminPhotoLibre(sujet, source, idSource, f.largeur), f.donnees, { contentType: 'image/webp', cacheControl: '31536000', upsert: false });
-      if (error && !/exist|duplicate/i.test(error.message)) {
-        console.error('Photos libres : envoi dans le stockage', error);
-        return { ok: false, message: `Envoi dans le stockage impossible : ${error.message}. Vérifiez que la migration 0030 (droits du dossier banque/) est exécutée.` };
-      }
-    }
-    const grande = Math.max(...largeurs);
-    const url = stockage.getPublicUrl(cheminPhotoLibre(sujet, source, idSource, grande)).data.publicUrl;
-    const { motsCles } = await getMotsClesEnBase();
-    const { ligne, erreurs } = construireTracabilite({
-      candidat, sujet, motsCles: motsClesDuSujet(sujet, motsCles), requete: String(entree.requete ?? ''), telechargeLe: new Date(), largeurs, urlPrincipale: url, etiquettes,
-    });
-    if (!ligne) return { ok: false, message: `Traçabilité incomplète : ${erreurs.join(' ')}` };
-    const { error } = await supabase.from('photos_libres').upsert({ ...ligne, auteur: user?.id ?? null, updated_at: new Date().toISOString() }, { onConflict: 'source,id_source' });
-    if (error) return { ok: false, message: `Photo hébergée mais traçabilité non enregistrée. ${MIGRATION}` };
-    await supabase.from('photos_libres_avis').upsert(avis, { onConflict: 'source,id_source' });
-    // Thèmes et hashtags, sous la même clé que l'inventaire et la bibliothèque (photo:banque/libres/…)
-    const cle = clePhoto(url);
-    let complement = '';
-    if (cle) {
-      const auteur = user?.id ?? null;
-      const { error: eSujets } = await supabase.from('assets_sujets').insert(sujets.map((s) => ({ cle_asset: cle, sujet: s, action: 'ajout', auteur })));
-      if (eSujets) complement += ' Thèmes supplémentaires non enregistrés (migration 0028).';
-      if (hashtags.length) {
-        const { error: eTags } = await supabase.from('assets_hashtags').insert(hashtags.map((h) => ({ cle_asset: cle, hashtag: h, action: 'ajout', auteur })));
-        complement += eTags ? ` ${MIGRATION_HASHTAGS}` : ` ${hashtags.length} hashtag${hashtags.length > 1 ? 's' : ''} enregistré${hashtags.length > 1 ? 's' : ''}.`;
-      }
-    }
-    revalidatePath('/admin/photos');
-    revalidatePath('/admin/illustrations');
-    return { ok: true, message: `Gardée : hébergée chez nous (${largeurs.join(', ')} px), ${LICENCES_SOURCES[source].nom} tracée, à valider dans Jeux de photos.${complement}`, url };
+    candidat = await detailPhoto(source, idSource);
   } catch (e) {
-    return { ok: false, message: e instanceof ErreurSource ? e.message : 'Téléchargement impossible. Réessayez.' };
+    return { ok: false, message: e instanceof ErreurSource ? e.message : 'Source injoignable. Réessayez.' };
   }
+  if (!candidat) return { ok: false, message: 'Photo introuvable à la source (retirée ?).' };
+  const { motsCles } = await getMotsClesEnBase();
+  const { ligne, erreurs } = construireCandidate({ candidat, sujet, motsCles: motsClesDuSujet(sujet, motsCles), requete: String(entree.requete ?? ''), gardeLe: new Date(), etiquettes });
+  if (!ligne) return { ok: false, message: `Traçabilité incomplète : ${erreurs.join(' ')}` };
+  const { error } = await supabase.from('photos_libres').upsert({ ...ligne, auteur: user?.id ?? null, updated_at: new Date().toISOString() }, { onConflict: 'source,id_source' });
+  if (error) {
+    console.error('Photos libres : candidate non enregistrée', error);
+    // Colonnes apercu_url / importe_le absentes ou chemin encore obligatoire : migration 0031 pas exécutée
+    return { ok: false, message: /apercu_url|importe_le|null value|not-null|schema cache/i.test(error.message) ? `Candidate non enregistrée. ${MIGRATION_0031}` : `Candidate non enregistrée : ${error.message}` };
+  }
+  await supabase.from('photos_libres_avis').upsert(avis, { onConflict: 'source,id_source' });
+  // Thèmes et hashtags sous la clé de la candidate ; recopiés sur la photo importée lors de « Valider et importer »
+  const cle = cleCandidatePhoto(source, idSource);
+  const auteur = user?.id ?? null;
+  let complement = '';
+  const { error: eSujets } = await supabase.from('assets_sujets').insert(sujets.map((s) => ({ cle_asset: cle, sujet: s, action: 'ajout', auteur })));
+  if (eSujets) complement += ' Thèmes supplémentaires non enregistrés (migration 0028).';
+  if (hashtags.length) {
+    const { error: eTags } = await supabase.from('assets_hashtags').insert(hashtags.map((h) => ({ cle_asset: cle, hashtag: h, action: 'ajout', auteur })));
+    complement += eTags ? ` ${MIGRATION_HASHTAGS}` : ` ${hashtags.length} hashtag${hashtags.length > 1 ? 's' : ''} enregistré${hashtags.length > 1 ? 's' : ''}.`;
+  }
+  revalidatePath('/admin/photos');
+  return { ok: true, message: `Gardée (lien seulement, rien n’est téléchargé) : à valider et importer dans Jeux de photos.${complement}` };
 }
 
 /** Mots-clés d'un sujet (une ligne ou une virgule par mot-clé) ; liste vide = valeurs par défaut */

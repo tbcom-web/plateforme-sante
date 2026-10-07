@@ -1,7 +1,8 @@
 import 'server-only';
 import {
-  API_PEXELS, API_PIXABAY, CACHE_RECHERCHE_MS, candidatsDepuisReponse, LICENCES_SOURCES, peutAppeler, SOURCES_PHOTOS_LIBRES, urlImageAutorisee,
-  urlPhotoPexels, urlPhotoPixabay, urlRecherchePexels, urlRecherchePixabay, type CandidatPhoto, type SourcePhotoLibre,
+  API_PEXELS, API_PIXABAY, CACHE_RECHERCHE_MS, candidatsDepuisReponse, cheminPhotoLibre, construireTracabilite, largeursAProduire, LICENCES_SOURCES, motsClesDuSujet,
+  peutAppeler, SOURCES_PHOTOS_LIBRES, urlImageAutorisee, urlPhotoPexels, urlPhotoPixabay, urlRecherchePexels, urlRecherchePixabay, type CandidatPhoto, type SourcePhotoLibre,
+  type TracabilitePhoto,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
@@ -125,27 +126,96 @@ export async function getMotsClesEnBase(): Promise<{ motsCles: Record<string, st
   return { motsCles: Object.fromEntries((data ?? []).map((l: { sujet: string; mots_cles: string[] | null }) => [l.sujet, l.mots_cles ?? []])), migrationManquante: false };
 }
 
+/**
+ * Photo libre gardée. Candidate NON importée (migration 0031) : chemin / url vides, aperçu servi par la source (apercuUrl)
+ * pendant l'évaluation seulement. Importée : fichiers WebP hébergés chez nous (url), date d'import.
+ */
 export type PhotoLibre = {
   id: string; source: SourcePhotoLibre; idSource: string; auteur: string; auteurUrl: string | null; pageUrl: string; licence: string; licenceVersion: string;
-  licenceUrl: string; telechargeLe: string; motsCles: string[]; sujet: string; chemin: string; url: string; largeurs: number[]; statut: 'a_valider' | 'validee' | 'retiree';
+  licenceUrl: string; telechargeLe: string | null; motsCles: string[]; requete: string; sujet: string; chemin: string | null; url: string | null; largeurs: number[];
+  largeurOriginale: number; hauteurOriginale: number; etiquettes: string[]; apercuUrl: string | null; importeLe: string | null; statut: 'a_valider' | 'validee' | 'retiree';
 };
 
-export const COLONNES_PHOTOS_LIBRES = 'id, source, id_source, auteur_nom, auteur_url, page_url, licence, licence_version, licence_url, telecharge_le, mots_cles, sujet, chemin, url, largeurs, statut';
+const COLONNES_0028 = 'id, source, id_source, auteur_nom, auteur_url, page_url, licence, licence_version, licence_url, telecharge_le, mots_cles, requete, sujet, chemin, url, largeurs, largeur_originale, hauteur_originale, etiquettes, statut';
+export const COLONNES_PHOTOS_LIBRES = `${COLONNES_0028}, apercu_url, importe_le`;
 
 type LignePhotoLibre = {
   id: string; source: SourcePhotoLibre; id_source: string; auteur_nom: string; auteur_url: string | null; page_url: string; licence: string; licence_version: string;
-  licence_url: string; telecharge_le: string; mots_cles: string[] | null; sujet: string; chemin: string; url: string; largeurs: number[] | null; statut: PhotoLibre['statut'];
+  licence_url: string; telecharge_le: string | null; mots_cles: string[] | null; requete?: string | null; sujet: string; chemin: string | null; url: string | null; largeurs: number[] | null;
+  largeur_originale?: number | null; hauteur_originale?: number | null; etiquettes?: string[] | null; apercu_url?: string | null; importe_le?: string | null; statut: PhotoLibre['statut'];
 };
 
 export const photoLibreDepuisLigne = (l: LignePhotoLibre): PhotoLibre => ({
   id: l.id, source: l.source, idSource: l.id_source, auteur: l.auteur_nom, auteurUrl: l.auteur_url, pageUrl: l.page_url, licence: l.licence, licenceVersion: l.licence_version,
-  licenceUrl: l.licence_url, telechargeLe: l.telecharge_le, motsCles: l.mots_cles ?? [], sujet: l.sujet, chemin: l.chemin, url: l.url, largeurs: l.largeurs ?? [], statut: l.statut,
+  licenceUrl: l.licence_url, telechargeLe: l.telecharge_le, motsCles: l.mots_cles ?? [], requete: l.requete ?? '', sujet: l.sujet, chemin: l.chemin, url: l.url, largeurs: l.largeurs ?? [],
+  largeurOriginale: l.largeur_originale ?? 0, hauteurOriginale: l.hauteur_originale ?? 0, etiquettes: l.etiquettes ?? [], apercuUrl: l.apercu_url ?? null,
+  // Avant 0031, toute photo gardée était importée : date d'import = date de téléchargement
+  importeLe: l.importe_le ?? (l.chemin ? l.telecharge_le : null), statut: l.statut,
 });
 
-/** Photos gardées (traçabilité) ; migrationManquante si la table 0028 n'existe pas encore */
-export async function getPhotosLibres(): Promise<{ photos: PhotoLibre[]; migrationManquante: boolean }> {
+/**
+ * Photos gardées (traçabilité). migrationManquante : table 0028 absente ; migration0031 : colonnes de l'import différé
+ * absentes (lecture sans elles, « Garder » demande d'exécuter 0031).
+ */
+export async function getPhotosLibres(): Promise<{ photos: PhotoLibre[]; migrationManquante: boolean; migration0031: boolean }> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('photos_libres').select(COLONNES_PHOTOS_LIBRES).order('created_at', { ascending: false }).limit(2000);
-  if (error) return { photos: [], migrationManquante: true };
-  return { photos: ((data ?? []) as LignePhotoLibre[]).map(photoLibreDepuisLigne), migrationManquante: false };
+  const lire = (colonnes: string) => supabase.from('photos_libres').select(colonnes).order('created_at', { ascending: false }).limit(2000);
+  let { data, error } = await lire(COLONNES_PHOTOS_LIBRES);
+  let migration0031 = false;
+  if (error) { migration0031 = true; ({ data, error } = await lire(COLONNES_0028)); }
+  if (error) return { photos: [], migrationManquante: true, migration0031 };
+  return { photos: ((data ?? []) as unknown as LignePhotoLibre[]).map(photoLibreDepuisLigne), migrationManquante: false, migration0031 };
+}
+
+export const MIGRATION_0031 = 'Migration 0031 à exécuter (supabase/migrations/0031_photos_libres_import_differe.sql).';
+
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * IMPORT d'une photo validée (« Valider et importer », /admin/photos) : relue à la source côté serveur (les informations
+ * enregistrées ne font pas foi pour le fichier), téléchargée, convertie en WebP 640 / 1280 / 1920 px au plus sans EXIF,
+ * envoyée dans photos/banque/libres/<sujet>/. Renvoie la traçabilité complète (date d'import = date de téléchargement).
+ * `introuvable` : la photo n'existe plus à la source.
+ */
+export async function importerDepuisSource(supabase: Supabase, e: { source: SourcePhotoLibre; idSource: string; sujet: string; requete: string; etiquettes: string[] }):
+  Promise<{ ok: true; ligne: TracabilitePhoto; candidat: CandidatPhoto } | { ok: false; message: string; introuvable?: boolean }> {
+  let candidat: CandidatPhoto | null;
+  try {
+    candidat = await detailPhoto(e.source, e.idSource);
+  } catch (err) {
+    return { ok: false, message: err instanceof ErreurSource ? err.message : 'Source injoignable. Réessayez.' };
+  }
+  if (!candidat) return { ok: false, introuvable: true, message: `Photo introuvable chez ${LICENCES_SOURCES[e.source].libelle} (retirée par son auteur ?) : elle est marquée « retirée », rien n'a été importé.` };
+  let original: Buffer;
+  try {
+    original = await telechargerImage(candidat);
+  } catch (err) {
+    return { ok: false, message: err instanceof ErreurSource ? err.message : 'Téléchargement impossible. Réessayez.' };
+  }
+  let largeurs: number[];
+  let fichiers: { largeur: number; donnees: Buffer }[];
+  try {
+    largeurs = largeursAProduire(await largeurImage(original));
+    fichiers = await convertirWebp(original, largeurs);
+  } catch (err) {
+    console.error('Photos libres : conversion WebP impossible', err);
+    return { ok: false, message: 'Conversion WebP impossible sur le serveur (sharp). Réessayez ; si cela persiste, prévenez Claude.' };
+  }
+  const stockage = supabase.storage.from('photos');
+  for (const f of fichiers) {
+    // Sans « upsert » : le remplacement exigerait en plus un droit de lecture sur storage.objects. Un fichier déjà présent
+    // (même photo, même largeur) est identique : on le garde.
+    const { error } = await stockage.upload(cheminPhotoLibre(e.sujet, e.source, e.idSource, f.largeur), f.donnees, { contentType: 'image/webp', cacheControl: '31536000', upsert: false });
+    if (error && !/exist|duplicate/i.test(error.message)) {
+      console.error('Photos libres : envoi dans le stockage', error);
+      return { ok: false, message: `Envoi dans le stockage impossible : ${error.message}. Vérifiez que la migration 0030 (droits du dossier banque/) est exécutée.` };
+    }
+  }
+  const url = stockage.getPublicUrl(cheminPhotoLibre(e.sujet, e.source, e.idSource, Math.max(...largeurs))).data.publicUrl;
+  const { motsCles } = await getMotsClesEnBase();
+  const { ligne, erreurs } = construireTracabilite({
+    candidat, sujet: e.sujet, motsCles: motsClesDuSujet(e.sujet, motsCles), requete: e.requete, telechargeLe: new Date(), largeurs, urlPrincipale: url, etiquettes: e.etiquettes,
+  });
+  if (!ligne) return { ok: false, message: `Traçabilité incomplète : ${erreurs.join(' ')}` };
+  return { ok: true, ligne, candidat };
 }

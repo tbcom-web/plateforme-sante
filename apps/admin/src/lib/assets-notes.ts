@@ -59,11 +59,12 @@ export async function getPhotosDesJeux(): Promise<PhotoDeJeu[]> {
   const supabase = await createClient();
   const [{ data, error }, { data: libres }] = await Promise.all([
     supabase.from('jeux_photos').select('id, nom, specialite, photos, source, site_id, actif').order('nom'),
-    supabase.from('photos_libres').select('url, source, sujet, statut').neq('statut', 'retiree').order('created_at'),
+    // Photos importées seulement (fichiers hébergés) : une candidate gardée sans import (0031) n'est pas un visuel utilisable
+    supabase.from('photos_libres').select('url, source, sujet, statut').neq('statut', 'retiree').not('url', 'is', null).order('created_at'),
   ]);
   const desJeux = error || !data ? [] : data.map(jeuPhotosDepuisLigne).flatMap((j) => photosDuJeu(j.photos).filter((u) => !u.startsWith('/photos/')).map((url) => ({ url, jeu: j.nom, specialite: j.specialite })));
   // Table absente (migration 0028 pas encore exécutée) : `libres` vaut null, aucune erreur
-  const desLibres = (libres ?? []).map((l: { url: string; source: string; sujet: string; statut: string }) => ({
+  const desLibres = (libres ?? []).filter((l: { url: string | null }) => Boolean(l.url)).map((l: { url: string; source: string; sujet: string; statut: string }) => ({
     url: l.url,
     jeu: `Banque libre ${l.source === 'pexels' ? 'Pexels' : 'Pixabay'}${l.statut === 'a_valider' ? ' (à valider)' : ''}`,
     sujet: l.sujet,
