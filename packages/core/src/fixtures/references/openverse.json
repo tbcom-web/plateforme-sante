@@ -1,0 +1,26 @@
+{
+  "result_count": 42, "page_count": 3, "page_size": 20, "page": 1,
+  "results": [
+    {
+      "id": "4bc43a04-ef46-4544-a0c1-63c63f56e276", "title": "Running shoes on a trail", "indexed_on": "2023-01-01T00:00:00Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/exemple/123456789",
+      "url": "https://live.staticflickr.com/65535/123456789_abcdef_b.jpg",
+      "creator": "Jane Runner", "creator_url": "https://www.flickr.com/photos/exemple",
+      "license": "by", "license_version": "2.0", "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "flickr", "source": "flickr", "category": "photograph", "filesize": null, "filetype": "jpg",
+      "tags": [{ "name": "running", "accuracy": null }, { "name": "marathon", "accuracy": null }, { "name": "shoes", "accuracy": 0.95 }],
+      "attribution": "\"Running shoes on a trail\" by Jane Runner is licensed under CC BY 2.0.",
+      "mature": false, "height": 1024, "width": 1536,
+      "thumbnail": "https://api.openverse.org/v1/images/4bc43a04-ef46-4544-a0c1-63c63f56e276/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/4bc43a04-ef46-4544-a0c1-63c63f56e276/"
+    },
+    {
+      "id": "0aff3595-8168-440b-83ff-7a80b65dea42", "title": "Foot anatomy", "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=1234",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/12/Foot_anatomy.png", "creator": "Anatomiste", "license": "cc0", "license_version": "1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/", "tags": [{ "name": "foot" }, { "name": "bones" }], "mature": false, "height": 600, "width": 800,
+      "thumbnail": "https://api.openverse.org/v1/images/0aff3595-8168-440b-83ff-7a80b65dea42/thumb/"
+    },
+    { "id": "mature-1", "title": "x", "foreign_landing_url": "https://exemple.org/x", "license": "by", "mature": true, "thumbnail": "https://api.openverse.org/v1/images/mature-1/thumb/" },
+    { "id": "petite", "title": "petite", "foreign_landing_url": "https://exemple.org/petite", "license": "by", "mature": false, "width": 120, "height": 90, "thumbnail": "https://api.openverse.org/v1/images/petite/thumb/" }
+  ]
+}

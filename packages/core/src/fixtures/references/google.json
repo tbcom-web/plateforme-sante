@@ -1,0 +1,19 @@
+{
+  "kind": "customsearch#search",
+  "queries": { "request": [{ "count": 10, "startIndex": 1, "searchType": "image", "searchTerms": "diabetic foot monofilament" }] },
+  "searchInformation": { "totalResults": "1230" },
+  "items": [
+    {
+      "kind": "customsearch#result", "title": "Monofilament test on diabetic foot - Example Clinic",
+      "link": "https://www.exemple-clinique.org/images/monofilament.jpg?token=abc", "displayLink": "www.exemple-clinique.org", "mime": "image/jpeg",
+      "image": {
+        "contextLink": "https://www.exemple-clinique.org/diabetic-foot?utm_source=x&page=2#section", "height": 800, "width": 1200, "byteSize": 120000,
+        "thumbnailLink": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_exemple", "thumbnailHeight": 100, "thumbnailWidth": 150
+      }
+    },
+    {
+      "kind": "customsearch#result", "title": "Sans vignette", "link": "https://exemple.org/a.jpg", "displayLink": "exemple.org",
+      "image": { "contextLink": "https://exemple.org/page", "height": 800, "width": 1200, "thumbnailLink": "https://evil.example/thumb.jpg" }
+    }
+  ]
+}

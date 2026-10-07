@@ -1,0 +1,53 @@
+{
+  "batchcomplete": true,
+  "continue": { "gsroffset": 20, "continue": "gsroffset||" },
+  "query": {
+    "pages": [
+      {
+        "pageid": 31415926, "ns": 6, "title": "File:Ingrown toenail brace diagram.svg", "index": 2,
+        "categories": [{ "ns": 14, "title": "Category:Ingrown nails" }, { "ns": 14, "title": "Category:Podiatry" }],
+        "imagerepository": "local",
+        "imageinfo": [{
+          "size": 48211, "width": 1200, "height": 900,
+          "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Ingrown_toenail_brace_diagram.svg/400px-Ingrown_toenail_brace_diagram.svg.png",
+          "thumbwidth": 400, "thumbheight": 300,
+          "url": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Ingrown_toenail_brace_diagram.svg",
+          "descriptionurl": "https://commons.wikimedia.org/wiki/File:Ingrown_toenail_brace_diagram.svg",
+          "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=31415926",
+          "mime": "image/svg+xml",
+          "extmetadata": {
+            "ObjectName": { "value": "Ingrown toenail brace diagram", "source": "commons-desc-page" },
+            "ImageDescription": { "value": "<p>Schematic of a <b>nail brace</b> correcting an ingrown toenail.</p>", "source": "commons-desc-page" },
+            "Artist": { "value": "<a href=\"//commons.wikimedia.org/wiki/User:Exemple\" title=\"User:Exemple\">Exemple</a>", "source": "commons-desc-page" },
+            "LicenseShortName": { "value": "CC BY-SA 4.0", "source": "commons-desc-page" },
+            "LicenseUrl": { "value": "https://creativecommons.org/licenses/by-sa/4.0", "source": "commons-desc-page" }
+          }
+        }]
+      },
+      {
+        "pageid": 2718281, "ns": 6, "title": "File:Unguis incarnatus.jpg", "index": 1,
+        "categories": [{ "ns": 14, "title": "Category:Ingrown toenails" }],
+        "imageinfo": [{
+          "width": 2048, "height": 1536,
+          "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Unguis_incarnatus.jpg/400px-Unguis_incarnatus.jpg",
+          "url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Unguis_incarnatus.jpg",
+          "descriptionurl": "https://commons.wikimedia.org/wiki/File:Unguis_incarnatus.jpg",
+          "mime": "image/jpeg",
+          "extmetadata": {
+            "Artist": { "value": "Inconnu" },
+            "LicenseShortName": { "value": "Public domain" },
+            "ImageDescription": { "value": "Ingrown toenail (onychocryptosis) on the hallux." }
+          }
+        }]
+      },
+      {
+        "pageid": 99, "ns": 6, "title": "File:Toenail video.webm", "index": 3,
+        "imageinfo": [{ "width": 640, "height": 480, "thumburl": "https://upload.wikimedia.org/x.jpg", "url": "https://upload.wikimedia.org/x.webm", "descriptionurl": "https://commons.wikimedia.org/wiki/File:Toenail_video.webm", "mime": "video/webm", "extmetadata": {} }]
+      },
+      {
+        "pageid": 100, "ns": 6, "title": "File:Hors hote.jpg", "index": 4,
+        "imageinfo": [{ "width": 800, "height": 600, "thumburl": "https://exemple.invalid/x.jpg", "url": "https://exemple.invalid/x.jpg", "descriptionurl": "https://commons.wikimedia.org/wiki/File:Hors_hote.jpg", "mime": "image/jpeg", "extmetadata": {} }]
+      }
+    ]
+  }
+}

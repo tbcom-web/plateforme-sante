@@ -20,6 +20,8 @@ import SujetsVisuel from '@/components/SujetsVisuel';
 import PredictionClaude, { empreintePourJuge, useAfficherAvant } from '@/components/PredictionClaude';
 import type { PredictionJuge } from '@plateforme/core/juge';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
+import ReferencesIllustration from '@/components/ReferencesIllustration';
+import { SuggestionsBibliotheque } from '@/components/SuggestionsClassement';
 import { correspondHashtag, hashtagsDe, type HashtagsAssets } from '@plateforme/core';
 import { lireHashtagsAssets } from '../retours/actions-hashtags';
 import type { Revue, StatutEnregistre } from '@/lib/illustrations';
@@ -54,6 +56,8 @@ const BOUTONS: Record<StatutIllustration, string> = {
 };
 const COURTS: Record<StatutIllustration, string> = { a_revoir: 'À revoir', valide: 'Validé', a_retravailler: 'Retravailler', retire: 'Retiré' };
 const CLE_GAMME = 'revue-illustrations-gamme';
+/** Éléments dessinés (icônes, illustrations, héros) : « Chercher des références » dans la vue agrandie */
+const TYPES_REFERENCES: readonly TypeAsset[] = ['picto', 'dessin', 'ligne', 'materiel', 'heros', 'biblio'];
 
 /** Aperçu d'un asset non SVG : photo ou modèle (vignette optimisée), gamme (pastilles) */
 function ApercuAutre({ l, grand = false }: { l: Ligne; grand?: boolean }) {
@@ -408,6 +412,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 <p className="text-xs text-neutral-500">Source : <code className="break-all">{ligneOuverte.source}</code></p>
                 <SujetsVisuel visuel={ligneOuverte} surcharges={surcharges} onChange={setSurcharges} compact />
                 <HashtagsVisuel cle={ligneOuverte.cle} etat={hashtags} onChange={setHashtags} migrationManquante={migrationHashtags} compact />
+                <SuggestionsBibliotheque key={`s-${ligneOuverte.cle}`} visuel={ligneOuverte} inventaire={lignes} surcharges={surcharges} onSurcharges={setSurcharges} hashtags={hashtags} onHashtags={setHashtags} />
                 {ligneOuverte.soins.length > 0 && <p className="text-xs text-neutral-500">Soins et fiches (code) : {ligneOuverte.soins.join(', ')}</p>}
               </div>
               <div className="grid content-start gap-2">
@@ -427,6 +432,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 </ol>
               </div>
             </div>
+            {TYPES_REFERENCES.includes(ligneOuverte.type) && <ReferencesIllustration key={`r-${ligneOuverte.cle}`} element={ligneOuverte} surcharges={surcharges} hashtags={hashtags} inventaire={lignes} />}
           </div>
         </div>
       )}

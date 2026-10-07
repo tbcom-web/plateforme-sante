@@ -10,10 +10,13 @@
 // rien qui laisse croire à un patient réel (étiquettes bloquantes).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  cleCandidat, ETIQUETTES_BLOQUANTES, ETIQUETTES_DECOUVERTE, LICENCES_SOURCES, normaliserHashtag, orientation, SOURCES_PHOTOS_LIBRES, suggestionsHashtags, SUJETS_VISUELS,
+  cleCandidat, ETIQUETTES_BLOQUANTES, ETIQUETTES_DECOUVERTE, LICENCES_SOURCES, normaliserHashtag, orientation, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type HashtagsAssets,
   APERCUS_TRAITEMENTS_IMAGES, type SourcePhotoLibre,
 } from '@plateforme/core';
 import { SaisieHashtags } from '@/components/HashtagsVisuel';
+import { SuggestionsClassement } from '@/components/SuggestionsClassement';
+import { suggererClassement } from '@plateforme/core/classement-visuels';
+import { lireHashtagsAssets } from './actions-hashtags';
 import { candidatsPhotos, deciderPhoto, enregistrerMotsCles, hashtagsConnus, type CandidatAffiche } from './actions-photos';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -42,6 +45,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [frequences, setFrequences] = useState<Record<string, number>>({});
   const [migrationHashtags, setMigrationHashtags] = useState(false);
+  const [tousHashtags, setTousHashtags] = useState<HashtagsAssets>({});
   const vues = useRef(new Set<string>());
   const sujetCourant = useRef(sujet);
   sujetCourant.current = sujet;
@@ -49,6 +53,8 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   // Hashtags déjà utilisés (autocomplétion) ; sans la migration 0029 : bandeau, la saisie reste possible
   useEffect(() => {
     void hashtagsConnus().then((r) => { setFrequences(r.frequences); setMigrationHashtags(r.migrationManquante); }).catch(() => undefined);
+    // Classement suggéré (classement-visuels.ts) : co-occurrences sur les visuels déjà classés
+    void lireHashtagsAssets().then((r) => setTousHashtags(r.hashtags)).catch(() => undefined);
   }, []);
   // Autocomplétion : hashtags utilisés (fréquence) + mots-clés de recherche de tous les thèmes
   const connus = useMemo(() => {
@@ -72,7 +78,8 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   const carte = file[0] ?? null;
   const bloquee = etiquettes.some((e) => (ETIQUETTES_BLOQUANTES as readonly string[]).includes(e));
   const sansTheme = themes.length === 0;
-  const suggestions = useMemo(() => (carte ? suggestionsHashtags(carte, hashtags) : []), [carte, hashtags]);
+  const classement = useMemo(() => (carte ? suggererClassement({ requete: carte.requete, tags: carte.tags, description: carte.description, voisins: { hashtags: tousHashtags }, deja: { sujets: themes, hashtags } }) : null), [carte, hashtags, themes, tousHashtags]);
+  const suggestions = useMemo(() => classement?.hashtags.map((h) => h.tag) ?? [], [classement]);
 
   const suivante = () => {
     if (carte) vues.current.add(cleCandidat(carte));
@@ -207,6 +214,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
                   );
                 })}
               </div>
+              {classement && <SuggestionsClassement suggestions={classement} contexte="photos" compact onSujet={(ids) => setThemes((l) => [...l, ...ids.filter((x) => !l.includes(x))])} />}
             </fieldset>
             <SaisieHashtags valeurs={hashtags} connus={connus} suggestions={suggestions}
               onAjout={(h) => setHashtags((l) => [...l, ...h.filter((x) => !l.includes(x))])} onRetrait={(h) => setHashtags((l) => l.filter((x) => x !== h))} />

@@ -164,4 +164,30 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
   const i = ancien.indexOf(debut), j = ancien.indexOf(fin);
   if (i >= 0 && j > i) writeFileSync(cheminCalibration, `${ancien.slice(0, i + debut.length)}\n${core.markdownCalibration(paires, { jour: dernierJour })}${ancien.slice(j)}`);
 }
+// Références d'illustration (0033) : pour chaque élément, les images de référence cochées par Paul — page d'origine PUBLIQUE,
+// licence, étiquettes « ce qui m'inspire », texte, classement accepté. Jamais de vignette, de chemin du stockage privé, d'URL
+// signée ni d'auteur du compte (colonnes explicites). Suggestions de classement refusées → section de SYNTHESE.md.
+{
+  const tmpRef = mkdtempSync(join(tmpdir(), 'exporter-references-'));
+  let coreRef;
+  try {
+    await build({
+      stdin: { contents: "export { referencesPourExport } from './references-illustrations'; export { markdownSuggestionsRefusees } from './classement-visuels';", resolveDir: join(racine, 'packages', 'core', 'src'), loader: 'ts' },
+      bundle: true, platform: 'node', format: 'esm', outfile: join(tmpRef, 'references.mjs'), logLevel: 'warning', loader: { '.svg': 'text' },
+    });
+    coreRef = await import(pathToFileURL(join(tmpRef, 'references.mjs')).href);
+  } finally {
+    rmSync(tmpRef, { recursive: true, force: true });
+  }
+  const [lignesRef, suggestions] = await Promise.all([
+    lireTout('inspirations', 'cle_asset,origine,page_origine,licence_origine,licence_url_origine,etiquettes,objectif,sujets,hashtags,requete,created_at', 'created_at.asc,page_origine.asc'),
+    lireTout('classement_suggestions', 'nature,valeur,decision', 'created_at.asc,valeur.asc'),
+  ]);
+  ecrire('references-illustrations.json', coreRef.referencesPourExport((lignesRef ?? []).filter((l) => l.cle_asset), core.titresAssets()));
+  if (suggestions !== null) {
+    const synthese = readFileSync(join(sortie, 'SYNTHESE.md'), 'utf8').replace(/\n+$/, '');
+    ecrire('SYNTHESE.md', `${synthese}\n\n${coreRef.markdownSuggestionsRefusees(suggestions)}\n`);
+  }
+}
+
 console.log(`Retours exportés dans ${sortie} : ${notesAssets.length} notes d’assets, ${notesAtelier.length} notes de l’atelier, ${journal.length} revues, ${courants.length} statuts, ${listeInspirations.length} inspirations.`);
