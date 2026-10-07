@@ -118,6 +118,12 @@ export const LIGNE = {
     discretes: { rayon: 2.6, queue: 9, final: false },
   },
   defaut: { epaisseur: 'fine', boucles: 'discretes' },
+  /**
+   * Graisse du trait continu du MATÉRIEL (repère 120 × 90, deux fois plus petit que celui des dessins) : sans réduction, le trait y
+   * paraissait deux fois plus épais et les petites pièces (trépied, boutons, cases) se bouchaient. Retour de Paul du 2026-10-07 sur le
+   * tapis de course : « attention à la finesse du trait sinon on comprend pas ».
+   */
+  materiel: 0.62,
 } as const;
 export type EpaisseurLigne = keyof typeof LIGNE.epaisseur;
 export type BouclesLigne = keyof typeof LIGNE.boucles;

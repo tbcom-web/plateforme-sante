@@ -90,6 +90,11 @@
 
 - Orteils en gros plan dont la commissure est à plus de 2 fois la largeur de l'orteil sous la pointe = **doigts** : longueur visible de l'hallux ≈ 1,4–1,5 × sa largeur, avant-pied dans le cadre [sites, ongle v5].
 
+- Deux images côte à côte dans un héros (orthonyxie + coupe, semelle + empreintes, instruments + pied) = « on ne comprend pas le lien » : UNE seule grande illustration par héros, une idée [Paul 2026-10-07, héros].
+- Poing rond posé sur une crosse de canne dont le crochet dépasse dessous = main « bizarre » : la main ENSERRE une poignée qui dépasse devant les doigts, la tige sort sous le poing [Paul 2026-10-07, senior].
+- Repli d'ongle incarné peint en boudin plein, cerné d'un trait posé sur la lame = « second ongle inclus dedans » ; coin de lame à cran + spicule = « ongle cassé » : repli en peau + rougeur fondue, contour extérieur seul, lame d'un seul arc [Paul 2026-10-07, POD-AT-0009].
+- Instruments en page d'accueil = inquiétant : le premier écran rassure (pieds soignés), les instruments vont à la fiche du soin [Paul 2026-10-07, pédicurie].
+
 ## Anatomie
 - Calque de peau posé par-dessus un objet (repli sur la lame) : il couvre TOUTE la racine et reprend le contour qu'il cache, sinon l'objet paraît collé (« pansement ») et le contour s'interrompt [0018 7a].
 - Liste de présence d'abord (atlas de la même vue), formes ensuite [os de la jambe, Paul].

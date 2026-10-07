@@ -34,17 +34,20 @@ export function courbe(pts: P[], ferme = false): string {
   return ferme ? `${d} Z` : d;
 }
 
-// Côté médial de l'hallux (bas → pointe), pointe, puis côté latéral (pointe → commissure) : normal et incarné
-export const MEDIAL: P[] = [[10.6, 172], [10, 140], [10, 110], [10.4, 84], [11.4, 54], [13.6, 36], [18.6, 23], [26.5, 15.2], [37, 12.2]];
+// Côté médial de l'hallux (bas → pointe), pointe, puis côté latéral (pointe → commissure) : normal et incarné. Sous l'orteil, le bord
+// médial s'évase légèrement vers la tête du 1er métatarsien (l'avant-pied se lit : jamais un « doigt » de largeur constante)
+export const MEDIAL: P[] = [[6.6, 172], [7.6, 140], [9.2, 112], [10.4, 84], [11.4, 54], [13.6, 36], [18.6, 23], [26.5, 15.2], [37, 12.2]];
 export const LATERAL_NORMAL: P[] = [[47, 13.2], [55, 17.6], [60.6, 25], [63.6, 36], [64.5, 50], [64.3, 64], [64.2, 76], [64.8, 84]];
 // Incarné : tout le bord latéral bombe (≈ +6,5 au tiers distal), courbe continue de la pointe jusqu'au-delà de la mi-longueur
 const LATERAL_INCARNE: P[] = [[47, 13.2], [55.6, 17.4], [62.4, 24.4], [67.6, 34], [70.6, 47], [70, 59], [67.8, 70], [65.6, 79], [64.9, 85]];
 // Commissure 1 (hallux / 2e), 2e orteil, commissure 2, 3e orteil (sort du cadre à droite). Longueur visible de l'hallux (pointe →
-// commissure) ≈ 1,45 × sa largeur : au-delà, les orteils se lisent « doigts ».
+// commissure) ≈ 1,45 × sa largeur : au-delà, les orteils se lisent « doigts ». Retour de Paul du 2026-10-07 (orthonyxie : « doigts de
+// pied trop fins, comme des doigts de main ») : le 2e orteil est élargi à ≈ 0,64 × la largeur de l'hallux (≈ 1,7 cm pour 2,5 cm ;
+// avant : 0,52), pulpe plus ronde, longueur visible ≈ 1,5 × sa largeur ; commissures serrées, sans espace en V.
 export const VOISINS: P[] = [
-  [66.2, 89.6], [68.2, 91.8], [70.2, 89.2], [70.8, 81], [71.4, 67], [73, 54.6], [76.6, 44.4], [82.4, 38.4], [88.6, 38], [93.8, 41.6], [97.2, 49],
-  [98.4, 60], [98.6, 76], [99.4, 88], [101.6, 92.6], [103.8, 89], [104.6, 78], [105.6, 66], [107.8, 58.4], [111.6, 54], [117, 52.4],
-  [128, 60], [128, 172],
+  [66.2, 89.6], [68, 91.6], [69.6, 89], [70, 81], [70.4, 67], [72.2, 54.4], [76.4, 43.6], [82.6, 37.6], [88.6, 36.8], [95.2, 39], [100.6, 45.4],
+  [103.4, 55], [104.2, 68], [104.4, 80], [105.2, 88.6], [107.4, 92.4], [109.6, 89], [110.2, 80], [111, 70], [113.2, 62.4], [117, 58.4],
+  [122, 57.4], [128, 62], [128, 172],
 ];
 /** Silhouette de la peau (hallux, 2e et 3e orteils, avant-pied qui sort du cadre) */
 export const silhouette = (lateral: P[]) => courbe([...MEDIAL, ...lateral, ...VOISINS], false) + ` L${r(10.6)},${r(172)} Z`;
@@ -60,9 +63,9 @@ export const SILLON_MEDIAL: P[] = [[19.6, 64], [19.2, 46], [19.8, 32], [21.8, 25
 export const SILLON_LATERAL: P[] = [[55.6, 64], [56, 46], [55.4, 32], [53.6, 25]];
 export const PLIS_IP = [[[25.4, 85], [37, 88.2], [48.6, 85]], [[28.6, 91.4], [37, 94], [45.4, 91.4]]] as P[][];
 // 2e orteil : lame courte, pli ; 3e : bord de la lame au bord du cadre (orteils serrés : espace distal ≈ 6–9 unités, jamais « doigts écartés »)
-export const LAME_2: P[] = [[77.6, 46.4], [84.4, 45.6], [91.2, 46.4], [91.6, 52], [90.2, 57], [84.4, 59.4], [78.6, 57], [77.2, 52]];
-export const PLI_2: P[] = [[77.6, 72], [84.8, 74.6], [92, 72]];
-export const LAME_3: P[] = [[107.4, 61], [113, 59.6], [118, 61], [118, 72], [107.6, 72], [107, 66]];
+export const LAME_2: P[] = [[78.6, 45.4], [87.2, 44.4], [95.8, 45.4], [96.4, 51.6], [94.8, 57], [87.2, 59.6], [79.6, 57], [78, 51.6]];
+export const PLI_2: P[] = [[77, 73.4], [87.2, 76], [97.4, 73.4]];
+export const LAME_3: P[] = [[112.4, 65.4], [117.6, 64], [122.6, 65.4], [122.6, 76], [112.6, 76], [112, 70.6]];
 
 // Incarné : bord interne du repli latéral gonflé (crête) — part de l'extrémité latérale du repli proximal, longe le bord de la lame
 // puis passe PAR-DESSUS (le bord de la lame plonge dessous), coin distal caché, et rejoint la pulpe près de la pointe
@@ -73,7 +76,7 @@ const PLI_GONFLE: P[] = [...CRETE.slice().reverse(), [54, 12], [78, 18], [78, 84
 const COTE_LATERAL: P[] = [...CRETE, [54, 8], [71.4, 8], [71.6, 44], [70.9, 56], [69.4, 66], [67.4, 76], [65.6, 86], [60, 150], [56, 150], [57.6, 100]];
 
 /** Flèche « le bord de la lame appuie sur la peau » (registre pédagogique, posée par le dessin) : origine et pointe, unités du dessin */
-export const FLECHE_INCARNE: { de: P; vers: P } = { de: [33.6, 39.6], vers: [48.6, 42.6] };
+export const FLECHE_INCARNE: { de: P; vers: P } = { de: [28.6, 38.6], vers: [51.4, 43.6] };
 
 export const ep = (k: 'fin' | 'normal' | 'epais', op = 1) => `stroke:var(--ez-trait);stroke-width:var(--ez-ep-${k})${op < 1 ? `;stroke-opacity:${op}` : ''}`;
 export const trait = (d: string, k: 'fin' | 'normal' | 'epais', op = 1) => `<path d="${d}" style="${ep(k, op)}"/>`;
@@ -113,7 +116,7 @@ export function hallux(incarne: boolean, o: VarianteHallux = {}): FormeEcranZen 
     // 2e et 3e orteils
     `<path d="${courbe(LAME_2, true)}" style="fill:var(--ez-ongle)"/>`, trait(courbe(LAME_2, true), 'fin', 0.8),
     trait(courbe(PLI_2), 'fin', 0.35),
-    `<path d="${courbe(LAME_3, true)}" style="fill:var(--ez-ongle)"/>`, trait(courbe(LAME_3.slice(0, 3)) + ` M${r(107.4)},${r(61)} L${r(107)},${r(66)} L${r(107.6)},${r(72)}`, 'fin', 0.8),
+    `<path d="${courbe(LAME_3, true)}" style="fill:var(--ez-ongle)"/>`, trait(courbe(LAME_3.slice(0, 3)) + ` M${r(112.4)},${r(65.4)} L${r(112)},${r(70.6)} L${r(112.6)},${r(76)}`, 'fin', 0.8),
     // Incarné : peau gonflée PAR-DESSUS le bord de la lame, rougeur fondue (côté latéral de la crête seulement), crête du repli
     incarne
       ? `<g clip-path="url(#EZID-peau)"><path d="${courbe(PLI_GONFLE, true)}" style="fill:var(--ez-peau-2)"/>` +

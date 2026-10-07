@@ -456,9 +456,16 @@ function parcours(nom: NomLigne, b: BouclesLigne, equipement: (id: string) => st
       return [pose(46, 111, 86, 104, e, -6, true), pose(46, 111, 154, 104, e, 6)].map((m) => new Trait(b).ajouter(transf(contourDos(), m)).pts);
     }
     case 'empreintes': {
-      // Paire d'empreintes en station debout : côte à côte, pointes ouvertes de ≈ 7° vers l'extérieur (pied gauche à gauche)
+      // Paire d'empreintes en station debout : côte à côte, pointes ouvertes de ≈ 7° vers l'extérieur (pied gauche à gauche).
+      // Refait le 2026-10-07 (Paul : « trop clipart, et le trait entre les ronds et le reste du pied est bizarre ») : plus de pulpes en
+      // ronds enfilés ; chaque pied est le CONTOUR RÉEL de la plante (orteils en boucles continues du contour, pied.ts), et, du même
+      // trait, la trace d'appui à l'intérieur (talon, bord externe, avant-pied ; EMPREINTE), comme le dessin « analyse » validé.
       const e = 0.58;
-      return [pose(46, 111, 92, 92, e, -7, true), pose(46, 111, 150, 92, e, 7)].map((m) => { const t = new Trait(b); traitEmpreinte(t, m, b); return t.pts; });
+      return [pose(46, 111, 92, 92, e, -7, true), pose(46, 111, 150, 92, e, 7)].map((m) => {
+        const t = new Trait(b).ajouter(partirDe(transf(contourPied(), m), appliquer(m, [48, 219]), 6));
+        t.ajouter(partirDe(transf(morceaux(EMPREINTE.contour, 0.6)[0], m), t.fin, 1), { tension: 0.5 });
+        return t.pts;
+      });
     }
     case 'pied-profil': {
       // Pied gauche vu côté interne, orteils à droite ; la jambe sort du cadre en haut
@@ -512,8 +519,15 @@ function parcours(nom: NomLigne, b: BouclesLigne, equipement: (id: string) => st
     case 'chaussure-course': {
       // Chaussure de course de profil (pied.ts : CHAUSSURE), à plat : tige (talon, col, laçage en boucles, pointe), puis la semelle
       // (pointe, dessous, talon) et la ligne de la semelle intermédiaire ; les lacets sont les boucles du trait le long du laçage
-      const k = 2.2, m: Affine = [k, 0, 0, k, 10, 34];
+      // Retour de Paul du 2026-10-07 (« pas mal mais un peu trop simple », étiquette « fade ») : la chaussure est inclinée en
+      // propulsion (talon levé de 9°, pointe vers le sol : elle court), et deux traits ajoutent ce qui fait une chaussure de course —
+      // le renfort de talon et la ligne de la semelle intermédiaire (amorti), puis la fenêtre d'amorti au talon.
+      const k = 2.2, a = (9 * Math.PI) / 180, [cx, cy] = CHAUSSURE.centre;
+      const m: Affine = [k * Math.cos(a), k * Math.sin(a), -k * Math.sin(a), k * Math.cos(a), 0, 0];
+      m[4] = 120 - (m[0] * cx + m[2] * cy); m[5] = 92 - (m[1] * cx + m[3] * cy);
       const tige = morceaux(CHAUSSURE.tige, 0.4)[0], semelle = morceaux(CHAUSSURE.semelle, 0.4)[0];
+      const details = new Trait(b).ajouter(transf(morceaux(CHAUSSURE.renfort, 0.4)[0], m)).ajouter(transf(morceaux(CHAUSSURE.ligne, 0.4)[0], m), { tension: 0.4 });
+      const fenetre = transf(morceaux(CHAUSSURE.fenetre, 0.4)[0], m);
       const iPointe = tige.findIndex((q) => q[0] > 95);
       const dessus = tige.slice(0, iPointe + 1);
       const t = new Trait(b);
@@ -529,18 +543,23 @@ function parcours(nom: NomLigne, b: BouclesLigne, equipement: (id: string) => st
       t.ajouter(transf(dessus.slice(i0), m));
       const iSem = semelle.findIndex((q) => q[0] > 95);
       t.ajouter(transf([...semelle.slice(iSem), ...semelle.slice(1, iSem + 1)], m), { tension: 0.3 });
-      return [t.entree(R.queue * 0.8, 0.2).pts];
+      details.ajouter(partirDe(fenetre, details.fin, 1), { tension: 0.4 });
+      return [t.entree(R.queue * 0.8, 0.2).pts, details.pts];
     }
     case 'premiers-pas': {
       // Premiers pas : une empreinte d'adulte et, à côté, celle du tout-petit (≈ 0,5 × la longueur adulte ; pied large, voûte comblée
       // par le coussinet graisseux), orteils en boucles du contour (silhouette du pied d'enfant de pied.ts)
-      const ea = 0.62, ee = ea * 0.5;
-      const adulte = pose(46, 111, 92, 100, ea, -5, true);
-      const enfant = pose(46, 111, 168, 118, ee, 6);
-      const cEnfant = transf(sousChemins(silhouetteEnfant(), 0.4)[0].pts, enfant);
-      const ta = new Trait(b).ajouter(partirDe(transf(contourPied(), adulte), appliquer(adulte, [70, 205]), 12)).entree(R.queue, 0.3);
-      const te = new Trait(b).ajouter(partirDe(cEnfant, appliquer(enfant, [30, 200]), 8)).entree(R.queue * 0.7, -0.3);
-      return [ta.pts, te.pts];
+      // Refait le 2026-10-07 (Paul : « je préfère des petites empreintes, ou les pieds adultes face aux pieds d'enfants ») : comme le
+      // héros enfant au trait continu (« J'adore ») — en haut, les deux pieds d'un adulte vus de dessus, orteils vers le bas, jambes qui
+      // sortent du cadre ; en bas, face à eux, les deux PETITES EMPREINTES du tout-petit (≈ 0,5 × la longueur adulte, plante comblée,
+      // orteils ronds en boucles du contour), pointes vers l'adulte. Deux traits pour l'adulte, un pour l'enfant (3 au plus).
+      const ea = 0.5, ee = ea * 0.52;
+      const adultes = [pose(49, 165, 92, 6, ea, 188, false), pose(49, 165, 148, 6, ea, 172, true)];
+      const ta = adultes.map((m) => new Trait(b).ajouter(transf(contourDos(), m)).pts);
+      const enfants = [pose(46, 111, 102, 140, ee, -8, true), pose(46, 111, 138, 140, ee, 8)];
+      const te = new Trait(b);
+      for (const m of enfants) te.ajouter(partirDe(transf(sousChemins(silhouetteEnfant(), 0.4)[0].pts, m), te.pts.length ? te.fin : appliquer(m, [48, 215]), 4), { tension: 0.5 });
+      return [...ta, te.pts];
     }
     case 'senior-canne': {
       // Pied de profil (gauche, côté interne) et canne tenue de l'autre côté (derrière le pied) : tige presque verticale en DOUBLE trait
@@ -629,16 +648,28 @@ function parcours(nom: NomLigne, b: BouclesLigne, equipement: (id: string) => st
     case 'laser': {
       // Laser : la plante du pied droit (vue de dessous), la pièce à main (même gabarit que le dessin « laser ») et le faisceau
       // étroit qui s'arrête à la surface, sous la 2e tête métatarsienne
-      const k = 0.72, mp: Affine = [-k, 0, 0, k, 34 + 92 * k, 16];
+      // Refait le 2026-10-07 (Paul : « on dirait pas trop un laser, trouver une représentation plus parlante ») : la pièce à main
+      // n'est plus un « stylo » — corps épais à bague de prise et bouton, embout conique, FIBRE optique qui part de l'arrière en
+      // boucles (câble d'un appareil) ; le faisceau est un CÔNE de lumière qui s'élargit jusqu'au spot posé sur la plante (la
+      // zone traitée, sous la 2e tête métatarsienne) ; aucun rayon autour (lu « douleur »).
+      const k = 0.7, mp: Affine = [-k, 0, 0, k, 40 + 92 * k, 16];
       const pied = new Trait(b).ajouter(partirDe(transf(contourPied(), mp), appliquer(mp, [76, 196]), 12)).pts;
-      const [mx, my] = CONTOUR_PIED.mtp[1], s = appliquer(mp, [mx, my + 6]), tip: P = [150, 40];
+      const [mx, my] = CONTOUR_PIED.mtp[1], s = appliquer(mp, [mx, my + 6]), tip: P = [s[0] + 46, s[1] - 12]; // embout à ≈ 5 cm de la peau : le faisceau se voit, la pièce ne touche pas
       const u = norme([s[0] - tip[0], s[1] - tip[1]]), ang = (Math.atan2(-u[1], -u[0]) * 180) / Math.PI;
-      const corps = sousChemins('M6 -4 L22 -6.5 L72 -6.5 C76 -6.5 78 -4 78 0 C78 4 76 6.5 72 6.5 L22 6.5 L6 4 C3 3.6 2 2 2 0 C2 -2 3 -3.6 6 -4 Z', 0.4)[0].pts;
-      const cable = sousChemins('M78 0 C88 0 92 8 98 16', 0.4)[0].pts;
-      const piece = new Trait(b).ajouter(transf(partirDe(corps, [78, 0], 1), pose(0, 0, tip[0], tip[1], 1, ang))).ajouter(transf(cable, pose(0, 0, tip[0], tip[1], 1, ang)));
+      // Repère de la pièce : x le long de l'axe, depuis l'embout (0) vers l'arrière ; corps Ø 16, embout conique, bague, bouton
+      const corps = sousChemins('M0 -4.8 L10 -6 L16 -8 L56 -8 C62 -8 64 -5 64 0 C64 5 62 8 56 8 L16 8 L10 6 L0 4.8 C-1.2 4 -1.2 -4 0 -4.8 Z', 0.4)[0].pts;
+      const bague = sousChemins('M28 -8 L28 8 M34 8 L34 -8 M44 -8 C44 -11.5 50 -11.5 50 -8', 0.4).map((x) => x.pts);
+      const fibre = sousChemins('M64 0 C74 0 78 -8 84 -12 C92 -17 96 -8 89 -6 C82 -4 86 -18 96 -22 C104 -25 110 -22 118 -30', 0.4)[0].pts;
+      const mP = pose(0, 0, tip[0], tip[1], 1.15, ang);
+      const piece = new Trait(b).ajouter(transf(partirDe(corps, [64, 0], 1), mP));
+      for (const q of bague) piece.ajouter(transf(q, mP), { tension: 0.3 });
+      piece.ajouter(transf(fibre, mP), { tension: 0.4 });
+      // Faisceau : cône de lumière qui S'ÉLARGIT de l'embout (Ø 4) au spot (Ø 14), spot en ellipse sur la peau
       const n: P = [-u[1], u[0]];
-      const faisceau: P[] = [[tip[0] + n[0] * 1.6, tip[1] + n[1] * 1.6], [s[0] + n[0] * 3, s[1] + n[1] * 3], [s[0] - n[0] * 3, s[1] - n[1] * 3], [tip[0] - n[0] * 1.6, tip[1] - n[1] * 1.6]];
-      return [pied, piece.pts, echantillon(faisceau)];
+      const spot = ellipse(s[0], s[1], 3.2, 7.2, 0, 1, 0, 28);
+      const faisceau = new Trait(b).ajouter([[tip[0] + n[0] * 2, tip[1] + n[1] * 2], [s[0] + n[0] * 7, s[1] + n[1] * 7]]).ajouter(spot, { tension: 0.3 });
+      faisceau.ajouter([[s[0] - n[0] * 7, s[1] - n[1] * 7], [tip[0] - n[0] * 2, tip[1] - n[1] * 2]], { tension: 0.3 });
+      return [pied, piece.pts, faisceau.pts];
     }
     case 'orthonyxie': case 'onychoplastie': case 'mycose': case 'ongle-epais': case 'cor': case 'orthoplastie': case 'domicile':
       return parcoursSoin(nom, b);
@@ -778,7 +809,7 @@ function piecesEquipement(svg: string): P[][] {
   const pieces: P[][] = [];
   for (const m of svg.matchAll(/<(path|circle)\b([^>]*)>/g)) {
     const a = m[2], cl = a.match(/class="([^"]*)"/)?.[1] ?? '';
-    if (/\b(zone|guide|eau|peau-seule|miroir|empreinte|cote|faisceau|maillage|vibration|poussieres|tuyau|sol)\b/.test(cl) || !/\b(trait|fin|filament)\b/.test(cl)) continue;
+    if (/\b(zone|guide|eau|peau-seule|miroir|empreinte|cote|faisceau|maillage|vibration|poussieres|tuyau|sol)\b/.test(cl) || !/\b(trait|fin|filament|coche)\b/.test(cl)) continue;
     if (m[1] === 'circle') {
       const [cx, cy, r] = ['cx', 'cy', 'r'].map((k) => +(a.match(new RegExp(`\\s${k}="([^"]*)"`))?.[1] ?? 0));
       pieces.push(ellipse(cx, cy, r, r, -90, 1, 0, 28));
@@ -793,14 +824,37 @@ function piecesEquipement(svg: string): P[][] {
 const ORDRE_EQUIPEMENT: Record<'fauteuil' | 'autoclave' | 'podoscope', { id: string; groupes: string[][] }> = {
   // 0 têtière, 1 dossier, 2 assise, 3 repose-jambes, 4 appui des pieds, 5-6 accoudoir, 7-8 colonne, 9 socle, 10 pédale
   fauteuil: { id: 'fauteuil-soins', groupes: [['0', '1', '2', '3'], ['~7', '9', '8']] },
-  // 0 cuve, 1 hublot, 2-3 plateaux d'instruments (parcourus en aller-retour), 4 poignée, 5 afficheur du cycle ; détails omis
-  autoclave: { id: 'autoclave-classe-b', groupes: [['0'], ['1', '3', '~2'], ['5']] },
-  // 0 dessus, 1 rebord de la vitre, 2 côté, 3 façade (miroir), 36-39 jambes : voir parcoursPodoscope
+  // Autoclave refait le 2026-10-07 : 0 boîtier, 1 capot, 2 bouchon du réservoir, 3-4 charnières, 5 porte, 6 joint, 7 poignée,
+  // 8 axe, 9 séparation, 10 afficheur, 11-13 boutons, 14 fente de l'imprimante, 15 ticket ; pieds et lignes du ticket omis
+  autoclave: { id: 'autoclave-classe-b', groupes: [['0', '1', '2', '10'], ['3', '4', '5', '6', '7'], ['14', '15']] },
+  // Podoscope : non utilisé (parcours dédié parcoursPodoscope, géométrie PODOSCOPE partagée avec le dessin, 2026-10-07)
   podoscope: { id: 'podoscope', groupes: [['0', '2', '3']] },
 };
 const ferme = (p: P[]) => p.length > 3 && dist(p[0], p[p.length - 1]) < 0.8;
 
+/** Podoscope au trait continu (géométrie PODOSCOPE, repère 120 × 90 agrandi ×2) : caisson, miroir et reflets, puis chaque jambe et son pied */
+function parcoursPodoscope(b: BouclesLigne): P[][] {
+  const x2 = (p: P[]) => p.map(([x, y]) => [x * 2, y * 2] as P);
+  const m2 = (m: Affine): Affine => m.map((v) => v * 2) as Affine;
+  const P_ = PODOSCOPE;
+  // Caisson : le dessus (verre), puis la face latérale et la façade, chacune reprise au point le plus proche (ponts courts)
+  const caisson = new Trait(b).ajouter(x2(morceaux(P_.dessus, 0.4)[0]));
+  for (const f of [P_.cote, P_.facade]) caisson.ajouter(partirDe(x2(morceaux(f, 0.4)[0]), caisson.fin, 1), { tension: 0.3 });
+  // Puis, du même trait (3 traits au plus), le miroir et le reflet des deux plantes : la trace d'appui (EMPREINTE), comme sur le dessin
+  caisson.ajouter(partirDe(x2(morceaux(P_.miroir, 0.4)[0]), caisson.fin, 1), { tension: 0.3 });
+  for (const r of P_.reflets.map(m2)) caisson.ajouter(partirDe(transf(morceaux(EMPREINTE.contour, 0.6)[0], r), caisson.fin, 1), { tension: 0.4 });
+  const jambes = P_.jambes.map((j, k) => {
+    const t = new Trait(b).ajouter(inverse(x2(morceaux(j.gauche, 0.4)[0])));
+    const c = transf(contourDos(), m2(P_.pieds[k]));
+    // Le contour du pied part de la cheville du même côté que la jambe déjà tracée (sinon le trait traverserait la cheville)
+    t.ajouter(dist(c[0], t.fin) <= dist(c[c.length - 1], t.fin) ? c : inverse(c), { tension: 0.4 }).ajouter(x2(morceaux(j.droite, 0.4)[0]), { tension: 0.4 });
+    return t.pts;
+  });
+  return [caisson.pts, ...jambes];
+}
+
 function parcoursEquipement(nom: 'fauteuil' | 'autoclave' | 'podoscope', b: BouclesLigne, equipement: (id: string) => string): P[][] {
+  if (nom === 'podoscope') return parcoursPodoscope(b);
   const o = ORDRE_EQUIPEMENT[nom];
   const pieces = piecesEquipement(equipement(o.id)).map((p) => p.map(([x, y]) => [x * 2, y * 2] as P));
   const traits = o.groupes.map((g) => {
@@ -823,27 +877,40 @@ function parcoursEquipement(nom: 'fauteuil' | 'autoclave' | 'podoscope', b: Bouc
     });
     return t.pts;
   }).filter((p) => p.length > 1);
-  if (nom === 'podoscope') {
-    // Façade : le miroir incliné (où se lisent les appuis), dans le même trait que le caisson
-    const miroir = equipement(o.id).match(/class="miroir" d="([^"]*)"/)?.[1];
-    if (miroir && traits[0]) { const t = new Trait(b); t.pts = traits[0]; const p = morceaux(miroir, 0.4)[0].map(([x, y]) => [x * 2, y * 2] as P); t.ajouter(partirDe(p, t.fin, 3), { tension: 0.4 });
-      // Reflet des plantes (mêmes poses que le dessin du matériel revu : renversées dans le miroir incliné)
-      for (const r of [[-0.1, 0, 0, -0.1, 59.2, 84.4], [0.1, 0, 0, -0.1, 74, 84.4]] as Affine[]) t.ajouter(partirDe(transf(contourPied(), r.map((v) => v * 2) as Affine), t.fin, 2), { tension: 0.4 });
-    }
-    // Les deux jambes debout sur la vitre : chaque jambe descend (bord extérieur), fait le tour du pied, remonte (bord intérieur).
-    // Pieds : contour du pied réel (CONTOUR_PIED) posé comme dans le dessin du matériel (vue de 3/4, raccourci en profondeur).
-    const poses: Affine[] = [[-0.13, 0, -0.05, -0.055, 50, 60], [0.13, 0, -0.05, -0.055, 64, 60]].map((m) => m.map((v) => v * 2) as Affine);
-    const jambes = [[36, 37], [38, 39]];
-    poses.forEach((m, k) => {
-      const [a, c] = jambes[k].map((i) => pieces[i]).map((p) => (p[0][1] < p[p.length - 1][1] ? p : inverse(p)));
-      const pied = transf(contourPied(), m);
-      const t = new Trait(b).ajouter(a);
-      t.ajouter(partirDe(pied, t.fin, 2), { tension: 0.4 }).ajouter(inverse(c), { tension: 0.4 });
-      traits.push(t.pts);
-    });
-  }
   return traits;
 }
+
+/**
+ * Podoscope (dessin du matériel, repère 120 × 90), refait le 2026-10-07 (Paul : « proportions out ; les empreintes doivent être en bas,
+ * les pieds sur la plateforme ; la représentation dans l'espace est fausse, le concept est bon »). Vue de 3/4 légèrement plongeante :
+ * caisson bas (≈ 60 × 50 × 25 cm), dessus de VERRE (parallélogramme, profondeur raccourcie), face avant ouverte sur le MIROIR incliné
+ * où se lisent les plantes (orteils en bas, gauche et droite conservées : pied droit du patient à gauche, hallux vers le centre). Le
+ * patient est debout SUR le verre, face à nous : pieds vus de dessus en raccourci (orteils vers nous), jambes qui montent hors du cadre.
+ * Partagé par le dessin (dessins.ts, corpsEquipement) et son trait continu (parcoursEquipement).
+ */
+export const PODOSCOPE = (() => {
+  const pieds: Affine[] = [[-0.12, 0, 0, -0.055, 52.8, 58.3], [0.12, 0, 0, -0.055, 61.2, 58.3]];
+  const reflets: Affine[] = [[-0.08, 0, 0, -0.08, 49.7, 80.8], [0.08, 0, 0, -0.08, 62.6, 80.8]];
+  // Jambes : du bord de la cheville (bords du contour dorsal, x 19,92 et 77,16 à y = 219) vers le haut, galbe du mollet, hors du cadre
+  const jambes = pieds.map((m) => {
+    const [a, b] = [19.92, 77.16].map((x) => appliquer(m, [x, 219])).sort((p, q) => p[0] - q[0]);
+    const s = (x: number, y: number) => `${r1(x)} ${r1(y)}`;
+    return {
+      gauche: `M${s(a[0], a[1])} C${s(a[0] - 0.9, a[1] - 10)} ${s(a[0] - 2.8, a[1] - 20)} ${s(a[0] - 2.4, a[1] - 30)} C${s(a[0] - 2.1, a[1] - 38)} ${s(a[0] - 1.4, a[1] - 44)} ${s(a[0] - 1.2, -2)}`,
+      droite: `M${s(b[0], b[1])} C${s(b[0] + 0.9, b[1] - 10)} ${s(b[0] + 2.8, b[1] - 20)} ${s(b[0] + 2.4, b[1] - 30)} C${s(b[0] + 2.1, b[1] - 38)} ${s(b[0] + 1.4, b[1] - 44)} ${s(b[0] + 1.2, -2)}`,
+      plein: `M${s(a[0], a[1] + 1)} C${s(a[0] - 0.9, a[1] - 10)} ${s(a[0] - 2.8, a[1] - 20)} ${s(a[0] - 2.4, a[1] - 30)} C${s(a[0] - 2.1, a[1] - 38)} ${s(a[0] - 1.4, a[1] - 44)} ${s(a[0] - 1.2, -2)} L${s(b[0] + 1.2, -2)} C${s(b[0] + 1.4, b[1] - 44)} ${s(b[0] + 2.1, b[1] - 38)} ${s(b[0] + 2.4, b[1] - 30)} C${s(b[0] + 2.8, b[1] - 20)} ${s(b[0] + 0.9, b[1] - 10)} ${s(b[0], b[1] + 1)} Z`,
+    };
+  });
+  return {
+    dessus: 'M16 58 L30 44 H106 L92 58 Z',
+    rebord: 'M23.4 55.6 L32.6 46.4 H99.2 L90 55.6 Z',
+    cote: 'M92 58 L106 44 V72 L92 86 Z',
+    facade: 'M16 58 H92 V86 H16 Z',
+    miroir: 'M21 62 H87 V83 H21 Z',
+    patins: 'M20 86 V88 M88 86 V88 M104 74 V75.6',
+    pieds, reflets, jambes,
+  };
+})();
 
 // ———————————————————————————————————————————————————— API
 
@@ -869,12 +936,21 @@ export function cheminsLigne(nom: NomLigne, o: Pick<OptionsLigne, 'boucles'> = {
   };
 }
 
+/**
+ * Traits en couleur VIVE (index des chemins) : les bandes de K-taping (retour de Paul du 2026-10-07 : « il faut qu'on comprenne mieux
+ * que c'est du taping, on dirait que c'est inclus dans le pied ; je mettrais le taping en couleur assez flashy, les couleurs du taping
+ * sont en général flashy ») : orange vif de la palette de données (--pression-4), surchargeable par --dessin-vif.
+ */
+const TRAITS_VIFS: Partial<Record<NomLigne, number[]>> = { taping: [1, 2] };
+const COULEUR_VIVE = 'var(--dessin-vif, var(--pression-4))';
+
 /** Contenu SVG (chemins) d'un dessin en ligne : un <path> par trait, styles en attributs (fichiers externes : WebKit) */
 export function contenuLigne(nom: NomLigne, o: OptionsLigne = {}): string {
   const ep = LIGNE.epaisseur[o.epaisseur ?? LIGNE.defaut.epaisseur] * (o.echelleTrait ?? 1);
   const couleur = o.couleur === 'accent' ? 'var(--dessin-accent, var(--accent))' : 'var(--dessin-ligne, var(--dessin-trait, currentColor))';
+  const vifs = TRAITS_VIFS[nom] ?? [];
   return cheminsLigne(nom, o).chemins
-    .map((c) => `<path class="ligne" pathLength="1" d="${c.d}" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke:${couleur};stroke-width:${r1(ep * 100) / 100};--ligne-debut:${c.debut};--ligne-part:${c.part}"></path>`)
+    .map((c, i) => `<path class="ligne" pathLength="1" d="${c.d}" fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke:${vifs.includes(i) ? COULEUR_VIVE : couleur};stroke-width:${r1(ep * (vifs.includes(i) ? 1.35 : 1) * 100) / 100};--ligne-debut:${c.debut};--ligne-part:${c.part}"></path>`)
     .join('');
 }
 
@@ -904,7 +980,7 @@ export const LIGNE_FORME: Record<string, NomLigne> = {
   'pied-profil-ongle-epais': 'pied-profil', 'pied-profil-anatomie': 'pied-profil', 'pied-profil-anatomie-epine': 'pied-profil', 'aponevrose-plantaire': 'pied-profil',
   'hallux-dorsal': 'ongle', 'hallux-dorsal-incarne': 'ongle', 'hallux-dorsal-incarne-sites': 'ongle', 'hallux-gros-plan': 'ongle', 'hallux-gros-plan-incarne': 'ongle',
   'semelle-dorsal': 'semelle', 'semelle-dessous': 'semelle', 'semelle-ortho-dessus': 'semelle', 'semelle-ortho-dessous': 'semelle',
-  'chaussure-running-profil': 'chaussure-course', 'chaussure-running-trois-quarts': 'chaussure-course',
+  'chaussure-running-profil': 'chaussure-course', 'chaussure-running-trois-quarts': 'chaussure-course', 'chaussure-sneaker-profil': 'chaussure-course', 'hallux-dorsal-incarne-net': 'ongle',
   'hallux-gros-plan-orthonyxie': 'orthonyxie', 'ongle-coupe-orthonyxie': 'orthonyxie', 'hallux-gros-plan-onychoplastie': 'onychoplastie',
   'hallux-gros-plan-mycose': 'mycose', 'pied-profil-ongle-epais-meulage': 'ongle-epais', 'orteil-griffe-cor': 'cor', 'orteil-griffe-orthoplastie': 'orthoplastie',
 };
@@ -916,9 +992,13 @@ export const LIGNE_FORME: Record<string, NomLigne> = {
  */
 export const ORDRE_MATERIEL: Record<string, string[][]> = {
   'sachets-individuels': [['4', '6'], ['7'], ['0', '2', '3']],
-  'tracabilite-sterilisation': [['0'], ['1'], ['6', '8', '12']],
+  // Traçabilité refaite le 2026-10-07 : 0 ticket, 1 courbe du cycle, 6 fiche, 7-18 cases cochées et leurs lignes
+  'tracabilite-sterilisation': [['0', '1'], ['6'], ['7', '8', '10', '11', '13', '14', '16', '17']],
+  // Tapis de course : 0 plateau, 1 bande, 2-3 rouleaux, 4-5 pieds (omis), 6 montant, 7 main courante, 8 console, 9-10 trépied, 11-12 caméra
+  'tapis-de-course': [['0'], ['6', '7', '8'], ['9', '10', '11', '12']],
   'bac-ultrasons': [['1', '0', '2', '3'], ['5', '~6', '7'], ['8', '10']],
-  stabilometrie: [['0', '1', '2', '4', '3'], ['5-20'], ['21-36']],
+  // Stabilométrie refaite le 2026-10-07 : 0 tranche, 1 dessus, 2-17 et 18-33 contours des pieds, 34 câble, 35-37 table, 38 base, 39-40 écran
+  stabilometrie: [['1', '0', '34', '38', '39', '40'], ['2-17', '18-33'], ['~36', '35', '37']],
   'empreinte-mousse': [['0', '2', '4', '3'], ['6-21'], ['22-37']],
   thermoformage: [['0', '1', '2'], ['7', '8']],
   'touret-poncage': [['15', '7', '5', '1', '6', '8', '16'], ['0']],

@@ -17,13 +17,22 @@
 // des caches à la couleur du fond. Le dessin est construit dans un repère de 384 × 216 (paysage) ou 240 × 320 (portrait) puis
 // agrandi au format du héros : les traits ont la même graisse apparente que les pièces des autres héros. BROUILLON à valider par Paul.
 import { silhouette } from './dessins';
-import { CONTOUR_PIED, EMPREINTE, PLANTE_ENFANT, ORTEILS_ENFANT, piedDeProfil, deformerChemin, echantillonner, chaikin, lisser, dansPolygone, couperSous, type P } from './pied';
-import { pointsTrame, grouperTrame, pression, type PointTrame } from './trame';
+import { CONTOUR_PIED, PLANTE_ENFANT, ORTEILS_ENFANT, SEMELLE, SEMELLE_ELEMENTS, piedDeProfil, deformerChemin, echantillonner, chaikin, lisser, dansPolygone, couperSous, type P } from './pied';
+import { pointsTrame, grouperTrame, type PointTrame } from './trame';
 import { TRAME, LIGNE } from './charte';
+import { poseCoureur } from './foulee';
+import { svgForme } from './bibliotheque/rendu';
+import { HALLUX_GROS_PLAN } from './bibliotheque/hallux-gros-plan';
 
 export type FormatScene = 'paysage' | 'portrait';
 export type RegistreScene = 'releve' | 'pedagogique' | 'ligne';
-export const SCENES_HEROS = ['enfant', 'senior', 'diabete'] as const;
+/**
+ * Scènes dessinées d'un seul tenant (retours de Paul du 2026-10-07 : « une seule grande illustration par héros, pas deux images côte
+ * à côte qu'on ne comprend pas ensemble »). Sport : les jambes d'un coureur en pleine foulée (genou et cheville fléchis, cinématique
+ * foulee.ts) ; ongles : le gros orteil en gros plan, ongle sain ; semelles : la paire de semelles orthopédiques vue de dessus ;
+ * pédicurie : les deux pieds vus de dessus, soignés, sans aucun instrument (« il faut rassurer »).
+ */
+export const SCENES_HEROS = ['enfant', 'senior', 'diabete', 'sport', 'ongles', 'semelles', 'pedicurie'] as const;
 export type SceneHeros = (typeof SCENES_HEROS)[number];
 
 /** Repère de construction (unités « dessin ») et facteur d'agrandissement vers le héros (640 × 360 ou 360 × 480) */
@@ -105,45 +114,12 @@ function piedEnfant(m: Affine, registre: RegistreScene, ouverture: number): stri
   return `<g>${aplat(pied)}${p.trait(tr2(pied))}${aplat(jambe)}${p.trait(tr2(bords))}${p.trait(tr2(ongles), 'fin')}</g>`;
 }
 
-/** Empreinte de l'enfant (repère du pied) : plante comblée et orteils ronds ; champ illustratif (talon, avant-pied, hallux) */
-const dansEmpreinteEnfant = (x: number, y: number) =>
-  dansPolygone(PLANTE_ENFANT, x, y) || ORTEILS_ENFANT.some(([cx, cy, rx, ry]) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1);
-const g2 = (x: number, y: number, cx: number, cy: number, sx: number, sy = sx) => Math.exp(-((x - cx) ** 2) / (2 * sx * sx) - ((y - cy) ** 2) / (2 * sy * sy));
-const champEnfant = (x: number, y: number) => Math.min(1, 0.32 + 0.62 * g2(x, y, 48, 196, 15, 18) + 0.45 * g2(x, y, 44, 72, 18, 13) + 0.4 * g2(x, y, 22, 22, 8));
-let memoEmpreinte: PointTrame[] | null = null;
-const PAS_EMPREINTE = TRAME.pasEnfant * 1.4;
-/** Points de l'empreinte de l'enfant (comme l'animation « premiers pas » : plante, puis un amas par orteil) */
-function pointsEmpreinte(): PointTrame[] {
-  if (memoEmpreinte) return memoEmpreinte;
-  const coussinets = ORTEILS_ENFANT.flatMap(([cx, cy, rx], i) =>
-    (i === 0 ? [[-0.38, 0.2], [0.38, 0.2], [0, -0.42]] : [[0, 0]]).map(([u, w]) => ({ x: r1(cx + u * rx), y: r1(cy + w * rx), v: i === 0 ? 0.9 : 0.7 })),
-  );
-  memoEmpreinte = [...pointsTrame(champEnfant, PAS_EMPREINTE, dansEmpreinteEnfant).filter((q) => q.y > 40), ...coussinets];
-  return memoEmpreinte;
-}
-/** Empreinte de l'enfant posée par `m` : trame de points (relevé) ou aplat doux (pédagogique) */
-function empreinteEnfant(m: Affine, registre: RegistreScene): string {
-  const e = Math.hypot(m[0], m[1]);
-  if (registre === 'releve') {
-    return `<g class="trame">${grouperTrame(pointsEmpreinte(), PAS_EMPREINTE)
-      .map((n) => `<path d="${n.d.replace(/M(-?[\d.]+) (-?[\d.]+)h0/g, (_, x, y) => `M${appliquer(m, +x, +y).map(r1).join(' ')}h0`)}" stroke="${n.couleur}" stroke-width="${r1(n.epaisseur * e * 1.25)}"></path>`)
-      .join('')}</g>`;
-  }
-  const plante = lisser(chaikin(PLANTE_ENFANT, 1).map(([x, y]) => appliquer(m, x, y)).map(([x, y]) => [r1(x), r1(y)] as P));
-  const orteils = ORTEILS_ENFANT.map(([cx, cy, rx, ry, r]) => {
-    const t = (r * Math.PI) / 180;
-    return lisser(Array.from({ length: 10 }, (_, k) => {
-      const a = (k / 10) * 2 * Math.PI;
-      return appliquer(m, cx + rx * Math.cos(a) * Math.cos(t) - ry * Math.sin(a) * Math.sin(t), cy + rx * Math.cos(a) * Math.sin(t) + ry * Math.sin(a) * Math.cos(t)).map(r1) as P;
-    }));
-  });
-  return `<path class="empreinte" d="${plante} ${orteils.join(' ')}"></path>`;
-}
-
 function sceneEnfant(format: FormatScene, registre: RegistreScene): string {
+  // Retour de Paul du 2026-10-07 (relevé : « on comprend pas pourquoi les empreintes de l'enfant sont posées à côté ») : plus
+  // d'empreintes à droite, la scène est centrée. Le trait continu (« J'adore ») garde exactement sa mise en page.
   const P_ = format === 'paysage'
-    ? { cx: 150, ea: 0.54, ya: 4, da: 36, ee: 0.3, ye: 172, de: 22, empreintes: true }
-    : { cx: 120, ea: 0.6, ya: 66, da: 40, ee: 0.33, ye: 246, de: 24, empreintes: false };
+    ? { cx: registre === 'ligne' ? 150 : 192, ea: 0.54, ya: 4, da: 36, ee: 0.3, ye: 172, de: 22 }
+    : { cx: 120, ea: 0.6, ya: 66, da: 40, ee: 0.33, ye: 246, de: 24 };
   // Chaque pied est posé par sa CHEVILLE (49 ; 165 dans le repère du pied) : l'ouverture des pieds tourne autour de la cheville,
   // jamais les jambes l'une vers l'autre. Adulte en face (orteils vers le bas), pieds ouverts de 8° ; enfant ouverts de 9°
   const CHEVILLE = 165;
@@ -151,14 +127,8 @@ function sceneEnfant(format: FormatScene, registre: RegistreScene): string {
   const adulteD = pose(49, CHEVILLE, P_.cx + P_.da, P_.ya, P_.ea, 180, true);
   const enfantD = pose(49, CHEVILLE, P_.cx + P_.de, P_.ye, P_.ee, 0);
   const enfantG = pose(49, CHEVILLE, P_.cx - P_.de, P_.ye, P_.ee, 0, true);
-  let empreintes = '';
-  if (P_.empreintes && registre !== 'ligne') {
-    // Les empreintes de l'enfant, à droite : un pas en avant de l'autre (pas ≈ 2 longueurs de son pied, ici raccourci de moitié
-    // pour tenir dans le cadre : deux traces côte à côte, décalées)
-    empreintes = empreinteEnfant(pose(48, 120, 300, 108, P_.ee, 7, true), registre) + empreinteEnfant(pose(48, 120, 332, 92, P_.ee, 9), registre);
-  }
   // Ouverture dans le repère du pied droit (angle positif : orteils vers le bord latéral) ; le miroir fait le pied gauche
-  return empreintes + piedAdulte(adulteG, registre, 8) + piedAdulte(adulteD, registre, 8) + piedEnfant(enfantG, registre, 9) + piedEnfant(enfantD, registre, 9);
+  return piedAdulte(adulteG, registre, 8) + piedAdulte(adulteD, registre, 8) + piedEnfant(enfantG, registre, 9) + piedEnfant(enfantD, registre, 9);
 }
 
 // ———————————————————————————————————————————————————— Senior : marche à petits pas avec une canne
@@ -395,31 +365,40 @@ function sceneSenior(format: FormatScene, registre: RegistreScene): string {
     const d = lisser(contour.map(([u, v]) => [r1(u), r1(v)] as P));
     return p.aplat(`${d} Z`, 'piece') + p.trait(courbe(contour.slice(0, 3)) + ' ' + courbe(contour.slice(5)));
   })();
-  // Canne : embout au sol un peu en avant du pied avant, tige inclinée (haut en arrière), poignée en crosse à hauteur de hanche,
-  // tenue par la main du côté proche (opposé au côté douloureux)
+  // Canne : embout au sol un peu en avant du pied avant, tige légèrement inclinée (haut en arrière), poignée ANATOMIQUE horizontale à
+  // hauteur du poignet (grand trochanter), tenue par la main du côté proche (opposé au côté douloureux). Retour de Paul du 2026-10-07
+  // (« au niveau de la main et de la canne c'est un peu bizarre ») : la crosse, dont le crochet dépassait sous un poing rond, est
+  // remplacée par une poignée que le poing ENSERRE : la poignée dépasse devant les doigts, la tige sort sous le poing, l'avant-bras
+  // arrive par le haut et l'arrière (coude légèrement fléchi).
   const bout = appliquer(avant, 128, c.sol)[0];
   const embout: P = [bout + 0.04 * H, sol];
-  const yPoing = sol - 0.5 * H;
-  const haut: P = [embout[0] - (sol - yPoing) * Math.tan((11 * Math.PI) / 180), yPoing];
-  const rc = 0.028 * H; // rayon de la crosse
-  const centre: P = [haut[0] + rc, haut[1]];
-  const crosse = `M${r1(embout[0])} ${r1(sol - 0.012 * H)} L${r1(haut[0])} ${r1(haut[1])} A${r1(rc)} ${r1(rc)} 0 0 1 ${r1(centre[0] + rc)} ${r1(centre[1])} L${r1(centre[0] + rc)} ${r1(centre[1] + 0.012 * H)}`;
+  const yPoignee = sol - 0.49 * H;
+  const haut: P = [embout[0] - (sol - yPoignee) * Math.tan((7 * Math.PI) / 180), yPoignee];
+  const ep = 0.0085 * H; // demi-épaisseur de la poignée (≈ 3 cm de diamètre)
+  const [xa, xb] = [haut[0] - 0.014 * H, haut[0] + 0.072 * H]; // arrière et avant de la poignée (≈ 14 cm)
+  const tige = `M${r1(embout[0])} ${r1(sol - 0.012 * H)} L${r1(haut[0])} ${r1(haut[1] + ep)}`;
+  const poignee = `M${r1(xa + ep)} ${r1(haut[1] - ep)} H${r1(xb - ep)} A${r1(ep)} ${r1(ep)} 0 0 1 ${r1(xb - ep)} ${r1(haut[1] + ep)} H${r1(xa + ep)} A${r1(ep)} ${r1(ep)} 0 0 1 ${r1(xa + ep)} ${r1(haut[1] - ep)} Z`;
   const emboutD = `M${r1(embout[0] - 0.008 * H)} ${r1(sol - 0.016 * H)} H${r1(embout[0] + 0.008 * H)} L${r1(embout[0] + 0.009 * H)} ${r1(sol)} H${r1(embout[0] - 0.009 * H)} Z`;
-  const canne = p.L ? p.trait(`${crosse} ${emboutD}`, 'canne', true) : `<path class="canne" d="${crosse}" style="stroke:var(--dessin-accent)"></path><path class="canne-embout" d="${emboutD}"></path>`;
-  // Main : poing simple (sans doigts dessinés un à un) refermé sur le sommet de la crosse, avant-bras dans sa manche vers le coude (hors cadre)
-  const poing: P = [centre[0] - 0.004 * H, centre[1] - rc + 0.004 * H];
-  const lp = 0.034 * H, hp = 0.027 * H;
-  const main = lisser([[poing[0] - lp, poing[1] - hp * 0.2], [poing[0] - lp * 0.6, poing[1] - hp], [poing[0] + lp * 0.5, poing[1] - hp * 1.05], [poing[0] + lp, poing[1] - hp * 0.3], [poing[0] + lp * 0.9, poing[1] + hp * 0.7], [poing[0], poing[1] + hp * 1.05], [poing[0] - lp * 0.85, poing[1] + hp * 0.6]].map(([x, y]) => [r1(x), r1(y)] as P));
-  const pouce = `M${r1(poing[0] - lp * 0.35)} ${r1(poing[1] - hp * 0.75)} C${r1(poing[0] + lp * 0.1)} ${r1(poing[1] - hp * 0.6)} ${r1(poing[0] + lp * 0.45)} ${r1(poing[1] - hp * 0.3)} ${r1(poing[0] + lp * 0.55)} ${r1(poing[1] + hp * 0.05)}`;
-  const coude: P = [Hh[0] + 0.01 * H, sol - 0.66 * H];
-  const poignet: P = [poing[0] - lp * 0.55, poing[1] - hp * 0.6];
-  const bras = tube([coude, poignet], [0.03 * H, 0.026 * H]);
+  const canne = p.L
+    ? p.trait(`${tige} ${emboutD}`, 'canne', true) + p.aplat(poignee) + p.trait(poignee, 'canne', true)
+    : `<path class="canne" d="${tige}" style="stroke:var(--dessin-accent)"></path><path class="canne-embout" d="${emboutD}"></path><path class="canne-embout" d="${poignee}" style="fill:var(--dessin-accent)"></path>`;
+  // Main : poing refermé AUTOUR de la poignée (paume dessus, doigts enroulés dessous), centré un peu en avant de la tige ; le bout
+  // avant de la poignée dépasse devant les doigts
+  const lp = 0.029 * H, hp = 0.024 * H;
+  const poing: P = [haut[0] + 0.02 * H, haut[1] - hp * 0.12];
+  const main = lisser([[poing[0] - lp, poing[1] - hp * 0.35], [poing[0] - lp * 0.55, poing[1] - hp * 1.02], [poing[0] + lp * 0.45, poing[1] - hp * 1.05], [poing[0] + lp * 0.98, poing[1] - hp * 0.4], [poing[0] + lp * 0.95, poing[1] + hp * 0.72], [poing[0] + lp * 0.1, poing[1] + hp * 1.1], [poing[0] - lp * 0.8, poing[1] + hp * 0.72]].map(([x, y]) => [r1(x), r1(y)] as P));
+  // Pouce posé sur le dessus de la poignée, vers l'avant
+  const pouce = `M${r1(poing[0] - lp * 0.45)} ${r1(poing[1] - hp * 0.6)} C${r1(poing[0] - lp * 0.05)} ${r1(poing[1] - hp * 0.48)} ${r1(poing[0] + lp * 0.4)} ${r1(poing[1] - hp * 0.42)} ${r1(poing[0] + lp * 0.74)} ${r1(poing[1] - hp * 0.4)}`;
+  // Avant-bras : du coude (hors cadre, au-dessus de la hanche) au poignet, en haut et à l'arrière du poing
+  const coude: P = [Hh[0] - 0.012 * H, sol - 0.67 * H];
+  const poignet: P = [poing[0] - lp * 0.5, poing[1] - hp * 0.75];
+  const bras = tube([coude, poignet], [0.03 * H, 0.025 * H]);
   const manche = (() => {
     const [g, d] = bras.bords;
     return p.aplat(bras.ferme, 'piece') + p.trait(`${courbe(g)} ${courbe(d)} M${r1(g[1][0])} ${r1(g[1][1])} L${r1(d[1][0])} ${r1(d[1][1])}`);
   })();
-  // Plis des doigts refermés (deux traits fins sur l'avant du poing)
-  const doigts = [0.25, 0.62].map((f) => `M${r1(poing[0] + lp * 0.55)} ${r1(poing[1] - hp * 0.6 + f * hp * 1.4)} C${r1(poing[0] + lp * 0.75)} ${r1(poing[1] - hp * 0.5 + f * hp * 1.4)} ${r1(poing[0] + lp * 0.85)} ${r1(poing[1] - hp * 0.3 + f * hp * 1.4)} ${r1(poing[0] + lp * 0.88)} ${r1(poing[1] - hp * 0.15 + f * hp * 1.4)}`).join(' ');
+  // Doigts enroulés sous la poignée : trois plis courts sur l'avant-bas du poing
+  const doigts = [0.15, 0.45, 0.75].map((f) => { const x = poing[0] + lp * (0.1 + f * 0.75); return `M${r1(x)} ${r1(poing[1] + hp * 0.2)} C${r1(x + lp * 0.06)} ${r1(poing[1] + hp * 0.45)} ${r1(x + lp * 0.05)} ${r1(poing[1] + hp * 0.7)} ${r1(x - lp * 0.02)} ${r1(poing[1] + hp * (0.98 - f * 0.25))}`; }).join(' ');
   const mainSvg = (p.L ? '' : `<g class="peau-douce">`) + p.aplat(main) + (p.L ? '' : '</g>') + p.trait(main) + p.trait(`${pouce} ${doigts}`, 'fin');
   // Sol et, en relevé, appuis sur le sol (jamais sur la peau) : pied avant entier, avant-pied arrière, embout de canne
   const ligneSol = p.trait(`M${r1(Math.min(appliquer(base, -10, 0)[0], R.l * 0.18))} ${r1(sol)} H${r1(Math.max(embout[0] + 0.08 * H, R.l * 0.82))}`, 'sol');
@@ -443,12 +422,168 @@ function sceneSenior(format: FormatScene, registre: RegistreScene): string {
     `<g>${piedChausse(avantP)}${pantalon(Kav, Aav)}</g>` + bassin + `<g>${piedChausse(arriereP)}${pantalon(Kar, Aar)}</g>` + canne + manche + mainSvg;
 }
 
+// ———————————————————————————————————————————————————— Sport : les jambes d'un coureur en pleine foulée
+
+/**
+ * SPORT (retour de Paul du 2026-10-07 sur le trait continu : « jambes trop droites ») : les jambes d'un coureur de profil, du bassin
+ * (short) au sol, à l'instant classique de la foulée : jambe d'appui en amortissement (genou fléchi ≈ 38°, pied à plat sous le
+ * bassin), jambe libre en oscillation (genou fléchi ≈ 95°, talon remonté sous la fesse, cheville proche du neutre). Cinématique et
+ * chaussure de foulee.ts (Novacheck 1998), la même que l'animation du coureur : les deux jambes partent d'une MÊME hanche. Galbe du
+ * mollet à l'arrière, cheville fine, aucun visage (le buste sort du cadre). Même peau pour les deux jambes (la profondeur se lit par
+ * l'ordre de peinture, jamais par une jambe assombrie).
+ */
+function sceneSport(format: FormatScene, registre: RegistreScene): string {
+  const R = REPERE[format];
+  const p = pinceau(registre);
+  const sol = R.h - (format === 'paysage' ? 14 : 22);
+  // Longueur de la jambe (hanche → cheville tendue = 0,94 L) : le bassin juste sous le haut du cadre
+  const L = format === 'paysage' ? 172 : 215;
+  const phase = 0.36; // fin d'appui droit (poussée sur l'avant-pied) : jambe gauche lancée vers l'avant, genou fléchi
+  const pose = poseCoureur(phase, L);
+  const x0 = R.l / 2 + (format === 'paysage' ? 6 : 4);
+  const X = (q: { x: number; y: number }): P => [x0 + q.x, sol + q.y];
+  // Jambe : tube à demi-largeurs différentes devant (crête tibiale, cuisse) et derrière (fesse, mollet) ; « derrière » = côté
+  // postérieur du segment (normale gauche de la marche hanche → cheville)
+  const tubeJambe = (pts: P[], avant: number[], arriere: number[]) => {
+    const g: P[] = [], d: P[] = [];
+    pts.forEach((q, i) => {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty) || 1, nx = -ty / l, ny = tx / l;
+      g.push([q[0] + nx * arriere[i] * L, q[1] + ny * arriere[i] * L]); d.push([q[0] - nx * avant[i] * L, q[1] - ny * avant[i] * L]);
+    });
+    return { g, d };
+  };
+  const mi = (a: P, b: P, t: number): P => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const jambe = (j: (typeof pose)['droite']) => {
+    const H_ = X(j.hanche), K = X(j.genou), A = X(j.cheville);
+    // Axe : hanche, mi-cuisse, genou, mollet (30 % de la jambe), bas du mollet, cheville
+    const axe: P[] = [H_, mi(H_, K, 0.5), K, mi(K, A, 0.3), mi(K, A, 0.62), A];
+    const { g, d } = tubeJambe(axe, [0.07, 0.058, 0.04, 0.036, 0.028, 0.022], [0.075, 0.06, 0.042, 0.062, 0.04, 0.024]);
+    const chaussure = j.chaussure.map(X);
+    return { g, d, chaussure, K, A, H_ };
+  };
+  const dessinerJambe = (j: ReturnType<typeof jambe>) => {
+    const peau = lisser([...j.g, ...[...j.d].reverse()].map(([x, y]) => [r1(x), r1(y)] as P));
+    const aplat = p.L ? p.aplat(peau) : `<g class="peau-douce">${p.aplat(peau)}</g>`;
+    // Contour : les deux bords, ouverts en haut (le short les couvre) et en bas (la chaussure les couvre)
+    const bords = `${courbe(j.g)} ${courbe(j.d)}`;
+    // Chaussure de course (foulee.ts) : tige et semelle épaisse ; ligne de la semelle intermédiaire
+    const ch = lisser(j.chaussure.map(([x, y]) => [r1(x), r1(y)] as P));
+    const [t0, , , , t4, t5, t6, t7, t8] = j.chaussure;
+    const semelle = courbe([mi(j.chaussure[2], t0, 0.25), mi(j.chaussure[3], j.chaussure[2], 0.5), mi(t4, t0, 0.18), mi(t5, j.chaussure[12], 0.22), mi(t6, j.chaussure[11], 0.2), mi(t7, j.chaussure[10], 0.3), t8]);
+    const chaussureSvg = p.aplat(ch, 'piece piece--forte') + p.trait(ch) + p.trait(semelle, 'fin');
+    return aplat + p.trait(bords) + chaussureSvg;
+  };
+  const droite = jambe(pose.droite), gauche = jambe(pose.gauche);
+  // Short : couvre le haut des deux cuisses (≈ 45 % de la cuisse), le bassin et sort du cadre par le haut
+  const short = (j: ReturnType<typeof jambe>) => {
+    const n = 3; // indices 0..1 de l'axe (hanche → mi-cuisse), prolongés un peu
+    const g = j.g.slice(0, 2).map((q, i) => (i === 1 ? mi(j.g[0], j.g[1], 0.95) : q)), d = j.d.slice(0, 2).map((q, i) => (i === 1 ? mi(j.d[0], j.d[1], 0.95) : q));
+    void n;
+    const e = 0.012 * L;
+    const ga: P[] = g.map(([x, y], i) => [x + (i ? -e : -e), y]), da: P[] = d.map(([x, y]) => [x + e, y]);
+    return { contour: [...ga, ...[...da].reverse()], ourlet: [ga[1], da[1]] as [P, P] };
+  };
+  const sd = short(droite), sg = short(gauche);
+  const Hh = X(pose.droite.hanche);
+  const bassin: P[] = [[Hh[0] - 0.13 * L, -12], [Hh[0] - 0.135 * L, Hh[1] - 0.02 * L], [Hh[0] - 0.09 * L, Hh[1] + 0.09 * L], [Hh[0] + 0.07 * L, Hh[1] + 0.09 * L], [Hh[0] + 0.1 * L, Hh[1] - 0.03 * L], [Hh[0] + 0.09 * L, -12]];
+  const shortSvg = (s: typeof sd) => p.aplat(lisser(s.contour.map(([x, y]) => [r1(x), r1(y)] as P)), 'piece piece--forte') + p.trait(`${courbe([s.contour[0], s.contour[1]])} ${courbe([s.contour[2], s.contour[3]])} M${r1(s.ourlet[0][0])} ${r1(s.ourlet[0][1])} L${r1(s.ourlet[1][0])} ${r1(s.ourlet[1][1])}`);
+  const bassinSvg = p.aplat(`${lisser(bassin.map(([x, y]) => [r1(x), r1(y)] as P))} Z`, 'piece piece--forte') + p.trait(`${courbe(bassin.slice(0, 3))} ${courbe(bassin.slice(4))}`);
+  // Sol ; en relevé, l'appui du pied d'appui en points SUR LE SOL (jamais sur la peau)
+  const xs = droite.chaussure.map(([x]) => x);
+  const ligneSol = p.trait(`M${r1(R.l * 0.08)} ${r1(sol)} H${r1(R.l * 0.92)}`, 'sol');
+  let appuis = '';
+  if (registre === 'releve') {
+    const pasT = TRAME.pas * 0.8 * (L / 205) * 1.6;
+    const [a0, a1] = [Math.min(...xs), Math.max(...xs)];
+    const pts: PointTrame[] = [];
+    for (let rang = 0; rang < 2; rang++) for (let x = a0 + (rang ? pasT / 2 : 0); x <= a1; x += pasT) {
+      const u = (x - a0) / (a1 - a0 || 1);
+      pts.push({ x: r1(x), y: r1(sol + pasT * 0.9 + rang * pasT * 0.866), v: Math.min(0.85, 0.3 + 0.45 * Math.exp(-(((u - 0.15) / 0.14) ** 2)) + 0.4 * Math.exp(-(((u - 0.72) / 0.12) ** 2))) });
+    }
+    appuis = `<g class="trame">${grouperTrame(pts, pasT).map((n) => `<path d="${n.d}" stroke="${n.couleur}" stroke-width="${n.epaisseur}"></path>`).join('')}</g>`;
+  }
+  // Ordre : jambe libre (côté éloigné) et son short, bassin, jambe d'appui (côté proche) et son short
+  return ligneSol + appuis + `<g>${dessinerJambe(gauche)}${shortSvg(sg)}</g>` + bassinSvg + `<g>${dessinerJambe(droite)}${shortSvg(sd)}</g>`;
+}
+
+// ———————————————————————————————————————————————————— Ongles, semelles, pédicurie : un seul sujet, en grand
+
+/**
+ * ONGLES : le gros orteil du pied droit en GROS PLAN (bibliotheque/hallux-gros-plan.ts : ongle sain, coupé droit, 2e et 3e orteils
+ * au bord), sans fenêtre : l'avant-pied sort du cadre par le bas. Relevé : rendu monochrome au trait ; pédagogique : en couleur
+ * (peau, ongle). Aucun ongle incarné ni rougeur en page d'accueil (rassurer).
+ */
+function sceneOngles(format: FormatScene, registre: RegistreScene): string {
+  const R = REPERE[format];
+  const { largeur: l, hauteur: h, echelle } = HALLUX_GROS_PLAN;
+  // Hauteur affichée > hauteur du cadre : le bas de l'avant-pied sort du cadre (la forme continue jusqu'à 172 / 158)
+  const H_ = format === 'paysage' ? R.h * 1.12 : R.h * 0.86;
+  const k = H_ / h, W = l * k;
+  const x = R.l / 2 - W * (format === 'paysage' ? 0.42 : 0.44), y = format === 'paysage' ? R.h * 0.04 : R.h * 0.08;
+  const svg = svgForme('hallux-gros-plan', { registre: registre === 'pedagogique' ? 'pedagogique' : 'releve', echelleTrait: echelle / k * 1.35, id: `heros-ongles-${format}-${registre}` });
+  return svg.replace('<svg ', `<svg x="${r1(x)}" y="${r1(y)}" width="${r1(W)}" height="${r1(H_ * (172 / 158))}" preserveAspectRatio="xMidYMin slice" stroke="none" `);
+}
+
+/**
+ * SEMELLES (pédagogique) : la PAIRE de semelles orthopédiques vue de dessus (POD-AT-0004, géométrie validée SEMELLE, L/l ≈ 2,6) avec
+ * leurs éléments : talonnette, soutien de voûte, barre rétrocapitale DERRIÈRE les têtes métatarsiennes. Pied gauche à gauche (miroir),
+ * pointes légèrement ouvertes. Une seule idée : « la semelle ». Relevé : l'animation des courbes de relief ; trait : la semelle seule.
+ */
+function sceneSemelles(format: FormatScene, registre: RegistreScene): string {
+  const R = REPERE[format];
+  const p = pinceau(registre);
+  const k = format === 'paysage' ? 0.78 : 1.08; // semelle ≈ 222 u de long dans son repère
+  const ecart = format === 'paysage' ? 44 : 50;
+  const cy = R.h / 2 + (format === 'paysage' ? 2 : 0);
+  const une = (gauche: boolean) => {
+    const m = pose(46, 111, R.l / 2 + (gauche ? -ecart : ecart), cy, k, gauche ? -5 : 5, gauche);
+    const t = (d: string) => tr(d, m);
+    return p.aplat(t(SEMELLE), 'peau') + (p.L ? '' : `<path class="piece" d="${t(SEMELLE_ELEMENTS.talonnette)}"></path><path class="piece piece--forte" d="${t(SEMELLE_ELEMENTS.voute)}"></path><path class="piece piece--forte" d="${t(SEMELLE_ELEMENTS.barre)}"></path>`) + p.trait(t(SEMELLE));
+  };
+  return une(true) + une(false);
+}
+
+/**
+ * PÉDICURIE (retour de Paul du 2026-10-07 : « attention aux instruments en page d'accueil, il faut rassurer ») : les deux pieds vus de
+ * dessus (« je regarde mes pieds »), soignés, ongles nets, pointes légèrement ouvertes, les jambes sortent du cadre en bas. Aucun
+ * instrument, aucun médaillon, aucune couleur sur la peau. Géométrie validée CONTOUR_PIED (vue dorsale, POD-AT-0001).
+ */
+function scenePedicurie(format: FormatScene, registre: RegistreScene): string {
+  const R = REPERE[format];
+  const p = pinceau(registre);
+  const e = format === 'paysage' ? 0.86 : 1.02, ecart = format === 'paysage' ? 46 : 52;
+  const y = format === 'paysage' ? 104 : 150;
+  const pied = (gauche: boolean) => {
+    const m = pose(46, 111, R.l / 2 + (gauche ? -ecart : ecart), y, e, gauche ? -6 : 6, gauche);
+    const t = (d: string) => tr(d, m);
+    // Jambe prolongée sous le cadre (le contour dorsal s'arrête à la cheville, y ≈ 219 dans le repère du pied)
+    const [x1, x2] = [19.92, 77.16], ev = (x2 - x1) * 0.06;
+    const jambe = `M${x1},212 L${x1 - ev},${PROLONGEMENT} L${x2 + ev},${PROLONGEMENT} L${x2},212 Z`;
+    const bords = `M${x1},214 L${x1 - ev},${PROLONGEMENT} M${x2},214 L${x2 + ev},${PROLONGEMENT}`;
+    const peau = [...CONTOUR_PIED.dorsal.peaux, jambe].map((d) => (p.L ? p.aplat(t(d)) : `<g class="peau-douce">${p.aplat(t(d))}</g>`)).join('');
+    return `<g>${peau}${p.trait(t(`${CONTOUR_PIED.dorsal.trait} ${bords}`), 'trait trait--moyen')}${p.trait(t(CONTOUR_PIED.dorsal.ongles), 'ongle-dessus ongle-dessus--fin')}${p.trait(t(CONTOUR_PIED.dorsal.plis), 'fin')}</g>`;
+  };
+  return pied(true) + pied(false);
+}
+
+const FONCTIONS_SCENES = () => ({ enfant: sceneEnfant, diabete: sceneDiabete, senior: sceneSenior, sport: sceneSport, ongles: sceneOngles, semelles: sceneSemelles, pedicurie: scenePedicurie });
+
+/**
+ * Scène paysage posée dans le repère 240 × 180 d'un dessin (dessins.ts) : bande 16:9 centrée verticalement, mêmes classes. Sert aux
+ * dessins dont la scène du héros est plus lisible que l'ancien schéma (diabète : le monofilament tenu en main, retour de Paul du
+ * 2026-10-07 sur le relevé « on comprend pas trop »).
+ */
+export function sceneDessin(nom: SceneHeros, registre: RegistreScene): string {
+  return `<g transform="translate(0 22.5) scale(0.625)">${FONCTIONS_SCENES()[nom]('paysage', registre)}</g>`;
+}
+
 /**
  * Scène dessinée d'un héros (contenu d'un <svg> au format du héros : 640 × 360 en paysage, 360 × 480 en portrait), sans fond ni
  * texte : classes des dessins (dessins.css) dans un groupe .dessin du registre.
  */
 export function sceneHeros(nom: SceneHeros, o: { format: FormatScene; registre: RegistreScene }): string {
   const R = REPERE[o.format];
-  const corps = nom === 'enfant' ? sceneEnfant(o.format, o.registre) : nom === 'diabete' ? sceneDiabete(o.format, o.registre) : sceneSenior(o.format, o.registre);
+  const corps = FONCTIONS_SCENES()[nom](o.format, o.registre);
   return `<g transform="scale(${+R.s.toFixed(4)})"><g class="dessin dessin--heros-${nom} dessin--${o.registre}" fill="none" stroke-linecap="round" stroke-linejoin="round">${corps}</g></g>`;
 }

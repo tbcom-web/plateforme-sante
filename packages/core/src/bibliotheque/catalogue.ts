@@ -115,8 +115,8 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     description: 'POD-AT-0001 agrandi ×3 autour de l’hallux : lame, bord libre, lunule, replis et sillons ; état « incarné » (spicule dans le repli épaissi, sans rouge).',
     professions: ['podologie'], zones: ['hallux', 'ongle'], sujets: ['ongle-incarne', 'coupe-ongles', 'orthonyxie'], tags: ['dorsal', 'zoom'],
     vue: 'dorsale', statut: 'valide', valide_par: PAUL, valide_le: '2026-10-04', version: '0.2.0', source: G('ongle.mjs', 'modeleHalluxDorsal(), ETATS_HALLUX_DORSAL — validé pour les sites webpodologue (Paul Tremblot, 2026-10-04 ; statut ÉcranZen inchangé)'), licence: LICENCE, compose_de: ['POD-AT-0001'],
-    declinaisons: [d('dorsale', 'repos', 'hallux-dorsal'), d('dorsale', 'incarne', 'hallux-dorsal-incarne'),
-      d('dorsale', 'incarne-sites', 'hallux-dorsal-incarne-sites', { statut: 'valide', valide_par: PAUL, valide_le: '2026-10-05', source: 'dérivé de POD-AT-0009, retouche du spicule validée par Paul 2026-10-05 (spicule qui prolonge l’arc de la lame, bout arrondi recouvert par le repli latéral épaissi ; bibliotheque/derivees.ts)' }),
+    declinaisons: [d('dorsale', 'repos', 'hallux-dorsal'), d('dorsale', 'incarne', 'hallux-dorsal-incarne-net', { statut: 'a-revalider', source: 'dérivé de POD-AT-0009 (état incarné), 2026-10-07 : lame sans cran ni spicule triangulaire au coin (Paul : « on dirait que l’ongle est cassé ») ; bibliotheque/derivees.ts, à revoir par Paul' }),
+      d('dorsale', 'incarne-sites', 'hallux-dorsal-incarne-sites', { statut: 'a-revalider', source: 'retouche du 2026-10-07 à revoir par Paul (« on dirait qu’il y a un ongle incarné inclus dedans ») : repli gonflé en peau avec rougeur fondue, sans trait intérieur ; auparavant : dérivé de POD-AT-0009, retouche du spicule validée par Paul 2026-10-05 (spicule qui prolonge l’arc de la lame, bout arrondi recouvert par le repli latéral épaissi ; bibliotheque/derivees.ts)' }),
       d('dorsale-gros-plan', 'repos', 'hallux-gros-plan', { statut: 'valide', valide_par: PAUL, source: 'validé par Paul le 2026-10-05 (remarque : le bourrelet enveloppe un peu trop l’ongle, à alléger à la prochaine retouche) ; dessin sites, références de lecture fournies par Paul, 2026-10-05 (gros plan de l’hallux refait de zéro, normal et incarné : contour latéral bombé, peau gonflée sur le bord de la lame, rougeur fondue ; bibliotheque/hallux-gros-plan.ts)' }),
       d('dorsale-gros-plan', 'orthonyxie', 'hallux-gros-plan-orthonyxie', { statut: 'brouillon', source: 'dessin sites 2026-10-05, fiches de soins de la migration 0020 (bibliotheque/soins-ongles.ts), à valider par Paul' }),
       d('dorsale-gros-plan', 'onychoplastie', 'hallux-gros-plan-onychoplastie', { statut: 'brouillon', source: 'dessin sites 2026-10-05, fiches de soins de la migration 0020 (bibliotheque/soins-ongles.ts), à valider par Paul' }),
@@ -157,7 +157,9 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     description: 'Chaussure basse sans marque : tige, col sous la malléole, laçage, semelle extérieure avec talon et cambrion.',
     professions: ['transverse'], zones: ['pied'], sujets: ['chaussage', 'orthese-plantaire'], tags: ['chaussure', 'profil'],
     vue: 'profil-medial', statut: 'valide', valide_par: PAUL, version: '1.0.0', source: G('semelle.mjs', 'modeleChaussureProfil() (état ville) (module marqué « PROPOSÉ » dans son en-tête ; atome validé par Paul dans catalogue/assets.json)'), licence: LICENCE, compose_de: [],
-    declinaisons: [d('profil-medial', 'ville', 'chaussure-profil-medial')],
+    // Retour de Paul du 2026-10-07 (« elle fait trop vieille, il faut un truc plus dynamique, style basket de ville / sneaker ») : vue
+    // canonique = basket de ville dessinée pour les sites (bibliotheque/derivees.ts) ; l'ancienne chaussure de ville reste en état « ville ».
+    declinaisons: [d('profil-medial', 'basket', 'chaussure-sneaker-profil', { statut: 'brouillon', source: 'dessin sites 2026-10-07 (bibliotheque/derivees.ts, SNEAKER), même repère que l’atome, à valider par Paul' }), d('profil-medial', 'ville', 'chaussure-profil-medial')],
     usages_sites: ['Conseils de chaussage', 'Semelles : « vous les portez dans vos chaussures »'],
     limites: ['Aucune marque, bande ou découpe identifiable'],
   },
@@ -166,7 +168,9 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     description: 'Claquette et tong de piscine posées au sol, vues de dessus, sans marque.',
     professions: ['podologie'], zones: ['plante'], sujets: ['verrues', 'piscine', 'chaussage', 'hygiene-pieds'], tags: ['dorsal', 'sandale'],
     vue: 'dorsal', statut: 'valide', valide_par: PAUL, version: '1.0.0', source: G('piscine.mjs', 'modeleSandale(), ETATS_SANDALE (module marqué « PROPOSÉ » dans son en-tête ; atome validé par Paul dans catalogue/assets.json)'), licence: LICENCE, compose_de: [],
-    declinaisons: [d('dorsal', 'claquette-posee', 'sandale-claquette'), d('dorsal', 'tong-posee', 'sandale-tong')],
+    declinaisons: [d('dorsal', 'claquette-posee', 'sandale-claquette'), d('dorsal', 'tong-posee', 'sandale-tong-sites', { statut: 'a-revalider', source: 'dérivé de POD-AT-0006 (tong), 2026-10-07 : bout de la semelle arrondi et droit (Paul : « le haut de la tong est un peu bizarre, normalement il est plus rond / droit ») ; bibliotheque/derivees.ts' }),
+      // Tong d'origine (ÉcranZen, validée) : reste disponible pour les contenus publiés tant que la tong retouchée n'est pas validée
+      d('dorsal', 'tong-ecranzen', 'sandale-tong')],
     usages_sites: ['Verrues plantaires : prévention (piscine, vestiaires)', 'Mycoses : conseils d’hygiène'],
     limites: ['Conseil de prévention, jamais une promesse (« évite les verrues »)'],
   },
@@ -210,10 +214,10 @@ export const BIBLIOTHEQUE: readonly ElementBibliotheque[] = [
     id: 'SITES/orteil-griffe', slug: 'orteil-griffe-coupe', niveau: 'atome', titre: 'Orteil en griffe, coupe sagittale du 2e rayon',
     description: '2e métatarsien, P1 en hyperextension, P2 et P3 fléchies, peau et ongle ; états « cor » (cor dorsal à noyau, durillon sous la tête, empeigne qui frotte) et « orthoplastie » (crête et anneau en silicone).',
     professions: ['podologie'], zones: ['orteils', 'avant-pied', 'tete-metatarsienne'], sujets: ['cors-durillons', 'orthoplastie', 'orteil-griffe'], tags: ['coupe', 'profil'],
-    vue: 'coupe-sagittale', statut: 'brouillon', valide_par: null, version: '2026-10-05', source: 'dessin sites (bibliotheque/soins-ongles.ts, proportions réelles commentées), pas d’atome ÉcranZen équivalent', licence: LICENCE, compose_de: [],
+    vue: 'coupe-sagittale', statut: 'retire', valide_par: null, version: '2026-10-05', source: 'dessin sites (bibliotheque/soins-ongles.ts, proportions réelles commentées), pas d’atome ÉcranZen équivalent', licence: LICENCE, compose_de: [],
     declinaisons: [d('coupe-sagittale', 'cor', 'orteil-griffe-cor'), d('coupe-sagittale', 'orthoplastie', 'orteil-griffe-orthoplastie')],
     usages_sites: ['Cors et durillons', 'Orthoplastie'],
-    limites: ['Plus utilisée par les dessins des sites depuis le 2026-10-06 (v3) : coupe jugée illisible par Paul, remplacée par le schéma classique (plante et dessus des orteils, soins-ongles.ts)', 'Schéma de compréhension en coupe : cor ≈ 1/4 de la largeur de l’orteil, teinte de peau à peine jaunie, jamais une boule colorée', 'La déformation n’est jamais corrigée à l’image (pas d’avant / après)'],
+    limites: ['RETIRÉE le 2026-10-07 (Paul, 1★ : « on comprend rien, à jeter ») : statut « retiré », plus utilisée nulle part', 'Plus utilisée par les dessins des sites depuis le 2026-10-06 (v3) : coupe jugée illisible par Paul, remplacée par le schéma classique (plante et dessus des orteils, soins-ongles.ts)', 'Schéma de compréhension en coupe : cor ≈ 1/4 de la largeur de l’orteil, teinte de peau à peine jaunie, jamais une boule colorée', 'La déformation n’est jamais corrigée à l’image (pas d’avant / après)'],
   },
 ];
 

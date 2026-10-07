@@ -55,6 +55,8 @@
 .dessin .ongle-coupe { stroke: var(--d-accent); stroke-width: var(--trait-normal); fill: var(--d-fond); }
 .dessin .tiret-fin { stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); opacity: 0.6; }
 .dessin .bande { stroke: var(--d-accent); opacity: 0.45; fill: none; }
+/* K-taping en registre pédagogique : bande de couleur VIVE, comme les vraies (retour de Paul du 2026-10-07 sur le trait continu) */
+.dessin--pedagogique .bande--vive { stroke: var(--dessin-vif, var(--pression-4)); opacity: 0.85; }
 .dessin .bande-motif { stroke: var(--d-accent); stroke-width: var(--trait-filet); stroke-dasharray: var(--tiret-court); opacity: 0.8; }
 .dessin .faisceau { fill: var(--d-accent); stroke: none; opacity: 0.22; }
 .dessin .faisceau-axe { stroke: var(--d-accent); stroke-width: var(--trait-fin); opacity: 0.8; }
@@ -106,6 +108,7 @@
 .dessin .canne-embout { fill: currentColor; stroke: none; }
 .dessin .repli { stroke-width: var(--trait-normal); }
 .dessin .ongle-cache { stroke: var(--d-accent); stroke-width: var(--trait-fin); stroke-dasharray: var(--tiret-court); }
+.dessin .coche { stroke: var(--d-accent); stroke-width: var(--trait-fort); fill: none; }
 .dessin .miroir { stroke-width: var(--trait-fin); fill: var(--d-accent); fill-opacity: 0.08; }
 /* Étiquettes : détourées par le fond, jamais posées sur un trait */
 .dessin .etiquette { paint-order: stroke; stroke: var(--d-fond); stroke-width: 3; stroke-linejoin: round; }
@@ -126,6 +129,9 @@
    Relevé : mélanges de l'accent et du fond (monochrome) ; pédagogique : peau claire, corne ocre (--pression-3 mêlé à la peau),
    halos flous (dégradé radial), halo du cor rosé (peau-ombre mêlée à --pression-5), silicone d'eau (--pression-2 mêlé au blanc). */
 .dessin--pedagogique .peau-douce .peau-seule { fill: var(--peau-clair, var(--d-fond)); }
+/* Ongles vus de dessus en registre pédagogique : couleur naturelle de l'ongle, contour à l'encre (retour de Paul du 2026-10-07 sur
+   « cors-durillons » : « pas fan des ongles verts, c'est très bizarre ») ; l'accent du cabinet ne colore jamais un ongle sain */
+.dessin--pedagogique .ongle-dessus, .dessin--pedagogique .ongle-naturel { stroke: var(--d-trait); stroke-opacity: 0.7; fill: var(--ongle, var(--d-fond)); }
 .dessin .halo { stroke: none; }
 .dessin .halo-durillon, .dessin .halo-cor { stop-color: var(--d-accent); }
 .dessin--pedagogique .halo-durillon { stop-color: var(--pression-3); }
@@ -140,6 +146,10 @@
 .dessin .cadre { fill: none; stroke-width: var(--trait-fin); opacity: 0.5; }
 .dessin .fleche { fill: none; stroke: var(--d-accent); stroke-width: var(--trait-normal); }
 .dessin .fleche-pointe { fill: var(--d-accent); stroke: none; }
+/* Flèche de l'ongle incarné (retour de Paul du 2026-10-07 : « la flèche en vert ne se voit pas ») : encre, trait fort, liseré clair */
+.dessin .fleche--encre { stroke: var(--d-trait); stroke-width: var(--trait-fort); }
+.dessin .fleche-pointe--encre { fill: var(--d-trait); }
+.dessin .fleche-halo { fill: var(--blanc); stroke: var(--blanc); stroke-width: calc(var(--trait-fort) * 3); stroke-linejoin: round; opacity: 0.9; }
 .dessin .renvoi { stroke-width: var(--trait-filet); opacity: 0.6; }
 .dessin .ancre { fill: currentColor; stroke: none; opacity: 0.6; }
 .dessin--pedagogique .oscillation, .dessin--pedagogique .polygone, .dessin--pedagogique .force-courbe { stroke: var(--d-accent); }
@@ -157,6 +167,19 @@
 .dessin--talon .onde { animation: dessin-onde var(--cycle-pouls) ease-out infinite; animation-delay: calc(var(--k) * var(--cycle-pouls) / 6); transform-box: fill-box; transform-origin: center; }
 .dessin .pulse { transform-box: fill-box; transform-origin: center; animation: dessin-pulse var(--cycle-pouls) ease-out infinite; }
 @keyframes dessin-onde { 0% { opacity: 0.9; } 100% { opacity: 0.15; } }
+/* Équilibre (pédagogique) et stabilométrie : le poids du corps (point) oscille d'avant en arrière et d'un pied à l'autre, les appuis
+   s'allument là où il passe (retour de Paul du 2026-10-07 : « il faut que ce soit animé sinon on comprend pas ») ; un cycle de relevé */
+.dessin .eq-point, .dessin .st-point { animation: eq-poids var(--cycle-releve) ease-in-out infinite; }
+.dessin .eq-avant { animation: eq-avant var(--cycle-releve) ease-in-out infinite; }
+.dessin .eq-arriere { animation: eq-arriere var(--cycle-releve) ease-in-out infinite; }
+.dessin .eq-g { animation: eq-g var(--cycle-releve) ease-in-out infinite; }
+.dessin .eq-d { animation: eq-d var(--cycle-releve) ease-in-out infinite; }
+.dessin .eq-trajet { stroke-width: var(--trait-fin); opacity: 0.55; }
+@keyframes eq-poids { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(0, -7px); } 40% { transform: translate(5px, 0); } 60% { transform: translate(0, 6px); } 80% { transform: translate(-5px, 0); } }
+@keyframes eq-avant { 0%, 40%, 60%, 100% { opacity: 0.38; } 20% { opacity: 0.85; } }
+@keyframes eq-arriere { 0%, 20%, 40%, 100% { opacity: 0.38; } 60% { opacity: 0.85; } }
+@keyframes eq-g { 0%, 20%, 40%, 60%, 100% { opacity: 0.6; } 80% { opacity: 1; } }
+@keyframes eq-d { 0%, 20%, 60%, 80%, 100% { opacity: 0.6; } 40% { opacity: 1; } }
 @keyframes dessin-pulse { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.7); } }
 /* Registre « ligne » (trait continu, ligne.ts) : « le trait se dessine ». Chaque chemin a pathLength="1" et ses parts du tracé
    (--ligne-debut, --ligne-part, fractions de --duree-ligne : les traits se suivent). Sur le site, ChargeurDessins pose

@@ -375,20 +375,22 @@ export const COR_DESSUS = (() => {
   return { x: r2(bx + ((mx - bx) * (y - by)) / (my - by)), y, r: 2.3 };
 })();
 /**
- * Orthoplastie vue de dessus : manchon (anneau) en silicone moulé qui coiffe le 2e orteil sur l'IPP (protection du cor), un peu plus
- * large que l'orteil (épaisseur ≈ 1,5 mm de chaque côté), ≈ 1,1 cm de long ; bords proximal et distal légèrement bombés vers le
- * bout (la pièce entoure un orteil cylindrique). L'orteil n'est ni redressé ni déplacé (Ameli : l'orthoplastie protège et répartit
- * les pressions, elle ne corrige pas la déformation).
+ * Orthoplastie vue de dessus : orthèse en silicone moulée sur le 2e orteil (protection du cor sur l'IPP). Refaite le 2026-10-07 (Paul :
+ * « une orthoplastie doit avoir plus de pâte entre les orteils et épouser un peu plus la forme du gros orteil sur le côté... on dirait
+ * une bague là ») : ce n'est plus un anneau mais une PÂTE qui coiffe le 2e orteil de l'IPP à sa base (≈ 2,6 cm), comble les espaces
+ * avec l'hallux et le 3e orteil, et remonte le long du bord latéral de l'hallux en l'épousant (≈ 3 mm sur sa face latérale) ; bord
+ * distal arrondi au-dessus de l'IPP (le bout de l'orteil reste libre), bord proximal bombé vers la plante. L'orteil n'est ni redressé
+ * ni déplacé (Ameli : l'orthoplastie protège et répartit les pressions, elle ne corrige pas la déformation).
  */
 export const MANCHON_ORTHO: P[] = (() => {
-  const poly = CONTOUR_PIED.polygonesOrteils[1], y0 = 31.6, y1 = 40.8, e = 1.3, n = 6;
-  const bord = (y: number) => { const l = largeurA(poly, y) ?? [33.4, 48.6]; return [l[0] - e, l[1] + e] as const; };
-  const gauche = Array.from({ length: n + 1 }, (_, k) => { const y = y0 + ((y1 - y0) * k) / n; return [bord(y)[0], y] as P; });
-  const droite = Array.from({ length: n + 1 }, (_, k) => { const y = y1 - ((y1 - y0) * k) / n; return [bord(y)[1], y] as P; });
-  // Bords bombés : bas (proximal) de gauche à droite, haut (distal) de droite à gauche
-  const arc = (y: number, xa: number, xb: number, f: number) => Array.from({ length: 5 }, (_, k) => { const t = (k + 1) / 6; return [xa + (xb - xa) * t, y - f * Math.sin(Math.PI * t)] as P; });
-  const [gb, db] = [gauche[n][0], droite[0][0]], [gh, dh] = [gauche[0][0], droite[n][0]];
-  return [...gauche, ...arc(y1, gb, db, 1.4), ...droite, ...arc(y0, dh, gh, 1.4)].map(([x, y]) => [r2(x), r2(y)] as P);
+  const [hal, , o3] = [0, 1, 2].map((i) => CONTOUR_PIED.polygonesOrteils[i]);
+  const bordHallux = (y: number) => (largeurA(hal, y)?.[1] ?? 33.2) - 2.6, bord3 = (y: number) => (largeurA(o3, y)?.[0] ?? 48.4) + 3;
+  const [yh, yb, yd] = [27.6, 53, 32.6]; // haut côté hallux, bas, haut côté 3e orteil
+  const gauche = Array.from({ length: 7 }, (_, k) => { const y = yh + ((yb - yh) * k) / 6; return [bordHallux(y), y] as P; });
+  const bas = Array.from({ length: 5 }, (_, k) => { const t = (k + 1) / 6, x = bordHallux(yb) + (bord3(yb - 2) - bordHallux(yb)) * t; return [x, yb - 2 * t + 2.2 * Math.sin(Math.PI * t)] as P; });
+  const droite = Array.from({ length: 6 }, (_, k) => { const y = yb - 2 - ((yb - 2 - yd) * k) / 5; return [bord3(y), y] as P; });
+  const haut = Array.from({ length: 5 }, (_, k) => { const t = (k + 1) / 6, x = bord3(yd) + (bordHallux(yh) - bord3(yd)) * t; return [x, yd + (yh - yd) * t - 4.4 * Math.sin(Math.PI * t)] as P; });
+  return [...gauche, ...bas, ...droite, ...haut].map(([x, y]) => [r2(x), r2(y)] as P);
 })();
 
 export const FORMES_SOINS_ONGLES: Record<string, FormeEcranZen> = {

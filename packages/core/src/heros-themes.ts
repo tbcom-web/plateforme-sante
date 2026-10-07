@@ -2,9 +2,10 @@
 // (ordinateur, 16:9) et portrait (téléphone, 3:4), dans les trois registres (relevé, pédagogique, trait continu), aux couleurs de la
 // gamme. API pure (chaîne SVG, aucune dépendance d'exécution) : l'accueil et les pages de thème la branchent.
 //
-// RÈGLE : aucune géométrie nouvelle. Chaque composition ASSEMBLE des dessins existants et revus (dessins.ts, ligne.ts, images fixes
-// des animations, matériel) : pied, foulée, empreintes, semelle, hallux viennent des géométries validées (pied.ts, foulee.ts, pas.ts,
-// bibliotheque/). La composition elle-même (choix, cadrage, couleurs) est un BROUILLON à valider par Paul.
+// RÈGLE : aucune géométrie nouvelle. UN SEUL sujet par héros (retours de Paul du 2026-10-07 : « une seule grande illustration, pas
+// deux images côte à côte qu'on ne comprend pas ensemble ») : une scène dessinée (heros-scenes.ts) ou un dessin existant et revu
+// (ligne.ts, image fixe d'une animation), centré en grand. Pied, foulée, semelle, hallux viennent des géométries validées (pied.ts,
+// foulee.ts, bibliotheque/). La composition elle-même (choix, cadrage, couleurs) est un BROUILLON à valider par Paul.
 //
 // Garde-fous (pieges-illustration.md) : AUCUN texte visible dans un héros (consigne de Paul du 2026-10-06 : ni légende, ni lecture,
 // ni mention « schéma illustratif » ; les <text>, étiquettes et renvois des pièces sont retirés ; le sujet reste dans le <title>,
@@ -16,7 +17,8 @@
 // (vue de dessus, sans jambes). Diabète : le monofilament tenu en main, appliqué sous la tête de M1 (pied de profil, patient
 // allongé) : monofilament et diapason ne flottent plus en l'air. Senior : la plaque
 // d'empreintes au point rouge central (incomprise) et la canne isolée en trait vertical sont remplacées par une marche à petits pas,
-// chaussée, avec une canne lisible (poignée en crosse tenue par une main, embout au sol en avant du pied).
+// chaussée, avec une canne lisible (poignée tenue par une main, embout au sol en avant du pied). Le 2026-10-07, sport, ongles, semelles
+// et pédicurie deviennent aussi des scènes d'un seul tenant (voir COMPOSITIONS).
 //
 // Usage : illustrationTheme('sport', { format: 'portrait', registre: 'ligne', gamme: 'mangue' }). Les classes viennent de
 // dessins.css (feuille du site) ; les variables de la charte (--trait-*, --pression-*) de feuilleCharte(). `gamme` (identifiant ou
@@ -44,90 +46,48 @@ export const themeIllustre = (id: string): id is ThemeIllustre => (THEMES_ILLUST
 /** Sujet de chaque héros (contenu du <title>, non affiché) : le libellé patient du thème (themes.ts) */
 const titreTheme = (id: ThemeIllustre) => themeParId(id)?.libelle ?? id;
 
-/** Pièce d'une composition : un dessin existant, dans un registre donné */
+/** Sujet d'un héros : une scène dessinée d'un seul tenant (heros-scenes.ts) ou UN dessin existant, dans un registre donné */
 type Piece =
+  | { type: 'scene'; nom: SceneHeros }
   | { type: 'dessin'; nom: NomDessin }
   | { type: 'animation'; nom: Animation }
   | { type: 'ligne'; nom: NomLigne }
   | { type: 'materiel'; id: string };
 
 /**
- * Pièce principale (grande) et pièce d'appui (plus petite), par thème et par registre. Alignées sur le choix de l'agent « refonte
- * agence » (apps/sites/src/lib/vitrine.ts, DESSINS_THEME), sauf deux écarts voulus : diabète (pièce d'appui = matériel du test au
- * monofilament, pas le relevé « appuis » dont l'anneau rouge se lit « pic ») et enfant (premiers pas, pas la croissance chiffrée).
+ * UN SEUL sujet par thème et par registre (retours de Paul du 2026-10-07, règle générale : « une seule grande illustration par
+ * héros, pas deux images côte à côte qu'on ne comprend pas ensemble » — ongles, semelles, enfant, pédicurie). Les anciennes paires
+ * (pièce principale + pièce d'appui) sont abandonnées. Sport : la foulée (animation du coureur en relevé, jambes du coureur en
+ * pleine foulée ailleurs) ; ongles : le gros orteil en gros plan, ongle sain (trait : l'avant-pied et ses ongles) ; semelles : la
+ * semelle (animation des courbes de relief, paire de semelles, semelle au trait) ; pédicurie : les pieds soignés, SANS instrument.
  */
-const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, [Piece, Piece]>> = {
-  // Foulée (coureur chaussé de l'animation, cinématique foulee.ts) et chaussure de course de profil
-  sport: {
-    releve: [{ type: 'animation', nom: 'coureur' }, { type: 'dessin', nom: 'sport' }],
-    pedagogique: [{ type: 'dessin', nom: 'sport' }, { type: 'dessin', nom: 'taping' }],
-    ligne: [{ type: 'ligne', nom: 'marche' }, { type: 'ligne', nom: 'chaussure-course' }],
-  },
-  // Scène dessinée (SCENES ci-dessous : monofilament tenu en main) : ces pièces ne servent plus qu'en repli
-  diabete: {
-    releve: [{ type: 'dessin', nom: 'diabete' }, { type: 'materiel', id: 'monofilament-diapason' }],
-    pedagogique: [{ type: 'dessin', nom: 'diabete' }, { type: 'materiel', id: 'monofilament-diapason' }],
-    ligne: [{ type: 'ligne', nom: 'monofilament' }, { type: 'ligne', nom: 'pieds-dessus' }],
-  },
-  // Orthonyxie et gros plan de l'hallux (normal / incarné, validé le 2026-10-05)
-  ongles: {
-    releve: [{ type: 'dessin', nom: 'orthonyxie' }, { type: 'dessin', nom: 'ongle' }],
-    pedagogique: [{ type: 'dessin', nom: 'orthonyxie' }, { type: 'dessin', nom: 'ongle' }],
-    ligne: [{ type: 'ligne', nom: 'orthonyxie' }, { type: 'ligne', nom: 'ongle' }],
-  },
-  // Scène dessinée (SCENES ci-dessous) : ces pièces ne servent plus qu'en repli
-  enfant: {
-    releve: [{ type: 'animation', nom: 'premiers-pas' }, { type: 'ligne', nom: 'premiers-pas' }],
-    pedagogique: [{ type: 'ligne', nom: 'premiers-pas' }, { type: 'ligne', nom: 'empreintes' }],
-    ligne: [{ type: 'ligne', nom: 'premiers-pas' }, { type: 'ligne', nom: 'empreintes' }],
-  },
-  // Scène dessinée (SCENES ci-dessous) : ces pièces ne servent plus qu'en repli
-  senior: {
-    releve: [{ type: 'dessin', nom: 'senior' }, { type: 'dessin', nom: 'domicile' }],
-    pedagogique: [{ type: 'dessin', nom: 'senior' }, { type: 'dessin', nom: 'domicile' }],
-    ligne: [{ type: 'ligne', nom: 'senior-canne' }, { type: 'ligne', nom: 'domicile' }],
-  },
-  // Semelle orthopédique (POD-AT-0004/0005, courbes de relief) et empreintes
-  semelles: {
-    releve: [{ type: 'animation', nom: 'semelle' }, { type: 'dessin', nom: 'analyse' }],
-    pedagogique: [{ type: 'dessin', nom: 'semelle' }, { type: 'dessin', nom: 'analyse' }],
-    ligne: [{ type: 'ligne', nom: 'semelle' }, { type: 'ligne', nom: 'empreintes' }],
-  },
-  // Soin des pieds (pied vu de dessus et médaillon de l'hallux) et instruments stérilisés en sachets individuels ; en trait : les
-  // pieds vus de dessus et les instruments. Retour de Paul du 2026-10-06 : la plante en points du dessin « cors-durillons » (zone
-  // chaude orange-rouge sous l'avant-pied) se lisait « plaie » : retirée du héros (le dessin reste sur la fiche du soin).
-  pedicurie: {
-    releve: [{ type: 'dessin', nom: 'soin' }, { type: 'materiel', id: 'sachets-individuels' }],
-    pedagogique: [{ type: 'dessin', nom: 'soin' }, { type: 'materiel', id: 'sachets-individuels' }],
-    ligne: [{ type: 'ligne', nom: 'pieds-dessus' }, { type: 'ligne', nom: 'instruments' }],
-  },
+const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, Piece>> = {
+  sport: { releve: { type: 'animation', nom: 'coureur' }, pedagogique: { type: 'scene', nom: 'sport' }, ligne: { type: 'scene', nom: 'sport' } },
+  diabete: { releve: { type: 'scene', nom: 'diabete' }, pedagogique: { type: 'scene', nom: 'diabete' }, ligne: { type: 'scene', nom: 'diabete' } },
+  ongles: { releve: { type: 'scene', nom: 'ongles' }, pedagogique: { type: 'scene', nom: 'ongles' }, ligne: { type: 'ligne', nom: 'ongle' } },
+  enfant: { releve: { type: 'scene', nom: 'enfant' }, pedagogique: { type: 'scene', nom: 'enfant' }, ligne: { type: 'scene', nom: 'enfant' } },
+  senior: { releve: { type: 'scene', nom: 'senior' }, pedagogique: { type: 'scene', nom: 'senior' }, ligne: { type: 'scene', nom: 'senior' } },
+  semelles: { releve: { type: 'animation', nom: 'semelle' }, pedagogique: { type: 'scene', nom: 'semelles' }, ligne: { type: 'ligne', nom: 'semelle' } },
+  pedicurie: { releve: { type: 'scene', nom: 'pedicurie' }, pedagogique: { type: 'scene', nom: 'pedicurie' }, ligne: { type: 'ligne', nom: 'pieds-dessus' } },
 };
 
-/** Thèmes dont le héros est une scène dessinée d'un seul tenant (heros-scenes.ts) plutôt qu'un assemblage de deux pièces */
-const SCENES: Partial<Record<ThemeIllustre, SceneHeros>> = { enfant: 'enfant', senior: 'senior', diabete: 'diabete' };
-
-/** Sources d'une composition (inventaire, revue) : « dessin:sport », « animation:coureur », « ligne:marche », « materiel:podoscope » */
+/** Source d'une composition (inventaire, revue) : « scene:sport », « animation:coureur », « ligne:ongle », « materiel:podoscope » */
 export function sourcesTheme(id: ThemeIllustre, registre: Registre): string[] {
-  const scene = SCENES[id];
-  if (scene) return [`scene:${scene}`];
-  return COMPOSITIONS[id][registre].map((p) => (p.type === 'materiel' ? `materiel:${p.id}` : `${p.type}:${p.nom}`));
+  const p = COMPOSITIONS[id][registre];
+  return [p.type === 'materiel' ? `materiel:${p.id}` : `${p.type}:${p.nom}`];
 }
 
 const r1 = (v: number) => +v.toFixed(1);
 
-/** Retire d'une pièce toute lecture (textes, étiquettes et leurs renvois, légende graduée) : un héros ne montre que le dessin */
-const sansLectures = sansTextes;
-const svgPiece = (p: Piece, registre: Registre, id: string, appui: boolean) => sansLectures(svgPieceBrute(p, registre, id, appui));
-
-/** SVG d'une pièce, dans le registre du héros ; la pièce d'appui en trait continu prend l'accent */
-function svgPieceBrute(p: Piece, registre: Registre, id: string, appui: boolean): string {
-  const ligne = { couleur: appui ? ('accent' as const) : ('trait' as const), epaisseur: registre === 'ligne' ? ('fine' as const) : ('moyenne' as const) };
+/** SVG d'un dessin existant dans le registre du héros, sans aucune lecture (textes, étiquettes et leurs renvois, légende graduée) */
+function svgPiece(p: Exclude<Piece, { type: 'scene' }>, registre: Registre, id: string): string {
+  const ligne = { couleur: 'trait' as const, epaisseur: registre === 'ligne' ? ('fine' as const) : ('moyenne' as const) };
   switch (p.type) {
-    case 'dessin': return svgDessin(p.nom, { registre, id, ligne });
+    case 'dessin': return sansTextes(svgDessin(p.nom, { registre, id, ligne }));
     // Images fixes des animations : sans aucune lecture chiffrée ni titre (un héros n'affiche pas de données)
-    case 'animation': return svgAnimationFixe(p.nom, { registre, id }).replace(/<rect x="\d+" y="268"[^>]*><\/rect>/g, '');
+    case 'animation': return sansTextes(svgAnimationFixe(p.nom, { registre, id }).replace(/<rect x="\d+" y="268"[^>]*><\/rect>/g, ''));
     case 'ligne': return svgLigne(p.nom, ligne);
-    case 'materiel': return svgEquipement(p.id, { registre, id, ligne });
+    case 'materiel': return sansTextes(svgEquipement(p.id, { registre, id, ligne }));
   }
 }
 
@@ -140,10 +100,10 @@ function poser(svg: string, x: number, y: number, l: number, h: number): string 
   return `<svg x="${r1(x)}" y="${r1(y)}" width="${r1(l)}" height="${r1(h)}" viewBox="${vue}" preserveAspectRatio="xMidYMid meet" overflow="hidden"><g class="${classe}" fill="none" stroke-linecap="round" stroke-linejoin="round">${interieur}</g></svg>`;
 }
 
-/** Cadres des deux pièces (rapport 4:3) selon le format */
-const CADRES: Record<FormatHeros, { principale: [number, number, number, number]; appui: [number, number, number, number] }> = {
-  paysage: { principale: [8, 26, 400, 300], appui: [392, 86, 240, 180] },
-  portrait: { principale: [0, 14, 360, 270], appui: [72, 278, 216, 162] },
+/** Cadre du sujet unique (rapport 4:3 des dessins), centré et aussi grand que le format le permet */
+const CADRES: Record<FormatHeros, [number, number, number, number]> = {
+  paysage: [92, 6, 456, 342],
+  portrait: [0, 60, 360, 270],
 };
 
 /** Variables de couleur posées sur la racine du héros (gamme connue) ; sans gamme, celles de la page s'appliquent */
@@ -171,26 +131,22 @@ export function illustrationTheme(
   const g = typeof o.gamme === 'string' ? gammeParId(o.gamme) : (o.gamme ?? undefined);
   const { largeur: L, hauteur: H } = FORMATS_HEROS[format];
   const id = o.id ?? `h-${themeId}-${format[0]}-${registre[0]}`;
-  const [principale, appui] = COMPOSITIONS[themeId][registre];
-  const c = CADRES[format];
+  const piece = COMPOSITIONS[themeId][registre];
   const R = registre === 'releve';
-  // Fond : surface « plan » quadrillée (relevé), aplat doux arrondi derrière la pièce principale (pédagogique), aucun (ligne)
+  // Fond : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne)
   let fond = '';
   if (R) {
     const pas = 40;
     const grille = [...Array.from({ length: Math.floor(L / pas) }, (_, i) => `M${(i + 1) * pas} 0V${H}`), ...Array.from({ length: Math.floor(H / pas) }, (_, i) => `M0 ${(i + 1) * pas}H${L}`)].join('');
     fond = `<rect width="${L}" height="${H}" fill="var(--plan, ${PLAN.fond})"></rect><path d="${grille}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.07" stroke-width="1"></path><path d="M16 12H${L - 16}M16 ${H - 12}H${L - 16}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.28" stroke-width="1"></path>`;
   } else if (registre === 'pedagogique') {
-    // Scène : aplat doux centré (les pieds et les jambes le débordent) ; sinon derrière la pièce principale
-    const [x, y, l, h] = SCENES[themeId] ? [L * 0.1, H * 0.1, L * 0.8, H * 0.8] : c.principale;
+    // Aplat doux centré : le sujet (pieds, jambes) le déborde
+    const [x, y, l, h] = [L * 0.1, H * 0.1, L * 0.8, H * 0.8];
     fond =`<rect x="${r1(x + l * 0.06)}" y="${r1(y + h * 0.04)}" width="${r1(l * 0.88)}" height="${r1(h * 0.92)}" rx="${r1(Math.min(l, h) * 0.12)}" fill="var(--aplat, var(--doux))"></rect>`;
   }
   // Sujet dans le <title> (jamais affiché) : thème et pièces, pour l'accessibilité des outils et les agents
   const titre = `<title>${titreTheme(themeId)} — ${sourcesTheme(themeId, registre).join(', ')}</title>`;
-  const scene = SCENES[themeId];
-  const corps = scene
-    ? sceneHeros(scene, { format, registre })
-    : poser(svgPiece(principale, registre, `${id}-a`, false), ...c.principale) + poser(svgPiece(appui, registre, `${id}-b`, true), ...c.appui);
+  const corps = piece.type === 'scene' ? sceneHeros(piece.nom, { format, registre }) : poser(svgPiece(piece, registre, `${id}-a`), ...CADRES[format]);
   const style = couleurs(g, registre);
   const classes = ['heros-theme', `heros-theme--${themeId}`, `heros-theme--${format}`, `heros-theme--${registre}`, o.classe].filter(Boolean).join(' ');
   return `<svg class="${classes}" viewBox="0 0 ${L} ${H}" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" fill="none"${style ? ` style="${style}"` : ''}>${titre}${fond}${corps}</svg>`;
