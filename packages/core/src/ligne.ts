@@ -350,7 +350,7 @@ function contourProfil(voute: 'normale' | 'creuse' | 'plate' = 'normale'): { tra
  * Talon levé (fin d'appui) : la partie du pied et de la jambe en arrière de la métatarso-phalangienne tourne autour d'elle de
  * `angle` degrés, les orteils restent à plat au sol (raccord progressif sur ±6 u autour de la MTP).
  */
-function leverTalon(pts: P[], mtp: P, angle: number): P[] {
+export function leverTalon(pts: P[], mtp: P, angle: number): P[] {
   return pts.map(([x, y]) => {
     const w = Math.max(0, Math.min(1, (mtp[0] + 5 - x) / 11)), w2 = w * w * (3 - 2 * w);
     const a = (angle * w2 * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a), dx = x - mtp[0], dy = y - mtp[1];
@@ -362,7 +362,7 @@ function leverTalon(pts: P[], mtp: P, angle: number): P[] {
  * Pliure : les points situés au-delà de `pivot` le long de la direction `axe` (vers le haut de la jambe) tournent de `angle` degrés
  * autour du pivot (positif = le haut part vers l'avant, à droite), avec un raccord progressif sur `largeur` unités (articulation).
  */
-function plier(pts: P[], pivot: P, axe: P, angle: number, largeur = 14): P[] {
+export function plier(pts: P[], pivot: P, axe: P, angle: number, largeur = 14): P[] {
   return pts.map(([x, y]) => {
     const sAxe = (x - pivot[0]) * axe[0] + (y - pivot[1]) * axe[1];
     const w = Math.max(0, Math.min(1, (sAxe + largeur / 2) / largeur)), w2 = w * w * (3 - 2 * w);
@@ -1025,6 +1025,20 @@ export function contenuLigneGroupes(svgPedagogique: string, groupes: string[][],
     }
     return t.pts;
   }).filter((p) => p.length > 1);
+  return ecrireTraits(traits, o);
+}
+
+/**
+ * Dessin au trait continu à partir de morceaux déjà posés dans le repère 240 × 180 (kit Sports, sports.ts) : chaque groupe est UN
+ * trait — ses morceaux sont enchaînés dans l'ordre par des ponts lissés, comme les dessins de ce module — puis rogné au cadre (une
+ * jambe sort du cadre, jamais de débord). 3 traits au plus par dessin (contrôle de la charte).
+ */
+export function contenuLigneMorceaux(groupes: P[][][], o: OptionsLigne = {}): string {
+  const b = o.boucles ?? LIGNE.defaut.boucles;
+  const traits = groupes
+    .map((g) => { const t = new Trait(b); for (const m of g) if (m.length > 1) t.ajouter(m, { tension: 0.5 }); return t.pts; })
+    .filter((p) => p.length > 1)
+    .flatMap((p) => rogner(p));
   return ecrireTraits(traits, o);
 }
 

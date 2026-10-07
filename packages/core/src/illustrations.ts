@@ -17,6 +17,8 @@ import { VISUELS_SOINS } from './jeux';
 import { EQUIPEMENTS } from './equipements';
 import { THEMES_ILLUSTRES, illustrationTheme, sourcesTheme } from './heros-themes';
 import { THEMES } from './themes';
+import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
+import { clesSport, sujetsDesKits } from './kits';
 
 /** Statut de revue d'une illustration (valeurs de la colonne `statut` de la migration 0021) */
 export type StatutIllustration = 'a_revoir' | 'valide' | 'a_retravailler' | 'retire';
@@ -107,6 +109,20 @@ export function inventaireIllustrations(): Illustration[] {
       svg: () => svgLigne(nom as NomLigne),
     });
   }
+  // Kit Sports (2026-10-07, brouillons) : un trait continu et un dessin pédagogique par sport (sports.ts) ; sujet « sport » par défaut
+  for (const sport of SPORTS) {
+    const f = FICHES_SPORTS[sport], cles = clesSport(sport);
+    l.push({
+      cle: cles.ligne, type: 'dessin', registre: 'ligne', titre: `${f.libelle} (kit Sports)`, detail: `Trait continu · ${f.regard}`,
+      source: `packages/core/src/sports.ts — scene('${sport}')`, soins: ['sport'], statutParDefaut: 'a_revoir', fond: 'clair',
+      svg: () => svgSport(sport, 'ligne'),
+    });
+    l.push({
+      cle: cles.pedagogique, type: 'dessin', registre: 'pedagogique', titre: `${f.libelle} (kit Sports)`, detail: `Pédagogique · ${f.regard}`,
+      source: `packages/core/src/sports.ts — scene('${sport}')`, soins: ['sport'], statutParDefaut: 'a_revoir', fond: 'doux',
+      svg: () => svgSport(sport, 'pedagogique'),
+    });
+  }
   for (const id of EQUIPEMENTS_DESSINES) {
     const e = EQUIPEMENTS.find((x) => x.id === id);
     for (const registre of ['releve', 'pedagogique', 'ligne'] as const) {
@@ -129,7 +145,7 @@ export function inventaireIllustrations(): Illustration[] {
   for (const p of PICTOS) {
     l.push({
       cle: `picto:${p.id}`, type: 'picto', titre: p.libelle, detail: `${p.id} · ${FAMILLES_PICTOS[p.famille as Famille] ?? p.famille}`,
-      source: `packages/core/src/pictos.ts — '${p.id}'`, soins: Object.entries(PICTOS_SOINS).filter(([, v]) => v === p.id).map(([slug]) => slug),
+      source: `packages/core/src/pictos.ts — '${p.id}'`, soins: [...Object.entries(PICTOS_SOINS).filter(([, v]) => v === p.id).map(([slug]) => slug), ...sujetsDesKits(`picto:${p.id}`)],
       statutParDefaut: 'a_revoir', fond: 'clair',
       svg: () => svgPicto(p.id, { taille: '100%', accent: true }) ?? '',
     });

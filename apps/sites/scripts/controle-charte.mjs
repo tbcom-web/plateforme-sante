@@ -57,7 +57,7 @@ for (const dossier of DOSSIERS) {
 // Gammes (contrastes AA) et fiches de modèles : on charge le core via esbuild (TypeScript).
 const sortie = join(tmpdir(), `controle-charte-${process.pid}.mjs`);
 await build({
-  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele, verifierTeinteSombre } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { GAMMES, verifierGamme, MODELES_INTEGRES, validerManifeste, feuilleCharte, UNIVERS_LISTE, MARQUES_DESSINEES, DESSINS_PODOLOGIE, ANIMATIONS, REGISTRES, svgDessin, svgAnimationFixe, PHOTOS_DESSINS, VISUELS_SOINS, EQUIPEMENTS, EQUIPEMENTS_DESSINES, svgEquipement, FORMES_BIBLIOTHEQUE, BIBLIOTHEQUE, svgForme, jetonsSansCorrespondance, DESSINS_LIGNE, svgLigne, svgElement, CATALOGUE_UNIVERS, validerUnivers, appliquerUnivers, draftVide, COULEURS_EXTREMES, verifierCouleursGabarit, gabaritModele, verifierTeinteSombre, SPORTS, svgSport } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent',
 });
 const core = await import(pathToFileURL(sortie).href);
@@ -121,6 +121,12 @@ const dessins = [
       if (r === 'ligne') return defautsLigne(svg, `dessin de matériel « ${id} » (ligne)`);
       return invalide(svg) || elements(svg) < 6 ? [`dessin de matériel « ${id} » (${r}) : vide ou invalide`] : [];
     }),
+  ]),
+  // Kit Sports (packages/core/src/sports.ts) : trait continu (mêmes règles que le registre ligne) et pédagogique (non vide, sans
+  // couleur littérale, sans texte)
+  ...core.SPORTS.flatMap((s) => [
+    ...['discretes', 'marquees'].flatMap((b) => defautsLigne(core.svgSport(s, 'ligne', { boucles: b }), `sport « ${s} » (ligne, boucles ${b})`)),
+    ...((svg) => [...(invalide(svg) || elements(svg) < 5 ? [`sport « ${s} » (pédagogique) : vide ou invalide`] : []), ...(/<text/.test(svg) ? [`sport « ${s} » (pédagogique) : texte`] : []), ...(/#[0-9a-f]{3,8}|rgba?\(\s*\d/i.test(svg) ? [`sport « ${s} » (pédagogique) : couleur littérale`] : [])])(core.svgSport(s, 'pedagogique')),
   ]),
   ...core.DESSINS_PODOLOGIE.filter((n) => !core.PHOTOS_DESSINS[n]).map((n) => `dessin « ${n} » sans photo associée (PHOTOS_DESSINS)`),
   ...Object.entries(core.VISUELS_SOINS).filter(([, c]) => !core.DESSINS_PODOLOGIE.includes(c.dessin)).map(([s, c]) => `soin « ${s} » : dessin inconnu « ${c.dessin} »`),

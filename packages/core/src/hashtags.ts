@@ -112,10 +112,18 @@ export type LigneHashtag = { cle: string; hashtag: string; action: ActionHashtag
 /** État courant : hashtags de chaque asset (ordre alphabétique), clés triées ; un asset sans hashtag n'apparaît pas */
 export type HashtagsAssets = Record<string, string[]>;
 
-/** Journal → état courant : dernière action par (clé, hashtag), dans l'ordre des dates puis de lecture */
-export function hashtagsDepuisLignes(lignes: readonly LigneHashtag[]): HashtagsAssets {
+/**
+ * Journal → état courant : dernière action par (clé, hashtag), dans l'ordre des dates puis de lecture. `defauts` : hashtags par
+ * défaut tirés du code (kits.ts, HASHTAGS_PAR_DEFAUT), appliqués AVANT le journal — un retrait de Paul les enlève, un ajout s'y ajoute.
+ */
+export function hashtagsDepuisLignes(lignes: readonly LigneHashtag[], defauts: Readonly<Record<string, readonly string[]>> = {}): HashtagsAssets {
   const triees = lignes.map((l, i) => ({ l, i })).sort((a, b) => String(a.l.le ?? '').localeCompare(String(b.l.le ?? '')) || a.i - b.i);
   const etat = new Map<string, Map<string, ActionHashtag>>();
+  for (const [cle, hs] of Object.entries(defauts)) {
+    const m = new Map<string, ActionHashtag>();
+    for (const h of hs) if (estHashtag(h)) m.set(h, 'ajout');
+    if (m.size) etat.set(cle, m);
+  }
   for (const { l } of triees) {
     if (!estHashtag(l.hashtag) || (l.action !== 'ajout' && l.action !== 'retrait') || typeof l.cle !== 'string' || !l.cle) continue;
     const m = etat.get(l.cle) ?? new Map<string, ActionHashtag>();

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { illustrationUtilisable, inventaireIllustrations, markdownRetours, empreinteSvg, statutRevueBibliotheque } from './illustrations';
 import { PICTOS } from './pictos';
 import { DESSINS_PODOLOGIE } from './univers';
+import { SPORTS } from './sports';
 
 test('clés uniques et rendus non vides', () => {
   const l = inventaireIllustrations();
@@ -11,7 +12,7 @@ test('clés uniques et rendus non vides', () => {
   for (const i of l) assert.match(i.svg(), /^<svg/, i.cle);
   assert.equal(l.filter((i) => i.type === 'picto').length, PICTOS.length);
   assert.ok(l.some((i) => i.cle === 'dessin:orthonyxie:releve') && l.some((i) => i.cle === 'picto:orthonyxie'));
-  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne').length, DESSINS_PODOLOGIE.length * 2);
+  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne').length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length);
 });
 
 test('statuts', () => {

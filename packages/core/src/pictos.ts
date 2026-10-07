@@ -39,6 +39,7 @@ import { PICTO } from './charte';
 import { MEDIAL, LATERAL_NORMAL, VOISINS, LAME } from './bibliotheque/hallux-gros-plan';
 import { PLAQUE_DURILLON } from './bibliotheque/soins-ongles';
 import { FORMES } from './bibliotheque/formes';
+import { SPORTS, FICHES_SPORTS, pictoSport, idPictoSport, type Sport } from './sports';
 
 // ———————————————————————————————————————————————————— Outils de tracé
 
@@ -233,7 +234,7 @@ function profil(l: number, [x0, sol]: P, { voute = 'normale' as 'normale' | 'cre
 /** Partie d'un picto : un tracé au trait, éventuellement à l'accent, ou un micro-aplat (`plein`) */
 type Partie = { d: string; accent?: boolean; plein?: boolean };
 type Def = { libelle: string; famille: Famille; parties: () => Partie[] };
-export type Famille = 'anatomie' | 'pathologies' | 'chaussage' | 'examens' | 'soins' | 'cabinet' | 'pratique';
+export type Famille = 'anatomie' | 'pathologies' | 'chaussage' | 'examens' | 'soins' | 'cabinet' | 'pratique' | 'sports';
 export const FAMILLES_PICTOS: Record<Famille, string> = {
   anatomie: 'Le pied',
   pathologies: 'Motifs de consultation',
@@ -242,6 +243,7 @@ export const FAMILLES_PICTOS: Record<Famille, string> = {
   soins: 'Soins et publics',
   cabinet: 'Cabinet',
   pratique: 'Infos pratiques',
+  sports: 'Sports',
 };
 
 const trait = (d: string): Partie => ({ d });
@@ -662,6 +664,26 @@ const DEFS: Record<string, Def> = {
     ],
   },
 };
+
+/**
+ * Kit Sports (2026-10-07, brouillons) : le picto de chaque sport est la scène du sport (sports.ts : pied validé chaussé, ballon,
+ * pédale…) recadrée sur la grille 48 et simplifiée — même géométrie que le trait continu et le dessin pédagogique, jamais redessinée.
+ * Le détail à l'accent est l'objet du sport (ballon, crampons, pédale, ski, lignes de vitesse) ; la jambe sort du cadre par le haut.
+ */
+function pictoDeSport(sport: Sport): Partie[] {
+  const { region: [x0, y0, c], traits, accents } = pictoSport(sport);
+  const e = 44 / c;
+  const t: Transfo = (x, y) => [2 + (x - x0) * e, 2 + (y - y0) * e];
+  const dans = (q: P) => q[0] >= 2.2 && q[0] <= 45.8 && q[1] >= 2.2 && q[1] <= 45.8;
+  const d = (l: P[][]) => l.map((q) => `M${q.map(([x, y]) => `${r1(x)} ${r1(y)}`).join(' L')}`).join(' ');
+  // Points de contrôle bornés à la grille (aux angles vifs d'une semelle, la courbe de Catmull-Rom les pousse hors du cadre)
+  const borner = (x: string) => x.replace(/-?\d*\.?\d+/g, (n) => String(Math.min(46.5, Math.max(1.5, +n))));
+  return [trait(borner(simplifier(d(traits), t, 0.4, dans))), accent(borner(simplifier(d(accents), t, 0.35, dans)))];
+}
+const DEFS_SPORTS: Record<string, Def> = Object.fromEntries(
+  SPORTS.map((s) => [idPictoSport(s), { libelle: FICHES_SPORTS[s].libelle, famille: 'sports' as Famille, parties: () => pictoDeSport(s) }]),
+);
+Object.assign(DEFS, DEFS_SPORTS);
 
 export type IdPicto = keyof typeof DEFS;
 

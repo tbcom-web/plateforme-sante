@@ -50,3 +50,5 @@ export * from './credits-photos';
 export * from './sources-photos';
 export * from './animations-sources';
 export * from './animations-lecture';
+export * from './sports';
+export * from './kits';

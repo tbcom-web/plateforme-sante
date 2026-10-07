@@ -94,6 +94,11 @@
 - Poing rond posé sur une crosse de canne dont le crochet dépasse dessous = main « bizarre » : la main ENSERRE une poignée qui dépasse devant les doigts, la tige sort sous le poing [Paul 2026-10-07, senior].
 - Repli d'ongle incarné peint en boudin plein, cerné d'un trait posé sur la lame = « second ongle inclus dedans » ; coin de lame à cran + spicule = « ongle cassé » : repli en peau + rougeur fondue, contour extérieur seul, lame d'un seul arc [Paul 2026-10-07, POD-AT-0009].
 - Instruments en page d'accueil = inquiétant : le premier écran rassure (pieds soignés), les instruments vont à la fiche du soin [Paul 2026-10-07, pédicurie].
+- Quelques petits arcs ou points dans un rond (alvéoles d'une balle de golf, coutures) = **visage / smiley** : balle lisse, ou motif régulier sans « yeux » [sites, kit Sports 2026-10-07].
+- Crampons de football (moulés, courts, nombreux) et de rugby (vissés, longs, peu nombreux) confondus = « faux matériel » pour un sportif : compter et mesurer avant de dessiner [sites, kit Sports].
+- Chaussure dessinée à part puis posée sur un pied = longueur fausse : la chaussure est l'enveloppe du pied validé, élargie de la tige [sites, kit Sports].
+- Pliure de cheville appliquée APRÈS avoir levé le talon (axe incliné) = les orteils sont emportés et se relèvent en l'air : plier la jambe sur le pied à plat, puis lever l'arrière-pied [sites, kit Sports].
+- Lignes de vitesse ou de chute reliées au sol par le trait continu = « gribouillis / cadre » : en trait continu, le mouvement se dit par la pose, les lignes restent au pédagogique [sites, kit Sports].
 
 ## Anatomie
 - Calque de peau posé par-dessus un objet (repli sur la lame) : il couvre TOUTE la racine et reprend le contour qu'il cache, sinon l'objet paraît collé (« pansement ») et le contour s'interrompt [0018 7a].
