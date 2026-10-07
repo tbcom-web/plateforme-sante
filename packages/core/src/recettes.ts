@@ -24,6 +24,7 @@ import { NEUTRES } from './charte';
 import { themeParId } from './themes';
 import { themeIllustre } from './heros-themes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
+import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
 import { clePhoto, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
@@ -194,6 +195,13 @@ export type ContexteRecette = {
    * variante concernée passe après les autres (FACTEUR_DEFAUT_MOBILE), sans être exclue ; le studio de Paul ne la fournit pas.
    */
   defautsMobile?: ReadonlySet<string>;
+  /**
+   * Harmonie graphique (harmonie.ts) : par défaut, « Tout changer » et chaque dé tirent dans une famille de style et ne proposent
+   * que des valeurs compatibles avec le reste. `horsRegles` (« Hors règles (explorer) » du studio) les désactive ; les garde-fous
+   * ci-dessus restent toujours actifs. `poidsHarmonie` : poids appris des notes (apprendreHarmonie), sinon dérivés de `poids`.
+   */
+  horsRegles?: boolean;
+  poidsHarmonie?: PoidsHarmonie | null;
 };
 
 /** Sujets actifs (posture et sujets différés jamais pris en compte) */
@@ -594,6 +602,8 @@ export function compositionInitiale(c: ContexteRecette, graine = 0): Composition
  * reparerComposition : un tirage ne lève jamais un garde-fou.
  */
 export function tirerDimension(x: CompositionRecette, dim: DimensionRecette, c: ContexteRecette, graine: number): CompositionRecette {
+  // Harmonie (harmonie.ts) : seulement des valeurs compatibles avec le reste, sauf « Hors règles »
+  if (!c.horsRegles) return tirerDimensionHarmonieuse(x, dim, c, graine, { ...outilsHarmonie(c), brut: (y, g) => tirerDimension(y, dim, { ...c, horsRegles: true }, g) });
   const r = alea(graine, dim);
   let y: CompositionRecette = x;
   switch (dim) {
@@ -616,6 +626,7 @@ export function tirerDimension(x: CompositionRecette, dim: DimensionRecette, c: 
  * (`composant` : horaires, galerie…) : le modèle ne change pas, seules ces variantes sont re-tirées.
  */
 export function tirerPage(x: CompositionRecette, cible: { page: PageStructure } | { composant: keyof Variantes }, c: ContexteRecette, graine: number): CompositionRecette {
+  if (!c.horsRegles) return tirerDimensionHarmonieuse(x, 'page' in cible ? `page:${cible.page}` : `composant:${cible.composant}`, c, graine, { ...outilsHarmonie(c), brut: (y, g) => tirerPage(y, cible, { ...c, horsRegles: true }, g) });
   const touchees: string[] = 'page' in cible ? [...(PAGES_STRUCTURE.find((p) => p.id === cible.page)?.sections ?? [])] : [cible.composant];
   const autres = Object.keys(VARIANTES_SECTIONS).filter((s) => !touchees.includes(s)).map((s) => `composant:${s}`);
   const garder = [...autres, ...('page' in cible && cible.page === 'accueil' ? [] : ['page:accueil'])];
@@ -702,6 +713,8 @@ export function blocsPourCle(cle: string): string[] | undefined {
 
 /** « Tout changer » : un dé sur chaque dimension non verrouillée (structure d'abord : elle conditionne styles et couleurs) */
 export function toutChanger(x: CompositionRecette, verrous: readonly string[], c: ContexteRecette, graine: number): CompositionRecette {
+  // Harmonie (harmonie.ts) : une famille de style d'abord (sujet n° 1, notes, verrous), puis chaque dimension dans la famille
+  if (!c.horsRegles) return toutChangerHarmonieux(x, verrous, c, graine, { ...outilsHarmonie(c), brut: (y, g) => toutChanger(y, verrous, { ...c, horsRegles: true }, g) });
   let y = x;
   const sousVerrous = verrous.filter((v) => v.startsWith('page:') || v.startsWith('composant:'));
   for (const d of ['structure', 'couleurs', 'polices', 'visuels', 'photos', 'effets', 'traitement'] as const) {
@@ -717,6 +730,25 @@ export function toutChanger(x: CompositionRecette, verrous: readonly string[], c
 // ---------------------------------------------------------------------------------------------------------------
 // Garde-fous
 // ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Outils du moteur d'harmonie (harmonie.ts) pour un scénario : les garde-fous du core passent toujours avant les règles d'harmonie
+ * (réparation, structures et styles permis, gammes non exclues, présentations permises par le gabarit). `brut` : tirage sans harmonie.
+ */
+export function outilsHarmonie(c: ContexteRecette): OutilsTirage<CompositionRecette> {
+  const brut = { ...c, horsRegles: true };
+  return {
+    brut: (x, g) => toutChanger(x, [], brut, g),
+    reparer: (x) => reparerComposition(x, c),
+    permis: (dim, x) => {
+      if (dim === 'structure') return structuresPermises(c);
+      if (dim === 'style') return stylesPermis(c, x.structure);
+      if (dim === 'gamme') { const ex = gammesExclues(c); return GAMMES.filter((g) => !ex.has(g.id) && !(avecDiabete(c) && estRougeVif(g.accent))).map((g) => g.id); }
+      if (dim.startsWith('v.')) return sectionsVariables(gabaritDe(c, x.structure)).includes(dim.slice(2) as keyof Variantes) ? (VARIANTES_SECTIONS[dim.slice(2) as keyof Variantes] as readonly string[]) : [];
+      return null;
+    },
+  };
+}
 
 /** Défauts d'une composition dans un scénario (liste vide si tout est permis) */
 export function controlerComposition(x: CompositionRecette, c: ContexteRecette): string[] {

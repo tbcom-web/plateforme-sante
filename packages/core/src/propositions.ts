@@ -38,6 +38,10 @@ import { themeParId, type Priorites } from './themes';
 import { BONUS_ATELIER, bonusAtelier, type PoidsAtelier } from './atelier-poids';
 import { bonusAssets } from './assets-poids';
 import { SPECIALITES } from './packs';
+import { harmonieCombinaison } from './harmonie';
+
+/** Poids de l'harmonie graphique (harmonie.ts) dans la pertinence d'une proposition (points par unité d'accord) */
+const BONUS_HARMONIE = 3;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Styles d'illustration
@@ -358,7 +362,9 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
         } else animations.push([null, 0]);
 
         for (const [animation, bonusAnim] of animations) {
-          const base = 3 * aU + 3 * aS + (couleurs.length ? 1 * aG + 4 * aC : 2.5 * aG) + nuance + bonusAnim;
+          // Harmonie graphique (harmonie.ts) : accord structure × style × gamme, ±1 point environ ; ne lève jamais une règle
+          const harmonie = BONUS_HARMONIE * (harmonieCombinaison(u, style, g.id) - 0.7);
+          const base = 3 * aU + 3 * aS + (couleurs.length ? 1 * aG + 4 * aC : 2.5 * aG) + nuance + bonusAnim + harmonie;
           const cle = `${n1}~${u}~${g.id}~${style}~${animation ?? '0'}`;
           const { registre, modeVisuel } = reglageStyle(style, u);
           const photos = style === 'photos' ? (theme1?.specialite ?? 'generale') : null;

@@ -26,6 +26,8 @@ import {
   appliquerPriorites, draftPourOnglet, libelleTraitementPhotos, niveauProximite, normaliserScenario, ongletsDuScenario, scenarioDeRecette, soinsDuScenario,
   TRAITEMENTS_PHOTOS, photosCompatibles, tirerPhotos, alea, respecterVerrous, suivreScenario, animationsPermises, tirerAnimation, LIBELLES_ANIMATIONS, type ScenarioRecette,
 } from '@plateforme/core';
+import IndicateurHarmonie from './IndicateurHarmonie';
+import { apprendreHarmonie } from '@plateforme/core';
 import SimulateurClient, { type CabinetDemo } from './SimulateurClient';
 import RecetteVignette from './RecetteVignette';
 import ApercusCoteACote from './ApercusCoteACote';
@@ -92,7 +94,10 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const [banque, setBanque] = useState<PhotoBanque[]>(photos);
   const [avecNonImportees, setAvecNonImportees] = useState(true);
   // Simulateur : visuels (héros, photos) tirés SEULEMENT des sujets du client simulé (sujetsSeulement)
-  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos: banque, nonImportees: avecNonImportees, sujetsSeulement: true, modele }), [scenario, poids, banque, avecNonImportees, modele]);
+  // Harmonie (harmonie.ts) : règles actives sauf « Hors règles (explorer) » ; poids souples appris des recettes notées
+  const [explorer, setExplorer] = useState(false);
+  const poidsHarmonie = useMemo(() => apprendreHarmonie(recettes.filter((r) => r.note !== null && r.statut === 'active').map((r) => ({ note: r.note!, composition: r.composition }))), [recettes]);
+  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos: banque, nonImportees: avecNonImportees, sujetsSeulement: true, modele, horsRegles: explorer, poidsHarmonie }), [scenario, poids, banque, avecNonImportees, modele, explorer, poidsHarmonie]);
   const [comp, setComp] = useState<CompositionRecette>(() => compositionInitiale({ sujets: ['sport'], principaux: 1, photos, sujetsSeulement: true, modele: modeleIntegre }));
   const [historique, setHistorique] = useState<Record<string, Partial<CompositionRecette>[]>>({});
   const [verrous, setVerrous] = useState<string[]>([]);
@@ -367,6 +372,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
             <span className="text-xs text-neutral-500">Transition entre pages : visible sur le site publié (navigateurs compatibles).</span>
           </div>
           {defauts.length > 0 && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-900">{defauts.join(' ')}</p>}
+          <IndicateurHarmonie composition={comp} contexte={ctx} onCorriger={setComp} explorer={explorer} onExplorer={setExplorer} />
 
     </>
   );

@@ -51,6 +51,7 @@ export * from './sources-photos';
 export * from './animations-sources';
 export * from './animations-lecture';
 export * from './effets';
+export * from './harmonie';
 export * from './recettes';
 export * from './formes';
 export * from './sports';
