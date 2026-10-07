@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   },
   // Le noyau partagé est livré en TypeScript source.
   transpilePackages: ['@plateforme/core'],
+  // Conversion WebP des photos libres (lib/photos-libres.ts) : module natif, chargé tel quel côté serveur.
+  serverExternalPackages: ['sharp'],
   // Domaine dédié de l'essai gratuit (docs/onboarding-lead.md) : essai.webpodologue.fr/ sert la page /essai.
   async rewrites() {
     return {
