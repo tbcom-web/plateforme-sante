@@ -30,13 +30,13 @@ type Props = {
   migrationManquante: boolean;
 };
 
-type Scenario = { principaux: string[]; secondaires: string[]; couleurs: string[] };
+export type Scenario = { principaux: string[]; secondaires: string[]; couleurs: string[] };
 type Appareil = 'bureau' | 'mobile';
 
 const ACTIFS = THEMES.filter((t) => t.statut === 'actif').map((t) => t.id);
 
 /** Tirage au hasard : 1 à 3 sujets principaux, 0 à 2 secondaires, 0 à 3 couleurs (thèmes différés exclus) */
-function auHasard(): Scenario {
+export function auHasard(): Scenario {
   const melange = <T,>(l: readonly T[]) => [...l].map((x) => [Math.random(), x] as const).sort((a, b) => a[0] - b[0]).map(([, x]) => x);
   const t = melange(ACTIFS);
   const np = 1 + Math.floor(Math.random() * 3);
@@ -46,7 +46,7 @@ function auHasard(): Scenario {
 }
 
 /** Cabinet fictif de l'aperçu (seule l'apparence vient de la proposition) */
-function draftDemo(): SiteDraft {
+export function draftDemo(): SiteDraft {
   const d = draftVide();
   d.cabinet = { ...d.cabinet, nom: 'Cabinet de podologie', ville: 'Lyon', quartier: 'Brotteaux', telephone: '04 00 00 00 00' };
   d.lieux[0] = { ...d.lieux[0], adresse: '10 rue de la Démo', codePostal: '69006', ville: 'Lyon' };

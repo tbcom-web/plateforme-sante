@@ -24,6 +24,8 @@
 // 7. Déterminisme : mêmes sujets, mêmes couleurs, même graine (et mêmes poids) → mêmes lots, dans le même ordre.
 // 8. Apprentissage (atelier-poids.ts, option `poids`) : les notes de l'atelier réordonnent les combinaisons et écartent les
 //    franchement mal notées, sans jamais lever une règle ci-dessus (elles ne portent que sur des combinaisons déjà permises).
+//    Les notes des assets (assets-poids.ts, `poids.assets`) s'y ajoutent : héros, animations, gammes, modèles, photos et
+//    dessins bien notés passent devant ; mal notés, « retirés » ou « à retravailler » reculent ou sont écartés.
 //
 // Module pur, sans dépendance d'exécution.
 
@@ -34,6 +36,8 @@ import { GAMMES, gamme as gammeParId, type Gamme } from './gammes';
 import type { Animation } from './packs';
 import { themeParId, type Priorites } from './themes';
 import { BONUS_ATELIER, bonusAtelier, type PoidsAtelier } from './atelier-poids';
+import { bonusAssets } from './assets-poids';
+import { SPECIALITES } from './packs';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Styles d'illustration
@@ -305,6 +309,12 @@ function hache(s: string): number {
   return (h >>> 0) / 4294967296;
 }
 
+/** Photos montrées par le style « photos » d'une spécialité (accueil, panorama, diaporama) */
+function photosSpecialite(id: string): string[] {
+  const s = SPECIALITES.find((x) => x.value === id) ?? SPECIALITES[0];
+  return [...new Set([s.photos.accueil, s.photos.panorama, ...s.photos.diaporama])];
+}
+
 type Candidat = Proposition & { cle: string; /** bonus de l'atelier (étoiles) */ bonus: number };
 
 /** Toutes les combinaisons cohérentes avec les sujets, notées (pertinence décroissante) */
@@ -351,7 +361,12 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
           const base = 3 * aU + 3 * aS + (couleurs.length ? 1 * aG + 4 * aC : 2.5 * aG) + nuance + bonusAnim;
           const cle = `${n1}~${u}~${g.id}~${style}~${animation ?? '0'}`;
           const { registre, modeVisuel } = reglageStyle(style, u);
-          const bonus = opts.poids ? bonusAtelier({ structure: u, gamme: g.id, style, animation, theme1: n1, proposition: cle }, opts.poids) : 0;
+          const photos = style === 'photos' ? (theme1?.specialite ?? 'generale') : null;
+          const bonus = opts.poids
+            ? Math.min(BONUS_ATELIER.max, Math.max(BONUS_ATELIER.min,
+              bonusAtelier({ structure: u, gamme: g.id, style, animation, theme1: n1, proposition: cle }, opts.poids)
+              + bonusAssets({ structure: u, gamme: g.id, style, registre, modeVisuel, animation, heros: n1 === 'cabinet' ? null : n1, photos: photos ? photosSpecialite(photos) : [] }, opts.poids.assets)))
+            : 0;
           const nuances: string[] = [];
           if (n2 && animation && animation === r2?.animation && animation !== r1.animation) nuances.push(`Animation tirée de votre sujet « ${themeParId(n2)?.court} »`);
           if (n2 && r2?.gammes.slice(0, 3).includes(g.id) && !r1.gammes.slice(0, 2).includes(g.id)) nuances.push(`Couleurs proches de votre sujet « ${themeParId(n2)?.court} »`);
@@ -368,7 +383,7 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
             registre,
             modeVisuel,
             animation,
-            photos: style === 'photos' ? (theme1?.specialite ?? 'generale') : null,
+            photos,
             heros: n1 === 'cabinet' ? null : n1,
             couleurs: couleursReprises,
             nuances,

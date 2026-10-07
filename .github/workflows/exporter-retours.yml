@@ -1,0 +1,56 @@
+name: exporter-retours
+
+# Export des retours de Paul (notes et commentaires sur les assets et les combinaisons) vers le dossier retours/ du dépôt,
+# pour que Claude les lise (git pull puis retours/SYNTHESE.md ; docs/retours.md).
+# Déclenché chaque nuit, à la main (Actions → exporter-retours → Run workflow) ou par le bouton « Envoyer mes retours à
+# Claude maintenant » du back-office (/admin/retours, /admin/atelier, /admin/illustrations : API workflow_dispatch).
+# Le dépôt est public : le script ne lit que des colonnes explicites (ni auteur, ni e-mail, ni leads, prospects ou sites).
+# Commit seulement s'il y a des changements, par le bot github-actions.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: exporter-retours
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  exporter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Exporter les retours depuis Supabase
+        run: node scripts/exporter-retours.mjs
+
+      - name: Enregistrer dans le dépôt (s'il y a du nouveau)
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add retours/
+          if git diff --cached --quiet; then
+            echo "Aucun nouveau retour."
+            exit 0
+          fi
+          git commit -m "Retours : export du $(TZ=Europe/Paris date +%Y-%m-%d)"
+          for essai in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 5
+          done
+          exit 1

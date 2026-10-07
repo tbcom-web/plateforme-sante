@@ -1,6 +1,7 @@
 import 'server-only';
 import { choisirJeuPhotos, jeuPhotosDepuisLigne, type JeuPhotos } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { getPoidsAssets } from '@/lib/assets-notes';
 
 // Jeux de photos côté serveur (table jeux_photos, migration 0016) : lecture, tirage, affectation.
 
@@ -20,7 +21,7 @@ export async function lireJeuPhotos(id: string, supabase?: Client): Promise<JeuP
   return data ? jeuPhotosDepuisLigne(data) : null;
 }
 
-/** Tirage au hasard parmi les jeux partagés actifs de la spécialité ('' si aucun) */
+/** Tirage au hasard parmi les jeux partagés actifs de la spécialité ('' si aucun), pondéré par les notes des photos (0027) */
 export async function tirerJeuPhotos(specialite: string, supabase?: Client): Promise<string> {
   const client = supabase ?? (await createClient());
   const { data } = await client
@@ -29,7 +30,8 @@ export async function tirerJeuPhotos(specialite: string, supabase?: Client): Pro
     .is('site_id', null)
     .eq('actif', true)
     .eq('specialite', specialite);
-  return choisirJeuPhotos((data ?? []).map(jeuPhotosDepuisLigne), specialite);
+  const jeux = (data ?? []).map(jeuPhotosDepuisLigne);
+  return choisirJeuPhotos(jeux, specialite, Math.random, jeux.length > 1 ? await getPoidsAssets() : null);
 }
 
 /**

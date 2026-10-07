@@ -7,7 +7,7 @@ import { essaiBloqueProduction, proprietaireSansAcces } from '@/lib/essai';
 type Resultat = { ok: boolean; message: string };
 
 /** Lance un workflow GitHub Actions (workflow_dispatch) avec ses paramètres. */
-async function lancerWorkflow(fichier: string, inputs: Record<string, string>): Promise<Resultat | null> {
+export async function lancerWorkflow(fichier: string, inputs: Record<string, string>): Promise<Resultat | null> {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO;
   if (!token || !repo) return { ok: false, message: 'Publication non configurée (GITHUB_TOKEN / GITHUB_REPO).' };

@@ -1,19 +1,22 @@
 'use client';
 
-// Revue des illustrations : inventaire du core (inventaireIllustrations), aperçu dans une gamme au choix (mêmes variables que les
-// sites : charte + gamme), statut et commentaires enregistrés dans le journal (migration 0021), export Markdown pour l'agent graphiste.
+// Bibliothèque & retours : inventaire unifié du core (inventaireAssets : illustrations, photos, modèles, gammes), aperçu dans
+// une gamme au choix (mêmes variables que les sites : charte + gamme), statut et commentaires enregistrés dans le journal
+// (migration 0021), note rapide 1 à 5 étoiles (migration 0027 ; avis détaillé dans /admin/retours), export Markdown.
 import '@plateforme/core/dessins.css';
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState, useTransition, type CSSProperties } from 'react';
 import {
-  empreinteSvg, GAMMES, inventaireIllustrations, LIBELLES_REGISTRES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ILLUSTRATION, markdownRetours,
-  STATUTS_ILLUSTRATION, SURFACES_CSS, variablesCharte, variablesGamme,
-  type Illustration, type Registre, type StatutIllustration, type TypeIllustration,
+  empreinteSvg, GAMMES, gamme as gammeParId, inventaireAssets, LIBELLES_REGISTRES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, markdownRetours,
+  pastilleGamme, STATUTS_ILLUSTRATION, SURFACES_CSS, variablesCharte, variablesGamme,
+  type Asset, type PhotoDeJeu, type Registre, type StatutIllustration, type TypeAsset,
 } from '@plateforme/core';
 import type { Revue, StatutEnregistre } from '@/lib/illustrations';
+import { ajouterNoteAsset } from '../retours/actions';
 import { ajouterRevue } from './actions';
 
-type Props = { statuts: StatutEnregistre[]; revues: Revue[]; migrationManquante: boolean };
-type Ligne = Illustration & { empreinte: string; svgRendu: string };
+type Props = { statuts: StatutEnregistre[]; revues: Revue[]; migrationManquante: boolean; photosJeux: PhotoDeJeu[]; moyennes: Record<string, { n: number; somme: number }>; migrationNotes: boolean };
+type Ligne = Asset & { empreinte: string; svgRendu: string; fond: 'grille' | 'plan' | 'doux' | 'clair'; registre?: Registre };
 type FiltreStatut = 'tous' | 'a_regarder' | StatutIllustration;
 
 const COULEURS: Record<StatutIllustration, string> = {
@@ -31,8 +34,29 @@ const BOUTONS: Record<StatutIllustration, string> = {
 const COURTS: Record<StatutIllustration, string> = { a_revoir: 'À revoir', valide: 'Validé', a_retravailler: 'Retravailler', retire: 'Retiré' };
 const CLE_GAMME = 'revue-illustrations-gamme';
 
+/** Aperçu d'un asset non SVG : photo ou modèle (vignette optimisée), gamme (pastilles) */
+function ApercuAutre({ l, grand = false }: { l: Ligne; grand?: boolean }) {
+  if (l.rendu.kind === 'image') {
+    return (
+      <div className={`relative w-full overflow-hidden bg-neutral-100 ${grand ? 'aspect-[4/3] rounded-xl' : 'aspect-[4/3]'}`}>
+        <Image src={l.rendu.src} alt={l.titre} fill sizes={grand ? '(max-width: 767px) 100vw, 900px' : '(max-width: 767px) 50vw, 300px'} className={l.type === 'modele' ? 'object-contain' : 'object-cover'} />
+      </div>
+    );
+  }
+  if (l.rendu.kind === 'gamme') {
+    const g = gammeParId(l.rendu.gamme) ?? GAMMES[0];
+    const [a, b] = pastilleGamme(g);
+    return (
+      <div className={`grid w-full grid-cols-3 gap-2 p-4 ${grand ? 'aspect-[4/3] rounded-xl' : 'aspect-[4/3]'}`} style={{ background: g.fond }}>
+        {[a, b, g.accent, g.accentFonce, g.fondDoux, g.plan].map((c, i) => <span key={i} className="rounded-lg ring-1 ring-black/10" style={{ background: c }} />)}
+      </div>
+    );
+  }
+  return null;
+}
+
 /** `petit` : pictos (grille de 24 px) montrés à taille modérée, pour juger le trait comme sur un site */
-function Apercu({ html, fond, grand = false, petit = false }: { html: string; fond: Illustration['fond']; grand?: boolean; petit?: boolean }) {
+function Apercu({ html, fond, grand = false, petit = false }: { html: string; fond: Ligne['fond']; grand?: boolean; petit?: boolean }) {
   const classe = fond === 'grille' ? 'surface-grille' : fond === 'plan' ? 'surface-plan' : '';
   const style: CSSProperties = { background: fond === 'doux' ? 'var(--doux)' : fond === 'clair' ? 'var(--fond)' : undefined, color: fond === 'plan' ? undefined : 'var(--encre)' };
   return (
@@ -42,8 +66,40 @@ function Apercu({ html, fond, grand = false, petit = false }: { html: string; fo
   );
 }
 
-export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante }: Props) {
-  const lignes = useMemo<Ligne[]>(() => inventaireIllustrations().map((i) => { const s = i.svg(); return { ...i, svgRendu: s, empreinte: empreinteSvg(s) }; }), []);
+const registreDeCle = (cle: string): Registre | undefined => (cle.startsWith('ligne:') || cle.endsWith(':ligne') ? 'ligne' : cle.endsWith(':releve') || cle.startsWith('animation:') ? 'releve' : cle.endsWith(':pedagogique') || cle.startsWith('biblio:') ? 'pedagogique' : undefined);
+
+export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes }: Props) {
+  const lignes = useMemo<Ligne[]>(() => inventaireAssets({ photosJeux }).map((a) => {
+    const s = a.rendu.kind === 'svg' ? a.rendu.svg() : '';
+    return { ...a, svgRendu: s, empreinte: s ? empreinteSvg(s) : '', fond: a.rendu.kind === 'svg' ? a.rendu.fond : 'clair', registre: registreDeCle(a.cle) };
+  }), [photosJeux]);
+  // Notes (0027) : moyenne par clé, mise à jour localement après une note rapide
+  const [moyennes, setMoyennes] = useState(moyennesInitiales);
+  const [notesMsg, setNotesMsg] = useState<Record<string, string>>({});
+  const noterVite = async (l: Ligne, n: number) => {
+    if (migrationNotes) { setNotesMsg((m) => ({ ...m, [l.cle]: 'Migration 0027 à exécuter.' })); return; }
+    const r = await ajouterNoteAsset(l.cle, n, [], '', l.empreinte || null).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
+    setNotesMsg((m) => ({ ...m, [l.cle]: r.message }));
+    if (r.ok) setMoyennes((m) => ({ ...m, [l.cle]: { n: (m[l.cle]?.n ?? 0) + 1, somme: (m[l.cle]?.somme ?? 0) + n } }));
+  };
+  const etoilesRapides = (l: Ligne) => {
+    const m = moyennes[l.cle];
+    return (
+      <div className="grid gap-1">
+        <div className="flex items-center justify-between gap-1">
+          <div role="group" aria-label={`Note rapide de ${l.titre}`} className="flex">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" onClick={() => void noterVite(l, n)} aria-label={`Noter ${n} sur 5`}
+                className={`grid size-9 place-items-center rounded text-lg leading-none hover:bg-amber-50 ${m && Math.round(m.somme / m.n) >= n ? 'text-amber-500' : 'text-neutral-300'}`}>★</button>
+            ))}
+          </div>
+          <span className="text-[11px] tabular-nums text-neutral-500">{m ? `${(m.somme / m.n).toFixed(1).replace('.', ',')} (${m.n})` : 'non noté'}</span>
+        </div>
+        <a href={`/admin/retours?cle=${encodeURIComponent(l.cle)}`} className="text-[11px] font-semibold text-teal-900 underline-offset-2 hover:underline">Avis détaillé →</a>
+        {notesMsg[l.cle] && <p className="text-[11px] text-neutral-600">{notesMsg[l.cle]}</p>}
+      </div>
+    );
+  };
   const [gamme, setGamme] = useState('canard');
   useEffect(() => {
     try { const g = localStorage.getItem(CLE_GAMME); if (g && GAMMES.some((x) => x.id === g)) setGamme(g); } catch { /* stockage indisponible */ }
@@ -64,7 +120,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
   const modifie = useCallback((l: Ligne) => { const e = courants.get(l.cle)?.empreinte; return Boolean(e && e !== l.empreinte); }, [courants]);
 
   const [filtreStatut, setFiltreStatut] = useState<FiltreStatut>('tous');
-  const [filtreType, setFiltreType] = useState<'tous' | TypeIllustration>('tous');
+  const [filtreType, setFiltreType] = useState<'tous' | TypeAsset>('tous');
   const [filtreRegistre, setFiltreRegistre] = useState<'tous' | Registre>('tous');
   const [filtreSoin, setFiltreSoin] = useState('tous');
   const [recherche, setRecherche] = useState('');
@@ -181,7 +237,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
         <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher (clé, nom, soin)" className={`${choix} lg:col-span-2`} />
         <select value={filtreType} onChange={(e) => setFiltreType(e.target.value as typeof filtreType)} className={choix} aria-label="Type">
           <option value="tous">Tous les types</option>
-          {(Object.keys(LIBELLES_TYPES_ILLUSTRATION) as TypeIllustration[]).map((t) => <option key={t} value={t}>{LIBELLES_TYPES_ILLUSTRATION[t]}</option>)}
+          {(Object.keys(LIBELLES_TYPES_ASSET) as TypeAsset[]).map((t) => <option key={t} value={t}>{LIBELLES_TYPES_ASSET[t]}</option>)}
         </select>
         <select value={filtreRegistre} onChange={(e) => setFiltreRegistre(e.target.value as typeof filtreRegistre)} className={choix} aria-label="Registre">
           <option value="tous">Tous les registres</option>
@@ -218,7 +274,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
           return (
             <li key={l.cle} className={`grid content-start gap-2 overflow-hidden rounded-xl bg-white text-sm ring-1 ${nouveau(l) || modifie(l) ? 'ring-2 ring-sky-400' : 'ring-black/5'}`}>
               <button type="button" onClick={() => setOuverte(l.cle)} className="relative block w-full" aria-label={`Agrandir ${l.titre}`}>
-                <Apercu html={l.svgRendu} fond={l.fond} petit={l.type === 'picto'} />
+                {l.rendu.kind === 'svg' ? <Apercu html={l.svgRendu} fond={l.fond} petit={l.type === 'picto'} /> : <ApercuAutre l={l} />}
                 <span className="absolute right-1.5 top-1.5 rounded bg-white/90 px-1.5 py-0.5 text-[11px] text-neutral-700 ring-1 ring-black/10">Agrandir</span>
               </button>
               <div className="grid gap-2 px-2.5 pb-2.5">
@@ -233,6 +289,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                   <code className="block truncate text-[10px] text-neutral-400" title={l.cle}>{l.cle}</code>
                 </div>
                 {derniere && <p className="line-clamp-2 text-xs text-neutral-700" title={derniere.commentaire ?? ''}>« {derniere.commentaire} »</p>}
+                {etoilesRapides(l)}
                 {boutonsStatut(l)}
                 {champCommentaire(l)}
                 {msg && <p className={`text-xs ${msg.ok ? 'text-teal-800' : 'text-red-700'}`}>{msg.message}</p>}
@@ -257,11 +314,11 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                 <button type="button" onClick={() => setOuverte(null)} className="min-h-11 rounded-lg bg-neutral-900 px-4 text-sm font-semibold text-white">Fermer</button>
               </div>
             </div>
-            <div className={`grid gap-3 ${ligneOuverte.svgVariante ? 'md:grid-cols-2' : ''}`}>
-              <Apercu html={ligneOuverte.svgRendu} fond={ligneOuverte.fond} grand petit={ligneOuverte.type === 'picto'} />
-              {ligneOuverte.svgVariante && (
+            <div className={`grid gap-3 ${ligneOuverte.rendu.kind === 'svg' && ligneOuverte.rendu.svgVariante ? 'md:grid-cols-2' : ''}`}>
+              {ligneOuverte.rendu.kind === 'svg' ? <Apercu html={ligneOuverte.svgRendu} fond={ligneOuverte.fond} grand petit={ligneOuverte.type === 'picto'} /> : <ApercuAutre l={ligneOuverte} grand />}
+              {ligneOuverte.rendu.kind === 'svg' && ligneOuverte.rendu.svgVariante && (
                 <div className="grid gap-1">
-                  <Apercu html={ligneOuverte.svgVariante()} fond="grille" grand />
+                  <Apercu html={ligneOuverte.rendu.svgVariante()} fond="grille" grand />
                   <p className="text-xs text-neutral-500">Même élément en registre relevé.</p>
                 </div>
               )}
@@ -272,6 +329,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
                   {modifie(ligneOuverte) && <span className="ml-2 text-xs text-sky-800">rendu modifié depuis le dernier retour</span>}</p>
                 {champCommentaire(ligneOuverte, true)}
                 {boutonsStatut(ligneOuverte, true)}
+                {etoilesRapides(ligneOuverte)}
                 {messages[ligneOuverte.cle] && <p className={`text-xs ${messages[ligneOuverte.cle].ok ? 'text-teal-800' : 'text-red-700'}`}>{messages[ligneOuverte.cle].message}</p>}
                 <p className="text-xs text-neutral-500">Source : <code className="break-all">{ligneOuverte.source}</code></p>
                 {ligneOuverte.soins.length > 0 && <p className="text-xs text-neutral-500">Soins et sujets : {ligneOuverte.soins.join(', ')}</p>}

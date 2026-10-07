@@ -26,6 +26,11 @@ export const ETIQUETTES_ATELIER = [
   { id: 'pas-pro', libelle: 'Pas assez pro', positive: false },
   { id: 'illisible-mobile', libelle: 'Illisible sur mobile', positive: false },
   { id: 'hors-sujet', libelle: 'Ne correspond pas au sujet', positive: false },
+  // « Ce qui va bien » (espace « Donner mon avis », /admin/retours, 2026-10-07) : après les 8 historiques (raccourcis t + 1-8)
+  { id: 'pro', libelle: 'Fait pro', positive: true },
+  { id: 'harmonieux', libelle: 'Harmonieux', positive: true },
+  { id: 'bien-dans-le-sujet', libelle: 'Bien dans le sujet', positive: true },
+  { id: 'lisible', libelle: 'Lisible', positive: true },
 ] as const;
 export type EtiquetteAtelier = (typeof ETIQUETTES_ATELIER)[number]['id'];
 export const estEtiquetteAtelier = (x: unknown): x is EtiquetteAtelier => ETIQUETTES_ATELIER.some((e) => e.id === x);

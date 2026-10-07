@@ -26,6 +26,7 @@ import {
   jeuPhotosDepuisLigne,
   nettoyerPhotosJeu,
   persoDuJeuPhotos,
+  poidsAssets,
   validerChoixLogo,
   marquesLogo,
   assainirMarque,
@@ -126,7 +127,12 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const jeuPhotos = jeuLu && jeuPhotosAutorise(jeuLu, s.id, d.theme.specialite)
     ? { ...jeuLu, photos: nettoyerPhotosJeu(jeuLu.photos, `${env('SUPABASE_URL')!.replace(/\/$/, '')}/storage/v1/object/public/photos/`, jeuLu.siteId) }
     : null;
-  const persoPack = persoDuJeuPhotos(jeuPhotos, persoBanque);
+  // Notes des photos (/admin/retours, migration 0027) : galerie du jeu de la mieux à la moins bien notée, photos « retirées »
+  // enlevées ; sans la migration, ordre du jeu inchangé.
+  const notesAssets = jeuPhotos
+    ? await lire<{ cle_asset: string; note: number | null; etiquettes: string[] | null; statut: string | null }[]>('rpc/assets_notes_apprentissage').catch(() => [])
+    : [];
+  const persoPack = persoDuJeuPhotos(jeuPhotos, persoBanque, poidsAssets(notesAssets.map((l) => ({ cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes, statut: l.statut }))));
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);
   // Spécialité secondaire : complète les visuels de la principale (avec sa propre personnalisation admin).
   const [persoSecondaire] = d.theme.specialiteSecondaire

@@ -1,6 +1,7 @@
 import 'server-only';
 import { estEtiquetteAtelier, poidsAtelier, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { getPoidsAssets } from '@/lib/assets-notes';
 
 // Notes de l'atelier des propositions (migration 0026).
 // - getNotesAtelier : journal complet, lu par le super admin (/admin/atelier) ;
@@ -29,8 +30,17 @@ export async function getNotesAtelier(): Promise<{ notes: NoteAtelierAdmin[]; mi
   return { notes, migrationManquante: false };
 }
 
-/** Poids appris pour le générateur de propositions ; null sans notes ou si la migration 0026 manque (aucune erreur) */
+/**
+ * Poids appris pour le générateur de propositions (notes de l'atelier + notes et statuts des assets, 0027) ; null sans
+ * aucune note ni statut, ou si les migrations manquent (aucune erreur).
+ */
 export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
+  const [atelier, assets] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets()]);
+  if (!atelier && !assets) return null;
+  return { ...(atelier ?? { n: 0, moyenne: 0, effets: {} }), ...(assets ? { assets } : {}) };
+}
+
+async function poidsDesCombinaisons(): Promise<PoidsAtelier | null> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('atelier_notes_apprentissage', { p_limite: 5000 });

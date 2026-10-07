@@ -1,6 +1,9 @@
 import { markdownAtelier, poidsAtelier, syntheseAtelier, universDuParcours } from '@plateforme/core';
+import Link from 'next/link';
+import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { exigerAdmin } from '@/lib/admin';
 import { getNotesAtelier } from '@/lib/atelier';
+import { getPoidsAssets } from '@/lib/assets-notes';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
@@ -15,12 +18,13 @@ export const metadata = { title: 'Super admin · Atelier des propositions' };
 // fonctions), les note, et le générateur apprend de ses notes (packages/core/src/atelier-poids.ts).
 export default async function PageAtelier() {
   await exigerAdmin();
-  const [{ notes, migrationManquante }, catalogue, modeles, marquesImportees, { univers }] = await Promise.all([
-    getNotesAtelier(), getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(),
+  const [{ notes, migrationManquante }, catalogue, modeles, marquesImportees, { univers }, assets] = await Promise.all([
+    getNotesAtelier(), getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getPoidsAssets(),
   ]);
   const synthese = syntheseAtelier(notes);
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
-  const poids = poidsAtelier(notes);
+  // Poids des combinaisons + notes et statuts des assets (0027) : exactement ce que reçoit le parcours
+  const poids = { ...poidsAtelier(notes), ...(assets ? { assets } : {}) };
   // Combinaisons déjà notées (clé stable des ingrédients) : nombre de notes et dernière note
   const dejaNotees: Record<string, { n: number; derniere: number }> = {};
   for (const x of notes) {
@@ -31,13 +35,17 @@ export default async function PageAtelier() {
 
   return (
     <div className="grid gap-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h1 className="text-2xl font-bold">Atelier des propositions</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
           Les combinaisons du générateur, exactement comme le parcours les propose (mêmes sujets, mêmes couleurs, mêmes lots).
           Chaque note améliore l’ordre des propositions : une note isolée compte peu, des notes concordantes comptent beaucoup.
           Les règles (diabète sans rouge, posture jamais, contrastes, trois propositions variées) ne sont jamais levées.
+          Pour noter au hasard, avec « ce qui va bien / ce qui ne va pas » : <Link href="/admin/retours?type=themes" className="font-semibold text-teal-900 underline">Donner mon avis</Link>.
         </p>
+      </div>
+      <EnvoyerRetours compact />
       </div>
       {migrationManquante && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
@@ -51,7 +59,7 @@ export default async function PageAtelier() {
         catalogue={catalogue}
         marquesImportees={marquesImportees}
         themesActives={themesActives()}
-        poids={poids.n ? poids : null}
+        poids={poids.n || poids.assets ? poids : null}
         dejaNotees={dejaNotees}
         migrationManquante={migrationManquante}
       />

@@ -8,6 +8,7 @@
 // un client : un jeu « adobe » (ou « praticien ») n'est jamais partagé. Voir docs/jeux-photos.md.
 import { SPECIALITES, type PersonnalisationPack } from './packs';
 import { CADRAGES_PHOTOS, VISUEL_SOIN_PAR_DEFAUT, type JeuVisuel } from './jeux';
+import { clePhoto, ordonnerPhotos, scoreMoyen, type PoidsAssets } from './assets-poids';
 
 export const SOURCES_JEU_PHOTOS = ['banque', 'adobe', 'praticien'] as const;
 export type SourceJeuPhotos = (typeof SOURCES_JEU_PHOTOS)[number];
@@ -148,25 +149,40 @@ export const jeuPhotosAutorise = (jeu: Pick<JeuPhotos, 'actif' | 'siteId' | 'spe
 /**
  * Tirage du jeu d'un site : au hasard parmi les jeux partagés actifs de la spécialité (jamais un jeu exclusif,
  * jamais un jeu Adobe). Aucun jeu → '' : photos intégrées du jeu visuel.
+ * Avec les notes des photos (`poids`, /admin/illustrations) : tirage PONDÉRÉ, les jeux aux photos les mieux notées sortent
+ * plus souvent (poids du jeu = 2^(score moyen de ses photos), photos « retirées » comprises), sans jamais exclure un jeu.
  */
 export function choisirJeuPhotos(
-  jeux: Pick<JeuPhotos, 'id' | 'specialite' | 'source' | 'siteId' | 'actif'>[],
+  jeux: (Pick<JeuPhotos, 'id' | 'specialite' | 'source' | 'siteId' | 'actif'> & { photos?: PhotosJeu })[],
   specialite: string,
   aleatoire: () => number = Math.random,
+  poids?: PoidsAssets | null,
 ): string {
   const candidats = jeux.filter((j) => j.actif && j.siteId === null && j.source === 'banque' && j.specialite === specialite);
   if (!candidats.length) return '';
-  const i = Math.min(candidats.length - 1, Math.floor(aleatoire() * candidats.length));
-  return candidats[i].id;
+  const masses = candidats.map((j) => {
+    const photos = j.photos ? photosDuJeu(j.photos) : [];
+    const cles = photos.map(clePhoto).filter((x): x is string => Boolean(x));
+    return poids && cles.length ? 2 ** scoreMoyen(cles, poids) : 1;
+  });
+  const total = masses.reduce((a, b) => a + b, 0);
+  let r = Math.min(0.999999, Math.max(0, aleatoire())) * total;
+  for (let i = 0; i < candidats.length; i++) {
+    r -= masses[i];
+    if (r < 0) return candidats[i].id;
+  }
+  return candidats[candidats.length - 1].id;
 }
 
 /**
  * Personnalisation de spécialité (jeuVisuel(…, perso)) tirée d'un jeu de photos. `base` : personnalisation de
  * la banque visuelle (packs_visuels), dont l'animation est conservée ; les photos du jeu passent devant.
+ * `poids` (notes des photos) : la galerie commence par les photos les mieux notées.
  */
-export function persoDuJeuPhotos(jeu: Pick<JeuPhotos, 'photos'> | null | undefined, base?: PersonnalisationPack | null): PersonnalisationPack | null {
+export function persoDuJeuPhotos(jeu: Pick<JeuPhotos, 'photos'> | null | undefined, base?: PersonnalisationPack | null, poids?: PoidsAssets | null): PersonnalisationPack | null {
   if (!jeu) return base ?? null;
-  const p = jeu.photos;
+  // Notes des photos : galerie de la mieux à la moins bien notée, photos « retirées » enlevées (s'il en reste au moins 3)
+  const p = poids ? { ...jeu.photos, galerie: ordonnerPhotos(jeu.photos.galerie, poids, 3) } : jeu.photos;
   const b = base?.photos ?? {};
   return {
     ...(base ?? {}),

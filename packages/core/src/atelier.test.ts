@@ -136,6 +136,6 @@ test('synthèse et Markdown', () => {
   assert.match(md, /^# Retours de l’atelier/);
   assert.match(md, /Fade/);
   assert.match(md, /Trop pâle/);
-  assert.ok(ETIQUETTES_ATELIER.length === 8);
+  assert.ok(ETIQUETTES_ATELIER.length === 12 && ETIQUETTES_ATELIER.filter((e) => e.positive).length === 5);
   assert.deepEqual(syntheseAtelier([]).ingredients, []);
 });

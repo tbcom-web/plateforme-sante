@@ -17,7 +17,11 @@
 // retirer des combinaisons déjà autorisées.
 //
 // Toutes les notes égales (ou aucune note) : tous les effets sont nuls, les propositions sont exactement celles d'avant.
+// Les notes des ASSETS (assets-poids.ts, /admin/illustrations) voyagent avec ces poids (champ `assets`) : un seul objet
+// transmis au parcours et à l'atelier ; propositions.ts ajoute leur bonus à celui de l'atelier.
 // Module pur, sans dépendance d'exécution (importé par propositions.ts : il ne doit rien importer de lui).
+
+import { normaliserPoidsAssets, type PoidsAssets } from './assets-poids';
 
 /** Ingrédients d'une combinaison notée (enregistrés tels quels dans atelier_notes.ingredients) */
 export type IngredientsAtelier = {
@@ -65,7 +69,7 @@ export const LISSAGE_ATELIER = { ingredient: 10, paire: 12, combinaison: 6 } as 
 export type TypeCleAtelier = keyof typeof LISSAGE_ATELIER;
 
 /** Poids appris, compacts (transmis au navigateur du praticien) : effets non nuls seulement */
-export type PoidsAtelier = { n: number; moyenne: number; effets: Record<string, number> };
+export type PoidsAtelier = { n: number; moyenne: number; effets: Record<string, number>; /** Notes et statuts des assets (0027) */ assets?: PoidsAssets | null };
 
 const val = (v: unknown) => (v === null || v === undefined || v === '' ? 'aucune' : String(v));
 
@@ -143,7 +147,8 @@ export function normaliserPoidsAtelier(v: unknown): PoidsAtelier | null {
   for (const [k, e] of Object.entries(o.effets as Record<string, unknown>)) {
     if (typeof e === 'number' && Number.isFinite(e) && k.length <= 300) effets[k] = Math.max(-4, Math.min(4, e));
   }
-  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets };
+  const assets = normaliserPoidsAssets(o.assets);
+  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, ...(assets ? { assets } : {}) };
 }
 
 /** Hachage FNV-1a 32 bits (hexadécimal, 8 caractères) */

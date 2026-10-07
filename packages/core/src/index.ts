@@ -38,3 +38,5 @@ export * from './essai';
 export * from './prospects';
 export * from './propositions';
 export * from './atelier';
+export * from './assets';
+export * from './retours';
