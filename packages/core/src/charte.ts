@@ -174,6 +174,24 @@ export const POLICES = {
   bodoni: "'Bodoni Moda Variable', Didot, 'Bodoni 72', Georgia, serif",
   /** Sérif de lecture à taille optique, texte courant (gabarit « revue ») */
   newsreader: "'Newsreader Variable', Georgia, serif",
+  // Catalogue étendu du studio (typo.ts, FICHES_POLICES : licences OFL / Apache, @fontsource, sous-ensemble latin)
+  playfair: "'Playfair Display Variable', Didot, Georgia, serif",
+  dmserif: "'DM Serif Display', Georgia, serif",
+  youngserif: "'Young Serif', Georgia, serif",
+  lora: "'Lora Variable', Georgia, serif",
+  cormorant: "'Cormorant Garamond Variable', Garamond, Georgia, serif",
+  robotoslab: "'Roboto Slab Variable', Rockwell, Georgia, serif",
+  spacegrotesk: "'Space Grotesk Variable', system-ui, sans-serif",
+  outfit: "'Outfit Variable', system-ui, sans-serif",
+  oswald: "'Oswald Variable', 'Arial Narrow', system-ui, sans-serif",
+  quicksand: "'Quicksand Variable', system-ui, sans-serif",
+  jakarta: "'Plus Jakarta Sans Variable', system-ui, sans-serif",
+  figtree: "'Figtree Variable', system-ui, sans-serif",
+  dmsans: "'DM Sans Variable', system-ui, sans-serif",
+  worksans: "'Work Sans Variable', system-ui, sans-serif",
+  sourcesans: "'Source Sans 3 Variable', system-ui, sans-serif",
+  /** Mono technique en TITRES (paire « Mono technique ») : même fichier que la police des données */
+  mono: "'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Consolas, monospace",
 } as const;
 /** Police des données (lectures, cotes, numéros, légendes) : toujours la même, quel que soit le modèle */
 export const POLICE_MONO = "'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Consolas, monospace";

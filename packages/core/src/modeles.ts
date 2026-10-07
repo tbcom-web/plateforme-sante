@@ -153,9 +153,13 @@ export function variantesValides(v: unknown, gabarit: Gabarit = 'tableau'): Part
   return r as Partial<Variantes>;
 }
 
-export const POLICES_TITRES = ['inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito', 'geist', 'publicsans', 'bodoni'] as const;
+export const POLICES_TITRES = [
+  'inter', 'manrope', 'fraunces', 'instrument', 'schibsted', 'nunito', 'geist', 'publicsans', 'bodoni',
+  // Catalogue étendu (typo.ts) : 2026-10-07
+  'newsreader', 'playfair', 'dmserif', 'youngserif', 'lora', 'cormorant', 'robotoslab', 'spacegrotesk', 'outfit', 'oswald', 'quicksand', 'jakarta', 'dmsans', 'mono',
+] as const;
 export type PoliceTitres = (typeof POLICES_TITRES)[number];
-export const POLICES_TEXTE = ['inter', 'manrope', 'nunito', 'geist', 'publicsans', 'newsreader'] as const;
+export const POLICES_TEXTE = ['inter', 'manrope', 'nunito', 'geist', 'publicsans', 'newsreader', 'figtree', 'dmsans', 'worksans', 'sourcesans', 'outfit', 'jakarta'] as const;
 export type PoliceTexte = (typeof POLICES_TEXTE)[number];
 /**
  * Paires de polices du studio de recettes (titre / texte), toutes déjà auto-hébergées (@fontsource, sous-ensemble latin, une
@@ -174,6 +178,22 @@ export const PAIRES_POLICES = [
   { id: 'serif-fine', nom: 'Serif fine', titres: 'instrument', texte: 'inter', graisse: 400, description: 'Instrument Serif / Inter : grands titres fins' },
   { id: 'ronde', nom: 'Ronde pédagogique', titres: 'nunito', texte: 'nunito', graisse: 750, description: 'Nunito seule : ronde, rassurante' },
   { id: 'clinique', nom: 'Clinique sobre', titres: 'inter', texte: 'inter', graisse: 560, description: 'Inter seule : clinique, neutre' },
+  // Catalogue étendu (2026-10-07, demande de Paul : « plus de combinaisons de polices ») : caractères variés, toujours libres
+  // (OFL / Apache, typo.ts FICHES_POLICES), 2 familles au plus, budget polices ≤ 90 Ko par site (mesuré au build).
+  { id: 'didone', nom: 'Didone élégante', titres: 'playfair', texte: 'figtree', graisse: 600, description: 'Playfair Display / Figtree : contrastes de revue, texte franc' },
+  { id: 'affiche', nom: 'Serif d’affiche', titres: 'dmserif', texte: 'dmsans', graisse: 400, description: 'DM Serif Display / DM Sans : grands titres contrastés' },
+  { id: 'gazette', nom: 'Gazette', titres: 'newsreader', texte: 'figtree', graisse: 560, description: 'Newsreader / Figtree : serif de lecture, sobre et chaleureuse' },
+  { id: 'humaniste', nom: 'Humaniste chaleureuse', titres: 'lora', texte: 'sourcesans', graisse: 600, description: 'Lora / Source Sans 3 : serif calligraphique, texte humaniste' },
+  { id: 'luxe', nom: 'Garamond de luxe', titres: 'cormorant', texte: 'worksans', graisse: 600, description: 'Cormorant Garamond / Work Sans : très grands titres fins' },
+  { id: 'vintage', nom: 'Serif ronde', titres: 'youngserif', texte: 'dmsans', graisse: 400, description: 'Young Serif / DM Sans : serif ronde, rassurante' },
+  { id: 'slab', nom: 'Slab robuste', titres: 'robotoslab', texte: 'sourcesans', graisse: 700, description: 'Roboto Slab / Source Sans 3 : empattements carrés, solide' },
+  { id: 'spatiale', nom: 'Grotesque à caractère', titres: 'spacegrotesk', texte: 'inter', graisse: 650, description: 'Space Grotesk / Inter : technique, singulière' },
+  { id: 'pop', nom: 'Géométrique pop', titres: 'outfit', texte: 'outfit', graisse: 700, description: 'Outfit seule : géométrique ronde, graphique' },
+  { id: 'condensee', nom: 'Condensée affirmée', titres: 'oswald', texte: 'worksans', graisse: 600, description: 'Oswald / Work Sans : titres hauts et serrés' },
+  { id: 'ronde-douce', nom: 'Ronde et douce', titres: 'quicksand', texte: 'figtree', graisse: 650, description: 'Quicksand / Figtree : arrondie, apaisante' },
+  { id: 'jakarta', nom: 'Moderne amicale', titres: 'jakarta', texte: 'jakarta', graisse: 750, description: 'Plus Jakarta Sans seule : moderne, ouverte' },
+  { id: 'grotesque-douce', nom: 'Grotesque douce', titres: 'dmsans', texte: 'dmsans', graisse: 700, description: 'DM Sans seule : géométrique douce, très lisible' },
+  { id: 'mono', nom: 'Mono technique', titres: 'mono', texte: 'inter', graisse: 650, description: 'JetBrains Mono / Inter : titres en mono, accent laboratoire' },
 ] as const satisfies readonly { id: string; nom: string; titres: PoliceTitres; texte: PoliceTexte; graisse: number; description: string }[];
 export type PairePolices = (typeof PAIRES_POLICES)[number];
 export type IdPairePolices = PairePolices['id'];

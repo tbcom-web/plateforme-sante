@@ -60,3 +60,8 @@ export * from './rendu-mobile';
 export * from './pages-demo';
 export * from './cadre-apercu';
 export * from './styles-experimentaux';
+export * from './typo';
+export * from './details';
+export * from './menus';
+export * from './habillage';
+export * from './habillage-attributs';

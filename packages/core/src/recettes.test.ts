@@ -160,7 +160,7 @@ test('application au brouillon, rétrocompatible, et modèle effectif (police, v
 });
 
 test('paires de polices : polices installées, 2 familles au plus', () => {
-  assert.ok(PAIRES_POLICES.length >= 6 && PAIRES_POLICES.length <= 10);
+  assert.ok(PAIRES_POLICES.length >= 20 && PAIRES_POLICES.length <= 24);
   for (const p of PAIRES_POLICES) {
     assert.ok((POLICES_TITRES as readonly string[]).includes(p.titres) && (POLICES_TEXTE as readonly string[]).includes(p.texte));
     assert.ok(new Set([p.titres, p.texte]).size <= 2);
