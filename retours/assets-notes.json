@@ -1,0 +1,704 @@
+[
+  {
+    "cle": "biblio:TRV-AT-0007:reperage:reperage",
+    "type": "biblio",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "0ab2fc16",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:EZ-HTML/semelle-ortho",
+    "type": "biblio",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "d9e96829",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:arriere-pied:pedagogique",
+    "type": "dessin",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "78b562d7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "gamme:sable",
+    "type": "gamme",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:lampe-loupe:releve",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "d3637ff8",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:SITES/orteil-griffe",
+    "type": "biblio",
+    "note": 1,
+    "etiquettes": [
+      "anatomie-fausse"
+    ],
+    "commentaire": "On comrpend rien a jeter",
+    "empreinte": "d8339f87",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:pedicurie:releve",
+    "type": "heros",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "Un peu trop de contenus, on comprend pas bien",
+    "empreinte": "c56f7d07",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:sport:ligne",
+    "type": "heros",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "Jambes trop droites",
+    "empreinte": "5f5b9f34",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:ongle:releve",
+    "type": "dessin",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "Anatomie de l'orteil un peu bizarre",
+    "empreinte": "89a9f46e",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:thermoformage:releve",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "730a1a7f",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:equilibre:pedagogique",
+    "type": "dessin",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "on comprend pas le point, les traits autour du pied sont bizarres. Il faudrait que ce soit une animation avec les pieds qui bougent et le point du milieu qui bouge aussi ou un truc du genre",
+    "empreinte": "bd961532",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:empreintes",
+    "type": "ligne",
+    "note": 2,
+    "etiquettes": [
+      "anatomie-fausse",
+      "clipart"
+    ],
+    "commentaire": "trop clipart, et le trait entre les ronds et le reste du pied est bizarre",
+    "empreinte": "feed2997",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:senior:ligne",
+    "type": "heros",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Top, juste au niveau de la main et de la canne c'est un peu bizarre mais tout le reste est top",
+    "empreinte": "2355ba44",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:diabete:releve",
+    "type": "dessin",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "on comprend pas trop",
+    "empreinte": "a10ec884",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:bac-ultrasons:releve",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "25d28692",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:verrue:releve",
+    "type": "dessin",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "fb785f79",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:verrue",
+    "type": "ligne",
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "6c881f6a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:premiers-pas",
+    "type": "ligne",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Pas mal mais je prefere utiliser des petites empreintes ou les pieds adultes face aux pieds d'enfants",
+    "empreinte": "f89a26cc",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:scanner-3d:releve",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "0eb2c797",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009:dorsale:incarne-sites",
+    "type": "biblio",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "On dirait qu'il y a un ongle incarné inclus dedans",
+    "empreinte": "a1d811c3",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0001",
+    "type": "biblio",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "d679a5fe",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:soin:releve",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Bien mais on sait pas trop pourquoi il y a besoin d'un zoom pour le soin.",
+    "empreinte": "5ff52f2a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009:dorsale:incarne",
+    "type": "biblio",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "On dirait que l'ongle est cassé... mais bien",
+    "empreinte": "dfff934e",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:lampe-loupe:pedagogique",
+    "type": "materiel",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "f7cc4090",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:EZ-HTML/semelle-ortho:dessous:neuve",
+    "type": "biblio",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "dabbac96",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:iontophorese:pedagogique",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "7a6c4f05",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:laser",
+    "type": "ligne",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "pas mal mais on dirait pas trop un laser, peut etre trouver une representation plus parlante",
+    "empreinte": "528746c3",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:mycose",
+    "type": "ligne",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "5b9a20ae",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:pieds-dessus",
+    "type": "ligne",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "ffad747c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:semelles:ligne",
+    "type": "heros",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "les deux illustrations ensemble n'ont pas trop de sens",
+    "empreinte": "5891cc09",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0002",
+    "type": "biblio",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "03c6e1f2",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:TRV-AT-0009",
+    "type": "biblio",
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": "franchement elle fait trop vieille cette chaussure je n'aime pas il faut un truc plus dynamique style basket de ville / sneaker",
+    "empreinte": "ec6ddf9c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:talon:releve",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Top mais il faut se focus sur le talon la on voit l'ensemble du pied",
+    "empreinte": "7c04421a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:voutes:pedagogique",
+    "type": "dessin",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "5a481177",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:orthonyxie:pedagogique",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Tres bien mais pas fan de la taille des doigts de pieds qui sont un peu trop fins comme des doigts de main",
+    "empreinte": "15994456",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:iontophorese:releve",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "8cf69f25",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:analyse:releve",
+    "type": "dessin",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "29fcab91",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:bac-ultrasons:pedagogique",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "a68c9f26",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:ongles:ligne",
+    "type": "heros",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "pas mettre les deux images a cote on comprend pas",
+    "empreinte": "694361f3",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:orthoplastie",
+    "type": "ligne",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "Non une orthoplastie doit avoir plus de \"pate\" entre les orteils et epouser un peu plus la forme du gros orteil sur le cote... on dirait une bague la",
+    "empreinte": "b7d319a5",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:ongle:pedagogique",
+    "type": "dessin",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "la fleche en vert ne se voit pas bien c'est pour montrer l'ongle incarné ?",
+    "empreinte": "4831ad9f",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0006:dorsal:tong-posee",
+    "type": "biblio",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "le haut de la tong est un peu bizarre, normalenent il est plus \"rond / droit\"",
+    "empreinte": "d412ec08",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:verrue:pedagogique",
+    "type": "dessin",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "b906b8d7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:stabilometrie:releve",
+    "type": "materiel",
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": "les empreintes sortent de la plateforme et il faut que ce soit animé sinon on comprend pas. Sur l'ecran on voit un gribouilli. L'ordi et la plateforme sont pas connectés ensemble",
+    "empreinte": "92cb7eac",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0008",
+    "type": "biblio",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "b5801b18",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:lampe-loupe:ligne",
+    "type": "materiel",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "10d3f6b7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:taping",
+    "type": "ligne",
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": "il faut quon comprenne mieux que c'est du taping on dirait que c'est inclus dans le pied la... et je mettrais le taping en couleur assez flashy car les couleurs du taping sont en general flashy",
+    "empreinte": "2911778c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:enfant:pedagogique",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [
+      "clair"
+    ],
+    "commentaire": null,
+    "empreinte": "cd7e3fb4",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:sport:pedagogique",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "9052d02d",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009:dorsale-gros-plan:mycose",
+    "type": "biblio",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "93005d50",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009",
+    "type": "biblio",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "321b3dfd",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0009:dorsale-gros-plan:onychoplastie",
+    "type": "biblio",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "ab920bd3",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:thermoformage:ligne",
+    "type": "materiel",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "2cd48fc4",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:appuis:releve",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "ea5636ed",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:sport:releve",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "d43cd86a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:cors-durillons:pedagogique",
+    "type": "dessin",
+    "note": 3,
+    "etiquettes": [
+      "style-different"
+    ],
+    "commentaire": "bien mais pas fan des ongles verts c'est tres bizarre...",
+    "empreinte": "e43089de",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:enfant:ligne",
+    "type": "heros",
+    "note": 5,
+    "etiquettes": [
+      "waouh"
+    ],
+    "commentaire": "J'adore",
+    "empreinte": "7447aee4",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:tapis-de-course:ligne",
+    "type": "materiel",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Canon attention a la finesse du trait sinon on comprend pas.",
+    "empreinte": "f3e0476a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:mycose:pedagogique",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "2e3c7043",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:senior:pedagogique",
+    "type": "dessin",
+    "note": 1,
+    "etiquettes": [],
+    "commentaire": "super la canne mais on comprend pas du tout le schema a gauche le rapport.",
+    "empreinte": "4f1e54d6",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0010:coupe-transversale:orthonyxie",
+    "type": "biblio",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "632e4349",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:semelles:releve",
+    "type": "heros",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "la taille des pieds a droite est pas comprehensible et on comprend pas pkoi les deux sont cote a cote",
+    "empreinte": "16c5d6c7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:voutes:releve",
+    "type": "dessin",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "1c6e3458",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:chaussure-course",
+    "type": "ligne",
+    "note": 3,
+    "etiquettes": [
+      "fade"
+    ],
+    "commentaire": "Pas mal mais un peu trop simple",
+    "empreinte": "d781a22b",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "heros:enfant:releve",
+    "type": "heros",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "bien mais on comprend pas pkoi les empreintes de l'enfant sont posees a cote",
+    "empreinte": "8d50f0dd",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:fauteuil",
+    "type": "ligne",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "5724424c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:onychoplastie",
+    "type": "ligne",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "9f25c0ac",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:laser:pedagogique",
+    "type": "materiel",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "3962e64a",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:tracabilite-sterilisation:ligne",
+    "type": "materiel",
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "je mettrais plutot des checkboxes a cote",
+    "empreinte": "22568874",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:podoscope:pedagogique",
+    "type": "materiel",
+    "note": 2,
+    "etiquettes": [
+      "anatomie-fausse",
+      "clipart"
+    ],
+    "commentaire": "horrible les proportions sont out, il faut representer differemment. Les empreintes doivent etre en bas, les pieds sur la plateformes la representation dans l'espace est nulle. Concept de representation est bon mais representation dans l'espace est fausse",
+    "empreinte": "2a940fe8",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:senior-canne",
+    "type": "ligne",
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "46bf5f80",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:appuis:pedagogique",
+    "type": "dessin",
+    "note": 3,
+    "etiquettes": [
+      "clipart"
+    ],
+    "commentaire": null,
+    "empreinte": "cc351a18",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:autoclave-classe-b:ligne",
+    "type": "materiel",
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": "on dirait une carte postale un peu faudrait plus de details",
+    "empreinte": "a7ac5d17",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:ongle-epais",
+    "type": "ligne",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "b78b3d5b",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:semelle",
+    "type": "ligne",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "23bc55cf",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:fraiseuse-numerique:pedagogique",
+    "type": "materiel",
+    "note": 5,
+    "etiquettes": [],
+    "commentaire": null,
+    "empreinte": "f4c5c945",
+    "jour": "2026-10-07"
+  }
+]

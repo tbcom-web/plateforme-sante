@@ -1,0 +1,1017 @@
+[
+  {
+    "cle": "291949cc85b7f621",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "releve",
+      "animation": "semelle",
+      "structure": "technique-precis",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~technique-precis~menthe~releve~semelle"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "582f314b0b55c64a",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "semelles",
+      "style": "pedagogique",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~clair-pratique~cobalt~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "2d71807d02a0ab44",
+    "ingredients": {
+      "gamme": "canard",
+      "heros": "semelles",
+      "style": "ligne",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~elegant-sobre~canard~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dbdb7ac7c1c0462c",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "releve",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~clair-pratique~menthe~releve~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "pas mal du tout mais Je mettrais une seule illustration dans le rond que les semelles par exemple. Les pieds en petits points devraient s'adapter a la couleur aussi et idealement pouvoir s'\"animer\"",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "db0e74972b76221a",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "semelles",
+      "style": "pedagogique",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~elegant-sobre~cobalt~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "tres sympa mais trop d'illustrations a droite. J'en mettrais deux max et mieux organisees mais over look ok",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "74b28a8be138e586",
+    "ingredients": {
+      "gamme": "cobalt-abricot",
+      "heros": "semelles",
+      "style": "photos",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "releve",
+      "animation": null,
+      "structure": "technique-precis",
+      "modeVisuel": "photos",
+      "proposition": "semelles~technique-precis~cobalt-abricot~photos~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": "pedicurie-podologie coupé et trop simple",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "6507a379250e405c",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "semelles",
+      "style": "ligne",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~clair-pratique~menthe~ligne~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": "images trop petites dans la bulle \nicones de soins trop petites et trop simples. Ca fait trop fiche doctolib la",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "0715fa13fb80a364",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "releve",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~elegant-sobre~cobalt~releve~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "8050204b0eaa0186",
+    "ingredients": {
+      "gamme": "canard",
+      "heros": "semelles",
+      "style": "pedagogique",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~simple-proche~canard~pedagogique~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "c46faccff67e00d8",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "releve",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~simple-proche~menthe~releve~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "c66dae81d46f0764",
+    "ingredients": {
+      "gamme": "cobalt-abricot",
+      "heros": "semelles",
+      "style": "pedagogique",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~clair-pratique~cobalt-abricot~pedagogique~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "3effb5738ecc1494",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "semelles",
+      "style": "photos",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "photos",
+      "proposition": "semelles~elegant-sobre~cobalt~photos~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "6ca1fd5cd7c35961",
+    "ingredients": {
+      "gamme": "canard",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "releve",
+      "animation": "semelle",
+      "structure": "technique-precis",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~technique-precis~canard~releve~semelle"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Top, mais pedicurie podologie est encore coupe en passant a la ligne",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "8799c1c15edd99a0",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "semelles",
+      "style": "ligne",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~simple-proche~menthe~ligne~0"
+    },
+    "note": 1,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "11efcff1b9afe642",
+    "ingredients": {
+      "gamme": "cobalt-abricot",
+      "heros": "semelles",
+      "style": "photos",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "photos",
+      "proposition": "semelles~clair-pratique~cobalt-abricot~photos~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "Pas mal mais la bulle de droite est trop collee au pavé de gauche",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "56dee36b58d144f8",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "releve",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~clair-pratique~cobalt~releve~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "9d2ca74fdfd18d82",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "semelles",
+      "style": "pedagogique",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "diabete",
+        "ongles",
+        "senior"
+      ],
+      "couleurs": [
+        "turquoise",
+        "bleu"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~elegant-sobre~menthe~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "je garderais une seule grande illustration a droite",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "0df0121ce032557b",
+    "ingredients": {
+      "gamme": "terracotta",
+      "heros": "diabete",
+      "style": "pedagogique",
+      "theme1": "diabete",
+      "themes": [
+        "diabete",
+        "senior",
+        "enfant",
+        "semelles",
+        "ongles"
+      ],
+      "couleurs": [
+        "corail",
+        "bleu"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "diabete~simple-proche~terracotta~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "un peu trop simple et l'illustration (la main qui pique est bizrrement representee)",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "f3d526de1580d039",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "diabete",
+      "style": "ligne",
+      "theme1": "diabete",
+      "themes": [
+        "diabete",
+        "senior",
+        "enfant",
+        "semelles",
+        "ongles"
+      ],
+      "couleurs": [
+        "corail",
+        "bleu"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "diabete~clair-pratique~cobalt~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "4b6253c0429591c9",
+    "ingredients": {
+      "gamme": "cobalt-abricot",
+      "heros": "diabete",
+      "style": "photos",
+      "theme1": "diabete",
+      "themes": [
+        "diabete",
+        "senior",
+        "enfant",
+        "semelles",
+        "ongles"
+      ],
+      "couleurs": [
+        "corail",
+        "bleu"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "photos",
+      "proposition": "diabete~elegant-sobre~cobalt-abricot~photos~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "adc9f52cacbfa25f",
+    "ingredients": {
+      "gamme": "cobalt",
+      "heros": "diabete",
+      "style": "pedagogique",
+      "theme1": "diabete",
+      "themes": [
+        "diabete",
+        "senior",
+        "enfant",
+        "semelles",
+        "ongles"
+      ],
+      "couleurs": [
+        "corail",
+        "bleu"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "diabete~clair-pratique~cobalt~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ca0ac6ffda59fb5a",
+    "ingredients": {
+      "gamme": "corail",
+      "heros": "enfant",
+      "style": "pedagogique",
+      "theme1": "enfant",
+      "themes": [
+        "enfant",
+        "diabete",
+        "ongles",
+        "semelles",
+        "sport"
+      ],
+      "couleurs": [
+        "corail",
+        "bleu-nuit"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "enfant~clair-pratique~corail~pedagogique~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "124063b1129d9136",
+    "ingredients": {
+      "gamme": "terracotta",
+      "heros": "ongles",
+      "style": "ligne",
+      "theme1": "ongles",
+      "themes": [
+        "ongles",
+        "sport",
+        "semelles",
+        "pedicurie"
+      ],
+      "couleurs": [
+        "terracotta",
+        "violet",
+        "rose"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "ongles~elegant-sobre~terracotta~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "62226e8d8887e5d6",
+    "ingredients": {
+      "gamme": "lavande",
+      "heros": "ongles",
+      "style": "pedagogique",
+      "theme1": "ongles",
+      "themes": [
+        "ongles",
+        "sport",
+        "semelles",
+        "pedicurie"
+      ],
+      "couleurs": [
+        "terracotta",
+        "violet",
+        "rose"
+      ],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "ongles~clair-pratique~lavande~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "trop d'icones dans la bulle...",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "d4b1235e13531751",
+    "ingredients": {
+      "gamme": "pasteque",
+      "heros": "ongles",
+      "style": "releve",
+      "theme1": "ongles",
+      "themes": [
+        "ongles",
+        "sport",
+        "semelles",
+        "pedicurie"
+      ],
+      "couleurs": [
+        "terracotta",
+        "violet",
+        "rose"
+      ],
+      "registre": "releve",
+      "animation": "meulage",
+      "structure": "technique-precis",
+      "modeVisuel": "illustrations",
+      "proposition": "ongles~technique-precis~pasteque~releve~meulage"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "Bien mais pas fan de la section \"en bref\"",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ada8a521873eed56",
+    "ingredients": {
+      "gamme": "pasteque",
+      "heros": "pedicurie",
+      "style": "ligne",
+      "theme1": "pedicurie",
+      "themes": [
+        "pedicurie",
+        "semelles",
+        "diabete",
+        "sport"
+      ],
+      "couleurs": [
+        "rose"
+      ],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "pedicurie~elegant-sobre~pasteque~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "bien les couleurs mais attention aux instruments en page d'accueil c'est pas genial... il faut rassurer",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "7a68abf65f5e2dcf",
+    "ingredients": {
+      "gamme": "prune",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "pedicurie",
+        "diabete",
+        "sport",
+        "ongles"
+      ],
+      "couleurs": [
+        "prune",
+        "corail",
+        "violet"
+      ],
+      "registre": "releve",
+      "animation": "semelle",
+      "structure": "technique-precis",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~technique-precis~prune~releve~semelle"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Top juste la section en bref qui est pas top",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "84f264c447dd5b49",
+    "ingredients": {
+      "gamme": "tournesol",
+      "heros": "senior",
+      "style": "pedagogique",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "senior~simple-proche~tournesol~pedagogique~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "Illustration un peu trop simple pour etre aussi grande",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "caa781f2fdaafe31",
+    "ingredients": {
+      "gamme": "ardoise",
+      "heros": "senior",
+      "style": "photos",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "photos",
+      "proposition": "senior~clair-pratique~ardoise~photos~0"
+    },
+    "note": 3,
+    "etiquettes": [],
+    "commentaire": "bien mais bulle a droite un peu grande. Et je n'aime pas l'organisation des bulles \"soins\" \"infos pratiques\" ca fait trop doctolib",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "d8a6e172db155643",
+    "ingredients": {
+      "gamme": "encre",
+      "heros": "senior",
+      "style": "ligne",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "senior~elegant-sobre~encre~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "la j'aime beaucoup",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "f8619be276a2375b",
+    "ingredients": {
+      "gamme": "tournesol",
+      "heros": "senior",
+      "style": "pedagogique",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "clair-pratique",
+      "modeVisuel": "illustrations",
+      "proposition": "senior~clair-pratique~tournesol~pedagogique~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "b014022c05f0c723",
+    "ingredients": {
+      "gamme": "sauge",
+      "heros": "senior",
+      "style": "photos",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "photos",
+      "proposition": "senior~simple-proche~sauge~photos~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "a8e4da4ab1082f5b",
+    "ingredients": {
+      "gamme": "ardoise",
+      "heros": "senior",
+      "style": "ligne",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "senior~elegant-sobre~ardoise~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "1e999ea2b39d321b",
+    "ingredients": {
+      "gamme": "tournesol",
+      "heros": "senior",
+      "style": "ligne",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "simple-proche",
+      "modeVisuel": "illustrations",
+      "proposition": "senior~simple-proche~tournesol~ligne~0"
+    },
+    "note": 2,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "5bda44ccd50d0d41",
+    "ingredients": {
+      "gamme": "encre",
+      "heros": "senior",
+      "style": "pedagogique",
+      "theme1": "senior",
+      "themes": [
+        "senior",
+        "pedicurie",
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [],
+      "registre": "pedagogique",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "senior~elegant-sobre~encre~pedagogique~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "73d35fa46123f081",
+    "ingredients": {
+      "gamme": "sable",
+      "heros": "pedicurie",
+      "style": "ligne",
+      "theme1": "pedicurie",
+      "themes": [
+        "pedicurie",
+        "sport"
+      ],
+      "couleurs": [],
+      "registre": "ligne",
+      "animation": null,
+      "structure": "elegant-sobre",
+      "modeVisuel": "illustrations",
+      "proposition": "pedicurie~elegant-sobre~sable~ligne~0"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": "Super mais enlever les instruments",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "754ec9a1050bd1ca",
+    "ingredients": {
+      "gamme": "menthe",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "enfant"
+      ],
+      "couleurs": [
+        "turquoise",
+        "terracotta",
+        "rouge"
+      ],
+      "registre": "releve",
+      "animation": "semelle",
+      "structure": "technique-precis",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~technique-precis~menthe~releve~semelle"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "jour": "2026-10-07"
+  }
+]
