@@ -1,1 +1,366 @@
-[]
+[
+  {
+    "cle": "dessin:analyse:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "29fcab91",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "photo:sport-trail",
+    "statut": "retire",
+    "commentaire": null,
+    "empreinte": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:cors-durillons:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "e6bd1013",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:premiers-pas",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "7b2dd607",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:chaussure-course",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "67cb530f",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:semelle",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "23bc55cf",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:ongle",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "c6352565",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:fauteuil",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "5724424c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:senior-canne",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "46bf5f80",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:autoclave",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "1d72c10c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:orthonyxie",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "e8b3b4a4",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:onychoplastie",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "00d4f1a0",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:ongle-epais",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "b78b3d5b",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:mycose",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "290a2a4c",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:cor",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "836415ba",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:tapis-de-course:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "aea5bd5e",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:tapis-de-course:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "9e70f156",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:tapis-de-course:ligne",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "fd6976e9",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:iontophorese:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "8cf69f25",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:iontophorese:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "7a6c4f05",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:autoclave-classe-b:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "1da9aa87",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:autoclave-classe-b:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "b746222e",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:fauteuil-soins:ligne",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "50228793",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:fauteuil-soins:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "8404268b",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:scanner-3d:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "0eb2c797",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:scanner-3d:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "362d3360",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:fraiseuse-numerique:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "9935f866",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:fraiseuse-numerique:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "f4c5c945",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:tracabilite-sterilisation:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "c84ed825",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:bac-ultrasons:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "25d28692",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "photo:banque/libres/sport/pexels-14433788-1920.webp",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "photo:accueil-observation-marche",
+    "statut": "a_revoir",
+    "commentaire": null,
+    "empreinte": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "photo:analyse-plateforme",
+    "statut": "a_revoir",
+    "commentaire": null,
+    "empreinte": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:EZ-HTML/chaussure-running:trois-quarts:neuve",
+    "statut": "a_retravailler",
+    "commentaire": null,
+    "empreinte": "240f8d26",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:soin:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "b2421335",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:enfant:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "cd7e3fb4",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:cors-durillons:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "e6bd1013",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:cors-durillons:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "fb6a0431",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:ongles-epais:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "58615865",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:monofilament-diapason:ligne",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "8c8b5bc8",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:tracabilite-sterilisation:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "1d0597d8",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:bac-ultrasons:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "a68c9f26",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:podoscope:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "c4730d63",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:analyse:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "44c95db8",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "materiel:podoscope:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "c4730d63",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0003:profil-medial:ongle-epais-meulage",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "84454562",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "biblio:POD-AT-0010:coupe-transversale:orthonyxie",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "632e4349",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:diabete:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "f843d6a9",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:senior:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "2d4e0429",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:verrue:releve",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "fb785f79",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:verrue:pedagogique",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "b906b8d7",
+    "jour": "2026-10-07"
+  },
+  {
+    "cle": "ligne:pied-dessus",
+    "statut": "valide",
+    "commentaire": null,
+    "empreinte": "7d0250d4",
+    "jour": "2026-10-07"
+  }
+]
