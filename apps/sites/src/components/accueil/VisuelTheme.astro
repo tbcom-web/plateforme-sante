@@ -24,14 +24,17 @@ interface Props {
   format?: FormatHeros;
   sizes?: string;
   class?: string;
+  /** Une seule grande illustration (le dessin principal du sujet), jamais l'assemblage du héros : cadres ronds ou petits
+   *  (retour de l'atelier du 2026-10-07 : « une seule illustration dans le rond ») */
+  seul?: boolean;
 }
-const { visuel, prioritaire = false, animer = false, registre = registreSite, format = 'portrait', sizes = '100vw', class: classe } = Astro.props;
+const { visuel, prioritaire = false, animer = false, registre = registreSite, format = 'portrait', sizes = '100vw', class: classe, seul = false } = Astro.props;
 const animation = visuel.type === 'dessin' && animer && registre === 'releve' ? visuel.animation : null;
 // Illustration héros du thème : gamme du site (sans gamme, couleur libre : les variables de la page s'appliquent). Modèle à
 // teinte « gamme » en relevé : toujours les variables de la page (plan, signal et pression dérivés de la gamme, teinteSombre),
 // jamais le signal fixe de la fiche de la gamme (menthe sur cobalt : « du bleu et du vert mélangés »).
 const gammeHeros = site.modele.jetons.teinte === 'gamme' && registre === 'releve' ? null : site.theme.gamme || null;
-const heros = visuel.type === 'dessin' && visuel.heros && !animation
+const heros = visuel.type === 'dessin' && visuel.heros && !animation && !seul
   ? illustrationTheme(visuel.heros, { format, registre, gamme: gammeHeros, id: `h-${visuel.heros}-${format[0]}-${registre[0]}` })
   : '';
 ---

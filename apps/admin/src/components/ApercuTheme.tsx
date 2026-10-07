@@ -25,11 +25,11 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import {
   completerJeuVisuel, construireNavigation, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
-  avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS, illustrationTheme, themeIllustre, themeParId, packVisuel,
-  type Animation, type FormatHeros, type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
+  avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS, illustrationTheme, themeIllustre, themeParId, packVisuel, svgLigne, cssPressionGamme,
+  type Animation, type NomDessin, type NomLigne, type FormatHeros, type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
-import ApercuGabarit, { HerosVue, type HerosApercu } from './ApercuGabarit';
+import ApercuGabarit, { HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
 
 type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
@@ -82,6 +82,13 @@ function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 
 
 /** Animation du sujet n° 1 à l'accueil Technique (lib/vitrine.ts du site, DESSINS_THEME) */
 const ANIMATION_SUJET: Record<string, Animation> = { sport: 'coureur', enfant: 'premiers-pas', semelles: 'semelle' };
+/** Dessin principal du sujet n° 1 (lib/vitrine.ts du site, DESSINS_THEME) : UNE seule grande illustration dans le disque du
+ *  tableau (retour de l'atelier du 2026-10-07). Pédicurie : les pieds, jamais les instruments (« il faut rassurer »). */
+const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
+  sport: { dessin: 'sport', ligne: 'marche' }, diabete: { dessin: 'diabete', ligne: 'monofilament' }, ongles: { dessin: 'orthonyxie', ligne: 'orthonyxie' },
+  enfant: { dessin: 'enfant', ligne: 'premiers-pas' }, senior: { dessin: 'senior', ligne: 'senior-canne' }, semelles: { dessin: 'semelle', ligne: 'semelle' },
+  pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
+};
 
 export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false }: Props) {
   const [vue, setVue] = useState<Vue>('accueil');
@@ -184,6 +191,14 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     const gammeHeros = j.teinte === 'gamme' && r === 'releve' ? null : d.theme.gamme || null;
     return { type: 'svg', html: illustrationTheme(themeUn, { format, registre: r, gamme: gammeHeros, id: `ap-h-${themeUn}-${format[0]}-${r[0]}` }), sombre: r === 'releve' };
   };
+  // Tableau : une seule grande illustration dans le disque (le dessin principal du sujet), jamais l'assemblage de deux pièces
+  const herosSeul = (registreForce?: Registre): HerosApercu | null => {
+    if (mode === 'photos') return herosApercu('portrait');
+    const r = registreForce ?? registre;
+    const x = themeUn ? DESSIN_SUJET[themeUn] : undefined;
+    if (!x) return herosApercu('portrait', registreForce);
+    return { type: 'svg', html: r === 'ligne' ? svgLigne(x.ligne) : svgDessin(x.dessin, { registre: r, id: `ap-seul-${x.dessin}` }), sombre: r === 'releve' };
+  };
   const transparent = m.entete === 'transparent' && (m.accueil.hero === 'plein' || m.accueil.hero === 'diaporama') && vue === 'accueil';
 
   const Sur = ({ n, children }: { n?: number; children: ReactNode }) => (
@@ -194,7 +209,12 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const herosDiaporama = m.accueil.hero === 'diaporama' && mode !== 'photos' ? herosApercu(mobile ? 'portrait' : 'paysage', undefined, true) : null;
   const photoDiaporama = m.accueil.hero === 'diaporama' && mode === 'photos' ? herosApercu('paysage') : null;
   const renduPlein: Rendu = photoDiaporama?.type === 'photo' ? { type: 'photo', src: photoDiaporama.src, cadrage: '50% 50%' } : accueil;
-  const titreHero = <>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}{r.aVille && <> <span className="ap-pale">{r.aVille}</span></>}</>;
+  // Mot métier insécable (comme le site, lib/typo.mjs) : « pédicurie-podologie » ne passe jamais à la ligne sur son trait d'union
+  const titreHero = <>Cabinet de <span className="ap-mot">{d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}</span>{r.aVille && <> <span className="ap-pale">{r.aVille}</span></>}</>;
+  const texteTitre = `Cabinet de ${d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} ${r.aVille ?? ''}`;
+  // Taille du titre ajustée à la colonne (le plus long mot tient sur une ligne) : héros plein (Technique), scindé, lieu
+  const taillePlein = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : herosDiaporama ? 1180 * 0.48 : 1180 * 0.6, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
+  const tailleScinde = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : 1180 * 0.5, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
   const heroPlein = (
     <section style={{ position: 'relative', minHeight: mobile ? 560 : 640, display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
       {/* Photo : plein cadre sous un voile ; dessin ou animation : fond plan, visuel à droite du titre */}
@@ -205,7 +225,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       {/* Héros du sujet n° 1 (Technique) : bloc au-dessus du titre sur téléphone, moitié droite sur ordinateur (comme le site) */}
       <div className="ap-cadre" style={{ position: 'relative', paddingBlock: mobile ? (herosDiaporama ? '430px 40px' : '120px 40px') : '160px 64px' }}>
         <p className="ap-sur" style={{ color: 'var(--blanc)' }}>{surTitre}</p>
-        <p className="ap-h1" style={{ color: 'var(--blanc)', maxWidth: herosDiaporama && !mobile ? '48%' : '14ch' }}>{titreHero}</p>
+        <p className="ap-h1" style={{ color: 'var(--blanc)', maxWidth: herosDiaporama && !mobile ? '48%' : mobile ? 'none' : '14ch', fontSize: taillePlein }}>{titreHero}</p>
         <p style={{ maxWidth: '46ch', opacity: 0.88, marginTop: 18 }}>{presentation}</p>
         <span className="ap-bouton" style={{ background: 'var(--blanc)', color: 'var(--encre)', marginTop: 12 }}>{rdv}</span>
       </div>
@@ -215,7 +235,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     <section className="ap-cadre" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.05fr 0.95fr', gap: mobile ? 28 : 56, alignItems: 'center', paddingBlock: mobile ? '36px 48px' : '72px 96px' }}>
       <div>
         <Sur>{surTitre}</Sur>
-        <p className="ap-h1">{titreHero}</p>
+        <p className="ap-h1" style={{ fontSize: tailleScinde }}>{titreHero}</p>
         <p className="ap-chapo">{presentation}</p>
         <span className="ap-bouton ap-bouton--plein">{rdv}</span>
       </div>
@@ -236,7 +256,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <div style={{ background: 'var(--fond)', borderRadius: Math.round(j.rayon * 1.3), boxShadow: '0 18px 40px -24px rgb(0 0 0 / 0.35)', padding: mobile ? 22 : 40, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.25fr 0.75fr', gap: mobile ? 18 : 40, alignItems: 'end' }}>
           <div>
             <p style={{ fontWeight: 700, color: 'var(--accent-vif)', margin: '0 0 8px' }}>{titre}{suffixeVille}</p>
-            <p className="ap-h1">{titreHero}</p>
+            <p className="ap-h1" style={{ fontSize: tailleScinde }}>{titreHero}</p>
             <p className="ap-chapo" style={{ marginBottom: 0 }}>{presentation}</p>
           </div>
           <div style={{ display: 'grid', gap: 10 }}>
@@ -455,7 +475,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
 
   return (
     <div className={vignette ? 'overflow-hidden bg-white' : 'overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm'}>
-      <style>{CSS + SURFACES_CSS}</style>
+      <style>{CSS + SURFACES_CSS + CSS_PRESSION}</style>
       {/* Commandes simples : la page montrée et l'appareil ; jamais le nom interne du modèle côté praticien */}
       {!vignette && <div className="flex flex-wrap items-center gap-2 border-b border-black/5 bg-neutral-50 px-3 py-2 text-xs">
         {technique && <span className="mr-auto truncate text-neutral-500">Modèle <strong className="text-neutral-800">{m.nom}</strong> · {jeu.label}</span>}
@@ -481,7 +501,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             style={{ ...style, width: LARGEUR[appareil], transform: `scale(${echelle})`, transformOrigin: '0 0', position: 'absolute', top: 0, left: 0 }}
           >
             {gabaritModele(m) !== 'classique' ? (
-              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={herosApercu(gabaritModele(m) === 'village' ? 'paysage' : 'portrait', gabaritModele(m) === 'tableau' && !d.theme.styleIllustration ? 'releve' : undefined)} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
+              <ApercuGabarit draft={d} modele={m} soins={soinsAffiches} mobile={mobile} heros={gabaritModele(m) === 'tableau' ? herosSeul(!d.theme.styleIllustration ? 'releve' : undefined) : herosApercu('portrait')} registre={registre} vue={vue} nomCabinet={nomCabinet} titre={titre} replis={r} dessinSoin={(slug) => visuelSoinJeu(jeu, slug).dessin}
                 marque={d.theme.logoPerso.url ? <img src={d.theme.logoPerso.url} alt="" style={{ height: 40 }} /> : <span dangerouslySetInnerHTML={{ __html: marque }} />} />
             ) : (<>
             <header className={`ap-entete ${transparent ? 'ap-entete--transparent' : ''}`}>
@@ -560,6 +580,12 @@ const CSS = `
 .ap-entete { position: relative; z-index: 2; background: color-mix(in srgb, var(--fond) 92%, transparent); border-bottom: var(--filet) solid var(--ligne); }
 .ap-entete--transparent { position: absolute; left: 0; right: 0; background: transparent; border-color: transparent; color: var(--blanc); }
 .ap-svg svg { width: 100%; height: 100%; }
+.ap-mot { white-space: nowrap; }
+/* Trame de points des relevés : respiration douce niveau par niveau (comme le site, Gabarit.astro) */
+@media (prefers-reduced-motion: no-preference) {
+  .ap .trame > * { animation: ap-trame var(--cycle-releve) var(--courbe-entree-sortie) infinite; animation-delay: calc(var(--k, 1) * var(--duree-decalage) * 4); }
+  @keyframes ap-trame { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+}
 /* Registre pédagogique : texte à 18 px, titres sans interlettrage serré, sur-titres en casse normale */
 .ap[data-registre='pedagogique'] { font-size: 18px; }
 .ap[data-registre='pedagogique'] :is(.ap-h1, .ap-h2, .ap-h3) { letter-spacing: -0.015em; line-height: 1.15; }
@@ -569,3 +595,6 @@ const CSS = `
 .ap[data-registre='pedagogique'] .ap-pale { color: var(--encre-douce); }
 .ap[data-registre='pedagogique'] .ap-douce::before { display: none; }
 `;
+
+// Trame de pression aux couleurs de la gamme, tous modèles (comme le site : CSS_TRAME_GAMME / CSS_TEINTE_GAMME)
+const CSS_PRESSION = cssPressionGamme('.ap');

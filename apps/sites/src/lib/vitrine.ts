@@ -25,7 +25,8 @@ const DESSINS_THEME: Record<string, { principal: Dessins; second: Omit<Dessins, 
   enfant: { principal: { dessin: 'enfant', ligne: 'premiers-pas', animation: 'premiers-pas' }, second: { dessin: 'analyse', ligne: 'empreintes' } },
   senior: { principal: { dessin: 'senior', ligne: 'senior-canne', animation: null }, second: { dessin: 'domicile', ligne: 'domicile' } },
   semelles: { principal: { dessin: 'semelle', ligne: 'semelle', animation: 'semelle' }, second: { dessin: 'analyse', ligne: 'empreintes' } },
-  pedicurie: { principal: { dessin: 'soin', ligne: 'instruments', animation: null }, second: { dessin: 'cors-durillons', ligne: 'cor' } },
+  // Pédicurie : jamais d'instruments en premier écran (retour de l'atelier du 2026-10-07 : « il faut rassurer ») : les pieds
+  pedicurie: { principal: { dessin: 'soin', ligne: 'pieds-dessus', animation: null }, second: { dessin: 'cors-durillons', ligne: 'cor' } },
   posture: { principal: { dessin: 'equilibre', ligne: 'empreintes', animation: 'trajectoire' }, second: { dessin: 'appuis', ligne: 'pied-dessous' } },
 };
 const DEFAUT: (typeof DESSINS_THEME)[string] = { principal: { dessin: 'analyse', ligne: 'empreintes', animation: 'podoscope' }, second: { dessin: 'appuis', ligne: 'pied-dessous' } };

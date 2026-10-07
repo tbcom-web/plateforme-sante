@@ -1,5 +1,5 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
-import { lotsPropositions, modeleIntegre, modeleDuSite, ordonnerSoins, packVisuel, themeParId, universCatalogue, type SiteConfig } from '@plateforme/core';
+import { lotsPropositions, modeleIntegre, modeleDuSite, ordonnerSoins, packVisuel, reglageStyle, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 // POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
@@ -605,5 +605,19 @@ if (process.env.PROPOSITION) {
   };
   site.soins = ordonnerSoins(site.soins, u.preReglage.soinsEnAvant);
   console.log(`[demo] proposition « ${p.nom} » : ${p.univers} · ${p.gamme} · ${p.style} · ${p.animation ?? 'sans animation'}`);
+}
+// COMBINAISON=<structure>,<gamme>,<style>[,<animation>] : une combinaison précise de l'atelier des propositions (planches
+// avant/après, ex. COMBINAISON=clair-pratique,menthe,releve PRINCIPAUX=semelles) ; sujet n° 1 = premier de PRINCIPAUX.
+if (process.env.COMBINAISON) {
+  const [structure, gamme, style = 'releve', animation = ''] = process.env.COMBINAISON.split(',');
+  const u = universCatalogue(structure);
+  if (!u) throw new Error(`Structure inconnue : ${structure}`);
+  const { registre, modeVisuel } = reglageStyle(style as StyleIllustration, structure as Structure);
+  const sujet = site.priorites?.principaux[0];
+  const packC = packVisuel(sujet ? (themeParId(sujet)?.specialite ?? 'generale') : 'generale');
+  site.modele = modeleDuSite(modeleIntegre(u.preReglage.modele), { registre });
+  site.theme = { ...site.theme, gamme, logo: { ...u.preReglage.logo }, modeVisuel, styleIllustration: style as StyleIllustration };
+  site.visuels = { specialite: packC.value, animation: (animation || null) as SiteConfig['visuels']['animation'], ...(animation ? { animationAccueil: animation as NonNullable<SiteConfig['visuels']['animation']> } : {}), photos: packC.photos };
+  site.soins = ordonnerSoins(site.soins, u.preReglage.soinsEnAvant);
 }
 export default site;

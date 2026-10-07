@@ -337,7 +337,9 @@ export const MODELES_INTEGRES: ModeleManifeste[] = [
     description: 'Plein écran sombre façon laboratoire d’analyse : trame de points de pression, animation du sujet principal, grotesque grasse.',
     version: 1,
     entete: 'transparent',
-    accueil: { hero: 'diaporama', voile: 55, sections: ['faits', 'competences', 'praticiens', 'panorama', 'galerie', 'actualites', 'acces', 'faq'] },
+    // Pas de bande « En bref » (retour de l'atelier du 2026-10-07, deux fois : « pas fan de la section En bref ») : à la place,
+    // le premier rendez-vous en trois étapes (prendre rendez-vous, venir, la consultation), utile au patient.
+    accueil: { hero: 'diaporama', voile: 55, sections: ['competences', 'etapes', 'praticiens', 'panorama', 'galerie', 'actualites', 'acces', 'faq'] },
     competences: 'cartes',
     pied: 'sombre',
     animations: 'douces',

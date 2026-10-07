@@ -3,10 +3,12 @@
 // Appeler, et la GRANDE image du sujet n° 1 du praticien (lib/vitrine.ts : illustration validée, ou photo en style
 // « photos »). L'image est visible sur téléphone, juste sous le titre (jamais masquée) ; sa place est réservée (aucun
 // décalage). Le H1 est celui du gabarit classique (SEO identique).
-// - « carte » (tableau) : un grand panneau pastel quasi plein écran ; texte à gauche, à droite l'image sur un disque de
-//   la couleur vive de la gamme (composition « affiche »), bouton plein ;
-// - « notice » (village) : bandeau pastel, gros titre, l'image en grand panneau arrondi, trois lignes simples (qui, où,
-//   soins) sans pictos, deux gros boutons ;
+// - « carte » (tableau) : un grand panneau pastel quasi plein écran ; texte à gauche, à droite UNE seule grande
+//   illustration (le dessin principal du sujet, jamais l'assemblage de deux pièces) sur un disque de la couleur vive de la
+//   gamme (composition « affiche »), bien détaché du texte, bouton plein (retours de l'atelier du 2026-10-07) ;
+// - « notice » (village) : aplat pastel de la gamme tramé de points, sur-titre à filet, très gros titre (la ville en
+//   couleur), l'illustration du sujet dans un cadre posé sur une ombre pleine de la couleur vive (pas un bandeau
+//   géant : « trop simple pour être aussi grande »), trois lignes simples (qui, où, soins), deux gros boutons ;
 // - « figure » (revue) : bandeau sur l'aplat pastel, grand titre Bodoni, et la figure du sujet n° 1 au trait continu,
 //   encadrée d'un filet, sans légende visible (règle de Paul).
 // Couleurs : rôles --g-* (packages/core/src/gabarits.ts) tirés de la gamme, AA garantis.
@@ -59,7 +61,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   <section class="g-cadre pe pe--carte" aria-label="Le cabinet en bref"><div class="pe__grille">
     <p class="pe__sur">{sur}</p>
     <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-    <div class:list={['pe__visuel', { 'pe__visuel--clair': disqueClair }]}><span class:list={['pe__disque', { 'surface-plan': !disqueClair }]} aria-hidden="true"></span><VisuelTheme visuel={visuel} registre={registreCarte} prioritaire sizes="(min-width: 900px) 45vw, 100vw" /></div>
+    <div class:list={['pe__visuel', { 'pe__visuel--clair': disqueClair }]} data-fond={disqueClair ? undefined : 'sombre'}><span class:list={['pe__disque', { 'surface-plan': !disqueClair }]} aria-hidden="true"></span><VisuelTheme visuel={visuel} registre={registreCarte} seul prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></div>
     <div class="pe__suite">
       <p class="pe__qui">{quiOu}</p>
       {soinsPhrase && <p class="pe__soins">{soinsPhrase}</p>}
@@ -72,8 +74,9 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   </div></section>
 ) : (
   <section class="pe pe--notice" aria-label="Le cabinet en bref"><div class="g-cadre pe__grille">
+    <p class="pe__sur">{sur}</p>
     <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-    <div class="pe__visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 900px) 45vw, 100vw" /></div>
+    <div class="pe__visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></div>
     <div class="pe__suite">
       <ul class="pe__lignes">
         <li><strong>{qui}</strong></li>
@@ -128,10 +131,10 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   .pe--carte .pe__sur { font-size: 0.95rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--g-aplat-doux); }
   .pe--carte { --pe-h1: 5.2rem; }
   .pe--carte :global(h1) { line-height: 0.98 !important; letter-spacing: -0.045em !important; }
-  .pe--carte .pe__visuel { aspect-ratio: 1 / 1; max-height: 64svh; width: 100%; justify-self: center; }
+  .pe--carte .pe__visuel { aspect-ratio: 1 / 1; max-height: 58svh; width: 100%; max-width: 520px; justify-self: center; }
   /* Disque « plan d'architecte » sombre de la gamme et dessin en relevé de pression (trame de points colorés) : l'affiche du cabinet */
   .pe--carte .pe__disque { position: absolute; inset: 6%; border-radius: 50%; box-shadow: 0 0 0 10px var(--g-vif); }
-  .pe--carte .pe__visuel :global(.vt--dessin) { padding: 15%; }
+  .pe--carte .pe__visuel :global(.vt--dessin) { padding: 13%; }
   .pe--carte .pe__visuel :global(.vt--heros) { inset: 6%; border-radius: 50%; }
   /* Jetons de dessin de la surface « plan » de la charte (SURFACES_CSS), le dessin étant posé sur le disque voisin */
   /* Photo et héros posés en retrait du disque : la taille vient des marges (inset), pas du 100 % du composant (sinon l'image
@@ -144,17 +147,24 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   .pe--carte .pe__visuel :global(.vt--photo) { inset: 6%; border-radius: 50%; }
   .pe--carte .pe__qui { font-size: 1.1rem; }
   @media (max-width: 899px) { .pe--carte .pe__visuel { max-width: 340px; } }
-  @media (min-width: 900px) { .pe--carte .pe__grille { min-height: min(calc(100svh - 110px), 760px); } }
+  @media (min-width: 900px) { .pe--carte .pe__grille { min-height: min(calc(100svh - 110px), 760px); column-gap: clamp(56px, 7vw, 112px); } }
 
-  /* ———— Notice (village) : une colonne ; l'image en BANDEAU large en tête (sur l'aplat pastel), puis un très gros titre ———— */
-  .pe--notice { background: var(--g-page); color: var(--g-encre); }
-  .pe--notice .pe__grille { padding-block: clamp(16px, 3vw, 32px) clamp(28px, 5vw, 56px); }
-  .pe--notice { --pe-h1: 3.8rem; }
-  .pe--notice .pe__visuel { order: -1; aspect-ratio: 16 / 10; border-radius: var(--rayon-carte); background: var(--g-aplat); }
-  .pe--notice .pe__visuel :global(.vt--dessin) { padding: 5% 12%; }
-  .pe--notice .pe__soins { color: var(--g-encre-douce); }
-  .pe--notice .pe__lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 1.15rem; }
-  .pe--notice .pe__lignes li + li { padding-top: 6px; border-top: var(--filet) solid var(--g-ligne); }
+  /* ———— Notice (village) : aplat pastel tramé de points ; titre très gros et chaleureux ; l'illustration dans un cadre portrait
+     sur une ombre pleine de la couleur vive (chaleur sans surcharge) ———— */
+  .pe--notice { position: relative; isolation: isolate; background: var(--g-aplat); color: var(--g-aplat-texte, var(--g-encre)); }
+  .pe--notice::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(circle, color-mix(in srgb, var(--g-encre) 14%, transparent) var(--trame-point), transparent calc(var(--trame-point) + 0.6px)); background-size: var(--trame-pas) var(--trame-pas); -webkit-mask-image: linear-gradient(100deg, transparent 35%, var(--blanc) 85%); mask-image: linear-gradient(100deg, transparent 35%, var(--blanc) 85%); }
+  .pe--notice .pe__grille { padding-block: clamp(28px, 5vw, 72px) clamp(36px, 6vw, 80px); }
+  .pe--notice { --pe-h1: 4.4rem; }
+  .pe--notice :global(h1) { line-height: 1.02 !important; letter-spacing: -0.03em !important; }
+  .pe--notice :global(h1 .pale) { color: var(--g-accent-texte) !important; }
+  .pe--notice .pe__sur { display: inline-flex; align-items: center; gap: 12px; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .pe--notice .pe__sur { align-items: baseline; }
+  .pe--notice .pe__sur::before { content: ''; flex: none; width: 28px; height: var(--filet-fort); background: currentColor; transform: translateY(-0.3em); }
+  .pe--notice .pe__visuel { aspect-ratio: 4 / 3; border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: 10px 10px 0 var(--g-vif); margin: 0 10px 10px 0; }
+  .pe--notice .pe__visuel :global(.vt--dessin) { padding: 8% 10%; }
+  .pe--notice .pe__soins { color: var(--g-aplat-doux); }
+  .pe--notice .pe__lignes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 1.15rem; }
+  .pe--notice .pe__lignes li + li { padding-top: 8px; border-top: var(--filet) solid color-mix(in srgb, var(--g-encre) 22%, transparent); }
   .pe--notice .pe__actions { display: grid; gap: 12px; width: 100%; }
   @media (min-width: 760px) { .pe--notice .pe__actions { grid-template-columns: 1fr 1fr; } }
   .pe__bouton { display: grid; place-items: center; align-content: center; min-height: 64px; padding: 8px 20px; border-radius: var(--rayon-carte); background: var(--g-carte); color: var(--g-encre); font-weight: 700; text-align: center; text-decoration: none; box-shadow: inset 0 0 0 var(--filet-fort) var(--g-encre); }
@@ -162,8 +172,13 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   .pe__bouton--plein, .pe__bouton--plein:hover { background: var(--g-plein); color: var(--g-plein-texte); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
   .pe__bouton span { font-size: 0.85rem; font-weight: 500; }
   @media (min-width: 900px) {
-    .pe--notice .pe__grille { grid-template-columns: minmax(0, 1fr); }
-    .pe--notice .pe__visuel { grid-column: 1; grid-row: auto; aspect-ratio: 21 / 9; margin-bottom: 28px; }
+    /* Ordinateur : sur-titre et titre sur toute la largeur (grand corps), puis les informations à gauche et l'illustration à droite */
+    .pe--notice .pe__grille { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: 'sur sur' 'titre titre' 'suite visuel'; column-gap: 40px; }
+    .pe--notice .pe__sur { grid-area: sur; }
+    .pe--notice .pe__grille > :global(h1) { grid-area: titre; }
+    .pe--notice .pe__suite { grid-area: suite; align-self: center; }
+    .pe--notice .pe__visuel { grid-area: visuel; grid-column: auto; grid-row: auto; width: 100%; }
+    .pe--notice .pe__actions { grid-template-columns: minmax(0, 1fr); }
   }
 
   /* ———— Figure (revue) : sur le papier, très grand titre, la figure au trait sur une planche pastel encadrée de filets ———— */

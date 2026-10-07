@@ -46,7 +46,7 @@ import Empreintes from '../components/dessins/Empreintes.astro';
 import Dessin from '../components/dessins/Dessin.astro';
 import { CONTOUR } from '../components/animations/pied';
 import { site, absUrl } from '../lib/site';
-import { feuilleCharte, variablesTheme, variablesGabarit, gabaritModele, POLICES, POLICE_MONO, NEUTRES, TRAIT, CSS_TEINTE_GAMME } from '@plateforme/core';
+import { feuilleCharte, variablesTheme, variablesGabarit, gabaritModele, POLICES, POLICE_MONO, NEUTRES, TRAIT, CSS_TEINTE_GAMME, CSS_TRAME_GAMME } from '@plateforme/core';
 import { businessSchema, personSchemas, websiteSchema, pageSchema, breadcrumbSchema } from '../lib/schema';
 import { aUneVersionMarkdown, cheminMarkdown } from '../lib/agents';
 import { navigation, entreeActive } from '../lib/navigation';
@@ -199,7 +199,7 @@ const precisionRdvBrute = rdvEnLigne ? `En ligne sur ${site.rdv.plateforme}, 24h
 const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
 ---
 <!doctype html>
-<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-gabarit={nouveau ? gabarit : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -225,7 +225,7 @@ const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : ''}${policesRepli}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>
@@ -386,10 +386,10 @@ const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
         );
         document.querySelectorAll('.apparait').forEach((el) => { el.classList.add('pret'); obs.observe(el); });
       }
-      // Animations continues (lignes de scan) : actives seulement quand le bloc est à l'écran.
+      // Animations continues (lignes de scan, trame de points des relevés) : actives seulement quand le bloc est à l'écran.
       if ('IntersectionObserver' in window) {
         const vue = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('en-vue', e.isIntersecting)));
-        document.querySelectorAll('.anime-visible').forEach((el) => vue.observe(el));
+        document.querySelectorAll('.anime-visible, svg.dessin--releve, svg.heros-theme--releve').forEach((el) => vue.observe(el));
       }
     </script>
   </body>
@@ -414,6 +414,13 @@ const precisionRdv = precisionRdvBrute === libelleRdv ? '' : precisionRdvBrute;
   [data-images='contraste'] main img:not(.praticien__photo) { filter: contrast(1.12) saturate(0.88) brightness(0.96); }
 
   * { box-sizing: border-box; }
+  /* Trame de points des relevés (pieds en points de pression, tous modèles ; retour de l'atelier du 2026-10-07 : « idéalement
+     s'animer ») : respiration douce, niveau par niveau (--k : du faible au fort appui), seulement à l'écran (.en-vue) et jamais
+     si le visiteur réduit les mouvements. Opacité seule : aucun décalage, aucun coût d'affichage du premier écran. */
+  @media (prefers-reduced-motion: no-preference) {
+    html:not(.sans-animations) .en-vue .trame > * { animation: trame-pouls var(--cycle-releve) var(--courbe-entree-sortie) infinite; animation-delay: calc(var(--k, 1) * var(--duree-decalage) * 4); }
+    @keyframes trame-pouls { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+  }
   /* Mots composés jamais coupés (lib/typo.mjs) ; titres réduits sur téléphone pour que le plus long tienne sur une ligne */
   mot-lie { white-space: nowrap; }
   /* Dernier recours (petit écran, très long mot composé dans un intertitre ou une ligne étroite) : le mot seul se réduit juste

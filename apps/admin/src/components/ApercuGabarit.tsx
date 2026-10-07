@@ -7,8 +7,12 @@
 // d'OpenStreetMap au build). Revue : filet double, premier écran sur l'aplat pastel avec un dessin au trait légendé, sections en
 // colonnes de journal (chiffre romain et titre à gauche), bulles à filet, Bodoni Moda et Newsreader.
 // Informations manquantes : replis du site publié (replisApercu, calculés par ApercuTheme) ; aucune valeur fictive.
+// Retours de l'atelier du 2026-10-07 (comme le site) : tableau = une seule grande illustration dans le disque, bien détaché du
+// texte ; soins en cartes éditoriales (grande illustration du soin, titre fort), infos pratiques en liens texte, plus de
+// bulles à picto « façon annuaire » ; village = aplat tramé, titre expressif, illustration en cadre portrait sur ombre pleine ;
+// « pédicurie-podologie » insécable, titre ajusté à sa colonne.
 import type { CSSProperties, ReactNode } from 'react';
-import { avecVille, construireNavigation, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type ReplisApercu, type SiteDraft } from '@plateforme/core';
+import { avecVille, construireNavigation, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -26,7 +30,15 @@ type Props = {
   dessinSoin: (slug: string) => NomDessin;
   /** Visuel du sujet n° 1 au premier écran (comme le site : PremierEcran), sinon le dessin du premier soin */
   heros?: HerosApercu | null;
+  /** Registre des dessins du site (illustrations des cartes de soins) */
+  registre?: Registre;
 };
+
+/** Longueur du plus long mot insécable d'un titre (« pédicurie-podologie », ville composée) : taille du titre (lib/typo.mjs) */
+const motLePlusLong = (t: string) => Math.max(0, ...t.split(/[\s,.;:!?()«»]+/).map((x) => [...x].length));
+/** Taille d'un titre pour que son plus long mot tienne sur `largeur` px (jamais « pédicurie- / podologie », règle de Paul) */
+export const tailleTitre = (titre: string, largeur: number, base: number, ratio = 0.6) => Math.min(base, Math.floor(largeur / (Math.max(10, motLePlusLong(titre)) * ratio)));
+
 
 /** Visuel du sujet n° 1 (calculé par ApercuTheme) : illustration composée (SVG) ou photo du sujet */
 export type HerosApercu = { type: 'svg'; html: string; sombre: boolean } | { type: 'photo'; src: string };
@@ -47,7 +59,7 @@ export function HerosVue({ h, rayon = 0 }: { h: HerosApercu; rayon?: number | st
 
 const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'], [/diab/, 'Diabétiques'], [/senior|chute/, 'Seniors']];
 
-export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null }: Props) {
+export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null, registre = 'ligne' }: Props) {
   const village = gabaritModele(m) === 'village';
   const revue = gabaritModele(m) === 'revue';
   const ROMAINS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
@@ -78,7 +90,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     : { display: 'inline-flex', alignItems: 'center', gap: 10, minHeight: 48, padding: '6px 18px 6px 8px', borderRadius: 999, background: 'var(--g-bulle)', color: 'var(--g-bulle-texte)', fontWeight: 600, fontSize: 16 };
   const rond: CSSProperties = { width: 34, height: 34, borderRadius: '50%', background: 'var(--g-carte)', color: 'var(--g-encre)', display: 'grid', placeItems: 'center' };
   const cadre: CSSProperties = { width: `min(${village ? 880 : revue ? 1120 : 1180}px, 100% - ${village ? 40 : revue && !mobile ? 64 : 32}px)`, marginInline: 'auto' };
-  const h1: CSSProperties = revue ? { fontSize: mobile ? 40 : 66, lineHeight: 1.04, letterSpacing: '-0.01em', fontWeight: 500 } : { fontSize: mobile ? 40 : village ? 56 : 60, lineHeight: 1.1, letterSpacing: village ? '-0.015em' : '-0.035em' };
+  const h1: CSSProperties = revue ? { fontSize: mobile ? 40 : 66, lineHeight: 1.04, letterSpacing: '-0.01em', fontWeight: 500 } : { fontSize: mobile ? 40 : village ? 64 : 60, lineHeight: village ? 1.04 : 1.1, letterSpacing: village ? '-0.03em' : '-0.035em' };
   const h2: CSSProperties = revue ? { fontSize: mobile ? 28 : 34, lineHeight: 1.12, fontWeight: 500 } : { fontSize: mobile ? 30 : 40, lineHeight: 1.15 };
   const sur: CSSProperties = { fontWeight: 600, color: 'var(--g-accent-texte)', margin: '0 0 10px', fontSize: 16 };
   const plan = (
@@ -89,7 +101,11 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     </div>
   );
   // Titre du site (pas de <h1> : l'aperçu est inclus dans une page de l'admin qui a le sien)
-  const titreH1 = <p className="ap-h1" style={{ ...h1, margin: 0 }}>Cabinet de {d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}{r.aVille && <> {revue ? <em style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</em> : r.aVille}</>}</p>;
+  const metier = d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+  // Largeur de la colonne du titre (premier écran) : le plus long mot insécable y tient toujours sur une ligne
+  const colonneTitre = mobile ? 390 - 40 - (village ? 0 : 52) : revue ? 1120 * 0.6 : village ? 880 * 0.56 : 1180 * 0.52 - 96;
+  const tailleH1 = tailleTitre(`Cabinet de ${metier} ${r.aVille ?? ''}`, colonneTitre, (h1.fontSize as number) ?? 60, revue ? 0.52 : 0.6);
+  const titreH1 = <p className="ap-h1" style={{ ...h1, fontSize: tailleH1, margin: 0 }}>Cabinet de <span className="ap-mot">{metier}</span>{r.aVille && <> {revue ? <em style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</em> : village ? <span style={{ color: 'var(--g-accent-texte)' }}>{r.aVille}</span> : r.aVille}</>}</p>;
   // Menu et bouton sur une ligne : un nom de cabinet long se réduit, jamais « Rendez-/vous » sur deux lignes
   const nomEntete: CSSProperties = { minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.2, fontSize: nomCabinet.length > 40 ? 16 : 18 };
   // Revue : dessin au trait continu du soin principal, légendé (sans animation)
@@ -142,9 +158,13 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       )}
     </div></section>
   ) : village ? (
-    <section style={{ background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'grid', gap: 18, paddingBlock: mobile ? 28 : 48 }}>
+    <section style={{ position: 'relative', background: 'var(--g-aplat)', color: 'var(--g-aplat-texte)' }}>
+      <span aria-hidden="true" style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--g-encre) 14%, transparent) var(--trame-point), transparent calc(var(--trame-point) + 0.6px))', backgroundSize: 'var(--trame-pas) var(--trame-pas)', WebkitMaskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)', maskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)' }} />
+      <div style={{ ...cadre, position: 'relative', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 5fr', columnGap: 48, rowGap: 18, alignItems: 'center', paddingBlock: mobile ? '28px 36px' : '64px 72px' }}>
+      <div style={{ display: 'grid', gap: 18 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: 15, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}><span style={{ width: 28, height: 2, background: 'currentColor' }} />{surTitre}</span>
       {titreH1}
-      {heros && <div style={{ aspectRatio: '16 / 9', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-page)' }}><HerosVue h={heros} /></div>}
+      {heros && mobile && <div style={{ aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: '6%' }}><HerosVue h={heros} /></div>}
       <div style={{ display: 'grid', gap: 8 }}>
         <span style={ligne}>{pid('rendez-vous')}{noms.length ? `${noms.join(' et ')}, ${titre.toLowerCase()}` : nomCabinet}</span>
         <span style={ligne}>{pid('itineraire')}{adresse}</span>
@@ -154,9 +174,11 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-plein)', color: 'var(--g-plein-texte)', fontWeight: 700, textAlign: 'center', padding: '0 12px' }}>{libelleRdv}</span>
         {enLigne && r.aTelephone && <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-encre)', fontWeight: 700 }}>Appeler le {tel}</span>}
       </div>
+      </div>
+      {heros && !mobile && <div style={{ aspectRatio: '3 / 4', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: '6%' }}><HerosVue h={heros} /></div>}
     </div></section>
   ) : (
-    <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.45fr 1fr', gap: 16, paddingTop: 14 }}>
+    <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.45fr 1fr', gap: mobile ? 20 : 64, paddingTop: 14, alignItems: 'center' }}>
       <div style={{ borderRadius: 'var(--rayon)', background: mobile ? 'var(--g-aplat)' : 'var(--g-carte)', boxShadow: mobile ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', color: 'var(--g-encre)', padding: mobile ? 26 : 48, display: 'grid', gap: 16, justifyItems: 'start' }}>
         <span style={{ padding: '6px 14px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontSize: 14, fontWeight: 600 }}>● {surTitre}</span>
         {titreH1}
@@ -168,8 +190,8 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         </div>
       </div>
       {heros ? (
-        <div style={{ position: 'relative', aspectRatio: '1 / 1', width: '100%', maxWidth: mobile ? 340 : undefined, justifySelf: 'center', alignSelf: 'center', borderRadius: '50%', background: heros.type === 'svg' && heros.sombre ? 'var(--plan)' : 'var(--g-carte)', boxShadow: '0 0 0 10px var(--g-vif)', overflow: 'hidden', margin: 10 }}>
-          <div style={{ position: 'absolute', inset: heros.type === 'photo' ? 0 : heros.sombre ? '6%' : '12%', borderRadius: heros.type === 'photo' || heros.sombre ? '50%' : 0, overflow: 'hidden' }}><HerosVue h={heros} /></div>
+        <div data-fond={heros.type === 'svg' && heros.sombre ? 'sombre' : undefined} className={heros.type === 'svg' && heros.sombre ? 'surface-plan' : undefined} style={{ position: 'relative', aspectRatio: '1 / 1', width: '100%', maxWidth: mobile ? 320 : 440, justifySelf: 'center', alignSelf: 'center', borderRadius: '50%', background: heros.type === 'svg' && heros.sombre ? undefined : 'var(--g-carte)', boxShadow: '0 0 0 10px var(--g-vif)', overflow: 'hidden', margin: 10 }}>
+          <div style={{ position: 'absolute', inset: heros.type === 'photo' ? 0 : '14%', borderRadius: heros.type === 'photo' ? '50%' : 0, display: 'grid', placeItems: 'center' }}><HerosVue h={heros} /></div>
         </div>
       ) : !mobile && soins[0] && (
         <div style={{ borderRadius: 'var(--rayon)', background: 'var(--g-vif)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-vif-texte)', '--dessin-accent': 'var(--g-vif-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '72%', height: '80%' }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: 'ligne' }) }} /></div>
@@ -205,7 +227,37 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       </div>
     </div>
   );
-  const soinsSection = section('Une prise en charge du pied, à tout âge.', (
+  // Tableau et village : cartes éditoriales (grande illustration du soin, titre fort, résumé), liens texte (comme le site)
+  const lien: CSSProperties = { fontWeight: 700, fontSize: village ? 19 : 17, textDecoration: 'underline', textDecorationThickness: 2, textUnderlineOffset: 6, textDecorationColor: 'var(--g-plein-bord)' };
+  const liens = (etiquette: string, items: string[]) => (
+    <div style={{ display: 'grid', gap: 8 }}>
+      <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{etiquette}</span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 28px' }}>{items.map((i) => <span key={i} style={lien}>{i} <span style={{ color: 'var(--g-accent-texte)' }}>→</span></span>)}</div>
+    </div>
+  );
+  const illustrationSoin = (slug: string) => <div className="ap-svg" style={{ width: village ? '92%' : '80%', height: village ? '92%' : '88%', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)', color: 'var(--g-encre)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(slug), { registre, id: `ap-soin-${slug}` }) }} />;
+  const soinsEditorial = (
+    <div style={{ display: 'grid', gap: 32 }}>
+      {village ? (
+        <div style={{ borderTop: '2px solid var(--g-encre)' }}>{soins.map((s) => (
+          <div key={s.slug} style={{ display: 'grid', gridTemplateColumns: `${mobile ? 104 : 168}px 1fr`, gap: mobile ? 16 : 28, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--g-ligne)' }}>
+            <div style={{ aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
+            <div style={{ display: 'grid', gap: 6 }}><strong style={{ fontFamily: 'var(--police-titres)', fontSize: mobile ? 23 : 28, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{s.titre_court}</strong>{<span style={{ color: 'var(--g-encre-douce)', fontSize: mobile ? 16 : 18, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: mobile ? 3 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.resume}</span>}</div>
+          </div>
+        ))}</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>{soins.slice(0, mobile ? 3 : 6).map((s) => (
+          <div key={s.slug} style={{ borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
+            <div style={{ aspectRatio: '16 / 10', background: 'var(--g-bulle)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
+            <div style={{ display: 'grid', gap: 8, padding: '18px 20px 20px' }}><strong style={{ fontFamily: 'var(--police-titres)', fontSize: 23, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{s.titre_court}</strong><span style={{ color: 'var(--g-encre-douce)', fontSize: 15, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.resume}</span><span style={{ color: 'var(--g-accent-texte)', fontWeight: 700, fontSize: 19 }}>→</span></div>
+          </div>
+        ))}</div>
+      )}
+      {pourQui.length >= 2 && liens('Pour qui', pourQui)}
+      {liens('Infos pratiques', infos)}
+    </div>
+  );
+  const soinsSection = section('Une prise en charge du pied, à tout âge.', !revue ? soinsEditorial : (
     <div style={{ display: 'grid', gap: 22 }}>
       {rangee('Soins', soins.map((s) => ({ cle: s.slug, texte: s.titre_court, picto: s.slug })), 'var(--g-bulle)', 'var(--g-bulle-texte)')}
       {pourQui.length >= 2 && rangee('Pour qui', pourQui.map((p) => ({ cle: p, texte: p })), 'var(--g-duo-bulle)', 'var(--g-duo-texte)')}

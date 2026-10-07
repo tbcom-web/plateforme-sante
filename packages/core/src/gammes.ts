@@ -368,7 +368,30 @@ export function variablesTeinte(choix: { couleur: string; gamme?: string | null 
  *    inchangés) ;
  * 2. sur les surfaces sombres (plan, pied de page, premier écran, animations sur fond nuit), --pression-n prend l'échelle sombre.
  */
-export const CSS_TEINTE_GAMME = (() => {
+export const CSS_TEINTE_GAMME = cssPressionGamme("html[data-teinte='gamme']");
+
+/**
+ * Trame de pression aux couleurs de la gamme dans TOUS les modèles (retour de Paul, atelier du 2026-10-07 : « les pieds en
+ * petits points devraient s'adapter à la couleur aussi ») : html[data-trame='gamme'] ne reprend de la teinte « gamme » que
+ * l'échelle de pression (variablesPressionGamme) ; plan, signal et fonds du modèle ne changent pas.
+ */
+export const CSS_TRAME_GAMME = cssPressionGamme("html[data-trame='gamme']");
+
+/** Échelles de pression de la gamme (claire et sombre) seules, sans les surfaces sombres de la teinte « gamme » */
+export function variablesPressionGamme(choix: { couleur: string; gamme?: string | null }): Record<string, string> {
+  const t = teinteSombre(choix);
+  const v: Record<string, string> = {};
+  t.pressionClaire.forEach((c, k) => { v[`--pression-${k + 1}`] = c; v[`--donnee-${k + 1}`] = c; });
+  t.pressionSombre.forEach((c, k) => { v[`--pression-sombre-${k + 1}`] = c; });
+  return v;
+}
+
+/**
+ * Règles de substitution des couleurs de pression sous la racine `h` (sélecteur) : 1. couleurs littérales de la palette dans
+ * les dessins du core → niveau de l'échelle de la gamme ; 2. surfaces sombres (plan, pied de page, premier écran, héros en
+ * relevé, [data-fond='sombre']) → échelle sombre.
+ */
+export function cssPressionGamme(h: string): string {
   // Couleurs littérales de la palette : les 5 arrêts et les niveaux de la trame (couleurPression au milieu de chaque niveau)
   const valeurs = new Map<string, number>();
   PRESSION.forEach((c, k) => valeurs.set(c.toLowerCase(), ARRETS_PRESSION[k]));
@@ -387,14 +410,13 @@ export const CSS_TEINTE_GAMME = (() => {
     }
     return 'var(--pression-5)';
   };
-  const h = "html[data-teinte='gamme']";
   const regles = [...valeurs].map(([c, v]) => {
     const x = niveau(v);
     return `${h} [stroke='${c}' i]{stroke:${x}}${h} [fill='${c}' i]{fill:${x}}${h} [stop-color='${c}' i]{stop-color:${x}}`;
   });
-  const sombres = `${h} :is(.surface-plan,.pied,.hero,[class*='--sombre'],[class*='fond-sombre']){${[1, 2, 3, 4, 5].map((k) => `--pression-${k}:var(--pression-sombre-${k})`).join(';')}}`;
+  const sombres = `${h} :is(.surface-plan,.pied,.hero,.heros-theme--releve,[data-fond='sombre'],[class*='--sombre'],[class*='fond-sombre']){${[1, 2, 3, 4, 5].map((k) => `--pression-${k}:var(--pression-sombre-${k})`).join(';')}}`;
   return regles.join('') + sombres;
-})();
+}
 
 /**
  * Variables CSS du thème d'un site : jetons du modèle (couche 5), puis couleurs de la gamme choisie
@@ -417,8 +439,9 @@ export function variablesTheme(m: ModeleManifeste, choix: { couleur: string; gam
     '--plan': m.jetons.plan ?? `color-mix(in srgb, ${encre ? NEUTRES.encreNuitDouce : t['--brand-deep']} 64%, ${NEUTRES.nuit})`,
     ...(m.jetons.signal ? { '--signal': m.jetons.signal } : {}),
     ...(g ? variablesGamme(g) : {}),
-    // Teinte « gamme » (modèle Technique) : surfaces sombres, signal et pression dérivés de la gamme ou de la couleur libre
-    ...(m.jetons.teinte === 'gamme' ? variablesTeinte(choix) : {}),
+    // Teinte « gamme » (modèle Technique) : surfaces sombres, signal et pression dérivés de la gamme ou de la couleur libre ;
+    // autres modèles : l'échelle de pression seule (trame de points aux couleurs du cabinet, CSS_TRAME_GAMME)
+    ...(m.jetons.teinte === 'gamme' ? variablesTeinte(choix) : variablesPressionGamme(choix)),
   };
   if (encre) {
     v['--accent'] = 'var(--encre-nuit)';
