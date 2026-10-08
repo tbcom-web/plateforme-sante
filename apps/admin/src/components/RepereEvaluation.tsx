@@ -90,6 +90,8 @@ type Props = {
   /** Change à chaque nouvel élément évalué : le défilement est rejoué */
   cle?: string;
   className?: string;
+  /** État réel du menu dans l'aperçu : barre collante (sticky / fixed) ou non (planche des menus, « Après défilement ») */
+  onMenuCollant?: (collant: boolean) => void;
 };
 
 const ETIQUETTE = 'Évalué ici';
@@ -123,10 +125,10 @@ function cssSurvolSimule(doc: Document): string {
 type EtatDoc = { defile: boolean; essais: number; cle: string; survol: string | null };
 
 /** Aperçu(s) piloté(s) : repère, défilement, menu ouvert / survolé / rubrique active */
-export default function PiloteApercu({ children, selecteurs = [], visible = true, defiler = 'repere', menu, cle = '', className }: Props) {
+export default function PiloteApercu({ children, selecteurs = [], visible = true, defiler = 'repere', menu, cle = '', className, onMenuCollant }: Props) {
   const racine = useRef<HTMLDivElement>(null);
-  const options = useRef({ selecteurs, visible, defiler, menu, cle });
-  options.current = { selecteurs, visible, defiler, menu, cle };
+  const options = useRef({ selecteurs, visible, defiler, menu, cle, onMenuCollant });
+  options.current = { selecteurs, visible, defiler, menu, cle, onMenuCollant };
   const etats = useRef(new WeakMap<Document, EtatDoc>());
 
   useEffect(() => {
@@ -171,6 +173,11 @@ export default function PiloteApercu({ children, selecteurs = [], visible = true
         const liens = Array.from(doc.querySelectorAll('.mn-lien'));
         if (o.menu.rubriqueActive && liens[0] && !doc.querySelector('.mn-lien[aria-current]')) liens[0].setAttribute('aria-current', 'page');
         liens.forEach((l, i) => l.toggleAttribute('data-survol-simule', Boolean(o.menu?.survol) && i === 1));
+      }
+      // Barre de menu collante ? (position calculée de l'en-tête, comme sur le site)
+      if (o.onMenuCollant) {
+        const e = doc.querySelector('.mn-entete, .ap-entete');
+        if (e) { const pos = win.getComputedStyle(e).position; o.onMenuCollant(pos === 'sticky' || pos === 'fixed'); }
       }
       // Éléments visés
       let cibles: Element[] = [];

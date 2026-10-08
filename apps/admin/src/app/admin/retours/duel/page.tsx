@@ -61,6 +61,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
         statuts={statutsAvecHeritage(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), inventaireAssets({ photosJeux }).map((a) => a.cle))}
         predictions={predictionsParCle(predictions)}
         typeInitial={type}
+        mobileInitial={sp.mobile === '1'}
       />
     </div>
   );

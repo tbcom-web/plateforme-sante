@@ -44,6 +44,7 @@ import { niveauProximite, normaliserScenario, proximiteScenarios, RANG_PROXIMITE
 import type { SiteDraft } from './draft';
 import type { Univers } from './catalogue-univers';
 import { lireCleCombinaison } from './combinaisons';
+import { effetAvecMobile } from './duels-appareils';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Dimensions, ordres de l'accueil
@@ -285,7 +286,8 @@ function choisir<T>(l: readonly { v: T; p: number }[], r: () => number, eviter?:
 }
 /** Poids d'une clé apprise : 2^effet (atelier, renforts compris), plafonné */
 const masse = (effet: number) => 2 ** Math.max(-3, Math.min(2, effet));
-const effetAtelier = (c: ContexteRecette, cle: string) => c.poids?.effets[cle] ?? 0;
+// Effet global + effet propre au mobile selon la portée de la clé (duels « Mobile seulement », duels-appareils.ts)
+const effetAtelier = (c: ContexteRecette, cle: string) => effetAvecMobile(c.poids?.effets, c.poids?.mobile, cle);
 const effetAsset = (c: ContexteRecette, cle: string, sujet?: string | null) => scoreAssetPourSujet(cle, sujet, c.poids?.assets);
 
 // ---------------------------------------------------------------------------------------------------------------

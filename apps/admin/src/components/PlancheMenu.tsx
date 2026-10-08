@@ -37,6 +37,8 @@ function Etat({ titre, detail, children, className = '' }: { titre: string; deta
 
 export default function PlancheMenu({ cle, selecteurs, repereVisible, ...p }: Props) {
   const [ouvert, setOuvert] = useState(false);
+  // Comportement réel de la barre au défilement (lu dans l'aperçu) : collante, ou elle quitte l'écran (menu non collant du modèle)
+  const [collant, setCollant] = useState<boolean | null>(null);
   useEffect(() => { setOuvert(false); }, [cle]);
   useEffect(() => {
     const f = (e: KeyboardEvent) => {
@@ -69,8 +71,8 @@ export default function PlancheMenu({ cle, selecteurs, repereVisible, ...p }: Pr
           <Etat titre="Survol simulé" detail="deuxième rubrique">
             <PiloteApercu {...pilote} defiler={null} menu={{ rubriqueActive: true, survol: true }}>{studio(false, { hauteur: 200 })}</PiloteApercu>
           </Etat>
-          <Etat titre="Après défilement" detail="barre collante">
-            <PiloteApercu {...pilote} defiler={520} menu={{ rubriqueActive: true }}>{studio(false, { hauteur: 200 })}</PiloteApercu>
+          <Etat titre="Après défilement" detail={collant === null ? '520 px plus bas' : collant ? 'barre collante : elle reste en haut' : 'menu non collant (comportement du modèle) : il quitte l’écran'}>
+            <PiloteApercu {...pilote} defiler={520} menu={{ rubriqueActive: true }} onMenuCollant={setCollant}>{studio(false, { hauteur: 200 })}</PiloteApercu>
           </Etat>
         </div>
       </section>

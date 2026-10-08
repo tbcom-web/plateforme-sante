@@ -136,6 +136,27 @@ tailles » ; « tu me demandes mon avis sur téléphone mais on ne voit pas le m
   pairesDuels, pairesDesNotes, ajouterPairesApprises dans lib/atelier.ts). Classements « Meilleures palettes — Sport »,
   « Meilleures paires de polices — Diabète », « Meilleures échelles de titres — Seniors ».
 
+### Duels « Mobile seulement »
+
+Demande de Paul du 2026-10-08 (« des duels Mobile only quand c'est pertinent, surtout pour les tailles, les espacements, les
+menus ») — `packages/core/src/duels-appareils.ts` :
+
+- **Table dimension → appareil** (appareilDimension, testée, totale) : « mobile » pour tailles et casse (`typo:*`), typographie,
+  détails (densité, espacements), menus, paire de polices (texte courant), barre d'actions du bas (`composant:contact`), cartes de
+  soins, premier écran, animation d'en-tête, portraits, équipe, sujets, horaires ; « les-deux » sinon.
+- **Part** : PART_DUELS_MOBILES = 40 % des duels de ces dimensions sont montrés QU'EN cadre téléphone (pas de bascule, bandeau
+  « … · sur téléphone uniquement », appareil enregistré « mobile ») ; sur grand écran, les deux téléphones en taille réelle
+  côte à côte, défilement synchronisé (case à cocher), zone encadrée. Filtre « Mobile seulement » sur l'accueil des duels
+  (`/admin/retours/duel?mobile=1`) : une série entière ainsi.
+- **Apprentissage** : en plus du poids global (téléphone ×1,25), les duels joués sur téléphone donnent des effets propres au
+  mobile (renfortsDuelsMobiles, ±0,5 ★) rangés dans `PoidsAtelier.mobile` (lib/atelier.ts) ; le générateur et le Studio
+  (effetAtelier, recettes.ts) les ajoutent selon la portée de la clé : ×1 pour un réglage qui n'existe que sur téléphone
+  (`menu=mobile:…`, barre d'actions / bouton flottant), ×0,5 pour un réglage partagé décisif sur téléphone (typo, détails,
+  police, cartes, premier écran, portraits…), ×0 sinon.
+- **Tuiles** : sur téléphone, le rendu mobile reste toujours affiché (« Mobile + ordinateur » ajoute l'ordinateur dessous) ;
+  planche des menus : « Après défilement » dit le comportement réel lu dans l'aperçu (barre collante, ou menu non collant du
+  modèle qui quitte l'écran).
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

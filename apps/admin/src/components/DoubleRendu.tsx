@@ -51,7 +51,8 @@ export default function DoubleRendu({ rendu, zonesOrdinateur, zonesMobile, onZon
   const controle = modeParent !== undefined;
   const mode = controle ? Boolean(modeParent) : modeLocal;
   const setMode = (m: boolean | ((x: boolean) => boolean)) => { const v = typeof m === 'function' ? m(mode) : m; if (controle) onMode?.(v); else setModeLocal(v); };
-  const appareil: AppareilRetour = etroit ? vu : 'les-deux';
+  // Écran étroit : le rendu MOBILE est toujours affiché (le bloc « Rendu mobile » en parle) ; « Ordinateur » l'ajoute dessous
+  const appareil: AppareilRetour = etroit ? (vu === 'mobile' ? 'mobile' : 'les-deux') : 'les-deux';
   const dernier = useRef<AppareilRetour | null>(null);
   useEffect(() => { if (dernier.current !== appareil) { dernier.current = appareil; onAppareil?.(appareil); } }, [appareil, onAppareil]);
 
@@ -92,10 +93,11 @@ export default function DoubleRendu({ rendu, zonesOrdinateur, zonesMobile, onZon
       <div role="radiogroup" aria-label="Rendu affiché" className="flex w-fit rounded-xl border border-neutral-200 bg-white p-0.5 text-sm">
         {(['mobile', 'ordinateur'] as const).map((a) => (
           <button key={a} type="button" role="radio" aria-checked={vu === a} onClick={() => setVu(a)}
-            className={`min-h-11 rounded-lg px-3 font-medium ${focus} ${vu === a ? 'bg-teal-800 text-white' : 'text-neutral-700'}`}>{a === 'mobile' ? 'Mobile' : 'Ordinateur'}</button>
+            className={`min-h-11 rounded-lg px-3 font-medium ${focus} ${vu === a ? 'bg-teal-800 text-white' : 'text-neutral-700'}`}>{a === 'mobile' ? 'Mobile' : 'Mobile + ordinateur'}</button>
         ))}
       </div>
-      {vu === 'mobile' ? mobile : ordinateur}
+      {mobile}
+      {vu === 'ordinateur' && ordinateur}
     </div>
   );
 }

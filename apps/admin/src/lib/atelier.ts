@@ -1,5 +1,5 @@
 import 'server-only';
-import { ajouterPairesApprises, pairesDesNotes, pairesDuels, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { ajouterPairesApprises, pairesDesNotes, pairesDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
 import { getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
@@ -52,7 +52,10 @@ export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
   // + combinaisons police × palette (duels « Police × palette » et tuile du même nom, duels-compositions.ts) : paires
   // `gamme:<g>&police:<p>` ajoutées aux paires apprises (plafond ±0,75 ★), lues par les tirages harmonieux
   const harmonie = ajouterPairesApprises(notations.length ? apprisHarmonie(statsNotation(notations)) : null, pairesDuels(duels), pairesDesNotes(assets?.effets ?? {}));
-  return harmonie ? { ...(poids ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : poids;
+  // Effets propres au mobile (duels joués sur téléphone) : lus par effetAtelier selon la portée de la clé (duels-appareils.ts)
+  const mobile = renfortsDuelsMobiles(duels);
+  const avecMobile = Object.keys(mobile).length ? { ...(poids ?? { n: 1, moyenne: 3, effets: {} }), mobile } : poids;
+  return harmonie ? { ...(avecMobile ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : avecMobile;
 }
 
 type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null; appareil?: string | null };

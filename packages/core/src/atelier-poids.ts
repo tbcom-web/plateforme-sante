@@ -82,6 +82,8 @@ export type PoidsAtelier = {
   n: number; moyenne: number; effets: Record<string, number>; /** Notes et statuts des assets (0027) */ assets?: PoidsAssets | null;
   /** Recettes complètes notées (notation-recettes.ts, migration 0038) : ingrédients, paires et familles, globaux et par sujet */
   harmonie?: ApprisHarmonie | null;
+  /** Effets propres au mobile (duels joués sur téléphone, duels-appareils.ts) : ajoutés selon la portée de la clé (porteeMobile) */
+  mobile?: Record<string, number> | null;
 };
 
 const val = (v: unknown) => (v === null || v === undefined || v === '' ? 'aucune' : String(v));
