@@ -9,6 +9,7 @@ import {
   REGLES_DEONTOLOGIQUES, SCENES_SOINS, SUJETS_KITS, themeParId, type LanguePrompt, type StylePrompt, type TrouImage,
 } from '@plateforme/core';
 import ImportImageGeneree, { type ValeursImport } from './ImportImageGeneree';
+import SetsDemo from './SetsDemo';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const champ = `min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-base md:text-sm ${focus}`;
@@ -17,7 +18,7 @@ const CLE = 'images-a-generer:reglages';
 const PRIORITES = { 1: 'Priorité haute', 2: 'Priorité moyenne', 3: 'À compléter' } as const;
 
 type Reglages = { gamme: string; langue: LanguePrompt; style: StylePrompt };
-type Importee = { id: string; url: string | null; sujet: string; outil: string; statut: string; genereLe: string | null };
+type Importee = { id: string; url: string | null; sujet: string; outil: string; statut: string; genereLe: string | null; demo?: boolean };
 
 function Copier({ texte }: { texte: string }) {
   const [fait, setFait] = useState(false);
@@ -30,8 +31,8 @@ function Copier({ texte }: { texte: string }) {
 }
 
 /** Prompt d'un sujet × emplacement : choix du format et de la variante, texte, copier, importer */
-function BlocPrompt({ sujet, emplacement, formats, reglages, precision, trou, migrationManquante }: {
-  sujet: string; emplacement: string; formats: string[]; reglages: Reglages; precision?: string; trou?: TrouImage; migrationManquante: boolean;
+function BlocPrompt({ sujet, emplacement, formats, reglages, precision, trou, migrationManquante, migration0048Manquante }: {
+  sujet: string; emplacement: string; formats: string[]; reglages: Reglages; precision?: string; trou?: TrouImage; migrationManquante: boolean; migration0048Manquante: boolean;
 }) {
   const [format, setFormat] = useState(formats[0]);
   const [variante, setVariante] = useState(0);
@@ -65,12 +66,12 @@ function BlocPrompt({ sujet, emplacement, formats, reglages, precision, trou, mi
       ) : (
         <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-900 ring-1 ring-red-200">Prompt refusé : {r.refus.join(' ')}</p>
       )}
-      {importer && <ImportImageGeneree key={`${importer.trou}|${format}|${variante}`} initial={importer} migrationManquante={migrationManquante} onFermer={() => setImporter(null)} />}
+      {importer && <ImportImageGeneree key={`${importer.trou}|${format}|${variante}`} initial={importer} migrationManquante={migrationManquante} migration0048Manquante={migration0048Manquante} onFermer={() => setImporter(null)} />}
     </div>
   );
 }
 
-export default function ImagesAGenerer({ trous, importees, migrationManquante }: { trous: TrouImage[]; importees: Importee[]; migrationManquante: boolean }) {
+export default function ImagesAGenerer({ trous, importees, migrationManquante, migration0048Manquante = false }: { trous: TrouImage[]; importees: Importee[]; migrationManquante: boolean; migration0048Manquante?: boolean }) {
   const [reglages, setReglages] = useState<Reglages>({ gamme: 'canard', langue: 'en', style: 'phrases' });
   const [tout, setTout] = useState(false);
   useEffect(() => { try { const r = JSON.parse(localStorage.getItem(CLE) ?? 'null'); if (r && GAMMES.some((g) => g.id === r.gamme)) setReglages({ gamme: r.gamme, langue: r.langue === 'fr' ? 'fr' : 'en', style: r.style === 'midjourney' ? 'midjourney' : 'phrases' }); } catch { /* réglages par défaut */ } }, []);
@@ -125,6 +126,8 @@ export default function ImagesAGenerer({ trous, importees, migrationManquante }:
         </div>
       </section>
 
+      <SetsDemo reglages={reglages} migrationManquante={migrationManquante} migration0048Manquante={migration0048Manquante} />
+
       <section aria-labelledby="trous" className="grid gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 id="trous" className="text-lg font-semibold">Trous à combler ({trous.length})</h2>
@@ -139,7 +142,7 @@ export default function ImagesAGenerer({ trous, importees, migrationManquante }:
                 <h3 className="text-base font-semibold">{t.libelle}</h3>
               </div>
               <ul className="text-xs text-neutral-600">{t.details.map((d) => <li key={d}>{d}</li>)}</ul>
-              <BlocPrompt sujet={t.sujet} emplacement={t.emplacement} formats={[...t.formats, 'ecranzen']} reglages={reglages} trou={t} migrationManquante={migrationManquante} />
+              <BlocPrompt sujet={t.sujet} emplacement={t.emplacement} formats={[...t.formats, 'ecranzen']} reglages={reglages} trou={t} migrationManquante={migrationManquante} migration0048Manquante={migration0048Manquante} />
             </li>
           ))}
         </ul>
@@ -168,7 +171,7 @@ export default function ImagesAGenerer({ trous, importees, migrationManquante }:
             <input value={precision} onChange={(e) => setPrecision(e.target.value)} maxLength={200} placeholder="ex. serviette vert sauge" className={champ} />
           </label>
         </div>
-        <BlocPrompt sujet={sujet} emplacement={emplacement} formats={formatsEmplacement(emplacement)} reglages={reglages} precision={precision} migrationManquante={migrationManquante} />
+        <BlocPrompt sujet={sujet} emplacement={emplacement} formats={formatsEmplacement(emplacement)} reglages={reglages} precision={precision} migrationManquante={migrationManquante} migration0048Manquante={migration0048Manquante} />
       </section>
 
       <section aria-labelledby="importees" className="grid gap-2">
@@ -180,7 +183,8 @@ export default function ImagesAGenerer({ trous, importees, migrationManquante }:
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {p.url && <img src={p.url} alt={`${LIBELLE_IMAGE_GENEREE} · ${libelleSujetKit(p.sujet)}`} loading="lazy" className="aspect-[3/2] w-full rounded object-cover" />}
                 <span className="absolute left-2.5 top-2.5 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-950 ring-1 ring-violet-300">{LIBELLE_IMAGE_GENEREE}</span>
-                <span>{libelleSujetKit(p.sujet)} · {p.outil} · {p.statut === 'a_valider' ? 'à valider' : p.statut === 'validee' ? 'validée' : 'retirée'}</span>
+                {p.demo && <span className="absolute right-2.5 top-2.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-950 ring-1 ring-amber-300">Démo</span>}
+                <span>{p.demo ? 'Démo' : libelleSujetKit(p.sujet)} · {p.outil} · {p.statut === 'a_valider' ? 'à valider' : p.statut === 'validee' ? 'validée' : 'retirée'}</span>
               </li>
             ))}
           </ul>

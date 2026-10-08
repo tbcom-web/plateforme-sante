@@ -1,5 +1,6 @@
 // Brouillon de site édité dans le back-office (colonne sites.config), version 2.
 // Modèle issu de l'analyse des 79 sites webpodologue (docs/referentiel-sites-praticiens.md).
+import { sansImagesDemo } from './kit-demo';
 import { MODELES_INTEGRES, pairePolices, variantesValides } from './modeles';
 import { jeuEffets } from './effets';
 import { estTypoParDefaut, normaliserTypo } from './typo';
@@ -354,8 +355,15 @@ function themeNormalise(t: SiteDraft['theme']): SiteDraft['theme'] {
   return r;
 }
 
-/** Convertit un brouillon (v1 ou v2 partiel) en v2 complet. */
+/**
+ * Convertit un brouillon (v1 ou v2 partiel) en v2 complet. Jamais d'image de DÉMONSTRATION (kit-demo.ts : cabinet ou praticien
+ * fictif) dans un brouillon lu, enregistré ou construit : elle est retirée ici, le repli habituel reprend (illustrations, initiales).
+ */
 export function normaliserDraft(brut: unknown): SiteDraft {
+  return sansImagesDemo(normaliserDraftBrut(brut));
+}
+
+function normaliserDraftBrut(brut: unknown): SiteDraft {
   const vide = draftVide();
   const d = (brut ?? {}) as Record<string, any>;
 

@@ -502,6 +502,13 @@ export function construireCandidate(e: {
  */
 export const estImageGeneree = (urlOuCle: string | null | undefined) => /(^|\/|photo:)banque\/ia\//.test(String(urlOuCle ?? ''));
 
+/**
+ * Image de DÉMONSTRATION (kit-demo.ts, demande de Paul du 2026-10-08) : image générée d'un cabinet ou d'un praticien FICTIF,
+ * rangée dans banque/ia/demo-<profession>/. Elle sert UNIQUEMENT aux aperçus (Studio, atelier, recettes, dégustation, kits,
+ * parcours) ; jamais dans la banque des sites, jamais dans un brouillon enregistré ni dans un site publié (kit-demo.ts).
+ */
+export const estImageDemo = (urlOuCle: string | null | undefined) => /(^|\/|photo:)banque\/ia\/demo-[a-z0-9-]+\//.test(String(urlOuCle ?? ''));
+
 /** Photo importée chez nous (fichier hébergé) : la seule forme utilisable par les jeux, le générateur et les sites */
 export const estPhotoImportee = (p: { statut: string; chemin?: string | null; url?: string | null }) => p.statut === 'validee' && Boolean(p.chemin) && Boolean(p.url);
 

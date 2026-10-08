@@ -16,6 +16,8 @@ export type KitCompact = {
   sujet?: string; accueil?: string; panorama?: string; galerie?: string[]; soins?: Record<string, string>;
   /** Kit illustré (kits-visuels.ts) : dessin par soin (nom de dessin), animation d'en-tête ; jamais d'élément exclu */
   dessins?: Record<string, string>; animation?: string; registre?: string; heros?: string;
+  /** Kit DÉMO d'une profession (kit-demo.ts, clé demo:<profession>) : portraits de praticiens fictifs, aperçus seulement */
+  portraits?: string[];
 };
 
 /**
@@ -70,6 +72,12 @@ export const premiereNonExclue = (l: readonly (string | null | undefined)[], exc
 export const SUJET_DE_SPECIALITE: Readonly<Record<string, string>> = { sport: 'sport', diabete: 'diabete', enfant: 'enfant', soins: 'pedicurie', generale: 'general' };
 /** Kit enregistré pour une spécialité (clé directe, sinon sujet de la spécialité) */
 export const kitDeSpecialite = (specialite: string): KitCompact | undefined => ETAT.kits[specialite] ?? ETAT.kits[SUJET_DE_SPECIALITE[specialite] ?? ''];
+
+/**
+ * Kit DÉMO d'une profession (kit-demo.ts : images « Démo uniquement » acceptées et notées), rangé sous la clé demo:<profession> :
+ * lu par les APERÇUS seulement (ApercuTheme, planches de portraits) ; jamais par fusionnerPack, jeuVisuel ni les recettes.
+ */
+export const kitDemoDe = (profession = 'podologue'): KitCompact | undefined => ETAT.kits[`demo:${profession}`];
 
 /** Tous types d'assets : dernière note 1 ★ ou moyenne ≤ 1,5 ★ (lignes plus récentes d'abord) */
 function refusTous(lignes: readonly { cle: string; note?: number | null }[]): Map<string, boolean> {

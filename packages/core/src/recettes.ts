@@ -13,6 +13,7 @@
 // variantes des sections, le héros, les photos et les effets ; modeleDuSite (catalogue-univers.ts) les applique au rendu.
 // Module pur.
 
+import { estImageDemo } from './photos-libres';
 import { animationPour, gammesDesCouleurs, LIBELLES_STRUCTURES, LIBELLES_STYLES, REGLES_THEMES, STRUCTURES, stylesCompatibles, reglageStyle, appliquerReglages, type Proposition, type StyleIllustration, type Structure } from './propositions';
 import { GAMMES, gamme as gammeParId } from './gammes';
 import { gabaritModele, modeleIntegre, PAIRES_POLICES, pairePolices, paireDuModele, VARIANTES_SECTIONS, VARIANTES_PAR_DEFAUT, variantesModele, varianteSujets, varianteTheme, varianteArticle, type IdPairePolices, type ModeleManifeste, type SectionAccueil, type Variantes, type Gabarit } from './modeles';
@@ -414,7 +415,8 @@ export type EntreeBanquePhotos = {
 export function banquePhotos(entrees: readonly EntreeBanquePhotos[], opts: { surcharges?: SurchargesSujets | null; hashtags?: HashtagsAssets | null } = {}): PhotoBanque[] {
   const vues = new Map<string, PhotoBanque>();
   for (const e of [...entrees].sort((a, b) => Number(a.importee === false) - Number(b.importee === false))) {
-    if (!e.url || vues.has(e.url)) continue;
+    // Images de DÉMONSTRATION (kit-demo.ts) : jamais dans la banque des sites (aperçus seulement, via le kit démo)
+    if (!e.url || vues.has(e.url) || estImageDemo(e.url)) continue;
     const cle = e.cle ?? clePhoto(e.url);
     const tags = (cle ? opts.hashtags?.[cle] ?? [] : []).filter(estSujetDeVisuel);
     const sujets = sujetsEffectifs([...e.sujets, ...tags], cle ? opts.surcharges?.[cle] : null).sujets;

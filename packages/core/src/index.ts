@@ -106,3 +106,4 @@ export * from './degustation';
 export * from './degustation-grilles';
 export * from './professions-ingredients';
 export * from './packs-professions';
+export * from './kit-demo';

@@ -1,5 +1,5 @@
 import 'server-only';
-import { gardeApercuEssai, gardeProduction, normaliserDraft } from '@plateforme/core';
+import { controlerImagesDemo, gardeApercuEssai, gardeProduction, normaliserDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getRole } from '@/lib/admin';
 import { essaiBloqueProduction, proprietaireSansAcces } from '@/lib/essai';
@@ -37,6 +37,18 @@ async function refusSansAcces(siteId: string): Promise<Resultat | null> {
 }
 
 /**
+ * Contrôle BLOQUANT (kit-demo.ts) : une image de DÉMONSTRATION (cabinet ou praticien fictif) dans la configuration ENREGISTRÉE
+ * (brouillon brut, et version publiée pour une republication) empêche toute construction du site, même privée. normaliserDraft
+ * les retire déjà à chaque enregistrement : ce contrôle attrape une configuration écrite autrement (import, script, ancienne
+ * version). Message clair, rien n'est lancé.
+ */
+async function refusImagesDemo(siteId: string, colonne: 'config' | 'config_publiee' = 'config'): Promise<Resultat | null> {
+  const { data } = await (await createClient()).from('sites').select(colonne).eq('id', siteId).maybeSingle();
+  const c = controlerImagesDemo((data as Record<string, unknown> | null)?.[colonne] ?? null);
+  return c.ok ? null : { ok: false, message: c.message };
+}
+
+/**
  * Publie un site : fige le brouillon en version publiée (config → config_publiee, fonction demander_publication),
  * puis lance le workflow GitHub qui construit le site depuis cette version. Refusé pour un site suspendu.
  */
@@ -44,6 +56,8 @@ export async function declencherPublication(siteId: string): Promise<Resultat> {
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const refus = await refusSansAcces(siteId);
   if (refus) return refus;
+  const demo = await refusImagesDemo(siteId);
+  if (demo) return demo;
   // Garde « essai = aperçu seulement » (aussi en SQL dans demander_publication et dans le workflow) : un site d'essai
   // non validé n'est jamais publié en production. Pour le praticien, « Publier » met à jour sa version d'essai privée ;
   // l'admin passe par « Valider et mettre en ligne » (/admin/leads), qui valide d'abord l'essai.
@@ -82,6 +96,8 @@ export async function declencherApercuEssai(siteId: string): Promise<Resultat> {
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const refus = await refusSansAcces(siteId);
   if (refus) return refus;
+  const demo = await refusImagesDemo(siteId);
+  if (demo) return demo;
   const supabase = await createClient();
   const rattrapage = await supabase.rpc('rattraper_articles', { p_site: siteId });
   if (rattrapage.error && rattrapage.error.code !== 'PGRST202') console.error('rattraper_articles', rattrapage.error);
@@ -106,6 +122,8 @@ export async function declencherApercu(siteId: string): Promise<Resultat> {
   if (UUID.test(siteId)) {
     const refus = await refusSansAcces(siteId);
     if (refus) return refus;
+    const demo = await refusImagesDemo(siteId);
+    if (demo) return demo;
     const rattrapage = await (await createClient()).rpc('rattraper_articles', { p_site: siteId });
     if (rattrapage.error && rattrapage.error.code !== 'PGRST202') console.error('rattraper_articles', rattrapage.error);
   }
@@ -123,12 +141,16 @@ export async function declencherPublications(siteIds: string[]): Promise<Resulta
   const supabase = await createClient();
   let lances = 0;
   let ignores = 0;
+  let bloquesDemo = 0;
   for (let i = 0; i < demandes.length; i += 100) {
     const lot = demandes.slice(i, i + 100);
-    const { data, error } = await supabase.from('sites').select('id').in('id', lot).neq('statut', 'suspendu');
+    const { data, error } = await supabase.from('sites').select('id, config, config_publiee').in('id', lot).neq('statut', 'suspendu');
     if (error) return { ok: false, message: 'Lecture des sites impossible.' };
-    const ids = (data ?? []).map((s) => s.id as string);
-    ignores += lot.length - ids.length;
+    // Image de démonstration dans la version publiée (ou le brouillon d'un site sans version publiée) : jamais republié
+    const sains = (data ?? []).filter((s) => controlerImagesDemo(s.config_publiee ?? s.config).ok);
+    bloquesDemo += (data ?? []).length - sains.length;
+    const ids = sains.map((s) => s.id as string);
+    ignores += lot.length - (data ?? []).length;
     if (!ids.length) continue;
     const maintenant = new Date().toISOString();
     const erreur = await lancerWorkflow('publier-sites.yml', { site_ids: JSON.stringify(ids) });
@@ -144,7 +166,8 @@ export async function declencherPublications(siteIds: string[]): Promise<Resulta
     lances += ids.length;
   }
   const suspendus = ignores ? ` ${ignores} site(s) suspendu(s) ou introuvable(s) ignoré(s).` : '';
-  return { ok: true, message: `${lances} site(s) en cours de republication (quelques minutes, 4 en parallèle).${suspendus}` };
+  const demos = bloquesDemo ? ` ${bloquesDemo} site(s) non republié(s) : photo d’exemple (image de démonstration) à remplacer.` : '';
+  return { ok: true, message: `${lances} site(s) en cours de republication (quelques minutes, 4 en parallèle).${suspendus}${demos}` };
 }
 
 export type Cible = { specialite?: string; modele?: string; marque?: string; jeuPhotos?: string; soin?: string; tous?: boolean };

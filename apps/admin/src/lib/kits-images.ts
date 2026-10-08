@@ -3,8 +3,10 @@ import { cache } from 'react';
 import {
   composerKitVisuel, familleDeCle, inventaireAssets, inventaireStudio, kitVisuelCompact, notesVisuels, type DonneesVisuels, type StatutIllustration,
   cleCandidatePhoto, clesImagesExclues, vivierCure, etiquetteKit, kitsCompacts, PREFIXE_REFUS_KIT, refusKitDepuisLignes, kitsGardes, notesPhotos, soinsParDefautScenario, SUJETS_KITS,
-  type DonneesKits, type KitCompact, type NoteKit,
+  type DonneesKits, type KitCompact, type NoteKit, cleKitDemo, composerKitDemo, kitDemoCompact,
 } from '@plateforme/core';
+import { professionsActives } from '@plateforme/core/professions';
+import { getImagesDemo } from '@/lib/kit-demo';
 import { createClient } from '@/lib/supabase/server';
 import { getPhotosDesJeux, getPoidsAssets, getSurchargesSujets } from '@/lib/assets-notes';
 import { getRevuesIllustrations } from '@/lib/illustrations';
@@ -57,6 +59,13 @@ export const getContexteImages = cache(async (praticien = false): Promise<{ excl
     for (const s of SUJETS_KITS) {
       const v = kitVisuelCompact(composerKitVisuel(s, dv, { praticien }));
       if (Object.keys(v).length) kits[s] = { sujet: s, ...(kits[s] ?? {}), ...v };
+    }
+    // Kit DÉMO de chaque profession (kit-demo.ts, clé demo:<profession>) : aperçus seulement (ApercuTheme, planches de portraits),
+    // jamais lu par les packs, les jeux ni les recettes ; praticiens : parcours d'inscription avec le bandeau « Photos d'exemple »
+    const demos = await getImagesDemo();
+    for (const p of professionsActives()) {
+      const k = composerKitDemo(demos.images, { profession: p.id, exclues: demos.exclues });
+      if (k) kits[cleKitDemo(p.id)] = kitDemoCompact(k);
     }
     return { exclues: [...d.exclues].sort(), kits, vivier };
   } catch {

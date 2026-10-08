@@ -37,6 +37,8 @@ import type { SoinCatalogue } from '@/lib/sites';
 import ApercuGabarit, { ActionsRapidesApercu, HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
 import { cssTransitionsSections } from '@plateforme/core';
+import { appliquerKitDemo, kitDemoDe, kitDemoUtilise, RIEN_APPLIQUE } from '@plateforme/core';
+import BandeauExemples from './BandeauExemples';
 import { animationDuHeros, cssVisuelAnime, htmlVisuelAnime, styleCouleursHeros } from '@plateforme/core';
 import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
 import { BlocPortraits, portraitsDuDraft, presentationApercu } from './ApercuPortraits';
@@ -67,6 +69,12 @@ type Props = {
   /** Studio : animations JOUÉES (sinon image figée) ; animationsEnAttente : badge « en attente de validation » */
   animer?: boolean;
   animationsEnAttente?: readonly string[];
+  /**
+   * Kit DÉMO (kit-demo.ts : cabinet et praticiens FICTIFS, images « Démo uniquement » acceptées et notées) posé AU RENDU à la place
+   * des galeries vides et des silhouettes ; jamais écrit dans le brouillon. Vrai par défaut (Studio, atelier, recettes, dégustation,
+   * kits, parcours) ; faux dans l'éditeur du site réel (/mon-site). Bandeau « Photos d'exemple » hors vignettes et hors Studio.
+   */
+  exemples?: boolean;
 };
 type Vue = VuePage;
 export type Appareil = 'bureau' | 'mobile';
@@ -116,7 +124,9 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
   pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
 };
 
-export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [] }: Props) {
+export default function ApercuTheme({ draft: d0, exemples = true, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [] }: Props) {
+  // Kit démo : photos d'exemple (cabinet et praticiens fictifs) seulement dans l'aperçu, le brouillon reste intact
+  const { draft: d, applique: kitApplique } = useMemo(() => (exemples ? appliquerKitDemo(d0, kitDemoDe()) : { draft: d0, applique: RIEN_APPLIQUE }), [d0, exemples]);
   // Animations jouées (Studio) : contexte lu par les visuels, canvas pilotés dans l'iframe de l'aperçu
   const reglageAnim = useMemo(() => ({ jouer: animer, enAttente: animationsEnAttente }), [animer, animationsEnAttente]);
   const racineAp = useRef<HTMLDivElement>(null);
@@ -557,6 +567,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           ))}
         </span>
       </div>}
+      {/* Photos d'exemple (kit démo) : bandeau discret, invitation à téléverser ses vraies photos ; jamais publiées */}
+      {!vignette && !sansCommandes && kitDemoUtilise(kitApplique) && <BandeauExemples />}
       {/* Iframe de la largeur réelle de l'appareil (CadreApercu) : media queries, position fixe et défilement comme sur l'appareil */}
       <div className={vignette ? 'overflow-hidden bg-neutral-100' : 'bg-neutral-100'}>
         <CadreApercu appareil={appareil} vignette={vignette} plein={plein} hauteur={hauteurCadre} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>

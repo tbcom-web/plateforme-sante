@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { composerKit, emplacementsAFaire, etatVivier, SUJETS_KITS, trousImages, type ManquePourTrous } from '@plateforme/core';
+import { composerKit, emplacementsAFaire, estImageDemo, etatVivier, SUJETS_KITS, trousImages, type ManquePourTrous } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getManques } from '@/lib/directeur';
-import { migration0040Manquante } from '@/lib/images-generees';
+import { migration0040Manquante, migration0048Manquante } from '@/lib/images-generees';
 import { getDonneesKits } from '@/lib/kits-images';
 import { getPhotosLibres } from '@/lib/photos-libres';
 import ImagesAGenerer from './ImagesAGenerer';
@@ -14,11 +14,12 @@ export const metadata = { title: 'Super admin · Images à générer' };
 // d'images (Paul génère lui-même : aucun appel à un service d'IA), conseils de sélection, « Importer une image générée » (0040).
 export default async function PageImagesAGenerer() {
   await exigerAdmin();
-  const [d, manques, libres, migration] = await Promise.all([
+  const [d, manques, libres, migration, migration0048] = await Promise.all([
     getDonneesKits(),
     getManques().catch(() => []),
     getPhotosLibres(),
     migration0040Manquante(),
+    migration0048Manquante(),
   ]);
   const kits = SUJETS_KITS.map((s) => {
     const soins = d.soins?.[s] ?? [];
@@ -28,7 +29,7 @@ export default async function PageImagesAGenerer() {
   });
   const trous = trousImages({ kits, manques: manques as ManquePourTrous[] });
   const importees = libres.photos.filter((p) => p.source === 'ia').slice(0, 12)
-    .map((p) => ({ id: p.id, url: p.url, sujet: p.sujet, outil: p.iaOutil ?? '', statut: p.statut, genereLe: p.iaGenereLe ?? null }));
+    .map((p) => ({ id: p.id, url: p.url, sujet: p.sujet, outil: p.iaOutil ?? '', statut: p.statut, genereLe: p.iaGenereLe ?? null, demo: estImageDemo(p.url) }));
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
@@ -48,7 +49,12 @@ export default async function PageImagesAGenerer() {
           Migration à exécuter (<code>supabase/migrations/0040_images_generees.sql</code>) : les prompts fonctionnent, l’import d’une image générée attend la migration.
         </p>
       )}
-      <ImagesAGenerer trous={trous} importees={importees} migrationManquante={migration} />
+      {!migration && migration0048 && (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
+          Migration à exécuter (<code>supabase/migrations/0048_images_generees_usage.sql</code>) : les prompts des sets démo fonctionnent ; l’usage « Démo uniquement », les emplacements et l’import en lot l’attendent.
+        </p>
+      )}
+      <ImagesAGenerer trous={trous} importees={importees} migrationManquante={migration} migration0048Manquante={migration0048} />
     </div>
   );
 }

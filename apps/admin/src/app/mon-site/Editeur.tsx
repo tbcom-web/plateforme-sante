@@ -714,7 +714,7 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
           ))}
         </div>
         {ongletAffiche === 'theme'
-          ? <ApercuTheme draft={d} modele={modeleDuSite(modeleCourant, d.theme)} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
+          ? <ApercuTheme exemples={false} draft={d} modele={modeleDuSite(modeleCourant, d.theme)} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
           : <Apercu draft={d} catalogue={catalogue} />}
       </div>
     </div>

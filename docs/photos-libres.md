@@ -146,3 +146,39 @@ Demande de Paul (2026-10-08) : « faire des prompts pour demander à ChatGPT de 
    ne représentent ni des patients ni le cabinet.
 4. **Migration** `supabase/migrations/0040_images_generees.sql` (à exécuter par Paul) ; sans elle, les prompts fonctionnent et
    l'import affiche « Migration à exécuter ».
+
+### Sets démo et kit démo (cabinet et praticiens fictifs)
+
+Demande de Paul (2026-10-08) : « créer un set d'images de cabinet de podologie avec salle d'attente, stérilisateur, matériel,
+etc., ainsi que des photos fictives de praticiens. Comment importer ça dans mon kit de base pour tous mes templates ? »
+
+**Principe (non négociable)** : une image générée d'un cabinet ou d'un praticien FICTIF n'est jamais présentée sur le site
+publié d'un vrai praticien comme SON cabinet ou SA personne (tromperie du public, déontologie, AI Act : transparence).
+
+1. **Prompts** (`/admin/cuisine/images-a-generer`, bloc « Sets démo », `construirePromptSet` de `prompts-images.ts`) :
+   - *Set démo cabinet* (pédicure-podologue d'abord, une entrée par profession dans `SETS_CABINET`) : salle d'attente,
+     accueil / secrétariat, salle de soins avec fauteuil, autoclave / stérilisation, plateau d'instruments stériles en sachets,
+     podoscope / plateforme, bureau d'examen, lavage des mains, détails d'ambiance, façade / porte neutre sans enseigne ; formats
+     galerie 4:3, panorama 16:9, téléphone 4:5 ; « Same clinic series » (même lumière, mêmes matières, palette de la gamme
+     injectée) + trois angles ; aucune personne, rien de lisible.
+   - *Set praticiens fictifs* : portrait 4:5 et en situation (tunique, gants, examen d'un pied, accueil), six personnes de
+     diversité d'âges, de genres et d'origines ; mention obligatoire « entirely fictional person, does not resemble any real
+     person », sans badge, sans nom, sans logo, mains et pieds corrects. Toutes les contraintes négatives habituelles restent
+     (sauf « aucun visage », remplacée par les contraintes du fictif).
+2. **Import** (« Importer une image générée » ou « Importer le set (en lot) ») : **usage obligatoire** — « Démo uniquement »
+   (par défaut, seul permis pour le cabinet et les praticiens) ou « Utilisable sur les sites (générique, non présenté comme le
+   cabinet) » pour l'hygiène, le matériel et l'ambiance, avec une case dédiée. **Emplacement** : galerie cabinet démo, panorama
+   démo, portrait démo, praticien en situation démo, hygiène, matériel, ambiance, illustration. **Import en lot** : 12 fichiers
+   au plus d'un coup, mêmes informations, même **lot** (la série). Traçabilité inchangée. Une image « Démo » est rangée dans
+   `photos/banque/ia/demo-<profession>/` (le dossier fait foi) et n'a aucun sujet de la banque. Migration
+   `supabase/migrations/0048_images_generees_usage.sql` (colonnes `ia_usage`, `ia_emplacement`, `ia_lot`) ; sans elle, les
+   prompts fonctionnent et l'import « Démo » affiche « Migration à exécuter ».
+3. **Kit démo** (`packages/core/src/kit-demo.ts`) : images « Démo » ACCEPTÉES (Arrivages : validée) et NOTÉES ≥ 3 ★ (4-5 ★
+   d'abord) ; cabinet : galerie de 4 + panorama pris dans le même lot ; praticiens : 1 à 3 portraits fictifs. Posé dans le
+   registre (`demo:<profession>`) et appliqué AU RENDU par tous les aperçus (Studio, atelier, recettes, dégustation, kits,
+   parcours `/creer` et `/essai`) à la place des galeries vides et des silhouettes ; jamais dans l'éditeur du site réel
+   (`/mon-site`). Côté praticien : bandeau « Photos d'exemple — remplacez-les par les vôtres ».
+4. **Garde-fous** : `normaliserDraft` retire toute image démo d'un brouillon (lecture, enregistrement, construction Astro) ;
+   la banque des sites et les jeux de photos les refusent ; `controlerPublication` les signale en bloquant et la publication
+   (`lib/publication.ts` : publier, version d'essai, aperçu privé, republication) est refusée avec un message clair tant qu'une
+   image démo subsiste dans la configuration enregistrée.

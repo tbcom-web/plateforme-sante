@@ -316,12 +316,15 @@ export const PRATICIENS_DEMO: readonly Omit<PortraitPraticien, 'photo'>[] = [
 
 /**
  * `n` praticiens de démonstration ; `photos` : silhouettes dessinées (une sur deux sans photo si « mixte », pour voir le
- * monogramme à côté d'une photo).
+ * monogramme à côté d'une photo) ; `fictifs` : portraits du kit démo (praticiens fictifs générés), à la place des silhouettes.
  */
-export function praticiensDemo(n: number, photos: 'avec' | 'sans' | 'mixte' = 'avec'): PortraitPraticien[] {
+export function praticiensDemo(n: number, photos: 'avec' | 'sans' | 'mixte' = 'avec', fictifs: readonly string[] = []): PortraitPraticien[] {
+  let k = 0;
   return Array.from({ length: n }, (_, i) => {
     const p = PRATICIENS_DEMO[i % PRATICIENS_DEMO.length];
     const avec = photos === 'avec' || (photos === 'mixte' && i % 2 === 0);
-    return { ...p, photo: avec ? { src: PORTRAITS_DEMO[i % PORTRAITS_DEMO.length], largeur: 400, hauteur: 500 } : null };
+    // Kit démo (kit-demo.ts) : portraits FICTIFS générés, aperçus seulement, jamais deux fois le même ; sinon la silhouette
+    const src = avec ? (k < fictifs.length ? fictifs[k++] : PORTRAITS_DEMO[i % PORTRAITS_DEMO.length]) : '';
+    return { ...p, photo: avec ? { src, largeur: 400, hauteur: 500 } : null };
   });
 }

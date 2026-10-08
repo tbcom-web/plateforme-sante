@@ -4,9 +4,10 @@
 // portraits-praticiens.ts, htmlPortraits et CSS_PORTRAITS). Deux usages :
 // - BlocPortraits : bloc praticiens de l'aperçu (ApercuGabarit, ApercuTheme : Studio, duels), praticiens du brouillon ;
 // - PlanchePortraits : tuile « Donner mon avis » (composant:portraits:<présentation>) : la présentation avec 1, 2 et 3 praticiens
-//   de démonstration (silhouettes dessinées et monogrammes, jamais une vraie personne), dans le cadre de l'appareil.
+//   de démonstration (portraits FICTIFS du kit démo s'il existe, sinon silhouettes dessinées ; monogrammes ; jamais une vraie
+//   personne), dans le cadre de l'appareil.
 import {
-  CSS_PORTRAITS, estPresentationPortraits, htmlPortraits, POLICES, praticiensDemo, styleCouleursPortraits,
+  CSS_PORTRAITS, estPresentationPortraits, htmlPortraits, kitDemoDe, POLICES, praticiensDemo, styleCouleursPortraits,
   type ModeleManifeste, type PortraitPraticien, type PresentationPortraits, type SiteDraft,
 } from '@plateforme/core';
 import CadreApercu from '@/components/CadreApercu';
@@ -43,7 +44,7 @@ export function BlocPortraits({ variante, praticiens, modele, couleur, gamme }: 
 /** Tuile de notation : la présentation avec 1, 2 et 3 praticiens de démonstration, dans le cadre de l'appareil */
 export function PlanchePortraits({ variante, mobile, vignette, hauteur, modele, couleur, gamme }: { variante: PresentationPortraits; mobile: boolean; vignette?: number; hauteur?: number } & Couleurs) {
   const couleurs = styleCouleursPortraits(modele, { couleur, gamme });
-  const groupes = [1, 2, 3].map((n) => `<section class="ppl"><p class="ppl__n">${n} praticien${n > 1 ? 's' : ''}</p>${htmlPortraits({ variante, praticiens: praticiensDemo(n, 'mixte'), couleurs })}</section>`).join('');
+  const groupes = [1, 2, 3].map((n) => `<section class="ppl"><p class="ppl__n">${n} praticien${n > 1 ? 's' : ''}</p>${htmlPortraits({ variante, praticiens: praticiensDemo(n, 'mixte', kitDemoDe()?.portraits ?? []), couleurs })}</section>`).join('');
   const style = {
     '--police-titres': POLICES[modele.jetons.policeTitres], '--graisse-titres': String(modele.jetons.graisseTitres ?? 650),
     fontFamily: POLICES[modele.jetons.policeTexte], background: 'var(--ppl-fond)', minHeight: '100vh',

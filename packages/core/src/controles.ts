@@ -7,6 +7,7 @@
 // affiche un repli sobre (replis.ts, appliqué au chargement des données dans apps/sites/src/lib/supabase.ts).
 import type { SiteDraft } from './draft';
 import { verifierTexte, type NiveauConformite } from './lexique';
+import { imagesDemoDans, MESSAGE_IMAGES_DEMO } from './kit-demo';
 import { EQUIPEMENTS } from './equipements';
 import { REPLIS, TEXTE_PROVISOIRE, adresseUtilisable, telephoneUtilisable } from './replis';
 import { lienRdvPrecis } from './format';
@@ -14,10 +15,9 @@ import { avertissementsHoraires, avertissementsNoteHoraires, horairesRenseignes 
 
 export type ResultatControle = {
   /**
-   * Empêcheraient la publication. Toujours VIDE aujourd'hui : chaque manque a un repli sur le site. Le champ est gardé
-   * pour un cas réellement impossible techniquement (aucun n'est connu) et pour la compatibilité des tests ; aucun écran
-   * de l'admin ne le lit plus (audit du 2026-10-05).
-   * @deprecated Toujours vide : utiliser `remplacements` (informations manquantes) et `conseils`.
+   * Empêchent la publication. Une seule cause (2026-10-08) : une image de DÉMONSTRATION (cabinet ou praticien fictif,
+   * kit-demo.ts) dans le brouillon ; lib/publication.ts refuse alors de publier (controlerImagesDemo). Chaque information
+   * manquante, elle, a un repli sur le site (`remplacements`, `conseils`).
    */
   bloquants: string[];
   /** Conseils, n'empêchent pas la publication (inclut les remplacements) */
@@ -42,8 +42,9 @@ export const numeroOrdreAffichable = (n: string) => { const v = n.replace(/\s/g,
 export const rppsAffichable = (n: string) => { const v = n.replace(/\s/g, ''); return /^\d{11}$/.test(v) && !numeroFictif(v) ? v : ''; };
 
 export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 'standard'): ResultatControle {
-  // Aucun bloquant : voir ResultatControle. Les remplacements sont aussi des conseils (repris à la fin).
-  const bloquants: string[] = [];
+  // Un seul bloquant : une image de DÉMONSTRATION (cabinet ou praticien fictif, kit-demo.ts) ne peut jamais être publiée.
+  // Les remplacements sont aussi des conseils (repris à la fin).
+  const bloquants: string[] = imagesDemoDans(d, 1).length ? [MESSAGE_IMAGES_DEMO] : [];
   const conseils: string[] = [];
   const remplacements: string[] = [];
   const remplace = (m: string) => remplacements.push(m);

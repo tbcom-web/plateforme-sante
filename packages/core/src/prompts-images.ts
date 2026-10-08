@@ -529,3 +529,204 @@ export function trousImages(e: { kits: readonly EntreeTrousKit[]; manques?: read
   const rangE = (x: string) => (x === 'accueil' ? 0 : x === 'page-sujet' ? 1 : 2);
   return [...trous.values()].sort((a, b) => a.priorite - b.priorite || ordre.indexOf(a.sujet) - ordre.indexOf(b.sujet) || rangE(a.emplacement) - rangE(b.emplacement) || (a.emplacement < b.emplacement ? -1 : 1));
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// SETS DÉMO (demande de Paul du 2026-10-08 : « créer un set d'images de cabinet de podologie avec salle d'attente, stérilisateur,
+// matériel, etc., ainsi que des photos fictives de praticiens ») : prompts d'un set COHÉRENT par profession, pour le KIT DÉMO
+// (kit-demo.ts) : aperçus seulement. Une image de ces sets n'est JAMAIS présentée comme le cabinet ou la personne d'un vrai
+// praticien sur un site publié (usage « Démo uniquement » à l'import, images-generees.ts).
+// - Set démo cabinet : pièces et détails d'un même cabinet FICTIF (même lumière, mêmes matières, même palette de gamme), formats
+//   galerie 4:3, panorama 16:9, mobile 4:5, « same clinic series » + variante d'angle ; aucune personne, aucune signalétique.
+// - Set praticiens fictifs : portraits 4:5 et en situation (tunique, gants, examen d'un pied, accueil), diversité d'âges, de genres
+//   et d'origines, « entirely fictional person, does not resemble any real person », sans badge, sans nom, sans logo, anatomie
+//   correcte. Les contraintes négatives habituelles restent, sauf « aucun visage » remplacée par les contraintes du fictif.
+// ---------------------------------------------------------------------------------------------------------------
+
+export type FormatSet = { id: string; libelle: string; ratio: string; cadrage: Texte };
+export const FORMATS_SETS: readonly FormatSet[] = [
+  { id: 'galerie', libelle: 'Galerie', ratio: '4:3', cadrage: { en: 'balanced horizontal composition, the whole scene readable, straight verticals', fr: 'composition horizontale équilibrée, scène lisible en entier, verticales droites' } },
+  { id: 'panorama', libelle: 'Panorama', ratio: '16:9', cadrage: { en: 'wide horizontal composition, calm uncluttered area on the left third (kept empty), straight verticals', fr: 'composition horizontale large, tiers gauche calme et dégagé (laissé vide), verticales droites' } },
+  { id: 'mobile', libelle: 'Téléphone', ratio: '4:5', cadrage: { en: 'vertical composition, subject in the lower two-thirds, nothing important near the edges', fr: 'composition verticale, sujet dans les deux tiers inférieurs, rien d’important près des bords' } },
+  { id: 'portrait', libelle: 'Portrait', ratio: '4:5', cadrage: { en: 'vertical head-and-shoulders framing, eyes at about 40 % of the height, plain softly lit background, room above the head', fr: 'cadrage vertical tête et épaules, yeux vers 40 % de la hauteur, fond uni doucement éclairé, de l’air au-dessus de la tête' } },
+];
+export const formatSet = (id: string) => FORMATS_SETS.find((f) => f.id === id);
+
+export type SceneSet = { id: string; libelle: string; scene: Texte; formats: readonly string[]; /** Emplacement proposé à l'import selon le format */ emplacement: (format: string) => string };
+const emplacementCabinet = (f: string) => (f === 'panorama' ? 'demo-panorama' : 'demo-galerie');
+
+/** Set démo cabinet par profession (pédicure-podologue d'abord ; une profession = une entrée) */
+export const SETS_CABINET: Readonly<Record<string, readonly SceneSet[]>> = {
+  podologue: [
+    { id: 'salle-attente', libelle: 'Salle d’attente', formats: ['galerie', 'panorama', 'mobile'], emplacement: emplacementCabinet,
+      scene: { en: 'the small, bright waiting room of a foot-care practice: a few light wooden chairs with soft fabric seats, a low table with a neat stack of plain closed magazines without readable covers, a tall green plant, an abstract framed print without lettering', fr: 'la petite salle d’attente lumineuse d’un cabinet de soins des pieds : quelques chaises en bois clair à l’assise en tissu, une table basse avec une pile nette de magazines fermés sans couverture lisible, une grande plante verte, une estampe abstraite encadrée sans inscription' } },
+    { id: 'accueil', libelle: 'Accueil / secrétariat', formats: ['galerie', 'panorama', 'mobile'], emplacement: emplacementCabinet,
+      scene: { en: 'the reception desk of a small health practice: a light oak counter, a closed laptop seen from the back, a plain desk lamp, a small plant, a neat tray of blank cards, nobody at the desk', fr: 'l’accueil d’un petit cabinet de santé : un comptoir en chêne clair, un ordinateur portable fermé vu de dos, une lampe de bureau unie, une petite plante, un plateau de fiches vierges bien rangées, personne au comptoir' } },
+    { id: 'salle-soins', libelle: 'Salle de soins avec fauteuil', formats: ['galerie', 'panorama', 'mobile'], emplacement: emplacementCabinet,
+      scene: { en: 'a clean, calm foot-care treatment room: an adjustable podiatry treatment chair covered with a white paper sheet, a mobile instrument cart with closed drawers, an articulated daylight examination lamp, light oak cabinets, a large window with sheer curtains', fr: 'une salle de soins de pédicurie propre et calme : un fauteuil de soins podologique réglable recouvert d’un drap d’examen en papier blanc, une servante mobile aux tiroirs fermés, une lampe d’examen articulée, des meubles en chêne clair, une grande fenêtre aux voilages légers' } },
+    { id: 'sterilisation', libelle: 'Autoclave / stérilisation', formats: ['galerie', 'mobile'], emplacement: () => 'hygiene',
+      scene: { en: 'a compact stainless-steel tabletop autoclave sterilizer on a clean white worktop in a small sterilization area, closed sterile pouches neatly stacked beside it, a plain ultrasonic cleaner, a stainless-steel sink', fr: 'un petit autoclave de table en inox sur un plan de travail blanc et net dans un coin de stérilisation, des sachets stériles fermés bien empilés à côté, un bac à ultrasons uni, un évier en inox' } },
+    { id: 'instruments', libelle: 'Plateau d’instruments stériles en sachets', formats: ['galerie', 'mobile'], emplacement: () => 'materiel',
+      scene: { en: 'close-up of foot-care instruments (nippers, scalpel handle, probe) sealed in transparent paper-and-film sterilization pouches, laid in order on a clean stainless-steel tray, plain pouches without printing', fr: 'gros plan d’instruments de pédicurie (pince à ongles, manche de bistouri, sonde) scellés dans des sachets de stérilisation papier-film transparents, rangés sur un plateau en inox propre, sachets unis sans impression' } },
+    { id: 'podoscope', libelle: 'Podoscope / plateforme', formats: ['galerie', 'mobile'], emplacement: () => 'materiel',
+      scene: { en: 'a podoscope (illuminated glass foot-examination platform with a mirror underneath) and a plain pressure-measurement walkway mat in a bright examination room, no screen content visible', fr: 'un podoscope (plateforme vitrée éclairée avec miroir dessous) et un tapis de mesure des appuis uni dans une salle d’examen lumineuse, aucun écran lisible' } },
+    { id: 'bureau', libelle: 'Bureau d’examen', formats: ['galerie', 'panorama', 'mobile'], emplacement: emplacementCabinet,
+      scene: { en: 'the consultation desk of a foot-care practice: a light oak desk, two comfortable chairs facing each other, a plain anatomical foot model, a closed notebook and a pen, a small plant', fr: 'le bureau de consultation d’un cabinet de soins des pieds : un bureau en chêne clair, deux chaises confortables en vis-à-vis, un modèle anatomique de pied uni, un carnet fermé et un stylo, une petite plante' } },
+    { id: 'lavage-mains', libelle: 'Vestiaire / lavage des mains', formats: ['galerie', 'mobile'], emplacement: () => 'hygiene',
+      scene: { en: 'a hand-washing station in a treatment room: a white basin with a hands-free elbow tap, unlabelled wall-mounted soap and hand-rub dispensers, a paper-towel dispenser, a pedal bin, a coat hook with a plain white tunic', fr: 'un point de lavage des mains dans une salle de soins : un lavabo blanc à robinet au coude, des distributeurs muraux de savon et de solution hydroalcoolique sans étiquette, un distributeur d’essuie-mains, une poubelle à pédale, une patère avec une tunique blanche unie' } },
+    { id: 'ambiance', libelle: 'Détails d’ambiance', formats: ['galerie', 'mobile'], emplacement: () => 'ambiance',
+      scene: { en: 'calm interior details of the practice: a green plant on a light oak shelf, soft daylight through a linen curtain, a folded white towel, matte ceramic and natural materials', fr: 'détails d’ambiance du cabinet : une plante verte sur une étagère en chêne clair, la lumière douce à travers un rideau de lin, une serviette blanche pliée, céramique mate et matières naturelles' } },
+    { id: 'facade', libelle: 'Façade / porte neutre', formats: ['galerie', 'mobile'], emplacement: emplacementCabinet,
+      scene: { en: 'the entrance of a ground-floor practice on a quiet street: a plain glass door with a light frame, a small potted plant beside it, a clean pavement, no sign, no plate, no house number, nothing readable', fr: 'l’entrée d’un cabinet en rez-de-chaussée dans une rue calme : une porte vitrée unie au cadre clair, une petite plante en pot à côté, un trottoir propre, aucune enseigne, aucune plaque, aucun numéro, rien de lisible' } },
+  ],
+};
+
+/** Cohérence de série : même cabinet, mêmes matières, même lumière (la variante ne change que l'angle) */
+export const SERIE_CABINET: Texte = {
+  en: 'Same clinic series: every image shows the same fictional practice with the same interior (light oak wood, white walls, matte sage and sand textiles, brushed stainless steel), the same soft natural daylight from large windows in late morning and the same colour grading across the whole series.',
+  fr: 'Même série de cabinet : chaque image montre le même cabinet fictif au même intérieur (chêne clair, murs blancs, textiles mats sauge et sable, inox brossé), la même lumière naturelle douce de grandes fenêtres en fin de matinée et le même étalonnage sur toute la série.',
+};
+export const VARIANTES_SERIE: readonly Texte[] = [
+  { en: 'eye-level view from the doorway', fr: 'vue à hauteur d’œil depuis la porte' },
+  { en: 'three-quarter view from a corner, slightly wider', fr: 'vue de trois quarts depuis un angle, un peu plus large' },
+  { en: 'closer view on the main element, gentle depth of field', fr: 'vue plus rapprochée sur l’élément principal, légère profondeur de champ' },
+];
+
+/** Praticiens fictifs : diversité d'âges, de genres et d'origines (aucune ressemblance avec une personne réelle) */
+export const PERSONAS_FICTIFS: readonly { id: string; libelle: string; texte: Texte }[] = [
+  { id: 'f-30', libelle: 'Femme, la trentaine', texte: { en: 'a woman in her early thirties of East Asian descent, short straight black hair', fr: 'une femme d’une trentaine d’années d’origine est-asiatique, cheveux noirs courts et lisses' } },
+  { id: 'h-50', libelle: 'Homme, la cinquantaine', texte: { en: 'a man in his fifties of West African descent, short greying hair and a trimmed grey beard', fr: 'un homme d’une cinquantaine d’années d’origine ouest-africaine, cheveux courts grisonnants, barbe grise taillée' } },
+  { id: 'f-55', libelle: 'Femme, la cinquantaine', texte: { en: 'a woman in her mid-fifties of Mediterranean descent, shoulder-length dark hair with grey streaks', fr: 'une femme d’environ cinquante-cinq ans d’origine méditerranéenne, cheveux bruns mi-longs striés de gris' } },
+  { id: 'h-28', libelle: 'Homme, la vingtaine', texte: { en: 'a man in his late twenties of North African descent, short curly dark hair, clean-shaven', fr: 'un homme d’une petite trentaine d’années d’origine nord-africaine, cheveux bruns courts et bouclés, rasé de près' } },
+  { id: 'f-40', libelle: 'Femme, la quarantaine', texte: { en: 'a woman in her forties with fair freckled skin, auburn hair tied back', fr: 'une femme d’une quarantaine d’années à la peau claire et taches de rousseur, cheveux auburn attachés' } },
+  { id: 'h-60', libelle: 'Homme, la soixantaine', texte: { en: 'a man in his early sixties of South Asian descent, short white hair, thin-framed glasses', fr: 'un homme d’une soixantaine d’années d’origine sud-asiatique, cheveux blancs courts, fines lunettes' } },
+];
+
+export const SITUATIONS_PRATICIENS: readonly SceneSet[] = [
+  { id: 'portrait', libelle: 'Portrait', formats: ['portrait'], emplacement: () => 'demo-portrait',
+    scene: { en: 'a head-and-shoulders photo of {p}, a foot-care practitioner wearing a plain white short-sleeved practitioner tunic, warm natural expression, looking at the camera', fr: 'une photo tête et épaules de {p}, praticien de soins des pieds en tunique blanche unie à manches courtes, expression naturelle et chaleureuse, regardant l’objectif' } },
+  { id: 'tunique', libelle: 'En tunique dans la salle de soins', formats: ['galerie', 'mobile'], emplacement: () => 'demo-situation',
+    scene: { en: '{p}, a foot-care practitioner in a plain white tunic, standing relaxed next to a treatment chair in a bright treatment room', fr: '{p}, praticien de soins des pieds en tunique blanche unie, debout et détendu à côté d’un fauteuil de soins dans une salle lumineuse' } },
+  { id: 'gants', libelle: 'Enfile ses gants', formats: ['galerie', 'mobile'], emplacement: () => 'demo-situation',
+    scene: { en: '{p}, a foot-care practitioner in a plain white tunic, putting on plain blue nitrile gloves before a treatment, hands clearly visible with five fingers each', fr: '{p}, praticien de soins des pieds en tunique blanche unie, qui enfile des gants en nitrile bleus unis avant un soin, mains bien visibles à cinq doigts' } },
+  { id: 'examen', libelle: 'Examen d’un pied', formats: ['galerie', 'mobile'], emplacement: () => 'demo-situation',
+    scene: { en: '{p}, a foot-care practitioner in a plain white tunic and gloves, gently examining the relaxed bare foot of a seated adult on a treatment chair; the seated adult’s face is out of frame', fr: '{p}, praticien de soins des pieds en tunique blanche unie et gants, qui examine doucement le pied nu et détendu d’un adulte assis sur un fauteuil de soins ; le visage de l’adulte assis est hors cadre' } },
+  { id: 'accueil', libelle: 'Accueil d’un patient', formats: ['galerie', 'mobile'], emplacement: () => 'demo-situation',
+    scene: { en: '{p}, a foot-care practitioner in a plain white tunic, welcoming an adult at the door of a bright treatment room; the visitor is seen from behind', fr: '{p}, praticien de soins des pieds en tunique blanche unie, qui accueille un adulte à la porte d’une salle de soins lumineuse ; le visiteur est vu de dos' } },
+];
+
+/** Mention OBLIGATOIRE d'un prompt de praticien fictif (contrôlée à l'import) */
+export const MENTION_FICTIF: Texte = {
+  en: 'entirely fictional person, does not resemble any real person',
+  fr: 'personne entièrement fictive, ne ressemble à aucune personne réelle',
+};
+
+/** Contraintes du fictif : remplacent « visage » et « personne » pour le set praticiens */
+export const CONTRAINTES_FICTIF: readonly { id: string; en: string; fr: string; mj: string }[] = [
+  { id: 'fictif', en: `${MENTION_FICTIF.en}, not a celebrity, public figure or lookalike`, fr: `${MENTION_FICTIF.fr}, ni célébrité, ni personnalité publique, ni sosie`, mj: 'celebrity, lookalike, real person' },
+  { id: 'badge', en: 'no name badge, no name tag, no name, no logo or lettering on clothing', fr: 'aucun badge ni porte-nom, aucun nom, aucun logo ni inscription sur la tenue', mj: 'name badge, name tag, uniform logo' },
+];
+
+/** Contraintes du set cabinet : rien de lisible, personne */
+export const CONTRAINTES_CABINET: readonly { id: string; en: string; fr: string; mj: string }[] = [
+  { id: 'signaletique', en: 'no readable sign, plate, poster, screen content, document or house number', fr: 'aucune enseigne, plaque, affiche, écran, document ni numéro lisible', mj: 'signage, poster, screen content, house number' },
+  { id: 'vide', en: 'no people in the room', fr: 'personne dans la pièce', mj: 'people, person' },
+];
+
+const USAGE_DEMO: Texte = {
+  en: 'Purpose: SAMPLE photo used only to preview website templates (demonstration); never presented as a real practice, a real place or a real person.',
+  fr: 'Usage : photo d’EXEMPLE servant uniquement à l’aperçu de modèles de sites (démonstration) ; jamais présentée comme un vrai cabinet, un vrai lieu ni une vraie personne.',
+};
+
+export const REGLES_SETS_DEMO: readonly string[] = [
+  'Images de démonstration : aperçus seulement (Studio, atelier, recettes, parcours). Jamais publiées sur le site d’un praticien.',
+  'Cabinet fictif : aucune enseigne, plaque, affiche ni écran lisible ; personne dans les pièces.',
+  'Praticiens fictifs : « entièrement fictif, ne ressemble à aucune personne réelle », sans badge, sans nom, sans logo.',
+  'Mains à cinq doigts, pieds à cinq orteils ; aucun matériel ni vêtement de marque.',
+  'À l’import : usage « Démo uniquement » (cabinet et praticiens), même lot pour toute la série.',
+];
+
+export type DemandePromptSet = {
+  set: 'cabinet' | 'praticiens';
+  /** Profession (SETS_CABINET) */
+  profession?: string;
+  /** Scène du cabinet ou situation du praticien */
+  scene: string;
+  format: string;
+  gamme: string | Gamme | null | undefined;
+  langue: LanguePrompt;
+  style: StylePrompt;
+  variante?: number;
+  /** Praticiens : persona (PERSONAS_FICTIFS) */
+  persona?: string;
+};
+export type PromptSetConstruit = Omit<PromptConstruit, 'format'> & { format: FormatSet; emplacement: string; usage: 'demo' };
+
+/** Motifs refusés dans un prompt de PRATICIEN FICTIF : règles habituelles sauf « visage », mention du fictif exigée */
+export function motifsRefusPraticienFictif(texte: string | null | undefined): string[] {
+  const t = String(texte ?? '');
+  const r = MOTIFS_INTERDITS.filter((m) => m.id !== 'visage' && m.re.test(partiePositive(t))).map((m) => m.motif);
+  if (!t.includes(MENTION_FICTIF.en) && !t.includes(MENTION_FICTIF.fr)) r.push(`Mention du fictif absente (« ${MENTION_FICTIF.en} »).`);
+  return [...new Set(r)];
+}
+
+/** Contraintes négatives d'un set (toutes celles de la banque ; praticiens : « visage » et « personne » remplacées par le fictif) */
+export const contraintesDuSet = (set: 'cabinet' | 'praticiens') => (set === 'praticiens'
+  ? [...CONTRAINTES_NEGATIVES.filter((c) => c.id !== 'visage' && c.id !== 'personne'), ...CONTRAINTES_FICTIF]
+  : [...CONTRAINTES_NEGATIVES, ...CONTRAINTES_CABINET]);
+
+/** Prompt d'une image d'un set démo, ou refus motivé (recontrôlé : contraintes complètes, mention du fictif, aucun motif interdit) */
+export function construirePromptSet(dem: DemandePromptSet): PromptSetConstruit | PromptRefuse {
+  const refus: string[] = [];
+  const profession = dem.profession || 'podologue';
+  const scenes = dem.set === 'cabinet' ? SETS_CABINET[profession] : SITUATIONS_PRATICIENS;
+  if (!scenes) return { ok: false, refus: ['Aucun set démo pour cette profession.'] };
+  const s = scenes.find((x) => x.id === dem.scene);
+  if (!s) refus.push('Scène inconnue.');
+  const format = formatSet(dem.format);
+  if (!format || (s && !s.formats.includes(dem.format))) refus.push('Format inconnu pour cette scène.');
+  const persona = dem.set === 'praticiens' ? PERSONAS_FICTIFS.find((p) => p.id === dem.persona) ?? PERSONAS_FICTIFS[0] : null;
+  if (refus.length || !s || !format) return { ok: false, refus };
+
+  const g = typeof dem.gamme === 'object' && dem.gamme ? dem.gamme : gammeParId(dem.gamme ?? GAMME_DEFAUT) ?? gammeParId(GAMME_DEFAUT)!;
+  const palette = paletteGamme(g);
+  const L = dem.langue === 'en' ? 'en' : 'fr';
+  const variante = Math.max(0, Math.min(VARIANTES_SERIE.length - 1, Math.floor(dem.variante ?? 0)));
+  const scene = persona ? s.scene[L].replace('{p}', persona.texte[L]) : s.scene[L];
+  const negatifs = contraintesDuSet(dem.set);
+  const lumiere = L === 'en' ? 'soft natural daylight from large windows, late morning' : 'lumière naturelle douce de grandes fenêtres, fin de matinée';
+  const fictif = persona ? `Important : ${MENTION_FICTIF[L]}.`.replace('Important :', L === 'en' ? 'Important:' : 'Important :') : '';
+  let texte: string;
+  let negatif: string;
+  if (dem.style === 'midjourney') {
+    negatif = `--no ${[...new Set(negatifs.flatMap((c) => c.mj.split(', ')))].join(', ')}`;
+    texte = [
+      scene, format.cadrage[L], persona ? '' : VARIANTES_SERIE[variante][L], lumiere, STYLE_BANQUE[L],
+      persona ? MENTION_FICTIF[L] : SERIE_CABINET[L].replace(/\.$/, ''),
+      phrasePalette(palette, L, '').replace(/^(Colour palette|Palette) ?: /, '').replace(/\.$/, ''),
+      L === 'en' ? 'sample photo for template preview only' : 'photo d’exemple pour aperçu de modèles seulement',
+    ].filter(Boolean).join(', ') + ` --ar ${format.ratio} --style raw ${negatif}`;
+  } else {
+    negatif = `${L === 'en' ? 'Avoid:' : 'À éviter :'} ${negatifs.map((c) => c[L]).join(' ; ')}.`;
+    texte = [
+      USAGE_DEMO[L],
+      `${L === 'en' ? 'Subject:' : 'Sujet :'} ${scene}.`,
+      fictif,
+      persona ? '' : SERIE_CABINET[L],
+      `${L === 'en' ? 'Framing:' : 'Cadrage :'} ${format.cadrage[L]}${persona ? '' : ` ; ${VARIANTES_SERIE[variante][L]}`}. ${L === 'en' ? 'Aspect ratio' : 'Format'} ${format.ratio}.`,
+      `${L === 'en' ? 'Light:' : 'Lumière :'} ${lumiere}.`,
+      `${L === 'en' ? 'Style:' : 'Style :'} ${STYLE_BANQUE[L]}.`,
+      phrasePalette(palette, L, ''),
+      negatif,
+    ].filter(Boolean).join('\n');
+  }
+  // Contrôle : toutes les contraintes du set, section « à éviter », motifs interdits (praticiens : sauf visage, mention exigée)
+  const manques: string[] = [];
+  for (const c of negatifs) {
+    const attendu = dem.style === 'midjourney' ? c.mj.split(', ') : [c[L]];
+    if (!attendu.every((x) => texte.includes(x))) manques.push(`Contrainte négative manquante : ${c.id}.`);
+  }
+  if (dem.style === 'midjourney' ? !texte.includes('--no ') : !MARQUEURS_NEGATIFS.some((m) => texte.includes(m))) manques.push('Section « à éviter » absente.');
+  manques.push(...(persona ? motifsRefusPraticienFictif(texte) : motifsRefus(scene)));
+  if (manques.length) return { ok: false, refus: manques };
+  return { ok: true, texte, negatif, format, langue: L, style: dem.style === 'midjourney' ? 'midjourney' : 'phrases', variante, palette, emplacement: s.emplacement(format.id), usage: 'demo' };
+}
