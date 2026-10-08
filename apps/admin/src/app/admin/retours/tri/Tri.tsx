@@ -14,8 +14,10 @@
 // - Filtre par hashtag (file et grille ; saisie partielle : « las » trouve #laser).
 // - « Couverture par sujet » : tableau (héros, illustrations par style, icônes, photos importées, animations validées) et
 //   manques, chacun avec un lien vers le tri filtré.
+// Lien « Propositions de Claude » (2026-10-08) : tags proposés par Claude, à valider (tri/claude).
 // Les visuels confirmés sans changement sont retenus dans ce navigateur (localStorage) pour ne pas revenir en tête de file.
 import '@plateforme/core/dessins.css';
+import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   actionsTri, alertesCouverture, correspondHashtag, dansFamille, appliquerHashtag, DESSINS_PODOLOGIE, frequencesAvecVocabulaire, VISUELS_SOINS, couvertureParSujet, fileTri, gamme as gammeParId, hashtagsDe, inventaireAssets, LIBELLES_FAMILLES_TRI,
@@ -233,6 +235,7 @@ export default function Tri(props: Props) {
               className={`min-h-11 rounded-lg px-3 text-sm font-semibold ${focus} ${vue === id ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700 hover:bg-white/60'}`}>{nom}</button>
           ))}
         </div>
+        <Link href="/admin/frigo/tri/claude" className={`flex min-h-11 items-center rounded-xl border border-dashed border-violet-600 bg-violet-50 px-3 text-sm font-semibold text-violet-950 ${focus}`}>Propositions de Claude</Link>
         {vue !== 'couverture' && (
           <>
             <label className="grid gap-1 text-sm">

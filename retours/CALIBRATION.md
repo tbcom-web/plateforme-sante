@@ -75,3 +75,11 @@ Plus gros écarts récents :
 - `dessin:senior:pedagogique` : prédit 3 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v0)
 - `heros:enfant:ligne` : prédit 3 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v0)
 <!-- /mesure-auto -->
+
+<!-- propositions-claude-tags -->
+## Propositions de tags de Claude : note prédite vs note de Paul
+
+Fichier retours/propositions-claude-tags.json (profil 2026-10-07.v2, 2026-10-08) : 460 visuels tagués, 93 notes prédites (éléments jamais notés). Notes de Paul données le jour de la proposition ou après, jusqu’au 2026-10-07 : 0.
+
+Pas encore de note de Paul sur ces éléments : la mesure se fera au prochain export.
+<!-- /propositions-claude-tags -->

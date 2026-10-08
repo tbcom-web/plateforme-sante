@@ -209,6 +209,24 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
   const i = ancien.indexOf(debut), j = ancien.indexOf(fin);
   if (i >= 0 && j > i) writeFileSync(cheminCalibration, `${ancien.slice(0, i + debut.length)}\n${core.markdownCalibration(paires, { jour: dernierJour })}${ancien.slice(j)}`);
 }
+// Propositions de tags de Claude (propositions-claude-tags.ts) : notes prédites comparées aux notes de Paul données APRÈS la
+// proposition (même clé) → section automatique de CALIBRATION.md entre ses propres marqueurs (le reste du fichier intact).
+// La note prédite n'est jamais une note de Paul : elle n'entre dans aucun autre calcul de l'export.
+{
+  const cheminTags = [join(sortie, 'propositions-claude-tags.json'), join(racine, 'retours', 'propositions-claude-tags.json')].find((c) => existsSync(c));
+  if (cheminTags && existsSync(cheminCalibration)) {
+    const tmpTags = mkdtempSync(join(tmpdir(), 'exporter-tags-claude-'));
+    try {
+      await build({ entryPoints: [join(racine, 'packages', 'core', 'src', 'propositions-claude-tags.ts')], bundle: true, platform: 'node', format: 'esm', outfile: join(tmpTags, 'tags.mjs'), logLevel: 'warning', loader: { '.svg': 'text' } });
+      const ct = await import(pathToFileURL(join(tmpTags, 'tags.mjs')).href);
+      const lot = ct.lirePropositionsTags(JSON.parse(readFileSync(cheminTags, 'utf8')));
+      const section = ct.markdownCalibrationTags(lot, notesAssets.map((n) => ({ cle: n.cle, note: n.note, jour: n.jour })), { jour: dernierJour });
+      writeFileSync(cheminCalibration, ct.remplacerSectionCalibrationTags(readFileSync(cheminCalibration, 'utf8'), section));
+    } finally {
+      rmSync(tmpTags, { recursive: true, force: true });
+    }
+  }
+}
 // Références d'illustration (0033) : pour chaque élément, les images de référence cochées par Paul — page d'origine PUBLIQUE,
 // licence, étiquettes « ce qui m'inspire », texte, classement accepté. Jamais de vignette, de chemin du stockage privé, d'URL
 // signée ni d'auteur du compte (colonnes explicites). Suggestions de classement refusées → section de SYNTHESE.md.

@@ -27,6 +27,7 @@
     "./dictionnaire-metier": "./src/dictionnaire-metier.ts",
     "./classement-visuels": "./src/classement-visuels.ts",
     "./references-illustrations": "./src/references-illustrations.ts",
+    "./propositions-claude-tags": "./src/propositions-claude-tags.ts",
     "./professions": "./src/professions.ts",
     "./arrivages": "./src/arrivages.ts",
     "./admin-espaces": "./src/admin-espaces.ts"
