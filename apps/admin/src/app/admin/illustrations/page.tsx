@@ -35,7 +35,7 @@ export default async function PageIllustrations({ searchParams }: { searchParams
             Tous les assets du code (pictos, dessins, traits continus, matériel, animations, héros, bibliothèque, photos, structures,
             gammes) : statut (à valider ou à faire retravailler), note rapide, historique. Pour noter à la chaîne, avec « ce qui va
             bien / ce qui ne va pas » : <Link href="/admin/retours" className="font-semibold text-teal-900 underline">Donner mon avis</Link>.
-            Les thèmes complets se notent dans l’<Link href="/admin/atelier" className="font-semibold text-teal-900 underline">atelier</Link>.
+            Les thèmes complets se notent dans l’<Link href="/admin/cuisine/atelier" className="font-semibold text-teal-900 underline">atelier</Link>.
           </p>
         </div>
         <EnvoyerRetours compact />

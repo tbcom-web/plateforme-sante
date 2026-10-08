@@ -46,17 +46,19 @@ type FiltreStatut = 'tous' | 'a_regarder' | StatutIllustration;
 
 const COULEURS: Record<StatutIllustration, string> = {
   a_revoir: 'bg-amber-100 text-amber-900',
+  accepte: 'bg-sky-100 text-sky-900',
   valide: 'bg-teal-100 text-teal-900',
   a_retravailler: 'bg-rose-100 text-rose-900',
   retire: 'bg-neutral-200 text-neutral-700',
 };
 const BOUTONS: Record<StatutIllustration, string> = {
   a_revoir: 'ring-amber-300 data-[actif=true]:bg-amber-500 data-[actif=true]:text-white',
+  accepte: 'ring-sky-300 data-[actif=true]:bg-sky-700 data-[actif=true]:text-white',
   valide: 'ring-teal-300 data-[actif=true]:bg-teal-700 data-[actif=true]:text-white',
   a_retravailler: 'ring-rose-300 data-[actif=true]:bg-rose-600 data-[actif=true]:text-white',
   retire: 'ring-neutral-300 data-[actif=true]:bg-neutral-600 data-[actif=true]:text-white',
 };
-const COURTS: Record<StatutIllustration, string> = { a_revoir: 'À revoir', valide: 'Validé', a_retravailler: 'Retravailler', retire: 'Retiré' };
+const COURTS: Record<StatutIllustration, string> = { a_revoir: 'À revoir', accepte: 'Accepté', valide: 'Validé', a_retravailler: 'Retravailler', retire: 'Retiré' };
 const CLE_GAMME = 'revue-illustrations-gamme';
 /** Éléments dessinés (icônes, illustrations, héros) : « Chercher des références » dans la vue agrandie */
 const TYPES_REFERENCES: readonly TypeAsset[] = ['picto', 'dessin', 'ligne', 'materiel', 'heros', 'biblio'];
@@ -195,7 +197,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
   }, [lignes, recherche, filtreStatut, filtreType, filtreRegistre, filtreSoin, filtreSujet, surcharges, hashtags, filtreHashtag, statutDe, nouveau, modifie]);
 
   const compteurs = useMemo(() => {
-    const c: Record<StatutIllustration, number> = { a_revoir: 0, valide: 0, a_retravailler: 0, retire: 0 };
+    const c: Record<StatutIllustration, number> = { a_revoir: 0, accepte: 0, valide: 0, a_retravailler: 0, retire: 0 };
     for (const l of lignes) c[statutDe(l)]++;
     return c;
   }, [lignes, statutDe]);

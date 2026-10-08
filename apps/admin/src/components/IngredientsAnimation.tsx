@@ -5,12 +5,13 @@ import { LIBELLES_STATUTS_ILLUSTRATION, type EtatAnimation, type StatutIllustrat
 
 const PASTILLES: Record<StatutIllustration, string> = {
   a_revoir: 'bg-amber-100 text-amber-900',
+  accepte: 'bg-sky-100 text-sky-900',
   valide: 'bg-teal-100 text-teal-900',
   a_retravailler: 'bg-rose-100 text-rose-900',
   retire: 'bg-neutral-200 text-neutral-700',
 };
 
-export const lienIngredient = (cle: string) => `/admin/illustrations?cle=${encodeURIComponent(cle)}`;
+export const lienIngredient = (cle: string) => `/admin/frigo/bibliotheque?cle=${encodeURIComponent(cle)}`;
 
 export default function IngredientsAnimation({ etat, onNoterIngredients }: { etat: EtatAnimation; onNoterIngredients?: () => void }) {
   return (

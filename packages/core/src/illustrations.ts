@@ -24,11 +24,15 @@ import { DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, LIBELLES_
 import { ICONES_ILLUSTREES_IDS, FICHES_ICONES_ILLUSTREES, FICHE_DIRECTION_D, SOURCE_ICONES_ILLUSTREES, CLE_STYLE_ICONES_D, cleIconeIllustree, svgTuileIllustree, svgPlancheIllustree } from './icones-illustrees';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, FICHES_STYLES, LIBELLES_SUJETS_STYLES, SUJET_VISUEL_STYLES, cleStyleExperimental, svgStyleExperimental, type StyleExperimental } from './styles-experimentaux';
 
-/** Statut de revue d'une illustration (valeurs de la colonne `statut` de la migration 0021) */
-export type StatutIllustration = 'a_revoir' | 'valide' | 'a_retravailler' | 'retire';
-export const STATUTS_ILLUSTRATION: readonly StatutIllustration[] = ['a_revoir', 'valide', 'a_retravailler', 'retire'];
+/**
+ * Statut de revue d'une illustration (valeurs de la colonne `statut` des migrations 0021 et 0044) ; « accepte » : accepté dans les
+ * Arrivages (entré au frigo, utilisable par le générateur ; arrivages.ts), en deçà de « valide » que seul Paul pose après revue.
+ */
+export type StatutIllustration = 'a_revoir' | 'accepte' | 'valide' | 'a_retravailler' | 'retire';
+export const STATUTS_ILLUSTRATION: readonly StatutIllustration[] = ['a_revoir', 'accepte', 'valide', 'a_retravailler', 'retire'];
 export const LIBELLES_STATUTS_ILLUSTRATION: Record<StatutIllustration, string> = {
   a_revoir: 'À revoir',
+  accepte: 'Accepté',
   valide: 'Validé',
   a_retravailler: 'À retravailler',
   retire: 'Retiré',

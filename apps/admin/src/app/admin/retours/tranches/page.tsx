@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { exigerAdmin } from '@/lib/admin';
 import { getReevaluations, getTranches } from '@/lib/tranches';
 import ElementsTranches from './ElementsTranches';
@@ -13,8 +12,7 @@ export default async function PageTranches() {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
-        <p className="text-sm"><Link href="/admin/retours" className="font-semibold text-teal-900 underline">← Donner mon avis</Link></p>
-        <h1 className="mt-1 text-2xl font-bold">Éléments tranchés</h1>
+        <h1 className="text-2xl font-bold">Éléments tranchés</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
           Notés 1 ★ : ils ne réapparaissent plus nulle part, ni à noter ni dans les sites générés. Notés 5 ★ (ou gardés) : ils ne vous sont
           plus redemandés, mais restent utilisés comme favoris. Si vous changez d’avis, « Réévaluer » remet l’élément dans la file.

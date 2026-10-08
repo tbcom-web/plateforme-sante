@@ -47,7 +47,7 @@ export default async function PageAtelier() {
           <EnvoyerRetours compact />
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
-          <Link href="/admin/atelier/studio" className="grid gap-0.5 rounded-2xl bg-teal-800 p-4 text-white hover:bg-teal-900">
+          <Link href="/admin/cuisine/studio" className="grid gap-0.5 rounded-2xl bg-teal-800 p-4 text-white hover:bg-teal-900">
             <span className="text-base font-semibold">Composer une recette → Studio</span>
             <span className="text-sm text-white/85">Lancer les dés, bloquer ce qui plaît, signaler les zones à améliorer, enregistrer.</span>
           </Link>

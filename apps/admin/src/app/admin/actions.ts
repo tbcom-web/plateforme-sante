@@ -19,7 +19,7 @@ export async function publierCommeAdmin(siteId: string): Promise<Resultat> {
   await exigerAdmin();
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const r = await declencherPublication(siteId);
-  revalidatePath('/admin');
+  revalidatePath('/admin/sites');
   return r;
 }
 
@@ -28,7 +28,7 @@ export async function reessayerPublication(siteId: string): Promise<Resultat> {
   await exigerAdmin();
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const r = await declencherPublications([siteId]);
-  revalidatePath('/admin');
+  revalidatePath('/admin/sites');
   return r.ok ? { ok: true, message: 'Publication relancée (version déjà validée).' } : r;
 }
 
@@ -72,7 +72,7 @@ export async function creerSiteClient(_: ResultatRattachement, formData: FormDat
   const r = await enregistrerSite(null, { ...d, profil: p.value, voix: p.voix, cabinet: { ...d.cabinet, nom }, theme: { ...d.theme, modele: p.modele } });
   if (!r.ok || !r.id) return { ok: false, message: r.message };
   const lien = await creerRattachement(r.id, email);
-  revalidatePath('/admin');
+  revalidatePath('/admin/sites');
   if ('erreur' in lien) return { ok: false, message: `Site créé, mais ${lien.erreur}`, id: r.id };
   return { ok: true, message: `Site créé. Transmettez ce lien à ${email} (valable ${VALIDITE_JOURS} jours, une seule fois) :`, lien: lien.lien, id: r.id };
 }
@@ -84,7 +84,7 @@ export async function changerProprietaire(siteId: string, email: string): Promis
   const e = String(email ?? '').trim().toLowerCase();
   if (!emailValide(e)) return { ok: false, message: 'Adresse e-mail invalide.' };
   const lien = await creerRattachement(siteId, e);
-  revalidatePath('/admin');
+  revalidatePath('/admin/sites');
   if ('erreur' in lien) return { ok: false, message: lien.erreur };
   return { ok: true, message: `Lien de transfert pour ${e} (valable ${VALIDITE_JOURS} jours, une seule fois). Le site change de propriétaire quand il l’ouvre :`, lien: lien.lien };
 }
@@ -94,7 +94,7 @@ export async function basculerTest(siteId: string, test: boolean): Promise<Resul
   if (!UUID.test(siteId)) return { ok: false, message: 'Site invalide.' };
   const supabase = await createClient();
   const { error } = await supabase.from('sites').update({ test }).eq('id', siteId);
-  revalidatePath('/admin');
+  revalidatePath('/admin/sites');
   return error
     ? { ok: false, message: 'Modification impossible.' }
     : { ok: true, message: test ? 'Marqué comme test : republiez pour appliquer.' : 'Site réel : republiez pour appliquer.' };
@@ -108,7 +108,7 @@ export async function basculerEdition(siteId: string, edition: boolean): Promise
   const { data } = await supabase.from('sites').select('options').eq('id', siteId).maybeSingle();
   const options = { ...((data?.options as Record<string, unknown> | null) ?? {}), edition };
   const { error } = await supabase.from('sites').update({ options }).eq('id', siteId);
-  revalidatePath('/admin');
+  revalidatePath('/admin/sites');
   return error
     ? { ok: false, message: 'Modification impossible pour le moment.' }
     : {
@@ -126,7 +126,7 @@ export async function changerStatut(siteId: string, statut: 'brouillon' | 'en_li
   }
   const supabase = await createClient();
   const { error } = await supabase.from('sites').update({ statut }).eq('id', siteId);
-  revalidatePath('/admin');
+  revalidatePath('/admin/sites');
   return error
     ? { ok: false, message: 'Modification impossible.' }
     : { ok: true, message: statut === 'suspendu' ? 'Site suspendu : il ne sera plus republié.' : 'Statut mis à jour.' };

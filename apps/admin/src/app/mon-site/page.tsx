@@ -47,7 +47,7 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
           </span>
           <span className="flex gap-3 font-semibold">
             <Link href={`/edition/${site.id}`} className="underline-offset-4 hover:underline">Édition visuelle</Link>
-            <Link href="/admin" className="underline-offset-4 hover:underline">← Tous les sites</Link>
+            <Link href="/admin/sites" className="underline-offset-4 hover:underline">← Tous les sites</Link>
           </span>
         </div>
       )}

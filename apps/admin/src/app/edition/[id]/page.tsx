@@ -24,7 +24,7 @@ export default async function Edition({ params }: PageProps<'/edition/[id]'>) {
     <div className="flex h-screen flex-col">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 bg-white px-4 py-2.5 text-sm">
         <div className="flex items-center gap-3">
-          <Link href={admin ? '/admin' : '/tableau-de-bord'} className="text-teal-800">{admin ? '← Tous les sites' : '← Tableau de bord'}</Link>
+          <Link href={admin ? '/admin/sites' : '/tableau-de-bord'} className="text-teal-800">{admin ? '← Tous les sites' : '← Tableau de bord'}</Link>
           <span className="font-semibold">{admin ? `Site de ${d.cabinet.nom || [d.praticiens[0]?.prenom, d.praticiens[0]?.nom].filter(Boolean).join(' ') || 'ce client'}` : 'Édition visuelle'} · {admin ? 'édition visuelle' : d.cabinet.nom || d.praticiens[0]?.nom || 'mon site'}</span>
         </div>
         <Link href={admin ? `/mon-site?site=${site.id}` : '/mon-site'} className="text-neutral-600 underline-offset-4 hover:underline">Informations du cabinet (formulaire)</Link>

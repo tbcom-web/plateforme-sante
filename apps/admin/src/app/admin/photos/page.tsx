@@ -84,7 +84,7 @@ export default async function JeuxPhotos() {
         </p>
         <p className="max-w-3xl text-sm text-neutral-600">
           Images générées par IA (étiquette « Image générée ») : prompts et import depuis{' '}
-          <Link href="/admin/retours/images-a-generer" className="font-semibold text-teal-900 underline underline-offset-4">Images à générer</Link>.
+          <Link href="/admin/cuisine/images-a-generer" className="font-semibold text-teal-900 underline underline-offset-4">Images à générer</Link>.
           Importées « à valider », avec l’outil, le prompt et les conditions de l’outil ; jamais dans la galerie du cabinet.
         </p>
         {libres.migrationManquante ? (

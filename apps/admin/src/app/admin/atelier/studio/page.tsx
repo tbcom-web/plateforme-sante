@@ -47,7 +47,7 @@ export default async function PageStudio({ searchParams }: { searchParams: Promi
     <div className="grid gap-4">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
-          <p className="text-sm"><Link href="/admin/atelier" className="font-semibold text-teal-900 underline">← Atelier</Link></p>
+          <p className="text-sm"><Link href="/admin/cuisine/atelier" className="font-semibold text-teal-900 underline">← Atelier</Link></p>
           <h1 className="mt-1 text-2xl font-bold">Studio de recettes</h1>
           <p className="mt-0.5 text-sm text-neutral-600">Composer, signaler ce qui est à améliorer, enregistrer. Garde-fous toujours actifs (contrastes, diabète sans rouge vif, posture jamais).</p>
         </div>

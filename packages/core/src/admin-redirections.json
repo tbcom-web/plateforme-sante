@@ -1,0 +1,10 @@
+[
+  { "source": "/admin/retours/tri", "destination": "/admin/frigo/tri" },
+  { "source": "/admin/retours/tranches", "destination": "/admin/frigo/tranches" },
+  { "source": "/admin/illustrations", "destination": "/admin/frigo/bibliotheque" },
+  { "source": "/admin/photos", "destination": "/admin/frigo/photos" },
+  { "source": "/admin/retours/kits", "destination": "/admin/cuisine/kits" },
+  { "source": "/admin/retours/images-a-generer", "destination": "/admin/cuisine/images-a-generer" },
+  { "source": "/admin/atelier", "destination": "/admin/cuisine/atelier" },
+  { "source": "/admin/atelier/studio", "destination": "/admin/cuisine/studio" }
+]

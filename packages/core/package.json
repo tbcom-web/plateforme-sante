@@ -27,7 +27,9 @@
     "./dictionnaire-metier": "./src/dictionnaire-metier.ts",
     "./classement-visuels": "./src/classement-visuels.ts",
     "./references-illustrations": "./src/references-illustrations.ts",
-    "./professions": "./src/professions.ts"
+    "./professions": "./src/professions.ts",
+    "./arrivages": "./src/arrivages.ts",
+    "./admin-espaces": "./src/admin-espaces.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

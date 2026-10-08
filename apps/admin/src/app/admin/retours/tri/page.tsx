@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { getTranches } from '@/lib/tranches';
 import { debutHashtag, estFamilleTri, estSujetDeVisuel, inventaireAssets, statutsAvecHeritage } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -28,8 +27,7 @@ export default async function PageTri({ searchParams }: { searchParams: Promise<
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
-        <p className="text-sm"><Link href="/admin/retours" className="font-semibold text-teal-900 underline">← Donner mon avis</Link></p>
-        <h1 className="mt-1 text-2xl font-bold">Trier par sujet</h1>
+        <h1 className="text-2xl font-bold">Trier par sujet</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
           Un visuel à la fois, les non étiquetés et ceux qui peuvent compléter un sujet mal couvert d’abord. Cochez ses sujets
           (touches 1 à 8 ; en pointillé : suggérés, déjà cochés), ajoutez si besoin des hashtags libres (#laser… : touche #),
