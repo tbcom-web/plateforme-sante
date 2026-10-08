@@ -72,5 +72,6 @@ export * from './habillage';
 export * from './habillage-attributs';
 export * from './duels';
 export * from './couverture-sujets';
+export * from './studio-organisation';
 export * from './notation-recettes';
 export * from './reperes';

@@ -10,7 +10,7 @@
 // Survol / toucher : « Ouvrir dans le Studio » et « Voir en grand » (toutes les pages du client, ordinateur / téléphone).
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
-  draftPourOnglet, gamme as gammeParId, libelleScenario, libelleTraitementPhotos, LIBELLES_STYLES, ongletsDuScenario, pairePolices, scenarioDeRecette, vueDePage,
+  APPRECIATIONS, appreciationDeNote, draftPourOnglet, gamme as gammeParId, libelleScenario, libelleTraitementPhotos, LIBELLES_STYLES, ongletsDuScenario, pairePolices, scenarioDeRecette, vueDePage,
   type MarqueImportee, type ModeleManifeste, type PageStructure, type Recette, type SiteDraft,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
@@ -87,7 +87,7 @@ export default function RecetteVignette({ recette: r, apercu, catalogue, marques
           <button type="button" onClick={() => setGrand(true)} disabled={!apercu} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold shadow ${focus}`}>Voir en grand</button>
         </div>
       </div>
-      <div className="flex items-start justify-between gap-2"><strong className="min-w-0">{r.nom}</strong><span className="shrink-0 text-sm">{r.note ? `${r.note}★` : 'non notée'}</span></div>
+      <div className="flex items-start justify-between gap-2"><strong className="min-w-0">{r.nom}</strong><span className="shrink-0 text-sm">{r.note ? (APPRECIATIONS.find((a) => a.id === appreciationDeNote(r.note))?.libelle ?? `${r.note}★`) : 'sans avis'}</span></div>
       <p className="text-xs text-neutral-700">{libelleScenario(scenario)}{r.etiquettes.length ? ` · ${r.etiquettes.join(', ')}` : ''}</p>
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-600">
         <PastillesGamme gamme={x.gamme} couleur={x.couleur} />

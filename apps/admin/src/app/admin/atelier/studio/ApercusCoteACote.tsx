@@ -7,6 +7,8 @@
 // page réduite dans le cadre, sans défiler : réduction appliquée DANS le document de l'aperçu, la largeur de mise en page et la
 // hauteur d'écran restent celles de l'appareil — les sections « plein écran » gardent leur taille réelle). Signaler une zone
 // (touche z, Échap) comme DoubleRendu.
+// Studio réorganisé (2026-10-08) : le mode zone (« À améliorer », z) et la liste des zones sont pilotés par le Studio ; ici,
+// seulement la surimpression et le tracé sur chaque aperçu.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { AppareilRetour, Zone } from '@plateforme/core';
 import AnnotateurZones from '@/components/AnnotateurZones';
@@ -25,6 +27,11 @@ type Props = {
   libelle?: string;
   /** Hauteur réservée au-dessus des aperçus (barre d'options), pour remplir l'écran */
   entete?: ReactNode;
+  /** Mode zone piloté par le Studio (bouton « À améliorer », touche z) */
+  mode: boolean;
+  onMode: (m: boolean) => void;
+  /** Options d'aperçu supplémentaires (animer, rejouer…) */
+  options?: ReactNode;
 };
 
 const lireCase = (cle: string) => { try { return localStorage.getItem(cle) === '1'; } catch { return false; } };
@@ -33,31 +40,16 @@ const ecrireCase = (cle: string, v: boolean) => { try { localStorage.setItem(cle
 /** Documents des iframes d'aperçu présents dans un conteneur (même origine : srcdoc) */
 const documentsDe = (el: HTMLElement | null) => [...(el?.querySelectorAll('iframe') ?? [])].map((f) => f.contentDocument).filter((d): d is Document => Boolean(d?.body));
 
-export default function ApercusCoteACote({ rendu, zonesOrdinateur, zonesMobile, onZonesOrdinateur, onZonesMobile, onAppareil, libelle = 'Page', entete }: Props) {
+export default function ApercusCoteACote({ rendu, zonesOrdinateur, zonesMobile, onZonesOrdinateur, onZonesMobile, onAppareil, libelle = 'Page', entete, mode, onMode, options }: Props) {
   const [sync, setSync] = useState(false);
   const [entiere, setEntiere] = useState(false);
   useEffect(() => { setSync(lireCase('studio:defilement-sync')); setEntiere(lireCase('studio:page-entiere')); }, []);
-  const [mode, setMode] = useState(false);
   const ordi = useRef<HTMLDivElement>(null);
   const mob = useRef<HTMLDivElement>(null);
   useEffect(() => { onAppareil?.('les-deux'); }, [onAppareil]);
   // Hauteur des cadres : l'écran moins l'en-tête de l'admin, la barre d'options, les commandes de zone et la note de l'aperçu
   const [hauteur, setHauteur] = useState(700);
-  useEffect(() => { const f = () => setHauteur(Math.max(360, window.innerHeight - 250)); f(); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
-
-  // z : signaler une zone (un seul mode pour les deux rendus) ; Échap quitte
-  const touches = useRef<(e: KeyboardEvent) => void>(() => {});
-  touches.current = (e: KeyboardEvent) => {
-    const cible = e.target as HTMLElement | null;
-    if (e.ctrlKey || e.metaKey || e.altKey || (cible && (cible.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(cible.tagName)))) return;
-    if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); setMode((m) => !m); return; }
-    if (e.key === 'Escape' && mode) { e.preventDefault(); e.stopImmediatePropagation(); setMode(false); }
-  };
-  useEffect(() => {
-    const f = (e: KeyboardEvent) => touches.current(e);
-    window.addEventListener('keydown', f, true);
-    return () => window.removeEventListener('keydown', f, true);
-  }, []);
+  useEffect(() => { const f = () => setHauteur(Math.max(360, window.innerHeight - 215)); f(); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
 
   // Défilement synchronisé et page entière : appliqués aux documents des deux cadres (recréés à chaque page : relus régulièrement)
   useEffect(() => {
@@ -111,20 +103,25 @@ export default function ApercusCoteACote({ rendu, zonesOrdinateur, zonesMobile, 
     <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         {entete}
-        {caseOption('Défilement synchronisé', sync, setSync, 'studio:defilement-sync', 'Faire défiler un aperçu fait défiler l’autre au même endroit de la page')}
-        {caseOption('Page entière', entiere, setEntiere, 'studio:page-entiere', 'Toute la page réduite dans le cadre, sans défiler')}
-        <span className="text-xs text-neutral-500">z : signaler une zone</span>
+        <details className="relative">
+          <summary className={`flex min-h-11 cursor-pointer items-center rounded-lg px-2 text-sm text-neutral-700 hover:bg-neutral-100 ${focus}`}>Options d’aperçu</summary>
+          <div className="absolute right-0 z-20 mt-1 grid w-64 gap-0.5 rounded-xl border border-black/10 bg-white p-2 shadow-lg">
+            {caseOption('Défilement synchronisé', sync, setSync, 'studio:defilement-sync', 'Faire défiler un aperçu fait défiler l’autre au même endroit de la page')}
+            {caseOption('Page entière', entiere, setEntiere, 'studio:page-entiere', 'Toute la page réduite dans le cadre, sans défiler')}
+            {options}
+          </div>
+        </details>
       </div>
       <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_404px] items-start gap-4">
         <figure ref={ordi} className="grid min-w-0 content-start gap-1">
           <figcaption className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Ordinateur (1440)</figcaption>
-          <AnnotateurZones zones={zonesOrdinateur} onChange={onZonesOrdinateur} appareil="ordinateur" mode={mode} onMode={setMode} raccourci={false} libelle={`${libelle}, rendu ordinateur`}>
+          <AnnotateurZones zones={zonesOrdinateur} onChange={onZonesOrdinateur} appareil="ordinateur" mode={mode} onMode={onMode} raccourci={false} barre={false} liste={false} libelle={`${libelle}, rendu ordinateur`}>
             <div aria-hidden="true" className="overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-black/10">{rendu('bureau', hauteur)}</div>
           </AnnotateurZones>
         </figure>
         <figure ref={mob} className="grid min-w-0 content-start gap-1">
           <figcaption className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Téléphone (390 × 844)</figcaption>
-          <AnnotateurZones zones={zonesMobile} onChange={onZonesMobile} appareil="mobile" mode={mode} onMode={setMode} raccourci={false} libelle={`${libelle}, rendu mobile`}>
+          <AnnotateurZones zones={zonesMobile} onChange={onZonesMobile} appareil="mobile" mode={mode} onMode={onMode} raccourci={false} barre={false} liste={false} libelle={`${libelle}, rendu mobile`}>
             <div aria-hidden="true" className="overflow-hidden rounded-[22px] bg-neutral-100 ring-4 ring-neutral-800">{rendu('mobile', Math.min(hauteur, 844))}</div>
           </AnnotateurZones>
         </figure>

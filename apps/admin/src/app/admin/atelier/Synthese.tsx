@@ -47,7 +47,7 @@ export default function Synthese({ synthese: s, markdown }: { synthese: Synthese
   };
 
   return (
-    <details open={s.total > 0} className="rounded-2xl border border-black/10 bg-neutral-50 p-4">
+    <details className="rounded-2xl border border-black/10 bg-neutral-50 p-4">
       <summary className={`flex min-h-11 cursor-pointer flex-wrap items-center gap-x-4 gap-y-1 rounded ${focus}`}>
         <span className="font-semibold">Tendances</span>
         <span className="text-sm text-neutral-600">{s.total} note{s.total > 1 ? 's' : ''}{s.total ? ` · moyenne ${num(s.moyenne)} ★` : ''}</span>

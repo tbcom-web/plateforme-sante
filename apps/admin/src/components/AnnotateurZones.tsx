@@ -30,6 +30,8 @@ type Props = {
   libelle?: string;
   /** Liste des zones sous la surface (édition) ; défaut : oui hors lecture seule */
   liste?: boolean;
+  /** Barre « Signaler une zone / forme / zoom » au-dessus de la surface ; défaut : oui (le Studio a son propre bouton « À améliorer ») */
+  barre?: boolean;
   className?: string;
 };
 
@@ -71,7 +73,7 @@ export function SurimpressionZones({ zones, children, className = '' }: { zones:
   );
 }
 
-export default function AnnotateurZones({ zones, onChange, appareil, children, lectureSeule = false, mode: modeControle, onMode, raccourci, libelle = 'Aperçu', liste = !lectureSeule, className = '' }: Props) {
+export default function AnnotateurZones({ zones, onChange, appareil, children, lectureSeule = false, mode: modeControle, onMode, raccourci, libelle = 'Aperçu', liste = !lectureSeule, barre = true, className = '' }: Props) {
   const [modeLocal, setModeLocal] = useState(false);
   const mode = !lectureSeule && (modeControle ?? modeLocal);
   const changerMode = (m: boolean) => { if (onMode) onMode(m); else setModeLocal(m); };
@@ -142,7 +144,7 @@ export default function AnnotateurZones({ zones, onChange, appareil, children, l
 
   return (
     <div className={`grid min-w-0 gap-2 ${className}`}>
-      <div className="flex flex-wrap items-center gap-1.5 text-sm">
+      {barre && <div className="flex flex-wrap items-center gap-1.5 text-sm">
         <button type="button" aria-pressed={mode} onClick={() => changerMode(!mode)} title="Touche z ; Échap pour annuler"
           className={`min-h-11 rounded-lg border px-3 font-semibold ${focus} ${mode ? 'border-orange-700 bg-orange-700 text-white' : 'border-neutral-300 bg-white text-neutral-800 hover:bg-orange-50'}`}>
           {mode ? 'Tracer une zone… (Échap)' : 'Signaler une zone'} <kbd className={`ml-1 rounded px-1 text-xs ${mode ? 'bg-white/20' : 'bg-neutral-100'}`}>z</kbd>
@@ -156,7 +158,7 @@ export default function AnnotateurZones({ zones, onChange, appareil, children, l
         )}
         <button type="button" aria-pressed={zoom > 1} onClick={() => setZoom((z) => (z > 1 ? 1 : 2))} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-2.5 ${focus}`}>{zoom > 1 ? 'Zoom ×1' : 'Zoom ×2'}</button>
         {zones.length > 0 && <span className="text-xs text-neutral-600">{zones.length} zone{zones.length > 1 ? 's' : ''}{zones.length >= LIMITES_ZONES.zones ? ' (maximum)' : ''}</span>}
-      </div>
+      </div>}
       <div className={`min-w-0 ${zoom > 1 ? 'max-h-[70vh] overflow-auto rounded-xl ring-1 ring-orange-300' : ''}`}>
         <div ref={surface} role="group" aria-label={`${libelle}${mode ? ' : mode zone, tracez à la souris ou au doigt' : ''}`}
           className={`relative min-w-0 ${mode ? 'cursor-crosshair select-none' : ''}`} style={{ zoom, touchAction: mode ? 'none' : undefined }}

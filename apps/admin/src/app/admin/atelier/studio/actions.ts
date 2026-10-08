@@ -5,6 +5,7 @@ import {
   appareilDe, clesStructure, estCleStudio, estEtiquetteStudio, estPageStructure, ETIQUETTES_RECETTE, modeleIntegre, nomRecette, normaliserComposition, normaliserZones,
   photosAImporter, serialiserComposition, serialiserZones, sujetsActifs, typeDeCle, type AppareilRetour, type PageStructure, type ZonesNote,
   normaliserScenario, serialiserRecetteAvecScenario, type ScenarioRecette, estStatutIllustration, etatsAnimations, type StatutIllustration,
+  ameliorationsNouvelles, NOTE_ZONES_PAGE, nombreZones, normaliserAmeliorations, type AmeliorationPage,
 } from '@plateforme/core';
 import { getNotesPagesRecette } from '@/lib/recettes';
 import { importerPhotoLibre } from '../../photos/actions';
@@ -35,6 +36,12 @@ export type SaisieRecette = {
   appareil?: AppareilRetour;
   /** Scénario complet du client simulé (principaux ordonnés, secondaires, couleurs, soins), gardé dans la composition jsonb */
   scenario?: ScenarioRecette | null;
+  /**
+   * Zones « À améliorer » par page et par appareil (Studio réorganisé, 2026-10-08) : gardées dans la composition jsonb
+   * (`ameliorations`, réaffichées à la réouverture) ; chaque lot nouveau ou modifié est aussi journalisé dans recettes_notes
+   * (page, appareil, zones, note de page NOTE_ZONES_PAGE). Absent (propositions, anciens appels) : lots déjà enregistrés gardés.
+   */
+  ameliorations?: AmeliorationPage[];
 };
 export type ResultatRecette = { ok: boolean; message: string; id?: string; migrationManquante?: boolean };
 
@@ -54,13 +61,21 @@ export async function enregistrerRecette(s: SaisieRecette): Promise<ResultatRece
   if (!sujetsActifs(sujets).length && sujets.length) return { ok: false, message: 'Sujets inconnus ou différés.' };
   const note = Number.isInteger(s.note) && (s.note as number) >= 1 && (s.note as number) <= 5 ? (s.note as number) : null;
   const etiquettes = [...new Set((s.etiquettes ?? []).filter((e) => (ETIQUETTES_RECETTE as readonly string[]).includes(e)))];
-  const ligne = {
-    nom: texte(s.nom, 120) ?? nomRecette(composition, sujets), sujets, couleurs_preferees: couleurs, composition: serialiserRecetteAvecScenario(composition, scenario),
-    note, etiquettes, positif: texte(s.positif), negatif: texte(s.negatif),
-  };
   const user = await getUser();
   const supabase = await createClient();
   let id = s.id && UUID.test(s.id) ? s.id : null;
+  // Zones déjà enregistrées avec la recette (seuls les lots nouveaux ou modifiés sont journalisés)
+  let anciennes: AmeliorationPage[] = [];
+  if (id) {
+    const { data } = await supabase.from('recettes').select('composition').eq('id', id).maybeSingle();
+    anciennes = normaliserAmeliorations((data?.composition as Record<string, unknown> | null)?.ameliorations);
+  }
+  const ameliorations = s.ameliorations === undefined ? anciennes : normaliserAmeliorations(s.ameliorations);
+  const ligne = {
+    nom: texte(s.nom, 120) ?? nomRecette(composition, sujets), sujets, couleurs_preferees: couleurs,
+    composition: { ...serialiserRecetteAvecScenario(composition, scenario), ...(ameliorations.length ? { ameliorations } : {}) },
+    note, etiquettes, positif: texte(s.positif), negatif: texte(s.negatif),
+  };
   if (id) {
     const { error } = await supabase.from('recettes').update(ligne).eq('id', id);
     if (error) return { ok: false, message: MIGRATION, migrationManquante: true };
@@ -75,10 +90,23 @@ export async function enregistrerRecette(s: SaisieRecette): Promise<ResultatRece
     const { error } = await supabase.from('recettes_notes').insert({ ...journal, appareil: appareilDe(s.appareil) });
     if (error) await supabase.from('recettes_notes').insert(journal);
   }
+  // Zones à améliorer : une ligne par page et par appareil modifiés (note de page fixe, plafonnée : docs/ingredients-recettes.md)
+  const nouvelles = ameliorationsNouvelles(anciennes, ameliorations).filter((a) => estPageStructure(a.page));
+  let zonesJournal = true;
+  if (nouvelles.length) {
+    const compo = JSON.parse(serialiserComposition(composition));
+    const { error } = await supabase.from('recettes_notes').insert(nouvelles.map((a) => ({
+      recette: id, page: a.page, appareil: a.appareil, note: NOTE_ZONES_PAGE, etiquettes: [], positif: null, negatif: null, composition: compo, auteur: user?.id ?? null,
+      zones: JSON.parse(serialiserZones({ appareil: a.appareil, empreinte: null, page: a.page, largeur: a.appareil === 'mobile' ? 390 : 1440, zones: a.zones }) ?? 'null'),
+    })));
+    if (error) zonesJournal = false;
+  }
   revalidatePath('/admin/atelier/studio');
   // Photo gardée non importée (aperçu Pexels / Pixabay) : la recette est enregistrée, mais l'import est requis avant tout usage sur un site
   const aImporter = photosAImporter(composition.photos).length;
-  return { ok: true, message: `Recette « ${ligne.nom} » enregistrée${note ? ` (${note}★)` : ''}.${aImporter ? ` Attention : ${aImporter} photo${aImporter > 1 ? 's' : ''} non importée${aImporter > 1 ? 's' : ''}, à valider et importer avant tout usage sur un site (ignorée${aImporter > 1 ? 's' : ''} d’ici là).` : ''}`, id };
+  const nz = nombreZones(ameliorations);
+  const zonesTxt = nz ? ` ${nz} zone${nz > 1 ? 's' : ''} à améliorer jointe${nz > 1 ? 's' : ''}${zonesJournal ? '' : ' (journal des pages : migration 0034 à exécuter)'}.` : '';
+  return { ok: true, message: `Recette « ${ligne.nom} » enregistrée${note ? ` (${note}★)` : ''}.${zonesTxt}${aImporter ? ` Attention : ${aImporter} photo${aImporter > 1 ? 's' : ''} non importée${aImporter > 1 ? 's' : ''}, à valider et importer avant tout usage sur un site (ignorée${aImporter > 1 ? 's' : ''} d’ici là).` : ''}`, id };
 }
 
 /**
@@ -172,6 +200,15 @@ export async function lireAnimationsEnAttente(): Promise<string[]> {
   const { data } = await supabase.from('illustrations_statuts').select('cle, statut');
   const statuts = Object.fromEntries(((data ?? []) as { cle: string; statut: string }[]).filter((l) => estStatutIllustration(l.statut)).map((l) => [l.cle, l.statut as StatutIllustration]));
   return etatsAnimations(statuts).filter((e) => e.enAttente).map((e) => e.animation);
+}
+
+/** Zones « À améliorer » enregistrées avec une recette (réaffichées à la réouverture dans le Studio) */
+export async function lireAmeliorations(recette: string): Promise<AmeliorationPage[]> {
+  await exigerAdmin();
+  if (!UUID.test(recette)) return [];
+  const supabase = await createClient();
+  const { data } = await supabase.from('recettes').select('composition').eq('id', recette).maybeSingle();
+  return normaliserAmeliorations((data?.composition as Record<string, unknown> | null)?.ameliorations);
 }
 
 /** Notes déjà données aux pages d'une recette (onglets du studio) */

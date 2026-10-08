@@ -22,8 +22,14 @@ export const ETIQUETTES_ZONE = [
   { id: 'trop-petit', libelle: 'Trop petit' },
   { id: 'couleur', libelle: 'Couleur' },
   { id: 'texte', libelle: 'Texte' },
-  { id: 'alignement', libelle: 'Alignement' },
+  { id: 'alignement', libelle: 'Mal aligné' },
   { id: 'coupe', libelle: 'Coupé' },
+  // Studio de recettes, « À améliorer » (2026-10-08) : étiquettes rapides des zones de page (studio-organisation.ts)
+  { id: 'trop-charge', libelle: 'Trop chargé' },
+  { id: 'illisible', libelle: 'Illisible' },
+  { id: 'image', libelle: 'Image' },
+  { id: 'espacement', libelle: 'Espacement' },
+  { id: 'typo', libelle: 'Typographie' },
 ] as const;
 export type EtiquetteZone = (typeof ETIQUETTES_ZONE)[number]['id'];
 export const estEtiquetteZone = (x: unknown): x is EtiquetteZone => ETIQUETTES_ZONE.some((e) => e.id === x);

@@ -37,12 +37,20 @@ type Props = {
   /** Rendu mobile seul affiché d'abord sur téléphone */
   mobileDabord?: boolean;
   libelle?: string;
+  /** Mode zone piloté par le parent (Studio : bouton « À améliorer », touche z) ; sans lui, géré ici */
+  mode?: boolean;
+  onMode?: (m: boolean) => void;
+  /** Barres et listes de zones de chaque rendu (défaut : oui ; le Studio a sa propre liste) */
+  outilsZones?: boolean;
 };
 
-export default function DoubleRendu({ rendu, zonesOrdinateur, zonesMobile, onZonesOrdinateur, onZonesMobile, onAppareil, largeurMobile = 300, mobileDabord = true, libelle = 'Élément' }: Props) {
+export default function DoubleRendu({ rendu, zonesOrdinateur, zonesMobile, onZonesOrdinateur, onZonesMobile, onAppareil, largeurMobile = 300, mobileDabord = true, libelle = 'Élément', mode: modeParent, onMode, outilsZones = true }: Props) {
   const etroit = useEcranEtroit();
   const [vu, setVu] = useState<'ordinateur' | 'mobile'>(mobileDabord ? 'mobile' : 'ordinateur');
-  const [mode, setMode] = useState(false);
+  const [modeLocal, setModeLocal] = useState(false);
+  const controle = modeParent !== undefined;
+  const mode = controle ? Boolean(modeParent) : modeLocal;
+  const setMode = (m: boolean | ((x: boolean) => boolean)) => { const v = typeof m === 'function' ? m(mode) : m; if (controle) onMode?.(v); else setModeLocal(v); };
   const appareil: AppareilRetour = etroit ? vu : 'les-deux';
   const dernier = useRef<AppareilRetour | null>(null);
   useEffect(() => { if (dernier.current !== appareil) { dernier.current = appareil; onAppareil?.(appareil); } }, [appareil, onAppareil]);
@@ -56,15 +64,16 @@ export default function DoubleRendu({ rendu, zonesOrdinateur, zonesMobile, onZon
     if (e.key === 'Escape' && mode) { e.preventDefault(); e.stopImmediatePropagation(); setMode(false); }
   };
   useEffect(() => {
+    if (controle) return;
     const f = (e: KeyboardEvent) => touches.current(e);
     window.addEventListener('keydown', f, true);
     return () => window.removeEventListener('keydown', f, true);
-  }, []);
+  }, [controle]);
 
   const ordinateur = (
     <figure className="grid min-w-0 content-start gap-1.5">
       <figcaption className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Ordinateur</figcaption>
-      <AnnotateurZones zones={zonesOrdinateur} onChange={onZonesOrdinateur} appareil="ordinateur" mode={mode} onMode={setMode} raccourci={false} libelle={`${libelle}, rendu ordinateur`}>
+      <AnnotateurZones zones={zonesOrdinateur} onChange={onZonesOrdinateur} appareil="ordinateur" mode={mode} onMode={setMode} raccourci={false} barre={outilsZones} liste={outilsZones} libelle={`${libelle}, rendu ordinateur`}>
         <div aria-hidden="true" className="overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-black/10">{rendu('bureau')}</div>
       </AnnotateurZones>
     </figure>
@@ -72,7 +81,7 @@ export default function DoubleRendu({ rendu, zonesOrdinateur, zonesMobile, onZon
   const mobile = (
     <figure className="grid min-w-0 content-start justify-items-center gap-1.5">
       <figcaption className="justify-self-start text-xs font-semibold uppercase tracking-wide text-neutral-500">Mobile</figcaption>
-      <AnnotateurZones zones={zonesMobile} onChange={onZonesMobile} appareil="mobile" mode={mode} onMode={setMode} raccourci={false} libelle={`${libelle}, rendu mobile`} className="w-full justify-items-center">
+      <AnnotateurZones zones={zonesMobile} onChange={onZonesMobile} appareil="mobile" mode={mode} onMode={setMode} raccourci={false} barre={outilsZones} liste={outilsZones} libelle={`${libelle}, rendu mobile`} className="w-full justify-items-center">
         <div aria-hidden="true" className="mx-auto overflow-hidden rounded-[22px] bg-neutral-100 ring-4 ring-neutral-800" style={{ width: largeurMobile, maxWidth: '100%' }}>{rendu('mobile')}</div>
       </AnnotateurZones>
     </figure>

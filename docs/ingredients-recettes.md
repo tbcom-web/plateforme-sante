@@ -157,6 +157,50 @@ gardée`. Pour chaque clé k (ingrédient `<dimension>:<valeur>` des dimensions 
 - **Hors périmètre** pour l'instant : zones « à améliorer » sur l'aperçu de la tuile (elles restent dans le Studio) ; scénarios des
   sites réels (seuls les scénarios types, ceux des recettes de Paul et des propositions de Claude sont générés).
 
+## Studio réorganisé : composer, améliorer, enregistrer (2026-10-08)
+
+Retour de Paul : « le studio devient un peu chaotique… le but étant de créer des recettes élégantes et de les enregistrer,
+pas besoin de mettre autant de notes… sélectionner les parties à améliorer en sélectionnant des zones… laisser la possibilité
+de bloquer certains éléments ». `/admin/atelier/studio` (Studio.tsx) :
+
+- **En haut** : le client simulé en une ligne (« Modifier » ouvre un tiroir avec SimulateurClient ; « 🎲 Au hasard »), l'état
+  de la recette, **À améliorer** (z) et **Enregistrer la recette**.
+- **Gauche** : « 🎲 Tout changer » (espace), compteur « n éléments bloqués » + « Tout débloquer », harmonie compacte (score,
+  famille, « Corriger », détail replié), zones de la page affichée, puis les dés en **six groupes repliables** : Couleurs ·
+  Typographie · Visuels & photos · Premier écran & animation · Structure des pages · Détails & effets. Une rangée par dimension :
+  valeur · 🎲 · ← · 🔒 ; le choix direct (liste, styles, traitement, photos) s'ouvre en touchant la valeur ; les axes un à un
+  (typographie, détails, menu, autres pages, éléments de page) sont sous « Réglage fin ». « Notes détaillées » (étoiles et
+  étiquettes par page, Rendu mobile, notes d'éléments) : repliées, facultatives.
+- **Registre des dimensions** (`packages/core/src/studio-organisation.ts`, `groupeDeCle`) : chaque dé est rangé par le préfixe de
+  sa clé de verrou (`composant:accueil`, `composant:transition`, `composant:sections`, `composant:entete*`, `animation` →
+  Premier écran & animation ; `page:*`, `composant:*`, `menu` → Structure ; `hab:typo:*` → Typographie…). Un nouveau dé se
+  range seul (ex. `composant:entete-anim`).
+- **Droite** : onglets des pages (pastille = nombre de zones, 🔒 de la page affichée), aperçus ordinateur + téléphone côte à
+  côte ; « Options d'aperçu » (défilement synchronisé, page entière, animer, rejouer).
+- **À améliorer** : on trace des rectangles sur l'aperçu ordinateur ou téléphone ; chaque zone reçoit une étiquette rapide
+  (Trop chargé, Illisible, Mal aligné, Couleur, Image, Espacement, Typographie, À revoir — `ETIQUETTES_ZONE`, zones.ts) et une
+  précision facultative ; zones gardées par page et par appareil en changeant d'onglet, en surimpression, supprimables.
+- **Enregistrer** : nom proposé, **une appréciation facultative** (Élégante / Correcte / À revoir), zones jointes
+  automatiquement ; « Notes détaillées » (1 à 5 ★, étiquettes, va / ne va pas) repliées. Anciennes recettes : note et remarques
+  relues et conservées (une note 4 reste 4 tant qu'on ne choisit pas d'appréciation).
+- **Bas** : Mes recettes (vignettes, filtre « Avis ») et Manques signalés, en onglets. Les propositions de Claude se notent dans
+  `/admin/retours/recettes` (lien compact en haut du Studio) et s'ouvrent ici par `?proposition=<id>`, `?recette=<id>`,
+  `?generee=<clé>` ou l'événement `studio:ouvrir-proposition`.
+- `/admin/atelier` : deux portes (Composer une recette → Studio ; Noter au hasard → Donner mon avis), tendances repliées.
+
+**Apprentissage (correspondance plafonnée)** — aucune migration :
+
+| Geste | Stocké | Effet sur les poids |
+|---|---|---|
+| Élégante | `recettes.note = 5` (+ journal `recettes_notes`, page nulle) | renfort de chaque ingrédient de la recette : Δ = Σ 0,4·w·(note − 3) / (K + Σ 0,4·w), plafonné à ±0,75 ★ (`renfortsPoids`) ; harmonie ±0,75 ★ ; recette ≥ 4 en tête de /creer |
+| Correcte | `note = 3` | neutre (3 = moyenne de référence) : aucun renfort |
+| À revoir | `note = 2` | affaiblit un peu chaque ingrédient (même formule, même plafond) |
+| Sans avis | `note` inchangée (nulle pour une nouvelle recette) | aucun |
+| Zones d'une page (un appareil) | `composition.ameliorations` (onglet, page, appareil, zones) + une ligne `recettes_notes` (page, appareil, zones, **note 2**) | une seule note de page **2 ★ par page et par appareil, quel que soit le nombre de zones** (`NOTE_ZONES_PAGE`), qui ne touche que les clés de cette page (`clesPage` : structure, ordre de l'accueil, variantes de ses sections), au poids de l'appareil (mobile 1,25) ; plafond ±0,75 ★ ; journalisée seulement si les zones de cette page et de cet appareil ont changé depuis le dernier enregistrement (`ameliorationsNouvelles`) |
+
+Export : les lignes `recettes_notes` avec zones partent dans `retours/recettes-notes.json` et dans la section « Zones » de
+`SYNTHESE.md` (une ligne par zone), comme avant.
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

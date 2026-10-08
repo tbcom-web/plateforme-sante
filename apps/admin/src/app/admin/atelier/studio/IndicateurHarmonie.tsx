@@ -15,9 +15,11 @@ type Props = {
   onCorriger: (x: CompositionRecette) => void;
   explorer: boolean;
   onExplorer: (actif: boolean) => void;
+  /** Studio réorganisé (2026-10-08) : une ligne (score, famille, « Corriger » la première règle ou le premier conseil), détail replié */
+  compact?: boolean;
 };
 
-export default function IndicateurHarmonie({ composition, contexte, onCorriger, explorer, onExplorer }: Props) {
+export default function IndicateurHarmonie({ composition, contexte, onCorriger, explorer, onExplorer, compact = false }: Props) {
   const s = useMemo(() => scoreHarmonie(composition, contexte), [composition, contexte]);
   const outils = useMemo(() => outilsHarmonie(contexte), [contexte]);
   // Corrections calculées une fois (bouton grisé si rien ne change : élément verrouillé par les garde-fous du core)
@@ -30,6 +32,35 @@ export default function IndicateurHarmonie({ composition, contexte, onCorriger, 
   }), [s, composition, outils]);
   const teinte = s.violations.length ? 'bg-red-50 text-red-900 ring-red-200' : s.score >= 75 ? 'bg-teal-50 text-teal-950 ring-teal-200' : 'bg-amber-50 text-amber-950 ring-amber-200';
   const autres = s.familles.slice(1).filter((f) => f.coherence >= s.familles[0].coherence - 0.08);
+
+  if (compact) {
+    const premier = items.find((it) => it.correction);
+    return (
+      <section aria-label="Harmonie graphique" className={`grid gap-1 rounded-xl px-3 py-1.5 text-sm ring-1 ${teinte}`}>
+        <div className="flex items-center justify-between gap-2">
+          <p className="min-w-0 truncate" aria-live="polite" title={s.nomFamille}><strong>Harmonie {s.score}</strong><span className="opacity-75">/100 · {s.nomFamille}</span></p>
+          {premier && <button type="button" className={bouton} onClick={() => onCorriger(premier.correction!)} title={premier.message}>Corriger</button>}
+        </div>
+        {(
+          <details>
+            <summary className={`cursor-pointer text-xs underline ${focus}`}>{s.violations.length ? `${s.violations.length} règle${s.violations.length > 1 ? 's' : ''} enfreinte${s.violations.length > 1 ? 's' : ''}` : items.length ? `${items.length} conseil${items.length > 1 ? 's' : ''}` : 'Règles d’harmonie'}</summary>
+            <ul className="mt-1 grid gap-1.5 text-xs">
+              {items.map((it, i) => (
+                <li key={`${it.code}-${i}`} className="flex items-start justify-between gap-2">
+                  <span>{it.dure ? <strong>Règle : </strong> : null}{it.message}</span>
+                  {it.correction && <button type="button" className={bouton} onClick={() => onCorriger(it.correction!)}>Corriger</button>}
+                </li>
+              ))}
+            </ul>
+            <label className="mt-1 inline-flex min-h-9 items-center gap-2 text-xs">
+              <input type="checkbox" checked={explorer} onChange={(e) => onExplorer(e.target.checked)} className="h-4 w-4 accent-teal-800" />
+              Hors règles (explorer)
+            </label>
+          </details>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section aria-label="Harmonie graphique" className={`grid gap-2 rounded-xl p-3 text-sm ring-1 ${teinte}`}>

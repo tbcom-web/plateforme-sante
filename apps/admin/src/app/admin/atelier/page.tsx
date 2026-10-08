@@ -36,20 +36,27 @@ export default async function PageAtelier() {
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 className="text-2xl font-bold">Atelier des propositions</h1>
-        <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-          Les combinaisons du générateur, exactement comme le parcours les propose (mêmes sujets, mêmes couleurs, mêmes lots).
-          Chaque note améliore l’ordre des propositions : une note isolée compte peu, des notes concordantes comptent beaucoup.
-          Les règles (diabète sans rouge, posture jamais, contrastes, trois propositions variées) ne sont jamais levées.
-          Pour noter au hasard, avec « ce qui va bien / ce qui ne va pas » : <Link href="/admin/retours?type=themes" className="font-semibold text-teal-900 underline">Donner mon avis</Link>.
+      {/* Sobriété (retour de Paul du 2026-10-08) : deux portes claires — composer une recette (Studio) ou noter au hasard
+          (Donner mon avis) ; ici, seulement les combinaisons du générateur à noter, sans doublon. */}
+      <div className="grid gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h1 className="text-2xl font-bold">Atelier</h1>
+          <EnvoyerRetours compact />
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Link href="/admin/atelier/studio" className="grid gap-0.5 rounded-2xl bg-teal-800 p-4 text-white hover:bg-teal-900">
+            <span className="text-base font-semibold">Composer une recette → Studio</span>
+            <span className="text-sm text-white/85">Lancer les dés, bloquer ce qui plaît, signaler les zones à améliorer, enregistrer.</span>
+          </Link>
+          <Link href="/admin/retours?type=themes" className="grid gap-0.5 rounded-2xl border border-teal-800 bg-white p-4 text-teal-950 hover:bg-teal-50">
+            <span className="text-base font-semibold">Noter au hasard → Donner mon avis</span>
+            <span className="text-sm text-neutral-600">Une carte à la fois : thèmes, illustrations, photos, structures.</span>
+          </Link>
+        </div>
+        <p className="max-w-3xl text-sm text-neutral-600">
+          Ci-dessous : les combinaisons du générateur, exactement comme le parcours les propose. Chaque note améliore l’ordre des
+          propositions ; les règles (diabète sans rouge, posture jamais, contrastes) ne sont jamais levées.
         </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Link href="/admin/atelier/studio" className="flex min-h-11 items-center rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900">Studio de recettes →</Link>
-        <EnvoyerRetours compact />
-      </div>
       </div>
       {migrationManquante && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
