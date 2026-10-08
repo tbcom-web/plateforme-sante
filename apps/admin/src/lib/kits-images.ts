@@ -1,11 +1,11 @@
 import 'server-only';
 import { cache } from 'react';
 import {
-  cleCandidatePhoto, clesImagesExclues, etiquetteKit, kitsCompacts, PREFIXE_REFUS_KIT, refusKitDepuisLignes, kitsGardes, notesPhotos, soinsParDefautScenario, SUJETS_KITS,
+  cleCandidatePhoto, clesImagesExclues, vivierCure, etiquetteKit, kitsCompacts, PREFIXE_REFUS_KIT, refusKitDepuisLignes, kitsGardes, notesPhotos, soinsParDefautScenario, SUJETS_KITS,
   type DonneesKits, type KitCompact, type NoteKit,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
-import { getPoidsAssets } from '@/lib/assets-notes';
+import { getPoidsAssets, getSurchargesSujets } from '@/lib/assets-notes';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getLignesAssetsApprentissage } from '@/lib/notation-recettes';
 import { getPhotosBanque } from '@/lib/recettes';
@@ -34,20 +34,24 @@ export const getNotesKits = cache(async (): Promise<(NoteKit & { rang: number; l
 });
 
 export const getDonneesKits = cache(async (): Promise<DonneesKits & { exclues: Set<string> }> => {
-  const [banque, assets, { hashtags }, lignes, catalogue, notesKits] = await Promise.all([
-    getPhotosBanque().catch(() => []), getPoidsAssets(), getHashtagsAssets().catch(() => ({ hashtags: {} })), getLignesAssetsApprentissage(), getCatalogue().catch(() => []), getNotesKits(),
+  // Banque : photos importées et intégrées + photos GARDÉES non importées (« Importer et utiliser ») ; le kit n'assemble que les
+  // importées du vivier curé (kits-images.ts, estCuree : étiquetées avec le sujet par Paul)
+  const [banque, assets, { hashtags }, lignes, catalogue, notesKits, surcharges] = await Promise.all([
+    getPhotosBanque({ nonImportees: true }).catch(() => []), getPoidsAssets(), getHashtagsAssets().catch(() => ({ hashtags: {} })), getLignesAssetsApprentissage(), getCatalogue().catch(() => []), getNotesKits(), getSurchargesSujets().catch(() => ({})),
   ]);
   const slugs = catalogue.map((c) => c.slug);
   const soins = Object.fromEntries(SUJETS_KITS.map((s) => [s, s === 'general' ? [] : soinsParDefautScenario({ principaux: [s], secondaires: [] }, slugs)]));
-  return { banque, assets, notes: notesPhotos(lignes), hashtags, soins, gardes: kitsGardes(notesKits), exclues: clesImagesExclues(lignes) };
+  return { banque, assets, notes: notesPhotos(lignes), hashtags, soins, gardes: kitsGardes(notesKits), exclues: clesImagesExclues(lignes), surcharges };
 });
 
-export const getContexteImages = cache(async (): Promise<{ exclues: string[]; kits: Record<string, KitCompact> }> => {
+export const getContexteImages = cache(async (): Promise<{ exclues: string[]; kits: Record<string, KitCompact>; vivier: Record<string, string[]> }> => {
   try {
     const d = await getDonneesKits();
-    return { exclues: [...d.exclues].sort(), kits: kitsCompacts(d) };
+    // Vivier curé 4-5 ★ par sujet (photos importées, meilleures d'abord) : tirages de photos et part du style « Photos »
+    const vivier = Object.fromEntries(SUJETS_KITS.map((s) => [s, vivierCure(s, d).filter((v) => v.importee && (v.note ?? 0) >= 4).map((v) => v.p.url)]));
+    return { exclues: [...d.exclues].sort(), kits: kitsCompacts(d), vivier };
   } catch {
-    return { exclues: [], kits: {} };
+    return { exclues: [], kits: {}, vivier: {} };
   }
 });
 
@@ -64,17 +68,6 @@ export async function getRefusKits(): Promise<Set<string>> {
     return error || !data ? new Set() : refusKitDepuisLignes(data as { valeur: string; decision: string; raison: string | null }[]);
   } catch {
     return new Set();
-  }
-}
-
-/** Requête d'origine des photos libres importées (mots qui décrivent la photo), par URL */
-export async function getRequetesPhotos(): Promise<Record<string, string>> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.from('photos_libres').select('url, requete').not('url', 'is', null).limit(5000);
-    return Object.fromEntries(((data ?? []) as { url: string; requete: string | null }[]).filter((l) => l.url && l.requete).map((l) => [l.url, l.requete!]));
-  } catch {
-    return {};
   }
 }
 

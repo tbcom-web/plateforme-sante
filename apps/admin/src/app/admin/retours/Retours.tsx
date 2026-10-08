@@ -86,6 +86,8 @@ type Props = {
   marquesImportees: MarqueImportee[];
   themesActives: string[];
   typeInitial: string | null;
+  /** Photos à découvrir pré-filtré depuis un kit d'images (sujet, emplacement, retour au kit) */
+  cibleDecouverte?: { sujet: string; emplacement: string; retour: string | null } | null;
   cleInitiale: string | null;
   /** ?ingredients=animation:<nom> : session sur les ingrédients non validés de cette animation */
   ingredientsDe?: string | null;
@@ -540,7 +542,7 @@ export default function Retours(props: Props) {
 
   // ======================= Inspirations / Photos à découvrir =======================
   if (espace === 'inspirations') return <Inspirations inspirations={props.inspirations} migrationManquante={props.migrationInspirations} onRetour={() => setEspace(null)} />;
-  if (espace === 'decouvrir') return <PhotosADecouvrir sources={props.sourcesPhotos} motsCles={props.motsClesPhotos} migrationManquante={props.migrationPhotos} onRetour={() => setEspace(null)} />;
+  if (espace === 'decouvrir') return <PhotosADecouvrir sources={props.sourcesPhotos} motsCles={props.motsClesPhotos} migrationManquante={props.migrationPhotos} onRetour={() => setEspace(null)} cible={props.cibleDecouverte ?? null} />;
 
   // ======================= Accueil =======================
   if (!categorie || !carte) {

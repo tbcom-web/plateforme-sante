@@ -14,16 +14,30 @@
 /** Kit compact transmis aux rendus (kits-images.ts, kitCompact) */
 export type KitCompact = { sujet?: string; accueil?: string; panorama?: string; galerie?: string[]; soins?: Record<string, string> };
 
-type Etat = { exclues: ReadonlySet<string>; kits: Readonly<Record<string, KitCompact>> };
-let ETAT: Etat = { exclues: new Set(), kits: {} };
+/**
+ * `vivier` : par sujet, URLs des photos du VIVIER CURÉ (kits-images.ts : retenues, étiquetées par Paul, importées) notées ≥ 4 ★,
+ * meilleures d'abord. Posé (même vide) : les tirages de photos (recettes.ts) n'utilisent QUE ces photos, et le style « Photos » est
+ * tiré plus souvent quand le sujet n° 1 en a assez (VIVIER_PHOTOS). Absent (null) : comportement d'avant.
+ */
+type Etat = { exclues: ReadonlySet<string>; kits: Readonly<Record<string, KitCompact>>; vivier: Readonly<Record<string, readonly string[]>> | null };
+let ETAT: Etat = { exclues: new Set(), kits: {}, vivier: null };
 
 /** Remplit le registre (une fois par requête, rendu ou construction) ; champs absents : inchangés */
-export function definirContexteImages(c: { exclues?: Iterable<string> | null; kits?: Record<string, KitCompact> | null }): void {
-  ETAT = { exclues: c.exclues ? new Set(c.exclues) : ETAT.exclues, kits: c.kits ? { ...c.kits } : ETAT.kits };
+export function definirContexteImages(c: { exclues?: Iterable<string> | null; kits?: Record<string, KitCompact> | null; vivier?: Record<string, readonly string[]> | null }): void {
+  ETAT = { exclues: c.exclues ? new Set(c.exclues) : ETAT.exclues, kits: c.kits ? { ...c.kits } : ETAT.kits, vivier: c.vivier !== undefined ? (c.vivier ? { ...c.vivier } : null) : ETAT.vivier };
 }
 export const contexteImages = (): Readonly<Etat> => ETAT;
 /** Remet le registre à vide (tests) */
-export const viderContexteImages = () => { ETAT = { exclues: new Set(), kits: {} }; };
+export const viderContexteImages = () => { ETAT = { exclues: new Set(), kits: {}, vivier: null }; };
+
+/**
+ * Style « Photos » et vivier (demande de Paul du 2026-10-08 : « voir aussi des photos de ma banque retenues et notées 4 ou 5 étoiles ») :
+ * le sujet n° 1 a assez de photos 4-5 ★ curées (`seuil`) → part visée de combinaisons en style photo (`part`, atelier, Studio, recettes à
+ * noter, duels de thèmes) ; sinon le style photo n'est pas tiré.
+ */
+export const VIVIER_PHOTOS = { seuil: 3, part: 0.5 } as const;
+/** Photos 4-5 ★ du vivier d'un sujet (null : registre inactif) */
+export const vivierDuSujet = (sujet: string | null | undefined): readonly string[] | null => (ETAT.vivier ? ETAT.vivier[sujet ?? ''] ?? [] : null);
 
 /** Clé d'une image à partir de son URL (même règle que clePhoto d'assets-poids.ts, sans en dépendre) */
 export function cleImage(u: string): string | null {

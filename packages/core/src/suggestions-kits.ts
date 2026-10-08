@@ -1,21 +1,16 @@
-// Suggestions pour compléter un KIT D'IMAGES (demande de Paul du 2026-10-08 : « pour les kits de photos, il faut que le tool
-// suggère des photos à ajouter au kit »). Pour chaque emplacement vide ou faible d'un kit (kits-images.ts) :
-// 1. SUGGESTIONS DE LA BANQUE (suggestionsBanque) : photos déjà importées ou intégrées, non exclues (contexte-images.ts), pas encore
-//    dans le kit, qui pourraient convenir sans être étiquetées pour cet emplacement :
-//      score = 3 si la photo est du sujet (1,5 voisin, 1 « général ») + 2 par mot de l'emplacement trouvé dans ses hashtags, son nom
-//              ou sa requête d'origine + 2 · (note − 3) (note inconnue : 0) + 3 · effet appris
-//    jamais une photo refusée « Pas pour ici » pour CET emplacement. « Utiliser ici » = sujet + hashtag de l'emplacement (#<slug du
-//    soin>, #accueil, #cabinet, #page-sujet) ajoutés à la photo : le kit se recompose.
-// 2. SUGGESTIONS NOUVELLES (Pexels / Pixabay) : requêtes ciblées par soin et emplacement (REQUETES_EMPLACEMENTS, anglais, toujours des
-//    pieds, des chaussures ou un cabinet de soin), tirées par couverture (choisirRequete). « Garder » = lien seulement, sujet + hashtag
-//    de l'emplacement + #kit-<sujet> pré-cochés ; la photo n'entre dans le kit qu'une fois importée (« en attente d'import »).
+// Compléter un KIT D'IMAGES : COUCHE 2 (assemblage) à partir de la COUCHE 1 (curation) — demande de Paul du 2026-10-08 : « d'abord on
+// curate les bonnes images, ensuite à partir des images curated on assemble ».
+// - Couche 1 (curation) : Photos à découvrir, tri par sujet, notes, /admin/photos. Une photo entre dans le VIVIER CURÉ d'un sujet
+//   quand Paul l'a retenue ET étiquetée avec ce sujet (kits-images.ts, estCuree / vivierCure), jamais si elle est exclue.
+// - Couche 2 (assemblage) : les kits et « Compléter ce kit » ne piochent QUE dans ce vivier. Suggestions par emplacement
+//   (suggestionsVivier), dans cet ordre : (1) notées ≥ 4 ★ avec le hashtag de l'emplacement, (2) notées ≥ 3,5 ★ du sujet, (3) non
+//   encore notées (notation rapide en ligne), (4) notées entre 2 et 3,5 ★ ; seulement si rien : (5) vivier d'un sujet VOISIN, signalé.
+//   Une photo gardée non importée est proposée avec « Importer et utiliser » (même import que /admin/photos).
+// - Vivier insuffisant pour un emplacement : « Trouver des photos » ouvre Photos à découvrir (couche 1) sur le sujet, avec les requêtes
+//   ciblées de l'emplacement (REQUETES_SOINS…) et le hashtag de l'emplacement pré-coché.
 // Pur, sans réseau.
 
-import { clePhoto, scoreAssetPourSujet } from './assets-poids';
-import { imageExclue } from './contexte-images';
-import type { NotesPhotos } from './favoris';
-import { libelleEmplacement, libelleSujetKit, type DonneesKits, type KitImages } from './kits-images';
-import type { PhotoBanque } from './recettes';
+import { libelleEmplacement, libelleSujetKit, vivierCure, type DonneesKits, type KitImages } from './kits-images';
 
 /** Requêtes ciblées (anglais) par soin du catalogue ; toujours des pieds, des ongles, des chaussures ou un cabinet de soin */
 export const REQUETES_SOINS: Readonly<Record<string, readonly string[]>> = {
@@ -117,10 +112,10 @@ export function compteurKit(kit: KitImages, soins: readonly string[], galerie = 
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Suggestions de la banque
+// Suggestions du vivier curé
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Sujets voisins (une photo d'un voisin peut convenir) */
+/** Sujets voisins (leur vivier n'est proposé que si celui du sujet ne donne rien) */
 export const SUJETS_VOISINS: Readonly<Record<string, readonly string[]>> = {
   enfant: ['general', 'sport'], sport: ['semelles', 'general'], senior: ['pedicurie', 'diabete', 'general'], diabete: ['pedicurie', 'senior', 'general'],
   ongles: ['pedicurie', 'general'], semelles: ['sport', 'general'], pedicurie: ['ongles', 'diabete', 'senior', 'general'], general: [],
@@ -136,47 +131,71 @@ export function refusKitDepuisLignes(lignes: readonly { contexte?: string; natur
   return r;
 }
 
-const mots = (s: string) => s.toLowerCase().split(/[^a-z0-9]+/).filter((m) => m.length >= 3);
-/** Mots d'un emplacement : slug du soin (sans « podologie », « soins »…) + mots de ses requêtes */
-export function motsEmplacement(sujet: string, emplacement: string): Set<string> {
-  const vides = new Set(['podologie', 'soins', 'soin', 'des', 'les', 'care', 'foot', 'feet', 'clinic', 'and', 'the', 'with']);
-  return new Set([...mots(hashtagEmplacement(emplacement)), ...requetesEmplacement(sujet, emplacement).flatMap(mots), ...(emplacement === 'accueil' || emplacement === 'page-sujet' ? [sujet] : [])].filter((m) => !vides.has(m)));
-}
+export const RANGS_SUGGESTION = {
+  1: 'Notée ≥ 4 ★, étiquetée pour cet emplacement',
+  2: 'Notée ≥ 3,5 ★',
+  3: 'Pas encore notée',
+  4: 'Notée moins de 3,5 ★',
+  5: 'Sujet voisin',
+} as const;
+export type RangSuggestion = keyof typeof RANGS_SUGGESTION;
 
-export type SuggestionBanque = { url: string; cle: string; score: number; note: number | null; raisons: string[]; sujets: readonly string[] };
+export type SuggestionVivier = {
+  url: string; cle: string; note: number | null; rang: RangSuggestion; etiquetee: boolean;
+  /** Sujet voisin dont vient la photo (rang 5), sinon null */
+  voisin: string | null;
+  /** Gardée mais pas encore importée : « Importer et utiliser » (identifiant photos_libres) */
+  aImporter: boolean; idLibre: string | null;
+  libelle: string;
+};
 
 /**
- * Photos de la banque qui pourraient remplir un emplacement (meilleures d'abord, `n` au plus) : importées ou intégrées, jamais
- * exclues, ni déjà dans le kit, ni refusées « Pas pour ici » pour cet emplacement, ni déjà étiquetées pour lui.
+ * Suggestions d'un emplacement, du vivier curé SEULEMENT (jamais une photo non étiquetée avec le sujet, non retenue ou exclue), hors
+ * photos déjà dans le kit et refus « Pas pour ici » de cet emplacement ; ordre : rang, étiquette de l'emplacement, note, effet.
  */
-export function suggestionsBanque(kit: KitImages, emplacement: string, d: DonneesKits & { requetes?: Readonly<Record<string, string>> }, refus: ReadonlySet<string> = new Set(), n = 6): SuggestionBanque[] {
-  const sujet = kit.sujet;
+export function suggestionsVivier(kit: KitImages, emplacement: string, d: DonneesKits, refus: ReadonlySet<string> = new Set(), n = 8): SuggestionVivier[] {
   const dans = new Set(kit.photos.map((p) => p.url));
-  const voisins = SUJETS_VOISINS[sujet] ?? ['general'];
-  const motsE = motsEmplacement(sujet, emplacement);
-  const tagE = hashtagEmplacement(emplacement);
-  const notes: NotesPhotos = d.notes ?? {};
-  const res: SuggestionBanque[] = [];
-  for (const p of d.banque as readonly PhotoBanque[]) {
-    const cle = p.cle ?? clePhoto(p.url);
-    if (!cle || p.importee === false || dans.has(p.url) || imageExclue(p.url, d.exclues) || imageExclue(cle, d.exclues) || /posture/.test(p.url)) continue;
-    if (d.assets?.statuts[cle] || refus.has(cleRefusKit(emplacement, cle))) continue;
-    const tags = (d.hashtags?.[cle] ?? []).map((t) => t.replace(/^#/, ''));
-    if (tags.includes(tagE)) continue;
-    const note = notes[cle]?.m ?? null;
-    if (note !== null && note <= 2) continue;
-    const raisons: string[] = [];
-    let s = 0;
-    if (p.sujets.includes(sujet)) { s += 3; raisons.push(`sujet ${libelleSujetKit(sujet)}`); }
-    else if (p.sujets.some((x) => voisins.includes(x) && x !== 'general')) { s += 1.5; raisons.push('sujet voisin'); }
-    else if (p.sujets.includes('general')) s += 1;
-    else continue;
-    const texte = new Set([...tags.flatMap(mots), ...mots(cle), ...mots(d.requetes?.[p.url] ?? '')]);
-    const communs = [...motsE].filter((m) => texte.has(m));
-    if (communs.length) { s += 2 * communs.length; raisons.push(`« ${communs.slice(0, 3).join(', ')} »`); }
-    if (note !== null) { s += 2 * (note - 3); raisons.push(`${String(note).replace('.', ',')}★`); }
-    s += 3 * scoreAssetPourSujet(cle, sujet, d.assets);
-    res.push({ url: p.url, cle, score: Math.round(s * 100) / 100, note, raisons, sujets: p.sujets });
+  const tag = hashtagEmplacement(emplacement);
+  const de = (sujet: string, voisin: string | null): (SuggestionVivier & { effet: number })[] => vivierCure(sujet, d)
+    .filter((v) => !dans.has(v.p.url) && !refus.has(cleRefusKit(emplacement, v.cle)))
+    .map((v) => {
+      const etiquetee = v.tags.includes(tag);
+      const rang: RangSuggestion = voisin ? 5 : v.note !== null && v.note >= 4 && etiquetee ? 1 : v.note !== null && v.note >= 3.5 ? 2 : v.note === null ? 3 : 4;
+      return { url: v.p.url, cle: v.cle, note: v.note, rang, etiquetee, voisin, aImporter: !v.importee, idLibre: v.p.idLibre ?? null, effet: v.effet, libelle: voisin ? `${RANGS_SUGGESTION[5]} : ${libelleSujetKit(voisin)}` : RANGS_SUGGESTION[rang] };
+    });
+  let l = de(kit.sujet, null);
+  if (!l.length) {
+    const vues = new Set<string>();
+    l = (SUJETS_VOISINS[kit.sujet] ?? []).flatMap((s) => de(s, s)).filter((x) => !vues.has(x.url) && Boolean(vues.add(x.url)));
   }
-  return res.sort((a, b) => b.score - a.score || (a.url < b.url ? -1 : 1)).slice(0, n);
+  return l.sort((a, b) => a.rang - b.rang || Number(b.etiquetee) - Number(a.etiquetee) || (b.note ?? 0) - (a.note ?? 0) || b.effet - a.effet || (a.url < b.url ? -1 : 1))
+    .slice(0, n).map(({ effet: _e, ...x }) => x);
 }
+
+/** État du vivier d'un sujet : « Enfants : 14 photos curées · 9 notées ≥ 4 ★ · 3 non notées · emplacements couverts 6/9 » */
+export function etatVivier(kit: KitImages, d: DonneesKits, soins: readonly string[], galerie = 4) {
+  const v = vivierCure(kit.sujet, d);
+  const notees4 = v.filter((x) => (x.note ?? 0) >= 4).length;
+  const nonNotees = v.filter((x) => x.note === null).length;
+  const aImporter = v.filter((x) => !x.importee).length;
+  const total = 2 + soins.length + galerie;
+  const n = (e: string) => kit.photos.filter((p) => p.emplacement === e).length;
+  const couverts = Math.min(1, n('accueil')) + Math.min(1, n('page-sujet')) + soins.filter((s) => n(`soin:${s}`)).length + Math.min(galerie, n('cabinet'));
+  return {
+    photos: v.length, notees4, nonNotees, aImporter, couverts, total,
+    texte: `${libelleSujetKit(kit.sujet)} : ${v.length} photo${v.length > 1 ? 's' : ''} curée${v.length > 1 ? 's' : ''} · ${notees4} notée${notees4 > 1 ? 's' : ''} ≥ 4 ★ · ${nonNotees} non notée${nonNotees > 1 ? 's' : ''}${aImporter ? ` · ${aImporter} à importer` : ''} · emplacements couverts ${couverts}/${total}`,
+  };
+}
+
+/** « Vivier Enfants : 3 photos curées, aucune pour orthonyxie » quand aucune photo du vivier n'est étiquetée pour l'emplacement ; sinon null */
+export function manqueVivier(sujet: string, emplacement: string, d: DonneesKits): string | null {
+  const v = vivierCure(sujet, d);
+  const tag = hashtagEmplacement(emplacement);
+  if (v.some((x) => x.tags.includes(tag))) return null;
+  const quoi = emplacement.startsWith('soin:') ? emplacement.slice(5).replace(/-/g, ' ') : libelleEmplacement(emplacement).toLowerCase();
+  return `Vivier ${libelleSujetKit(sujet)} : ${v.length} photo${v.length > 1 ? 's' : ''} curée${v.length > 1 ? 's' : ''}, aucune pour ${quoi}`;
+}
+
+/** Lien « Trouver des photos » : Photos à découvrir (couche 1) pré-filtré sur le sujet et les requêtes de l'emplacement, puis retour au kit */
+export const lienTrouverPhotos = (sujet: string, emplacement: string) =>
+  `/admin/retours?type=decouvrir&sujet=${encodeURIComponent(sujet)}&emplacement=${encodeURIComponent(emplacement)}&retour=kits`;

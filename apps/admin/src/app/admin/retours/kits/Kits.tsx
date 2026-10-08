@@ -18,7 +18,7 @@ import { draftStudio } from '@/components/ApercuStudio';
 import type { SoinCatalogue } from '@/lib/sites';
 import { noterKit } from './actions';
 import CompleterKit from './CompleterKit';
-import type { EmplacementAFaire, SuggestionBanque } from '@plateforme/core';
+import type { EmplacementAFaire, SuggestionVivier } from '@plateforme/core';
 import type { PhotoEnAttenteKit } from '@/lib/kits-images';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -28,10 +28,10 @@ type Props = {
   sujet: string;
   rang: number;
   kit: KitImages;
-  aFaire: (EmplacementAFaire & { banque: SuggestionBanque[] })[];
+  aFaire: (EmplacementAFaire & { banque: SuggestionVivier[]; manque: string | null; trouver: string })[];
   compteur: string;
   enAttente: PhotoEnAttenteKit[];
-  resume: { sujet: string; libelle: string; note: number | null; trous: number; photos: number; garde: boolean }[];
+  resume: { sujet: string; libelle: string; note: number | null; trous: number; photos: number; garde: boolean; vivier: string; curees: number }[];
   notes: { note: number | null; garder: boolean; le: string | null }[];
   migrationManquante: boolean;
   proposes: Univers[];
@@ -96,12 +96,20 @@ export default function Kits(props: Props) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4" style={style}>
       <style>{SURFACES_CSS}</style>
+      {/* Couche 1 → 2 : état du vivier curé de chaque sujet (photos retenues et étiquetées par Paul), dont le kit est assemblé */}
+      <section aria-labelledby="kits-viviers" className="grid gap-1.5 rounded-2xl border border-black/10 bg-white p-3">
+        <h2 id="kits-viviers" className="text-sm font-semibold">Viviers curés (couche 1) → kits assemblés (couche 2)</h2>
+        <ul className="grid gap-0.5 text-xs text-neutral-700 sm:grid-cols-2">
+          {props.resume.map((r) => <li key={r.sujet} className={r.sujet === sujet ? 'font-semibold text-teal-900' : ''}>{r.vivier}</li>)}
+        </ul>
+        <p className="text-xs text-neutral-500">Une photo entre dans le vivier d’un sujet quand vous l’avez retenue (gardée, importée ou intégrée) ET étiquetée avec ce sujet ; jamais si elle est notée 2 ★ ou moins, retirée ou à retravailler.</p>
+      </section>
       <nav aria-label="Sujets" className="flex gap-1 overflow-x-auto pb-1">
         {props.resume.map((r) => (
           <Link key={r.sujet} href={`/admin/retours/kits?sujet=${r.sujet}`} aria-current={r.sujet === sujet ? 'page' : undefined}
             className={`grid min-h-11 shrink-0 content-center rounded-lg border px-3 text-sm ${focus} ${r.sujet === sujet ? 'border-teal-800 bg-teal-800 font-semibold text-white' : 'border-neutral-200 bg-white'}`}>
             <span>{r.libelle}{r.garde ? ' ★' : ''}</span>
-            <span className={`text-xs ${r.sujet === sujet ? 'text-teal-50' : 'text-neutral-500'}`}>{r.photos} photos{r.note !== null ? ` · ${String(r.note).replace('.', ',')}★` : ''}{r.trous ? ` · ${r.trous} trou${r.trous > 1 ? 's' : ''}` : ''}</span>
+            <span className={`text-xs ${r.sujet === sujet ? 'text-teal-50' : 'text-neutral-500'}`}>{r.curees} curées · {r.photos} au kit{r.note !== null ? ` · ${String(r.note).replace('.', ',')}★` : ''}{r.trous ? ` · ${r.trous} trou${r.trous > 1 ? 's' : ''}` : ''}</span>
           </Link>
         ))}
       </nav>

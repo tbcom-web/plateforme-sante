@@ -29,7 +29,7 @@ import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
-import { contexteImages, imageExclue, sansImagesExclues } from './contexte-images';
+import { contexteImages, imageExclue, sansImagesExclues, VIVIER_PHOTOS, vivierDuSujet } from './contexte-images';
 import { classerPhotos, MODE_TIRAGE_DEFAUT, poidsFavori, tirerPhotosFavorites, type ModeTirage } from './favoris';
 import { clePhoto, effetHerite, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
 import { estSujetDeVisuel, sujetsEffectifs } from './sujets-visuels';
@@ -479,8 +479,25 @@ export function manquePhotosNotees(c: ContexteRecette): string | null {
   const n = photosClassees(c).filter((x) => x.palier <= 2).length;
   return n >= 3 ? null : `Peu de photos notées pour ${themeParId(s1)?.court ?? s1} (${n} à 3,5 ★ ou plus) : complété avec les meilleures des sujets voisins.`;
 }
+/**
+ * Facteur du style « Photos » selon le vivier de photos 4-5 ★ du sujet n° 1 (registre contexte-images.ts) : null = registre inactif
+ * (inchangé), 0 = vivier insuffisant (style photo jamais tiré), 6 = vivier suffisant (tirages harmonieux : nettement plus souvent).
+ */
+export function facteurStylePhotos(c: ContexteRecette): number | null {
+  const v = vivierDuSujet(sujetsActifs(c.sujets)[0] ?? 'general');
+  return v === null ? null : v.length >= VIVIER_PHOTOS.seuil ? 6 : 0;
+}
+/** Photos du vivier 4-5 ★ des sujets du scénario (sujet n° 1 d'abord, puis « général ») ; null = registre inactif */
+export function photosDuVivier(c: ContexteRecette): string[] | null {
+  if (vivierDuSujet('general') === null) return null;
+  return [...new Set([...sujetsActifs(c.sujets), 'general'].flatMap((s) => vivierDuSujet(s) ?? []))];
+}
 /** Tirage de `n` photos sans remise (accueil d'abord), pondéré ; déterministe pour une graine */
-export function tirerPhotos(c: ContexteRecette, r: () => number, n = 5, eviter: readonly string[] = []): string[] {
+export function tirerPhotos(c0: ContexteRecette, r: () => number, n = 5, eviter: readonly string[] = []): string[] {
+  // Vivier curé 4-5 ★ (registre posé par l'admin et les sites) : JAMAIS une photo hors vivier
+  const viv = photosDuVivier(c0);
+  const c: ContexteRecette = viv === null ? c0 : { ...c0, photos: (c0.photos ?? photosIntegreesBanque()).filter((p) => viv.includes(p.url)), sujetsSeulement: false };
+  if (viv !== null && !c.photos!.length) return [];
   // Favoris d'abord (défaut) : photos les mieux notées du sujet, premier écran en rotation parmi les meilleures (favoris.ts)
   if ((c.modeTirage ?? MODE_TIRAGE_DEFAUT) === 'favoris') {
     const classees = photosClassees(c);
@@ -529,7 +546,15 @@ function tirerPolices(x: CompositionRecette, c: ContexteRecette, r: () => number
 function tirerVisuels(x: CompositionRecette, c: ContexteRecette, r: () => number): CompositionRecette['visuels'] {
   const r1 = REGLES_THEMES[sujetUn(c)];
   const styles = stylesPermis(c, x.structure);
-  const style = choisir(styles.map((s) => ({ v: s, p: (r1.styles[s] ?? 1) * pese(c, [`style=${s}`]) })), r, (v) => v === x.visuels.style) ?? styles[0];
+  const poidsStyles = styles.map((s) => ({ v: s, p: (r1.styles[s] ?? 1) * pese(c, [`style=${s}`]) }));
+  // Vivier de photos 4-5 ★ (contexte-images.ts) : style « Photos » visé VIVIER_PHOTOS.part du temps s'il est assez fourni, jamais sinon
+  const ph = poidsStyles.find((e) => e.v === 'photos');
+  const f = facteurStylePhotos(c);
+  if (ph && f !== null && poidsStyles.length > 1) {
+    const autres = poidsStyles.filter((e) => e.v !== 'photos').reduce((t, e) => t + e.p, 0);
+    ph.p = f === 0 ? 0 : (VIVIER_PHOTOS.part / (1 - VIVIER_PHOTOS.part)) * autres;
+  }
+  const style = choisir(f === 0 && poidsStyles.length > 1 ? poidsStyles.filter((e) => e.v !== 'photos') : poidsStyles, r, (v) => v === x.visuels.style) ?? styles[0];
   const { registre } = reglageStyle(style, x.structure);
   const heros = herosPossibles(c);
   const herosSujet = heros.length ? choisir(heros.map((h, i) => ({ v: h, p: (i === 0 ? 2.5 : 1) * pese(c, [], [`heros:${h}:${registre}`], h) })), r) ?? heros[0] : null;
@@ -885,6 +910,8 @@ export function outilsHarmonie(c: ContexteRecette): OutilsTirage<CompositionRece
   return {
     brut: (x, g) => toutChanger(x, [], brut, g),
     reparer: (x) => reparerComposition(x, c),
+    // Style « Photos » selon le vivier de photos 4-5 ★ (facteurStylePhotos) : jamais sans vivier, nettement plus souvent avec
+    poids: (dim, v) => (dim === 'style' && v === 'photos' ? facteurStylePhotos(c) ?? 1 : 1),
     permis: (dim, x) => {
       if (dim === 'structure') return structuresPermises(c);
       if (dim === 'style') return stylesPermis(c, x.structure);

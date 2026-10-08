@@ -20,6 +20,33 @@ import { corrigerHarmonie, violationsDures } from './harmonie';
 import { estAValider } from './heros-photo-variantes';
 import { gamme as gammeParId } from './gammes';
 import type { Variantes } from './modeles';
+import { reglageStyle, REGLES_THEMES, stylesCompatibles } from './propositions';
+import { VIVIER_PHOTOS } from './contexte-images';
+
+/**
+ * Part de combinaisons en style « Photos » dans l'atelier (demande de Paul du 2026-10-08 : « voir aussi des photos de ma banque
+ * retenues et notées 4 ou 5 étoiles ») : quand le sujet n° 1 a au moins VIVIER_PHOTOS.seuil photos 4-5 ★ curées, les propositions
+ * du générateur passent en style photo (structure compatible, style permis par le sujet) jusqu'à atteindre `part` (≈ 50 %, réglable) ;
+ * leurs photos viennent ensuite du vivier seulement (tirerPhotos). Vivier insuffisant : liste inchangée. Doublons écartés.
+ */
+export function avecPartPhotos(liste: readonly Proposition[], sujet: string, photos45: number, part: number = VIVIER_PHOTOS.part): Proposition[] {
+  if (photos45 < VIVIER_PHOTOS.seuil) return liste.map((p) => (p.style === 'photos' ? { ...p } : p));
+  const r1 = REGLES_THEMES[sujet] ?? REGLES_THEMES.cabinet;
+  const ids = new Set(liste.map((p) => p.id));
+  let nPhotos = 0;
+  return liste.map((p, i) => {
+    if (p.style === 'photos') { nPhotos++; return p; }
+    const permis = stylesCompatibles(p.univers).includes('photos') && r1?.styles.photos !== undefined;
+    if (!permis || nPhotos >= part * (i + 1)) return p;
+    const id = p.id.split('~').map((x, k) => (k === 3 ? 'photos' : k === 4 ? '0' : x)).join('~');
+    if (ids.has(id)) return p;
+    ids.add(id);
+    nPhotos++;
+    const { registre, modeVisuel } = reglageStyle('photos', p.univers);
+    // Nom et phrase du style photo (ceux du générateur pour ce sujet), ton de la structure gardé
+    return { ...p, id, style: 'photos', registre, modeVisuel, animation: null, photos: p.photos ?? null, nom: r1.noms?.photos ?? p.nom, phrase: r1.montre?.photos ? `${p.phrase.split(' : ')[0]} : ${r1.montre.photos}.` : p.phrase };
+  });
+}
 
 /** Dimensions fixées par la proposition du générateur (le reste du registre est tiré) */
 export const DIMENSIONS_FIXEES_ATELIER: readonly DimensionRecette[] = ['couleurs', 'visuels', 'structure', 'photos'];

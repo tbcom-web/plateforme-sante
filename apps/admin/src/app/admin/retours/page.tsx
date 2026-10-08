@@ -62,6 +62,10 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   const dejaNotees: Record<string, number> = {};
   for (const x of atelier.notes) dejaNotees[x.cle] = (dejaNotees[x.cle] ?? 0) + 1;
   const type = typeof sp.type === 'string' ? sp.type : null;
+  // Photos à découvrir ouvert depuis un kit (« Trouver des photos », suggestions-kits.ts) : sujet, emplacement, retour au kit
+  const cibleDecouverte = type === 'decouvrir' && typeof sp.sujet === 'string' && typeof sp.emplacement === 'string'
+    ? { sujet: sp.sujet, emplacement: sp.emplacement, retour: sp.retour === 'kits' ? `/admin/retours/kits?sujet=${encodeURIComponent(sp.sujet)}` : null }
+    : null;
   const cle = typeof sp.cle === 'string' ? sp.cle : null;
   const ingredients = typeof sp.ingredients === 'string' ? sp.ingredients : null;
 
@@ -101,6 +105,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         marquesImportees={marquesImportees}
         themesActives={themesActives()}
         typeInitial={type}
+        cibleDecouverte={cibleDecouverte}
         cleInitiale={cle}
         ingredientsDe={ingredients}
         inspirations={inspirations.inspirations}

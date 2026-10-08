@@ -1115,6 +1115,8 @@ export type OutilsTirage<T> = {
   brut: (x: T, graine: number) => T;
   reparer: (x: T) => T;
   permis?: (dim: DimensionHarmonie, x: T) => readonly string[] | null;
+  /** Facteur de poids d'une valeur (style « Photos » selon le vivier de photos 4-5 ★ : recettes.ts) ; absent : 1 */
+  poids?: (dim: DimensionHarmonie, v: string, x: T) => number;
 };
 const outilsNeutres = <T>(): OutilsTirage<T> => ({ brut: (x) => x, reparer: (x) => x });
 
@@ -1158,7 +1160,7 @@ function valeurDansFamille<T extends CompositionHarmonie>(dim: DimensionHarmonie
   const base = permis ? [...permis] : valeursDimensionHarmonie(dim);
   const ph = poidsHarmonie(c);
   const l = base.filter((v) => compatibiliteFamille(dim, v, f) !== 'exclu' && !interditContexte(dim, v, c))
-    .map((v) => ({ v, p: (compatibiliteFamille(dim, v, f) === 'prefere' ? 4 : (etiquetteIngredient(dim, v)?.neutre ?? true) ? 2 : 1) * poidsValeurHarmonie(c, ph, dim, v, x) }));
+    .map((v) => ({ v, p: (compatibiliteFamille(dim, v, f) === 'prefere' ? 4 : (etiquetteIngredient(dim, v)?.neutre ?? true) ? 2 : 1) * poidsValeurHarmonie(c, ph, dim, v, x) * (outils.poids?.(dim, v, x) ?? 1) }));
   return choisir(l, r);
 }
 
@@ -1234,6 +1236,8 @@ export function ameliorer<T extends CompositionHarmonie>(x: T, verrous: readonly
     let mieux: { y: T; s: ScoreHarmonie } | null = null;
     for (const k of s.conseils.flatMap((co) => co.corrections).slice(0, 5)) {
       if (!dims.includes(k.dim) || estVerrouilleeHarmonie(k.dim, verrous) || lireDimension(y, k.dim) === k.valeur) continue;
+      // Conseil souple qui retirerait une valeur favorisée par les outils (style « Photos » avec vivier 4-5 ★) : ignoré
+      if ((outils.poids?.(k.dim, lireDimension(y, k.dim) ?? '', y) ?? 1) > 1) continue;
       const l = outils.permis?.(k.dim, y) ?? null;
       if (l && !l.includes(k.valeur)) continue;
       const z = applique(y, k, outils);
@@ -1282,7 +1286,8 @@ export function tirerDansFamille<T extends CompositionHarmonie>(f: IdFamilleStyl
     y = reparerHarmonie(y, verrous, c, outils);
     y = ameliorer(y, verrous, c, outils);
     const s = scoreHarmonie(y, c);
-    const note = s.score - (s.violations.length ? 100 : 0) + (s.famille === f ? 5 : 0);
+    // Valeur favorisée par les outils (style « Photos » avec un vivier 4-5 ★ suffisant) : départage en sa faveur, règles dures intactes
+    const note = s.score - (s.violations.length ? 100 : 0) + (s.famille === f ? 5 : 0) + ((outils.poids?.('style', lireDimension(y, 'style') ?? '', y) ?? 1) > 1 ? 8 : 0);
     if (!meilleur || note > meilleur.s) meilleur = { y, s: note };
     if (!s.violations.length && s.famille === f && s.score >= 72) break;
   }

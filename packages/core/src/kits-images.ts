@@ -3,6 +3,7 @@
 // assets_sujets + hashtags qui nomment un sujet), de leurs notes, statuts, duels et poids appris, et des HASHTAGS qui nomment un
 // emplacement (#accueil, #cabinet, #<slug du soin>, #fiche-soin…). Rien n'est dessiné ni stocké : le kit est recalculé à chaque lecture.
 //
+// COUCHE 2 (assemblage) : uniquement le VIVIER CURÉ du sujet (estCuree : photo retenue, étiquetée avec le sujet par Paul, non exclue).
 // Emplacements : premier écran, page sujet, une photo par soin du sujet, galerie du cabinet (4). Pour chacun :
 //   score = 3 · (4 − palier) + 3 · effet appris + (note moyenne ou 3) + 2,5 · étiquette de l'emplacement (#<slug> : 3, #fiche-soin : 1)
 //   palier (favoris.ts) : 1 = ≥ 4 ★, 2 = ≥ 3,5 ★, 3 = jamais notée, 4 = autre sujet / « général » (complément, signalé)
@@ -70,7 +71,40 @@ export type DonneesKits = {
   soins?: Readonly<Record<string, readonly string[]>>;
   gardes?: readonly KitGarde[];
   exclues?: ReadonlySet<string>;
+  /** Sujets ajoutés / retirés par Paul (assets_sujets) : l'étiquette qui fait entrer une photo dans le VIVIER CURÉ d'un sujet */
+  surcharges?: SurchargesSujets | null;
 };
+
+// ---------------------------------------------------------------------------------------------------------------
+// COUCHE 1 → 2 : le vivier curé (demande de Paul du 2026-10-08 : « d'abord on curate les bonnes images, ensuite à partir des images
+// curated on assemble »)
+// ---------------------------------------------------------------------------------------------------------------
+
+export type PhotoVivier = { p: PhotoBanque; cle: string; note: number | null; effet: number; importee: boolean; tags: string[] };
+
+/**
+ * Photo du VIVIER CURÉ d'un sujet : retenue par Paul (dans la banque : jeu de photos, photo libre gardée ou importée, photo intégrée),
+ * ÉTIQUETÉE avec ce sujet par Paul (assets_sujets : sujet ajouté, ou hashtag #<sujet>) et toujours de ce sujet (pas retirée du
+ * sujet), jamais exclue (moyenne ou dernière note ≤ 2 ★, retirée, à retravailler), jamais « posture ».
+ */
+export function estCuree(p: PhotoBanque, sujet: string, d: Pick<DonneesKits, 'surcharges' | 'hashtags' | 'exclues' | 'assets' | 'notes'>): boolean {
+  const cle = p.cle ?? clePhoto(p.url);
+  if (!cle || !p.sujets.includes(sujet) || /posture/.test(p.url) || p.sujets.includes('posture')) return false;
+  if (imageExclue(p.url, d.exclues) || imageExclue(cle, d.exclues) || d.assets?.statuts[cle]) return false;
+  const note = d.notes?.[cle]?.m;
+  if (typeof note === 'number' && note <= 2) return false;
+  const s = d.surcharges?.[cle];
+  const tags = (d.hashtags?.[cle] ?? []).map((t) => t.replace(/^#/, ''));
+  return Boolean((s?.ajouts.includes(sujet) && !s.retraits.includes(sujet)) || tags.includes(sujet));
+}
+
+/** Vivier curé d'un sujet (photos importées et gardées non importées), notées d'abord */
+export function vivierCure(sujet: string, d: DonneesKits): PhotoVivier[] {
+  return d.banque.filter((p) => estCuree(p, sujet, d)).map((p) => {
+    const cle = (p.cle ?? clePhoto(p.url))!;
+    return { p, cle, note: d.notes?.[cle]?.m ?? null, effet: scoreAsset(cle, d.assets), importee: p.importee !== false, tags: (d.hashtags?.[cle] ?? []).map((t) => t.replace(/^#/, '')) };
+  }).sort((a, b) => (b.note ?? 0) - (a.note ?? 0) || b.effet - a.effet || (a.p.url < b.p.url ? -1 : 1));
+}
 
 const hache = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
 const bruit = (rang: number, k: string) => (rang ? (hache(`${rang}|${k}`) / 4294967296) * 2.2 : 0);
@@ -85,9 +119,10 @@ export function seriePhoto(url: string, cle?: string | null): string {
 /** Kit d'un sujet ; `rang` : rotation (0 = meilleur, ou kit gardé) */
 export function composerKit(sujet: string, d: DonneesKits, rang = 0, soins?: readonly string[]): KitImages {
   const exclues = d.exclues;
-  const pool = d.banque.filter((p) => p.importee !== false && !imageExclue(p.url, exclues) && !(p.cle && imageExclue(p.cle, exclues)) && !/posture/.test(p.url) && !p.sujets.includes('posture'));
+  // Couche 2 : le kit n'assemble QUE le vivier curé du sujet (photos importées) ; sinon trou, l'illustration reste
+  const pool = d.banque.filter((p) => p.importee !== false && !imageExclue(p.url, exclues) && !(p.cle && imageExclue(p.cle, exclues)) && estCuree(p, sujet, d));
   const sujets = sujet === 'general' ? ['general'] : [sujet];
-  const permis = pool.filter((p) => p.sujets.includes(sujet) || p.sujets.includes('general'));
+  const permis = pool;
   const classees = classerPhotos(permis, sujets, d.assets, d.notes);
   const tags = (x: PhotoClassee<PhotoBanque>) => (x.cle ? d.hashtags?.[x.cle] ?? [] : []).map((t) => t.replace(/^#/, ''));
   const etiquette = (x: PhotoClassee<PhotoBanque>, e: EmplacementKit) => {
@@ -230,6 +265,6 @@ export function contexteImagesSite(e: {
     ...photosIntegreesBanque().map((p) => ({ url: p.url, origine: 'integree' as const, sujets: p.sujets })),
   ];
   const banque = banquePhotos(entrees, { surcharges: e.surcharges ?? null, hashtags });
-  const k = composerKit(e.sujet, { banque, assets: poidsAssets(lignes), notes: notesPhotos(lignes), hashtags, gardes: kitsGardes(e.notesKits ?? []), exclues }, 0, e.soins);
+  const k = composerKit(e.sujet, { banque, assets: poidsAssets(lignes), notes: notesPhotos(lignes), hashtags, gardes: kitsGardes(e.notesKits ?? []), exclues, surcharges: e.surcharges ?? null }, 0, e.soins);
   return { exclues, kit: k.photos.length ? kitCompact(k) : null };
 }

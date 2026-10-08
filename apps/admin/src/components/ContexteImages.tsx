@@ -7,5 +7,5 @@ import ContexteImagesClient from './ContexteImagesClient';
 export default async function ContexteImages() {
   const c = await getContexteImages();
   definirContexteImages(c);
-  return <ContexteImagesClient exclues={c.exclues} kits={c.kits} />;
+  return <ContexteImagesClient exclues={c.exclues} kits={c.kits} vivier={c.vivier} />;
 }

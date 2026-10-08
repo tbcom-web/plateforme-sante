@@ -292,6 +292,31 @@ par « général » défilent un par un (clavier : U utiliser ici, G garder, X p
   photo apparaît « en attente d'import » dans le kit et EN TÊTE de `/admin/photos` (« pour le kit Enfants · orthonyxie ») ; elle
   entre dans le kit après « Valider et importer » (les hashtags suivent la photo à l'import).
 
+### Deux couches : curation → assemblage (2026-10-08)
+
+« D'abord on curate les bonnes images, ensuite à partir des images curated on assemble. »
+
+- **Couche 1 — curation** (Photos à découvrir, tri par sujet, notes, `/admin/photos`) : une photo entre dans le **vivier curé**
+  d'un sujet (`estCuree`, `vivierCure`, kits-images.ts) quand Paul l'a retenue (jeu de photos, photo libre gardée ou importée,
+  photo intégrée) ET étiquetée avec ce sujet (`assets_sujets`, ou hashtag `#<sujet>`), jamais si elle est exclue (moyenne ou
+  dernière note ≤ 2 ★, retirée, à retravailler) ou retirée du sujet.
+- **Couche 2 — assemblage** : le kit et « Compléter ce kit » ne piochent QUE dans le vivier (photos importées pour le kit ; sinon
+  trou, l'illustration reste). Suggestions par emplacement (`suggestionsVivier`) : (1) notées ≥ 4 ★ avec le hashtag de
+  l'emplacement, (2) notées ≥ 3,5 ★, (3) pas encore notées — notation rapide en ligne (1-5, `assets_notes` : ≤ 2 ★ la fait sortir),
+  (4) moins de 3,5 ★ ; seulement si rien : (5) vivier d'un sujet voisin, signalé. Photo gardée non importée : « Importer et
+  utiliser » (même import que `/admin/photos`). Plus de recherche Pexels / Pixabay dans la file : « Vivier Enfants : 3 photos
+  curées, aucune pour orthonyxie → Trouver des photos » ouvre Photos à découvrir pré-filtré (sujet, requêtes ciblées de
+  l'emplacement, `#<emplacement>` et `#kit-<sujet>` pré-cochés), avec « ← Retour au kit ». En tête de la vue : l'état du vivier de
+  chaque sujet (« Enfants : 14 photos curées · 9 notées ≥ 4 ★ · 3 non notées · emplacements couverts 6/9 »).
+- **Photos 4-5 ★ partout** (registre `contexte-images.ts`, `vivier` : URLs du vivier curé notées ≥ 4 ★ par sujet, posé par
+  `ContexteImages`) : les tirages de photos (`tirerPhotos` : Studio, atelier, recettes à noter, duels de thèmes) n'utilisent que
+  ces photos ; le style « Photos » est tiré nettement plus souvent quand le sujet n° 1 en a au moins `VIVIER_PHOTOS.seuil` = 3
+  (dés : part visée `VIVIER_PHOTOS.part` = 50 % ; tirages harmonieux : facteur 6 et conseils souples qui retireraient la photo
+  ignorés, règles dures intactes) et jamais sinon. Atelier : `avecPartPhotos` fait passer les propositions compatibles en style
+  photo jusqu'à ≈ 50 % ; vivier insuffisant : « Peu de photos 4-5 ★ pour Enfants (2) → Compléter le vivier ». Mesuré (test) :
+  vivier de 5 photos → 9/18 combinaisons de l'atelier en photo, toutes leurs photos dans le vivier ; Studio « Tout changer »
+  7/60 → 33/60 en style photo.
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

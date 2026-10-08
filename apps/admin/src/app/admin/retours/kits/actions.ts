@@ -1,12 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import {
-  choisirRequete, estCleAsset, filtrerCandidats, hashtagEmplacement, hashtagKit, hashtagsValides, PREFIXE_REFUS_KIT, requetesEmplacement, SOURCES_PHOTOS_LIBRES, SUJETS_KITS,
-} from '@plateforme/core';
+import { clePhoto, estCleAsset, hashtagEmplacement, hashtagsValides, PREFIXE_REFUS_KIT, SUJETS_KITS } from '@plateforme/core';
 import { validerDecisionClassement } from '@plateforme/core/classement-visuels';
-import { ErreurSource, rechercher, sourcesConfigurees } from '@/lib/photos-libres';
-import { deciderPhoto, type ResultatCandidats } from '../actions-photos';
+import { importerPhotoLibre } from '../../photos/actions';
 import { exigerAdmin } from '@/lib/admin';
 import { MIGRATION_KITS } from '@/lib/kits-images';
 import { createClient, getUser } from '@/lib/supabase/server';
@@ -39,7 +36,7 @@ export async function noterKit(s: SaisieKit): Promise<{ ok: boolean; message: st
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Compléter un kit (suggestions-kits.ts) : banque d'abord, puis Pexels / Pixabay
+// Compléter un kit (suggestions-kits.ts) : couche 2, le vivier curé seulement (Pexels / Pixabay = couche 1, Photos à découvrir)
 // ---------------------------------------------------------------------------------------------------------------
 
 const EMPLACEMENT_KIT = /^(accueil|page-sujet|cabinet|soin:[a-z0-9-]{1,40})$/;
@@ -77,49 +74,33 @@ export async function pasPourIci(cle: string, emplacement: string): Promise<{ ok
   return { ok: true, message: 'Elle ne sera plus proposée ici.' };
 }
 
-/**
- * Suggestions NOUVELLES pour un emplacement (Pexels / Pixabay, clés serveur seulement, limites de débit et cache de lib/photos-libres) :
- * requêtes ciblées (requetesEmplacement) tirées par couverture (choisirRequete : requêtes déjà riches en photos gardées en dernier) ;
- * photos déjà vues (gardées ou rejetées) jamais remontrées. Rien n'est téléchargé.
- */
-export async function suggestionsNouvelles(sujet: string, emplacement: string, vuesNavigateur: string[] = []): Promise<ResultatCandidats> {
+/** Notation rapide dans la file (couche 1 depuis la couche 2) : note de la photo, comme les autres notes d'assets (assets_notes) */
+export async function noterPhotoKit(cle: string, note: number): Promise<{ ok: boolean; message: string }> {
   await exigerAdmin();
-  if (!(SUJETS_KITS as readonly string[]).includes(sujet) || !EMPLACEMENT_KIT.test(emplacement)) return { ok: false, message: 'Emplacement inconnu.', candidats: [] };
-  const conf = sourcesConfigurees();
-  const sources = SOURCES_PHOTOS_LIBRES.filter((s) => conf[s]);
-  if (!sources.length) return { ok: false, cleManquante: true, message: 'Clé API à configurer (PEXELS_API_KEY ou PIXABAY_API_KEY dans Vercel).', candidats: [] };
+  if (!estCleAsset(cle) || !cle.startsWith('photo:')) return { ok: false, message: 'Photo inconnue.' };
+  if (!Number.isInteger(note) || note < 1 || note > 5) return { ok: false, message: 'Note de 1 à 5.' };
+  const user = await getUser();
   const supabase = await createClient();
-  const [{ data: a }, { data: p }] = await Promise.all([
-    supabase.from('photos_libres_avis').select('source, id_source').limit(20000),
-    supabase.from('photos_libres').select('source, id_source, requete, statut').limit(20000),
-  ]);
-  const vues = new Set([...(a ?? []), ...(p ?? [])].map((l: { source: string; id_source: string }) => `${l.source}:${l.id_source}`));
-  for (const v of (Array.isArray(vuesNavigateur) ? vuesNavigateur : []).slice(0, 2000)) if (typeof v === 'string') vues.add(v);
-  const gardees: Record<string, number> = {};
-  for (const l of (p ?? []) as { requete: string | null; statut: string }[]) if (l.requete && l.statut !== 'retiree') gardees[l.requete] = (gardees[l.requete] ?? 0) + 1;
-  const requetes = requetesEmplacement(sujet, emplacement);
-  let derniere = '';
-  for (let essai = 0; essai < 3; essai++) {
-    const source = sources[Math.floor(Math.random() * sources.length)];
-    const requete = choisirRequete(requetes, gardees);
-    try {
-      const l = filtrerCandidats(await rechercher(source, requete, 1 + Math.floor(Math.random() * (essai ? 3 : 1))), vues).slice(0, 8);
-      if (l.length) return { ok: true, message: '', candidats: l.map(({ telechargement: _t, ...c }) => ({ ...c, requete })) };
-    } catch (e) {
-      derniere = e instanceof ErreurSource ? e.message : 'Recherche impossible.';
-    }
-  }
-  return { ok: false, message: derniere || 'Aucune nouvelle photo pour cet emplacement : réessayez plus tard.', candidats: [] };
+  const { error } = await supabase.from('assets_notes').insert({ cle_asset: cle, type: 'photo', note, etiquettes: [], auteur: user?.id ?? null });
+  if (error) return { ok: false, message: 'Migration 0027 à exécuter : note non enregistrée.' };
+  revalidatePath('/admin/retours/kits');
+  return { ok: true, message: note <= 2 ? `${note}★ : la photo sort du vivier.` : `${note}★ enregistrée.` };
 }
 
 /**
- * « Garder » pour un kit : flux existant (deciderPhoto : lien seulement, aucun téléchargement), sujet du kit, hashtag de l'emplacement
- * et #kit-<sujet> pré-cochés ; la photo n'entre dans le kit qu'une fois « Valider et importer » fait dans /admin/photos.
+ * « Importer et utiliser » : photo GARDÉE non importée du vivier → même import que /admin/photos (importerPhotoLibre : relue à la
+ * source, WebP sans métadonnées, traçabilité, sujets et hashtags reportés), puis sujet + hashtag de l'emplacement sur la photo importée.
  */
-export async function garderPourKit(source: string, idSource: string, sujet: string, emplacement: string, requete: string): Promise<{ ok: boolean; message: string }> {
+export async function importerEtUtiliser(idLibre: string, sujet: string, emplacement: string): Promise<{ ok: boolean; message: string }> {
   await exigerAdmin();
+  if (!/^[0-9a-f-]{36}$/.test(idLibre)) return { ok: false, message: 'Photo inconnue.' };
   if (!(SUJETS_KITS as readonly string[]).includes(sujet) || !EMPLACEMENT_KIT.test(emplacement)) return { ok: false, message: 'Emplacement inconnu.' };
-  const r = await deciderPhoto({ source, idSource, decision: 'garder', etiquettes: [], sujets: [sujet], hashtags: [hashtagEmplacement(emplacement), hashtagKit(sujet)], requete });
-  if (r.ok) revalidatePath('/admin/retours/kits');
-  return { ok: r.ok, message: r.ok ? 'Gardée pour le kit (lien seulement) : « Valider et importer » dans Jeux de photos ; elle entrera dans le kit une fois importée.' : r.message };
+  const r = await importerPhotoLibre(idLibre);
+  if (!r?.ok) return { ok: false, message: r?.message ?? 'Import impossible.' };
+  const supabase = await createClient();
+  const { data } = await supabase.from('photos_libres').select('url, statut').eq('id', idLibre).maybeSingle();
+  const cle = data?.url ? clePhoto(data.url as string) : null;
+  if (!cle || data?.statut !== 'validee') return { ok: false, message: 'Import non confirmé : voir Jeux de photos.' };
+  const u = await utiliserIci(cle, sujet, emplacement);
+  return { ok: u.ok, message: u.ok ? `Importée et placée : ${u.message}` : u.message };
 }

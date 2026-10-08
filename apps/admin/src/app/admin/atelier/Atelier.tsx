@@ -21,7 +21,7 @@ import {
 import ApercuTheme from '@/components/ApercuTheme';
 import ApercusCoteACote from './studio/ApercusCoteACote';
 import {
-  aValiderDansComposition, appliquerPriorites, appliquerRecette, compositionAtelier, draftPourOnglet, libelleTraitementPhotos, LIBELLES_VARIANTES, modeleIntegre,
+  aValiderDansComposition, appliquerPriorites, appliquerRecette, avecPartPhotos, compositionAtelier, vivierDuSujet, VIVIER_PHOTOS, draftPourOnglet, libelleTraitementPhotos, LIBELLES_VARIANTES, modeleIntegre,
   NOMS_SECTIONS_VARIABLES, ongletsDuScenario, pairePolices, reglagesAtelier, soinsDuScenario, vueDePage, type ContexteRecette, type PageStructure,
 } from '@plateforme/core';
 import DoubleRendu from '@/components/DoubleRendu';
@@ -106,7 +106,11 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
   const disponibles = useMemo(() => new Set(proposes.map((u) => u.id)), [proposes]);
   // Mêmes lots que le parcours (mêmes poids appris) ; « apprentissage » décoché : générateur brut
   const lots = useMemo(() => lotsPropositions(entree, nbLots, { poids: apprentissage ? poids : null }), [entree, nbLots, apprentissage, poids]);
-  const liste = useMemo(() => lots.flat().filter((p) => disponibles.has(p.univers)), [lots, disponibles]);
+  // Vivier curé 4-5 ★ du sujet n° 1 (contexte-images.ts) : assez de photos → ≈ VIVIER_PHOTOS.part des combinaisons en style photo,
+  // avec ces photos seulement (tirerPhotos) ; sinon illustrations et bandeau « Peu de photos 4-5 ★ … → Compléter le vivier »
+  const sujetUn = sujetsPris(entree)[0] ?? 'general';
+  const vivier = vivierDuSujet(sujetUn);
+  const liste = useMemo(() => avecPartPhotos(lots.flat().filter((p) => disponibles.has(p.univers)), sujetUn, vivier?.length ?? 0), [lots, disponibles, sujetUn, vivier]);
   const epuise = lots.length < nbLots;
   const p = liste[index] ?? null;
 
@@ -205,6 +209,12 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
 
   return (
     <div className="grid gap-5">
+      {vivier !== null && vivier.length < VIVIER_PHOTOS.seuil && (
+        <p className="flex flex-wrap items-center gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
+          <span>Peu de photos 4-5 ★ pour {themeParId(sujetUn)?.court ?? 'ce sujet'} ({vivier.length}) : les combinaisons restent en illustrations.</span>
+          <a href={`/admin/retours/kits?sujet=${sujetUn}`} className="font-semibold text-teal-900 underline">Compléter le vivier →</a>
+        </p>
+      )}
       {/* ---- Scénario ---- */}
       <section aria-labelledby="atelier-scenario" className="grid gap-3 rounded-2xl border border-black/10 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

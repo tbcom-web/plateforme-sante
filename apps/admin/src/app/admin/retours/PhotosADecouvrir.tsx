@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   cleCandidat, ETIQUETTES_BLOQUANTES, ETIQUETTES_DECOUVERTE, LICENCES_SOURCES, normaliserHashtag, orientation, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type HashtagsAssets,
   APERCUS_TRAITEMENTS_IMAGES, type SourcePhotoLibre,
+  hashtagEmplacement, hashtagKit, libelleEmplacement, libelleSujet, requetesEmplacement,
 } from '@plateforme/core';
 import { SaisieHashtags } from '@/components/HashtagsVisuel';
 import { SuggestionsClassement } from '@/components/SuggestionsClassement';
@@ -27,11 +28,17 @@ type Props = {
   motsCles: Record<string, string[]>;
   migrationManquante: boolean;
   onRetour: () => void;
+  /**
+   * Ouvert depuis « Compléter ce kit » (couche 2 → couche 1) : sujet imposé, requêtes ciblées de l'emplacement (suggestions-kits.ts,
+   * requetesEmplacement), hashtag de l'emplacement et #kit-<sujet> pré-cochés, lien de retour au kit.
+   */
+  cible?: { sujet: string; emplacement: string; retour: string | null } | null;
 };
 
-export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, migrationManquante, onRetour }: Props) {
+export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, migrationManquante, onRetour, cible }: Props) {
   const configurees = SOURCES_PHOTOS_LIBRES.filter((s) => sources[s]);
-  const [sujet, setSujet] = useState('sport');
+  const [sujet, setSujet] = useState(cible?.sujet ?? 'sport');
+  const tagsCible = useMemo(() => (cible ? [hashtagEmplacement(cible.emplacement), hashtagKit(cible.sujet)] : []), [cible]);
   const [file, setFile] = useState<CandidatAffiche[]>([]);
   const [chargement, setChargement] = useState(false);
   const [etiquettes, setEtiquettes] = useState<string[]>([]);
@@ -42,7 +49,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   const [texteMots, setTexteMots] = useState('');
   // Thèmes et hashtags de la photo affichée (remis à zéro à chaque photo : thème de la recherche pré-coché)
   const [themes, setThemes] = useState<string[]>([sujet]);
-  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [hashtags, setHashtags] = useState<string[]>(tagsCible);
   const [frequences, setFrequences] = useState<Record<string, number>>({});
   const [migrationHashtags, setMigrationHashtags] = useState(false);
   const [tousHashtags, setTousHashtags] = useState<HashtagsAssets>({});
@@ -65,7 +72,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
 
   const charger = useCallback(async (s: string) => {
     setChargement(true);
-    const r = await candidatsPhotos(s, [...vues.current]).catch(() => ({ ok: false, message: 'Connexion perdue.', candidats: [] as CandidatAffiche[] }));
+    const r = await candidatsPhotos(s, [...vues.current], cible && s === cible.sujet ? cible.emplacement : null).catch(() => ({ ok: false, message: 'Connexion perdue.', candidats: [] as CandidatAffiche[] }));
     setChargement(false);
     if (s !== sujetCourant.current) return;
     if (!r.ok) { setStatut({ ok: false, message: r.message }); return; }
@@ -85,7 +92,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
     if (carte) vues.current.add(cleCandidat(carte));
     setEtiquettes([]);
     setThemes([sujet]);
-    setHashtags([]);
+    setHashtags(cible && sujet === cible.sujet ? tagsCible : []);
     const reste = file.slice(1);
     setFile(reste);
     if (reste.length < 2 && !chargement) void charger(sujet);
@@ -131,7 +138,10 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4 pb-40 md:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button type="button" onClick={onRetour} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Accueil</button>
+        {cible?.retour
+          ? <a href={cible.retour} className={`inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Retour au kit</a>
+          : <button type="button" onClick={onRetour} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Accueil</button>}
+        {cible && <p className="w-full rounded-lg bg-teal-50 p-2 text-sm text-teal-950 ring-1 ring-teal-200 sm:order-last">Pour le kit {libelleSujet(cible.sujet)} · {libelleEmplacement(cible.emplacement)} : recherches ciblées ({requetesEmplacement(cible.sujet, cible.emplacement).join(', ')}) ; #{hashtagEmplacement(cible.emplacement)} et #{hashtagKit(cible.sujet)} pré-cochés. Gardée, la photo entre dans le vivier ; elle rejoint le kit une fois importée.</p>}
         <label className="flex items-center gap-2 text-sm">
           <span className="font-medium">Rechercher</span>
           <select value={sujet} onChange={(e) => { setSujet(e.target.value); setThemes([e.target.value]); setFile([]); setEdition(false); setStatut(null); }} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm">

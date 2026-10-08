@@ -15,6 +15,8 @@ import { clePhoto } from './assets-poids';
 afterEach(() => viderContexteImages());
 
 const banque: PhotoBanque[] = photosIntegreesBanque();
+// Couche 1 (curation) simulée : chaque photo intégrée étiquetée par Paul avec ses sujets (assets_sujets)
+const surcharges = Object.fromEntries(banque.map((p) => [clePhoto(p.url)!, { ajouts: [...p.sujets], retraits: [] }]));
 const toutesPhotosDuJeu = (j: ReturnType<typeof jeuVisuel>) => [j.accueil.photo, j.panorama.photo, ...j.galerie.map((g) => g.photo), ...Object.values(j.soins).map((s) => s.photo), ...Object.values(j.photosDessins).map((p) => p.photo)];
 
 test('clés exclues : moyenne ≤ 2, dernière note ≤ 2 (lignes les plus récentes d’abord), retirée, à retravailler', () => {
@@ -51,7 +53,7 @@ test('exclusion stricte sur tous les chemins : aucune photo exclue ne sort (pack
     assert.ok(!tirerPhotos({ ...c, modeTirage }, alea(g, 'p'), 6).some(ex), `tirage ${modeTirage}`);
   }
   // Kits
-  for (const s of ['sport', 'enfant', 'general']) assert.ok(!photosDuKit(composerKit(s, { banque, exclues })).some(ex), `kit ${s}`);
+  for (const s of ['sport', 'enfant', 'general']) assert.ok(!photosDuKit(composerKit(s, { banque, exclues, surcharges })).some(ex), `kit ${s}`);
 });
 
 test('kit : sujet + hashtag + emplacement, pas de doublon ni de quasi-identique, trous signalés, complément « général » affiché', () => {
@@ -59,7 +61,7 @@ test('kit : sujet + hashtag + emplacement, pas de doublon ni de quasi-identique,
   const cles = sport.map((p) => clePhoto(p.url)!);
   const hashtags: Record<string, string[]> = { [cles[1]]: ['podologie-du-sport'], [cles[2]]: ['cabinet'] };
   const notes = { [cles[0]]: { m: 4.5, n: 2 }, [cles[1]]: { m: 4, n: 1 }, [cles[2]]: { m: 3.5, n: 1 } };
-  const k = composerKit('sport', { banque, hashtags, notes }, 0, ['podologie-du-sport', 'k-taping']);
+  const k = composerKit('sport', { banque, hashtags, notes, surcharges }, 0, ['podologie-du-sport', 'k-taping']);
   assert.equal(k.photos.find((p) => p.emplacement === 'accueil')?.url, sport[0].url, 'premier écran : la mieux notée');
   assert.equal(k.photos.find((p) => p.emplacement === 'soin:podologie-du-sport')?.url, sport[1].url, 'soin : la photo étiquetée #podologie-du-sport');
   assert.ok(k.trous.some((t) => t.includes('#k-taping')), 'soin sans photo étiquetée : trou signalé');
@@ -69,21 +71,21 @@ test('kit : sujet + hashtag + emplacement, pas de doublon ni de quasi-identique,
   const series = k.photos.map((p) => seriePhoto(p.url, p.cle));
   assert.equal(new Set(series).size, series.length, 'aucune photo quasi identique');
   // Sujet pauvre en photos : complété par « général », signalé
-  const d = composerKit('diabete', { banque });
+  const d = composerKit('diabete', { banque, surcharges });
   if (d.complement) assert.ok(d.trous[0].includes('complété'));
   // Forme compacte : premier écran, galerie, soins
   const kc = kitCompact(k);
   assert.equal(kc.accueil, sport[0].url);
   assert.equal(kc.soins?.['podologie-du-sport'], sport[1].url);
-  assert.ok(Object.keys(kitsCompacts({ banque })).includes('sport'));
+  assert.ok(Object.keys(kitsCompacts({ banque, surcharges })).includes('sport'));
 });
 
 test('kit : rotation du premier écran (rang), kit gardé repris en rang 0, notes de kit → photos', () => {
-  const premiers = new Set([0, 1, 2, 3].map((r) => composerKit('general', { banque }, r).photos.find((p) => p.emplacement === 'accueil')?.url));
+  const premiers = new Set([0, 1, 2, 3].map((r) => composerKit('general', { banque, surcharges }, r).photos.find((p) => p.emplacement === 'accueil')?.url));
   assert.ok(premiers.size >= 3, `rotation : ${premiers.size}`);
-  const autre = composerKit('general', { banque }, 2);
+  const autre = composerKit('general', { banque, surcharges }, 2);
   const g = kitsGardes([{ sujet: 'general', note: 5, garder: true, photos: autre.photos, le: '2026-10-08' }]);
-  const k0 = composerKit('general', { banque, gardes: g }, 0);
+  const k0 = composerKit('general', { banque, gardes: g, surcharges }, 0);
   assert.ok(k0.garde);
   assert.equal(k0.photos.find((p) => p.emplacement === 'accueil')?.url, autre.photos.find((p) => p.emplacement === 'accueil')?.url);
   const r = renfortsKits([{ sujet: 'general', note: 5, garder: true, photos: autre.photos }]);
@@ -92,7 +94,7 @@ test('kit : rotation du premier écran (rang), kit gardé repris en rang 0, note
 });
 
 test('registre : le kit du sujet passe avant les photos par défaut de la spécialité, après la personnalisation', () => {
-  const k = composerKit('enfant', { banque }, 1);
+  const k = composerKit('enfant', { banque, surcharges }, 1);
   definirContexteImages({ kits: { enfant: kitCompact(k) } });
   const j = jeuVisuel('enfant');
   assert.equal(j.accueil.photo, kitCompact(k).accueil);
@@ -101,4 +103,18 @@ test('registre : le kit du sujet passe avant les photos par défaut de la spéci
   // Tirage « Favoris d'abord » : les photos du kit suivent le premier écran
   const t = tirerPhotos({ sujets: ['enfant'], principaux: 1, photos: banque }, alea(1, 'p'), 6);
   assert.ok(photosDuKit(k).slice(0, 2).some((u) => t.includes(u)));
+});
+
+test('couche 2 : le kit n’assemble que le vivier curé (étiqueté par Paul, retenu, non exclu)', () => {
+  // Sans étiquette de Paul : aucune photo, l'illustration porte le premier écran
+  assert.equal(composerKit('sport', { banque }).photos.length, 0);
+  const sport = banque.filter((p) => p.sujets.includes('sport'));
+  const une = clePhoto(sport[0].url)!;
+  const k = composerKit('sport', { banque, surcharges: { [une]: { ajouts: ['sport'], retraits: [] } } });
+  assert.deepEqual(k.photos.map((p) => p.url), [sport[0].url]);
+  // Étiquetée puis retirée du sujet, ou exclue : jamais
+  assert.equal(composerKit('sport', { banque, surcharges: { [une]: { ajouts: ['sport'], retraits: ['sport'] } } }).photos.length, 0);
+  assert.equal(composerKit('sport', { banque, surcharges: { [une]: { ajouts: ['sport'], retraits: [] } }, exclues: new Set([une]) }).photos.length, 0);
+  // Hashtag #sport posé par Paul : curée aussi
+  assert.equal(composerKit('sport', { banque, hashtags: { [une]: ['sport'] } }).photos.length, 1);
 });

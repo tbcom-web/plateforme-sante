@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import {
   choisirRequete, cleCandidatePhoto, construireCandidate, requetesDuSujet, estSourcePhotoLibre, estSujetVisuel, etiquettesDecouverteValides, filtrerCandidats, frequencesHashtags, hashtagsValides,
-  motsClesDuSujet, normaliserMotsCles, refusDecision, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type CandidatPhoto, type DecisionPhoto, type SourcePhotoLibre,
+  motsClesDuSujet, normaliserMotsCles, requetesEmplacement, refusDecision, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type CandidatPhoto, type DecisionPhoto, type SourcePhotoLibre,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import {
@@ -45,7 +45,7 @@ async function dejaVues(sujet: string): Promise<{ vues: Set<string>; gardees: Re
 }
 
 /** Prochaines candidates pour un sujet (mot-clé et source tirés au hasard, filtrées : taille, doublons, déjà vues) */
-export async function candidatsPhotos(sujet: string, vuesNavigateur: string[] = []): Promise<ResultatCandidats> {
+export async function candidatsPhotos(sujet: string, vuesNavigateur: string[] = [], emplacement: string | null = null): Promise<ResultatCandidats> {
   await exigerAdmin();
   if (!estSujetVisuel(sujet)) return { ok: false, message: 'Sujet inconnu.', candidats: [] };
   const conf = sourcesConfigurees();
@@ -54,7 +54,8 @@ export async function candidatsPhotos(sujet: string, vuesNavigateur: string[] = 
   const [{ motsCles }, { vues, gardees }] = await Promise.all([getMotsClesEnBase(), dejaVues(sujet)]);
   for (const v of (Array.isArray(vuesNavigateur) ? vuesNavigateur : []).slice(0, 2000)) if (typeof v === 'string') vues.add(v);
   // Mots-clés du sujet + exploration (randonnée, basket…), tirés en privilégiant ceux qui ont encore peu de photos
-  const mots = requetesDuSujet(sujet, motsCles);
+  // Depuis un kit (« Trouver des photos ») : requêtes ciblées de l'emplacement (suggestions-kits.ts), pondérées par couverture
+  const mots = emplacement && /^(accueil|page-sujet|cabinet|soin:[a-z0-9-]{1,40})$/.test(emplacement) ? requetesEmplacement(sujet, emplacement) : requetesDuSujet(sujet, motsCles);
   let derniereErreur = '';
   for (let essai = 0; essai < 4; essai++) {
     const source: SourcePhotoLibre = auHasard(sources);
