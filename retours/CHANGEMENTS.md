@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Psychomotricien branché de bout en bout (en préparation, jamais public) : thèmes, pratique, parcours RPPS 96 et question « contrat PCO » ; /essai ouvre une profession seulement si publique et pack publiable ; testable en mode test (bandeau « Profession en préparation »).
 - 2026-10-09 : Chaîne des modèles : moteur et migration 0050 (fiches, versions, tickets, votes, avis ; rôles contributeur / validateur)
 - 2026-10-09 : Chaîne des modèles : format commun des tickets et des résultats du testeur automatique (packages/core/src/chaine-modeles-format.ts)
 - 2026-10-09 : « Personnaliser mon site » (/mon-site/personnaliser) : police et taille globale des textes, couleurs principale/secondaire avec contrôle AA, images (kit validé, envoi recadré au point focal, images Démo jamais publiées), textes des pages de soins par blocs (réglementaires verrouillés, avertissements doux), annuler/rétablir, historique, publication ; couche du praticien appliquée après la recette ; vue /admin/personnalisations ; migration 0047 (journal, non exécutée).

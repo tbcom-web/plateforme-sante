@@ -113,7 +113,8 @@ const PODOLOGUE: PackProfession = {
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// Psychomotricien : PACK MINIMAL PROVISOIRE (structure ; textes « [à rédiger] » par l'agent du pack Psychomotricien)
+// Psychomotricien : textes FRANCE repris du pack (packages/contenus/professions/psychomotricien/textes.ts, PACK_SITE_PSYCHOMOT,
+// 90966aa) ; Belgique et Suisse non recherchées (« [à rédiger] ») : le pack reste NON publiable (en préparation)
 // ---------------------------------------------------------------------------------------------------------------
 
 const PSYCHOMOTRICIEN: PackProfession = {
@@ -122,16 +123,20 @@ const PSYCHOMOTRICIEN: PackProfession = {
   titre: { FR: 'Psychomotricien', BE: `Psychomotricien ${A_REDIGER}`, CH: `Psychomotricien ${A_REDIGER}` },
   discipline: { FR: 'psychomotricité', BE: 'psychomotricité', CH: 'psychomotricité' },
   cabinetGenerique: 'Cabinet de psychomotricité',
-  instance: { FR: A_REDIGER, BE: A_REDIGER, CH: A_REDIGER },
+  instance: { FR: 'Agence régionale de santé (enregistrement au RPPS)', BE: A_REDIGER, CH: A_REDIGER },
   lienInstance: {},
-  diplome: { FR: `Diplôme d’État de psychomotricien ${A_REDIGER}`, BE: A_REDIGER, CH: A_REDIGER },
-  regles: { FR: A_REDIGER, BE: A_REDIGER, CH: A_REDIGER },
+  diplome: { FR: 'Diplôme d’État de psychomotricien', BE: A_REDIGER, CH: A_REDIGER },
+  regles: {
+    FR: 'Profession d’auxiliaire médical régie par le Code de la santé publique, articles L4332-1 à L4332-7 et R4332-1 à R4332-15 (actes professionnels : article R4332-1), consultables sur legifrance.gouv.fr.',
+    BE: A_REDIGER,
+    CH: A_REDIGER,
+  },
   specialiteSchema: '',
   defauts: {
-    accrocheTitre: `${A_REDIGER} Accroche du cabinet de psychomotricité`,
-    faq: (o) => [...faqRdvAcces(o), { q: 'Les séances sont-elles remboursées ?', r: `${A_REDIGER} Prise en charge à vérifier sur ameli.fr avant rédaction.` }],
+    accrocheTitre: 'Bilan psychomoteur et séances, du tout-petit à la personne âgée',
+    faq: (o) => [...faqRdvAcces(o), { q: 'Les séances sont-elles remboursées ?', r: 'Les séances en cabinet libéral ne sont pas remboursées par l’Assurance maladie, même avec une prescription médicale. Certaines complémentaires santé en prennent une partie en charge, selon le contrat : renseignez-vous auprès de la vôtre.' }],
   },
-  univers: { id: 'psychomotricite', nom: 'Psychomotricité', motif: A_REDIGER, implemente: false },
+  univers: { id: 'psychomotricite', nom: 'Psychomotricité', motif: 'Trajectoires de mouvement', implemente: false },
   // Visuels de la bibliothèque à proposer aussi pour la psychomotricité (validés par Paul) : enfant, marche, équilibre…
   motsClesPartage: ['enfant', 'enfants', 'bebe', 'marche', 'marcher', 'premiers-pas', 'equilibre', 'motricite', 'coordination', 'jeu', 'jouer', 'saut', 'sauter', 'danse', 'yoga', 'senior', 'chute', 'relaxation'],
   soinsDemo: [

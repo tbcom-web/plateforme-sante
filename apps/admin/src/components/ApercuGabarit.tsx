@@ -11,6 +11,7 @@
 // texte ; soins en cartes éditoriales (grande illustration du soin, titre fort), infos pratiques en liens texte, plus de
 // bulles à picto « façon annuaire » ; village = aplat tramé, titre expressif, illustration en cadre portrait sur ombre pleine ;
 // « pédicurie-podologie » insécable, titre ajusté à sa colonne.
+import { useMetierApercu } from './ApercuMetier';
 import type { CSSProperties, ReactNode } from 'react';
 import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, actionsRapides, appelDansBarre, appelMasqueApercu, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import { facteurChasse, facteurTitres, menuABouton, normaliserHabillage } from '@plateforme/core';
@@ -124,6 +125,7 @@ export function ActionsRapidesApercu({ a }: { a: ActionsRapides | null }) {
 const PUBLICS: [RegExp, string][] = [[/enfant/, 'Enfants'], [/sport/, 'Sportifs'], [/diab/, 'Diabétiques'], [/senior|chute/, 'Seniors']];
 
 export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue, marque, nomCabinet, titre, replis: r, dessinSoin, heros = null, registre = 'ligne', seul, pageSujet = null, pageArticle = null }: Props) {
+  const metierPack = useMetierApercu();
   const village = gabaritModele(m) === 'village';
   const revue = gabaritModele(m) === 'revue';
   const ROMAINS = ['I', 'II', 'III', 'IV', 'V', 'VI'];
@@ -176,7 +178,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     </div>
   );
   // Titre du site (pas de <h1> : l'aperçu est inclus dans une page de l'admin qui a le sien)
-  const metier = d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+  const metier = metierPack?.discipline ?? (d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie');
   // Largeur de la colonne du titre (premier écran) : le plus long mot insécable y tient toujours sur une ligne
   const colonneTitre = mobile ? 390 - 40 - (village ? 0 : 52) : revue ? 1120 * 0.6 : village ? 880 * 0.56 : 1180 * 0.52 - 96;
   const tailleH1 = tailleTitre(`Cabinet de ${metier} ${r.aVille ?? ''}`, colonneTitre, ((h1.fontSize as number) ?? 60) * facteurTitres(habillage.typo), (revue ? 0.52 : 0.6) * facteurChasse(habillage.typo));
@@ -347,7 +349,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       {liens('Infos pratiques', infos)}
     </div>
   );
-  const soinsSection = section('Une prise en charge du pied, à tout âge.', v.soins !== 'filets' ? soinsEditorial : (
+  const soinsSection = section(metierPack ? `${metierPack.accroche}.` : 'Une prise en charge du pied, à tout âge.', v.soins !== 'filets' ? soinsEditorial : (
     <div style={{ display: 'grid', gap: 22 }}>
       {rangee('Soins', soins.map((s) => ({ cle: s.slug, texte: s.titre_court, picto: s.slug })), 'var(--g-bulle)', 'var(--g-bulle-texte)')}
       {pourQui.length >= 2 && rangee('Pour qui', pourQui.map((p) => ({ cle: p, texte: p })), 'var(--g-duo-bulle)', 'var(--g-duo-texte)')}

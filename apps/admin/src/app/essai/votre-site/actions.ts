@@ -11,6 +11,7 @@ import { estModeTest } from '@/lib/mode-test';
 import { limiteDebit, parIdentifiant, parNom, parRpps, type ResultatAnnuaire } from '@/lib/annuaire-sante';
 import { clientAnonyme, hacherIp } from '@/lib/capture';
 import { capturerRendu, choisirModele, type EtatParcours, type EtatPorte } from '@/app/creer/actions';
+import { professionOuverte } from '@/lib/professions-parcours';
 
 // Actions du parcours client (/essai/votre-site). En MODE TEST (super admin, lib/mode-test.ts) : aucune écriture, aucun
 // prospect, aucun appel réel à l'annuaire (fiches de démonstration).
@@ -61,6 +62,8 @@ export async function enregistrerSiteClient(
   const id = siteId ?? existant?.id ?? null;
   const v = siteId ? version : existant?.updatedAt ?? null;
   const choix = normaliserChoixClient(draft.choixClient);
+  // Profession fermée au public (en préparation, pack non publiable) : aucun site d'essai (seul le mode test la montre)
+  if (!(await professionOuverte(choix?.profession || 'podologue'))) return { ok: false, message: 'Cette profession n’est pas encore ouverte.' };
   const d: SiteDraft = { ...draft, ...(choix ? { choixClient: choix } : {}) };
   return choisirModele(id, d, v, universId, reglages);
 }
@@ -71,7 +74,7 @@ export async function enregistrerSiteClient(
  */
 export async function inscrireListeAttente(s: { profession: string; email: string; prenom: string; nom: string; ville: string; recontact: boolean }): Promise<{ ok: boolean; message: string }> {
   const p = professionParcours(s.profession);
-  if (!p || p.disponible) return { ok: false, message: 'Profession inconnue.' };
+  if (!p || (await professionOuverte(p.id))) return { ok: false, message: 'Profession inconnue.' };
   if (!s.recontact) return { ok: false, message: 'Cochez l’accord pour être recontacté(e).' };
   const email = String(s.email ?? '').trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) return { ok: false, message: 'Adresse e-mail invalide.' };

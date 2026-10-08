@@ -30,7 +30,44 @@ export type ProfessionParcours = {
   angles: readonly { motif: RegExp; theme: string }[];
   /** Thèmes qui ouvrent l'écran « Les activités de vos patients » (ex. Sport) ; [] = jamais */
   themesActivites: readonly string[];
+  /** Titre de l'écran des activités quand le métier parle d'autre chose que des activités des patients (séances, médiations) */
+  ecranActivites?: { titre: string; consigne: string };
+  /** Questions propres au métier, posées avec « Vos informations » (réponses gardées dans les choix du client) */
+  questions?: readonly QuestionParcours[];
 };
+
+/** Question d'onboarding propre à un métier (forme réduite de QuestionOnboarding des packs de contenus) */
+export type QuestionParcours = {
+  id: string;
+  question: string;
+  aide?: string;
+  type: 'oui-non' | 'choix' | 'choix-multiples' | 'texte';
+  options?: readonly { valeur: string; libelle: string }[];
+  /** Posée seulement si la question `si` a reçu « oui » */
+  si?: string;
+};
+
+/** Réponses aux questions du métier (oui-non : booléen ; choix multiples : liste ; texte : chaîne bornée) */
+export type ReponsesMetier = Record<string, boolean | string | string[]>;
+
+/** Questions visibles avec ces réponses (une question conditionnelle n'apparaît qu'après « oui » à sa question) */
+export const questionsVisibles = (p: Pick<ProfessionParcours, 'questions'> | undefined, r: ReponsesMetier): QuestionParcours[] =>
+  (p?.questions ?? []).filter((q) => !q.si || r[q.si] === true);
+
+/** Lecture prudente des réponses venues du navigateur : questions connues, valeurs bornées, conditions respectées */
+export function normaliserReponsesMetier(p: Pick<ProfessionParcours, 'questions'> | undefined, v: unknown): ReponsesMetier {
+  const o = v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
+  const r: ReponsesMetier = {};
+  for (const q of p?.questions ?? []) {
+    const x = o[q.id];
+    if (q.type === 'oui-non' && typeof x === 'boolean') r[q.id] = x;
+    else if (q.type === 'choix' && typeof x === 'string' && q.options?.some((c) => c.valeur === x)) r[q.id] = x;
+    else if (q.type === 'choix-multiples' && Array.isArray(x)) { const l = [...new Set(x.filter((y): y is string => typeof y === 'string' && Boolean(q.options?.some((c) => c.valeur === y))))]; if (l.length) r[q.id] = l; }
+    else if (q.type === 'texte' && typeof x === 'string' && x.trim()) r[q.id] = x.replace(/\s+/g, ' ').trim().slice(0, 120);
+  }
+  for (const q of p?.questions ?? []) if (q.si && r[q.si] !== true) delete r[q.id];
+  return r;
+}
 
 export const PROFESSIONS_PARCOURS: readonly ProfessionParcours[] = [
   {
@@ -45,6 +82,35 @@ export const PROFESSIONS_PARCOURS: readonly ProfessionParcours[] = [
       { motif: /diab[eè]t/i, theme: 'diabete' },
     ],
     themesActivites: ['sport'],
+  },
+  {
+    // Pack Psychomotricien (packages/contenus/professions/psychomotricien, 90966aa) : EN PRÉPARATION, jamais ouvert au public
+    // (disponible faux, statut « preparation » dans professions.ts, pack non publiable). Code TRE_G15 96 vérifié ; code du
+    // diplôme d'État de l'annuaire NON vérifié (vide). Questions : celles du pack (ONBOARDING_PSYCHOMOT), textes identiques
+    // (contrôlés par controlerPackPsychomot). Testable par le super admin en mode test seulement.
+    id: 'psychomotricien',
+    libelle: 'Psychomotricien ou psychomotricienne',
+    codesRpps: ['96'],
+    disponible: false,
+    codesDiplomeEtat: [],
+    diplomeEtat: 'Diplôme d’État de psychomotricien',
+    angles: [
+      { motif: /g[ée]riatr|g[ée]ronto|personne[s]? [âa]g[ée]e/i, theme: 'seniors' },
+      { motif: /p[ée]rinat|petite enfance|b[ée]b[ée]/i, theme: 'petite-enfance' },
+      { motif: /autis|neurod[ée]velop|\bTND\b|\bTSA\b/i, theme: 'tnd' },
+    ],
+    themesActivites: ['petite-enfance', 'apprentissages', 'graphomotricite', 'tnd', 'adolescents', 'adultes', 'seniors', 'relaxation'],
+    ecranActivites: { titre: 'Les activités de vos séances', consigne: 'Jusqu’à 3, dans l’ordre : celles que vous proposez le plus. Elles sont citées sur votre site et orientent ses illustrations.' },
+    questions: [
+      { id: 'contrat-pco', question: 'Avez-vous signé un contrat avec une plateforme de coordination et d’orientation (PCO) ?',
+        aide: 'Seuls les psychomotriciens sous contrat avec la plateforme peuvent être payés par l’Assurance maladie dans le parcours.', type: 'oui-non' },
+      { id: 'territoire-pco', question: 'Quelle plateforme (territoire) ?', type: 'texte', si: 'contrat-pco' },
+      { id: 'groupes', question: 'Proposez-vous des séances en petit groupe ?', type: 'oui-non' },
+      { id: 'interventions-exterieures', question: 'Intervenez-vous à domicile, à l’école, en crèche ou en établissement ?', type: 'choix-multiples',
+        options: [
+          { valeur: 'domicile', libelle: 'À domicile' }, { valeur: 'ecole', libelle: 'À l’école ou en crèche' }, { valeur: 'etablissement', libelle: 'En établissement (Ehpad, structure)' },
+        ] },
+    ],
   },
   { id: 'masseur-kinesitherapeute', libelle: 'Masseur-kinésithérapeute', codesRpps: ['70'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [], themesActivites: [] },
   { id: 'osteopathe', libelle: 'Ostéopathe', codesRpps: [], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [], themesActivites: [] },

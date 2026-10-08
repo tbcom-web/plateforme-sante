@@ -11,9 +11,9 @@
 import { controlerPratique, motifsRefus, verifierTexte } from '@plateforme/core';
 import { FICHES_PSYCHOMOT, TEXTE_CONTRAT_PCO } from './fiches';
 import { FAQ_PSYCHOMOT, PAGES_PSYCHOMOT, PRISE_EN_CHARGE } from './pages';
-import { PRATIQUE_PSYCHOMOTRICIEN } from './pratique';
+import { PARCOURS_PSYCHOMOTRICIEN, PRATIQUE_PSYCHOMOTRICIEN } from './pratique';
 import { sourcePsychomot } from './sources';
-import { MENTIONS_PSYCHOMOT, PACK_SITE_PSYCHOMOT } from './textes';
+import { MENTIONS_PSYCHOMOT, ONBOARDING_PSYCHOMOT, PACK_SITE_PSYCHOMOT } from './textes';
 import { MOTIFS_INTERDITS_PSYCHOMOT, SCENE_SALLE_PSYCHOMOT, SCENES_FICHES_PSYCHOMOT, SCENES_SUJETS_PSYCHOMOT } from './visuels';
 
 /** Mots interdits propres au métier : [motif, raison] */
@@ -66,6 +66,22 @@ export function controlerPackPsychomot(pack: { statut: string }): { erreurs: str
   // 1. Pratique
   E.push(...controlerPratique(p));
   for (const th of p.themes) if (th.court.length > 10) E.push(`thème ${th.id} : libellé court > 10 caractères (« ${th.court} »).`);
+
+  // 1 bis. Parcours client (core, onboarding-professions.ts) : code RPPS 96, jamais disponible tant que le pack est en préparation,
+  // questions du métier aux textes IDENTIQUES à celles du pack (ONBOARDING_PSYCHOMOT, revues dans les Arrivages)
+  const parcours = PARCOURS_PSYCHOMOTRICIEN;
+  if (!parcours) E.push('parcours : entrée « psychomotricien » absente de PROFESSIONS_PARCOURS (core).');
+  else {
+    if (!parcours.codesRpps.includes('96')) E.push('parcours : code RPPS 96 absent.');
+    if (parcours.disponible && pack.statut !== 'publiable') E.push('parcours : « disponible » alors que le pack n’est pas publiable.');
+    for (const q of parcours.questions ?? []) {
+      const ref = ONBOARDING_PSYCHOMOT.find((x) => x.id === q.id);
+      if (!ref) { E.push(`parcours · question ${q.id} : absente du pack.`); continue; }
+      if (ref.question !== q.question || (ref.aide ?? '') !== (q.aide ?? '') || ref.type !== q.type) E.push(`parcours · question ${q.id} : texte différent du pack.`);
+      if (JSON.stringify(ref.options ?? []) !== JSON.stringify(q.options ?? [])) E.push(`parcours · question ${q.id} : options différentes du pack.`);
+    }
+    if (!(parcours.questions ?? []).some((q) => q.id === 'contrat-pco')) E.push('parcours : question « contrat PCO » absente.');
+  }
 
   // 2. Renvois
   const fiches = new Set(FICHES_PSYCHOMOT.map((f) => f.slug));

@@ -8,7 +8,7 @@
 // Textes : sobres, factuels, sans promesse (mémoire métier) ; posturologie et réflexologie exclues (thème « posture » différé,
 // jamais dans un profil de référence : controlerPratique). Module pur.
 
-import { THEMES } from './themes';
+import { THEMES, THEMES_AUTRES_PROFESSIONS } from './themes';
 
 /** Thème d'une profession (sujet que le patient comprend) */
 export type ThemePratique = {
@@ -127,8 +127,68 @@ export const PRATIQUE_PODOLOGUE: PratiqueProfession = {
   ],
 };
 
+// ---------------------------------------------------------------------------------------------------------------
+// Psychomotricien (profession « psychomotricien », EN PRÉPARATION : jamais proposée au public, onboarding-professions.ts)
+// Données du pack (packages/contenus/professions/psychomotricien/pratique.ts, 90966aa), source unique ici : le pack les
+// réexporte et les contrôle (controlerPackPsychomot). Thèmes : themes.ts (THEMES_AUTRES_PROFESSIONS) ; activités = médiations des
+// séances (CSP R4332-1 3°) ; `scene` absent : aucune scène dessinée existante.
+// ---------------------------------------------------------------------------------------------------------------
+
+const SUJET_PSYCHOMOT: Record<string, string> = { graphomotricite: 'ecriture', 'sante-mentale': 'adultes' };
+const POUR_PSYCHOMOT: Record<string, string> = {
+  'petite-enfance': 'la petite enfance', apprentissages: 'les enfants', graphomotricite: 'le geste d’écrire', tnd: 'les troubles du neurodéveloppement',
+  adolescents: 'les adolescents', adultes: 'les adultes', seniors: 'les personnes âgées', relaxation: 'la régulation du tonus et des émotions', 'sante-mentale': 'la santé mentale',
+};
+
+export const PRATIQUE_PSYCHOMOTRICIEN: PratiqueProfession = {
+  profession: 'psychomotricien',
+  vocabulaire: { metier: 'psychomotricien', discipline: 'psychomotricité', generaliste: 'un cabinet de psychomotricité' },
+  themes: THEMES_AUTRES_PROFESSIONS.filter((t) => t.profession === 'psychomotricien').map((t) => ({
+    id: t.id, libelle: t.libelle, court: t.court, sujetVisuel: SUJET_PSYCHOMOT[t.id] ?? t.id, pour: POUR_PSYCHOMOT[t.id] ?? t.libelle.toLowerCase(), actif: t.statut === 'actif', soins: t.soins,
+  })),
+  activites: [
+    { id: 'jeu-moteur', libelle: 'Jeux et parcours de motricité', court: 'parcours moteur', hashtags: ['motricite', 'parcours-moteur'], themes: ['petite-enfance', 'apprentissages', 'tnd'],
+      soins: ['maladresse-coordination', 'developpement-du-tout-petit'], requetes: ['children motor skills obstacle course mats', 'soft play foam blocks'],
+      precision: 'parcours de motricité en mousse colorée dans une salle claire, sans enfant identifiable' },
+    { id: 'motricite-fine', libelle: 'Motricité fine et construction', court: 'motricité fine', hashtags: ['motricite-fine'], themes: ['petite-enfance', 'apprentissages', 'graphomotricite', 'tnd'],
+      soins: ['maladresse-coordination', 'graphomotricite'], requetes: ['child hands wooden blocks', 'hands stacking wooden shapes'],
+      precision: 'mains d’enfant qui empilent des formes en bois sur une table claire, cadrage serré sur les mains' },
+    { id: 'graphisme', libelle: 'Graphisme et écriture', court: 'graphisme', hashtags: ['graphomotricite', 'ecriture'], themes: ['graphomotricite', 'apprentissages', 'adolescents'],
+      soins: ['graphomotricite'], requetes: ['child hand pencil drawing lines', 'pencil grip paper loops'],
+      precision: 'main qui trace des boucles au crayon sur une grande feuille, cadrage sur la main et la feuille' },
+    { id: 'equilibre-coordination', libelle: 'Équilibre et coordination', court: 'équilibre', hashtags: ['equilibre', 'coordination'], themes: ['apprentissages', 'seniors', 'tnd'],
+      soins: ['equilibre-marche-age', 'maladresse-coordination'], requetes: ['balance beam low feet', 'feet walking on a line'],
+      precision: 'pieds qui avancent sur une poutre basse ou une ligne au sol, vue de côté au ras du sol' },
+    { id: 'relaxation', libelle: 'Relaxation et conscience du corps', court: 'relaxation', hashtags: ['relaxation', 'tonus'], themes: ['relaxation', 'adolescents', 'adultes'],
+      soins: ['tonus-emotions-relaxation'], requetes: ['person lying on mat relaxation', 'hands resting on belly breathing'],
+      precision: 'personne allongée sur un tapis, mains posées sur le ventre, tête hors cadre, lumière douce' },
+    { id: 'rythme-expression', libelle: 'Rythme et expression corporelle', court: 'rythme', hashtags: ['rythme', 'expression-corporelle'], themes: ['petite-enfance', 'apprentissages', 'adolescents'],
+      soins: ['espace-temps-schema-corporel', 'reeducation-psychomotrice'], requetes: ['hand drum rhythm', 'colorful scarves movement'],
+      precision: 'petit tambourin et foulards colorés posés sur un tapis de salle de motricité' },
+    { id: 'marche', libelle: 'Marche et déplacements', court: 'marche', hashtags: ['marche', 'autonomie'], themes: ['seniors'],
+      soins: ['equilibre-marche-age'], requetes: ['older adult walking hallway handrail', 'senior feet walking indoor'],
+      precision: 'pieds d’une personne âgée en chaussures fermées qui marche dans un couloir clair, main sur la rampe' },
+  ],
+  publics: [
+    { id: 'bebes', libelle: 'Bébés et tout-petits', themes: ['petite-enfance'] },
+    { id: 'enfants', libelle: 'Enfants', themes: ['apprentissages', 'graphomotricite', 'tnd'] },
+    { id: 'adolescents', libelle: 'Adolescents', themes: ['adolescents'] },
+    { id: 'adultes', libelle: 'Adultes', themes: ['adultes', 'relaxation'] },
+    { id: 'personnes-agees', libelle: 'Personnes âgées', themes: ['seniors'] },
+  ],
+  profils: [
+    { id: 'petite-enfance', court: 'Petite enfance', principal: 'petite-enfance', secondaires: ['tnd'], activites: ['jeu-moteur', 'rythme-expression'], publics: ['bebes'] },
+    { id: 'enfant-apprentissages', court: 'Enfant · apprentissages', principal: 'apprentissages', secondaires: ['graphomotricite'], activites: ['jeu-moteur', 'motricite-fine'], publics: ['enfants'] },
+    { id: 'ecriture', court: 'Écriture', principal: 'graphomotricite', secondaires: ['apprentissages'], activites: ['graphisme', 'motricite-fine'], publics: ['enfants', 'adolescents'] },
+    { id: 'tnd-pco', court: 'TND · parcours PCO', principal: 'tnd', secondaires: ['petite-enfance', 'apprentissages'], activites: ['jeu-moteur', 'motricite-fine'], publics: ['bebes', 'enfants'] },
+    { id: 'ados-adultes', court: 'Ados et adultes', principal: 'adolescents', secondaires: ['adultes', 'relaxation'], activites: ['relaxation'], publics: ['adolescents', 'adultes'] },
+    { id: 'seniors', court: 'Personnes âgées', principal: 'seniors', secondaires: [], activites: ['equilibre-coordination', 'marche'], publics: ['personnes-agees'] },
+    { id: 'generaliste', court: 'Généraliste', principal: null, secondaires: [], activites: [], publics: [] },
+  ],
+};
+
 /** Pratiques connues, une par profession (même `id` que professions.ts) */
-export const PRATIQUES: readonly PratiqueProfession[] = [PRATIQUE_PODOLOGUE];
+export const PRATIQUES: readonly PratiqueProfession[] = [PRATIQUE_PODOLOGUE, PRATIQUE_PSYCHOMOTRICIEN];
 /** Profession par défaut (sites existants : podologie), identique à PROFESSION_PAR_DEFAUT de professions.ts */
 export const PROFESSION_PRATIQUE_DEFAUT = 'podologue';
 

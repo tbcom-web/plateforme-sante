@@ -6,6 +6,7 @@
 // contenu et même ordre de titres que les pages Astro (apps/sites/src/pages/themes/[theme].astro, actualites/[slug].astro) ;
 // contenu de démonstration réaliste : le sujet n° 1 du scénario (intro et soins du catalogue), l'article ARTICLE_DEMO (core).
 // Pas de <h1> (l'aperçu est inclus dans une page de l'admin qui a le sien) ; les intertitres restent des <h2>.
+import { useMetierApercu } from './ApercuMetier';
 import type { CSSProperties, ReactNode } from 'react';
 import { ARTICLE_DEMO, minutesLecture, pictoSoin, sommaireMarkdown, svgPicto, type Article, type Theme, type Variantes } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -33,6 +34,7 @@ const bouton = (plein: boolean): CSSProperties => ({ display: 'inline-grid', pla
 export function ApercuPageSujet({ theme, soins, visuel, variante, conseils, mobile, nomCabinet, libelleRdv, adresse, telephone, ville }: Commun & {
   theme: Theme; soins: SoinCatalogue[]; visuel: HerosApercu | null; variante: Variantes['theme']; conseils: { titre: string; date: string }[];
 }) {
+  const metierPack = useMetierApercu();
   const heros = variante === 'heros' && !mobile;
   const rangees = variante === 'rangees';
   const colonnes = variante === 'colonnes' && !mobile;
@@ -42,7 +44,7 @@ export function ApercuPageSujet({ theme, soins, visuel, variante, conseils, mobi
       <div style={{ display: 'grid', gridTemplateColumns: mobile || heros ? '1fr' : '1.1fr 0.9fr', gap: mobile ? 22 : 48, alignItems: 'end', paddingTop: 24, borderTop: `var(--filet-fort, 2px) solid ${v.encre}` }}>
         <div style={{ display: 'grid', gap: 14 }}>
           {fil(['Accueil', 'Soins', theme.libelle])}
-          {sur(`Pédicure-podologue${ville ? ` · ${ville}` : ''}`)}
+          {sur(`${metierPack?.titre ?? 'Pédicure-podologue'}${ville ? ` · ${ville}` : ''}`)}
           {titre}
           <p style={{ margin: 0, fontSize: mobile ? 17 : 19, color: v.douce, maxWidth: '60ch' }}>{theme.intro}</p>
         </div>

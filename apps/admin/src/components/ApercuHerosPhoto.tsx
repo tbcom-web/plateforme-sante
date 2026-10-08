@@ -4,6 +4,7 @@
 // maillé, bento) : EXACTEMENT le HTML et la feuille du site (packages/core/src/heros-photo.ts, htmlHeros et CSS_HEROS), dans
 // l'iframe de l'aperçu (CadreApercu). Le diaporama joue tout de suite (toutes les photos chargées) ; bouton pause actif.
 // Sans photo, une variante à photos n'est pas rendue (null) : l'appelant garde son premier écran, comme le site.
+import { useMetierApercu } from './ApercuMetier';
 import { CLASSE_PAUSE } from './AnimationsBudget';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -43,6 +44,7 @@ export function herosPhotoActif(d: SiteDraft, m: ModeleManifeste): boolean {
 
 /** Le nouveau premier écran de la recette, ou null (premier écran du gabarit ou du modèle) */
 export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r, sur, registre, illustration, masquerAppel = false }: Props) {
+  const metierPack = useMetierApercu();
   const [pause, setPause] = useState(false);
   const boite = useRef<HTMLDivElement>(null);
   const brute = m.variantes?.['entete-anim'];
@@ -74,7 +76,7 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
   if (!herosRenduPossible(v, photos.length, Boolean(visuelAnime))) return null;
   const t = m.variantes?.transition;
   const transition: TransitionDiaporama = (TRANSITIONS_DIAPORAMA as readonly string[]).includes(t as string) ? (t as TransitionDiaporama) : 'fondu';
-  const metier = d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+  const metier = metierPack?.discipline ?? (d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie');
   const principaux = soins.slice(0, 3).map((s) => s.titre_court.toLowerCase());
   const soinsPhrase = principaux.length ? `${principaux.slice(0, -1).join(', ')}${principaux.length > 1 ? ' et ' : ''}${principaux.at(-1)}.` : '';
   const qui = r.noms.join(' et ') || d.cabinet.nom;

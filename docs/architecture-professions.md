@@ -76,6 +76,24 @@ Ce document complète la mémoire projet (couches Charte → Univers métier →
 - Un pack `publiable: false` (psychomotricien aujourd'hui) n'est construit qu'en démonstration (`demo-psychomotricien`, jamais
   indexé) : `verifierPackPubliable` bloque la publication tant que des textes « [à rédiger] » restent.
 
+## Parcours client (/essai) et profession en préparation (2026-10-09)
+
+- Psychomotricien branché de bout en bout, **toujours en préparation** : thèmes dans `themes.ts` (`THEMES_AUTRES_PROFESSIONS`,
+  identifiants distincts de la podologie, `themesProposes(actives, profession)`), pratique dans `pratiques.ts`
+  (`PRATIQUE_PSYCHOMOTRICIEN` : thèmes, médiations des séances, publics, 7 profils de référence), entrée du parcours dans
+  `onboarding-professions.ts` (code RPPS 96, `disponible: false`, questions du métier dont « contrat PCO », écran « Les activités
+  de vos séances »). Le pack (`packages/contenus/professions/psychomotricien/pratique.ts`) les réexporte ; `controle:packs` vérifie
+  que les questions du parcours restent identiques à celles du pack. Pack site du core : textes France repris du pack, Belgique
+  et Suisse « [à rédiger] » (non publiable).
+- Ouverture au public (`apps/admin/src/lib/professions-parcours.ts`) : parcours `disponible` ET `estProfessionPublique` ET
+  `packPubliable(profession)` ; sinon « Bientôt disponible » + liste d'attente. Contrôlé aussi côté serveur (enregistrement du
+  site d'essai, liste d'attente).
+- Mode test du super admin : une profession en préparation est testable (badge « En préparation », bandeau « Profession en
+  préparation »), catalogue de démonstration = fiches de son pack (`catalogueDuPack`), aperçus aux textes de son pack (titre,
+  discipline, accroche, FAQ : `profession` d'`ApercuTheme`, contexte `ApercuMetier`). Rien n'est écrit.
+- Limites : illustrations et pictos propres non dessinés (visuels de la spécialité « enfant » / « générale » en attendant) ; les
+  réponses aux questions du métier sont gardées dans les choix du client (`choixClient.reponses`), pas encore lues par les sites.
+
 ## Recherche de photos par profession
 
 Ajout de Paul du 2026-10-09 : « Quand on crée une profession, on crée des thèmes clés qui permettent ensuite de sourcer des

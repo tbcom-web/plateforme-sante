@@ -8,7 +8,7 @@
 // le goût global de Paul (atelier, duels, notes) ; lues par /admin/choix-clients. Les sessions de test n'écrivent rien.
 import { draftVide, type SiteDraft } from './draft';
 import { normaliserPriorites, type Priorites } from './themes';
-import type { ProfessionParcours } from './onboarding-professions';
+import { normaliserReponsesMetier, professionParcours, type ProfessionParcours, type ReponsesMetier } from './onboarding-professions';
 import { questionActivites, normaliserActivites } from './profils';
 import type { PratiqueProfession } from './pratiques';
 
@@ -234,6 +234,8 @@ export type ChoixClient = {
   retenue: string | null;
   activites: string[];
   couleurs: string[];
+  /** Réponses aux questions propres au métier (onboarding-professions.ts : contrat PCO…) ; absentes sans questions */
+  reponses?: ReponsesMetier;
 };
 
 const ID_PROPOSITION = /^[a-z0-9~_.:-]{1,140}$/i;
@@ -259,7 +261,15 @@ export function normaliserChoixClient(v: unknown): ChoixClient | undefined {
     retenue: typeof o.retenue === 'string' && ID_PROPOSITION.test(o.retenue) ? o.retenue : null,
     activites: ids(o.activites, 3),
     couleurs: ids(o.couleurs, 3),
+    ...reponsesLues(o),
   };
+}
+
+/** Réponses du métier relues d'après les questions de la profession enregistrée (inconnues ou vides : rien) */
+function reponsesLues(o: Record<string, unknown>): { reponses?: ReponsesMetier } {
+  const p = typeof o.profession === 'string' ? professionParcours(o.profession) : undefined;
+  const r = normaliserReponsesMetier(p, o.reponses);
+  return Object.keys(r).length ? { reponses: r } : {};
 }
 
 /** Synthèse pour l'admin : combien de fois chaque proposition a été aimée, rejetée, retenue (sites des clients) */

@@ -44,6 +44,9 @@ import { animationDuHeros, cssVisuelAnime, htmlVisuelAnime, styleCouleursHeros }
 import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
 import { BlocPortraits, portraitsDuDraft, presentationApercu } from './ApercuPortraits';
 import CadreApercu from './CadreApercu';
+import { ContexteMetierApercu, type MetierApercu } from './ApercuMetier';
+import { packProfession } from '@plateforme/core';
+import { PROFESSION_PAR_DEFAUT } from '@plateforme/core/professions';
 
 type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
@@ -76,6 +79,12 @@ type Props = {
    * kits, parcours) ; faux dans l'éditeur du site réel (/mon-site). Bandeau « Photos d'exemple » hors vignettes et hors Studio.
    */
   exemples?: boolean;
+  /**
+   * Profession montrée (parcours client en mode test : profession en préparation) : titre, discipline et accroche de son pack
+   * (packs-professions.ts), FAQ de son pack, aucun article de démonstration d'une autre profession. Absente ou profession par
+   * défaut : rendu inchangé.
+   */
+  profession?: string | null;
 };
 type Vue = VuePage;
 export type Appareil = 'bureau' | 'mobile';
@@ -125,7 +134,7 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
   pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
 };
 
-export default function ApercuTheme({ draft: d0, exemples = true, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [] }: Props) {
+export default function ApercuTheme({ profession = null, draft: d0, exemples = true, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [] }: Props) {
   // Kit démo : photos d'exemple (cabinet et praticiens fictifs) seulement dans l'aperçu, le brouillon reste intact
   const { draft: d, applique: kitApplique } = useMemo(() => (exemples ? appliquerKitDemo(d0, kitDemoDe()) : { draft: d0, applique: RIEN_APPLIQUE }), [d0, exemples]);
   // Animations jouées (Studio) : contexte lu par les visuels, canvas pilotés dans l'iframe de l'aperçu
@@ -192,7 +201,11 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
   const r = replisApercu(d);
   const ville = r.ville;
   const suffixeVille = r.aVille ? ` ${r.aVille}` : '';
-  const titre = PAYS.find((p) => p.value === d.pays)?.titre ?? 'Pédicure-podologue';
+  // Autre profession que celle par défaut : textes de son pack (titre, discipline, accroche) ; sinon à l'identique
+  const metierPack: MetierApercu | null = profession && profession !== PROFESSION_PAR_DEFAUT
+    ? (() => { const pk = packProfession(profession); const pays = (d.pays in pk.titre ? d.pays : 'FR') as keyof typeof pk.titre; return { titre: pk.titre[pays], discipline: pk.discipline[pays], accroche: pk.defauts.accrocheTitre }; })()
+    : null;
+  const titre = metierPack?.titre ?? PAYS.find((p) => p.value === d.pays)?.titre ?? 'Pédicure-podologue';
   const noms = r.noms;
   const nomCabinet = r.nomCabinet;
   const surTitre = [titre, ville].filter(Boolean).join(' · ');
@@ -272,8 +285,9 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
   const photoDiaporama = m.accueil.hero === 'diaporama' && mode === 'photos' ? herosApercu('paysage') : null;
   const renduPlein: Rendu = photoDiaporama?.type === 'photo' ? { type: 'photo', src: photoDiaporama.src, cadrage: '50% 50%' } : accueil;
   // Mot métier insécable (comme le site, lib/typo.mjs) : « pédicurie-podologie » ne passe jamais à la ligne sur son trait d'union
-  const titreHero = <>Cabinet de <span className="ap-mot">{d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}</span>{r.aVille && <> <span className="ap-pale">{r.aVille}</span></>}</>;
-  const texteTitre = `Cabinet de ${d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'} ${r.aVille ?? ''}`;
+  const discipline = metierPack?.discipline ?? (d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie');
+  const titreHero = <>Cabinet de <span className="ap-mot">{discipline}</span>{r.aVille && <> <span className="ap-pale">{r.aVille}</span></>}</>;
+  const texteTitre = `Cabinet de ${discipline} ${r.aVille ?? ''}`;
   // Taille du titre ajustée à la colonne (le plus long mot tient sur une ligne) : héros plein (Technique), scindé, lieu
   const taillePlein = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : herosDiaporama ? 1180 * 0.48 : 1180 * 0.6, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
   const tailleScinde = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : 1180 * 0.5, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
@@ -456,7 +470,7 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
         <div className="ap-cadre">
           <Sur n={n}>{SECTIONS_LIBELLES.actualites}</Sur>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: 18 }}>
-            {['Choisir ses chaussures de course', 'Le pied de l’enfant qui grandit'].map((t, k) => (
+            {(metierPack ? [] : ['Choisir ses chaussures de course', 'Le pied de l’enfant qui grandit']).map((t, k) => (
               <div key={t}>
                 <Visuel registre={registre} rendu={mode === 'photos' ? { type: 'photo', src: jeu.galerie[k + 1]?.photo ?? jeu.accueil.photo, cadrage: '50% 50%' } : { type: 'dessin', dessin: k ? 'enfant' : jeu.couverture }} filtre={filtre} hauteur={180} rayon={j.rayon} />
                 <p className="ap-mono" style={{ color: 'var(--encre-pale)', marginTop: 12 }}>Conseil · 4 min</p>
@@ -494,7 +508,7 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
       <section className={`ap-section ${douce ? 'ap-douce' : ''}`}>
         <div className="ap-cadre">
           <Sur n={n}>{SECTIONS_LIBELLES.faq}</Sur>
-          {['Faut-il une ordonnance ?', 'Les semelles sont-elles remboursées ?'].map((q) => (
+          {(metierPack ? packProfession(profession).defauts.faq({ pmr: true, plateforme: '', enLigne: false }).slice(-2).map((f) => f.q) : ['Faut-il une ordonnance ?', 'Les semelles sont-elles remboursées ?']).map((q) => (
             <p key={q} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: 'var(--filet) solid var(--ligne)', margin: 0, fontWeight: 600 }}>{q}<span>+</span></p>
           ))}
         </div>
@@ -576,6 +590,7 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
       <div className={vignette ? 'overflow-hidden bg-neutral-100' : 'bg-neutral-100'}>
         <CadreApercu appareil={appareil} vignette={vignette} plein={plein} hauteur={hauteurCadre} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>
           <ContexteAnimations.Provider value={reglageAnim}>
+          <ContexteMetierApercu.Provider value={metierPack}>
           <div
             ref={racineAp}
             className={`ap${habillage.bouton ? ' mn-js' : ''}`}
@@ -639,6 +654,7 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
             </>)}
             {animer && <style>{cssAnimationsApercu()}</style>}
           </div>
+          </ContexteMetierApercu.Provider>
           </ContexteAnimations.Provider>
         </CadreApercu>
       </div>

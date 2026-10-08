@@ -70,3 +70,14 @@ export async function packPubliable(profession: string): Promise<boolean> {
   const p = (await getPacksRevue(profession))[0];
   return p ? p.progression.publiable : true;
 }
+
+/**
+ * Catalogue de DÉMONSTRATION d'une profession qui a un pack de contenus (fiches au format soins_catalogue) : aperçus du parcours
+ * client en mode test (profession en préparation, jamais publique) tant que la table soins_catalogue n'a pas ses fiches. Sans pack :
+ * null. Aucune lecture en base.
+ */
+export function catalogueDuPack(profession: string): { slug: string; titre_court: string; titre: string; resume: string; corps: string }[] | null {
+  const e = PACKS.find((x) => x.pack.profession === profession);
+  if (!e?.pack.fiches?.length) return null;
+  return e.pack.fiches.map((f) => ({ slug: f.slug, titre_court: f.titreCourt, titre: f.titre, resume: f.resume, corps: f.corps }));
+}

@@ -21,7 +21,7 @@ import {
   pourcentageParcours, themesDuMetier, TOTAL_PARCOURS, ETAPES_AVANT_RENDU,
   propositionRetenue, propositionSuivante, TOURS_STYLE_MAX, type AvisStyle, type ChoixClient, type EtapeOnboarding, type IdentiteConfirmee, type Verdict,
 } from '@plateforme/core/onboarding';
-import { anglesDesDiplomes, professionDuCodeRpps, professionParcours, professionsProposees, type ProfessionParcours } from '@plateforme/core/onboarding-professions';
+import { anglesDesDiplomes, professionDuCodeRpps, professionParcours, professionsProposees, questionsVisibles, type ProfessionParcours, type QuestionParcours, type ReponsesMetier } from '@plateforme/core/onboarding-professions';
 import {
   diplomeEtatPresent, diplomesUniversitairesDe, ficheDemo, mentionSource, type FicheAnnuaire, type ResumeAnnuaire,
 } from '@plateforme/core/annuaire-sante';
@@ -77,11 +77,13 @@ type Etat = {
   maxNumero: number;
   siteId: string | null;
   version: string | null;
+  /** Réponses aux questions propres au métier (contrat PCO…) */
+  reponses: ReponsesMetier;
 };
 
 const etatVide = (): Etat => ({
   v: 1, etape: 'profession', faites: [], profession: null, identite: { ...identiteVide(), diplomeEtat: true }, maxNumero: 1, priorites: { principaux: [], secondaires: [] }, angles: [], anglesAppliques: false,
-  activites: [], couleurs: undefined, avis: {}, journal: [], tour: 0, grilles: [], retenue: null, contact: false, siteId: null, version: null,
+  activites: [], couleurs: undefined, avis: {}, journal: [], tour: 0, grilles: [], retenue: null, contact: false, siteId: null, version: null, reponses: {},
 });
 
 const CLE = (test: boolean) => (test ? 'onboarding-test:v1' : 'onboarding:v1');
@@ -113,8 +115,12 @@ function identiteDepuisFiche(f: FicheAnnuaire, codesDE: readonly string[], lieu 
   };
 }
 
-const pratiqueDuMetier = (p: ProfessionParcours | undefined): PratiqueProfession | undefined => (p?.disponible ? pratiqueDe(p.id) : undefined);
-const anglesDe = (f: FicheAnnuaire, p: ProfessionParcours | undefined) => anglesDesDiplomes(diplomesUniversitairesDe(f), p, themesDuMetier(pratiqueDuMetier(p)));
+/**
+ * Pratique d'un métier ACCESSIBLE dans ce parcours (ouvert au public, ou en préparation en mode test : lib/professions-parcours.ts) ;
+ * sinon aucune (« Bientôt disponible »).
+ */
+const pratiqueDuMetier = (p: ProfessionParcours | undefined, accessibles: ReadonlySet<string>): PratiqueProfession | undefined => (p && accessibles.has(p.id) ? pratiqueDe(p.id) : undefined);
+const anglesDe = (f: FicheAnnuaire, p: ProfessionParcours | undefined, accessibles: ReadonlySet<string>) => anglesDesDiplomes(diplomesUniversitairesDe(f), p, themesDuMetier(pratiqueDuMetier(p, accessibles)));
 const libellesActivites = (ids: readonly string[], pratique: PratiqueProfession | undefined) =>
   pratique ? ids.map((id) => activitePratique(pratique, id)?.libelle).filter((x): x is string => Boolean(x)) : [];
 
@@ -154,6 +160,11 @@ type Props = {
   publiees: { recettes: Recette[]; publications: PublicationRecette[] };
   defautsMobile: string[];
   themesActives: string[];
+  /**
+   * Professions du parcours (lib/professions-parcours.ts) : ouvertes au public (profession publique ET pack publiable) ; en
+   * préparation, testables en mode test seulement ; catalogues de démonstration (fiches des packs) des professions en préparation
+   */
+  professions: { ouvertes: string[]; preparation: string[]; catalogues: Record<string, SoinCatalogue[]> };
   actions: {
     chercher: (d: { rpps?: string; nom?: string; ville?: string; id?: string; profession?: string }) => Promise<ResultatAnnuaire>;
     enregistrer: (draft: SiteDraft, universId: string, reglages: { gamme?: string; style?: Proposition['style']; animation?: Proposition['animation']; proposition?: string | null; recette?: string | null }, siteId: string | null, version: string | null) => Promise<EtatCreation>;
@@ -162,7 +173,9 @@ type Props = {
   };
 };
 
-export default function Onboarding({ siteCommence, test, annuaire, catalogue, modeles, marquesImportees, univers, recettes, publiees, defautsMobile, themesActives, actions }: Props) {
+export default function Onboarding({ siteCommence, test, annuaire, catalogue: catalogueDefaut, modeles, marquesImportees, univers, recettes, publiees, defautsMobile, themesActives, professions, actions }: Props) {
+  const ouvertes = useMemo(() => new Set(professions.ouvertes), [professions.ouvertes]);
+  const accessibles = useMemo(() => new Set([...professions.ouvertes, ...(test ? professions.preparation : [])]), [professions, test]);
   const router = useRouter();
   const etroit = useEtroit();
   const [e, setE] = useState<Etat>(etatVide);
@@ -174,6 +187,8 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
   const [rendu, setRendu] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const proposes = useMemo(() => universDuParcours(univers), [univers]);
+  // Catalogue de la profession choisie : fiches du pack d'une profession en préparation (mode test), sinon le catalogue de la base
+  const catalogue = (e.profession && accessibles.has(e.profession) && professions.catalogues[e.profession]) || catalogueDefaut;
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
   const maj = useCallback((patch: Partial<Etat>) => setE((x) => ({ ...x, ...patch })), []);
 
@@ -190,11 +205,11 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
       const p = professionParcours('podologue')!;
       const f = persona.fiche ? ficheDemo(persona.fiche) : null;
       setFiche(f);
-      const base: Etat = { ...etatVide(), profession: 'podologue', identite: f ? identiteDepuisFiche(f, p.codesDiplomeEtat) : { ...identiteVide(), diplomeEtat: true }, angles: f ? anglesDe(f, p) : [] };
+      const base: Etat = { ...etatVide(), profession: 'podologue', identite: f ? identiteDepuisFiche(f, p.codesDiplomeEtat) : { ...identiteVide(), diplomeEtat: true }, angles: f ? anglesDe(f, p, accessibles) : [] };
       const saut = ETAPES_SAUT_TEST.find((x) => x.id === test.etape)?.id;
       if (saut && persona.id !== 'vierge') {
         const remplie: Etat = { ...base, priorites: persona.sujets, anglesAppliques: true, activites: persona.activites, couleurs: persona.couleurs };
-        const etapes = etapesOnboarding(pratiqueDuMetier(p), remplie.priorites, p.themesActivites);
+        const etapes = etapesOnboarding(pratiqueDuMetier(p, accessibles), remplie.priorites, p.themesActivites);
         const cible = etapes.includes(saut) ? saut : 'couleurs';
         setE({ ...remplie, etape: cible, faites: etapes.slice(0, etapes.indexOf(cible)), maxNumero: numeroOnboarding(cible) });
       } else {
@@ -203,11 +218,14 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
     }
     setPret(true);
     if (test?.neuf) window.history.replaceState(null, '', window.location.pathname + window.location.search.replace(/([?&])neuf=1&?/, '$1').replace(/[?&]$/, ''));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- démarrage une seule fois
   }, [test, siteCommence, router]);
   useEffect(() => { if (pret) ecrireLocal(Boolean(test), e); }, [e, pret, test]);
 
   const profession = professionParcours(e.profession);
-  const pratique = pratiqueDuMetier(profession);
+  const pratique = pratiqueDuMetier(profession, accessibles);
+  // Profession en préparation testée par le super admin (jamais publique) : bandeau dédié
+  const enPreparation = Boolean(test && profession && !ouvertes.has(profession.id) && accessibles.has(profession.id));
   const etapes = useMemo(() => etapesOnboarding(pratique, e.priorites, profession?.themesActivites ?? []), [pratique, e.priorites, profession]);
   // Numérotation UNIQUE de /essai à la fin de /creer (onboarding.ts : PARCOURS_COMPLET, 10 étapes) ; le pourcentage ne recule jamais
   const numero = rendu ? ETAPES_AVANT_RENDU : numeroOnboarding(e.etape);
@@ -251,7 +269,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
   const retenue = pool.find((c) => c.id === e.retenue) ?? propositionRetenue(pool, e.avis) ?? pool[0];
   const vignette = (p: Proposition, hauteur: number, mobile: boolean) => {
     const x = apercuDe(p);
-    return x ? <ApercuTheme vignette={hauteur} appareil={mobile ? 'mobile' : 'bureau'} draft={x.draft} modele={x.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} /> : <div style={{ height: hauteur }} className="bg-neutral-100" />;
+    return x ? <ApercuTheme profession={e.profession} vignette={hauteur} appareil={mobile ? 'mobile' : 'bureau'} draft={x.draft} modele={x.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} /> : <div style={{ height: hauteur }} className="bg-neutral-100" />;
   };
 
   // ---- Grille du tour : figée à l'ouverture ----
@@ -292,7 +310,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
   // ---- « Voir mon site » : construction, enregistrement (sauf test), porte de l'e-mail, rendu ----
   const choixClient = (r: string | null): ChoixClient => ({
     version: 1, le: new Date().toISOString(), profession: e.profession ?? '', source: e.identite.source === 'annuaire' ? 'annuaire' : 'saisie',
-    avis: e.journal, retenue: r, activites: e.activites, couleurs: e.couleurs ?? [],
+    avis: e.journal, retenue: r, activites: e.activites, couleurs: e.couleurs ?? [], ...(Object.keys(e.reponses).length ? { reponses: e.reponses } : {}),
   });
   const enregistrer = async (c: CandidatPropose) => {
     if (!base) return { ok: false, message: 'Profession à choisir.' } as EtatCreation;
@@ -325,12 +343,15 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
 
   if (!pret) return <main className="min-h-screen bg-neutral-50" aria-busy="true" />;
 
-  const infos = TITRES[e.etape];
+  const infos = e.etape === 'activites' && profession?.ecranActivites ? profession.ecranActivites : TITRES[e.etape];
   const apercuDirect = e.etape !== 'profession' && retenue ? apercuDe(retenue.proposition) : null;
 
   return (
     <div className="min-h-screen bg-neutral-50 pb-24 sm:pb-8">
       {test && <BandeauTest persona={test.persona} />}
+      {enPreparation && profession && (
+        <p role="status" className="border-b border-violet-300 bg-violet-50 px-4 py-2 text-center text-sm font-semibold text-violet-950">Profession en préparation : {profession.libelle}. Jamais proposée au public tant que son pack n’est pas publiable.</p>
+      )}
       <header className="border-b border-black/5 bg-white">
         <div className="mx-auto grid max-w-6xl gap-2 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
@@ -355,7 +376,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
           {/* Aperçu en direct, téléphone : bandeau compact au-dessus de l'étape */}
           {etroit && apercuDirect && e.etape !== 'style' && (
             <ApercuCompact>
-              <ApercuTheme vignette={150} appareil="mobile" draft={apercuDirect.draft} modele={apercuDirect.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
+              <ApercuTheme profession={e.profession} vignette={150} appareil="mobile" draft={apercuDirect.draft} modele={apercuDirect.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
             </ApercuCompact>
           )}
 
@@ -366,13 +387,15 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
               chercher={actions.chercher}
               listeAttente={actions.listeAttente}
               identite={e.identite}
-              onChoisir={(id) => maj({ profession: id })}
+              ouvertes={ouvertes}
+              accessibles={accessibles}
+              onChoisir={(id) => maj({ profession: id, ...(id !== e.profession ? { priorites: { principaux: [], secondaires: [] }, activites: [], reponses: {}, angles: [], anglesAppliques: false, grilles: [], tour: 0, avis: {}, journal: [], retenue: null } : {}) })}
               onFiche={(f) => {
                 const p = professionDuCodeRpps(f.professionCode);
                 setFiche(f);
                 const prof = p ?? professionParcours(e.profession);
-                setE((x) => ({ ...x, profession: prof?.id ?? x.profession, identite: identiteDepuisFiche(f, prof?.codesDiplomeEtat ?? []), angles: anglesDe(f, prof) }));
-                if (prof?.disponible) aller('identite');
+                setE((x) => ({ ...x, profession: prof?.id ?? x.profession, identite: identiteDepuisFiche(f, prof?.codesDiplomeEtat ?? []), angles: anglesDe(f, prof, accessibles) }));
+                if (prof && accessibles.has(prof.id)) aller('identite');
               }}
             />
           )}
@@ -383,9 +406,12 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
               profession={profession}
               annuaire={annuaire}
               chercher={actions.chercher}
-              onFiche={(f) => { setFiche(f); maj({ identite: identiteDepuisFiche(f, profession.codesDiplomeEtat), angles: anglesDe(f, profession) }); }}
+              onFiche={(f) => { setFiche(f); maj({ identite: identiteDepuisFiche(f, profession.codesDiplomeEtat), angles: anglesDe(f, profession, accessibles) }); }}
               onChange={(identite) => maj({ identite })}
             />
+          )}
+          {e.etape === 'identite' && profession && questionsVisibles(profession, e.reponses).length > 0 && (
+            <QuestionsMetier questions={questionsVisibles(profession, e.reponses)} reponses={e.reponses} onChange={(reponses) => maj({ reponses })} />
           )}
           {e.etape === 'sujets' && (
             <div className="grid gap-3">
@@ -394,7 +420,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
                   Proposé d’après votre diplôme inscrit dans l’annuaire : <strong>{e.angles.map((s) => themeParId(s)?.court).join(', ')}</strong>. Confirmez ou modifiez.
                 </p>
               )}
-              <ChoixSujets priorites={e.priorites} onChange={(priorites) => maj({ priorites })} soins={[]} soinsConnus={slugs} themesActives={themesActives} masquerIndisponibles compact />
+              <ChoixSujets profession={e.profession} priorites={e.priorites} onChange={(priorites) => maj({ priorites })} soins={[]} soinsConnus={slugs} themesActives={themesActives} masquerIndisponibles compact />
             </div>
           )}
           {e.etape === 'activites' && pratique && <EtapeActivites valeur={e.activites} pratique={pratique} themes={[...e.priorites.principaux, ...e.priorites.secondaires]} onChange={(activites) => maj({ activites })} />}
@@ -423,7 +449,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
             <p className="text-sm font-medium text-neutral-600">Votre site, en direct</p>
             <div className="mx-auto w-[260px] overflow-hidden rounded-[22px] ring-4 ring-neutral-800">
               {apercuDirect
-                ? <ApercuTheme vignette={540} appareil="mobile" draft={apercuDirect.draft} modele={apercuDirect.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
+                ? <ApercuTheme profession={e.profession} vignette={540} appareil="mobile" draft={apercuDirect.draft} modele={apercuDirect.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
                 : <div className="grid h-[540px] place-items-center bg-white p-6 text-center text-sm text-neutral-500">Votre site apparaît ici dès vos premières réponses.</div>}
             </div>
           </aside>
@@ -439,7 +465,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
               <button
                 type="button"
                 className={passer(e) ? btnSecondaire : btnPrincipal}
-                disabled={!peutContinuer(e, profession)}
+                disabled={!peutContinuer(e, profession, accessibles)}
                 onClick={() => aller(suivante)}
               >
                 {libelleSuivant(e)}
@@ -470,6 +496,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
         const x = apercuDe(retenue.proposition);
         return x ? (
           <RenduClient
+            profession={e.profession}
             draft={x.draft}
             modele={x.modele}
             nom={retenue.proposition.nom}
@@ -488,8 +515,8 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
   );
 }
 
-function peutContinuer(e: Etat, p: ReturnType<typeof professionParcours>): boolean {
-  if (e.etape === 'profession') return Boolean(p?.disponible);
+function peutContinuer(e: Etat, p: ReturnType<typeof professionParcours>, accessibles: ReadonlySet<string>): boolean {
+  if (e.etape === 'profession') return Boolean(p && accessibles.has(p.id));
   if (e.etape === 'identite') return Boolean(e.identite.nom.trim() || e.identite.nomCabinet.trim());
   return true;
 }
@@ -540,8 +567,10 @@ function BandeauTest({ persona }: { persona: string }) {
   );
 }
 
-function EtapeProfession({ valeur, annuaire, chercher, listeAttente, identite, onChoisir, onFiche }: {
+function EtapeProfession({ valeur, annuaire, chercher, listeAttente, identite, ouvertes, accessibles, onChoisir, onFiche }: {
   valeur: string | null;
+  ouvertes: ReadonlySet<string>;
+  accessibles: ReadonlySet<string>;
   annuaire: Props['annuaire'];
   chercher: Props['actions']['chercher'];
   listeAttente: Props['actions']['listeAttente'];
@@ -584,16 +613,17 @@ function EtapeProfession({ valeur, annuaire, chercher, listeAttente, identite, o
       <fieldset className="grid gap-2">
         <legend className="mb-2 font-semibold">Ou choisissez votre profession</legend>
         <div role="radiogroup" aria-label="Profession" className="grid gap-2 sm:grid-cols-2">
-          {professionsProposees().map((p) => (
+          {[...professionsProposees().filter((p) => accessibles.has(p.id)), ...professionsProposees().filter((p) => !accessibles.has(p.id))].map((p) => (
             <button key={p.id} type="button" role="radio" aria-checked={valeur === p.id} onClick={() => onChoisir(p.id)}
               className={`flex min-h-14 items-center justify-between gap-2 rounded-xl border px-4 text-left ${focus} ${valeur === p.id ? 'border-teal-700 bg-teal-50 font-semibold ring-1 ring-teal-700' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>
               <span>{p.libelle}</span>
-              {!p.disponible && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Bientôt</span>}
+              {!accessibles.has(p.id) && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Bientôt</span>}
+              {accessibles.has(p.id) && !ouvertes.has(p.id) && <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-900">En préparation</span>}
             </button>
           ))}
         </div>
       </fieldset>
-      {choisie && !choisie.disponible && <ListeAttente profession={choisie.id} libelle={choisie.libelle} identite={identite} inscrire={listeAttente} />}
+      {choisie && !accessibles.has(choisie.id) && <ListeAttente profession={choisie.id} libelle={choisie.libelle} identite={identite} inscrire={listeAttente} />}
     </div>
   );
 }
@@ -748,6 +778,47 @@ function EtapeIdentite({ identite, fiche, profession, annuaire, chercher, onFich
   );
 }
 
+/** Questions propres au métier (onboarding-professions.ts : contrat PCO, groupes, interventions extérieures) */
+function QuestionsMetier({ questions, reponses, onChange }: { questions: QuestionParcours[]; reponses: ReponsesMetier; onChange: (r: ReponsesMetier) => void }) {
+  const poser = (id: string, v: boolean | string | string[] | undefined) => { const r = { ...reponses }; if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) delete r[id]; else r[id] = v; onChange(r); };
+  return (
+    <fieldset className="grid max-w-3xl gap-4 rounded-2xl border border-black/10 bg-white p-4">
+      <legend className="sr-only">Votre exercice</legend>
+      <p className="font-semibold">Votre exercice</p>
+      {questions.map((q) => (
+        <div key={q.id} className="grid gap-2">
+          <p id={`q-${q.id}`} className="text-sm font-medium text-neutral-800">{q.question}</p>
+          {q.aide && <p className="text-xs text-neutral-600">{q.aide}</p>}
+          {q.type === 'oui-non' && (
+            <div role="radiogroup" aria-labelledby={`q-${q.id}`} className="flex gap-2">
+              {([true, false] as const).map((v) => (
+                <button key={String(v)} type="button" role="radio" aria-checked={reponses[q.id] === v} onClick={() => poser(q.id, reponses[q.id] === v ? undefined : v)}
+                  className={`min-h-11 min-w-20 rounded-xl border px-4 text-sm ${focus} ${reponses[q.id] === v ? 'border-teal-700 bg-teal-50 font-semibold ring-1 ring-teal-700' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>{v ? 'Oui' : 'Non'}</button>
+              ))}
+            </div>
+          )}
+          {(q.type === 'choix' || q.type === 'choix-multiples') && (
+            <div className="flex flex-wrap gap-2" aria-labelledby={`q-${q.id}`} role="group">
+              {(q.options ?? []).map((o) => {
+                const liste = Array.isArray(reponses[q.id]) ? (reponses[q.id] as string[]) : reponses[q.id] ? [String(reponses[q.id])] : [];
+                const actif = liste.includes(o.valeur);
+                return (
+                  <button key={o.valeur} type="button" aria-pressed={actif}
+                    onClick={() => poser(q.id, q.type === 'choix' ? (actif ? undefined : o.valeur) : actif ? liste.filter((x) => x !== o.valeur) : [...liste, o.valeur])}
+                    className={`min-h-11 rounded-xl border px-3 text-sm ${focus} ${actif ? 'border-teal-700 bg-teal-50 font-semibold ring-1 ring-teal-700' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>{o.libelle}</button>
+                );
+              })}
+            </div>
+          )}
+          {q.type === 'texte' && (
+            <input aria-labelledby={`q-${q.id}`} value={typeof reponses[q.id] === 'string' ? (reponses[q.id] as string) : ''} maxLength={120} onChange={(ev) => poser(q.id, ev.target.value)} className={champ} />
+          )}
+        </div>
+      ))}
+    </fieldset>
+  );
+}
+
 function EtapeActivites({ valeur, pratique, themes, onChange }: { valeur: string[]; pratique: PratiqueProfession; themes: string[]; onChange: (v: string[]) => void }) {
   const plein = valeur.length >= ACTIVITES_MAX;
   return (
@@ -810,7 +881,8 @@ function Construction({ identite, activites }: { identite: IdentiteConfirmee; ac
   );
 }
 
-function RenduClient({ draft, modele, nom, catalogue, marquesImportees, appareil, autres, test, onAutre, onFermer, onContinuer }: {
+function RenduClient({ profession, draft, modele, nom, catalogue, marquesImportees, appareil, autres, test, onAutre, onFermer, onContinuer }: {
+  profession: string | null;
   draft: SiteDraft; modele: ModeleManifeste; nom: string; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[]; appareil: 'mobile' | 'bureau';
   autres: boolean; test: boolean; onAutre: () => void; onFermer: () => void; onContinuer: () => void;
 }) {
@@ -831,7 +903,7 @@ function RenduClient({ draft, modele, nom, catalogue, marquesImportees, appareil
       </header>
       <div className="overflow-y-auto overscroll-contain px-2 py-3 sm:px-6">
         <div className="mx-auto max-w-6xl" role="region" aria-label="Rendu du site">
-          <ApercuTheme key={`${draft.theme.proposition}-${appareil}`} plein appareil={appareil} draft={draft} modele={modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
+          <ApercuTheme profession={profession} key={`${draft.theme.proposition}-${appareil}`} plein appareil={appareil} draft={draft} modele={modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />
         </div>
         <p className="mx-auto mt-3 max-w-2xl text-center text-xs text-neutral-600">Rendu préparé dans votre navigateur. Rien n’est publié.{test ? ' Mode test : rien n’est enregistré.' : ''}</p>
       </div>

@@ -42,10 +42,12 @@ type Props = {
    * liste ordonnée ; les sujets « traités aussi » repliés tant qu'on ne les ouvre pas)
    */
   compact?: boolean;
+  /** Profession du praticien (thèmes de SA pratique : themes.ts, themesDeLaProfession) ; absente : profession par défaut */
+  profession?: string | null;
 };
 
-export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, themesActives = [], conseils = false, masquerIndisponibles = false, compact = false }: Props) {
-  const proposes = themesProposes(themesActives).filter((t) => t.disponible || !masquerIndisponibles);
+export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, themesActives = [], conseils = false, masquerIndisponibles = false, compact = false, profession = null }: Props) {
+  const proposes = themesProposes(themesActives, profession).filter((t) => t.disponible || !masquerIndisponibles);
   const plein = priorites.principaux.length >= PRINCIPAUX_MAX;
   // Aperçu : soins cochés, sinon ceux des sujets (que le praticien confirmera à l'étape « Vos soins »)
   const soinsApercu = (soins.length ? soins : soinsDesPriorites(priorites, soinsConnus)).map((slug) => ({ slug }));

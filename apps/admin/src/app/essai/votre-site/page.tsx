@@ -14,6 +14,7 @@ import { getDefautsMobileOuverts, getRecettesLecture } from '@/lib/recettes';
 import { publicationDepuisLigne, recetteDepuisLigne, type PublicationRecette, type Recette } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import Onboarding from './Onboarding';
+import { etatsProfessionsParcours } from '@/lib/professions-parcours';
 import { capturerRenduClient, chercherAnnuaire, enregistrerSiteClient, inscrireListeAttente } from './actions';
 
 export const metadata: Metadata = {
@@ -58,9 +59,11 @@ export default async function PageVotreSite({ searchParams }: PageProps<'/essai/
   const p = await searchParams;
   const un = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
 
-  // Seule profession ouverte aujourd'hui : la podologie (onboarding-professions.ts) ; recettes publiées de ses profils
-  const [catalogue, modeles, marquesImportees, { univers }, recettes, defautsMobile, publiees] = await Promise.all([
-    getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getRecettesLecture(4), getDefautsMobileOuverts(), recettesPubliees('podologue'),
+  // Professions ouvertes au public : parcours disponible, profession publique ET pack publiable (lib/professions-parcours.ts) ;
+  // en mode test, les professions en préparation sont testables (fiches de leur pack en catalogue de démonstration).
+  // Recettes publiées des profils de la profession par défaut (seule ouverte aujourd'hui).
+  const [catalogue, modeles, marquesImportees, { univers }, recettes, defautsMobile, publiees, professions] = await Promise.all([
+    getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getRecettesLecture(4), getDefautsMobileOuverts(), recettesPubliees('podologue'), etatsProfessionsParcours(test),
   ]);
 
   return (
@@ -78,6 +81,7 @@ export default async function PageVotreSite({ searchParams }: PageProps<'/essai/
         publiees={publiees}
         defautsMobile={defautsMobile}
         themesActives={themesActives()}
+        professions={professions}
         actions={{ chercher: chercherAnnuaire, enregistrer: enregistrerSiteClient, capturer: capturerRenduClient, listeAttente: inscrireListeAttente }}
       />
     </>

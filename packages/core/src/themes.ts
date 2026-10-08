@@ -47,6 +47,8 @@ export type Theme = {
   statut: StatutTheme;
   /** Raison du statut « differe » */
   motif?: string;
+  /** Profession du thème (professions.ts) ; absent : profession par défaut (podologue, THEMES) */
+  profession?: string;
 };
 
 export const THEMES: readonly Theme[] = [
@@ -164,21 +166,73 @@ export const THEMES: readonly Theme[] = [
   },
 ];
 
+/**
+ * Thèmes des AUTRES professions (en préparation : jamais proposés au public tant que la profession n'est pas ouverte,
+ * onboarding-professions.ts). Identifiants distincts de ceux de THEMES (brouillons, adresses /themes/<id>). Psychomotricien :
+ * thèmes du pack (packages/contenus/professions/psychomotricien, 90966aa), description et introduction reprises du résumé de la
+ * fiche pivot du pack (textes relus dans les Arrivages) ; pictos propres « à dessiner » (pack, PICTOS_A_DESSINER) : picto
+ * générique en attendant. Thème « santé mentale » différé comme dans le pack.
+ */
+const PSYCHOMOT = (t: Omit<Theme, 'profession' | 'themesFlux' | 'intro'> & { intro?: string }): Theme => ({ ...t, intro: t.intro ?? t.description, themesFlux: [], profession: 'psychomotricien' });
+export const THEMES_AUTRES_PROFESSIONS: readonly Theme[] = [
+  PSYCHOMOT({ id: 'petite-enfance', libelle: 'Bébés et petite enfance', court: 'Bébés', picto: 'premiers-pas', specialite: 'enfant', univers: 'simple-proche', statut: 'actif',
+    description: 'Éducation précoce et stimulation psychomotrice quand le développement moteur ou le tonus d’un bébé inquiète le médecin.',
+    soins: ['developpement-du-tout-petit', 'bilan-psychomoteur', 'tonus-emotions-relaxation'] }),
+  PSYCHOMOT({ id: 'apprentissages', libelle: 'Enfants : motricité et apprentissages', court: 'Enfants', picto: 'bilan', specialite: 'enfant', univers: 'simple-proche', statut: 'actif',
+    description: 'Un enfant qui tombe souvent, peine à s’habiller, à faire du vélo ou à découper : un bilan pour comprendre ses difficultés de coordination.',
+    soins: ['maladresse-coordination', 'espace-temps-schema-corporel', 'attention-agitation', 'bilan-psychomoteur', 'reeducation-psychomotrice'] }),
+  PSYCHOMOT({ id: 'graphomotricite', libelle: 'Écriture et graphisme (graphomotricité)', court: 'Écriture', picto: 'bilan', specialite: 'enfant', univers: 'clair-pratique', statut: 'actif',
+    description: 'Une écriture lente, douloureuse ou difficile à relire : le psychomotricien travaille le geste d’écrire, pas l’orthographe.',
+    soins: ['graphomotricite', 'maladresse-coordination', 'bilan-psychomoteur'] }),
+  PSYCHOMOT({ id: 'tnd', libelle: 'Troubles du neurodéveloppement', court: 'TND', picto: 'bilan', specialite: 'enfant', univers: 'clair-pratique', statut: 'actif',
+    description: 'Un enfant qui ne tient pas en place, ou au contraire très en retrait : un travail par le corps, en complément du suivi médical.',
+    soins: ['parcours-pco', 'bilan-psychomoteur', 'maladresse-coordination', 'attention-agitation', 'developpement-du-tout-petit'] }),
+  PSYCHOMOT({ id: 'adolescents', libelle: 'Adolescents', court: 'Ados', picto: 'bilan', specialite: 'generale', univers: 'elegant-sobre', statut: 'actif',
+    description: 'Quand les émotions passent par des tensions du corps : un travail de relaxation et de conscience corporelle, dans le cadre d’un suivi prescrit.',
+    soins: ['tonus-emotions-relaxation', 'image-du-corps', 'graphomotricite', 'reeducation-psychomotrice'] }),
+  PSYCHOMOT({ id: 'adultes', libelle: 'Adultes', court: 'Adultes', picto: 'bilan', specialite: 'generale', univers: 'elegant-sobre', statut: 'actif',
+    description: 'Quand les émotions passent par des tensions du corps : un travail de relaxation et de conscience corporelle, dans le cadre d’un suivi prescrit.',
+    soins: ['tonus-emotions-relaxation', 'image-du-corps', 'reeducation-psychomotrice'] }),
+  PSYCHOMOT({ id: 'seniors', libelle: 'Personnes âgées : équilibre et autonomie', court: 'Seniors', picto: 'senior-canne', specialite: 'generale', univers: 'clair-pratique', statut: 'actif',
+    description: 'Équilibre, coordination, confiance dans les déplacements : un suivi sur prescription médicale, au cabinet, à domicile ou en établissement.',
+    soins: ['equilibre-marche-age', 'bilan-psychomoteur', 'reeducation-psychomotrice'] }),
+  PSYCHOMOT({ id: 'relaxation', libelle: 'Tonus, émotions et relaxation', court: 'Relaxation', picto: 'bilan', specialite: 'generale', univers: 'elegant-sobre', statut: 'actif',
+    description: 'Quand les émotions passent par des tensions du corps : un travail de relaxation et de conscience corporelle, dans le cadre d’un suivi prescrit.',
+    soins: ['tonus-emotions-relaxation', 'reeducation-psychomotrice'] }),
+  PSYCHOMOT({ id: 'sante-mentale', libelle: 'Santé mentale : approche corporelle', court: 'Santé psy', picto: 'bilan', specialite: 'generale', univers: 'elegant-sobre', statut: 'differe',
+    description: 'Une approche corporelle qui contribue, avec l’équipe soignante, à la prise en charge de difficultés liées à l’image du corps.',
+    soins: ['image-du-corps', 'tonus-emotions-relaxation'],
+    motif: 'Formulations à valider par un psychomotricien avant de proposer ce sujet (pack Psychomotricien, en préparation).' }),
+];
+
+/** Tous les thèmes connus (podologie puis autres professions) : lecture des brouillons, navigation, pages de thème */
+export const TOUS_LES_THEMES: readonly Theme[] = [...THEMES, ...THEMES_AUTRES_PROFESSIONS];
+
+/** Profession d'un thème (absente : profession par défaut) */
+export const professionDuTheme = (t: Pick<Theme, 'profession'>) => t.profession ?? 'podologue';
+
+/** Thèmes d'une profession, dans l'ordre d'affichage ; absente ou inconnue : ceux de la profession par défaut (THEMES) */
+export function themesDeLaProfession(profession?: string | null): readonly Theme[] {
+  if (!profession || profession === 'podologue') return THEMES;
+  const l = THEMES_AUTRES_PROFESSIONS.filter((t) => t.profession === profession);
+  return l.length ? l : THEMES;
+}
+
 export const PRINCIPAUX_MAX = 3;
 export const SECONDAIRES_MAX = 3;
 
 /** Adresse de la page d'un thème (distincte des pages de soin /soins/<slug> : aucune collision possible) */
 export const cheminTheme = (id: string) => `/themes/${id}`;
 
-export const themeParId = (id: string | null | undefined): Theme | undefined => THEMES.find((t) => t.id === id);
+export const themeParId = (id: string | null | undefined): Theme | undefined => TOUS_LES_THEMES.find((t) => t.id === id);
 
 /** Un thème est sélectionnable s'il est actif, ou différé mais activé par le drapeau admin (`themesActives`) */
 export const themeSelectionnable = (t: Pick<Theme, 'id' | 'statut'>, themesActives: readonly string[] = []) =>
   t.statut === 'actif' || themesActives.includes(t.id);
 
 /** Thèmes proposés dans le parcours, dans l'ordre d'affichage, avec leur disponibilité (les différés restent montrés, grisés) */
-export function themesProposes(themesActives: readonly string[] = []): { theme: Theme; disponible: boolean }[] {
-  return THEMES.map((theme) => ({ theme, disponible: themeSelectionnable(theme, themesActives) }));
+export function themesProposes(themesActives: readonly string[] = [], profession?: string | null): { theme: Theme; disponible: boolean }[] {
+  return themesDeLaProfession(profession).map((theme) => ({ theme, disponible: themeSelectionnable(theme, themesActives) }));
 }
 
 // ---- Priorités du praticien ----
