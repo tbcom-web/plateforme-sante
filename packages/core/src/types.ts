@@ -138,6 +138,11 @@ export type SiteConfig = {
    * (« Aussi au cabinet ») ; absente = navigation sans thème (Soins, Le cabinet, Infos pratiques).
    */
   priorites?: import('./themes').Priorites;
+  /**
+   * Activités mises en avant (profils.ts : basket, tennis…) et visuels VALIDÉS retenus pour la première (visuelsDeLActivite) ;
+   * `repli` : aucun visuel validé de l'activité, ceux du thème sont utilisés. Absent : aucune activité.
+   */
+  activites?: { ids: string[]; illustration?: string | null; photos?: string[]; repli: boolean };
   /** Textes personnalisés par le praticien (clés de personnalisation.ts) ; absents = texte standard */
   textes?: Record<string, string>;
   /** Pack visuel de la spécialité (photos par défaut) et animation d'accueil retenue (null = aucune) */

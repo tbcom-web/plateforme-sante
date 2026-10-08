@@ -1,5 +1,6 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
 import { readFileSync } from 'node:fs';
+import { normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
 import { estPresentationPortraits, libellesComposition, lotsPropositions, PORTRAITS_DEMO, PRATICIENS_DEMO, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
@@ -657,4 +658,14 @@ if (process.env.PHOTOS_PRATICIENS === 'demo' || process.env.PHOTOS_PRATICIENS ==
   site.praticiens = site.praticiens.map((p, i) => (process.env.PHOTOS_PRATICIENS === 'mixte' && i % 2 ? p : { ...p, photo: PORTRAITS_DEMO[i % PORTRAITS_DEMO.length] }));
 }
 if (estPresentationPortraits(process.env.PORTRAITS)) site.modele = { ...site.modele, variantes: { ...(site.modele.variantes ?? {}), portraits: process.env.PORTRAITS } };
+// ACTIVITE=basket (ou basket,tennis) : activités mises en avant (profils.ts). La démo n'a aucun visuel validé de l'activité (pas de
+// Supabase) : repli sur les visuels du thème, comme un vrai site ; les soins de l'activité passent en tête.
+if (process.env.ACTIVITE) {
+  const themes = [...(site.priorites?.principaux ?? []), ...(site.priorites?.secondaires ?? [])];
+  const ids = normaliserActivites(pratiqueDe(null), process.env.ACTIVITE.split(','), themes);
+  if (!ids.length) throw new Error(`Activité inconnue ou sans thème qui s'y prête : ${process.env.ACTIVITE}`);
+  const v = visuelsPourPraticien(tableVisuelsActivites(null, {}), themes, ids);
+  site.activites = { ids, illustration: v?.repli ? null : v?.illustration ?? null, photos: v?.photosActivite ?? [], repli: v?.repli ?? true };
+  site.soins = ordonnerSoins(site.soins, soinsEnAvantActivites(pratiqueDe(null), ids, site.soins.map((x) => x.slug)));
+}
 export default site;

@@ -718,6 +718,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
                 <div className="flex flex-wrap gap-1.5">
                   <button type="button" onClick={() => ouvrir(r)} className={`min-h-11 rounded-lg border border-teal-800 px-3 text-sm font-semibold text-teal-900 ${focus}`}>Ouvrir</button>
                   <button type="button" onClick={() => ouvrir(r, true)} className={`min-h-11 rounded-lg border border-neutral-300 px-3 text-sm ${focus}`}>Dupliquer</button>
+                  {r.statut === 'active' && <Link href={`/admin/profils/publier?recette=${r.id}`} className={`inline-flex min-h-11 items-center rounded-lg border border-teal-800 px-3 text-sm font-semibold text-teal-900 ${focus}`}>Publier pour les praticiens</Link>}
                   <button type="button" onClick={async () => setStatut(await changerStatutRecette(r.id, r.statut === 'active' ? 'archivee' : 'active'))} className={`min-h-11 rounded-lg border border-neutral-300 px-3 text-sm ${focus}`}>{r.statut === 'active' ? 'Archiver' : 'Réactiver'}</button>
                 </div>
               </RecetteVignette>

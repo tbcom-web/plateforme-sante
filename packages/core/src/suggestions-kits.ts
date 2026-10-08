@@ -11,6 +11,7 @@
 //   ciblées de l'emplacement (REQUETES_SOINS…) et le hashtag de l'emplacement pré-coché.
 // Pur, sans réseau.
 
+import { PRATIQUES } from './pratiques';
 import { libelleEmplacement, libelleSujetKit, photosARattacher, vivierCure, type DonneesKits, type KitImages } from './kits-images';
 import { estImageGeneree } from './photos-libres';
 
@@ -57,13 +58,15 @@ export const MOTS_METIER = ['foot', 'feet', 'toe', 'toenail', 'nail', 'heel', 's
 
 /** Requêtes d'un emplacement d'un kit (soin : celles du soin ; sinon celles de la page pour le sujet ; cabinet) */
 export function requetesEmplacement(sujet: string, emplacement: string): string[] {
+  // Activité d'un profil de pratique (profils.ts, « Trouver des photos pré-filtrées #basket ») : recherches de l'activité
+  if (emplacement.startsWith('activite:')) { const h = emplacement.slice(9); const a = PRATIQUES.flatMap((p) => p.activites).find((x) => x.hashtags.includes(h)); return [...(a?.requetes ?? [h.replace(/-/g, ' ')])]; }
   if (emplacement.startsWith('soin:')) return [...(REQUETES_SOINS[emplacement.slice(5)] ?? [`${emplacement.slice(5).replace(/-/g, ' ')} foot care`])];
   if (emplacement === 'cabinet') return [...REQUETES_CABINET];
   return [...(REQUETES_PAGES[emplacement]?.[sujet] ?? REQUETES_PAGES[emplacement]?.general ?? ['foot care'])];
 }
 
 /** Hashtag qui étiquette une photo pour un emplacement (#<slug du soin>, #accueil, #cabinet, #page-sujet) */
-export const hashtagEmplacement = (emplacement: string) => (emplacement.startsWith('soin:') ? emplacement.slice(5) : emplacement);
+export const hashtagEmplacement = (emplacement: string) => (emplacement.startsWith('soin:') ? emplacement.slice(5) : emplacement.startsWith('activite:') ? emplacement.slice(9) : emplacement);
 /** Hashtag des photos gardées pour un kit (/admin/photos : « pour le kit Enfant · orthonyxie ») */
 export const hashtagKit = (sujet: string) => `kit-${sujet}`;
 

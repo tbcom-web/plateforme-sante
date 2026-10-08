@@ -184,6 +184,11 @@ export type SiteDraft = {
    * propositions.ts) ; absent = étape pas encore vue, [] = « laissez-nous proposer ».
    */
   couleursPreferees?: string[];
+  /**
+   * Activités à mettre en avant (profils.ts, étape « Vos sujets » quand un thème s'y prête : basket, tennis…), 3 au plus, dans
+   * l'ordre ; absent = aucune. Choisissent les visuels de l'activité (validés seulement, sinon ceux du thème) et l'ordre des soins.
+   */
+  activites?: string[];
   /** Slugs des compétences choisies dans le catalogue de la profession */
   soins: string[];
   /** Fiches conseils proposées aux patients (identifiants de SUJETS_FICHES_CONSEILS, catalogue-univers.ts), facultatif */
@@ -361,6 +366,8 @@ export function normaliserDraft(brut: unknown): SiteDraft {
       theme: themeNormalise({ ...vide.theme, modeVisuel: 'mixte', specialite: specialiteDuProfil(d.profil), ...d.theme, jeuPhotos: typeof d.theme?.jeuPhotos === 'string' ? d.theme.jeuPhotos : '' }),
       // Couleurs préférées : liste de 3 identifiants au plus (absente : étape pas encore vue)
       ...(Array.isArray(d.couleursPreferees) ? { couleursPreferees: [...new Set((d.couleursPreferees as unknown[]).filter((x): x is string => typeof x === 'string' && /^[a-z-]{2,20}$/.test(x)))].slice(0, 3) } : { couleursPreferees: undefined }),
+      // Activités (profils.ts) : identifiants, 3 au plus, sans doublon ; absentes : aucune
+      ...(Array.isArray(d.activites) ? { activites: [...new Set((d.activites as unknown[]).filter((x): x is string => typeof x === 'string' && /^[a-z0-9-]{2,30}$/.test(x)))].slice(0, 3) } : { activites: undefined }),
       flux: { ...vide.flux, ...d.flux, themes: Array.isArray(d.flux?.themes) ? d.flux.themes : [] },
       photos: { ...vide.photos, ...d.photos, cabinet: Array.isArray(d.photos?.cabinet) ? d.photos.cabinet : [] },
       lieux: Array.isArray(d.lieux) && d.lieux.length ? d.lieux.map((l: any) => lieuNormalise(l)) : vide.lieux,

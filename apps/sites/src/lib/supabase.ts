@@ -32,6 +32,14 @@ import {
   sujetsDeSpecialite,
   contexteImagesSite,
   kitVisuelSite,
+  tableVisuelsActivites,
+  visuelsPourPraticien,
+  soinsEnAvantActivites,
+  pratiqueDe,
+  notesVisuels,
+  clesImagesExclues,
+  type StatutIllustration,
+  type VisuelsActivite,
   inventaireAssets,
   hashtagsDepuisLignes,
   HASHTAGS_PAR_DEFAUT,
@@ -76,18 +84,25 @@ async function lireContexteImages(d: SiteDraft, slugs: readonly string[]) {
   const sujet = d.priorites?.principaux?.[0] ?? SUJET_DE_SPECIALITE[d.theme.specialite] ?? 'general';
   const surcharges = surchargesDepuisLignes(sujets.map((l) => ({ cle: l.cle_asset, sujet: l.sujet, action: l.action })));
   const soinsSite = (d.soins ?? []).filter((x) => slugs.includes(x));
-  const visuel = kitVisuelSite({
-    sujet, soins: soinsSite, lignesAssets, surcharges, statuts,
-    hashtags: hashtagsDepuisLignes(lignesHashtags.map((l) => ({ cle: l.cle_asset, hashtag: l.hashtag, action: l.action })), HASHTAGS_PAR_DEFAUT),
-    visuels: inventaireAssets().filter((a) => ['dessin', 'ligne', 'heros', 'materiel', 'biblio', 'picto', 'animation'].includes(a.type)).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins })),
-  });
+  const hashtagsVisuels = hashtagsDepuisLignes(lignesHashtags.map((l) => ({ cle: l.cle_asset, hashtag: l.hashtag, action: l.action })), HASHTAGS_PAR_DEFAUT);
+  const visuelsInventaire = inventaireAssets().filter((a) => ['dessin', 'ligne', 'heros', 'materiel', 'biblio', 'picto', 'animation'].includes(a.type)).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins }));
+  const visuel = kitVisuelSite({ sujet, soins: soinsSite, lignesAssets, surcharges, statuts, hashtags: hashtagsVisuels, visuels: visuelsInventaire });
+  // Activités du praticien (profils.ts) : visuels VALIDÉS de la première activité (#basket…), sinon repli sur ceux du thème
+  const activites = d.activites ?? [];
+  const lignesV = lignesAssets.map((l) => ({ cle: l.cle_asset, note: l.note, statut: l.statut }));
+  const visuelsActivite = activites.length
+    ? visuelsPourPraticien(tableVisuelsActivites(null, { visuels: {
+      visuels: visuelsInventaire, surcharges, hashtags: hashtagsVisuels, notes: notesVisuels(lignesV), exclues: clesImagesExclues(lignesV),
+      statuts: Object.fromEntries(statuts.filter((x) => ['valide', 'a_revoir', 'a_retravailler', 'retire'].includes(x.statut)).map((x) => [x.cle, x.statut as StatutIllustration])),
+    } }), [...(d.priorites?.principaux ?? []), ...(d.priorites?.secondaires ?? [])], activites)
+    : null;
   return { ...contexteImagesSite({
     sujet, soins: soinsSite, lignesAssets,
     surcharges,
     lignesHashtags, libres,
     jeux: jeux.map((l) => { const j = jeuPhotosDepuisLigne(l); return { photos: j.photos, specialite: j.specialite, sujets: j.specialite === 'generale' ? ['general'] : sujetsDeSpecialite(j.specialite) }; }),
     notesKits: kits.map((k) => ({ sujet: k.sujet, note: k.note, garder: k.garder, photos: Array.isArray(k.photos) ? k.photos : [], appareil: k.appareil })),
-  }), visuel };
+  }), visuel, visuelsActivite };
 }
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
@@ -217,6 +232,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   // Plus rien ne bloque la publication (règle de Paul, 2026-10-05) : chaque information manquante a un repli sobre,
   // appliqué par assemblerSite. Les avertissements restent visibles à la saisie (controlerPublication, conseils).
   return assemblerSite({
+    visuelsActivite: images?.visuelsActivite ?? null,
     ligne: s,
     apercu: process.env.APERCU === '1',
     d,
@@ -254,6 +270,8 @@ export type EntreeAssemblage = {
   creditAdobe?: boolean;
   /** Le site affiche au moins une image générée par IA (mention dans les crédits) */
   creditIa?: boolean;
+  /** Visuels validés de l'activité n° 1 du praticien (profils.ts), null : aucun (repli sur le thème) */
+  visuelsActivite?: VisuelsActivite | null;
 };
 export type { LigneSoin, LigneProfession, LigneArticle };
 
@@ -311,7 +329,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       corps: perso(c.corps),
       faq: c.faq.map((f) => ({ q: perso(f.q), r: perso(f.r) })),
       icone: c.icone ?? undefined,
-    })), d.theme.soinsEnAvant);
+    })), d.activites?.length ? soinsEnAvantActivites(pratiqueDe(null), d.activites, slugsSoins, d.theme.soinsEnAvant ?? []) : d.theme.soinsEnAvant);
 
   // Seuls les praticiens nommés sont présentés (le nom de famille suffit) ; sans aucun : présentation au nom du cabinet.
   const praticiensNommes = d.praticiens.filter((p) => nomAffiche(p));
@@ -422,6 +440,8 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
     communes: d.cabinet.communes.map(ligneSansProvisoire).filter(Boolean),
     // Hiérarchie du site (thèmes principaux et secondaires) : navigation et pages de thème (lib/navigation.ts)
     priorites: d.priorites,
+    // Activités mises en avant (profils.ts) et visuels validés retenus (repli : ceux du thème)
+    ...(d.activites?.length ? { activites: { ids: [...d.activites], illustration: e.visuelsActivite?.illustration ?? null, photos: e.visuelsActivite?.photosActivite ?? [], repli: e.visuelsActivite?.repli ?? true } } : {}),
     photos: d.photos,
     // Textes de l'éditeur visuel, revalidés (option « édition » requise pour les zones guidées).
     marqueImportee,

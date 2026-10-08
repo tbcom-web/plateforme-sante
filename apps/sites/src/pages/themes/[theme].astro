@@ -12,6 +12,7 @@ import TetePage from '../../components/gabarits/TetePage.astro';
 import Icone from '../../components/Icone.astro';
 import VisuelTheme from '../../components/accueil/VisuelTheme.astro';
 import { visuelTheme } from '../../lib/vitrine';
+import { illustrationActivite } from '../../lib/activites';
 import { site, dateFr } from '../../lib/site';
 import { breadcrumbSchema, themeSchema } from '../../lib/schema';
 import { titreCompetences, localisation, lienRdv, libelleRdv, rdvEnLigne, telLien, viaPlateforme, lieu, aLaVille, aAdresse, aTelephone, adresseLieu } from '../../lib/textes';
@@ -30,6 +31,8 @@ const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = plusieurs ? '/le-cabinet#praticiens' : lienRdv(`theme-${t.theme.id}`);
 // Grande image du sujet en tête de page (illustration validée, ou photo en style « photos ») : lib/vitrine.ts
 const visuel = visuelTheme(t.theme.id);
+// Activité n° 1 du praticien (#basket…) : son illustration VALIDÉE à la place, sinon le visuel du thème (repli)
+const activite = illustrationActivite(t.theme.id);
 const presentation = variantes.theme ?? 'liste';
 ---
 <Gabarit title={p.title} description={p.description} path={p.path} schemas={[themeSchema({ nom: p.titre, description: p.description, path: p.path, soins: p.soins }), breadcrumbSchema(crumbs)]}>
@@ -37,7 +40,7 @@ const presentation = variantes.theme ?? 'liste';
   {nouveauGabarit ? (
     <TetePage crumbs={crumbs} sur={localisation} chapo={p.intro}>
       <h1 slot="titre">{espacesFines(t.theme.libelle)}{aLaVille && <>{' '}<span class="pale">{aLaVille}</span></>}</h1>
-      <Fragment slot="visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></Fragment>
+      <Fragment slot="visuel">{activite ? <div class="theme__activite" aria-hidden="true" set:html={activite} /> : <VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 900px) 40vw, 100vw" />}</Fragment>
     </TetePage>
   ) : (
     <section class="cadre tete-page">
@@ -48,7 +51,7 @@ const presentation = variantes.theme ?? 'liste';
           <h1>{espacesFines(t.theme.libelle)}{aLaVille && <>{' '}<span class="pale">{aLaVille}</span></>}</h1>
           <p class="chapo">{p.intro}</p>
         </div>
-        <div class="theme__visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 960px) 45vw, 100vw" /></div>
+        <div class="theme__visuel">{activite ? <div class="theme__activite" aria-hidden="true" set:html={activite} /> : <VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 960px) 45vw, 100vw" />}</div>
       </div>
     </section>
   )}
@@ -109,6 +112,10 @@ const presentation = variantes.theme ?? 'liste';
   .theme__visuel { position: relative; aspect-ratio: 4 / 3; border-radius: var(--rayon-grand, 28px); background: var(--doux); overflow: hidden; color: var(--encre); --dessin-accent: var(--accent-vif); }
   .theme__visuel :global(.vt) { position: absolute; inset: 0; }
   .theme__visuel :global(.vt--dessin) { padding: 8% 10%; }
+  /* Illustration de l'activité (scène du kit Sports, validée) : centrée dans le cadre du visuel, couleurs de la gamme */
+  .theme__activite { display: grid; place-items: center; aspect-ratio: 4 / 3; padding: 6% 8%; color: var(--g-encre, var(--encre, currentColor)); }
+  .theme__visuel .theme__activite { position: absolute; inset: 0; aspect-ratio: auto; }
+  .theme__activite :global(svg) { width: 100%; height: 100%; }
   .theme__dedans { display: grid; gap: clamp(36px, 5vw, 56px); }
   .theme__titre { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
   .theme__picto { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--t-bulle); color: var(--t-picto); flex: none; }

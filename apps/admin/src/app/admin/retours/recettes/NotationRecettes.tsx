@@ -417,7 +417,7 @@ function Appris({ palmares, resume }: { palmares: Palmares[]; resume: { notes: n
   return (
     <div className="grid gap-4">
       <p className="text-sm text-neutral-700">
-        {resume.apprises} recette{resume.apprises > 1 ? 's' : ''} complète{resume.apprises > 1 ? 's' : ''} apprise{resume.apprises > 1 ? 's' : ''} en base · {resume.gardees} gardée{resume.gardees > 1 ? 's' : ''}.
+        {resume.apprises} recette{resume.apprises > 1 ? 's' : ''} complète{resume.apprises > 1 ? 's' : ''} apprise{resume.apprises > 1 ? 's' : ''} en base · {resume.gardees} gardée{resume.gardees > 1 ? 's' : ''}.{' '}<a href="/admin/profils" className="font-semibold text-teal-900 underline">Publier les recettes gardées pour les praticiens</a>.
         Calculé à chaque chargement depuis vos notes (aucun passage par Claude) : chaque note pondère les ingrédients de la recette et leurs combinaisons ;
         les tirages du Studio, « Tout changer », les recettes proposées ici et les propositions des praticiens en tiennent compte, toujours derrière les garde-fous et l’harmonie.
       </p>

@@ -1,6 +1,8 @@
 'use server';
 
-import { validerPorteRendu, type ReglagesSite, type SiteDraft } from '@plateforme/core';
+import { avecPhotosActivite, pratiqueDe, soinsEnAvantActivites, styleDuTheme, visuelsPourPraticien, validerPorteRendu, type ReglagesSite, type SiteDraft } from '@plateforme/core';
+import { professionDe } from '@plateforme/core/professions';
+import { getVisuelsActivites } from '@/lib/profils';
 import { getRole } from '@/lib/admin';
 import { appliquerUniversAuSite } from '@/lib/univers';
 import { enregistrerEtPublier, enregistrerSite, type EtatEnregistrement } from '../mon-site/actions';
@@ -29,6 +31,20 @@ export async function choisirModele(id: string | null, draft: SiteDraft, version
   const admin = (await getRole()) === 'admin';
   const a = await appliquerUniversAuSite(r.id, universId, { admin, version: r.version, parcours: true, ...(reglages ? { reglages } : {}) });
   if (!a.ok || !a.draft) return { ok: false, message: a.message, id: r.id, version: r.version };
+  // Activités du praticien (profils.ts) : soins de l'activité mis en avant, photos VALIDÉES de l'activité (style « photos ») ; jamais
+  // reçues du navigateur : relues ici. Rien à faire sans activité.
+  const activites = a.draft.activites ?? [];
+  if (activites.length) {
+    const profession = professionDe(null).id;
+    const themes = [...a.draft.priorites.principaux, ...a.draft.priorites.secondaires];
+    const v = visuelsPourPraticien(await getVisuelsActivites(profession), themes, activites);
+    let y: SiteDraft = { ...a.draft, theme: { ...a.draft.theme, soinsEnAvant: soinsEnAvantActivites(pratiqueDe(profession), activites, a.draft.soins, a.draft.theme.soinsEnAvant ?? []) } };
+    y = avecPhotosActivite(y, v, styleDuTheme(y.theme) === 'photos');
+    if (JSON.stringify(y) !== JSON.stringify(a.draft)) {
+      const e = await enregistrerSite(r.id, y, a.version);
+      if (e.ok) return { ok: true, message: 'Site appliqué. Votre brouillon est enregistré.', id: r.id, version: e.version, draft: y, soinsACocher: a.resultat?.soinsACocher };
+    }
+  }
   return { ok: true, message: 'Site appliqué. Votre brouillon est enregistré.', id: r.id, version: a.version, draft: a.draft, soinsACocher: a.resultat?.soinsACocher };
 }
 

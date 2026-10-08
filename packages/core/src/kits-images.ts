@@ -34,7 +34,7 @@ export const libelleSujetKit = (s: string) => (s === 'general' ? 'Général' : t
 
 export type EmplacementKit = 'accueil' | 'page-sujet' | 'cabinet' | `soin:${string}`;
 export const LIBELLES_EMPLACEMENTS: Record<string, string> = { accueil: 'Premier écran', 'page-sujet': 'Page sujet', cabinet: 'Cabinet (galerie)' };
-export const libelleEmplacement = (e: string) => LIBELLES_EMPLACEMENTS[e] ?? (e.startsWith('soin:') ? `Soin : ${e.slice(5).replace(/-/g, ' ')}` : e);
+export const libelleEmplacement = (e: string) => LIBELLES_EMPLACEMENTS[e] ?? (e.startsWith('soin:') ? `Soin : ${e.slice(5).replace(/-/g, ' ')}` : e.startsWith('activite:') ? `Activité : #${e.slice(9)}` : e);
 
 /** Hashtags qui désignent un emplacement */
 const ETIQUETTES_EMPLACEMENT: Record<string, readonly string[]> = {

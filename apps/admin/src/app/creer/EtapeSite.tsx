@@ -14,7 +14,11 @@ import {
   appliquerReglages,
   basculerCouleur,
   propositionDeRecette,
-  recettesPourScenario,
+  recettesPourPraticien,
+  avecPhotosActivite,
+  visuelsPourPraticien,
+  type PublicationRecette,
+  type VisuelsActivite,
   type PropositionRecette,
   type Recette,
   COULEURS_PREFEREES,
@@ -144,6 +148,12 @@ type PropsSite = {
   recettes?: Recette[];
   /** Clés dont l'adaptation mobile est à corriger (0034) : recettes concernées après les autres */
   defautsMobile?: string[];
+  /** Profession du site (profils de pratique) */
+  profession?: string | null;
+  /** Recettes publiées pour les profils de pratique (0043) */
+  publiees?: { recettes: Recette[]; publications: PublicationRecette[] };
+  /** Visuels validés de chaque activité (« thème|activité ») */
+  visuelsActivites?: Record<string, VisuelsActivite>;
   etroit: boolean;
   /** Proposition en cours d'application (serveur) */
   choixEnCours: string | null;
@@ -154,22 +164,36 @@ type PropsSite = {
   onStructure: (u: Structure) => void;
 };
 
-export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, poids = null, recettes = [], defautsMobile = [], etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
+export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImportees, jeuPhotos, slugs, themesActives, poids = null, recettes = [], defautsMobile = [], profession = null, publiees, visuelsActivites = {}, etroit, choixEnCours, onChoisir, onMaj, onStructure }: PropsSite) {
   const entree = useMemo(() => ({ priorites: d.priorites, couleursPreferees: d.couleursPreferees ?? [] }), [d.priorites, d.couleursPreferees]);
   const [nbLots, setNbLots] = useState(1);
   const lots = useMemo(() => lotsPropositions(entree, nbLots, { poids }), [entree, nbLots, poids]);
   const disponibles = new Set(proposes.map((u) => u.id));
   // Recettes du studio (bien notées) d'abord : celles d'un scénario identique ou proche de ce client (mêmes sujets ordonnés,
   // couleurs identiques ou voisines : simulateur.ts, proximiteScenarios), puis du sujet n° 1, puis génériques ; puis le générateur
-  const duStudio = useMemo(() => recettesPourScenario(recettes, { principaux: d.priorites.principaux, secondaires: d.priorites.secondaires, couleurs: d.couleursPreferees ?? [], soins: d.soins }, 4, new Set(defautsMobile), { praticien: true }).slice(0, 6).map(propositionDeRecette), [recettes, d.priorites, d.couleursPreferees, d.soins, defautsMobile]);
+  // Profils de pratique (profils.ts) : d'abord les recettes PUBLIÉES pour les profils les plus proches du praticien (thème n° 1,
+  // activités, autres thèmes), avec le badge « Conçu pour … », puis les autres recettes (recettesPourPraticien)
+  const duStudio = useMemo(() => {
+    const toutes = [...(publiees?.recettes ?? []), ...recettes.filter((r) => !publiees?.recettes.some((x) => x.id === r.id))];
+    return recettesPourPraticien({
+      reponses: { profession, principaux: d.priorites.principaux, secondaires: d.priorites.secondaires, activites: d.activites ?? [] },
+      recettes: toutes, publications: publiees?.publications ?? [], defautsMobile: new Set(defautsMobile),
+      scenario: { principaux: d.priorites.principaux, secondaires: d.priorites.secondaires, couleurs: d.couleursPreferees ?? [], soins: d.soins },
+    }).slice(0, 6).map((x) => ({ ...propositionDeRecette(x.recette), ...(x.badge ? { badge: x.badge } : {}) }) as PropositionRecette & { badge?: string });
+  }, [recettes, publiees, profession, d.priorites, d.couleursPreferees, d.soins, d.activites, defautsMobile]);
+  // Kit de l'activité n° 1 (photos validées #basket…) appliqué aux aperçus ; repli : photos de la recette ou du thème
+  const visuels = useMemo(() => visuelsPourPraticien(visuelsActivites, [...d.priorites.principaux, ...d.priorites.secondaires], d.activites ?? []), [visuelsActivites, d.priorites, d.activites]);
   const liste: Proposition[] = [...duStudio, ...lots.flat()].filter((p) => disponibles.has(p.univers));
   const epuise = lots.length < nbLots;
   const manifeste = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);
 
   // Aperçu d'une proposition : structure appliquée localement (comme le serveur), réglages de la proposition, soins de base
-  const apercu = (p: Proposition) => ('recette' in p
-    ? appliquerRecette(d, (p as PropositionRecette).recette.composition, { id: (p as PropositionRecette).recette.id, proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives })
-    : apercuProposition(d, p, { proposes, modeles, slugs, themesActives }))!;
+  const apercu = (p: Proposition) => {
+    const x = ('recette' in p
+      ? appliquerRecette(d, (p as PropositionRecette).recette.composition, { id: (p as PropositionRecette).recette.id, proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives })
+      : apercuProposition(d, p, { proposes, modeles, slugs, themesActives }))!;
+    return { ...x, draft: avecPhotosActivite(x.draft, visuels, styleDuTheme(x.draft.theme) === 'photos') };
+  };
 
   const hauteur = etroit ? 460 : 300;
   const actuelle = d.theme.proposition;
@@ -202,7 +226,8 @@ export function EtapeVotreSite({ d, proposes, modeles, catalogue, marquesImporte
           return (
             <li key={p.id} className={`relative grid w-[86vw] max-w-[420px] shrink-0 snap-start content-start gap-3 rounded-2xl border bg-white p-3 shadow-sm sm:p-4 lg:w-auto lg:max-w-none ${choisie ? 'border-teal-700 ring-2 ring-teal-700/25' : 'border-black/10'}`}>
               <div className="flex min-h-7 flex-wrap items-center gap-2">
-                {i === 0 && <span className="rounded-full bg-teal-800 px-2.5 py-1 text-xs font-semibold text-white">Le plus proche de vos choix</span>}
+                {'badge' in p && typeof p.badge === 'string' ? <span className="rounded-full bg-teal-800 px-2.5 py-1 text-xs font-semibold text-white">{p.badge}</span>
+                  : i === 0 && <span className="rounded-full bg-teal-800 px-2.5 py-1 text-xs font-semibold text-white">Le plus proche de vos choix</span>}
                 {choisie && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">Votre choix</span>}
               </div>
               <div aria-hidden="true" className={`overflow-hidden ring-1 ring-black/10 ${etroit ? 'mx-auto w-[230px] rounded-[18px] ring-4 ring-neutral-800' : 'rounded-lg'}`}>

@@ -14,6 +14,8 @@ import { lireJeuPhotos } from '@/lib/jeux-photos';
 import { themesActives } from '@/lib/themes';
 import { getPoidsAtelier } from '@/lib/atelier';
 import { getDefautsMobileOuverts, getRecettesLecture } from '@/lib/recettes';
+import { getRecettesPubliees, getVisuelsActivites } from '@/lib/profils';
+import { professionDe } from '@plateforme/core/professions';
 
 export const metadata = { title: 'Créer mon site' };
 
@@ -34,7 +36,9 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
   if (pourClient && !admin) redirect('/creer');
 
   // Poids appris des notes de l'atelier (/admin/atelier) : réordonnent les propositions de « Votre site »
-  const [site, catalogue, modeles, marquesImportees, { univers }, poidsAtelier, recettes, defautsMobile] = await Promise.all([
+  // Profession du site (registre professions.ts) : profils de pratique, recettes publiées pour elle, visuels de ses activités
+  const profession = professionDe(null).id;
+  const [site, catalogue, modeles, marquesImportees, { univers }, poidsAtelier, recettes, defautsMobile, publiees, visuelsActivites] = await Promise.all([
     pourClient ? getSiteParId(siteDemande) : getMonSite(),
     getCatalogue(),
     getModelesDisponibles(),
@@ -44,6 +48,9 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
     getRecettesLecture(4),
     // Défauts d'adaptation mobile ouverts (0034) : les recettes concernées passent après les autres, jusqu'à correction
     getDefautsMobileOuverts(),
+    // Recettes publiées pour les profils de pratique (0043) et visuels validés de chaque activité (#basket…)
+    getRecettesPubliees(profession),
+    getVisuelsActivites(profession),
   ]);
   if (!site) notFound();
   // Compte en essai gratuit (non validé) : même parcours, pré-rempli avec le nom, « Voir mon site » en aperçu privé.
@@ -97,6 +104,9 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
         themesActives={themesActives()}
         poidsAtelier={poidsAtelier}
         recettes={recettes}
+        profession={profession}
+        publiees={publiees}
+        visuelsActivites={visuelsActivites}
         defautsMobile={defautsMobile}
         lienAvance={pourClient ? `/mon-site?site=${site.id}` : '/mon-site'}
         essai={essai}

@@ -307,18 +307,52 @@ export function kitDuProfil(profil: ProfilPratique, d: DonneesProfil, opts: { pr
  * Visuels d'un site pour une activité (héros, page sujet, fiches) : ceux de l'activité s'il y en a de VALIDÉS, sinon le kit
  * générique du thème (repli). `illustration` : clé de l'illustration retenue ; `photos` : URL des photos (meilleures d'abord).
  */
-export function visuelsDeLActivite(kit: KitProfil, activite?: string | null): { activite: string | null; repli: boolean; illustration: string | null; photos: string[]; icone: string | null } {
+export type VisuelsActivite = { activite: string | null; repli: boolean; illustration: string | null; photos: string[]; icone: string | null; /** Photos propres à l'activité (validées), sans repli */ photosActivite: string[] };
+export function visuelsDeLActivite(kit: KitProfil, activite?: string | null): VisuelsActivite {
   const k = kit.activites.find((x) => x.activite === (activite ?? kit.activites[0]?.activite));
   const prendre = (f: FamilleKit) => (k?.familles[f].filter((e) => !e.aValider) ?? []);
   const propres = { illustration: prendre('illustration')[0]?.cle ?? null, photos: prendre('photo').map((e) => e.url!).filter(Boolean), icone: prendre('icone')[0]?.cle ?? null };
   const repli = !k || (!propres.illustration && !propres.photos.length && !propres.icone);
   const g = (f: FamilleKit) => kit.generique[f].filter((e) => !e.aValider);
   return {
-    activite: k?.activite ?? null, repli,
+    activite: k?.activite ?? null, repli, photosActivite: propres.photos,
     illustration: propres.illustration ?? g('illustration')[0]?.cle ?? null,
     photos: propres.photos.length ? propres.photos : g('photo').map((e) => e.url!).filter(Boolean),
     icone: propres.icone ?? g('icone')[0]?.cle ?? null,
   };
+}
+
+/** Clé de la table des visuels d'activités (praticiens) : `<thème>|<activité>` */
+export const cleVisuelsActivite = (theme: string, activite: string) => `${theme}|${activite}`;
+
+/**
+ * Table des visuels VALIDÉS de chaque activité, par thème qui s'y prête (parcours /creer, sites) : kit du profil « thème + activité »
+ * en mode praticien. Pur : les données viennent de l'appelant.
+ */
+export function tableVisuelsActivites(profession: string | null | undefined, d: DonneesProfil, registre: readonly PratiqueProfession[] = PRATIQUES): Record<string, VisuelsActivite> {
+  const p = pratiqueDe(profession, registre);
+  const r: Record<string, VisuelsActivite> = {};
+  for (const t of p.themes.filter((x) => x.actif)) for (const a of p.activites.filter((x) => x.themes.includes(t.id))) {
+    const profil = profilDepuisReponses({ profession: p.profession, principaux: [t.id], activites: [a.id] }, registre);
+    r[cleVisuelsActivite(t.id, a.id)] = visuelsDeLActivite(kitDuProfil(profil, d, { praticien: true, registre }), a.id);
+  }
+  return r;
+}
+
+/** Visuels de la première activité du praticien, pour son thème principal qui s'y prête (thèmes dans l'ordre) ; null sans activité */
+export function visuelsPourPraticien(table: Readonly<Record<string, VisuelsActivite>>, themes: readonly string[], activites: readonly string[]): VisuelsActivite | null {
+  for (const a of activites) for (const t of themes) { const v = table[cleVisuelsActivite(t, a)]; if (v) return v; }
+  return null;
+}
+
+/**
+ * Photos de l'activité posées sur un brouillon au style « photos » (premier écran, page du sujet, fiches) : seulement des photos
+ * VALIDÉES propres à l'activité ; sans elles (repli), le brouillon garde les photos de la recette ou du thème.
+ */
+export function avecPhotosActivite<D extends { theme: { photosRecette?: string[] } }>(d: D, v: VisuelsActivite | null, stylePhotos: boolean): D {
+  if (!stylePhotos || !v || !v.photosActivite.length) return d;
+  const photos = [...new Set([...v.photosActivite, ...(d.theme.photosRecette ?? [])])].slice(0, 5);
+  return { ...d, theme: { ...d.theme, photosRecette: photos } };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

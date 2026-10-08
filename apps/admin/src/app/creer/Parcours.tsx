@@ -39,6 +39,11 @@ import {
   soinsDeBaseParcours,
   soinsParDefaut,
   type Priorites,
+  normaliserActivites,
+  pratiqueDe,
+  soinsEnAvantActivites,
+  type PublicationRecette,
+  type VisuelsActivite,
 } from '@plateforme/core';
 import ChoixSujets from '@/components/ChoixSujets';
 import ApercuTheme, { type Appareil } from '@/components/ApercuTheme';
@@ -50,6 +55,7 @@ import type { EtatParcours, EtatPorte } from './actions';
 import { EtapeCabinet, EtapeContenus, EtapeHoraires, EtapeSoinsImage, Verification, nomProposition } from './Etapes';
 import { EtapeCouleursPreferees, EtapeVotreSite } from './EtapeSite';
 import VerificationEssai from './VerificationEssai';
+import ChoixActivites from './ChoixActivites';
 import PorteRendu from './PorteRendu';
 import RenduPlein from './RenduPlein';
 
@@ -81,6 +87,12 @@ type Props = {
   recettes?: Recette[];
   /** Clés dont l'adaptation mobile est à corriger (0034) : les recettes concernées passent après les autres */
   defautsMobile?: string[];
+  /** Profession du site (registre professions.ts) : profils de pratique et activités proposées */
+  profession?: string | null;
+  /** Recettes publiées pour les profils de pratique (0043) : proposées d'abord, badge « Conçu pour … » */
+  publiees?: { recettes: Recette[]; publications: PublicationRecette[] };
+  /** Visuels validés de chaque activité (« thème|activité ») : appliqués aux aperçus et au site */
+  visuelsActivites?: Record<string, VisuelsActivite>;
   actions: {
     sauvegarder: ActionEnregistrer;
     choisir: ActionChoisir;
@@ -120,7 +132,7 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, poidsAtelier = null, recettes = [], defautsMobile = [], actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
+export default function Parcours({ siteId, etapeInitiale, version, initial, catalogue, modeles, marquesImportees, jeuPhotos, univers, client, admin, lienAvance, themesActives, poidsAtelier = null, recettes = [], defautsMobile = [], profession = null, publiees, visuelsActivites = {}, actions, essai = null, verifInitiale = false, messageInitial = null }: Props) {
   const router = useRouter();
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
@@ -307,8 +319,17 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
   // Seuls 3 ou 4 soins de base sont cochés d'office (aucun acte spécialisé)
   const soinsDeBase = useMemo(() => soinsDeBaseParcours(d, universCourant, slugs), [d, universCourant, slugs]);
   // Sujets modifiés après le choix du modèle : spécialités et soins en avant recalculés (mêmes règles que le serveur)
+  const pratique = useMemo(() => pratiqueDe(profession), [profession]);
+  // Thèmes changés : activités ramenées à celles que les thèmes proposent encore
   const majPriorites = (p: Priorites) =>
-    setD((x) => (x.theme.univers ? avecPrioritesParcours({ ...x, priorites: p }, { soinsConnus: slugs, themesActives }) : { ...x, priorites: p }));
+    setD((x) => {
+      const y = x.theme.univers ? avecPrioritesParcours({ ...x, priorites: p }, { soinsConnus: slugs, themesActives }) : { ...x, priorites: p };
+      const activites = normaliserActivites(pratique, x.activites ?? [], [...p.principaux, ...p.secondaires]);
+      return activites.length ? { ...y, activites } : { ...y, activites: undefined };
+    });
+  // Activités : ordre des soins mis en avant (parmi les soins cochés), visuels de l'activité au site
+  const majActivites = (activites: string[]) =>
+    setD((x) => ({ ...x, activites: activites.length ? activites : undefined, theme: { ...x.theme, soinsEnAvant: soinsEnAvantActivites(pratique, activites, x.soins, x.theme.soinsEnAvant ?? []) } }));
   const infos = ETAPES_PARCOURS[etape - 1];
   const aide = aideEtape(etape);
   const pret = Boolean(universCourant);
@@ -366,6 +387,9 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
         {etape === 1 && !verif && (
           <div className="max-w-3xl">
             <ChoixSujets priorites={d.priorites} onChange={majPriorites} soins={d.soins} soinsConnus={slugs} themesActives={themesActives} masquerIndisponibles={!admin} />
+            <div className="mt-6">
+              <ChoixActivites pratique={pratique} themes={[...d.priorites.principaux, ...d.priorites.secondaires]} valeur={d.activites ?? []} onChange={majActivites} />
+            </div>
           </div>
         )}
 
@@ -385,6 +409,9 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
               poids={poidsAtelier}
               recettes={recettes}
               defautsMobile={defautsMobile}
+              profession={profession}
+              publiees={publiees}
+              visuelsActivites={visuelsActivites}
               etroit={etroit}
               choixEnCours={choixEnCours}
               onChoisir={choisir}

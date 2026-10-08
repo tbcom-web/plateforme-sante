@@ -202,3 +202,24 @@ test('métier fictif (kinésithérapeute, 2 thèmes) : profils, matching, kit, p
   assert.ok(!l.some((x) => x.recette.id === 'p1' && x.publiee));
   assert.deepEqual(profilsCiblesParDefaut({ principaux: ['dos'], secondaires: [] }, 'kinesitherapeute', REGISTRE), ['dos']);
 });
+
+test('photos de l’activité : posées seulement si validées et propres à l’activité, en style « photos »', async () => {
+  const { avecPhotosActivite, tableVisuelsActivites, visuelsPourPraticien } = await import('./profils');
+  const table = tableVisuelsActivites('podologue', { visuels: visuels('valide') });
+  const v = visuelsPourPraticien(table, ['sport', 'diabete'], ['basket']);
+  assert.equal(v?.illustration, 'ligne:sport-basket');
+  assert.deepEqual(v?.photosActivite, []);
+  const d = { theme: { photosRecette: ['/photos/a.webp'] } };
+  assert.equal(avecPhotosActivite(d, v, true), d);
+  const avec = { ...v!, photosActivite: ['https://x.supabase.co/storage/v1/object/public/photos/basket.webp'] };
+  assert.deepEqual(avecPhotosActivite(d, avec, true).theme.photosRecette, ['https://x.supabase.co/storage/v1/object/public/photos/basket.webp', '/photos/a.webp']);
+  assert.equal(avecPhotosActivite(d, avec, false), d);
+  // Sans donnée (démo) : repli
+  assert.equal(visuelsPourPraticien(tableVisuelsActivites(null, {}), ['sport'], ['basket'])?.repli, true);
+});
+
+test('« Trouver des photos pré-filtrées #basket » : recherches et hashtag de l’activité', async () => {
+  const { requetesEmplacement, hashtagEmplacement } = await import('./suggestions-kits');
+  assert.ok(requetesEmplacement('sport', 'activite:basket').includes('basketball shoes court'));
+  assert.equal(hashtagEmplacement('activite:basket'), 'basket');
+});

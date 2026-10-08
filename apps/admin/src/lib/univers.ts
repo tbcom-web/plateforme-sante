@@ -22,6 +22,7 @@ import { getCatalogue } from '@/lib/sites';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
 import { themesActives } from '@/lib/themes';
 import { getRecettesLecture } from '@/lib/recettes';
+import { getRecettesPubliees } from '@/lib/profils';
 
 // Univers du catalogue côté serveur : statuts enregistrés (table univers_statuts, migration 0018), nombre de sites
 // qui les utilisent, et application d'un univers au brouillon d'un site (parcours praticien, phase B).
@@ -81,7 +82,9 @@ export async function appliquerUniversAuSite(
   if (opts.reglages) r.draft = appliquerReglages(r.draft, opts.reglages);
   // Recette du studio choisie (parcours) : relue côté serveur (recettes_lecture, actives et bien notées), jamais reçue telle quelle
   if (opts.reglages?.recette) {
-    const recette = (await getRecettesLecture(4)).find((x) => x.id === opts.reglages!.recette);
+    // Recette publiée pour un profil de pratique (0043, recettes_publiees) : relue de la même façon
+    const recette = (await getRecettesLecture(4)).find((x) => x.id === opts.reglages!.recette)
+      ?? (await getRecettesPubliees(null)).recettes.find((x) => x.id === opts.reglages!.recette);
     const a = recette ? appliquerRecette(r.draft, recette.composition, { id: recette.id, proposes: [u], modeles: modeles.map((m) => m.manifeste), soinsConnus: catalogue.map((c) => c.slug), themesActives: themesActives() }) : null;
     if (a) r.draft = { ...a.draft, theme: { ...a.draft.theme, proposition: `recette~${recette!.id}` } };
   }
