@@ -226,12 +226,14 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
   }
   const [lignesRef, suggestions] = await Promise.all([
     lireTout('inspirations', 'cle_asset,origine,page_origine,licence_origine,licence_url_origine,etiquettes,objectif,sujets,hashtags,requete,created_at', 'created_at.asc,page_origine.asc'),
-    lireTout('classement_suggestions', 'nature,valeur,decision', 'created_at.asc,valeur.asc'),
+    lireTout('classement_suggestions', 'nature,valeur,decision,raison', 'created_at.asc,valeur.asc'),
   ]);
   ecrire('references-illustrations.json', coreRef.referencesPourExport((lignesRef ?? []).filter((l) => l.cle_asset), core.titresAssets()));
   if (suggestions !== null) {
     const synthese = readFileSync(join(sortie, 'SYNTHESE.md'), 'utf8').replace(/\n+$/, '');
-    ecrire('SYNTHESE.md', `${synthese}\n\n${coreRef.markdownSuggestionsRefusees(suggestions)}\n`);
+    // Les refus « Pas pour ici » des kits d'images (raison kit-pas-ici:…) visent un emplacement, pas le hashtag : hors statistique
+    const horsKits = suggestions.filter((l) => !String(l.raison ?? '').startsWith('kit-pas-ici:')).map(({ raison: _r, ...l }) => l);
+    ecrire('SYNTHESE.md', `${synthese}\n\n${coreRef.markdownSuggestionsRefusees(horsKits)}\n`);
   }
 }
 
