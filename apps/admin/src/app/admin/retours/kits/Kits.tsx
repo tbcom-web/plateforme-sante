@@ -19,7 +19,8 @@ import type { SoinCatalogue } from '@/lib/sites';
 import { noterKit } from './actions';
 import CompleterKit from './CompleterKit';
 import RattacherNotees from '@/components/RattacherNotees';
-import type { EmplacementAFaire, PhotoARattacher, SuggestionVivier } from '@plateforme/core';
+import type { EmplacementAFaire, FamilleKit, KitVisuel, PhotoARattacher, SuggestionVivier, VisuelARattacher } from '@plateforme/core';
+import VisuelsDuKit from './VisuelsDuKit';
 import type { PhotoEnAttenteKit } from '@/lib/kits-images';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -29,11 +30,13 @@ type Props = {
   sujet: string;
   rang: number;
   kit: KitImages;
-  aFaire: (EmplacementAFaire & { banque: SuggestionVivier[]; manque: string | null; trouver: string })[];
+  aFaire: (EmplacementAFaire & { banque: (SuggestionVivier & { famille?: FamilleKit })[]; manque: string | null; trouver: string; famille?: FamilleKit })[];
+  visuelsARattacher: VisuelARattacher[];
+  kitVisuel: KitVisuel;
   compteur: string;
   aRattacher: PhotoARattacher[];
   enAttente: PhotoEnAttenteKit[];
-  resume: { sujet: string; libelle: string; note: number | null; trous: number; photos: number; garde: boolean; vivier: string; curees: number }[];
+  resume: { sujet: string; libelle: string; note: number | null; trous: number; photos: number; garde: boolean; vivier: string; curees: number; parType: string }[];
   notes: { note: number | null; garder: boolean; le: string | null }[];
   migrationManquante: boolean;
   proposes: Univers[];
@@ -102,11 +105,11 @@ export default function Kits(props: Props) {
       <section aria-labelledby="kits-viviers" className="grid gap-1.5 rounded-2xl border border-black/10 bg-white p-3">
         <h2 id="kits-viviers" className="text-sm font-semibold">Viviers curés (couche 1) → kits assemblés (couche 2)</h2>
         <ul className="grid gap-0.5 text-xs text-neutral-700 sm:grid-cols-2">
-          {props.resume.map((r) => <li key={r.sujet} className={r.sujet === sujet ? 'font-semibold text-teal-900' : ''}>{r.vivier}</li>)}
+          {props.resume.map((r) => <li key={r.sujet} className={r.sujet === sujet ? 'font-semibold text-teal-900' : ''}>{r.vivier}<br /><span className="text-neutral-500">{r.parType}</span></li>)}
         </ul>
         <p className="text-xs text-neutral-500">Une photo entre dans le vivier d’un sujet quand vous l’avez retenue (gardée, importée ou intégrée) ET étiquetée avec ce sujet ; jamais si elle est notée 2 ★ ou moins, retirée ou à retravailler.</p>
       </section>
-      <RattacherNotees photos={props.aRattacher} />
+      <RattacherNotees photos={props.aRattacher} visuels={props.visuelsARattacher} />
       <nav aria-label="Sujets" className="flex gap-1 overflow-x-auto pb-1">
         {props.resume.map((r) => (
           <Link key={r.sujet} href={`/admin/retours/kits?sujet=${r.sujet}`} aria-current={r.sujet === sujet ? 'page' : undefined}
@@ -136,7 +139,9 @@ export default function Kits(props: Props) {
 
       <CompleterKit key={sujet} sujet={sujet} aFaire={props.aFaire} compteur={props.compteur} enAttente={props.enAttente} />
 
-      <ul aria-label="Planche du kit" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      <VisuelsDuKit kit={props.kitVisuel} />
+
+      <ul id="planche-photos" aria-label="Planche du kit" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {kit.photos.map((p) => (
           <li key={p.emplacement + p.url} className="grid content-start gap-1 rounded-xl border border-black/10 bg-white p-1.5">
             <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-neutral-100"><Image src={p.url} alt="" fill sizes="(max-width: 767px) 50vw, 16vw" className="object-cover" /></div>

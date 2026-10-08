@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { composerKit, compteurKit, emplacementsAFaire, etatVivier, photosARattacher, libelleSujetKit, lienTrouverPhotos, manqueVivier, suggestionsVivier, SUJETS_KITS, universDuParcours } from '@plateforme/core';
+import { composerKit, composerKitVisuel, compteurKit, emplacementsAFaire, emplacementsVisuelsAFaire, etatVivier, etatVivierVisuels, photosARattacher, suggestionsVisuels, visuelsARattacher, libelleSujetKit, lienTrouverPhotos, manqueVivier, suggestionsVivier, SUJETS_KITS, universDuParcours } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
-import { getDonneesKits, getEnAttenteKits, getNotesKits, getRefusKits } from '@/lib/kits-images';
+import { getDonneesKits, getDonneesVisuels, getEnAttenteKits, getNotesKits, getRefusKits } from '@/lib/kits-images';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
@@ -21,12 +21,12 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
   const un = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
   const sujet = (SUJETS_KITS as readonly string[]).includes(un(sp.sujet)) ? un(sp.sujet) : 'enfant';
   const rang = Math.max(0, Math.min(99, Number.parseInt(un(sp.rang), 10) || 0));
-  const [d, notes, modeles, catalogue, marquesImportees, { univers }] = await Promise.all([getDonneesKits(), getNotesKits(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers()]);
+  const [d, dv, notes, modeles, catalogue, marquesImportees, { univers }] = await Promise.all([getDonneesKits(), getDonneesVisuels(), getNotesKits(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers()]);
   // Table présente ? (sinon : notes gardées dans le navigateur)
   const supabase = await createClient();
   const { error } = await supabase.from('kits_images_notes').select('id').limit(1);
   // État du vivier curé de chaque sujet (couche 1) et du kit assemblé (couche 2)
-  const resume = SUJETS_KITS.map((s) => { const k = composerKit(s, d, 0); const v = etatVivier(k, d, d.soins?.[s] ?? []); return { sujet: s, libelle: libelleSujetKit(s), note: k.noteMoyenne, trous: k.trous.length, photos: k.photos.length, garde: k.garde, vivier: v.texte, curees: v.photos }; });
+  const resume = SUJETS_KITS.map((s) => { const k = composerKit(s, d, 0); const v = etatVivier(k, d, d.soins?.[s] ?? []); return { sujet: s, libelle: libelleSujetKit(s), note: k.noteMoyenne, trous: k.trous.length, photos: k.photos.length, garde: k.garde, vivier: v.texte, curees: v.photos, parType: etatVivierVisuels(s, dv, v.photos) }; });
   const kit = composerKit(sujet, d, rang);
   // Compléter ce kit (suggestions-kits.ts) : emplacements vides ou faibles, suggestions de la banque, photos en attente d'import
   const [refus, enAttente] = await Promise.all([getRefusKits(), getEnAttenteKits()]);
@@ -34,6 +34,13 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
   // Couche 2 : suggestions du vivier curé seulement ; vivier insuffisant → « Trouver des photos » (couche 1, Photos à découvrir)
   const aFaire = emplacementsAFaire(kit, soins).map((e) => ({ ...e, banque: suggestionsVivier(kit, e.emplacement, d, refus, 8), manque: manqueVivier(sujet, e.emplacement, d), trouver: lienTrouverPhotos(sujet, e.emplacement) }));
   const compteur = compteurKit(kit, soins);
+  // Kit multi-visuels (kits-visuels.ts) : illustrations (un seul style), icônes, animations (« à valider » visibles pour Paul) ;
+  // emplacements vides : suggestions du vivier curé dans le même ordre que les photos
+  const kitVisuel = composerKitVisuel(sujet, dv, { soins });
+  const aFaireVisuels = emplacementsVisuelsAFaire(kitVisuel, soins).map((e) => ({
+    emplacement: e.emplacement, libelle: e.libelle, famille: e.famille, raison: 'vide' as const, photo: null, note: null, manque: null, trouver: '/admin/retours/tri',
+    banque: suggestionsVisuels(kitVisuel, e.emplacement, e.famille, dv, refus, 8).map((x) => ({ ...x, url: '', etiquetee: x.rang === 1, aImporter: false, idLibre: null })),
+  }));
   const notesSujet = notes.filter((n) => n.sujet === sujet);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
@@ -55,8 +62,10 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
         sujet={sujet}
         rang={rang}
         kit={kit}
-        aFaire={aFaire}
+        aFaire={[...aFaire, ...aFaireVisuels]}
         aRattacher={photosARattacher(d)}
+        visuelsARattacher={visuelsARattacher(dv)}
+        kitVisuel={kitVisuel}
         compteur={compteur.texte}
         enAttente={enAttente.filter((x) => x.sujet === sujet)}
         resume={resume}

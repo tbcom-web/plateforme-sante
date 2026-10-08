@@ -4,7 +4,7 @@ import ContexteImages from '@/components/ContexteImages';
 export default function Disposition({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <ContexteImages />
+      <ContexteImages praticien />
       {children}
     </>
   );

@@ -1,11 +1,13 @@
 import 'server-only';
 import { cache } from 'react';
 import {
+  composerKitVisuel, familleDeCle, inventaireAssets, kitVisuelCompact, notesVisuels, type DonneesVisuels, type StatutIllustration,
   cleCandidatePhoto, clesImagesExclues, vivierCure, etiquetteKit, kitsCompacts, PREFIXE_REFUS_KIT, refusKitDepuisLignes, kitsGardes, notesPhotos, soinsParDefautScenario, SUJETS_KITS,
   type DonneesKits, type KitCompact, type NoteKit,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
-import { getPoidsAssets, getSurchargesSujets } from '@/lib/assets-notes';
+import { getPhotosDesJeux, getPoidsAssets, getSurchargesSujets } from '@/lib/assets-notes';
+import { getRevuesIllustrations } from '@/lib/illustrations';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getLignesAssetsApprentissage } from '@/lib/notation-recettes';
 import { getPhotosBanque } from '@/lib/recettes';
@@ -44,12 +46,19 @@ export const getDonneesKits = cache(async (): Promise<DonneesKits & { exclues: S
   return { banque, assets, notes: notesPhotos(lignes), hashtags, soins, gardes: kitsGardes(notesKits), exclues: clesImagesExclues(lignes), surcharges };
 });
 
-export const getContexteImages = cache(async (): Promise<{ exclues: string[]; kits: Record<string, KitCompact>; vivier: Record<string, string[]> }> => {
+export const getContexteImages = cache(async (praticien = false): Promise<{ exclues: string[]; kits: Record<string, KitCompact>; vivier: Record<string, string[]> }> => {
   try {
-    const d = await getDonneesKits();
+    const [d, dv] = await Promise.all([getDonneesKits(), getDonneesVisuels()]);
     // Vivier curé 4-5 ★ par sujet (photos importées, meilleures d'abord) : tirages de photos et part du style « Photos »
     const vivier = Object.fromEntries(SUJETS_KITS.map((s) => [s, vivierCure(s, d).filter((v) => v.importee && (v.note ?? 0) >= 4).map((v) => v.p.url)]));
-    return { exclues: [...d.exclues].sort(), kits: kitsCompacts(d), vivier };
+    // Kits multi-visuels (kits-visuels.ts) : dessin par soin et animation d'en-tête du sujet, ajoutés au kit photo ; praticiens
+    // (/creer, /edition, /mon-site) : visuels validés seulement, animations aux ingrédients validés seulement
+    const kits = kitsCompacts(d);
+    for (const s of SUJETS_KITS) {
+      const v = kitVisuelCompact(composerKitVisuel(s, dv, { praticien }));
+      if (Object.keys(v).length) kits[s] = { sujet: s, ...(kits[s] ?? {}), ...v };
+    }
+    return { exclues: [...d.exclues].sort(), kits, vivier };
   } catch {
     return { exclues: [], kits: {}, vivier: {} };
   }
@@ -89,3 +98,13 @@ export async function getEnAttenteKits(): Promise<PhotoEnAttenteKit[]> {
     return [];
   }
 }
+
+/**
+ * Données des kits multi-visuels (kits-visuels.ts) : illustrations, icônes et animations de l'inventaire (aucune liste figée : un
+ * nouveau visuel entre dès qu'il est rattaché), sujets et hashtags de Paul, notes (base → variantes), statuts de revue, exclusions.
+ */
+export const getDonneesVisuels = cache(async (): Promise<DonneesVisuels> => {
+  const [d, lignes, revues, photosJeux] = await Promise.all([getDonneesKits(), getLignesAssetsApprentissage(), getRevuesIllustrations().catch(() => ({ statuts: [] as { cle: string; statut: StatutIllustration }[] })), getPhotosDesJeux().catch(() => [])]);
+  const visuels = inventaireAssets({ photosJeux }).filter((a) => { const f = familleDeCle(a.cle); return f === 'illustration' || f === 'icone' || f === 'animation'; }).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins, titre: a.titre }));
+  return { visuels, surcharges: d.surcharges, hashtags: d.hashtags, notes: notesVisuels(lignes), exclues: d.exclues, statuts: Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), soins: d.soins };
+});

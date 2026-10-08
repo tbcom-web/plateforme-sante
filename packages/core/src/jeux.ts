@@ -272,6 +272,8 @@ export function jeuVisuel(
   // Kit d'images du sujet (contexte-images.ts) : photo étiquetée pour chaque soin ; photos exclues (≤ 2 ★, retirées) remplacées
   const kit = kitDeSpecialite(p.value);
   for (const [slug, photo] of Object.entries(kit?.soins ?? {})) if (!imageExclue(photo)) soins[slug] = { ...(soins[slug] ?? VISUEL_SOIN_PAR_DEFAUT), photo, cadrage: cadrage(photo), photoBonne: true };
+  // Kit illustré du sujet (kits-visuels.ts) : son dessin pour chaque soin prime sur le dessin par défaut
+  for (const [slug, nom] of Object.entries(kit?.dessins ?? {})) if (soins[slug]) soins[slug] = { ...soins[slug], dessin: nom as NomDessin };
   if (contexteImages().exclues.size) {
     const secours = [p.photos.accueil, p.photos.panorama, ...diaporama];
     for (const [slug, v] of Object.entries(soins)) if (imageExclue(v.photo)) { const photo = premiereNonExclue(secours); soins[slug] = { ...v, photo, cadrage: cadrage(photo), photoBonne: false }; }
@@ -280,7 +282,8 @@ export function jeuVisuel(
   return {
     specialite: p.value,
     label: p.label,
-    accueil: { photo: p.photos.accueil, cadrage: cadrage(p.photos.accueil), dessin: dessins[0], animation: p.animation, photoBonne: accueilPerso || sur.accueilBonne },
+    // Animation d'en-tête du kit illustré (validée pour les praticiens) avant celle de la spécialité
+    accueil: { photo: p.photos.accueil, cadrage: cadrage(p.photos.accueil), dessin: dessins[0], animation: kit?.animation && p.animation !== null ? (kit.animation as Animation) : p.animation, photoBonne: accueilPerso || sur.accueilBonne },
     panorama: { photo: p.photos.panorama, cadrage: cadrage(p.photos.panorama), dessin: dessins[1] ?? dessins[0], animation: null, photoBonne: panoramaPerso || sur.panoramaBonne },
     galerie: diaporama.slice(0, 6).map((photo) => ({ photo, cadrage: cadrage(photo) })),
     soins,

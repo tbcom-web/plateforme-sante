@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { clePhoto, estCleAsset, hashtagEmplacement, hashtagsValides, PREFIXE_REFUS_KIT, SUJETS_KITS } from '@plateforme/core';
+import { clePhoto, estCleAsset, familleDeCle, typeDeCle, hashtagEmplacement, hashtagsValides, PREFIXE_REFUS_KIT, SUJETS_KITS } from '@plateforme/core';
 import { validerDecisionClassement } from '@plateforme/core/classement-visuels';
 import { importerPhotoLibre } from '../../photos/actions';
 import { exigerAdmin } from '@/lib/admin';
@@ -39,7 +39,7 @@ export async function noterKit(s: SaisieKit): Promise<{ ok: boolean; message: st
 // Compléter un kit (suggestions-kits.ts) : couche 2, le vivier curé seulement (Pexels / Pixabay = couche 1, Photos à découvrir)
 // ---------------------------------------------------------------------------------------------------------------
 
-const EMPLACEMENT_KIT = /^(accueil|page-sujet|cabinet|soin:[a-z0-9-]{1,40})$/;
+const EMPLACEMENT_KIT = /^(accueil|page-sujet|cabinet|infos|entete|soin:[a-z0-9-]{1,40})$/;
 
 /**
  * « Utiliser ici » : ajoute à la photo le sujet du kit et le hashtag de l'emplacement (#<slug du soin>, #cabinet…) dans les
@@ -47,7 +47,8 @@ const EMPLACEMENT_KIT = /^(accueil|page-sujet|cabinet|soin:[a-z0-9-]{1,40})$/;
  */
 export async function utiliserIci(cle: string, sujet: string, emplacement: string): Promise<{ ok: boolean; message: string }> {
   await exigerAdmin();
-  if (!estCleAsset(cle) || !cle.startsWith('photo:')) return { ok: false, message: 'Photo inconnue.' };
+  // Photos et autres visuels du kit (illustrations, icônes, animations : kits-visuels.ts)
+  if (!estCleAsset(cle) || !familleDeCle(cle)) return { ok: false, message: 'Visuel inconnu.' };
   if (!(SUJETS_KITS as readonly string[]).includes(sujet) || !EMPLACEMENT_KIT.test(emplacement)) return { ok: false, message: 'Emplacement inconnu.' };
   const tag = hashtagEmplacement(emplacement);
   if (!hashtagsValides([tag]).length) return { ok: false, message: 'Hashtag invalide.' };
@@ -77,11 +78,11 @@ export async function pasPourIci(cle: string, emplacement: string): Promise<{ ok
 /** Notation rapide dans la file (couche 1 depuis la couche 2) : note de la photo, comme les autres notes d'assets (assets_notes) */
 export async function noterPhotoKit(cle: string, note: number): Promise<{ ok: boolean; message: string }> {
   await exigerAdmin();
-  if (!estCleAsset(cle) || !cle.startsWith('photo:')) return { ok: false, message: 'Photo inconnue.' };
+  if (!estCleAsset(cle) || !familleDeCle(cle)) return { ok: false, message: 'Visuel inconnu.' };
   if (!Number.isInteger(note) || note < 1 || note > 5) return { ok: false, message: 'Note de 1 à 5.' };
   const user = await getUser();
   const supabase = await createClient();
-  const { error } = await supabase.from('assets_notes').insert({ cle_asset: cle, type: 'photo', note, etiquettes: [], auteur: user?.id ?? null });
+  const { error } = await supabase.from('assets_notes').insert({ cle_asset: cle, type: typeDeCle(cle), note, etiquettes: [], auteur: user?.id ?? null });
   if (error) return { ok: false, message: 'Migration 0027 à exécuter : note non enregistrée.' };
   revalidatePath('/admin/retours/kits');
   return { ok: true, message: note <= 2 ? `${note}★ : la photo sort du vivier.` : `${note}★ enregistrée.` };
@@ -111,7 +112,7 @@ export async function importerEtUtiliser(idLibre: string, sujet: string, emplace
  */
 export async function rattacherSujets(choix: { cle: string; sujet: string }[]): Promise<{ ok: boolean; message: string }> {
   await exigerAdmin();
-  const l = (Array.isArray(choix) ? choix : []).filter((c) => c && estCleAsset(c.cle) && c.cle.startsWith('photo:') && (SUJETS_KITS as readonly string[]).includes(c.sujet)).slice(0, 500);
+  const l = (Array.isArray(choix) ? choix : []).filter((c) => c && estCleAsset(c.cle) && Boolean(familleDeCle(c.cle)) && (SUJETS_KITS as readonly string[]).includes(c.sujet)).slice(0, 500);
   if (!l.length) return { ok: false, message: 'Aucune photo sélectionnée.' };
   const user = await getUser();
   const supabase = await createClient();

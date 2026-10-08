@@ -12,7 +12,11 @@
 // Registre vide (tests, scripts) : comportement d'avant. Module sans dépendance (importé par packs.ts et jeux.ts).
 
 /** Kit compact transmis aux rendus (kits-images.ts, kitCompact) */
-export type KitCompact = { sujet?: string; accueil?: string; panorama?: string; galerie?: string[]; soins?: Record<string, string> };
+export type KitCompact = {
+  sujet?: string; accueil?: string; panorama?: string; galerie?: string[]; soins?: Record<string, string>;
+  /** Kit illustré (kits-visuels.ts) : dessin par soin (nom de dessin), animation d'en-tête ; jamais d'élément exclu */
+  dessins?: Record<string, string>; animation?: string; registre?: string; heros?: string;
+};
 
 /**
  * `vivier` : par sujet, URLs des photos du VIVIER CURÉ (kits-images.ts : retenues, étiquetées par Paul, importées) notées ≥ 4 ★,

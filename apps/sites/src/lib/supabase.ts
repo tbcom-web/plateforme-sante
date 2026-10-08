@@ -31,6 +31,10 @@ import {
   surchargesDepuisLignes,
   sujetsDeSpecialite,
   contexteImagesSite,
+  kitVisuelSite,
+  inventaireAssets,
+  hashtagsDepuisLignes,
+  HASHTAGS_PAR_DEFAUT,
   definirContexteImages,
   sansImagesExclues,
   SUJET_DE_SPECIALITE,
@@ -64,14 +68,23 @@ async function lireContexteImages(d: SiteDraft, slugs: readonly string[]) {
     vide(lire<{ photos: unknown; specialite: string; actif: boolean; site_id: string | null; id: string; nom: string; source: string }[]>('jeux_photos?actif=eq.true&site_id=is.null&select=id,nom,specialite,photos,source,site_id,actif')),
     vide(lire<{ sujet: string; note: number | null; garder: boolean; photos: { emplacement: string; url: string }[]; appareil: string | null }[]>('rpc/kits_images_apprentissage')),
   ]);
+  // Statuts de revue (validé, à revoir…) : le kit illustré d'un site ne prend que des visuels VALIDÉS (kits-visuels.ts)
+  const statuts = await vide(lire<{ cle: string; statut: string }[]>('illustrations_statuts?select=cle,statut'));
   const sujet = d.priorites?.principaux?.[0] ?? SUJET_DE_SPECIALITE[d.theme.specialite] ?? 'general';
-  return contexteImagesSite({
-    sujet, soins: (d.soins ?? []).filter((x) => slugs.includes(x)), lignesAssets,
-    surcharges: surchargesDepuisLignes(sujets.map((l) => ({ cle: l.cle_asset, sujet: l.sujet, action: l.action }))),
+  const surcharges = surchargesDepuisLignes(sujets.map((l) => ({ cle: l.cle_asset, sujet: l.sujet, action: l.action })));
+  const soinsSite = (d.soins ?? []).filter((x) => slugs.includes(x));
+  const visuel = kitVisuelSite({
+    sujet, soins: soinsSite, lignesAssets, surcharges, statuts,
+    hashtags: hashtagsDepuisLignes(lignesHashtags.map((l) => ({ cle: l.cle_asset, hashtag: l.hashtag, action: l.action })), HASHTAGS_PAR_DEFAUT),
+    visuels: inventaireAssets().filter((a) => ['dessin', 'ligne', 'heros', 'materiel', 'biblio', 'picto', 'animation'].includes(a.type)).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins })),
+  });
+  return { ...contexteImagesSite({
+    sujet, soins: soinsSite, lignesAssets,
+    surcharges,
     lignesHashtags, libres,
     jeux: jeux.map((l) => { const j = jeuPhotosDepuisLigne(l); return { photos: j.photos, specialite: j.specialite, sujets: j.specialite === 'generale' ? ['general'] : sujetsDeSpecialite(j.specialite) }; }),
     notesKits: kits.map((k) => ({ sujet: k.sujet, note: k.note, garder: k.garder, photos: Array.isArray(k.photos) ? k.photos : [], appareil: k.appareil })),
-  });
+  }), visuel };
 }
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
@@ -175,7 +188,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   // validées et importées seulement), avant les photos par défaut et le jeu de photos PARTAGÉ (un jeu exclusif du site reste prioritaire)
   const photosStyle = d.theme.modeVisuel === 'photos';
   const images = await lireContexteImages(d, catalogue.map((c) => c.slug)).catch(() => null);
-  if (images) definirContexteImages({ exclues: images.exclues, kits: images.kit && photosStyle ? { [d.theme.specialite]: images.kit } : {} });
+  // Kit illustré (dessin par soin, animation d'en-tête validés) dans tous les styles ; kit photo en style « Photos »
+  if (images) definirContexteImages({ exclues: images.exclues, kits: { [d.theme.specialite]: { ...(images.kit && photosStyle ? images.kit : {}), ...images.visuel } } });
   const jeuRetenu = images?.kit && photosStyle && jeuPhotos && !jeuPhotos.siteId ? null : jeuPhotos;
   const persoPack = persoDuJeuPhotos(jeuRetenu, persoBanque, poidsPhotos, sujetsDeSpecialite(d.theme.specialite));
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);

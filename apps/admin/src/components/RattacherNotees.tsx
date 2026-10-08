@@ -7,16 +7,22 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { gainsRattachement, libelleSujetKit, type PhotoARattacher } from '@plateforme/core';
+import { gainsRattachement, inventaireAssets, LIBELLES_FAMILLES_KIT, libelleSujetKit, type Asset, type PhotoARattacher, type VisuelARattacher } from '@plateforme/core';
+import Apercu from '@/app/admin/retours/tri/ApercuVisuel';
 import { rattacherSujets } from '@/app/admin/retours/kits/actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
-export default function RattacherNotees({ photos }: { photos: PhotoARattacher[] }) {
+type Element = { cle: string; note: number; sujets: string[]; sujetPropose: string; url?: string; importee?: boolean; famille: string };
+
+/** Photos ET visuels (illustrations, icônes, animations : kits-visuels.ts, visuelsARattacher) notés ≥ 4 ★ sans sujet */
+export default function RattacherNotees({ photos: lesPhotos, visuels = [] }: { photos: PhotoARattacher[]; visuels?: VisuelARattacher[] }) {
+  const photos: Element[] = useMemo(() => [...lesPhotos.map((p) => ({ ...p, famille: 'photo' })), ...visuels], [lesPhotos, visuels]);
+  const parCle = useMemo(() => (visuels.length ? new Map<string, Asset>(inventaireAssets().map((a) => [a.cle, a])) : new Map<string, Asset>()), [visuels.length]);
   const router = useRouter();
   const [ouvert, setOuvert] = useState(false);
-  const [coches, setCoches] = useState<Record<string, boolean>>(() => Object.fromEntries(photos.map((p) => [p.cle, true])));
-  const [sujets, setSujets] = useState<Record<string, string>>(() => Object.fromEntries(photos.map((p) => [p.cle, p.sujetPropose])));
+  const [coches, setCoches] = useState<Record<string, boolean>>({});
+  const [sujets, setSujets] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [occupe, setOccupe] = useState(false);
   const tous = useMemo(() => photos.map((p) => ({ cle: p.cle, sujet: sujets[p.cle] ?? p.sujetPropose })), [photos, sujets]);
@@ -34,7 +40,7 @@ export default function RattacherNotees({ photos }: { photos: PhotoARattacher[] 
   return (
     <section aria-labelledby="rattacher-notees" className="grid gap-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="rattacher-notees" className="text-sm font-semibold text-amber-950">Photos que vous avez déjà notées ≥ 4 ★ mais sans sujet : {photos.length}</h2>
+        <h2 id="rattacher-notees" className="text-sm font-semibold text-amber-950">Photos et visuels que vous avez déjà notés ≥ 4 ★ mais sans sujet : {photos.length}</h2>
         <button type="button" aria-expanded={ouvert} onClick={() => setOuvert((o) => !o)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold text-teal-900 underline ${focus}`}>{ouvert ? 'Masquer' : 'Voir et rattacher'}</button>
       </div>
       <p className="text-xs text-amber-950">Sujet proposé d’après le jeu de photos, la catégorie ou la recherche d’origine ; rien n’est enregistré sans votre validation.</p>
@@ -46,17 +52,19 @@ export default function RattacherNotees({ photos }: { photos: PhotoARattacher[] 
               <li key={p.cle} className={`grid content-start gap-1 rounded-xl border bg-white p-1.5 ${coches[p.cle] !== false ? 'border-teal-700' : 'border-black/10 opacity-60'}`}>
                 <label className="grid cursor-pointer gap-1">
                   <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-neutral-100">
-                    {p.importee
-                      ? <Image src={p.url} alt="" fill sizes="(max-width: 767px) 50vw, 16vw" className="object-cover" />
+                    {!p.url && parCle.get(p.cle)
+                      ? <Apercu a={parCle.get(p.cle)!} />
+                      : p.importee
+                      ? <Image src={p.url ?? ""} alt="" fill sizes="(max-width: 767px) 50vw, 16vw" className="object-cover" />
                       // eslint-disable-next-line @next/next/no-img-element
-                      : <img src={p.url} alt="" referrerPolicy="no-referrer" className="size-full object-cover" />}
+                      : <img src={p.url ?? ''} alt="" referrerPolicy="no-referrer" className="size-full object-cover" />}
                   </div>
                   <span className="flex items-center gap-1.5 text-xs">
                     <input type="checkbox" checked={coches[p.cle] !== false} onChange={(e) => setCoches((c) => ({ ...c, [p.cle]: e.target.checked }))} className="size-4" />
-                    {String(p.note).replace('.', ',')}★
+                    {String(p.note).replace('.', ',')}★{p.famille !== 'photo' ? ` · ${LIBELLES_FAMILLES_KIT[p.famille as 'icone']?.un ?? p.famille}` : ''}
                   </span>
                 </label>
-                <select value={sujets[p.cle]} onChange={(e) => setSujets((s) => ({ ...s, [p.cle]: e.target.value }))} aria-label="Sujet" className="min-h-9 rounded-md border border-neutral-300 bg-white px-1 text-xs">
+                <select value={sujets[p.cle] ?? p.sujetPropose} onChange={(e) => setSujets((s) => ({ ...s, [p.cle]: e.target.value }))} aria-label="Sujet" className="min-h-9 rounded-md border border-neutral-300 bg-white px-1 text-xs">
                   {p.sujets.map((s) => <option key={s} value={s}>{libelleSujetKit(s)}</option>)}
                 </select>
               </li>

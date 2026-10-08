@@ -318,6 +318,27 @@ par « général » défilent un par un (clavier : U utiliser ici, G garder, X p
   vivier de 5 photos → 9/18 combinaisons de l'atelier en photo, toutes leurs photos dans le vivier ; Studio « Tout changer »
   7/60 → 33/60 en style photo.
 
+### Kits multi-visuels : illustrations, icônes, animations (`kits-visuels.ts`, 2026-10-08)
+
+« Les kits d'images peuvent aussi contenir des illustrations taguées avec semelles, etc. ; idem pour les animations. »
+
+- **Vivier** (`estCureVisuel`, `vivierVisuels`) : tous les visuels de l'inventaire (dessins, traits continus, héros, matériel, styles
+  expérimentaux, kit sport, pictos / icônes, animations ; aucune liste figée) rattachés par Paul au sujet (`assets_sujets`, `#<sujet>`)
+  ou à l'un de ses soins (`#<slug>`), jamais exclus (moyenne ou dernière note ≤ 2 ★, retirés, à retravailler) — note et statut
+  HÉRITÉS de la base pour une variante (`noteHeritee`, `statutEffectif`). État par type : « Semelles : 4 illustrations, 7 icônes,
+  1 animation, 2 photos ».
+- **Kit** (`composerKitVisuel`) : un seul style d'illustration (registre le mieux fourni et noté du vivier, ou celui imposé),
+  héros illustré, illustration de la page sujet et de chaque soin, icône par soin et pour les infos pratiques, animation d'en-tête
+  et animations de soin ; une variante n'est jamais un doublon de sa base. Praticiens : visuels « validés » seulement, animations
+  seulement quand toutes leurs images de base sont validées ; Paul voit les « à valider » avec badge.
+- **Vue des kits** : onglets Photos · Illustrations · Icônes · Animations (animations jouées ~6 s puis en pause, rejouées au survol :
+  même budget que les aperçus) ; « Compléter ce kit » propose aussi illustrations, icônes et animations du vivier pour les
+  emplacements vides (même ordre que les photos : ≥ 4 ★ étiquetés, ≥ 3,5 ★, non notés avec notation en ligne, bien notés à rattacher,
+  puis sujet voisin) ; le bloc « déjà notés ≥ 4 ★ mais sans sujet » inclut illustrations, icônes et animations.
+- **Utilisation** (`kitVisuelCompact` → registre `contexte-images.ts`) : le dessin du kit pour chaque soin prime sur le dessin par
+  défaut, l'animation d'en-tête du kit sur celle de la spécialité (`jeuVisuel`) — Studio, atelier, recettes à noter, duels de
+  thèmes ; `/creer`, `/edition`, `/mon-site` et sites générés (`kitVisuelSite`) : éléments validés seulement.
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).
