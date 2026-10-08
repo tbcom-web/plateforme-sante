@@ -1,5 +1,5 @@
 import 'server-only';
-import { apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { ajouterPairesApprises, pairesDesNotes, pairesDuels, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
 import { getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
@@ -49,7 +49,9 @@ export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
   const renforts = fusionnerRenforts(fusionnerRenforts(sources.length ? renfortsPoids(sources, base?.moyenne || 3) : { atelier: {}, assets: {} }, renfortsDuels(duels)), renfortsNotations(notations));
   const poids = Object.keys(renforts.atelier).length || Object.keys(renforts.assets).length ? appliquerRenforts(base, renforts) : base;
   // Ingrédients, PAIRES et familles appris des recettes complètes : lus par les tirages harmonieux (harmonie.ts) et propositions.ts
-  const harmonie = notations.length ? apprisHarmonie(statsNotation(notations)) : null;
+  // + combinaisons police × palette (duels « Police × palette » et tuile du même nom, duels-compositions.ts) : paires
+  // `gamme:<g>&police:<p>` ajoutées aux paires apprises (plafond ±0,75 ★), lues par les tirages harmonieux
+  const harmonie = ajouterPairesApprises(notations.length ? apprisHarmonie(statsNotation(notations)) : null, pairesDuels(duels), pairesDesNotes(assets?.effets ?? {}));
   return harmonie ? { ...(poids ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : poids;
 }
 

@@ -27,6 +27,7 @@ import { libelleCleTypo, toutesClesTypo } from './typo';
 import { libelleCleDetails, toutesClesDetails } from './details';
 import { libelleCleMenu, toutesClesMenu } from './menus';
 import { VARIANTES_SECTIONS } from './modeles';
+import { toutesCombinaisons } from './combinaisons';
 
 export * from './assets-poids';
 
@@ -296,6 +297,8 @@ export function inventaireStudio(): Asset[] {
   }
   // Habillage (habillage.ts) : chaque paire de polices et chaque valeur de typographie, chaque jeu et élément de détails, chaque
   // menu ; rendus en spécimen (typo, détails) ou en premier écran (menus) par l'aperçu de l'admin
+  // Combinaisons police × palette (combinaisons.ts) : tuile « Police × palette », type typo (aucune migration)
+  for (const c of toutesCombinaisons()) l.push({ cle: c.cle, type: 'typo', titre: c.titre, detail: 'Police × palette', source: 'packages/core/src/combinaisons.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle: c.cle } });
   for (const cle of toutesClesTypo()) l.push({ cle, type: 'typo', titre: libelleCleTypo(cle), detail: 'Typographie', source: 'packages/core/src/typo.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle } });
   for (const cle of toutesClesDetails()) l.push({ cle, type: 'details', titre: libelleCleDetails(cle), detail: 'Détails', source: 'packages/core/src/details.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle } });
   for (const cle of toutesClesMenu()) l.push({ cle, type: 'menu', titre: libelleCleMenu(cle), detail: 'Menu', source: 'packages/core/src/menus.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle } });

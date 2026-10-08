@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  appliquerHashtag, assetsDuHashtag, completerHashtag, correspondHashtag, frequencesAvecVocabulaire, frequencesHashtags, hashtagsDepuisLignes, hashtagsValides, HASHTAGS_MAX, lireHashtags,
+  appliquerHashtag, assetsDuHashtag, completerHashtag, correspondHashtag, frequencesHashtags, hashtagsDepuisLignes, hashtagsValides, HASHTAGS_MAX, lireHashtags,
   markdownHashtags, normaliserHashtag, suggestionsHashtags,
 } from './hashtags';
 
@@ -76,11 +76,4 @@ test('hashtags : synthèse Markdown', () => {
   assert.match(md, /^## Hashtags des visuels/);
   assert.match(md, /- #trail \(2\) : `dessin:x` Pied, `photo:a`/);
   assert.match(markdownHashtags({}), /Aucun hashtag/);
-});
-
-test('autocomplétion du tri : hashtags utilisés d’abord, puis vocabulaire métier normalisé', () => {
-  const f = frequencesAvecVocabulaire({ 'photo:a': ['laser-co2', 'trail'], 'photo:b': ['trail'] }, ['Laser', 'orthonyxie', 'Verrue', 'trail', 'k taping']);
-  assert.deepEqual(f, { 'laser-co2': 1, trail: 2, laser: 0, orthonyxie: 0, verrue: 0, 'k-taping': 0 });
-  assert.deepEqual(completerHashtag('las', f), ['laser-co2', 'laser']);
-  assert.deepEqual(completerHashtag('', f, [], 3), ['trail', 'laser-co2', 'k-taping']);
 });

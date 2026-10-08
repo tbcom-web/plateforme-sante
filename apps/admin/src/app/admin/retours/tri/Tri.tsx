@@ -5,29 +5,22 @@
 //   couvert, jamais trié, déjà trié — un visuel à la fois en grand ; gros boutons des sujets (multi-sélection, touches 1 à 8) ;
 //   suggestions (suggererClassement) pré-cochées en pointillé ; hashtags suggérés ; Entrée = « Suivant » (enregistre les
 //   ajouts / retraits et les suggestions acceptées ou refusées), → passer, ← précédent.
-//   Hashtags LIBRES (2026-10-08, « on doit pouvoir donner des hashtags, par exemple Laser ») : champ avec puces supprimables,
-//   autocomplétion (hashtags déjà utilisés par fréquence, puis vocabulaire métier : soins du catalogue, dessins, sujets),
-//   enregistrés aussitôt (assets_hashtags, 0029) ; « # » donne le focus au champ ; dans le champ, Entrée ajoute le hashtag,
-//   Entrée sur champ vide ou Ctrl+Entrée = enregistrer et suivant.
-// - « Sélection multiple » : grille, clic ou espace pour sélectionner, « Ajouter le sujet X à la sélection » (ou le retirer),
-//   « Ajouter #… à la sélection » (ou les retirer).
-// - Filtre par hashtag (file et grille ; saisie partielle : « las » trouve #laser).
+// - « Sélection multiple » : grille, clic ou espace pour sélectionner, « Ajouter le sujet X à la sélection » (ou le retirer).
 // - « Couverture par sujet » : tableau (héros, illustrations par style, icônes, photos importées, animations validées) et
 //   manques, chacun avec un lien vers le tri filtré.
 // Les visuels confirmés sans changement sont retenus dans ce navigateur (localStorage) pour ne pas revenir en tête de file.
 import '@plateforme/core/dessins.css';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  actionsTri, alertesCouverture, correspondHashtag, dansFamille, appliquerHashtag, DESSINS_PODOLOGIE, frequencesAvecVocabulaire, VISUELS_SOINS, couvertureParSujet, fileTri, gamme as gammeParId, hashtagsDe, inventaireAssets, LIBELLES_FAMILLES_TRI,
+  actionsTri, alertesCouverture, dansFamille, appliquerHashtag, couvertureParSujet, fileTri, gamme as gammeParId, hashtagsDe, inventaireAssets, LIBELLES_FAMILLES_TRI,
   LIBELLES_RAISONS_TRI, LIBELLES_TYPES_ASSET, STYLES_COUVERTURE, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, variablesCharte, variablesGamme,
   FAMILLES_TRI, type FamilleTri, type HashtagsAssets, type PhotoDeJeu, type StatutIllustration, type SurchargesSujets,
 } from '@plateforme/core';
 import { suggererClassement, type DecisionClassement } from '@plateforme/core/classement-visuels';
 import { appliquerAction } from '@/components/SujetsVisuel';
 import Apercu from './ApercuVisuel';
-import { FiltreHashtag, SaisieHashtags } from '@/components/HashtagsVisuel';
 import { basculerHashtagAsset } from '../actions-hashtags';
-import { enregistrerTri, hashtagsEnLot, sujetEnLot } from './actions';
+import { enregistrerTri, sujetEnLot } from './actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const libelle = (id: string) => SUJETS_VISUELS.find((s) => s.id === id)?.libelle ?? id;
@@ -42,8 +35,6 @@ type Props = {
   migrationHashtags: boolean;
   statuts: Record<string, StatutIllustration>;
   sujetInitial: string;
-  /** Filtre par hashtag (?hashtag=) */
-  hashtagInitial?: string;
   familleInitiale: FamilleTri;
   vueInitiale: Vue;
 };
@@ -59,28 +50,14 @@ export default function Tri(props: Props) {
   const [vue, setVue] = useState<Vue>(props.vueInitiale);
   const [famille, setFamille] = useState<FamilleTri>(props.familleInitiale);
   const [sujetFiltre, setSujetFiltre] = useState(props.sujetInitial);
-  const [filtreHashtag, setFiltreHashtag] = useState(props.hashtagInitial ?? '');
-  // Hashtags lus par la file au moment où elle est figée (un hashtag ajouté en cours de session ne la réordonne pas)
-  const refHashtags = useRef(hashtags);
-  refHashtags.current = hashtags;
-  // Autocomplétion : hashtags utilisés (fréquence), puis vocabulaire métier (soins du catalogue, dessins, sujets)
-  const connusHashtags = useMemo(() => frequencesAvecVocabulaire(hashtags, [...Object.keys(VISUELS_SOINS), ...DESSINS_PODOLOGIE, ...SUJETS_VISUELS.map((x) => x.id)]), [hashtags]);
-  const champHashtag = useRef<HTMLInputElement>(null);
   const [vus, setVus] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState('');
   const [enCours, setEnCours] = useState(false);
   useEffect(() => { setVus(lireVus()); }, []);
 
-  // Props stabilisées : une action serveur (revalidatePath) renvoie de nouveaux objets identiques, qui ne doivent pas refiger la
-  // file ni la ramener au début
-  const clePhotos = JSON.stringify(props.photosJeux), cleStatuts = JSON.stringify(props.statuts);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const photosJeux = useMemo(() => props.photosJeux, [clePhotos]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const statutsTri = useMemo(() => props.statuts, [cleStatuts]);
-  const inventaire = useMemo(() => inventaireAssets({ photosJeux }).filter((a) => ['picto', 'dessin', 'ligne', 'materiel', 'animation', 'heros', 'biblio', 'photo'].includes(a.type)), [photosJeux]);
+  const inventaire = useMemo(() => inventaireAssets({ photosJeux: props.photosJeux }).filter((a) => ['picto', 'dessin', 'ligne', 'materiel', 'animation', 'heros', 'biblio', 'photo'].includes(a.type)), [props.photosJeux]);
   const parCle = useMemo(() => new Map(inventaire.map((a) => [a.cle, a])), [inventaire]);
-  const visuels = useMemo(() => inventaire.map((a) => ({ cle: a.cle, type: a.type, soins: a.soins, statut: statutsTri[a.cle] ?? null })), [inventaire, statutsTri]);
+  const visuels = useMemo(() => inventaire.map((a) => ({ cle: a.cle, type: a.type, soins: a.soins, statut: props.statuts[a.cle] ?? null })), [inventaire, props.statuts]);
   const couverture = useMemo(() => couvertureParSujet(visuels, surcharges), [visuels, surcharges]);
   const alertes = useMemo(() => alertesCouverture(couverture), [couverture]);
   // Sujets mal couverts : pour la famille filtrée (ou, sans filtre, les manques importants seulement)
@@ -96,10 +73,9 @@ export default function Tri(props: Props) {
 
   // File figée au début (et à chaque changement de filtre) : les actions ne la réordonnent pas en cours de session
   const [graineFile, setGraineFile] = useState(0);
-  const file = useMemo(() => fileTri(filtreHashtag ? visuels.filter((v) => correspondHashtag(refHashtags.current, v.cle, filtreHashtag, true)) : visuels,
-    { surcharges, famille, sujet: sujetFiltre || null, tries: vus, faibles, suggestions: (v) => suggestionsLegeres(v.cle) }),
+  const file = useMemo(() => fileTri(visuels, { surcharges, famille, sujet: sujetFiltre || null, tries: vus, faibles, suggestions: (v) => suggestionsLegeres(v.cle) }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visuels, famille, sujetFiltre, filtreHashtag, graineFile]);
+    [visuels, famille, sujetFiltre, graineFile]);
   const [index, setIndex] = useState(0);
   useEffect(() => { setIndex(0); }, [file]);
   const entree = file[index] ?? null;
@@ -146,14 +122,12 @@ export default function Tri(props: Props) {
     setIndex((i) => i + 1);
   }, [asset, effectifs, enCours, coches, suggestions, surcharges]);
 
-  // Hashtags du visuel courant : enregistrés aussitôt (ajout ou retrait), annulés localement en cas d'échec
-  const changerHashtags = async (tags: string[], action: 'ajout' | 'retrait') => {
-    if (!asset || !tags.length) return;
-    const cle = asset.cle;
-    setHashtags((e) => tags.reduce((x, t) => appliquerHashtag(x, cle, t, action), e));
-    const res = await Promise.all(tags.map((t) => basculerHashtagAsset(cle, t, action).catch(() => ({ ok: false, message: 'Connexion perdue.' }))));
-    const echec = res.find((r) => !r.ok);
-    if (echec) { setHashtags((e) => tags.reduce((x, t) => appliquerHashtag(x, cle, t, action === 'ajout' ? 'retrait' : 'ajout'), e)); setMessage(echec.message); }
+  const ajouterHashtag = async (tag: string) => {
+    if (!asset) return;
+    const avant = hashtags;
+    setHashtags(appliquerHashtag(hashtags, asset.cle, tag, 'ajout'));
+    const r = await basculerHashtagAsset(asset.cle, tag, 'ajout').catch(() => ({ ok: false, message: 'Connexion perdue.' }));
+    if (!r.ok) { setHashtags(avant); setMessage(r.message); }
   };
 
   // Clavier (vue « un par un ») : 1-8 sujets, Entrée suivant, → passer, ← précédent
@@ -164,9 +138,6 @@ export default function Tri(props: Props) {
     const f = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
-      // « # » (AltGr+3 sur un clavier français : Ctrl+Alt) : focus du champ des hashtags
-      if (e.key === '#') { e.preventDefault(); champHashtag.current?.focus(); return; }
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void refSuivant.current(); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const n = Number(e.key);
       if (Number.isInteger(n) && n >= 1 && n <= SUJETS_VISUELS.length) { e.preventDefault(); basculer(SUJETS_VISUELS[n - 1].id); return; }
@@ -182,19 +153,7 @@ export default function Tri(props: Props) {
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [pageGrille, setPageGrille] = useState(1);
   const [sujetLot, setSujetLot] = useState(SUJETS_VISUELS[0].id);
-  const [tagsLot, setTagsLot] = useState<string[]>([]);
-  const lotHashtags = async (action: 'ajout' | 'retrait') => {
-    const cles = [...selection].filter((cle) => parCle.has(cle));
-    if (!cles.length || !tagsLot.length) return;
-    setEnCours(true);
-    const avant = hashtags;
-    setHashtags((e) => cles.reduce((x, cle) => tagsLot.reduce((y, t) => appliquerHashtag(y, cle, t, action), x), e));
-    const r = await hashtagsEnLot(cles, tagsLot, action).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
-    setEnCours(false);
-    if (!r.ok) setHashtags(avant); else setTagsLot([]);
-    setMessage(r.message);
-  };
-  useEffect(() => { setPageGrille(1); setSelection(new Set()); }, [famille, sujetFiltre, filtreHashtag]);
+  useEffect(() => { setPageGrille(1); setSelection(new Set()); }, [famille, sujetFiltre]);
   const lot = async (action: 'ajout' | 'retrait') => {
     const cles = [...selection].filter((cle) => { const a = parCle.get(cle); if (!a) return false; const e = sujetsDuVisuel({ cle, type: a.type, soins: a.soins }, surcharges).sujets; return action === 'ajout' ? !e.includes(sujetLot) : e.includes(sujetLot); });
     if (!cles.length) { setMessage(action === 'ajout' ? `Tous les visuels sélectionnés ont déjà le sujet ${libelle(sujetLot)}.` : `Aucun visuel sélectionné n’a le sujet ${libelle(sujetLot)}.`); return; }
@@ -209,13 +168,9 @@ export default function Tri(props: Props) {
     setMessage(r.message);
   };
 
-  const changerFiltre = (f: FamilleTri, s: string, v: Vue, h: string = filtreHashtag) => {
-    setFamille(f); setSujetFiltre(s); setVue(v); setFiltreHashtag(h); setGraineFile((g) => g + 1);
-    try {
-      const u = new URL(window.location.href); u.searchParams.set('famille', f); if (s) u.searchParams.set('sujet', s); else u.searchParams.delete('sujet'); u.searchParams.set('vue', v);
-      if (h) u.searchParams.set('hashtag', h); else u.searchParams.delete('hashtag');
-      window.history.replaceState(null, '', u);
-    } catch { /* sans effet */ }
+  const changerFiltre = (f: FamilleTri, s: string, v: Vue) => {
+    setFamille(f); setSujetFiltre(s); setVue(v); setGraineFile((g) => g + 1);
+    try { const u = new URL(window.location.href); u.searchParams.set('famille', f); if (s) u.searchParams.set('sujet', s); else u.searchParams.delete('sujet'); u.searchParams.set('vue', v); window.history.replaceState(null, '', u); } catch { /* sans effet */ }
   };
 
   const style = useMemo(() => ({ ...variablesCharte(), ...variablesGamme(gammeParId('canard')!) }) as CSSProperties, []);
@@ -247,11 +202,6 @@ export default function Tri(props: Props) {
                 <option value="">Tous (non étiquetés d’abord)</option>
                 {SUJETS_VISUELS.map((s) => <option key={s.id} value={s.id}>{s.libelle} (et ce qui pourrait l’être)</option>)}
               </select>
-            </label>
-            <label className="grid gap-1 text-sm">
-              <span className="font-medium">Hashtag</span>
-              <FiltreHashtag valeur={filtreHashtag} onChange={(h) => changerFiltre(famille, sujetFiltre, vue, h)} etat={hashtags}
-                className="min-h-11 w-40 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm" />
             </label>
           </>
         )}
@@ -304,11 +254,19 @@ export default function Tri(props: Props) {
                 </div>
                 {effectifs.retires.length > 0 && <p className="text-xs text-neutral-500">Retiré par vous : {effectifs.retires.map(libelle).join(', ')}</p>}
               </fieldset>
-              <SaisieHashtags key={asset.cle} libelle="Hashtags (libres : #laser, #enfant…)" valeurs={hashtagsDe(hashtags, asset.cle)} connus={connusHashtags} ouvrirVide
-                suggestions={suggestions.hashtags.map((h) => h.tag)} champRef={champHashtag} desactive={props.migrationHashtags}
-                onAjout={(h) => void changerHashtags(h, 'ajout')} onRetrait={(h) => void changerHashtags([h], 'retrait')}
-                onEntreeVide={() => void refSuivant.current()} onCtrlEntree={() => void refSuivant.current()}
-                aide="# : aller au champ · Entrée ou virgule : ajouter · Entrée champ vide ou Ctrl+Entrée : enregistrer et suivant" />
+              <div className="grid gap-1.5">
+                <p className="text-sm font-semibold">Hashtags</p>
+                <ul className="flex flex-wrap gap-1.5">
+                  {hashtagsDe(hashtags, asset.cle).map((h) => <li key={h} className="rounded-full bg-neutral-100 px-2.5 py-1 text-sm">#{h}</li>)}
+                  {suggestions.hashtags.filter((h) => !hashtagsDe(hashtags, asset.cle).includes(h.tag)).map((h) => (
+                    <li key={h.tag}>
+                      <button type="button" onClick={() => void ajouterHashtag(h.tag)} title={h.raison}
+                        className={`min-h-9 rounded-full border border-dashed border-neutral-400 px-2.5 text-sm text-neutral-700 hover:border-teal-700 hover:text-teal-900 ${focus}`}>+ #{h.tag}</button>
+                    </li>
+                  ))}
+                  {!hashtagsDe(hashtags, asset.cle).length && !suggestions.hashtags.length && <li className="text-xs text-neutral-500">Aucun hashtag ni suggestion.</li>}
+                </ul>
+              </div>
               <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t border-black/10 bg-white/95 p-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
                 <button type="button" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={index === 0} className={`min-h-12 rounded-xl border border-neutral-300 px-3 text-sm disabled:opacity-40 ${focus}`} aria-label="Précédent">←</button>
                 <button type="button" onClick={() => setIndex((i) => i + 1)} className={`min-h-12 rounded-xl border border-neutral-300 px-3 text-sm ${focus}`}>Passer →</button>
@@ -330,16 +288,6 @@ export default function Tri(props: Props) {
             <button type="button" disabled={!selection.size || enCours} onClick={() => void lot('retrait')} className={`min-h-11 rounded-xl border border-neutral-300 px-3 text-sm disabled:opacity-50 ${focus}`}>Le retirer</button>
             <button type="button" onClick={() => setSelection(new Set(file.slice(0, pageGrille * PAGE_GRILLE).map((x) => x.visuel.cle)))} className={`min-h-11 rounded-xl px-3 text-sm text-teal-900 underline ${focus}`}>Tout sélectionner</button>
             {selection.size > 0 && <button type="button" onClick={() => setSelection(new Set())} className={`min-h-11 rounded-xl px-3 text-sm text-neutral-700 underline ${focus}`}>Vider</button>}
-            <div className="flex basis-full flex-wrap items-end gap-2 border-t border-black/5 pt-2">
-              <div className="min-w-[220px] flex-1 sm:max-w-sm">
-                <SaisieHashtags compact libelle="Hashtags à appliquer" valeurs={tagsLot} connus={connusHashtags} ouvrirVide desactive={props.migrationHashtags}
-                  onAjout={(h) => setTagsLot((l) => [...l, ...h.filter((x) => !l.includes(x))])} onRetrait={(h) => setTagsLot((l) => l.filter((x) => x !== h))} />
-              </div>
-              <button type="button" disabled={!selection.size || !tagsLot.length || enCours} onClick={() => void lotHashtags('ajout')} className={`min-h-11 rounded-xl bg-sky-800 px-3 text-sm font-semibold text-white disabled:opacity-50 ${focus}`}>
-                Ajouter {tagsLot.length ? tagsLot.map((t) => `#${t}`).join(' ') : 'les hashtags'} à la sélection
-              </button>
-              <button type="button" disabled={!selection.size || !tagsLot.length || enCours} onClick={() => void lotHashtags('retrait')} className={`min-h-11 rounded-xl border border-neutral-300 px-3 text-sm disabled:opacity-50 ${focus}`}>Les retirer</button>
-            </div>
           </div>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {file.slice(0, pageGrille * PAGE_GRILLE).map(({ visuel, raison }) => {
@@ -353,7 +301,6 @@ export default function Tri(props: Props) {
                     <Apercu a={a} />
                     <span className="truncate text-xs font-semibold" title={a.titre}>{choisi ? '✓ ' : ''}{a.titre}</span>
                     <span className="truncate text-[11px] text-neutral-600">{s.length ? s.map(libelle).join(', ') : LIBELLES_RAISONS_TRI[raison]}</span>
-                    {hashtagsDe(hashtags, a.cle).length > 0 && <span className="truncate text-[11px] text-sky-900" title={hashtagsDe(hashtags, a.cle).map((h) => `#${h}`).join(' ')}>{hashtagsDe(hashtags, a.cle).map((h) => `#${h}`).join(' ')}</span>}
                   </button>
                 </li>
               );

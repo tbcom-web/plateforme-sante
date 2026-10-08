@@ -52,7 +52,7 @@ test('duels : classements par contexte (famille × sujet n° 1)', () => {
   assert.equal(c.length, 3);
   const titres = c.map((x) => x.titre);
   assert.ok(titres.includes('Meilleures photos — Sport'));
-  assert.ok(titres.includes('Meilleures polices — Diabète'));
+  assert.ok(titres.includes('Meilleures paires de polices — Diabète'));
   assert.equal(c.find((x) => x.famille === 'polices')!.lignes[0].cle, 'police=revue');
 });
 

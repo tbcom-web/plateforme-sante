@@ -5,7 +5,7 @@
 //   (hashtags déjà utilisés, mots-clés de recherche) et suggestions non cochées (tags de la source) ; rien n'est enregistré.
 // - HashtagsVisuel (défaut) : hashtags d'un asset enregistrés à chaque ajout / retrait (même logique que SujetsVisuel).
 // - FiltreHashtag : champ de filtre « #hashtag » avec autocomplétion (bibliothèque, Donner mon avis).
-import { useId, useMemo, useRef, useState, type Ref } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { appliquerHashtag, completerHashtag, debutHashtag, HASHTAGS_MAX, hashtagsDe, lireHashtags, type HashtagsAssets } from '@plateforme/core';
 import { basculerHashtagAsset } from '@/app/admin/retours/actions-hashtags';
 
@@ -25,20 +25,10 @@ type PropsSaisie = {
   compact?: boolean;
   libelle?: string;
   desactive?: boolean;
-  /** Champ de saisie (raccourci « # » du tri pour lui donner le focus) */
-  champRef?: Ref<HTMLInputElement>;
-  /** Entrée sur un champ vide (tri : enregistrer et passer au suivant) */
-  onEntreeVide?: () => void;
-  /** Ctrl+Entrée (ou Cmd+Entrée) : la saisie en cours devient une puce, puis cette action (tri : enregistrer et suivant) */
-  onCtrlEntree?: () => void;
-  /** Propositions dès le focus, champ vide (hashtags les plus fréquents, puis vocabulaire métier) */
-  ouvrirVide?: boolean;
-  /** Texte d'aide sous le champ (raccourcis) */
-  aide?: string;
 };
 
 /** Champ + puces : ne fait qu'appeler onAjout / onRetrait (l'appelant enregistre ou garde en mémoire) */
-export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], suggestions = [], compact = false, libelle = 'Hashtags', desactive = false, champRef, onEntreeVide, onCtrlEntree, ouvrirVide = false, aide }: PropsSaisie) {
+export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], suggestions = [], compact = false, libelle = 'Hashtags', desactive = false }: PropsSaisie) {
   const id = useId();
   const [texte, setTexte] = useState('');
   const [ouvert, setOuvert] = useState(false);
@@ -47,9 +37,7 @@ export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], sugge
   const fermeture = useRef<number | undefined>(undefined);
   const ouvrir = () => { window.clearTimeout(fermeture.current); setOuvert(true); };
   const plein = valeurs.length >= HASHTAGS_MAX;
-  const propositions = useMemo(() => (ouvert && (debutHashtag(texte) || ouvrirVide) ? completerHashtag(texte, connus, valeurs, 6) : []), [ouvert, texte, connus, valeurs, ouvrirVide]);
-  // Proposition active (flèches haut / bas, Entrée la choisit)
-  const [active, setActive] = useState(-1);
+  const propositions = useMemo(() => (ouvert && debutHashtag(texte) ? completerHashtag(texte, connus, valeurs, 6) : []), [ouvert, texte, connus, valeurs]);
   const sugg = suggestions.filter((s) => !valeurs.includes(s));
 
   const valider = (brut: string) => {
@@ -65,7 +53,6 @@ export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], sugge
     const m = /^([\s\S]*)[\s,;]+([^\s,;]*)$/.exec(v);
     if (m && m[1].replace(/[#\s,;]/g, '')) { valider(m[1]); setTexte(m[2]); return; }
     setTexte(v);
-    setActive(-1);
     ouvrir();
   };
 
@@ -86,31 +73,22 @@ export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], sugge
         </ul>
       )}
       <div className="relative">
-        <input id={id} ref={champRef} type="text" value={texte} disabled={desactive || plein} autoComplete="off" autoCapitalize="none" spellCheck={false} enterKeyHint="done"
+        <input id={id} type="text" value={texte} disabled={desactive || plein} autoComplete="off" autoCapitalize="none" spellCheck={false} enterKeyHint="done"
           placeholder={plein ? `${HASHTAGS_MAX} hashtags au plus` : '#trail #sneakers ou trail, sneakers'}
           onChange={(e) => changer(e.target.value)} onFocus={ouvrir} onBlur={() => { fermeture.current = window.setTimeout(() => setOuvert(false), 150); }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (texte.trim()) { valider(texte); setTexte(''); } setActive(-1); onCtrlEntree?.(); return; }
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              if (active >= 0 && propositions[active]) { valider(propositions[active]); setTexte(''); setActive(-1); }
-              else if (texte.trim()) { valider(texte); setTexte(''); }
-              else onEntreeVide?.();
-            }
-            else if (e.key === 'ArrowDown' && propositions.length) { e.preventDefault(); setActive((i) => (i + 1) % propositions.length); }
-            else if (e.key === 'ArrowUp' && propositions.length) { e.preventDefault(); setActive((i) => (i <= 0 ? propositions.length - 1 : i - 1)); }
+            if (e.key === 'Enter') { e.preventDefault(); if (texte.trim()) { valider(texte); setTexte(''); } }
             else if (e.key === 'Backspace' && !texte && valeurs.length) onRetrait(valeurs[valeurs.length - 1]);
-            else if (e.key === 'Escape') { if (ouvert && propositions.length) { e.stopPropagation(); setOuvert(false); } else e.currentTarget.blur(); }
+            else if (e.key === 'Escape') setOuvert(false);
           }}
           role="combobox" aria-expanded={propositions.length > 0} aria-controls={`${id}-liste`} aria-autocomplete="list"
-          aria-activedescendant={active >= 0 && propositions[active] ? `${id}-p${active}` : undefined}
           className="min-h-11 w-full rounded-lg border border-neutral-300 bg-white px-3 text-base disabled:bg-neutral-50 md:text-sm" />
         {propositions.length > 0 && (
           <ul id={`${id}-liste`} role="listbox" className="absolute inset-x-0 top-full z-30 mt-1 grid max-h-60 overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
-            {propositions.map((h, i) => (
-              <li key={h} id={`${id}-p${i}`} role="option" aria-selected={i === active}>
-                <button type="button" tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={() => { valider(h); setTexte(''); setActive(-1); }}
-                  className={`flex min-h-11 w-full items-center px-3 text-left text-sm hover:bg-sky-50 ${i === active ? 'bg-sky-100' : ''} ${focus}`}>#{h}</button>
+            {propositions.map((h) => (
+              <li key={h} role="option" aria-selected={false}>
+                <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { valider(h); setTexte(''); }}
+                  className={`flex min-h-11 w-full items-center px-3 text-left text-sm hover:bg-sky-50 ${focus}`}>#{h}</button>
               </li>
             ))}
           </ul>
@@ -125,7 +103,6 @@ export function SaisieHashtags({ valeurs, onAjout, onRetrait, connus = [], sugge
           ))}
         </div>
       )}
-      {aide && <p className="text-xs text-neutral-500">{aide}</p>}
       {alerte && <p role="status" className="text-xs text-amber-800">{alerte}</p>}
     </div>
   );

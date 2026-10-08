@@ -15,15 +15,12 @@
 // Ordinateur ET mobile (0034) : chaque carte montre les deux rendus (côte à côte, bascule sur téléphone, DoubleRendu) ; la note
 // porte sur le CHOIX et garde l'appareil regardé ; zones signalées (z) sur l'un ou l'autre rendu ; bloc « Rendu mobile » à part
 // (Mobile OK / à revoir : défaut d'adaptation, jamais une pénalité du choix) ; liste « Rendu mobile à revoir » à l'accueil.
-// Illustration de BASE (2026-10-08, bases-illustrations.ts, VariantesBase.tsx) : la file est dédoublonnée par base — une carte
-// par dessin (l'illustration basique, notée sous la clé de base, valable pour toutes ses variantes) ; « Voir les N variantes »
-// repliées ; les anciennes notes de variantes comptent pour leur base ; statut de la base valable pour ses variantes.
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  animationDeCle, CATEGORIES_RETOURS, categorieDuType, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
+  animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
   ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
@@ -56,8 +53,6 @@ import { ajouterNoteAtelier } from '../atelier/actions';
 import { ajouterRevue } from '../illustrations/actions';
 import { ajouterNoteAsset } from './actions';
 import Inspirations from './Inspirations';
-import VariantesRepliees, { inventaireParBase } from './VariantesBase';
-import { clesAvecSignal, notesAvecBases, statutEffectif } from '@plateforme/core';
 import PhotosADecouvrir from './PhotosADecouvrir';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -300,8 +295,6 @@ export default function Retours(props: Props) {
   const { photosJeux, markdown, changements, influents, changementsClaude, renfortsRecettes = [], migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
   // Inventaire : bibliothèque (illustrations, photos, modèles, gammes) + studio de recettes (structures de pages, éléments, effets)
   const inventaireComplet = useMemo(() => [...inventaireAssets({ photosJeux }), ...inventaireStudio()], [photosJeux]);
-  // File « à noter » dédoublonnée par illustration de base (une carte par dessin, ses variantes repliées)
-  const { notables, groupes: groupesBases } = useMemo(() => inventaireParBase(inventaireComplet), [inventaireComplet]);
   // Tuile « Éléments » : filtre par famille (horaires, plan d'accès, galerie, contact, forme des cartes…)
   const [famille, setFamille] = useState('');
   // Sujets des visuels (défauts du code ± surcharges de Paul) et filtre « noter les visuels du sujet … »
@@ -311,18 +304,13 @@ export default function Retours(props: Props) {
   const [hashtags, setHashtags] = useState<HashtagsAssets>(props.hashtagsAssets ?? {});
   const [filtreHashtag, setFiltreHashtag] = useState('');
   const inventaire = useMemo(
-    () => notables.filter((a) => {
-      const membres = groupesBases.get(a.cle)?.variantes ?? [a];
-      return (!filtreSujet || membres.some((m) => sujetsDuVisuel(m, surcharges).sujets.includes(filtreSujet))) && membres.some((m) => correspondHashtag(hashtags, m.cle, filtreHashtag, true));
-    }),
-    [notables, groupesBases, filtreSujet, surcharges, hashtags, filtreHashtag],
+    () => inventaireComplet.filter((a) => (!filtreSujet || sujetsDuVisuel(a, surcharges).sujets.includes(filtreSujet)) && correspondHashtag(hashtags, a.cle, filtreHashtag, true)),
+    [inventaireComplet, filtreSujet, surcharges, hashtags, filtreHashtag],
   );
   const [notes, setNotes] = useState<NoteLegere[]>(props.notesAssets);
   const [datesAtelier, setDatesAtelier] = useState<string[]>(props.datesAtelier);
   const [dejaNotees, setDejaNotees] = useState(props.dejaNotees);
-  // Notes de variantes comptées aussi pour leur base (agrégation) ; signaux : clés notées (variantes nouvelles → duel)
-  const etats = useMemo(() => etatsNotes(notesAvecBases(notes)), [notes]);
-  const signaux = useMemo(() => clesAvecSignal(notes), [notes]);
+  const etats = useMemo(() => etatsNotes(notes), [notes]);
   // Statuts de la bibliothèque (illustrations_statuts), mis à jour localement depuis une session « ingrédients »
   const [statuts, setStatuts] = useState<Record<string, StatutIllustration>>(props.statuts);
   // Session limitée à une liste de clés (ingrédients d'une animation en attente)
@@ -341,7 +329,7 @@ export default function Retours(props: Props) {
   const parCategorie = useMemo(() => {
     const m = new Map<CategorieRetours, { total: number; notes: number }>();
     for (const a of inventaire) {
-      const c = categorieDuType(a.type);
+      const c = categorieDeCle(a);
       const x = m.get(c) ?? { total: 0, notes: 0 };
       x.total++;
       if (etats.has(a.cle)) x.notes++;
@@ -394,7 +382,8 @@ export default function Retours(props: Props) {
   const candidatsDe = useCallback((c: CategorieRetours) => {
     if (selection) return inventaireComplet.filter((a) => selection.cles.includes(a.cle));
     const cat = CATEGORIES_RETOURS.find((x) => x.id === c)!;
-    const l = cat.types.length ? inventaire.filter((a) => cat.types.includes(a.type)) : inventaire;
+    // Catégorie d'après la clé (combinaisons police × palette à part) ; « Tout au hasard » sans les combinaisons
+    const l = cat.types.length ? inventaire.filter((a) => categorieDeCle(a) === c) : inventaire.filter((a) => categorieDeCle(a) !== 'combinaisons');
     return c === 'elements' && famille ? l.filter((a) => a.soins.includes(famille)) : l;
   }, [inventaire, inventaireComplet, selection, famille]);
   // Animation dont un ingrédient de base n'est pas validé : tirée après tout le reste
@@ -450,7 +439,7 @@ export default function Retours(props: Props) {
     if (!categorie || historique.length) return;
     // ?cle= (lien « Noter » de la bibliothèque) : cet élément d'abord, une seule fois (oublié au démarrage d'une autre catégorie ;
     // pas ici : en développement, React rejoue l'effet et la 2e passe tirait une autre carte)
-    const demandee = cleDemandee.current ? inventaireComplet.find((a) => a.cle === cleDemandee.current) ?? notables.find((a) => a.cle === cleDemandee.current) : undefined;
+    const demandee = cleDemandee.current ? inventaireComplet.find((a) => a.cle === cleDemandee.current) : undefined;
     const carte = demandee ? preparer(demandee) : tirer(categorie);
     if (!carte) return;
     vus.current.add(cleCarte(carte));
@@ -707,10 +696,7 @@ export default function Retours(props: Props) {
   const pct = prog && prog.total ? Math.round((prog.notes / prog.total) * 100) : 0;
   const titre = carte.kind === 'asset' ? carte.asset.titre : carte.p.nom;
   const etat = carte.kind === 'asset' ? etats.get(carte.asset.cle) : undefined;
-  const st = carte.kind === 'asset' ? statutEffectif(carte.asset.cle, statuts) : undefined;
-  // Carte d'une illustration de base : ses variantes (repliées) ; sujets et hashtags portés par l'illustration basique
-  const groupeBase = carte.kind === 'asset' ? groupesBases.get(carte.asset.cle) ?? null : null;
-  const visuelCarte = carte.kind === 'asset' ? groupeBase?.representant ?? carte.asset : null;
+  const st = carte.kind === 'asset' ? statuts[carte.asset.cle] : undefined;
   const apercuTheme = carte.kind === 'theme'
     ? apercuProposition({ ...base, priorites: { principaux: carte.scenario.principaux, secondaires: carte.scenario.secondaires }, couleursPreferees: carte.scenario.couleurs }, carte.p, { proposes, modeles, slugs, themesActives })
     : null;
@@ -816,7 +802,6 @@ export default function Retours(props: Props) {
             </div>
             {carte.kind === 'asset' && <PredictionClaude predictions={props.predictions} cle={carte.asset.cle} empreinte={empreinteJuge} notee={noteeCetteVersion} afficherAvant={afficherAvant} />}
           </div>
-          {groupeBase && <VariantesRepliees key={`vb-${groupeBase.base}`} groupe={groupeBase} signaux={signaux} statut={statuts[groupeBase.base]} onStatut={(s) => void changerStatut(s)} />}
           {etatAnim && <IngredientsAnimation etat={etatAnim} onNoterIngredients={noterIngredients} />}
           {selection && carte.kind === 'asset' && (
             <div className="grid gap-1.5 rounded-xl bg-neutral-50 p-3 ring-1 ring-black/10">
@@ -832,8 +817,8 @@ export default function Retours(props: Props) {
               <p className="text-xs text-neutral-500">« Ce qui va bien » part avec « Validé », « Ce qui ne va pas » avec « À retravailler ».</p>
             </div>
           )}
-          {visuelCarte && visuelCarte.rendu.kind !== 'studio' && <SujetsVisuel visuel={visuelCarte} surcharges={surcharges} onChange={setSurcharges} />}
-          {visuelCarte && visuelCarte.rendu.kind !== 'studio' && <HashtagsVisuel cle={visuelCarte.cle} etat={hashtags} onChange={setHashtags} migrationManquante={props.migrationHashtags} />}
+          {carte.kind === 'asset' && carte.asset.rendu.kind !== 'studio' && <SujetsVisuel visuel={carte.asset} surcharges={surcharges} onChange={setSurcharges} />}
+          {carte.kind === 'asset' && carte.asset.rendu.kind !== 'studio' && <HashtagsVisuel cle={carte.asset.cle} etat={hashtags} onChange={setHashtags} migrationManquante={props.migrationHashtags} />}
 
           <fieldset className="grid gap-1.5">
             <legend className="mb-1 text-sm font-medium text-teal-900">Ce qui va bien</legend>

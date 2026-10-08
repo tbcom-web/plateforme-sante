@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { estTypeDuel, inventaireAssets, statutsAvecHeritage, universDuParcours } from '@plateforme/core';
+import { estTypeDuel, modeDuel, universDuParcours } from '@plateforme/core';
 import { predictionsParCle } from '@plateforme/core/juge';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
@@ -27,7 +27,8 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
     getDuels(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(), getRecettes(),
     getPhotosDesJeux(), getSurchargesSujets(), getRevuesIllustrations(), getPredictions(),
   ]);
-  const type = typeof sp.type === 'string' && estTypeDuel(sp.type) ? sp.type : null;
+  // Type de duel ou mode (palette, polices, tailles, police-palette : MODES_DUEL)
+  const type = typeof sp.type === 'string' && (estTypeDuel(sp.type) || modeDuel(sp.type)) ? sp.type : null;
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
@@ -57,7 +58,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
         recettes={recettes.filter((r) => r.statut === 'active')}
         photosJeux={photosJeux}
         surcharges={surcharges}
-        statuts={statutsAvecHeritage(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), inventaireAssets({ photosJeux }).map((a) => a.cle))}
+        statuts={Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut]))}
         predictions={predictionsParCle(predictions)}
         typeInitial={type}
       />

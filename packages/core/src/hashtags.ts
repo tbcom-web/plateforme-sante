@@ -168,17 +168,6 @@ export function frequencesHashtags(etat: HashtagsAssets | null | undefined): Rec
   return f;
 }
 
-/**
- * Autocomplétion du tri (2026-10-08, « on doit pouvoir donner des hashtags, par exemple Laser ») : hashtags déjà utilisés
- * (fréquence = nombre de visuels) puis vocabulaire métier (soins du catalogue, dessins, sujets : laser, orthonyxie, verrue,
- * taping…) à fréquence 0, normalisé et sans doublon ; completerHashtag les classe après les hashtags déjà utilisés.
- */
-export function frequencesAvecVocabulaire(etat: HashtagsAssets | null | undefined, vocabulaire: readonly string[]): Record<string, number> {
-  const f = frequencesHashtags(etat);
-  for (const h of hashtagsValides([...vocabulaire], 2000)) if (!(h in f)) f[h] = 0;
-  return f;
-}
-
 /** Un asset passe-t-il le filtre ? (hashtag exact, ou recherche partielle « tra » → #trail) */
 export function correspondHashtag(etat: HashtagsAssets | null | undefined, cle: string, filtre: string, partiel = false): boolean {
   const q = partiel ? debutHashtag(filtre) : normaliserHashtag(filtre);

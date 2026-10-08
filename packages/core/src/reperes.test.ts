@@ -1,17 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DIMENSIONS_DUEL_TIRABLES, repereCle, repereConnu, repereDimension, repereTheme, valeursDuel, ZONES_APERCU } from './reperes';
-import { DIMENSIONS_DUEL } from './duels';
+import { DIMENSIONS_DUEL, MODES_DUEL } from './duels';
 import { FAMILLES_COMPOSANTS, compositionInitiale, type CompositionRecette } from './recettes';
 import { inventaireStudio, inventaireAssets } from './assets';
 
 test('chaque dimension tirable par un duel a un repère explicite, libellé en langage simple', () => {
-  const toutes = new Set([...Object.values(DIMENSIONS_DUEL).flat(), ...FAMILLES_COMPOSANTS.map((f) => `composant:${f}`), 'photo', 'style', 'version']);
+  const toutes = new Set([...Object.values(DIMENSIONS_DUEL).flat(), ...MODES_DUEL.flatMap((m) => m.dimensions), ...FAMILLES_COMPOSANTS.map((f) => `composant:${f}`), 'photo', 'style', 'version']);
   for (const d of toutes) {
     assert.ok(DIMENSIONS_DUEL_TIRABLES.includes(d), `${d} absente de DIMENSIONS_DUEL_TIRABLES`);
     assert.ok(repereConnu(d), `${d} sans entrée dans la table`);
     const r = repereDimension(d);
-    assert.ok(r.libelle.length > 3 && !r.libelle.includes(':') || d.startsWith('composant:'), `${d} : libellé ${r.libelle}`);
+    assert.ok(r.libelle.length > 3 && !r.libelle.includes(':'), `${d} : libellé ${r.libelle}`);
     assert.ok(r.ensemble || r.selecteurs.length > 0, `${d} : ni encadré ni « ensemble »`);
   }
 });

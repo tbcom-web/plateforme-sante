@@ -62,36 +62,6 @@ priment toujours.
   (`predireDuel`, colonne `prediction`), accord dans la page et dans la synthèse. Export : `retours/duels.json` et section
   « Duels : classements par sujet » de `SYNTHESE.md`. Sans la migration : duels gardés dans le navigateur.
 
-### Hashtags libres dans le tri, illustration de base et duels de variantes (2026-10-08)
-
-- **Hashtags dans « Trier par sujet »** (« on doit pouvoir donner des hashtags, par exemple Laser ») : vue « Un par un » ET
-  action groupée de la grille. Champ avec puces supprimables, Entrée ou virgule pour ajouter, autocomplétion (hashtags déjà
-  utilisés triés par fréquence, puis vocabulaire métier : soins du catalogue, dessins, sujets — `frequencesAvecVocabulaire`,
-  `hashtags.ts`), normalisation `normaliserHashtag` / `hashtagsValides` ; suggestions en un clic. Touche `#` : focus du champ ;
-  dans le champ, Entrée ajoute, Entrée sur champ vide ou Ctrl+Entrée = enregistrer et suivant (les touches 1-8 / Entrée hors
-  du champ sont inchangées). Filtre de la file et de la grille par hashtag (`?hashtag=`, saisie partielle). Enregistrement dans
-  `assets_hashtags` (0029) : aussitôt dans la vue « Un par un », `hashtagsEnLot` pour la sélection.
-- **Illustration de base → variantes** (`packages/core/src/bases-illustrations.ts`, « noter juste l'illustration basique ») :
-  base dérivée des clés existantes (aucune clé renommée) — `dessin:<nom>:<registre>`, `ligne:<trait>` propre à un seul dessin,
-  `dessin:<sujet>:<style expérimental>`, `dessin:sport-<s>:…` / `ligne:sport-<s>`, `heros:<thème>:<registre>`,
-  `materiel:<id>:<registre>` → `dessin:<nom>`, `heros:<thème>`, `materiel:<id>`. La file « à noter » est dédoublonnée par base
-  (inventaire actuel, tuile Illustrations : 234 → 113 cartes, 121 notes économisées) : la carte montre l'illustration basique
-  (pédagogique, sinon relevé, sinon le premier style), notée sous la clé de base ; « Voir les N variantes » repliées, sans
-  obligation de les noter. Les anciennes notes de variantes comptent pour leur base (`notesAvecBases`).
-  Apprentissage (`poidsAssets`) : effet(base) = m(groupe) − μ (lissage K = 4, notes de la base et de toutes ses variantes) ;
-  effet(variante) = effet(base) + écart, écart = clamp((moy(variante) − moy(groupe)) · n / (n + 4), ±0,5 ★), 0 sans note
-  propre ; `scoreAsset` lit l'effet de la clé, à défaut celui de sa base. Statuts « Retiré » / « À retravailler » posés sur la
-  base (boutons sous la carte) : valables pour les variantes sauf statut propre. Une variante NOUVELLE sans aucun signal d'une
-  base déjà notée n'est pas remise en note : elle est signalée « à comparer en duel ».
-- **Duels de variantes** (`/admin/retours/duel/variantes?base=…`, bouton « Comparer ses variantes en duel » de la carte) :
-  type `illustration`, dimension `variante:contraste` (contraste d'origine / fort / doux, filtre CSS posé au rendu, aucune
-  source de dessin modifiée), `variante:style` (deux registres ou styles du même dessin) ou `variante:couleur` (deux gammes) ;
-  une seule dimension diffère (`genererDuelVariantes`, `dimensionUniqueVariantes`). Les variantes de rendu ont leur propre clé
-  (`dessin:x:pedagogique@contraste=fort`) : le renfort du duel (±0,5 ★) devient l'écart propre de la variante, ajouté à
-  l'effet hérité de sa base (`appliquerRenforts`), sans toucher la clé réelle du dessin. Classement par illustration et
-  « contraste préféré » tous dessins confondus (`preferencesVariantes`). Libellés simples des repères :
-  `LIBELLES_DUELS_VARIANTES` (« le contraste de l’illustration »). Aucune migration.
-
 ### Ce qui est évalué (repère)
 
 Retour de Paul du 2026-10-08 (« montrer direct avec un encadré ce qui est évalué, parfois on ne sait pas trop ») :

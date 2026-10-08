@@ -28,7 +28,7 @@ import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
-import { clePhoto, effetHerite, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
+import { clePhoto, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
 import { estSujetDeVisuel, sujetsEffectifs } from './sujets-visuels';
 import { urlImageAutorisee, type SourcePhotoLibre } from './photos-libres';
 import type { HashtagsAssets } from './hashtags';
@@ -43,6 +43,7 @@ import { cleTraitementPhotos, libelleTraitementPhotos, lireCleTraitementPhotos, 
 import { niveauProximite, normaliserScenario, proximiteScenarios, RANG_PROXIMITE, scenarioDeRecette, type ScenarioRecette } from './simulateur';
 import type { SiteDraft } from './draft';
 import type { Univers } from './catalogue-univers';
+import { lireCleCombinaison } from './combinaisons';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Dimensions, ordres de l'accueil
@@ -721,6 +722,9 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   if (tp) return { ...x, traitement: tp };
   if (type === 'effets' && jeuEffets(a)) return { ...x, effets: a as IdJeuEffets };
   // Habillage : la valeur de la clé posée sur l'habillage de `x` (paire de polices pour typo:police:<id>)
+  // Combinaison police × palette (combinaisons.ts, tuile « Police × palette ») : la paire et la gamme posées ensemble
+  const combi = lireCleCombinaison(cle);
+  if (combi) return { ...x, police: combi.police as IdPairePolices, gamme: combi.gamme, couleur: gammeParId(combi.gamme)?.accent ?? x.couleur };
   if (estCleTypo(cle)) { const t = typoPourCle(habillageDe(x).typo, cle); return { ...x, typo: t.typo, ...(t.police ? { police: t.police as IdPairePolices } : {}) }; }
   if (estCleDetails(cle)) return { ...x, details: detailsPourCle(habillageDe(x).details, cle) };
   if (estCleMenu(cle)) return { ...x, menu: menuPourCle(habillageDe(x).menu, cle) };
@@ -1103,8 +1107,7 @@ export function appliquerRenforts(poids: PoidsAtelier | null | undefined, r: { a
   if (!p.n && Object.keys(r.atelier).length) p.n = 1;
   if (Object.keys(r.assets).length) {
     const a: PoidsAssets = p.assets ? { ...p.assets, effets: { ...p.assets.effets } } : { n: 0, moyenne: 3, effets: {}, statuts: {} };
-    // Variante d'une illustration de base sans effet propre : le renfort s'ajoute à l'effet hérité de sa base (bases-illustrations.ts)
-    for (const [k, d] of Object.entries(r.assets)) a.effets[k] = borne(effetHerite(k, a) + d);
+    for (const [k, d] of Object.entries(r.assets)) a.effets[k] = borne((a.effets[k] ?? 0) + d);
     p.assets = a;
   }
   return p;
@@ -1260,7 +1263,7 @@ export function estCleStudio(k: unknown): k is string {
   if (typeof k !== 'string' || k.length > 200) return false;
   const [type, a, b] = k.split(':');
   if (type === 'effets') return (Boolean(jeuEffets(a)) && b === undefined) || Boolean(lireCleTraitementPhotos(k));
-  if (type === 'typo') return estCleTypo(k);
+  if (type === 'typo') return estCleTypo(k) || lireCleCombinaison(k) !== null;
   if (type === 'details') return estCleDetails(k);
   if (type === 'menu') return estCleMenu(k);
   if (type === 'composant') return Boolean((VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) && k.split(':').length === 3;

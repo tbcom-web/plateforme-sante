@@ -16,7 +16,7 @@ import {
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
   modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  valeursDuel, variablesCharte, variablesGamme, vueDePage,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -25,6 +25,8 @@ import type { PredictionJuge } from '@plateforme/core/juge';
 import ApercuTheme from '@/components/ApercuTheme';
 import { draftStudio } from '@/components/ApercuStudio';
 import PiloteApercu, { BandeauEvaluation, useRepereVisible } from '@/components/RepereEvaluation';
+import CadreApercu from '@/components/CadreApercu';
+import SpecimenHabillage from '@/components/SpecimenHabillage';
 import type { SoinCatalogue } from '@/lib/sites';
 import Apercu from '../tri/ApercuVisuel';
 import { enregistrerDuel } from './actions';
@@ -36,10 +38,38 @@ const libelleSujet = (id: string) => SUJETS_VISUELS.find((s) => s.id === id)?.li
 const EMPLACEMENTS = [{ id: 'accueil', nom: 'Premier écran' }, { id: 'page-sujet', nom: 'Page sujet' }, { id: 'galerie', nom: 'Galerie' }] as const;
 /** États du menu montrés dans un duel de menus (bascule commune à A et B) */
 type EtatMenu = 'haut' | 'ouvert' | 'survol' | 'defile';
-const ETATS_MENU: Record<'bureau' | 'mobile', [EtatMenu, string][]> = {
+/** Appareil montré : ordinateur, téléphone, ou les deux côte à côte */
+type Appareil = 'bureau' | 'mobile' | 'les-deux';
+const APPAREILS: [Appareil, string][] = [['bureau', 'Ordinateur'], ['mobile', 'Mobile'], ['les-deux', 'Les deux']];
+const VU_SUR: Record<Appareil, string> = { bureau: 'vu sur ordinateur', mobile: 'vu sur téléphone', 'les-deux': 'vu sur ordinateur et téléphone' };
+const ETATS_MENU: Record<Appareil, [EtatMenu, string][]> = {
   bureau: [['haut', 'Haut de page'], ['survol', 'Survol simulé'], ['defile', 'Après défilement']],
   mobile: [['haut', 'Fermé'], ['ouvert', 'Ouvert'], ['defile', 'Après défilement']],
+  'les-deux': [['haut', 'Haut de page · fermé'], ['ouvert', 'Ouvert (téléphone)'], ['survol', 'Survol (ordinateur)'], ['defile', 'Après défilement']],
 };
+/** Dimensions qui ont une vue rapide « spécimen » (palette, polices, tailles) */
+const AVEC_SPECIMEN = (d: string | null | undefined) => Boolean(d && (d === 'couleurs' || d === 'polices' || d === 'police-couleurs' || d.startsWith('typo:') || d === 'typo'));
+
+/** Nuancier d'une palette (pastilles) */
+function Nuancier({ x, lettre }: { x: CompositionRecette; lettre: string }) {
+  return (
+    <span className="flex items-center gap-1.5" aria-label={`Palette ${lettre}`}>
+      <strong className="text-sm">{lettre}</strong>
+      {nuancier(x).map((c) => <span key={c.nom + c.hex} title={`${c.nom} ${c.hex}`} className="size-6 rounded-md ring-1 ring-black/15" style={{ background: c.hex }} />)}
+    </span>
+  );
+}
+
+/** Un visuel (photo dans son cadre de site, illustration) dans le vrai cadre du téléphone : mise en page mobile de la section */
+function CadreTelephone({ children, hauteur }: { children: ReactNode; hauteur: number }) {
+  return (
+    <div className="overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-black/10">
+      <CadreApercu appareil="mobile" hauteur={hauteur} titre="Aperçu téléphone">
+        <div style={{ padding: 16, display: 'grid', alignContent: 'start', gap: 12, fontFamily: 'system-ui, sans-serif', background: '#fff', minHeight: '100vh' }}>{children}</div>
+      </CadreApercu>
+    </div>
+  );
+}
 
 type Rendu = { kind: 'compo'; x: CompositionRecette } | { kind: 'asset'; asset: Asset };
 type Cote = { cle: string; ingredients: IngredientsDuel; rendu: Rendu };
@@ -61,7 +91,8 @@ type Props = {
   surcharges: SurchargesSujets;
   statuts: Record<string, StatutIllustration>;
   predictions: Record<string, PredictionJuge[]>;
-  typeInitial: TypeDuel | null;
+  /** Type de duel ou mode (MODES_DUEL) */
+  typeInitial: string | null;
 };
 
 function lireLocaux(): DuelLocal[] {
@@ -130,10 +161,18 @@ function CadrePhoto({ src, emplacement, sujet }: { src: string; emplacement: str
 export default function Duel(props: Props) {
   const etroit = useEtroit();
   const hauteur = useHauteur(etroit);
-  const [type, setType] = useState<TypeDuel | null>(props.typeInitial);
+  // Type de duel ou MODE (MODES_DUEL : palettes, paires de polices, tailles et casse, police × palette ; enregistrés sous leur type)
+  const [type, setType] = useState<string | null>(props.typeInitial);
+  const mode = type ? modeDuel(type) : null;
+  const typeBase: TypeDuel | null = type ? ((mode?.type ?? type) as TypeDuel) : null;
   const [sujetChoisi, setSujetChoisi] = useState('');
-  const [appareil, setAppareil] = useState<'bureau' | 'mobile'>('bureau');
-  useEffect(() => { if (etroit) setAppareil('mobile'); }, [etroit]);
+  // Appareil montré (retour de Paul du 2026-10-08 : « tu me demandes mon avis sur téléphone mais on ne voit pas le mode
+  // mobile ») : ordinateur, téléphone (vrai cadre 390 px) ou les deux côte à côte (défaut en grand écran) ; sur un vrai téléphone,
+  // le rendu mobile réel. L'appareil enregistré avec le duel est celui qui était affiché.
+  const [appareil, setAppareil] = useState<Appareil>('les-deux');
+  useEffect(() => { setAppareil(etroit ? 'mobile' : 'les-deux'); }, [etroit]);
+  // Vue rapide « spécimen » (palettes, polices, tailles) ou page complète
+  const [specimen, setSpecimen] = useState(false);
   const [locaux, setLocaux] = useState<DuelLocal[]>([]);
   useEffect(() => { setLocaux(lireLocaux()); }, []);
   const [session, setSession] = useState<DuelLocal[]>([]);
@@ -175,10 +214,12 @@ export default function Duel(props: Props) {
     return l.find((k) => libelleCleRenfort(k) !== k) ?? l[0] ?? cle;
   };
 
-  const generer = useCallback((t: TypeDuel, g: number, historique: readonly DuelLocal[]): Courant | null => {
+  const generer = useCallback((m: string, g: number, historique: readonly DuelLocal[]): Courant | null => {
+    const md = modeDuel(m);
+    const t = (md?.type ?? m) as TypeDuel;
     const r = hasard(g);
     const sujetsType = t === 'photo' || t === 'illustration' ? SUJETS_VISUELS : SUJETS_CLIENT;
-    const parSujet = (s: string) => historique.filter((d) => d.type === t && (d.scenario.sujets[0] ?? 'cabinet') === s).length;
+    const parSujet = (s: string) => historique.filter((d) => d.type === t && (!md || modeDuDuel(d)?.id === md.id) && (d.scenario.sujets[0] ?? 'cabinet') === s).length;
     const ordre = sujetChoisi ? [sujetChoisi] : [...sujetsType.map((s) => s.id)].map((s) => ({ s, k: (1 + parSujet(s)) * -Math.log(Math.max(r(), 1e-9)) })).sort((a, b) => a.k - b.k).map((x) => x.s);
     if (t === 'photo' || t === 'illustration') {
       for (const s of ordre) {
@@ -192,12 +233,19 @@ export default function Duel(props: Props) {
       return null;
     }
     for (const s of ordre) {
-      const c = contexte(s);
+      // Palettes : la moitié du temps, un client qui a choisi 1 ou 2 couleurs (gammes et couleurs libres proches)
+      const couleurs = md && md.dimensions.some((x) => x === 'couleurs' || x === 'police-couleurs') && r() < 0.5
+        ? [...new Set([COULEURS_PREFEREES[Math.floor(r() * COULEURS_PREFEREES.length)].id, ...(r() < 0.4 ? [COULEURS_PREFEREES[Math.floor(r() * COULEURS_PREFEREES.length)].id] : [])])] : [];
+      const c = { ...contexte(s), couleursPreferees: couleurs };
       const libres = recettesPourScenario(props.recettes, [s]).slice(0, 8).map((x) => x.composition);
       let base = libres.length && r() < 0.6 ? libres[Math.floor(r() * libres.length)] : compositionInitiale(c, g);
       let dims: string[];
       let varier: (x: CompositionRecette, dim: string, gg: number) => CompositionRecette;
-      if (t === 'element') {
+      if (md) {
+        // Modes : seules leurs dimensions, variantes du moteur d'harmonie sans nouvelle règle dure (duels-compositions.ts)
+        dims = [...md.dimensions];
+        varier = (x, dim, gg) => varierDuel(x, dim, c, gg);
+      } else if (t === 'element') {
         dims = Object.keys(base.sections.variantes).filter((f) => (FAMILLES_COMPOSANTS as readonly string[]).includes(f)).map((f) => `composant:${f}`);
         varier = (x, dim, gg) => tirerPage(x, { composant: dim.slice(10) } as Parameters<typeof tirerPage>[1], c, gg);
       } else {
@@ -223,13 +271,13 @@ export default function Duel(props: Props) {
       const famille = d.dimension?.startsWith('composant:') ? d.dimension.slice(10) : null;
       const page = famille ? PAGES_STRUCTURE.find((p) => (p.sections as readonly string[]).includes(famille)) : null;
       const vue: VuePage = famille === 'theme' ? 'theme' : famille === 'article' ? 'article' : page ? vueDePage(page.id) : 'accueil';
-      return { type: t, scenario: { sujets: [s], principaux: 1, ...(page ? { page: page.id } : {}) }, a, b, dimension: d.dimension, prediction: predireDuel(ja, jb, props.predictions), vue };
+      return { type: t, scenario: { sujets: [s], principaux: 1, ...(couleurs.length ? { couleurs } : {}), ...(page ? { page: page.id } : {}) }, a, b, dimension: d.dimension, prediction: predireDuel(ja, jb, props.predictions), vue };
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sujetChoisi, candidats, contexte, props.recettes, props.predictions, dimensionsDispo]);
 
-  const lancer = useCallback((t: TypeDuel, g: number, hist: readonly DuelLocal[]) => {
+  const lancer = useCallback((t: string, g: number, hist: readonly DuelLocal[]) => {
     const c = generer(t, g, hist);
     setCourant(c);
     setEtiquettes([]); setRemarque(''); setPourquoi(false); setEtatMenu('haut');
@@ -241,7 +289,8 @@ export default function Duel(props: Props) {
 
   const choisir = useCallback(async (resultat: ResultatDuel) => {
     if (!courant) return;
-    const app = courant.a.rendu.kind === 'compo' ? (appareil === 'mobile' ? 'mobile' : 'ordinateur') : etroit ? 'mobile' : 'ordinateur';
+    // Appareil réellement affiché
+    const app = appareil === 'les-deux' ? 'les-deux' : appareil === 'mobile' ? 'mobile' : 'ordinateur';
     const d: DuelLocal = {
       type: courant.type, scenario: courant.scenario, aCle: courant.a.cle, bCle: courant.b.cle, aIngredients: courant.a.ingredients, bIngredients: courant.b.ingredients,
       dimension: courant.dimension, resultat, etiquettes, appareil: app, prediction: courant.prediction, le: new Date().toISOString(), remarque: remarque.trim() || null,
@@ -250,7 +299,7 @@ export default function Duel(props: Props) {
     setDernier({ resultat, prediction: courant.prediction });
     const g = graine + 1;
     setGraine(g);
-    lancer(courant.type, g, [d, ...historique]);
+    lancer(type ?? courant.type, g, [d, ...historique]);
     const r = await enregistrerDuel(d as unknown as Record<string, unknown>, d.remarque).catch(() => ({ ok: false, message: 'Connexion perdue : duel gardé dans ce navigateur.', migrationManquante: true }));
     if (!r.ok) {
       if (r.migrationManquante) {
@@ -261,7 +310,7 @@ export default function Duel(props: Props) {
       }
       setMessage(r.message);
     } else setMessage('');
-  }, [courant, appareil, etroit, etiquettes, remarque, graine, lancer, historique]);
+  }, [courant, appareil, type, etiquettes, remarque, graine, lancer, historique]);
 
   // Clavier : ← A, → B, ↓ égalité, ↑ les deux sont mauvais
   const refChoisir = useRef(choisir);
@@ -273,7 +322,7 @@ export default function Duel(props: Props) {
     const f = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
-      if ((e.key === 'o' || e.key === 'O') && refMenu.current && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); setEtatMenu((x) => (x === 'ouvert' ? 'haut' : 'ouvert')); setAppareil('mobile'); return; }
+      if ((e.key === 'o' || e.key === 'O') && refMenu.current && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); setEtatMenu((x) => (x === 'ouvert' ? 'haut' : 'ouvert')); setAppareil((a) => (a === 'bureau' ? 'les-deux' : a)); return; }
       const m: Record<string, ResultatDuel> = { ArrowLeft: 'a', ArrowRight: 'b', ArrowDown: 'egalite', ArrowUp: 'mauvais' };
       if (m[e.key]) { e.preventDefault(); void refChoisir.current(m[e.key]); }
     };
@@ -339,13 +388,13 @@ export default function Duel(props: Props) {
         <section aria-labelledby="du-types" className="grid gap-3">
           <h2 id="du-types" className="text-lg font-semibold">Quel duel ?</h2>
           <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {TYPES_DUEL.filter((t) => t !== 'traitement' || DIMENSIONS_RECETTE.some((d) => d.id === 'traitement')).map((t) => {
-              const n = historique.filter((d) => d.type === t).length;
+            {[...TYPES_DUEL.filter((t) => t !== 'traitement' || DIMENSIONS_RECETTE.some((d) => d.id === 'traitement')).map((t) => ({ id: t as string, ...LIBELLES_TYPES_DUEL[t] })), ...MODES_DUEL].map(({ id: t, nom, detail }) => {
+              const n = historique.filter((d) => (modeDuel(t) ? modeDuDuel(d)?.id === t : d.type === t && !modeDuDuel(d))).length;
               return (
                 <li key={t}>
                   <button type="button" onClick={() => setType(t)} className={`grid h-full w-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 text-left hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
-                    <span className="text-lg font-bold">{LIBELLES_TYPES_DUEL[t].nom}</span>
-                    <span className="text-sm text-neutral-600">{LIBELLES_TYPES_DUEL[t].detail}</span>
+                    <span className="text-lg font-bold">{nom}</span>
+                    <span className="text-sm text-neutral-600">{detail}</span>
                     <span className="text-sm font-semibold text-neutral-800">{n} duel{n > 1 ? 's' : ''} joué{n > 1 ? 's' : ''}</span>
                   </button>
                 </li>
@@ -373,13 +422,33 @@ export default function Duel(props: Props) {
         <span className="grid size-8 place-items-center rounded-full bg-teal-800 text-sm font-bold text-white">{lettre}</span>
         {courant?.dimension && <span className="truncate text-sm text-neutral-700">{libelleElement(c.ingredients.element ?? c.cle)}</span>}
       </figcaption>
-      {c.rendu.kind === 'compo' ? (
-        <ApercuCompo x={c.rendu.x} sujet={courant!.scenario.sujets[0] ?? 'sport'} appareil={appareil} vue={courant!.vue} hauteur={hauteur} props={props} />
-      ) : courant!.type === 'photo' && c.rendu.asset.rendu.kind === 'image' ? (
-        <CadrePhoto src={c.rendu.asset.rendu.src} emplacement={courant!.scenario.emplacement ?? 'accueil'} sujet={courant!.scenario.sujets[0] ?? 'general'} />
-      ) : <Apercu a={c.rendu.asset} grand />}
+      {/* Un cadre par appareil montré ; « Les deux » : ordinateur et vrai cadre téléphone côte à côte */}
+      <div className={appareil === 'les-deux' ? 'grid min-w-0 items-start gap-2' : 'min-w-0'} style={appareil === 'les-deux' ? { gridTemplateColumns: `minmax(0, 1fr) ${etroit ? '42%' : '38%'}` } : undefined}>
+        {(appareil === 'les-deux' ? (['bureau', 'mobile'] as const) : [appareil as 'bureau' | 'mobile']).map((app) => <div key={app} className="min-w-0">{rendu(c, app)}</div>)}
+      </div>
     </figure>
   );
+  /** Rendu d'un côté pour un appareil : composition (page ou spécimen), photo dans son cadre de site, illustration */
+  function rendu(c: Cote, app: 'bureau' | 'mobile') {
+    const h = appareil === 'les-deux' && app === 'mobile' ? Math.max(hauteur, 420) : hauteur;
+    if (c.rendu.kind === 'compo') {
+      const x = c.rendu.x;
+      if (specimen && AVEC_SPECIMEN(courant!.dimension)) return <div className="overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-black/10"><SpecimenHabillage mobile={app === 'mobile'} hauteur={h} reglages={{ police: x.police, typo: x.typo ?? null, gamme: x.gamme || null, couleur: x.couleur }} /></div>;
+      return <ApercuCompo x={x} sujet={courant!.scenario.sujets[0] ?? 'sport'} appareil={app} vue={courant!.vue} hauteur={h} props={props} />;
+    }
+    const visuel = courant!.type === 'photo' && c.rendu.asset.rendu.kind === 'image'
+      ? <CadrePhoto src={c.rendu.asset.rendu.src} emplacement={courant!.scenario.emplacement ?? 'accueil'} sujet={courant!.scenario.sujets[0] ?? 'general'} />
+      : <Apercu a={c.rendu.asset} grand />;
+    if (app === 'bureau') return visuel;
+    // Téléphone : la section où le visuel apparaît, en vraie largeur mobile (390 px)
+    return (
+      <CadreTelephone hauteur={h}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#0f766e' }}>Pédicure-podologue · {libelleSujet(courant!.scenario.sujets[0] ?? 'general')}</span>
+        {visuel}
+        <span style={{ fontSize: 14, color: '#404040' }}>Bilan, conseils et soins adaptés : ce que nous faisons au cabinet pour vous.</span>
+      </CadreTelephone>
+    );
+  }
 
   // Ce qui est comparé (reperes.ts) : libellé, zones encadrées dans les aperçus, valeurs lisibles de A et B
   const repere = repereDimension(courant?.dimension ?? null);
@@ -398,11 +467,11 @@ export default function Duel(props: Props) {
       <style>{SURFACES_CSS + '.tr-svg svg{width:100%;height:100%;display:block}'}</style>
       <div className="flex flex-wrap items-end gap-3">
         <button type="button" onClick={() => { setType(null); setCourant(null); }} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Types de duel</button>
-        <p className="text-sm"><strong>{LIBELLES_TYPES_DUEL[type].nom}</strong> · {session.length} cette session · série {serie} j</p>
+        <p className="text-sm"><strong>{mode?.nom ?? LIBELLES_TYPES_DUEL[typeBase!].nom}</strong> · {session.length} cette session · série {serie} j</p>
         {choixSujet}
-        {courant?.a.rendu.kind === 'compo' && (
-          <div role="group" aria-label="Appareil" className="flex gap-1 rounded-xl bg-neutral-100 p-1">
-            {([['bureau', 'Ordinateur'], ['mobile', 'Mobile']] as const).map(([id, nom]) => (
+        {courant && (
+          <div role="group" aria-label="Appareil montré" className="flex gap-1 rounded-xl bg-neutral-100 p-1 ring-1 ring-black/10">
+            {APPAREILS.map(([id, nom]) => (
               <button key={id} type="button" aria-pressed={appareil === id} onClick={() => setAppareil(id)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${appareil === id ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>{nom}</button>
             ))}
           </div>
@@ -426,7 +495,20 @@ export default function Duel(props: Props) {
             Client : <strong>{libelleSujet(courant.scenario.sujets[0] ?? 'general')}</strong>
             {courant.scenario.emplacement ? <> · emplacement : {EMPLACEMENTS.find((e) => e.id === courant.scenario.emplacement)?.nom}</> : null}
           </p>
-          <BandeauEvaluation prefixe="On compare" repere={repere} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
+          <BandeauEvaluation prefixe="On compare" repere={{ ...repere, detail: [repere.detail, VU_SUR[appareil]].filter(Boolean).join(' · ') }} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
+            {(courant.dimension === 'couleurs' || courant.dimension === 'police-couleurs') && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' && (
+              <div className="grid gap-1.5">
+                <Nuancier x={courant.a.rendu.x} lettre="A" />
+                <Nuancier x={courant.b.rendu.x} lettre="B" />
+              </div>
+            )}
+            {AVEC_SPECIMEN(courant.dimension) && courant.a.rendu.kind === 'compo' && (
+              <div role="group" aria-label="Vue" className="flex gap-1 rounded-xl bg-neutral-100 p-1">
+                {([[false, 'Page complète'], [true, 'Spécimen']] as const).map(([v, nom]) => (
+                  <button key={nom} type="button" aria-pressed={specimen === v} onClick={() => setSpecimen(v)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${specimen === v ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>{nom}</button>
+                ))}
+              </div>
+            )}
             {courant.dimension === 'menu' && (
               <div role="group" aria-label="État du menu montré" className="flex flex-wrap gap-1 rounded-xl bg-neutral-100 p-1">
                 {ETATS_MENU[appareil].map(([id, nom]) => (
@@ -481,7 +563,7 @@ export default function Duel(props: Props) {
 
       <section aria-labelledby="du-classement" className="grid gap-3">
         <h2 id="du-classement" className="text-lg font-semibold">Classement{courant ? ` — ${libelleSujet(courant.scenario.sujets[0] ?? 'general')}` : ''}</h2>
-        {rendreClassements((c) => (!courant || c.sujet === (courant.scenario.sujets[0] ?? 'cabinet')) && (type === 'photo' || type === 'illustration' ? c.famille === type : c.famille !== 'photo' && c.famille !== 'illustration'))}
+        {rendreClassements((c) => (!courant || c.sujet === (courant.scenario.sujets[0] ?? 'cabinet')) && (mode ? mode.dimensions.includes(c.famille) : true) && (type === 'photo' || type === 'illustration' ? c.famille === type : c.famille !== 'photo' && c.famille !== 'illustration'))}
       </section>
     </div>
   );

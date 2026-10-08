@@ -7,24 +7,34 @@
 import type { CSSProperties } from 'react';
 import {
   attributsHabillage, cssHabillage, detailsPourCle, gamme, modeleIntegre, normaliserHabillage, pairePolices, POLICES, typoPourCle,
-  variablesCharte, variablesGabarit, HABILLAGE_PAR_DEFAUT, graisseTitres, facteurChasse, facteurTitres,
+  variablesCharte, variablesGabarit, HABILLAGE_PAR_DEFAUT, graisseTitres, facteurChasse, facteurTitres, lireCleCombinaison, type ReglagesTypo,
 } from '@plateforme/core';
 import CadreApercu from './CadreApercu';
 import './polices-studio';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/geist';
 
-export default function SpecimenHabillage({ cle, mobile = false, vignette }: { cle: string; mobile?: boolean; vignette?: number }) {
+/**
+ * `reglages` : spécimen d'une COMPOSITION (vue rapide des duels palettes, polices, tailles : paire, typographie, gamme ou couleur
+ * libre de la recette) au lieu d'une clé ; clé `typo:combinaison:<paire>.<gamme>` (tuile « Police × palette ») : la paire dans
+ * les couleurs de la gamme.
+ */
+export default function SpecimenHabillage({ cle = '', mobile = false, vignette, hauteur, reglages }: {
+  cle?: string; mobile?: boolean; vignette?: number; hauteur?: number;
+  reglages?: { police: string; typo?: Partial<ReglagesTypo> | null; gamme?: string | null; couleur?: string | null };
+}) {
   const [type] = cle.split(':');
   const base = HABILLAGE_PAR_DEFAUT;
-  const t = type === 'typo' ? typoPourCle(base.typo, cle) : { typo: base.typo };
+  const combi = lireCleCombinaison(cle);
+  const t = reglages ? { typo: { ...base.typo, ...(reglages.typo ?? {}) } as ReglagesTypo, police: reglages.police } : combi ? { typo: base.typo, police: combi.police } : type === 'typo' ? typoPourCle(base.typo, cle) : { typo: base.typo };
   const police = t.police ?? 'didone';
   const h = normaliserHabillage({ typo: t.typo, details: type === 'details' ? detailsPourCle(base.details, cle) : base.details });
-  const p = pairePolices(police)!;
+  const p = pairePolices(police) ?? pairePolices('didone')!;
   const m = modeleIntegre('tableau');
-  const g = gamme('cobalt-abricot');
+  const g = gamme(reglages ? reglages.gamme ?? '' : combi?.gamme ?? 'cobalt-abricot');
+  const couleur = g?.accent ?? reglages?.couleur ?? '#2d5bff';
   const style = {
-    ...variablesCharte(), ...variablesGabarit(m, { couleur: g?.accent ?? '#2d5bff', gamme: g?.id ?? null }),
+    ...variablesCharte(), ...variablesGabarit(m, { couleur, gamme: g?.id ?? null }),
     '--rayon': '18px', '--rayon-bouton': '999px', '--police-titres': (POLICES as Record<string, string>)[p.titres], '--police-texte': (POLICES as Record<string, string>)[p.texte],
     '--graisse-titres': String(graisseTitres(police, h.typo) ?? p.graisse), '--mot-long': String(Math.round(20 * facteurChasse(h.typo))),
     background: 'var(--g-page)', color: 'var(--g-encre)', fontFamily: 'var(--police-texte)', fontSize: mobile ? 17 : 18, lineHeight: 1.6, minHeight: '100vh',
@@ -33,7 +43,7 @@ export default function SpecimenHabillage({ cle, mobile = false, vignette }: { c
   const taille = Math.min(mobile ? 40 : 72, (mobile ? 330 : 1100) / (20 * 0.58 * facteurChasse(h.typo))) * facteurTitres(h.typo);
   const css = cssHabillage(h, { police, gabarit: 'tableau' });
   return (
-    <CadreApercu appareil={mobile ? 'mobile' : 'bureau'} vignette={vignette} titre={`Spécimen ${mobile ? 'téléphone' : 'ordinateur'}`}>
+    <CadreApercu appareil={mobile ? 'mobile' : 'bureau'} vignette={hauteur ? undefined : vignette} hauteur={hauteur} titre={`Spécimen ${mobile ? 'téléphone' : 'ordinateur'}`}>
       <div className="ap" {...attributsHabillage(h)} data-registre="ligne" style={style}>
         {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
         <section className="ap-section eff-section" style={{ padding: mobile ? '36px 20px' : '64px 72px' }}>

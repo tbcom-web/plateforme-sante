@@ -7,7 +7,7 @@
 // l'accueil, contact) et classes déjà présentes dans l'aperçu (.ap-h1, .mn-entete, .hp…). Le site publié n'est pas modifié.
 // Couverture générique par préfixe : toute dimension `composant:<famille>` (y compris de nouvelles familles, ex.
 // composant:entete-anim) et toute clé `composant:<famille>:<variante>` ont un repère ; famille inconnue → [data-zone="<famille>"].
-import { DIMENSIONS_DUEL } from './duels';
+import { DIMENSIONS_DUEL, MODES_DUEL } from './duels';
 import { jeuEffets } from './effets';
 import { gamme as gammeParId } from './gammes';
 import { pairePolices } from './modeles';
@@ -25,6 +25,8 @@ export const ZONES_APERCU = {
   'menu-mobile': ['.ap-menu', '.mn-burger', '.mn-nav', '.mn-entete', '.ap-entete'],
   rdv: ['.mn-rdv', '.ap-entete .ap-bouton', '.apb-rdv', '.apb-plein', '.apb-flottant'],
   titres: ['.ap-h1', '.ap-h2', '.ap-h3', '.hp__titre', '.eff-titre'],
+  'titre-principal': ['.ap-h1', '.hp__titre'],
+  paragraphe: ['.ap-chapo', '.hp__soins', '[data-zone="premier-ecran"] p:not([class])', '.td-tete > p:not([class])'],
   textes: ['.ap-sur', '.td-sur', '.hp__sur', '.ap-chapo'],
   photos: ['.ap img', '.hp__fond'],
   illustrations: ['.ap-svg', '.vt', '.eff-visuel'],
@@ -96,9 +98,14 @@ const VARIANTES_ILLUSTRATION: Record<string, string> = {
 
 /** Dimensions de duel nommées (hors composant:*) */
 const DIMENSIONS: Record<string, () => Repere> = {
-  polices: () => repere('les polices des titres et du texte', ['titres', 'textes']),
+  polices: () => repere('la paire de polices (titres et texte)', ['titres', 'paragraphe']),
   typo: () => repere('la typographie (taille, casse, graisse des titres)', ['titres', 'textes']),
-  couleurs: () => ensemble('les couleurs', 'fonds, boutons, accents : partout'),
+  couleurs: () => ensemble('la palette de couleurs', 'fonds, boutons, accents : partout'),
+  'typo:echelle': () => repere('la taille des titres (échelle)', ['titre-principal']),
+  'typo:casse': () => repere('la casse des titres (majuscules ou minuscules)', ['titre-principal']),
+  'typo:graisse': () => repere('la graisse des titres', ['titre-principal']),
+  'typo:interlettrage': () => repere('l’interlettrage des titres', ['titre-principal']),
+  'police-couleurs': () => repere('la combinaison police × palette', ['titres', 'paragraphe']),
   effets: () => repere('les effets (survol, apparition)', ['cartes', 'illustrations', 'boutons']),
   traitement: () => repere('le traitement des photos', ['photos']),
   visuels: () => repere('le style des illustrations', ['illustrations', 'photos']),
@@ -125,7 +132,7 @@ export function repereDimension(dimension: string | null | undefined): Repere {
 
 /** Dimensions qu'un duel peut tirer (duels.ts, Duel.tsx) : compositions, éléments de page, photos, illustrations */
 export const DIMENSIONS_DUEL_TIRABLES: readonly string[] = [
-  ...new Set([...Object.values(DIMENSIONS_DUEL).flat(), ...FAMILLES_COMPOSANTS.map((f) => `composant:${f}`), 'photo', 'style', 'version']),
+  ...new Set([...Object.values(DIMENSIONS_DUEL).flat(), ...MODES_DUEL.flatMap((m) => m.dimensions), ...FAMILLES_COMPOSANTS.map((f) => `composant:${f}`), 'photo', 'style', 'version']),
 ];
 
 /** La dimension a-t-elle un repère explicite (pas un repli) ? (tests) */
@@ -152,6 +159,7 @@ export function repereCle(cle: string, titre?: string | null): Repere {
   }
   if (type === 'effets') return repere(`le jeu d’effets « ${jeuEffets(a)?.nom ?? a} »`, ['cartes', 'illustrations', 'boutons'], 'survol simulé en boucle, apparition');
   if (type === 'typo') {
+    if (a === 'combinaison') { const [p, g] = (b ?? '').split('.'); return { ...ensemble(`la combinaison « ${pairePolices(p)?.nom ?? p} × ${gammeParId(g)?.nom ?? g} »`), detail: 'paire de polices dans cette palette' }; }
     if (a === 'police') return { ...ensemble(`la paire de polices « ${pairePolices(b)?.nom ?? b} »`), detail: pairePolices(b)?.description };
     return ensemble(`la typographie : ${(NOMS_AXES_TYPO[a as AxeTypo] ?? a).toLowerCase()} « ${sansPrefixe(libelleCleTypo(cle))} »`);
   }
@@ -200,7 +208,18 @@ export function valeursDuel(dimension: string | null | undefined, a: CompoPartie
     const fam = dimension.slice(10);
     return deux((x) => { const v = (x.sections.variantes as Record<string, string | undefined>)[fam]; return v ? LIBELLES_VARIANTES[fam]?.[v] ?? v : 'celle du modèle'; });
   }
+  if (dimension.startsWith('typo:')) {
+    const axe = dimension.slice(5) as AxeTypo;
+    const nom = (x: CompoPartielle) => {
+      const v = habillageDe(x).typo[axe];
+      const axeNom = (NOMS_AXES_TYPO[axe] ?? axe).toLowerCase();
+      const val = ((AXES_TYPO[axe] as readonly { id: string; nom: string }[] | undefined)?.find((o) => o.id === v)?.nom ?? v).replace(/\s*\([^)]*\)$/, '').toLowerCase();
+      return val.startsWith(axeNom) ? val : `${axeNom} ${val}`;
+    };
+    return deux(nom);
+  }
   switch (dimension) {
+    case 'police-couleurs': return deux((x) => `${pairePolices(x.police)?.nom ?? x.police} + ${x.gamme ? gammeParId(x.gamme)?.nom ?? x.gamme : `couleur ${x.couleur}`}`);
     case 'polices': return deux((x) => pairePolices(x.police)?.nom ?? x.police);
     case 'couleurs': return deux((x) => (x.gamme ? gammeParId(x.gamme)?.nom ?? x.gamme : `couleur ${x.couleur}`));
     case 'effets': return deux((x) => jeuEffets(x.effets)?.nom ?? x.effets);

@@ -5,7 +5,6 @@
 
 import type { TypeAsset } from './assets-poids';
 import { scoreAsset } from './assets-poids';
-import { baseDeCle } from './bases-illustrations';
 import type { PoidsAtelier } from './atelier-poids';
 import { libelleCombinaison } from './atelier';
 import { lotsPropositions } from './propositions';
@@ -16,7 +15,7 @@ import { jourParis } from './essai';
 // Catégories (tuiles de l'accueil)
 // ---------------------------------------------------------------------------------------------------------------
 
-export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets' | 'typographies' | 'details' | 'menus';
+export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets' | 'typographies' | 'details' | 'menus' | 'combinaisons';
 
 export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: string; description: string; types: readonly TypeAsset[] }[] = [
   { id: 'hasard', libelle: 'Tout au hasard', description: 'Un peu de tout, les jamais notés d’abord', types: [] },
@@ -35,11 +34,18 @@ export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: strin
   { id: 'typographies', libelle: 'Typographies', description: 'Paires de polices, échelle, casse, graisse, surtitres', types: ['typo'] },
   { id: 'details', libelle: 'Détails', description: 'Jeux de détails : séparateurs, soulignés, coins, ombres, boutons, cadres…', types: ['details'] },
   { id: 'menus', libelle: 'Menus', description: 'En-têtes et menus : ordinateur, téléphone, bouton de rendez-vous', types: ['menu'] },
+  // Combinaisons police × palette (combinaisons.ts) : spécimen de la paire de polices dans les couleurs de la gamme
+  { id: 'combinaisons', libelle: 'Police × palette', description: 'Paires de polices dans une palette : quelles combinaisons vont bien ensemble', types: ['typo'] },
 ];
 
 export const categorieRetours = (id: string | null | undefined) => CATEGORIES_RETOURS.find((c) => c.id === id);
 
 /** Catégorie d'un type d'asset (thèmes : aucune) */
+/**
+ * Catégorie d'un élément d'après sa clé : les combinaisons police × palette (`typo:combinaison:…`, combinaisons.ts) ont leur tuile ;
+ * le reste suit son type. Elles ne sont pas tirées par « Tout au hasard » (414 combinaisons : elles écraseraient le reste).
+ */
+export const categorieDeCle = (a: { cle: string; type: TypeAsset }): CategorieRetours => (a.cle.startsWith('typo:combinaison:') ? 'combinaisons' : categorieDuType(a.type));
 export const categorieDuType = (t: TypeAsset): CategorieRetours => CATEGORIES_RETOURS.find((c) => c.types.includes(t))?.id ?? 'illustrations';
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -169,9 +175,7 @@ export function assetsInfluents(poids: PoidsAtelier | null | undefined, titres: 
   const a = poids?.assets;
   if (!a) return { favorises: [], evites: [] };
   const cles = [...new Set([...Object.keys(a.effets), ...Object.keys(a.statuts)])];
-  // Variante qui ne fait qu'hériter de sa base (même score) : seule la base est listée (bases-illustrations.ts)
-  const l = cles.map((cle) => ({ cle, titre: titres[cle] ?? cle, score: scoreAsset(cle, a) }))
-    .filter((x) => { const b = baseDeCle(x.cle); return !b || !cles.includes(b) || scoreAsset(b, a) !== x.score; });
+  const l = cles.map((cle) => ({ cle, titre: titres[cle] ?? cle, score: scoreAsset(cle, a) }));
   return {
     favorises: l.filter((x) => x.score >= 0.3).sort((x, y) => y.score - x.score || (x.cle < y.cle ? -1 : 1)).slice(0, nb),
     evites: l.filter((x) => x.score <= -0.75).sort((x, y) => x.score - y.score || (x.cle < y.cle ? -1 : 1)).slice(0, nb),

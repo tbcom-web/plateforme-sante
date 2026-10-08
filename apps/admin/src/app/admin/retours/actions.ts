@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { appareilDe, baseDeCle, clePhoto, estAssetDuCode, inventaireAssets, estCleAsset, estCleStudio, estEtiquetteDuType, estSujetDeVisuel, lireInstantane, normaliserZones, serialiserZones, texteRemarques, typeDeCle, type AppareilRetour, type ZonesNote } from '@plateforme/core';
+import { appareilDe, clePhoto, estAssetDuCode, estCleAsset, estCleStudio, estEtiquetteDuType, estSujetDeVisuel, lireInstantane, normaliserZones, serialiserZones, texteRemarques, typeDeCle, type AppareilRetour, type ZonesNote } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux } from '@/lib/assets-notes';
 import { lancerWorkflow } from '@/lib/publication';
@@ -20,9 +20,8 @@ export async function ajouterNoteAsset(
   await exigerAdmin();
   const type = typeof cle === 'string' ? typeDeCle(cle) : null;
   if (!type) return { ok: false, message: 'Élément inconnu.' };
-  // Structures de pages, éléments et jeux d'effets du studio (tuiles dédiées) : clé connue du studio (recettes.ts) ;
-  // illustration de BASE (dessin:orthonyxie, heros:sport…, bases-illustrations.ts) : base d'au moins une variante de l'inventaire
-  if (!estAssetDuCode(cle) && !estCleStudio(cle) && !inventaireAssets().some((a) => baseDeCle(a.cle) === cle)) {
+  // Structures de pages, éléments et jeux d'effets du studio (tuiles dédiées) : clé connue du studio (recettes.ts)
+  if (!estAssetDuCode(cle) && !estCleStudio(cle)) {
     const photos = type === 'photo' ? await getPhotosDesJeux() : [];
     if (!photos.some((p) => clePhoto(p.url) === cle)) return { ok: false, message: 'Élément inconnu.' };
   }
