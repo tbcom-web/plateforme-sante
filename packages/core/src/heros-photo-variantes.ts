@@ -129,7 +129,12 @@ export const METADONNEES_PREMIERS_ECRANS: Record<PremierEcranNouveau, { famille:
 // (bande au-dessus du titre, emblème à côté du titre, ou fond). « aucune » par défaut ; toutes « à valider ».
 // ---------------------------------------------------------------------------------------------------------------
 
-export const ANIMATIONS_ENTETE = ['aucune', 'voute-trace', 'points-pression', 'foulee', 'onde', 'taches', 'mots', 'empreintes', 'rubans', 'geometrie', 'lueur'] as const;
+export const ANIMATIONS_ENTETE = [
+  'aucune', 'voute-trace', 'points-pression', 'foulee', 'onde', 'taches', 'mots', 'empreintes', 'rubans', 'geometrie', 'lueur',
+  // Famille « empreintes en lignes de niveau » (entete-empreintes.ts, retour de Paul du 2026-10-08 : « j'adore le style des
+  // empreintes comme ça ») : contour de la semelle et courbes de niveau du relief, géométries validées, rien de redessiné
+  'em-respire', 'em-trace', 'em-deroule', 'em-marche', 'em-petits-pas', 'em-sensibilite', 'em-particules', 'em-topographie', 'em-defilement', 'em-encre',
+] as const;
 export type AnimationEntete = (typeof ANIMATIONS_ENTETE)[number];
 export const estAnimationEntete = (v: unknown): v is AnimationEntete => (ANIMATIONS_ENTETE as readonly unknown[]).includes(v);
 export const LIBELLES_ANIMATIONS_ENTETE: Record<AnimationEntete, string> = {
@@ -144,12 +149,29 @@ export const LIBELLES_ANIMATIONS_ENTETE: Record<AnimationEntete, string> = {
   rubans: 'Rubans de couleur (à valider)',
   geometrie: 'Formes géométriques en rotation lente (à valider)',
   lueur: 'Lueur qui suit le pointeur (à valider)',
+  'em-respire': 'Empreintes : zones d’appui qui s’allument et respirent (à valider)',
+  'em-trace': 'Empreintes : contour qui se dessine, puis les zones (à valider)',
+  'em-deroule': 'Empreintes : point lumineux qui suit le déroulé du pas (à valider)',
+  'em-marche': 'Empreintes : marche, gauche puis droite (à valider)',
+  'em-petits-pas': 'Empreintes : petits pas d’enfant en zigzag (à valider)',
+  'em-sensibilite': 'Empreintes : points de la plante qui s’allument un à un (à valider)',
+  'em-particules': 'Empreintes : particules qui dessinent les contours (à valider)',
+  'em-topographie': 'Empreintes : lignes de niveau en carte de relief (à valider)',
+  'em-defilement': 'Empreintes : zones qui s’allument au défilement (à valider)',
+  'em-encre': 'Empreintes à l’encre sur fond clair (à valider)',
 };
-/** Emplacement : bande au-dessus du titre, emblème à côté du titre, fond du premier écran */
-export const PLACEMENT_ANIMATIONS_ENTETE: Record<Exclude<AnimationEntete, 'aucune'>, 'bande' | 'embleme' | 'fond'> = {
+/**
+ * Emplacement : bande au-dessus du titre, emblème à côté du titre, fond du premier écran ; « scene » (empreintes) : en grand dans
+ * la carte visuelle du bento, à côté du titre (premier écran « bento ») — ailleurs, en emblème à côté du sur-titre.
+ */
+export const PLACEMENT_ANIMATIONS_ENTETE: Record<Exclude<AnimationEntete, 'aucune'>, 'bande' | 'embleme' | 'fond' | 'scene'> = {
   'voute-trace': 'embleme', 'points-pression': 'embleme', foulee: 'bande', onde: 'embleme', taches: 'embleme', mots: 'bande', empreintes: 'bande',
   rubans: 'bande', geometrie: 'embleme', lueur: 'fond',
+  'em-respire': 'scene', 'em-trace': 'scene', 'em-deroule': 'scene', 'em-marche': 'scene', 'em-petits-pas': 'scene', 'em-sensibilite': 'scene',
+  'em-particules': 'scene', 'em-topographie': 'scene', 'em-defilement': 'scene', 'em-encre': 'scene',
 };
+/** Premiers écrans qui posent une animation « scène » en grand (carte visuelle) ; ailleurs elle passe en emblème */
+export const HOTES_SCENE_ENTETE: readonly string[] = ['bento'];
 export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: FamillePremierEcran; energie: number; rondeur: number; expressif: boolean }> = {
   aucune: { famille: 'sobre', energie: 0, rondeur: 0.5, expressif: false },
   'voute-trace': { famille: 'sobre', energie: 0.45, rondeur: 0.6, expressif: false },
@@ -162,6 +184,17 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
   rubans: { famille: 'organique', energie: 0.8, rondeur: 0.8, expressif: true },
   geometrie: { famille: 'sobre', energie: 0.5, rondeur: 0.3, expressif: false },
   lueur: { famille: 'fondu', energie: 0.35, rondeur: 0.7, expressif: false },
+  // Empreintes en lignes de niveau : en grand, ce sont l'élément expressif de l'écran (premier écran calme : bento)
+  'em-respire': { famille: 'organique', energie: 0.45, rondeur: 0.8, expressif: true },
+  'em-trace': { famille: 'sobre', energie: 0.45, rondeur: 0.7, expressif: true },
+  'em-deroule': { famille: 'sobre', energie: 0.5, rondeur: 0.6, expressif: true },
+  'em-marche': { famille: 'vitesse', energie: 0.55, rondeur: 0.6, expressif: true },
+  'em-petits-pas': { famille: 'organique', energie: 0.7, rondeur: 0.9, expressif: true },
+  'em-sensibilite': { famille: 'sobre', energie: 0.25, rondeur: 0.7, expressif: true },
+  'em-particules': { famille: 'vitesse', energie: 0.75, rondeur: 0.5, expressif: true },
+  'em-topographie': { famille: 'organique', energie: 0.5, rondeur: 0.85, expressif: true },
+  'em-defilement': { famille: 'sobre', energie: 0.3, rondeur: 0.7, expressif: true },
+  'em-encre': { famille: 'fondu', energie: 0.3, rondeur: 0.7, expressif: true },
 };
 
 /**

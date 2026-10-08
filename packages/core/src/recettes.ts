@@ -23,7 +23,7 @@ import { contraste, hex, rvb } from './couleurs';
 import { NEUTRES } from './charte';
 import { themeParId } from './themes';
 import { themeIllustre } from './heros-themes';
-import { estAValider, estPremierEcranAnime, estPremierEcranNouveau, estPremierEcranPhoto, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_ANIMATIONS_ENTETE, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
+import { HOTES_SCENE_ENTETE, PLACEMENT_ANIMATIONS_ENTETE, type AnimationEntete, estAValider, estPremierEcranAnime, estPremierEcranNouveau, estPremierEcranPhoto, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_ANIMATIONS_ENTETE, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
@@ -820,6 +820,8 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   if (type === 'composant' && (VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) {
     // Transition du diaporama : montrée sur le diaporama plein écran (sauf premier écran scindé déjà choisi)
     const accueil = a === 'transition' && !estPremierEcranAnime(x.sections.variantes.accueil) ? { accueil: 'diaporama' as const }
+      // Animation d'en-tête « scène » (empreintes en lignes de niveau) : jouée en grand dans la carte du bento, son hôte
+      : a === 'entete-anim' && PLACEMENT_ANIMATIONS_ENTETE[b as Exclude<AnimationEntete, 'aucune'>] === 'scene' && !HOTES_SCENE_ENTETE.includes(x.sections.variantes.accueil as string) ? { accueil: 'bento' as const }
       // Animation d'en-tête : jouée dans le premier écran fondu (le plus aimé du lot 1) si la recette n'a pas de nouveau premier écran
       : a === 'entete-anim' && !estPremierEcranNouveau(x.sections.variantes.accueil) ? { accueil: 'fondu' as const } : {};
     const y = { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, ...accueil, [a]: b } } };

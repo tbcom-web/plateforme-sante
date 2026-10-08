@@ -472,6 +472,18 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.entete-anim:rubans': E('Rubans de couleur', { e: 0.8, r: 0.7, f: -0.5 }, { pref: [F.po, F.dx], jamais: [F.te, F.ed, F.mi, F.cl], fort: 0.8 }),
   'v.entete-anim:geometrie': E('Formes géométriques en rotation', { e: 0.5, c: 0.6, r: -0.3 }, { pref: [F.po, F.te, F.ma], jamais: [F.na], fort: 0.6 }),
   'v.entete-anim:lueur': E('Lueur qui suit le pointeur', { e: 0.3, f: 0.2 }, { pref: [F.ed, F.mi, F.ma], fort: 0.4 }),
+  // Empreintes en lignes de niveau (entete-empreintes.ts, 2026-10-08, à valider) : en grand dans la carte du bento, c'est
+  // l'élément expressif de l'écran (fort ≥ 0,7) ; registre technique / relevé ; jamais vives pour le diabète ni les seniors
+  'v.entete-anim:em-respire': E('Empreintes : zones qui respirent', { e: 0.45, r: 0.6, c: 0.5 }, { pref: [F.te, F.mi, F.ma, F.cl], jamais: [F.dx], fort: 0.8 }),
+  'v.entete-anim:em-trace': E('Empreintes : contour tracé', { e: 0.45, r: 0.4, c: 0.4, f: 0.3 }, { pref: [F.te, F.mi, F.ed, F.cl], fort: 0.8 }),
+  'v.entete-anim:em-deroule': E('Empreintes : déroulé du pas', { e: 0.5, c: 0.4, d: -0.2 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx], fort: 0.7 }),
+  'v.entete-anim:em-marche': E('Empreintes : marche', { e: 0.6, r: 0.4 }, { pref: [F.te, F.po, F.ma], jamais: [F.ed], fort: 0.8 }),
+  'v.entete-anim:em-petits-pas': E('Empreintes : petits pas d’enfant', { e: 0.75, r: 0.9, t: 0.4, f: -0.5 }, { pref: [F.dx, F.po, F.na], jamais: [F.te, F.ed, F.mi], fort: 0.8 }),
+  'v.entete-anim:em-sensibilite': E('Empreintes : points de la plante', { e: 0.2, r: 0.5, f: 0.3, d: -0.3 }, { pref: [F.mi, F.cl, F.te, F.ed], jamais: [F.po], fort: 0.7 }),
+  'v.entete-anim:em-particules': E('Empreintes : particules', { e: 0.8, c: 0.6, f: -0.2 }, { pref: [F.te, F.ma, F.po], jamais: [F.cl, F.dx, F.na], fort: 0.8 }),
+  'v.entete-anim:em-topographie': E('Empreintes : carte de relief', { e: 0.5, r: 0.7, c: 0.4 }, { pref: [F.te, F.po, F.na], jamais: [F.ed], fort: 0.8 }),
+  'v.entete-anim:em-defilement': E('Empreintes : zones au défilement', { e: 0.3, c: 0.4, f: 0.2 }, { pref: [F.te, F.mi, F.ed, F.cl], fort: 0.7 }),
+  'v.entete-anim:em-encre': E('Empreintes à l’encre, fond clair', { e: 0.3, f: 0.4, t: 0.2, c: -0.2 }, { pref: [F.ed, F.cl, F.na, F.mi], jamais: [F.po], fort: 0.7 }),
   'v.transition:fondu': E('Fondu enchaîné', {}),
   'v.transition:ken-burns': E('Ken Burns', { e: 0.4, f: 0.2 }, { pref: [F.ed, F.na] }),
   'v.transition:glissement': E('Glissement', { e: 0.6 }, { pref: [F.po], jamais: [F.mi] }),
@@ -660,12 +672,12 @@ const RONDS: [DimensionHarmonie, string][] = [
   ['details.coins', 'tres-arrondis'], ['v.soins-forme', 'bulles'], ['v.soins-forme', 'organiques'], ['v.soins-forme', 'pilules'], ['details.cadre', 'organique'],
   ['details.fond', 'formes'], ['details.separateur', 'ondulation'], ['details.souligne', 'vague'], ['v.sections', 'vague'], ['v.accueil', 'maille'], ['details.boutons', 'pilule'],
   ['v.accueil', 'organique'], ['v.accueil', 'organique-fondu'], ['v.accueil', 'duo-taches'], ['v.accueil', 'tache-morph'], ['v.accueil', 'forme-respire'],
-  ['v.accueil', 'maille-anime'], ['v.accueil', 'bandes-ondulantes'], ['v.entete-anim', 'taches'], ['v.entete-anim', 'onde'], ['v.entete-anim', 'rubans'],
+  ['v.accueil', 'maille-anime'], ['v.accueil', 'bandes-ondulantes'], ['v.entete-anim', 'taches'], ['v.entete-anim', 'onde'], ['v.entete-anim', 'rubans'], ['v.entete-anim', 'em-petits-pas'],
 ];
 /** Animations d'en-tête trop vives pour le diabète et les seniors (énergie ≥ 0,7 : il faut rassurer) */
-const ANIMATIONS_VIVES = ['foulee', 'mots', 'empreintes', 'rubans'];
+const ANIMATIONS_VIVES = ['foulee', 'mots', 'empreintes', 'rubans', 'em-petits-pas', 'em-particules'];
 /** Animations qui pulsent : jamais avec les illustrations douces (registre pédagogique : « rien qui pulse », charte) */
-const ANIMATIONS_PULSEES = ['points-pression', 'onde'];
+const ANIMATIONS_PULSEES = ['points-pression', 'onde', 'em-respire', 'em-marche'];
 
 /** Valeur neutre (sans règle) d'une dimension, utilisée pour corriger */
 const NEUTRES: Record<string, string> = {

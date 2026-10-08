@@ -7,7 +7,7 @@
 import { CLASSE_PAUSE } from './AnimationsBudget';
 import { useEffect, useRef, useState } from 'react';
 import {
-  CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
+  CORPS_PARTICULES, CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
   TRANSITIONS_DIAPORAMA, illustrationTheme, themeIllustre, type Registre, type ModeleManifeste, type ReplisApercu, type SiteDraft, type TransitionDiaporama,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -32,6 +32,9 @@ const photosApercu = (d: SiteDraft) => [...new Set((d.theme.modeVisuel === 'phot
   ? [d.photos.accueil, ...(d.theme.photosRecette ?? [])]
   : d.photos.accueil ? [d.photos.accueil, ...d.photos.cabinet] : []).filter(Boolean))].map((src) => ({ src }));
 
+/** Tempo des animations rythmées (comme le site) : vif pour le sport, calme dès qu'il y a diabète ou seniors */
+const tempoApercu = (sujets: string[]) => (sujets.includes('sport') && !sujets.some((x) => x === 'diabete' || x === 'senior') ? 'vif' : 'calme');
+
 /** Le premier écran de la recette est-il l'un des nouveaux, rendable (photos) ? Sinon : premier écran du gabarit ou du modèle */
 export function herosPhotoActif(d: SiteDraft, m: ModeleManifeste): boolean {
   const v = m.variantes?.accueil;
@@ -51,6 +54,8 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     if (!h || !animation) return;
     // Aperçu en pause (budget des animations, AnimationsBudget.tsx) : pas de nouvelle lecture, l'en-tête reste à son état final
     const jouer = () => { if (h.ownerDocument.documentElement.classList.contains(CLASSE_PAUSE)) return; h.classList.remove('ea-joue'); void h.offsetWidth; h.classList.add('ea-joue'); };
+    // Particules des empreintes (canvas) : même script que le site, exécuté sur la section de l'aperçu (il suit la classe ea-joue)
+    if (animation === 'em-particules') new Function('h', CORPS_PARTICULES)(h);
     jouer();
     const t = setInterval(jouer, DUREE_ENTETE + 1700);
     const l = h.querySelector<HTMLElement>('.ea--lueur i');
@@ -91,6 +96,7 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     mode: 'apercu',
     pause,
     animation,
+    tempo: tempoApercu(construireNavigation(d, soins).principaux.map((x) => x.theme.id as string)),
   });
   // Illustration de l'emplacement : celle du site (VisuelTheme : illustration composée du sujet du héros, gamme du site sauf
   // modèle à teinte « gamme » en relevé)

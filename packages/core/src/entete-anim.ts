@@ -14,6 +14,10 @@
 // - la lueur suit le pointeur seulement avec une souris (désactivée au tactile).
 
 import { PLACEMENT_ANIMATIONS_ENTETE, type AnimationEntete } from './heros-photo-variantes';
+import { cssEmpreintes, estEmpreintes, htmlEmpreintes, type AnimationEmpreintes } from './entete-empreintes';
+
+/** Animations de ce fichier (la famille « empreintes en lignes de niveau » est dans entete-empreintes.ts) */
+type AnimationSimple = Exclude<AnimationEntete, 'aucune' | AnimationEmpreintes>;
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 /** Durée d'une lecture (≤ 5 s, WCAG 2.2.2) */
@@ -25,7 +29,7 @@ const sp = (n: number, cl = 'ea__e') => Array.from({ length: n }, (_, i) => `<i 
 const VOUTE_EMBLEME = 'M4 62H26C36 62 42 30 60 28C82 26 98 50 112 60C114 61.5 116 62 120 62H136';
 
 /** Balisage de chaque animation (contenu de la boîte .ea) ; `mots` : mots des soins */
-function corps(a: Exclude<AnimationEntete, 'aucune'>, mots: readonly string[]): string {
+function corps(a: AnimationSimple, mots: readonly string[]): string {
   switch (a) {
     case 'voute-trace':
       return `<span class="ea__f"><span class="ea__i"><svg viewBox="0 0 140 80"><path d="${VOUTE_EMBLEME}"/></svg></span></span><i class="ea__sol"></i><i class="ea__pt"></i>`;
@@ -54,7 +58,7 @@ const KF = (n: string, c: string) => `@keyframes ea-${n}{${c}}`;
 const D = `${DUREE_ENTETE}ms`;
 
 /** Feuille propre à chaque animation : état fixe (composé) puis lecture sous .ea-joue */
-const CSS: Record<Exclude<AnimationEntete, 'aucune'>, string> = {
+const CSS: Record<AnimationSimple, string> = {
   'voute-trace': `.ea--voute-trace svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;fill:none;stroke:var(--ea-1);stroke-width:3;stroke-linecap:round}.ea__f,.ea__i{position:absolute;inset:0;overflow:hidden}.ea__sol{position:absolute;left:3%;right:3%;bottom:21%;height:2px;background:var(--ea-1);opacity:.25}.ea--voute-trace .ea__pt{position:absolute;left:43%;top:35%;width:12px;height:12px;margin:-6px;border-radius:50%;background:var(--ea-2)}
 ${J} .ea__f{animation:ea-fen ${D} cubic-bezier(.4,0,.2,1) both}${J} .ea__i{animation:ea-fen-i ${D} cubic-bezier(.4,0,.2,1) both}${J} .ea--voute-trace .ea__pt{animation:ea-pop ${D} both}
 ${KF('fen', '0%{transform:translate3d(-100%,0,0)}30%,52%{transform:none}70%{transform:translate3d(100%,0,0)}70.1%{transform:translate3d(-100%,0,0)}100%{transform:none}')}${KF('fen-i', '0%{transform:translate3d(100%,0,0)}30%,52%{transform:none}70%{transform:translate3d(-100%,0,0)}70.1%{transform:translate3d(100%,0,0)}100%{transform:none}')}${KF('pop', '0%,14%{transform:scale(0)}22%{transform:scale(1.5)}30%,56%{transform:none}66%,84%{transform:scale(0)}94%{transform:scale(1.4)}100%{transform:none}')}`,
@@ -104,9 +108,12 @@ const COMMUN = `.ea{--ea-1:var(--hp-accent-texte);--ea-2:var(--hp-vif);--ea-3:va
 .hp--sur-photo .ea--embleme{margin-bottom:0}@media (min-width:900px){.ea--embleme{width:140px;height:80px}.ea--bande{height:48px}}
 @media (prefers-reduced-motion:reduce){.ea *{animation:none!important}}`;
 
-/** Balisage de l'animation (null : aucune) */
-export function htmlAnimationEntete(a: AnimationEntete | null | undefined, mots: readonly string[] = []): string {
+/**
+ * Balisage de l'animation (null : aucune). Empreintes : `scene` (carte visuelle du bento) sinon emblème ; `vif` : tempo sportif.
+ */
+export function htmlAnimationEntete(a: AnimationEntete | null | undefined, mots: readonly string[] = [], o: { scene?: boolean; vif?: boolean } = {}): string {
   if (!a || a === 'aucune') return '';
+  if (estEmpreintes(a)) return htmlEmpreintes(a, { placement: o.scene ? 'scene' : 'embleme', vif: o.vif });
   const p = PLACEMENT_ANIMATIONS_ENTETE[a];
   if (a === 'mots' && !mots.length) return '';
   return `<span class="ea ea--${p} ea--${a}" aria-hidden="true">${corps(a, mots)}</span>`;
@@ -115,6 +122,7 @@ export function htmlAnimationEntete(a: AnimationEntete | null | undefined, mots:
 /** Feuille de l'animation (commune + propre) */
 export function cssAnimationEntete(a: AnimationEntete | null | undefined): string {
   if (!a || a === 'aucune') return '';
+  if (estEmpreintes(a)) return cssEmpreintes(a);
   return (COMMUN + CSS[a]).replace(/\n\s*/g, '');
 }
 

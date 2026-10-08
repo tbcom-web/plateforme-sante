@@ -5,13 +5,14 @@
 // Première photo = élément LCP (préchargée, <img> réel, fetchpriority="high") ; photos suivantes chargées après l'événement
 // load par le script du core (≤ 1 Ko). Animation d'en-tête (entete-anim.ts) : image fixe, lue par SCRIPT_ENTETE (≤ 0,75 Ko). Sans photo : illustration du sujet n° 1 (VisuelTheme) dans l'emplacement prévu.
 import VisuelTheme from '../accueil/VisuelTheme.astro';
-import { CSS_HEROS, SCRIPT_ENTETE, SCRIPT_HEROS, htmlHeros } from '@plateforme/core';
+import { CSS_HEROS, SCRIPT_ENTETE, SCRIPT_HEROS, SCRIPT_PARTICULES, htmlHeros } from '@plateforme/core';
 import { donneesHeros } from '../../lib/heros-photo';
 import { visuelPremierEcran } from '../../lib/vitrine';
 
 const d = donneesHeros!;
 const { avant, apres, fente, css } = htmlHeros(d);
-const premiere = d.photos[0];
+// Animation « scène » (empreintes) dans la carte du bento : la photo n'est pas montrée, donc pas préchargée
+const premiere = avant.includes('hp__carte--scene') ? undefined : d.photos[0];
 ---
 {premiere && <link rel="preload" as="image" href={premiere.src} imagesrcset={premiere.srcset} imagesizes={premiere.srcset ? (d.variante === 'scinde-photo' ? '(min-width: 900px) 50vw, 100vw' : d.variante === 'maille' ? '(min-width: 900px) 45vw, 100vw' : d.variante === 'bento' ? '(min-width: 900px) 40vw, 100vw' : '100vw') : undefined} fetchpriority="high" />}
 <Fragment set:html={`<style>${CSS_HEROS}${css}</style>${avant}`} />
@@ -19,4 +20,6 @@ const premiere = d.photos[0];
 {fente && <Fragment set:html={apres} />}
 {avant.includes('data-hp-diapos') && <script is:inline type="module" set:html={SCRIPT_HEROS} />}
 {/* Animation d'en-tête : script classique en ligne juste après le premier écran (lecture dès l'affichage, sans saut) */}
+{/* Particules des empreintes (canvas) : leur script avant celui de la lecture, qui pose ea-joue */}
+{avant.includes('ea--em-particules') && <script is:inline set:html={SCRIPT_PARTICULES} />}
 {avant.includes(' data-ea') && <script is:inline set:html={SCRIPT_ENTETE} />}

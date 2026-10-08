@@ -1,7 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import {
-  composerKitVisuel, familleDeCle, inventaireAssets, kitVisuelCompact, notesVisuels, type DonneesVisuels, type StatutIllustration,
+  composerKitVisuel, familleDeCle, inventaireAssets, inventaireStudio, kitVisuelCompact, notesVisuels, type DonneesVisuels, type StatutIllustration,
   cleCandidatePhoto, clesImagesExclues, vivierCure, etiquetteKit, kitsCompacts, PREFIXE_REFUS_KIT, refusKitDepuisLignes, kitsGardes, notesPhotos, soinsParDefautScenario, SUJETS_KITS,
   type DonneesKits, type KitCompact, type NoteKit,
 } from '@plateforme/core';
@@ -105,6 +105,7 @@ export async function getEnAttenteKits(): Promise<PhotoEnAttenteKit[]> {
  */
 export const getDonneesVisuels = cache(async (): Promise<DonneesVisuels> => {
   const [d, lignes, revues, photosJeux] = await Promise.all([getDonneesKits(), getLignesAssetsApprentissage(), getRevuesIllustrations().catch(() => ({ statuts: [] as { cle: string; statut: StatutIllustration }[] })), getPhotosDesJeux().catch(() => [])]);
-  const visuels = inventaireAssets({ photosJeux }).filter((a) => { const f = familleDeCle(a.cle); return f === 'illustration' || f === 'icone' || f === 'animation'; }).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins, titre: a.titre }));
+  // Animations d'en-tête (composant:entete-anim:*) : rattachables à un sujet comme les animations de l'inventaire
+  const visuels = [...inventaireAssets({ photosJeux }), ...inventaireStudio().filter((a) => a.cle.startsWith('composant:entete-anim:'))].filter((a) => { const f = familleDeCle(a.cle); return f === 'illustration' || f === 'icone' || f === 'animation'; }).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins, titre: a.titre }));
   return { visuels, surcharges: d.surcharges, hashtags: d.hashtags, notes: notesVisuels(lignes), exclues: d.exclues, statuts: Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), soins: d.soins };
 });

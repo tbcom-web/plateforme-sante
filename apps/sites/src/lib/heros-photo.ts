@@ -34,6 +34,9 @@ const transition: TransitionDiaporama = (TRANSITIONS_DIAPORAMA as readonly strin
 // Animation d'en-tête (entete-anim.ts) : dans les nouveaux premiers écrans seulement
 const animationBrute = site.modele.variantes?.['entete-anim'];
 const animation = estAnimationEntete(animationBrute) ? animationBrute : null;
+// Tempo des animations rythmées (marche des empreintes) : vif pour le sport, calme dès qu'il y a diabète ou seniors
+const sujetsSite = navigation.principaux.map((t) => t.theme.id as string);
+const tempo = sujetsSite.includes('sport') && !sujetsSite.some((s) => s === 'diabete' || s === 'senior') ? 'vif' as const : 'calme' as const;
 
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
@@ -63,6 +66,7 @@ export const donneesHeros: DonneesHeros | null = varianteHeros ? {
   motLong: motLongTitre(`Cabinet de ${specialite} ${aLaVille ?? ''}`),
   mode: 'site',
   animation,
+  tempo,
 } : null;
 
 /** Variante du premier écran des gabarits tableau, village, revue quand le nouveau premier écran n'est pas rendu (pas de photo) */

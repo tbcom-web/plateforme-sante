@@ -20,13 +20,14 @@ import { contraste, melanger, rvb } from './couleurs';
 import { CYCLES, COURBES, DUREES, NEUTRES } from './charte';
 import { couleursGabarit, type CouleursGabarit } from './gabarits';
 import type { ModeleManifeste } from './modeles';
-import { estPremierEcranAnime, estPremierEcranPhoto, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, type AnimationEntete, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
+import { estPremierEcranAnime, estPremierEcranPhoto, HOTES_SCENE_ENTETE, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, type AnimationEntete, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
 import { AVEC_COMPOSITION, cssLot2, FONDS_LOT2, FORMES_LOT2, teintesSousTexte } from './heros-organiques';
 import { cssAnimationEntete, htmlAnimationEntete, motsDesSoins } from './entete-anim';
 
 export * from './heros-photo-variantes';
 export { teintesSousTexte, cssLot2 } from './heros-organiques';
 export { cssAnimationEntete, htmlAnimationEntete, motsDesSoins, SCRIPT_ENTETE, DUREE_ENTETE } from './entete-anim';
+export { ANIMATIONS_EMPREINTES, CORPS_PARTICULES, SCRIPT_PARTICULES, estAnimationEmpreintes, type AnimationEmpreintes } from './entete-empreintes';
 
 /** Photos montrées au plus par le diaporama (3 à 5 demandées) */
 export const HEROS_PHOTOS_MAX = 5;
@@ -108,6 +109,8 @@ export type DonneesHeros = {
   pause?: boolean;
   /** Animation d'en-tête (entete-anim.ts) ; absente ou « aucune » : rien */
   animation?: AnimationEntete | null;
+  /** Tempo des animations d'en-tête rythmées (marche) : « vif » pour le sport, calme sinon (diabète, seniors) */
+  tempo?: 'calme' | 'vif' | null;
 };
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -145,9 +148,13 @@ function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: bool
   return `<div class="hp__media">${formes ? `<span aria-hidden="true">${formes}</span>` : ''}<div class="hp__fond" aria-hidden="true">${diapos}${voile ? '<span class="hp__voile"></span>' : ''}</div>${commandes}</div>`;
 }
 
+/** L'animation d'en-tête se pose-t-elle en grand dans la carte visuelle (« scène » dans un premier écran hôte) ? */
+const enScene = (d: DonneesHeros) => Boolean(d.animation && d.animation !== 'aucune' && PLACEMENT_ANIMATIONS_ENTETE[d.animation] === 'scene' && HOTES_SCENE_ENTETE.includes(d.variante));
+
 function titre(d: DonneesHeros): string {
-  // Animation d'en-tête en bande ou en emblème : au-dessus du sur-titre (taille réservée, jamais sous le texte)
-  const anim = d.animation && d.animation !== 'aucune' && PLACEMENT_ANIMATIONS_ENTETE[d.animation] !== 'fond' ? htmlAnimationEntete(d.animation, motsDesSoins(d.soins)) : '';
+  // Animation d'en-tête en bande ou en emblème : au-dessus du sur-titre (taille réservée, jamais sous le texte) ; une « scène »
+  // hors de son hôte passe en emblème
+  const anim = d.animation && d.animation !== 'aucune' && PLACEMENT_ANIMATIONS_ENTETE[d.animation] !== 'fond' && !enScene(d) ? htmlAnimationEntete(d.animation, motsDesSoins(d.soins), { vif: d.tempo === 'vif' }) : '';
   const mots = (d.soins.split(' ').map((m, k) => `<span class="hp__m" style="--k:${k}">${esc(m)}</span>`)).join(' ');
   return `${anim}<p class="hp__sur">${esc(d.sur)}</p>`
     + `<${d.balise} class="hp__titre">Cabinet de <span class="hp__mot">${esc(d.metier)}</span>${d.ville ? ` <span class="pale">${esc(d.ville)}</span>` : ''}</${d.balise}>`
@@ -218,8 +225,11 @@ export function htmlHeros(d: DonneesHeros): { avant: string; apres: string; fent
   // Bento : texte et rendez-vous, visuel, sujets, lieu ; cartes arrondies en grappe
   const sujets = d.sujets.length ? `<div class="hp__carte hp__carte--sujets"><p class="hp__etiquette">Sujets du cabinet</p><ul>${d.sujets.map((s) => `<li><a href="${esc(s.href)}">${esc(s.libelle)}</a></li>`).join('')}</ul></div>` : '';
   const lieu = d.lieu ? `<div class="hp__carte hp__carte--lieu"><p>${esc(d.lieu.ligne)}</p><a href="${esc(d.lieu.href)}">${esc(d.lieu.libelle)}</a></div>` : '';
-  const debut = `${ouverture}<div class="hp__cadre hp__grille">${texte(' hp__carte hp__carte--texte')}<div class="hp__carte hp__carte--visuel${visuel ? ' hp__carte--photo' : ''}" aria-hidden="true">`;
+  // Animation « scène » (empreintes) : en grand dans la carte visuelle, à la place de la photo ou de l'illustration
+  const scene = enScene(d) ? htmlAnimationEntete(animation, [], { scene: true, vif: d.tempo === 'vif' }) : '';
+  const debut = `${ouverture}<div class="hp__cadre hp__grille">${texte(' hp__carte hp__carte--texte')}<div class="hp__carte hp__carte--visuel${visuel && !scene ? ' hp__carte--photo' : ''}${scene ? ' hp__carte--scene' : ''}" aria-hidden="true">`;
   const fin = `</div>${sujets}${lieu}</div></section>`;
+  if (scene) return { avant: `${debut}${scene}${fin}`, apres: '', fente: false, css };
   return visuel ? { avant: `${debut}${visuel}${fin}`, apres: '', fente: false, css } : { avant: debut, apres: fin, fente: true, css };
 }
 
@@ -376,6 +386,7 @@ export const CSS_HEROS = `
 .hp__carte--visuel{overflow:hidden;min-height:240px;padding:0;background:var(--hp-aplat);color:var(--hp-encre);display:grid;place-items:center}
 .hp__carte--visuel > :not(img){width:80%;height:80%}
 .hp__carte--visuel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hp .hp__carte--scene{min-height:min(78vw,340px)}.hp .hp__carte--scene > .ea{width:auto;height:auto}
 .hp__carte--sujets{background:var(--hp-carte);box-shadow:inset 0 0 0 1px var(--hp-ligne)}
 .hp__carte--sujets ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
 .hp .hp__carte--sujets a{display:flex;align-items:center;min-height:44px;color:var(--hp-encre);font-weight:650;text-decoration:underline;text-decoration-color:var(--hp-ligne);text-underline-offset:5px}

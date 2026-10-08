@@ -22,6 +22,7 @@ import type { SurchargesSujets, TypeAsset } from './assets-poids';
 import type { StatutIllustration } from './illustrations';
 import { DESSINS_PODOLOGIE } from './univers';
 import { ANIMATIONS } from './packs';
+import { INGREDIENTS_A_VALIDER } from './heros-photo-variantes';
 
 export const FAMILLES_KIT = ['photo', 'illustration', 'icone', 'animation'] as const;
 export type FamilleKit = (typeof FAMILLES_KIT)[number];
@@ -38,6 +39,9 @@ export function familleDeCle(cle: string): FamilleKit | null {
   if (t === 'photo') return 'photo';
   if (t === 'picto') return 'icone';
   if (t === 'animation') return 'animation';
+  // Animations d'en-tête (composant:entete-anim:*, dont les empreintes en lignes de niveau) : rattachables à un sujet comme les
+  // animations d'accueil (vivier, kit « Animation d'en-tête »)
+  if (cle.startsWith('composant:entete-anim:') && !cle.endsWith(':aucune')) return 'animation';
   if (t === 'dessin' || t === 'ligne' || t === 'heros' || t === 'materiel' || t === 'biblio') return 'illustration';
   return null;
 }
@@ -109,6 +113,8 @@ export function estCureVisuel(v: VisuelCandidat, sujet: string, d: DonneesVisuel
 
 /** Validé (praticiens) : statut « valide », le sien ou celui de sa base ; animation : tous ses ingrédients validés */
 export function visuelValide(cle: string, d: DonneesVisuels): boolean {
+  // Animation d'en-tête « à valider » (INGREDIENTS_A_VALIDER) : jamais pour un praticien tant que Paul ne l'a pas validée
+  if (INGREDIENTS_A_VALIDER.has(cle)) return (d.statuts ? statutEffectif(cle, d.statuts) : undefined) === 'valide';
   if (familleDeCle(cle) === 'animation') return !animationEnAttenteDe(cle, d);
   return (d.statuts ? statutEffectif(cle, d.statuts) : undefined) === 'valide';
 }

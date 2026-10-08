@@ -44,8 +44,8 @@ transitions.
 
 Tous les ingrédients existants sont étiquetés : 23 paires de polices, 4 structures, 4 styles + 4 registres expérimentaux,
 17 gammes (couleur libre : température calculée depuis la teinte), 4 effets, 6 traitements photo, 9 formes de cartes, 25 premiers
-écrans (dont les 10 du lot 2 « couleurs / formes organiques », à valider), 11 animations d'en-tête (`v.entete-anim`, aucune
-comprise, à valider), 6 transitions de diaporama, 5 transitions entre sections, 7 jeux de détails et leurs 10 éléments, les 7 axes
+écrans (dont les 10 du lot 2 « couleurs / formes organiques », à valider), 21 animations d'en-tête (`v.entete-anim`, aucune
+comprise, dont les 10 « empreintes en lignes de niveau », à valider), 6 transitions de diaporama, 5 transitions entre sections, 7 jeux de détails et leurs 10 éléments, les 7 axes
 typographiques, les 3 axes de menu, et les présentations de pages les plus marquées (les autres sont neutres).
 
 <!--
@@ -89,6 +89,12 @@ TODO (quand details.ts sera poussé) : importer JEUX_DETAILS au lieu de la copie
    Jamais de foulée, mots, pas ni rubans pour le diabète ou les seniors (`animation-calme`) ; jamais de points qui pulsent ni
    d'onde avec les illustrations douces (`pulse-pedagogique` : « rien qui pulse » en registre pédagogique). Les taches, l'onde,
    les rubans et les premiers écrans organiques du lot 2 comptent parmi les rondeurs interdites avec la structure Technique.
+8 ter. **Empreintes en lignes de niveau** (`entete-empreintes.ts`, 2026-10-08, à valider) : contour de la semelle et courbes de
+   niveau du relief, dérivés des géométries validées (rien de redessiné, aucun chiffre ni texte). En grand dans la carte du
+   bento (son hôte) : c'est l'élément expressif de l'écran (fort 0,7 à 0,8) ; ailleurs, en emblème. Petits pas et particules
+   sont vifs (`animation-calme` : jamais pour le diabète ni les seniors) ; la marche prend le tempo calme sauf pour un site
+   « sport » sans diabète ni seniors ; respiration et marche « pulsent » (`pulse-pedagogique`) ; les petits pas sont des
+   rondeurs. La sensibilité (diabète) n'emploie que le trait, jamais la couleur vive de la gamme.
 9. **Contrastes AA** : accent ≥ 4,5:1 sur le fond (`contraste-aa`), en plus des contrôles du core.
 10. **Cohérence des coins** (`coins-coherents`) : jamais d’angles carrés (coins carrés, gros carrés, étiquettes carrées) avec des
     éléments très arrondis (bulles, pilules, cadres organiques, menus en pastilles, surtitres en pastille) : même rayon partout.
