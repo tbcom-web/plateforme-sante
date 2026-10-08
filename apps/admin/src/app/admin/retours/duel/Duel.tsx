@@ -16,7 +16,7 @@ import {
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
   modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, blocFocal, habillageDe, valeurFocale,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -99,6 +99,8 @@ type Props = {
   typeInitial: string | null;
   /** ?mobile=1 : série « Mobile seulement » */
   mobileInitial?: boolean;
+  /** ?page=<id> : duels de pages complètes sur cette page */
+  pageInitiale?: string | null;
 };
 
 function lireLocaux(): DuelLocal[] {
@@ -172,6 +174,8 @@ export default function Duel(props: Props) {
   const mode = type ? modeDuel(type) : null;
   const typeBase: TypeDuel | null = type ? ((mode?.type ?? type) as TypeDuel) : null;
   const [sujetChoisi, setSujetChoisi] = useState('');
+  // Duels « Pages complètes » : page choisie ('' = tirage parmi les pages du simulateur)
+  const [pageChoisie, setPageChoisie] = useState(props.pageInitiale ?? '');
   // Appareil montré (retour de Paul du 2026-10-08 : « tu me demandes mon avis sur téléphone mais on ne voit pas le mode
   // mobile ») : ordinateur, téléphone (vrai cadre 390 px) ou les deux côte à côte (défaut en grand écran) ; sur un vrai téléphone,
   // le rendu mobile réel. L'appareil enregistré avec le duel est celui qui était affiché.
@@ -219,7 +223,7 @@ export default function Duel(props: Props) {
           pilote = w;
           const max = w.document.documentElement.scrollHeight - w.innerHeight;
           const ratio = max > 0 ? w.scrollY / max : 0;
-          for (const autre of fenetres) if (autre !== w) { const m = autre.document.documentElement.scrollHeight - autre.innerHeight; autre.scrollTo(0, Math.round(ratio * m)); }
+          for (const autre of fenetres) if (autre !== w && autre.innerWidth === w.innerWidth) { const m = autre.document.documentElement.scrollHeight - autre.innerHeight; autre.scrollTo(0, Math.round(ratio * m)); }
           setTimeout(() => { if (pilote === w) pilote = null; }, 120);
         };
         w.addEventListener('scroll', f, { passive: true });
@@ -282,7 +286,12 @@ export default function Duel(props: Props) {
       let base = libres.length && r() < 0.6 ? libres[Math.floor(r() * libres.length)] : compositionInitiale(c, g);
       let dims: string[];
       let varier: (x: CompositionRecette, dim: string, gg: number) => CompositionRecette;
-      if (md) {
+      // Pages complètes : la structure d'UNE page change (dé par page) ; 20 % du temps, deux recettes complètes vues sur cette page
+      const pageCible = md?.id === 'pages' ? (pageChoisie || PAGES_DUEL[Math.floor(r() * PAGES_DUEL.length)].id) : null;
+      if (md?.id === 'pages') {
+        dims = [`page:${pageCible}`];
+        varier = (x, dim, gg) => tirerPage(x, { page: dim.slice(5) } as Parameters<typeof tirerPage>[1], c, gg);
+      } else if (md) {
         // Modes : seules leurs dimensions, variantes du moteur d'harmonie sans nouvelle règle dure (duels-compositions.ts)
         dims = [...md.dimensions];
         varier = (x, dim, gg) => varierDuel(x, dim, c, gg);
@@ -316,24 +325,29 @@ export default function Duel(props: Props) {
       // Série « Mobile seulement » : seules les dimensions où le téléphone est décisif
       if (serieMobile) dims = dims.filter((x) => appareilDimension(x) === 'mobile');
       if (!dims.length) continue;
-      const d = genererDuelComposition({ type: t, graine: g, base, sujet: s, dimensions: dims, varier, historique, libres: t === 'theme' ? libres : [] });
-      if (!d) continue;
+      const d0 = genererDuelComposition({ type: t, graine: g, base, sujet: s, dimensions: dims, varier, historique, libres: t === 'theme' || pageCible ? libres : [], ...(pageCible ? { partLibre: 0.2 } : {}) });
+      if (!d0) continue;
+      // Deux recettes complètes vues sur la page : dimension page-libre:<page>
+      const d = pageCible && !d0.dimension ? { ...d0, dimension: `page-libre:${pageCible}` } : d0;
       const a = coteCompo(d.a, s), b = coteCompo(d.b, s);
       const base0 = { type: t, aCle: a.cle, bCle: b.cle, aIngredients: a.ingredients, bIngredients: b.ingredients };
       const diff = clesDifferentes(base0);
-      a.ingredients.element = d.dimension ? choisirElement(diff.atelier[0], diff.assets[0], a.cle) : a.cle;
-      b.ingredients.element = d.dimension ? choisirElement(diff.atelier[1], diff.assets[1], b.cle) : b.cle;
+      // Page complète : l'élément classé est la structure de CETTE page (structure:<page>:…) ; recettes libres : la composition
+      const pageDim = pageDeDimension(d.dimension);
+      const elementDe = (i: 0 | 1, cle: string) => (d.dimension?.startsWith('page-libre:') ? cle : pageDim ? diff.assets[i].find((k) => k.startsWith(`structure:${pageDim}:`)) ?? choisirElement(diff.atelier[i], diff.assets[i], cle) : d.dimension ? choisirElement(diff.atelier[i], diff.assets[i], cle) : cle);
+      a.ingredients.element = elementDe(0, a.cle);
+      b.ingredients.element = elementDe(1, b.cle);
       const [ja, jb] = clesJugeDuel(base0);
       if (ja.length) a.ingredients.juge = ja;
       if (jb.length) b.ingredients.juge = jb;
       const famille = d.dimension?.startsWith('composant:') ? d.dimension.slice(10) : null;
-      const page = famille ? PAGES_STRUCTURE.find((p) => (p.sections as readonly string[]).includes(famille)) : null;
+      const page = pageDim ? PAGES_STRUCTURE.find((p) => p.id === pageDim) : famille ? PAGES_STRUCTURE.find((p) => (p.sections as readonly string[]).includes(famille)) : null;
       const vue: VuePage = famille === 'theme' ? 'theme' : famille === 'article' ? 'article' : page ? vueDePage(page.id) : 'accueil';
       return { type: t, scenario: { sujets: [s], principaux: 1, ...(couleurs.length ? { couleurs } : {}), ...(page ? { page: page.id } : {}) }, a, b, dimension: d.dimension, prediction: predireDuel(ja, jb, props.predictions), vue, mobileSeul: duelMobileSeulement(d.dimension, r(), { serie: serieMobile }) };
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sujetChoisi, serieMobile, candidats, contexte, props.recettes, props.predictions, dimensionsDispo]);
+  }, [sujetChoisi, serieMobile, pageChoisie, candidats, contexte, props.recettes, props.predictions, dimensionsDispo]);
 
   const lancer = useCallback((t: string, g: number, hist: readonly DuelLocal[]) => {
     const c = generer(t, g, hist);
@@ -343,7 +357,7 @@ export default function Duel(props: Props) {
   }, [generer, sujetChoisi]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (type) lancer(type, graine, historique); }, [type, sujetChoisi, serieMobile]);
+  useEffect(() => { if (type) lancer(type, graine, historique); }, [type, sujetChoisi, serieMobile, pageChoisie]);
 
   const choisir = useCallback(async (resultat: ResultatDuel) => {
     if (!courant) return;
@@ -469,6 +483,12 @@ export default function Duel(props: Props) {
             })}
           </ul>
         </section>
+        <section aria-label="Pages complètes" className="flex flex-wrap items-center gap-2 rounded-2xl border border-black/10 bg-white p-4 text-sm">
+          <span className="font-semibold">Pages complètes :</span>
+          {PAGES_DUEL.map((p) => (
+            <button key={p.id} type="button" onClick={() => { setPageChoisie(p.id); setType('pages'); }} className={`min-h-11 rounded-full px-3 ring-1 ring-black/10 hover:bg-teal-50 ${focus}`}>{p.nom}</button>
+          ))}
+        </section>
         <section className="flex flex-wrap gap-4 rounded-2xl border border-black/10 bg-neutral-50 p-4 text-sm">
           <p><strong>{historique.length}</strong> duel{historique.length > 1 ? 's' : ''} au total{locaux.length ? ` (dont ${locaux.length} dans ce navigateur)` : ''}</p>
           <p>Série : <strong>{serie}</strong> jour{serie > 1 ? 's' : ''} d’affilée</p>
@@ -553,6 +573,15 @@ export default function Duel(props: Props) {
         <button type="button" onClick={() => { setType(null); setCourant(null); }} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Types de duel</button>
         <p className="text-sm"><strong>{mode?.nom ?? LIBELLES_TYPES_DUEL[typeBase!].nom}</strong> · {session.length} cette session · série {serie} j</p>
         {choixSujet}
+        {mode?.id === 'pages' && (
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium">Page</span>
+            <select value={pageChoisie} onChange={(e) => setPageChoisie(e.target.value)} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm">
+              <option value="">Au choix (tirage)</option>
+              {PAGES_DUEL.map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
+            </select>
+          </label>
+        )}
         {courant?.mobileSeul && <p className="flex min-h-11 items-center gap-2 rounded-xl bg-slate-900 px-3 text-sm font-semibold text-white">Téléphone uniquement</p>}
         {courant && !courant.mobileSeul && (
           <div role="group" aria-label="Appareil montré" className="flex gap-1 rounded-xl bg-neutral-100 p-1 ring-1 ring-black/10">
@@ -587,7 +616,7 @@ export default function Duel(props: Props) {
                 <Nuancier x={courant.b.rendu.x} lettre="B" />
               </div>
             )}
-            {courant.mobileSeul && !enFocal && (
+            {(courant.mobileSeul || pageDeDimension(courant.dimension)) && !enFocal && (
               <label className="flex min-h-11 items-center gap-2 text-sm text-slate-800">
                 <input type="checkbox" checked={synchro} onChange={(e) => setSynchro(e.target.checked)} className="size-4" />
                 Défilement synchronisé

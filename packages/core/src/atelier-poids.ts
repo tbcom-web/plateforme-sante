@@ -52,12 +52,6 @@ export type IngredientsAtelier = {
    * sur elles (recettes.ts, sourcesCombinaisons). Absent ou vide : clé de combinaison inchangée (notes antérieures).
    */
   photos?: string[];
-  /**
-   * Réglages complets de la combinaison (2026-10-08, atelier-compositions.ts) : clés atelier `police=…`, `variante=accueil:…`,
-   * `variante=entete-anim:…`, `typo=…`, `details=…`, `menu=…`, `effets=…`, `traitement=…` — les nouveaux ingrédients (premiers
-   * écrans, animations d'en-tête, portraits, habillage) sont ainsi notés avec la combinaison. Absent : clé inchangée (notes antérieures).
-   */
-  reglages?: string[];
 };
 
 /** Une note de l'atelier (ce que lit l'apprentissage : ni commentaire ni auteur) */
@@ -100,8 +94,6 @@ export function clesAtelier(i: Partial<IngredientsAtelier>): { cle: string; type
   const has = (d: DimensionAtelier) => d === 'animation' || Boolean(i[d]);
   for (const d of DIMENSIONS_ATELIER) if (has(d)) r.push({ cle: `${d}=${val(i[d])}`, type: 'ingredient' });
   for (const [a, b] of PAIRES_ATELIER) if (has(a) && has(b)) r.push({ cle: `${a}=${val(i[a])}&${b}=${val(i[b])}`, type: 'paire' });
-  // Réglages complets (premiers écrans, animations d'en-tête, portraits, habillage…) : chacun est un ingrédient noté
-  for (const k of Array.isArray(i.reglages) ? new Set(i.reglages) : []) if (typeof k === 'string' && k) r.push({ cle: k, type: 'ingredient' });
   if (i.proposition) r.push({ cle: `combinaison=${i.proposition}`, type: 'combinaison' });
   return r;
 }
@@ -221,13 +213,7 @@ export function ingredientsCanoniques(i: Partial<IngredientsAtelier>): Ingredien
     // Photos : seulement si présentes (la clé des combinaisons notées sans photo ne change pas)
     ...(Array.isArray(i.photos) && i.photos.some((x) => typeof x === 'string' && /^photo:[^\s]{1,200}$/.test(x))
       ? { photos: [...new Set(i.photos.filter((x): x is string => typeof x === 'string' && /^photo:[^\s]{1,200}$/.test(x)))].slice(0, 8) } : {}),
-    // Réglages : seulement si présents (clés atelier bien formées, triées)
-    ...(Array.isArray(i.reglages) && i.reglages.some(estCleReglage) ? { reglages: [...new Set(i.reglages.filter(estCleReglage))].sort().slice(0, 60) } : {}),
   };
-}
-
-function estCleReglage(x: unknown): x is string {
-  return typeof x === 'string' && x.length <= 120 && /^(police|ordre|effets|variante|typo|details|menu|traitement)=[^\s&]{1,110}$/.test(x);
 }
 
 /** Clé stable d'une combinaison (16 caractères hexadécimaux) : hachage des ingrédients canoniques */

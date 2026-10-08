@@ -37,3 +37,28 @@ test('tailles réelles et écart visible garanti', () => {
     }
   }
 });
+
+test('pages complètes : mode, dimensions sûres pour la base, une seule page change', async () => {
+  const { MODES_DUEL: modes, PAGES_DUEL, pageDeDimension, uneSeuleDimension, nomFamille } = await import('./duels');
+  const { repereDimension, valeursDuel } = await import('./reperes');
+  const { tirerPage, compositionInitiale: init } = await import('./recettes');
+  const m = modes.find((x) => x.id === 'pages')!;
+  assert.equal(m.type, 'element');
+  assert.equal(m.dimensions.length, PAGES_DUEL.length);
+  for (const d of m.dimensions) { assert.match(d, /^[a-z0-9:_-]{1,60}$/); assert.match(repereDimension(d).libelle, /^la page « /); }
+  assert.equal(pageDeDimension('page-libre:fiche'), 'fiche');
+  assert.equal(nomFamille('page:acces'), 'structures de la page « Contact et accès »');
+  let vus = 0;
+  for (let g = 1; g <= 12; g++) {
+    const c = { sujets: ['sport'], principaux: 1, couleursPreferees: [] as string[] };
+    for (const st of ['clair-pratique', 'simple-proche', 'elegant-sobre', 'technique-precis']) for (const p of ['acces', 'cabinet', 'questions', 'fiche', 'theme', 'article']) {
+      const x = { ...init(c, g), structure: st as never };
+      const y = tirerPage(x, { page: p as never }, c, g);
+      if (JSON.stringify(y) === JSON.stringify(x) || !uneSeuleDimension(x, y, `page:${p}`)) continue;
+      vus++;
+      const v = valeursDuel(`page:${p}`, x, y);
+      assert.ok(v && v[0] !== v[1], p);
+    }
+  }
+  assert.ok(vus > 5, `trop peu de variantes de page : ${vus}`);
+});

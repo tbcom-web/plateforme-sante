@@ -7,7 +7,7 @@
 // l'accueil, contact) et classes déjà présentes dans l'aperçu (.ap-h1, .mn-entete, .hp…). Le site publié n'est pas modifié.
 // Couverture générique par préfixe : toute dimension `composant:<famille>` (y compris de nouvelles familles, ex.
 // composant:entete-anim) et toute clé `composant:<famille>:<variante>` ont un repère ; famille inconnue → [data-zone="<famille>"].
-import { DIMENSIONS_DUEL, MODES_DUEL } from './duels';
+import { DIMENSIONS_DUEL, MODES_DUEL, pageDeDimension, pageDuel } from './duels';
 import { jeuEffets } from './effets';
 import { gamme as gammeParId } from './gammes';
 import { pairePolices } from './modeles';
@@ -125,6 +125,9 @@ const DIMENSIONS: Record<string, () => Repere> = {
 export function repereDimension(dimension: string | null | undefined): Repere {
   if (!dimension) return ensemble('tout le thème (duel libre)', 'thème complet : jugez l’ensemble');
   if (dimension.startsWith('composant:')) return repereFamille(dimension.slice('composant:'.length));
+  // Pages complètes : toute la page (structure de cette page, ou deux recettes complètes vues sur elle)
+  const page = pageDeDimension(dimension);
+  if (page) return ensemble(`la page « ${pageDuel(page)?.nom ?? page} »`, dimension.startsWith('page-libre:') ? 'deux recettes complètes, jugez la page entière' : 'même recette, seule la structure de cette page change');
   // Variantes d'une illustration de base (contraste, couleur, style…) : l'illustration entière, aucun encadré
   if (dimension.startsWith('variante:')) { const v = dimension.slice(9); return ensemble(VARIANTES_ILLUSTRATION[v] ?? `la variante « ${v} » de l’illustration`, 'même dessin de base'); }
   return DIMENSIONS[dimension]?.() ?? ensemble(dimension);
@@ -136,7 +139,7 @@ export const DIMENSIONS_DUEL_TIRABLES: readonly string[] = [
 ];
 
 /** La dimension a-t-elle un repère explicite (pas un repli) ? (tests) */
-export const repereConnu = (dimension: string) => dimension in DIMENSIONS || (dimension.startsWith('composant:') && dimension.slice(10) in FAMILLES) || (dimension.startsWith('variante:') && dimension.slice(9) in VARIANTES_ILLUSTRATION);
+export const repereConnu = (dimension: string) => dimension in DIMENSIONS || pageDeDimension(dimension) !== null || (dimension.startsWith('composant:') && dimension.slice(10) in FAMILLES) || (dimension.startsWith('variante:') && dimension.slice(9) in VARIANTES_ILLUSTRATION);
 
 const sansPrefixe = (s: string) => s.replace(/^[^:]+ : /, '');
 
@@ -204,6 +207,16 @@ function axesDifferents<A extends string>(x: Record<A, string>, y: Record<A, str
 export function valeursDuel(dimension: string | null | undefined, a: CompoPartielle, b: CompoPartielle): [string, string] | null {
   if (!dimension) return null;
   const deux = (f: (x: CompoPartielle) => string): [string, string] => [f(a), f(b)];
+  // Structure d'une page : les présentations (et l'ordre de l'accueil) qui diffèrent, « Plan d'accès : Notice et plan »
+  if (dimension.startsWith('page:')) {
+    const p = PAGES_STRUCTURE.find((x) => x.id === dimension.slice(5));
+    const secs = [...(p?.ordre ? ['ordre'] : []), ...((p?.sections ?? []) as string[])];
+    const val = (x: CompoPartielle, s: string) => (s === 'ordre' ? x.sections.ordre : (x.sections.variantes as Record<string, string | undefined>)[s]) ?? '';
+    const diff = secs.filter((s) => val(a, s) !== val(b, s));
+    if (!diff.length) return null;
+    const lib = (x: CompoPartielle) => diff.map((s) => `${s === 'ordre' ? 'Ordre' : NOMS_SECTIONS_VARIABLES[s] ?? s} : ${s === 'ordre' ? val(x, s) : LIBELLES_VARIANTES[s]?.[val(x, s)] ?? (val(x, s) || 'celle du modèle')}`).join(', ');
+    return [lib(a), lib(b)];
+  }
   if (dimension.startsWith('composant:')) {
     const fam = dimension.slice(10);
     return deux((x) => { const v = (x.sections.variantes as Record<string, string | undefined>)[fam]; return v ? LIBELLES_VARIANTES[fam]?.[v] ?? v : 'celle du modèle'; });

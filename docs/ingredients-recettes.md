@@ -201,26 +201,6 @@ de bloquer certains éléments ». `/admin/atelier/studio` (Studio.tsx) :
 Export : les lignes `recettes_notes` avec zones partent dans `retours/recettes-notes.json` et dans la section « Zones » de
 `SYNTHESE.md` (une ligne par zone), comme avant.
 
-## Atelier : combinaisons complètes, page entière (2026-10-08)
-
-Retour de Paul : « je ne vois pas dans les combinaisons les nouveaux headers… difficile de voir la totalité de la page […] on voit
-juste le hero ». `/admin/atelier` (Atelier.tsx) :
-
-- **Combinaisons complètes** (`packages/core/src/atelier-compositions.ts`, `compositionAtelier`) : la proposition du générateur des
-  praticiens fixe structure, gamme, style, animation et héros ; tous les autres dés du Studio sont lancés, dérivés du registre
-  (`desAtelier` : dimensions de `DIMENSIONS_RECETTE` non fixées, un dé par type de page `PAGES_STRUCTURE`, un dé par famille
-  `FAMILLES_COMPOSANTS`) — premiers écrans photo et organiques, animations d'en-tête, transitions, portraits des praticiens,
-  polices, typographie, détails, menus, effets, traitement des photos. Aucune liste figée : un nouveau dé ou une nouvelle famille
-  entre seul. Tirages par les fonctions du Studio (harmonie active, pondération inchangée), puis règles dures corrigées
-  (`corrigerHarmonie`) ; déterministe. Ingrédients « à valider » tirés (badge sur la carte) : seul le générateur des praticiens
-  les exclut. Test : `atelier-compositions.test.ts` (toute dimension du registre apparaît dans une combinaison).
-- **Notés avec la combinaison** : `ingredients.reglages` (clés atelier `police=`, `variante=accueil:…`, `variante=entete-anim:…`,
-  `typo=`, `details=`, `menu=`, `effets=`, `traitement=`) ; chaque réglage est un ingrédient de l'apprentissage (`clesAtelier`).
-  Sans réglages (notes antérieures) : clé de combinaison inchangée.
-- **Aperçu de la page entière** : ordinateur et téléphone côte à côte (ApercusCoteACote du Studio), défilement dans le cadre,
-  « Options d'aperçu » (page entière réduite, défilement synchronisé, animer), onglets des pages du scénario ; zones (z). Sur
-  téléphone : un rendu à la fois avec bascule, cadre défilant.
-
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

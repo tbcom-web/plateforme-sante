@@ -175,6 +175,21 @@ Retour de Paul du 2026-10-08 (« la comparaison de tailles et casse est difficil
 - Tuiles « Typographies », « Détails » et « Police × palette » : le bloc focalisé de la valeur notée (une carte et un bouton
   isolés pour les détails) au lieu du spécimen complet ; prêt pour les futurs espacements, ombres et arrondis.
 
+### Duels de pages complètes
+
+Demande de Paul du 2026-10-08 (« voter entre deux pages complètes : page de soin, d'article, de contact ») : type de duel
+« Pages complètes » (MODES_DUEL `pages`, enregistré en `element` : aucune migration).
+
+- Page choisie (sélecteur, raccourcis « Pages complètes : Fiche soin… » sur l'accueil des duels, `?type=pages&page=fiche`) ou
+  tirée parmi les pages du simulateur : accueil, page sujet, fiche soin, article de blog, actualités, cabinet, contact et
+  accès, questions, liste des soins. A et B : la même recette, seule la structure de CETTE page change (dé par page,
+  dimension `page:<page>`, élément classé `structure:<page>:…`) ; 20 % du temps, deux recettes complètes vues sur cette page
+  (`page-libre:<page>`). Contenu de démonstration réel (vraie fiche soin, vrai article).
+- Page entière défilable, « Les deux » par défaut (ordinateur + téléphone), défilement synchronisé entre A et B du même
+  appareil ; bandeau « On compare : la page « Contact et accès » — A : Plan d'accès : Notice et plan · B : … ».
+- Apprentissage : clés de structure par page (`structure:<page>:…`) et variantes (`variante=<section>:…`), effets propres au
+  mobile si le duel est joué sur téléphone ; classements « Meilleures structures de la page « Contact et accès » — sujet ».
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

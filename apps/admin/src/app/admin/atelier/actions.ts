@@ -1,7 +1,6 @@
 'use server';
 
 import {
-  estReglageAtelier,
   appareilDe, cleCombinaison, estCleAsset, estEtiquetteAtelier, ingredientsCanoniques, ingredientsProposition, normaliserZones, propositionParId, serialiserZones, texteRemarques,
   type AppareilRetour, type IngredientsAtelier, type ZonesNote,
 } from '@plateforme/core';
@@ -24,9 +23,7 @@ export async function ajouterNoteAtelier(recus: Partial<IngredientsAtelier>, not
   if (!p) return { ok: false, message: 'Combinaison inconnue du générateur (scénario modifié ?).' };
   // Photos montrées (style « photos ») : clés de la banque reçues, gardées si bien formées (la note porte aussi sur elles)
   const photos = p.modeVisuel === 'photos' ? (i.photos ?? []).filter((k) => estCleAsset(k) && k.startsWith('photo:')) : [];
-  // Réglages complets (premiers écrans, animations d'en-tête, portraits, habillage…, atelier-compositions.ts) : clés bien formées
-  const reglages = (i.reglages ?? []).filter(estReglageAtelier);
-  const ingredients = ingredientsCanoniques({ ...ingredientsProposition(p, entree), ...(photos.length ? { photos } : {}), ...(reglages.length ? { reglages } : {}) });
+  const ingredients = ingredientsCanoniques({ ...ingredientsProposition(p, entree), ...(photos.length ? { photos } : {}) });
   const cle = cleCombinaison(ingredients);
   const texte = String(commentaire ?? '').trim().slice(0, 2000) || null;
   const etq = [...new Set((etiquettes ?? []).filter(estEtiquetteAtelier))];

@@ -62,6 +62,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
         predictions={predictionsParCle(predictions)}
         typeInitial={type}
         mobileInitial={sp.mobile === '1'}
+        pageInitiale={typeof sp.page === 'string' ? sp.page : null}
       />
     </div>
   );

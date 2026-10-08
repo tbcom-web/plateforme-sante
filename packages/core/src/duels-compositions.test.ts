@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classementsParContexte, MODES_DUEL, modeDuDuel, modeDuel, uneSeuleDimension, validerDuel, type Duel } from './duels';
+import { classementsParContexte, TYPES_DUEL, MODES_DUEL, modeDuDuel, modeDuel, uneSeuleDimension, validerDuel, type Duel } from './duels';
 import { ajouterPairesApprises, nuancier, pairesDesNotes, pairesDuels, sansNouvelleViolation, varierDuel } from './duels-compositions';
 import { cleAssetCombinaison, cleCombinaisonPolicePalette, estCleCombinaison, lireCleCombinaison, toutesCombinaisons } from './combinaisons';
 import { clePaireHarmonie, violationsDures } from './harmonie';
@@ -12,9 +12,9 @@ import { repereCle, repereDimension, valeursDuel } from './reperes';
 const ctx = (sujets: string[]) => ({ sujets, principaux: 1, couleursPreferees: [] as string[] });
 
 test('modes : palettes, paires de polices, tailles et casse, police × palette ; types enregistrables sans migration', () => {
-  assert.deepEqual(MODES_DUEL.map((m) => m.id), ['palette', 'polices', 'tailles', 'police-palette']);
+  assert.deepEqual(MODES_DUEL.map((m) => m.id).slice(0, 4), ['palette', 'polices', 'tailles', 'police-palette']);
   for (const m of MODES_DUEL) {
-    assert.ok(['theme', 'typo'].includes(m.type));
+    assert.ok((TYPES_DUEL as readonly string[]).includes(m.type));
     for (const d of m.dimensions) {
       const v = validerDuel({ type: m.type, resultat: 'a', aCle: 'compo:aaaa', bCle: 'compo:bbbb', dimension: d });
       assert.ok(v.ok && v.duel.dimension === d, `${d} refusée par validerDuel`);

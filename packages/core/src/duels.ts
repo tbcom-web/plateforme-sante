@@ -64,12 +64,26 @@ export const LIBELLES_TYPES_DUEL: Record<TypeDuel, { nom: string; detail: string
  * graisse, interlettrage) ; Police × palette : les deux changent ensemble (combinaison, clé apprise `gamme:<g>&police:<p>`).
  * Les tirages passent par le moteur d'harmonie (jamais de règle dure enfreinte : duels-compositions.ts).
  */
+/**
+ * Duels de PAGES COMPLÈTES (demande de Paul du 2026-10-08 : « voter entre deux pages complètes : page de soin, d'article, de
+ * contact ») : type `element`, dimension `page:<page>` (même recette, seule la structure de CETTE page change : dé par page,
+ * clés structure:<page>:*) ou `page-libre:<page>` (deux recettes complètes vues sur cette page).
+ */
+export const PAGES_DUEL: readonly { id: string; nom: string }[] = [
+  { id: 'accueil', nom: 'Accueil' }, { id: 'theme', nom: 'Page sujet' }, { id: 'fiche', nom: 'Fiche soin' }, { id: 'article', nom: 'Article de blog' },
+  { id: 'actualites', nom: 'Actualités' }, { id: 'cabinet', nom: 'Le cabinet' }, { id: 'acces', nom: 'Contact et accès' }, { id: 'questions', nom: 'Questions' },
+  { id: 'soins', nom: 'Liste des soins' },
+];
+export const pageDuel = (id: unknown) => PAGES_DUEL.find((p) => p.id === id) ?? null;
+/** Page d'une dimension `page:<id>` ou `page-libre:<id>` */
+export const pageDeDimension = (d: string | null | undefined): string | null => (d && /^page(-libre)?:/.test(d) ? d.slice(d.indexOf(':') + 1) : null);
 export const AXES_TAILLES = ['echelle', 'casse', 'graisse', 'interlettrage'] as const;
 export const MODES_DUEL: readonly { id: string; type: TypeDuel; nom: string; detail: string; dimensions: readonly string[] }[] = [
   { id: 'palette', type: 'theme', nom: 'Palettes', detail: 'La même recette, seule la palette de couleurs change (gammes, couleurs libres proches des préférences).', dimensions: ['couleurs'] },
   { id: 'polices', type: 'typo', nom: 'Paires de polices', detail: 'La même recette, seule la paire de polices (titres et texte) change.', dimensions: ['polices'] },
   { id: 'tailles', type: 'typo', nom: 'Tailles et casse', detail: 'La même paire de polices : échelle des titres, casse, graisse ou interlettrage, un réglage à la fois.', dimensions: AXES_TAILLES.map((a) => `typo:${a}`) },
   { id: 'police-palette', type: 'theme', nom: 'Police × palette', detail: 'La paire de polices ET la palette changent ensemble : quelles combinaisons vont bien ensemble.', dimensions: ['police-couleurs'] },
+  { id: 'pages', type: 'element', nom: 'Pages complètes', detail: 'La même page (fiche soin, article, contact…) en deux structures, ou dans deux recettes complètes : page entière, ordinateur et téléphone.', dimensions: PAGES_DUEL.map((p) => `page:${p.id}`) },
 ];
 export const modeDuel = (id: unknown) => MODES_DUEL.find((m) => m.id === id) ?? null;
 /** Mode d'un duel enregistré (d'après sa dimension) ; null : type de base */
@@ -222,6 +236,9 @@ export function uneSeuleDimension(a: object, b: object, dimension: string): bool
     const axes = [...new Set([...Object.keys(ta), ...Object.keys(tb)])].filter((k) => jsonStable(ta[k]) !== jsonStable(tb[k]));
     return d.length === 1 && d[0] === 'typo' && axes.length === 1 && axes[0] === axe;
   }
+  // Structure d'une page : seules ses présentations (sections) changent ; recettes complètes vues sur une page : libre
+  if (dimension.startsWith('page:')) return d.length === 1 && d[0] === 'sections';
+  if (dimension.startsWith('page-libre:')) return d.length > 0;
   // Police × palette : la paire ET la palette diffèrent, rien d'autre
   if (dimension === 'police-couleurs') return d.includes('police') && (d.includes('gamme') || d.includes('couleur')) && d.every((c) => CHAMPS_DIMENSION[dimension].includes(c));
   const permis = CHAMPS_DIMENSION[dimension];
@@ -406,6 +423,7 @@ const NOMS_FAMILLES: Record<string, string> = {
 };
 /** « polices », « présentations des horaires »… */
 export function nomFamille(f: string, nomsSections: Readonly<Record<string, string>> = {}): string {
+  if (/^page(-libre)?:/.test(f)) { const p = pageDuel(pageDeDimension(f)); return `${f.startsWith('page-libre:') ? 'recettes vues sur la page' : 'structures de la page'} « ${p?.nom ?? f} »`; }
   if (f.startsWith('composant:')) { const s = f.slice(10); return `présentations « ${(nomsSections[s] ?? s).toLowerCase()} »`; }
   return NOMS_FAMILLES[f] ?? f;
 }
