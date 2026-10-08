@@ -111,3 +111,4 @@ export * from './recherche-photos-professions';
 export * from './degustation-directions';
 export * from './contenus-revue';
 export * from './personnalisations-site';
+export * from './chaine-modeles-format';
