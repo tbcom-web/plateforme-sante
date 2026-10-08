@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import {
   jeuPhotosDepuisLigne, libelleSourceImage, photosDuJeu, recapSourcesImages, type LigneSourceImage, type ProvenancePhoto, type SourcePhotoManuelle,
 } from '@plateforme/core';
@@ -15,7 +16,7 @@ type LigneSource = {
   url_source: string | null; licence: string | null; licence_url: string | null; updated_at: string | null;
 };
 
-export async function getSourcesManuelles(): Promise<{ sources: Record<string, SourcePhotoManuelle & { le?: string | null }>; migrationManquante: boolean }> {
+async function getSourcesManuellesSansMemo(): Promise<{ sources: Record<string, SourcePhotoManuelle & { le?: string | null }>; migrationManquante: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('photos_sources').select('chemin, provenance, reference_licence, auteur_nom, banque_nom, url_source, licence, licence_url, updated_at').limit(5000);
   if (error) return { sources: {}, migrationManquante: true };
@@ -27,9 +28,10 @@ export async function getSourcesManuelles(): Promise<{ sources: Record<string, S
     migrationManquante: false,
   };
 }
+export const getSourcesManuelles = cache(getSourcesManuellesSansMemo);
 
 /** Récapitulatif « Sources et licences » (une ligne par image) */
-export async function getRecapSources(): Promise<{ lignes: LigneSourceImage[]; migration0031: boolean }> {
+async function getRecapSourcesSansMemo(): Promise<{ lignes: LigneSourceImage[]; migration0031: boolean }> {
   const supabase = await createClient();
   const [libres, manuelles, { data: jeux }, { data: adobe }] = await Promise.all([
     getPhotosLibres(),
@@ -47,9 +49,10 @@ export async function getRecapSources(): Promise<{ lignes: LigneSourceImage[]; m
   });
   return { lignes, migration0031: manuelles.migrationManquante || libres.migration0031 };
 }
+export const getRecapSources = cache(getRecapSourcesSansMemo);
 
 /** Libellé de source par adresse d'image (cartes de la bibliothèque et de « Donner mon avis ») */
-export async function getCreditsImages(): Promise<Record<string, string>> {
+async function getCreditsImagesSansMemo(): Promise<Record<string, string>> {
   try {
     const { lignes } = await getRecapSources();
     return Object.fromEntries(lignes.map((l) => [l.url, libelleSourceImage(l)]));
@@ -57,3 +60,4 @@ export async function getCreditsImages(): Promise<Record<string, string>> {
     return {};
   }
 }
+export const getCreditsImages = cache(getCreditsImagesSansMemo);

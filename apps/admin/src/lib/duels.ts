@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { duelDepuisLigne, type Duel } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
@@ -13,7 +14,7 @@ export type DuelAdmin = Duel & { remarque: string | null };
 
 const COLONNES = 'type, scenario, a_cle, b_cle, a_ingredients, b_ingredients, dimension_differente, resultat, etiquettes, remarque, appareil, prediction, created_at';
 
-export async function getDuels(): Promise<{ duels: DuelAdmin[]; migrationManquante: boolean }> {
+async function getDuelsSansMemo(): Promise<{ duels: DuelAdmin[]; migrationManquante: boolean }> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from('duels').select(COLONNES).order('created_at', { ascending: false }).limit(5000);
@@ -27,8 +28,9 @@ export async function getDuels(): Promise<{ duels: DuelAdmin[]; migrationManquan
     return { duels: [], migrationManquante: true };
   }
 }
+export const getDuels = cache(getDuelsSansMemo);
 
-export async function getDuelsApprentissage(): Promise<Duel[]> {
+async function getDuelsApprentissageSansMemo(): Promise<Duel[]> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('duels_apprentissage', { p_limite: 20000 });
@@ -38,3 +40,4 @@ export async function getDuelsApprentissage(): Promise<Duel[]> {
     return [];
   }
 }
+export const getDuelsApprentissage = cache(getDuelsApprentissageSansMemo);

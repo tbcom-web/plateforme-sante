@@ -27,6 +27,7 @@ import {
   TRAITEMENTS_PHOTOS, respecterVerrous, suivreScenario, animationsPermises, tirerAnimation, LIBELLES_ANIMATIONS, type ScenarioRecette,
   tirerHabillageRecette, verrouAxe, type AxeHabillage, apprendreHarmonie, libelleScenario, scenarioAuHasard, alea,
   APPRECIATIONS, appreciationDeNote, groupeDeCle, nombreZones, noteAppreciation, type AmeliorationPage, type Appreciation,
+  contexteImages,
 } from '@plateforme/core';
 import SimulateurClient, { type CabinetDemo } from './SimulateurClient';
 import ChoixModeTirage, { useModeTirage } from '@/components/ModeTirage';
@@ -406,7 +407,17 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const [filtreScenario, setFiltreScenario] = useState<'tous' | 'identique' | 'proche'>('tous');
   const auNiveau = (r: Recette) => { const n = niveauProximite(scenario, scenarioDeRecette(r)); return filtreScenario === 'tous' || n === 'identique' || (filtreScenario === 'proche' && n === 'proche'); };
   const liste = recettes.filter((r) => (archivees || r.statut === 'active') && (!filtreSujet || r.sujets.includes(filtreSujet)) && (r.note ?? 0) >= filtreNote && auNiveau(r));
-  const apercuRecette = (r: Recette) => appliquerRecette(draftDemo(scenarioDeRecette(r), cabinet, slugs), r.composition, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives });
+  // Aperçu de chaque recette mémorisé (perf, 2026-10-08) : il était recalculé pour TOUTES les recettes à chaque rendu du
+  // Studio (chaque « Tout changer », chaque dé). Même calcul, refait seulement si la recette, le cabinet, le catalogue, les
+  // univers, les modèles, les thèmes actifs ou le contexte d'images (photos exclues, kits) changent.
+  const cacheApercus = useRef<{ cles: readonly unknown[]; parRecette: WeakMap<Recette, ReturnType<typeof appliquerRecette>> } | null>(null);
+  const apercuRecette = (r: Recette) => {
+    const cles = [cabinet, slugs, proposes, modeles, themesActives, contexteImages()];
+    if (!cacheApercus.current || cacheApercus.current.cles.some((k, i) => k !== cles[i])) cacheApercus.current = { cles, parRecette: new WeakMap() };
+    const parRecette = cacheApercus.current.parRecette;
+    if (!parRecette.has(r)) parRecette.set(r, appliquerRecette(draftDemo(scenarioDeRecette(r), cabinet, slugs), r.composition, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives }));
+    return parRecette.get(r)!;
+  };
   const [bas, setBas] = useState<'recettes' | 'manques'>('recettes');
 
   // ---- Rangées des dés (rangées dans leurs groupes par le registre du core) ----

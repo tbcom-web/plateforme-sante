@@ -231,6 +231,27 @@ export type AssetsProposition = {
   sujet?: string | null;
 };
 
+// Score moyen des dessins d'un registre, mémorisé par poids (perf, retour de Paul du 2026-10-08 « le tool commence à ramer ») :
+// bonusAssets est appelé pour chaque candidate du générateur (des milliers par page) et scorePrefixe reconstruisait à chaque
+// fois l'ensemble des clés notées. Les poids sont immuables une fois construits (poidsAssets, normaliserPoidsAssets et
+// appliquerRenforts remplissent des objets neufs avant de les rendre) : clé = l'objet `effets`, et l'entrée n'est réutilisée
+// que si `statuts` et `sansHeritage` (seules autres entrées de scorePrefixe) sont les mêmes objets. Résultat identique à
+// scorePrefixe (test d'égalité : assets.test.ts).
+const memoDessins = new WeakMap<PoidsAssets['effets'], { statuts: PoidsAssets['statuts']; sansHeritage: PoidsAssets['sansHeritage']; scores: Map<string, number> }>();
+function scoreDessinsDuRegistre(poids: PoidsAssets, r: string): number {
+  let m = memoDessins.get(poids.effets);
+  if (!m || m.statuts !== poids.statuts || m.sansHeritage !== poids.sansHeritage) {
+    m = { statuts: poids.statuts, sansHeritage: poids.sansHeritage, scores: new Map() };
+    memoDessins.set(poids.effets, m);
+  }
+  let v = m.scores.get(r);
+  if (v === undefined) {
+    v = scorePrefixe(poids, (k) => (r === 'ligne' ? k.startsWith('ligne:') : k.startsWith('dessin:') && k.endsWith(`:${r}`)));
+    m.scores.set(r, v);
+  }
+  return v;
+}
+
 /** Bonus d'une proposition selon les notes et statuts des assets qu'elle montre (en étoiles, borné) ; 0 sans poids */
 export function bonusAssets(p: AssetsProposition, poids: PoidsAssets | null | undefined): number {
   if (!poids) return 0;
@@ -242,8 +263,7 @@ export function bonusAssets(p: AssetsProposition, poids: PoidsAssets | null | un
     b += c.photos * (cles.length ? cles.reduce((s, k) => s + scoreAssetPourSujet(k, p.sujet, poids), 0) / cles.length : 0);
   } else {
     if (p.heros) b += c.heros * scoreAssetPourSujet(`heros:${p.heros}:${p.registre}`, p.sujet ?? p.heros, poids);
-    const r = p.registre;
-    b += c.dessins * scorePrefixe(poids, (k) => (r === 'ligne' ? k.startsWith('ligne:') : k.startsWith('dessin:') && k.endsWith(`:${r}`)));
+    b += c.dessins * scoreDessinsDuRegistre(poids, p.registre);
   }
   return arrondi(Math.min(c.max, Math.max(c.min, b)));
 }

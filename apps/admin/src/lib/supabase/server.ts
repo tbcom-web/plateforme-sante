@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -26,8 +27,9 @@ export async function createClient() {
 }
 
 /** Utilisateur connecté (vérifié auprès de Supabase), ou null. */
-export async function getUser() {
+async function getUserSansMemo() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   return data.user;
 }
+export const getUser = cache(getUserSansMemo);

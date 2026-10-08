@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createClient } from '@/lib/supabase/server';
@@ -26,18 +27,20 @@ async function lireRetour(fichier: string): Promise<string | null> {
   return null;
 }
 
-export async function getPropositionsClaude(): Promise<LotPropositions> {
+async function getPropositionsClaudeSansMemo(): Promise<LotPropositions> {
   const t = await lireRetour('recettes-proposees.json');
   try { return lirePropositionsClaude(t ? JSON.parse(t) : null); } catch { return { profil: null, le: null, propositions: [] }; }
 }
+export const getPropositionsClaude = cache(getPropositionsClaudeSansMemo);
 
-export async function getManques(): Promise<ManqueSignale[]> {
+async function getManquesSansMemo(): Promise<ManqueSignale[]> {
   const t = await lireRetour('MANQUES.md');
   return t ? lireManques(t) : [];
 }
+export const getManques = cache(getManquesSansMemo);
 
 /** Avis déjà donnés (plus récents d'abord) ; `migrationManquante` : table absente (0035 pas encore exécutée) */
-export async function getAvisDirecteur(): Promise<{ avis: AvisDirecteur[]; migrationManquante: boolean }> {
+async function getAvisDirecteurSansMemo(): Promise<{ avis: AvisDirecteur[]; migrationManquante: boolean }> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from('directeur_avis').select('nature, cle, decision, remarque, created_at').order('created_at', { ascending: false }).limit(500);
@@ -47,3 +50,4 @@ export async function getAvisDirecteur(): Promise<{ avis: AvisDirecteur[]; migra
     return { avis: [], migrationManquante: true };
   }
 }
+export const getAvisDirecteur = cache(getAvisDirecteurSansMemo);

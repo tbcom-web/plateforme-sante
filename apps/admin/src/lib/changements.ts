@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -17,7 +18,7 @@ export function lireChangements(md: string): ChangementClaude[] {
     .slice(0, 30);
 }
 
-export async function getChangementsClaude(): Promise<ChangementClaude[]> {
+async function getChangementsClaudeSansMemo(): Promise<ChangementClaude[]> {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO;
   if (token && repo) {
@@ -34,3 +35,4 @@ export async function getChangementsClaude(): Promise<ChangementClaude[]> {
   }
   return [];
 }
+export const getChangementsClaude = cache(getChangementsClaudeSansMemo);

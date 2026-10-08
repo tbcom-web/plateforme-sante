@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { HASHTAGS_PAR_DEFAUT, hashtagsDepuisLignes, type HashtagsAssets } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
@@ -8,7 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export const MIGRATION_HASHTAGS = 'Migration 0029 à exécuter (supabase/migrations/0029_assets_hashtags.sql) : hashtags non enregistrés.';
 
-export async function getHashtagsAssets(): Promise<{ hashtags: HashtagsAssets; migrationManquante: boolean }> {
+async function getHashtagsAssetsSansMemo(): Promise<{ hashtags: HashtagsAssets; migrationManquante: boolean }> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('assets_hashtags_effectifs');
@@ -21,3 +22,4 @@ export async function getHashtagsAssets(): Promise<{ hashtags: HashtagsAssets; m
     return { hashtags: hashtagsDepuisLignes([], HASHTAGS_PAR_DEFAUT), migrationManquante: true };
   }
 }
+export const getHashtagsAssets = cache(getHashtagsAssetsSansMemo);

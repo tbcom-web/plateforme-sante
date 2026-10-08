@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { avecSujets, estCleAsset, photosDuJeu, SUJETS_VISUELS, surchargesDepuisLignes, type SurchargesSujets, poidsAssets, jeuPhotosDepuisLigne, type LigneAppriseAsset, type PhotoDeJeu, type PoidsAssets } from '@plateforme/core';
 import { getCreditsImages } from '@/lib/sources-photos';
 import { createClient } from '@/lib/supabase/server';
@@ -11,7 +12,7 @@ export type NoteAssetAdmin = { id: string; cle: string; note: number; etiquettes
 type Ligne = { id: string; cle_asset: string; note: number; etiquettes: string[] | null; commentaire: string | null; positif?: string | null; negatif?: string | null; empreinte: string | null; created_at: string };
 
 /** Journal des notes (plus récentes d'abord) ; `migrationManquante` : table absente (migration 0027 pas encore exécutée) */
-export async function getNotesAssets(): Promise<{ notes: NoteAssetAdmin[]; migrationManquante: boolean }> {
+async function getNotesAssetsSansMemo(): Promise<{ notes: NoteAssetAdmin[]; migrationManquante: boolean }> {
   const supabase = await createClient();
   const lire = (colonnes: string) => supabase.from('assets_notes').select(colonnes).order('created_at', { ascending: false }).limit(20000);
   // Remarques distinctes (0028) ; sans la migration 0028, lecture sans ces colonnes (l'instantané « apercu » n'est lu qu'à la demande)
@@ -26,9 +27,10 @@ export async function getNotesAssets(): Promise<{ notes: NoteAssetAdmin[]; migra
     migrationManquante: false,
   };
 }
+export const getNotesAssets = cache(getNotesAssetsSansMemo);
 
 /** Surcharges de sujets des visuels (assets_sujets_effectifs, 0028) ; {} si la migration manque */
-export async function getSurchargesSujets(): Promise<SurchargesSujets> {
+async function getSurchargesSujetsSansMemo(): Promise<SurchargesSujets> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('assets_sujets_effectifs');
@@ -38,12 +40,21 @@ export async function getSurchargesSujets(): Promise<SurchargesSujets> {
     return {};
   }
 }
+export const getSurchargesSujets = cache(getSurchargesSujetsSansMemo);
+
+/**
+ * Lignes brutes de assets_notes_apprentissage (notes et statuts, 20 000 au plus), lues UNE fois par requête : partagées par
+ * getPoidsAssets et getLignesAssetsApprentissage (notation-recettes.ts), appelées jusqu'à 5 fois par page auparavant.
+ */
+export const lireAssetsNotesApprentissage = cache(async () => {
+  const supabase = await createClient();
+  return await supabase.rpc('assets_notes_apprentissage', { p_limite: 20000 });
+});
 
 /** Poids appris des assets (+ sujets ajoutés / retirés par Paul) ; null sans notes, statut ni surcharge, ou si les migrations manquent */
-export async function getPoidsAssets(): Promise<PoidsAssets | null> {
+async function getPoidsAssetsSansMemo(): Promise<PoidsAssets | null> {
   try {
-    const supabase = await createClient();
-    const [{ data, error }, sujets] = await Promise.all([supabase.rpc('assets_notes_apprentissage', { p_limite: 20000 }), getSurchargesSujets()]);
+    const [{ data, error }, sujets] = await Promise.all([lireAssetsNotesApprentissage(), getSurchargesSujets()]);
     if (error || !Array.isArray(data)) return avecSujets(null, sujets);
     // Appareil regardé (0034) : une note donnée sur le rendu mobile pèse un peu plus (rendu-mobile.ts) ; absent avant 0034
     return avecSujets(poidsAssets((data as { cle_asset: string; note: number | null; etiquettes: string[] | null; statut: string | null; appareil?: string | null }[])
@@ -52,12 +63,13 @@ export async function getPoidsAssets(): Promise<PoidsAssets | null> {
     return null;
   }
 }
+export const getPoidsAssets = cache(getPoidsAssetsSansMemo);
 
 /**
  * Photos des jeux de photos (stockage) à ajouter à l'inventaire : URL, nom du jeu, spécialité ; puis les photos libres de
  * droits gardées (Pexels / Pixabay, migration 0028), non retirées : candidates visibles dans la bibliothèque et notables.
  */
-export async function getPhotosDesJeux(): Promise<PhotoDeJeu[]> {
+async function getPhotosDesJeuxSansMemo(): Promise<PhotoDeJeu[]> {
   const supabase = await createClient();
   const [{ data, error }, { data: libres }, credits] = await Promise.all([
     supabase.from('jeux_photos').select('id, nom, specialite, photos, source, site_id, actif').order('nom'),
@@ -76,5 +88,6 @@ export async function getPhotosDesJeux(): Promise<PhotoDeJeu[]> {
   }));
   return [...desJeux, ...desLibres].map((p) => ({ ...p, credit: credits[p.url] }));
 }
+export const getPhotosDesJeux = cache(getPhotosDesJeuxSansMemo);
 
 export const cleAssetValide = (cle: unknown): cle is string => estCleAsset(cle);

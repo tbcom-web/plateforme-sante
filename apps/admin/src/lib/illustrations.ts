@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { estStatutIllustration, type StatutIllustration } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
@@ -10,7 +11,7 @@ export type Revue = { id: string; cle: string; statut: StatutIllustration; comme
 type LigneRevue = { id: string; cle: string; statut: string; commentaire: string | null; empreinte: string | null; created_at: string; profiles?: { email: string } | { email: string }[] | null };
 
 /** Statuts et journal ; `migrationManquante` : tables absentes (migration 0021 pas encore exécutée) */
-export async function getRevuesIllustrations(): Promise<{ statuts: StatutEnregistre[]; revues: Revue[]; migrationManquante: boolean }> {
+async function getRevuesIllustrationsSansMemo(): Promise<{ statuts: StatutEnregistre[]; revues: Revue[]; migrationManquante: boolean }> {
   const supabase = await createClient();
   const [s, r] = await Promise.all([
     supabase.from('illustrations_statuts').select('cle, statut, empreinte, maj_le'),
@@ -26,3 +27,4 @@ export async function getRevuesIllustrations(): Promise<{ statuts: StatutEnregis
     .map((l) => ({ id: l.id, cle: l.cle, statut: l.statut as StatutIllustration, commentaire: l.commentaire, empreinte: l.empreinte, le: l.created_at, auteur: email(l.profiles) }));
   return { statuts, revues, migrationManquante: false };
 }
+export const getRevuesIllustrations = cache(getRevuesIllustrationsSansMemo);

@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { normaliserPalette, type CouleurPalette } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
@@ -24,7 +25,7 @@ export type Inspiration = {
 
 type Ligne = { id: string; chemin: string; lien: string | null; etiquettes: string[] | null; objectif: string | null; sujet: string | null; type_element: string | null; palette: unknown; created_at: string };
 
-export async function getInspirations(limite = 200): Promise<{ inspirations: Inspiration[]; migrationManquante: boolean }> {
+async function getInspirationsSansMemo(limite = 200): Promise<{ inspirations: Inspiration[]; migrationManquante: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('inspirations')
@@ -46,3 +47,4 @@ export async function getInspirations(limite = 200): Promise<{ inspirations: Ins
     })),
   };
 }
+export const getInspirations = cache(getInspirationsSansMemo);

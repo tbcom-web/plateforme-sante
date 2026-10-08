@@ -29,11 +29,15 @@ export const libelleStatutCommercial = (s: string | null | undefined) => STATUTS
 
 const JOUR_MS = 86_400_000;
 
+let formateurJourParis: Intl.DateTimeFormat | undefined;
+
 /** Date du jour (AAAA-MM-JJ) à Paris : les relances se comptent en jours calendaires français. */
 export function jourParis(instant: Date | number | string): string {
   const d = new Date(instant);
-  // en-CA donne directement le format AAAA-MM-JJ.
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  // en-CA donne directement le format AAAA-MM-JJ. Formateur créé une seule fois (perf : sa création coûte ~0,1 ms et
+  // serieAvis l'appelait pour chaque avis, soit ~0,7 s sur /admin/retours avec 2 500 avis).
+  formateurJourParis ??= new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit' });
+  return formateurJourParis.format(d);
 }
 
 /** Ajoute des jours à une date AAAA-MM-JJ (calcul en UTC, sans effet d'heure d'été). */

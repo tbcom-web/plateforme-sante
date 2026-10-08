@@ -88,3 +88,4 @@ export * from './favoris';
 export * from './contexte-images';
 export * from './kits-images';
 export * from './suggestions-kits';
+export * from './duels-historique';

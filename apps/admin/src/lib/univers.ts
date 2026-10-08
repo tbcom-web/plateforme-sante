@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import {
   appliquerRecette,
   appliquerReglages,
@@ -28,12 +29,13 @@ import { getRecettesLecture } from '@/lib/recettes';
 type Client = Awaited<ReturnType<typeof createClient>>;
 
 /** Catalogue avec les statuts posés par l'admin ; erreur : migration 0018 pas encore installée */
-export async function getUnivers(supabase?: Client): Promise<{ univers: Univers[]; erreur: boolean }> {
+async function getUniversSansMemo(supabase?: Client): Promise<{ univers: Univers[]; erreur: boolean }> {
   const client = supabase ?? (await createClient());
   const { data, error } = await client.from('univers_statuts').select('id, statut, valide_par, valide_le');
   const lignes = new Map(((data ?? []) as LigneStatutUnivers[]).map((l) => [l.id, l]));
   return { univers: CATALOGUE_UNIVERS.map((u) => avecStatut(u, lignes.get(u.id))), erreur: Boolean(error) };
 }
+export const getUnivers = cache(getUniversSansMemo);
 
 /** Nombre de sites (brouillon) par univers appliqué */
 export async function sitesParUnivers(supabase?: Client): Promise<Record<string, number>> {

@@ -1,0 +1,402 @@
+[
+ {
+  "profession_slug": "podologue",
+  "slug": "bilan-podologique",
+  "titre_court": "Bilan podologique",
+  "titre": "Bilan podologique à {ville}",
+  "resume": "Un examen complet de vos pieds, de votre posture et de votre marche pour comprendre l’origine d’une douleur ou d’une gêne.",
+  "corps": "## À quoi sert un bilan podologique ?\n\nLe bilan podologique permet d’analyser la forme de vos pieds, leurs appuis et la façon dont vous marchez. Il aide à comprendre l’origine de douleurs aux pieds, mais aussi parfois aux genoux, aux hanches ou au dos.\n\n## Comment se déroule la séance ?\n\n1. **Échange** sur vos douleurs, vos activités et vos antécédents.\n2. **Examen clinique** des pieds, debout et allongé.\n3. **Analyse des appuis** sur podoscope et observation de la marche.\n4. **Explications et conseils**. Si besoin, je vous propose des semelles orthopédiques.\n\nPrévoyez environ 45 minutes. Pensez à apporter vos chaussures habituelles et, si vous en avez, vos anciennes semelles et vos examens récents.\n\n## Pour qui ?\n\nLe bilan s’adresse à toute personne qui ressent une gêne en marchant ou en courant, aux enfants dont la marche interroge les parents, et aux sportifs qui reprennent une activité.",
+  "faq": [
+   {
+    "q": "Faut-il une ordonnance pour un bilan podologique ?",
+    "r": "Non, vous pouvez prendre rendez-vous directement. Une ordonnance de votre médecin peut toutefois être utile pour le remboursement éventuel de semelles orthopédiques."
+   },
+   {
+    "q": "Combien de temps dure un bilan podologique ?",
+    "r": "Comptez environ 45 minutes, échange, examen et conseils compris."
+   },
+   {
+    "q": "Que faut-il apporter ?",
+    "r": "Vos chaussures portées au quotidien, vos anciennes semelles si vous en avez, et vos examens récents (radiographies, comptes rendus)."
+   }
+  ],
+  "icone": null,
+  "position": 1
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "semelles-orthopediques",
+  "titre_court": "Semelles orthopédiques",
+  "titre": "Semelles orthopédiques sur mesure à {ville}",
+  "resume": "Des orthèses plantaires conçues pour vos pieds et vos chaussures, après un bilan complet.",
+  "corps": "## Des semelles faites pour vous\n\nLes semelles orthopédiques, ou orthèses plantaires, sont fabriquées sur mesure après un bilan podologique. Elles visent à mieux répartir les appuis et à limiter certaines contraintes lors de la marche ou du sport.\n\n## Les étapes\n\n1. **Bilan podologique** pour comprendre vos appuis.\n2. **Prise d’empreinte** de vos pieds.\n3. **Fabrication** des semelles, adaptées à vos chaussures (ville, travail, sport).\n4. **Essayage et contrôle** quelques semaines après, pour ajuster si nécessaire.\n\n## Remboursement\n\nSur prescription médicale, les semelles orthopédiques sont prises en charge en partie par l’Assurance Maladie, sur la base de son tarif de remboursement. Votre complémentaire santé peut compléter selon votre contrat. Un devis vous est remis avant fabrication.",
+  "faq": [
+   {
+    "q": "Combien de temps faut-il pour s’habituer à des semelles ?",
+    "r": "En général quelques jours à deux semaines. Je vous conseille de les porter progressivement, et je vous revois pour un contrôle."
+   },
+   {
+    "q": "Les semelles vont-elles dans toutes mes chaussures ?",
+    "r": "Elles sont conçues pour un type de chaussure précis. Nous en parlons lors du bilan pour choisir le modèle le plus adapté à votre quotidien."
+   },
+   {
+    "q": "Tous les combien faut-il les renouveler ?",
+    "r": "Cela dépend de l’usure et de l’évolution de vos pieds. Chez l’adulte, un contrôle annuel est recommandé ; chez l’enfant, plus souvent en raison de la croissance."
+   }
+  ],
+  "icone": null,
+  "position": 2
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "soins-de-pedicurie",
+  "titre_court": "Soins de pédicurie",
+  "titre": "Soins de pédicurie à {ville}",
+  "resume": "Cors, durillons, ongles épais ou incarnés : des soins réalisés avec du matériel stérilisé, dans le respect de votre confort.",
+  "corps": "## Les soins proposés\n\n- Coupe et soin des ongles, y compris épais ou difficiles à couper\n- Ongles incarnés\n- Cors, durillons et callosités\n- Crevasses et peau sèche du talon\n- Conseils d’hygiène et de chaussage\n\n## Hygiène et sécurité\n\nLes instruments sont stérilisés après chaque patient, selon les recommandations d’hygiène en vigueur. Le matériel à usage unique est utilisé dès que possible.\n\n## Quand consulter ?\n\nDès qu’une douleur, une rougeur ou une gêne apparaît, sans attendre qu’elle s’aggrave. Les personnes âgées, diabétiques ou sous traitement anticoagulant ont intérêt à confier leurs soins de pieds à un professionnel.",
+  "faq": [
+   {
+    "q": "Un soin de pédicurie est-il douloureux ?",
+    "r": "Le soin est réalisé avec précaution et adapté à votre sensibilité. N’hésitez pas à signaler toute gêne pendant la séance."
+   },
+   {
+    "q": "Le soin de pédicurie est-il remboursé ?",
+    "r": "Le soin de pédicurie courant n’est pas remboursé par l’Assurance Maladie, sauf pour les patients diabétiques dans le cadre du forfait de prévention. Certaines complémentaires santé le prennent en charge."
+   },
+   {
+    "q": "À quelle fréquence venir ?",
+    "r": "Selon vos besoins, en général toutes les 6 à 8 semaines. Nous ajustons ensemble le rythme lors de la première séance."
+   }
+  ],
+  "icone": null,
+  "position": 3
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "pied-diabetique",
+  "titre_court": "Pied diabétique",
+  "titre": "Suivi du pied diabétique à {ville}",
+  "resume": "Prévention et soins adaptés aux personnes diabétiques, en lien avec votre médecin traitant.",
+  "corps": "## Pourquoi un suivi spécifique ?\n\nLe diabète peut diminuer la sensibilité des pieds et ralentir la cicatrisation. Une petite blessure peut alors passer inaperçue. Le podologue participe au dépistage et à la prévention, en lien avec votre médecin.\n\n## Ce que comprend le suivi\n\n- Examen de la sensibilité et de l’état de la peau et des ongles\n- Soins de pédicurie adaptés\n- Conseils de chaussage et d’hygiène au quotidien\n- Si besoin, semelles ou orthèses de protection\n\n## Prise en charge\n\nSelon votre grade de risque, déterminé par votre médecin, l’Assurance Maladie prend en charge un bilan et un nombre défini de séances de prévention par an, sur prescription médicale.",
+  "faq": [
+   {
+    "q": "Comment connaître mon grade de risque ?",
+    "r": "Il est déterminé par votre médecin, souvent après un examen de la sensibilité de vos pieds. Il figure sur la prescription de soins podologiques."
+   },
+   {
+    "q": "Quels gestes adopter à la maison ?",
+    "r": "Regarder vos pieds chaque jour, les laver et bien les sécher entre les orteils, hydrater la peau sans en mettre entre les orteils, et ne jamais marcher pieds nus."
+   },
+   {
+    "q": "Que faire en cas de plaie ?",
+    "r": "Ne la négligez pas : contactez rapidement votre médecin ou votre podologue, même si elle n’est pas douloureuse."
+   }
+  ],
+  "icone": null,
+  "position": 4
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "podologie-du-sport",
+  "titre_court": "Podologie du sport",
+  "titre": "Podologie du sport à {ville}",
+  "resume": "Analyse de la foulée et conseils pour pratiquer votre sport dans de bonnes conditions, du loisir à la compétition.",
+  "corps": "## Pour les sportifs de tous niveaux\n\nCourse à pied, trail, football, tennis, danse : chaque sport sollicite les pieds différemment. Le bilan du sportif s’intéresse à votre pratique, à vos chaussures et à votre foulée.\n\n## Le bilan du sportif\n\n1. **Échange** sur votre pratique, vos objectifs et vos éventuelles douleurs.\n2. **Examen** des pieds et de la posture.\n3. **Analyse de la course** ou du geste sportif.\n4. **Conseils** de chaussage, de reprise progressive et, si besoin, semelles adaptées à votre sport.\n\n## Prévenir plutôt que guérir\n\nUn bilan avant une reprise ou une préparation de course permet d’anticiper. Pensez à venir avec vos chaussures de sport et une tenue adaptée.",
+  "faq": [
+   {
+    "q": "Faut-il des semelles spécifiques pour courir ?",
+    "r": "Pas systématiquement. Le bilan permet de déterminer si des semelles sont utiles pour votre pratique ou si des conseils de chaussage suffisent."
+   },
+   {
+    "q": "Quand faire un bilan avant un marathon ?",
+    "r": "Idéalement 2 à 3 mois avant la course, pour laisser le temps de s’adapter à d’éventuelles semelles ou à de nouvelles chaussures."
+   },
+   {
+    "q": "Que faut-il apporter ?",
+    "r": "Vos chaussures de sport habituelles, une tenue permettant de courir et, si vous en avez, vos anciennes semelles."
+   }
+  ],
+  "icone": null,
+  "position": 5
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "podologie-enfant",
+  "titre_court": "Podologie de l’enfant",
+  "titre": "Podologie de l’enfant à {ville}",
+  "resume": "Un examen adapté aux enfants et aux adolescents pour accompagner la croissance et rassurer les parents.",
+  "corps": "## Quand consulter pour son enfant ?\n\n- Il marche sur la pointe des pieds ou les pieds tournés vers l’intérieur\n- Ses chaussures s’usent de façon inhabituelle\n- Il se plaint de douleurs aux pieds, aux genoux ou après le sport\n- Il tombe souvent ou se fatigue vite à la marche\n\n## Une séance adaptée\n\nL’examen se fait dans le jeu et la bonne humeur, en présence d’un parent. J’observe la marche, les appuis et la posture, puis je vous explique ce que j’ai observé et ce qui est normal pour son âge.\n\n## Et ensuite ?\n\nBien souvent, des conseils de chaussage et un suivi suffisent. Si des semelles sont utiles, elles sont adaptées et contrôlées régulièrement pendant la croissance.",
+  "faq": [
+   {
+    "q": "À partir de quel âge peut-on consulter ?",
+    "r": "Dès que l’enfant marche, si quelque chose vous interroge. Un premier bilan vers 3 à 4 ans permet aussi de faire le point."
+   },
+   {
+    "q": "Les pieds plats de l’enfant sont-ils inquiétants ?",
+    "r": "Chez le jeune enfant, un pied qui paraît plat est souvent normal et évolue avec la croissance. Le bilan permet de faire la différence."
+   },
+   {
+    "q": "Comment choisir les chaussures de mon enfant ?",
+    "r": "À la bonne taille, avec un contrefort qui maintient le talon et une semelle souple à l’avant. Je vous donne des repères précis lors de la séance."
+   }
+  ],
+  "icone": null,
+  "position": 6
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "cors-durillons",
+  "titre_court": "Cors et durillons",
+  "titre": "Cors et durillons : soins à {ville}",
+  "resume": "Retrait des cors, durillons et callosités, recherche de leur cause et prévention par le chaussage, les orthoplasties ou les semelles.",
+  "corps": "## D’où viennent les cors et les durillons ?\n\nCors, durillons et callosités sont des épaississements de la peau, appelés hyperkératoses. Ils sont dus à des frottements ou à des pressions répétés : chaussures trop étroites ou à talons hauts, orteils déformés, appuis trop marqués sous l’avant-pied. Le cor a un noyau dur qui appuie vers l’intérieur et peut être très douloureux. Une verrue plantaire peut ressembler à un cor : l’examen permet de les distinguer.\n\n## Le soin\n\nLa corne est retirée et le noyau du cor enlevé avec des instruments stérilisés (bistouri, fraise). La technique est adaptée à la sensibilité et à la fragilité de la peau. Le soin diminue la gêne à la marche ; plusieurs séances sont parfois nécessaires.\n\n## Prévenir les récidives\n\nTant que la cause persiste, la corne se reforme. Selon l’examen :\n\n- **Chaussage** : chaussures souples, assez larges à l’avant, sans couture intérieure gênante, à talon bas\n- **Orthoplastie** : orthèse d’orteil en silicone qui protège une zone de frottement\n- **Orthèses plantaires** (semelles orthopédiques) pour mieux répartir les appuis, après un bilan podologique\n- **Hydratation** de la peau, sauf entre les orteils\n\n## À éviter\n\nNe pas couper soi-même un cor avec une lame ou des ciseaux. Les produits et pansements « coricides » sont à proscrire en cas de diabète, de troubles de la circulation ou de peau fragile : ils peuvent provoquer une plaie.\n\n## Diabète : vigilance\n\nAvec un diabète, la sensibilité des pieds peut diminuer et la peau cicatrise moins bien : une petite blessure peut passer inaperçue. Les soins sont à confier à un professionnel. Un cor, un durillon ou une zone de peau qui change de couleur doit être montré rapidement au pédicure-podologue ou au médecin. En cas de plaie, consulter le médecin sans attendre. En cas de rougeur qui s’étend, de fièvre ou de plaie qui s’aggrave, appeler le 15.",
+  "faq": [
+   {
+    "q": "Faut-il une ordonnance pour soigner un cor ?",
+    "r": "Non, il est possible de consulter un pédicure-podologue sans ordonnance."
+   },
+   {
+    "q": "Le soin est-il remboursé ?",
+    "r": "Le soin courant n’est pas remboursé par l’Assurance Maladie. Les personnes diabétiques dont le pied est classé à risque (grades 2 et 3) par le médecin bénéficient de séances de prévention prises en charge, sur prescription médicale. Certaines complémentaires santé participent aux autres soins."
+   },
+   {
+    "q": "Le soin est-il douloureux ?",
+    "r": "Le soin retire la corne sans entamer la peau saine. Il diminue souvent la pression du cor ; la technique est adaptée si la zone est sensible."
+   },
+   {
+    "q": "À quelle fréquence revenir ?",
+    "r": "Selon la vitesse à laquelle la corne se reforme, le chaussage et l’activité. Le rythme est fixé lors de la première séance."
+   },
+   {
+    "q": "Le cor peut-il revenir ?",
+    "r": "Oui, tant que le frottement ou la pression persiste. C’est pourquoi le soin s’accompagne de conseils de chaussage et, si besoin, d’une orthoplastie ou de semelles."
+   }
+  ],
+  "icone": null,
+  "position": 7
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "ongles-epais",
+  "titre_court": "Ongles épais",
+  "titre": "Ongles épais : soins à {ville}",
+  "resume": "Un soin régulier des ongles épaissis ou déformés, fréquents avec l’âge, pour marcher plus confortablement et éviter les blessures.",
+  "corps": "## Pourquoi les ongles s’épaississent-ils ?\n\nAvec l’âge, les ongles des pieds s’épaississent souvent et deviennent plus durs. Des chocs ou frottements répétés dans la chaussure, des orteils déformés, des troubles de la circulation, une mycose ou des ongles longtemps restés sans soin peuvent y contribuer. Dans sa forme marquée, l’onychogryphose, l’ongle très épais se recourbe et prend l’aspect d’une griffe.\n\n## Pourquoi s’en occuper ?\n\nUn ongle épais est difficile à couper soi-même. Il appuie dans la chaussure, peut blesser l’orteil ou l’orteil voisin et rend la marche inconfortable. Des pieds douloureux rendent la marche moins sûre : prendre soin de ses ongles participe à la prévention des chutes.\n\n## Le soin\n\n- **Coupe** de l’ongle avec des instruments stérilisés\n- **Meulage** (fraisage) pour réduire son épaisseur, en respectant sa courbure\n- **Soin des bords de l’ongle** et de la corne éventuelle autour ou sous l’ongle\n- **Conseils** de chaussage : chaussures assez hautes et larges à l’avant\n\nDes précautions particulières sont prises pour éviter tout saignement, notamment chez les personnes diabétiques, sous anticoagulant ou ayant des troubles de la circulation.\n\n## Pour qui ?\n\nPersonnes âgées, personnes qui ne peuvent plus atteindre leurs pieds ou qui voient mal, personnes diabétiques ou ayant des troubles de la circulation. Les soins se font au cabinet ou, selon les disponibilités, à domicile ou en établissement.\n\n## Quand voir le médecin ?\n\nUne tache, une bande foncée ou un saignement sous l’ongle apparus sans choc, une plaie de l’orteil ou une rougeur qui s’étend doivent être montrés au médecin.",
+  "faq": [
+   {
+    "q": "Faut-il une ordonnance ?",
+    "r": "Non, il est possible de consulter un pédicure-podologue sans ordonnance."
+   },
+   {
+    "q": "Le soin est-il remboursé ?",
+    "r": "Le soin courant n’est pas remboursé par l’Assurance Maladie. Les personnes diabétiques dont le pied est classé à risque (grades 2 et 3) par le médecin bénéficient de séances de prévention prises en charge, sur prescription médicale. Certaines complémentaires santé participent aux autres soins."
+   },
+   {
+    "q": "Le meulage de l’ongle fait-il mal ?",
+    "r": "Le meulage réduit l’épaisseur de l’ongle. Une sensation de vibration ou de chaleur est possible ; la vitesse est adaptée si l’orteil est sensible."
+   },
+   {
+    "q": "À quelle fréquence prévoir un soin ?",
+    "r": "L’ongle épais se reforme : un soin régulier est nécessaire. Le rythme dépend de la pousse et du chaussage ; il est fixé lors de la première séance."
+   },
+   {
+    "q": "Le soin peut-il se faire à domicile ?",
+    "r": "Selon les secteurs et les disponibilités du cabinet. Le plus simple est de contacter le cabinet par téléphone."
+   }
+  ],
+  "icone": null,
+  "position": 8
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "posturologie",
+  "titre_court": "Posturologie",
+  "titre": "Posturologie à {ville}",
+  "resume": "Texte de test : posturologie au cabinet.",
+  "corps": "## Posturologie\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur posturologie ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 9
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "podologie-du-senior",
+  "titre_court": "Podologie du senior",
+  "titre": "Podologie du senior à {ville}",
+  "resume": "Texte de test : podologie du senior au cabinet.",
+  "corps": "## Podologie du senior\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur podologie du senior ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 10
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "verrues-plantaires",
+  "titre_court": "Verrues plantaires",
+  "titre": "Verrues plantaires à {ville}",
+  "resume": "Texte de test : verrues plantaires au cabinet.",
+  "corps": "## Verrues plantaires\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur verrues plantaires ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 11
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "ongle-incarne",
+  "titre_court": "Ongle incarné",
+  "titre": "Ongle incarné à {ville}",
+  "resume": "Texte de test : ongle incarné au cabinet.",
+  "corps": "## Ongle incarné\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur ongle incarné ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 12
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "douleur-talon",
+  "titre_court": "Douleur au talon",
+  "titre": "Douleur au talon à {ville}",
+  "resume": "Texte de test : douleur au talon au cabinet.",
+  "corps": "## Douleur au talon\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur douleur au talon ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 13
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "laser",
+  "titre_court": "Laser",
+  "titre": "Laser à {ville}",
+  "resume": "Texte de test : laser au cabinet.",
+  "corps": "## Laser\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur laser ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 14
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "k-taping",
+  "titre_court": "K-taping",
+  "titre": "K-taping à {ville}",
+  "resume": "Texte de test : k-taping au cabinet.",
+  "corps": "## K-taping\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur k-taping ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 15
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "orthonyxie",
+  "titre_court": "Orthonyxie",
+  "titre": "Orthonyxie à {ville}",
+  "resume": "Texte de test : orthonyxie au cabinet.",
+  "corps": "## Orthonyxie\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur orthonyxie ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 16
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "onychoplastie",
+  "titre_court": "Onychoplastie",
+  "titre": "Onychoplastie à {ville}",
+  "resume": "Texte de test : onychoplastie au cabinet.",
+  "corps": "## Onychoplastie\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur onychoplastie ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 17
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "orthoplastie",
+  "titre_court": "Orthoplastie",
+  "titre": "Orthoplastie à {ville}",
+  "resume": "Texte de test : orthoplastie au cabinet.",
+  "corps": "## Orthoplastie\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur orthoplastie ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 18
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "mycose-ongles",
+  "titre_court": "Mycose des ongles",
+  "titre": "Mycose des ongles à {ville}",
+  "resume": "Texte de test : mycose des ongles au cabinet.",
+  "corps": "## Mycose des ongles\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur mycose des ongles ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 19
+ },
+ {
+  "profession_slug": "podologue",
+  "slug": "soins-a-domicile",
+  "titre_court": "Soins à domicile",
+  "titre": "Soins à domicile à {ville}",
+  "resume": "Texte de test : soins à domicile au cabinet.",
+  "corps": "## Soins à domicile\n\nTexte de test de la fiche, pour vérifier la construction de la page.\n\n## Déroulement\n\n1. **Échange** sur votre gêne.\n2. **Examen** des pieds.\n3. **Conseils** adaptés.",
+  "faq": [
+   {
+    "q": "Question de test sur soins à domicile ?",
+    "r": "Réponse de test."
+   }
+  ],
+  "icone": null,
+  "position": 20
+ }
+]

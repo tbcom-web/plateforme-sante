@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache as memoRequete } from 'react';
 import {
   API_PEXELS, API_PIXABAY, CACHE_RECHERCHE_MS, candidatsDepuisReponse, cheminPhotoLibre, construireTracabilite, largeursAProduire, LICENCES_SOURCES, motsClesDuSujet,
   peutAppeler, SOURCES_PHOTOS_LIBRES, urlImageAutorisee, urlPhotoPexels, urlPhotoPixabay, urlRecherchePexels, urlRecherchePixabay, type CandidatPhoto, type SourcePhotoLibre,
@@ -119,12 +120,13 @@ export async function largeurImage(source: Buffer): Promise<number> {
 }
 
 /** Mots-clés enregistrés par sujet (migration 0028) ; {} si la table manque */
-export async function getMotsClesEnBase(): Promise<{ motsCles: Record<string, string[]>; migrationManquante: boolean }> {
+async function getMotsClesEnBaseSansMemo(): Promise<{ motsCles: Record<string, string[]>; migrationManquante: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('photos_libres_mots_cles').select('sujet, mots_cles');
   if (error) return { motsCles: {}, migrationManquante: true };
   return { motsCles: Object.fromEntries((data ?? []).map((l: { sujet: string; mots_cles: string[] | null }) => [l.sujet, l.mots_cles ?? []])), migrationManquante: false };
 }
+export const getMotsClesEnBase = memoRequete(getMotsClesEnBaseSansMemo);
 
 /**
  * Photo libre gardée. Candidate NON importée (migration 0031) : chemin / url vides, aperçu servi par la source (apercuUrl)
@@ -157,7 +159,7 @@ export const photoLibreDepuisLigne = (l: LignePhotoLibre): PhotoLibre => ({
  * Photos gardées (traçabilité). migrationManquante : table 0028 absente ; migration0031 : colonnes de l'import différé
  * absentes (lecture sans elles, « Garder » demande d'exécuter 0031).
  */
-export async function getPhotosLibres(): Promise<{ photos: PhotoLibre[]; migrationManquante: boolean; migration0031: boolean }> {
+async function getPhotosLibresSansMemo(): Promise<{ photos: PhotoLibre[]; migrationManquante: boolean; migration0031: boolean }> {
   const supabase = await createClient();
   const lire = (colonnes: string) => supabase.from('photos_libres').select(colonnes).order('created_at', { ascending: false }).limit(2000);
   let { data, error } = await lire(COLONNES_PHOTOS_LIBRES);
@@ -166,6 +168,7 @@ export async function getPhotosLibres(): Promise<{ photos: PhotoLibre[]; migrati
   if (error) return { photos: [], migrationManquante: true, migration0031 };
   return { photos: ((data ?? []) as unknown as LignePhotoLibre[]).map(photoLibreDepuisLigne), migrationManquante: false, migration0031 };
 }
+export const getPhotosLibres = memoRequete(getPhotosLibresSansMemo);
 
 export const MIGRATION_0031 = 'Migration 0031 à exécuter (supabase/migrations/0031_photos_libres_import_differe.sql).';
 

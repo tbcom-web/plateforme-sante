@@ -4,6 +4,7 @@ import {
   modeleIntegre, normaliserComposition, notationDepuisLigne, sujetsDuScenario, type NotationRecette, type ScenarioRecette,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { lireAssetsNotesApprentissage } from '@/lib/assets-notes';
 
 // Notation des recettes complètes (migration 0038, packages/core/src/notation-recettes.ts) :
 // - getNotationsApprentissage : recettes_notation_apprentissage() (ni auteur ni texte libre), pour l'apprentissage EN DIRECT
@@ -32,7 +33,7 @@ export const getNotationsApprentissage = cache(async (): Promise<NotationRecette
 
 export type NotationAdmin = NotationRecette & { pourTexte: string | null; contreTexte: string | null; sourceId: string | null };
 
-export async function getNotationsAdmin(): Promise<{ notations: NotationAdmin[]; migrationManquante: boolean }> {
+async function getNotationsAdminSansMemo(): Promise<{ notations: NotationAdmin[]; migrationManquante: boolean }> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from('recettes_notation')
@@ -48,14 +49,15 @@ export async function getNotationsAdmin(): Promise<{ notations: NotationAdmin[];
     return { notations: [], migrationManquante: true };
   }
 }
+export const getNotationsAdmin = cache(getNotationsAdminSansMemo);
 
-export async function getLignesAssetsApprentissage(): Promise<{ cle: string; note: number | null; statut: string | null }[]> {
+async function getLignesAssetsApprentissageSansMemo(): Promise<{ cle: string; note: number | null; statut: string | null }[]> {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.rpc('assets_notes_apprentissage', { p_limite: 20000 });
+    const { data, error } = await lireAssetsNotesApprentissage();
     if (error || !Array.isArray(data)) return [];
     return (data as { cle_asset: string; note: number | null; statut: string | null }[]).map((l) => ({ cle: l.cle_asset, note: l.note, statut: l.statut }));
   } catch {
     return [];
   }
 }
+export const getLignesAssetsApprentissage = cache(getLignesAssetsApprentissageSansMemo);

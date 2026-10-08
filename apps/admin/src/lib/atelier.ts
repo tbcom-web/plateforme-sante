@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { notesPhotos, renfortsKits, ajouterPairesApprises, pairesDesNotes, pairesDuels, pairesElementsDesNotes, pairesElementsDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
 import { getNotesKits } from '@/lib/kits-images';
 import { getLignesAssetsApprentissage, getNotationsApprentissage } from '@/lib/notation-recettes';
@@ -17,7 +18,7 @@ export type NoteAtelierAdmin = NoteAtelierLue & { id: string; cle: string };
 type Ligne = { id: string; cle_combinaison: string; ingredients: Partial<IngredientsAtelier> | null; note: number; etiquettes: string[] | null; commentaire: string | null; positif?: string | null; negatif?: string | null; created_at: string };
 
 /** Journal des notes (plus récentes d'abord) ; `migrationManquante` : table absente (migration 0026 pas encore exécutée) */
-export async function getNotesAtelier(): Promise<{ notes: NoteAtelierAdmin[]; migrationManquante: boolean }> {
+async function getNotesAtelierSansMemo(): Promise<{ notes: NoteAtelierAdmin[]; migrationManquante: boolean }> {
   const supabase = await createClient();
   const lire = (colonnes: string) => supabase.from('atelier_notes').select(colonnes).order('created_at', { ascending: false }).limit(5000);
   // Remarques « ce qui va bien / ce qui ne va pas » (0028) ; sans la migration 0028, lecture sans ces colonnes
@@ -32,12 +33,13 @@ export async function getNotesAtelier(): Promise<{ notes: NoteAtelierAdmin[]; mi
     }));
   return { notes, migrationManquante: false };
 }
+export const getNotesAtelier = cache(getNotesAtelierSansMemo);
 
 /**
  * Poids appris pour le générateur de propositions (notes de l'atelier + notes et statuts des assets, 0027) ; null sans
  * aucune note ni statut, ou si les migrations manquent (aucune erreur).
  */
-export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
+async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
   const [atelier, assets, recettes, pages, duels, notations] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets(), getRecettesLecture(1), getNotesPagesLecture(), getDuelsApprentissage(), getNotationsApprentissage()]);
   // Notes brutes des photos (« Favoris d'abord », favoris.ts : photos ≥ 4 ★ puis ≥ 3,5 ★ d'abord, ≤ 2 ★ jamais)
   const photos = notesPhotos(await getLignesAssetsApprentissage());
@@ -64,6 +66,7 @@ export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
   const fin = harmonie ? { ...(avecMobile ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : avecMobile;
   return fin && Object.keys(photos).length ? { ...fin, notesPhotos: photos } : fin;
 }
+export const getPoidsAtelier = cache(getPoidsAtelierSansMemo);
 
 type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null; appareil?: string | null };
 

@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { inventaireAssets, type PhotoDeJeu } from '@plateforme/core';
@@ -8,7 +9,7 @@ import { empreinteImage, ligneJuge, lirePredictions, pairesJuge, predictionsParC
 // GitHub (même jeton que la publication et que CHANGEMENTS.md), sinon dans le dossier local (développement). Affichées après la
 // note de Paul seulement (Claude ne doit pas l'influencer) ; la justesse se calcule ici, côté serveur, contre les notes en base.
 
-export async function getPredictions(): Promise<PredictionJuge[]> {
+async function getPredictionsSansMemo(): Promise<PredictionJuge[]> {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO;
   if (token && repo) {
@@ -25,6 +26,7 @@ export async function getPredictions(): Promise<PredictionJuge[]> {
   }
   return [];
 }
+export const getPredictions = cache(getPredictionsSansMemo);
 
 /** Prédictions par clé (pour le client) et ligne « Juge : x/n justes à ±1 » calculée contre les notes en base */
 export async function getJuge(notes: readonly NotePourJuge[], photosJeux: readonly PhotoDeJeu[] = []) {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { estTypeDuel, modeDuel, inventaireAssets, statutsAvecHeritage, universDuParcours } from '@plateforme/core';
+import { estTypeDuel, historiqueDuelsAllege, modeDuel, inventaireAssets, statutsAvecHeritage, universDuParcours } from '@plateforme/core';
 import { predictionsParCle } from '@plateforme/core/juge';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
@@ -27,6 +27,8 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
     getDuels(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(), getRecettes(),
     getPhotosDesJeux(), getSurchargesSujets(), getRevuesIllustrations(), getPredictions(),
   ]);
+  // Historique allégé (perf, 2026-10-08) : compositions retirées là où le navigateur ne les lit pas (duels-historique.ts)
+  const historique = historiqueDuelsAllege(duels);
   // Type de duel ou mode (palette, polices, tailles, police-palette : MODES_DUEL)
   const type = typeof sp.type === 'string' && (estTypeDuel(sp.type) || modeDuel(sp.type)) ? sp.type : null;
   return (
@@ -46,7 +48,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
         </p>
       )}
       <Duel
-        historique={duels}
+        historique={historique}
         migrationManquante={migrationManquante}
         proposes={universDuParcours(univers)}
         modeles={modeles}

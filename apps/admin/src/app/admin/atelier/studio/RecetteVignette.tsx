@@ -8,13 +8,17 @@
 // Image figée enregistrée : NON (une capture navigateur fidèle demanderait de rasteriser l'iframe — polices, SVG, filtres —, trop
 // fragile sans dépendance lourde) ; l'aperçu vivant paresseux en tient lieu (documenté dans retours/CHANGEMENTS.md).
 // Survol / toucher : « Ouvrir dans le Studio » et « Voir en grand » (toutes les pages du client, ordinateur / téléphone).
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   APPRECIATIONS, appreciationDeNote, draftPourOnglet, gamme as gammeParId, libelleScenario, libelleTraitementPhotos, LIBELLES_STYLES, ongletsDuScenario, pairePolices, scenarioDeRecette, vueDePage,
   type MarqueImportee, type ModeleManifeste, type PageStructure, type Recette, type SiteDraft,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import type { SoinCatalogue } from '@/lib/sites';
+
+// Aperçus des cartes : rendus seulement quand leurs entrées changent (l'aperçu de la recette est mémorisé par le Studio), pas à
+// chaque rendu du Studio (« Tout changer », dés) : perf, 2026-10-08.
+const ApercuVignette = memo(ApercuTheme);
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 export const APERCUS_VIVANTS = 3;
@@ -70,8 +74,8 @@ export default function RecetteVignette({ recette: r, apercu, catalogue, marques
       <div ref={ref} className="group relative grid grid-cols-[minmax(0,1fr)_86px] gap-2 overflow-hidden rounded-lg bg-neutral-100 p-1.5" style={{ height: 178 }}>
         {vivant && apercu ? (
           <>
-            <div className="pointer-events-none min-w-0 overflow-hidden rounded-md" aria-hidden="true"><ApercuTheme vignette={164} sansCommandes appareil="bureau" draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} /></div>
-            <div className="pointer-events-none overflow-hidden rounded-md" aria-hidden="true"><ApercuTheme vignette={164} sansCommandes appareil="mobile" draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} /></div>
+            <div className="pointer-events-none min-w-0 overflow-hidden rounded-md" aria-hidden="true"><ApercuVignette vignette={164} sansCommandes appareil="bureau" draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} /></div>
+            <div className="pointer-events-none overflow-hidden rounded-md" aria-hidden="true"><ApercuVignette vignette={164} sansCommandes appareil="mobile" draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} /></div>
           </>
         ) : (
           <div className="col-span-2 grid place-items-center gap-1 rounded-md text-center text-xs text-neutral-600" style={{ background: g?.fondDoux ?? '#f4f4f5' }}>

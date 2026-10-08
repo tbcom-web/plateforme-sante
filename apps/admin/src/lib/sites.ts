@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import { controlerPublication, draftVide, normaliserDraft, type ResultatControle, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
@@ -104,7 +105,7 @@ export async function getMonSite(): Promise<MonSite> {
   return versSite(data);
 }
 
-export async function getCatalogue(profession = 'podologue'): Promise<SoinCatalogue[]> {
+async function getCatalogueSansMemo(profession = 'podologue'): Promise<SoinCatalogue[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('soins_catalogue')
@@ -113,6 +114,7 @@ export async function getCatalogue(profession = 'podologue'): Promise<SoinCatalo
     .order('position');
   return data ?? [];
 }
+export const getCatalogue = cache(getCatalogueSansMemo);
 
 /** Contrôles avant publication (conseils et remplacements ; plus rien de bloquant), sur un brouillon v1 ou v2. */
 export function controles(d: unknown): ResultatControle {

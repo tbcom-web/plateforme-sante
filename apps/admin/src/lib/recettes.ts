@@ -1,4 +1,5 @@
 import 'server-only';
+import { cache } from 'react';
 import {
   apercuAutorise, appareilDe, banquePhotos, cleCandidatePhoto, estPageStructure, estPhotoImportee, estSourcePhotoLibre, modeleIntegre, normaliserComposition, photosIntegreesBanque,
   recetteDepuisLigne, retourMobileDepuisLigne, sujetsDeSpecialite, SUJETS_VISUELS,
@@ -18,15 +19,16 @@ import { getHashtagsAssets } from '@/lib/hashtags';
 export const COLONNES_RECETTE = 'id, nom, sujets, couleurs_preferees, composition, note, etiquettes, positif, negatif, statut, created_at, updated_at';
 
 /** Recettes (plus récentes d'abord) ; `migrationManquante` : table absente (0032 pas encore exécutée) */
-export async function getRecettes(modele?: (id: string) => ModeleManifeste): Promise<{ recettes: Recette[]; migrationManquante: boolean }> {
+async function getRecettesSansMemo(modele?: (id: string) => ModeleManifeste): Promise<{ recettes: Recette[]; migrationManquante: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('recettes').select(COLONNES_RECETTE).order('updated_at', { ascending: false }).limit(1000);
   if (error) return { recettes: [], migrationManquante: true };
   return { recettes: (data ?? []).map((l) => recetteDepuisLigne(l as Record<string, unknown>, modele ?? modeleIntegre)).filter((r): r is Recette => Boolean(r)), migrationManquante: false };
 }
+export const getRecettes = cache(getRecettesSansMemo);
 
 /** Recettes actives notées au moins `noteMin` (parcours, apprentissage) ; [] sans la migration */
-export async function getRecettesLecture(noteMin = 4): Promise<Recette[]> {
+async function getRecettesLectureSansMemo(noteMin = 4): Promise<Recette[]> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('recettes_lecture', { p_note_min: noteMin });
@@ -36,9 +38,10 @@ export async function getRecettesLecture(noteMin = 4): Promise<Recette[]> {
     return [];
   }
 }
+export const getRecettesLecture = cache(getRecettesLectureSansMemo);
 
 /** Notes PAR PAGE des recettes actives (fonction recettes_notes_apprentissage, 0034 : ni auteur ni remarques) ; [] sans la migration */
-export async function getNotesPagesLecture(): Promise<NoteRecette[]> {
+async function getNotesPagesLectureSansMemo(): Promise<NoteRecette[]> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('recettes_notes_apprentissage', { p_limite: 5000 });
@@ -52,6 +55,7 @@ export async function getNotesPagesLecture(): Promise<NoteRecette[]> {
     return [];
   }
 }
+export const getNotesPagesLecture = cache(getNotesPagesLectureSansMemo);
 
 /** Notes par page d'une recette (studio : notes déjà données, onglets) ; [] sans la migration 0034 */
 export async function getNotesPagesRecette(recette: string): Promise<{ page: string; note: number; appareil: string; le: string }[]> {
@@ -66,12 +70,13 @@ export async function getNotesPagesRecette(recette: string): Promise<{ page: str
  * Retours « Rendu mobile » (table defauts_mobile, 0034), super admin : liste de corrections de /admin/retours ;
  * `migrationManquante` : table absente.
  */
-export async function getRetoursMobile(): Promise<{ retours: RetourMobile[]; migrationManquante: boolean }> {
+async function getRetoursMobileSansMemo(): Promise<{ retours: RetourMobile[]; migrationManquante: boolean }> {
   const supabase = await createClient();
   const { data, error } = await supabase.from('defauts_mobile').select('id, cle, page, verdict, note, etiquettes, remarque, zones, empreinte, statut, created_at').order('created_at', { ascending: false }).limit(2000);
   if (error) return { retours: [], migrationManquante: true };
   return { retours: (data ?? []).map((l) => retourMobileDepuisLigne(l as Record<string, unknown>)).filter((r): r is RetourMobile => Boolean(r)), migrationManquante: false };
 }
+export const getRetoursMobile = cache(getRetoursMobileSansMemo);
 
 /** Clés dont l'adaptation mobile est à corriger (defauts_mobile_ouverts, 0034) : parcours des praticiens ; [] sans la migration */
 export async function getDefautsMobileOuverts(): Promise<string[]> {
@@ -106,7 +111,12 @@ async function lirePhotosLibres(supabase: Awaited<ReturnType<typeof createClient
  * `nonImportees` (studio seulement) : aussi les photos libres GARDÉES pas encore importées (statut « à valider »), servies par
  * leur aperçu Pexels / Pixabay et marquées `importee: false` ; jamais pour l'atelier, le parcours ni les sites.
  */
-export async function getPhotosBanque(opts: { nonImportees?: boolean } = {}): Promise<PhotoBanque[]> {
+export function getPhotosBanque(opts: { nonImportees?: boolean } = {}): Promise<PhotoBanque[]> {
+  // Une lecture par requête et par option (cache React : la clé est un booléen, pas l'objet d'options)
+  return photosBanque(Boolean(opts.nonImportees));
+}
+const photosBanque = cache(async (nonImportees: boolean): Promise<PhotoBanque[]> => {
+  const opts = { nonImportees };
   const supabase = await createClient();
   const [jeux, { data: libres }, surcharges, { hashtags }] = await Promise.all([
     getPhotosDesJeux().catch(() => []),
@@ -129,4 +139,4 @@ export async function getPhotosBanque(opts: { nonImportees?: boolean } = {}): Pr
     ...photosIntegreesBanque().map((p) => ({ url: p.url, origine: 'integree' as const, sujets: p.sujets })),
   ];
   return banquePhotos(entrees, { surcharges, hashtags });
-}
+});
