@@ -226,6 +226,10 @@ export async function importerPhotoLibre(id: string): Promise<Resultat> {
     if (sujets.length) await supabase.from('assets_sujets').insert(sujets.map((x) => ({ cle_asset: cleFinale, sujet: x, action: 'ajout', auteur })));
     if (tags.length) await supabase.from('assets_hashtags').insert(tags.map((x) => ({ cle_asset: cleFinale, hashtag: x, action: 'ajout', auteur })));
     if (sujets.length || tags.length) complement = ` Thèmes et hashtags reportés (${[...sujets, ...tags.map((t) => `#${t}`)].join(', ')}).`;
+    // Professions de la candidate (assets_professions, 0046 : profession verrouillée du chercheur, « Aussi pour… ») → photo importée
+    const { data: pr } = await supabase.rpc('assets_professions_effectifs');
+    const lignesProf = ((pr ?? []) as { cle_asset: string; profession: string; action: string }[]).filter((l) => l.cle_asset === cleCandidate && (l.action === 'ajout' || l.action === 'retrait'));
+    if (lignesProf.length) await supabase.from('assets_professions').insert(lignesProf.map((l) => ({ cle_asset: cleFinale, profession: l.profession, action: l.action, auteur })));
   }
   revalidatePath('/admin/photos');
   revalidatePath('/admin/illustrations');

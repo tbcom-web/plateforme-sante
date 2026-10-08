@@ -122,9 +122,19 @@ export async function largeurImage(source: Buffer): Promise<number> {
 /** Mots-clés enregistrés par sujet (migration 0028) ; {} si la table manque */
 async function getMotsClesEnBaseSansMemo(): Promise<{ motsCles: Record<string, string[]>; migrationManquante: boolean }> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from('photos_libres_mots_cles').select('sujet, mots_cles');
+  const [{ data, error }, { data: parProfession }] = await Promise.all([
+    supabase.from('photos_libres_mots_cles').select('sujet, mots_cles'),
+    // Autres professions (migration 0049) : clé « profession/thème » (recherche-photos-professions.ts, cleMotsCles) ; absente : ignorée
+    supabase.from('photos_libres_mots_cles_professions').select('profession, theme, mots_cles'),
+  ]);
   if (error) return { motsCles: {}, migrationManquante: true };
-  return { motsCles: Object.fromEntries((data ?? []).map((l: { sujet: string; mots_cles: string[] | null }) => [l.sujet, l.mots_cles ?? []])), migrationManquante: false };
+  return {
+    motsCles: Object.fromEntries([
+      ...(data ?? []).map((l: { sujet: string; mots_cles: string[] | null }) => [l.sujet, l.mots_cles ?? []] as const),
+      ...((parProfession ?? []) as { profession: string; theme: string; mots_cles: string[] | null }[]).map((l) => [`${l.profession}/${l.theme}`, l.mots_cles ?? []] as const),
+    ]),
+    migrationManquante: false,
+  };
 }
 export const getMotsClesEnBase = memoRequete(getMotsClesEnBaseSansMemo);
 

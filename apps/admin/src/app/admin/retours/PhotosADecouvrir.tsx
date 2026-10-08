@@ -8,17 +8,24 @@
 // « Valider et importer » (/admin/photos) héberge ensuite la photo chez nous (WebP, sans EXIF).
 // Les sites n'utilisent jamais un lien direct vers Pexels ou Pixabay. Charte : pas de visage reconnaissable mis en avant,
 // rien qui laisse croire à un patient réel (étiquettes bloquantes).
+// PROFESSION (ajout de Paul du 2026-10-09, recherche-photos-professions.ts) : sélecteur de profession VERROUILLABLE (cadenas,
+// mémorisé dans ce navigateur ; sans verrou : profession de l'en-tête) ; thèmes et requêtes de la profession choisie ; à la
+// décision, la profession est pré-cochée et « Aussi pour… » est suggéré quand le visuel est générique (cabinet, marche, enfant…).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   cleCandidat, ETIQUETTES_BLOQUANTES, ETIQUETTES_DECOUVERTE, LICENCES_SOURCES, normaliserHashtag, orientation, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type HashtagsAssets,
   APERCUS_TRAITEMENTS_IMAGES, type SourcePhotoLibre,
-  hashtagEmplacement, hashtagKit, libelleEmplacement, libelleSujet, requetesEmplacement,
+  hashtagEmplacement, hashtagKit, libelleEmplacement, libelleSujet, requetesEmplacement, motsClesDuTheme, professionsALaDecision,
 } from '@plateforme/core';
 import { SaisieHashtags } from '@/components/HashtagsVisuel';
 import { SuggestionsClassement } from '@/components/SuggestionsClassement';
 import { suggererClassement } from '@plateforme/core/classement-visuels';
 import { lireHashtagsAssets } from './actions-hashtags';
-import { candidatsPhotos, deciderPhoto, enregistrerMotsCles, hashtagsConnus, type CandidatAffiche } from './actions-photos';
+import { candidatsPhotos, contexteChercheur, deciderPhoto, enregistrerMotsCles, hashtagsConnus, type CandidatAffiche } from './actions-photos';
+
+const CLE_VERROU = 'chercheur-profession-verrou';
+const PAR_DEFAUT = 'podologue';
+type Contexte = Awaited<ReturnType<typeof contexteChercheur>>;
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -56,6 +63,48 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   const vues = useRef(new Set<string>());
   const sujetCourant = useRef(sujet);
   sujetCourant.current = sujet;
+  // Profession du chercheur : verrouillée (cadenas, mémorisée) ou celle de l'en-tête
+  const [ctx, setCtx] = useState<Contexte | null>(null);
+  const [profession, setProfession] = useState<string>(PAR_DEFAUT);
+  const [verrou, setVerrou] = useState<string | null>(null);
+  const [professionsCochees, setProfessionsCochees] = useState<string[]>([PAR_DEFAUT]);
+  const professionCourante = useRef(profession);
+  professionCourante.current = profession;
+  const themesProfession = useMemo(() => (profession === PAR_DEFAUT || !ctx ? SUJETS_VISUELS.map((s) => ({ id: s.id, libelle: s.libelle })) : ctx.themes[profession] ?? []), [ctx, profession]);
+  const motsAffiches = profession === PAR_DEFAUT ? motsCles[sujet] ?? [] : motsClesDuTheme(profession, sujet, ctx?.enBase ?? {});
+  useEffect(() => {
+    void contexteChercheur().then((c) => {
+      setCtx(c);
+      let v: string | null = null;
+      try { v = window.localStorage.getItem(CLE_VERROU); } catch { v = null; }
+      const ok = v && c.professions.some((p) => p.id === v) ? v : null;
+      setVerrou(ok);
+      // Ouvert depuis un kit : profession par défaut (sujet du kit) ; lien d'un trou de couverture (?profession=…&theme=…, Frigo) :
+      // cette profession et ce thème, sans toucher au verrou ; sinon verrou, sinon en-tête
+      const q = new URLSearchParams(window.location.search);
+      const pUrl = q.get('profession');
+      const tUrl = q.get('theme');
+      const p = cible ? PAR_DEFAUT : pUrl && c.professions.some((x) => x.id === pUrl) ? pUrl : ok ?? c.globale;
+      if (tUrl && !cible) sujetCourant.current = tUrl;
+      if (p !== PAR_DEFAUT) changerProfession(p, c);
+      else if (tUrl && !cible && SUJETS_VISUELS.some((x) => x.id === tUrl)) { setSujet(tUrl); setThemes([tUrl]); }
+    }).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const changerProfession = (p: string, c: Contexte | null = ctx) => {
+    setProfession(p);
+    setProfessionsCochees([p]);
+    const themes = p === PAR_DEFAUT ? SUJETS_VISUELS.map((s) => s.id) : (c?.themes[p] ?? []).map((t) => t.id);
+    const t = themes.includes(sujetCourant.current) ? sujetCourant.current : themes[0] ?? 'general';
+    professionCourante.current = p;
+    setFile([]); setEdition(false); setStatut(null);
+    if (t !== sujetCourant.current) { setSujet(t); setThemes([t]); } else if (configurees.length) { setThemes([t]); void charger(t); }
+  };
+  const basculerVerrou = () => {
+    const v = verrou ? null : profession;
+    setVerrou(v);
+    try { if (v) window.localStorage.setItem(CLE_VERROU, v); else window.localStorage.removeItem(CLE_VERROU); } catch { /* stockage indisponible : verrou de la session seulement */ }
+  };
 
   // Hashtags déjà utilisés (autocomplétion) ; sans la migration 0029 : bandeau, la saisie reste possible
   useEffect(() => {
@@ -72,7 +121,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
 
   const charger = useCallback(async (s: string) => {
     setChargement(true);
-    const r = await candidatsPhotos(s, [...vues.current], cible && s === cible.sujet ? cible.emplacement : null).catch(() => ({ ok: false, message: 'Connexion perdue.', candidats: [] as CandidatAffiche[] }));
+    const r = await candidatsPhotos(s, [...vues.current], cible && s === cible.sujet ? cible.emplacement : null, professionCourante.current).catch(() => ({ ok: false, message: 'Connexion perdue.', candidats: [] as CandidatAffiche[] }));
     setChargement(false);
     if (s !== sujetCourant.current) return;
     if (!r.ok) { setStatut({ ok: false, message: r.message }); return; }
@@ -87,11 +136,14 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
   const sansTheme = themes.length === 0;
   const classement = useMemo(() => (carte ? suggererClassement({ requete: carte.requete, tags: carte.tags, description: carte.description, voisins: { hashtags: tousHashtags }, deja: { sujets: themes, hashtags } }) : null), [carte, hashtags, themes, tousHashtags]);
   const suggestions = useMemo(() => classement?.hashtags.map((h) => h.tag) ?? [], [classement]);
+  // « Aussi pour… » : autres professions suggérées quand le visuel est générique (requête, description, tags de la source)
+  const aussiPour = useMemo(() => (carte ? professionsALaDecision({ verrou: profession, texte: `${carte.requete} ${carte.description ?? ''} ${(carte.tags ?? []).join(' ')}`, hashtags }).suggerees : []), [carte, profession, hashtags]);
 
   const suivante = () => {
     if (carte) vues.current.add(cleCandidat(carte));
     setEtiquettes([]);
     setThemes([sujet]);
+    setProfessionsCochees([profession]);
     setHashtags(cible && sujet === cible.sujet ? tagsCible : []);
     const reste = file.slice(1);
     setFile(reste);
@@ -105,9 +157,10 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
     const etq = etiquettes;
     const ths = themes.length ? themes : [sujet];
     const tags = hashtags;
+    const profs = professionsCochees.length ? professionsCochees : [profession];
     setStatut({ ok: true, message: decision === 'garder' ? 'Enregistrement du lien et de la licence…' : 'Rejet…' });
     suivante();
-    const r = await deciderPhoto({ source: c.source, idSource: c.idSource, decision, etiquettes: etq, sujets: ths, hashtags: decision === 'garder' ? tags : [], requete: c.requete })
+    const r = await deciderPhoto({ source: c.source, idSource: c.idSource, decision, etiquettes: etq, sujets: ths, hashtags: decision === 'garder' ? tags : [], requete: c.requete, profession, professions: profs })
       .catch(() => ({ ok: false, message: 'Connexion perdue : décision non enregistrée.' }));
     if (r.ok && decision === 'garder') {
       setGardees((n) => n + 1);
@@ -118,12 +171,17 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
 
   const basculer = (id: string) => setEtiquettes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
   const basculerTheme = (id: string) => setThemes((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
-  const ouvrirEdition = () => { setTexteMots((motsCles[sujet] ?? []).join('\n')); setEdition(true); };
+  const ouvrirEdition = () => { setTexteMots(motsAffiches.join('\n')); setEdition(true); };
   const enregistrerMots = async () => {
-    const r = await enregistrerMotsCles(sujet, texteMots).catch(() => ({ ok: false, message: 'Connexion perdue.', motsCles: undefined }));
+    const r = await enregistrerMotsCles(sujet, texteMots, profession).catch(() => ({ ok: false, message: 'Connexion perdue.', motsCles: undefined }));
     setStatut({ ok: r.ok, message: r.message });
-    if (r.ok && r.motsCles) { setMotsCles((m) => ({ ...m, [sujet]: r.motsCles! })); setEdition(false); setFile([]); if (configurees.length) void charger(sujet); }
+    if (r.ok && r.motsCles) {
+      if (profession === PAR_DEFAUT) setMotsCles((m) => ({ ...m, [sujet]: r.motsCles! }));
+      else setCtx((c) => (c ? { ...c, enBase: { ...c.enBase, [`${profession}/${sujet}`]: r.motsCles! } } : c));
+      setEdition(false); setFile([]); if (configurees.length) void charger(sujet);
+    }
   };
+  const libelleProfession = (id: string) => ctx?.professions.find((p) => p.id === id)?.court ?? id;
 
   const puce = (e: (typeof ETIQUETTES_DECOUVERTE)[number]) => {
     const actif = etiquettes.includes(e.id);
@@ -142,10 +200,28 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
           ? <a href={cible.retour} className={`inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Retour au kit</a>
           : <button type="button" onClick={onRetour} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Accueil</button>}
         {cible && <p className="w-full rounded-lg bg-teal-50 p-2 text-sm text-teal-950 ring-1 ring-teal-200 sm:order-last">Pour le kit {libelleSujet(cible.sujet)} · {libelleEmplacement(cible.emplacement)} : recherches ciblées ({requetesEmplacement(cible.sujet, cible.emplacement).join(', ')}) ; #{hashtagEmplacement(cible.emplacement)} et #{hashtagKit(cible.sujet)} pré-cochés. Gardée, la photo entre dans le vivier ; elle rejoint le kit une fois importée.</p>}
+        {ctx && ctx.professions.length > 1 && (
+          <div className="flex items-center gap-1.5 text-sm">
+            <label className="flex items-center gap-2">
+              <span className="font-medium">Profession</span>
+              <select value={profession} disabled={Boolean(verrou) || Boolean(cible)} onChange={(e) => changerProfession(e.target.value)} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base disabled:bg-neutral-100 md:text-sm">
+                {ctx.professions.map((p) => <option key={p.id} value={p.id}>{p.libelle}</option>)}
+              </select>
+            </label>
+            <button type="button" onClick={basculerVerrou} aria-pressed={Boolean(verrou)} disabled={Boolean(cible)}
+              title={verrou ? 'Profession verrouillée pour vos recherches : cliquer pour suivre la profession de l’en-tête' : 'Verrouiller cette profession pour vos recherches'}
+              className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg border px-2 text-sm font-semibold ${focus} ${verrou ? 'border-teal-800 bg-teal-800 text-white' : 'border-neutral-300 bg-white text-neutral-700'}`}>
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2" />{verrou ? <path d="M8 11V7a4 4 0 0 1 8 0v4" /> : <path d="M8 11V7a4 4 0 0 1 7.5-2" />}
+              </svg>
+              {verrou ? 'Verrouillée' : 'Verrouiller'}
+            </button>
+          </div>
+        )}
         <label className="flex items-center gap-2 text-sm">
           <span className="font-medium">Rechercher</span>
           <select value={sujet} onChange={(e) => { setSujet(e.target.value); setThemes([e.target.value]); setFile([]); setEdition(false); setStatut(null); }} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base md:text-sm">
-            {SUJETS_VISUELS.map((s) => <option key={s.id} value={s.id}>{s.libelle}</option>)}
+            {themesProfession.map((s) => <option key={s.id} value={s.id}>{s.libelle}</option>)}
           </select>
         </label>
         <p className="text-sm text-neutral-600">{gardees} gardée{gardees > 1 ? 's' : ''} cette session</p>
@@ -215,7 +291,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
             <fieldset className="grid gap-1.5">
               <legend className="mb-1 text-sm font-medium">Thèmes <span className="font-normal text-neutral-500">· au moins un pour garder ; le premier coché range la photo</span></legend>
               <div className="flex flex-wrap gap-1.5">
-                {SUJETS_VISUELS.map((s) => {
+                {themesProfession.map((s) => {
                   const actif = themes.includes(s.id);
                   return (
                     <button key={s.id} type="button" aria-pressed={actif} onClick={() => basculerTheme(s.id)}
@@ -227,6 +303,26 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
               </div>
               {classement && <SuggestionsClassement suggestions={classement} contexte="photos" compact onSujet={(ids) => setThemes((l) => [...l, ...ids.filter((x) => !l.includes(x))])} />}
             </fieldset>
+            {ctx && ctx.professions.length > 1 && (
+              <fieldset className="grid gap-1.5">
+                <legend className="mb-1 text-sm font-medium">Professions <span className="font-normal text-neutral-500">· la photo sera rangée pour celles cochées</span></legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {ctx.professions.map((p) => {
+                    const actif = professionsCochees.includes(p.id);
+                    const suggeree = aussiPour.find((x) => x.profession === p.id);
+                    if (p.id !== profession && !actif && !suggeree) return null;
+                    return (
+                      <button key={p.id} type="button" aria-pressed={actif} disabled={p.id === profession && actif && professionsCochees.length === 1}
+                        onClick={() => setProfessionsCochees((l) => (l.includes(p.id) ? l.filter((x) => x !== p.id) : [...l, p.id]))}
+                        title={suggeree ? `Visuel générique : ${suggeree.raisons.join(', ')}` : undefined}
+                        className={`min-h-11 rounded-full border px-3 text-sm ${focus} ${actif ? 'border-teal-800 bg-teal-800 text-white' : 'border-dashed border-teal-700 bg-white text-teal-900 hover:bg-teal-50'}`}>
+                        {actif ? `✓ ${p.court}` : `Aussi pour ${p.court}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
             <SaisieHashtags valeurs={hashtags} connus={connus} suggestions={suggestions}
               onAjout={(h) => setHashtags((l) => [...l, ...h.filter((x) => !l.includes(x))])} onRetrait={(h) => setHashtags((l) => l.filter((x) => x !== h))} />
             <fieldset className="grid gap-1.5">
@@ -261,7 +357,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
 
       <section aria-labelledby="pd-mots" className="grid gap-2 rounded-2xl border border-black/10 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 id="pd-mots" className="text-base font-semibold">Mots-clés de recherche · {SUJETS_VISUELS.find((s) => s.id === sujet)?.libelle}</h3>
+          <h3 id="pd-mots" className="text-base font-semibold">Mots-clés de recherche · {profession !== PAR_DEFAUT ? `${libelleProfession(profession)} · ` : ''}{themesProfession.find((s) => s.id === sujet)?.libelle}</h3>
           {!edition && <button type="button" onClick={ouvrirEdition} className={`min-h-11 rounded-lg px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>Modifier</button>}
         </div>
         {edition ? (
@@ -276,7 +372,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
             </div>
           </div>
         ) : (
-          <ul className="flex flex-wrap gap-1.5 text-sm">{(motsCles[sujet] ?? []).map((m) => <li key={m} className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-800">{m}</li>)}</ul>
+          <ul className="flex flex-wrap gap-1.5 text-sm">{motsAffiches.map((m) => <li key={m} className="rounded-full bg-neutral-100 px-2.5 py-1 text-neutral-800">{m}</li>)}</ul>
         )}
       </section>
     </div>

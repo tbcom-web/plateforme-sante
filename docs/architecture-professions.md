@@ -76,6 +76,28 @@ Ce document complète la mémoire projet (couches Charte → Univers métier →
 - Un pack `publiable: false` (psychomotricien aujourd'hui) n'est construit qu'en démonstration (`demo-psychomotricien`, jamais
   indexé) : `verifierPackPubliable` bloque la publication tant que des textes « [à rédiger] » restent.
 
+## Recherche de photos par profession
+
+Ajout de Paul du 2026-10-09 : « Quand on crée une profession, on crée des thèmes clés qui permettent ensuite de sourcer des
+photos (Pexels, etc.). Dans le chercheur d'images, pouvoir LOCKER la profession pour laquelle on cherche, et taguer les images
+sur la bonne profession. »
+
+- `packages/core/src/recherche-photos-professions.ts` : thèmes de recherche par profession (requêtes, exploration, hashtags,
+  sujet visuel enregistré). Podologue = sujets visuels d'avant, à l'identique (test). Psychomotricien = thèmes du pack
+  (`packages/contenus/professions/psychomotricien/pratique.ts`) et requêtes de ses médiations (« handwriting child hand »,
+  « elderly balance rail », « baby tummy time »…).
+- Mots-clés éditables par (profession, thème) : podologue dans `photos_libres_mots_cles` (0028, inchangé), autres professions
+  dans `photos_libres_mots_cles_professions` (migration 0049).
+- Couverture et pondération des requêtes PAR PROFESSION (`couvertureRequetes`, `choisirRequeteProfession`).
+- Photos à découvrir : sélecteur de profession + cadenas (verrou mémorisé dans le navigateur ; sans verrou : profession de
+  l'en-tête) ; thèmes de la profession ; à « Garder », la profession est pré-cochée, « Aussi pour … » proposé quand le visuel
+  est générique (`professionsALaDecision`) ; rattachement `assets_professions` sous la clé de la candidate, reporté sur la photo
+  à l'import (`lignesProfessionsDecision`).
+- Frigo : « Photos à trouver » par profession (`trousParProfession` : « Psychomotricité : 0 photo #graphomotricite »), liens
+  vers le chercheur ouvert sur la profession et le thème (`/admin/retours?type=decouvrir&profession=…&theme=…`).
+- Arrivages (source photos) : `candidatsPhotos(theme, vues, emplacement, verrou)` et `deciderPhoto({ …, profession, professions })`
+  acceptent la profession ; l'écran des Arrivages (en cours chez son agent) peut s'y brancher.
+
 ## Ajouter une profession
 
 1. `professions.ts` : une entrée (statut `preparation`).
@@ -83,5 +105,6 @@ Ce document complète la mémoire projet (couches Charte → Univers métier →
 3. `pratiques.ts` : thèmes, activités, profils de référence (agent Profils).
 4. `onboarding-professions.ts` : codes RPPS / ADELI, diplôme, `disponible: false` (agent Onboarding).
 5. Table `professions` : sa ligne (slug, libellé, spécialité schema.org), catalogue de soins.
-6. Frigo : rattacher les ingrédients partagés (suggestions), produire ses pictos et illustrations propres.
-7. Relire les textes, passer `publiable: true`, puis `statut: 'active'`.
+6. `recherche-photos-professions.ts` : ses thèmes de recherche (requêtes, hashtags).
+7. Frigo : rattacher les ingrédients partagés (suggestions), produire ses pictos et illustrations propres.
+8. Relire les textes, passer `publiable: true`, puis `statut: 'active'`.

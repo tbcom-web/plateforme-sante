@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import {
   couvertureParSujet, estIngredientUnitaire, gamme as gammeParId, hashtagsDe, inventaireAssets, inventaireStudio, LIBELLES_STATUTS_ILLUSTRATION, libelleSujet,
   statutsAvecHeritage, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, variablesCharte, variablesGamme, type Asset, type StatutIllustration,
-  estFiltrePartage, FILTRES_PARTAGE, ingredientPourProfession, packProfession, partageDeLIngredient, professionsDeLIngredient, suggestionsDePartage,
+  libelleTrou, trousParProfession, estFiltrePartage, FILTRES_PARTAGE, ingredientPourProfession, packProfession, partageDeLIngredient, professionsDeLIngredient, suggestionsDePartage,
 } from '@plateforme/core';
 import { etatNouveaute, estTypeIngredient, typeIngredient, TYPES_INGREDIENTS, type TypeIngredient } from '@plateforme/core/arrivages';
 import { PROFESSION_PAR_DEFAUT, professionsAdmin, sujetDeLaProfession } from '@plateforme/core/professions';
@@ -100,6 +100,12 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
     return { profession: p, total: s.length, items: s.slice(0, 12).map((x) => ({ ...x, asset: parCle.get(x.cle)! })) };
   }).filter((x) => x.total);
 
+  // Trous de photos PAR PROFESSION (recherche-photos-professions.ts) : thèmes de la profession les moins couverts → chercheur de
+  // photos ouvert sur cette profession et ce thème (« Psychomotricité : 0 photo #graphomotricite »)
+  const trous = trousParProfession(profession.id, auFrigo.filter((a) => a.type === 'photo').map((a) => ({
+    statut: null, professions: professionsDeLIngredient(a.cle, rattachements), hashtags: hashtagsDe(hashtags.hashtags, a.cle), sujets: sujetsDuVisuel(a, surcharges).sujets,
+  }))).slice(0, 6);
+
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6" style={style}>
       <style>{SURFACES_CSS + '.fr-svg svg{width:100%;height:100%;display:block}'}</style>
@@ -130,6 +136,22 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
           </ul>
         </section>
       ))}
+
+      {trous.length > 0 && (
+        <section aria-labelledby="fr-trous" className="grid gap-2">
+          <h2 id="fr-trous" className="text-lg font-semibold">Photos à trouver ({profession.court})</h2>
+          <ul className="flex flex-wrap gap-2 text-sm">
+            {trous.map((t) => (
+              <li key={t.theme}>
+                <Link href={`/admin/retours?type=decouvrir&profession=${encodeURIComponent(profession.id)}&theme=${encodeURIComponent(t.theme)}`}
+                  className={`flex min-h-11 items-center gap-1 rounded-full px-3 ring-1 ${t.photos === 0 ? 'bg-red-50 text-red-900 ring-red-200' : 'bg-white ring-black/10'}`}>
+                  {libelleTrou(profession.court, t)} · Trouver des photos →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section aria-labelledby="fr-couv" className="grid gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
