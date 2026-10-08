@@ -326,7 +326,12 @@ export const SEUIL_DETOURAGE = 0.55;
 // ———————————————————————————————————————————————————— Données enregistrées (brouillon) et rendu sur les sites
 
 export type RenduImage = { l: number; h: number; url: string };
-export type RendusPortrait = { portrait: RenduImage[]; carre: RenduImage[] };
+export type RendusPortrait = {
+  portrait: RenduImage[];
+  carre: RenduImage[];
+  /** Fond remplacé par le studio (aplat, dégradé, cercle, duotone) : le portrait se fond dans un aplat (présentation « detoure ») */
+  detoure?: boolean;
+};
 
 /** Portrait composé par le studio (praticiens[].portrait du brouillon) */
 export type PortraitStudio = {
@@ -410,7 +415,7 @@ export function rendusPortrait(p: { photo: string; portrait?: PortraitStudio | n
   const r = p.portrait?.rendus;
   if (!p.photo || !r || !Array.isArray(r.portrait) || !Array.isArray(r.carre)) return null;
   if (![...r.portrait, ...r.carre].some((x) => x?.url === p.photo)) return null;
-  return r.portrait.length || r.carre.length ? { portrait: r.portrait, carre: r.carre } : null;
+  return r.portrait.length || r.carre.length ? { portrait: r.portrait, carre: r.carre, ...(styleDetoure(p.portrait!.style) ? { detoure: true } : {}) } : null;
 }
 
 /** Attribut srcset (largeurs croissantes) */

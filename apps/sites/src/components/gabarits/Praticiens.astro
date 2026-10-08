@@ -9,12 +9,16 @@ import { zonePhoto } from '../../lib/edition';
 import { imagePortrait } from '../../lib/portraits';
 import { lienRdv, rdvEnLigne, viaPlateforme, libelleContact } from '../../lib/textes';
 import { motLePlusLong } from '../../lib/typo.mjs';
+import { presentationPortraits } from '../../lib/portraits';
+import PortraitsPraticiens from '../PortraitsPraticiens.astro';
 
 interface Props { variante: 'cartes' | 'fiches' | 'liste' }
 const { variante } = Astro.props;
 const STATUTS: Record<string, string> = { titulaire: 'Titulaire du cabinet', collaborateur: 'En collaboration', remplacant: 'En remplacement' };
 const plusieurs = site.praticiens.length > 1;
 ---
+{/* Présentation des portraits choisie par la recette (autre que « sobre ») : HTML partagé du core, mêmes contenus */}
+{presentationPortraits !== 'sobre' ? <PortraitsPraticiens /> : (
 <ul class:list={['praticiens', `praticiens--${variante}`]}>
   {site.praticiens.map((p, i) => (
     <li class="praticien">
@@ -48,6 +52,7 @@ const plusieurs = site.praticiens.length > 1;
     </li>
   ))}
 </ul>
+)}
 
 <style>
   .praticiens { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }

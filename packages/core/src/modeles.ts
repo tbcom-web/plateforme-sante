@@ -10,6 +10,7 @@
 import { GAMMES } from './gammes';
 import type { Registre } from './dessins';
 import { PREMIERS_ECRANS_NOUVEAUX, TRANSITIONS_DIAPORAMA, TRANSITIONS_SECTIONS, estPremierEcranNouveau } from './heros-photo-variantes';
+import { PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 
 /**
  * Sections possibles de l'accueil. « etapes » : premier rendez-vous en trois étapes (rendez-vous, venue,
@@ -65,6 +66,12 @@ export const VARIANTES_SECTIONS = {
   /** Praticiens : cartes courtes (détails repliés) ou fiches en une colonne */
   /** … ou en « liste » (revue) : une ligne par praticien, séparées par un filet, sans carte */
   praticiens: ['cartes', 'fiches', 'liste'],
+  /**
+   * Présentation des portraits des praticiens (portraits-variantes.ts ; tous gabarits, accueil et « Le cabinet ») : « sobre » = celle
+   * du gabarit (historique) ; grand portrait éditorial, voile, côte à côte, mosaïque, forme organique, anneau, tirage à bordure,
+   * bandeau défilant, aplat (portraits-praticiens.ts, HTML partagé site / aperçu). Même contenu, mêmes titres.
+   */
+  portraits: PRESENTATIONS_PORTRAITS,
   /** Venir au cabinet : horaires et accès côte à côte puis volets repliés, ou notice en une colonne avec plan schématique */
   /** … ou en « colonnes » : horaires à gauche, adresse et plan d'accès à droite (plan SVG statique, jamais de tuiles) */
   infos: ['volets', 'notice', 'colonnes'],
@@ -118,7 +125,10 @@ export const VARIANTES_SECTIONS = {
   article: ['standard', 'lecture', 'laterale', 'chapo'],
 } as const;
 export type SectionVariable = keyof typeof VARIANTES_SECTIONS;
-export type Variantes = { [S in SectionVariable]: (typeof VARIANTES_SECTIONS)[S][number] };
+export type Variantes = { [S in Exclude<SectionVariable, 'portraits'>]: (typeof VARIANTES_SECTIONS)[S][number] } & {
+  /** Présentation des portraits : facultative (absente = « sobre », celle du gabarit) ; fiches et variantes antérieures inchangées */
+  portraits?: (typeof VARIANTES_SECTIONS)['portraits'][number];
+};
 /** Variantes par défaut de chaque gabarit (la fiche peut en changer une partie). */
 export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
   tableau: { accueil: 'carte', soins: 'bulles', praticiens: 'cartes', infos: 'volets', faq: 'accordeon', actualites: 'liste', pied: 'simple', sujets: 'une', horaires: 'tableau', galerie: 'mosaique', 'soins-forme': 'gabarit', contact: 'barre', fiche: 'encadre', theme: 'liste', article: 'standard', transition: 'fondu', sections: 'aucune' },
@@ -133,7 +143,7 @@ export function variantesModele(m: Pick<ModeleManifeste, 'gabarit' | 'variantes'
   return g === 'classique' ? null : { ...VARIANTES_PAR_DEFAUT[g], ...(m.variantes ?? {}) };
 }
 /** Sections dont la variante s'applique aussi au gabarit classique (présentation des sujets seulement) */
-export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme', 'theme', 'article', 'accueil', 'transition', 'sections'];
+export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme', 'theme', 'article', 'accueil', 'transition', 'sections', 'portraits'];
 /** Forme des cartes (tous gabarits) ; défaut : celle du modèle */
 export const formeDesCartes = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['soins-forme'] =>
   (VARIANTES_SECTIONS['soins-forme'] as readonly string[]).includes(m.variantes?.['soins-forme'] as string) ? m.variantes!['soins-forme']! : 'gabarit';

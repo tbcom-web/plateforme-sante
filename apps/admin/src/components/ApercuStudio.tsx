@@ -11,6 +11,7 @@ import {
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import SpecimenHabillage from '@/components/SpecimenHabillage';
+import { PlanchePortraits, presentationApercu } from '@/components/ApercuPortraits';
 import type { SoinCatalogue } from '@/lib/sites';
 
 type Props = {
@@ -65,6 +66,11 @@ export default function ApercuStudio({ cle, proposes, modeles, catalogue, marque
   // Typographies et détails : spécimen lisible (titre, surtitre, paragraphe, bouton, carte, citation) ; menus : l'accueil (en-tête)
   if (/^(typo|details):/.test(cle)) return nu ? <SpecimenHabillage cle={cle} mobile={mobile} vignette={mobile ? 600 : 560} /> : <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${mobile ? 'mx-auto w-[300px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}><SpecimenHabillage cle={cle} mobile={mobile} /></div>;
   if (!apercu) return <p className="text-sm text-neutral-600">Aperçu indisponible.</p>;
+  // Présentation des portraits : 1, 2 et 3 praticiens de démonstration (silhouettes dessinées, monogrammes), HTML du site
+  if (cle.startsWith('composant:portraits:')) {
+    const planche = <PlanchePortraits variante={presentationApercu({ variantes: { portraits: cle.split(':')[2] as never } })} mobile={mobile} vignette={vignette} hauteur={hauteur} modele={apercu.modele} couleur={apercu.draft.theme.couleur} gamme={apercu.draft.theme.gamme} />;
+    return nu ? planche : <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${mobile ? 'mx-auto w-[300px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}>{planche}</div>;
+  }
   if (nu) return <ApercuTheme key={`${cle}|${mobile}`} sansCommandes vignette={hauteur ? undefined : vignette ?? (mobile ? 600 : 560)} hauteurCadre={hauteur} vueInitiale={vuePourCle(cle)} survol={survol} seul={blocsPourCle(cle)} appareil={mobile ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
   return (
     <div className="grid gap-2">

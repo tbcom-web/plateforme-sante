@@ -1,6 +1,6 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
 import { readFileSync } from 'node:fs';
-import { libellesComposition, lotsPropositions, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
+import { estPresentationPortraits, libellesComposition, lotsPropositions, PORTRAITS_DEMO, PRATICIENS_DEMO, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 // POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
@@ -642,4 +642,19 @@ if (process.env.RECETTE) {
   // Ordre des soins : celui du site (les soins mis en avant viennent des sujets du praticien, pas de la recette)
   console.log(`[demo] recette : ${libellesComposition(x).map((l) => `${l.dimension} ${l.valeur}`).join(' | ')}`);
 }
+// Présentation des portraits (contrôles de débordement, WebKit, planches) : PORTRAITS=<présentation> (portraits-variantes.ts),
+// PRATICIENS=<n> (1 à 5 : praticiens de démonstration), PHOTOS_PRATICIENS=demo (silhouettes dessinées, jamais une vraie personne)
+// ou mixte (une sur deux : monogramme à côté d'une photo).
+if (process.env.PRATICIENS) {
+  const n = Math.max(1, Math.min(5, Number(process.env.PRATICIENS) || 1));
+  site.praticiens = Array.from({ length: n }, (_, i) => {
+    const base = site.praticiens[i] ?? site.praticiens[site.praticiens.length - 1];
+    const d = PRATICIENS_DEMO[i];
+    return i < 2 ? base : { ...base, prenom: d.prenom, nom: d.nom, statut: 'collaborateur', orientations: [...d.orientations], formations: [], sports: [], presence: '' };
+  });
+}
+if (process.env.PHOTOS_PRATICIENS === 'demo' || process.env.PHOTOS_PRATICIENS === 'mixte') {
+  site.praticiens = site.praticiens.map((p, i) => (process.env.PHOTOS_PRATICIENS === 'mixte' && i % 2 ? p : { ...p, photo: PORTRAITS_DEMO[i % PORTRAITS_DEMO.length] }));
+}
+if (estPresentationPortraits(process.env.PORTRAITS)) site.modele = { ...site.modele, variantes: { ...(site.modele.variantes ?? {}), portraits: process.env.PORTRAITS } };
 export default site;

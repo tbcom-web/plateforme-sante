@@ -22,6 +22,7 @@ import {
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
 } from '@plateforme/core';
 import type { PredictionJuge } from '@plateforme/core/juge';
+import { compositionPourCle as poserCle, PRESENTATIONS_PORTRAITS } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import { draftStudio } from '@/components/ApercuStudio';
 import PiloteApercu, { BandeauEvaluation, useRepereVisible } from '@/components/RepereEvaluation';
@@ -280,6 +281,13 @@ export default function Duel(props: Props) {
         varier = (x, dim, gg) => varierDuel(x, dim, c, gg);
       } else if (t === 'element') {
         dims = Object.keys(base.sections.variantes).filter((f) => (FAMILLES_COMPOSANTS as readonly string[]).includes(f)).map((f) => `composant:${f}`);
+        // Présentations des portraits (à valider, 2026-10-08) : un duel d'éléments sur cinq compare deux présentations des
+        // praticiens sur la même recette (repère « On compare : la présentation des portraits » sur le bloc praticiens)
+        if (r() < 0.2) {
+          const l = PRESENTATIONS_PORTRAITS.filter((p) => p !== 'sobre');
+          base = poserCle(base, `composant:portraits:${l[Math.floor(r() * l.length)]}`);
+          dims = ['composant:portraits'];
+        }
         varier = (x, dim, gg) => tirerPage(x, { composant: dim.slice(10) } as Parameters<typeof tirerPage>[1], c, gg);
       } else {
         if (t === 'traitement') {

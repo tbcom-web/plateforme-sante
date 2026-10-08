@@ -10,6 +10,8 @@ import { site } from '../../lib/site';
 import { zonePhoto } from '../../lib/edition';
 import { imagePortrait } from '../../lib/portraits';
 import { lienRdv, rdvEnLigne, viaPlateforme, libelleContact } from '../../lib/textes';
+import { presentationPortraits } from '../../lib/portraits';
+import PortraitsPraticiens from '../PortraitsPraticiens.astro';
 
 const STATUTS: Record<string, string> = { titulaire: 'Titulaire du cabinet', collaborateur: 'En collaboration', remplacant: 'En remplacement' };
 // Profil d'appui illustratif selon l'orientation du praticien (pure variation graphique).
@@ -24,6 +26,8 @@ const appui = (orientations: string[]): Appui => {
 const PASTILLES = [1, 2, 3, 4, 5].map((n) => `var(--donnee-${n})`);
 const seul = site.praticiens.length === 1;
 ---
+{/* Présentation des portraits choisie par la recette (autre que « sobre ») : HTML partagé du core, mêmes contenus */}
+{presentationPortraits !== 'sobre' ? <PortraitsPraticiens classique /> : (
 <div class:list={['praticiens', { 'praticiens--seul': seul }]}>
   {site.praticiens.map((p, i) => (
     <article class="praticien apparait">
@@ -64,6 +68,7 @@ const seul = site.praticiens.length === 1;
     </article>
   ))}
 </div>
+)}
 
 <style>
   .praticiens { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }

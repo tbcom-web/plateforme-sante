@@ -1,0 +1,12 @@
+---
+// Présentation des portraits des praticiens choisie par la recette (variante `portraits`, tous gabarits) : grand portrait
+// éditorial, voile, côte à côte, mosaïque, forme organique, anneau, tirage à bordure, bandeau défilant, aplat. Balisage et feuille
+// de style viennent du core (portraits-praticiens.ts) : l'aperçu de l'admin rend exactement le même HTML. Même contenu et mêmes
+// titres que les fiches historiques (H3 par praticien, aucun H1/H2 ajouté). Aucun script ; images en srcset, chargement différé.
+import { CSS_PORTRAITS, htmlPortraits } from '@plateforme/core';
+import { donneesPortraits } from '../lib/portraits';
+
+interface Props { classique?: boolean }
+const html = htmlPortraits(donneesPortraits(Boolean(Astro.props.classique)));
+---
+<Fragment set:html={`<style>${CSS_PORTRAITS}</style>${html}`} />

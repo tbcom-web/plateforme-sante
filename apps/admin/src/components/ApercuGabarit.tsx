@@ -16,6 +16,7 @@ import { avecVille, construireNavigation, variantesModele, type VuePage, illustr
 import { facteurChasse, facteurTitres, menuABouton, normaliserHabillage } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
+import { BlocPortraits, portraitsDuDraft, presentationApercu } from './ApercuPortraits';
 
 type Props = {
   draft: SiteDraft;
@@ -402,7 +403,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     </section>
   ) : null;
   // Équipe : cartes, fiches ou liste (comme Praticiens.astro)
-  const equipeSection = noms.length ? section(noms.length > 1 ? `Une équipe de ${noms.length} praticiens.` : `Votre ${titre.toLowerCase()}${suffixeVille}.`, (
+  const equipeSection = noms.length ? section(noms.length > 1 ? `Une équipe de ${noms.length} praticiens.` : `Votre ${titre.toLowerCase()}${suffixeVille}.`, presentationApercu(m) !== 'sobre' ? (
+    // Présentation des portraits de la recette : HTML partagé du site (portraits-praticiens.ts)
+    <BlocPortraits variante={presentationApercu(m)} praticiens={portraitsDuDraft(d, titre, d.cabinet.ville || d.lieux[0]?.ville || '', (s) => soins.find((x) => x.slug === s)?.titre_court ?? s)} modele={m} couleur={d.theme.couleur} gamme={d.theme.gamme} />
+  ) : (
     <div style={{ display: 'grid', gap: v.praticiens === 'liste' ? 0 : 14, gridTemplateColumns: v.praticiens === 'cartes' && !mobile ? 'repeat(auto-fill, minmax(260px, 1fr))' : '1fr' }}>
       {noms.map((n) => <div key={n} className="eff-carte" style={v.praticiens === 'liste' ? { padding: '14px 0', borderBottom: '1px solid var(--g-ligne)', fontWeight: 650 } : { padding: 20, borderRadius: 'var(--rayon)', background: v.praticiens === 'fiches' ? 'var(--g-doux)' : 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}><strong>{n}</strong><span style={{ display: 'block', color: 'var(--g-encre-douce)', fontSize: 15 }}>{titre}</span></div>)}
     </div>

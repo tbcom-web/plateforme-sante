@@ -38,6 +38,7 @@ import ApercuGabarit, { ActionsRapidesApercu, HerosVue, tailleTitre, type HerosA
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
 import { cssTransitionsSections } from '@plateforme/core';
 import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
+import { BlocPortraits, portraitsDuDraft, presentationApercu } from './ApercuPortraits';
 import CadreApercu from './CadreApercu';
 
 type Props = {
@@ -400,6 +401,10 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
       <section className={`ap-section ${douce ? 'ap-douce' : ''}`}>
         <div className="ap-cadre">
           <Sur n={n}>{SECTIONS_LIBELLES.praticiens}</Sur>
+          {presentationApercu(m) !== 'sobre' ? (
+            // Présentation des portraits de la recette : HTML partagé du site (portraits-praticiens.ts)
+            <BlocPortraits variante={presentationApercu(m)} praticiens={portraitsDuDraft(d, titre, d.cabinet.ville || d.lieux[0]?.ville || '', (s) => catalogue.find((x) => x.slug === s)?.titre_court ?? s)} modele={m} couleur={d.theme.couleur} gamme={d.theme.gamme} />
+          ) : (
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
             {d.praticiens.filter((p) => p.nom.trim()).map((p) => (
               <div key={p.id} className="ap-carte" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -408,6 +413,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
               </div>
             ))}
           </div>
+          )}
         </div>
       </section>
     ),

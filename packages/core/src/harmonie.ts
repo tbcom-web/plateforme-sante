@@ -25,6 +25,7 @@ import { contraste, rvb } from './couleurs';
 import { PAIRES_POLICES, VARIANTES_SECTIONS } from './modeles';
 import { JEUX_EFFETS } from './effets';
 import { FORMES_CARTES } from './formes';
+import { PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Profils et familles
@@ -159,7 +160,7 @@ export const NOMS_DIMENSIONS_HARMONIE: Record<string, string> = {
   'details.separateur': 'Séparateurs', 'details.souligne': 'Soulignés', 'details.fond': 'Motif de fond', 'details.boutons': 'Boutons', 'details.densite': 'Densité',
   'details.cadre': 'Cadres d’images', 'details.citation': 'Encadrés', 'details.badge': 'Étiquettes', 'menu.ordinateur': 'Menu (ordinateur)', 'menu.mobile': 'Menu (téléphone)',
   'menu.rdv': 'Bouton de rendez-vous', 'v.accueil': 'Premier écran', 'v.transition': 'Transition du diaporama', 'v.sections': 'Transitions entre sections',
-  'v.soins-forme': 'Forme des cartes', 'v.sujets': 'Sujets', 'v.soins': 'Soins', 'v.praticiens': 'Équipe', 'v.infos': 'Plan d’accès', 'v.faq': 'Questions',
+  'v.soins-forme': 'Forme des cartes', 'v.sujets': 'Sujets', 'v.soins': 'Soins', 'v.praticiens': 'Équipe', 'v.portraits': 'Présentation des praticiens', 'v.infos': 'Plan d’accès', 'v.faq': 'Questions',
   'v.galerie': 'Galerie', 'v.horaires': 'Horaires', 'v.contact': 'Contact', 'v.pied': 'Pied de page', 'v.fiche': 'Fiche d’un soin', 'v.actualites': 'Actualités',
   'v.theme': 'Page sujet', 'v.article': 'Article',
 };
@@ -466,6 +467,18 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.soins:grille': E('Rangées larges', { d: 0.5, r: -0.5 }, { pref: [F.te] }),
   'v.soins:filets': E('Bulles à filet', { f: 0.7, d: -0.4 }, { pref: [F.ed, F.mi] }),
   'v.praticiens:liste': E('Équipe en liste', { f: 0.6, d: -0.4 }, { pref: [F.ed] }),
+  // Présentations des portraits des praticiens (portraits-variantes.ts, 2026-10-08, à valider) : jamais FORTES (un seul élément fort
+  // par écran reste le premier écran) ; forme organique = élément rond (règle Technique) ; tirage incliné = chaleureux, jamais clinique
+  'v.portraits:sobre': E('Portraits en petit format', {}),
+  'v.portraits:editorial': E('Grand portrait éditorial', { f: 0.8, c: 0.6, d: -0.5 }, { pref: [F.ed, F.ma, F.cl], fort: 0.5 }),
+  'v.portraits:voile': E('Portrait plein cadre et voile', { c: 0.7, e: 0.4, f: 0.3 }, { pref: [F.ma, F.ed, F.po], jamais: [F.mi], fort: 0.6 }),
+  'v.portraits:duo': E('Portraits côte à côte', { d: 0.1, f: 0.4 }, { pref: [F.cl, F.mi, F.te] }),
+  'v.portraits:mosaique': E('Mosaïque décalée', { e: 0.5, d: -0.2, c: 0.3 }, { pref: [F.ma, F.po, F.ed], jamais: [F.mi, F.cl], fort: 0.5 }),
+  'v.portraits:organique': E('Portrait en forme organique', { r: 1, t: 0.5, f: -0.4 }, { pref: [F.dx, F.na], jamais: [F.te, F.mi, F.ma, F.ed], fort: 0.5, rayon: 2 }),
+  'v.portraits:anneau': E('Portrait rond et anneau', { r: 0.6, e: 0.2 }, { pref: [F.dx, F.po, F.cl], jamais: [F.ed] }),
+  'v.portraits:polaroid': E('Tirage à bordure', { t: 0.6, f: -0.5, e: 0.3 }, { pref: [F.na, F.po, F.dx], jamais: [F.mi, F.ed, F.te], fort: 0.5 }),
+  'v.portraits:defilement': E('Bandeau de portraits', { e: 0.5, d: 0.3 }, { pref: [F.po, F.te, F.ma], jamais: [F.ed] }),
+  'v.portraits:detoure': E('Portrait sur aplat', { c: 0.5, e: 0.4, r: 0.2 }, { pref: [F.po, F.ma, F.dx], jamais: [F.mi, F.ed], fort: 0.5 }),
   'v.faq:ouverte': E('Questions ouvertes', { d: -0.3, f: 0.3 }),
   'v.galerie:mosaique': E('Mosaïque', { e: 0.4 }),
   'v.galerie:defilement': E('Diaporama au doigt', { e: 0.5 }),
@@ -616,6 +629,7 @@ const val = (x: CompositionHarmonie, dim: DimensionHarmonie) => lireDimension(x,
 const SUJETS_CALMES = ['diabete', 'senior'];
 /** Éléments ronds ou « blobs » (interdits avec la structure Technique et la police mono) */
 const RONDS: [DimensionHarmonie, string][] = [
+  ['v.portraits', 'organique'],
   ['details.coins', 'tres-arrondis'], ['v.soins-forme', 'bulles'], ['v.soins-forme', 'organiques'], ['v.soins-forme', 'pilules'], ['details.cadre', 'organique'],
   ['details.fond', 'formes'], ['details.separateur', 'ondulation'], ['details.souligne', 'vague'], ['v.sections', 'vague'], ['v.accueil', 'maille'], ['details.boutons', 'pilule'],
   ['v.accueil', 'organique'], ['v.accueil', 'organique-fondu'],
@@ -623,7 +637,7 @@ const RONDS: [DimensionHarmonie, string][] = [
 /** Valeur neutre (sans règle) d'une dimension, utilisée pour corriger */
 const NEUTRES: Record<string, string> = {
   'details.coins': 'gabarit', 'v.soins-forme': 'gabarit', 'details.cadre': 'aucun', 'details.fond': 'aucun', 'details.separateur': 'filet', 'details.souligne': 'aucun',
-  'v.sections': 'aucune', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
+  'v.sections': 'aucune', 'v.portraits': 'sobre', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
   'details.densite': 'aeree', effets: 'sobre', 'v.accueil': 'carte', 'details.badge': 'gabarit', 'menu.ordinateur': 'gabarit', 'typo.surtitre': 'simple',
 };
 /** Classe de rayon (0 carré, 1 arrondi, 2 très arrondi) des éléments qui portent des angles */

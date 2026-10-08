@@ -25,6 +25,7 @@ import { themeParId } from './themes';
 import { themeIllustre } from './heros-themes';
 import { estPremierEcranAnime, estPremierEcranPhoto, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
+import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
@@ -96,7 +97,7 @@ export function sectionsSelonOrdre(base: readonly SectionAccueil[], ordre: Ordre
 
 /** Sections dont le studio tire la variante, selon le gabarit (classique : la présentation des sujets seulement) */
 export const sectionsVariables = (g: Gabarit): (keyof Variantes)[] =>
-  g === 'classique' ? ['accueil', 'transition', 'sujets', 'soins-forme', 'theme', 'article', 'sections'] : ['accueil', 'transition', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article', 'sections'];
+  g === 'classique' ? ['accueil', 'transition', 'sujets', 'soins-forme', 'theme', 'article', 'sections', 'portraits'] : ['accueil', 'transition', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'portraits', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article', 'sections'];
 
 /**
  * Valeurs qu'un dé peut tirer pour une section (premier écran : les variantes à photos seulement avec des photos, style
@@ -148,7 +149,7 @@ export const ONGLETS_PAGES: readonly { page: PageStructure; nom: string; vue: Vu
 export const vueDePage = (p: PageStructure): VuePage => ONGLETS_PAGES.find((o) => o.page === p)?.vue ?? 'accueil';
 
 /** Familles d'éléments notables (composants) : présentation de chaque élément, clé `composant:<famille>:<variante>` */
-export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'faq', 'soins', 'sujets', 'accueil', 'transition', 'sections', 'pied', 'actualites', 'theme', 'article'];
+export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'portraits', 'faq', 'soins', 'sujets', 'accueil', 'transition', 'sections', 'pied', 'actualites', 'theme', 'article'];
 
 /** Libellés des variantes (studio) */
 export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
@@ -159,6 +160,7 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   sujets: { une: 'Le premier à la une', rangees: 'Grandes rangées illustrées', cartes: 'Cartes égales', liste: 'Liste éditoriale', colonnes: 'Deux colonnes' },
   horaires: { tableau: 'Tableau compact', bandeau: 'Bandeau', carte: 'Carte encadrée', liste: 'Liste, jour courant en évidence' },
   praticiens: { cartes: 'Cartes', fiches: 'Fiches', liste: 'Liste' },
+  portraits: { ...LIBELLES_PRESENTATIONS_PORTRAITS },
   infos: { volets: 'Adresse et itinéraire', notice: 'Notice et plan', colonnes: 'Horaires | adresse et plan' },
   faq: { accordeon: 'Accordéon', colonnes: 'Deux colonnes', ouverte: 'Liste ouverte' },
   galerie: { mosaique: 'Mosaïque', defilement: 'Diaporama au doigt', grande: 'Grande photo et vignettes', bande: 'Bande de quatre photos' },
@@ -171,7 +173,7 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   'soins-forme': Object.fromEntries(FORMES_CARTES.map((f) => [f.id, f.nom])),
 };
 export const NOMS_SECTIONS_VARIABLES: Record<string, string> = {
-  accueil: 'Premier écran', transition: 'Transition du diaporama', sections: 'Transitions entre sections', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
+  accueil: 'Premier écran', transition: 'Transition du diaporama', sections: 'Transitions entre sections', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', portraits: 'Présentation des praticiens', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -760,7 +762,7 @@ export function blocsPourCle(cle: string): string[] | undefined {
   if (type === 'composant') {
     const blocs: Record<string, string[]> = {
       accueil: ['premier'], transition: ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
-      galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], faq: ['faq'], pied: ['pied'], actualites: ['actualites'],
+      galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], portraits: ['praticiens'], faq: ['faq'], pied: ['pied'], actualites: ['actualites'],
     };
     // Page sujet, article, fiche : la page entière (vuePourCle)
     return blocs[a];

@@ -243,6 +243,7 @@ const SOURCES_FAMILLES: Record<string, string> = {
   galerie: 'apps/sites/src/components/gabarits/Accueil.astro (galerie)',
   contact: 'apps/sites/src/components/gabarits/Coquille.astro (c-contact, c-flottant)',
   praticiens: 'apps/sites/src/components/gabarits/Praticiens.astro',
+  portraits: 'packages/core/src/portraits-praticiens.ts (HTML et CSS partagés site / aperçu) ; apps/sites/src/components/PortraitsPraticiens.astro',
   faq: 'apps/sites/src/components/gabarits/Faq.astro',
   pied: 'apps/sites/src/components/gabarits/Coquille.astro (c-pied)',
   actualites: 'apps/sites/src/components/gabarits/Actus.astro',
