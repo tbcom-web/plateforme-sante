@@ -46,7 +46,8 @@ test('inventaire : aucune clé de base ne recouvre une clé réelle ; chaque gro
   const reelles = new Set(cles);
   const { groupes } = regrouperParBase(cles.map((cle) => ({ cle })));
   assert.ok(groupes.length > 30);
-  for (const g of groupes) assert.ok(!reelles.has(g.base), g.base);
+  // Exception (2026-10-08) : le picto actuel est la base de ses directions de style à l'essai, et il ouvre son groupe
+  for (const g of groupes) assert.ok(!reelles.has(g.base) || (g.base.startsWith('picto:') && g.representant.cle === g.base), g.base);
   // L'illustration « basique » : pédagogique d'abord
   const ortho = groupes.find((g) => g.base === 'dessin:orthonyxie')!;
   assert.equal(ortho.representant.cle, 'dessin:orthonyxie:pedagogique');

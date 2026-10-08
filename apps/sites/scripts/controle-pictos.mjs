@@ -15,7 +15,7 @@ import { build } from 'esbuild';
 const racine = fileURLToPath(new URL('..', import.meta.url));
 const sortie = join(tmpdir(), `controle-pictos-${process.pid}.mjs`);
 const r = await build({
-  stdin: { contents: "export { PICTOS, svgPicto, PICTO, PICTO_ACCENT, PICTOS_SOINS, PICTOS_EQUIPEMENTS, pictoExiste, EQUIPEMENTS } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { PICTOS, svgPicto, PICTO, PICTO_ACCENT, PICTOS_SOINS, PICTOS_EQUIPEMENTS, pictoExiste, EQUIPEMENTS, DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, svgPictoDirection, traitDirection, couleursPictoSur, FONDS_PICTO, CONTRASTE_PICTO, gamme, contraste } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent',
 });
 writeFileSync(sortie, r.outputFiles[0].text);
@@ -79,4 +79,29 @@ const boite = (svg, indice = 0) => {
   if (s.h / s.l < 2.3 || s.h / s.l > 2.9) defauts.push(`semelle : L/l = ${(s.h / s.l).toFixed(2)} (attendu ≈ 2,6)`);
 }
 
+// Directions de style à l'essai (pictos-directions.ts, 2026-10-08) : CHAQUE direction a sa grille (A, B : 24 ; C : 64) et son
+// épaisseur optique (une seule déclaration de trait sur la racine pour A et B) ; mêmes interdits ; accent ≥ 3:1 sur blanc, teinté,
+// sombre de 4 gammes. Les pictos actuels gardent leur contrôle (grille 48) ci-dessus, inchangé.
+let nDirections = 0;
+for (const d of c.DIRECTIONS_PICTOS) {
+  const Gd = c.FICHES_DIRECTIONS[d].grille;
+  for (const id of c.ECHANTILLON_DIRECTIONS) {
+    for (const taille of [20, 24, 32, 48, 64]) {
+      const svg = c.svgPictoDirection(id, d, { taille });
+      const v = `direction ${d} ${id} (${taille} px)`;
+      nDirections++;
+      if (!svg.includes(`viewBox="0 0 ${Gd} ${Gd}"`)) defauts.push(`${v} : viewBox différente de 0 0 ${Gd} ${Gd}`);
+      const ep = [...svg.matchAll(/stroke-width="([\d.]+)"/g)].map((m) => +m[1]);
+      if (ep[0] !== c.traitDirection(d, taille) || (d !== 'c' && ep.length !== 1)) defauts.push(`${v} : épaisseur hors règle (${ep.join(', ')})`);
+      if (/#[0-9a-f]{3,8}|(?:rgba?|hsla?)\(\s*\d/i.test(svg)) defauts.push(`${v} : couleur littérale`);
+      if (/<style|<text|\sid=|vector-effect|pathLength/i.test(svg)) defauts.push(`${v} : <style>, texte, identifiant ou piège WebKit`);
+      for (const [, dd] of svg.matchAll(/ d="([^"]+)"/g)) if (nombres(dd.replace(/a[^A-Za-z]*/g, '')).some((n) => n < -0.6 || n > Gd + 0.6)) { defauts.push(`${v} : tracé hors de la grille`); break; }
+    }
+  }
+}
+for (const g of ['canard', 'menthe', 'sable', 'pasteque']) for (const f of c.FONDS_PICTO) {
+  const k = c.couleursPictoSur(c.gamme(g), f);
+  if (c.contraste(k.accent, k.fond) < c.CONTRASTE_PICTO) defauts.push(`accent des pictos sous 3:1 : ${g}, fond ${f}`);
+}
+if (!defauts.some((x) => x.startsWith('direction'))) console.log(`✓ directions de style à l'essai : ${nDirections} rendus (3 directions × 12 pictos × 5 tailles), accent ≥ 3:1 sur 4 gammes × 3 fonds`);
 export const resume = `${c.PICTOS.length} pictos (grille ${G}, un seul trait ${c.PICTO.trait}/${c.PICTO.traitFort}, sans couleur littérale ni <style>)`;

@@ -19,7 +19,7 @@ export default async function PageDuelVariantes({ searchParams }: { searchParams
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
-        <p className="text-sm"><Link href="/admin/retours" className="font-semibold text-teal-900 underline">← Donner mon avis</Link> · <Link href="/admin/retours/duel" className="font-semibold text-teal-900 underline">Tous les duels</Link></p>
+        <p className="text-sm"><Link href="/admin/retours" className="font-semibold text-teal-900 underline">← Donner mon avis</Link> · <Link href="/admin/retours/duel" className="font-semibold text-teal-900 underline">Tous les duels</Link> · <Link href="/admin/retours/duel/pictos" className="font-semibold text-teal-900 underline">Le style des icônes</Link></p>
         <h1 className="mt-1 text-2xl font-bold">Duel des variantes</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
           Le même dessin, deux variantes : une seule chose change. Choisissez (← A, → B, ↓ égalité, ↑ les deux sont mauvais).

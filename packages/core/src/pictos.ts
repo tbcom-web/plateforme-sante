@@ -884,3 +884,9 @@ export const PICTOS_EQUIPEMENTS: Record<string, IdPicto> = {
 export const pictoSoin = (slug: string): IdPicto | null => PICTOS_SOINS[slug] ?? null;
 export const pictoEquipement = (id: string): IdPicto | null => PICTOS_EQUIPEMENTS[id] ?? null;
 
+
+/**
+ * Outils de tracé partagés avec les directions de style à l'essai (pictos-directions.ts, 2026-10-08) : mêmes simplifications de la
+ * géométrie partagée (pied.ts, bibliothèque), pour que les trois directions dessinent la MÊME anatomie.
+ */
+export const OUTILS_PICTOS = { simplifier, placer, courbe, rdp, cercle, ellipse, arc, plante, profil, empreinte, halluxGros, contourDecale, ORTEILS_DESSUS, PIED, PIED_L } as const;

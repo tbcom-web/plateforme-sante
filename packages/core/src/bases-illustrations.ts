@@ -51,7 +51,12 @@ export const LIBELLES_DUELS_VARIANTES: Readonly<Record<string, string>> = Object
 export const HERITAGE_VARIANTES = { plafondEcart: 0.5, lissage: 4 } as const;
 
 /** Registres (ordre de préférence de l'illustration « basique ») */
-const ORDRE_VARIANTES = ['pedagogique', 'releve', 'decoupe', 'riso', 'volume', 'geometrique', 'ligne'] as const;
+const ORDRE_VARIANTES = ['pedagogique', 'releve', 'decoupe', 'riso', 'volume', 'geometrique', 'ligne', 'direction-a', 'direction-b', 'direction-c'] as const;
+/**
+ * Directions de style des pictos à l'essai (2026-10-08, pictos-directions.ts) : `picto:<id>@direction-<a|b|c>` est une variante
+ * (dimension « style ») du picto actuel `picto:<id>`, qui est lui-même la base (il rejoint son groupe, en tête).
+ */
+const DIRECTION_PICTO = /^(picto:[a-z0-9-]+)@direction-([abc])$/;
 /** Styles expérimentaux (styles-experimentaux.ts, recopiés : module sans dépendance ; test d'égalité) */
 export const STYLES_VARIANTES = ['decoupe', 'riso', 'volume', 'geometrique'] as const;
 
@@ -100,6 +105,8 @@ export function baseDeCle(cle: string): string | null {
   if (typeof cle !== 'string') return null;
   const r = lireVarianteRendu(cle);
   if (r) return baseDeCle(r.source) ?? r.source;
+  const dir = DIRECTION_PICTO.exec(cle);
+  if (dir) return dir[1];
   const p = cle.split(':');
   if (p.length === 3 && (p[0] === 'dessin' || p[0] === 'heros' || p[0] === 'materiel') && p[1] && p[2]) return `${p[0]}:${p[1]}`;
   if (p.length === 2 && p[0] === 'ligne') {
@@ -114,6 +121,8 @@ export function baseDeCle(cle: string): string | null {
 export function valeurVariante(cle: string): string | null {
   const r = lireVarianteRendu(cle);
   if (r) return `${r.dimension}=${r.valeur}`;
+  const dir = DIRECTION_PICTO.exec(cle);
+  if (dir) return `direction-${dir[2]}`;
   if (!baseDeCle(cle)) return null;
   const p = cle.split(':');
   return p[0] === 'ligne' ? 'ligne' : p[2];
@@ -128,6 +137,7 @@ export function dimensionDeVariante(cle: string): DimensionVariante | null {
 
 /** Rang d'une variante (0 = illustration « basique ») */
 export function rangVariante(cle: string): number {
+  if (/^picto:[a-z0-9-]+$/.test(cle)) return -1; // le picto actuel, base de ses directions
   const v = valeurVariante(cle);
   if (!v) return 99;
   const i = (ORDRE_VARIANTES as readonly string[]).indexOf(v);
@@ -139,7 +149,8 @@ export const estVariante = (cle: string) => baseDeCle(cle) !== null;
 /** Libellé court d'une variante pour les vignettes (« Pédagogique », « Trait continu », « Riso »…) */
 export function libelleVariante(cle: string): string {
   const v = valeurVariante(cle) ?? '';
-  const noms: Record<string, string> = { pedagogique: 'Pédagogique', releve: 'Relevé', ligne: 'Trait continu', decoupe: 'Découpe', riso: 'Riso', volume: 'Volume', geometrique: 'Géométrique' };
+  const noms: Record<string, string> = { pedagogique: 'Pédagogique', releve: 'Relevé', ligne: 'Trait continu', decoupe: 'Découpe', riso: 'Riso', volume: 'Volume', geometrique: 'Géométrique', 'direction-a': 'Direction A (trait fin)', 'direction-b': 'Direction B (duotone)', 'direction-c': 'Direction C (éditorial)' };
+  if (!v && /^picto:[a-z0-9-]+$/.test(cle)) return 'Picto actuel';
   if (v.startsWith('contraste=')) return LIBELLES_CONTRASTES[v.slice(10) as Contraste] ?? v;
   if (v.startsWith('couleur=')) return `Couleurs ${v.slice(8)}`;
   return noms[v] ?? v;
@@ -162,8 +173,10 @@ export type GroupeBase<T extends { cle: string }> = {
 export function regrouperParBase<T extends { cle: string }>(items: readonly T[]): { groupes: GroupeBase<T>[]; seuls: T[] } {
   const parBase = new Map<string, T[]>();
   const seuls: T[] = [];
+  // Une base présente elle-même dans la liste (picto actuel de ses directions) rejoint son groupe
+  const bases = new Set(items.map((x) => baseDeCle(x.cle)).filter((b): b is string => Boolean(b)));
   for (const x of items) {
-    const b = baseDeCle(x.cle);
+    const b = baseDeCle(x.cle) ?? (bases.has(x.cle) ? x.cle : null);
     if (!b) { seuls.push(x); continue; }
     (parBase.get(b) ?? parBase.set(b, []).get(b)!).push(x);
   }
@@ -184,7 +197,7 @@ export function dedoublonnerParBase<T extends { cle: string }>(items: readonly T
   const faits = new Set<string>();
   const res: T[] = [];
   for (const x of items) {
-    const b = baseDeCle(x.cle);
+    const b = baseDeCle(x.cle) ?? (parBase.has(x.cle) ? x.cle : null);
     if (!b) { res.push(x); continue; }
     if (faits.has(b)) continue;
     faits.add(b);

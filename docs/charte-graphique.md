@@ -208,6 +208,10 @@ Les teintes anatomiques sont dans `ANATOMIE` (`charte.ts`, variables `--peau`, `
 `--trait-normal`, `--trait-fort`, ramenés au repère 512 u des atomes. `controle:charte` vérifie chaque forme dans les deux
 registres (aucune couleur littérale, aucun jeton sans correspondance, ≤ 64 ko).
 
+### Pictogrammes : trois directions à l'essai (2026-10-08, brouillons)
+
+Diagnostic et plan : `retours/PICTOS-DIAGNOSTIC.md`. `pictos-directions.ts` dessine 12 pictos de l'échantillon dans trois directions (A trait fin, grille 24 ; B duotone doux, grille 24 ; C éditorial, grille 64), même anatomie que `pictos.ts`. Épaisseur **optique** (`traitOptique` : 1,5 px de 20 à 24 px, 2 px à 48 px, jamais proportionnelle) ; accent choisi par `couleursPictoSur(gamme, fond)` à ≥ 3:1 contre le fond blanc, teinté ou sombre. `controle:charte` vérifie chaque direction dans SA grille (les pictos actuels gardent leur contrôle en grille 48). Rien n'est branché sur les sites avant le choix de Paul.
+
 ## Typographie
 
 | Rôle | Police | Règle |

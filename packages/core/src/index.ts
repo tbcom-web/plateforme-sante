@@ -27,6 +27,7 @@ export * from './agents';
 export * from './jeux-photos';
 export * from './bibliotheque';
 export * from './pictos';
+export * from './pictos-directions';
 export * from './gabarits';
 export * from './parcours';
 export * from './soins-lies';

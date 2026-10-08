@@ -39,7 +39,7 @@ export function courbe(pts: P[], ferme = false): string {
 export const MEDIAL: P[] = [[6.6, 172], [7.6, 140], [9.2, 112], [10.4, 84], [11.4, 54], [13.6, 36], [18.6, 23], [26.5, 15.2], [37, 12.2]];
 export const LATERAL_NORMAL: P[] = [[47, 13.2], [55, 17.6], [60.6, 25], [63.6, 36], [64.5, 50], [64.3, 64], [64.2, 76], [64.8, 84]];
 // Incarné : tout le bord latéral bombe (≈ +6,5 au tiers distal), courbe continue de la pointe jusqu'au-delà de la mi-longueur
-const LATERAL_INCARNE: P[] = [[47, 13.2], [55.6, 17.4], [62.4, 24.4], [67.6, 34], [70.6, 47], [70, 59], [67.8, 70], [65.6, 79], [64.9, 85]];
+export const LATERAL_INCARNE: P[] = [[47, 13.2], [55.6, 17.4], [62.4, 24.4], [67.6, 34], [70.6, 47], [70, 59], [67.8, 70], [65.6, 79], [64.9, 85]];
 // Commissure 1 (hallux / 2e), 2e orteil, commissure 2, 3e orteil (sort du cadre à droite). Longueur visible de l'hallux (pointe →
 // commissure) ≈ 1,45 × sa largeur : au-delà, les orteils se lisent « doigts ». Retour de Paul du 2026-10-07 (orthonyxie : « doigts de
 // pied trop fins, comme des doigts de main ») : le 2e orteil est élargi à ≈ 0,64 × la largeur de l'hallux (≈ 1,7 cm pour 2,5 cm ;

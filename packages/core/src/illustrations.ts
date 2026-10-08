@@ -20,6 +20,7 @@ import { THEMES } from './themes';
 import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
 import { clesSport, sujetsDesKits } from './kits';
 import { DESSINS_UNIVERS, FICHES_DESSINS_UNIVERS, svgDessinUnivers, sujetsUnivers } from './dessins-univers';
+import { DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, LIBELLES_ECHANTILLON, cleDirection, cleStyleIcones, svgTuileDirection, svgPlancheDirection } from './pictos-directions';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, FICHES_STYLES, LIBELLES_SUJETS_STYLES, SUJET_VISUEL_STYLES, cleStyleExperimental, svgStyleExperimental, type StyleExperimental } from './styles-experimentaux';
 
 /** Statut de revue d'une illustration (valeurs de la colonne `statut` de la migration 0021) */
@@ -176,6 +177,23 @@ export function inventaireIllustrations(): Illustration[] {
       source: `packages/core/src/pictos.ts — '${p.id}'`, soins: [...Object.entries(PICTOS_SOINS).filter(([, v]) => v === p.id).map(([slug]) => slug), ...sujetsDesKits(`picto:${p.id}`), ...sujetsUnivers(`picto:${p.id}`)],
       statutParDefaut: 'a_revoir', fond: 'clair',
       svg: () => svgPicto(p.id, { taille: '100%', accent: true }) ?? '',
+    });
+  }
+  // Directions de style des pictos à l'essai (2026-10-08, pictos-directions.ts, brouillons « À revoir », rien de branché) : les 12
+  // pictos de l'échantillon dans chaque direction, variantes du picto actuel (base `picto:<id>`, bases-illustrations.ts), sans sujet
+  // ni hashtag (jamais dans un kit) ; et la tuile « Style d'icônes » de chaque direction : sa planche en situation
+  for (const d of DIRECTIONS_PICTOS) {
+    for (const id of ECHANTILLON_DIRECTIONS) {
+      l.push({
+        cle: cleDirection(id, d), type: 'picto', titre: `${LIBELLES_ECHANTILLON[id]} (${FICHES_DIRECTIONS[d].court})`, detail: `${FICHES_DIRECTIONS[d].nom} · essai de style`,
+        source: `packages/core/src/pictos-directions.ts — '${id}', direction ${d.toUpperCase()}`, soins: [], statutParDefaut: 'a_revoir', fond: 'clair',
+        svg: () => svgTuileDirection(id, d),
+      });
+    }
+    l.push({
+      cle: cleStyleIcones(d), type: 'picto', titre: `Style d’icônes : ${FICHES_DIRECTIONS[d].nom}`, detail: 'Planche en situation : cartes de soins, infos pratiques, téléphone',
+      source: `packages/core/src/pictos-directions.ts — svgPlancheDirection('${d}')`, soins: [], statutParDefaut: 'a_revoir', fond: 'doux',
+      svg: () => svgPlancheDirection(d),
     });
   }
   // Héros des thèmes (heros-themes.ts, 2026-10-06) : une revue par thème et par registre ; vue agrandie = format portrait (téléphone)
