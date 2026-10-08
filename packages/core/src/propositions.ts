@@ -38,7 +38,7 @@ import { themeParId, type Priorites } from './themes';
 import { BONUS_ATELIER, bonusAtelier, type PoidsAtelier } from './atelier-poids';
 import { bonusAssets } from './assets-poids';
 import { SPECIALITES } from './packs';
-import { harmonieCombinaison } from './harmonie';
+import { bonusRecettesApprises, harmonieCombinaison } from './harmonie';
 
 /** Poids de l'harmonie graphique (harmonie.ts) dans la pertinence d'une proposition (points par unité d'accord) */
 const BONUS_HARMONIE = 3;
@@ -371,7 +371,9 @@ function candidats(e: EntreePropositions, opts: OptionsPropositions = {}): Candi
           const bonus = opts.poids
             ? Math.min(BONUS_ATELIER.max, Math.max(BONUS_ATELIER.min,
               bonusAtelier({ structure: u, gamme: g.id, style, animation, theme1: n1, proposition: cle }, opts.poids)
-              + bonusAssets({ structure: u, gamme: g.id, style, registre, modeVisuel, animation, heros: n1 === 'cabinet' ? null : n1, sujet: n1 === 'cabinet' ? null : n1, photos: photos ? photosSpecialite(photos) : [] }, opts.poids.assets)))
+              + bonusAssets({ structure: u, gamme: g.id, style, registre, modeVisuel, animation, heros: n1 === 'cabinet' ? null : n1, sujet: n1 === 'cabinet' ? null : n1, photos: photos ? photosSpecialite(photos) : [] }, opts.poids.assets)
+              // Recettes complètes notées (notation-recettes.ts) : ingrédients et paires structure × style × gamme, sujet n° 1 compris
+              + bonusRecettesApprises(opts.poids.harmonie, n1, { structure: u, style, gamme: g.id })))
             : 0;
           const nuances: string[] = [];
           if (n2 && animation && animation === r2?.animation && animation !== r1.animation) nuances.push(`Animation tirée de votre sujet « ${themeParId(n2)?.court} »`);

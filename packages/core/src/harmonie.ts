@@ -119,7 +119,11 @@ export type CompositionHarmonie = {
 /** Contexte : sujets (le n° 1 d'abord), poids appris (atelier + renforts des recettes), option « Hors règles » */
 export type ContexteHarmonie = {
   sujets: readonly string[];
-  poids?: { effets: Record<string, number> } | null;
+  /**
+   * `harmonie` : apprentissage des RECETTES COMPLÈTES notées (notation-recettes.ts, tuile « Recettes complètes ») : effets par
+   * ingrédient, par PAIRE d'ingrédients et par famille, globaux et par sujet n° 1 ; fusionnés à `poidsHarmonie` (fusionPoidsHarmonie).
+   */
+  poids?: { effets: Record<string, number>; harmonie?: ApprisHarmonie | null } | null;
   /** « Hors règles (explorer) » : désactivé par défaut ; les garde-fous du core restent actifs */
   horsRegles?: boolean;
   /** Poids appris par famille et par ingrédient (apprendreHarmonie) ; sinon dérivés de `poids` */
@@ -852,7 +856,7 @@ export function scoreHarmonie(x: CompositionHarmonie, c?: ContexteHarmonie | nul
 
   // Apprentissage (souple) : notes de Paul par famille et par ingrédient, ±5 points au plus
   const ph = poidsHarmonie(c);
-  const appris = Math.max(-1, Math.min(1, ((ph.familles[fam] ?? 0) + presentes(x).reduce((s, [d, v]) => s + (ph.ingredients[`${d}:${v}`] ?? 0), 0) / 4) / PLAFOND_HARMONIE));
+  const appris = Math.max(-1, Math.min(1, ((ph.familles[fam] ?? 0) + presentes(x).reduce((s, [d, v]) => s + (ph.ingredients[`${d}:${v}`] ?? 0), 0) / 4 + effetPairesComposition(ph, x) / 4) / PLAFOND_HARMONIE));
 
   const POIDS: Record<string, number> = { coherence: 4, temperature: 1.2, rondeur: 1.5, densite: 1, structureStyle: 1.5, expressivite: 1 };
   const k = Object.keys(comp);
@@ -868,7 +872,9 @@ export function scoreHarmonie(x: CompositionHarmonie, c?: ContexteHarmonie | nul
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Poids appris : effet en étoiles (± PLAFOND_HARMONIE) par famille et par ingrédient `<dimension>:<valeur>` */
-export type PoidsHarmonie = { familles: Partial<Record<IdFamilleStyle, number>>; ingredients: Record<string, number> };
+export type PoidsHarmonie = { familles: Partial<Record<IdFamilleStyle, number>>; ingredients: Record<string, number>; /** Paires `<dimA>:<va>&<dimB>:<vb>` (PAIRES_HARMONIE) */ paires?: Record<string, number> };
+/** Apprentissage des recettes complètes (notation-recettes.ts) : global et par sujet n° 1 */
+export type ApprisHarmonie = { global: PoidsHarmonie; sujets?: Record<string, PoidsHarmonie> };
 export const PLAFOND_HARMONIE = 0.75;
 export const LISSAGE_HARMONIE = 6;
 
@@ -890,9 +896,30 @@ export const effetApprisHarmonie = (c: ContexteHarmonie | null | undefined, dim:
  * des effets de ses ingrédients préférés notés, plafonnée.
  */
 export function poidsHarmonie(c?: ContexteHarmonie | null): PoidsHarmonie {
+  const base = poidsHarmonieBase(c);
+  const appris = c?.poids?.harmonie;
+  if (!appris) return base;
+  // Mémoïsé : poidsHarmonie est appelé à chaque score (mêmes objets de poids tout au long d'un tirage)
+  const sujet = c?.sujets?.[0] ?? 'cabinet';
+  let parBase = CACHE_FUSION.get(appris);
+  if (!parBase) { parBase = new WeakMap(); CACHE_FUSION.set(appris, parBase); }
+  let parSujet = parBase.get(base);
+  if (!parSujet) { parSujet = new Map(); parBase.set(base, parSujet); }
+  let r = parSujet.get(sujet);
+  if (!r) { r = fusionPoidsHarmonie(base, appris, sujet); parSujet.set(sujet, r); }
+  return r;
+}
+const CACHE_FUSION = new WeakMap<ApprisHarmonie, WeakMap<PoidsHarmonie, Map<string, PoidsHarmonie>>>();
+const CACHE_BASE = new WeakMap<object, PoidsHarmonie>();
+const VIDE_HARMONIE: PoidsHarmonie = { familles: {}, ingredients: {} };
+
+/** Poids d'harmonie fournis, sinon dérivés des effets de l'atelier (mémoïsés par objet d'effets) */
+function poidsHarmonieBase(c?: ContexteHarmonie | null): PoidsHarmonie {
   if (c?.poidsHarmonie) return c.poidsHarmonie;
   const effets = c?.poids?.effets;
-  if (!effets) return { familles: {}, ingredients: {} };
+  if (!effets) return VIDE_HARMONIE;
+  const deja = CACHE_BASE.get(effets);
+  if (deja) return deja;
   const familles: Partial<Record<IdFamilleStyle, number>> = {};
   for (const f of FAMILLES_STYLE) {
     const l: number[] = [];
@@ -904,8 +931,76 @@ export function poidsHarmonie(c?: ContexteHarmonie | null): PoidsHarmonie {
     }
     if (l.length) familles[f.id] = borne(l.reduce((s, n) => s + n, 0) / (l.length + LISSAGE_HARMONIE / 3));
   }
-  return { familles, ingredients: {} };
+  const r: PoidsHarmonie = { familles, ingredients: {} };
+  CACHE_BASE.set(effets, r);
+  return r;
 }
+
+/**
+ * Apprentissage des recettes complètes (notation-recettes.ts) ajouté aux poids d'harmonie : effet global + effet du sujet n° 1, pour
+ * chaque famille, ingrédient `<dim>:<valeur>` et paire `<dim>:<v>&<dim>:<v>` ; somme bornée (familles et ingrédients ±1 ★, paires
+ * ±0,75 ★). Les règles DURES ne sont jamais touchées : ces poids ne font que pondérer des valeurs déjà compatibles.
+ */
+export function fusionPoidsHarmonie(base: PoidsHarmonie, appris: ApprisHarmonie, sujet: string): PoidsHarmonie {
+  const sj = appris.sujets?.[sujet];
+  const somme = (a: Record<string, number> | undefined, b: Record<string, number> | undefined, c: Record<string, number> | undefined, plafond: number) => {
+    const r: Record<string, number> = {};
+    for (const k of new Set([...Object.keys(a ?? {}), ...Object.keys(b ?? {}), ...Object.keys(c ?? {})])) {
+      const v = Math.round(Math.max(-plafond, Math.min(plafond, (a?.[k] ?? 0) + (b?.[k] ?? 0) + (c?.[k] ?? 0))) * 1000) / 1000;
+      if (v) r[k] = v;
+    }
+    return r;
+  };
+  return {
+    familles: somme(base.familles as Record<string, number>, appris.global.familles as Record<string, number>, sj?.familles as Record<string, number> | undefined, 1) as Partial<Record<IdFamilleStyle, number>>,
+    ingredients: somme(base.ingredients, appris.global.ingredients, sj?.ingredients, 1),
+    paires: somme(base.paires, appris.global.paires, sj?.paires, 0.75),
+  };
+}
+
+/**
+ * Paires d'ingrédients apprises (combinaisons, demande de Paul du 2026-10-08) : une note de recette complète renforce aussi chaque
+ * PAIRE de ses ingrédients parmi ces couples de dimensions. Clé : `<dimA>:<va>&<dimB>:<vb>` (dimensions dans cet ordre).
+ */
+export const PAIRES_HARMONIE: readonly (readonly [DimensionHarmonie, DimensionHarmonie])[] = [
+  ['gamme', 'police'], ['style', 'structure'], ['police', 'structure'], ['v.accueil', 'gamme'], ['style', 'gamme'], ['gamme', 'structure'],
+  ['style', 'police'], ['police', 'details.jeu'], ['details.jeu', 'gamme'], ['v.accueil', 'police'], ['v.accueil', 'structure'],
+  ['traitement', 'gamme'], ['effets', 'v.accueil'], ['police', 'typo.casse'], ['menu.ordinateur', 'structure'], ['v.sujets', 'structure'],
+];
+export const clePaireHarmonie = (a: DimensionHarmonie, va: string, b: DimensionHarmonie, vb: string) => `${a}:${va}&${b}:${vb}`;
+
+/** Somme des effets de paires appris qui relient la valeur `v` de `dim` aux valeurs actuelles de `x` */
+export function effetPairesHarmonie(ph: PoidsHarmonie, dim: DimensionHarmonie, v: string, x: CompositionHarmonie): number {
+  if (!ph.paires) return 0;
+  let s = 0;
+  for (const [a, b] of PAIRES_HARMONIE) {
+    if (a === dim) { const w = val(x, b); if (w) s += ph.paires[clePaireHarmonie(a, v, b, w)] ?? 0; }
+    else if (b === dim) { const w = val(x, a); if (w) s += ph.paires[clePaireHarmonie(a, w, b, v)] ?? 0; }
+  }
+  return s;
+}
+
+/** Somme des effets de paires appris présents dans une composition */
+export function effetPairesComposition(ph: PoidsHarmonie, x: CompositionHarmonie): number {
+  if (!ph.paires) return 0;
+  let s = 0;
+  for (const [a, b] of PAIRES_HARMONIE) { const va = val(x, a), vb = val(x, b); if (va && vb) s += ph.paires[clePaireHarmonie(a, va, b, vb)] ?? 0; }
+  return s;
+}
+
+/**
+ * Bonus appris (étoiles, borné ±1,5) d'une combinaison du générateur des praticiens (propositions.ts : structure × style × gamme)
+ * d'après les recettes complètes notées : ingrédients et paires entre ces trois dimensions, globaux + sujet n° 1.
+ */
+export function bonusRecettesApprises(appris: ApprisHarmonie | null | undefined, sujet: string, valeurs: Partial<Record<DimensionHarmonie, string>>): number {
+  if (!appris) return 0;
+  const ph = fusionPoidsHarmonie(VIDE_HARMONIE, appris, sujet);
+  let b = 0;
+  for (const [d, v] of Object.entries(valeurs)) if (v) b += 0.5 * (ph.ingredients[`${d}:${v}`] ?? 0);
+  for (const [a, c] of PAIRES_HARMONIE) { const va = valeurs[a], vc = valeurs[c]; if (va && vc) b += 0.5 * (ph.paires?.[clePaireHarmonie(a, va, c, vc)] ?? 0); }
+  return Math.round(Math.max(-1.5, Math.min(1.5, b)) * 1000) / 1000;
+}
+
 const borne = (n: number) => Math.max(-PLAFOND_HARMONIE, Math.min(PLAFOND_HARMONIE, Math.round(n * 1000) / 1000));
 
 /**
@@ -998,7 +1093,7 @@ function valeurDansFamille<T extends CompositionHarmonie>(dim: DimensionHarmonie
   const base = permis ? [...permis] : valeursDimensionHarmonie(dim);
   const ph = poidsHarmonie(c);
   const l = base.filter((v) => compatibiliteFamille(dim, v, f) !== 'exclu' && !interditContexte(dim, v, c))
-    .map((v) => ({ v, p: (compatibiliteFamille(dim, v, f) === 'prefere' ? 4 : (etiquetteIngredient(dim, v)?.neutre ?? true) ? 2 : 1) * masse(effetApprisHarmonie(c, dim, v) + (ph.ingredients[`${dim}:${v}`] ?? 0)) }));
+    .map((v) => ({ v, p: (compatibiliteFamille(dim, v, f) === 'prefere' ? 4 : (etiquetteIngredient(dim, v)?.neutre ?? true) ? 2 : 1) * masse(effetApprisHarmonie(c, dim, v) + (ph.ingredients[`${dim}:${v}`] ?? 0) + effetPairesHarmonie(ph, dim, v, x)) }));
   return choisir(l, r);
 }
 

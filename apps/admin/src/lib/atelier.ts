@@ -1,5 +1,6 @@
 import 'server-only';
-import { appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
@@ -36,14 +37,20 @@ export async function getNotesAtelier(): Promise<{ notes: NoteAtelierAdmin[]; mi
  * aucune note ni statut, ou si les migrations manquent (aucune erreur).
  */
 export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
-  const [atelier, assets, recettes, pages, duels] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets(), getRecettesLecture(1), getNotesPagesLecture(), getDuelsApprentissage()]);
+  const [atelier, assets, recettes, pages, duels, notations] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets(), getRecettesLecture(1), getNotesPagesLecture(), getDuelsApprentissage(), getNotationsApprentissage()]);
   const base = !atelier?.poids && !assets ? null : { ...(atelier?.poids ?? { n: 0, moyenne: 0, effets: {} }), ...(assets ? { assets } : {}) };
+  // Recettes gardées depuis la tuile « Recettes complètes » : apprises par leur notation (0038), pas une seconde fois comme recette
+  const gardees = new Set(notations.map((n) => n.recette).filter(Boolean));
   // Renforts (recettes.ts) : une recette ou une combinaison notée renforce (ou affaiblit) un peu chacun de ses ingrédients
   // Notes par page (0034) : chacune ne renforce que les clés de sa page (structure, éléments, variantes), au poids de l'appareil
-  const sources = [...sourcesRecettes(recettes), ...sourcesCombinaisons(atelier?.lignes ?? []), ...sourcesNotesPages(pages)];
+  const sources = [...sourcesRecettes(recettes.filter((r) => !gardees.has(r.id))), ...sourcesCombinaisons(atelier?.lignes ?? []), ...sourcesNotesPages(pages)];
   // Duels « A ou B ? » (0037, duels.ts) : ±0,5 ★ au plus par clé, cumulés aux renforts des notes dans la limite de ±1 ★
-  const renforts = fusionnerRenforts(sources.length ? renfortsPoids(sources, base?.moyenne || 3) : { atelier: {}, assets: {} }, renfortsDuels(duels));
-  return Object.keys(renforts.atelier).length || Object.keys(renforts.assets).length ? appliquerRenforts(base, renforts) : base;
+  // Recettes complètes notées (0038, notation-recettes.ts) : ±0,75 ★ au plus par clé, même cumul plafonné à ±1 ★
+  const renforts = fusionnerRenforts(fusionnerRenforts(sources.length ? renfortsPoids(sources, base?.moyenne || 3) : { atelier: {}, assets: {} }, renfortsDuels(duels)), renfortsNotations(notations));
+  const poids = Object.keys(renforts.atelier).length || Object.keys(renforts.assets).length ? appliquerRenforts(base, renforts) : base;
+  // Ingrédients, PAIRES et familles appris des recettes complètes : lus par les tirages harmonieux (harmonie.ts) et propositions.ts
+  const harmonie = notations.length ? apprisHarmonie(statsNotation(notations)) : null;
+  return harmonie ? { ...(poids ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : poids;
 }
 
 type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null; appareil?: string | null };

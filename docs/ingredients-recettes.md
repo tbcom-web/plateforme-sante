@@ -94,12 +94,76 @@ soit vraiment harmonieux […] et s'il voit des manques, il les signale ». Agen
   photos : Paul) → revue dans « Donner mon avis » → implémentation, ligne dans `retours/CHANGEMENTS.md`, manque retiré.
 - Le directeur ne crée aucun élément graphique et ne passe jamais rien en « Validé ».
 
+## Recettes complètes : notation et apprentissage automatique (2026-10-08)
+
+Demande de Paul : « on note une recette complète, on donne un avis pour / contre et on peut dire “garder cette recette” […] tout
+cela ajoute des éléments de pondération […] sans repasser par Claude ». Tuile **Recettes complètes** (`/admin/retours/recettes`),
+module `packages/core/src/notation-recettes.ts`, journal `recettes_notation` (migration 0038).
+
+- **Écran** : bandeau « Vous notez : la recette complète (thème entier) — scénario » et liste compacte des ingrédients (palette,
+  polices, typographie, style, premier écran, mise en page, détails, menu, effets) ; aperçus ordinateur + téléphone (côte à côte dès
+  1200 px, bascule sinon), page entière défilable, onglets des pages du scénario ; étoiles (1-5), Pour / Contre (champ court +
+  étiquettes rapides), « ★ Garder cette recette », « Ouvrir dans le Studio » (`?proposition=<id>` pour Claude, `?generee=<clé>` +
+  sessionStorage pour une recette générée), « Suivant » (Entrée). Onglet « Ce que le système a appris » : palmarès par sujet.
+- **Garder** (action de Paul) : la recette rejoint « Mes recettes » (table `recettes`, étiquette `gardee`, note donnée ou 5★) et suit
+  les règles existantes du parcours (active, note ≥ 4, même scénario d'abord : `recettesPourScenario`). Elle est apprise par sa
+  notation, pas une seconde fois comme recette (`getPoidsAtelier`).
+- **Source sans Claude** (`genererCandidates`) : pour les scénarios types (`SCENARIOS_TYPES` : sujet n° 1 × couleurs) et ceux des
+  recettes de Paul et des propositions de Claude : départ « Tout changer » harmonieux (poids appris compris), puis **recherche
+  locale** : un dé à la fois (couleurs, polices, visuels, structure, effets, typographie, détails, menu, traitement, photos, pages
+  accueil / soins / accès / cabinet), gardé si l'objectif monte. Objectif = score prédit ; candidates n° 5, 10… (≈ 20 %) =
+  **exploration** : score + 2,5 × incertitude moyenne des ingrédients (les moins notés d'abord). Toujours : garde-fous du core
+  (`controlerComposition`), aucune règle dure d'harmonie (`violationsDures`), aucun ingrédient **refusé** (`clesRefusees` : statut
+  retiré ou à retravailler, assets notés en moyenne ≤ 2 ★, ingrédients de recettes dont la moyenne des signaux est ≤ 2 ★ sur au moins
+  deux signaux) ; ingrédients **à valider** (statut « à revoir ») seulement en exploration, signalés sur l'écran. Les propositions de
+  Claude (`retours/recettes-proposees.json`) entrent dans la même file (« proposée par Claude ») ; Claude n'est plus nécessaire.
+
+### Formule d'apprentissage (calculée à chaque lecture depuis Supabase)
+
+Pour une note : `d = (note − 3) + 0,5 si « Garder »` (Garder sans étoiles = 5★), poids `w = 1,25 sur mobile (sinon 1) × 1,5 si
+gardée`. Pour chaque clé k (ingrédient `<dimension>:<valeur>` des dimensions d'harmonie + `heros:<sujet>` + `photo:<clé>`,
+**paire** `<dimA>:<va>&<dimB>:<vb>` de `PAIRES_HARMONIE`, famille de style dominante), globalement ET pour le sujet n° 1 :
+
+| | Lissage K | Plafond |
+|---|---|---|
+| Ingrédient | 4 | ±0,75 ★ |
+| Paire (combinaison) | 6 | ±0,5 ★ |
+| Famille | 6 | ±0,75 ★ |
+
+`effet(k) = Σ w·d / (K + Σ w)`, incertitude `σ(k) = 1,2 / √(K + Σ w)`, nombre de signaux affiché.
+
+- **Pour / Contre ciblés** : une étiquette qui nomme une dimension (couleurs, polices, typographie, illustrations, photos, premier
+  écran, mise en page, détails, menu, effets) ajoute un signal −1,5 (contre) ou +1 (pour), poids 1, aux SEULS ingrédients de cette
+  dimension ; la part négative (resp. positive) de la note n'atteint les autres ingrédients qu'à moitié. « Polices » en contre sur une
+  4★ : la paire de polices baisse, la gamme monte. Les paires ne reçoivent que la note. Étiquettes d'ensemble (harmonie, fait pro,
+  rendu mobile, trop chargé, fade) : seule la note compte.
+- **Clés du générateur** (`renfortsNotations`) : les mêmes notes renforcent les clés atelier / assets de la recette (`clesRecette`),
+  `Δ(k) = Σ 0,6·w·d / (K + Σ 0,6·w)`, K = 10 (atelier) ou 4 (assets), plafond ±0,75 ★, mêmes ciblages par préfixe ; cumulées aux
+  notes isolées, aux recettes du Studio et aux duels dans la limite de **±1 ★ par clé** (`fusionnerRenforts`).
+- **Branchements** : `getPoidsAtelier` renvoie `harmonie` (forme compacte, `apprisHarmonie`) ; `poidsHarmonie` (harmonie.ts) y ajoute
+  les effets du sujet n° 1 (familles et ingrédients ±1, paires ±0,75) : tirages du Studio, « Tout changer » (familles, valeurs dans la
+  famille, effets de paires avec les valeurs déjà posées), score d'harmonie (±5 points, paires comprises) ; `propositions.ts` ajoute
+  `bonusRecettesApprises` (structure × style × gamme, ±1,5 ★) au bonus des praticiens. Toujours derrière les garde-fous et les règles
+  dures : les poids ne font que réordonner des valeurs permises.
+- **Score prédit** (`scorePredit`, en étoiles, borné 1-5) : `3 + (harmonie − 80) / 20 + 1,2·tanh(A / 1,2) + 0,6 si la gamme suit
+  les couleurs choisies par le client` (la recherche locale optimise la valeur avant les bornes), avec `A = 0,35·Σ effets d'ingrédients + 0,35·Σ effets de paires + effet de famille +
+  0,15·Σ effets appris de l'atelier` (global + sujet n° 1 ; tanh : beaucoup de petits effets ne saturent jamais le score). Il est enregistré avec chaque note
+  (`predit`) pour mesurer l'accord ; l'écran le dit après la note (« Le système prévoyait 3,6★ »).
+- **Preuve d'amélioration** (test `notation-recettes.test.ts`, « Paul synthétique » au goût fixé et caché, note = 3 + 1,6 × goût,
+  10 tours de 6 recettes pour « Sport, bleu », tout réappris en base à chaque tour) : goût moyen des recettes proposées (hors
+  exploration) −0,11 au tour 1 (rien d'appris, ≈ 2,8★) → +0,20 sur les 5 derniers tours (≈ 3,3★), contre −0,17 (≈ 2,7★) pour le
+  même générateur sans apprentissage.
+- **Sans la migration 0038** : la tuile fonctionne (notes gardées dans le navigateur, « Garder » enregistre quand même la recette).
+- **Hors périmètre** pour l'instant : zones « à améliorer » sur l'aperçu de la tuile (elles restent dans le Studio) ; scénarios des
+  sites réels (seuls les scénarios types, ceux des recettes de Paul et des propositions de Claude sont générés).
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).
 - [ ] Niveau 1 : avant / après, champs libres « va bien / ne va pas », sujets tagués, inspirations, flux de photos libres.
 - [ ] Niveau 2 : kits de visuels par sujet (proposés par Claude d'après les notes ; Paul garde, retire ou remplace) ; les générateurs puisent dans les kits. Premier kit déclaré : « Sports » (2026-10-07, brouillon, voir ci-dessous).
 - [x] Niveau 3 : recettes nommées — **Studio de recettes** (`/admin/atelier/studio`, 2026-10-07) : dés 🎲 / ← / 🔒 par dimension (couleurs : 17 gammes ou couleur libre AA ; polices : 9 paires `PAIRES_POLICES` ; visuels : style, héros ; photos de la banque ; structure : modèle, ordre de l'accueil, un dé par type de page et par élément, forme des cartes ; effets : Sobre, Doux, Vivant, Éditorial), raccourcis c p v f s e et espace ; « Enregistrer cette recette » (table `recettes`, migration 0032) ; « Mes recettes » (ouvrir, dupliquer, archiver). Les recettes notées ≥ 4 du sujet n° 1 passent en premier dans « Votre site » (/creer), puis le générateur ; le brouillon garde `theme.recette` et ses réglages (police, variantes, ordre, héros, photos, effets) que le site publié applique.
+- [x] Recettes complètes notées (2026-10-08, tuile `/admin/retours/recettes`, migration 0038) : générateur sans Claude, apprentissage en direct des ingrédients et de leurs combinaisons, palmarès (voir ci-dessus).
 - [x] Apprentissage croisé : une recette (ou une combinaison de l'atelier) notée renforce ou affaiblit un peu chacun de ses ingrédients (`renfortsPoids`, recettes.ts : 0,4 note par ingrédient, lissage existant, plafond ±0,75 étoile) ; « Ce que vos avis ont changé » le dit.
 - [x] Notables comme ingrédients (assets_notes, migration 0032) : structures de pages `structure:<page>:<variantes>`, éléments `composant:<famille>:<variante>` (horaires, plan d'accès, galerie, questions, équipe, soins, forme des cartes…), jeux d'effets `effets:<id>` — notés depuis le studio (« Noter les éléments affichés »).
 - [x] Lot 1 des éléments notables (2026-10-07) : horaires (tableau, bandeau, carte, liste), plan d'accès (adresse et itinéraire, notice et plan, colonnes ; plan SVG statique d'OpenStreetMap, jamais de tuiles ni d'iframe), galerie du cabinet (mosaïque, diaporama au doigt en scroll-snap sans script, grande photo, bande de quatre), rendez-vous et contact (`contact` : barre d'actions, bandeau « Écrire au cabinet », carte de contact, bouton flottant ; liens seulement), formes des cartes (bulles, gros carrés, arrondies, mosaïque, pastilles, organiques, tuiles pleine couleur, sans cadre). Tuiles « Structures de pages » (165 structures), « Éléments » (40, filtre par famille) et « Effets » (4) dans /admin/retours : `inventaireStudio()` (assets.ts), aperçu de l'élément seul (`ApercuStudio`, `seul` d'ApercuGabarit, `compositionPourCle` / `blocsPourCle`), mêmes étoiles, étiquettes du studio, export ; avant / après par empreinte de la feuille CSS pour les effets et les formes (avant-apres.ts, `empreinteStudio`).
@@ -112,6 +176,7 @@ soit vraiment harmonieux […] et s'il voit des manques, il les signale ». Agen
   - **Zones** (`AnnotateurZones`, zones.ts) : mode « Signaler une zone » (z, Échap), rectangle ou ellipse, étiquette (à revoir, anatomie, trop petit, couleur, texte, alignement, coupé), commentaire court, déplacer / supprimer, zoom ×2 ; coordonnées normalisées 0-1 avec appareil, empreinte, page et largeur ; colonne `zones` des trois journaux et de `defauts_mobile` ; surimpression dans l'avant / après (« Avant : vos zones ») et la liste mobile ; export (JSON, une ligne par zone dans SYNTHESE.md) ; `scripts/rendre-assets.mjs --zones`.
 - [ ] À suivre : prédictions du juge par appareil et pour les structures, éléments et effets ; aperçu « avant / après » téléphone des défauts mobiles corrigés (aujourd'hui : rendu actuel et zones notées) ; formulaire de contact (pas de formulaire aujourd'hui : stockage, RGPD et anti-spam à décider par Paul — en attendant « Écrire au cabinet » reste un lien e-mail).
 - [x] Nouveaux premiers écrans (2026-10-07, demande de Paul + veille 2026) : `accueil` = photo plein écran (texte à gauche, centré, en bas), diaporama plein écran, photo d'un côté / texte de l'autre (variantes à photos : seulement en style « Photos »), typographique (couleur forte, mots des soins qui arrivent un à un), dégradé maillé et visuel masqué, bento ; tous gabarits, classique compris (absent = premier écran du modèle). Sous-ingrédients avec dé et verrou : `transition` du diaporama (fondu, Ken Burns, glissement, volet, rideau, fondu flou ; seulement si les photos défilent) et `sections` (transitions entre sections : vague, chevauchement, révélation au défilement, cartes des sujets empilées). Balisage et CSS uniques dans `packages/core/src/heros-photo.ts` (site : `HerosPhoto.astro` ; admin : `ApercuHerosPhoto.tsx`) ; première photo = LCP (préchargée, fetchpriority), suivantes après `load` ; voile calculé AA ; notables (`composant:accueil:*`, `composant:transition:*`, `composant:sections:*`, `structure:accueil:*`).
+- [x] Premiers écrans, lot 2 « couleurs / formes organiques », et animations d'en-tête (2026-10-08, retour de Paul : « j'adore les nouveaux styles de hero couleurs / formes organiques, il faut continuer… d'autres animations stylisées minimalistes et très dynamiques qu'on peut intégrer au header ») : `accueil` + 10 variantes (`heros-organiques.ts` : photo en papier découpé, duo de taches, arche, courbe de la voûte ; sans photo : aplats en papier découpé, tache qui se déforme, dégradé maillé animé, forme qui respire, bandes ondulantes, aplat en courbe de voûte) et sous-ingrédient `entete-anim` (`entete-anim.ts` : trait de voûte, points de pression, foulée, onde au sol, taches, mots des soins, pas abstraits, rubans, formes géométriques, lueur ; < 3 Ko chacune, transform / opacity seulement, image fixe sans script ni avec « réduire les animations », lecture ≤ 5 s à l'affichage, au retour à l'écran et au survol). **Ingrédients « à valider »** (`INGREDIENTS_A_VALIDER`) : libellés « (à valider) » dans le Studio, tuiles de « Donner mon avis » qui jouent l'animation, duels « Éléments » (un sur trois porte sur eux) ; jamais tirés ni proposés aux praticiens (`ContexteRecette.praticien`, `recettesPourScenario(…, { praticien: true })` dans /creer) tant que Paul ne les a pas validés (passer leur clé dans `valides`, puis la retirer de la liste). Notables : `composant:accueil:*`, `composant:entete-anim:*` (aucune migration).
 - [x] Habillage des recettes (2026-10-07, demande de Paul : « plus de combinaisons de polices, de tailles, MAJUSCULES vs minuscules… des éléments de style… des styles de menus ») : 23 paires de polices libres auto-hébergées, **typographie** (échelle, casse, graisse, interlettrage, mot d'accent, alignement, surtitres), **jeux de détails** (6 jeux cohérents, 10 éléments variables un à un) et **menus** (ordinateur, téléphone, rendez-vous) : `typo.ts`, `details.ts`, `menus.ts`, `habillage.ts` (core) ; panneau « Typographie & détails » du studio (`PanneauHabillage.tsx` : dés 🎲 / ← / 🔒 par groupe et par axe, touches y d m, choix direct) ; la recette enregistre `typo`, `details`, `menu` (anciennes recettes : rendu du modèle) ; le site les applique (`theme.typo/details/menu`, `<html data-td data-mn>`, Gabarit.astro, Coquille.astro) comme l'aperçu (ApercuTheme, ApercuGabarit : classes mn-*, td-*, ap-*). Notables (migration 0036, types `typo`, `details`, `menu`) : tuiles « Typographies » (spécimen titre, surtitre, paragraphe, bouton, carte, citation : `SpecimenHabillage.tsx`, ordinateur et mobile), « Détails » (spécimen) et « Menus » (accueil) ; apprentissage : clés atelier `typo=…`, `details=…`, `menu=…` et clés notables renforcées par la note de la recette ; attributs d'harmonie (`habillage-attributs.ts`) pour le moteur d'harmonie. Règles et catalogue des polices : `docs/charte-graphique.md` (Typographie).
 - [x] Photos dans le donneur d'avis : l'atelier et le studio montrent de vraies photos de la banque (jeux, photos libres validées, photos intégrées) tirées pour les sujets et pondérées par les notes ; leurs clés font partie des ingrédients notés.
 - [ ] Remplissage automatique (demande de Paul du 2026-10-07) :

@@ -72,3 +72,4 @@ export * from './habillage';
 export * from './habillage-attributs';
 export * from './duels';
 export * from './couverture-sujets';
+export * from './notation-recettes';

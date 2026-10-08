@@ -920,7 +920,9 @@ export function serialiserRecetteAvecScenario(x: CompositionRecette, s: Scenario
   const o = JSON.parse(serialiserComposition(x)) as Record<string, unknown>;
   return s ? { ...o, scenario: normaliserScenario(s) } : o;
 }
-export const ETIQUETTES_RECETTE = ['waouh', 'pro', 'harmonieux', 'lisible', 'bien-dans-le-sujet', 'fade', 'trop-charge', 'couleurs-jurent', 'pas-pro', 'illisible-mobile'] as const;
+// « gardee » : recette gardée par Paul depuis la tuile « Recettes complètes » (notation-recettes.ts) ; conservée à chaque réenregistrement
+export const ETIQUETTES_RECETTE = ['waouh', 'pro', 'harmonieux', 'lisible', 'bien-dans-le-sujet', 'fade', 'trop-charge', 'couleurs-jurent', 'pas-pro', 'illisible-mobile', 'gardee'] as const;
+export const ETIQUETTE_GARDEE = 'gardee';
 export const STATUTS_RECETTE = ['active', 'archivee'] as const;
 
 /** Recette lue (studio : complète ; parcours : sans auteur ni remarques) */

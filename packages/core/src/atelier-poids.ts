@@ -24,6 +24,7 @@
 // Module pur, sans dépendance d'exécution (importé par propositions.ts : il ne doit rien importer de lui).
 
 import { normaliserPoidsAssets, type PoidsAssets } from './assets-poids';
+import type { ApprisHarmonie, PoidsHarmonie } from './harmonie';
 
 /** Ingrédients d'une combinaison notée (enregistrés tels quels dans atelier_notes.ingredients) */
 export type IngredientsAtelier = {
@@ -77,7 +78,11 @@ export const LISSAGE_ATELIER = { ingredient: 10, paire: 12, combinaison: 6 } as 
 export type TypeCleAtelier = keyof typeof LISSAGE_ATELIER;
 
 /** Poids appris, compacts (transmis au navigateur du praticien) : effets non nuls seulement */
-export type PoidsAtelier = { n: number; moyenne: number; effets: Record<string, number>; /** Notes et statuts des assets (0027) */ assets?: PoidsAssets | null };
+export type PoidsAtelier = {
+  n: number; moyenne: number; effets: Record<string, number>; /** Notes et statuts des assets (0027) */ assets?: PoidsAssets | null;
+  /** Recettes complètes notées (notation-recettes.ts, migration 0038) : ingrédients, paires et familles, globaux et par sujet */
+  harmonie?: ApprisHarmonie | null;
+};
 
 const val = (v: unknown) => (v === null || v === undefined || v === '' ? 'aucune' : String(v));
 
@@ -159,7 +164,25 @@ export function normaliserPoidsAtelier(v: unknown): PoidsAtelier | null {
     if (typeof e === 'number' && Number.isFinite(e) && k.length <= 300) effets[k] = Math.max(-4, Math.min(4, e));
   }
   const assets = normaliserPoidsAssets(o.assets);
-  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, ...(assets ? { assets } : {}) };
+  const harmonie = normaliserApprisHarmonie(o.harmonie);
+  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, ...(assets ? { assets } : {}), ...(harmonie ? { harmonie } : {}) };
+}
+
+/** Apprentissage des recettes complètes reçu de l'extérieur : valeurs numériques bornées à ±1, clés courtes ; invalide → null */
+export function normaliserApprisHarmonie(v: unknown): ApprisHarmonie | null {
+  if (!v || typeof v !== 'object') return null;
+  const table = (t: unknown) => {
+    const r: Record<string, number> = {};
+    if (t && typeof t === 'object') for (const [k, e] of Object.entries(t as Record<string, unknown>)) if (typeof e === 'number' && Number.isFinite(e) && k.length <= 300) r[k] = Math.max(-1, Math.min(1, e));
+    return r;
+  };
+  const ph = (x: unknown): PoidsHarmonie | null => (x && typeof x === 'object' ? { familles: table((x as Record<string, unknown>).familles), ingredients: table((x as Record<string, unknown>).ingredients), paires: table((x as Record<string, unknown>).paires) } : null);
+  const o = v as Record<string, unknown>;
+  const global = ph(o.global);
+  if (!global) return null;
+  const sujets: Record<string, PoidsHarmonie> = {};
+  if (o.sujets && typeof o.sujets === 'object') for (const [k, x] of Object.entries(o.sujets as Record<string, unknown>)) { const p = ph(x); if (p && /^[a-z-]{2,30}$/.test(k)) sujets[k] = p; }
+  return { global, ...(Object.keys(sujets).length ? { sujets } : {}) };
 }
 
 /** Hachage FNV-1a 32 bits (hexadécimal, 8 caractères) */

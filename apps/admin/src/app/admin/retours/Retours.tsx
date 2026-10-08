@@ -586,7 +586,7 @@ export default function Retours(props: Props) {
 
         <section aria-labelledby="rt-entrainer" className="grid gap-3">
           <h2 id="rt-entrainer" className="text-lg font-semibold">Trier et comparer</h2>
-          <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <li>
               <Link href="/admin/retours/tri" className={`grid h-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
                 <span className="text-lg font-bold">Trier par sujet</span>
@@ -597,6 +597,12 @@ export default function Retours(props: Props) {
               <Link href="/admin/retours/duel" className={`grid h-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
                 <span className="text-lg font-bold">Duel : A ou B ?</span>
                 <span className="text-sm text-neutral-600">Deux propositions pour le même client, une seule chose change : choisissez. Classements par sujet (meilleures photos, polices…).</span>
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/retours/recettes" className={`grid h-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
+                <span className="text-lg font-bold">Recettes complètes</span>
+                <span className="text-sm text-neutral-600">Une recette entière à la fois (générée par le système ou proposée par Claude) : étoiles, pour / contre, « Garder ». Le système apprend les meilleurs ingrédients et combinaisons.</span>
               </Link>
             </li>
           </ul>
