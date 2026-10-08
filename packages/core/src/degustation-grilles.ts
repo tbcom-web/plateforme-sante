@@ -5,11 +5,13 @@
 import { DIMENSIONS_FORMAT, genererGrille, interetElement, pretProfil, TAILLE_GRILLE, type EtatApprentissage, type FormatGrille } from './degustation';
 import { cleComposition, cleJugeDe, type IngredientsDuel } from './duels';
 import { sansNouvelleViolation, varierDuel } from './duels-compositions';
+import { differenceRendue, etiquetteChangement, grilleDirections, optionsDistinctes, sectionsRendues } from './degustation-directions';
+import { tirerDansFamille, type IdFamilleStyle } from './harmonie';
 import { VARIANTES_SECTIONS } from './modeles';
 import { clePhoto } from './assets-poids';
 import { DIRECTIONS_PICTOS, cleDirection } from './pictos-directions';
-import { dimensionElement, elementsComposition, noteElement, versQuatreCinq, type NotesElements } from './qualite';
-import { clesRecette, compositionInitiale, compositionPourCle, serialiserComposition, tirerPage, type CompositionRecette, type ContexteRecette, type PageStructure } from './recettes';
+import { avecBonusQuatreCinq, dimensionElement, elementsComposition, noteElement, versQuatreCinq, type NotesElements } from './qualite';
+import { clesRecette, compositionInitiale, compositionPourCle, outilsHarmonie, serialiserComposition, tirerPage, type CompositionRecette, type ContexteRecette, type PageStructure } from './recettes';
 import type { Tranches } from './tranches';
 
 export type PropositionDegustation = {
@@ -21,6 +23,10 @@ export type PropositionDegustation = {
   x?: CompositionRecette;
   /** Photos du kit (format kits ; la première est celle du premier écran) */
   photos?: string[];
+  /** Ce qui change, écrit sur la carte (« Police : Bodoni Moda / Newsreader ») ; directions : « Graphique pop » */
+  etiquette?: string;
+  /** Directions : les 3 mots de la légende (« sombre · typo didone · photos ») */
+  mots?: string[];
 };
 
 export type GrilleDegustation = { format: FormatGrille; dimension: string; base: CompositionRecette | null; propositions: PropositionDegustation[] };
@@ -37,8 +43,14 @@ type OptionsGrille = {
 };
 
 /** Base « favoris 4-5 ★ » d'un scénario : aucun élément à juger là où la dimension a des favoris */
-export const baseFavoris = (c: ContexteRecette, notes: NotesElements | null | undefined, graine: number) =>
-  versQuatreCinq(compositionInitiale(c, graine), c, notes, { maxNouveaux: 0, essais: 3, graine }).composition;
+export const baseFavoris = (c: ContexteRecette, notes: NotesElements | null | undefined, graine: number, famille?: IdFamilleStyle | null) => {
+  // Entonnoir (2026-10-09) : les détails se dégustent dans la famille préférée du profil (choisie dans une grille « Directions »)
+  if (famille) {
+    const cb = avecBonusQuatreCinq(c, notes);
+    return tirerDansFamille(famille, compositionInitiale(cb, graine), [], cb as never, graine, outilsHarmonie(cb) as never) as CompositionRecette;
+  }
+  return versQuatreCinq(compositionInitiale(c, graine), c, notes, { maxNouveaux: 0, essais: 3, graine }).composition;
+};
 
 /** Éléments comptés pour « un seul nouveau » : ceux de la jauge ; pour une page, sa structure seule remplace ses présentations */
 export function elementsGrille(x: CompositionRecette, sujets: readonly string[], dimension: string): string[] {
@@ -72,20 +84,35 @@ const variateur = (c: ContexteRecette) => (x: CompositionRecette, d: string, g: 
  * Grille de compositions (formats compositions, palettes-polices, premiers-ecrans, pages) : base favoris 4-5 ★ (ou `base`), six
  * variantes de la dimension, chacune avec un seul élément nouveau, jamais refusé ni tranché.
  */
-export function grilleCompositions(format: FormatGrille, dimension: string, o: OptionsGrille & { base?: CompositionRecette | null }): GrilleDegustation | null {
+export function grilleCompositions(format: FormatGrille, dimension: string, o: OptionsGrille & { base?: CompositionRecette | null; famille?: IdFamilleStyle | null }): GrilleDegustation | null {
   const c = o.contexte;
-  const base = o.base ?? baseFavoris(c, o.notes, o.graine);
+  const base = o.base ?? baseFavoris(c, o.notes, o.graine, o.famille);
+  // Différence RENDUE seulement (cas « Mises en page · Semelles » du 2026-10-09 : forme des cartes invisible en gabarit classique)
+  const page = dimension.startsWith('page:') ? dimension.slice(5) : dimension.startsWith('composant:') ? dimension.slice(10) : null;
+  if (page && !sectionsRendues(base, page, c.modele).length) return null;
   const g = genererGrille<CompositionRecette>({
     base, dimension, graine: o.graine, n: o.n ?? TAILLE_GRILLE, essais: 7,
     varier: variateur(c), elements: (x) => elementsGrille(x, c.sujets, dimension), cle: (x) => cleComposition(JSON.parse(serialiserComposition(x))),
     tranches: o.tranches, interet: (k) => interetElement(k, { notes: o.notes, sigma: o.sigma, nouveautes: o.nouveautes }),
-    // Jamais de nouvelle règle dure (harmonie.ts) par rapport à la base
-    controle: (b, y) => sansNouvelleViolation(b, y, c),
+    // Jamais de nouvelle règle dure (harmonie.ts) par rapport à la base ; une page ou un élément : seulement des sections rendues
+    controle: (b, y) => sansNouvelleViolation(b, y, c) && (!page || differenceRendue(b, y, page, c.modele)),
+    // Écart minimal garanti entre options (palettes éloignées, polices de genres différents…) ; sinon grille plus courte (≥ 3)
+    distinct: (a, b) => optionsDistinctes(dimension, a, b),
   });
   if (!g) return null;
   return {
     format, dimension, base,
-    propositions: g.propositions.map((p) => ({ cle: p.cle, nouveau: p.nouveau, x: p.x, ingredients: ingredientsPropositionGrille(p.x, c.sujets, p.nouveau) })),
+    propositions: g.propositions.map((p) => ({ cle: p.cle, nouveau: p.nouveau, x: p.x, etiquette: etiquetteChangement(dimension, p.x, p.nouveau), ingredients: ingredientsPropositionGrille(p.x, c.sujets, p.nouveau) })),
+  };
+}
+
+/** Grille « Directions » au format commun (vignettes d'accueil, étiquette = famille, 3 mots) */
+export function grilleDirectionsDegustation(o: OptionsGrille & { priorite?: readonly IdFamilleStyle[] }): GrilleDegustation | null {
+  const g = grilleDirections({ contexte: o.contexte, notes: o.notes, tranches: o.tranches, graine: o.graine, priorite: o.priorite });
+  if (!g) return null;
+  return {
+    format: 'directions', dimension: 'directions', base: null,
+    propositions: g.propositions.map((p) => ({ cle: p.cle, nouveau: `famille:${p.famille}`, x: p.x, etiquette: p.legende.famille, mots: p.legende.mots, ingredients: p.ingredients })),
   };
 }
 
@@ -107,7 +134,7 @@ export function grilleKit(kit: readonly string[], pool: readonly string[], o: Om
   if (!g) return null;
   return {
     format: 'kits', dimension: 'photo', base: null,
-    propositions: g.propositions.map((p) => ({ cle: p.nouveau, nouveau: p.nouveau, photos: p.x, ingredients: { assets: [p.nouveau], element: p.nouveau, juge: [p.nouveau] } })),
+    propositions: g.propositions.map((p) => ({ cle: p.nouveau, nouveau: p.nouveau, photos: p.x, etiquette: `Photo : ${p.nouveau.slice(6)}`, ingredients: { assets: [p.nouveau], element: p.nouveau, juge: [p.nouveau] } })),
   };
 }
 
@@ -120,7 +147,7 @@ export function grilleIcones(id: string, o: { tranches?: Pick<Tranches, 'refuses
   if (cles.length < 3) return null;
   let s = o.graine >>> 0;
   const melange = cles.map((k) => { s = (Math.imul(s ^ (s >>> 15), 2246822507) + 0x9e3779b9) >>> 0; return { k, v: s }; }).sort((a, b) => a.v - b.v).map((x) => x.k);
-  return { format: 'icones', dimension: 'variante:style', base: null, propositions: melange.map((k) => ({ cle: k, nouveau: k, ingredients: { assets: [k], element: k, juge: [k] } })) };
+  return { format: 'icones', dimension: 'variante:style', base: null, propositions: melange.map((k) => ({ cle: k, nouveau: k, etiquette: k.includes('@direction-') ? `Style ${k.slice(-1).toUpperCase()}` : 'Picto actuel', ingredients: { assets: [k], element: k, juge: [k] } })) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------

@@ -10,7 +10,7 @@
 
 create table if not exists public.degustation_choix (
   id uuid primary key default gen_random_uuid(),
-  format text not null check (format in ('compositions', 'palettes-polices', 'premiers-ecrans', 'kits', 'icones', 'pages')),
+  format text not null check (format in ('directions', 'compositions', 'palettes-polices', 'premiers-ecrans', 'kits', 'icones', 'pages')),
   -- Type de duel équivalent (même moteur que la table duels, 0037)
   type text not null check (type in ('theme', 'typo', 'traitement', 'element', 'photo', 'illustration')),
   -- Seule dimension qui varie d'une proposition à l'autre (couleurs, polices, composant:accueil, page:soins, photo, variante:style…)
@@ -35,6 +35,11 @@ create table if not exists public.degustation_choix (
   auteur uuid default auth.uid() references public.profiles (id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- Grilles « Directions » (2026-10-09) : contrainte du format rejouée si la table existait déjà
+alter table public.degustation_choix drop constraint if exists degustation_choix_format_check;
+alter table public.degustation_choix add constraint degustation_choix_format_check
+  check (format in ('directions', 'compositions', 'palettes-polices', 'premiers-ecrans', 'kits', 'icones', 'pages'));
 
 create index if not exists degustation_choix_date_idx on public.degustation_choix (created_at desc);
 create index if not exists degustation_choix_profession_idx on public.degustation_choix (profession, created_at desc);

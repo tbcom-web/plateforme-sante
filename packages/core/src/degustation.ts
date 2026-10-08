@@ -31,6 +31,9 @@ import type { Tranches } from './tranches';
 // ---------------------------------------------------------------------------------------------------------------
 
 export const FORMATS_GRILLE = [
+  // Refonte du 2026-10-09 : la grille par défaut montre des DIRECTIONS radicalement différentes (degustation-directions.ts) ;
+  // les autres formats sont des grilles « Détail » montrées en bloc focalisé, écart minimal garanti entre options
+  { id: 'directions', nom: 'Directions', type: 'theme', appareil: 'bureau', detail: 'Des sites radicalement différents pour le même client : une famille de style chacun.' },
   { id: 'compositions', nom: 'Compositions complètes', type: 'theme', appareil: 'bureau', detail: 'Six sites pour le même client : une seule chose change de l’un à l’autre (palette, polices, effets, détails…).' },
   { id: 'palettes-polices', nom: 'Palettes et polices', type: 'theme', appareil: 'bureau', detail: 'Spécimens : six palettes avec la même paire de polices, ou six paires de polices sur la même palette.' },
   { id: 'premiers-ecrans', nom: 'Premiers écrans', type: 'element', appareil: 'mobile', detail: 'Le haut de la page d’accueil sur téléphone, six présentations.' },
@@ -48,7 +51,9 @@ export const formatGrille = (id: unknown) => FORMATS_GRILLE.find((f) => f.id ===
  * coins, graisse, pages sujet et article 3 à 5 (le moteur d'harmonie permet peu de valeurs) ; un dé à 2 valeurs reste au duel.
  */
 export const DIMENSIONS_FORMAT: Readonly<Record<FormatGrille, readonly string[]>> = {
-  compositions: ['couleurs', 'polices', 'visuels', 'effets', 'details:coins', 'typo:graisse'],
+  directions: ['directions'],
+  // Détail : effets écartés (invisibles en vignette, retour du 2026-10-09) ; palettes et polices : format « palettes-polices »
+  compositions: ['visuels', 'details:coins', 'typo:graisse'],
   'palettes-polices': ['couleurs', 'polices'],
   'premiers-ecrans': ['composant:accueil'],
   kits: ['photo'],
@@ -79,6 +84,8 @@ export function genererGrille<C>(p: {
   controle?: (base: C, y: C) => boolean;
   tranches?: Pick<Tranches, 'refuses' | 'favoris'> | null;
   interet?: (nouveau: string) => number;
+  /** Deux propositions nettement différentes ? (écart minimal garanti ; sinon la grille est plus courte) */
+  distinct?: (a: C, b: C) => boolean;
 }): Grille<C> | null {
   const n = p.n ?? TAILLE_GRILLE, r = hasard(p.graine);
   const base = new Set(p.elements(p.base));
@@ -98,7 +105,12 @@ export function genererGrille<C>(p: {
     cles.add(c);
     vus.set(k, { x: y, cle: c, nouveau: k, score: (p.interet?.(k) ?? 1) + 0.35 * r() });
   }
-  const l = [...vus.values()].sort((a, b) => b.score - a.score || a.nouveau.localeCompare(b.nouveau)).slice(0, n);
+  const l: { x: C; cle: string; nouveau: string; score: number }[] = [];
+  for (const v of [...vus.values()].sort((a, b) => b.score - a.score || a.nouveau.localeCompare(b.nouveau))) {
+    if (l.length >= n) break;
+    if (p.distinct && !l.every((y) => p.distinct!(v.x, y.x))) continue;
+    l.push(v);
+  }
   if (l.length < (p.min ?? 3)) return null;
   const melange = l.map((x) => ({ x, k: r() })).sort((a, b) => a.k - b.k).map((o) => ({ x: o.x.x, cle: o.x.cle, nouveau: o.x.nouveau }));
   return { base: p.base, dimension: p.dimension, propositions: melange };
@@ -207,7 +219,8 @@ export function duelsDepuisChoix(c: ChoixGrille): Duel[] {
   return comparaisonsDuChoix(c).map(([g, p]) => {
     const G = c.propositions[g], P = c.propositions[p];
     const [a, b, resultat] = G.cle < P.cle ? [G, P, 'a' as const] : [P, G, 'b' as const];
-    return { type: c.type, scenario: c.scenario, aCle: a.cle, bCle: b.cle, aIngredients: a.ingredients, bIngredients: b.ingredients, dimension: c.dimension, resultat, etiquettes: [], appareil: c.appareil, prediction: null, le: c.le ?? null };
+    // Directions : duels LIBRES (poids 0,5 réparti sur toutes les clés qui diffèrent, mêmes plafonds) ; la famille est l'élément classé
+    return { type: c.type, scenario: c.scenario, aCle: a.cle, bCle: b.cle, aIngredients: a.ingredients, bIngredients: b.ingredients, dimension: c.format === 'directions' ? null : c.dimension, resultat, etiquettes: [], appareil: c.appareil, prediction: null, le: c.le ?? null };
   }).sort((x, y) => cleDePaire(x.aCle, x.bCle).localeCompare(cleDePaire(y.aCle, y.bCle)));
 }
 
@@ -352,19 +365,26 @@ export function valeurPiste(p: EtatApprentissage['pistes'][number], pret: number
  * glouton par valeur d'apprentissage avec rendement décroissant (la même piste vaut 0,6× après chaque passage). Ordre : grilles
  * réparties, duels intercalés, notes regroupées en rafale à la fin du premier tiers et du dernier tiers.
  */
-export function planifierSession(e: EtatApprentissage, opts: { n?: number; graine?: number } = {}): CarteSession[] {
+export function planifierSession(e: EtatApprentissage, opts: { n?: number; graine?: number; directions?: number } = {}): CarteSession[] {
   const n = opts.n ?? SESSION.cartes, r = hasard(opts.graine ?? 1);
   const pret = new Map(e.profils.map((p) => [p.id, p.pret]));
   const nNotes = Math.min(Math.round(n * SESSION.partNotes), e.aNoter.length);
   const nDuels = Math.min(Math.round(n * SESSION.partDuels), e.departages.length);
-  const nGrilles = e.pistes.length ? n - nNotes - nDuels : 0;
+  // ENTONNOIR (2026-10-09) : 3-4 grilles « Directions » d'abord (profils les moins prêts), puis les détails de ces profils (dans
+  // leurs familles préférées : la page construit la base), quelques duels de départage
+  const avecDirections = e.pistes.some((p) => p.format === 'directions');
+  const profilsTete = [...e.profils].sort((a, b) => a.pret - b.pret || a.id.localeCompare(b.id)).slice(0, opts.directions ?? (e.profils.length >= 4 ? 4 : 3));
+  const directions: CarteSession[] = avecDirections ? profilsTete.map((p, i) => ({ id: `r${i}`, kind: 'grille', format: 'directions', dimension: 'directions', profil: p.id, valeur: Math.round((2 + 2 * (1 - p.pret)) * 1000) / 1000 })) : [];
+  const tete = new Set(profilsTete.map((p) => p.id));
+  const pistes = e.pistes.filter((p) => p.format !== 'directions');
+  const nGrilles = pistes.length ? n - nNotes - nDuels - directions.length : 0;
   const grilles: CarteSession[] = [];
   const passages = new Map<string, number>();
   for (let i = 0; i < nGrilles; i++) {
     let best: { p: EtatApprentissage['pistes'][number]; v: number } | null = null;
-    for (const p of e.pistes) {
+    for (const p of pistes) {
       const k = `${p.format}|${p.dimension}|${p.profil}`;
-      const v = valeurPiste(p, pret.get(p.profil) ?? 0.5) * 0.6 ** (passages.get(k) ?? 0) + 0.05 * r();
+      const v = valeurPiste(p, pret.get(p.profil) ?? 0.5) * (directions.length && tete.has(p.profil) ? 1.5 : 1) * 0.6 ** (passages.get(k) ?? 0) + 0.05 * r();
       if (!best || v > best.v) best = { p, v };
     }
     if (!best) break;
@@ -382,7 +402,7 @@ export function planifierSession(e: EtatApprentissage, opts: { n?: number; grain
   res.splice(Math.min(res.length, Math.max(2, Math.round(n / 3) - rafale1.length)), 0, ...rafale1);
   duels.forEach((d, i) => res.splice(Math.min(res.length, Math.round(((i + 1) * res.length) / (duels.length + 1))), 0, d));
   res.splice(Math.max(0, res.length - 2), 0, ...rafale2);
-  return res.slice(0, n);
+  return [...directions, ...res].slice(0, n);
 }
 
 /** Temps restant estimé (secondes) des cartes non jouées */

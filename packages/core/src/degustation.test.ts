@@ -22,12 +22,13 @@ const ctx = () => contexteScenario(enfant.scenario, { poids: null, photos: [], m
 // Grille
 // ---------------------------------------------------------------------------------------------------------------
 
-test('grille de compositions : 6 propositions, un seul élément nouveau chacune (même dimension), toutes différentes', () => {
+test('grille de compositions : 3 à 6 propositions (écart minimal garanti), un seul élément nouveau chacune (même dimension), toutes différentes', () => {
   const c = ctx();
   for (const [format, dim] of [['compositions', 'couleurs'], ['palettes-polices', 'polices'], ['premiers-ecrans', 'composant:accueil']] as const) {
     const g = grilleCompositions(format, dim, { contexte: c, graine: 7 });
     assert.ok(g, `${dim} : grille`);
-    assert.equal(g!.propositions.length, 6, `${dim} : 6 propositions`);
+    const n = g!.propositions.length;
+    assert.ok(n >= 3 && n <= 6, `${dim} : ${n} propositions`);
     const base = new Set(elementsGrille(g!.base!, c.sujets, dim));
     const nouveaux = new Set<string>();
     for (const p of g!.propositions) {
@@ -36,8 +37,8 @@ test('grille de compositions : 6 propositions, un seul élément nouveau chacune
       nouveaux.add(p.nouveau);
       assert.equal(p.ingredients.element, p.nouveau);
     }
-    assert.equal(nouveaux.size, 6);
-    assert.equal(new Set(g!.propositions.map((p) => p.cle)).size, 6);
+    assert.equal(nouveaux.size, n);
+    assert.equal(new Set(g!.propositions.map((p) => p.cle)).size, n);
   }
 });
 

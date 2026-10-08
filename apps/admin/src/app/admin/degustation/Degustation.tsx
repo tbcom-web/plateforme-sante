@@ -13,7 +13,7 @@ import {
   apprentissagesSession, avancementDefi, baseFavoris, classerPhotos, clePhoto, clesRecette, cleComposition, compositionPourCle, contexteScenario, defiDuJour, DIMENSIONS_FORMAT,
   dimensionElement, duelsDepuisChoix, ECHANTILLON_DIRECTIONS, effetSession, elementsDuProfil, formatGrille, gamme as gammeParId, grilleCompositions, grilleIcones, grilleKit,
   hasard, LIBELLES_VARIANTES, libelleElement, medailles, missionProfil, modeleIntegre, niveauPalais, nouvellesMedailles, pairePolices, pariGrille, parisDesChoix,
-  planifierSession, predireDuel, pretProfil, SUJETS_VISUELS, scoreBatsClaude, serialiserComposition, serieDegustation, sessionReprenable, tempsEstime, texteDuree, xpCarte,
+  FAMILLES_STYLE, planifierSession, predireDuel, pretProfil, SUJETS_VISUELS, famillesPreferees, grilleDirectionsDegustation, repereEvalue, type IdFamilleStyle, type famillesDesDuels, scoreBatsClaude, serialiserComposition, serieDegustation, sessionReprenable, tempsEstime, texteDuree, xpCarte,
   type CarteSession, type ChoixGrille, type Duel, type EtatApprentissage, type FormatGrille, type GrilleDegustation, type MarqueImportee, type Medaille, type ModeleManifeste,
   type PhotoBanque, type PoidsAtelier, type PropositionDegustation, type ScenarioRecette, type ScoreBatsClaude, type Univers, type DefiDuJour, type ElementInventaire,
 } from '@plateforme/core';
@@ -22,7 +22,7 @@ import type { SoinCatalogue } from '@/lib/sites';
 import { enregistrerDuel } from '../retours/duel/actions';
 import { ajouterNoteAsset } from '../retours/actions';
 import { enregistrerChoixGrille } from './actions';
-import { ApercuIngredient, Confettis, jouerSon, VignetteProposition, type ContexteRendu } from './Vignettes';
+import { ApercuIngredient, comparerEmpreintes, Confettis, DIMENSIONS_FOCALES, empreinteIframe, jouerSon, VignetteProposition, type ContexteRendu } from './Vignettes';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -41,6 +41,8 @@ type Props = ContexteRendu & {
   defi: DefiDuJour;
   faits: Record<string, { grilles: number; kits: number; recettesGardees: number }>;
   lienPublier: string;
+  /** Préférences de famille apprises des grilles « Directions » (global et par sujet) */
+  familles: ReturnType<typeof famillesDesDuels>;
   migrationManquante: boolean;
   tranches: { refuses: string[]; favoris: string[]; notes: string[] };
   predictions: Record<string, PredictionJuge[]>;
@@ -66,6 +68,7 @@ const ecrire = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.s
 
 /** Libellé lisible d'un élément (« la palette « Sable » ») pour l'écran de fin */
 function libelleIngredient(k: string): string {
+  if (k.startsWith('famille:')) return `la direction « ${FAMILLES_STYLE.find((f) => f.id === k.slice(8))?.nom ?? k.slice(8)} »`;
   if (k.startsWith('gamme:')) return `la palette « ${gammeParId(k.slice(6))?.nom ?? k.slice(6)} »`;
   if (k.startsWith('typo:police:')) return `les polices « ${pairePolices(k.slice(12))?.nom ?? k.slice(12)} »`;
   if (k.startsWith('composant:accueil:')) return `le premier écran « ${(LIBELLES_VARIANTES.accueil as Record<string, string> | undefined)?.[k.slice(18)] ?? k.slice(18)} »`;
@@ -84,9 +87,9 @@ export default function Degustation(props: Props) {
   const [onglet, setOnglet] = useState<'session' | 'libre' | 'palais'>('session');
   const [journal, setJournal] = useState<Jouee[]>([]);
   const [choixLocaux, setChoixLocaux] = useState<ChoixLeger[]>([]);
-  const [options, setOptions] = useState({ son: false, rafale: true });
-  useEffect(() => { setJournal(lire(K.journal, [])); setChoixLocaux(lire(K.choix, [])); setOptions(lire(K.options, { son: false, rafale: true })); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [prof]);
-  const majOptions = (o: Partial<typeof options>) => setOptions((x) => { const n = { ...x, ...o }; ecrire(K.options, n); return n; });
+  const [options, setOptions] = useState({ son: false, rafale: true, autoValider: true });
+  useEffect(() => { setJournal(lire(K.journal, [])); setChoixLocaux(lire(K.choix, [])); setOptions({ son: false, rafale: true, autoValider: true, ...lire(K.options, {}) }); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [prof]);
+  const majOptions = (o: Partial<{ son: boolean; rafale: boolean; autoValider: boolean }>) => setOptions((x) => { const n = { ...x, ...o }; ecrire(K.options, n); return n; });
 
   const rendu: ContexteRendu = useMemo(() => ({ proposes: props.proposes, modeles: props.modeles, catalogue: props.catalogue, marquesImportees: props.marquesImportees, themesActives: props.themesActives }),
     [props.proposes, props.modeles, props.catalogue, props.marquesImportees, props.themesActives]);
@@ -104,6 +107,9 @@ export default function Degustation(props: Props) {
     if (effets[k] !== undefined) return moyenne + effets[k];
     return notes[k]?.m ?? null;
   }, [props.predictions, effets, moyenne, notes]);
+
+  /** Famille choisie (n° 1) par profil dans les grilles « Directions » de cette session : base des grilles « Détail » */
+  const famillesSession = useRef(new Map<string, IdFamilleStyle>());
 
   // ---- Génération d'une carte ----
   const construire = useCallback((c: CarteSession, graine: number): Courant | null => {
@@ -125,8 +131,12 @@ export default function Degustation(props: Props) {
       return { kind: 'duel', carte: c, profil, grille: { format: 'compositions', dimension: c.dimension, base, propositions: [pa, pb] }, pari: predireDuel([c.a], [c.b], props.predictions), debut };
     }
     const o = { contexte: ctx, notes, tranches, graine };
+    // Entonnoir : famille choisie pour ce profil dans une grille « Directions » de la session, sinon famille préférée apprise
+    const famille = famillesSession.current.get(profil.id) ?? famillesPreferees(props.familles, profil.sujets[0] ?? 'cabinet')[0] ?? null;
     let g: GrilleDegustation | null = null;
-    if (c.format === 'kits') {
+    if (c.format === 'directions') {
+      g = grilleDirectionsDegustation({ ...o, priorite: famillesPreferees(props.familles, profil.sujets[0] ?? 'cabinet').slice(0, 2) });
+    } else if (c.format === 'kits') {
       const cl = classerPhotos(props.photos, ctx.sujets, props.poids?.assets ?? null, props.poids?.notesPhotos ?? null).filter((x) => x.sujetUn && x.cle);
       const urls = cl.map((x) => x.p.url);
       g = grilleKit(urls.slice(0, 4), urls.slice(1), { sujets: ctx.sujets, notes, tranches, graine });
@@ -134,12 +144,14 @@ export default function Degustation(props: Props) {
       g = grilleIcones(ECHANTILLON_DIRECTIONS[graine % ECHANTILLON_DIRECTIONS.length], { tranches, graine });
     } else {
       const dims = [c.dimension, ...DIMENSIONS_FORMAT[c.format].filter((d) => d !== c.dimension)];
-      for (const d of dims) { g = grilleCompositions(c.format, d, o); if (g) break; }
+      for (const d of dims) { g = grilleCompositions(c.format, d, { ...o, famille }); if (g) break; }
     }
     if (!g) return null;
-    const pari = pariGrille(g.propositions.map((p) => ({ cle: p.cle, nouveau: p.nouveau })), noteJuge);
+    // Directions : le juge parie sur la moyenne prédite des éléments de chaque site (la famille seule n'a pas de prédiction)
+    const pari = pariGrille(g.propositions.map((p) => (g!.format === 'directions' ? { cle: p.cle, juge: p.ingredients.assets ?? [] } : { cle: p.cle, nouveau: p.nouveau })), noteJuge);
     return { kind: 'grille', carte: c, profil, grille: g, pari, debut };
-  }, [props.photos, props.poids, props.predictions, profilDe, modele, notes, tranches, noteJuge]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.photos, props.poids, props.predictions, props.familles, profilDe, modele, notes, tranches, noteJuge]);
 
   // ---- Session ----
   const [session, setSession] = useState<EtatSession | null>(null);
@@ -176,6 +188,7 @@ export default function Degustation(props: Props) {
     const c: CarteSession = { id: `l${Date.now()}`, kind: 'grille', format, dimension: DIMENSIONS_FORMAT[format][Math.floor(Math.random() * DIMENSIONS_FORMAT[format].length)], profil, valeur: 0 };
     const x = construire(c, Date.now() % 1000003);
     setCourant(x); setSession(null); setFin(false);
+    setMessage('');
     if (!x) setMessage('Pas assez de propositions inédites pour ce profil et ce format : essayez un autre format.');
   }, [construire]);
 
@@ -253,6 +266,7 @@ export default function Degustation(props: Props) {
     const accord = courant.pari === null ? null : selection.meilleures.includes(courant.pari);
     const xp = xpCarte('grille', { pire: selection.pire !== null, serie }) + (accord === false ? 0 : 0);
     setSessionDuels((l) => [...l, ...duelsDepuisChoix(choix)]);
+    if (courant.grille.format === 'directions') { const f = courant.grille.propositions[selection.meilleures[0]]?.nouveau.slice(8); if (f) famillesSession.current.set(courant.profil.id, f as IdFamilleStyle); }
     const j: Jouee = { le: choix.le!, kind: 'grille', xp, profil: courant.profil.id, accordClaude: accord, dureeMs: choix.dureeMs ?? 0, session: session?.id ?? 'libre', enBase: !props.migrationManquante };
     noter(j);
     const nums = selection.meilleures.map((i) => `la n° ${i + 1}`).join(' et ');
@@ -300,6 +314,28 @@ export default function Degustation(props: Props) {
 
   // Annuler : ← retire le dernier choix de la grille
   const annuler = useCallback(() => setSelection((s) => (s.pire !== null && modePire ? { ...s, pire: null } : { ...s, meilleures: s.meilleures.slice(0, -1) })), [modePire]);
+
+  // Valider stable (validation automatique au 2e choix : une seule minuterie, toujours la dernière saisie)
+  const refValider = useRef(valider);
+  refValider.current = valider;
+  const validerStable = useCallback(() => { void refValider.current(); }, []);
+
+  // Contrôle « différence perceptible » (empreintes du rendu) : deux vignettes identiques à l'œil → grille regénérée (2 essais),
+  // sinon les doublons sont retirés (au moins 3 propositions) ; jamais une grille aux vignettes identiques
+  const regenerations = useRef(0);
+  const identiques = useCallback((paires: [number, number][]) => {
+    if (!courant || courant.kind !== 'grille') return;
+    if (regenerations.current < 2) {
+      regenerations.current++;
+      const x = construire(courant.carte, (Date.now() + 7919 * regenerations.current) % 1000003);
+      if (x) { setSelection({ meilleures: [], pire: null }); setCourant(x); setMessage('Deux propositions se ressemblaient trop à l’écran : grille regénérée.'); return; }
+    }
+    const retirer = new Set(paires.map(([, j]) => j));
+    const reste = courant.grille.propositions.filter((_, i) => !retirer.has(i));
+    if (reste.length >= 3) { setSelection({ meilleures: [], pire: null }); setCourant({ ...courant, grille: { ...courant.grille, propositions: reste }, pari: null }); setMessage('Propositions trop proches retirées de la grille.'); }
+    else { setMessage('Grille trop uniforme à l’écran : passée.'); suivante(); }
+  }, [courant, construire, suivante]);
+  useEffect(() => { regenerations.current = 0; }, [courant?.carte.id]);
 
   // ---- Clavier ----
   const ref = useRef({ toucher, valider, duel, noterVite, annuler, courant, agrandi, rafale: options.rafale, noteSaisie });
@@ -406,7 +442,8 @@ export default function Degustation(props: Props) {
           )}
           {courant?.kind === 'grille' && (
             <CarteGrille c={courant} selection={selection} modePire={modePire} rendu={rendu} onToucher={toucher} onSurvol={(i) => { survol.current = i; }} agrandi={agrandi} onAgrandir={setAgrandi}
-              onPire={() => setModePire((m) => !m)} onValider={() => void valider()} onAnnuler={annuler} onPasser={suivante} />
+              onPire={() => setModePire((m) => !m)} onValider={validerStable} onAnnuler={annuler} onPasser={suivante}
+              autoValider={options.autoValider} onIdentiques={identiques} />
           )}
           {courant?.kind === 'duel' && <CarteDuel c={courant} rendu={rendu} onChoisir={(r) => void duel(r)} onPasser={suivante} />}
           {courant?.kind === 'note' && (
@@ -440,7 +477,7 @@ function Accueil({ etat, reprise, onCommencer, onReprendre, defi, defiAv, profil
     <section className="grid gap-4 rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
       <div className="grid gap-1">
         <h2 className="text-xl font-bold">Dégustation du jour</h2>
-        <p className="text-sm text-neutral-700">{plan.length} cartes · environ {texteDuree(tempsEstime(plan))} · surtout des grilles, choisies là où le générateur a le plus à apprendre.</p>
+        <p className="text-sm text-neutral-700">{plan.length} cartes · environ {texteDuree(tempsEstime(plan))} · d’abord des directions très différentes, puis les détails dans vos styles préférés.</p>
       </div>
       <div className="flex flex-wrap gap-2">
         {reprise && <button type="button" onClick={onReprendre} className={`min-h-12 rounded-xl bg-teal-800 px-5 text-base font-bold text-white ${focus}`}>Reprendre ({reprise.cartes.length - reprise.position} cartes restantes)</button>}
@@ -484,57 +521,133 @@ function ChoixLibre({ profils, formats, valeur, onChange }: { profils: Profil[];
   );
 }
 
-function CarteGrille({ c, selection, modePire, rendu, onToucher, onSurvol, agrandi, onAgrandir, onPire, onValider, onAnnuler, onPasser }: {
+/** Formats dont les vignettes sont des pages rendues (empreinte du rendu, recadrage automatique) */
+const FORMATS_PAGES = new Set(['directions', 'compositions', 'premiers-ecrans', 'pages']);
+
+function CarteGrille({ c, selection, modePire, rendu, onToucher, onSurvol, agrandi, onAgrandir, onPire, onValider, onAnnuler, onPasser, autoValider, onIdentiques }: {
   c: Extract<Courant, { kind: 'grille' }>; selection: { meilleures: number[]; pire: number | null }; modePire: boolean; rendu: ContexteRendu;
   onToucher: (i: number) => void; onSurvol: (i: number | null) => void; agrandi: number | null; onAgrandir: (i: number | null) => void; onPire: () => void; onValider: () => void; onAnnuler: () => void; onPasser: () => void;
+  autoValider: boolean; onIdentiques: (paires: [number, number][]) => void;
 }) {
   const f = formatGrille(c.grille.format)!;
-  const mobile = f.appareil === 'mobile';
+  const directions = c.grille.format === 'directions';
+  const focale = DIMENSIONS_FOCALES.has(c.grille.dimension);
+  const mobile = f.appareil === 'mobile' || focale;
   const scenario = useMemo(() => ({ principaux: c.profil.scenario.principaux, secondaires: c.profil.scenario.secondaires, couleurs: c.profil.scenario.couleurs }), [c.profil]);
   const n = c.grille.propositions.length;
   const [h, setH] = useState(220);
-  useEffect(() => { const m = () => setH(window.innerWidth < 640 ? (mobile ? 300 : 150) : mobile ? 420 : 250); m(); window.addEventListener('resize', m); return () => window.removeEventListener('resize', m); }, [mobile]);
+  useEffect(() => {
+    const m = () => setH(focale ? (window.innerWidth < 640 ? 300 : 380) : window.innerWidth < 640 ? (mobile ? 300 : 170) : mobile ? 420 : directions ? 300 : 250);
+    m(); window.addEventListener('resize', m); return () => window.removeEventListener('resize', m);
+  }, [mobile, focale, directions]);
   const pret = selection.meilleures.length >= Math.min(2, n - 1);
+
+  // ---- Contrôle « différence perceptible » sur le RENDU : empreintes, recadrage sur la zone qui diffère, refus si identiques ----
+  const liste = useRef<HTMLUListElement | null>(null);
+  const [recadrage, setRecadrage] = useState<number | null>(null);
+  useEffect(() => {
+    setRecadrage(null);
+    if (!FORMATS_PAGES.has(c.grille.format) || focale) return;
+    const t = setTimeout(() => {
+      const cartes = Array.from(liste.current?.querySelectorAll<HTMLLIElement>('li[data-carte]') ?? []);
+      const iframes = cartes.map((li) => li.querySelector('iframe'));
+      const empreintes = iframes.map(empreinteIframe);
+      const hauteurVue = iframes.find((x) => x?.contentWindow)?.contentWindow?.innerHeight ?? 800;
+      const r = comparerEmpreintes(empreintes, Math.round(hauteurVue * 0.9));
+      if (r.identiques.length) { onIdentiques(r.identiques); return; }
+      if (r.y > 0 && !directions) { for (const x of iframes) x?.contentWindow?.scrollTo(0, r.y); setRecadrage(r.y); }
+    }, 2200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c.grille]);
+
+  // ---- Validation automatique dès le 2e choix (option, activée par défaut) ----
+  useEffect(() => {
+    if (!autoValider || selection.meilleures.length < Math.min(2, n - 1)) return;
+    const t = setTimeout(onValider, 450);
+    return () => clearTimeout(t);
+  }, [autoValider, selection.meilleures.length, n, onValider]);
+
+  // ---- Superposer (toucher long sur une carte) : cette carte et la n° 1 (ou la voisine) au même endroit, bascule au toucher ----
+  const [superpose, setSuperpose] = useState<[number, number] | null>(null);
+  const [voirB, setVoirB] = useState(false);
+  const appui = useRef<number | null>(null);
+  const long = useRef(false);
+  const debutAppui = (i: number) => { long.current = false; appui.current = window.setTimeout(() => { appui.current = null; long.current = true; setSuperpose([selection.meilleures[0] ?? (i === 0 ? 1 : 0), i]); setVoirB(true); }, 550); };
+  const finAppui = () => { if (appui.current) { clearTimeout(appui.current); appui.current = null; } };
+
+  const titre = directions ? 'Choisis tes 2 directions préférées' : 'Choisis tes 2 préférées';
   return (
-    <section aria-label="Grille : choisis tes 2 préférées" className="grid gap-3">
+    <section aria-label={`Grille : ${titre}`} className="grid gap-3">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="text-lg font-bold">Choisis tes 2 préférées</h2>
-        <span className="text-sm text-neutral-700">{f.nom} · profil {c.profil.nom} · une seule chose change d’une proposition à l’autre</span>
+        <h2 className="text-lg font-bold">{titre}</h2>
+        <span className="text-sm text-neutral-700">
+          {directions ? `profil ${c.profil.nom} · des styles complètement différents` : <>profil {c.profil.nom} · <strong className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-950">Évalué ici : {repereEvalue(c.grille.dimension)}</strong>{recadrage ? ' · vignettes recadrées sur ce qui change' : ''}</>}
+        </span>
       </div>
-      <ul className={`grid gap-2 sm:gap-3 ${mobile ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 lg:grid-cols-3'}`}>
+      <ul ref={liste} className={`grid gap-2 sm:gap-3 ${mobile && !focale ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
         {c.grille.propositions.map((p, i) => {
           const rang = selection.meilleures.indexOf(i);
           const pire = selection.pire === i;
           return (
-            <li key={p.cle} onMouseEnter={() => onSurvol(i)} onMouseLeave={() => onSurvol(null)} className="relative min-w-0">
-              <button type="button" onClick={() => onToucher(i)} aria-pressed={rang >= 0 || pire} aria-label={`Proposition ${i + 1}${rang >= 0 ? `, préférée n° ${rang + 1}` : ''}${pire ? ', celle qui ne va pas' : ''}`}
-                className={`block w-full overflow-hidden rounded-xl bg-neutral-100 text-left ring-1 motion-safe:transition motion-safe:duration-200 ${focus} ${rang >= 0 ? 'ring-4 ring-teal-700 motion-safe:scale-[0.98]' : pire ? 'ring-4 ring-red-600 opacity-70' : 'ring-black/10 hover:ring-teal-700/50'}`}>
+            <li key={p.cle} data-carte={i} onMouseEnter={() => onSurvol(i)} onMouseLeave={() => onSurvol(null)} className="relative grid min-w-0 content-start gap-1">
+              {!directions && p.etiquette && <span className="truncate px-1 text-xs font-semibold text-neutral-800" title={p.etiquette}>{p.etiquette}</span>}
+              <button type="button" onClick={() => { if (long.current) { long.current = false; return; } onToucher(i); }} onPointerDown={() => debutAppui(i)} onPointerUp={finAppui} onPointerLeave={finAppui} onContextMenu={(e) => e.preventDefault()}
+                aria-pressed={rang >= 0 || pire} aria-label={`Proposition ${i + 1}${p.etiquette ? ` : ${p.etiquette}` : ''}${rang >= 0 ? `, préférée n° ${rang + 1}` : ''}${pire ? ', celle qui ne va pas' : ''}`}
+                className={`relative block w-full overflow-hidden rounded-xl bg-neutral-100 text-left ring-1 motion-safe:transition motion-safe:duration-200 ${focus} ${rang >= 0 ? 'ring-4 ring-teal-700 motion-safe:scale-[0.98]' : pire ? 'ring-4 ring-red-600 opacity-70' : 'ring-black/10 hover:ring-teal-700/50'}`}>
                 <span className="pointer-events-none block min-w-0" aria-hidden="true">
                   <VignetteProposition p={p} format={c.grille.format} dimension={c.grille.dimension} scenario={scenario} rendu={rendu} hauteur={h} />
                 </span>
+                <span className={`pointer-events-none absolute left-2 grid size-7 place-items-center rounded-full bg-white/90 text-sm font-bold text-neutral-900 ring-1 ring-black/10 ${focale ? 'bottom-2' : 'top-2'}`}>{i + 1}</span>
+                {rang >= 0 && <span className="pointer-events-none absolute right-12 top-2 rounded-full bg-teal-700 px-2 py-0.5 text-xs font-bold text-white motion-safe:animate-[degustation-pop_.25s_ease-out]">n°&nbsp;{rang + 1}</span>}
+                {pire && <span className="pointer-events-none absolute right-12 top-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">ne va pas</span>}
               </button>
-              <span className="pointer-events-none absolute left-2 top-2 grid size-7 place-items-center rounded-full bg-white/90 text-sm font-bold text-neutral-900 ring-1 ring-black/10">{i + 1}</span>
-              {rang >= 0 && <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-teal-700 px-2 py-0.5 text-xs font-bold text-white motion-safe:animate-[degustation-pop_.25s_ease-out]">n° {rang + 1}</span>}
-              {pire && <span className="pointer-events-none absolute right-2 top-2 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">ne va pas</span>}
-              <button type="button" onClick={() => onAgrandir(i)} aria-label={`Agrandir la proposition ${i + 1}`} className={`absolute bottom-1.5 right-1.5 grid size-9 place-items-center rounded-full bg-white/95 text-sm ring-1 ring-black/10 ${focus}`}>⤢</button>
+              {directions && (
+                <span className="grid px-1 leading-tight">
+                  <strong className="text-sm">{p.etiquette}</strong>
+                  <span className="text-xs text-neutral-600">{(p.mots ?? []).join(' · ')}</span>
+                </span>
+              )}
+              <button type="button" onClick={() => onAgrandir(i)} aria-label={`Agrandir la proposition ${i + 1}`} className={`absolute right-1.5 grid size-9 place-items-center rounded-full bg-white/95 text-sm ring-1 ring-black/10 ${directions ? 'top-1.5' : 'top-6'} ${focus}`}>⤢</button>
             </li>
           );
         })}
       </ul>
       <style>{'@keyframes degustation-pop { from { transform: scale(.6); opacity: 0 } to { transform: none; opacity: 1 } }'}</style>
+      <p className="text-xs text-neutral-500">Toucher long (ou clic maintenu) sur une carte : la superposer à votre n°&nbsp;1 pour comparer.{autoValider ? ' Validation automatique au 2e choix.' : ''}</p>
       <div className="sticky bottom-0 z-10 -mx-1 flex items-center gap-1.5 rounded-xl bg-white/95 p-2 ring-1 ring-black/10 backdrop-blur sm:gap-2">
         <button type="button" onClick={onPire} aria-pressed={modePire} className={`min-h-11 rounded-xl px-3 text-sm font-semibold ${focus} ${modePire ? 'bg-red-600 text-white' : 'border border-red-300 text-red-800'}`}>{modePire ? 'Touchez-la' : <>✕ <span className="hidden sm:inline">Celle qui </span>ne va pas</>}</button>
         <button type="button" onClick={onAnnuler} className={`min-h-11 rounded-xl border border-neutral-300 px-3 text-sm ${focus}`} aria-label="Annuler le dernier choix">←<span className="hidden sm:inline"> Annuler</span></button>
         <button type="button" onClick={onPasser} className={`min-h-11 rounded-xl px-2 text-sm text-neutral-600 underline ${focus}`}>Passer</button>
-        <button type="button" onClick={onValider} disabled={!pret} className={`ml-auto min-h-11 rounded-xl bg-teal-800 px-5 text-sm font-bold text-white disabled:opacity-40 sm:px-6 ${focus}`}>Valider<span className="hidden sm:inline"> ↵</span></button>
+        {!autoValider && <button type="button" onClick={onValider} disabled={!pret} className={`ml-auto min-h-11 rounded-xl bg-teal-800 px-5 text-sm font-bold text-white disabled:opacity-40 sm:px-6 ${focus}`}>Valider<span className="hidden sm:inline"> ↵</span></button>}
+        {autoValider && <span className="ml-auto pr-1 text-sm tabular-nums text-neutral-700">{selection.meilleures.length}/2</span>}
       </div>
+      {superpose && c.grille.propositions[superpose[0]] && c.grille.propositions[superpose[1]] && (
+        <div role="dialog" aria-modal="true" aria-label="Superposer deux propositions" className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-3" onClick={() => setSuperpose(null)}>
+          <div className="grid w-full max-w-3xl gap-2 rounded-2xl bg-white p-3" onClick={(e) => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <strong>Superposer</strong>
+              <span className="min-w-0 truncate text-neutral-700">n°&nbsp;{(voirB ? superpose[1] : superpose[0]) + 1} : {c.grille.propositions[voirB ? superpose[1] : superpose[0]].etiquette}</span>
+              <button type="button" onClick={() => setVoirB((v) => !v)} className={`ml-auto min-h-11 rounded-xl bg-teal-800 px-4 font-bold text-white ${focus}`}>Basculer</button>
+              <button type="button" onClick={() => setSuperpose(null)} className={`min-h-11 rounded-xl border border-neutral-300 px-4 ${focus}`}>Fermer</button>
+            </div>
+            <div className="relative overflow-hidden rounded-xl bg-neutral-100" onPointerDown={() => setVoirB((v) => !v)} onKeyDown={(e) => { if (e.key === ' ') { e.preventDefault(); setVoirB((v) => !v); } }} tabIndex={0}>
+              {superpose.map((k, j) => (
+                <div key={k} className={j === 0 ? '' : 'absolute inset-0'} style={{ visibility: (j === 1) === voirB ? 'visible' : 'hidden' }} aria-hidden="true">
+                  <VignetteProposition p={c.grille.propositions[k]} format={c.grille.format} dimension={c.grille.dimension} scenario={scenario} rendu={rendu} hauteur={Math.round((typeof window === 'undefined' ? 800 : window.innerHeight) * 0.6)} grand />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       {agrandi !== null && c.grille.propositions[agrandi] && (
         <div role="dialog" aria-modal="true" aria-label={`Proposition ${agrandi + 1} agrandie`} className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-3" onClick={() => onAgrandir(null)}>
           <div className="grid w-full max-w-5xl gap-2 rounded-2xl bg-white p-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2">
-              <strong>Proposition {agrandi + 1}</strong>
-              <button type="button" onClick={() => { onToucher(agrandi); onAgrandir(null); }} className={`ml-auto min-h-11 rounded-xl bg-teal-800 px-4 text-sm font-bold text-white ${focus}`}>Je la choisis</button>
-              <button type="button" onClick={() => onAgrandir(null)} className={`min-h-11 rounded-xl border border-neutral-300 px-4 text-sm ${focus}`}>Fermer (Échap)</button>
+              <strong className="min-w-0 truncate">Proposition {agrandi + 1}{c.grille.propositions[agrandi].etiquette ? ` · ${c.grille.propositions[agrandi].etiquette}` : ''}</strong>
+              <button type="button" onClick={() => { onToucher(agrandi); onAgrandir(null); }} className={`ml-auto min-h-11 shrink-0 rounded-xl bg-teal-800 px-4 text-sm font-bold text-white ${focus}`}>Je la choisis</button>
+              <button type="button" onClick={() => onAgrandir(null)} className={`min-h-11 shrink-0 rounded-xl border border-neutral-300 px-4 text-sm ${focus}`}>Fermer</button>
             </div>
             <div className={`overflow-hidden rounded-xl bg-neutral-100 ${mobile ? 'mx-auto w-full max-w-[420px]' : ''}`}>
               <VignetteProposition p={c.grille.propositions[agrandi]} format={c.grille.format} dimension={c.grille.dimension} scenario={scenario} rendu={rendu} hauteur={Math.round((typeof window === 'undefined' ? 800 : window.innerHeight) * 0.72)} grand />
@@ -632,7 +745,7 @@ function FinSession({ jouees, duels, profils, avant, apres, nouvelles, niveauAva
 function MonPalais({ niveau, serie, score, semaine, defi, defiAv, missions, lienPublier, profils, pret, medailles: gagnees, couvertes, grilles, options, onOptions }: {
   niveau: ReturnType<typeof niveauPalais>; serie: number; score: ScoreBatsClaude; semaine: ScoreBatsClaude; defi: DefiDuJour; defiAv: { fait: number; reussi: boolean };
   missions: ReturnType<typeof missionProfil>[]; lienPublier: string; profils: Profil[]; pret: Record<string, number>; medailles: Medaille[]; couvertes: string[]; grilles: number;
-  options: { son: boolean; rafale: boolean }; onOptions: (o: Partial<{ son: boolean; rafale: boolean }>) => void;
+  options: { son: boolean; rafale: boolean; autoValider: boolean }; onOptions: (o: Partial<{ son: boolean; rafale: boolean; autoValider: boolean }>) => void;
 }) {
   return (
     <div className="grid gap-4">
@@ -671,6 +784,7 @@ function MonPalais({ niveau, serie, score, semaine, defi, defiAv, missions, lien
       <section className="flex flex-wrap gap-4 text-sm">
         <label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="size-5" checked={options.son} onChange={(e) => onOptions({ son: e.target.checked })} /> Son de validation</label>
         <label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="size-5" checked={options.rafale} onChange={(e) => onOptions({ rafale: e.target.checked })} /> Notes rapides en rafale</label>
+        <label className="flex min-h-11 items-center gap-2"><input type="checkbox" className="size-5" checked={options.autoValider} onChange={(e) => onOptions({ autoValider: e.target.checked })} /> Valider automatiquement au 2e choix</label>
       </section>
     </div>
   );

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {
-  choixDeLaProfession, classementsParContexte, defiDuJour, elementsInventaire, etatDegustation, inventaireAssets, inventaireStudio, parisDesChoix,
+  choixDeLaProfession, choixPourApprentissage, duelsDesChoix, famillesDesDuels, classementsParContexte, defiDuJour, elementsInventaire, etatDegustation, inventaireAssets, inventaireStudio, parisDesChoix,
   scoreBatsClaude, sujetsDuVisuel, universDuParcours, type FormatGrille,
 } from '@plateforme/core';
 import { predictionsParCle } from '@plateforme/core/juge';
@@ -41,7 +41,7 @@ export default async function PageDegustation() {
   const elements = elementsInventaire([...inventaireAssets({ photosJeux }), ...inventaireStudio()].map((x) => ({ cle: x.cle, sujets: x.type === 'photo' ? sujetsDuVisuel(x, surcharges).sujets : [] })));
   const t = tranches.tranches;
   // Icônes à l'essai (pictos-directions.ts) : seulement s'il y a des pictos de la profession dans l'inventaire
-  const formats: FormatGrille[] = ['compositions', 'palettes-polices', 'premiers-ecrans', 'pages', 'kits', ...(elements.some((e) => e.cle.includes('@direction-')) ? ['icones' as const] : [])];
+  const formats: FormatGrille[] = ['directions', 'palettes-polices', 'compositions', 'premiers-ecrans', 'pages', 'kits', ...(elements.some((e) => e.cle.includes('@direction-')) ? ['icones' as const] : [])];
   const etat = etatDegustation({
     profils, elements, notes: poids?.notesElements ?? {}, effets: poids?.assets?.effets ?? null, moyenne: poids?.assets?.moyenne || 3,
     faites: mesChoix.map((c) => ({ sujet: c.scenario.sujets[0] ?? 'cabinet', format: c.format, dimension: c.dimension })),
@@ -63,8 +63,9 @@ export default async function PageDegustation() {
       <div>
         <h1 className="text-2xl font-bold">🍽 Dégustation{profession.libelle ? <span className="ml-2 align-middle text-base font-semibold text-neutral-600">· {profession.libelle}</span> : null}</h1>
         <p className="mt-1 hidden max-w-3xl text-sm text-neutral-600 md:block">
-          Six propositions pour le même client, une seule chose change de l’une à l’autre : touchez vos deux préférées (et, si vous voulez, celle qui ne va pas).
-          Chaque grille vaut neuf duels pour le générateur. Claude parie avant vous, en secret.
+          D’abord des directions de style complètement différentes pour le même client, puis les détails (palette, polices, premier écran…)
+          dans les styles que vous préférez, montrés en gros plan avec ce qui change écrit sur chaque carte. Touchez vos deux préférées :
+          la grille se valide toute seule. Claude parie avant vous, en secret.
         </p>
       </div>
       {migrationManquante && (
@@ -85,6 +86,7 @@ export default async function PageDegustation() {
           defi={defiDuJour(jour, nomsProfils)}
           faits={faits}
           lienPublier={publier}
+          familles={famillesDesDuels(duelsDesChoix(choixPourApprentissage(choix, profession.id, profession.parDefaut).filter((c) => c.format === 'directions')))}
           migrationManquante={migrationManquante}
           tranches={tranchesEnListes(t)}
           predictions={predictionsParCle(predictions)}

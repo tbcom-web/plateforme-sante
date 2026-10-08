@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { notesElements, notesPhotos, renfortsKits, ajouterPairesApprises, pairesDesNotes, pairesDuels, pairesElementsDesNotes, pairesElementsDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { notesElements, notesPhotos, renfortsKits, ajouterFamillesApprises, famillesDesDuels, ajouterPairesApprises, pairesDesNotes, pairesDuels, pairesElementsDesNotes, pairesElementsDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
 import { getNotesKits } from '@/lib/kits-images';
 import { getLignesAssetsApprentissage, getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
@@ -63,10 +63,12 @@ async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
   const harmonie = ajouterPairesApprises(notations.length ? apprisHarmonie(statsNotation(notations)) : null, pairesDuels(duels), pairesDesNotes(assets?.effets ?? {}),
     // + combinaisons d'éléments (duels « Combinaisons d'éléments » et tuile « Combinaisons », combinaisons-elements.ts)
     pairesElementsDuels(duels), pairesElementsDesNotes(assets?.effets ?? {}));
+  // + préférence de FAMILLE des grilles « Directions » de la Dégustation (degustation-directions.ts : ±0,5 ★, global et par sujet)
+  const harmonieFamilles = ajouterFamillesApprises(harmonie, famillesDesDuels(duels));
   // Effets propres au mobile (duels joués sur téléphone) : lus par effetAtelier selon la portée de la clé (duels-appareils.ts)
   const mobile = renfortsDuelsMobiles(duels);
   const avecMobile = Object.keys(mobile).length ? { ...(poids ?? { n: 1, moyenne: 3, effets: {} }), mobile } : poids;
-  const fin = harmonie ? { ...(avecMobile ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : avecMobile;
+  const fin = harmonieFamilles ? { ...(avecMobile ?? { n: 0, moyenne: 3, effets: {} }), harmonie: harmonieFamilles } : avecMobile;
   const avecPhotos = fin && Object.keys(photos).length ? { ...fin, notesPhotos: photos } : fin;
   return avecPhotos && Object.keys(elements).length ? { ...avecPhotos, notesElements: elements } : avecPhotos;
 }

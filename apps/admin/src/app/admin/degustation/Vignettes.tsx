@@ -6,11 +6,12 @@
 import '@plateforme/core/dessins.css';
 import { memo, useMemo, type CSSProperties } from 'react';
 import {
-  appliquerRecette, lireCleDirection, svgPicto, svgPictoDirection, vueDePage, type CompositionRecette, type MarqueImportee, type ModeleManifeste, type PageStructure,
+  appliquerRecette, blocFocal, habillageDe, lireCleDirection, nuancier, svgPicto, svgPictoDirection, vueDePage, type CompositionRecette, type MarqueImportee, type ModeleManifeste, type PageStructure,
   type PropositionDegustation, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import ApercuStudio, { draftStudio } from '@/components/ApercuStudio';
+import BlocFocal from '@/components/BlocFocal';
 import type { SoinCatalogue } from '@/lib/sites';
 
 export type ContexteRendu = {
@@ -68,17 +69,86 @@ function Icone({ cle, hauteur }: { cle: string; hauteur: number }) {
   );
 }
 
+/** Dimensions d'une grille « Détail » montrées en BLOC FOCALISÉ (largeur téléphone, lisible dans une carte) */
+export const DIMENSIONS_FOCALES = new Set(['couleurs', 'polices', 'typo:graisse', 'details:coins']);
+
+/** Bloc focalisé d'une option de détail : palette (nuancier + titre + bouton + carte), police (titre + texte), graisse, coins */
+function BlocDetail({ x, dimension, hauteur }: { x: CompositionRecette; dimension: string; hauteur: number }) {
+  const h = habillageDe(x);
+  const bloc = dimension === 'couleurs' ? { elements: ['surtitre', 'h1', 'bouton', 'carte'] as const, empile: true } : blocFocal(dimension) ?? { elements: ['surtitre', 'h1', 'paragraphe3'] as const, empile: true };
+  const reglages = { police: x.police, typo: h.typo, details: h.details, gamme: x.gamme || null, couleur: x.couleur };
+  return (
+    <div className="grid content-start overflow-hidden bg-white" style={{ height: hauteur }}>
+      {dimension === 'couleurs' && (
+        <div className="flex h-9 shrink-0" aria-hidden="true">{nuancier(x).map((c) => <span key={c.nom} className="flex-1" style={{ background: c.hex }} title={c.nom} />)}</div>
+      )}
+      <BlocFocal bloc={{ ...bloc, elements: [...bloc.elements] }} reglages={reglages} mobile echelle={0.9} />
+    </div>
+  );
+}
+
 /** Rendu d'une proposition selon le format */
 export const VignetteProposition = memo(function VignetteProposition({ p, format, dimension, scenario, rendu, hauteur, grand }: PropsVignette) {
   if (format === 'kits' && p.photos) return <MosaiqueKit photos={p.photos} hauteur={hauteur} />;
   if (format === 'icones') return <Icone cle={p.cle} hauteur={hauteur} />;
-  if (format === 'palettes-polices') {
-    return <ApercuStudio cle={p.nouveau} nu {...(grand ? { hauteur } : { vignette: hauteur })} proposes={rendu.proposes} modeles={rendu.modeles} catalogue={rendu.catalogue} marquesImportees={rendu.marquesImportees} themesActives={rendu.themesActives} />;
-  }
+  if (p.x && DIMENSIONS_FOCALES.has(dimension)) return <BlocDetail x={p.x} dimension={dimension} hauteur={hauteur} />;
   if (!p.x) return null;
   const page = dimension.startsWith('page:') ? (dimension.slice(5) as PageStructure) : null;
   return <VignetteCompo x={p.x} scenario={scenario} rendu={rendu} hauteur={hauteur} mobile={format === 'premiers-ecrans'} page={page} grand={grand} />;
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// Empreinte du rendu (contrôle « différence perceptible », 2026-10-09)
+// ---------------------------------------------------------------------------------------------------------------
+
+export type LigneEmpreinte = { y: number; sig: string };
+
+/**
+ * Empreinte d'une vignette rendue (iframe de CadreApercu) : pour chaque élément visible, position et taille (arrondies à 4 px),
+ * rayon, couleurs, police et graisse calculés. Deux vignettes au rendu identique ont la même liste, quelle que soit leur clé.
+ */
+export function empreinteIframe(iframe: HTMLIFrameElement | null): LigneEmpreinte[] | null {
+  const d = iframe?.contentDocument;
+  const w = d?.defaultView;
+  if (!d || !w || !d.body?.firstElementChild) return null;
+  const l: LigneEmpreinte[] = [];
+  const els = d.body.querySelectorAll('*');
+  const sy = w.scrollY;
+  for (let i = 0; i < els.length && l.length < 2500; i++) {
+    const e = els[i] as HTMLElement;
+    if (e.tagName === 'STYLE' || e.tagName === 'SCRIPT') continue;
+    const r = e.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) continue;
+    const cs = w.getComputedStyle(e);
+    if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    const q = (v: number) => Math.round(v / 4);
+    const texte = e.childElementCount === 0 ? (e.textContent ?? '').trim().slice(0, 24) : '';
+    l.push({ y: Math.round(r.top + sy), sig: [e.tagName, q(r.left), q(r.top + sy), q(r.width), q(r.height), cs.borderRadius, cs.backgroundColor, cs.color, cs.fontFamily.slice(0, 24), cs.fontWeight, cs.fontSize, texte].join('|') });
+  }
+  return l;
+}
+
+/**
+ * Comparaison des empreintes : fenêtre de recadrage (y, hauteur `h`) qui montre une différence pour le plus de paires possible
+ * (« Évalué ici »), et paires sans AUCUNE différence dans cette fenêtre (rendu identique à l'œil) → grille refusée.
+ */
+export function comparerEmpreintes(l: readonly (LigneEmpreinte[] | null)[], h: number): { y: number; identiques: [number, number][] } {
+  const ok = l.map((x, i) => ({ x, i })).filter((o): o is { x: LigneEmpreinte[]; i: number } => Boolean(o.x?.length));
+  const diffs: { i: number; j: number; ys: number[] }[] = [];
+  for (let a = 0; a < ok.length; a++) for (let b = a + 1; b < ok.length; b++) {
+    const sa = new Set(ok[a].x.map((e) => e.sig)), sb = new Set(ok[b].x.map((e) => e.sig));
+    const ys = [...ok[a].x.filter((e) => !sb.has(e.sig)), ...ok[b].x.filter((e) => !sa.has(e.sig))].map((e) => e.y).sort((m, n) => m - n);
+    diffs.push({ i: ok[a].i, j: ok[b].i, ys });
+  }
+  // Fenêtres candidates : 0, puis chaque première différence (moins une marge)
+  const candidats = [0, ...new Set(diffs.flatMap((d) => d.ys.slice(0, 1)).map((y) => Math.max(0, y - 40)))];
+  let best = { y: 0, n: -1 };
+  for (const y of candidats) {
+    const n = diffs.filter((d) => d.ys.some((v) => v >= y && v < y + h)).length;
+    if (n > best.n) best = { y, n };
+  }
+  return { y: best.y, identiques: diffs.filter((d) => !d.ys.some((v) => v >= best.y && v < best.y + h)).map((d) => [d.i, d.j]) };
+}
 
 /** Aperçu d'un ingrédient seul (notes rapides) */
 export function ApercuIngredient({ cle, rendu, hauteur, mobile }: { cle: string; rendu: ContexteRendu; hauteur: number; mobile?: boolean }) {

@@ -7,6 +7,29 @@ Code : `packages/core/src/degustation.ts` (modèle, session, jeu), `packages/cor
 état d'apprentissage), `apps/admin/src/app/admin/degustation/`, `apps/admin/src/lib/degustation.ts`. Migration
 `supabase/migrations/0042_degustation.sql` (sans elle : choix gardés dans le navigateur, bandeau « Migration à exécuter »).
 
+## Refonte du 2026-10-09 : « Directions » puis « Détail »
+
+Retour de Paul : « je ne comprends vraiment pas la différence entre les éléments […] j'ai 4 images, on dirait les mêmes ». Un seul
+élément nouveau par vignette rendait les pages quasi identiques à l'échelle d'une vignette ; et, cas « Mises en page · profil
+Semelles », trois vignettes identiques au pixel : la structure Technique (gabarit classique) ne rend pas la forme des cartes sur la
+page Soins (`.ap-carte` sans `data-forme`), donc la seule section qui variait était invisible.
+
+- **Grilles « Directions »** (`degustation-directions.ts`, par défaut en tête de session) : 4 à 6 sites radicalement différents,
+  une famille de style d'harmonie chacun, cohérents (famille dominante, aucune règle dure) et tirés avec les éléments 4-5 ★
+  favorisés. Sélection par diversité maximale : pour CHAQUE paire, distance d'attributs (contraste, rondeur, densité, énergie,
+  température, formalité) ≥ 0,22 et au moins 4 dimensions visibles différentes (palette, polices, premier écran, style
+  d'illustration ou photo, structure). Légende : famille + 3 mots. Apprentissage : duels libres (crédit réparti, plafonds des duels)
+  et préférence de famille par sujet (`famillesDesDuels` → poids d'harmonie, ±0,5 ★).
+- **Grilles « Détail »** : palettes (nuancier + titre + bouton + carte), polices (titre + texte), graisse, coins en bloc focalisé à la
+  largeur du téléphone ; ce qui change écrit sur chaque carte (« Police : Bodoni Moda / Newsreader ») et repère « Évalué ici » ;
+  écart minimal garanti (palettes à distance perçue ≥ 150, polices de familles et de genres différents), sinon 3 ou 4 options ;
+  « Superposer » au toucher long. Les détails se dégustent dans la famille choisie (entonnoir).
+- **Différence perceptible** : une grille ne fait jamais varier une section que le gabarit ne rend pas (`SECTIONS_NON_RENDUES`,
+  `differenceRendue`) ; dans l'admin, empreinte du rendu de chaque vignette (position, taille, couleurs, police de chaque élément) :
+  vignettes recadrées sur la zone qui diffère, deux vignettes identiques à l'œil → grille regénérée (2 fois), sinon doublons retirés.
+  Tests : 50 grilles « Directions » et 50 grilles « Détail » sans paire sous le seuil, non-régression du cas Semelles.
+- **Validation automatique** au 2e choix (option « Mon palais », activée par défaut ; bouton Valider si désactivée).
+
 ## Grille « Choisis tes 2 préférées parmi 6 »
 
 - Six propositions du même profil : la base est faite des favoris 4-5 ★ (`versQuatreCinq`, aucun élément à juger là où la
