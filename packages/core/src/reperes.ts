@@ -138,6 +138,10 @@ const DIMENSIONS: Record<string, () => Repere> = {
   menu: () => repere('le menu', ['menu', 'menu-mobile', 'rdv']),
   structure: () => ensemble('la structure du site'),
   photo: () => ensemble('la photo'),
+  // Visuels animés du premier écran (visuels-heros-animes.ts) : l'animation jouée face à son image fixe, à une illustration fixe
+  // du même sujet, ou à une autre animation (dimension « version » des illustrations)
+  'animation:fige': () => ensemble('le visuel animé du premier écran, joué ou figé', 'l’animation apporte-t-elle quelque chose ?'),
+  'animation:illustration': () => ensemble('le visuel du premier écran, animation ou illustration fixe'),
   surfaces: () => ensemble('la répartition des couleurs et des fonds (même palette)', 'contraste AA vérifié'),
   'image:fond': () => ensemble('le fond derrière l’image (même image)'),
   'image:traitement': () => ensemble('le traitement de l’image sur ce fond'),
