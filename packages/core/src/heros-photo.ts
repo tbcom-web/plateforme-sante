@@ -20,9 +20,13 @@ import { contraste, melanger, rvb } from './couleurs';
 import { CYCLES, COURBES, DUREES, NEUTRES } from './charte';
 import { couleursGabarit, type CouleursGabarit } from './gabarits';
 import type { ModeleManifeste } from './modeles';
-import { estPremierEcranAnime, estPremierEcranPhoto, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
+import { estPremierEcranAnime, estPremierEcranPhoto, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, type AnimationEntete, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
+import { AVEC_COMPOSITION, cssLot2, FONDS_LOT2, FORMES_LOT2, teintesSousTexte } from './heros-organiques';
+import { cssAnimationEntete, htmlAnimationEntete, motsDesSoins } from './entete-anim';
 
 export * from './heros-photo-variantes';
+export { teintesSousTexte, cssLot2 } from './heros-organiques';
+export { cssAnimationEntete, htmlAnimationEntete, motsDesSoins, SCRIPT_ENTETE, DUREE_ENTETE } from './entete-anim';
 
 /** Photos montrées au plus par le diaporama (3 à 5 demandées) */
 export const HEROS_PHOTOS_MAX = 5;
@@ -59,8 +63,10 @@ export function styleCouleursHeros(m: Pick<ModeleManifeste, 'gabarit' | 'jetons'
   const ap = alphaVoile(c.plein, [c['plein-texte']]);
   const [pr, pg, pb] = rvb(c.plein);
   // Largeur du cadre et gouttière : celles de la coquille du gabarit (Coquille.astro, ApercuGabarit), texte aligné sur l'en-tête
+  // Teintes de la gamme posées sous le texte (lot 2 : dégradé maillé animé, forme qui respire ; lueur d'en-tête) : AA calculé
+  const [t1, t2, t3] = teintesSousTexte(c);
   const [cadre, gouttiere] = ({ village: [880, 40], revue: [1120, 64] } as Record<string, [number, number]>)[m.gabarit ?? 'classique'] ?? [1180, 40];
-  return [...ROLES.map((k) => `--hp-${k}:${c[k]}`), `--hp-voile-c:rgb(${r} ${g} ${b} / ${a})`, `--hp-voile-a:${a}`, `--hp-voile-plein:rgb(${pr} ${pg} ${pb} / ${ap})`, `--hp-cadre:${cadre}px`, `--hp-gouttiere:${gouttiere}px`].join(';');
+  return [...ROLES.map((k) => `--hp-${k}:${c[k]}`), `--hp-voile-c:rgb(${r} ${g} ${b} / ${a})`, `--hp-voile-a:${a}`, `--hp-voile-plein:rgb(${pr} ${pg} ${pb} / ${ap})`, `--hp-t1:${t1}`, `--hp-t2:${t2}`, `--hp-t3:${t3}`, `--hp-cadre:${cadre}px`, `--hp-gouttiere:${gouttiere}px`].join(';');
 }
 
 /** Plus long mot insécable d'un titre, borné (même règle que Gabarit.astro : --mot-long) */
@@ -100,6 +106,8 @@ export type DonneesHeros = {
   mode: 'site' | 'apercu';
   /** Aperçu : défilement en pause (réduction des animations) */
   pause?: boolean;
+  /** Animation d'en-tête (entete-anim.ts) ; absente ou « aucune » : rien */
+  animation?: AnimationEntete | null;
 };
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -109,7 +117,7 @@ const VIDE = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAIC
 
 /** Photos effectivement montrées par une variante (aucune pour typographique ; une pour les autres sans défilement) */
 export function photosMontrees(v: PremierEcranNouveau, photos: readonly PhotoHeros[]): PhotoHeros[] {
-  if (v === 'typographique') return [];
+  if (v === 'typographique' || (PREMIERS_ECRANS_LOT2_LIBRES as readonly string[]).includes(v)) return [];
   return photos.slice(0, estPremierEcranAnime(v) ? HEROS_PHOTOS_MAX : 1);
 }
 
@@ -125,7 +133,7 @@ function img(p: PhotoHeros, i: number, d: DonneesHeros, sizes: string): string {
 }
 
 /** Cadre des photos (aria-hidden) et commandes du diaporama (points décoratifs, bouton pause accessible) */
-function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: boolean): string {
+function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: boolean, formes = ''): string {
   const diapos = photos.map((p, i) => `<div class="hp__diapo" style="--hp-i:${i};--hp-kx:${i % 2 ? -1 : 1}">${img(p, i, d, sizes)}</div>`).join('');
   const anime = photos.length > 1;
   const commandes = anime
@@ -134,12 +142,14 @@ function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: bool
       + '<svg class="hp__arret" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z"/></svg>'
       + '<svg class="hp__lecture" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg></button></div>'
     : '';
-  return `<div class="hp__media"><div class="hp__fond" aria-hidden="true">${diapos}${voile ? '<span class="hp__voile"></span>' : ''}</div>${commandes}</div>`;
+  return `<div class="hp__media">${formes ? `<span aria-hidden="true">${formes}</span>` : ''}<div class="hp__fond" aria-hidden="true">${diapos}${voile ? '<span class="hp__voile"></span>' : ''}</div>${commandes}</div>`;
 }
 
 function titre(d: DonneesHeros): string {
+  // Animation d'en-tête en bande ou en emblème : au-dessus du sur-titre (taille réservée, jamais sous le texte)
+  const anim = d.animation && d.animation !== 'aucune' && PLACEMENT_ANIMATIONS_ENTETE[d.animation] !== 'fond' ? htmlAnimationEntete(d.animation, motsDesSoins(d.soins)) : '';
   const mots = (d.soins.split(' ').map((m, k) => `<span class="hp__m" style="--k:${k}">${esc(m)}</span>`)).join(' ');
-  return `<p class="hp__sur">${esc(d.sur)}</p>`
+  return `${anim}<p class="hp__sur">${esc(d.sur)}</p>`
     + `<${d.balise} class="hp__titre">Cabinet de <span class="hp__mot">${esc(d.metier)}</span>${d.ville ? ` <span class="pale">${esc(d.ville)}</span>` : ''}</${d.balise}>`
     + (d.soins ? `<p class="hp__soins">${d.variante === 'typographique' ? mots : esc(d.soins)}</p>` : '')
     + `<div class="hp__actions">${d.actions.map((a) => `<a class="hp__bouton${a.plein ? ' hp__bouton--plein' : ''}" href="${esc(a.href)}">${esc(a.libelle)}${a.detail ? ` <span>${esc(a.detail)}</span>` : ''}</a>`).join('')}</div>`
@@ -150,10 +160,11 @@ function titre(d: DonneesHeros): string {
 }
 
 /** Variantes dont la photo est posée sur le fond de la page (fondue, découpée, masquée) */
-const SUR_PAGE = ['fondu', 'fondu-double', 'oblique', 'parallelogramme', 'organique', 'organique-fondu'] as const;
+const SUR_PAGE: readonly string[] = ['fondu', 'fondu-double', 'oblique', 'parallelogramme', 'organique', 'organique-fondu', ...PREMIERS_ECRANS_LOT2];
 const TAILLES: Partial<Record<PremierEcranNouveau, string>> = {
   fondu: '(min-width: 900px) 60vw, 100vw', oblique: '(min-width: 900px) 60vw, 100vw', parallelogramme: '(min-width: 900px) 45vw, 100vw',
-  organique: '(min-width: 900px) 45vw, 100vw', 'organique-fondu': '(min-width: 900px) 60vw, 100vw',
+  organique: '(min-width: 900px) 45vw, 100vw', 'organique-fondu': '(min-width: 900px) 60vw, 100vw', 'decoupe-photo': '(min-width: 900px) 40vw, 100vw', 'duo-taches': '(min-width: 900px) 40vw, 80vw',
+  'arche-photo': '(min-width: 900px) 30vw, 70vw', 'voute-photo': '(min-width: 900px) 55vw, 100vw',
 };
 // Lignes de vitesse (traits fins, aucune image) et bandes diagonales qui « filent » ; taches organiques qui respirent
 const VITESSE = '<svg class="hp__vitesse" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 14H400M70 38H400M0 62H330M140 86H400M30 110H260"/></svg>';
@@ -173,16 +184,23 @@ export function htmlHeros(d: DonneesHeros): { avant: string; apres: string; fent
   const v = d.variante;
   const photos = photosMontrees(v, d.photos);
   const anime = estPremierEcranAnime(v) && photos.length > 1;
+  const animation = d.animation && d.animation !== 'aucune' ? d.animation : null;
+  const lueur = animation && PLACEMENT_ANIMATIONS_ENTETE[animation] === 'fond' ? htmlAnimationEntete(animation) : '';
   const surPhoto = v === 'photo-gauche' || v === 'photo-centre' || v === 'photo-bas' || v === 'diaporama' || v === 'voile-degrade';
   const surPage = (SUR_PAGE as readonly string[]).includes(v);
   const classes = ['hp', `hp--${v}`, surPhoto && 'hp--sur-photo', surPage && 'hp--sur-page', anime && `hp--t-${d.transition}`, anime && d.mode === 'apercu' && !d.pause && 'hp--joue', d.pause && 'hp--pause'].filter(Boolean).join(' ');
   const style = [d.couleurs, `--mot-long:${d.motLong}`, anime ? `--hp-anim:hp-${d.transition}-${photos.length};--hp-anim-pt:hp-pt-${photos.length};--hp-cycle:${photos.length * DUREE_DIAPO}ms;--hp-d:${DUREE_DIAPO}ms;--hp-t:${DUREE_TRANSITION}ms` : ''].filter(Boolean).join(';');
-  const ouverture = `<section class="${classes}" style="${esc(style)}" aria-label="Le cabinet en bref"${anime ? ` data-hp-diapos="${photos.length}"` : ''}>`;
-  const css = keyframesHeros(anime ? d.transition : null, photos.length);
+  const ouverture = `<section class="${classes}" style="${esc(style)}" aria-label="Le cabinet en bref"${anime ? ` data-hp-diapos="${photos.length}"` : ''}${animation ? ' data-ea' : ''}>${lueur}`;
+  const css = keyframesHeros(anime ? d.transition : null, photos.length) + cssLot2(v) + cssAnimationEntete(animation);
   const texte = (cl = '') => `<div class="hp__texte${cl}">${titre(d)}</div>`;
   if (surPage) {
     // Photo posée sur le fond de la page (fondue, découpée, masquée) : le texte reste sur le fond uni (AA du gabarit)
-    return { avant: `${ouverture}${DECORS[v] ?? ''}${media(d, photos, TAILLES[v] ?? '100vw', false)}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
+    // Lot 2 sans photo : composition de formes à la place de la photo (ou fond seul)
+    const libre = (PREMIERS_ECRANS_LOT2_LIBRES as readonly string[]).includes(v);
+    const visuel = libre
+      ? (AVEC_COMPOSITION.includes(v) ? `<div class="hp__media hp__compo" aria-hidden="true">${FORMES_LOT2[v]}</div>` : '')
+      : media(d, photos, TAILLES[v] ?? '100vw', false, FORMES_LOT2[v] ?? '');
+    return { avant: `${ouverture}${DECORS[v] ?? FONDS_LOT2[v] ?? ''}${visuel}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
   }
   if (surPhoto || v === 'scinde-photo') {
     const sizes = v === 'scinde-photo' ? '(min-width: 900px) 50vw, 100vw' : '100vw';

@@ -111,3 +111,113 @@ test('métadonnées d’harmonie : chaque premier écran a sa famille, son éner
   assert.equal(METADONNEES_PREMIERS_ECRANS.organique.famille, 'organique');
   assert.equal(METADONNEES_PREMIERS_ECRANS.fondu.famille, 'fondu');
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// Lot 2 « couleurs / formes organiques » et animations d'en-tête (2026-10-08)
+// ---------------------------------------------------------------------------------------------------------------
+import { ANIMATIONS_ENTETE, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, PREMIERS_ECRANS_LOT2_PHOTO, LIBELLES_PREMIERS_ECRANS, LIBELLES_ANIMATIONS_ENTETE } from './heros-photo-variantes';
+import { cssAnimationEntete, htmlAnimationEntete, motsDesSoins, SCRIPT_ENTETE } from './entete-anim';
+import { cssLot2 } from './heros-organiques';
+import { recettesPourScenario, toutChanger, type Recette } from './recettes';
+import { violationsDures } from './harmonie';
+
+test('lot 2 : chaque variante se rend ; sans photo aucune image, avec photo la première reste l’élément LCP', () => {
+  for (const v of PREMIERS_ECRANS_LOT2) {
+    const r = htmlHeros(base({ variante: v as never }));
+    assert.match(r.avant, /class="hp__titre"/, v);
+    assert.ok(cssLot2(v).length > 100, v);
+    assert.doesNotMatch(r.css, /NaN|undefined/, v);
+    const imgs = r.avant.match(/<img[^>]*>/g) ?? [];
+    if ((PREMIERS_ECRANS_LOT2_LIBRES as readonly string[]).includes(v)) assert.equal(imgs.length, 0, v);
+    else { assert.equal(imgs.length, 1, v); assert.match(imgs[0], /fetchpriority="high"/, v); assert.match(r.avant, /hp--sur-page/, v); }
+  }
+  assert.equal(PREMIERS_ECRANS_LOT2_PHOTO.length + PREMIERS_ECRANS_LOT2_LIBRES.length, 10);
+});
+
+test('lot 2 : teintes posées sous le texte AA (titre, sur-titre, texte doux) pour toutes les gammes et tous les gabarits', () => {
+  for (const g of GAMMES) for (const id of ['tableau', 'village', 'revue', 'proximite']) {
+    const style = styleCouleursHeros(modeleIntegre(id), { couleur: g.accent, gamme: g.id });
+    const v = (k: string) => new RegExp(`--hp-${k}:(#[0-9a-f]{6})`).exec(style)![1];
+    for (const t of ['t1', 't2', 't3']) for (const texte of ['encre', 'accent-texte', 'encre-douce']) {
+      assert.ok(contraste(v(texte), v(t)) >= 4.5, `${g.id} / ${id} / ${texte} sur ${t}`);
+      // Mélange avec le fond de la page (bord des taches floues) : AA aussi
+      for (const a of [0.25, 0.5, 0.75]) assert.ok(contraste(v(texte), melanger(v('page'), v(t), a)) >= 4.5, `${g.id} / ${id} / ${texte} / ${t} ${a}`);
+    }
+  }
+});
+
+test('animations d’en-tête : < 3 Ko, transform et opacity seulement, image fixe sans lecture, ≤ 5 s', () => {
+  const mots = motsDesSoins('Bilan podologique, semelles orthopédiques et soins de pédicurie.');
+  assert.deepEqual(mots, ['Bilan podologique', 'semelles orthopédiques', 'soins de pédicurie']);
+  for (const a of ANIMATIONS_ENTETE.filter((x) => x !== 'aucune')) {
+    const html = htmlAnimationEntete(a, mots), css = cssAnimationEntete(a);
+    assert.ok(html.length > 20, a);
+    assert.ok(Buffer.byteLength(html + css) < 3072, `${a} : ${Buffer.byteLength(html + css)} octets`);
+    // Images clés : transform et opacity seulement (compositeur)
+    for (const k of css.match(/@keyframes [\w-]+\{.*?\}\}/g) ?? []) for (const p of k.replace(/@keyframes [\w-]+\{/, '').matchAll(/([a-z-]+):/g)) assert.ok(['transform', 'opacity'].includes(p[1]), `${a} anime ${p[1]}`);
+    // Aucune lecture sans la classe posée par le script (image fixe par défaut) ; réduction des animations respectée
+    for (const m of css.matchAll(/([^{}]*)\{[^{}]*animation:ea-/g)) assert.match(m[1], /\.ea-joue/, a);
+    assert.match(css, /prefers-reduced-motion:reduce/);
+    assert.doesNotMatch(html, /<script|<img|onclick/);
+  }
+  assert.equal(htmlAnimationEntete('aucune'), '');
+  assert.ok(SCRIPT_ENTETE.length < 768, `script ${SCRIPT_ENTETE.length}`);
+  // Aucun chevron : le post-traitement typographique du site (apps/sites/src/lib/typo.mjs) découpe le HTML sur « < »
+  assert.doesNotMatch(SCRIPT_ENTETE, /</);
+  // Placement : emblème / bande au-dessus du sur-titre, lueur en fond ; section marquée pour le script
+  const r = htmlHeros(base({ variante: 'fondu', animation: 'voute-trace' }));
+  assert.match(r.avant, /data-ea/);
+  assert.match(r.avant, /<div class="hp__texte"><span class="ea ea--embleme ea--voute-trace"/);
+  assert.match(htmlHeros(base({ variante: 'papier-decoupe', animation: 'lueur' })).avant, /data-ea><span class="ea ea--fond ea--lueur"/);
+  assert.doesNotMatch(htmlHeros(base({ variante: 'fondu', animation: 'aucune' })).avant, /data-ea|class="ea /);
+});
+
+test('à valider : badge dans les libellés, jamais tirés ni gardés pour un praticien, disponibles au studio', () => {
+  for (const v of PREMIERS_ECRANS_LOT2) { assert.ok(INGREDIENTS_A_VALIDER.has(`composant:accueil:${v}`)); assert.match(LIBELLES_PREMIERS_ECRANS[v as keyof typeof LIBELLES_PREMIERS_ECRANS], /à valider/); }
+  for (const a of ANIMATIONS_ENTETE.filter((x) => x !== 'aucune')) { assert.ok(INGREDIENTS_A_VALIDER.has(`composant:entete-anim:${a}`)); assert.match(LIBELLES_ANIMATIONS_ENTETE[a], /à valider/); }
+  assert.ok(valeursTirables('accueil', 'tableau', true).includes('duo-taches'));
+  assert.ok(!valeursTirables('accueil', 'tableau', true, { praticien: true }).includes('duo-taches'));
+  assert.ok(valeursTirables('accueil', 'tableau', true, { praticien: true, valides: new Set(['composant:accueil:duo-taches']) }).includes('duo-taches'));
+  assert.deepEqual(valeursTirables('entete-anim', 'tableau', false, { praticien: true }), ['aucune']);
+  const c: ContexteRecette = { sujets: ['sport', 'enfant'], principaux: 2 };
+  const x = { ...compositionInitiale(c), structure: 'clair-pratique' as const };
+  const avec = { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, accueil: 'papier-decoupe' as const, 'entete-anim': 'onde' as const } } };
+  assert.equal(reparerComposition(avec, c).sections.variantes['entete-anim'], 'onde');
+  const prat = reparerComposition(avec, { ...c, praticien: true }).sections.variantes;
+  assert.equal(prat['entete-anim'], undefined);
+  assert.notEqual(prat.accueil, 'papier-decoupe');
+  // Sans nouveau premier écran, pas d'animation d'en-tête ; tuile : jouée dans le premier écran fondu
+  const sans = { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, accueil: 'carte' as const, 'entete-anim': 'onde' as const } } };
+  assert.equal(reparerComposition(sans, c).sections.variantes['entete-anim'], undefined);
+  const tuile = compositionPourCle(sans, 'composant:entete-anim:foulee');
+  assert.equal(tuile.sections.variantes.accueil, 'fondu');
+  assert.ok(tuile.photos.length >= 3);
+  // Parcours : les recettes qui contiennent un ingrédient à valider ne sont pas proposées
+  const rec = (id: string, comp: typeof x): Recette => ({ id, nom: id, composition: comp, sujets: ['sport'], note: 5, statut: 'active' } as unknown as Recette);
+  const l = [rec('a', avec), rec('b', x)];
+  assert.equal(recettesPourScenario(l, ['sport']).length, 2);
+  assert.deepEqual(recettesPourScenario(l, ['sport'], 4, undefined, { praticien: true }).map((r) => r.id), ['b']);
+});
+
+test('harmonie : animations vives jamais pour diabète et seniors, un seul élément fort, rien qui pulse en pédagogique', () => {
+  const c: ContexteRecette = { sujets: ['diabete'], principaux: 1 };
+  const x = compositionInitiale(c);
+  const avec = (accueil: string, anim: string, style = x.visuels.style) => ({ ...x, visuels: { ...x.visuels, style }, sections: { ...x.sections, variantes: { ...x.sections.variantes, accueil, 'entete-anim': anim } } }) as never;
+  assert.ok(violationsDures(avec('bento', 'foulee'), { sujets: ['diabete'] }).some((v) => v.code === 'animation-calme'));
+  assert.ok(!violationsDures(avec('bento', 'voute-trace'), { sujets: ['diabete'] }).some((v) => v.code === 'animation-calme'));
+  assert.ok(violationsDures(avec('organique', 'mots'), { sujets: ['sport'] }).some((v) => v.code === 'expressif'));
+  assert.ok(!violationsDures(avec('papier-decoupe', 'voute-trace'), { sujets: ['sport'] }).some((v) => v.code === 'expressif'));
+  assert.ok(violationsDures(avec('bento', 'onde', 'pedagogique'), { sujets: ['enfant'] }).some((v) => v.code === 'pulse-pedagogique'));
+});
+
+test('générateur des praticiens : jamais un premier écran, une animation d’en-tête ni une présentation des portraits « à valider »', () => {
+  const c: ContexteRecette = { sujets: ['sport', 'enfant'], principaux: 2, praticien: true };
+  let x = compositionInitiale(c);
+  for (let g = 1; g <= 120; g++) {
+    x = g % 3 ? toutChanger(x, [], c, g) : tirerPage(x, { page: 'accueil' }, c, g);
+    const v = x.sections.variantes as Record<string, string | undefined>;
+    for (const k of ['accueil', 'entete-anim', 'portraits']) assert.ok(!v[k] || !INGREDIENTS_A_VALIDER.has(`composant:${k}:${v[k]}`), `${g} : ${k} = ${v[k]}`);
+  }
+  // Le studio (sans « praticien ») y a accès
+  assert.ok(INGREDIENTS_A_VALIDER.has('composant:portraits:organique') || [...INGREDIENTS_A_VALIDER].some((k) => k.startsWith('composant:portraits:')));
+});

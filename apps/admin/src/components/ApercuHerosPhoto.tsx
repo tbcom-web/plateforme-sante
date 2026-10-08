@@ -4,9 +4,9 @@
 // maillé, bento) : EXACTEMENT le HTML et la feuille du site (packages/core/src/heros-photo.ts, htmlHeros et CSS_HEROS), dans
 // l'iframe de l'aperçu (CadreApercu). Le diaporama joue tout de suite (toutes les photos chargées) ; bouton pause actif.
 // Sans photo, une variante à photos n'est pas rendue (null) : l'appelant garde son premier écran, comme le site.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-  CSS_HEROS, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
+  CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
   TRANSITIONS_DIAPORAMA, illustrationTheme, themeIllustre, type Registre, type ModeleManifeste, type ReplisApercu, type SiteDraft, type TransitionDiaporama,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -40,6 +40,22 @@ export function herosPhotoActif(d: SiteDraft, m: ModeleManifeste): boolean {
 /** Le nouveau premier écran de la recette, ou null (premier écran du gabarit ou du modèle) */
 export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r, sur, registre, illustration, masquerAppel = false }: Props) {
   const [pause, setPause] = useState(false);
+  const boite = useRef<HTMLDivElement>(null);
+  const brute = m.variantes?.['entete-anim'];
+  const animation = estAnimationEntete(brute) && brute !== 'aucune' ? brute : null;
+  // Animation d'en-tête : rejouée en boucle dans l'aperçu (le site la joue à l'affichage, au retour à l'écran et au survol) ;
+  // lueur : suit le pointeur
+  useEffect(() => {
+    const h = boite.current?.querySelector<HTMLElement>('.hp[data-ea]');
+    if (!h || !animation) return;
+    const jouer = () => { h.classList.remove('ea-joue'); void h.offsetWidth; h.classList.add('ea-joue'); };
+    jouer();
+    const t = setInterval(jouer, DUREE_ENTETE + 1700);
+    const l = h.querySelector<HTMLElement>('.ea--lueur i');
+    const suivre = (e: PointerEvent) => { const b = h.getBoundingClientRect(); if (l) l.style.transform = `translate3d(${e.clientX - b.left}px,${e.clientY - b.top}px,0)`; };
+    if (l) h.addEventListener('pointermove', suivre);
+    return () => { clearInterval(t); h.removeEventListener('pointermove', suivre); };
+  }, [animation, m.variantes?.accueil, d.theme.gamme, d.theme.couleur]);
   const v = m.variantes?.accueil;
   if (!estPremierEcranNouveau(v)) return null;
   const photos = photosApercu(d);
@@ -72,6 +88,7 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     motLong: motLongTitre(`Cabinet de ${metier} ${r.aVille ?? ''}`),
     mode: 'apercu',
     pause,
+    animation,
   });
   // Illustration de l'emplacement : celle du site (VisuelTheme : illustration composée du sujet du héros, gamme du site sauf
   // modèle à teinte « gamme » en relevé)
@@ -80,7 +97,7 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
   const gamme = m.jetons.teinte === 'gamme' && registre === 'releve' ? null : d.theme.gamme || null;
   const svg = fente && sujet && themeIllustre(sujet) ? illustrationTheme(sujet, { format: v === 'bento' ? 'paysage' : 'portrait', registre, gamme, id: `hp-${sujet}` }) : illustration;
   return (
-    <div onClick={(e) => { if ((e.target as Element).closest?.('.hp__pause')) setPause((p) => !p); }}>
+    <div ref={boite} onClick={(e) => { if ((e.target as Element).closest?.('.hp__pause')) setPause((p) => !p); }}>
       <style dangerouslySetInnerHTML={{ __html: CSS_HEROS + css }} />
       <div style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: fente ? `${avant}<div class="vt vt--heros">${svg}</div>${apres}` : avant }} />
     </div>

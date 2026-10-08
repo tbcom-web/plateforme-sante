@@ -43,8 +43,9 @@ ingrédient arrive, mais le test `harmonie.test.ts` exige l’étiquette des pol
 transitions.
 
 Tous les ingrédients existants sont étiquetés : 23 paires de polices, 4 structures, 4 styles + 4 registres expérimentaux,
-17 gammes (couleur libre : température calculée depuis la teinte), 4 effets, 6 traitements photo, 9 formes de cartes, 15 premiers
-écrans, 6 transitions de diaporama, 5 transitions entre sections, 7 jeux de détails et leurs 10 éléments, les 7 axes
+17 gammes (couleur libre : température calculée depuis la teinte), 4 effets, 6 traitements photo, 9 formes de cartes, 25 premiers
+écrans (dont les 10 du lot 2 « couleurs / formes organiques », à valider), 11 animations d'en-tête (`v.entete-anim`, aucune
+comprise, à valider), 6 transitions de diaporama, 5 transitions entre sections, 7 jeux de détails et leurs 10 éléments, les 7 axes
 typographiques, les 3 axes de menu, et les présentations de pages les plus marquées (les autres sont neutres).
 
 <!--
@@ -82,6 +83,12 @@ TODO (quand details.ts sera poussé) : importer JEUX_DETAILS au lieu de la copie
    signature de la marque, comptée à part).
 8. **Un seul élément expressif FORT par écran** (`expressif`) : titre spectaculaire OU fond motif (trame, formes) OU premier écran
    typographique / maillé / diaporama / photo plein écran / oblique / organique…
+8 bis. **Animations d'en-tête** (`entete-anim.ts`, 2026-10-08) : les très dynamiques (foulée, mots cinétiques, rubans, taches)
+   sont FORTES (≥ 0,8) et ne se posent qu'avec un premier écran calme (bento, photo d'un côté) ; les minimalistes (trait de
+   voûte, points de pression, onde, pas, formes géométriques, lueur) se combinent avec les premiers écrans des lots 1 et 2.
+   Jamais de foulée, mots, pas ni rubans pour le diabète ou les seniors (`animation-calme`) ; jamais de points qui pulsent ni
+   d'onde avec les illustrations douces (`pulse-pedagogique` : « rien qui pulse » en registre pédagogique). Les taches, l'onde,
+   les rubans et les premiers écrans organiques du lot 2 comptent parmi les rondeurs interdites avec la structure Technique.
 9. **Contrastes AA** : accent ≥ 4,5:1 sur le fond (`contraste-aa`), en plus des contrôles du core.
 10. **Cohérence des coins** (`coins-coherents`) : jamais d’angles carrés (coins carrés, gros carrés, étiquettes carrées) avec des
     éléments très arrondis (bulles, pilules, cadres organiques, menus en pastilles, surtitres en pastille) : même rayon partout.

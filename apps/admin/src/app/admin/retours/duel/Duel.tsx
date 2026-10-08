@@ -21,6 +21,7 @@ import {
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
 } from '@plateforme/core';
+import { ANIMATIONS_ENTETE, compositionPourCle, PREMIERS_ECRANS_LOT2 } from '@plateforme/core';
 import type { PredictionJuge } from '@plateforme/core/juge';
 import { compositionPourCle as poserCle, PRESENTATIONS_PORTRAITS } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
@@ -281,6 +282,14 @@ export default function Duel(props: Props) {
         varier = (x, dim, gg) => varierDuel(x, dim, c, gg);
       } else if (t === 'element') {
         dims = Object.keys(base.sections.variantes).filter((f) => (FAMILLES_COMPOSANTS as readonly string[]).includes(f)).map((f) => `composant:${f}`);
+        // Ingrédients à valider (2026-10-08) : un duel sur trois compare deux animations d'en-tête, ou deux premiers écrans
+        // « couleurs / formes organiques », sur la même recette
+        if (r() < 0.34) {
+          const anim = r() < 0.5;
+          const l = anim ? ANIMATIONS_ENTETE.filter((a) => a !== 'aucune') : PREMIERS_ECRANS_LOT2;
+          base = compositionPourCle(base, `composant:${anim ? 'entete-anim' : 'accueil'}:${l[Math.floor(r() * l.length)]}`);
+          dims = [anim ? 'composant:entete-anim' : 'composant:accueil'];
+        }
         // Présentations des portraits (à valider, 2026-10-08) : un duel d'éléments sur cinq compare deux présentations des
         // praticiens sur la même recette (repère « On compare : la présentation des portraits » sur le bloc praticiens)
         if (r() < 0.2) {

@@ -233,6 +233,7 @@ export function inventaireAssets(opts: { photosJeux?: readonly PhotoDeJeu[] } = 
 
 /** Fichiers à retoucher par famille d'élément (gabarits Astro et aperçu de l'admin) */
 const SOURCES_FAMILLES: Record<string, string> = {
+  'entete-anim': 'packages/core/src/entete-anim.ts',
   accueil: 'apps/sites/src/components/gabarits/PremierEcran.astro',
   theme: 'apps/sites/src/pages/themes/[theme].astro (page-theme--<variante>) ; apps/admin/src/components/ApercuPages.tsx',
   article: 'apps/sites/src/pages/actualites/[slug].astro (article--<variante>) ; apps/admin/src/components/ApercuPages.tsx',
@@ -265,6 +266,7 @@ export function inventaireStudio(): Asset[] {
   for (const f of FAMILLES_COMPOSANTS) {
     for (const v of VARIANTES_SECTIONS[f] as readonly string[]) {
       if (f === 'soins-forme' && v === 'gabarit') continue; // « celle du modèle » : pas une forme à juger seule
+      if (f === 'entete-anim' && v === 'aucune') continue; // pas d'animation : rien à juger seul
       l.push({
         cle: `composant:${f}:${v}`, type: 'composant', titre: `${NOMS_SECTIONS_VARIABLES[f] ?? f} : ${libelleVariante(f, v)}`,
         detail: `Élément · ${NOMS_SECTIONS_VARIABLES[f] ?? f}`, source: SOURCES_FAMILLES[f] ?? 'apps/sites/src/components/gabarits', soins: [f],

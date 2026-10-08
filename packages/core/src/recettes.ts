@@ -23,7 +23,7 @@ import { contraste, hex, rvb } from './couleurs';
 import { NEUTRES } from './charte';
 import { themeParId } from './themes';
 import { themeIllustre } from './heros-themes';
-import { estPremierEcranAnime, estPremierEcranPhoto, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
+import { estAValider, estPremierEcranAnime, estPremierEcranNouveau, estPremierEcranPhoto, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_ANIMATIONS_ENTETE, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
@@ -97,17 +97,19 @@ export function sectionsSelonOrdre(base: readonly SectionAccueil[], ordre: Ordre
 
 /** Sections dont le studio tire la variante, selon le gabarit (classique : la présentation des sujets seulement) */
 export const sectionsVariables = (g: Gabarit): (keyof Variantes)[] =>
-  g === 'classique' ? ['accueil', 'transition', 'sujets', 'soins-forme', 'theme', 'article', 'sections', 'portraits'] : ['accueil', 'transition', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'portraits', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article', 'sections'];
+  g === 'classique' ? ['accueil', 'transition', 'entete-anim', 'sujets', 'soins-forme', 'theme', 'article', 'sections', 'portraits'] : ['accueil', 'transition', 'entete-anim', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'portraits', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article', 'sections'];
 
 /**
  * Valeurs qu'un dé peut tirer pour une section (premier écran : les variantes à photos seulement avec des photos, style
  * « Photos » ; classique : le premier écran du modèle, '' , ou l'un des nouveaux premiers écrans de heros-photo.ts).
  */
-export function valeursTirables(s: keyof Variantes, g: Gabarit, avecPhotos: boolean): string[] {
+export function valeursTirables(s: keyof Variantes, g: Gabarit, avecPhotos: boolean, c?: Pick<ContexteRecette, 'praticien' | 'valides'> | null): string[] {
   const toutes = VARIANTES_SECTIONS[s] as readonly string[];
-  if (s !== 'accueil') return [...toutes];
+  // Ingrédients « à valider » (lot 2 des premiers écrans, animations d'en-tête) : jamais tirés pour un praticien avant validation
+  const permis = (v: string) => !c?.praticien || !estAValider(`composant:${s}:${v}`, c.valides);
+  if (s !== 'accueil') return toutes.filter(permis);
   const base = g === 'classique' ? ['', ...PREMIERS_ECRANS_NOUVEAUX] : [...toutes];
-  return base.filter((v) => avecPhotos || !estPremierEcranPhoto(v));
+  return base.filter((v) => (avecPhotos || !estPremierEcranPhoto(v)) && permis(v));
 }
 
 /**
@@ -149,12 +151,13 @@ export const ONGLETS_PAGES: readonly { page: PageStructure; nom: string; vue: Vu
 export const vueDePage = (p: PageStructure): VuePage => ONGLETS_PAGES.find((o) => o.page === p)?.vue ?? 'accueil';
 
 /** Familles d'éléments notables (composants) : présentation de chaque élément, clé `composant:<famille>:<variante>` */
-export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'portraits', 'faq', 'soins', 'sujets', 'accueil', 'transition', 'sections', 'pied', 'actualites', 'theme', 'article'];
+export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'portraits', 'faq', 'soins', 'sujets', 'accueil', 'transition', 'entete-anim', 'sections', 'pied', 'actualites', 'theme', 'article'];
 
 /** Libellés des variantes (studio) */
 export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   accueil: { carte: 'Carte et disque', notice: 'Notice tramée', figure: 'Figure de revue', ...LIBELLES_PREMIERS_ECRANS },
   transition: { ...LIBELLES_TRANSITIONS_DIAPORAMA },
+  'entete-anim': { ...LIBELLES_ANIMATIONS_ENTETE },
   sections: { ...LIBELLES_TRANSITIONS_SECTIONS },
   soins: { bulles: 'Cartes illustrées', grille: 'Rangées larges', filets: 'Bulles à filet' },
   sujets: { une: 'Le premier à la une', rangees: 'Grandes rangées illustrées', cartes: 'Cartes égales', liste: 'Liste éditoriale', colonnes: 'Deux colonnes' },
@@ -173,7 +176,7 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   'soins-forme': Object.fromEntries(FORMES_CARTES.map((f) => [f.id, f.nom])),
 };
 export const NOMS_SECTIONS_VARIABLES: Record<string, string> = {
-  accueil: 'Premier écran', transition: 'Transition du diaporama', sections: 'Transitions entre sections', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', portraits: 'Présentation des praticiens', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
+  accueil: 'Premier écran', transition: 'Transition du diaporama', 'entete-anim': 'Animation d’en-tête', sections: 'Transitions entre sections', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', portraits: 'Présentation des praticiens', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -235,6 +238,13 @@ export type ContexteRecette = {
    * ci-dessus restent toujours actifs. `poidsHarmonie` : poids appris des notes (apprendreHarmonie), sinon dérivés de `poids`.
    */
   horsRegles?: boolean;
+  /**
+   * Générateur des praticiens : les ingrédients « à valider » (INGREDIENTS_A_VALIDER : lot 2 des premiers écrans, animations
+   * d'en-tête) ne sont ni tirés ni gardés, sauf ceux de `valides` (validés par Paul). Le studio, « Donner mon avis » et les duels
+   * de Paul ne le posent pas : ils y ont accès (libellé « à valider »).
+   */
+  praticien?: boolean;
+  valides?: ReadonlySet<string> | null;
   poidsHarmonie?: PoidsHarmonie | null;
 };
 
@@ -558,8 +568,10 @@ function tirerStructure(x: CompositionRecette, c: ContexteRecette, r: () => numb
     if (fige(s)) { if (actuelle && possibles.includes(actuelle)) (variantes as Record<string, string>)[s] = actuelle; continue; }
     const mobile = (v: string) => (c.defautsMobile?.has(`composant:${s}:${v}`) ? FACTEUR_DEFAUT_MOBILE : 1);
     // Premier écran : variantes à photos seulement en style « Photos » ; classique : '' = premier écran du modèle
-    const tirables = valeursTirables(s, g, x.visuels.style === 'photos');
-    const v = choisir(tirables.map((v) => ({ v, p: (v === '' ? 2 : 1) * mobile(v) * masse(v === '' ? 0 : effetAtelier(c, `variante=${s}:${v}`) + effetAsset(c, `composant:${s}:${v}`)) })), r)!;
+    const tirables = valeursTirables(s, g, x.visuels.style === 'photos', c);
+    // Animation d'en-tête : « aucune » reste la plus fréquente (trois fois plus que chaque animation)
+    const base = (v: string) => (v === '' ? 2 : (s === 'entete-anim' && v === 'aucune') || (s === 'portraits' && v === 'sobre') ? 3 : 1);
+    const v = choisir(tirables.map((v) => ({ v, p: base(v) * mobile(v) * masse(v === '' ? 0 : effetAtelier(c, `variante=${s}:${v}`) + effetAsset(c, `composant:${s}:${v}`)) })), r)!;
     if (v) (variantes as Record<string, string>)[s] = v;
   }
   return { structure, sections: { ordre, variantes } };
@@ -606,6 +618,9 @@ export function reparerComposition(x: CompositionRecette, c: ContexteRecette): C
   if (variantes.accueil && (!valeursTirables('accueil', g, style === 'photos').includes(variantes.accueil))) delete variantes.accueil;
   if (!estPremierEcranAnime(variantes.accueil)) delete variantes.transition;
   else if (!variantes.transition) variantes.transition = 'fondu';
+  // Animation d'en-tête : seulement dans les nouveaux premiers écrans (heros-photo.ts) ; praticien : ingrédients validés seulement
+  if (c.praticien) for (const k of ['accueil', 'entete-anim', 'portraits'] as const) if (variantes[k] && estAValider(`composant:${k}:${variantes[k]}`, c.valides)) delete variantes[k];
+  if (!estPremierEcranNouveau(variantes.accueil)) delete variantes['entete-anim'];
   const herosSujet = x.visuels.herosSujet && heros.includes(x.visuels.herosSujet) ? x.visuels.herosSujet : heros[0] ?? null;
   return {
     structure,
@@ -734,7 +749,9 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   if (estCleMenu(cle)) return { ...x, menu: menuPourCle(habillageDe(x).menu, cle) };
   if (type === 'composant' && (VARIANTES_SECTIONS as Record<string, readonly string[]>)[a]?.includes(b)) {
     // Transition du diaporama : montrée sur le diaporama plein écran (sauf premier écran scindé déjà choisi)
-    const accueil = a === 'transition' && !estPremierEcranAnime(x.sections.variantes.accueil) ? { accueil: 'diaporama' as const } : {};
+    const accueil = a === 'transition' && !estPremierEcranAnime(x.sections.variantes.accueil) ? { accueil: 'diaporama' as const }
+      // Animation d'en-tête : jouée dans le premier écran fondu (le plus aimé du lot 1) si la recette n'a pas de nouveau premier écran
+      : a === 'entete-anim' && !estPremierEcranNouveau(x.sections.variantes.accueil) ? { accueil: 'fondu' as const } : {};
     const y = { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, ...accueil, [a]: b } } };
     return estPremierEcranPhoto(y.sections.variantes.accueil) ? avecPhotosDemo(y) : y;
   }
@@ -761,7 +778,7 @@ export function blocsPourCle(cle: string): string[] | undefined {
   const [type, a] = cle.split(':');
   if (type === 'composant') {
     const blocs: Record<string, string[]> = {
-      accueil: ['premier'], transition: ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
+      accueil: ['premier'], transition: ['premier'], 'entete-anim': ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
       galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], portraits: ['praticiens'], faq: ['faq'], pied: ['pied'], actualites: ['actualites'],
     };
     // Page sujet, article, fiche : la page entière (vuePourCle)
@@ -828,7 +845,7 @@ export function outilsHarmonie(c: ContexteRecette): OutilsTirage<CompositionRece
       if (dim === 'structure') return structuresPermises(c);
       if (dim === 'style') return stylesPermis(c, x.structure);
       if (dim === 'gamme') { const ex = gammesExclues(c); return GAMMES.filter((g) => !ex.has(g.id) && !(avecDiabete(c) && estRougeVif(g.accent))).map((g) => g.id); }
-      if (dim.startsWith('v.')) return sectionsVariables(gabaritDe(c, x.structure)).includes(dim.slice(2) as keyof Variantes) ? (VARIANTES_SECTIONS[dim.slice(2) as keyof Variantes] as readonly string[]) : [];
+      if (dim.startsWith('v.')) return sectionsVariables(gabaritDe(c, x.structure)).includes(dim.slice(2) as keyof Variantes) ? (VARIANTES_SECTIONS[dim.slice(2) as keyof Variantes] as readonly string[]).filter((v) => !c.praticien || !estAValider(`composant:${dim.slice(2)}:${v}`, c.valides)) : [];
       return null;
     },
   };
@@ -978,13 +995,15 @@ export function recetteDepuisLigne(l: Record<string, any>, modele?: (id: string)
  * `defautsMobile` (praticiens) : une recette dont une page ou un élément a un défaut d'adaptation mobile ouvert passe après les
  * autres (sa note de choix n'est pas touchée), jusqu'à la correction.
  */
-export function recettesPourScenario(recettes: readonly Recette[], client: readonly string[] | ScenarioRecette, min = 4, defautsMobile?: ReadonlySet<string>): Recette[] {
+export function recettesPourScenario(recettes: readonly Recette[], client: readonly string[] | ScenarioRecette, min = 4, defautsMobile?: ReadonlySet<string>, opts: { praticien?: boolean; valides?: ReadonlySet<string> | null } = {}): Recette[] {
   const sc: ScenarioRecette = Array.isArray(client) ? normaliserScenario({ sujets: sujetsActifs(client as readonly string[]) }) : normaliserScenario(client);
   const s1 = sujetsActifs([...sc.principaux, ...sc.secondaires])[0] ?? null;
   const mobileARevoir = (r: Recette) => (defautsMobile?.size ? clesStructure(r.composition).some((k) => defautsMobile.has(k)) : false);
   const cle = new Map(recettes.map((r) => { const s = scenarioDeRecette(r); return [r.id, { rang: RANG_PROXIMITE[niveauProximite(sc, s)], prox: proximiteScenarios(sc, s) }]; }));
   return recettes
     .filter((r) => r.statut === 'active' && (r.note ?? 0) >= min && ((s1 && r.sujets.includes(s1)) || !sujetsActifs(r.sujets).length))
+    // Parcours des praticiens : jamais une recette qui contient un ingrédient « à valider » (lot 2, animations d'en-tête)
+    .filter((r) => !opts.praticien || !clesStructure(r.composition).some((k) => INGREDIENTS_A_VALIDER.has(k) && estAValider(k, opts.valides)))
     .sort((a, b) => Number(mobileARevoir(a)) - Number(mobileARevoir(b)) || cle.get(a.id)!.rang - cle.get(b.id)!.rang || (b.note ?? 0) - (a.note ?? 0)
       || cle.get(b.id)!.prox - cle.get(a.id)!.prox || (a.id < b.id ? -1 : 1));
 }

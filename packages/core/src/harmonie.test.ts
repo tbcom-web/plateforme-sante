@@ -19,7 +19,7 @@ test('harmonie : chaque ingrédient des catalogues est étiqueté (polices, gamm
   for (const g of GAMMES) assert.ok(ETIQUETTES_HARMONIE[`gamme:${g.id}`], `gamme ${g.id}`);
   for (const j of JEUX_EFFETS) assert.ok(ETIQUETTES_HARMONIE[`effets:${j.id}`], `effets ${j.id}`);
   for (const f of FORMES_CARTES) assert.ok(ETIQUETTES_HARMONIE[`v.soins-forme:${f.id}`], `forme ${f.id}`);
-  for (const s of ['accueil', 'transition', 'sections'] as const) for (const v of (VARIANTES_SECTIONS as Record<string, readonly string[]>)[s] ?? []) assert.ok(ETIQUETTES_HARMONIE[`v.${s}:${v}`], `${s} ${v}`);
+  for (const s of ['accueil', 'transition', 'entete-anim', 'sections'] as const) for (const v of (VARIANTES_SECTIONS as Record<string, readonly string[]>)[s] ?? []) assert.ok(ETIQUETTES_HARMONIE[`v.${s}:${v}`], `${s} ${v}`);
   for (const s of ['releve', 'pedagogique', 'ligne', 'photos', 'decoupe', 'riso', 'volume', 'geometrique']) assert.ok(ETIQUETTES_HARMONIE[`style:${s}`] ?? ETIQUETTES_HARMONIE[`experimental:${s}`], s);
 });
 

@@ -159,7 +159,7 @@ export const NOMS_DIMENSIONS_HARMONIE: Record<string, string> = {
   'typo.alignement': 'Alignement', 'typo.surtitre': 'Surtitres', 'details.jeu': 'Jeu de détails', 'details.coins': 'Coins', 'details.ombres': 'Ombres',
   'details.separateur': 'Séparateurs', 'details.souligne': 'Soulignés', 'details.fond': 'Motif de fond', 'details.boutons': 'Boutons', 'details.densite': 'Densité',
   'details.cadre': 'Cadres d’images', 'details.citation': 'Encadrés', 'details.badge': 'Étiquettes', 'menu.ordinateur': 'Menu (ordinateur)', 'menu.mobile': 'Menu (téléphone)',
-  'menu.rdv': 'Bouton de rendez-vous', 'v.accueil': 'Premier écran', 'v.transition': 'Transition du diaporama', 'v.sections': 'Transitions entre sections',
+  'menu.rdv': 'Bouton de rendez-vous', 'v.accueil': 'Premier écran', 'v.transition': 'Transition du diaporama', 'v.entete-anim': 'Animation d’en-tête', 'v.sections': 'Transitions entre sections',
   'v.soins-forme': 'Forme des cartes', 'v.sujets': 'Sujets', 'v.soins': 'Soins', 'v.praticiens': 'Équipe', 'v.portraits': 'Présentation des praticiens', 'v.infos': 'Plan d’accès', 'v.faq': 'Questions',
   'v.galerie': 'Galerie', 'v.horaires': 'Horaires', 'v.contact': 'Contact', 'v.pied': 'Pied de page', 'v.fiche': 'Fiche d’un soin', 'v.actualites': 'Actualités',
   'v.theme': 'Page sujet', 'v.article': 'Article',
@@ -226,7 +226,7 @@ export function verrousDimension(dim: DimensionHarmonie): string[] {
 }
 /** Pages du studio et leurs sections (PAGES_STRUCTURE de recettes.ts) */
 const PAGES_H: Record<string, readonly string[]> = {
-  accueil: ['accueil', 'sujets'], soins: ['soins', 'soins-forme'], acces: ['infos', 'horaires', 'contact'], cabinet: ['praticiens', 'galerie'],
+  accueil: ['accueil', 'sujets', 'entete-anim'], soins: ['soins', 'soins-forme'], acces: ['infos', 'horaires', 'contact'], cabinet: ['praticiens', 'galerie'],
   questions: ['faq'], fiche: ['fiche'], actualites: ['actualites'], theme: ['theme'], article: ['article'],
 };
 export const estVerrouilleeHarmonie = (dim: DimensionHarmonie, verrous: readonly string[]) => verrousDimension(dim).some((v) => verrous.includes(v));
@@ -445,6 +445,30 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.accueil:organique': E('Photo dans une forme organique', { r: 1, e: 0.5, f: -0.5 }, { pref: [F.dx, F.na], jamais: [F.te, F.ed, F.ma, F.mi], fort: 1 }),
   'v.accueil:organique-fondu': E('Forme organique fondue', { r: 1, t: 0.3, f: -0.3 }, { pref: [F.na, F.dx], jamais: [F.te, F.ma, F.mi], fort: 0.8 }),
   'v.accueil:scinde-photo': E('Photo d’un côté, texte de l’autre', { f: 0.3 }, { pref: [F.cl, F.na, F.ed], fort: 0.5 }),
+  // Lot 2 des premiers écrans « couleurs / formes organiques » (2026-10-08, à valider)
+  'v.accueil:decoupe-photo': E('Photo en papier découpé', { r: 0.4, t: 0.6, e: 0.5, f: -0.4 }, { pref: [F.na, F.po, F.dx], jamais: [F.te, F.mi, F.ed], fort: 0.9 }),
+  'v.accueil:duo-taches': E('Duo de taches, couleur et photo', { r: 1, e: 0.5, f: -0.5 }, { pref: [F.dx, F.na, F.po], jamais: [F.te, F.ed, F.ma, F.mi], fort: 1 }),
+  'v.accueil:arche-photo': E('Photo dans une arche', { r: 0.6, f: 0.3, c: 0.2 }, { pref: [F.ed, F.na, F.cl, F.dx], jamais: [F.te], fort: 0.8 }),
+  'v.accueil:voute-photo': E('Photo en courbe de voûte', { r: 0.5, f: 0.2, t: 0.2 }, { pref: [F.na, F.cl, F.dx], jamais: [F.ma], fort: 0.8 }),
+  'v.accueil:papier-decoupe': E('Aplats en papier découpé', { r: 0.5, t: 0.6, e: 0.5, f: -0.4 }, { pref: [F.na, F.dx, F.po], jamais: [F.te, F.mi, F.ed], fort: 0.9 }),
+  'v.accueil:tache-morph': E('Tache qui se déforme', { r: 1, e: 0.5, f: -0.5 }, { pref: [F.dx, F.na, F.po], jamais: [F.te, F.ed, F.ma, F.mi], fort: 0.9 }),
+  'v.accueil:maille-anime': E('Dégradé maillé animé', { r: 0.7, e: 0.5, f: -0.3 }, { pref: [F.po, F.dx, F.na], jamais: [F.te, F.cl, F.mi], fort: 0.8 }),
+  'v.accueil:forme-respire': E('Grande forme qui respire', { r: 1, e: 0.3, t: 0.3, f: -0.4 }, { pref: [F.dx, F.na], jamais: [F.te, F.ma, F.mi], fort: 0.8 }),
+  'v.accueil:bandes-ondulantes': E('Bandes ondulantes', { r: 0.7, e: 0.7, f: -0.4 }, { pref: [F.po, F.dx], jamais: [F.te, F.ed, F.mi, F.cl], fort: 0.9 }),
+  'v.accueil:voute-aplat': E('Aplat en courbe de voûte', { r: 0.6, f: 0.1, t: 0.2 }, { pref: [F.na, F.cl, F.dx], jamais: [F.ma], fort: 0.8 }),
+  // Animations d'en-tête (entete-anim.ts, 2026-10-08, à valider) : très dynamiques = FORTES (≥ 0,8), jamais avec un autre
+  // élément fort ; les minimalistes (≤ 0,6) se combinent avec les premiers écrans des lots 1 et 2
+  'v.entete-anim:aucune': E('Sans animation d’en-tête', {}),
+  'v.entete-anim:voute-trace': E('Trait qui trace la voûte', { e: 0.4, f: 0.3 }, { pref: [F.ed, F.cl, F.na, F.te], fort: 0.5 }),
+  'v.entete-anim:points-pression': E('Points de pression en séquence', { e: 0.5, t: -0.4, d: 0.3 }, { pref: [F.te, F.mi, F.cl], fort: 0.5 }),
+  'v.entete-anim:foulee': E('Lignes de foulée', { e: 1, r: -0.6, c: 0.6 }, { pref: [F.te, F.po, F.ma], jamais: [F.dx, F.na, F.mi, F.cl, F.ed], fort: 0.8 }),
+  'v.entete-anim:onde': E('Onde au sol', { e: 0.5, r: 0.8 }, { pref: [F.dx, F.na, F.cl], jamais: [F.te, F.ma], fort: 0.6 }),
+  'v.entete-anim:taches': E('Taches qui se rejoignent', { r: 1, e: 0.6, f: -0.5 }, { pref: [F.dx, F.po, F.na], jamais: [F.te, F.ed, F.ma, F.mi], fort: 0.8 }),
+  'v.entete-anim:mots': E('Mots des soins cinétiques', { e: 0.9, c: 0.8 }, { pref: [F.ma, F.po, F.ed], jamais: [F.mi, F.cl, F.dx], fort: 0.9 }),
+  'v.entete-anim:empreintes': E('Pas abstraits qui avancent', { e: 0.7 }, { pref: [F.po, F.te, F.dx], jamais: [F.mi, F.ed], fort: 0.6 }),
+  'v.entete-anim:rubans': E('Rubans de couleur', { e: 0.8, r: 0.7, f: -0.5 }, { pref: [F.po, F.dx], jamais: [F.te, F.ed, F.mi, F.cl], fort: 0.8 }),
+  'v.entete-anim:geometrie': E('Formes géométriques en rotation', { e: 0.5, c: 0.6, r: -0.3 }, { pref: [F.po, F.te, F.ma], jamais: [F.na], fort: 0.6 }),
+  'v.entete-anim:lueur': E('Lueur qui suit le pointeur', { e: 0.3, f: 0.2 }, { pref: [F.ed, F.mi, F.ma], fort: 0.4 }),
   'v.transition:fondu': E('Fondu enchaîné', {}),
   'v.transition:ken-burns': E('Ken Burns', { e: 0.4, f: 0.2 }, { pref: [F.ed, F.na] }),
   'v.transition:glissement': E('Glissement', { e: 0.6 }, { pref: [F.po], jamais: [F.mi] }),
@@ -632,12 +656,18 @@ const RONDS: [DimensionHarmonie, string][] = [
   ['v.portraits', 'organique'],
   ['details.coins', 'tres-arrondis'], ['v.soins-forme', 'bulles'], ['v.soins-forme', 'organiques'], ['v.soins-forme', 'pilules'], ['details.cadre', 'organique'],
   ['details.fond', 'formes'], ['details.separateur', 'ondulation'], ['details.souligne', 'vague'], ['v.sections', 'vague'], ['v.accueil', 'maille'], ['details.boutons', 'pilule'],
-  ['v.accueil', 'organique'], ['v.accueil', 'organique-fondu'],
+  ['v.accueil', 'organique'], ['v.accueil', 'organique-fondu'], ['v.accueil', 'duo-taches'], ['v.accueil', 'tache-morph'], ['v.accueil', 'forme-respire'],
+  ['v.accueil', 'maille-anime'], ['v.accueil', 'bandes-ondulantes'], ['v.entete-anim', 'taches'], ['v.entete-anim', 'onde'], ['v.entete-anim', 'rubans'],
 ];
+/** Animations d'en-tête trop vives pour le diabète et les seniors (énergie ≥ 0,7 : il faut rassurer) */
+const ANIMATIONS_VIVES = ['foulee', 'mots', 'empreintes', 'rubans'];
+/** Animations qui pulsent : jamais avec les illustrations douces (registre pédagogique : « rien qui pulse », charte) */
+const ANIMATIONS_PULSEES = ['points-pression', 'onde'];
+
 /** Valeur neutre (sans règle) d'une dimension, utilisée pour corriger */
 const NEUTRES: Record<string, string> = {
   'details.coins': 'gabarit', 'v.soins-forme': 'gabarit', 'details.cadre': 'aucun', 'details.fond': 'aucun', 'details.separateur': 'filet', 'details.souligne': 'aucun',
-  'v.sections': 'aucune', 'v.portraits': 'sobre', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
+  'v.sections': 'aucune', 'v.entete-anim': 'aucune', 'v.portraits': 'sobre', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
   'details.densite': 'aeree', effets: 'sobre', 'v.accueil': 'carte', 'details.badge': 'gabarit', 'menu.ordinateur': 'gabarit', 'typo.surtitre': 'simple',
 };
 /** Classe de rayon (0 carré, 1 arrondi, 2 très arrondi) des éléments qui portent des angles */
@@ -706,6 +736,14 @@ export function violationsDures(x: CompositionHarmonie, c?: ContexteHarmonie | n
   if (x.effets === 'vivant' && calmes.length) {
     v.push({ code: 'vivant-sujet', message: `Effets « Vivant » pour ${calmes.map((s) => (s === 'diabete' ? 'le diabète' : 'les seniors')).join(' et ')} : il faut rassurer, pas animer.`, dims: ['effets'], corrections: [{ dim: 'effets', valeur: 'doux' }, { dim: 'effets', valeur: 'sobre' }] });
   }
+  // 6 bis. Animations d'en-tête : jamais très dynamiques pour le diabète ni le senior ; jamais pulsées en illustrations douces
+  const anim = val(x, 'v.entete-anim');
+  if (anim && ANIMATIONS_VIVES.includes(anim) && calmes.length) {
+    v.push({ code: 'animation-calme', message: `Animation d’en-tête « ${nomValeurHarmonie('v.entete-anim', anim)} » pour ${calmes.map((s) => (s === 'diabete' ? 'le diabète' : 'les seniors')).join(' et ')} : trop vive, il faut rassurer.`, dims: ['v.entete-anim'], corrections: [{ dim: 'v.entete-anim', valeur: 'voute-trace' }, { dim: 'v.entete-anim', valeur: 'aucune' }] });
+  }
+  if (anim && ANIMATIONS_PULSEES.includes(anim) && x.visuels.style === 'pedagogique') {
+    v.push({ code: 'pulse-pedagogique', message: `« ${nomValeurHarmonie('v.entete-anim', anim)} » avec les illustrations douces : en registre pédagogique, rien ne pulse.`, dims: ['v.entete-anim'], corrections: [{ dim: 'v.entete-anim', valeur: 'voute-trace' }, { dim: 'v.entete-anim', valeur: 'aucune' }] });
+  }
   // 7. Deux familles de polices au plus (titres + texte ; la mono des données du registre relevé est la signature de la marque)
   if (!p && !PAIRES_POLICES.some((q) => q.id === x.police)) {
     v.push({ code: 'polices-familles', message: `Paire de polices inconnue (« ${x.police} ») : deux familles au plus, choisies dans le catalogue.`, dims: ['police'], corrections: [{ dim: 'police', valeur: 'grotesque' }] });
@@ -713,7 +751,7 @@ export function violationsDures(x: CompositionHarmonie, c?: ContexteHarmonie | n
   // 8. Un seul élément expressif FORT par écran (titre géant OU fond motif OU héros diaporama / photo plein écran…)
   const forts = elementsExpressifsForts(x);
   if (forts.length > 1) {
-    const ordre = ['details.fond', 'typo.echelle', 'v.accueil', 'v.sections'];
+    const ordre = ['v.entete-anim', 'details.fond', 'typo.echelle', 'v.accueil', 'v.sections'];
     const trie = [...forts].sort((a, b) => ordre.indexOf(a.dim) - ordre.indexOf(b.dim));
     v.push({
       code: 'expressif', message: `Plusieurs éléments expressifs forts à la fois (${forts.map((f) => `« ${nomValeurHarmonie(f.dim, f.valeur)} »`).join(', ')}) : un seul par écran.`,

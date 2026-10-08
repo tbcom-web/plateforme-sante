@@ -1,7 +1,7 @@
 // Données des nouveaux premiers écrans (packages/core/src/heros-photo.ts) pour le site publié : variante choisie par la recette
 // (variantes.accueil, tous gabarits), photos (style « Photos » : photo d'accueil du praticien, photos de la recette, jeu de la
 // spécialité ; sinon photos importées par le praticien), textes et liens identiques au premier écran des gabarits.
-import { gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcranNouveau, herosRenduPossible, photosMontrees, styleCouleursHeros, motLongTitre, type DonneesHeros, type PhotoHeros, type TransitionDiaporama, TRANSITIONS_DIAPORAMA } from '@plateforme/core';
+import { estAnimationEntete, gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcranNouveau, herosRenduPossible, photosMontrees, styleCouleursHeros, motLongTitre, type DonneesHeros, type PhotoHeros, type TransitionDiaporama, TRANSITIONS_DIAPORAMA } from '@plateforme/core';
 import { site } from './site';
 import { jeu } from './visuels-soins';
 import { photoResponsive } from './visuels';
@@ -31,6 +31,10 @@ export const varianteHeros = demande && herosRenduPossible(demande, photos.lengt
 const transitionBrute = site.modele.variantes?.transition;
 const transition: TransitionDiaporama = (TRANSITIONS_DIAPORAMA as readonly string[]).includes(transitionBrute as string) ? (transitionBrute as TransitionDiaporama) : 'fondu';
 
+// Animation d'en-tête (entete-anim.ts) : dans les nouveaux premiers écrans seulement
+const animationBrute = site.modele.variantes?.['entete-anim'];
+const animation = estAnimationEntete(animationBrute) ? animationBrute : null;
+
 const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : aTelephone ? telLien : lienContact;
@@ -58,6 +62,7 @@ export const donneesHeros: DonneesHeros | null = varianteHeros ? {
   couleurs: styleCouleursHeros(site.modele, site.theme),
   motLong: motLongTitre(`Cabinet de ${specialite} ${aLaVille ?? ''}`),
   mode: 'site',
+  animation,
 } : null;
 
 /** Variante du premier écran des gabarits tableau, village, revue quand le nouveau premier écran n'est pas rendu (pas de photo) */

@@ -338,6 +338,11 @@ Le logo combine trois choix, sur le même principe de couches (`packages/core/sr
 - **Cycles** : `--cycle-pouls` 2,4 s (pulsation, onde, déroulé du pas), `-pas` 3,2 s (trajet du centre de pression), `-releve` 5,6 s (scan, courbes de niveau, empreintes), `-diapo` 7 s, `-foulee` 0,72 s (cadence d'environ 167 pas/min), `-geste` 10 s (geste de soin montré en étapes : meulage d'un ongle épaissi ; 12 s en salle d'attente ÉcranZen, règle de lecture des étiquettes).
 - **Courbes** : `--courbe-sortie` pour les apparitions et survols, `-entree-sortie` pour les balayages, `-trace` pour le tracé d'un trait, `-rebond` pour un point qui s'allume.
 - Les animations sont mises en pause hors écran (`.anime-visible`, IntersectionObserver), avec une image fixe si `prefers-reduced-motion` est actif.
+- Animations d'en-tête du premier écran (`packages/core/src/entete-anim.ts`, 2026-10-08, à valider) : formes abstraites seules
+  (jamais de pied dessiné, d'orteils en ronds, de cible ni de personnage), HTML + CSS, transform et opacity uniquement, < 3 Ko
+  chacune ; taille réservée (aucun décalage) et jamais sous le texte ; image fixe composée par défaut, lecture ≤ 5 s posée par
+  un script de 0,75 Ko (à l'affichage, au retour à l'écran, au survol), rien avec « réduire les animations » ni l'Économiseur
+  de données ; couleurs de la gamme (accent, vif, aplat), texte du premier écran sur photo : couleur du texte.
 - Accueil « relevé de podoscope » (`Podoscope` avec `releve`) : trame des deux empreintes, ligne de scan (`--cycle-releve`), légende graduée de la pression, tracé du centre de pression au `--signal` et mention illustrative ; rien ne bouge hors écran ni avec `prefers-reduced-motion`.
 - Animation « meulage » (`packages/core/src/meulage.ts`, composant `Meulage.astro`) : l'hallux de profil (POD-AT-0003, ongle épais), la fraise arrive et se pose sur le dos de l'ongle, trois couches s'effacent (la lamelle suivante devient le contour), reflet lisse, retrait de la fraise, fondu de toute la scène et reprise. Sans texte sur les sites ; l'état sans animation est l'image figée (fraise posée). Version ÉcranZen 16:9 et 9:16, étiquettes facultatives : `packages/contenus/scripts/exporter-animation.mjs`.
 

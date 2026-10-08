@@ -3,9 +3,9 @@
 // écran (transitions en CSS), photo d'un côté et texte de l'autre, typographique, dégradé maillé et visuel masqué, bento.
 // Balisage et feuille de style viennent du core (heros-photo.ts) : l'aperçu de l'admin rend exactement le même HTML.
 // Première photo = élément LCP (préchargée, <img> réel, fetchpriority="high") ; photos suivantes chargées après l'événement
-// load par le script du core (≤ 1 Ko). Sans photo : illustration du sujet n° 1 (VisuelTheme) dans l'emplacement prévu.
+// load par le script du core (≤ 1 Ko). Animation d'en-tête (entete-anim.ts) : image fixe, lue par SCRIPT_ENTETE (≤ 0,75 Ko). Sans photo : illustration du sujet n° 1 (VisuelTheme) dans l'emplacement prévu.
 import VisuelTheme from '../accueil/VisuelTheme.astro';
-import { CSS_HEROS, SCRIPT_HEROS, htmlHeros } from '@plateforme/core';
+import { CSS_HEROS, SCRIPT_ENTETE, SCRIPT_HEROS, htmlHeros } from '@plateforme/core';
 import { donneesHeros } from '../../lib/heros-photo';
 import { visuelPremierEcran } from '../../lib/vitrine';
 
@@ -18,3 +18,5 @@ const premiere = d.photos[0];
 {fente && <VisuelTheme visuel={visuelPremierEcran} format={d.variante === 'bento' ? 'paysage' : 'portrait'} />}
 {fente && <Fragment set:html={apres} />}
 {avant.includes('data-hp-diapos') && <script is:inline type="module" set:html={SCRIPT_HEROS} />}
+{/* Animation d'en-tête : script classique en ligne juste après le premier écran (lecture dès l'affichage, sans saut) */}
+{avant.includes(' data-ea') && <script is:inline set:html={SCRIPT_ENTETE} />}
