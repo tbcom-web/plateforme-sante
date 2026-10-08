@@ -8,8 +8,9 @@ import { ajusterBT, APPRENTISSAGE_DUELS, poidsAppareilDuel, REFERENCE, type Duel
 import { cleCombinaisonPolicePalette, cleApriseDeNotable } from './combinaisons';
 import { gamme as gammeParId } from './gammes';
 import { violationsDures, type ApprisHarmonie, type ContexteHarmonie } from './harmonie';
-import { tirerDimension, tirerHabillageRecette, type CompositionRecette, type ContexteRecette, type DimensionRecette } from './recettes';
+import { habillageDe, tirerDimension, tirerHabillageRecette, type CompositionRecette, type ContexteRecette, type DimensionRecette } from './recettes';
 import type { AxeTypo } from './typo';
+import { ecartVisible } from './focal';
 
 const codes = (x: CompositionRecette, c: ContexteRecette) => new Set(violationsDures(x, c as unknown as ContexteHarmonie).map((v) => v.code));
 
@@ -31,7 +32,8 @@ export function varierDuel(x: CompositionRecette, dimension: string, c: Contexte
     if (dimension.startsWith('typo:')) y = tirerHabillageRecette(x, { groupe: 'typo', axe: dimension.slice(5) as AxeTypo }, c, g);
     else if (dimension === 'police-couleurs') y = tirerDimension(tirerDimension(x, 'polices', c, g), 'couleurs', c, (g + 1) >>> 0);
     else y = tirerDimension(x, dimension as DimensionRecette, c, g);
-    if (sansNouvelleViolation(x, y, c)) return y;
+    // Écart visible garanti (focal.ts) : deux crans trop proches → un autre tirage
+    if (sansNouvelleViolation(x, y, c) && ecartVisible(dimension, { police: x.police, typo: habillageDe(x).typo }, { police: y.police, typo: habillageDe(y).typo })) return y;
   }
   return x;
 }

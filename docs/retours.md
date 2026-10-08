@@ -157,6 +157,24 @@ menus ») — `packages/core/src/duels-appareils.ts` :
   planche des menus : « Après défilement » dit le comportement réel lu dans l'aperçu (barre collante, ou menu non collant du
   modèle qui quitte l'écran).
 
+### Blocs focalisés (tailles, casse, polices, détails)
+
+Retour de Paul du 2026-10-08 (« la comparaison de tailles et casse est difficile avec autant de contenu ») —
+`packages/core/src/focal.ts`, `apps/admin/src/components/BlocFocal.tsx` :
+
+- Duels « Tailles et casse » et « Paires de polices » : par défaut un **bloc focalisé** unique, identique en A et B sauf le
+  réglage testé, avec seulement ce qui est touché (échelle → surtitre, H1 réel du site, H2, deux lignes ; casse → surtitre,
+  titre, bouton ; graisse → titre seul en grand ; interlettrage → titre et surtitre ; polices → surtitre, titre, paragraphe de
+  trois lignes). A au-dessus de B, même alignement ; « Superposer A / B » (Espace, ou « Maintenir pour voir B ») pour
+  voir la différence d'un coup d'œil ; « Règle » graduée en marge ; « Voir dans la page complète » en secondaire. Mêmes
+  blocs en téléphone seul quand le réglage est mobile.
+- Bandeau avec les mesures réelles de l'appareil affiché : « A : affirmée (H1 28 px, H2 20 px) · B : spectaculaire (H1 35 px,
+  H2 25 px) », graisse en valeur (« noire (850) »), interlettrage en em.
+- Écart visible garanti (ecartVisible, appliqué par varierDuel) : jamais deux crans dont le H1 diffère de moins de 10 %, la
+  graisse effective de moins de 100, l'interlettrage de moins de 0,02 em, ni deux valeurs identiques de fait.
+- Tuiles « Typographies », « Détails » et « Police × palette » : le bloc focalisé de la valeur notée (une carte et un bouton
+  isolés pour les détails) au lieu du spécimen complet ; prêt pour les futurs espacements, ombres et arrondis.
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

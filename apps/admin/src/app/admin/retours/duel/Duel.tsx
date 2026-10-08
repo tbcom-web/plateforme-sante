@@ -16,7 +16,7 @@ import {
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
   modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, blocFocal, habillageDe, valeurFocale,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -29,6 +29,7 @@ import { draftStudio } from '@/components/ApercuStudio';
 import PiloteApercu, { BandeauEvaluation, useRepereVisible } from '@/components/RepereEvaluation';
 import CadreApercu from '@/components/CadreApercu';
 import SpecimenHabillage from '@/components/SpecimenHabillage';
+import { ComparaisonFocale } from '@/components/BlocFocal';
 import type { SoinCatalogue } from '@/lib/sites';
 import Apercu from '../tri/ApercuVisuel';
 import { enregistrerDuel } from './actions';
@@ -178,6 +179,11 @@ export default function Duel(props: Props) {
   useEffect(() => { setAppareil(etroit ? 'mobile' : 'les-deux'); }, [etroit]);
   // Vue rapide « spécimen » (palettes, polices, tailles) ou page complète
   const [specimen, setSpecimen] = useState(false);
+  // Bloc focalisé (retour de Paul du 2026-10-08 : « difficile de voir la différence avec autant de contenu ») : par défaut pour les
+  // tailles, la casse, la graisse, l'interlettrage et les polices ; A au-dessus de B, superposition (Espace), règle graduée
+  const [focal, setFocal] = useState(true);
+  const [superposer, setSuperposer] = useState(false);
+  const [regle, setRegle] = useState(false);
   // Série « Mobile seulement » (filtre de l'accueil, ?mobile=1) et défilement synchronisé des deux téléphones
   const [serieMobile, setSerieMobile] = useState(Boolean(props.mobileInitial));
   const [synchro, setSynchro] = useState(true);
@@ -332,7 +338,7 @@ export default function Duel(props: Props) {
   const lancer = useCallback((t: string, g: number, hist: readonly DuelLocal[]) => {
     const c = generer(t, g, hist);
     setCourant(c);
-    setEtiquettes([]); setRemarque(''); setPourquoi(false); setEtatMenu('haut');
+    setEtiquettes([]); setRemarque(''); setPourquoi(false); setEtatMenu('haut'); setFocal(true); setSpecimen(false);
     if (!c) setMessage(`Plus de duel inédit pour ${sujetChoisi ? libelleSujet(sujetChoisi) : 'ces sujets'} : changez de sujet ou de type.`);
   }, [generer, sujetChoisi]);
 
@@ -516,7 +522,21 @@ export default function Duel(props: Props) {
 
   // Ce qui est comparé (reperes.ts) : libellé, zones encadrées dans les aperçus, valeurs lisibles de A et B
   const repere = repereDimension(courant?.dimension ?? null);
+  // Bloc focalisé de la dimension (focal.ts) : seulement pour deux compositions
+  const bloc = courant && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' ? blocFocal(courant.dimension) : null;
+  const enFocal = Boolean(bloc && focal);
+  const reglagesFocal = (c: Cote) => { const x = (c.rendu as { x: CompositionRecette }).x; return { police: x.police, typo: habillageDe(x).typo, details: habillageDe(x).details, gamme: x.gamme || null, couleur: x.couleur }; };
+  // Valeurs : mesures réelles de l'appareil affiché pour les tailles (« affirmée (H1 28 px, H2 30 px) »)
+  const valeurTaille = (c: Cote) => {
+    const r = reglagesFocal(c);
+    const v = (m: boolean) => valeurFocale(courant!.dimension!, r, m);
+    if (vu !== 'les-deux') return v(vu === 'mobile');
+    // Les deux appareils : la mesure de chacun, une seule fois le nom
+    const o = v(false), t = v(true);
+    return o === t ? o : `${o.replace(/\)$/, '')} sur ordinateur ; ${t.replace(/^[^(]*\(/, '')} sur téléphone`.replace(/\) sur téléphone$/, ' sur téléphone)');
+  };
   const valeurs: [string, string] | null = !courant ? null
+    : courant.dimension?.startsWith('typo:') && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' ? [valeurTaille(courant.a), valeurTaille(courant.b)]
     : courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' ? valeursDuel(courant.dimension, courant.a.rendu.x, courant.b.rendu.x)
     : [libelleElement(courant.a.cle), libelleElement(courant.b.cle)];
 
@@ -560,20 +580,34 @@ export default function Duel(props: Props) {
             Client : <strong>{libelleSujet(courant.scenario.sujets[0] ?? 'general')}</strong>
             {courant.scenario.emplacement ? <> · emplacement : {EMPLACEMENTS.find((e) => e.id === courant.scenario.emplacement)?.nom}</> : null}
           </p>
-          <BandeauEvaluation prefixe="On compare" repere={{ ...repere, detail: [repere.detail, courant.mobileSeul ? 'sur téléphone uniquement' : VU_SUR[vu]].filter(Boolean).join(' · ') }} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
+          <BandeauEvaluation prefixe="On compare" repere={{ ...repere, ...(enFocal ? { selecteurs: [] } : {}), detail: [repere.detail, courant.mobileSeul ? 'sur téléphone uniquement' : VU_SUR[vu]].filter(Boolean).join(' · ') }} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
             {(courant.dimension === 'couleurs' || courant.dimension === 'police-couleurs') && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' && (
               <div className="grid gap-1.5">
                 <Nuancier x={courant.a.rendu.x} lettre="A" />
                 <Nuancier x={courant.b.rendu.x} lettre="B" />
               </div>
             )}
-            {courant.mobileSeul && (
+            {courant.mobileSeul && !enFocal && (
               <label className="flex min-h-11 items-center gap-2 text-sm text-slate-800">
                 <input type="checkbox" checked={synchro} onChange={(e) => setSynchro(e.target.checked)} className="size-4" />
                 Défilement synchronisé
               </label>
             )}
-            {AVEC_SPECIMEN(courant.dimension) && courant.a.rendu.kind === 'compo' && (
+            {bloc ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <div role="group" aria-label="Vue" className="flex gap-1 rounded-xl bg-neutral-100 p-1">
+                  <button type="button" aria-pressed={focal} onClick={() => setFocal(true)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${focal ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>Bloc focalisé</button>
+                  <button type="button" aria-pressed={!focal} onClick={() => setFocal(false)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${!focal ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>Voir dans la page complète</button>
+                </div>
+                {focal && (
+                  <>
+                    {/* Bouton (pas une case) qui rend le focus : Espace bascule alors A / B sans décocher la superposition */}
+                    <button type="button" aria-pressed={superposer} onClick={(e) => { setSuperposer((x) => !x); e.currentTarget.blur(); }} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ring-1 ${focus} ${superposer ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-800 ring-slate-300'}`}>Superposer A / B <kbd className="ml-1 hidden rounded bg-black/10 px-1.5 text-xs md:inline">Espace</kbd></button>
+                    <label className="flex min-h-11 items-center gap-2 text-sm text-slate-800"><input type="checkbox" checked={regle} onChange={(e) => setRegle(e.target.checked)} className="size-4" />Règle</label>
+                  </>
+                )}
+              </div>
+            ) : AVEC_SPECIMEN(courant.dimension) && courant.a.rendu.kind === 'compo' && (
               <div role="group" aria-label="Vue" className="flex gap-1 rounded-xl bg-neutral-100 p-1">
                 {([[false, 'Page complète'], [true, 'Spécimen']] as const).map(([v, nom]) => (
                   <button key={nom} type="button" aria-pressed={specimen === v} onClick={() => setSpecimen(v)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${specimen === v ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>{nom}</button>
@@ -590,6 +624,17 @@ export default function Duel(props: Props) {
               </div>
             )}
           </BandeauEvaluation>
+          {enFocal && bloc ? (
+            // Bloc focalisé : A au-dessus de B (ou superposés), par appareil montré ; aucun encadré (tout le bloc est le sujet)
+            <section ref={refPropositions} aria-label="Les deux propositions, bloc focalisé" className={`grid grid-cols-[minmax(0,1fr)] gap-6 ${vu === 'les-deux' ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
+              {(vu === 'les-deux' ? (['bureau', 'mobile'] as const) : [vu as 'bureau' | 'mobile']).map((app) => (
+                <div key={app} className="grid min-w-0 content-start gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{app === 'mobile' ? 'Téléphone' : 'Ordinateur'}</p>
+                  <ComparaisonFocale bloc={bloc} a={reglagesFocal(courant.a)} b={reglagesFocal(courant.b)} mobile={app === 'mobile'} regle={regle} superposer={superposer} />
+                </div>
+              ))}
+            </section>
+          ) : (
           <PiloteApercu selecteurs={repere.selecteurs} visible={repereVisible} cle={`${courant.a.cle}|${courant.b.cle}|${vu}|${etatMenu === 'defile' ? 'd' : ''}`}
             defiler={etatMenu === 'defile' && courant.dimension === 'menu' ? 520 : 'repere'}
             menu={courant.dimension === 'menu' ? { ouvert: etatMenu === 'ouvert', survol: etatMenu === 'survol', rubriqueActive: true, onBascule: (o) => setEtatMenu(o ? 'ouvert' : 'haut') } : undefined}>
@@ -599,6 +644,7 @@ export default function Duel(props: Props) {
               {cote('B', courant.b)}
             </section>
           </PiloteApercu>
+          )}
 
           <div className="fixed inset-x-0 bottom-0 z-20 grid gap-1.5 border-t border-black/10 bg-white/95 p-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0"
             onTouchStart={toucher} onTouchEnd={lacher(true)}>
