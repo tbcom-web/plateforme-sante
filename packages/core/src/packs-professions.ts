@@ -30,6 +30,8 @@ export type PackProfession = {
   profession: string;
   /** Faux tant que des textes « [à rédiger] » restent ou que les mentions n'ont pas été relues */
   publiable: boolean;
+  /** Titre professionnel selon le pays (praticiens, sur-titres, données structurées) */
+  titre: ParPays;
   /** Discipline du titre « Cabinet de … » (H1 de l'accueil, titre du cabinet) */
   discipline: ParPays;
   /** Nom générique d'un cabinet de plusieurs praticiens sans nom (logo) */
@@ -83,6 +85,8 @@ const faqRdvAcces = ({ pmr, plateforme, enLigne, telephone = true, email = '' }:
 const PODOLOGUE: PackProfession = {
   profession: 'podologue',
   publiable: true,
+  // Mêmes titres que PAYS (draft.ts), repris à l'identique
+  titre: { FR: 'Pédicure-podologue', BE: 'Podologue', CH: 'Podologue ES' },
   discipline: { FR: 'pédicurie-podologie', BE: 'podologie', CH: 'podologie' },
   cabinetGenerique: 'Cabinet de podologie',
   instance: { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH: 'Société Suisse des Podologues (SSP)' },
@@ -115,6 +119,7 @@ const PODOLOGUE: PackProfession = {
 const PSYCHOMOTRICIEN: PackProfession = {
   profession: 'psychomotricien',
   publiable: false,
+  titre: { FR: 'Psychomotricien', BE: `Psychomotricien ${A_REDIGER}`, CH: `Psychomotricien ${A_REDIGER}` },
   discipline: { FR: 'psychomotricité', BE: 'psychomotricité', CH: 'psychomotricité' },
   cabinetGenerique: 'Cabinet de psychomotricité',
   instance: { FR: A_REDIGER, BE: A_REDIGER, CH: A_REDIGER },

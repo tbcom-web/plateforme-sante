@@ -4,13 +4,14 @@
 // Selon le style visuel : animation de la spécialité, photo, ou dessin technique sur fond plan (lib/visuels).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
+import { discipline } from '../../lib/pack';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { photoResponsive, photoAccueilAffichee, fondAnime, visuelAccueil, dessinSpecialite } from '../../lib/visuels';
 import { titreMetierAffiche, phraseAccueil, telLien, lienRdv, libelleRdv, rdvEnLigne, lieu, TYPES_LIEU, localisation, viaPlateforme, aLaVille, aTelephone, aAdresse, adresseLieu } from '../../lib/textes';
 
-const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const specialite = discipline;
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 const choix = visuelAccueil([photoAccueilAffichee]);
 // Animation ou illustration : titre à gauche, visuel à droite

@@ -3,6 +3,7 @@
 // spécialité ; sinon photos importées par le praticien), textes et liens identiques au premier écran des gabarits.
 import { estAnimationEntete, gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcranNouveau, herosRenduPossible, photosMontrees, styleCouleursHeros, motLongTitre, type DonneesHeros, type PhotoHeros, type TransitionDiaporama, TRANSITIONS_DIAPORAMA } from '@plateforme/core';
 import { site } from './site';
+import { discipline } from './pack';
 import { jeu } from './visuels-soins';
 import { photoResponsive } from './visuels';
 import { vitrinePhoto, visuelPremierEcran, animationPremierEcran } from './vitrine';
@@ -38,7 +39,7 @@ const animation = estAnimationEntete(animationBrute) ? animationBrute : null;
 const sujetsSite = navigation.principaux.map((t) => t.theme.id as string);
 const tempo = sujetsSite.includes('sport') && !sujetsSite.some((s) => s === 'diabete' || s === 'senior') ? 'vif' as const : 'calme' as const;
 
-const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const specialite = discipline;
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : aTelephone ? telLien : lienContact;
 const principaux = site.soins.slice(0, 3).map((s) => s.titreCourt.toLowerCase());

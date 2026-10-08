@@ -5,6 +5,7 @@
 // Les couleurs de la marque sont des variables CSS (--logo-*) : la version claire (en-tête transparent sur
 // photo, pied de page sombre) ne fait que les régler. Voir packages/core/src/logos.ts.
 import { site } from '../lib/site';
+import { pack } from '../lib/pack';
 import { titreMetierAffiche, titreCabinet, praticiens } from '../lib/textes';
 import {
   svgMarque, traitementLogo, validerChoixLogo, initiales, LOGO, COULEURS_MARQUE_CSS, svgMarqueImportee, couleursImportee,
@@ -33,7 +34,7 @@ const choix = p.choix ?? (importee ? { marque: importee.id, disposition: valider
 const m = p.modele ?? site.modele;
 const t = traitementLogo(m);
 // Sans praticien nommé : nom du cabinet ; sans ville : le métier seul (replis.ts).
-const nom = p.nom ?? (praticiens.length > 1 ? 'Cabinet de podologie' : praticiens.length ? `${praticiens[0].prenom} ${praticiens[0].nom}`.trim() : site.cabinet.nom);
+const nom = p.nom ?? (praticiens.length > 1 ? pack.cabinetGenerique : praticiens.length ? `${praticiens[0].prenom} ${praticiens[0].nom}`.trim() : site.cabinet.nom);
 const ligne = p.ligne ?? (site.cabinet.ville ? `${titreMetierAffiche} · ${site.cabinet.ville}` : titreMetierAffiche);
 const taille = p.taille ?? LOGO.tailles[choix.disposition];
 const svg = importee

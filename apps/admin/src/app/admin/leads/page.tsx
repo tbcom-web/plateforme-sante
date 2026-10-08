@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { libelleStatutCommercial, messageRelanceProspect, STATUTS_COMMERCIAUX, type EtapeEntonnoir } from '@plateforme/core';
 import { lireLeads, type Lead } from '@/lib/leads';
+import { getProfession } from '@/lib/profession';
+import { professionsAdmin } from '@plateforme/core/professions';
+import BasculeProfession from '@/components/BasculeProfession';
 import { lireEntonnoirs, lireProspects, type Prospect } from '@/lib/prospects';
 import { dateCourte } from '@/lib/libelles';
 import { jourCourt } from '@/lib/essai';
@@ -146,7 +149,10 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
   const filtre: Filtre = typeof p.filtre === 'string' && p.filtre in FILTRES ? (p.filtre as Filtre) : 'actifs';
   const statut = typeof p.statut === 'string' && STATUTS_COMMERCIAUX.some((s) => s.id === p.statut) ? p.statut : '';
   const q = typeof p.q === 'string' ? p.q.slice(0, 80) : '';
-  const [leads, prospects] = await Promise.all([lireLeads(), lireProspects()]);
+  // Profession choisie dans l'en-tête : le commercial bascule d'une profession à l'autre (essais et prospects de ce métier seulement)
+  const [tousLeads, tousProspects, profession] = await Promise.all([lireLeads(), lireProspects(), getProfession()]);
+  const leads = tousLeads && tousLeads.filter((l) => l.profession === profession.id);
+  const prospects = tousProspects && tousProspects.filter((x) => x.profession === profession.id);
 
   if (!leads) {
     return (
@@ -173,13 +179,14 @@ export default async function Leads({ searchParams }: PageProps<'/admin/leads'>)
     <div className="grid grid-cols-1 gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Essais gratuits</h1>
+          <h1 className="text-2xl font-bold">Essais gratuits <span className="text-base font-semibold text-neutral-600">· {profession.pluriel}</span></h1>
           <p className="text-sm text-neutral-600">
             {listes.length} lead{listes.length > 1 ? 's' : ''} · {anonymesSansContact} site{anonymesSansContact > 1 ? 's' : ''} commencé{anonymesSansContact > 1 ? 's' : ''} sans coordonnées (comptés seulement) · {sansCompte.length} prospect{sansCompte.length > 1 ? 's' : ''} sans compte{nbTests ? ` · dont ${nbTests} de test` : ''} · version d’essai en aperçu privé, mise en ligne publique après validation.
           </p>
         </div>
         <a href="/essai" target="_blank" rel="noopener" className="text-sm font-semibold text-teal-800 underline">Page d’essai ↗</a>
       </div>
+      <BasculeProfession courante={profession.id} professions={professionsAdmin().map((x) => ({ id: x.id, libelle: x.libelle }))} />
 
       <Entonnoir {...entonnoirs} />
 

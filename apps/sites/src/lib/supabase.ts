@@ -65,7 +65,7 @@ import {
   type SiteDraft,
   type Soin,
 } from '@plateforme/core';
-import { defautsProfession } from './defaults';
+import { defautsProfession, titreMetierProfession } from './defaults';
 import { rendusPortrait } from '@plateforme/core/portrait';
 
 /** Lignes Supabase du contexte d'images d'un site (kits-images.ts, contexteImagesSite) ; tables absentes : listes vides */
@@ -308,7 +308,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
   const ville = ligneSansProvisoire(d.cabinet.ville) || ligneSansProvisoire(lieuBrut?.ville ?? '');
   const perso = (t: string) => avecVille(t, ville);
   const defauts = defautsProfession(prof.slug);
-  const titreMetier = PAYS.find((p) => p.value === d.pays)?.titre ?? prof.libelle;
+  const titreMetier = titreMetierProfession(prof.slug, d.pays) ?? PAYS.find((p) => p.value === d.pays)?.titre ?? prof.libelle;
   const libelle = (slug: string) => catalogue.find((c) => c.slug === slug)?.titre_court ?? slug;
   const telephone = telephoneUtilisable(d.cabinet.telephone) ? formaterTelephone(d.cabinet.telephone) : '';
   const email = /^\S+@\S+\.\S+$/.test(d.cabinet.email ?? '') ? d.cabinet.email.trim() : '';

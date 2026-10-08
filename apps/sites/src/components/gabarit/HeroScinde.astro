@@ -3,6 +3,7 @@
 // cède la place à l'animation de la spécialité ou à une planche technique sur fond plan (lib/visuels).
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
+import { discipline } from '../../lib/pack';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import AnimationAccueil from '../animations/AnimationAccueil.astro';
 import Planche from '../dessins/Planche.astro';
@@ -12,7 +13,7 @@ import { titreMetierAffiche, phraseAccueil, lieu, telLien, lienRdv, libelleRdv, 
 
 const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
 const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}` : 'Sur rendez-vous';
-const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const specialite = discipline;
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 const choix = visuelAccueil([photoAccueilAffichee]);
 // Texte alternatif seulement pour la photo du praticien (son cabinet) ; une photo d'illustration reste décorative.

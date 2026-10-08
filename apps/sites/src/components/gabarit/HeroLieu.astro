@@ -8,11 +8,12 @@
 import Icone from '../Icone.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
+import { discipline } from '../../lib/pack';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import { photoResponsive, photoLieuAccueil, cadrageLieuAccueil, dessinSpecialite } from '../../lib/visuels';
 import { phraseAccueil, lieu, telLien, lienRdv, libelleRdv, rdvEnLigne, viaPlateforme, titreMetierAffiche, TYPES_LIEU, aLaVille, suffixeVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
 
-const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const specialite = discipline;
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 const ouverts = lieu.horaires.filter((h) => /\d/.test(h.heures)).map((h) => h.jour.toLowerCase());
 const jours = ouverts.length > 1 ? `Du ${ouverts[0]} au ${ouverts.at(-1)}, sur rendez-vous` : 'Sur rendez-vous';

@@ -14,6 +14,7 @@
 // Couleurs : rôles --g-* (packages/core/src/gabarits.ts) tirés de la gamme, AA garantis.
 import VisuelTheme from '../accueil/VisuelTheme.astro';
 import { site } from '../../lib/site';
+import { discipline } from '../../lib/pack';
 import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche, aLaVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
 import { nomLieu } from '../../lib/gabarits';
 import { visuelPremierEcran, animationPremierEcran } from '../../lib/vitrine';
@@ -21,7 +22,7 @@ import { registre as registreSite } from '../../lib/visuels';
 
 interface Props { variante: 'carte' | 'notice' | 'figure' }
 const { variante } = Astro.props;
-const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const specialite = discipline;
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : aTelephone ? telLien : lienContact;
 const libelleRdv = rdvEnLigne ? 'Prendre rendez-vous' : libelleContact;

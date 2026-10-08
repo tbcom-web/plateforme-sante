@@ -14,6 +14,7 @@
 import Logo from '../Logo.astro';
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
+import { lienInstance } from '../../lib/pack';
 import { gabaritModele } from '@plateforme/core';
 import { telLien, itineraire, lienRdv, titreCabinet, praticiens, lieu, rdvEnLigne, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact, contactRdv } from '../../lib/textes';
 import { navigation, entreeActive } from '../../lib/navigation';
@@ -128,7 +129,7 @@ const principale = actionsContact[0];
         <ul class="c-pied__liens">
           {pied.map((l) => <li><a href={l.href} aria-current={actifPied === l.href ? 'page' : undefined}>{l.label}</a></li>)}
           <li><a href="/mentions-legales">Mentions légales</a></li>
-          {site.pays === 'FR' && <li><a href="https://www.onpp.fr" rel="noopener" target="_blank">Ordre national des pédicures-podologues</a></li>}
+          {lienInstance && <li><a href={lienInstance.url} rel="noopener" target="_blank">{lienInstance.libelle}</a></li>}
         </ul>
       </div>
     </div>

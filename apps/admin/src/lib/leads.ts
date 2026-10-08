@@ -1,4 +1,5 @@
 import 'server-only';
+import { idProfession } from '@plateforme/core/professions';
 import { estLeadTest, etatEssai, jourParis, joursRestants, progressionParcours, prochaineRelance, relancesAFaire, relancesEssai, type EssaiPourRelances, type EtatEssaiId, type Relance } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { lienApercu } from '@/lib/essai';
@@ -13,6 +14,8 @@ export type Lead = {
   telephone: string;
   /** Lead de test (@webpodologue.fr ou « +test ») : exclu des statistiques, supprimable */
   test: boolean;
+  /** Profession (registre professions.ts ; « pedicure-podologue » des essais ramené à « podologue ») */
+  profession: string;
   prenom: string;
   nom: string;
   ville: string;
@@ -51,7 +54,7 @@ export type Lead = {
   prochaine: Relance | null;
 };
 
-const COLONNES_0023 = `owner, prenom, nom, ville, source, utm, cgu_version, cgu_acceptees_le, conseils_opt_in, essai_debut, essai_fin, parcours_etape,
+const COLONNES_0023 = `owner, profession, prenom, nom, ville, source, utm, cgu_version, cgu_acceptees_le, conseils_opt_in, essai_debut, essai_fin, parcours_etape,
   apercu_genere_le, mise_en_ligne_demandee_le, valide_le, suspendu_le, paiement_statut, statut_commercial, prochaine_relance, relances_faites,
   profil:profiles!essais_owner_fkey(email), site:sites!essais_site_id_fkey(id, slug, statut, publication_etat, config)`;
 // Avec la mise à jour 0024 : téléphone repris du prospect ; 0025 : session anonyme (contact, rendu, accès).
@@ -59,7 +62,7 @@ const COLONNES_0024 = `${COLONNES_0023}, telephone`;
 const COLONNES = `${COLONNES_0024}, created_at, email_contact, rendu_demande_le, acces_cree_le`;
 
 type Ligne = {
-  owner: string; prenom: string; nom: string; ville: string; source: string; utm: Record<string, string> | null; cgu_version: string | null; cgu_acceptees_le: string | null;
+  owner: string; profession?: string | null; prenom: string; nom: string; ville: string; source: string; utm: Record<string, string> | null; cgu_version: string | null; cgu_acceptees_le: string | null;
   created_at?: string; email_contact?: string | null; rendu_demande_le?: string | null; acces_cree_le?: string | null;
   conseils_opt_in: boolean; essai_debut: string; essai_fin: string; parcours_etape: number; apercu_genere_le: string | null; mise_en_ligne_demandee_le: string | null;
   valide_le: string | null; suspendu_le: string | null; paiement_statut: string | null; statut_commercial: string; prochaine_relance: string | null;
@@ -75,7 +78,7 @@ export const pourRelances = (l: Pick<Lead, 'debut' | 'fin' | 'etape' | 'apercuGe
 
 function versLead(l: Ligne, aujourdhui: string): Lead {
   const base = {
-    owner: l.owner, email: l.profil?.email || l.email_contact || '', telephone: l.telephone ?? '', test: estLeadTest(l.profil?.email || l.email_contact), prenom: l.prenom, nom: l.nom, ville: l.ville, source: l.source, utm: l.utm ?? {}, cguVersion: l.cgu_version,
+    owner: l.owner, email: l.profil?.email || l.email_contact || '', telephone: l.telephone ?? '', test: estLeadTest(l.profil?.email || l.email_contact), profession: idProfession(l.profession), prenom: l.prenom, nom: l.nom, ville: l.ville, source: l.source, utm: l.utm ?? {}, cguVersion: l.cgu_version,
     cguAccepteesLe: l.cgu_acceptees_le, creeLe: l.created_at ?? l.essai_debut, renduDemandeLe: l.rendu_demande_le ?? null,
     // Base sans 0025 : tout essai a ses CGU (inscription avec mot de passe), donc un accès.
     accesCreeLe: l.acces_cree_le !== undefined ? l.acces_cree_le : l.cgu_version ? l.cgu_acceptees_le : null, conseils: l.conseils_opt_in, debut: l.essai_debut, fin: l.essai_fin, etape: l.parcours_etape,

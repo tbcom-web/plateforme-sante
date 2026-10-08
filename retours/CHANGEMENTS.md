@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Professions : textes des sites tirés du pack de la profession (rendu podologue identique), Frigo par profession (chips, « Aussi pour … » en lot, suggestions de partage), Sites / Essais filtrés par profession, démo psychomotricien provisoire.
 - 2026-10-09 : Kit démo par profession : sets de prompts « cabinet fictif » et « praticiens fictifs » (Cuisine › Images à générer), import en lot avec usage obligatoire (« Démo uniquement » / « Utilisable sur les sites »), kit démo posé dans tous les aperçus avec le bandeau « Photos d’exemple », jamais publié (normaliserDraft, contrôle bloquant de publication). Migration 0048 à exécuter.
 - 2026-10-09 : Psychomotricien : recherche réglementaire sourcée (docs/professions/psychomotricien.md) et pack de contenus en préparation, non publiable avant relecture (packages/contenus/professions/psychomotricien, contrôle npm run controle:packs)
 - 2026-10-09 : Professions : psychomotricien « en préparation » (visible dans l'admin), packs profession (textes des sites par métier), ingrédients partagés entre professions (« commun » / une ou plusieurs professions), migration 0046 à exécuter (docs/architecture-professions.md).

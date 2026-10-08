@@ -3,15 +3,18 @@ import type { CSSProperties } from 'react';
 import {
   couvertureParSujet, estIngredientUnitaire, gamme as gammeParId, hashtagsDe, inventaireAssets, inventaireStudio, LIBELLES_STATUTS_ILLUSTRATION, libelleSujet,
   statutsAvecHeritage, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, variablesCharte, variablesGamme, type Asset, type StatutIllustration,
+  estFiltrePartage, FILTRES_PARTAGE, ingredientPourProfession, packProfession, partageDeLIngredient, professionsDeLIngredient, suggestionsDePartage,
 } from '@plateforme/core';
 import { etatNouveaute, estTypeIngredient, typeIngredient, TYPES_INGREDIENTS, type TypeIngredient } from '@plateforme/core/arrivages';
-import { estDeLaProfession, sujetDeLaProfession } from '@plateforme/core/professions';
+import { PROFESSION_PAR_DEFAUT, professionsAdmin, sujetDeLaProfession } from '@plateforme/core/professions';
 import { exigerAdmin } from '@/lib/admin';
 import { getEtatsNouveautes } from '@/lib/arrivages';
 import { getPhotosDesJeux, getSurchargesSujets, lireAssetsNotesApprentissage } from '@/lib/assets-notes';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getRevuesIllustrations } from '@/lib/illustrations';
 import { getProfession } from '@/lib/profession';
+import { getRattachementsProfessions } from '@/lib/professions-ingredients';
+import { BarreLot, ChipsProfessions, DecisionSuggestion, SelectionProfessions } from './ProfessionsIngredients';
 import { getTranches } from '@/lib/tranches';
 
 export const metadata = { title: 'Super admin · Frigo' };
@@ -29,10 +32,14 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
   await exigerAdmin();
   const sp = await searchParams;
   const profession = await getProfession();
-  const [photosJeux, surcharges, hashtags, revues, notes, etats, tranches] = await Promise.all([
-    getPhotosDesJeux(), getSurchargesSujets(), getHashtagsAssets(), getRevuesIllustrations(), lireAssetsNotesApprentissage(), getEtatsNouveautes(), getTranches(),
+  const [photosJeux, surcharges, hashtags, revues, notes, etats, tranches, { rattachements, migrationManquante }] = await Promise.all([
+    getPhotosDesJeux(), getSurchargesSujets(), getHashtagsAssets(), getRevuesIllustrations(), lireAssetsNotesApprentissage(), getEtatsNouveautes(), getTranches(), getRattachementsProfessions(),
   ]);
-  const deLaProfession = estDeLaProfession({}, profession.id);
+  // Professions des ingrédients (professions-ingredients.ts) : bibliothèque unique, chaque élément commun ou à une ou plusieurs
+  // professions ; le frigo de la profession choisie = ses ingrédients + les communs.
+  const parDefaut = profession.id === PROFESSION_PAR_DEFAUT;
+  const toutes = professionsAdmin().map((p) => ({ id: p.id, court: p.court }));
+  const partage = estFiltrePartage(un(sp.partage)) ? un(sp.partage) : '';
 
   // Notes (moyenne, nombre, dernière) par clé
   const moyennes = new Map<string, { s: number; n: number }>();
@@ -44,7 +51,8 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
     moyennes.set(l.cle_asset, m);
     if (!(l.cle_asset in dernieres)) dernieres[l.cle_asset] = l.note;
   }
-  const inventaire: Asset[] = deLaProfession ? [...inventaireAssets({ photosJeux }), ...inventaireStudio().filter((a) => estIngredientUnitaire(a.cle))] : [];
+  const bibliotheque: Asset[] = [...inventaireAssets({ photosJeux }), ...inventaireStudio().filter((a) => estIngredientUnitaire(a.cle))];
+  const inventaire: Asset[] = bibliotheque.filter((a) => ingredientPourProfession(a.cle, profession.id, rattachements));
   const statutsBruts = Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])) as Record<string, StatutIllustration>;
   const statuts = statutsAvecHeritage(statutsBruts, inventaire.map((a) => a.cle));
   const recentes = new Set(etats.recentes.map((r) => r.cle));
@@ -54,19 +62,19 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
     if (recentes.has(a.cle)) return etatNouveaute(a.cle, { statuts: etats.statuts, dernieresNotes: etats.dernieresNotes }) === 'accepte';
     const s = statuts[a.cle];
     return s !== 'retire' && s !== 'a_retravailler';
-  }).filter((a) => a.type !== 'photo' || sujetsDuVisuel(a, surcharges).sujets.some((s) => { const x = SUJETS_VISUELS.find((y) => y.id === s); return !x || sujetDeLaProfession(x, profession); }));
+  }).filter((a) => !parDefaut || a.type !== 'photo' || sujetsDuVisuel(a, surcharges).sujets.some((s) => { const x = SUJETS_VISUELS.find((y) => y.id === s); return !x || sujetDeLaProfession(x, profession); }));
 
   const parType = new Map<TypeIngredient, Asset[]>(TYPES_INGREDIENTS.map((t) => [t.id, []]));
   for (const a of auFrigo) parType.get(typeIngredient(a.cle))!.push(a);
   const typeChoisi: TypeIngredient = estTypeIngredient(un(sp.type)) ? (un(sp.type) as TypeIngredient) : (TYPES_INGREDIENTS.find((t) => parType.get(t.id)!.length)?.id ?? 'photo');
   const theme = SUJETS_VISUELS.some((s) => s.id === un(sp.theme)) ? un(sp.theme) : '';
-  const liste = parType.get(typeChoisi)!.filter((a) => !theme || sujetsDuVisuel(a, surcharges).sujets.includes(theme))
+  const liste = parType.get(typeChoisi)!.filter((a) => (!theme || sujetsDuVisuel(a, surcharges).sujets.includes(theme)) && (!partage || partageDeLIngredient(a.cle, profession.id, rattachements) === partage))
     .sort((a, b) => (moyennes.get(b.cle)?.s ?? 0) / (moyennes.get(b.cle)?.n || 1) - (moyennes.get(a.cle)?.s ?? 0) / (moyennes.get(a.cle)?.n || 1));
   const pages = Math.max(1, Math.ceil(liste.length / PAR_PAGE));
   const page = Math.min(pages, Math.max(1, Number.parseInt(un(sp.page), 10) || 1));
   const visibles = liste.slice((page - 1) * PAR_PAGE, page * PAR_PAGE);
   const lien = (c: Record<string, string>) => {
-    const u = new URLSearchParams(Object.entries({ type: typeChoisi, theme, ...c }).filter(([, v]) => v) as [string, string][]);
+    const u = new URLSearchParams(Object.entries({ type: typeChoisi, theme, partage, ...c }).filter(([, v]) => v) as [string, string][]);
     return `/admin/frigo${u.size ? `?${u}` : ''}`;
   };
 
@@ -74,6 +82,23 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
   const visuels = auFrigo.filter((a) => ['picto', 'dessin', 'ligne', 'materiel', 'animation', 'heros', 'biblio', 'photo'].includes(a.type)).map((a) => ({ cle: a.cle, type: a.type, soins: a.soins, statut: statuts[a.cle] ?? null }));
   const couverture = couvertureParSujet(visuels, surcharges).filter((c) => { const s = SUJETS_VISUELS.find((x) => x.id === c.sujet); return !s || sujetDeLaProfession(s, profession); });
   const style = { ...variablesCharte(), ...variablesGamme(gammeParId('canard')!) } as CSSProperties;
+
+  // Suggestions de partage vers la profession choisie (ou, depuis la profession par défaut, vers chaque autre profession dont le
+  // pack a des mots-clés de partage) : visuels acceptés de la bibliothèque tagués enfant, marche, équilibre… ; validés par Paul.
+  const accepte = (cle: string) => {
+    if (refuses.has(cle)) return false;
+    if (recentes.has(cle)) return etatNouveaute(cle, { statuts: etats.statuts, dernieresNotes: etats.dernieresNotes }) === 'accepte';
+    const s = statuts[cle];
+    return s !== 'retire' && s !== 'a_retravailler';
+  };
+  const parCle = new Map(bibliotheque.map((a) => [a.cle, a]));
+  const candidats = bibliotheque.filter((a) => a.rendu.kind !== 'studio' && accepte(a.cle))
+    .map((a) => ({ cle: a.cle, titre: a.titre, sujets: sujetsDuVisuel(a, surcharges).sujets, hashtags: hashtagsDe(hashtags.hashtags, a.cle) }));
+  const cibles = (parDefaut ? professionsAdmin().filter((p) => p.id !== profession.id) : [profession]).filter((p) => packProfession(p.id).motsClesPartage.length);
+  const suggestions = cibles.map((p) => {
+    const s = suggestionsDePartage(candidats, { profession: p.id, motsCles: packProfession(p.id).motsClesPartage }, rattachements);
+    return { profession: p, total: s.length, items: s.slice(0, 12).map((x) => ({ ...x, asset: parCle.get(x.cle)! })) };
+  }).filter((x) => x.total);
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6" style={style}>
@@ -85,6 +110,26 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
           <Link href="/admin/arrivages" className="font-semibold text-teal-900 underline">Arrivages</Link>.
         </p>
       </div>
+
+      {suggestions.map((sg) => (
+        <section key={sg.profession.id} aria-labelledby={`fr-sugg-${sg.profession.id}`} className="grid gap-3 rounded-2xl border border-teal-800/20 bg-teal-50/40 p-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id={`fr-sugg-${sg.profession.id}`} className="text-lg font-semibold">Suggestions de partage → {sg.profession.libelle} <span className="tabular-nums text-neutral-600">({sg.total})</span></h2>
+            <DecisionSuggestion cles={sg.items.map((i) => i.cle)} profession={sg.profession.id} court={sg.profession.court} migrationManquante={migrationManquante} tout />
+          </div>
+          <p className="max-w-3xl text-sm text-neutral-600">Visuels de la bibliothèque dont le thème, un hashtag ou le titre correspond à cette profession. Rien n’est rattaché sans votre clic ; « Non » ne la repropose plus.</p>
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {sg.items.map((i) => (
+              <li key={i.cle} className="grid content-start gap-1.5 rounded-xl bg-white p-2 ring-1 ring-black/5">
+                <Vignette a={i.asset} />
+                <p className="line-clamp-2 text-xs font-semibold" title={i.asset.titre}>{i.asset.titre}</p>
+                <p className="text-xs text-neutral-600">{i.raisons.join(' · ')}</p>
+                <DecisionSuggestion cles={[i.cle]} profession={sg.profession.id} court={sg.profession.court} migrationManquante={migrationManquante} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
 
       <section aria-labelledby="fr-couv" className="grid gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -133,8 +178,17 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
             <Link key={s.id} href={lien({ theme: s.id, page: '' })} className={`rounded-full px-2.5 py-1 ring-1 ${theme === s.id ? 'bg-neutral-800 text-white ring-neutral-900' : 'bg-white ring-black/10'}`}>{s.libelle}</Link>
           ))}
         </div>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-neutral-600">Professions :</span>
+          {FILTRES_PARTAGE.map((f) => (
+            <Link key={f.id || 'tous'} href={lien({ partage: f.id, page: '' })} aria-current={partage === f.id ? 'true' : undefined}
+              className={`rounded-full px-2.5 py-1 ring-1 ${partage === f.id ? 'bg-neutral-800 text-white ring-neutral-900' : 'bg-white ring-black/10'}`}>{f.libelle}</Link>
+          ))}
+        </div>
+        {migrationManquante && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Migration 0046 à exécuter (supabase/migrations/0046_assets_professions.sql) : les professions affichées sont celles par défaut, le partage n’est pas encore enregistrable.</p>}
         <p className="text-sm text-neutral-600">{liste.length} ingrédient{liste.length > 1 ? 's' : ''}{pages > 1 ? ` · page ${page} sur ${pages}` : ''} · les mieux notés d’abord</p>
         {visibles.length === 0 ? <p className="rounded-xl bg-white p-6 text-center text-sm text-neutral-600 ring-1 ring-black/5">Rien de ce type au frigo pour l’instant.</p> : (
+          <SelectionProfessions>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {visibles.map((a) => {
               const m = moyennes.get(a.cle);
@@ -151,11 +205,14 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
                   </p>
                   {sujets.length > 0 && <p className="text-xs text-neutral-600">{sujets.map(libelleSujet).join(' · ')}</p>}
                   {tags.length > 0 && <p className="truncate text-xs text-teal-900" title={tags.map((t) => `#${t}`).join(' ')}>{tags.map((t) => `#${t}`).join(' ')}</p>}
+                  <ChipsProfessions cle={a.cle} professions={professionsDeLIngredient(a.cle, rattachements)} toutes={toutes} migrationManquante={migrationManquante} />
                   <Link href={`/admin/retours?cle=${encodeURIComponent(a.cle)}`} className="mt-auto flex min-h-11 items-center text-xs font-semibold text-teal-900 underline">Noter ou revoir</Link>
                 </li>
               );
             })}
           </ul>
+          <BarreLot cles={visibles.map((a) => a.cle)} toutes={toutes} courante={profession.id} migrationManquante={migrationManquante} />
+          </SelectionProfessions>
         )}
         {pages > 1 && (
           <nav aria-label="Pages" className="flex items-center gap-3 text-sm">

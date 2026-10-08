@@ -6,6 +6,7 @@
 // est un vrai bloc en haut du premier écran (pleine opacité), le titre dessous ; sur ordinateur, à droite du titre.
 import Icone from '../Icone.astro';
 import { site } from '../../lib/site';
+import { discipline } from '../../lib/pack';
 import { texte, champ, zonePhoto } from '../../lib/edition';
 import VisuelTheme from '../accueil/VisuelTheme.astro';
 import { fondAnime, registre } from '../../lib/visuels';
@@ -18,7 +19,7 @@ const visuel = visuelPremierEcran.type === 'dessin' ? { ...visuelPremierEcran, a
 const choix: 'photo' | 'animation' | 'illustration' = visuel.type === 'photo' ? 'photo' : visuel.animation && registre === 'releve' && site.visuels.animation !== null ? 'animation' : 'illustration';
 // Animation ou illustration : titre à gauche, visuel à droite
 const anime = choix !== 'photo';
-const specialite = site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
+const specialite = discipline;
 const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : lienRdv('accueil');
 ---
 <section class:list={['hero', `hero--${choix}`, { 'hero--anime': anime }]} style={choix === 'animation' ? `background:${fondAnime}` : undefined}>

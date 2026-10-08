@@ -1,18 +1,15 @@
 ---
 import Gabarit from '../layouts/Gabarit.astro';
 import { site } from '../lib/site';
+import { pack } from '../lib/pack';
 import { noms, lieu, titreCabinet, rdvEnLigne, aAdresse, adresseLieu, aTelephone } from '../lib/textes';
 
 const mesure = site.tracking.ga4 || site.tracking.clarity;
-const ordre = { FR: 'Ordre national des pédicures-podologues', BE: 'INAMI', CH: 'Société Suisse des Podologues (SSP)' }[site.pays];
-// Profession réglementée : titre professionnel, État où il a été obtenu et règles professionnelles applicables.
+const ordre = pack.instance[site.pays];
+// Profession réglementée : titre professionnel, État où il a été obtenu et règles professionnelles applicables (pack de la profession).
 const paysTitre = { FR: 'France', BE: 'Belgique', CH: 'Suisse' }[site.pays];
-const diplomeEtat = { FR: 'Diplôme d’État de pédicure-podologue', BE: 'Titre professionnel de podologue', CH: 'Diplôme de podologue ES' }[site.pays];
-const regles = {
-  FR: 'Code de déontologie des pédicures-podologues : Code de la santé publique, articles R.4322-31 et suivants (consultables sur legifrance.gouv.fr).',
-  BE: 'Loi coordonnée du 10 mai 2015 relative à l’exercice des professions des soins de santé.',
-  CH: 'Législation sanitaire du canton d’exercice et règles professionnelles de la Société Suisse des Podologues.',
-}[site.pays];
+const diplomeEtat = pack.diplome[site.pays];
+const regles = pack.regles[site.pays];
 ---
 <Gabarit title={`Mentions légales – ${titreCabinet}`} description={`Mentions légales du site de ${noms}.`} path="/mentions-legales">
   <section class="cadre tete-page">

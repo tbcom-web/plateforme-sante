@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { manques } from '@/lib/sites';
 import { dateCourte, etatPublication, STATUTS, type Etat, type Statut } from '@/lib/libelles';
 import ActualisationAuto from '@/components/ActualisationAuto';
-import { estDeLaProfession } from '@plateforme/core/professions';
+import { ALIAS_PROFESSIONS } from '@plateforme/core/professions';
 import { getProfession } from '@/lib/profession';
 import ActionsSite from '../ActionsSite';
 import NouveauSite from '../NouveauSite';
@@ -45,11 +45,12 @@ const nettoyerRecherche = (v: unknown) => (typeof v === 'string' ? v.replace(/[^
 const un = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
 
 // Clients › Sites (espaces de l'admin, docs/espaces-admin.md ; ancienne adresse : /admin, devenue le tableau de bord). Sites de la
-// profession choisie dans l'en-tête : les sites existants, sans profession enregistrée, sont de la profession par défaut.
+// profession choisie dans l'en-tête (sites.profession_slug, alias compris : bascule rapide du commercial d'une profession à l'autre).
 export default async function AdminSites({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const p = await searchParams;
   const profession = await getProfession();
-  const autreProfession = !estDeLaProfession({}, profession.id);
+  // Slugs enregistrés qui désignent cette profession (identifiant du registre + alias historiques)
+  const slugs = [profession.id, ...Object.entries(ALIAS_PROFESSIONS).filter(([, v]) => v === profession.id).map(([k]) => k)];
   const q = nettoyerRecherche(un(p.q));
   const statut = (['brouillon', 'en_ligne', 'suspendu'] as const).find((s) => s === un(p.statut)) ?? '';
   const test = un(p.test) === '1' ? '1' : un(p.test) === '0' ? '0' : '';
@@ -66,7 +67,8 @@ export default async function AdminSites({ searchParams }: { searchParams: Promi
     .select(
       'id, slug, statut, test, options, domaine, published_at, updated_at, config, modifs_non_publiees, publiee_le, publication_etat, publication_run_url, publication_debut, publication_fin, publication_erreur, profiles(email)',
       { count: 'exact' },
-    );
+    )
+    .in('profession_slug', slugs);
   if (q) {
     const motif = `*${q}*`;
     requete = requete.or(
@@ -84,14 +86,13 @@ export default async function AdminSites({ searchParams }: { searchParams: Promi
     .order('id')
     .range(debut, debut + PAR_PAGE - 1)
     .returns<Ligne[]>();
-  // Autre profession que celle des sites existants : aucun site pour l'instant
-  const sites = autreProfession ? [] : data ?? [];
-  const total = autreProfession ? 0 : count ?? 0;
+  const sites = data ?? [];
+  const total = count ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAR_PAGE));
 
   // Compteurs (requêtes de comptage seulement, sans charger les sites).
-  const compter = async (filtre: (r: ReturnType<typeof base>) => ReturnType<typeof base>) => (autreProfession ? 0 : (await filtre(base())).count ?? 0);
-  const base = () => supabase.from('sites').select('id', { count: 'exact', head: true });
+  const compter = async (filtre: (r: ReturnType<typeof base>) => ReturnType<typeof base>) => (await filtre(base())).count ?? 0;
+  const base = () => supabase.from('sites').select('id', { count: 'exact', head: true }).in('profession_slug', slugs);
   const [nbTotal, nbEnLigne, nbBrouillons, nbTests, nbEchecs, nbModifs] = await Promise.all([
     compter((r) => r),
     compter((r) => r.eq('statut', 'en_ligne').eq('test', false)),

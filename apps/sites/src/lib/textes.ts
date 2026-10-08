@@ -1,5 +1,6 @@
 // Phrases du site accordées à la voix choisie (je / nous / 3e personne) et au nombre de praticiens.
 import { site } from './site';
+import { discipline } from './pack';
 import { lieuEnClair, lieuCourt, lienRdvPrecis, REPLIS, titreSoins, aVille, telephoneUtilisable, modeContact, horairesRenseignes, regrouperHoraires, lignesHoraires, mentionsHoraires, libelleJours as libelleJoursCore, type Horaire } from '@plateforme/core';
 
 const enListe = (mots: string[]) =>
@@ -22,7 +23,7 @@ export const titreMetierPluriel = titreMetierAffiche.toLowerCase();
 export const aLaVille = aVille(site.cabinet.ville);
 /** « … à Lyon » à accoler à un titre (espace compris) ; vide sans ville. */
 export const suffixeVille = aLaVille ? ` ${aLaVille}` : '';
-export const titreCabinet = `Cabinet de ${site.pays === 'FR' ? 'pédicurie-podologie' : 'podologie'}${suffixeVille}`;
+export const titreCabinet = `Cabinet de ${discipline}${suffixeVille}`;
 
 /** Lieu d'exercice en clair : le quartier complète la ville, il ne la remplace jamais (« dans le quartier Claret, à Toulon »). */
 export const lieuExercice = lieuEnClair(site.cabinet.quartier, site.cabinet.ville);

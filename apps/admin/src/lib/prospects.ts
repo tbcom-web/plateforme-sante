@@ -5,6 +5,7 @@ import {
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import type { Lead } from '@/lib/leads';
+import { idProfession } from '@plateforme/core/professions';
 
 // Prospects de l'essai (coordonnées laissées à l'étape 1, migration 0024) et entonnoir de /admin/leads.
 // Lecture par la RLS (admin uniquement). null si la base n'a pas encore la mise à jour 0024.
@@ -16,6 +17,8 @@ export type Prospect = {
   nom: string;
   telephone: string;
   ville: string;
+  /** Profession (registre professions.ts, alias ramenés) */
+  profession: string;
   source: string;
   utm: Record<string, string>;
   etape: string;
@@ -36,12 +39,12 @@ export type Prospect = {
 };
 
 type Ligne = {
-  id: string; email: string; prenom: string; nom: string; telephone: string; ville: string; source: string; utm: Record<string, string> | null; etape: string;
+  id: string; email: string; profession?: string | null; prenom: string; nom: string; telephone: string; ville: string; source: string; utm: Record<string, string> | null; etape: string;
   conseils_opt_in: boolean; visites: number; created_at: string; derniere_visite: string; owner: string | null; compte_cree_le: string | null;
   relances_faites: Record<string, string> | null; test: boolean;
 };
 
-const COLONNES = 'id, email, prenom, nom, telephone, ville, source, utm, etape, conseils_opt_in, visites, created_at, derniere_visite, owner, compte_cree_le, relances_faites, test';
+const COLONNES = 'id, email, profession, prenom, nom, telephone, ville, source, utm, etape, conseils_opt_in, visites, created_at, derniere_visite, owner, compte_cree_le, relances_faites, test';
 
 /** Origine des liens de reprise envoyés aux prospects (domaine de l'essai). */
 export function origineEssai(): string {
@@ -55,7 +58,7 @@ export function origineEssai(): string {
 function versProspect(l: Ligne, aujourdhui: string, origine: string): Prospect {
   const r = { creeLe: l.created_at, compteCreeLe: l.compte_cree_le, faites: l.relances_faites };
   return {
-    id: l.id, email: l.email, prenom: l.prenom, nom: l.nom, telephone: l.telephone, ville: l.ville, source: l.source, utm: l.utm ?? {}, etape: l.etape,
+    id: l.id, email: l.email, prenom: l.prenom, nom: l.nom, telephone: l.telephone, ville: l.ville, profession: idProfession(l.profession), source: l.source, utm: l.utm ?? {}, etape: l.etape,
     etapeLibelle: libelleEtapeProspect(l.etape), conseils: l.conseils_opt_in, visites: l.visites, creeLe: l.created_at, derniereVisite: l.derniere_visite,
     owner: l.owner, compteCreeLe: l.compte_cree_le, relancesFaites: l.relances_faites ?? {}, test: l.test,
     joursSansCompte: Math.max(0, ecartJours(jourParis(l.created_at), aujourdhui)),
