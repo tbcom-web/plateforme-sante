@@ -82,7 +82,8 @@ async function getPhotosDesJeuxSansMemo(): Promise<PhotoDeJeu[]> {
   // Table absente (migration 0028 pas encore exécutée) : `libres` vaut null, aucune erreur
   const desLibres = (libres ?? []).filter((l: { url: string | null }) => Boolean(l.url)).map((l: { url: string; source: string; sujet: string; statut: string }) => ({
     url: l.url,
-    jeu: `Banque libre ${l.source === 'pexels' ? 'Pexels' : 'Pixabay'}${l.statut === 'a_valider' ? ' (à valider)' : ''}`,
+    // « Banque libre … » : préfixe lu par getPhotosBanque (recettes.ts) ; image générée par IA (0040) étiquetée comme telle
+    jeu: `Banque libre ${l.source === 'ia' ? '· Image générée' : l.source === 'pexels' ? 'Pexels' : 'Pixabay'}${l.statut === 'a_valider' ? ' (à valider)' : ''}`,
     sujet: l.sujet,
     specialite: SUJETS_VISUELS.find((s) => s.id === l.sujet)?.specialite ?? 'generale',
   }));

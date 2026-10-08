@@ -46,6 +46,9 @@ import {
   type PersonnalisationPack,
   validerManifeste,
   normaliserDraft,
+  estImageGeneree,
+  mentionCreditPhotos,
+  photosDuJeu,
   phraseJoursDomicile,
   PAYS,
   type Faq,
@@ -192,6 +195,9 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   if (images) definirContexteImages({ exclues: images.exclues, kits: { [d.theme.specialite]: { ...(images.kit && photosStyle ? images.kit : {}), ...images.visuel } } });
   const jeuRetenu = images?.kit && photosStyle && jeuPhotos && !jeuPhotos.siteId ? null : jeuPhotos;
   const persoPack = persoDuJeuPhotos(jeuRetenu, persoBanque, poidsPhotos, sujetsDeSpecialite(d.theme.specialite));
+  // Images générées par IA (jeu retenu, kit photo) : mention dans les crédits des mentions légales (images-generees.ts)
+  const kitPhoto = images?.kit && photosStyle ? images.kit : null;
+  const creditIa = [...(jeuRetenu ? photosDuJeu(jeuRetenu.photos) : []), kitPhoto?.accueil, kitPhoto?.panorama, ...(kitPhoto?.galerie ?? []), ...Object.values(kitPhoto?.soins ?? {})].some((u) => estImageGeneree(u));
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);
   // Spécialité secondaire : complète les visuels de la principale (avec sa propre personnalisation admin).
   const [persoSecondaire] = d.theme.specialiteSecondaire
@@ -225,6 +231,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     logo,
     marqueImportee,
     creditAdobe: jeuPhotos?.source === 'adobe',
+    creditIa,
   });
 }
 
@@ -245,6 +252,8 @@ export type EntreeAssemblage = {
   logo: SiteConfig['theme']['logo'];
   marqueImportee?: MarqueImportee;
   creditAdobe?: boolean;
+  /** Le site affiche au moins une image générée par IA (mention dans les crédits) */
+  creditIa?: boolean;
 };
 export type { LigneSoin, LigneProfession, LigneArticle };
 
@@ -391,7 +400,8 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       editeur: noms ? `${noms}, ${metier}` : nomCabinet,
       hebergeur: 'Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis',
       // Licence Adobe Stock : mention de la source, sans nom de fichier.
-      ...(e.creditAdobe ? { creditPhotos: 'Photos : Adobe Stock' } : {}),
+      // Images générées par IA : mention qu'elles ne représentent ni des patients ni le cabinet
+      ...((m) => (m ? { creditPhotos: m } : {}))(mentionCreditPhotos({ adobe: e.creditAdobe, ia: e.creditIa })),
     },
 
     pays: d.pays,

@@ -45,7 +45,7 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
-        <p className="text-sm"><Link href="/admin/retours" className="font-semibold text-teal-900 underline">← Donner mon avis</Link></p>
+        <p className="flex flex-wrap gap-x-4 text-sm"><Link href="/admin/retours" className="font-semibold text-teal-900 underline">← Donner mon avis</Link><Link href="/admin/retours/images-a-generer" className="font-semibold text-teal-900 underline">Images à générer (prompts) →</Link></p>
         <h1 className="mt-1 text-2xl font-bold">Kits d’images</h1>
         <p className="mt-1 hidden max-w-3xl text-sm text-neutral-600 md:block">
           Pour chaque sujet, le système compose un kit à partir de vos notes et de vos étiquettes : photo du premier écran, page sujet,

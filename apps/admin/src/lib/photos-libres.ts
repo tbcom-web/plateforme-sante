@@ -133,17 +133,23 @@ export const getMotsClesEnBase = memoRequete(getMotsClesEnBaseSansMemo);
  * pendant l'évaluation seulement. Importée : fichiers WebP hébergés chez nous (url), date d'import.
  */
 export type PhotoLibre = {
-  id: string; source: SourcePhotoLibre; idSource: string; auteur: string; auteurUrl: string | null; pageUrl: string; licence: string; licenceVersion: string;
-  licenceUrl: string; telechargeLe: string | null; motsCles: string[]; requete: string; sujet: string; chemin: string | null; url: string | null; largeurs: number[];
+  /** « ia » : image générée par IA importée par Paul (migration 0040, images-generees.ts) */
+  id: string; source: SourcePhotoLibre | 'ia'; idSource: string; auteur: string; auteurUrl: string | null; pageUrl: string | null; licence: string; licenceVersion: string;
+  licenceUrl: string | null; telechargeLe: string | null; motsCles: string[]; requete: string; sujet: string; chemin: string | null; url: string | null; largeurs: number[];
   largeurOriginale: number; hauteurOriginale: number; etiquettes: string[]; apercuUrl: string | null; importeLe: string | null; statut: 'a_valider' | 'validee' | 'retiree';
+  /** Image générée : outil, prompt, conditions de l'outil, date de génération (null pour Pexels / Pixabay ou sans 0040) */
+  iaOutil?: string | null; iaPrompt?: string | null; iaConditions?: string | null; iaGenereLe?: string | null;
 };
 
 const COLONNES_0028 = 'id, source, id_source, auteur_nom, auteur_url, page_url, licence, licence_version, licence_url, telecharge_le, mots_cles, requete, sujet, chemin, url, largeurs, largeur_originale, hauteur_originale, etiquettes, statut';
 export const COLONNES_PHOTOS_LIBRES = `${COLONNES_0028}, apercu_url, importe_le`;
+/** Colonnes des images générées (migration 0040) */
+export const COLONNES_0040 = `${COLONNES_PHOTOS_LIBRES}, ia_outil, ia_prompt, ia_conditions, ia_genere_le`;
 
 type LignePhotoLibre = {
-  id: string; source: SourcePhotoLibre; id_source: string; auteur_nom: string; auteur_url: string | null; page_url: string; licence: string; licence_version: string;
-  licence_url: string; telecharge_le: string | null; mots_cles: string[] | null; requete?: string | null; sujet: string; chemin: string | null; url: string | null; largeurs: number[] | null;
+  id: string; source: SourcePhotoLibre | 'ia'; id_source: string; auteur_nom: string; auteur_url: string | null; page_url: string | null; licence: string; licence_version: string;
+  licence_url: string | null; telecharge_le: string | null;
+  ia_outil?: string | null; ia_prompt?: string | null; ia_conditions?: string | null; ia_genere_le?: string | null; mots_cles: string[] | null; requete?: string | null; sujet: string; chemin: string | null; url: string | null; largeurs: number[] | null;
   largeur_originale?: number | null; hauteur_originale?: number | null; etiquettes?: string[] | null; apercu_url?: string | null; importe_le?: string | null; statut: PhotoLibre['statut'];
 };
 
@@ -153,24 +159,28 @@ export const photoLibreDepuisLigne = (l: LignePhotoLibre): PhotoLibre => ({
   largeurOriginale: l.largeur_originale ?? 0, hauteurOriginale: l.hauteur_originale ?? 0, etiquettes: l.etiquettes ?? [], apercuUrl: l.apercu_url ?? null,
   // Avant 0031, toute photo gardée était importée : date d'import = date de téléchargement
   importeLe: l.importe_le ?? (l.chemin ? l.telecharge_le : null), statut: l.statut,
+  iaOutil: l.ia_outil ?? null, iaPrompt: l.ia_prompt ?? null, iaConditions: l.ia_conditions ?? null, iaGenereLe: l.ia_genere_le ?? null,
 });
 
 /**
  * Photos gardées (traçabilité). migrationManquante : table 0028 absente ; migration0031 : colonnes de l'import différé
  * absentes (lecture sans elles, « Garder » demande d'exécuter 0031).
  */
-async function getPhotosLibresSansMemo(): Promise<{ photos: PhotoLibre[]; migrationManquante: boolean; migration0031: boolean }> {
+async function getPhotosLibresSansMemo(): Promise<{ photos: PhotoLibre[]; migrationManquante: boolean; migration0031: boolean; migration0040: boolean }> {
   const supabase = await createClient();
   const lire = (colonnes: string) => supabase.from('photos_libres').select(colonnes).order('created_at', { ascending: false }).limit(2000);
-  let { data, error } = await lire(COLONNES_PHOTOS_LIBRES);
-  let migration0031 = false;
+  // Colonnes des images générées (0040), sinon celles de l'import différé (0031), sinon celles de 0028
+  let { data, error } = await lire(COLONNES_0040);
+  let migration0040 = false, migration0031 = false;
+  if (error) { migration0040 = true; ({ data, error } = await lire(COLONNES_PHOTOS_LIBRES)); }
   if (error) { migration0031 = true; ({ data, error } = await lire(COLONNES_0028)); }
-  if (error) return { photos: [], migrationManquante: true, migration0031 };
-  return { photos: ((data ?? []) as unknown as LignePhotoLibre[]).map(photoLibreDepuisLigne), migrationManquante: false, migration0031 };
+  if (error) return { photos: [], migrationManquante: true, migration0031, migration0040 };
+  return { photos: ((data ?? []) as unknown as LignePhotoLibre[]).map(photoLibreDepuisLigne), migrationManquante: false, migration0031, migration0040 };
 }
 export const getPhotosLibres = memoRequete(getPhotosLibresSansMemo);
 
 export const MIGRATION_0031 = 'Migration 0031 à exécuter (supabase/migrations/0031_photos_libres_import_differe.sql).';
+export const MIGRATION_0040 = 'Migration à exécuter (supabase/migrations/0040_images_generees.sql) : les images générées ne peuvent pas encore être importées.';
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 

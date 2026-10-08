@@ -496,6 +496,12 @@ export function construireCandidate(e: {
   };
 }
 
+/**
+ * Image GÉNÉRÉE PAR IA (images-generees.ts, dossier banque/ia/ ; adresse du stockage, chemin ou clé d'inventaire photo:banque/ia/…) :
+ * étiquette « Image générée » dans l'admin, jamais dans la galerie du cabinet (kits-images.ts, jeux-photos.ts).
+ */
+export const estImageGeneree = (urlOuCle: string | null | undefined) => /(^|\/|photo:)banque\/ia\//.test(String(urlOuCle ?? ''));
+
 /** Photo importée chez nous (fichier hébergé) : la seule forme utilisable par les jeux, le générateur et les sites */
 export const estPhotoImportee = (p: { statut: string; chemin?: string | null; url?: string | null }) => p.statut === 'validee' && Boolean(p.chemin) && Boolean(p.url);
 

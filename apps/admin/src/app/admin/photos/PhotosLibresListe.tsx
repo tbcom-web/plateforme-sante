@@ -5,7 +5,7 @@
 // Thèmes et HASHTAGS (0029) : filtre « #… », recherche (auteur, thème, mot-clé, hashtag), ajout / retrait sur chaque photo.
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { cleCandidatePhoto, clePhoto, correspondHashtag, etiquetteKit, hashtagsDe, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
+import { cleCandidatePhoto, clePhoto, correspondHashtag, etiquetteKit, hashtagsDe, LIBELLE_IMAGE_GENEREE, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import type { PhotoLibre } from '@/lib/photos-libres';
 import { changerStatutPhotoLibre, importerPhotoLibre } from './actions';
@@ -13,6 +13,8 @@ import StatutPhotoLibre from './StatutPhotoLibre';
 
 const champ = 'min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-base md:text-sm';
 const jour = (d: string | null) => (d ? new Date(d).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }) : '—');
+/** Libellé de la source : Pexels, Pixabay ou « Image générée » (IA, migration 0040) */
+const libelleSource = (p: PhotoLibre) => (p.source === 'ia' ? LIBELLE_IMAGE_GENEREE : LICENCES_SOURCES[p.source].libelle);
 
 /** Candidate non importée : « Valider et importer » (téléchargement côté serveur) ou « Retirer » (sans import) */
 function ActionsCandidate({ id, onResultat }: { id: string; onResultat: (r: { ok: boolean; texte: string }) => void }) {
@@ -46,14 +48,14 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
   const [recherche, setRecherche] = useState('');
   const [resultat, setResultat] = useState<{ ok: boolean; texte: string } | null>(null);
   // Clé d'asset : photo importée → clé de l'inventaire ; candidate → photo:libre:<source>-<id> (reportée à l'import)
-  const lignes = useMemo(() => photos.map((p) => ({ p, cle: p.url ? clePhoto(p.url) : cleCandidatePhoto(p.source, p.idSource) })), [photos]);
+  const lignes = useMemo(() => photos.map((p) => ({ p, cle: p.url ? clePhoto(p.url) : p.source === 'ia' ? null : cleCandidatePhoto(p.source, p.idSource) })), [photos]);
   // Photos gardées pour un kit d'images (#kit-<sujet>, suggestions-kits.ts) et pas encore importées : en tête, étiquetées
   const kitDe = (cle: string | null, p: PhotoLibre) => (cle && !p.url && p.statut !== 'retiree' ? etiquetteKit(hashtagsDe(hashtags, cle)) : null);
   const visibles = lignes.filter(({ p, cle }) => {
     if (filtre && (!cle || !correspondHashtag(hashtags, cle, filtre, true))) return false;
     const q = recherche.trim().toLowerCase().replace(/^#/, '');
     if (!q) return true;
-    return [p.auteur, libelleSujet(p.sujet), p.sujet, p.source, p.idSource, ...p.motsCles, ...(cle ? hashtagsDe(hashtags, cle) : [])].some((t) => t.toLowerCase().includes(q));
+    return [p.auteur, libelleSujet(p.sujet), p.sujet, p.source, p.idSource, ...(p.source === 'ia' ? [LIBELLE_IMAGE_GENEREE, p.iaOutil ?? ''] : []), ...p.motsCles, ...(cle ? hashtagsDe(hashtags, cle) : [])].some((t) => t.toLowerCase().includes(q));
   });
   visibles.sort((a, b) => Number(Boolean(kitDe(b.cle, b.p))) - Number(Boolean(kitDe(a.cle, a.p))));
   const aImporter = visibles.filter(({ p }) => !p.url && p.statut !== 'retiree').length;
@@ -82,19 +84,34 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
                 ) : <div className="grid aspect-[3/2] w-full place-items-center rounded-lg bg-neutral-100 text-xs text-neutral-500">Aperçu indisponible</div>}
                 {!importee && (
                   <figcaption className="absolute left-2 top-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-950 ring-1 ring-amber-300">
-                    Aperçu {LICENCES_SOURCES[p.source].libelle}, non importée
+                    Aperçu {libelleSource(p)}, non importée
                   </figcaption>
                 )}
+                {p.source === 'ia' && <span className="absolute right-2 top-2 rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-950 ring-1 ring-violet-300">{LIBELLE_IMAGE_GENEREE}</span>}
                 {kitDe(cle, p) && <span className="absolute bottom-2 left-2 rounded-full bg-teal-800 px-2 py-0.5 text-[11px] font-semibold text-white">{kitDe(cle, p)!.libelle}</span>}
               </figure>
               <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
                 <dt className="text-neutral-500">Sujet</dt><dd>{libelleSujet(p.sujet)}</dd>
-                <dt className="text-neutral-500">Source</dt><dd><a href={p.pageUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{LICENCES_SOURCES[p.source].libelle} n° {p.idSource}</a> · {p.largeurOriginale} × {p.hauteurOriginale} px</dd>
-                <dt className="text-neutral-500">Auteur</dt><dd className="truncate">{p.auteurUrl ? <a href={p.auteurUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.auteur}</a> : p.auteur}</dd>
-                <dt className="text-neutral-500">Licence</dt><dd><a href={p.licenceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.licence}</a>, {p.licenceVersion}</dd>
+                {p.source === 'ia' ? (
+                  <>
+                    <dt className="text-neutral-500">Source</dt><dd>{LIBELLE_IMAGE_GENEREE} par IA · {p.iaOutil ?? 'outil non renseigné'} · {p.largeurOriginale} × {p.hauteurOriginale} px</dd>
+                    <dt className="text-neutral-500">Générée</dt><dd>{jour(p.iaGenereLe ?? null)}</dd>
+                    <dt className="text-neutral-500">Auteur</dt><dd className="truncate">{p.auteur}</dd>
+                    <dt className="text-neutral-500">Conditions</dt><dd>{p.licenceUrl ? <a href={p.licenceUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.licence}</a> : p.licence}, {p.licenceVersion}{p.iaConditions ? ` : ${p.iaConditions}` : ''}</dd>
+                  </>
+                ) : (
+                  <>
+                    <dt className="text-neutral-500">Source</dt><dd><a href={p.pageUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{libelleSource(p)} n° {p.idSource}</a> · {p.largeurOriginale} × {p.hauteurOriginale} px</dd>
+                    <dt className="text-neutral-500">Auteur</dt><dd className="truncate">{p.auteurUrl ? <a href={p.auteurUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.auteur}</a> : p.auteur}</dd>
+                    <dt className="text-neutral-500">Licence</dt><dd><a href={p.licenceUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{p.licence}</a>, {p.licenceVersion}</dd>
+                  </>
+                )}
                 <dt className="text-neutral-500">Importée</dt><dd>{importee ? `${jour(p.importeLe ?? p.telechargeLe)} · ${p.largeurs.join(', ')} px` : 'non (lien seulement)'}</dd>
-                <dt className="text-neutral-500">Mots-clés</dt><dd className="truncate">{p.motsCles.join(', ')}</dd>
+                {p.source !== 'ia' && <><dt className="text-neutral-500">Mots-clés</dt><dd className="truncate">{p.motsCles.join(', ')}</dd></>}
               </dl>
+              {p.source === 'ia' && p.iaPrompt && (
+                <details className="text-xs"><summary className="cursor-pointer text-neutral-700">Prompt utilisé</summary><p className="mt-1 whitespace-pre-wrap break-words text-neutral-600">{p.iaPrompt}</p></details>
+              )}
               {cle && <HashtagsVisuel cle={cle} etat={hashtags} onChange={setHashtags} migrationManquante={migrationHashtags} compact />}
               {importee ? <StatutPhotoLibre id={p.id} statut={p.statut} /> : p.statut === 'retiree' ? <p className="text-xs text-neutral-600">Retirée sans import (traçabilité conservée).</p> : <ActionsCandidate id={p.id} onResultat={setResultat} />}
             </li>

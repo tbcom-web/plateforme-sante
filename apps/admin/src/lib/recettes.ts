@@ -129,8 +129,10 @@ const photosBanque = cache(async (nonImportees: boolean): Promise<PhotoBanque[]>
     // Jeux de photos partagés (les photos libres sont lues à part, avec leur statut)
     ...jeux.filter((p) => !p.jeu.startsWith('Banque libre')).map((p) => ({ url: p.url, origine: 'jeu' as const, sujets: sujetsJeu(p.specialite) })),
     ...((libres ?? []) as LigneLibre[]).flatMap((l): EntreeBanquePhotos[] => {
-      if (!estSourcePhotoLibre(l.source)) return [];
       const sujets = SUJETS_VISUELS.some((x) => x.id === l.sujet) ? [l.sujet] : ['general'];
+      // Image générée par IA (0040) : comme une photo libre importée, une fois validée (jamais d'aperçu externe)
+      if (l.source === 'ia') return estPhotoImportee(l) ? [{ url: l.url!, origine: 'libre', sujets, idLibre: l.id }] : [];
+      if (!estSourcePhotoLibre(l.source)) return [];
       if (estPhotoImportee(l)) return [{ url: l.url!, origine: 'libre', sujets, idLibre: l.id, source: l.source }];
       // Gardée, pas encore importée : aperçu de la source, clé de la candidate (sujets et hashtags saisis au « Garder »)
       if (!opts.nonImportees || l.statut !== 'a_valider' || l.url || !l.apercu_url || !apercuAutorise(l.source, l.apercu_url)) return [];

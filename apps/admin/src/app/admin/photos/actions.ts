@@ -242,7 +242,7 @@ export async function enregistrerSourcePhoto(urlOuChemin: string, entree: unknow
   await exigerAdmin();
   const brut = String(urlOuChemin ?? '');
   const chemin = brut.startsWith('banque/') ? brut : cheminStockagePhoto(brut);
-  if (!chemin || !chemin.startsWith('banque/') || chemin.startsWith('banque/libres/') || chemin.includes('..') || /\s/.test(chemin) || chemin.length > 307) return { ok: false, message: 'Photo inconnue (seules les photos envoyées dans la banque ont une source à renseigner ici).' };
+  if (!chemin || !chemin.startsWith('banque/') || chemin.startsWith('banque/libres/') || chemin.startsWith('banque/ia/') || chemin.includes('..') || /\s/.test(chemin) || chemin.length > 307) return { ok: false, message: 'Photo inconnue (seules les photos envoyées dans la banque ont une source à renseigner ici).' };
   const { source, erreurs } = validerSourcePhoto(entree);
   if (!source) return { ok: false, message: erreurs.join(' ') };
   const supabase = await createClient();

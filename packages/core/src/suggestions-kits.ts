@@ -12,6 +12,7 @@
 // Pur, sans réseau.
 
 import { libelleEmplacement, libelleSujetKit, photosARattacher, vivierCure, type DonneesKits, type KitImages } from './kits-images';
+import { estImageGeneree } from './photos-libres';
 
 /** Requêtes ciblées (anglais) par soin du catalogue ; toujours des pieds, des ongles, des chaussures ou un cabinet de soin */
 export const REQUETES_SOINS: Readonly<Record<string, readonly string[]>> = {
@@ -161,7 +162,7 @@ export function suggestionsVivier(kit: KitImages, emplacement: string, d: Donnee
   const dans = new Set(kit.photos.map((p) => p.url));
   const tag = hashtagEmplacement(emplacement);
   const de = (sujet: string, voisin: string | null): (SuggestionVivier & { effet: number })[] => vivierCure(sujet, d)
-    .filter((v) => !dans.has(v.p.url) && !refus.has(cleRefusKit(emplacement, v.cle)))
+    .filter((v) => !dans.has(v.p.url) && !refus.has(cleRefusKit(emplacement, v.cle)) && !(emplacement === 'cabinet' && estImageGeneree(v.p.url)))
     .map((v) => {
       const etiquetee = v.tags.includes(tag);
       const rang: RangSuggestion = voisin ? 5 : v.note !== null && v.note >= 4 && etiquetee ? 1 : v.note !== null && v.note >= 3.5 ? 2 : v.note === null ? 3 : 4;
@@ -170,7 +171,7 @@ export function suggestionsVivier(kit: KitImages, emplacement: string, d: Donnee
   let l = de(kit.sujet, null);
   // Vivier épuisé : d'abord les photos notées ≥ 4 ★ du même sujet IMPLICITE pas encore rattachées (avant tout voisin)
   if (!l.length) {
-    l = photosARattacher(d, kit.sujet).filter((x) => !dans.has(x.url) && !refus.has(cleRefusKit(emplacement, x.cle))).map((x) => ({
+    l = photosARattacher(d, kit.sujet).filter((x) => !dans.has(x.url) && !refus.has(cleRefusKit(emplacement, x.cle)) && !(emplacement === 'cabinet' && estImageGeneree(x.url))).map((x) => ({
       url: x.url, cle: x.cle, note: x.note, rang: 6 as RangSuggestion, etiquetee: false, voisin: null, aRattacher: true, aImporter: !x.importee, idLibre: x.idLibre, effet: 0,
       libelle: `Notée ${String(x.note).replace('.', ',')} ★, pas encore rattachée à ${libelleSujetKit(kit.sujet)}`,
     }));

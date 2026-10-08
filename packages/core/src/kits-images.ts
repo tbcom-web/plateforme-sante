@@ -26,7 +26,7 @@ import { poidsAssets, type SurchargesSujets } from './assets-poids';
 import { hashtagsDepuisLignes } from './hashtags';
 import { HASHTAGS_PAR_DEFAUT } from './kits';
 import { photosDuJeu, type PhotosJeu } from './jeux-photos';
-import { SUJETS_VISUELS } from './photos-libres';
+import { estImageGeneree, SUJETS_VISUELS } from './photos-libres';
 
 export const SUJETS_KITS = ['enfant', 'sport', 'senior', 'diabete', 'ongles', 'semelles', 'pedicurie', 'general'] as const;
 export type SujetKit = (typeof SUJETS_KITS)[number];
@@ -143,7 +143,7 @@ export function composerKit(sujet: string, d: DonneesKits, rang = 0, soins?: rea
 
   // Kit gardé par Paul : repris tel quel (photos encore valides), le reste complété
   const garde = rang === 0 ? d.gardes?.find((g) => g.sujet === sujet) : undefined;
-  if (garde) for (const g of garde.photos) { const x = classees.find((c) => c.p.url === g.url); if (x && libre(x) && !res.some((r) => r.emplacement === g.emplacement && g.emplacement !== 'cabinet')) poser(g.emplacement as EmplacementKit, x); }
+  if (garde) for (const g of garde.photos) { const x = classees.find((c) => c.p.url === g.url); if (x && libre(x) && !(g.emplacement === 'cabinet' && estImageGeneree(x.p.url)) && !res.some((r) => r.emplacement === g.emplacement && g.emplacement !== 'cabinet')) poser(g.emplacement as EmplacementKit, x); }
 
   // Premier écran : rotation parmi les 4 meilleures
   if (!res.some((r) => r.emplacement === 'accueil')) {
@@ -163,8 +163,8 @@ export function composerKit(sujet: string, d: DonneesKits, rang = 0, soins?: rea
     else trous.push(`${nomSujet} : aucune photo #${slug} (fiche soin) ; l’illustration du soin est utilisée.`);
   }
   if (!res.some((r) => r.emplacement === 'page-sujet')) { const x = meilleure('page-sujet'); if (x) poser('page-sujet', x); }
-  // Galerie du cabinet : 4 photos
-  for (let i = res.filter((r) => r.emplacement === 'cabinet').length; i < 4; i++) { const x = meilleure('cabinet'); if (x) poser('cabinet', x); }
+  // Galerie du cabinet : 4 photos, jamais une image générée par IA (elle serait prise pour le vrai cabinet)
+  for (let i = res.filter((r) => r.emplacement === 'cabinet').length; i < 4; i++) { const x = meilleure('cabinet', (c) => !estImageGeneree(c.p.url)); if (x) poser('cabinet', x); }
   if (res.filter((r) => r.emplacement === 'cabinet').length < 4) trous.push(`${nomSujet} : moins de 4 photos pour la galerie du cabinet.`);
 
   const complement = res.some((r) => r.complement);
@@ -189,7 +189,8 @@ export const photosDuKit = (k: Pick<KitImages, 'photos'>): string[] => {
 /** Forme compacte transmise au registre (contexte-images.ts) et aux rendus */
 export function kitCompact(k: KitImages): KitCompact {
   const de = (e: string) => k.photos.filter((p) => p.emplacement === e).map((p) => p.url);
-  const galerie = [...de('cabinet'), ...de('page-sujet')];
+  // Galerie (page « Le cabinet » des sites) : jamais une image générée par IA
+  const galerie = [...de('cabinet'), ...de('page-sujet')].filter((u) => !estImageGeneree(u));
   return {
     sujet: k.sujet,
     ...(de('accueil')[0] ? { accueil: de('accueil')[0] } : {}),

@@ -157,6 +157,7 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
           Photos libres de droits de Pexels et Pixabay, une à la fois. Gardée, seul son lien est enregistré avec sa licence : rien n’est
           téléchargé. « Valider et importer » (Jeux de photos) l’héberge ensuite chez nous ; les sites n’utilisent que nos copies importées.
         </p>
+        <p className="text-sm">Aucune bonne photo pour un sujet ? <a href="/admin/retours/images-a-generer" className="font-semibold text-teal-900 underline underline-offset-4">Images à générer</a> : prompts prêts à copier et import d’une image générée.</p>
       </div>
       {migrationManquante && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">Migration 0028 à exécuter (<code>supabase/migrations/0028_inspirations_photos_libres.sql</code>) : décisions et traçabilité ne peuvent pas encore être enregistrées.</p>

@@ -2,6 +2,7 @@
 // enregistrent la source et éventuellement la licence associée »). Module pur :
 // - banque intégrée (apps/sites/public/photos) : crédits Unsplash typés (credits-photos.ts) ;
 // - photos libres Pexels / Pixabay : traçabilité de photos_libres (0028, 0031), dès « Garder » ;
+// - images générées par IA importées par Paul (banque/ia/…) : traçabilité de photos_libres, source « ia » (0040 : outil, prompt, conditions) ;
 // - photos envoyées à la main par l'admin dans la banque (banque/jeux/…, banque/sites/… d'un jeu « banque ») : provenance
 //   OBLIGATOIRE à l'envoi (table photos_sources, migration 0031) — Adobe Stock (référence de licence), photo personnelle /
 //   réalisée pour le cabinet (auteur), autre banque (nom, adresse, licence) ; sinon « Source à renseigner » ;
@@ -71,10 +72,11 @@ export function validerSourcePhoto(e: unknown): { source: SourcePhotoManuelle | 
 // Classement d'une image d'après son adresse
 // ---------------------------------------------------------------------------------------------------------------
 
-export type TypeSourceImage = 'integree' | 'libre' | 'banque' | 'adobe' | 'praticien' | 'inconnue';
+export type TypeSourceImage = 'integree' | 'libre' | 'ia' | 'banque' | 'adobe' | 'praticien' | 'inconnue';
 export const LIBELLES_TYPES_SOURCE: Record<TypeSourceImage, string> = {
   integree: 'Banque intégrée (Unsplash)',
   libre: 'Photo libre (Pexels / Pixabay)',
+  ia: 'Image générée (IA)',
   banque: 'Envoyée dans la banque',
   adobe: 'Adobe Stock (licence du client)',
   praticien: 'Fournie par le praticien',
@@ -100,6 +102,7 @@ export function typeSourceImage(url: string, sourceDuJeu?: 'banque' | 'adobe' | 
   const c = cheminStockagePhoto(url);
   if (!c) return 'inconnue';
   if (c.startsWith('banque/libres/')) return 'libre';
+  if (c.startsWith('banque/ia/')) return 'ia';
   if (UUID.test(c.split('/')[0])) return 'praticien';
   if (c.startsWith('banque/sites/')) return sourceDuJeu === 'adobe' ? 'adobe' : sourceDuJeu === 'praticien' ? 'praticien' : 'banque';
   if (c.startsWith('banque/')) return 'banque';
@@ -131,7 +134,7 @@ export type LigneSourceImage = {
 
 export type EntreeRecap = {
   /** Photos libres (photos_libres) */
-  libres?: readonly { url: string | null; apercuUrl: string | null; source: 'pexels' | 'pixabay'; idSource: string; auteur: string; pageUrl: string; licence: string; licenceVersion: string; licenceUrl: string; telechargeLe: string | null; importeLe: string | null; statut: string; sujet: string }[];
+  libres?: readonly { url: string | null; apercuUrl: string | null; source: 'pexels' | 'pixabay' | 'ia'; idSource: string; auteur: string; pageUrl: string | null; licence: string; licenceVersion: string; licenceUrl: string | null; telechargeLe: string | null; importeLe: string | null; statut: string; sujet: string; iaOutil?: string | null }[];
   /** Photos des jeux (adresse, nom et source du jeu) */
   photosJeux?: readonly { url: string; jeu: string; source: 'banque' | 'adobe' | 'praticien' }[];
   /** Sources des photos envoyées (photos_sources), par chemin */
@@ -141,7 +144,7 @@ export type EntreeRecap = {
 };
 
 const LIB_STATUT_LIBRE: Record<string, string> = { a_valider: 'À valider', validee: 'Validée', retiree: 'Retirée' };
-const ORDRE: TypeSourceImage[] = ['inconnue', 'banque', 'praticien', 'adobe', 'libre', 'integree'];
+const ORDRE: TypeSourceImage[] = ['inconnue', 'banque', 'praticien', 'adobe', 'libre', 'ia', 'integree'];
 
 /** Toutes les images avec leur source et leur licence (une ligne par image ; « à renseigner » d'abord) */
 export function recapSourcesImages(e: EntreeRecap): LigneSourceImage[] {
@@ -158,9 +161,12 @@ export function recapSourcesImages(e: EntreeRecap): LigneSourceImage[] {
   }
   for (const p of e.libres ?? []) {
     const url = p.url ?? p.apercuUrl ?? `${p.source}:${p.idSource}`;
+    // Image générée par IA (source « ia », migration 0040) : outil déclaré, auteur = Paul, conditions de l'outil
+    const ia = p.source === 'ia';
     ajouter({
-      url, chemin: p.url ? cheminStockagePhoto(p.url) : null, type: 'libre', fournisseur: p.source === 'pexels' ? 'Pexels' : 'Pixabay', auteur: p.auteur, lien: p.pageUrl,
-      licence: `${p.licence}, ${p.licenceVersion}`, lienLicence: p.licenceUrl, date: (p.importeLe ?? p.telechargeLe ?? '').slice(0, 10),
+      url, chemin: p.url ? cheminStockagePhoto(p.url) : null, type: ia ? 'ia' : 'libre',
+      fournisseur: ia ? `Image générée par IA${p.iaOutil ? ` (${p.iaOutil})` : ''}` : p.source === 'pexels' ? 'Pexels' : 'Pixabay', auteur: p.auteur, lien: p.pageUrl ?? '',
+      licence: `${p.licence}, ${p.licenceVersion}`, lienLicence: p.licenceUrl ?? '', date: (p.importeLe ?? p.telechargeLe ?? '').slice(0, 10),
       statut: `${LIB_STATUT_LIBRE[p.statut] ?? p.statut}${p.url ? '' : ' (non importée)'}`, aRenseigner: false, usage: usage(url),
     });
   }

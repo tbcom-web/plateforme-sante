@@ -116,3 +116,33 @@ Demande de Paul (2026-10-07) : chaque image enregistrée garde sa source et, le 
   licence, photo personnelle / réalisée pour le cabinet + auteur, autre banque + nom, page, licence), table `photos_sources`
   (migration 0031) ; une photo envoyée sans provenance apparaît « Source à renseigner » avec « Compléter la source » ;
 - Adobe Stock d'un jeu exclusif : `licences_photos` (0016) ; photos des praticiens : « Photo fournie par le praticien ».
+
+## Images générées par IA (/admin/retours/images-a-generer)
+
+Demande de Paul (2026-10-08) : « faire des prompts pour demander à ChatGPT de créer des images sur des sujets dont on a du mal
+à trouver des images de représentation ». **Paul génère lui-même** : aucun service d'IA n'est appelé par le code.
+
+1. **Prompts** (`packages/core/src/prompts-images.ts`) : la page liste les TROUS réels (emplacements des kits sans photo,
+   faibles ou complétés par un autre sujet, sujets avec moins de 3 photos ≥ 4 ★, manques « photo » de `retours/MANQUES.md`),
+   priorisés. Pour chacun : prompt prêt à copier (anglais ou français ; ChatGPT / Firefly en phrases, ou Midjourney avec `--ar`
+   et `--no`), par format (premier écran 16:9 et 4:5, carte de soin 4:3, page sujet 3:2, cabinet : détail d'ambiance 3:2,
+   ÉcranZen 9:16), trois variantes (lumière × angle), couleurs de la gamme choisie injectées (nom + hexadécimal), style de la
+   banque (naturel, lumineux, sans retouche glamour). Contraintes négatives **toujours présentes** : pas de texte, de logo ni de
+   marque, pas de visage reconnaissable, pas de sang ni de plaie, anatomie correcte (cinq orteils), pas d'avant / après, modèle
+   anonyme jamais présenté comme un vrai patient ou praticien, pas de tatouage, chaussures propres, image nette. Une précision
+   libre qui viole une règle (avant / après, résultat, faux patient ou praticien, marque, posturologie / réflexologie, sang,
+   visage, texte) est **refusée** : aucun prompt rendu. Liens depuis la vue Kits d'images et Photos à découvrir.
+2. **Import** (« Importer une image générée », `packages/core/src/images-generees.ts`, route `…/images-a-generer/importer`) :
+   PNG, JPEG ou WebP depuis l'ordinateur ou le téléphone ; type réel lu dans les octets, 4 Mo au plus à l'envoi (le navigateur
+   réencode au-delà), grand côté ≥ 1024 px et petit côté ≥ 768 px, **refus si les métadonnées contiennent une localisation GPS**
+   (photo d'appareil). Conversion WebP 640 / 1280 / 1920 px au plus, toutes métadonnées retirées, dans
+   `photos/banque/ia/<sujet>/ia-<empreinte>-<largeur>.webp`. Traçabilité obligatoire dans `photos_libres` (source « ia ») :
+   outil, date de génération, prompt utilisé, conditions d'utilisation de l'outil (résumé + lien), case « usage commercial
+   vérifié » (Paul vérifie lui-même les conditions de l'outil), auteur = Paul, date d'import. Statut « à valider » ; sujet et
+   hashtags du trou pré-cochés (`#<emplacement>`, `#image-generee`) ; ensuite notation, tri, validation et kits comme les autres.
+3. **Partout** : étiquette « Image générée » (Jeux de photos, Sources et licences, export CSV, cartes de la bibliothèque).
+   **Jamais dans la galerie du cabinet** (kits, jeux de photos) : elle serait prise pour le vrai cabinet. Sur les sites qui en
+   affichent une, les mentions légales (« Crédits photos ») précisent que certaines photos d'illustration sont générées par IA et
+   ne représentent ni des patients ni le cabinet.
+4. **Migration** `supabase/migrations/0040_images_generees.sql` (à exécuter par Paul) ; sans elle, les prompts fonctionnent et
+   l'import affiche « Migration à exécuter ».

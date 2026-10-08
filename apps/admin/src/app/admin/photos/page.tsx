@@ -27,7 +27,7 @@ export default async function JeuxPhotos() {
     // Seules les photos IMPORTÉES (fichiers hébergés chez nous) entrent dans un jeu
     const validees = libres.photos.filter(estPhotoImportee).map((p) => ({ ...p, url: p.url! }));
     const duSujet = (p: (typeof validees)[number]) => SUJETS_VISUELS.find((x) => x.id === p.sujet)?.specialite === spec;
-    return [...validees.filter(duSujet), ...validees.filter((p) => !duSujet(p))].map((p) => ({ url: p.url, legende: `${libelleSujet(p.sujet)} · ${p.auteur} (${p.source === 'pexels' ? 'Pexels' : 'Pixabay'})` }));
+    return [...validees.filter(duSujet), ...validees.filter((p) => !duSujet(p))].map((p) => ({ url: p.url, legende: `${libelleSujet(p.sujet)} · ${p.auteur} (${p.source === 'ia' ? 'Image générée' : p.source === 'pexels' ? 'Pexels' : 'Pixabay'})` }));
   };
   const jeux = (data ?? []).map(jeuPhotosDepuisLigne);
   const soins = catalogue.map((s) => ({ slug: s.slug, titre: s.titre_court }));
@@ -73,7 +73,7 @@ export default async function JeuxPhotos() {
 
       <section aria-labelledby="photos-libres" className="grid gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 id="photos-libres" className="text-lg font-semibold">Photos libres de droits (Pexels, Pixabay)</h2>
+          <h2 id="photos-libres" className="text-lg font-semibold">Photos libres de droits (Pexels, Pixabay) et images générées</h2>
           <a href="/admin/photos/licences.csv" className="flex min-h-11 items-center rounded-xl border border-neutral-300 bg-white px-3 text-sm font-semibold hover:bg-neutral-50">Exporter les licences (CSV)</a>
         </div>
         <p className="max-w-3xl text-sm text-neutral-600">
@@ -81,6 +81,11 @@ export default async function JeuxPhotos() {
           ou Pixabay, pour l’évaluation). « Valider et importer » télécharge alors la photo et l’héberge chez nous (WebP, sans métadonnées) : seule
           une photo importée est proposée dans le choix des jeux ci-dessus et utilisée par les sites. Chaque ligne garde sa preuve de licence.
           Les sources et licences de toutes les autres images sont plus bas (« Sources et licences »).
+        </p>
+        <p className="max-w-3xl text-sm text-neutral-600">
+          Images générées par IA (étiquette « Image générée ») : prompts et import depuis{' '}
+          <Link href="/admin/retours/images-a-generer" className="font-semibold text-teal-900 underline underline-offset-4">Images à générer</Link>.
+          Importées « à valider », avec l’outil, le prompt et les conditions de l’outil ; jamais dans la galerie du cabinet.
         </p>
         {libres.migrationManquante ? (
           <p className="text-sm text-amber-900">Migration 0028 à exécuter (<code>supabase/migrations/0028_inspirations_photos_libres.sql</code>).</p>
