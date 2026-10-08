@@ -96,3 +96,6 @@ export * from './images-generees';
 export * from './generation-recettes';
 export * from './tranches';
 export * from './qualite';
+export * from './pratiques';
+export * from './profils';
+export * from './publication-recettes';
