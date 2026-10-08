@@ -23,6 +23,15 @@
 // ordinateur et « les-deux » 1) dans les sommes ci-dessus (n(a) devient la somme des poids). Les notes antérieures, sans
 // appareil, valent « les-deux » : résultats inchangés. Les retours « Rendu mobile » (adaptation téléphone) ne passent JAMAIS ici.
 // Module pur, sans dépendance d'exécution (importé par propositions.ts et jeux-photos.ts).
+//
+// ILLUSTRATION DE BASE → VARIANTES (2026-10-08, bases-illustrations.ts) : les notes d'un dessin et de toutes ses variantes
+// (registres, styles, trait continu, héros d'un thème…) forment un groupe noté sous la clé de base (`dessin:orthonyxie`) :
+//   effet(base) = m(groupe) − μ ; effet(variante) = effet(base) + écart(variante),
+//   écart = clamp((moy(variante) − moy(groupe)) · n(variante) / (n(variante) + K), ±0,5) — 0 sans note propre.
+// scoreAsset lit l'effet de la clé, à défaut celui de sa base ; statut « Retiré » / « À retravailler » de la base valable pour
+// ses variantes sauf statut propre (lu quand la source le fournit : sansHeritage).
+
+import { baseDeCle, HERITAGE_VARIANTES } from './bases-illustrations';
 
 /** Préfixes de clé (= type d'asset enregistré dans assets_notes.type) */
 /**
@@ -58,7 +67,11 @@ const poidsNote = (a: unknown) => (a === 'mobile' ? 1.25 : 1);
  */
 export type SurchargesSujets = Record<string, { ajouts: string[]; retraits: string[] }>;
 
-export type PoidsAssets = { n: number; moyenne: number; effets: Record<string, number>; statuts: Record<string, 'a_retravailler' | 'retire'>; sujets?: SurchargesSujets };
+export type PoidsAssets = {
+  n: number; moyenne: number; effets: Record<string, number>; statuts: Record<string, 'a_retravailler' | 'retire'>; sujets?: SurchargesSujets;
+  /** Variantes avec un statut propre non pénalisant (« Validé », « À revoir ») : n'héritent pas du statut de leur base */
+  sansHeritage?: string[];
+};
 
 export const LISSAGE_ASSETS = 4;
 export const PENALITES_STATUT = { retire: -3, a_retravailler: -0.75 } as const;
@@ -97,27 +110,74 @@ export function statsAssets(lignes: readonly LigneAppriseAsset[]): { n: number; 
   return { n, moyenne, cles };
 }
 
-/** Poids appris (déterministes quel que soit l'ordre des lignes) ; null si rien n'est appris */
+/** Poids appris (déterministes quel que soit l'ordre des lignes) ; null si rien n'est appris. Héritage base → variantes : voir l'en-tête. */
 export function poidsAssets(lignes: readonly LigneAppriseAsset[]): PoidsAssets | null {
   const { n, moyenne, cles } = statsAssets(lignes);
   const effets: Record<string, number> = {};
+  // Groupes base → variantes : notes agrégées sous la clé de base (anciennes notes de variantes comprises)
+  const groupes = new Map<string, { poids: number; somme: number; membres: StatAsset[] }>();
+  const basesNotees = new Set([...cles.keys()].map(baseDeCle).filter((b): b is string => Boolean(b)));
+  for (const s of cles.values()) {
+    const b = baseDeCle(s.cle) ?? (basesNotees.has(s.cle) ? s.cle : null);
+    if (!b) continue;
+    const g = groupes.get(b) ?? groupes.set(b, { poids: 0, somme: 0, membres: [] }).get(b)!;
+    g.poids += s.poids; g.somme += s.somme; g.membres.push(s);
+  }
+  const K = HERITAGE_VARIANTES.lissage, P = HERITAGE_VARIANTES.plafondEcart;
+  const enGroupe = new Set<string>();
+  for (const [b, g] of groupes) {
+    const effetBase = arrondi((g.somme + K * moyenne) / (g.poids + K) - moyenne);
+    const moyG = g.somme / g.poids;
+    if (effetBase !== 0) effets[b] = effetBase;
+    for (const m of g.membres) {
+      enGroupe.add(m.cle);
+      if (m.cle === b) continue;
+      const ecart = Math.max(-P, Math.min(P, ((m.somme / m.poids) - moyG) * (m.poids / (m.poids + K))));
+      const e = arrondi(effetBase + ecart);
+      // Effet propre stocké même nul quand la base a un effet (sinon la variante reprendrait l'effet de sa base)
+      if (e !== 0 || effetBase !== 0) effets[m.cle] = Object.is(e, -0) ? 0 : e;
+    }
+  }
   for (const k of [...cles.keys()].sort()) {
+    if (enGroupe.has(k)) continue;
     const e = cles.get(k)!.effet;
     if (e !== 0) effets[k] = e;
   }
+  const effetsTries: Record<string, number> = {};
+  for (const k of Object.keys(effets).sort()) effetsTries[k] = effets[k];
   const statuts: PoidsAssets['statuts'] = {};
+  const sansHeritage: string[] = [];
   for (const l of [...lignes].sort((a, b) => (a.cle < b.cle ? -1 : 1))) {
-    if (estCleAsset(l.cle) && (l.statut === 'retire' || l.statut === 'a_retravailler')) statuts[l.cle] = l.statut;
+    if (!estCleAsset(l.cle)) continue;
+    if (l.statut === 'retire' || l.statut === 'a_retravailler') statuts[l.cle] = l.statut;
+    else if ((l.statut === 'valide' || l.statut === 'a_revoir') && baseDeCle(l.cle) && !sansHeritage.includes(l.cle)) sansHeritage.push(l.cle);
   }
   if (!n && !Object.keys(statuts).length) return null;
-  return { n, moyenne: arrondi(moyenne), effets, statuts };
+  return { n, moyenne: arrondi(moyenne), effets: effetsTries, statuts, ...(sansHeritage.length ? { sansHeritage } : {}) };
+}
+
+/** Effet appris d'une clé (sans statut) : le sien, à défaut celui de sa base (illustration de base → variantes) */
+export function effetHerite(cle: string, poids: Pick<PoidsAssets, 'effets'> | null | undefined): number {
+  if (!poids) return 0;
+  if (poids.effets[cle] !== undefined) return poids.effets[cle];
+  const b = baseDeCle(cle);
+  return b ? poids.effets[b] ?? 0 : 0;
+}
+
+/** Statut pénalisant d'une clé : le sien, à défaut celui de sa base (sauf statut propre non pénalisant) */
+export function statutAppris(cle: string, poids: PoidsAssets | null | undefined): 'a_retravailler' | 'retire' | undefined {
+  if (!poids) return undefined;
+  if (poids.statuts[cle]) return poids.statuts[cle];
+  if (poids.sansHeritage?.includes(cle)) return undefined;
+  const b = baseDeCle(cle);
+  return b ? poids.statuts[b] : undefined;
 }
 
 /** Score d'un asset (en étoiles, relatif à la moyenne) : effet lissé + pénalité de statut ; 0 si inconnu */
 export function scoreAsset(cle: string, poids: PoidsAssets | null | undefined): number {
   if (!poids) return 0;
-  const st = poids.statuts[cle];
-  return arrondi((poids.effets[cle] ?? 0) + (st ? PENALITES_STATUT[st] : 0));
+  const st = statutAppris(cle, poids);
+  return arrondi(effetHerite(cle, poids) + (st ? PENALITES_STATUT[st] : 0));
 }
 
 /** Moyenne des scores d'une liste de clés (les inconnues comptent 0) */
@@ -206,7 +266,8 @@ export function normaliserPoidsAssets(v: unknown): PoidsAssets | null {
     const l = (x: unknown) => (Array.isArray(x) ? x.filter((y): y is string => typeof y === 'string' && /^[a-z0-9-]{2,30}$/.test(y)).slice(0, 20) : []);
     if (estCleAsset(k) && s && typeof s === 'object') sujets[k] = { ajouts: l(s.ajouts), retraits: l(s.retraits) };
   }
-  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, statuts, ...(Object.keys(sujets).length ? { sujets } : {}) };
+  const sansHeritage = Array.isArray(o.sansHeritage) ? o.sansHeritage.filter((k): k is string => estCleAsset(k)).slice(0, 2000) : [];
+  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, statuts, ...(Object.keys(sujets).length ? { sujets } : {}), ...(sansHeritage.length ? { sansHeritage } : {}) };
 }
 
 /**

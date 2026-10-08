@@ -1,9 +1,10 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { estCleAsset, estSujetDeVisuel } from '@plateforme/core';
+import { estCleAsset, estSujetDeVisuel, hashtagsValides } from '@plateforme/core';
 import { validerDecisionClassement, type DecisionClassement } from '@plateforme/core/classement-visuels';
 import { exigerAdmin } from '@/lib/admin';
+import { MIGRATION_HASHTAGS } from '@/lib/hashtags';
 import { createClient, getUser } from '@/lib/supabase/server';
 
 // Tri par sujet (/admin/retours/tri) : mêmes tables que les puces « + Sujet / × » (assets_sujets, 0028, journal en ajout seul ;
@@ -46,4 +47,25 @@ export async function sujetEnLot(cles: string[], sujet: string, action: 'ajout' 
   if (error) return { ok: false, message: MIGRATION_SUJETS, migrationManquante: true };
   revalidatePath('/admin/illustrations');
   return { ok: true, message: `${l.length} visuel${l.length > 1 ? 's' : ''} : sujet ${action === 'ajout' ? 'ajouté' : 'retiré'}.` };
+}
+
+/**
+ * Actions groupées : ajoute (ou retire) des hashtags libres (#laser…) à une sélection de visuels (journal assets_hashtags, 0029,
+ * même règle que les puces « + / × » : dernière action par clé et hashtag). Hashtags normalisés côté serveur ; 2 000 lignes au plus.
+ */
+export async function hashtagsEnLot(cles: string[], hashtags: string[], action: 'ajout' | 'retrait'): Promise<{ ok: boolean; message: string; hashtags?: string[]; migrationManquante?: boolean }> {
+  await exigerAdmin();
+  const h = hashtagsValides(hashtags);
+  if (!h.length || (action !== 'ajout' && action !== 'retrait')) return { ok: false, message: 'Hashtag invalide : 2 à 30 caractères, lettres, chiffres et tirets.' };
+  const l = [...new Set((Array.isArray(cles) ? cles : []).filter(estCleAsset))].slice(0, 500);
+  if (!l.length) return { ok: false, message: 'Aucun visuel sélectionné.' };
+  const lignes = l.flatMap((cle) => h.map((hashtag) => ({ cle_asset: cle, hashtag, action }))).slice(0, 2000);
+  const user = await getUser();
+  const supabase = await createClient();
+  const { error } = await supabase.from('assets_hashtags').insert(lignes.map((x) => ({ ...x, auteur: user?.id ?? null })));
+  if (error) return { ok: false, message: MIGRATION_HASHTAGS, migrationManquante: true };
+  revalidatePath('/admin/illustrations');
+  revalidatePath('/admin/photos');
+  const tags = h.map((x) => `#${x}`).join(' ');
+  return { ok: true, message: `${l.length} visuel${l.length > 1 ? 's' : ''} : ${tags} ${action === 'ajout' ? 'ajouté' : 'retiré'}${h.length > 1 ? 's' : ''}.`, hashtags: h };
 }

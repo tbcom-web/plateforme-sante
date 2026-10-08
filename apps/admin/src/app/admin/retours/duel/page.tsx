@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { estTypeDuel, universDuParcours } from '@plateforme/core';
+import { estTypeDuel, inventaireAssets, statutsAvecHeritage, universDuParcours } from '@plateforme/core';
 import { predictionsParCle } from '@plateforme/core/juge';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
@@ -57,7 +57,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
         recettes={recettes.filter((r) => r.statut === 'active')}
         photosJeux={photosJeux}
         surcharges={surcharges}
-        statuts={Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut]))}
+        statuts={statutsAvecHeritage(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), inventaireAssets({ photosJeux }).map((a) => a.cle))}
         predictions={predictionsParCle(predictions)}
         typeInitial={type}
       />

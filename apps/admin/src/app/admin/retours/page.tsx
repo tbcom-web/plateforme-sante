@@ -1,6 +1,6 @@
 import {
   assetsInfluents, changementsGenerateur, markdownAnimationsEnAttente, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
-  markdownHashtags, universDuParcours,
+  markdownHashtags, titresBases, universDuParcours,
   resumeRenforts,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -38,7 +38,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
     // Recettes du studio notées (0032) : « Recette X validée : renforce gamme Y, police Z, photo W »
     getRecettesLecture(1),
   ]);
-  const titres = titresAssets();
+  // Titres des illustrations de base (notées sous dessin:orthonyxie, heros:sport…) en plus de ceux de l'inventaire
+  const titres = { ...titresBases(titresAssets()), ...titresAssets() };
   const hashtags = await lectureHashtags;
   const mobile = await lectureMobile;
   // Juge du goût de Paul : prédictions (retours/predictions.json) et justesse contre les notes en base

@@ -75,3 +75,4 @@ export * from './couverture-sujets';
 export * from './studio-organisation';
 export * from './notation-recettes';
 export * from './reperes';
+export * from './bases-illustrations';
