@@ -13,7 +13,7 @@
 // illustration ; lecture ≤ ~6 s sous `.ea-joue` (SCRIPT_ENTETE dans les premiers écrans du core, SCRIPT_VISUEL_ANIME ailleurs),
 // arrêt hors écran. Le cadre de l'hôte réserve la place : LCP (le titre) et CLS inchangés.
 
-import { ANIMATIONS_HEROS, LIBELLES_ANIMATIONS_ENTETE, SOURCE_ANIMATION_HEROS, estAValider, estAnimationHeros, type AnimationEntete } from './heros-photo-variantes';
+import { animationsPretesDefinies, ANIMATIONS_HEROS, LIBELLES_ANIMATIONS_ENTETE, SOURCE_ANIMATION_HEROS, estAValider, estAnimationHeros, type AnimationEntete } from './heros-photo-variantes';
 import { cssEmpreintes, estAnimationEmpreintes, htmlEmpreintes } from './entete-empreintes';
 import { cssAnimationEntete, htmlAnimationEntete } from './entete-anim';
 import { cssLectureAnimations, svgAnimationLecture } from './animations-lecture';
@@ -49,8 +49,8 @@ const rang = (sujet: string, a: AnimationEntete) => { const i = (PAR_SUJET[sujet
 export type StatutAnimationHeros = 'valide' | 'a-valider' | 'ingredients-en-attente';
 export function statutAnimationHeros(a: AnimationEntete, o: { statuts?: Statuts | null; valides?: ReadonlySet<string> | null } = {}): StatutAnimationHeros {
   const source = SOURCE_ANIMATION_HEROS[a];
-  // Sans statuts connus, une animation d'illustration est en attente (jamais montrée par défaut)
-  if (source && (!o.statuts || etatAnimation(source, o.statuts).enAttente)) return 'ingredients-en-attente';
+  // Sans statuts : le registre posé par l'admin (definirAnimationsPretes) ; vide (site, tests) : en attente, jamais montrée
+  if (source && (o.statuts ? etatAnimation(source, o.statuts).enAttente : !animationsPretesDefinies().has(a))) return 'ingredients-en-attente';
   const cle = `composant:entete-anim:${a}`;
   return estAValider(cle, o.valides) && lireStatut(o.statuts, cle) !== 'valide' ? 'a-valider' : 'valide';
 }
@@ -86,6 +86,10 @@ export function animationDuHeros(variantes: { 'visuel-heros'?: string; 'entete-a
   if (ok(kit)) return kit;
   return [...(PAR_SUJET[sujet ?? ''] ?? []), 'em-respire' as const, 'em-trace' as const].find((a) => ok(a) && pourSujet(a, sujet ?? '')) ?? null;
 }
+
+/** Animations d'illustrations dont toutes les images de base sont validées (statuts de la bibliothèque, lus par l'admin) */
+export const animationsPretesDepuisStatuts = (statuts: Statuts): string[] =>
+  (Object.entries(SOURCE_ANIMATION_HEROS) as [AnimationEntete, NonNullable<(typeof SOURCE_ANIMATION_HEROS)[AnimationEntete]>][]).filter(([, src]) => !etatAnimation(src, statuts).enAttente).map(([a]) => a);
 
 const ID = (a: string) => a.replace(/[^a-z0-9-]/g, '');
 

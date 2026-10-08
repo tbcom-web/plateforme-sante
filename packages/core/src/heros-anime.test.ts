@@ -3,8 +3,8 @@
 // validée pour un praticien, jamais d'animation dont les images de base attendent leur validation, studio, harmonie.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ANIMATIONS_HEROS, HOTES_VISUEL_ANIME, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, VISUELS_HEROS } from './heros-photo-variantes';
-import { animationDuHeros, animationsHerosDuSujet, cssVisuelAnime, htmlVisuelAnime, SCRIPT_VISUEL_ANIME, statutAnimationHeros } from './heros-anime';
+import { ANIMATIONS_HEROS, HOTES_VISUEL_ANIME, INGREDIENTS_A_VALIDER, definirAnimationsPretes, PREMIERS_ECRANS_NOUVEAUX, VISUELS_HEROS } from './heros-photo-variantes';
+import { animationDuHeros, animationsHerosDuSujet, animationsPretesDepuisStatuts, cssVisuelAnime, htmlVisuelAnime, SCRIPT_VISUEL_ANIME, statutAnimationHeros } from './heros-anime';
 import { htmlHeros, styleCouleursHeros, type DonneesHeros } from './heros-photo';
 import { modeleIntegre, VARIANTES_SECTIONS } from './modeles';
 import { SOURCES_ANIMATIONS } from './animations-sources';
@@ -103,4 +103,21 @@ test('studio et recettes : dé « Visuel du premier écran », tuile jouée dans
   assert.ok(violationsDures(avec('bento', 'animation', 'mots'), c).some((v) => v.code === 'embleme-en-plus'));
   assert.ok(!violationsDures(avec('bento', 'animation', 'em-respire'), c).some((v) => v.code === 'embleme-en-plus'));
   assert.ok(violationsDures(avec('typographique', 'animation', 'aucune'), c).some((v) => v.code === 'visuel-anime-hote'));
+});
+
+test('registre des animations prêtes (admin) : une image de base validée → l’animation apparaît dans le dé ; vide → jamais', () => {
+  // Statuts lus par l'admin (illustrations_statuts) : toutes les images de base de la semelle validées, rien d'autre
+  const statuts = Object.fromEntries(SOURCES_ANIMATIONS.semelle.map((s) => [s.cle, 'valide' as const]));
+  assert.deepEqual(animationsPretesDepuisStatuts(statuts), ['il-semelle']);
+  assert.deepEqual(animationsPretesDepuisStatuts({}), []);
+  try {
+    definirAnimationsPretes(animationsPretesDepuisStatuts(statuts));
+    assert.ok(valeursTirables('entete-anim', 'tableau', false).includes('il-semelle'));
+    assert.ok(!valeursTirables('entete-anim', 'tableau', false).includes('il-premiers-pas'));
+    assert.equal(statutAnimationHeros('il-semelle'), 'a-valider');
+    assert.equal(animationDuHeros({ 'visuel-heros': 'animation' }, 'semelles'), 'il-semelle');
+    // Praticien : toujours pas (à valider par Paul)
+    assert.equal(animationDuHeros({ 'visuel-heros': 'animation', 'entete-anim': 'il-semelle' }, 'semelles', { praticien: true }), null);
+  } finally { definirAnimationsPretes([]); }
+  assert.ok(!valeursTirables('entete-anim', 'tableau', false).includes('il-semelle'));
 });

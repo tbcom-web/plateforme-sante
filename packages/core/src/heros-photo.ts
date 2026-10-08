@@ -28,7 +28,7 @@ import { cssVisuelAnime, htmlVisuelAnime } from './heros-anime';
 export * from './heros-photo-variantes';
 export { teintesSousTexte, cssLot2 } from './heros-organiques';
 export { cssAnimationEntete, htmlAnimationEntete, motsDesSoins, SCRIPT_ENTETE, DUREE_ENTETE } from './entete-anim';
-export { animationDuHeros, animationsHerosDuSujet, cssVisuelAnime, htmlVisuelAnime, statutAnimationHeros, SCRIPT_VISUEL_ANIME, type StatutAnimationHeros, type TonVisuelAnime } from './heros-anime';
+export { animationDuHeros, animationsHerosDuSujet, animationsPretesDepuisStatuts, cssVisuelAnime, htmlVisuelAnime, statutAnimationHeros, SCRIPT_VISUEL_ANIME, type StatutAnimationHeros, type TonVisuelAnime } from './heros-anime';
 export { ANIMATIONS_EMPREINTES, CORPS_PARTICULES, SCRIPT_PARTICULES, estAnimationEmpreintes, type AnimationEmpreintes } from './entete-empreintes';
 
 /** Photos montrées au plus par le diaporama (3 à 5 demandées) */

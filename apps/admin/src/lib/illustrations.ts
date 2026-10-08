@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { estStatutIllustration, type StatutIllustration } from '@plateforme/core';
+import { animationsPretesDepuisStatuts, estStatutIllustration, type StatutIllustration } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
 // Revues des illustrations (migration 0021) : statut courant par clé et journal des retours, lus par le super admin.
@@ -28,3 +28,12 @@ async function getRevuesIllustrationsSansMemo(): Promise<{ statuts: StatutEnregi
   return { statuts, revues, migrationManquante: false };
 }
 export const getRevuesIllustrations = cache(getRevuesIllustrationsSansMemo);
+
+/**
+ * Animations d'illustrations dont toutes les images de base sont validées (heros-anime.ts) : semelle, équilibre, premiers pas
+ * n'apparaissent dans le studio, l'atelier, les tuiles, les duels et les recettes à noter qu'à partir de là.
+ */
+export const getAnimationsPretes = cache(async (): Promise<string[]> => {
+  const { statuts } = await getRevuesIllustrations();
+  return animationsPretesDepuisStatuts(Object.fromEntries(statuts.map((s) => [s.cle, s.statut])));
+});

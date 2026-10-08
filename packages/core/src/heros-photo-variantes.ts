@@ -214,6 +214,15 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
  */
 export const ANIMATIONS_HEROS: readonly AnimationEntete[] = ANIMATIONS_ENTETE.filter((a) => a.startsWith('em-') || a.startsWith('il-') || a === 'taches' || a === 'onde' || a === 'geometrie');
 export const estAnimationHeros = (a: unknown): a is AnimationEntete => (ANIMATIONS_HEROS as readonly unknown[]).includes(a);
+/**
+ * Registre des animations d'illustrations PRÊTES (images de base validées) : posé par l'admin à partir des statuts de la
+ * bibliothèque (definirAnimationsPretes, heros-anime.ts : animationsPretesDepuisStatuts), lu par le studio, l'atelier, les
+ * duels et le worker des recettes à noter. Vide par défaut (site publié, tests) : aucune animation d'illustration montrée.
+ */
+let PRETES: ReadonlySet<string> = new Set();
+export const definirAnimationsPretes = (cles: Iterable<string>) => { PRETES = new Set(cles); };
+export const animationsPretesDefinies = (): ReadonlySet<string> => PRETES;
+
 /** Animations d'illustration et leur animation source (animations-sources.ts : images de base à valider d'abord) */
 export const SOURCE_ANIMATION_HEROS: Partial<Record<AnimationEntete, 'semelle' | 'trajectoire' | 'premiers-pas'>> = {
   'il-semelle': 'semelle', 'il-trajectoire': 'trajectoire', 'il-premiers-pas': 'premiers-pas',

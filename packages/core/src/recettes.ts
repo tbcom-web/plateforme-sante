@@ -23,7 +23,7 @@ import { contraste, hex, rvb } from './couleurs';
 import { NEUTRES } from './charte';
 import { themeParId } from './themes';
 import { themeIllustre } from './heros-themes';
-import { HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, LIBELLES_VISUELS_HEROS, PLACEMENT_ANIMATIONS_ENTETE, estAnimationHeros, type AnimationEntete, estAValider, estPremierEcranAnime, estPremierEcranNouveau, estPremierEcranPhoto, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_ANIMATIONS_ENTETE, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
+import { animationsPretesDefinies, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, LIBELLES_VISUELS_HEROS, PLACEMENT_ANIMATIONS_ENTETE, estAnimationHeros, type AnimationEntete, estAValider, estPremierEcranAnime, estPremierEcranNouveau, estPremierEcranPhoto, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_ANIMATIONS_ENTETE, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
@@ -110,7 +110,8 @@ export const sectionsVariables = (g: Gabarit): (keyof Variantes)[] =>
  */
 export function valeursTirables(s: keyof Variantes, g: Gabarit, avecPhotos: boolean, c?: Pick<ContexteRecette, 'praticien' | 'valides' | 'animationsPretes'> | null): string[] {
   // Animations d'illustrations (il-*) : jamais tirées tant que leurs images de base ne sont pas validées (animationsPretes)
-  const toutes = (VARIANTES_SECTIONS[s] as readonly string[]).filter((v) => s !== 'entete-anim' || !v.startsWith('il-') || Boolean(c?.animationsPretes?.has(v)));
+  const pretes = c?.animationsPretes ?? animationsPretesDefinies();
+  const toutes = (VARIANTES_SECTIONS[s] as readonly string[]).filter((v) => s !== 'entete-anim' || !v.startsWith('il-') || pretes.has(v));
   // Ingrédients « à valider » (lot 2 des premiers écrans, animations d'en-tête) : jamais tirés pour un praticien avant validation
   const permis = (v: string) => !c?.praticien || !estAValider(`composant:${s}:${v}`, c.valides);
   if (s !== 'accueil') return toutes.filter(permis);
@@ -218,7 +219,8 @@ export type CompositionRecette = {
 export type ContexteRecette = {
   /**
    * Animations d'illustrations dont les images de base sont validées (heros-anime.ts, statutAnimationHeros ≠
-   * « ingredients-en-attente ») : seules celles-ci sont tirées (il-*). Absent : aucune (règle de Paul).
+   * « ingredients-en-attente ») : seules celles-ci sont tirées (il-*). Absent : le registre posé par l'admin
+   * (definirAnimationsPretes), vide par défaut — aucune (règle de Paul).
    */
   animationsPretes?: ReadonlySet<string>;
   /** Sujets pris en compte (principaux puis secondaires), dans l'ordre */

@@ -15,7 +15,7 @@ import '@plateforme/core/dessins.css';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  appliquerRecette, cleRecetteNotee, contexteScenario, draftPourOnglet, ETIQUETTES_POUR_CONTRE, gamme as gammeParId, jeuEffets, contexteImages, executerDemandeGeneration, type DemandeGeneration,
+  appliquerRecette, cleRecetteNotee, contexteScenario, draftPourOnglet, ETIQUETTES_POUR_CONTRE, gamme as gammeParId, jeuEffets, contexteImages, executerDemandeGeneration, animationsPretesDefinies, type DemandeGeneration,
   libelleScenario, libelleTraitementPhotos, LIBELLES_SOURCES_NOTATION, LIBELLES_STRUCTURES, LIBELLES_STYLES, LIBELLES_VARIANTES, lireDimension, modeleIntegre,
   nomRecette, nomValeurHarmonie, normaliserComposition, ongletsDuScenario, pairePolices, scorePredit, serialiserComposition, SURFACES_CSS, sujetsDuScenario,
   SUJETS_VISUELS, variablesCharte, variablesGamme, vueDePage,
@@ -163,6 +163,8 @@ export default function NotationRecettes(props: Props) {
         scenario: sc.scenario, contexte: { poids: props.poids, photos: props.photos, modeTirage }, modeles: props.modeles.map((m) => m.manifeste),
         options: { n: 3, graine: (Date.now() % 100000) + t, iterations: 12, refusees: [...refusees], aValider: [...aValider], deja: [...deja], stats: props.stats },
         images: { exclues: [...images.exclues], kits: { ...images.kits }, vivier: images.vivier ? { ...images.vivier } : null },
+        // Animations d'illustrations prêtes (images de base validées, components/AnimationsPretes.tsx) : reposées dans le worker
+        animationsPretes: [...animationsPretesDefinies()],
       };
       generer(demande).then((gen) => {
       const ajout: Item[] = [...gen];
