@@ -39,7 +39,8 @@ import { PICTO } from './charte';
 import { MEDIAL, LATERAL_NORMAL, VOISINS, LAME } from './bibliotheque/hallux-gros-plan';
 import { PLAQUE_DURILLON } from './bibliotheque/soins-ongles';
 import { FORMES } from './bibliotheque/formes';
-import { SPORTS, FICHES_SPORTS, pictoSport, idPictoSport, type Sport } from './sports';
+import { SPORTS, FICHES_SPORTS, pictoSport, idPictoSport, chaussure, type Sport } from './sports';
+import { CHAUSSURE_CONFORT } from './dessins-univers';
 
 // ———————————————————————————————————————————————————— Outils de tracé
 
@@ -664,6 +665,112 @@ const DEFS: Record<string, Def> = {
     ],
   },
 };
+
+/**
+ * Planche « ce qui manque » (2026-10-08, brouillons ; fiches, sujets et hashtags : dessins-univers.ts). Même grammaire que les autres
+ * pictos ; anatomie DÉRIVÉE des géométries validées (chaussure : enveloppe du profil validé, sports.ts ; miroir : plante), objets du
+ * cabinet et infos pratiques au trait simple, sans texte ni logo (ni lettre « P », ni marque). Pas de picto « hallux valgus » ni
+ * « crevasses » : à 24 px, les orteils déviés se lisent « main » et les crevasses du talon se fondent en tache (essais du 2026-10-08) ;
+ * les illustrations portent ces sujets. Formes larges et espacées (≥ 2 épaisseurs de trait entre deux traits parallèles) : lisibles à 24 px.
+ */
+const DEFS_UNIVERS: Record<string, Def> = {
+  'chaussure-confort': {
+    libelle: 'Chaussure confort à scratch',
+    famille: 'chaussage',
+    // Profil de la chaussure confort (enveloppe du profil validé, sports.ts : chaussure ; modèle CHAUSSURE_CONFORT) : tige à bout large
+    // et haut, semelle épaisse à talon bas (bord inférieur seul : deux traits si proches se fondraient) ; UNE bride large à l'accent,
+    // bout arrondi (deux bandes obliques fines se liraient comme les bandes d'une marque)
+    parties: () => {
+      const c = chaussure(CHAUSSURE_CONFORT);
+      const e = 41 / (c.x1 - c.x0), y0 = 40 - (c.sol - 12) * e;
+      const t: Transfo = (x, y) => [3.5 + (x - c.x0) * e, y0 + (y - 12) * e];
+      const pl = (q: readonly P[]) => `M${q.map(([x, y]) => `${x},${y}`).join(' L')}`;
+      const tige = [c.arriere, c.avant, c.col].map((q) => simplifier(pl(q), t, 0.3)).join('');
+      const semelle = c.bordSemelle.map((q) => simplifier(pl(q), t, 0.3)).join('');
+      const dessus = [...c.avant].sort((u, v) => u[0] - v[0]);
+      const yD = (x: number) => { for (let i = 1; i < dessus.length; i++) if (dessus[i][0] >= x) { const [a, b] = [dessus[i - 1], dessus[i]]; return a[1] + ((x - a[0]) / (b[0] - a[0])) * (b[1] - a[1]); } return dessus[dessus.length - 1][1]; };
+      // Bride : bande de 10 u (repère du profil) partie du dessus, qui descend vers l'arrière ; bout arrondi
+      const [x1, x2] = [56, 68], h = 24;
+      const coins: P[] = [[x1, yD(x1) + 0.6], [x2, yD(x2) + 0.6], [x2 - 5, yD(x2) + h], [x1 - 5, yD(x1) + h]].map(([x, y]) => t(x, y));
+      const [a, b, cc, d] = coins;
+      const bride = `M${r1(a[0])} ${r1(a[1])}L${r1(b[0])} ${r1(b[1])}L${r1(cc[0])} ${r1(cc[1])}A${r1(Math.hypot(cc[0] - d[0], cc[1] - d[1]) / 2)} ${r1(Math.hypot(cc[0] - d[0], cc[1] - d[1]) / 2)} 0 0 1 ${r1(d[0])} ${r1(d[1])}Z`;
+      // Poignées de courbe bornées à la grille (aux angles de la semelle, la courbe de Catmull-Rom les pousse hors du cadre)
+      const borner = (x: string) => x.replace(/-?\d*\.?\d+/g, (n) => String(Math.min(47.5, Math.max(0.5, +n))));
+      return [trait(borner(tige)), trait(borner(semelle)), accent(bride)];
+    },
+  },
+  'auto-examen': {
+    libelle: 'Auto-examen au miroir',
+    famille: 'soins',
+    // Miroir sur pied (ovale, fourche, tige, socle) ; dans le verre, la plante (pastilles des orteils) à l'accent
+    parties: () => {
+      const p = plante(17.5, [24, 18.6]);
+      return [
+        trait(`${ellipse(24, 18.6, 11.5, 14.6)}M8.6 18.6C8.6 30 15 37.2 24 37.2C33 37.2 39.4 30 39.4 18.6M24 37.2V43.5M14.5 45H33.5`),
+        { ...p[0], accent: true }, { ...p[1], accent: true },
+      ];
+    },
+  },
+  'creme-hydratation': {
+    libelle: 'Crème et hydratation',
+    famille: 'soins',
+    // Tube souple (sans marque) debout, bout scellé en haut (deux stries de sertissage), épaule, bouchon strié en bas ; une noisette de
+    // crème posée à côté, en micro-aplat à l'accent (jamais une volute : émoji)
+    parties: () => [
+      trait('M12.5 6.5H29.5L28 31.5C27.8 33.2 26.6 34.5 24.9 34.5H17.1C15.4 34.5 14.2 33.2 14 31.5ZM15.5 11H26.5M17 34.5V38H25V34.5M16.5 38H25.5V43.5H16.5Z'),
+      plein('M32 43.6C32 40.8 34.2 39.6 36.2 40C37.4 37.4 41.8 37.6 42.4 40.6C43.8 41.2 44 43.6 42.2 43.6Z', true),
+    ],
+  },
+  laser: {
+    libelle: 'Laser',
+    famille: 'examens',
+    // Pièce à main en biais (corps large à bouts arrondis, sans bague ni aiguille : jamais une seringue), fibre qui sort du cadre en
+    // courbe ; faisceau étroit en micro-aplat à l'accent, de l'embout jusqu'à la peau (arc bas) : le faisceau s'arrête à la surface
+    parties: () => [
+      trait('M22.4 22.6L33.8 11.2C35.6 9.4 38.6 9.4 40.4 11.2C42.2 13 42.2 16 40.4 17.8L29 29.2C27.2 31 24.2 31 22.4 29.2C20.6 27.4 20.6 24.4 22.4 22.6ZM40.8 10.8C43 8.6 44.4 6.6 45.4 3.6'),
+      trait('M5.5 43.5C12.5 40.6 21.5 40.6 28.5 43.5'),
+      plein('M22.6 30.4L15.2 41.8L18.4 41.8L24.6 31.8Z', true),
+    ],
+  },
+  'hygiene-mains': {
+    libelle: 'Hygiène des mains',
+    famille: 'cabinet',
+    // Flacon pompe (corps, épaule, tête de pompe et bec vers la droite) ; goutte de solution à l'accent, sous le bec, loin du flacon
+    parties: () => [
+      trait('M14 24.5C14 21.7 16.2 19.5 19 19.5H27C29.8 19.5 32 21.7 32 24.5V41C32 42.7 30.7 44 29 44H17C15.3 44 14 42.7 14 41ZM20 19.5V14.5H26V19.5M17.5 14.5V10.5H31.5L35.5 12.5'),
+      accent('M39.5 22C39.5 22 36.6 25.6 36.6 27.6A2.9 2.9 0 0 0 42.4 27.6C42.4 25.6 39.5 22 39.5 22Z'),
+    ],
+  },
+  chaussettes: {
+    libelle: 'Chaussettes adaptées',
+    famille: 'chaussage',
+    // Chaussette de profil (pointe à droite) : talon et pointe arrondis, tige droite ; bord côte à l'accent (sans élastique qui serre)
+    parties: () => [
+      trait('M14 4.5V24.5C14 27 12.6 28.6 10.4 30.6C7.4 33.4 7.2 38.8 10.6 41.6C12.4 43.1 14.6 43.5 17 43.5H36.5C40.6 43.5 43.5 41.2 43.5 37.6C43.5 34 40.8 31.8 37 31.2C33 30.6 30 29.4 28.4 26.2C27.6 24.6 27.5 23 27.5 21V4.5'),
+      accent('M14 10.5H27.5'),
+    ],
+  },
+  stationnement: {
+    libelle: 'Stationnement',
+    famille: 'pratique',
+    // Voiture vue de dessus (capot, pare-brise, toit, lunette) entre deux lignes de place de stationnement à l'accent
+    parties: () => [
+      trait('M19.2 6.5H28.8C31.4 6.5 33 8.4 33 11V37C33 39.6 31.4 41.5 28.8 41.5H19.2C16.6 41.5 15 39.6 15 37V11C15 8.4 16.6 6.5 19.2 6.5ZM16.4 17.2C20.6 15.4 27.4 15.4 31.6 17.2M17.2 33.6C21 35 27 35 30.8 33.6'),
+      accent('M7 4V44M41 4V44'),
+    ],
+  },
+  transports: {
+    libelle: 'Transports en commun',
+    famille: 'pratique',
+    // Bus ou tram vu de face : caisse arrondie, grand pare-brise, deux phares, roues ; bandeau de destination à l'accent (sans texte)
+    parties: () => [
+      trait('M13.5 5.5H34.5C37.3 5.5 39.5 7.7 39.5 10.5V37.5H8.5V10.5C8.5 7.7 10.7 5.5 13.5 5.5ZM12 17H36V28H12ZM13 37.5V42.5H18V37.5M30 37.5V42.5H35V37.5'),
+      plein(`${cercle(14.2, 32.6, 1.8)}${cercle(33.8, 32.6, 1.8)}`),
+      accent('M15.5 11.4H32.5'),
+    ],
+  },
+};
+Object.assign(DEFS, DEFS_UNIVERS);
 
 /**
  * Kit Sports (2026-10-07, brouillons) : le picto de chaque sport est la scène du sport (sports.ts : pied validé chaussé, ballon,

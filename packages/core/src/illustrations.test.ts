@@ -5,6 +5,7 @@ import { illustrationUtilisable, inventaireIllustrations, markdownRetours, empre
 import { PICTOS } from './pictos';
 import { DESSINS_PODOLOGIE } from './univers';
 import { SPORTS } from './sports';
+import { DESSINS_UNIVERS } from './dessins-univers';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, hashtagsStyleExperimental } from './styles-experimentaux';
 import { HASHTAGS_PAR_DEFAUT } from './kits';
 
@@ -14,7 +15,7 @@ test('clés uniques et rendus non vides', () => {
   for (const i of l) assert.match(i.svg(), /^<svg/, i.cle);
   assert.equal(l.filter((i) => i.type === 'picto').length, PICTOS.length);
   assert.ok(l.some((i) => i.cle === 'dessin:orthonyxie:releve') && l.some((i) => i.cle === 'picto:orthonyxie'));
-  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne' && !i.style).length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length);
+  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne' && !i.style).length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length + DESSINS_UNIVERS.length);
 });
 
 test('registres expérimentaux : 5 sujets × 4 styles, clés stables, sans texte ni couleur littérale', () => {

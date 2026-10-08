@@ -19,6 +19,7 @@ import { THEMES_ILLUSTRES, illustrationTheme, sourcesTheme } from './heros-theme
 import { THEMES } from './themes';
 import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
 import { clesSport, sujetsDesKits } from './kits';
+import { DESSINS_UNIVERS, FICHES_DESSINS_UNIVERS, svgDessinUnivers, sujetsUnivers } from './dessins-univers';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, FICHES_STYLES, LIBELLES_SUJETS_STYLES, SUJET_VISUEL_STYLES, cleStyleExperimental, svgStyleExperimental, type StyleExperimental } from './styles-experimentaux';
 
 /** Statut de revue d'une illustration (valeurs de la colonne `statut` de la migration 0021) */
@@ -126,6 +127,16 @@ export function inventaireIllustrations(): Illustration[] {
       svg: () => svgSport(sport, 'pedagogique'),
     });
   }
+  // Planche « ce qui manque » (2026-10-08, brouillons) : illustrations nouvelles en registre pédagogique (dessins-univers.ts) ;
+  // base `dessin:<id>` (bases-illustrations.ts), sujets et hashtags par défaut tirés de leur fiche
+  for (const nom of DESSINS_UNIVERS) {
+    const f = FICHES_DESSINS_UNIVERS[nom];
+    l.push({
+      cle: `dessin:${nom}:pedagogique`, type: 'dessin', registre: 'pedagogique', titre: f.libelle, detail: `Pédagogique · ${f.regard}`,
+      source: `packages/core/src/dessins-univers.ts — corps('${nom}')`, soins: sujetsUnivers(`dessin:${nom}:pedagogique`), statutParDefaut: 'a_revoir', fond: 'doux',
+      svg: () => svgDessinUnivers(nom, { id: `rv-du-${nom}` }),
+    });
+  }
   // Registres expérimentaux (2026-10-07, brouillons à noter) : 5 sujets × 4 styles, clé dessin:<sujet>:<style>, hashtag #style-<style>
   // (HASHTAGS_PAR_DEFAUT, kits.ts) ; vue agrandie = format portrait (premier écran téléphone)
   for (const style of STYLES_EXPERIMENTAUX) {
@@ -162,7 +173,7 @@ export function inventaireIllustrations(): Illustration[] {
   for (const p of PICTOS) {
     l.push({
       cle: `picto:${p.id}`, type: 'picto', titre: p.libelle, detail: `${p.id} · ${FAMILLES_PICTOS[p.famille as Famille] ?? p.famille}`,
-      source: `packages/core/src/pictos.ts — '${p.id}'`, soins: [...Object.entries(PICTOS_SOINS).filter(([, v]) => v === p.id).map(([slug]) => slug), ...sujetsDesKits(`picto:${p.id}`)],
+      source: `packages/core/src/pictos.ts — '${p.id}'`, soins: [...Object.entries(PICTOS_SOINS).filter(([, v]) => v === p.id).map(([slug]) => slug), ...sujetsDesKits(`picto:${p.id}`), ...sujetsUnivers(`picto:${p.id}`)],
       statutParDefaut: 'a_revoir', fond: 'clair',
       svg: () => svgPicto(p.id, { taille: '100%', accent: true }) ?? '',
     });
