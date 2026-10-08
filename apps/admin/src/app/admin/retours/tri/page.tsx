@@ -5,6 +5,9 @@ import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getRevuesIllustrations } from '@/lib/illustrations';
 import Tri from './Tri';
+import { photosARattacher } from '@plateforme/core';
+import { getDonneesKits } from '@/lib/kits-images';
+import RattacherNotees from '@/components/RattacherNotees';
 
 export const metadata = { title: 'Super admin · Trier par sujet' };
 
@@ -15,7 +18,7 @@ export const metadata = { title: 'Super admin · Trier par sujet' };
 export default async function PageTri({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await exigerAdmin();
   const sp = await searchParams;
-  const [photosJeux, surcharges, hashtags, revues] = await Promise.all([getPhotosDesJeux(), getSurchargesSujets(), getHashtagsAssets(), getRevuesIllustrations()]);
+  const [photosJeux, surcharges, hashtags, revues, donneesKits] = await Promise.all([getPhotosDesJeux(), getSurchargesSujets(), getHashtagsAssets(), getRevuesIllustrations(), getDonneesKits()]);
   const sujet = typeof sp.sujet === 'string' && estSujetDeVisuel(sp.sujet) ? sp.sujet : '';
   const famille = typeof sp.famille === 'string' && estFamilleTri(sp.famille) ? sp.famille : 'tout';
   const vue = sp.vue === 'grille' || sp.vue === 'couverture' ? sp.vue : 'un';
@@ -31,6 +34,8 @@ export default async function PageTri({ searchParams }: { searchParams: Promise<
           puis Entrée. Le générateur et les sites utilisent ces sujets.
         </p>
       </div>
+      {/* Photos notées ≥ 4 ★ sans sujet curé (kits-images.ts) : rattachement en un clic, sujet implicite pré-coché */}
+      <RattacherNotees photos={photosARattacher(donneesKits)} />
       <Tri
         photosJeux={photosJeux}
         surcharges={surcharges}

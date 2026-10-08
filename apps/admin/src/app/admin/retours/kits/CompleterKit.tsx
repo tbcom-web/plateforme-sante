@@ -18,7 +18,7 @@ import { importerEtUtiliser, noterPhotoKit, pasPourIci, utiliserIci } from './ac
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const CLE_REFUS = 'kits:pas-ici';
 const RAISONS: Record<EmplacementAFaire['raison'], string> = { vide: 'vide', faible: 'photo non notée ou < 3,5 ★', complement: 'complément d’un autre sujet' };
-const COULEURS_RANG: Record<number, string> = { 1: 'bg-teal-100 text-teal-900', 2: 'bg-teal-50 text-teal-900', 3: 'bg-neutral-100 text-neutral-700', 4: 'bg-neutral-100 text-neutral-600', 5: 'bg-amber-100 text-amber-900' };
+const COULEURS_RANG: Record<number, string> = { 1: 'bg-teal-100 text-teal-900', 2: 'bg-teal-50 text-teal-900', 3: 'bg-neutral-100 text-neutral-700', 4: 'bg-neutral-100 text-neutral-600', 5: 'bg-amber-100 text-amber-900', 6: 'bg-violet-100 text-violet-900' };
 
 type AFaire = EmplacementAFaire & { banque: SuggestionVivier[]; manque: string | null; trouver: string };
 
@@ -95,7 +95,7 @@ export default function CompleterKit({ sujet, aFaire, compteur, enAttente }: { s
         ))}
       </span>
       <span className="flex flex-wrap gap-1">
-        <button type="button" disabled={occupe} onClick={() => utiliser(s)} className={`min-h-9 rounded-lg bg-teal-800 px-2 text-xs font-semibold text-white disabled:opacity-50 ${focus}`}>{s.aImporter ? 'Importer et utiliser' : 'Utiliser ici'} <kbd className="hidden md:inline">U</kbd></button>
+        <button type="button" disabled={occupe} onClick={() => utiliser(s)} className={`min-h-9 rounded-lg bg-teal-800 px-2 text-xs font-semibold text-white disabled:opacity-50 ${focus}`}>{s.aImporter ? 'Importer et utiliser' : s.aRattacher ? 'Rattacher et utiliser' : 'Utiliser ici'} <kbd className="hidden md:inline">U</kbd></button>
         <button type="button" onClick={() => void refuser(s)} className={`min-h-9 rounded-lg border border-neutral-300 px-2 text-xs ${focus}`}>Pas pour ici <kbd className="hidden md:inline">X</kbd></button>
       </span>
     </li>

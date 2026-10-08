@@ -104,3 +104,20 @@ export async function importerEtUtiliser(idLibre: string, sujet: string, emplace
   const u = await utiliserIci(cle, sujet, emplacement);
   return { ok: u.ok, message: u.ok ? `Importée et placée : ${u.message}` : u.message };
 }
+
+/**
+ * Rattacher au vivier des photos déjà notées ≥ 4 ★ (bloc « Photos notées ≥ 4 ★ sans sujet ») : chaque choix validé par Paul
+ * devient un ajout de sujet dans assets_sujets (rien d'automatique). 500 au plus.
+ */
+export async function rattacherSujets(choix: { cle: string; sujet: string }[]): Promise<{ ok: boolean; message: string }> {
+  await exigerAdmin();
+  const l = (Array.isArray(choix) ? choix : []).filter((c) => c && estCleAsset(c.cle) && c.cle.startsWith('photo:') && (SUJETS_KITS as readonly string[]).includes(c.sujet)).slice(0, 500);
+  if (!l.length) return { ok: false, message: 'Aucune photo sélectionnée.' };
+  const user = await getUser();
+  const supabase = await createClient();
+  const { error } = await supabase.from('assets_sujets').insert(l.map((c) => ({ cle_asset: c.cle, sujet: c.sujet, action: 'ajout', auteur: user?.id ?? null })));
+  if (error) return { ok: false, message: 'Migration 0028 à exécuter : sujets non enregistrés.' };
+  revalidatePath('/admin/retours/kits');
+  revalidatePath('/admin/retours/tri');
+  return { ok: true, message: `${l.length} photo${l.length > 1 ? 's' : ''} rattachée${l.length > 1 ? 's' : ''} à leur sujet : elles entrent dans le vivier.` };
+}

@@ -5,7 +5,7 @@ import {
   compteurKit, emplacementsAFaire, etatVivier, etiquetteKit, hashtagKit, lienTrouverPhotos, manqueVivier, MOTS_METIER, REQUETES_PAGES, REQUETES_SOINS, REQUETES_CABINET,
   refusKitDepuisLignes, requetesEmplacement, suggestionsVivier, cleRefusKit, PREFIXE_REFUS_KIT,
 } from './suggestions-kits';
-import { composerKit, estCuree, SUJETS_KITS, type DonneesKits } from './kits-images';
+import { composerKit, estCuree, gainsRattachement, photosARattacher, SUJETS_KITS, type DonneesKits } from './kits-images';
 import { photosIntegreesBanque, type PhotoBanque } from './recettes';
 import { clePhoto } from './assets-poids';
 import { VISUELS_SOINS } from './jeux';
@@ -114,4 +114,26 @@ test('emplacements à compléter, compteur, étiquette des photos gardées pour 
   assert.equal(hashtagKit('enfant'), 'kit-enfant');
   assert.equal(etiquetteKit(['kit-enfant', 'orthonyxie'])?.libelle, 'pour le kit Enfants · orthonyxie');
   assert.equal(etiquetteKit(['sport']), null);
+});
+
+test('rattacher : photos notées ≥ 4 ★ au sujet implicite non curé, proposées avant le voisin ; gains par sujet', () => {
+  const enfant = banque.filter((p) => p.sujets.includes('enfant'));
+  const [a, b, c] = enfant;
+  const d: DonneesKits = { banque, notes: { [cle(a)]: { m: 4.5, n: 2 }, [cle(b)]: { m: 4, n: 1 }, [cle(c)]: { m: 3, n: 1 } }, surcharges: tag(banque.filter((p) => p.sujets.includes('general')).slice(0, 2), 'general') };
+  const l = photosARattacher(d);
+  assert.deepEqual(l.filter((x) => x.sujets.includes('enfant')).map((x) => x.url), [a.url, b.url], '≥ 4 ★ seulement, meilleures d’abord');
+  assert.ok(l.every((x) => x.note >= 4));
+  assert.equal(l.find((x) => x.url === a.url)?.sujetPropose, 'enfant', 'sujet précis avant « général »');
+  assert.deepEqual(gainsRattachement(l.map((x) => ({ sujet: x.sujetPropose }))).enfant, 2);
+  // Exclue : jamais
+  assert.ok(!photosARattacher({ ...d, exclues: new Set([cle(a)]) }).some((x) => x.url === a.url));
+  // Déjà curée pour Enfants : plus à rattacher
+  assert.ok(!photosARattacher({ ...d, surcharges: { ...d.surcharges, ...tag([a], 'enfant') } }, 'enfant').some((x) => x.url === a.url));
+  // File : vivier Enfants vide → d'abord ces photos (rang 6, « Rattacher »), pas le voisin
+  const s = suggestionsVivier({ ...composerKit('enfant', d), photos: [] }, 'cabinet', d);
+  assert.ok(s.length >= 2 && s.every((x) => x.rang === 6 && x.aRattacher && x.voisin === null), JSON.stringify(s.map((x) => x.rang)));
+  assert.match(s[0].libelle, /pas encore rattachée à Enfants/);
+  // Plus rien à rattacher : voisin
+  const d2 = { ...d, notes: {} };
+  assert.ok(suggestionsVivier({ ...composerKit('enfant', d2), photos: [] }, 'cabinet', d2).every((x) => x.rang === 5));
 });

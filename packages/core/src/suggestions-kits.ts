@@ -4,13 +4,14 @@
 //   quand Paul l'a retenue ET étiquetée avec ce sujet (kits-images.ts, estCuree / vivierCure), jamais si elle est exclue.
 // - Couche 2 (assemblage) : les kits et « Compléter ce kit » ne piochent QUE dans ce vivier. Suggestions par emplacement
 //   (suggestionsVivier), dans cet ordre : (1) notées ≥ 4 ★ avec le hashtag de l'emplacement, (2) notées ≥ 3,5 ★ du sujet, (3) non
-//   encore notées (notation rapide en ligne), (4) notées entre 2 et 3,5 ★ ; seulement si rien : (5) vivier d'un sujet VOISIN, signalé.
+//   encore notées (notation rapide en ligne), (4) notées entre 2 et 3,5 ★ ; vivier épuisé : (6) photos notées ≥ 4 ★ du même sujet
+//   IMPLICITE pas encore rattachées (« Rattacher et utiliser ») ; seulement ensuite : (5) vivier d'un sujet VOISIN, signalé.
 //   Une photo gardée non importée est proposée avec « Importer et utiliser » (même import que /admin/photos).
 // - Vivier insuffisant pour un emplacement : « Trouver des photos » ouvre Photos à découvrir (couche 1) sur le sujet, avec les requêtes
 //   ciblées de l'emplacement (REQUETES_SOINS…) et le hashtag de l'emplacement pré-coché.
 // Pur, sans réseau.
 
-import { libelleEmplacement, libelleSujetKit, vivierCure, type DonneesKits, type KitImages } from './kits-images';
+import { libelleEmplacement, libelleSujetKit, photosARattacher, vivierCure, type DonneesKits, type KitImages } from './kits-images';
 
 /** Requêtes ciblées (anglais) par soin du catalogue ; toujours des pieds, des ongles, des chaussures ou un cabinet de soin */
 export const REQUETES_SOINS: Readonly<Record<string, readonly string[]>> = {
@@ -137,6 +138,7 @@ export const RANGS_SUGGESTION = {
   3: 'Pas encore notée',
   4: 'Notée moins de 3,5 ★',
   5: 'Sujet voisin',
+  6: 'Notée ≥ 4 ★, pas encore rattachée',
 } as const;
 export type RangSuggestion = keyof typeof RANGS_SUGGESTION;
 
@@ -144,6 +146,8 @@ export type SuggestionVivier = {
   url: string; cle: string; note: number | null; rang: RangSuggestion; etiquetee: boolean;
   /** Sujet voisin dont vient la photo (rang 5), sinon null */
   voisin: string | null;
+  /** Rang 6 : photo bien notée du même sujet implicite, à rattacher (« Rattacher et utiliser » : sujet + hashtag) */
+  aRattacher?: boolean;
   /** Gardée mais pas encore importée : « Importer et utiliser » (identifiant photos_libres) */
   aImporter: boolean; idLibre: string | null;
   libelle: string;
@@ -164,6 +168,13 @@ export function suggestionsVivier(kit: KitImages, emplacement: string, d: Donnee
       return { url: v.p.url, cle: v.cle, note: v.note, rang, etiquetee, voisin, aImporter: !v.importee, idLibre: v.p.idLibre ?? null, effet: v.effet, libelle: voisin ? `${RANGS_SUGGESTION[5]} : ${libelleSujetKit(voisin)}` : RANGS_SUGGESTION[rang] };
     });
   let l = de(kit.sujet, null);
+  // Vivier épuisé : d'abord les photos notées ≥ 4 ★ du même sujet IMPLICITE pas encore rattachées (avant tout voisin)
+  if (!l.length) {
+    l = photosARattacher(d, kit.sujet).filter((x) => !dans.has(x.url) && !refus.has(cleRefusKit(emplacement, x.cle))).map((x) => ({
+      url: x.url, cle: x.cle, note: x.note, rang: 6 as RangSuggestion, etiquetee: false, voisin: null, aRattacher: true, aImporter: !x.importee, idLibre: x.idLibre, effet: 0,
+      libelle: `Notée ${String(x.note).replace('.', ',')} ★, pas encore rattachée à ${libelleSujetKit(kit.sujet)}`,
+    }));
+  }
   if (!l.length) {
     const vues = new Set<string>();
     l = (SUJETS_VOISINS[kit.sujet] ?? []).flatMap((s) => de(s, s)).filter((x) => !vues.has(x.url) && Boolean(vues.add(x.url)));

@@ -268,3 +268,39 @@ export function contexteImagesSite(e: {
   const k = composerKit(e.sujet, { banque, assets: poidsAssets(lignes), notes: notesPhotos(lignes), hashtags, gardes: kitsGardes(e.notesKits ?? []), exclues, surcharges: e.surcharges ?? null }, 0, e.soins);
   return { exclues, kit: k.photos.length ? kitCompact(k) : null };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Rattacher au vivier les photos déjà bien notées (le vivier ne démarre pas vide)
+// ---------------------------------------------------------------------------------------------------------------
+
+/**
+ * Photo notée ≥ 4 ★ (moyenne), non exclue, qui a un sujet IMPLICITE (spécialité du jeu de photos, catégorie de la photo intégrée,
+ * sujet de la photo libre : sujets effectifs de la banque) sans être curée pour lui (Paul ne l'a pas encore étiquetée). Proposée
+ * pré-cochée ; rien n'est enregistré sans son clic (assets_sujets, ajout).
+ */
+export type PhotoARattacher = { url: string; cle: string; note: number; sujets: string[]; sujetPropose: string; importee: boolean; idLibre: string | null };
+
+export function photosARattacher(d: DonneesKits, sujet?: string | null): PhotoARattacher[] {
+  const res: PhotoARattacher[] = [];
+  for (const p of d.banque) {
+    const cle = p.cle ?? clePhoto(p.url);
+    const note = cle ? d.notes?.[cle]?.m : undefined;
+    if (!cle || typeof note !== 'number' || note < 4 || imageExclue(p.url, d.exclues) || imageExclue(cle, d.exclues) || d.assets?.statuts[cle]) continue;
+    const implicites = p.sujets.filter((s) => s !== 'posture' && !estCuree(p, s, d));
+    // Déjà curée pour au moins un sujet : seulement si on cherche un sujet précis qu'elle n'a pas encore
+    const curee = p.sujets.some((s) => estCuree(p, s, d));
+    const l = sujet ? implicites.filter((s) => s === sujet) : curee ? [] : implicites;
+    if (!l.length) continue;
+    // Sujet proposé : le plus précis (« général » en dernier)
+    const tri = [...l].sort((a, b) => Number(a === 'general') - Number(b === 'general'));
+    res.push({ url: p.url, cle, note, sujets: tri, sujetPropose: tri[0], importee: p.importee !== false, idLibre: p.idLibre ?? null });
+  }
+  return res.sort((a, b) => b.note - a.note || (a.url < b.url ? -1 : 1));
+}
+
+/** Photos notées ≥ 4 ★ qui deviendraient curées, par sujet, si les rattachements choisis étaient validés */
+export function gainsRattachement(choix: readonly { sujet: string }[]): Record<string, number> {
+  const r: Record<string, number> = {};
+  for (const c of choix) r[c.sujet] = (r[c.sujet] ?? 0) + 1;
+  return r;
+}

@@ -308,6 +308,7 @@ par « général » défilent un par un (clavier : U utiliser ici, G garder, X p
   curées, aucune pour orthonyxie → Trouver des photos » ouvre Photos à découvrir pré-filtré (sujet, requêtes ciblées de
   l'emplacement, `#<emplacement>` et `#kit-<sujet>` pré-cochés), avec « ← Retour au kit ». En tête de la vue : l'état du vivier de
   chaque sujet (« Enfants : 14 photos curées · 9 notées ≥ 4 ★ · 3 non notées · emplacements couverts 6/9 »).
+- **Le vivier ne démarre pas vide** (`photosARattacher`) : les photos déjà notées ≥ 4 ★ qui ont un sujet IMPLICITE (spécialité du jeu de photos, catégorie de la photo intégrée, sujet de la photo libre) sans y être rattachées par Paul sont listées dans la vue des kits et dans « Trier par sujet » (« Photos que vous avez déjà notées ≥ 4 ★ mais sans sujet : 23 »), sujet le plus précis pré-coché ; « Valider tout » / « Valider la sélection » (le bouton annonce « +9 Enfants, +5 Sport ») enregistre des ajouts dans `assets_sujets`, rien d'automatique. Dans « Compléter ce kit », quand le vivier du sujet est épuisé, ces photos passent AVANT le vivier d'un sujet voisin (« Notée 4 ★, pas encore rattachée à Enfants » → « Rattacher et utiliser »).
 - **Photos 4-5 ★ partout** (registre `contexte-images.ts`, `vivier` : URLs du vivier curé notées ≥ 4 ★ par sujet, posé par
   `ContexteImages`) : les tirages de photos (`tirerPhotos` : Studio, atelier, recettes à noter, duels de thèmes) n'utilisent que
   ces photos ; le style « Photos » est tiré nettement plus souvent quand le sujet n° 1 en a au moins `VIVIER_PHOTOS.seuil` = 3

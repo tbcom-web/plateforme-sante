@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { composerKit, compteurKit, emplacementsAFaire, etatVivier, libelleSujetKit, lienTrouverPhotos, manqueVivier, suggestionsVivier, SUJETS_KITS, universDuParcours } from '@plateforme/core';
+import { composerKit, compteurKit, emplacementsAFaire, etatVivier, photosARattacher, libelleSujetKit, lienTrouverPhotos, manqueVivier, suggestionsVivier, SUJETS_KITS, universDuParcours } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getDonneesKits, getEnAttenteKits, getNotesKits, getRefusKits } from '@/lib/kits-images';
 import { getMarquesImportees } from '@/lib/marques';
@@ -56,6 +56,7 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
         rang={rang}
         kit={kit}
         aFaire={aFaire}
+        aRattacher={photosARattacher(d)}
         compteur={compteur.texte}
         enAttente={enAttente.filter((x) => x.sujet === sujet)}
         resume={resume}

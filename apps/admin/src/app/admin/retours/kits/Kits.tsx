@@ -18,7 +18,8 @@ import { draftStudio } from '@/components/ApercuStudio';
 import type { SoinCatalogue } from '@/lib/sites';
 import { noterKit } from './actions';
 import CompleterKit from './CompleterKit';
-import type { EmplacementAFaire, SuggestionVivier } from '@plateforme/core';
+import RattacherNotees from '@/components/RattacherNotees';
+import type { EmplacementAFaire, PhotoARattacher, SuggestionVivier } from '@plateforme/core';
 import type { PhotoEnAttenteKit } from '@/lib/kits-images';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -30,6 +31,7 @@ type Props = {
   kit: KitImages;
   aFaire: (EmplacementAFaire & { banque: SuggestionVivier[]; manque: string | null; trouver: string })[];
   compteur: string;
+  aRattacher: PhotoARattacher[];
   enAttente: PhotoEnAttenteKit[];
   resume: { sujet: string; libelle: string; note: number | null; trous: number; photos: number; garde: boolean; vivier: string; curees: number }[];
   notes: { note: number | null; garder: boolean; le: string | null }[];
@@ -104,6 +106,7 @@ export default function Kits(props: Props) {
         </ul>
         <p className="text-xs text-neutral-500">Une photo entre dans le vivier d’un sujet quand vous l’avez retenue (gardée, importée ou intégrée) ET étiquetée avec ce sujet ; jamais si elle est notée 2 ★ ou moins, retirée ou à retravailler.</p>
       </section>
+      <RattacherNotees photos={props.aRattacher} />
       <nav aria-label="Sujets" className="flex gap-1 overflow-x-auto pb-1">
         {props.resume.map((r) => (
           <Link key={r.sujet} href={`/admin/retours/kits?sujet=${r.sujet}`} aria-current={r.sujet === sujet ? 'page' : undefined}
