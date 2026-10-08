@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  cleCandidatePhoto, construireCandidate, estSourcePhotoLibre, estSujetVisuel, etiquettesDecouverteValides, filtrerCandidats, frequencesHashtags, hashtagsValides,
+  choisirRequete, cleCandidatePhoto, construireCandidate, requetesDuSujet, estSourcePhotoLibre, estSujetVisuel, etiquettesDecouverteValides, filtrerCandidats, frequencesHashtags, hashtagsValides,
   motsClesDuSujet, normaliserMotsCles, refusDecision, SOURCES_PHOTOS_LIBRES, SUJETS_VISUELS, type CandidatPhoto, type DecisionPhoto, type SourcePhotoLibre,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -26,14 +26,22 @@ export type ResultatCandidats = { ok: boolean; message: string; candidats: Candi
 
 const auHasard = <T,>(l: readonly T[]): T => l[Math.floor(Math.random() * l.length)];
 
-/** Photos déjà vues (gardées ou rejetées) : jamais remontrées */
-async function dejaVues(): Promise<Set<string>> {
+/**
+ * Photos déjà vues (gardées ou rejetées) : jamais remontrées. Couverture du sujet par requête (photos gardées ou importées,
+ * hors retirées) : la requête suivante privilégie les thèmes encore peu couverts (choisirRequete).
+ */
+async function dejaVues(sujet: string): Promise<{ vues: Set<string>; gardees: Record<string, number> }> {
   const supabase = await createClient();
   const [{ data: a }, { data: p }] = await Promise.all([
     supabase.from('photos_libres_avis').select('source, id_source').limit(20000),
-    supabase.from('photos_libres').select('source, id_source').limit(20000),
+    supabase.from('photos_libres').select('source, id_source, sujet, requete, statut').limit(20000),
   ]);
-  return new Set([...(a ?? []), ...(p ?? [])].map((l: { source: string; id_source: string }) => `${l.source}:${l.id_source}`));
+  const vues = new Set([...(a ?? []), ...(p ?? [])].map((l: { source: string; id_source: string }) => `${l.source}:${l.id_source}`));
+  const gardees: Record<string, number> = {};
+  for (const l of (p ?? []) as { sujet: string; requete: string | null; statut: string }[]) {
+    if (l.sujet === sujet && l.requete && l.statut !== 'retiree') gardees[l.requete] = (gardees[l.requete] ?? 0) + 1;
+  }
+  return { vues, gardees };
 }
 
 /** Prochaines candidates pour un sujet (mot-clé et source tirés au hasard, filtrées : taille, doublons, déjà vues) */
@@ -43,13 +51,14 @@ export async function candidatsPhotos(sujet: string, vuesNavigateur: string[] = 
   const conf = sourcesConfigurees();
   const sources = SOURCES_PHOTOS_LIBRES.filter((s) => conf[s]);
   if (!sources.length) return { ok: false, cleManquante: true, message: 'Clé API à configurer (PEXELS_API_KEY ou PIXABAY_API_KEY dans Vercel).', candidats: [] };
-  const [{ motsCles }, vues] = await Promise.all([getMotsClesEnBase(), dejaVues()]);
+  const [{ motsCles }, { vues, gardees }] = await Promise.all([getMotsClesEnBase(), dejaVues(sujet)]);
   for (const v of (Array.isArray(vuesNavigateur) ? vuesNavigateur : []).slice(0, 2000)) if (typeof v === 'string') vues.add(v);
-  const mots = motsClesDuSujet(sujet, motsCles);
+  // Mots-clés du sujet + exploration (randonnée, basket…), tirés en privilégiant ceux qui ont encore peu de photos
+  const mots = requetesDuSujet(sujet, motsCles);
   let derniereErreur = '';
   for (let essai = 0; essai < 4; essai++) {
     const source: SourcePhotoLibre = auHasard(sources);
-    const requete = auHasard(mots);
+    const requete = choisirRequete(mots, gardees);
     const page = 1 + Math.floor(Math.random() * (essai < 2 ? 2 : 5));
     try {
       const l = filtrerCandidats(await rechercher(source, requete, page), vues).slice(0, 12);

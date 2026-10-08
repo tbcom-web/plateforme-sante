@@ -6,7 +6,7 @@ import {
 } from './inspirations';
 import {
   candidatPexels, candidatPixabay, candidatsDepuisReponse, cheminPhotoLibre, cleCandidat, construireTracabilite, csvLicences, construireCandidate, cleCandidatePhoto, apercuAutorise, estPhotoImportee, filtrerCandidats,
-  largeursAProduire, MOTS_CLES_DEFAUT, motsClesDuSujet, normaliserMotsCles, orientation, peutAppeler, refusDecision, SUJETS_VISUELS,
+  largeursAProduire, MOTS_CLES_DEFAUT, MOTS_CLES_EXPLORATION, choisirRequete, requetesDuSujet, motsClesDuSujet, normaliserMotsCles, orientation, peutAppeler, refusDecision, SUJETS_VISUELS,
   urlImageAutorisee, urlRecherchePexels, urlRecherchePixabay, type CandidatPhoto,
 } from './photos-libres';
 import { contraste } from './couleurs';
@@ -111,6 +111,21 @@ test('photos libres : sujets et mots-clés par défaut, normalisation', () => {
   assert.deepEqual(motsClesDuSujet('sport', { sport: [] }), [...MOTS_CLES_DEFAUT.sport]);
   assert.deepEqual(motsClesDuSujet('sport', { sport: ['barefoot run'] }), ['barefoot run']);
   assert.equal(normaliserMotsCles(Array.from({ length: 20 }, (_, i) => `mot ${i}`)).length, 12);
+});
+
+test('photos libres : exploration des thèmes peu couverts', () => {
+  const l = requetesDuSujet('sport', {});
+  assert.ok(l.includes('trail running') && l.includes('hiking trail'), 'mots-clés du sujet + exploration');
+  assert.equal(new Set(l).size, l.length, 'sans doublon');
+  for (const s of SUJETS_VISUELS) assert.ok(MOTS_CLES_EXPLORATION[s.id]?.length, `exploration pour ${s.id}`);
+  // Une requête déjà bien couverte (tennis : 6 photos) est rarement tirée face à une requête vide
+  const tirages = Array.from({ length: 1000 }, (_, i) => choisirRequete(['tennis court shoes', 'hiking trail'], { 'tennis court shoes': 6 }, i / 1000));
+  const tennis = tirages.filter((q) => q === 'tennis court shoes').length;
+  assert.ok(tennis < 40, `tennis tiré ${tennis} fois sur 1000`);
+  // Requête rejetée 8 fois sans photo gardée : mise de côté tant qu'il en reste d'autres
+  assert.equal(choisirRequete(['a b', 'c d'], {}, 0, { 'a b': 8 }), 'c d');
+  assert.equal(choisirRequete(['a b'], {}, 0.5, { 'a b': 8 }), 'a b');
+  assert.equal(choisirRequete([], {}, 0.5), '');
 });
 
 test('photos libres : lecture des API, hôtes contrôlés, adresses de recherche', () => {

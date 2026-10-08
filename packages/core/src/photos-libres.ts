@@ -53,6 +53,53 @@ export function motsClesDuSujet(sujet: string, enBase: Readonly<Record<string, r
   return b.length ? b : [...(MOTS_CLES_DEFAUT[sujet] ?? MOTS_CLES_DEFAUT.general)];
 }
 
+/**
+ * Mots-clés d'EXPLORATION par sujet (demande de Paul, 2026-10-08 : « si on a déjà beaucoup d'images de tennis, passer à
+ * d'autres : randonnée, etc. ») : activités et situations variées, ajoutées aux mots-clés du sujet pour élargir la banque.
+ * Toujours des pieds, des chaussures ou la marche : jamais un sujet hors métier.
+ */
+export const MOTS_CLES_EXPLORATION: Readonly<Record<string, readonly string[]>> = {
+  sport: [
+    'hiking trail', 'mountain hiking boots', 'tennis court shoes', 'basketball sneakers', 'football cleats', 'rugby boots',
+    'cycling shoes', 'dance shoes', 'yoga barefoot', 'swimming pool feet', 'climbing shoes', 'track spikes', 'nordic walking',
+    'gym sneakers', 'beach running', 'ski boots',
+  ],
+  enfant: ['kids playing barefoot', 'child sneakers', 'kids running park', 'child sport shoes', 'family walk', 'kids dance class'],
+  senior: ['senior hiking', 'elderly couple walking', 'senior garden', 'senior dance', 'comfortable shoes', 'senior stairs'],
+  diabete: ['diabetic socks', 'blood sugar test', 'healthy walking', 'foot moisturizer', 'comfortable walking shoes'],
+  ongles: ['nail clipper', 'foot spa', 'pedicure clinic', 'healthy toenails'],
+  semelles: ['custom insoles', 'shoe fitting', 'arch support', 'gait analysis', 'shoe store'],
+  pedicurie: ['medical clinic interior', 'foot massage', 'clinic hands gloves', 'foot treatment'],
+  general: ['sand footprints', 'city walking', 'forest path walking', 'morning walk', 'feet relaxing'],
+};
+
+/** Toutes les requêtes possibles d'un sujet : ses mots-clés (base ou défaut), puis ceux d'exploration, sans doublon */
+export function requetesDuSujet(sujet: string, enBase: Readonly<Record<string, readonly string[]>> = {}): string[] {
+  return [...new Set([...motsClesDuSujet(sujet, enBase), ...(MOTS_CLES_EXPLORATION[sujet] ?? [])])];
+}
+
+/**
+ * Requête suivante, pondérée par la COUVERTURE : plus une requête a déjà donné de photos gardées ou importées
+ * (`dejaGardees[requete]`), moins elle est tirée (poids 1 / (1 + n)², une requête sans photo pèse 1, une à 3 photos 1/16).
+ * Les requêtes trop souvent rejetées (`rejets[requete]` ≥ 8 sans aucune photo gardée) sont mises de côté tant qu'il en
+ * reste d'autres. `r` : tirage dans [0, 1).
+ */
+export function choisirRequete(
+  requetes: readonly string[],
+  dejaGardees: Readonly<Record<string, number>> = {},
+  r: number = Math.random(),
+  rejets: Readonly<Record<string, number>> = {},
+): string {
+  if (!requetes.length) return '';
+  const utiles = requetes.filter((q) => !((rejets[q] ?? 0) >= 8 && !(dejaGardees[q] ?? 0)));
+  const l = utiles.length ? utiles : [...requetes];
+  const poids = l.map((q) => 1 / (1 + (dejaGardees[q] ?? 0)) ** 2);
+  const total = poids.reduce((a, b) => a + b, 0);
+  let x = Math.min(Math.max(r, 0), 0.999999) * total;
+  for (let i = 0; i < l.length; i++) { x -= poids[i]; if (x < 0) return l[i]; }
+  return l[l.length - 1];
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Sources et licences
 // ---------------------------------------------------------------------------------------------------------------
