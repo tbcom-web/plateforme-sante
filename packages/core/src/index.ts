@@ -104,3 +104,5 @@ export * from './icones-illustrees';
 export * from './nouveautes';
 export * from './degustation';
 export * from './degustation-grilles';
+export * from './professions-ingredients';
+export * from './packs-professions';

@@ -2,7 +2,7 @@ import Shell from '@/components/Shell';
 import ContexteImages from '@/components/ContexteImages';
 import NavAdmin from '@/components/NavAdmin';
 import BoutonParcoursTest from '@/components/BoutonParcoursTest';
-import { professionsActives } from '@plateforme/core/professions';
+import { professionsAdmin } from '@plateforme/core/professions';
 import { exigerAdmin } from '@/lib/admin';
 import { getNombreArrivages, getNombreNouveautesANoter } from '@/lib/arrivages';
 import { getProfession } from '@/lib/profession';
@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
     <Shell email={user?.email ?? ''}>
       <NavAdmin
         compteurs={{ arrivages, nouveautes }}
-        professions={professionsActives().map((p) => ({ id: p.id, libelle: p.libelle, court: p.court }))}
+        professions={professionsAdmin().map((p) => ({ id: p.id, libelle: p.statut === 'preparation' ? `${p.libelle} (en préparation)` : p.libelle, court: p.court }))}
         profession={profession.id}
       />
       {/* Parcours client en mode test (aucune écriture) : components/BoutonParcoursTest.tsx */}
