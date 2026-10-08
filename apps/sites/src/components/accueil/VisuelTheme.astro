@@ -44,6 +44,9 @@ const animation = visuel.type === 'dessin' && animer && registre === 'releve' ? 
 // teinte « gamme » en relevé : toujours les variables de la page (plan, signal et pression dérivés de la gamme, teinteSombre),
 // jamais le signal fixe de la fiche de la gamme (menthe sur cobalt : « du bleu et du vert mélangés »).
 const gammeHeros = site.modele.jetons.teinte === 'gamme' && registre === 'releve' ? null : site.theme.gamme || null;
+// Illustration validée de l'activité du praticien (lib/vitrine.ts) : à la place du dessin du thème (jamais d'une animation) ;
+// sur un fond sombre (registre relevé), trait clair
+const svgActivite = visuel.type === 'dessin' && visuel.svg && !animation ? visuel.svg : '';
 const heros = visuel.type === 'dessin' && visuel.heros && !animation && !seul
   ? illustrationTheme(visuel.heros, { format, registre, gamme: gammeHeros, id: `h-${visuel.heros}-${format[0]}-${registre[0]}` })
   : '';
@@ -53,11 +56,13 @@ const heros = visuel.type === 'dessin' && visuel.heros && !animation && !seul
     <Fragment set:html={`<style>${cssVisuelAnime(animationHeros!)}</style>${anime}`} />
   </div>
 ) : (
-<div class:list={['vt', `vt--${heros ? 'heros' : visuel.type}`, animation ? 'vt--anime' : '', classe]} aria-hidden="true">
+<div class:list={['vt', `vt--${heros || svgActivite ? 'heros' : visuel.type}`, animation ? 'vt--anime' : '', classe]} aria-hidden="true" style={svgActivite && registre === 'releve' ? '--dessin-ligne:var(--sur-sombre-doux,#eef2ff);--dessin-trait:var(--sur-sombre-doux,#eef2ff)' : undefined}>
   {visuel.type === 'photo' ? (
     <img src={visuel.src} {...photoResponsive(visuel.src, sizes)} alt="" width="1600" height="1067" style={`object-position:${visuel.cadrage}`} loading={prioritaire ? 'eager' : 'lazy'} fetchpriority={prioritaire ? 'high' : 'auto'} decoding={prioritaire ? 'sync' : 'async'} />
   ) : animation ? (
     <Animation nom={animation} releve />
+  ) : svgActivite ? (
+    <Fragment set:html={svgActivite} />
   ) : heros ? (
     <Fragment set:html={heros} />
   ) : registre === 'ligne' ? (

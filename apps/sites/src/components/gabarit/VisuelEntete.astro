@@ -28,8 +28,10 @@ interface Props {
   photoPraticien?: string;
   /** Texte alternatif de la photo du praticien (porteuse d'information) ; une photo d'illustration reste décorative */
   altPraticien?: string;
+  /** Illustration VALIDÉE de l'activité du praticien (lib/activites.ts) à la place du dessin du soin */
+  svgActivite?: string | null;
 }
-const { photo, cadrage = '50% 50%', dessin, animation = null, photoBonne = true, liste = false, photoPraticien, altPraticien = '' } = Astro.props;
+const { photo, cadrage = '50% 50%', dessin, animation = null, photoBonne = true, liste = false, photoPraticien, altPraticien = '', svgActivite = null } = Astro.props;
 // Règle : illustrations dans les listes ; photo sur la fiche d'un soin si elle est bonne (mode mélange).
 const choix = rendreCase({ photo, cadrage, dessin, animation, photoBonne }, modeVisuel, liste ? 'liste' : 'page', { photoPraticien, animationActive: true });
 const image = choix.type === 'photo' ? choix : { src: photo, cadrage };
@@ -47,7 +49,7 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
 
 {rendu === 'illustrations' && (
   <figure class:list={['ve', 've--plan', 'surface-plan', { 've--anime': anime }]} aria-hidden="true">
-    <span class="ve__scene">{anime ? <Animation nom={anime} fond="sombre" /> : <Dessin nom={dessin} />}</span>
+    <span class="ve__scene">{anime ? <Animation nom={anime} fond="sombre" /> : svgActivite ? <Fragment set:html={svgActivite} /> : <Dessin nom={dessin} />}</span>
   </figure>
 )}
 
@@ -57,7 +59,7 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
       <img src={image.src} {...photoResponsive(image.src, '(min-width: 960px) 52vw, calc(100vw - 40px)')} alt={alt} width="1600" height="900" fetchpriority="high" decoding="async" style={`object-position:${image.cadrage}`} />
     </span>
     <span class="ve__encart surface-grille" aria-hidden="true">
-      <Dessin nom={dessin} />
+      {svgActivite ? <Fragment set:html={svgActivite} /> : <Dessin nom={dessin} />}
     </span>
   </figure>
 )}

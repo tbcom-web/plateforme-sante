@@ -16,12 +16,18 @@ import { photoResponsive } from '../../lib/visuels';
 import { telLien, lienRdv, rdvEnLigne, titreCompetences, viaPlateforme, lieu, aTelephone, adresseLieu, lienContact, libelleContact, suffixeVille } from '../../lib/textes';
 import { pictoDuSoin, visuelVariante, nomLieu, gabarit, variantes } from '../../lib/gabarits';
 import { espacesFines, equipementsDuSoin, type Soin } from '@plateforme/core';
+import { visuelActiviteSoin } from '../../lib/activites';
 
 interface Props { soin: Soin }
 const { soin } = Astro.props;
 const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Soins', path: '/soins' }, { name: soin.titreCourt, path: `/soins/${soin.slug}` }];
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
-const v = visuelVariante(soin.slug, 'page');
+const v0 = visuelVariante(soin.slug, 'page');
+// Soin mis en avant pour l'activité du praticien, avec des visuels validés (lib/activites.ts) : sa photo (style photo, sauf photo
+// du praticien) ou son illustration à la place du dessin du soin ; sinon le visuel du soin (repli)
+const act = visuelActiviteSoin(soin.slug);
+const v = v0.type === 'photo' && act?.photo && !v0.praticien ? { ...v0, src: act.photo, cadrage: '50% 50%' } : v0;
+const svgAct = v.type !== 'photo' ? act?.svg ?? null : null;
 const revue = gabarit === 'revue';
 // Aucune légende visible sous la figure (règle de Paul) : ce que représente l'image est dit aux agents (lib/vitrine.ts,
 // descriptionSoin, version Markdown). Les annotations intérieures des schémas restent visibles ici, discrètes (dessins-annotes).
@@ -51,7 +57,7 @@ const enPratique = [
     <Fragment slot="visuel">
       {v.type === 'photo'
         ? <img src={v.src} {...photoResponsive(v.src, '(min-width: 900px) 460px, 100vw')} alt={v.praticien ? `${soin.titreCourt} au cabinet${suffixeVille}` : ''} width="1200" height="900" fetchpriority="high" decoding="async" style={`object-position:${v.cadrage}`} />
-        : <Dessin nom={v.dessin} trace={!revue} />}
+        : svgAct ? <Fragment set:html={svgAct} /> : <Dessin nom={v.dessin} trace={!revue} />}
     </Fragment>
   </TetePage>
 

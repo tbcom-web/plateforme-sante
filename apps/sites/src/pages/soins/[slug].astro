@@ -11,6 +11,7 @@ import VignetteSoin from '../../components/gabarit/VignetteSoin.astro';
 import { site, md } from '../../lib/site';
 import { soinSchema, faqSchema, breadcrumbSchema } from '../../lib/schema';
 import { visuelSoin, photoPraticienSoin } from '../../lib/visuels-soins';
+import { visuelActiviteSoin } from '../../lib/activites';
 import { noms, telLien, lienRdv, libelleRdv, lieu, rdvEnLigne, titreCompetences, viaPlateforme, adresseLieu, aTelephone } from '../../lib/textes';
 import { espacesFines, equipementsDuSoin, soinsLies } from '@plateforme/core';
 import type { Soin } from '@plateforme/core';
@@ -33,6 +34,8 @@ const rang = site.soins.findIndex((s) => s.slug === soin.slug) + 1;
 const total = site.soins.length;
 const autres = site.soins.filter((s) => s.slug !== soin.slug);
 const visuel = visuelSoin(soin.slug);
+// Soin mis en avant pour l'activité du praticien, avec des visuels validés : photo et illustration de l'activité (lib/activites.ts)
+const activite = visuelActiviteSoin(soin.slug);
 // Matériel du cabinet utile à ce soin, seulement s'il a été coché (ex. « Examen sur plateforme de pression »).
 const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
 ---
@@ -54,7 +57,7 @@ const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
           <h1>{espacesFines(soin.titre)}</h1>
           <p class="chapo">{soin.resume}</p>
         </div>
-        <VisuelEntete photo={visuel.photo} cadrage={visuel.cadrage} dessin={visuel.dessin} animation={visuel.animation} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} photoBonne={visuel.photoBonne} photoPraticien={photoPraticienSoin(soin.slug)} altPraticien={`${soin.titreCourt} au cabinet de ${site.cabinet.ville}`} />
+        <VisuelEntete photo={activite?.photo ?? visuel.photo} cadrage={activite?.photo ? '50% 50%' : visuel.cadrage} dessin={visuel.dessin} animation={visuel.animation} svgActivite={activite?.svg} legende={soin.titreCourt} repere={`Fig. ${deux(rang)}`} photoBonne={activite?.photo ? true : visuel.photoBonne} photoPraticien={photoPraticienSoin(soin.slug)} altPraticien={`${soin.titreCourt} au cabinet de ${site.cabinet.ville}`} />
       </div>
     </header>
 

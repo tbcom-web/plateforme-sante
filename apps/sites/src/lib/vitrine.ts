@@ -15,6 +15,7 @@ import { jeu } from './visuels-soins';
 import { modeVisuel } from './visuels';
 import { navigation } from './navigation';
 import { legendeLigne, ligneDuSoin } from './gabarits';
+import { illustrationActivite, photoActivite } from './activites';
 
 type Dessins = { dessin: NomDessin; ligne: NomLigne; animation: Animation | null };
 /** Dessins validés de chaque sujet : principal (premier écran, page du thème) et second (bloc du thème n° 1 sur l'accueil) */
@@ -33,7 +34,7 @@ const DEFAUT: (typeof DESSINS_THEME)[string] = { principal: { dessin: 'analyse',
 
 export type VisuelTheme =
   | { type: 'photo'; src: string; cadrage: string }
-  | { type: 'dessin'; dessin: NomDessin; ligne: NomLigne; animation: Animation | null; heros?: string };
+  | { type: 'dessin'; dessin: NomDessin; ligne: NomLigne; animation: Animation | null; heros?: string; /** Illustration VALIDÉE de l'activité (lib/activites.ts) à la place du dessin du thème */ svg?: string };
 
 /** Photo seulement si le praticien a choisi le style « photos » */
 export const vitrinePhoto = modeVisuel === 'photos';
@@ -92,8 +93,14 @@ const visuelHerosChoisi = (site.modele.variantes as Record<string, string> | und
  */
 export const animationPremierEcran = animationDuHeros(site.modele.variantes as never, themeHeros);
 /** Visuel du premier écran : photo d'accueil du praticien d'abord (style « photos » ou visuel « photo »), sinon le visuel du thème n° 1 */
+// Activité du praticien (#basket…) avec des visuels VALIDÉS pour le sujet du héros : sa photo (style « photos ») ou son
+// illustration (styles illustrés) ; une animation garde celle du thème ; sans visuel validé : visuel du thème (repli)
+const photoAct = themeHeros ? photoActivite(themeHeros) : null;
+const svgAct = themeHeros ? illustrationActivite(themeHeros) : null;
 export const visuelPremierEcran: VisuelTheme = (visuelHerosChoisi === 'photo' || site.theme.accueilPhoto || (vitrinePhoto && visuelHerosChoisi !== 'illustration')) && site.photos.accueil
   ? (montrees.add(site.photos.accueil), { type: 'photo', src: site.photos.accueil, cadrage: '50% 50%' })
-  : visuelTheme(themeHeros, 'principal', montrees);
+  : photoAct && ((vitrinePhoto && visuelHerosChoisi !== 'illustration') || visuelHerosChoisi === 'photo')
+    ? (montrees.add(photoAct), { type: 'photo', src: photoAct, cadrage: '50% 50%' })
+    : ((v: VisuelTheme): VisuelTheme => (v.type === 'dessin' && svgAct ? { ...v, svg: svgAct, heros: undefined } : v))(visuelTheme(themeHeros, 'principal', montrees));
 /** Visuels des blocs des sujets principaux de l'accueil, dans l'ordre de préférence (le sujet du héros prend son second visuel) */
 export const visuelsSujets: VisuelTheme[] = navigation.principaux.map((t) => visuelTheme(t.theme.id, t.theme.id === themeHeros && !(vitrinePhoto && site.photos.accueil) ? 'second' : 'principal', montrees));

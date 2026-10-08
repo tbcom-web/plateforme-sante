@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Sites : l'activité du praticien (visuels validés) habille le premier écran et les fiches des soins mis en avant ; repli sur le thème sinon.
 - 2026-10-09 : Sites publiés : la construction applique les exclusions de l'admin (Arrivages non acceptés ou refusés, ≤ 2 ★, à valider) ; un élément refusé de la configuration est remplacé par son repli.
 - 2026-10-09 : Forme des cartes visible en gabarit classique (aperçu et site) ; la Dégustation fait de nouveau varier la forme des cartes en structure Technique.
 - 2026-10-09 : Duels A/B par profession (migration 0051 à exécuter) : profession enregistrée, apprentissage = goût de la profession + dimensions transversales + éléments communs, comme la Dégustation.
