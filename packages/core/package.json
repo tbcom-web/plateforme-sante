@@ -26,7 +26,8 @@
     "./juge": "./src/juge.ts",
     "./dictionnaire-metier": "./src/dictionnaire-metier.ts",
     "./classement-visuels": "./src/classement-visuels.ts",
-    "./references-illustrations": "./src/references-illustrations.ts"
+    "./references-illustrations": "./src/references-illustrations.ts",
+    "./professions": "./src/professions.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",
