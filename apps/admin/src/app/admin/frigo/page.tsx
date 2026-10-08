@@ -117,6 +117,22 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
         </p>
       </div>
 
+      {trous.length > 0 && (
+        <section aria-labelledby="fr-trous" className="grid gap-2">
+          <h2 id="fr-trous" className="text-lg font-semibold">Photos à trouver ({profession.court})</h2>
+          <ul className="flex flex-wrap gap-2 text-sm">
+            {trous.map((t) => (
+              <li key={t.theme}>
+                <Link href={`/admin/retours?type=decouvrir&profession=${encodeURIComponent(profession.id)}&theme=${encodeURIComponent(t.theme)}`}
+                  className={`flex min-h-11 items-center gap-1 rounded-full px-3 ring-1 ${t.photos === 0 ? 'bg-red-50 text-red-900 ring-red-200' : 'bg-white ring-black/10'}`}>
+                  {libelleTrou(profession.court, t)} · Trouver des photos →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {suggestions.map((sg) => (
         <section key={sg.profession.id} aria-labelledby={`fr-sugg-${sg.profession.id}`} className="grid gap-3 rounded-2xl border border-teal-800/20 bg-teal-50/40 p-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -136,22 +152,6 @@ export default async function Frigo({ searchParams }: { searchParams: Promise<Re
           </ul>
         </section>
       ))}
-
-      {trous.length > 0 && (
-        <section aria-labelledby="fr-trous" className="grid gap-2">
-          <h2 id="fr-trous" className="text-lg font-semibold">Photos à trouver ({profession.court})</h2>
-          <ul className="flex flex-wrap gap-2 text-sm">
-            {trous.map((t) => (
-              <li key={t.theme}>
-                <Link href={`/admin/retours?type=decouvrir&profession=${encodeURIComponent(profession.id)}&theme=${encodeURIComponent(t.theme)}`}
-                  className={`flex min-h-11 items-center gap-1 rounded-full px-3 ring-1 ${t.photos === 0 ? 'bg-red-50 text-red-900 ring-red-200' : 'bg-white ring-black/10'}`}>
-                  {libelleTrou(profession.court, t)} · Trouver des photos →
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       <section aria-labelledby="fr-couv" className="grid gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

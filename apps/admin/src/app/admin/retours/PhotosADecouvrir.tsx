@@ -85,17 +85,16 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
       const pUrl = q.get('profession');
       const tUrl = q.get('theme');
       const p = cible ? PAR_DEFAUT : pUrl && c.professions.some((x) => x.id === pUrl) ? pUrl : ok ?? c.globale;
-      if (tUrl && !cible) sujetCourant.current = tUrl;
-      if (p !== PAR_DEFAUT) changerProfession(p, c);
+      if (p !== PAR_DEFAUT) changerProfession(p, c, cible ? null : tUrl);
       else if (tUrl && !cible && SUJETS_VISUELS.some((x) => x.id === tUrl)) { setSujet(tUrl); setThemes([tUrl]); }
     }).catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const changerProfession = (p: string, c: Contexte | null = ctx) => {
+  const changerProfession = (p: string, c: Contexte | null = ctx, prefere: string | null = null) => {
     setProfession(p);
     setProfessionsCochees([p]);
     const themes = p === PAR_DEFAUT ? SUJETS_VISUELS.map((s) => s.id) : (c?.themes[p] ?? []).map((t) => t.id);
-    const t = themes.includes(sujetCourant.current) ? sujetCourant.current : themes[0] ?? 'general';
+    const t = prefere && themes.includes(prefere) ? prefere : themes.includes(sujetCourant.current) ? sujetCourant.current : themes[0] ?? 'general';
     professionCourante.current = p;
     setFile([]); setEdition(false); setStatut(null);
     if (t !== sujetCourant.current) { setSujet(t); setThemes([t]); } else if (configurees.length) { setThemes([t]); void charger(t); }
@@ -201,10 +200,10 @@ export default function PhotosADecouvrir({ sources, motsCles: motsClesInitiaux, 
           : <button type="button" onClick={onRetour} className={`min-h-11 rounded-xl px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>← Accueil</button>}
         {cible && <p className="w-full rounded-lg bg-teal-50 p-2 text-sm text-teal-950 ring-1 ring-teal-200 sm:order-last">Pour le kit {libelleSujet(cible.sujet)} · {libelleEmplacement(cible.emplacement)} : recherches ciblées ({requetesEmplacement(cible.sujet, cible.emplacement).join(', ')}) ; #{hashtagEmplacement(cible.emplacement)} et #{hashtagKit(cible.sujet)} pré-cochés. Gardée, la photo entre dans le vivier ; elle rejoint le kit une fois importée.</p>}
         {ctx && ctx.professions.length > 1 && (
-          <div className="flex items-center gap-1.5 text-sm">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 text-sm">
             <label className="flex items-center gap-2">
               <span className="font-medium">Profession</span>
-              <select value={profession} disabled={Boolean(verrou) || Boolean(cible)} onChange={(e) => changerProfession(e.target.value)} className="min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-base disabled:bg-neutral-100 md:text-sm">
+              <select value={profession} disabled={Boolean(verrou) || Boolean(cible)} onChange={(e) => changerProfession(e.target.value)} className="min-h-11 max-w-[11rem] rounded-lg border border-neutral-300 bg-white px-2 text-base disabled:bg-neutral-100 md:text-sm">
                 {ctx.professions.map((p) => <option key={p.id} value={p.id}>{p.libelle}</option>)}
               </select>
             </label>
