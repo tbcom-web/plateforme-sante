@@ -18,7 +18,7 @@ export type AppareilJugement = 'ordinateur' | 'mobile' | 'les-deux';
 
 /** Dimensions (ou familles composant:<f>) où le rendu téléphone est décisif */
 const MOBILES = new Set(['typo', 'details', 'menu', 'polices', 'police-couleurs']);
-const FAMILLES_MOBILES = new Set(['contact', 'soins-forme', 'accueil', 'entete-anim', 'portraits', 'praticiens', 'sujets', 'horaires']);
+const FAMILLES_MOBILES = new Set(['contact', 'soins-forme', 'accueil', 'entete-anim', 'visuel-heros', 'portraits', 'praticiens', 'sujets', 'horaires']);
 
 /** Appareil où se juge une dimension de duel */
 export function appareilDimension(dimension: string | null | undefined): AppareilJugement {
@@ -41,7 +41,7 @@ export function duelMobileSeulement(dimension: string | null | undefined, r: num
 /** Portée mobile d'une clé apprise (atelier) : 1 réglage propre au téléphone, 0,5 partagé mais décisif sur téléphone, 0 sinon */
 export function porteeMobile(cle: string): number {
   if (cle.startsWith('menu=mobile:') || /^variante=contact:(barre|flottant)$/.test(cle)) return 1;
-  if (/^(typo|details|police)=/.test(cle) || /^variante=(soins-forme|accueil|entete-anim|portraits|praticiens|sujets|horaires|contact):/.test(cle)) return 0.5;
+  if (/^(typo|details|police)=/.test(cle) || /^variante=(soins-forme|accueil|entete-anim|visuel-heros|portraits|praticiens|sujets|horaires|contact):/.test(cle)) return 0.5;
   return 0;
 }
 

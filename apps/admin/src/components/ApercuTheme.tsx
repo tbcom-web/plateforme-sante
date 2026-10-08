@@ -37,6 +37,7 @@ import type { SoinCatalogue } from '@/lib/sites';
 import ApercuGabarit, { ActionsRapidesApercu, HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
 import { cssTransitionsSections } from '@plateforme/core';
+import { animationDuHeros, cssVisuelAnime, htmlVisuelAnime, styleCouleursHeros } from '@plateforme/core';
 import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
 import { BlocPortraits, portraitsDuDraft, presentationApercu } from './ApercuPortraits';
 import CadreApercu from './CadreApercu';
@@ -210,7 +211,15 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   // Héros : sujet choisi par une recette du studio (parmi les principaux), sinon le n° 1 (comme le site : themeHeros)
   const principauxIds = construireNavigation(d, soins).principaux.map((x) => x.theme.id);
   const themeUn = d.theme.herosSujet && principauxIds.includes(d.theme.herosSujet) ? d.theme.herosSujet : principauxIds[0] ?? null;
-  const herosApercu = (format: FormatHeros, registreForce?: Registre, animer = false): HerosApercu | null => {
+  // Visuel ANIMÉ du premier écran (heros-anime.ts) : l'animation à la place de l'illustration ou de la photo, même cadre (carte,
+  // notice, figure) ; jouée une fois à l'affichage de l'aperçu (ea-joue posée d'emblée), image fixe ensuite
+  const animHeros = m.gabarit && m.gabarit !== 'classique' ? animationDuHeros(m.variantes as never, themeUn) : null;
+  const herosAnime = (r: Registre, nu = false): HerosApercu | null => (animHeros
+    ? { type: 'svg', sombre: r === 'releve', html: `<div class="ha ea-joue" data-ea style="position:relative;width:100%;height:100%;${styleCouleursHeros(m, d.theme)}"><style>${cssVisuelAnime(animHeros)}</style>${htmlVisuelAnime(animHeros, { ton: r === 'releve' ? 'sombre' : 'clair', nu })}</div>` }
+    : null);
+  const herosApercu = (format: FormatHeros, registreForce?: Registre, animer = false, premierEcran = true): HerosApercu | null => {
+    const ha = premierEcran ? herosAnime(registreForce ?? registre) : null;
+    if (ha) return ha;
     if (mode === 'photos') {
       const spec = themeParId(themeUn)?.specialite ?? jeu.specialite;
       const src = d.photos.accueil || (spec === jeu.specialite ? jeu.accueil.photo : packVisuel(spec).photos.accueil);
@@ -227,6 +236,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   };
   // Tableau : une seule grande illustration dans le disque (le dessin principal du sujet), jamais l'assemblage de deux pièces
   const herosSeul = (registreForce?: Registre): HerosApercu | null => {
+    const ha = herosAnime(registreForce ?? registre, true);
+    if (ha) return ha;
     if (mode === 'photos') return herosApercu('portrait');
     const r = registreForce ?? registre;
     const x = themeUn ? DESSIN_SUJET[themeUn] : undefined;
@@ -507,7 +518,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const commun = { mobile, nomCabinet, libelleRdv: rdv, adresse: r.aAdresse ? r.adresse : '', telephone: r.aTelephone ? tel : null, ville: ville || null };
   const themePage = themeParId(themeUn ?? principauxIds[0] ?? 'sport');
   const pageSujet = themePage && (
-    <ApercuPageSujet {...commun} theme={themePage} variante={varianteTheme(m)} visuel={herosApercu('paysage')}
+    <ApercuPageSujet {...commun} theme={themePage} variante={varianteTheme(m)} visuel={herosApercu('paysage', undefined, false, false)}
       soins={catalogue.filter((s) => themePage.soins.includes(s.slug)).slice(0, 6)} conseils={[{ titre: ARTICLE_DEMO.titre, date: '22 septembre 2026' }]} />
   );
   const pageArticle = <ApercuArticle {...commun} variante={varianteArticle(m)} auteur={noms.length === 1 ? `${noms[0]}, ${titre.toLowerCase()}` : nomCabinet}

@@ -20,13 +20,15 @@ import { contraste, melanger, rvb } from './couleurs';
 import { CYCLES, COURBES, DUREES, NEUTRES } from './charte';
 import { couleursGabarit, type CouleursGabarit } from './gabarits';
 import type { ModeleManifeste } from './modeles';
-import { estPremierEcranAnime, estPremierEcranPhoto, HOTES_SCENE_ENTETE, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, type AnimationEntete, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
+import { estPremierEcranAnime, estPremierEcranPhoto, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, type AnimationEntete, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
 import { AVEC_COMPOSITION, cssLot2, FONDS_LOT2, FORMES_LOT2, teintesSousTexte } from './heros-organiques';
 import { cssAnimationEntete, htmlAnimationEntete, motsDesSoins } from './entete-anim';
+import { cssVisuelAnime, htmlVisuelAnime } from './heros-anime';
 
 export * from './heros-photo-variantes';
 export { teintesSousTexte, cssLot2 } from './heros-organiques';
 export { cssAnimationEntete, htmlAnimationEntete, motsDesSoins, SCRIPT_ENTETE, DUREE_ENTETE } from './entete-anim';
+export { animationDuHeros, animationsHerosDuSujet, cssVisuelAnime, htmlVisuelAnime, statutAnimationHeros, SCRIPT_VISUEL_ANIME, type StatutAnimationHeros, type TonVisuelAnime } from './heros-anime';
 export { ANIMATIONS_EMPREINTES, CORPS_PARTICULES, SCRIPT_PARTICULES, estAnimationEmpreintes, type AnimationEmpreintes } from './entete-empreintes';
 
 /** Photos montrées au plus par le diaporama (3 à 5 demandées) */
@@ -111,6 +113,11 @@ export type DonneesHeros = {
   animation?: AnimationEntete | null;
   /** Tempo des animations d'en-tête rythmées (marche) : « vif » pour le sport, calme sinon (diabète, seniors) */
   tempo?: 'calme' | 'vif' | null;
+  /**
+   * Visuel principal ANIMÉ (heros-anime.ts, animationDuHeros) : l'animation prend la place de la photo ou de l'illustration,
+   * dans le même cadre et sous le même masque ; aucune autre animation dans l'en-tête. Premiers écrans à visuel seulement.
+   */
+  visuelAnime?: AnimationEntete | null;
 };
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -125,7 +132,7 @@ export function photosMontrees(v: PremierEcranNouveau, photos: readonly PhotoHer
 }
 
 /** La variante peut-elle être rendue avec ces photos ? (sinon : premier écran par défaut du gabarit) */
-export const herosRenduPossible = (v: PremierEcranNouveau, nbPhotos: number) => !estPremierEcranPhoto(v) || nbPhotos > 0;
+export const herosRenduPossible = (v: PremierEcranNouveau, nbPhotos: number, visuelAnime = false) => !estPremierEcranPhoto(v) || nbPhotos > 0 || (visuelAnime && HOTES_VISUEL_ANIME.includes(v));
 
 function img(p: PhotoHeros, i: number, d: DonneesHeros, sizes: string): string {
   const pos = attr('style', p.cadrage && p.cadrage !== '50% 50%' ? `object-position:${p.cadrage}` : undefined);
@@ -136,8 +143,9 @@ function img(p: PhotoHeros, i: number, d: DonneesHeros, sizes: string): string {
 }
 
 /** Cadre des photos (aria-hidden) et commandes du diaporama (points décoratifs, bouton pause accessible) */
-function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: boolean, formes = ''): string {
-  const diapos = photos.map((p, i) => `<div class="hp__diapo" style="--hp-i:${i};--hp-kx:${i % 2 ? -1 : 1}">${img(p, i, d, sizes)}</div>`).join('');
+function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: boolean, formes = '', animHtml = ''): string {
+  // Visuel animé : une seule « diapositive », l'animation (masques et cadrages de la variante appliqués à l'identique)
+  const diapos = animHtml ? `<div class="hp__diapo hp__diapo--anime">${animHtml}</div>` : photos.map((p, i) => `<div class="hp__diapo" style="--hp-i:${i};--hp-kx:${i % 2 ? -1 : 1}">${img(p, i, d, sizes)}</div>`).join('');
   const anime = photos.length > 1;
   const commandes = anime
     ? `<div class="hp__commandes"><span class="hp__points" aria-hidden="true">${photos.map((_, i) => `<span class="hp__point" style="--hp-i:${i}"></span>`).join('')}</span>`
@@ -187,9 +195,13 @@ const DECORS: Partial<Record<PremierEcranNouveau, string>> = {
  * le site ou l'aperçu ; seulement « maille » et « bento » sans photo). Toujours rendu : une variante photo sans photo est remplacée
  * par l'appelant (herosRenduPossible).
  */
-export function htmlHeros(d: DonneesHeros): { avant: string; apres: string; fente: boolean; css: string } {
-  const v = d.variante;
-  const photos = photosMontrees(v, d.photos);
+export function htmlHeros(d0: DonneesHeros): { avant: string; apres: string; fente: boolean; css: string } {
+  const v = d0.variante;
+  // Visuel animé (heros-anime.ts) : seulement dans un premier écran à visuel principal ; il remplace alors toute autre animation
+  const va = d0.visuelAnime && HOTES_VISUEL_ANIME.includes(v) ? d0.visuelAnime : null;
+  const d: DonneesHeros = va ? { ...d0, animation: null } : d0;
+  const vaHtml = va ? htmlVisuelAnime(va, { vif: d.tempo === 'vif' }) : '';
+  const photos = va ? [] : photosMontrees(v, d.photos);
   const anime = estPremierEcranAnime(v) && photos.length > 1;
   const animation = d.animation && d.animation !== 'aucune' ? d.animation : null;
   const lueur = animation && PLACEMENT_ANIMATIONS_ENTETE[animation] === 'fond' ? htmlAnimationEntete(animation) : '';
@@ -197,8 +209,8 @@ export function htmlHeros(d: DonneesHeros): { avant: string; apres: string; fent
   const surPage = (SUR_PAGE as readonly string[]).includes(v);
   const classes = ['hp', `hp--${v}`, surPhoto && 'hp--sur-photo', surPage && 'hp--sur-page', anime && `hp--t-${d.transition}`, anime && d.mode === 'apercu' && !d.pause && 'hp--joue', d.pause && 'hp--pause'].filter(Boolean).join(' ');
   const style = [d.couleurs, `--mot-long:${d.motLong}`, anime ? `--hp-anim:hp-${d.transition}-${photos.length};--hp-anim-pt:hp-pt-${photos.length};--hp-cycle:${photos.length * DUREE_DIAPO}ms;--hp-d:${DUREE_DIAPO}ms;--hp-t:${DUREE_TRANSITION}ms` : ''].filter(Boolean).join(';');
-  const ouverture = `<section class="${classes}" style="${esc(style)}" aria-label="Le cabinet en bref"${anime ? ` data-hp-diapos="${photos.length}"` : ''}${animation ? ' data-ea' : ''}>${lueur}`;
-  const css = keyframesHeros(anime ? d.transition : null, photos.length) + cssLot2(v) + cssAnimationEntete(animation);
+  const ouverture = `<section class="${classes}" style="${esc(style)}" aria-label="Le cabinet en bref"${anime ? ` data-hp-diapos="${photos.length}"` : ''}${animation || va ? ' data-ea' : ''}${va ? ' data-visuel-anime' : ''}>${lueur}`;
+  const css = keyframesHeros(anime ? d.transition : null, photos.length) + cssLot2(v) + cssAnimationEntete(animation) + (va ? cssVisuelAnime(va) : '');
   const texte = (cl = '') => `<div class="hp__texte${cl}">${titre(d)}</div>`;
   if (surPage) {
     // Photo posée sur le fond de la page (fondue, découpée, masquée) : le texte reste sur le fond uni (AA du gabarit)
@@ -206,17 +218,20 @@ export function htmlHeros(d: DonneesHeros): { avant: string; apres: string; fent
     const libre = (PREMIERS_ECRANS_LOT2_LIBRES as readonly string[]).includes(v);
     const visuel = libre
       ? (AVEC_COMPOSITION.includes(v) ? `<div class="hp__media hp__compo" aria-hidden="true">${FORMES_LOT2[v]}</div>` : '')
-      : media(d, photos, TAILLES[v] ?? '100vw', false, FORMES_LOT2[v] ?? '');
+      : media(d, photos, TAILLES[v] ?? '100vw', false, FORMES_LOT2[v] ?? '', vaHtml);
     return { avant: `${ouverture}${DECORS[v] ?? FONDS_LOT2[v] ?? ''}${visuel}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
   }
   if (surPhoto || v === 'scinde-photo') {
     const sizes = v === 'scinde-photo' ? '(min-width: 900px) 50vw, 100vw' : '100vw';
-    return { avant: `${ouverture}${media(d, photos, sizes, surPhoto)}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
+    return { avant: `${ouverture}${media(d, photos, sizes, surPhoto, '', v === 'scinde-photo' ? vaHtml : '')}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
   }
   if (v === 'typographique') {
     return { avant: `${ouverture}<span class="hp__trame" aria-hidden="true"></span><div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
   }
   const visuel = photos[0] ? img(photos[0], 0, d, v === 'maille' ? '(min-width: 900px) 45vw, 100vw' : '(min-width: 900px) 40vw, 100vw') : null;
+  if (v === 'maille' && va) {
+    return { avant: `${ouverture}<div class="hp__cadre hp__grille">${texte()}<div class="hp__forme" aria-hidden="true"><span class="hp__tache"></span><div class="hp__masque hp__masque--anime">${vaHtml}</div></div></div></section>`, apres: '', fente: false, css };
+  }
   if (v === 'maille') {
     const debut = `${ouverture}<div class="hp__cadre hp__grille">${texte()}<div class="hp__forme" aria-hidden="true"><span class="hp__tache"></span><div class="hp__masque${visuel ? ' hp__masque--photo' : ''}">`;
     const fin = '</div></div></div></section>';
@@ -226,7 +241,7 @@ export function htmlHeros(d: DonneesHeros): { avant: string; apres: string; fent
   const sujets = d.sujets.length ? `<div class="hp__carte hp__carte--sujets"><p class="hp__etiquette">Sujets du cabinet</p><ul>${d.sujets.map((s) => `<li><a href="${esc(s.href)}">${esc(s.libelle)}</a></li>`).join('')}</ul></div>` : '';
   const lieu = d.lieu ? `<div class="hp__carte hp__carte--lieu"><p>${esc(d.lieu.ligne)}</p><a href="${esc(d.lieu.href)}">${esc(d.lieu.libelle)}</a></div>` : '';
   // Animation « scène » (empreintes) : en grand dans la carte visuelle, à la place de la photo ou de l'illustration
-  const scene = enScene(d) ? htmlAnimationEntete(animation, [], { scene: true, vif: d.tempo === 'vif' }) : '';
+  const scene = va ? vaHtml : enScene(d) ? htmlAnimationEntete(animation, [], { scene: true, vif: d.tempo === 'vif' }) : '';
   const debut = `${ouverture}<div class="hp__cadre hp__grille">${texte(' hp__carte hp__carte--texte')}<div class="hp__carte hp__carte--visuel${visuel && !scene ? ' hp__carte--photo' : ''}${scene ? ' hp__carte--scene' : ''}" aria-hidden="true">`;
   const fin = `</div>${sujets}${lieu}</div></section>`;
   if (scene) return { avant: `${debut}${scene}${fin}`, apres: '', fente: false, css };
@@ -386,7 +401,8 @@ export const CSS_HEROS = `
 .hp__carte--visuel{overflow:hidden;min-height:240px;padding:0;background:var(--hp-aplat);color:var(--hp-encre);display:grid;place-items:center}
 .hp__carte--visuel > :not(img){width:80%;height:80%}
 .hp__carte--visuel img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.hp .hp__carte--scene{min-height:min(78vw,340px)}.hp .hp__carte--scene > .ea{width:auto;height:auto}
+.hp .hp__carte--scene{min-height:min(78vw,340px)}
+.hp :is(.hp__masque,.hp__carte--visuel,.hp__diapo) > .ea{position:absolute;inset:0;width:auto;height:auto;margin:0}.hp :is(.hp__masque,.hp__diapo) > .ea{border-radius:0}.hp .hp__carte--scene > .ea{width:auto;height:auto}
 .hp__carte--sujets{background:var(--hp-carte);box-shadow:inset 0 0 0 1px var(--hp-ligne)}
 .hp__carte--sujets ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px}
 .hp .hp__carte--sujets a{display:flex;align-items:center;min-height:44px;color:var(--hp-encre);font-weight:650;text-decoration:underline;text-decoration-color:var(--hp-ligne);text-underline-offset:5px}

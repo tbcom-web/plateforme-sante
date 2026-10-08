@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { deriverGeometrie, sourceGeometrie } from './entete-empreintes-derive';
 import { GEO_EMPREINTES } from './entete-empreintes-geo';
 import { ANIMATIONS_EMPREINTES, CORPS_PARTICULES, SCRIPT_PARTICULES, cssEmpreintes, htmlEmpreintes } from './entete-empreintes';
-import { ANIMATIONS_ENTETE, INGREDIENTS_A_VALIDER, LIBELLES_ANIMATIONS_ENTETE, METADONNEES_ANIMATIONS_ENTETE, PLACEMENT_ANIMATIONS_ENTETE } from './heros-photo-variantes';
+import { ANIMATIONS_ENTETE, HOTES_VISUEL_ANIME, INGREDIENTS_A_VALIDER, LIBELLES_ANIMATIONS_ENTETE, METADONNEES_ANIMATIONS_ENTETE, PLACEMENT_ANIMATIONS_ENTETE } from './heros-photo-variantes';
 import { htmlHeros, styleCouleursHeros, type DonneesHeros } from './heros-photo';
 import { modeleIntegre } from './modeles';
 import { ETIQUETTES_HARMONIE, violationsDures } from './harmonie';
@@ -95,8 +95,10 @@ test('harmonie, studio, kits : calme pour le diabète, tuile dans le bento, jama
   // Un seul élément fort : la scène + un premier écran fort est signalée ; avec le bento, non
   assert.ok(violationsDures(avec('organique', 'em-respire'), { sujets: ['sport'] }).some((v) => v.code === 'expressif'));
   assert.ok(!violationsDures(avec('bento', 'em-respire'), { sujets: ['sport'] }).some((v) => v.code === 'expressif'));
-  // Tuile du studio : jouée dans son hôte (bento)
-  assert.equal(compositionPourCle(x, 'composant:entete-anim:em-topographie').sections.variantes.accueil, 'bento');
+  // Tuile du studio : jouée en visuel animé du premier écran (heros-anime.ts), dans un premier écran à visuel
+  const tuile = compositionPourCle(x, 'composant:entete-anim:em-topographie').sections.variantes;
+  assert.equal(tuile['visuel-heros'], 'animation');
+  assert.ok(HOTES_VISUEL_ANIME.includes(tuile.accueil as string), tuile.accueil);
   // Praticien : jamais tirée tant que Paul ne l'a pas validée
   assert.ok(!valeursTirables('entete-anim', 'tableau', false, { praticien: true }).some((v) => v.startsWith('em-')));
   // Kits : rattachable à un sujet (famille « animation »), validée seulement par Paul

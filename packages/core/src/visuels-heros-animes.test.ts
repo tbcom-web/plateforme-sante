@@ -23,3 +23,18 @@ test('visuels animés du premier écran : animations du sujet, état, image fixe
   assert.ok(repereConnu('animation:fige') && repereConnu('animation:illustration'));
   assert.ok(!repereDimension('animation:fige').libelle.includes(':'));
 });
+
+test('option heros : animations qui tiennent en grand (empreintes, abstraites, illustrations validées), image fixe en HTML', () => {
+  const assets = inventaireAssets({ photosJeux: [] });
+  const sujetsDe = (a: (typeof assets)[number]) => sujetsDuVisuel({ cle: a.cle, type: a.type, soins: a.soins }, {}).sujets;
+  const sans = visuelsHerosAnimes('semelles', { assets, sujetsDe });
+  assert.ok(sans.every((v) => v.cle.startsWith('animation:')), 'inchangé sans l’option');
+  const avec = visuelsHerosAnimes('semelles', { assets, sujetsDe, heros: true });
+  const em = avec.find((v) => v.cle === 'composant:entete-anim:em-respire')!;
+  assert.ok(em && em.admissible && em.aValider && em.rendu === 'entete' && em.fixe!.html.includes('ea--em-respire'));
+  // Animation d'illustration sans images de base validées : listée, jamais admissible ni rendue
+  const il = avec.find((v) => v.cle === 'composant:entete-anim:il-semelle')!;
+  assert.ok(il.enAttente && !il.admissible && !il.fixe);
+  // Diabète : jamais les vives
+  assert.ok(!visuelsHerosAnimes('diabete', { assets, sujetsDe, heros: true }).some((v) => /em-petits-pas|em-particules|:taches/.test(v.cle)));
+});

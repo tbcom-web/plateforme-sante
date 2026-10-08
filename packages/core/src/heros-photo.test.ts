@@ -149,7 +149,8 @@ test('lot 2 : teintes posées sous le texte AA (titre, sur-titre, texte doux) po
 test('animations d’en-tête : < 3 Ko (empreintes : < 5 Ko), transform et opacity seulement, image fixe sans lecture, ≤ 5 s', () => {
   const mots = motsDesSoins('Bilan podologique, semelles orthopédiques et soins de pédicurie.');
   assert.deepEqual(mots, ['Bilan podologique', 'semelles orthopédiques', 'soins de pédicurie']);
-  for (const a of ANIMATIONS_ENTETE.filter((x) => x !== 'aucune')) {
+  // il-* : animations d'illustrations, seulement en visuel du héros (heros-anime.test.ts)
+  for (const a of ANIMATIONS_ENTETE.filter((x) => x !== 'aucune' && !x.startsWith('il-'))) {
     // Empreintes en lignes de niveau (entete-empreintes.ts) : < 5 Ko et stroke-dashoffset permis (tracé des contours)
     const em = a.startsWith('em-');
     const html = htmlAnimationEntete(a, mots), css = cssAnimationEntete(a);

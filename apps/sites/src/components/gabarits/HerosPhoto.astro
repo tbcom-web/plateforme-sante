@@ -12,7 +12,7 @@ import { visuelPremierEcran } from '../../lib/vitrine';
 const d = donneesHeros!;
 const { avant, apres, fente, css } = htmlHeros(d);
 // Animation « scène » (empreintes) dans la carte du bento : la photo n'est pas montrée, donc pas préchargée
-const premiere = avant.includes('hp__carte--scene') ? undefined : d.photos[0];
+const premiere = avant.includes('hp__carte--scene') || avant.includes('data-visuel-anime') ? undefined : d.photos[0];
 ---
 {premiere && <link rel="preload" as="image" href={premiere.src} imagesrcset={premiere.srcset} imagesizes={premiere.srcset ? (d.variante === 'scinde-photo' ? '(min-width: 900px) 50vw, 100vw' : d.variante === 'maille' ? '(min-width: 900px) 45vw, 100vw' : d.variante === 'bento' ? '(min-width: 900px) 40vw, 100vw' : '100vw') : undefined} fetchpriority="high" />}
 <Fragment set:html={`<style>${CSS_HEROS}${css}</style>${avant}`} />

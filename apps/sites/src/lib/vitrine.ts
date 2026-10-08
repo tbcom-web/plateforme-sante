@@ -9,7 +9,7 @@
 //   nouvelle ; animation seulement au premier écran du gabarit classique (registre relevé) ;
 // - pas deux fois la même image en haut de l'accueil : le bloc du thème n° 1 prend le second dessin (ou la seconde photo)
 //   de son sujet, le premier écran ayant le principal.
-import { packVisuel, themeParId, themeIllustre, type Animation, type NomDessin, type NomLigne } from '@plateforme/core';
+import { animationDuHeros, packVisuel, themeParId, themeIllustre, type Animation, type NomDessin, type NomLigne } from '@plateforme/core';
 import { site } from './site';
 import { jeu } from './visuels-soins';
 import { modeVisuel } from './visuels';
@@ -81,8 +81,15 @@ export const themeHeros = navigation.principaux.some((t) => t.theme.id === site.
 
 // Accueil : premier écran puis blocs des sujets principaux, sans répéter une photo.
 const montrees = new Set<string>();
-/** Visuel du premier écran : photo d'accueil du praticien d'abord (style « photos »), sinon le visuel du thème n° 1 */
-export const visuelPremierEcran: VisuelTheme = vitrinePhoto && site.photos.accueil
+/** Visuel du premier écran choisi par la recette (dé « Visuel du premier écran ») : auto, photo, illustration, animation */
+const visuelHerosChoisi = (site.modele.variantes as Record<string, string> | undefined)?.['visuel-heros'];
+/**
+ * Animation du visuel du premier écran (heros-anime.ts) : à la place de l'illustration ou de la photo, même cadre ; null sinon.
+ * Site publié : jamais une animation d'illustration dont les images de base ne sont pas validées (statuts inconnus ici).
+ */
+export const animationPremierEcran = animationDuHeros(site.modele.variantes as never, themeHeros);
+/** Visuel du premier écran : photo d'accueil du praticien d'abord (style « photos » ou visuel « photo »), sinon le visuel du thème n° 1 */
+export const visuelPremierEcran: VisuelTheme = (visuelHerosChoisi === 'photo' || (vitrinePhoto && visuelHerosChoisi !== 'illustration')) && site.photos.accueil
   ? (montrees.add(site.photos.accueil), { type: 'photo', src: site.photos.accueil, cadrage: '50% 50%' })
   : visuelTheme(themeHeros, 'principal', montrees);
 /** Visuels des blocs des sujets principaux de l'accueil, dans l'ordre de préférence (le sujet du héros prend son second visuel) */

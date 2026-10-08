@@ -7,7 +7,7 @@
 import { CLASSE_PAUSE } from './AnimationsBudget';
 import { useEffect, useRef, useState } from 'react';
 import {
-  CORPS_PARTICULES, CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
+  animationDuHeros, CORPS_PARTICULES, CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
   TRANSITIONS_DIAPORAMA, illustrationTheme, themeIllustre, type Registre, type ModeleManifeste, type ReplisApercu, type SiteDraft, type TransitionDiaporama,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -38,7 +38,7 @@ const tempoApercu = (sujets: string[]) => (sujets.includes('sport') && !sujets.s
 /** Le premier écran de la recette est-il l'un des nouveaux, rendable (photos) ? Sinon : premier écran du gabarit ou du modèle */
 export function herosPhotoActif(d: SiteDraft, m: ModeleManifeste): boolean {
   const v = m.variantes?.accueil;
-  return estPremierEcranNouveau(v) && herosRenduPossible(v, photosApercu(d).length);
+  return estPremierEcranNouveau(v) && herosRenduPossible(v, photosApercu(d).length, (m.variantes as Record<string, string> | undefined)?.['visuel-heros'] === 'animation');
 }
 
 /** Le nouveau premier écran de la recette, ou null (premier écran du gabarit ou du modèle) */
@@ -46,7 +46,12 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
   const [pause, setPause] = useState(false);
   const boite = useRef<HTMLDivElement>(null);
   const brute = m.variantes?.['entete-anim'];
-  const animation = estAnimationEntete(brute) && brute !== 'aucune' ? brute : null;
+  const animationBrute = estAnimationEntete(brute) && brute !== 'aucune' ? brute : null;
+  // Visuel animé du premier écran (heros-anime.ts) : remplace la photo ou l'illustration ; dans l'aperçu de Paul, les « à valider »
+  // sont montrées, jamais une animation d'illustration dont les images de base attendent leur validation
+  const sujetHeros = (() => { const nav = construireNavigation(d, soins).principaux.map((x) => x.theme.id as string); return d.theme.herosSujet && nav.includes(d.theme.herosSujet) ? d.theme.herosSujet : nav[0]; })();
+  const visuelAnime = animationDuHeros(m.variantes as never, sujetHeros);
+  const animation = visuelAnime ?? animationBrute;
   // Animation d'en-tête : rejouée en boucle dans l'aperçu (le site la joue à l'affichage, au retour à l'écran et au survol) ;
   // lueur : suit le pointeur
   useEffect(() => {
@@ -66,7 +71,7 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
   const v = m.variantes?.accueil;
   if (!estPremierEcranNouveau(v)) return null;
   const photos = photosApercu(d);
-  if (!herosRenduPossible(v, photos.length)) return null;
+  if (!herosRenduPossible(v, photos.length, Boolean(visuelAnime))) return null;
   const t = m.variantes?.transition;
   const transition: TransitionDiaporama = (TRANSITIONS_DIAPORAMA as readonly string[]).includes(t as string) ? (t as TransitionDiaporama) : 'fondu';
   const metier = d.pays === 'FR' ? 'pédicurie-podologie' : 'podologie';
@@ -95,7 +100,8 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     motLong: motLongTitre(`Cabinet de ${metier} ${r.aVille ?? ''}`),
     mode: 'apercu',
     pause,
-    animation,
+    animation: animationBrute,
+    visuelAnime,
     tempo: tempoApercu(construireNavigation(d, soins).principaux.map((x) => x.theme.id as string)),
   });
   // Illustration de l'emplacement : celle du site (VisuelTheme : illustration composée du sujet du héros, gamme du site sauf

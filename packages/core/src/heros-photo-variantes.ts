@@ -134,6 +134,9 @@ export const ANIMATIONS_ENTETE = [
   // Famille « empreintes en lignes de niveau » (entete-empreintes.ts, retour de Paul du 2026-10-08 : « j'adore le style des
   // empreintes comme ça ») : contour de la semelle et courbes de niveau du relief, géométries validées, rien de redessiné
   'em-respire', 'em-trace', 'em-deroule', 'em-marche', 'em-petits-pas', 'em-sensibilite', 'em-particules', 'em-topographie', 'em-defilement', 'em-encre',
+  // Animations d'ILLUSTRATIONS existantes (animations-lecture.ts : mêmes tracés que l'illustration du sujet), en visuel du héros
+  // seulement, et seulement quand leurs images de base sont validées (animations-sources.ts, règle de Paul du 2026-10-07)
+  'il-semelle', 'il-trajectoire', 'il-premiers-pas',
 ] as const;
 export type AnimationEntete = (typeof ANIMATIONS_ENTETE)[number];
 export const estAnimationEntete = (v: unknown): v is AnimationEntete => (ANIMATIONS_ENTETE as readonly unknown[]).includes(v);
@@ -159,6 +162,9 @@ export const LIBELLES_ANIMATIONS_ENTETE: Record<AnimationEntete, string> = {
   'em-topographie': 'Empreintes : lignes de niveau en carte de relief (à valider)',
   'em-defilement': 'Empreintes : zones qui s’allument au défilement (à valider)',
   'em-encre': 'Empreintes à l’encre sur fond clair (à valider)',
+  'il-semelle': 'Semelle : courbes de relief qui se dessinent (à valider)',
+  'il-trajectoire': 'Équilibre : centre de pression qui se déplace (à valider)',
+  'il-premiers-pas': 'Premiers pas de l’enfant (à valider)',
 };
 /**
  * Emplacement : bande au-dessus du titre, emblème à côté du titre, fond du premier écran ; « scene » (empreintes) : en grand dans
@@ -169,6 +175,7 @@ export const PLACEMENT_ANIMATIONS_ENTETE: Record<Exclude<AnimationEntete, 'aucun
   rubans: 'bande', geometrie: 'embleme', lueur: 'fond',
   'em-respire': 'scene', 'em-trace': 'scene', 'em-deroule': 'scene', 'em-marche': 'scene', 'em-petits-pas': 'scene', 'em-sensibilite': 'scene',
   'em-particules': 'scene', 'em-topographie': 'scene', 'em-defilement': 'scene', 'em-encre': 'scene',
+  'il-semelle': 'scene', 'il-trajectoire': 'scene', 'il-premiers-pas': 'scene',
 };
 /** Premiers écrans qui posent une animation « scène » en grand (carte visuelle) ; ailleurs elle passe en emblème */
 export const HOTES_SCENE_ENTETE: readonly string[] = ['bento'];
@@ -195,6 +202,35 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
   'em-topographie': { famille: 'organique', energie: 0.5, rondeur: 0.85, expressif: true },
   'em-defilement': { famille: 'sobre', energie: 0.3, rondeur: 0.7, expressif: true },
   'em-encre': { famille: 'fondu', energie: 0.3, rondeur: 0.7, expressif: true },
+  'il-semelle': { famille: 'sobre', energie: 0.4, rondeur: 0.6, expressif: true },
+  'il-trajectoire': { famille: 'sobre', energie: 0.45, rondeur: 0.5, expressif: true },
+  'il-premiers-pas': { famille: 'organique', energie: 0.5, rondeur: 0.8, expressif: true },
+};
+
+/**
+ * Animations qui tiennent EN GRAND, à la place de l'illustration ou de la photo du premier écran (visuel-heros = animation) :
+ * empreintes en lignes de niveau, formes abstraites qui s'adaptent à leur cadre (taches, onde, formes géométriques) et animations
+ * d'illustrations existantes (il-*). Les autres (bandes, emblèmes, lueur) restent des animations d'en-tête.
+ */
+export const ANIMATIONS_HEROS: readonly AnimationEntete[] = ANIMATIONS_ENTETE.filter((a) => a.startsWith('em-') || a.startsWith('il-') || a === 'taches' || a === 'onde' || a === 'geometrie');
+export const estAnimationHeros = (a: unknown): a is AnimationEntete => (ANIMATIONS_HEROS as readonly unknown[]).includes(a);
+/** Animations d'illustration et leur animation source (animations-sources.ts : images de base à valider d'abord) */
+export const SOURCE_ANIMATION_HEROS: Partial<Record<AnimationEntete, 'semelle' | 'trajectoire' | 'premiers-pas'>> = {
+  'il-semelle': 'semelle', 'il-trajectoire': 'trajectoire', 'il-premiers-pas': 'premiers-pas',
+};
+
+/**
+ * Premiers écrans dont le visuel principal (illustration ou photo) peut être une animation (même cadre, même masque) : gabarits
+ * tableau, village, revue (carte, notice, figure) et nouveaux premiers écrans à visuel ; jamais les photos plein écran, le
+ * typographique ni les compositions de formes du lot 2.
+ */
+export const HOTES_VISUEL_ANIME: readonly string[] = ['carte', 'notice', 'figure', 'bento', 'maille', 'scinde-photo', 'fondu', 'fondu-double', 'oblique', 'parallelogramme', 'organique', 'organique-fondu', 'decoupe-photo', 'duo-taches', 'arche-photo', 'voute-photo'];
+
+/** Visuel principal du premier écran : auto (photo si le style est « Photos », sinon illustration), photo, illustration, animation */
+export const VISUELS_HEROS = ['auto', 'photo', 'illustration', 'animation'] as const;
+export type VisuelHeros = (typeof VISUELS_HEROS)[number];
+export const LIBELLES_VISUELS_HEROS: Record<VisuelHeros, string> = {
+  auto: 'Selon le style (photo ou illustration)', photo: 'Photo', illustration: 'Illustration', animation: 'Animation (à valider)',
 };
 
 /**
@@ -208,6 +244,7 @@ export const INGREDIENTS_A_VALIDER: ReadonlySet<string> = new Set([
   ...PORTRAITS_A_VALIDER,
   ...PREMIERS_ECRANS_LOT2.map((v) => `composant:accueil:${v}`),
   ...ANIMATIONS_ENTETE.filter((a) => a !== 'aucune').map((a) => `composant:entete-anim:${a}`),
+  'composant:visuel-heros:animation',
 ]);
 export const estAValider = (cle: string, valides?: ReadonlySet<string> | null) => INGREDIENTS_A_VALIDER.has(cle) && !valides?.has(cle);
 

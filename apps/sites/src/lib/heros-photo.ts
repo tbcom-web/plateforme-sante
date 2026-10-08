@@ -5,7 +5,7 @@ import { estAnimationEntete, gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcra
 import { site } from './site';
 import { jeu } from './visuels-soins';
 import { photoResponsive } from './visuels';
-import { vitrinePhoto, visuelPremierEcran } from './vitrine';
+import { vitrinePhoto, visuelPremierEcran, animationPremierEcran } from './vitrine';
 import { navigation } from './navigation';
 import { nomLieu } from './gabarits';
 import { noms, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche, aLaVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from './textes';
@@ -26,7 +26,7 @@ const vues = new Set<string>();
 const photos: PhotoHeros[] = sources.filter((p) => p.src && !vues.has(p.src) && vues.add(p.src)).map((p) => ({ src: p.src, cadrage: p.cadrage, srcset: photoResponsive(p.src, '100vw').srcset }));
 
 /** Variante rendue : le nouveau premier écran s'il a de quoi s'afficher (photos), sinon null (repli du gabarit) */
-export const varianteHeros = demande && herosRenduPossible(demande, photos.length) ? demande : null;
+export const varianteHeros = demande && herosRenduPossible(demande, photos.length, Boolean(animationPremierEcran)) ? demande : null;
 
 const transitionBrute = site.modele.variantes?.transition;
 const transition: TransitionDiaporama = (TRANSITIONS_DIAPORAMA as readonly string[]).includes(transitionBrute as string) ? (transitionBrute as TransitionDiaporama) : 'fondu';
@@ -67,6 +67,8 @@ export const donneesHeros: DonneesHeros | null = varianteHeros ? {
   mode: 'site',
   animation,
   tempo,
+  // Visuel animé du premier écran (heros-anime.ts) : à la place de la photo ou de l'illustration, même cadre
+  visuelAnime: animationPremierEcran,
 } : null;
 
 /** Variante du premier écran des gabarits tableau, village, revue quand le nouveau premier écran n'est pas rendu (pas de photo) */

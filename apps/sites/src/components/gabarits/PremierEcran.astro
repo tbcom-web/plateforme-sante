@@ -16,7 +16,7 @@ import VisuelTheme from '../accueil/VisuelTheme.astro';
 import { site } from '../../lib/site';
 import { noms, titreMetierPluriel, telLien, lienRdv, rdvEnLigne, viaPlateforme, lieu, localisation, titreMetierAffiche, aLaVille, aTelephone, aAdresse, adresseLieu, lienContact, libelleContact } from '../../lib/textes';
 import { nomLieu } from '../../lib/gabarits';
-import { visuelPremierEcran } from '../../lib/vitrine';
+import { visuelPremierEcran, animationPremierEcran } from '../../lib/vitrine';
 import { registre as registreSite } from '../../lib/visuels';
 
 interface Props { variante: 'carte' | 'notice' | 'figure' }
@@ -45,7 +45,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
     <p class="pe__sur">{sur}</p>
     <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
     <figure class="pe__visuel">
-      <VisuelTheme visuel={visuel} prioritaire sizes="(min-width: 900px) 45vw, 100vw" />
+      <VisuelTheme visuel={visuel} animationHeros={animationPremierEcran} prioritaire sizes="(min-width: 900px) 45vw, 100vw" />
     </figure>
     <div class="pe__suite">
       <p class="pe__qui">{quiOu}</p>
@@ -61,7 +61,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   <section class="g-cadre pe pe--carte" aria-label="Le cabinet en bref"><div class="pe__grille">
     <p class="pe__sur">{sur}</p>
     <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-    <div class:list={['pe__visuel', { 'pe__visuel--clair': disqueClair }]} data-fond={disqueClair ? undefined : 'sombre'}><span class:list={['pe__disque', { 'surface-plan': !disqueClair }]} aria-hidden="true"></span><VisuelTheme visuel={visuel} registre={registreCarte} seul prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></div>
+    <div class:list={['pe__visuel', { 'pe__visuel--clair': disqueClair }]} data-fond={disqueClair ? undefined : 'sombre'}><span class:list={['pe__disque', { 'surface-plan': !disqueClair }]} aria-hidden="true"></span><VisuelTheme visuel={visuel} registre={registreCarte} animationHeros={animationPremierEcran} nu seul prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></div>
     <div class="pe__suite">
       <p class="pe__qui">{quiOu}</p>
       {soinsPhrase && <p class="pe__soins">{soinsPhrase}</p>}
@@ -76,7 +76,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
   <section class="pe pe--notice" aria-label="Le cabinet en bref"><div class="g-cadre pe__grille">
     <p class="pe__sur">{sur}</p>
     <h1>Cabinet de {specialite}{' '}{aLaVille && <span class="pale">{aLaVille}</span>}</h1>
-    <div class="pe__visuel"><VisuelTheme visuel={visuel} format="paysage" prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></div>
+    <div class="pe__visuel"><VisuelTheme visuel={visuel} animationHeros={animationPremierEcran} format="paysage" prioritaire sizes="(min-width: 900px) 40vw, 100vw" /></div>
     <div class="pe__suite">
       <ul class="pe__lignes">
         <li><strong>{qui}</strong></li>

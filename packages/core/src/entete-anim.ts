@@ -17,7 +17,9 @@ import { PLACEMENT_ANIMATIONS_ENTETE, type AnimationEntete } from './heros-photo
 import { cssEmpreintes, estEmpreintes, htmlEmpreintes, type AnimationEmpreintes } from './entete-empreintes';
 
 /** Animations de ce fichier (la famille « empreintes en lignes de niveau » est dans entete-empreintes.ts) */
-type AnimationSimple = Exclude<AnimationEntete, 'aucune' | AnimationEmpreintes>;
+type AnimationSimple = Exclude<AnimationEntete, 'aucune' | AnimationEmpreintes | `il-${string}`>;
+/** Animations d'illustrations (il-*) : seulement en visuel du héros (heros-anime.ts), jamais en emblème ni en bande */
+const estIllustration = (a: AnimationEntete): a is Extract<AnimationEntete, `il-${string}`> => a.startsWith('il-');
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 /** Durée d'une lecture (≤ 5 s, WCAG 2.2.2) */
@@ -114,6 +116,7 @@ const COMMUN = `.ea{--ea-1:var(--hp-accent-texte);--ea-2:var(--hp-vif);--ea-3:va
 export function htmlAnimationEntete(a: AnimationEntete | null | undefined, mots: readonly string[] = [], o: { scene?: boolean; vif?: boolean } = {}): string {
   if (!a || a === 'aucune') return '';
   if (estEmpreintes(a)) return htmlEmpreintes(a, { placement: o.scene ? 'scene' : 'embleme', vif: o.vif });
+  if (estIllustration(a)) return '';
   const p = PLACEMENT_ANIMATIONS_ENTETE[a];
   if (a === 'mots' && !mots.length) return '';
   return `<span class="ea ea--${p} ea--${a}" aria-hidden="true">${corps(a, mots)}</span>`;
@@ -123,6 +126,7 @@ export function htmlAnimationEntete(a: AnimationEntete | null | undefined, mots:
 export function cssAnimationEntete(a: AnimationEntete | null | undefined): string {
   if (!a || a === 'aucune') return '';
   if (estEmpreintes(a)) return cssEmpreintes(a);
+  if (estIllustration(a)) return '';
   return (COMMUN + CSS[a]).replace(/\n\s*/g, '');
 }
 

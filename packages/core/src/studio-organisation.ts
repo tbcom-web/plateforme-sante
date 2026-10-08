@@ -47,6 +47,7 @@ export const REGLES_GROUPES: readonly { prefixe: string; groupe: GroupeStudio }[
   { prefixe: 'composant:sections', groupe: 'premier-ecran' },
   { prefixe: 'composant:entete', groupe: 'premier-ecran' },
   { prefixe: 'composant:heros', groupe: 'premier-ecran' },
+  { prefixe: 'composant:visuel-heros', groupe: 'premier-ecran' },
   { prefixe: 'entete', groupe: 'premier-ecran' },
   { prefixe: 'effets', groupe: 'details' },
   { prefixe: 'details', groupe: 'details' },

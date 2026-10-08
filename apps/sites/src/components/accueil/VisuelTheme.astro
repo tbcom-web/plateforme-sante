@@ -10,7 +10,7 @@ import Animation from '../animations/Animation.astro';
 import { photoResponsive, registre as registreSite } from '../../lib/visuels';
 import { site } from '../../lib/site';
 import type { VisuelTheme } from '../../lib/vitrine';
-import { illustrationTheme, type FormatHeros, type Registre } from '@plateforme/core';
+import { illustrationTheme, htmlVisuelAnime, cssVisuelAnime, styleCouleursHeros, SCRIPT_VISUEL_ANIME, SCRIPT_PARTICULES, type AnimationEntete, type FormatHeros, type Registre } from '@plateforme/core';
 
 interface Props {
   visuel: VisuelTheme;
@@ -27,8 +27,18 @@ interface Props {
   /** Une seule grande illustration (le dessin principal du sujet), jamais l'assemblage du héros : cadres ronds ou petits
    *  (retour de l'atelier du 2026-10-07 : « une seule illustration dans le rond ») */
   seul?: boolean;
+  /**
+   * Visuel ANIMÉ du premier écran (heros-anime.ts, lib/vitrine.ts : animationPremierEcran) : l'animation à la place de
+   * l'illustration ou de la photo, dans ce même cadre (place réservée, aucun décalage) ; image fixe sans script ou en réduction
+   * des animations ; `nu` : sans panneau (posée sur le disque de la carte).
+   */
+  animationHeros?: AnimationEntete | null;
+  nu?: boolean;
 }
-const { visuel, prioritaire = false, animer = false, registre = registreSite, format = 'portrait', sizes = '100vw', class: classe, seul = false } = Astro.props;
+const { visuel, prioritaire = false, animer = false, registre = registreSite, format = 'portrait', sizes = '100vw', class: classe, seul = false, animationHeros = null, nu = false } = Astro.props;
+// Visuel animé : panneau sombre de la gamme en relevé, clair « encre » sinon ; couleurs --hp-* du premier écran (heros-photo.ts)
+const anime = animationHeros ? htmlVisuelAnime(animationHeros, { ton: registre === 'releve' ? 'sombre' : 'clair', nu }) : '';
+const styleAnime = animationHeros ? styleCouleursHeros(site.modele, site.theme) : '';
 const animation = visuel.type === 'dessin' && animer && registre === 'releve' ? visuel.animation : null;
 // Illustration héros du thème : gamme du site (sans gamme, couleur libre : les variables de la page s'appliquent). Modèle à
 // teinte « gamme » en relevé : toujours les variables de la page (plan, signal et pression dérivés de la gamme, teinteSombre),
@@ -38,6 +48,11 @@ const heros = visuel.type === 'dessin' && visuel.heros && !animation && !seul
   ? illustrationTheme(visuel.heros, { format, registre, gamme: gammeHeros, id: `h-${visuel.heros}-${format[0]}-${registre[0]}` })
   : '';
 ---
+{anime ? (
+  <div class:list={['vt', 'vt--visuel-anime', 'ha', classe]} data-ea style={styleAnime} aria-hidden="true">
+    <Fragment set:html={`<style>${cssVisuelAnime(animationHeros!)}</style>${anime}`} />
+  </div>
+) : (
 <div class:list={['vt', `vt--${heros ? 'heros' : visuel.type}`, animation ? 'vt--anime' : '', classe]} aria-hidden="true">
   {visuel.type === 'photo' ? (
     <img src={visuel.src} {...photoResponsive(visuel.src, sizes)} alt="" width="1600" height="1067" style={`object-position:${visuel.cadrage}`} loading={prioritaire ? 'eager' : 'lazy'} fetchpriority={prioritaire ? 'high' : 'auto'} decoding={prioritaire ? 'sync' : 'async'} />
@@ -51,6 +66,9 @@ const heros = visuel.type === 'dessin' && visuel.heros && !animation && !seul
     <Dessin nom={visuel.dessin} registre={registre} />
   )}
 </div>
+)}
+{anime && animationHeros === 'em-particules' && <script is:inline set:html={SCRIPT_PARTICULES} />}
+{anime && <script is:inline set:html={SCRIPT_VISUEL_ANIME} />}
 
 <style>
   .vt { position: relative; display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; isolation: isolate; }

@@ -22,7 +22,7 @@ import type { SurchargesSujets, TypeAsset } from './assets-poids';
 import type { StatutIllustration } from './illustrations';
 import { DESSINS_PODOLOGIE } from './univers';
 import { ANIMATIONS } from './packs';
-import { INGREDIENTS_A_VALIDER } from './heros-photo-variantes';
+import { INGREDIENTS_A_VALIDER, estAnimationHeros } from './heros-photo-variantes';
 
 export const FAMILLES_KIT = ['photo', 'illustration', 'icone', 'animation'] as const;
 export type FamilleKit = (typeof FAMILLES_KIT)[number];
@@ -262,13 +262,16 @@ export function suggestionsVisuels(kit: KitVisuel, emplacement: string, famille:
 }
 
 /** Forme compacte du kit illustré pour les rendus (registre contexte-images.ts) : dessin par soin, animation d'en-tête */
-export function kitVisuelCompact(k: KitVisuel): { registre?: string; dessins?: Record<string, string>; animation?: string; heros?: string } {
+export function kitVisuelCompact(k: KitVisuel): { registre?: string; dessins?: Record<string, string>; animation?: string; heros?: string; animationHeros?: string } {
   const dessins: Record<string, string> = {};
   for (const e of k.illustrations) if (e.emplacement.startsWith('soin:') && e.cle.startsWith('dessin:') && (DESSINS_PODOLOGIE as readonly string[]).includes(e.cle.split(':')[1])) dessins[e.emplacement.slice(5)] = e.cle.split(':')[1];
   const anim = k.animations.find((a) => a.emplacement === 'entete' && (ANIMATIONS as readonly string[]).includes(a.cle.slice('animation:'.length)));
+  const animHeros = k.animations.find((a) => a.emplacement === 'entete' && estAnimationHeros(a.cle.slice('composant:entete-anim:'.length)) && a.cle.startsWith('composant:entete-anim:'));
   return {
     ...(k.registre ? { registre: k.registre } : {}), ...(Object.keys(dessins).length ? { dessins } : {}),
     ...(anim ? { animation: anim.cle.slice('animation:'.length) } : {}), ...(k.heros ? { heros: k.heros.cle } : {}),
+    // Animation de héros du sujet (heros-anime.ts, animationDuHeros(…, { kit })) : une animation d'en-tête qui tient en grand
+    ...(animHeros ? { animationHeros: animHeros.cle.slice('composant:entete-anim:'.length) } : {}),
   };
 }
 

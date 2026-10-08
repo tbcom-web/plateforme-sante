@@ -184,7 +184,7 @@ s.querySelectorAll('.ea__p').forEach(function(y){var m=y.getScreenCTM();for(var 
 r=1;t0=lt=w.performance.now();w.requestAnimationFrame(f)}else if(!j&&r){r=0;x.clearRect(0,0,c.width,c.height)}}
 new w.MutationObserver(g).observe(h,{attributes:!0,attributeFilter:['class']});g()`.replace(/\n/g, '');
 /** Script du site (en ligne, après le premier écran) */
-export const SCRIPT_PARTICULES = `(function(){var h=document.querySelector('.hp[data-ea]');if(!h)return;${CORPS_PARTICULES}})()`;
+export const SCRIPT_PARTICULES = `(function(){var e=document.querySelector('.ea--em-particules'),h=e&&e.closest('[data-ea]');if(!h)return;${CORPS_PARTICULES}})()`;
 
 /** Animation d'en-tête de la famille (garde de type pour entete-anim.ts) */
 export const estEmpreintes = (a: AnimationEntete | null | undefined): a is AnimationEmpreintes => estAnimationEmpreintes(a);

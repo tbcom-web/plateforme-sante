@@ -68,6 +68,7 @@ const FAMILLES: Record<string, { nom: string; zones: string[]; page?: boolean }>
   accueil: { nom: 'le premier écran', zones: ['premier-ecran'] },
   transition: { nom: 'la transition du diaporama', zones: ['premier-ecran'] },
   'entete-anim': { nom: 'l’animation d’en-tête', zones: ['premier-ecran'] },
+  'visuel-heros': { nom: 'le visuel du premier écran', zones: ['premier-ecran'] },
   sections: { nom: 'les transitions entre sections', zones: ['sections'] },
   soins: { nom: 'la présentation des soins', zones: ['bloc:competences'] },
   'soins-forme': { nom: 'la forme des cartes de soins', zones: ['cartes-soins'] },

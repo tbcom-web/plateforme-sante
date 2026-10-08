@@ -27,6 +27,7 @@ import { PAIRES_POLICES, VARIANTES_SECTIONS } from './modeles';
 import { JEUX_EFFETS } from './effets';
 import { FORMES_CARTES } from './formes';
 import { PRESENTATIONS_PORTRAITS } from './portraits-variantes';
+import { ANIMATIONS_HEROS, HOTES_VISUEL_ANIME } from './heros-photo-variantes';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Profils et familles
@@ -162,7 +163,7 @@ export const NOMS_DIMENSIONS_HARMONIE: Record<string, string> = {
   'typo.alignement': 'Alignement', 'typo.surtitre': 'Surtitres', 'details.jeu': 'Jeu de détails', 'details.coins': 'Coins', 'details.ombres': 'Ombres',
   'details.separateur': 'Séparateurs', 'details.souligne': 'Soulignés', 'details.fond': 'Motif de fond', 'details.boutons': 'Boutons', 'details.densite': 'Densité',
   'details.cadre': 'Cadres d’images', 'details.citation': 'Encadrés', 'details.badge': 'Étiquettes', 'menu.ordinateur': 'Menu (ordinateur)', 'menu.mobile': 'Menu (téléphone)',
-  'menu.rdv': 'Bouton de rendez-vous', 'v.accueil': 'Premier écran', 'v.transition': 'Transition du diaporama', 'v.entete-anim': 'Animation d’en-tête', 'v.sections': 'Transitions entre sections',
+  'menu.rdv': 'Bouton de rendez-vous', 'v.accueil': 'Premier écran', 'v.transition': 'Transition du diaporama', 'v.entete-anim': 'Animation d’en-tête', 'v.visuel-heros': 'Visuel du premier écran', 'v.sections': 'Transitions entre sections',
   'v.soins-forme': 'Forme des cartes', 'v.sujets': 'Sujets', 'v.soins': 'Soins', 'v.praticiens': 'Équipe', 'v.portraits': 'Présentation des praticiens', 'v.infos': 'Plan d’accès', 'v.faq': 'Questions',
   'v.galerie': 'Galerie', 'v.horaires': 'Horaires', 'v.contact': 'Contact', 'v.pied': 'Pied de page', 'v.fiche': 'Fiche d’un soin', 'v.actualites': 'Actualités',
   'v.theme': 'Page sujet', 'v.article': 'Article',
@@ -229,7 +230,7 @@ export function verrousDimension(dim: DimensionHarmonie): string[] {
 }
 /** Pages du studio et leurs sections (PAGES_STRUCTURE de recettes.ts) */
 const PAGES_H: Record<string, readonly string[]> = {
-  accueil: ['accueil', 'sujets', 'entete-anim'], soins: ['soins', 'soins-forme'], acces: ['infos', 'horaires', 'contact'], cabinet: ['praticiens', 'galerie'],
+  accueil: ['accueil', 'sujets', 'entete-anim', 'visuel-heros'], soins: ['soins', 'soins-forme'], acces: ['infos', 'horaires', 'contact'], cabinet: ['praticiens', 'galerie'],
   questions: ['faq'], fiche: ['fiche'], actualites: ['actualites'], theme: ['theme'], article: ['article'],
 };
 export const estVerrouilleeHarmonie = (dim: DimensionHarmonie, verrous: readonly string[]) => verrousDimension(dim).some((v) => verrous.includes(v));
@@ -483,6 +484,15 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.entete-anim:em-particules': E('Empreintes : particules', { e: 0.8, c: 0.6, f: -0.2 }, { pref: [F.te, F.ma, F.po], jamais: [F.cl, F.dx, F.na], fort: 0.8 }),
   'v.entete-anim:em-topographie': E('Empreintes : carte de relief', { e: 0.5, r: 0.7, c: 0.4 }, { pref: [F.te, F.po, F.na], jamais: [F.ed], fort: 0.8 }),
   'v.entete-anim:em-defilement': E('Empreintes : zones au défilement', { e: 0.3, c: 0.4, f: 0.2 }, { pref: [F.te, F.mi, F.ed, F.cl], fort: 0.7 }),
+  // Animations d'illustrations existantes, en visuel du héros seulement (heros-anime.ts) : mêmes tracés que l'illustration
+  'v.entete-anim:il-semelle': E('Semelle : relief qui se dessine', { e: 0.35, c: 0.4, f: 0.3 }, { pref: [F.te, F.mi, F.cl, F.ed], fort: 0.7 }),
+  'v.entete-anim:il-trajectoire': E('Équilibre : centre de pression', { e: 0.45, c: 0.4 }, { pref: [F.te, F.mi, F.ma], fort: 0.7 }),
+  'v.entete-anim:il-premiers-pas': E('Premiers pas de l’enfant', { e: 0.5, r: 0.7, t: 0.3 }, { pref: [F.dx, F.na, F.po, F.te], fort: 0.7 }),
+  // Visuel principal du premier écran (heros-anime.ts) : l'animation compte par sa propre étiquette (v.entete-anim)
+  'v.visuel-heros:auto': E('Visuel selon le style', {}),
+  'v.visuel-heros:photo': E('Photo en visuel', { t: 0.2 }, { pref: [F.na, F.ed, F.ma] }),
+  'v.visuel-heros:illustration': E('Illustration en visuel', { f: 0.1 }, { pref: [F.te, F.mi, F.dx, F.cl] }),
+  'v.visuel-heros:animation': E('Animation en visuel', { e: 0.4 }, { pref: [F.te, F.mi, F.ma, F.po] }),
   'v.entete-anim:em-encre': E('Empreintes à l’encre, fond clair', { e: 0.3, f: 0.4, t: 0.2, c: -0.2 }, { pref: [F.ed, F.cl, F.na, F.mi], jamais: [F.po], fort: 0.7 }),
   'v.transition:fondu': E('Fondu enchaîné', {}),
   'v.transition:ken-burns': E('Ken Burns', { e: 0.4, f: 0.2 }, { pref: [F.ed, F.na] }),
@@ -682,7 +692,7 @@ const ANIMATIONS_PULSEES = ['points-pression', 'onde', 'em-respire', 'em-marche'
 /** Valeur neutre (sans règle) d'une dimension, utilisée pour corriger */
 const NEUTRES: Record<string, string> = {
   'details.coins': 'gabarit', 'v.soins-forme': 'gabarit', 'details.cadre': 'aucun', 'details.fond': 'aucun', 'details.separateur': 'filet', 'details.souligne': 'aucun',
-  'v.sections': 'aucune', 'v.entete-anim': 'aucune', 'v.portraits': 'sobre', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
+  'v.sections': 'aucune', 'v.entete-anim': 'aucune', 'v.visuel-heros': 'auto', 'v.portraits': 'sobre', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
   'details.densite': 'aeree', effets: 'sobre', 'v.accueil': 'carte', 'details.badge': 'gabarit', 'menu.ordinateur': 'gabarit', 'typo.surtitre': 'simple',
 };
 /** Classe de rayon (0 carré, 1 arrondi, 2 très arrondi) des éléments qui portent des angles */
@@ -758,6 +768,16 @@ export function violationsDures(x: CompositionHarmonie, c?: ContexteHarmonie | n
   }
   if (anim && ANIMATIONS_PULSEES.includes(anim) && x.visuels.style === 'pedagogique') {
     v.push({ code: 'pulse-pedagogique', message: `« ${nomValeurHarmonie('v.entete-anim', anim)} » avec les illustrations douces : en registre pédagogique, rien ne pulse.`, dims: ['v.entete-anim'], corrections: [{ dim: 'v.entete-anim', valeur: 'voute-trace' }, { dim: 'v.entete-anim', valeur: 'aucune' }] });
+  }
+  // 6 ter. Visuel animé du premier écran (heros-anime.ts) : un premier écran à visuel principal, et pas d'emblème en plus
+  if (val(x, 'v.visuel-heros') === 'animation') {
+    if (anim && anim !== 'aucune' && !(ANIMATIONS_HEROS as readonly string[]).includes(anim)) {
+      v.push({ code: 'embleme-en-plus', message: `Visuel animé et « ${nomValeurHarmonie('v.entete-anim', anim)} » en plus : une seule animation dans le premier écran.`, dims: ['v.entete-anim'], corrections: [{ dim: 'v.entete-anim', valeur: 'aucune' }] });
+    }
+    const acc = val(x, 'v.accueil');
+    if (acc && !HOTES_VISUEL_ANIME.includes(acc)) {
+      v.push({ code: 'visuel-anime-hote', message: `« ${nomValeurHarmonie('v.accueil', acc)} » n'a pas de visuel principal à animer.`, dims: ['v.visuel-heros', 'v.accueil'], corrections: [{ dim: 'v.visuel-heros', valeur: 'auto' }, { dim: 'v.accueil', valeur: 'bento' }] });
+    }
   }
   // 7. Deux familles de polices au plus (titres + texte ; la mono des données du registre relevé est la signature de la marque)
   if (!p && !PAIRES_POLICES.some((q) => q.id === x.police)) {
