@@ -45,7 +45,38 @@
           "soins-forme": "organiques"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "note": 4,
     "etiquettes": [],
@@ -87,7 +118,38 @@
           "soins-forme": "gabarit"
         }
       },
-      "effets": "vivant"
+      "effets": "vivant",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "note": 4,
     "etiquettes": [],
@@ -134,7 +196,38 @@
           "soins-forme": "sans-cadre"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "note": null,
     "etiquettes": [],
@@ -187,7 +280,38 @@
           "soins-forme": "carres"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "note": 4,
     "etiquettes": [],
@@ -223,7 +347,38 @@
           "soins-forme": "carres"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "note": 4,
     "etiquettes": [],
@@ -276,7 +431,38 @@
           "soins-forme": "organiques"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "note": null,
     "etiquettes": [],
@@ -312,9 +498,491 @@
           "soins-forme": "pilules"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "note": 4,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "72d0c0d1-ab3c-4649-9c99-b5e0e822b625",
+    "nom": "Prévention douce · Canard · Illustrations douces",
+    "sujets": [
+      "diabete"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "elegant-sobre",
+      "gamme": "canard",
+      "couleur": "#1f6b64",
+      "police": "douce",
+      "visuels": {
+        "style": "pedagogique",
+        "herosSujet": "diabete",
+        "animation": null
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "modele",
+        "variantes": {}
+      },
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
+    },
+    "note": null,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "10bd6fba-7175-4f88-b2d2-375c30f6d83e",
+    "nom": "Petits pas · Pistache & framboise · Ronde",
+    "sujets": [
+      "enfant"
+    ],
+    "couleursPreferees": [
+      "jaune",
+      "vert"
+    ],
+    "composition": {
+      "structure": "elegant-sobre",
+      "gamme": "pistache",
+      "couleur": "#4a6b12",
+      "police": "ronde",
+      "visuels": {
+        "style": "ligne",
+        "herosSujet": "enfant",
+        "animation": null
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "modele",
+        "variantes": {
+          "soins-forme": "organiques"
+        }
+      },
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
+    },
+    "note": null,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "bb1bdd2d-3619-41bd-ba5e-8c366f5282d4",
+    "nom": "Enfants · Clair et pratique · Tournesol & ardoise · Grotesque douce",
+    "sujets": [
+      "enfant",
+      "ongles"
+    ],
+    "couleursPreferees": [
+      "prune",
+      "violet"
+    ],
+    "composition": {
+      "structure": "clair-pratique",
+      "gamme": "tournesol",
+      "couleur": "#3e5568",
+      "police": "grotesque-douce",
+      "visuels": {
+        "style": "photos",
+        "herosSujet": "enfant",
+        "animation": null
+      },
+      "photos": [
+        "https://images.pexels.com/photos/9648681/pexels-photo-9648681.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/6716655/pexels-photo-6716655.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/27587778/pexels-photo-27587778.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://pixabay.com/get/g603d5969594161cec81fd7ef7f3951d059788477f260529cf80dec1341c2972678bc6651c876171e473740ea5fb4ca91_640.jpg",
+        "/photos/enfant-pied.webp"
+      ],
+      "sections": {
+        "ordre": "soins-puis-infos",
+        "variantes": {
+          "theme": "colonnes",
+          "sujets": "une",
+          "accueil": "fondu-double",
+          "article": "lecture",
+          "sections": "vague",
+          "soins-forme": "organiques"
+        }
+      },
+      "effets": "doux",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "modeste",
+        "casse": "normale",
+        "graisse": "normale",
+        "interlettrage": "large",
+        "accent": "italique",
+        "alignement": "gauche",
+        "surtitre": "pastille"
+      },
+      "details": {
+        "jeu": "doux-rond",
+        "separateur": "ondulation",
+        "souligne": "vague",
+        "citation": "aplat",
+        "badge": "plein",
+        "fond": "aucun",
+        "coins": "tres-arrondis",
+        "ombres": "douce",
+        "boutons": "pilule",
+        "densite": "aeree",
+        "cadre": "organique"
+      },
+      "menu": {
+        "ordinateur": "centre",
+        "mobile": "tiroir",
+        "rdv": "contour"
+      }
+    },
+    "note": null,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "6ccdacf1-526b-4fb5-aafa-0c8595a7f8ec",
+    "nom": "Sport · Clair et pratique · Lavande & citron · Douce arrondie",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "clair-pratique",
+      "gamme": "lavande",
+      "couleur": "#5a36e0",
+      "police": "douce",
+      "visuels": {
+        "style": "releve",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "soins-puis-infos",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "large",
+          "fiche": "encadre",
+          "infos": "notice",
+          "soins": "bulles",
+          "theme": "colonnes",
+          "sujets": "rangees",
+          "accueil": "typographique",
+          "article": "standard",
+          "contact": "bandeau",
+          "galerie": "bande",
+          "horaires": "bandeau",
+          "sections": "revelation",
+          "actualites": "liste",
+          "praticiens": "fiches",
+          "soins-forme": "bulles"
+        }
+      },
+      "effets": "vivant",
+      "traitement": {
+        "id": "duotone",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "couleur",
+        "alignement": "gauche",
+        "surtitre": "pastille"
+      },
+      "details": {
+        "jeu": "magazine",
+        "separateur": "aucun",
+        "souligne": "trait",
+        "citation": "aplat",
+        "badge": "plein",
+        "fond": "grain",
+        "coins": "mixtes",
+        "ombres": "portee",
+        "boutons": "pilule",
+        "densite": "aeree",
+        "cadre": "decale"
+      },
+      "menu": {
+        "ordinateur": "collante",
+        "mobile": "defilant",
+        "rdv": "gabarit"
+      }
+    },
+    "note": null,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "7191adbd-a10f-4f06-90cb-2ed5353985d2",
+    "nom": "Sport · Élégant et sobre · Cobalt · Géométrique nette",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "elegant-sobre",
+      "gamme": "cobalt",
+      "couleur": "#1f4fbf",
+      "police": "geometrique",
+      "visuels": {
+        "style": "photos",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [
+        "https://images.pexels.com/photos/13124397/pexels-photo-13124397.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/31588232/pexels-photo-31588232.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/38503139/pexels-photo-38503139.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://images.pexels.com/photos/5067702/pexels-photo-5067702.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+        "https://pixabay.com/get/g4fcdd41d7f9fef41e5c6a378b13be3bbc1d253fedd2eeef1ca859ecd62968bcb7ff25113324c388c0f9b4fc10f423203_640.jpg"
+      ],
+      "sections": {
+        "ordre": "soins-puis-infos",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "simple",
+          "fiche": "pratique-haut",
+          "infos": "volets",
+          "soins": "grille",
+          "theme": "liste",
+          "sujets": "colonnes",
+          "accueil": "parallelogramme",
+          "article": "lecture",
+          "contact": "carte",
+          "galerie": "grande",
+          "horaires": "tableau",
+          "sections": "aucune",
+          "actualites": "une",
+          "praticiens": "fiches",
+          "soins-forme": "tuiles"
+        }
+      },
+      "effets": "sobre",
+      "traitement": {
+        "id": "duotone",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "modeste",
+        "casse": "normale",
+        "graisse": "grasse",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "filet"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "tiroir",
+        "rdv": "gabarit"
+      }
+    },
+    "note": null,
+    "etiquettes": [],
+    "positif": null,
+    "negatif": null,
+    "statut": "active",
+    "jour": "2026-10-07"
+  },
+  {
+    "id": "430f2f95-04ed-4796-bf85-ebff4ae7423c",
+    "nom": "Sport · Simple et proche · Pastèque & menthe · Grotesque à caractère",
+    "sujets": [
+      "sport"
+    ],
+    "couleursPreferees": [],
+    "composition": {
+      "structure": "simple-proche",
+      "gamme": "pasteque",
+      "couleur": "#b3264a",
+      "police": "spatiale",
+      "visuels": {
+        "style": "pedagogique",
+        "herosSujet": "sport",
+        "animation": null
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "questions-haut",
+        "variantes": {
+          "faq": "colonnes",
+          "pied": "large",
+          "fiche": "pratique-haut",
+          "infos": "volets",
+          "soins": "grille",
+          "theme": "liste",
+          "sujets": "rangees",
+          "accueil": "maille",
+          "article": "standard",
+          "contact": "flottant",
+          "galerie": "mosaique",
+          "horaires": "liste",
+          "sections": "aucune",
+          "actualites": "cartes",
+          "praticiens": "fiches",
+          "soins-forme": "gabarit"
+        }
+      },
+      "effets": "vivant",
+      "traitement": {
+        "id": "duotone",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "serre",
+        "accent": "couleur",
+        "alignement": "gauche",
+        "surtitre": "pastille"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "transparente",
+        "mobile": "defilant",
+        "rdv": "flottant"
+      }
+    },
+    "note": null,
     "etiquettes": [],
     "positif": null,
     "negatif": null,

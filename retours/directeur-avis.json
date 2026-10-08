@@ -1,0 +1,98 @@
+[
+  {
+    "nature": "proposition",
+    "cle": "diabete-1",
+    "decision": "pas-convaincu",
+    "remarque": "Repetition d'elements en page d'accueil",
+    "profil": "2026-10-07.v2",
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "proposition",
+    "cle": "diabete-2",
+    "decision": "enregistree",
+    "remarque": null,
+    "profil": "2026-10-07.v2",
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "proposition",
+    "cle": "enfant-1",
+    "decision": "enregistree",
+    "remarque": null,
+    "profil": "2026-10-07.v2",
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M1",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M2",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M3",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M4",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M5",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M6",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M7",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M8",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  },
+  {
+    "nature": "manque",
+    "cle": "M9",
+    "decision": "a-faire",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-07"
+  }
+]

@@ -5268,5 +5268,50 @@
       ]
     },
     "jour": "2026-10-07"
+  },
+  {
+    "cle": "d5f1f548bc3cef77",
+    "ingredients": {
+      "gamme": "pasteque",
+      "heros": "semelles",
+      "style": "releve",
+      "theme1": "semelles",
+      "themes": [
+        "semelles",
+        "ongles",
+        "pedicurie"
+      ],
+      "couleurs": [
+        "rose"
+      ],
+      "registre": "releve",
+      "animation": "semelle",
+      "structure": "technique-precis",
+      "modeVisuel": "illustrations",
+      "proposition": "semelles~technique-precis~pasteque~releve~semelle"
+    },
+    "note": 4,
+    "etiquettes": [],
+    "commentaire": null,
+    "positif": null,
+    "negatif": null,
+    "appareil": "les-deux",
+    "zones": {
+      "appareil": "les-deux",
+      "empreinte": null,
+      "zones": [
+        {
+          "forme": "rect",
+          "x": 0.5286,
+          "y": 0.3288,
+          "l": 0.4618,
+          "h": 0.3872,
+          "etiquette": "a-revoir",
+          "commentaire": "image trop petite",
+          "appareil": "ordinateur"
+        }
+      ]
+    },
+    "jour": "2026-10-07"
   }
 ]

@@ -46,7 +46,38 @@
           "soins-forme": "organiques"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "jour": "2026-10-07"
   },
@@ -86,7 +117,38 @@
           "soins-forme": "gabarit"
         }
       },
-      "effets": "vivant"
+      "effets": "vivant",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "jour": "2026-10-07"
   },
@@ -137,7 +199,38 @@
           "soins-forme": "carres"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "jour": "2026-10-07"
   },
@@ -171,7 +264,38 @@
           "soins-forme": "carres"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "jour": "2026-10-07"
   },
@@ -222,7 +346,38 @@
           "soins-forme": "tuiles"
         }
       },
-      "effets": "doux"
+      "effets": "doux",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "jour": "2026-10-07"
   },
@@ -256,7 +411,38 @@
           "soins-forme": "pilules"
         }
       },
-      "effets": "sobre"
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
     },
     "jour": "2026-10-07"
   }
