@@ -12,5 +12,5 @@
     "allowImportingTsExtensions": false,
     "types": []
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "professions/**/*.ts"]
 }

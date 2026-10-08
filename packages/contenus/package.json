@@ -13,6 +13,7 @@
     "generer": "node scripts/generer.mjs",
     "reel": "node scripts/reel.mjs",
     "verifier": "node scripts/generer.mjs --verifier",
+    "controle:packs": "node scripts/controle-packs.mjs",
     "tsc": "tsc -p tsconfig.json",
     "verifier:types": "tsc -p tsconfig.json"
   },
