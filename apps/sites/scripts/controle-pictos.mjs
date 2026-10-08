@@ -15,7 +15,7 @@ import { build } from 'esbuild';
 const racine = fileURLToPath(new URL('..', import.meta.url));
 const sortie = join(tmpdir(), `controle-pictos-${process.pid}.mjs`);
 const r = await build({
-  stdin: { contents: "export { PICTOS, svgPicto, PICTO, PICTO_ACCENT, PICTOS_SOINS, PICTOS_EQUIPEMENTS, pictoExiste, EQUIPEMENTS, DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, svgPictoDirection, traitDirection, couleursPictoSur, FONDS_PICTO, CONTRASTE_PICTO, gamme, contraste } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
+  stdin: { contents: "export { PICTOS, svgPicto, PICTO, PICTO_ACCENT, PICTOS_SOINS, PICTOS_EQUIPEMENTS, pictoExiste, EQUIPEMENTS, DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, svgPictoDirection, traitDirection, couleursPictoSur, FONDS_PICTO, CONTRASTE_PICTO, gamme, contraste, ICONES_ILLUSTREES_IDS, svgIconeIllustree, couleursIconesIllustrees, ROLES_ICONES, ROLES_SIGNIFIANTS, CONTRASTE_ICONES, estChaudNonRouge, GAMMES } from '@plateforme/core';", resolveDir: racine, loader: 'ts' },
   bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent',
 });
 writeFileSync(sortie, r.outputFiles[0].text);
@@ -104,4 +104,25 @@ for (const g of ['canard', 'menthe', 'sable', 'pasteque']) for (const f of c.FON
   if (c.contraste(k.accent, k.fond) < c.CONTRASTE_PICTO) defauts.push(`accent des pictos sous 3:1 : ${g}, fond ${f}`);
 }
 if (!defauts.some((x) => x.startsWith('direction'))) console.log(`✓ directions de style à l'essai : ${nDirections} rendus (3 directions × 12 pictos × 5 tailles), accent ≥ 3:1 sur 4 gammes × 3 fonds`);
+// Direction D « icônes illustrées » (icones-illustrees.ts, 2026-10-08) : grille 128, aplats à rôles de couleur (var(--ic-<rôle>)
+// seulement, aucune couleur littérale), ni texte ni <style> ni identifiant, ≤ 6 Ko gzip ; formes signifiantes ≥ 3:1 sur la tache
+// dans toutes les gammes, accent chaud jamais rouge. Usage ≥ 64 px (jamais en 24 px) : rien n'est contrôlé en petit, rien de branché.
+const { gzipSync } = await import('node:zlib');
+let nIllustrees = 0;
+for (const id of c.ICONES_ILLUSTREES_IDS) for (const taille of [64, 96, 128]) {
+  const svg = c.svgIconeIllustree(id, { taille });
+  const v = `icône illustrée ${id} (${taille} px)`;
+  nIllustrees++;
+  if (!svg.includes('viewBox="0 0 128 128"')) defauts.push(`${v} : viewBox différente de 0 0 128 128`);
+  if (/#[0-9a-f]{3,8}|(?:rgba?|hsla?)\(\s*\d/i.test(svg)) defauts.push(`${v} : couleur littérale`);
+  if (/<style|<text|<image|\sid=|vector-effect|pathLength/i.test(svg)) defauts.push(`${v} : <style>, texte, image, identifiant ou piège WebKit`);
+  for (const [, r] of svg.matchAll(/var\(--ic-([a-z-]+)\)/g)) if (!c.ROLES_ICONES.includes(r)) defauts.push(`${v} : rôle inconnu --ic-${r}`);
+  if (gzipSync(svg).length >= 6144) defauts.push(`${v} : ${gzipSync(svg).length} octets gzip (≥ 6 Ko)`);
+}
+for (const g of c.GAMMES) {
+  const k = c.couleursIconesIllustrees(g);
+  for (const r of c.ROLES_SIGNIFIANTS) if (c.contraste(k[r], k.fond) < c.CONTRASTE_ICONES) defauts.push(`icônes illustrées : ${r} sous 3:1 sur la tache (${g.id})`);
+  if (!c.estChaudNonRouge(k['accent-chaud'])) defauts.push(`icônes illustrées : accent chaud rouge (${g.id})`);
+}
+if (!defauts.some((x) => x.startsWith('icône') || x.startsWith('icônes'))) console.log(`✓ icônes illustrées (direction D) : ${nIllustrees} rendus (${c.ICONES_ILLUSTREES_IDS.length} icônes × 3 tailles), formes signifiantes ≥ 3:1 sur ${c.GAMMES.length} gammes`);
 export const resume = `${c.PICTOS.length} pictos (grille ${G}, un seul trait ${c.PICTO.trait}/${c.PICTO.traitFort}, sans couleur littérale ni <style>)`;

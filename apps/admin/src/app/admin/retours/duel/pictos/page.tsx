@@ -20,7 +20,7 @@ export default async function PageDuelPictos({ searchParams }: { searchParams: P
         <p className="text-sm"><Link href="/admin/retours" className="font-semibold text-teal-900 underline">← Donner mon avis</Link> · <Link href="/admin/retours/duel" className="font-semibold text-teal-900 underline">Tous les duels</Link></p>
         <h1 className="mt-1 text-2xl font-bold">Duel : le style des icônes</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-          Trois directions à l’essai sur 12 pictos : A trait fin, B duotone doux, C éditorial. Choisissez (← A, → B, ↓ égalité,
+          Quatre directions à l’essai : A trait fin, B duotone doux, C éditorial (12 pictos) et D icônes illustrées (10 mini-illustrations, dès 64 px). Choisissez (← A, → B, ↓ égalité,
           ↑ les deux sont mauvais). Après votre choix, les ~60 pictos seront redessinés dans la direction retenue.
         </p>
       </div>

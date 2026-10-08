@@ -13,7 +13,7 @@ test('clés uniques et rendus non vides', () => {
   const l = inventaireIllustrations();
   assert.equal(new Set(l.map((i) => i.cle)).size, l.length);
   for (const i of l) assert.match(i.svg(), /^<svg/, i.cle);
-  assert.equal(l.filter((i) => i.type === 'picto').length, PICTOS.length + 3 * 12 + 3); // + directions de style à l'essai (pictos-directions.ts)
+  assert.equal(l.filter((i) => i.type === 'picto').length, PICTOS.length + 3 * 12 + 3 + 10 + 1); // + directions de style à l'essai (pictos-directions.ts) + direction D (icones-illustrees.ts)
   assert.ok(l.some((i) => i.cle === 'dessin:orthonyxie:releve') && l.some((i) => i.cle === 'picto:orthonyxie'));
   assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne' && !i.style).length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length + DESSINS_UNIVERS.length);
 });

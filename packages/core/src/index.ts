@@ -99,4 +99,4 @@ export * from './qualite';
 export * from './pratiques';
 export * from './profils';
 export * from './publication-recettes';
-export * from './visuels-heros-animes';
+export * from './icones-illustrees';

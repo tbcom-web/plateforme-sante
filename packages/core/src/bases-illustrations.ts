@@ -51,14 +51,14 @@ export const LIBELLES_DUELS_VARIANTES: Readonly<Record<string, string>> = Object
 export const HERITAGE_VARIANTES = { plafondEcart: 0.5, lissage: 4 } as const;
 
 /** Registres (ordre de préférence de l'illustration « basique ») */
-const ORDRE_VARIANTES = ['pedagogique', 'releve', 'decoupe', 'riso', 'volume', 'geometrique', 'ligne', 'direction-a', 'direction-b', 'direction-c'] as const;
+const ORDRE_VARIANTES = ['pedagogique', 'releve', 'decoupe', 'riso', 'volume', 'geometrique', 'ligne', 'direction-a', 'direction-b', 'direction-c', 'direction-d'] as const;
 /**
  * Directions de style des pictos à l'essai (2026-10-08, pictos-directions.ts) : `picto:<id>@direction-<a|b|c>` est une REFONTE, pas
  * une variante de rendu : c'est une base à part entière (baseDeCle → null). Elle n'hérite ni de la note, ni du statut, ni du refus
  * (1 ★, tranches.ts) du picto actuel : un picto actuel à 1 ★ ne doit pas cacher ses trois directions avant que Paul les voie.
  * Libellé et valeur restent lisibles (« Direction A (trait fin) ») pour les duels du style des icônes.
  */
-const DIRECTION_PICTO = /^(picto:[a-z0-9-]+)@direction-([abc])$/;
+const DIRECTION_PICTO = /^(picto:[a-z0-9-]+)@direction-([abcd])$/; // d : icônes illustrées (icones-illustrees.ts)
 /** Styles expérimentaux (styles-experimentaux.ts, recopiés : module sans dépendance ; test d'égalité) */
 export const STYLES_VARIANTES = ['decoupe', 'riso', 'volume', 'geometrique'] as const;
 
@@ -149,7 +149,7 @@ export const estVariante = (cle: string) => baseDeCle(cle) !== null;
 /** Libellé court d'une variante pour les vignettes (« Pédagogique », « Trait continu », « Riso »…) */
 export function libelleVariante(cle: string): string {
   const v = valeurVariante(cle) ?? '';
-  const noms: Record<string, string> = { pedagogique: 'Pédagogique', releve: 'Relevé', ligne: 'Trait continu', decoupe: 'Découpe', riso: 'Riso', volume: 'Volume', geometrique: 'Géométrique', 'direction-a': 'Direction A (trait fin)', 'direction-b': 'Direction B (duotone)', 'direction-c': 'Direction C (éditorial)' };
+  const noms: Record<string, string> = { pedagogique: 'Pédagogique', releve: 'Relevé', ligne: 'Trait continu', decoupe: 'Découpe', riso: 'Riso', volume: 'Volume', geometrique: 'Géométrique', 'direction-a': 'Direction A (trait fin)', 'direction-b': 'Direction B (duotone)', 'direction-c': 'Direction C (éditorial)', 'direction-d': 'Direction D (illustrée)' };
   if (!v && /^picto:[a-z0-9-]+$/.test(cle)) return 'Picto actuel';
   if (v.startsWith('contraste=')) return LIBELLES_CONTRASTES[v.slice(10) as Contraste] ?? v;
   if (v.startsWith('couleur=')) return `Couleurs ${v.slice(8)}`;

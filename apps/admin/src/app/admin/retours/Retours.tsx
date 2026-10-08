@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { Suspense, use, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   avecReevaluations, animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
-  ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, visuelsHerosAnimes, blocFocal, lireCleSurfaces, inventaireImagesFonds, lireCleImageFond, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
+  ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, blocFocal, lireCleSurfaces, inventaireImagesFonds, lireCleImageFond, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
   type PoidsAtelier, type Proposition, type StatutIllustration, type Univers,
@@ -411,8 +411,7 @@ export default function Retours(props: Props) {
     if (selection) return inventaireComplet.filter((a) => selection.cles.includes(a.cle));
     const cat = CATEGORIES_RETOURS.find((x) => x.id === c)!;
     // Catégorie d'après la clé (combinaisons police × palette à part) ; « Tout au hasard » sans les combinaisons
-    // Illustrations : les animations du sujet en font partie (visuels animés du premier écran, retour de Paul du 2026-10-08)
-    const l = c === 'illustrations' ? inventaire.filter((a) => categorieDeCle(a) === c || a.type === 'animation') : cat.types.length ? inventaire.filter((a) => categorieDeCle(a) === c) : inventaire.filter((a) => categorieDeCle(a) !== 'combinaisons' && categorieDeCle(a) !== 'images-fonds');
+    const l = cat.types.length ? inventaire.filter((a) => categorieDeCle(a) === c) : inventaire.filter((a) => categorieDeCle(a) !== 'combinaisons' && categorieDeCle(a) !== 'images-fonds');
     return c === 'elements' && famille ? l.filter((a) => a.soins.includes(famille)) : l;
   }, [inventaire, inventaireComplet, selection, famille]);
   // Animation dont un ingrédient de base n'est pas validé : tirée après tout le reste
@@ -859,24 +858,6 @@ export default function Retours(props: Props) {
               <p className="text-xs text-neutral-500">« Ce qui va bien » part avec « Validé », « Ce qui ne va pas » avec « À retravailler ».</p>
             </div>
           )}
-          {/* Illustration d'un sujet qui a une animation de héros : « ▶ version animée » à côté (visuels-heros-animes.ts) */}
-          {visuelCarte && ['heros', 'dessin', 'ligne'].includes(visuelCarte.type) && (() => {
-            const anims = [...new Map(sujetsDuVisuel(visuelCarte, surcharges).sujets.flatMap((s) => visuelsHerosAnimes(s, { assets: inventaireComplet, sujetsDe: (a) => sujetsDuVisuel(a, surcharges).sujets, statuts })).filter((v) => v.admissible).map((v) => [v.cle, v])).values()];
-            if (!anims.length) return null;
-            return (
-              <details className="rounded-xl bg-neutral-50 p-3 ring-1 ring-black/10">
-                <summary className="min-h-11 cursor-pointer text-sm font-semibold text-teal-900">▶ Version animée ({anims.length})</summary>
-                <div className="mt-2 grid gap-3">
-                  {anims.map((v) => (
-                    <figure key={v.cle} className="grid gap-1">
-                      <div className="surface-plan overflow-hidden rounded-xl"><LectureAnimation nom={v.animation as never} /></div>
-                      <figcaption className="text-xs text-neutral-600">{v.titre}</figcaption>
-                    </figure>
-                  ))}
-                </div>
-              </details>
-            );
-          })()}
           {visuelCarte && visuelCarte.rendu.kind !== 'studio' && <SujetsVisuel visuel={visuelCarte} surcharges={surcharges} onChange={setSurcharges} />}
           {visuelCarte && visuelCarte.rendu.kind !== 'studio' && <HashtagsVisuel cle={visuelCarte.cle} etat={hashtags} onChange={setHashtags} migrationManquante={props.migrationHashtags} />}
 

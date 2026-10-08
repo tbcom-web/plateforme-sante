@@ -21,6 +21,7 @@ import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
 import { clesSport, sujetsDesKits } from './kits';
 import { DESSINS_UNIVERS, FICHES_DESSINS_UNIVERS, svgDessinUnivers, sujetsUnivers } from './dessins-univers';
 import { DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, LIBELLES_ECHANTILLON, cleDirection, cleStyleIcones, svgTuileDirection, svgPlancheDirection } from './pictos-directions';
+import { ICONES_ILLUSTREES_IDS, FICHES_ICONES_ILLUSTREES, FICHE_DIRECTION_D, SOURCE_ICONES_ILLUSTREES, CLE_STYLE_ICONES_D, cleIconeIllustree, svgTuileIllustree, svgPlancheIllustree } from './icones-illustrees';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, FICHES_STYLES, LIBELLES_SUJETS_STYLES, SUJET_VISUEL_STYLES, cleStyleExperimental, svgStyleExperimental, type StyleExperimental } from './styles-experimentaux';
 
 /** Statut de revue d'une illustration (valeurs de la colonne `statut` de la migration 0021) */
@@ -197,6 +198,24 @@ export function inventaireIllustrations(): Illustration[] {
       svg: () => svgPlancheDirection(d),
     });
   }
+  // Direction D « icônes illustrées » (icones-illustrees.ts, 2026-10-08, brouillons « À revoir », rien de branché) : planche 5 de
+  // Paul (image générée par IA, ChatGPT) vectorisée en aplats à rôles de couleur ; bases à part entière (aucun héritage), SANS
+  // sujet rattaché (les sujets et hashtags sont seulement suggérés dans le détail : jamais dans un kit avant l'avis de Paul) ;
+  // usage ≥ 64 px. Et la tuile « Style d'icônes » D : la planche en situation (cartes à 64 px).
+  for (const id of ICONES_ILLUSTREES_IDS) {
+    const f = FICHES_ICONES_ILLUSTREES[id];
+    l.push({
+      cle: cleIconeIllustree(id), type: 'picto', titre: `${f.titre} (${FICHE_DIRECTION_D.court})`,
+      detail: `${FICHE_DIRECTION_D.nom} · essai de style · ${f.traitement === 'amelioree' ? 'pied redessiné (géométrie validée) · ' : ''}sujets suggérés : ${f.sujets.join(', ')} · ${f.hashtags.map((h) => `#${h}`).join(' ')} · ${SOURCE_ICONES_ILLUSTREES.source} · ≥ 64 px`,
+      source: `packages/core/src/icones-illustrees.ts — '${id}' (planche 5, case ${f.numero})`, soins: [], statutParDefaut: 'a_revoir', fond: 'clair',
+      svg: () => svgTuileIllustree(id),
+    });
+  }
+  l.push({
+    cle: CLE_STYLE_ICONES_D, type: 'picto', titre: `Style d’icônes : ${FICHE_DIRECTION_D.nom}`, detail: 'Planche en situation : cartes de thèmes (64 px), téléphone',
+    source: "packages/core/src/icones-illustrees.ts — svgPlancheIllustree()", soins: [], statutParDefaut: 'a_revoir', fond: 'doux',
+    svg: () => svgPlancheIllustree(),
+  });
   // Héros des thèmes (heros-themes.ts, 2026-10-06) : une revue par thème et par registre ; vue agrandie = format portrait (téléphone)
   for (const t of THEMES_ILLUSTRES) {
     const theme = THEMES.find((x) => x.id === t);

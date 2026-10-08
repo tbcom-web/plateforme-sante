@@ -212,6 +212,12 @@ registres (aucune couleur littérale, aucun jeton sans correspondance, ≤ 64 ko
 
 Diagnostic et plan : `retours/PICTOS-DIAGNOSTIC.md`. `pictos-directions.ts` dessine 12 pictos de l'échantillon dans trois directions (A trait fin, grille 24 ; B duotone doux, grille 24 ; C éditorial, grille 64), même anatomie que `pictos.ts`. Épaisseur **optique** (`traitOptique` : 1,5 px de 20 à 24 px, 2 px à 48 px, jamais proportionnelle) ; accent choisi par `couleursPictoSur(gamme, fond)` à ≥ 3:1 contre le fond blanc, teinté ou sombre. `controle:charte` vérifie chaque direction dans SA grille (les pictos actuels gardent leur contrôle en grille 48). Rien n'est branché sur les sites avant le choix de Paul.
 
+### Pictogrammes : direction D « icônes illustrées » (2026-10-08, brouillons)
+
+Source : planche 5 « Patients et domaines de pratique » générée par Paul avec ChatGPT (image générée par IA, propriété de Paul, 2026-10-08). `icones-illustrees.ts` : 10 mini-illustrations rondes vectorisées en aplats (`icones-illustrees-traces.ts`, fichier généré) sur une tache de fond normalisée, chaque aplat rattaché à un **rôle de couleur** (`--ic-peau`, `--ic-peau-ombre`, `--ic-accent`, `--ic-accent-clair`, `--ic-accent-chaud`, `--ic-encre`, `--ic-neutre`, `--ic-fond`, `--ic-blanc`) alimenté par `couleursIconesIllustrees(gamme)` : formes signifiantes (accent, accent chaud, encre, neutre) ≥ 3:1 sur la tache, accent chaud orangé jamais rouge (diabète), peau constante (`ANATOMIE.peau`) dans toutes les gammes. Aucune couleur littérale dans les tracés (les valeurs n'apparaissent que dans les déclarations `--ic-*` d'un aperçu autonome) ; ≤ 6 Ko gzip par icône.
+
+**Usage : cartes de thèmes et de soins, ≥ 64 px (64, 96, 128). Jamais en 24 px** : les lacets, crampons et nervures deviennent du bruit ; en dessous de 64 px, utiliser A, B ou C. Anatomie : cases 4 (pied diabétique), 6 (empreinte) et 10 (prévention des chutes) **améliorées** (pied remplacé par la géométrie validée de `pied.ts` : profil médial POD-AT-0003, plante POD-AT-0001) ; cases 2 (pédiatrique : orteils non dénombrables, jambes d'adulte) et 11 (rhumatologique : squelette inventé, douleur en cible) **écartées**. Clés `picto:<id>@direction-d` et `picto:style-icones-d`, statut « À revoir », sujets et hashtags seulement suggérés (rien de rattaché, rien de branché).
+
 ## Typographie
 
 | Rôle | Police | Règle |

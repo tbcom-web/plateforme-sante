@@ -110,7 +110,7 @@ test('inventaire : 36 pictos et 3 planches « Style d’icônes », à revoir, s
   const l = inventaireIllustrations();
   const dirs = l.filter((i) => lireCleDirection(i.cle));
   assert.equal(dirs.length, 36);
-  const planches = l.filter((i) => i.cle.startsWith('picto:style-icones-'));
+  const planches = l.filter((i) => /^picto:style-icones-[abc]$/.test(i.cle)); // la planche D : icones-illustrees.test.ts
   assert.equal(planches.length, 3);
   for (const i of [...dirs, ...planches]) {
     assert.equal(i.statutParDefaut, 'a_revoir');

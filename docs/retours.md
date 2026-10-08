@@ -255,25 +255,6 @@ une combinaison noté 5 étoiles, je ne veux plus qu'il apparaisse, sinon on ré
 - Hors règle pour l'instant : kits notés en bloc (« Noter ce kit ») ; la notation en ligne de « Compléter ce kit » montre les favoris
   comme photos à utiliser, sans les redemander.
 
-### Animations dans les duels et tuiles d'illustrations
-
-Retour de Paul du 2026-10-08 (« quand je note / A-B teste les illustrations, je ne vois pas d'animations ») : les animations
-sont traitées comme des illustrations de héros (`packages/core/src/visuels-heros-animes.ts`, version minimale en attendant
-celle de l'agent des animations de héros).
-
-- **Duels « Illustrations et héros »** : les animations admissibles du sujet entrent dans les candidats (animation contre
-  animation = dimension « version ») ; environ un duel sur trois quand le sujet a une animation : l'animation jouée face à son
-  image fixe (`animation:fige`, « l'animation apporte-t-elle quelque chose ? », côté `animation:<nom>@fige`) ou face à une
-  illustration fixe du même sujet (`animation:illustration`). Rendu dans un vrai premier écran (PremierEcranAnime : titre,
-  bouton, visuel principal), animation jouée avec Pause / Rejouer. Favoris, exclusions et tranchés (1 ★ jamais, refusés
-  exclus) respectés.
-- **Admissible** : images de base validées (etatAnimation pas « en attente ») et animation non retirée. Les animations d'en-tête
-  dérivées des géométries validées (em-*) et celles « à valider » pour Paul seront ajoutées quand l'agent des animations de
-  héros aura poussé `visuelsHerosAnimes` (leurs fichiers ne sont pas encore dans le dépôt).
-- **Tuile « Illustrations »** : les animations du sujet en font partie (jouées) ; une illustration (héros, dessin, trait)
-  d'un sujet qui a une animation affiche « ▶ Version animée » à côté.
-- Duels de variantes (/admin/retours/duel/variantes) : inchangés pour l'instant.
-
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :
