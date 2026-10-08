@@ -49,8 +49,9 @@ test('chaque élément notable a un « Vous notez » ; les éléments de page so
   for (const [cle, titre] of titres) {
     const r = repereCle(cle, titre);
     assert.ok(r.libelle && !r.libelle.includes('undefined'), `${cle} : ${r.libelle}`);
-    if (cle.startsWith('menu:') || cle.startsWith('effets:')) assert.ok(r.selecteurs.length, `${cle} sans encadré`);
-    if (/^composant:(?!fiche|theme|article)/.test(cle)) assert.ok(r.selecteurs.length, `${cle} sans encadré`);
+    if (cle.startsWith('menu:') || (cle.startsWith('effets:') && !cle.startsWith('effets:surfaces-'))) assert.ok(r.selecteurs.length, `${cle} sans encadré`);
+    if (cle.startsWith('effets:surfaces-')) assert.ok(r.selecteurs.length || r.ensemble, cle);
+    if (/^composant:(?!fiche|theme|article|paire)/.test(cle)) assert.ok(r.selecteurs.length, `${cle} sans encadré`);
   }
   assert.equal(repereCle('typo:police:revue').libelle, 'la paire de polices « Revue à empattements »');
   assert.equal(repereCle('effets:photos-duotone').libelle, 'le traitement photo « Duotone »');

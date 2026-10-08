@@ -16,6 +16,10 @@ import { FAMILLES_COMPOSANTS, habillageDe, LIBELLES_VARIANTES, NOMS_SECTIONS_VAR
 import { lireCleTraitementPhotos, libelleTraitementPhotos } from './traitements-photos';
 import { AXES_TYPO, NOMS_AXES_TYPO, libelleCleTypo, type AxeTypo } from './typo';
 import { jeuDetails, libelleCleDetails, libelleDetails } from './details';
+import { lireCleSurfaces, surface } from './surfaces';
+import { lireClePaire, lireDimensionPaire, libellePaire, nomPaire } from './combinaisons-elements';
+import { lireDimension, nomValeurHarmonie, type CompositionHarmonie } from './harmonie';
+import { ELEMENTS_DETAILS } from './details';
 import { AXES_MENU, MENU_PAR_DEFAUT, NOMS_AXES_MENU, libelleCleMenu, menuPourCle, type AxeMenu } from './menus';
 
 /** Zones nommées de l'aperçu (data-zone de l'admin, ou classes stables de l'aperçu) */
@@ -96,6 +100,26 @@ const VARIANTES_ILLUSTRATION: Record<string, string> = {
   contraste: 'le contraste de l’illustration', couleur: 'les couleurs de l’illustration', style: 'le style de l’illustration (même dessin)',
 };
 
+/** Zones d'une dimension d'harmonie (v.<section>, police, style, menu…) */
+function zonesHarmonie(dim: string): string[] {
+  if (dim.startsWith('v.')) return repereFamille(dim.slice(2)).zones;
+  if (dim === 'police') return ['titres', 'paragraphe'];
+  if (dim === 'style') return ['illustrations'];
+  if (dim.startsWith('menu.')) return ['menu'];
+  return [];
+}
+function repereDeuxDimensions(libelle: string, a: string, b: string): Repere {
+  const zones = [...new Set([...zonesHarmonie(a), ...zonesHarmonie(b)])];
+  return zones.length ? repere(libelle, zones) : ensemble(libelle);
+}
+
+/** Répartition des surfaces : zones qui changent entre A et B (premier écran, cartes, texte…) ; aucune : toute la page */
+export function repereSurfaces(ids: readonly string[]): Repere {
+  const zones = [...new Set(ids.flatMap((id) => surface(id)?.zones ?? []))];
+  const libelle = 'la répartition des couleurs et des fonds (même palette)';
+  return zones.length ? repere(libelle, zones, 'contraste AA vérifié') : ensemble(libelle, 'fonds de page : jugez l’ensemble · contraste AA vérifié');
+}
+
 /** Dimensions de duel nommées (hors composant:*) */
 const DIMENSIONS: Record<string, () => Repere> = {
   polices: () => repere('la paire de polices (titres et texte)', ['titres', 'paragraphe']),
@@ -114,6 +138,14 @@ const DIMENSIONS: Record<string, () => Repere> = {
   menu: () => repere('le menu', ['menu', 'menu-mobile', 'rdv']),
   structure: () => ensemble('la structure du site'),
   photo: () => ensemble('la photo'),
+  surfaces: () => ensemble('la répartition des couleurs et des fonds (même palette)', 'contraste AA vérifié'),
+  'image:fond': () => ensemble('le fond derrière l’image (même image)'),
+  'image:traitement': () => ensemble('le traitement de l’image sur ce fond'),
+  'details:densite': () => repere('la densité (espacements intérieurs des cartes et boutons)', ['cartes', 'boutons']),
+  'details:ombres': () => repere('les ombres des cartes et boutons', ['cartes', 'boutons']),
+  'details:coins': () => repere('les arrondis (coins des cartes, boutons, images)', ['cartes', 'boutons']),
+  'details:boutons': () => repere('le style des boutons', ['boutons']),
+  'details:cadre': () => repere('les cadres d’images', ['illustrations', 'photos']),
   style: () => ensemble('le style du dessin (même sujet)'),
   version: () => ensemble('le dessin (même style)'),
 };
@@ -128,6 +160,9 @@ export function repereDimension(dimension: string | null | undefined): Repere {
   // Pages complètes : toute la page (structure de cette page, ou deux recettes complètes vues sur elle)
   const page = pageDeDimension(dimension);
   if (page) return ensemble(`la page « ${pageDuel(page)?.nom ?? page} »`, dimension.startsWith('page-libre:') ? 'deux recettes complètes, jugez la page entière' : 'même recette, seule la structure de cette page change');
+  // Combinaison d'éléments : les zones des deux éléments
+  const paire = lireDimensionPaire(dimension);
+  if (paire) return repereDeuxDimensions(`la combinaison ${nomPaire(paire[0], paire[1]).toLowerCase()}`, paire[0], paire[1]);
   // Variantes d'une illustration de base (contraste, couleur, style…) : l'illustration entière, aucun encadré
   if (dimension.startsWith('variante:')) { const v = dimension.slice(9); return ensemble(VARIANTES_ILLUSTRATION[v] ?? `la variante « ${v} » de l’illustration`, 'même dessin de base'); }
   return DIMENSIONS[dimension]?.() ?? ensemble(dimension);
@@ -139,7 +174,7 @@ export const DIMENSIONS_DUEL_TIRABLES: readonly string[] = [
 ];
 
 /** La dimension a-t-elle un repère explicite (pas un repli) ? (tests) */
-export const repereConnu = (dimension: string) => dimension in DIMENSIONS || pageDeDimension(dimension) !== null || (dimension.startsWith('composant:') && dimension.slice(10) in FAMILLES) || (dimension.startsWith('variante:') && dimension.slice(9) in VARIANTES_ILLUSTRATION);
+export const repereConnu = (dimension: string) => dimension in DIMENSIONS || pageDeDimension(dimension) !== null || lireDimensionPaire(dimension) !== null || (dimension.startsWith('composant:') && dimension.slice(10) in FAMILLES) || (dimension.startsWith('variante:') && dimension.slice(9) in VARIANTES_ILLUSTRATION);
 
 const sansPrefixe = (s: string) => s.replace(/^[^:]+ : /, '');
 
@@ -151,6 +186,10 @@ const sansPrefixe = (s: string) => s.replace(/^[^:]+ : /, '');
 export function repereCle(cle: string, titre?: string | null): Repere {
   const [type, a, b] = cle.split(':');
   const t = titre ?? cle;
+  const sf = lireCleSurfaces(cle);
+  if (sf) { const x = surface(sf)!; return x.zones.length ? repere(`la répartition des surfaces « ${x.nom} »`, x.zones, x.detail) : ensemble(`la répartition des surfaces « ${x.nom} »`, `${x.detail} : toute la page`); }
+  const pe = lireClePaire(cle);
+  if (pe) return repereDeuxDimensions(`la combinaison ${libellePaire(pe)}`, pe.a, pe.b);
   const tp = lireCleTraitementPhotos(cle);
   if (tp) return repere(`le traitement photo « ${libelleTraitementPhotos(tp)} »`, ['photos']);
   if (type === 'composant') return repereFamille(a, b ? LIBELLES_VARIANTES[a]?.[b] ?? b : undefined);
@@ -230,6 +269,14 @@ export function valeursDuel(dimension: string | null | undefined, a: CompoPartie
       return val.startsWith(axeNom) ? val : `${axeNom} ${val}`;
     };
     return deux(nom);
+  }
+  // Combinaison d'éléments : les deux valeurs (« Bulles rondes + Trait fin »)
+  const paire = lireDimensionPaire(dimension);
+  if (paire) return deux((x) => paire.map((d) => nomValeurHarmonie(d, lireDimension(x as unknown as CompositionHarmonie, d) ?? 'celle du modèle')).join(' + '));
+  // Un élément du jeu de détails (densité, ombres…)
+  if (dimension.startsWith('details:')) {
+    const e = dimension.slice(8);
+    return deux((x) => { const v = (habillageDe(x).details as Record<string, string>)[e]; return (ELEMENTS_DETAILS[e as keyof typeof ELEMENTS_DETAILS] as readonly { id: string; nom: string }[] | undefined)?.find((o) => o.id === v)?.nom ?? v; });
   }
   switch (dimension) {
     case 'police-couleurs': return deux((x) => `${pairePolices(x.police)?.nom ?? x.police} + ${x.gamme ? gammeParId(x.gamme)?.nom ?? x.gamme : `couleur ${x.couleur}`}`);

@@ -16,7 +16,7 @@ import { jourParis } from './essai';
 // Catégories (tuiles de l'accueil)
 // ---------------------------------------------------------------------------------------------------------------
 
-export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets' | 'typographies' | 'details' | 'menus' | 'combinaisons';
+export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets' | 'typographies' | 'details' | 'menus' | 'combinaisons' | 'surfaces';
 
 export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: string; description: string; types: readonly TypeAsset[] }[] = [
   { id: 'hasard', libelle: 'Tout au hasard', description: 'Un peu de tout, les jamais notés d’abord', types: [] },
@@ -36,7 +36,9 @@ export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: strin
   { id: 'details', libelle: 'Détails', description: 'Jeux de détails : séparateurs, soulignés, coins, ombres, boutons, cadres…', types: ['details'] },
   { id: 'menus', libelle: 'Menus', description: 'En-têtes et menus : ordinateur, téléphone, bouton de rendez-vous', types: ['menu'] },
   // Combinaisons police × palette (combinaisons.ts) : spécimen de la paire de polices dans les couleurs de la gamme
-  { id: 'combinaisons', libelle: 'Police × palette', description: 'Paires de polices dans une palette : quelles combinaisons vont bien ensemble', types: ['typo'] },
+  { id: 'combinaisons', libelle: 'Combinaisons', description: 'Police × palette, cartes × illustrations, premier écran × animation, menu × police…', types: ['typo', 'composant'] },
+  // Contrastes couleur × fond (surfaces.ts) : la même palette répartie autrement, toujours AA
+  { id: 'surfaces', libelle: 'Contrastes et fonds', description: 'Fond blanc ou teinté, texte franc ou doux, accent plein ou léger : même palette', types: ['effets'] },
 ];
 
 export const categorieRetours = (id: string | null | undefined) => CATEGORIES_RETOURS.find((c) => c.id === id);
@@ -46,7 +48,8 @@ export const categorieRetours = (id: string | null | undefined) => CATEGORIES_RE
  * Catégorie d'un élément d'après sa clé : les combinaisons police × palette (`typo:combinaison:…`, combinaisons.ts) ont leur tuile ;
  * le reste suit son type. Elles ne sont pas tirées par « Tout au hasard » (414 combinaisons : elles écraseraient le reste).
  */
-export const categorieDeCle = (a: { cle: string; type: TypeAsset }): CategorieRetours => (a.cle.startsWith('typo:combinaison:') ? 'combinaisons' : categorieDuType(a.type));
+export const categorieDeCle = (a: { cle: string; type: TypeAsset }): CategorieRetours =>
+  a.cle.startsWith('typo:combinaison:') || a.cle.startsWith('composant:paire:') ? 'combinaisons' : a.cle.startsWith('effets:surfaces-') ? 'surfaces' : categorieDuType(a.type);
 export const categorieDuType = (t: TypeAsset): CategorieRetours => CATEGORIES_RETOURS.find((c) => c.types.includes(t))?.id ?? 'illustrations';
 
 // ---------------------------------------------------------------------------------------------------------------

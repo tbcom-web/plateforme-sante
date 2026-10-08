@@ -80,6 +80,8 @@ export * from './bases-illustrations';
 export * from './combinaisons';
 export * from './duels-compositions';
 export * from './duels-appareils';
+export * from './surfaces';
+export * from './combinaisons-elements';
 export * from './focal';
 export * from './atelier-compositions';
 export * from './favoris';

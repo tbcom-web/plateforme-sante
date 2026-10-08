@@ -11,7 +11,7 @@
 //   comme le script du site SCRIPT_MENU), bouton « Menu » cliquable, rubrique active (aria-current), survol simulé (règles
 //   :hover des menus recopiées sur [data-survol-simule]), défilement imposé (barre collante). Rien n'est ajouté au site publié.
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import type { Repere } from '@plateforme/core';
+import { appliquerSurfaces, cssSurfaces, mesurerSurfaces, type Repere } from '@plateforme/core';
 
 const CLE_MASQUE = 'repere:masque';
 
@@ -235,3 +235,39 @@ export default function PiloteApercu({ children, selecteurs = [], visible = true
 
   return <div ref={racine} className={className ?? 'min-w-0'}>{children}</div>;
 }
+
+/**
+ * Répartition des surfaces dans les aperçus (duels « Contrastes et fonds », tuile du même nom ; surfaces.ts) : couleurs --g-*
+ * lues sur la racine .ap de chaque aperçu, feuille cssSurfaces injectée (vide si la répartition n'est pas conforme AA).
+ */
+export function StyleSurfaces({ id, children, onMesure }: { id: string | null | undefined; children: ReactNode; onMesure?: (m: { ratio: number; conforme: boolean }) => void }) {
+  const racine = useRef<HTMLDivElement>(null);
+  const rappel = useRef(onMesure);
+  rappel.current = onMesure;
+  useEffect(() => {
+    if (!id) return;
+    const tick = () => {
+      for (const f of Array.from(racine.current?.querySelectorAll('iframe') ?? [])) {
+        const doc = f.contentDocument;
+        const ap = doc?.querySelector('.ap');
+        if (!doc || !ap) continue;
+        let st = doc.head.querySelector<HTMLStyleElement>('style[data-surfaces]');
+        if (st?.dataset.surfaces === id) continue;
+        const cs = doc.defaultView!.getComputedStyle(ap);
+        const c: Record<string, string> = {};
+        for (const k of CLES_SURFACES) { const v = cs.getPropertyValue(`--g-${k}`).trim(); if (v) c[k] = v; }
+        if (!c.page) continue;
+        if (!st) { st = doc.createElement('style'); doc.head.appendChild(st); }
+        st.dataset.surfaces = id;
+        st.textContent = cssSurfaces(c, id);
+        const m = mesurerSurfaces(appliquerSurfaces(c, id));
+        rappel.current?.({ ratio: m.ratio, conforme: m.conforme });
+      }
+    };
+    tick();
+    const t = setInterval(tick, 400);
+    return () => clearInterval(t);
+  }, [id]);
+  return <div ref={racine} className="min-w-0">{children}</div>;
+}
+const CLES_SURFACES = ['page', 'carte', 'doux', 'bulle', 'bulle-texte', 'accent-texte', 'plein', 'plein-texte', 'plein-bord', 'encre', 'encre-douce', 'aplat', 'aplat-texte', 'aplat-doux', 'figure'] as const;

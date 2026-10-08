@@ -1,5 +1,5 @@
 import 'server-only';
-import { notesPhotos, renfortsKits, ajouterPairesApprises, pairesDesNotes, pairesDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { notesPhotos, renfortsKits, ajouterPairesApprises, pairesDesNotes, pairesDuels, pairesElementsDesNotes, pairesElementsDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
 import { getNotesKits } from '@/lib/kits-images';
 import { getLignesAssetsApprentissage, getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
@@ -55,7 +55,9 @@ export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
   // Ingrédients, PAIRES et familles appris des recettes complètes : lus par les tirages harmonieux (harmonie.ts) et propositions.ts
   // + combinaisons police × palette (duels « Police × palette » et tuile du même nom, duels-compositions.ts) : paires
   // `gamme:<g>&police:<p>` ajoutées aux paires apprises (plafond ±0,75 ★), lues par les tirages harmonieux
-  const harmonie = ajouterPairesApprises(notations.length ? apprisHarmonie(statsNotation(notations)) : null, pairesDuels(duels), pairesDesNotes(assets?.effets ?? {}));
+  const harmonie = ajouterPairesApprises(notations.length ? apprisHarmonie(statsNotation(notations)) : null, pairesDuels(duels), pairesDesNotes(assets?.effets ?? {}),
+    // + combinaisons d'éléments (duels « Combinaisons d'éléments » et tuile « Combinaisons », combinaisons-elements.ts)
+    pairesElementsDuels(duels), pairesElementsDesNotes(assets?.effets ?? {}));
   // Effets propres au mobile (duels joués sur téléphone) : lus par effetAtelier selon la portée de la clé (duels-appareils.ts)
   const mobile = renfortsDuelsMobiles(duels);
   const avecMobile = Object.keys(mobile).length ? { ...(poids ?? { n: 1, moyenne: 3, effets: {} }), mobile } : poids;

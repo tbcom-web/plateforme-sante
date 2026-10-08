@@ -24,7 +24,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
-  ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, blocFocal, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
+  ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, blocFocal, lireCleSurfaces, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
   type PoidsAtelier, type Proposition, type StatutIllustration, type Univers,
@@ -45,7 +45,7 @@ import EnvoyerRetours from '@/components/EnvoyerRetours';
 import DoubleRendu from '@/components/DoubleRendu';
 import PlancheMenu from '@/components/PlancheMenu';
 import BlocFocal, { reglagesDeCle } from '@/components/BlocFocal';
-import PiloteApercu, { BandeauEvaluation, useRepereVisible } from '@/components/RepereEvaluation';
+import PiloteApercu, { BandeauEvaluation, StyleSurfaces, useRepereVisible } from '@/components/RepereEvaluation';
 import RenduMobile from '@/components/RenduMobile';
 import { empreinteMobile, etatsMobile, type AppareilRetour, type RetourMobile, type Zone } from '@plateforme/core';
 import RenduMobileARevoir from './RenduMobileARevoir';
@@ -803,7 +803,8 @@ export default function Retours(props: Props) {
               // Typographies, détails, combinaisons police × palette : le bloc focalisé (seul le contenu touché), pas le spécimen complet
               ? <BlocFocal bloc={blocFocal(carte.asset.cle)!} reglages={reglagesDeCle(carte.asset.cle)} mobile={app === 'mobile'} />
               : carte.kind === 'asset' && carte.asset.rendu.kind === 'studio'
-              ? <ApercuStudio nu cle={carte.asset.cle} mobile={app === 'mobile'} proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />
+              // Contrastes et fonds : l'aperçu avec la répartition des surfaces de la clé (surfaces.ts, conforme AA)
+              ? (lireCleSurfaces(carte.asset.cle) ? <StyleSurfaces id={lireCleSurfaces(carte.asset.cle)}><ApercuStudio nu cle={carte.asset.cle} mobile={app === 'mobile'} proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} /></StyleSurfaces> : <ApercuStudio nu cle={carte.asset.cle} mobile={app === 'mobile'} proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />)
               : carte.kind === 'asset'
                 ? (app === 'mobile' ? <ApercuAssetMobile c={carte} /> : <div className="bg-white p-2"><ApercuAsset c={carte} /></div>)
                 : apercuTheme && <ApercuTheme key={`${carte.cle}|${app}`} sansCommandes vignette={app === 'mobile' ? 560 : 520} appareil={app} draft={apercuTheme.draft} modele={apercuTheme.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />} />

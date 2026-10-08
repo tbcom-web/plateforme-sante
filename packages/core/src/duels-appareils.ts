@@ -24,6 +24,8 @@ const FAMILLES_MOBILES = new Set(['contact', 'soins-forme', 'accueil', 'entete-a
 export function appareilDimension(dimension: string | null | undefined): AppareilJugement {
   if (!dimension) return 'les-deux';
   if (dimension.startsWith('typo:')) return 'mobile';
+  // Réglages fins : la densité (espacements) se juge au téléphone ; ombres, coins, boutons, cadres : les deux
+  if (dimension.startsWith('details:')) return dimension === 'details:densite' ? 'mobile' : 'les-deux';
   if (dimension.startsWith('composant:')) return FAMILLES_MOBILES.has(dimension.slice(10)) ? 'mobile' : 'les-deux';
   return MOBILES.has(dimension) ? 'mobile' : 'les-deux';
 }

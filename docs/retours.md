@@ -190,6 +190,33 @@ Demande de Paul du 2026-10-08 (« voter entre deux pages complètes : page de so
 - Apprentissage : clés de structure par page (`structure:<page>:…`) et variantes (`variante=<section>:…`), effets propres au
   mobile si le duel est joué sur téléphone ; classements « Meilleures structures de la page « Contact et accès » — sujet ».
 
+### Contrastes et fonds, images × fonds, combinaisons d'éléments, réglages fins
+
+Demandes de Paul du 2026-10-08 (« noter / A-B tester les contrastes de couleurs avec leurs fonds, ainsi que les images,
+combinaisons d'éléments » ; « tester les padding, les ombres… ») :
+
+- **Contrastes et fonds** (`surfaces.ts`, duel « Contrastes et fonds », tuile du même nom) : la même palette répartie
+  autrement — fond blanc, fond teinté doux, cartes teintées, contraste franc, contraste doux, accent plein, accent léger.
+  Règle dure : jamais sous AA (texte 4,5:1, grands éléments 3:1), calculé sur les couleurs du gabarit ; seules les répartitions
+  conformes sont proposées ; ratio affiché (« A : Fond blanc (texte 15,5:1) »), zones qui changent encadrées. Aperçu de l'admin
+  seulement (variables --g-* remplacées) : à valider avant d'entrer dans les recettes et les sites. Clés `surfaces=<id>`,
+  `effets:surfaces-<id>`.
+- **Images × fonds** (`combinaisons-elements.ts`, duel « Images × fonds ») : la même illustration / photo / héros sur deux
+  fonds (blanc, fond de la gamme, teinte, aplat d'accent, dégradé) ou sur le même fond avec deux traitements (adouci,
+  contrasté, noir et blanc). Côtés `<clé>@fond=<id>` (variante de rendu) ; clé apprise `image:<base>&surface:<id>` /
+  `image:<base>&traitement:<id>` (base = illustration de base, héritage base → variantes).
+- **Combinaisons d'éléments** (duel et tuile « Combinaisons ») : forme des cartes × style d'illustration, premier écran ×
+  animation d'en-tête, menu × police, détails × structure, premier écran × police, style × structure, portraits × premier
+  écran ; les deux changent, eux seuls, jamais de nouvelle règle dure (varierPaire) ; clé de paire des recettes complètes
+  (`<dimA>:<va>&<dimB>:<vb>`, plafond ±0,75 ★), lue par les tirages harmonieux pour les paires de PAIRES_HARMONIE
+  (premier écran × police, style × structure ; les autres sont apprises et le seront dès qu'elles y entrent : les ajouter
+  modifie l'équilibre du test d'amélioration des recettes, à valider). Dimension `paire:<a>:<b>` (« . » écrit « _ » :
+  contrainte de la colonne dimension_differente).
+- **Réglages fins** (duel « Espacements, ombres, arrondis ») : un élément du jeu de détails à la fois (densité = espacements
+  intérieurs, ombres, coins = arrondis, boutons, cadres d'images), bloc focalisé carte + bouton, densité jugée au téléphone.
+  Ces réglages sont ceux de details.ts (déjà rendus à l'identique sur le site et dans l'aperçu, étiquetés dans harmonie.ts) ;
+  de nouveaux crans (gouttières, rythme vertical, ombres colorées) restent à ajouter dans details.ts.
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

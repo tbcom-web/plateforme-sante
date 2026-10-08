@@ -78,12 +78,24 @@ export const pageDuel = (id: unknown) => PAGES_DUEL.find((p) => p.id === id) ?? 
 /** Page d'une dimension `page:<id>` ou `page-libre:<id>` */
 export const pageDeDimension = (d: string | null | undefined): string | null => (d && /^page(-libre)?:/.test(d) ? d.slice(d.indexOf(':') + 1) : null);
 export const AXES_TAILLES = ['echelle', 'casse', 'graisse', 'interlettrage'] as const;
+/**
+ * Paires d'éléments (= PAIRES_ELEMENTS de combinaisons-elements.ts, vérifié par les tests) : dimension `paire:<a>:<b>`, « . » des
+ * dimensions d'harmonie écrit « _ » (contrainte de la colonne dimension_differente, 0037 : [a-z0-9:_-], aucune migration)
+ */
+export const DIMENSIONS_PAIRES: readonly string[] = ['paire:v_soins-forme:style', 'paire:v_accueil:v_entete-anim', 'paire:menu_ordinateur:police', 'paire:details_jeu:structure', 'paire:v_accueil:police', 'paire:style:structure', 'paire:v_portraits:v_accueil'];
 export const MODES_DUEL: readonly { id: string; type: TypeDuel; nom: string; detail: string; dimensions: readonly string[] }[] = [
   { id: 'palette', type: 'theme', nom: 'Palettes', detail: 'La même recette, seule la palette de couleurs change (gammes, couleurs libres proches des préférences).', dimensions: ['couleurs'] },
   { id: 'polices', type: 'typo', nom: 'Paires de polices', detail: 'La même recette, seule la paire de polices (titres et texte) change.', dimensions: ['polices'] },
   { id: 'tailles', type: 'typo', nom: 'Tailles et casse', detail: 'La même paire de polices : échelle des titres, casse, graisse ou interlettrage, un réglage à la fois.', dimensions: AXES_TAILLES.map((a) => `typo:${a}`) },
   { id: 'police-palette', type: 'theme', nom: 'Police × palette', detail: 'La paire de polices ET la palette changent ensemble : quelles combinaisons vont bien ensemble.', dimensions: ['police-couleurs'] },
   { id: 'pages', type: 'element', nom: 'Pages complètes', detail: 'La même page (fiche soin, article, contact…) en deux structures, ou dans deux recettes complètes : page entière, ordinateur et téléphone.', dimensions: PAGES_DUEL.map((p) => `page:${p.id}`) },
+  // Lot du 2026-10-08 (« contrastes de couleurs avec leurs fonds, images, combinaisons d'éléments ») : surfaces.ts, combinaisons-elements.ts
+  { id: 'surfaces', type: 'theme', nom: 'Contrastes et fonds', detail: 'La même palette, répartie autrement : fond blanc ou teinté, texte franc ou doux, accent plein ou léger (toujours AA).', dimensions: ['surfaces'] },
+  { id: 'images-fonds', type: 'illustration', nom: 'Images × fonds', detail: 'La même image sur deux fonds, ou sur le même fond avec deux traitements.', dimensions: ['image:fond', 'image:traitement'] },
+  // Réglages fins (demande de Paul du 2026-10-08 : « tester les padding, les ombres… ») : UN élément du jeu de détails à la fois
+  // (densité = espacements intérieurs, ombres, coins = arrondis, boutons, cadres d'images), bloc focalisé carte + bouton
+  { id: 'details-fins', type: 'theme', nom: 'Espacements, ombres, arrondis', detail: 'Un seul réglage fin change : densité (espacements), ombres, coins, boutons ou cadres d’images.', dimensions: ['details:densite', 'details:ombres', 'details:coins', 'details:boutons', 'details:cadre'] },
+  { id: 'combinaisons', type: 'theme', nom: 'Combinaisons d’éléments', detail: 'Deux éléments qui se voient ensemble changent à la fois : cartes × illustrations, premier écran × animation, menu × police…', dimensions: DIMENSIONS_PAIRES },
 ];
 export const modeDuel = (id: unknown) => MODES_DUEL.find((m) => m.id === id) ?? null;
 /** Mode d'un duel enregistré (d'après sa dimension) ; null : type de base */
@@ -236,6 +248,16 @@ export function uneSeuleDimension(a: object, b: object, dimension: string): bool
     const axes = [...new Set([...Object.keys(ta), ...Object.keys(tb)])].filter((k) => jsonStable(ta[k]) !== jsonStable(tb[k]));
     return d.length === 1 && d[0] === 'typo' && axes.length === 1 && axes[0] === axe;
   }
+  // Combinaison d'éléments : contrôlée par varierPaire (les deux dimensions d'harmonie, elles seules) ; répartition des surfaces : son champ
+  if (dimension.startsWith('paire:')) return d.length > 0;
+  // Un élément du jeu de détails (details:densite…) : seul le réglage `details`, et dans lui seul cet élément
+  if (dimension.startsWith('details:')) {
+    const e = dimension.slice(8);
+    const da = ((a as { details?: Record<string, unknown> }).details ?? {}), db = ((b as { details?: Record<string, unknown> }).details ?? {});
+    const el = [...new Set([...Object.keys(da), ...Object.keys(db)])].filter((k) => jsonStable(da[k]) !== jsonStable(db[k]));
+    return d.length === 1 && d[0] === 'details' && el.length === 1 && el[0] === e;
+  }
+  if (dimension === 'surfaces') return d.length === 1 && d[0] === 'surfaces';
   // Structure d'une page : seules ses présentations (sections) changent ; recettes complètes vues sur une page : libre
   if (dimension.startsWith('page:')) return d.length === 1 && d[0] === 'sections';
   if (dimension.startsWith('page-libre:')) return d.length > 0;
@@ -377,6 +399,8 @@ export function familleClassement(d: Pick<Duel, 'type' | 'dimension'>): string {
   if (d.type === 'photo') return 'photo';
   // Variantes d'une illustration de base : classement à part (contrastes, couleurs, styles du même dessin)
   if (d.type === 'illustration' && d.dimension?.startsWith('variante:')) return d.dimension;
+  // Images × fonds : classement des combinaisons image × fond (ou traitement)
+  if (d.dimension?.startsWith('image:')) return d.dimension;
   if (d.type === 'illustration') return 'illustration';
   return d.dimension ?? 'libre';
 }
@@ -418,13 +442,15 @@ const NOMS_FAMILLES: Record<string, string> = {
   'variante:contraste': 'contrastes d’illustration', 'variante:couleur': 'couleurs d’illustration', 'variante:style': 'styles d’une même illustration',
   photo: 'photos', illustration: 'illustrations et héros', couleurs: 'palettes', polices: 'paires de polices', effets: 'effets', typo: 'typographies',
   'typo:echelle': 'échelles de titres', 'typo:casse': 'casses de titres', 'typo:graisse': 'graisses de titres', 'typo:interlettrage': 'interlettrages de titres',
-  'police-couleurs': 'combinaisons police × palette',
+  'details:densite': 'densités (espacements)', 'details:ombres': 'ombres', 'details:coins': 'arrondis', 'details:boutons': 'boutons', 'details:cadre': 'cadres d’images',
+  'police-couleurs': 'combinaisons police × palette', surfaces: 'répartitions des couleurs et des fonds', 'image:fond': 'images × fonds', 'image:traitement': 'traitements d’image sur fond',
   details: 'détails', menu: 'menus', visuels: 'styles d’illustration', traitement: 'traitements photo', photos: 'jeux de photos', libre: 'compositions',
 };
 /** « polices », « présentations des horaires »… */
 export function nomFamille(f: string, nomsSections: Readonly<Record<string, string>> = {}): string {
   if (/^page(-libre)?:/.test(f)) { const p = pageDuel(pageDeDimension(f)); return `${f.startsWith('page-libre:') ? 'recettes vues sur la page' : 'structures de la page'} « ${p?.nom ?? f} »`; }
   if (f.startsWith('composant:')) { const s = f.slice(10); return `présentations « ${(nomsSections[s] ?? s).toLowerCase()} »`; }
+  if (f.startsWith('paire:')) return `combinaisons « ${f.slice(6).replace(':', ' × ').replace(/(^|\s)v_/g, '$1').replace(/_/g, ' ')} »`;
   return NOMS_FAMILLES[f] ?? f;
 }
 

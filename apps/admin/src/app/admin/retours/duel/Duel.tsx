@@ -16,7 +16,7 @@ import {
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
   modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, appliquerSurfaces, cleAssetSurfaces, cleDePaire, cleImageFond, cleImageRendu, couleursGabarit, filtreImage, FONDS_IMAGE, fondImageCss, gabaritModele, ingredientPaire, lireDimensionPaire, mesurerSurfaces, ratioLisible, reparerComposition, repereSurfaces, surface, surfacesConformes, TRAITEMENTS_IMAGE, varierPaire, type Repere, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -26,7 +26,7 @@ import type { PredictionJuge } from '@plateforme/core/juge';
 import { compositionPourCle as poserCle, PRESENTATIONS_PORTRAITS } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
 import { draftStudio } from '@/components/ApercuStudio';
-import PiloteApercu, { BandeauEvaluation, useRepereVisible } from '@/components/RepereEvaluation';
+import PiloteApercu, { BandeauEvaluation, StyleSurfaces, useRepereVisible } from '@/components/RepereEvaluation';
 import CadreApercu from '@/components/CadreApercu';
 import SpecimenHabillage from '@/components/SpecimenHabillage';
 import { ComparaisonFocale } from '@/components/BlocFocal';
@@ -63,6 +63,20 @@ function Nuancier({ x, lettre }: { x: CompositionRecette; lettre: string }) {
   );
 }
 
+/** Images × fonds : la même image posée sur un fond de la gamme, avec un traitement (combinaisons-elements.ts) */
+function VisuelSurFond({ asset, fond, traitement }: { asset: Asset; fond: string; traitement: string }) {
+  const g = gammeParId('canard')!;
+  const filtre = filtreImage(traitement);
+  return (
+    <div className="grid aspect-[4/3] w-full place-items-center rounded-2xl p-[8%] ring-1 ring-black/10" style={{ background: fondImageCss(fond, g) }}>
+      {asset.rendu.kind === 'image'
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={asset.rendu.src} alt="" className="max-h-full max-w-full rounded-xl object-cover" style={{ filter: filtre }} />
+        : asset.rendu.kind === 'svg' ? <div className="tr-svg h-full w-full" style={{ filter: filtre }} dangerouslySetInnerHTML={{ __html: asset.rendu.svg() }} /> : null}
+    </div>
+  );
+}
+
 /** Un visuel (photo dans son cadre de site, illustration) dans le vrai cadre du téléphone : mise en page mobile de la section */
 function CadreTelephone({ children, hauteur }: { children: ReactNode; hauteur: number }) {
   return (
@@ -75,9 +89,10 @@ function CadreTelephone({ children, hauteur }: { children: ReactNode; hauteur: n
 }
 
 type Rendu = { kind: 'compo'; x: CompositionRecette } | { kind: 'asset'; asset: Asset };
-type Cote = { cle: string; ingredients: IngredientsDuel; rendu: Rendu };
+/** `surfaces` : répartition des surfaces (surfaces.ts) ; `image` : la même image sur un fond / avec un traitement (combinaisons-elements.ts) */
+type Cote = { cle: string; ingredients: IngredientsDuel; rendu: Rendu; surfaces?: string; image?: { fond: string; traitement: string } };
 /** `mobileSeul` : duel « Mobile seulement » (duels-appareils.ts) : A et B montrés QU'EN cadre téléphone, appareil enregistré « mobile » */
-type Courant = { type: TypeDuel; scenario: ScenarioDuel; a: Cote; b: Cote; dimension: string | null; prediction: 'a' | 'b' | 'egalite' | null; vue: VuePage; mobileSeul?: boolean };
+type Courant = { type: TypeDuel; scenario: ScenarioDuel; a: Cote; b: Cote; dimension: string | null; prediction: 'a' | 'b' | 'egalite' | null; vue: VuePage; mobileSeul?: boolean; valeursForcees?: [string, string]; repereForce?: Repere };
 type DuelLocal = DuelCore & { remarque?: string | null };
 
 type Props = {
@@ -266,6 +281,33 @@ export default function Duel(props: Props) {
     const sujetsType = t === 'photo' || t === 'illustration' ? SUJETS_VISUELS : SUJETS_CLIENT;
     const parSujet = (s: string) => historique.filter((d) => d.type === t && (!md || modeDuDuel(d)?.id === md.id) && (d.scenario.sujets[0] ?? 'cabinet') === s).length;
     const ordre = sujetChoisi ? [sujetChoisi] : [...sujetsType.map((s) => s.id)].map((s) => ({ s, k: (1 + parSujet(s)) * -Math.log(Math.max(r(), 1e-9)) })).sort((a, b) => a.k - b.k).map((x) => x.s);
+    const dejaVus = new Set(historique.map((d) => cleDePaire(d.aCle, d.bCle)));
+    // Images × fonds : la même image sur deux fonds (ou sur le même fond avec deux traitements) ; clé apprise image:<base>&surface:<id>
+    if (md?.id === 'images-fonds') {
+      for (const s of ordre) {
+        const pool = [...candidats.illustration, ...candidats.photo].filter((x) => !x.exclu && x.sujets.includes(s));
+        if (!pool.length) continue;
+        const asset = parCle.get(pool[Math.floor(r() * pool.length)].cle);
+        if (!asset) continue;
+        const axe = r() < 0.6 ? 'fond' as const : 'traitement' as const;
+        const valeurs = (axe === 'fond' ? FONDS_IMAGE : TRAITEMENTS_IMAGE).map((v) => v.id as string);
+        const fondFixe = FONDS_IMAGE[Math.floor(r() * FONDS_IMAGE.length)].id;
+        const paires: [string, string][] = [];
+        for (let i = 0; i < valeurs.length; i++) for (let j = i + 1; j < valeurs.length; j++) if (!dejaVus.has(cleDePaire(cleImageRendu(asset.cle, axe, valeurs[i]), cleImageRendu(asset.cle, axe, valeurs[j])))) paires.push([valeurs[i], valeurs[j]]);
+        if (!paires.length) continue;
+        const [va, vb] = paires[Math.floor(r() * paires.length)];
+        const cote = (v: string): Cote => ({
+          cle: cleImageRendu(asset.cle, axe, v), rendu: { kind: 'asset', asset },
+          ingredients: { assets: [cleImageFond(asset.cle, axe, v)], element: cleImageFond(asset.cle, axe, v), juge: [asset.cle] },
+          image: axe === 'fond' ? { fond: v, traitement: 'aucun' } : { fond: fondFixe, traitement: v },
+        });
+        const nom = (v: string) => (axe === 'fond' ? FONDS_IMAGE.find((f) => f.id === v)?.nom : TRAITEMENTS_IMAGE.find((f) => f.id === v)?.nom) ?? v;
+        const [a, b] = r() < 0.5 ? [cote(va), cote(vb)] : [cote(vb), cote(va)];
+        const na = nom(a.image!.fond === b.image!.fond ? a.image!.traitement : a.image!.fond), nb = nom(a.image!.fond === b.image!.fond ? b.image!.traitement : b.image!.fond);
+        return { type: t, scenario: { sujets: [s] }, a, b, dimension: `image:${axe}`, prediction: null, vue: 'accueil', valeursForcees: [`${asset.titre} · ${na}`, `${asset.titre} · ${nb}`] };
+      }
+      return null;
+    }
     if (t === 'photo' || t === 'illustration') {
       for (const s of ordre) {
         const p = genererPaireElements(t, candidats[t], historique, { graine: g, sujet: s });
@@ -286,9 +328,32 @@ export default function Duel(props: Props) {
       let base = libres.length && r() < 0.6 ? libres[Math.floor(r() * libres.length)] : compositionInitiale(c, g);
       let dims: string[];
       let varier: (x: CompositionRecette, dim: string, gg: number) => CompositionRecette;
+      // Contrastes et fonds : même palette, deux répartitions des surfaces conformes AA (calculées sur les couleurs du gabarit)
+      if (md?.id === 'surfaces') {
+        const ap = appliquerRecette(draftStudio([s]), base, { proposes: props.proposes, modeles: props.modeles.map((m) => m.manifeste), soinsConnus: props.catalogue.map((x) => x.slug), themesActives: props.themesActives });
+        if (!ap || gabaritModele(ap.modele) === 'classique') continue;
+        const cg = couleursGabarit(ap.modele, { couleur: base.couleur, gamme: base.gamme || null });
+        const ids = surfacesConformes(cg);
+        const cleS = (id: string) => cleComposition({ ...base, surfaces: id });
+        const paires: [string, string][] = [];
+        for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) if (!dejaVus.has(cleDePaire(cleS(ids[i]), cleS(ids[j])))) paires.push([ids[i], ids[j]]);
+        if (!paires.length) continue;
+        const [ia, ib] = paires[Math.floor(r() * paires.length)];
+        const cote = (id: string): Cote => {
+          const k = coteCompo(base, s);
+          return { ...k, cle: cleS(id), surfaces: id, ingredients: { ...k.ingredients, atelier: [...(k.ingredients.atelier ?? []), `surfaces=${id}`], assets: [...(k.ingredients.assets ?? []), cleAssetSurfaces(id)], element: cleAssetSurfaces(id) } };
+        };
+        const [x1, x2] = r() < 0.5 ? [ia, ib] : [ib, ia];
+        const v = (id: string) => `${surface(id)?.nom ?? id} (texte ${ratioLisible(mesurerSurfaces(appliquerSurfaces(cg, id)).ratio)})`;
+        return { type: t, scenario: { sujets: [s], principaux: 1, ...(couleurs.length ? { couleurs } : {}) }, a: cote(x1), b: cote(x2), dimension: 'surfaces', prediction: null, vue: 'accueil', valeursForcees: [v(x1), v(x2)], repereForce: repereSurfaces([x1, x2]) };
+      }
       // Pages complètes : la structure d'UNE page change (dé par page) ; 20 % du temps, deux recettes complètes vues sur cette page
       const pageCible = md?.id === 'pages' ? (pageChoisie || PAGES_DUEL[Math.floor(r() * PAGES_DUEL.length)].id) : null;
-      if (md?.id === 'pages') {
+      if (md?.id === 'combinaisons') {
+        // Combinaisons d'éléments : les deux éléments de la paire changent, eux seuls, sans nouvelle règle dure (varierPaire)
+        dims = [...md.dimensions];
+        varier = (x, dim, gg) => { const p = lireDimensionPaire(dim); return p ? varierPaire(x, p[0], p[1], hasard(gg), { reparer: (y) => reparerComposition(y, c) }) : x; };
+      } else if (md?.id === 'pages') {
         dims = [`page:${pageCible}`];
         varier = (x, dim, gg) => tirerPage(x, { page: dim.slice(5) } as Parameters<typeof tirerPage>[1], c, gg);
       } else if (md) {
@@ -337,6 +402,9 @@ export default function Duel(props: Props) {
       const elementDe = (i: 0 | 1, cle: string) => (d.dimension?.startsWith('page-libre:') ? cle : pageDim ? diff.assets[i].find((k) => k.startsWith(`structure:${pageDim}:`)) ?? choisirElement(diff.atelier[i], diff.assets[i], cle) : d.dimension ? choisirElement(diff.atelier[i], diff.assets[i], cle) : cle);
       a.ingredients.element = elementDe(0, a.cle);
       b.ingredients.element = elementDe(1, b.cle);
+      // Combinaison d'éléments : clé apprise de chaque côté dans ses ingrédients (duels_apprentissage ne renvoie pas la composition)
+      const paireDim = lireDimensionPaire(d.dimension);
+      if (paireDim) for (const [k, x] of [[a, d.a], [b, d.b]] as const) { const ing = ingredientPaire(x, paireDim[0], paireDim[1]); if (ing) k.ingredients.atelier = [...(k.ingredients.atelier ?? []), ing]; }
       const [ja, jb] = clesJugeDuel(base0);
       if (ja.length) a.ingredients.juge = ja;
       if (jb.length) b.ingredients.juge = jb;
@@ -509,7 +577,7 @@ export default function Duel(props: Props) {
     <figure className="grid min-w-0 content-start gap-2">
       <figcaption className="flex items-center gap-2">
         <span className="grid size-8 place-items-center rounded-full bg-teal-800 text-sm font-bold text-white">{lettre}</span>
-        {courant?.dimension && <span className="truncate text-sm text-neutral-700">{libelleElement(c.ingredients.element ?? c.cle)}</span>}
+        {courant?.dimension && <span className="truncate text-sm text-neutral-700">{courant.valeursForcees ? courant.valeursForcees[lettre === 'A' ? 0 : 1] : libelleElement(c.ingredients.element ?? c.cle)}</span>}
       </figcaption>
       {/* Un cadre par appareil montré ; « Les deux » : ordinateur et vrai cadre téléphone côte à côte */}
       <div className={vu === 'les-deux' ? 'grid min-w-0 items-start gap-2' : 'min-w-0'} style={vu === 'les-deux' ? { gridTemplateColumns: `minmax(0, 1fr) ${etroit ? '42%' : '38%'}` } : undefined}>
@@ -524,9 +592,11 @@ export default function Duel(props: Props) {
     if (c.rendu.kind === 'compo') {
       const x = c.rendu.x;
       if (specimen && AVEC_SPECIMEN(courant!.dimension)) return <div className="overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-black/10"><SpecimenHabillage mobile={app === 'mobile'} hauteur={h} reglages={{ police: x.police, typo: x.typo ?? null, gamme: x.gamme || null, couleur: x.couleur }} /></div>;
-      return <ApercuCompo x={x} sujet={courant!.scenario.sujets[0] ?? 'sport'} appareil={app} vue={courant!.vue} hauteur={h} props={props} />;
+      const page = <ApercuCompo x={x} sujet={courant!.scenario.sujets[0] ?? 'sport'} appareil={app} vue={courant!.vue} hauteur={h} props={props} />;
+      return c.surfaces ? <StyleSurfaces id={c.surfaces}>{page}</StyleSurfaces> : page;
     }
-    const visuel = courant!.type === 'photo' && c.rendu.asset.rendu.kind === 'image'
+    const visuel = c.image ? <VisuelSurFond asset={c.rendu.asset} fond={c.image.fond} traitement={c.image.traitement} />
+      : courant!.type === 'photo' && c.rendu.asset.rendu.kind === 'image'
       ? <CadrePhoto src={c.rendu.asset.rendu.src} emplacement={courant!.scenario.emplacement ?? 'accueil'} sujet={courant!.scenario.sujets[0] ?? 'general'} />
       : <Apercu a={c.rendu.asset} grand />;
     if (app === 'bureau') return visuel;
@@ -541,7 +611,7 @@ export default function Duel(props: Props) {
   }
 
   // Ce qui est comparé (reperes.ts) : libellé, zones encadrées dans les aperçus, valeurs lisibles de A et B
-  const repere = repereDimension(courant?.dimension ?? null);
+  const repere = courant?.repereForce ?? repereDimension(courant?.dimension ?? null);
   // Bloc focalisé de la dimension (focal.ts) : seulement pour deux compositions
   const bloc = courant && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' ? blocFocal(courant.dimension) : null;
   const enFocal = Boolean(bloc && focal);
@@ -556,6 +626,7 @@ export default function Duel(props: Props) {
     return o === t ? o : `${o.replace(/\)$/, '')} sur ordinateur ; ${t.replace(/^[^(]*\(/, '')} sur téléphone`.replace(/\) sur téléphone$/, ' sur téléphone)');
   };
   const valeurs: [string, string] | null = !courant ? null
+    : courant.valeursForcees ? courant.valeursForcees
     : courant.dimension?.startsWith('typo:') && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' ? [valeurTaille(courant.a), valeurTaille(courant.b)]
     : courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' ? valeursDuel(courant.dimension, courant.a.rendu.x, courant.b.rendu.x)
     : [libelleElement(courant.a.cle), libelleElement(courant.b.cle)];

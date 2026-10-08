@@ -48,6 +48,8 @@ import type { SiteDraft } from './draft';
 import type { Univers } from './catalogue-univers';
 import { lireCleCombinaison } from './combinaisons';
 import { effetAvecMobile } from './duels-appareils';
+import { lireCleSurfaces } from './surfaces';
+import { lireClePaire, poserPaire } from './combinaisons-elements';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Dimensions, ordres de l'accueil
@@ -781,6 +783,8 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
   if (tp) return { ...x, traitement: tp };
   if (type === 'effets' && jeuEffets(a)) return { ...x, effets: a as IdJeuEffets };
   // Habillage : la valeur de la clé posée sur l'habillage de `x` (paire de polices pour typo:police:<id>)
+  // Combinaison d'éléments (combinaisons-elements.ts) : les deux valeurs posées
+  if (lireClePaire(cle)) return poserPaire(x, cle);
   // Combinaison police × palette (combinaisons.ts, tuile « Police × palette ») : la paire et la gamme posées ensemble
   const combi = lireCleCombinaison(cle);
   if (combi) return { ...x, police: combi.police as IdPairePolices, gamme: combi.gamme, couleur: gammeParId(combi.gamme)?.accent ?? x.couleur };
@@ -1327,7 +1331,8 @@ export const estEtiquetteStudio = (x: unknown): x is string => ETIQUETTES_STUDIO
 export function estCleStudio(k: unknown): k is string {
   if (typeof k !== 'string' || k.length > 200) return false;
   const [type, a, b] = k.split(':');
-  if (type === 'effets') return (Boolean(jeuEffets(a)) && b === undefined) || Boolean(lireCleTraitementPhotos(k));
+  if (type === 'effets') return (Boolean(jeuEffets(a)) && b === undefined) || Boolean(lireCleTraitementPhotos(k)) || lireCleSurfaces(k) !== null;
+  if (type === 'composant' && a === 'paire') return lireClePaire(k) !== null;
   if (type === 'typo') return estCleTypo(k) || lireCleCombinaison(k) !== null;
   if (type === 'details') return estCleDetails(k);
   if (type === 'menu') return estCleMenu(k);

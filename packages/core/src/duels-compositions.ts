@@ -6,10 +6,12 @@
 // (8 essais), et à défaut la variante est abandonnée (le duel passe à une autre dimension).
 import { ajusterBT, APPRENTISSAGE_DUELS, poidsAppareilDuel, REFERENCE, type Duel, type MatchBT } from './duels';
 import { cleCombinaisonPolicePalette, cleApriseDeNotable } from './combinaisons';
+import { matchsPaires } from './combinaisons-elements';
 import { gamme as gammeParId } from './gammes';
 import { violationsDures, type ApprisHarmonie, type ContexteHarmonie } from './harmonie';
 import { habillageDe, tirerDimension, tirerHabillageRecette, type CompositionRecette, type ContexteRecette, type DimensionRecette } from './recettes';
 import type { AxeTypo } from './typo';
+import type { ElementDetails } from './details';
 import { ecartVisible } from './focal';
 
 const codes = (x: CompositionRecette, c: ContexteRecette) => new Set(violationsDures(x, c as unknown as ContexteHarmonie).map((v) => v.code));
@@ -30,6 +32,7 @@ export function varierDuel(x: CompositionRecette, dimension: string, c: Contexte
     const g = (Math.imul(graine, 2654435761) + essai * 97) >>> 0;
     let y: CompositionRecette;
     if (dimension.startsWith('typo:')) y = tirerHabillageRecette(x, { groupe: 'typo', axe: dimension.slice(5) as AxeTypo }, c, g);
+    else if (dimension.startsWith('details:')) y = tirerHabillageRecette(x, { groupe: 'details', axe: dimension.slice(8) as ElementDetails }, c, g);
     else if (dimension === 'police-couleurs') y = tirerDimension(tirerDimension(x, 'polices', c, g), 'couleurs', c, (g + 1) >>> 0);
     else y = tirerDimension(x, dimension as DimensionRecette, c, g);
     // Écart visible garanti (focal.ts) : deux crans trop proches → un autre tirage
@@ -100,4 +103,25 @@ export function ajouterPairesApprises(h: ApprisHarmonie | null | undefined, ...s
     if (t) paires[k] = t; else delete paires[k];
   }
   return { ...base, global: { ...base.global, paires } };
+}
+
+/**
+ * Paires apprises des duels « Combinaisons d'éléments » (dimension `paire:<a>|<b>`, combinaisons-elements.ts) : Bradley-Terry
+ * des clés `<a>:<va>&<b>:<vb>` des deux côtés, Δ = clamp(0,5 · θ, ±0,5 ★) ; ajoutées aux paires d'harmonie (ajouterPairesApprises).
+ */
+export function pairesElementsDuels(duels: readonly Duel[]): Record<string, number> {
+  const matchs: MatchBT[] = [];
+  for (const m of matchsPaires(duels)) {
+    const w = poidsAppareilDuel(m.appareil);
+    if (m.resultat === 'mauvais') { for (const k of [m.a, m.b]) if (k) matchs.push({ a: k, b: REFERENCE, s: 0, w: w * APPRENTISSAGE_DUELS.penaliteMauvais }); continue; }
+    if (!m.a || !m.b || m.a === m.b) continue;
+    matchs.push({ a: m.a, b: m.b, s: m.resultat === 'a' ? 1 : m.resultat === 'b' ? 0 : 0.5, w });
+  }
+  const r: Record<string, number> = {};
+  const f = ajusterBT(matchs);
+  for (const k of [...f.keys()].sort()) {
+    const v = Math.round(Math.max(-APPRENTISSAGE_DUELS.plafond, Math.min(APPRENTISSAGE_DUELS.plafond, APPRENTISSAGE_DUELS.facteur * f.get(k)!.theta)) * 1000) / 1000;
+    if (v) r[k] = v;
+  }
+  return r;
 }
