@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Aperçus de l'admin : « Saint-Rémy-de-Provence » et les autres mots composés ne se coupent plus (trait d'union insécable à l'affichage).
 - 2026-10-09 : Chaîne des modèles (/chaine) : présélection → tournoi → check agent → avis humain → retouche Claude → re-check → revalidation → validation de Paul ; rôles contributeur / validateur ; docs/chaine-modeles.md
 - 2026-10-09 : Sites : l'activité du praticien (visuels validés) habille le premier écran et les fiches des soins mis en avant ; repli sur le thème sinon.
 - 2026-10-09 : Sites publiés : la construction applique les exclusions de l'admin (Arrivages non acceptés ou refusés, ≤ 2 ★, à valider) ; un élément refusé de la configuration est remplacé par son repli.

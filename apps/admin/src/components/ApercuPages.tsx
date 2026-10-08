@@ -44,7 +44,7 @@ export function ApercuPageSujet({ theme, soins, visuel, variante, conseils, mobi
       <div style={{ display: 'grid', gridTemplateColumns: mobile || heros ? '1fr' : '1.1fr 0.9fr', gap: mobile ? 22 : 48, alignItems: 'end', paddingTop: 24, borderTop: `var(--filet-fort, 2px) solid ${v.encre}` }}>
         <div style={{ display: 'grid', gap: 14 }}>
           {fil(['Accueil', 'Soins', theme.libelle])}
-          {sur(`${metierPack?.titre ?? 'Pédicure-podologue'}${ville ? ` · ${ville}` : ''}`)}
+          {sur(`${(metierPack?.titre ?? 'Pédicure-podologue').replace(/-/g, '‑')}${ville ? ` · ${ville}` : ''}`)}
           {titre}
           <p style={{ margin: 0, fontSize: mobile ? 17 : 19, color: v.douce, maxWidth: '60ch' }}>{theme.intro}</p>
         </div>

@@ -47,6 +47,7 @@ import CadreApercu from './CadreApercu';
 import { ContexteMetierApercu, type MetierApercu } from './ApercuMetier';
 import { packProfession } from '@plateforme/core';
 import { PROFESSION_PAR_DEFAUT } from '@plateforme/core/professions';
+import { apercuInsecable, insecable } from '@plateforme/core/onboarding';
 
 type Props = {
   draft: SiteDraft; modele: ModeleManifeste; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[];
@@ -136,7 +137,9 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
 
 export default function ApercuTheme({ profession = null, draft: d0, exemples = true, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [] }: Props) {
   // Kit démo : photos d'exemple (cabinet et praticiens fictifs) seulement dans l'aperçu, le brouillon reste intact
-  const { draft: d, applique: kitApplique } = useMemo(() => (exemples ? appliquerKitDemo(d0, kitDemoDe()) : { draft: d0, applique: RIEN_APPLIQUE }), [d0, exemples]);
+  // Mots composés insécables À L'AFFICHAGE (comme les sites, lib/typo.mjs) : noms, cabinet, villes (« Saint-Rémy-de-Provence ») avec
+  // un trait d'union insécable ; le brouillon enregistré garde le vrai trait d'union. Tous les aperçus passent par ici.
+  const { draft: d, applique: kitApplique } = useMemo(() => { const di = apercuInsecable(d0); return exemples ? appliquerKitDemo(di, kitDemoDe()) : { draft: di, applique: RIEN_APPLIQUE }; }, [d0, exemples]);
   // Animations jouées (Studio) : contexte lu par les visuels, canvas pilotés dans l'iframe de l'aperçu
   const reglageAnim = useMemo(() => ({ jouer: animer, enAttente: animationsEnAttente }), [animer, animationsEnAttente]);
   const racineAp = useRef<HTMLDivElement>(null);
@@ -205,7 +208,7 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
   const metierPack: MetierApercu | null = profession && profession !== PROFESSION_PAR_DEFAUT
     ? (() => { const pk = packProfession(profession); const pays = (d.pays in pk.titre ? d.pays : 'FR') as keyof typeof pk.titre; return { titre: pk.titre[pays], discipline: pk.discipline[pays], accroche: pk.defauts.accrocheTitre }; })()
     : null;
-  const titre = metierPack?.titre ?? PAYS.find((p) => p.value === d.pays)?.titre ?? 'Pédicure-podologue';
+  const titre = insecable(metierPack?.titre ?? PAYS.find((p) => p.value === d.pays)?.titre ?? 'Pédicure-podologue');
   const noms = r.noms;
   const nomCabinet = r.nomCabinet;
   const surTitre = [titre, ville].filter(Boolean).join(' · ');
