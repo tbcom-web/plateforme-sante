@@ -254,6 +254,24 @@ export function choixPourApprentissage<T extends Pick<ChoixGrille, 'profession' 
   return l.filter((c) => professionDuChoix(c, parDefaut) === profession || estDimensionTransversale(c.dimension));
 }
 
+/** Profession effective d'un duel A/B (null ou absente → profession par défaut, fournie par l'appelant) */
+export const professionDuDuel = (d: Pick<Duel, 'profession'>, parDefaut: string) => d.profession || parDefaut;
+
+/**
+ * Duels A/B qui nourrissent le goût d'une profession, comme la Dégustation (choixPourApprentissage) : TOUS les siens ; ceux des
+ * autres professions sur les dimensions transversales (couleurs, polices, typographie, détails, menus, effets, surfaces, pages,
+ * composants) ; et, pour les duels d'éléments (photos, illustrations) d'une autre profession, seulement si les DEUX éléments
+ * sont aussi pour cette profession (`pourLaProfession` : ingrédient commun ou partagé, professions-ingredients.ts). Sans
+ * profession (null) : tout.
+ */
+export function duelsPourApprentissage<T extends Pick<Duel, 'profession' | 'dimension' | 'type' | 'aCle' | 'bCle'>>(
+  l: readonly T[], profession: string | null, parDefaut: string, pourLaProfession?: (cle: string) => boolean,
+): T[] {
+  if (!profession) return [...l];
+  return l.filter((d) => professionDuDuel(d, parDefaut) === profession || estDimensionTransversale(d.dimension)
+    || ((d.type === 'photo' || d.type === 'illustration') && Boolean(pourLaProfession) && pourLaProfession!(d.aCle) && pourLaProfession!(d.bCle)));
+}
+
 /** Probabilité Plackett-Luce du classement partiel observé (tests, simulation) */
 export function vraisemblancePL(theta: readonly number[], meilleures: readonly number[], pire: number | null = null): number {
   let restant = theta.map((_, i) => i);

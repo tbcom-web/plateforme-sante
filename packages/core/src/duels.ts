@@ -164,6 +164,11 @@ export type Duel = {
   appareil?: string | null;
   /** Gagnant prédit par le juge au moment du duel (calibration) */
   prediction?: 'a' | 'b' | 'egalite' | null;
+  /**
+   * Profession du duel (registre professions.ts, cookie du sélecteur de l'en-tête ; migration 0051) ; null ou absente = profession
+   * par défaut (duels d'avant le multi-professions). Apprentissage : degustation.ts, duelsPourApprentissage.
+   */
+  profession?: string | null;
   le?: string | null;
 };
 
@@ -312,12 +317,13 @@ export function validerDuel(b: Record<string, unknown>): { ok: true; duel: Duel 
   const etiquettes = Array.isArray(b.etiquettes) ? [...new Set(b.etiquettes.filter(estEtiquetteDuel))].slice(0, 12) : [];
   const appareil = (APPAREILS_DUEL as readonly unknown[]).includes(b.appareil) ? (b.appareil as AppareilDuel) : 'les-deux';
   const prediction = b.prediction === 'a' || b.prediction === 'b' || b.prediction === 'egalite' ? b.prediction : null;
+  const profession = typeof b.profession === 'string' && /^[a-z0-9-]{2,40}$/.test(b.profession) ? b.profession : null;
   return {
     ok: true,
     duel: {
       type: b.type, scenario: normaliserScenarioDuel(b.scenario), aCle, bCle,
       aIngredients: normaliserIngredientsDuel(b.aIngredients), bIngredients: normaliserIngredientsDuel(b.bIngredients),
-      dimension, resultat: b.resultat, etiquettes, appareil, prediction,
+      dimension, resultat: b.resultat, etiquettes, appareil, prediction, ...(profession ? { profession } : {}),
     },
   };
 }
@@ -326,7 +332,7 @@ export function validerDuel(b: Record<string, unknown>): { ok: true; duel: Duel 
 export function duelDepuisLigne(l: Record<string, unknown>): Duel | null {
   const v = validerDuel({
     type: l.type, resultat: l.resultat, aCle: l.a_cle, bCle: l.b_cle, dimension: l.dimension_differente, etiquettes: l.etiquettes ?? [],
-    appareil: l.appareil, prediction: l.prediction, scenario: l.scenario, aIngredients: l.a_ingredients, bIngredients: l.b_ingredients,
+    appareil: l.appareil, prediction: l.prediction, scenario: l.scenario, aIngredients: l.a_ingredients, bIngredients: l.b_ingredients, profession: l.profession,
   });
   return v.ok ? { ...v.duel, le: typeof l.created_at === 'string' ? l.created_at : null } : null;
 }
