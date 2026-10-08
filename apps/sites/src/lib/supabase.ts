@@ -63,6 +63,9 @@ import {
   photosDuJeu,
   phraseJoursDomicile,
   PAYS,
+  appliquerExclusionsSite,
+  clesExcluesSite,
+  jourParis,
   type Faq,
   type PraticienPublic,
   type SiteConfig,
@@ -107,6 +110,22 @@ async function lireContexteImages(d: SiteDraft, slugs: readonly string[]) {
     jeux: jeux.map((l) => { const j = jeuPhotosDepuisLigne(l); return { photos: j.photos, specialite: j.specialite, sujets: j.specialite === 'generale' ? ['general'] : sujetsDeSpecialite(j.specialite) }; }),
     notesKits: kits.map((k) => ({ sujet: k.sujet, note: k.note, garder: k.garder, photos: Array.isArray(k.photos) ? k.photos : [], appareil: k.appareil })),
   }), visuel, visuelsActivite };
+}
+
+/**
+ * Exclusions du site publié (exclusions-site.ts, mêmes règles que l'admin) : éléments ≤ 2 ★, retirés ou à retravailler,
+ * nouveautés non acceptées ou refusées dans les Arrivages, photos « à valider ». Tables absentes : aucune exclusion (avant).
+ */
+async function lireExclusionsSite(): Promise<Set<string>> {
+  const [lignes, aValider] = await Promise.all([
+    lire<{ cle_asset: string; note: number | null; statut: string | null }[]>('rpc/assets_notes_apprentissage').catch(() => []),
+    lire<{ url: string | null }[]>('photos_libres?statut=neq.validee&url=not.is.null&select=url').catch(() => []),
+  ]);
+  return clesExcluesSite({
+    lignes: lignes.map((l) => ({ cle: l.cle_asset, note: l.note, statut: l.statut })),
+    jour: jourParis(new Date()),
+    urlsAValider: aValider.map((x) => x.url ?? '').filter(Boolean),
+  });
 }
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
@@ -175,7 +194,11 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   // Site public : version publiée (repli sur le brouillon si elle n'existe pas encore) ; aperçu (APERCU=1) : brouillon.
   // Personnalisations du praticien (personnalisations-site.ts) : couche appliquée EN DERNIER (recette → pack → profil/kit → praticien) ;
   // images « Démo » jamais posées sur un site construit.
-  const d = appliquerPersonnalisations(normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config)), { publication: true });
+  const d0 = appliquerPersonnalisations(normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config)), { publication: true });
+  // Exclusions de l'admin appliquées au site publié : un élément refusé de la configuration est remplacé par son repli
+  const exclusionsSite = await lireExclusionsSite().catch(() => new Set<string>());
+  const { draft: d, retires } = appliquerExclusionsSite(d0, exclusionsSite);
+  if (retires.length) console.log(`[exclusions] ${s.slug ?? s.id} : ${retires.length} élément(s) remplacé(s) par leur repli : ${retires.join(', ')}`);
 
   // Modèle de présentation : fiche importée par l'admin (table « modeles »), sinon modèle intégré.
   const [ligneModele] = await lire<{ manifeste: unknown }[]>(`modeles?id=eq.${encodeURIComponent(d.theme.modele)}&actif=eq.true&select=manifeste`).catch(() => []);
@@ -213,7 +236,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   const photosStyle = d.theme.modeVisuel === 'photos';
   const images = await lireContexteImages(d, catalogue.map((c) => c.slug)).catch(() => null);
   // Kit illustré (dessin par soin, animation d'en-tête validés) dans tous les styles ; kit photo en style « Photos »
-  if (images) definirContexteImages({ exclues: images.exclues, kits: { [d.theme.specialite]: { ...(images.kit && photosStyle ? images.kit : {}), ...images.visuel } } });
+  if (images) definirContexteImages({ exclues: [...images.exclues, ...exclusionsSite], kits: { [d.theme.specialite]: { ...(images.kit && photosStyle ? images.kit : {}), ...images.visuel } } });
+  else if (exclusionsSite.size) definirContexteImages({ exclues: exclusionsSite });
   const jeuRetenu = images?.kit && photosStyle && jeuPhotos && !jeuPhotos.siteId ? null : jeuPhotos;
   const persoPack = persoDuJeuPhotos(jeuRetenu, persoBanque, poidsPhotos, sujetsDeSpecialite(d.theme.specialite));
   // Images générées par IA (jeu retenu, kit photo) : mention dans les crédits des mentions légales (images-generees.ts)

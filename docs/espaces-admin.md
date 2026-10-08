@@ -71,7 +71,9 @@ Frigo, tableau de bord, Sites. Dégustation et Profils lisent le même cookie. A
 - **Ce qui n'est pas accepté n'est pas utilisable par le générateur** : les nouveautés en attente ou refusées sont ajoutées au
   registre d'exclusion (`ContexteImages` → `contexte-images.ts`) pour l'admin, /creer, /edition, /mon-site et l'essai (lecture
   `assets_notes_apprentissage()`, ouverte aux praticiens). Les photos l'étaient déjà (seules les `validee` importées sont tirées).
-  Limite : la construction des sites publiés (`apps/sites`) n'applique pas encore l'exclusion des nouveautés en attente.
+  Sites publiés (2026-10-09) : la construction Astro applique les mêmes exclusions (`exclusions-site.ts`, `apps/sites/src/lib/supabase.ts`) :
+  nouveautés non acceptées ou refusées, éléments ≤ 2 ★, retirés ou à retravailler, photos « à valider » ; un élément exclu de la
+  configuration du site est remplacé par son repli (valeur par défaut, photo suivante ou illustration), journalisé au build.
 - Gestes : A / → accepter, R / ← refuser, glisser au doigt (droite = accepter), Z annule la dernière décision (30 gardées).
 - Frigo = inventaire unitaire (bibliothèque + éléments du studio) moins arrivages en attente ou refusés, retirés, à retravailler,
   tranchés 1 ★.
