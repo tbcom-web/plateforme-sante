@@ -7,6 +7,11 @@
 // Téléphone : gros boutons, barre de notation fixée en bas. Une seule carte rendue à la fois (rendu paresseux).
 // Ordinateur ET mobile (0034) : les deux rendus côte à côte (bascule sur téléphone), annotables ; la note du CHOIX garde
 // l'appareil regardé ; bloc « Rendu mobile » à part (défaut d'adaptation rattaché à la structure, jamais au choix).
+// COMBINAISONS COMPLÈTES (retour de Paul du 2026-10-08 : « je ne vois pas les nouveaux headers… on voit juste le hero ») : chaque
+// proposition est complétée par tous les ingrédients du Studio (compositionAtelier, core : premiers écrans photo et organiques,
+// animations d'en-tête, transitions, portraits, habillage, traitement des photos ; « à valider » compris, avec badge), notés avec
+// elle (`reglages`). Aperçu de la PAGE ENTIÈRE : ordinateur et téléphone côte à côte avec défilement dans le cadre, « Page
+// entière », défilement synchronisé et onglets des pages du scénario (ApercusCoteACote du Studio) ; sur téléphone, un rendu à la fois.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   basculerCouleur, cleCombinaison, COULEURS_PREFEREES, couleurPreferee, draftVide, ETIQUETTES_ATELIER, gamme as gammeParId, ingredientsProposition,
@@ -14,10 +19,14 @@ import {
   type PhotoBanque, type MarqueImportee, type ModeleManifeste, type PoidsAtelier, type SiteDraft, type Univers,
 } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
+import ApercusCoteACote from './studio/ApercusCoteACote';
+import {
+  aValiderDansComposition, appliquerPriorites, appliquerRecette, compositionAtelier, draftPourOnglet, libelleTraitementPhotos, LIBELLES_VARIANTES, modeleIntegre,
+  NOMS_SECTIONS_VARIABLES, ongletsDuScenario, pairePolices, reglagesAtelier, soinsDuScenario, vueDePage, type ContexteRecette, type PageStructure,
+} from '@plateforme/core';
 import DoubleRendu from '@/components/DoubleRendu';
 import RenduMobile from '@/components/RenduMobile';
 import { empreinteMobile, type AppareilRetour, type ScenarioRecette, type Zone } from '@plateforme/core';
-import { apercuProposition } from '@/lib/apercu-proposition';
 import type { SoinCatalogue } from '@/lib/sites';
 import { ajouterNoteAtelier } from './actions';
 
@@ -109,12 +118,27 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
   // Style « photos » : de VRAIES photos de la banque, tirées pour les sujets et pondérées par les notes ; elles font partie des
   // ingrédients notés (clé de combinaison) — même tirage pour une même proposition (graine : son identifiant)
   const photosP = useMemo(() => (p && p.modeVisuel === 'photos' && photos.length ? tirerPhotos({ sujets: sujetsPris(entree), principaux: scenario.principaux.length, poids, photos }, alea(0, p.id)) : []), [p, photos, entree, scenario.principaux.length, poids]);
-  const ingredients = useMemo(() => (p ? ingredientsProposition(p, entree, photosP) : null), [p, entree, photosP]);
+  // Combinaison complète : la proposition + tous les autres ingrédients du Studio (registre, harmonie), « à valider » compris
+  const modele = useCallback((id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id), [modeles]);
+  const ctxRecette = useMemo<ContexteRecette>(() => ({ sujets: sujetsPris(entree), principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids: apprentissage ? poids : null, photos, modele }), [entree, scenario.principaux.length, scenario.couleurs, apprentissage, poids, photos, modele]);
+  const comp = useMemo(() => (p ? compositionAtelier(p, ctxRecette, photosP, 0) : null), [p, ctxRecette, photosP]);
+  const aValider = useMemo(() => (comp ? aValiderDansComposition(comp) : []), [comp]);
+  const ingredients = useMemo(() => (p && comp ? { ...ingredientsProposition(p, entree, photosP), reglages: reglagesAtelier(comp, sujetsPris(entree)) } : null), [p, comp, entree, photosP]);
   const cle = useMemo(() => (ingredients ? cleCombinaison(ingredients) : ''), [ingredients]);
   const apercu = useMemo(() => {
-    const a = p ? apercuProposition(d, p, { proposes, modeles, slugs, themesActives }) : null;
-    return a && photosP.length ? { ...a, draft: { ...a.draft, theme: { ...a.draft.theme, photosRecette: photosP } } } : a;
-  }, [p, d, proposes, modeles, slugs, themesActives, photosP]);
+    if (!comp) return null;
+    const dd = appliquerPriorites({ ...d, soins: soinsDuScenario(scenario, slugs) }, { principaux: scenario.principaux, secondaires: scenario.secondaires });
+    return appliquerRecette(dd, comp, { proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives });
+  }, [comp, d, scenario, slugs, proposes, modeles, themesActives]);
+  // Pages du scénario (onglets) ; mode zone (z) partagé par les deux rendus côte à côte
+  const onglets = useMemo(() => ongletsDuScenario(scenario, catalogue, { themesActives }), [scenario, catalogue, themesActives]);
+  const [ongletId, setOngletId] = useState('accueil');
+  const onglet = onglets.find((o) => o.id === ongletId) ?? onglets[0];
+  const [large, setLarge] = useState(false);
+  useEffect(() => { const mq = window.matchMedia('(min-width: 1200px)'); const f = () => setLarge(mq.matches); f(); mq.addEventListener('change', f); return () => mq.removeEventListener('change', f); }, []);
+  const [modeZone, setModeZone] = useState(false);
+  const [animer, setAnimer] = useState(true);
+  useEffect(() => { if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setAnimer(false); }, []);
 
   const changerScenario = (s: Scenario) => {
     setScenario(s);
@@ -161,7 +185,8 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
     if (modeEtiquettes && /^[1-8]$/.test(e.key)) { e.preventDefault(); basculerEtiquette(ETIQUETTES_ATELIER[Number(e.key) - 1].id); return; }
     if (/^[1-5]$/.test(e.key)) { e.preventDefault(); void noter(Number(e.key)); return; }
     if (e.key === 't' || e.key === 'T') { e.preventDefault(); setModeEtiquettes((m) => !m); return; }
-    if (e.key === 'Escape') { setModeEtiquettes(false); return; }
+    if (large && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); setModeZone((m) => !m); return; }
+    if (e.key === 'Escape') { setModeEtiquettes(false); setModeZone(false); return; }
     if (e.key === 'ArrowRight') { e.preventDefault(); aller(1); return; }
     if (e.key === 'ArrowLeft') { e.preventDefault(); aller(-1); return; }
   };
@@ -241,16 +266,35 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
 
       {/* ---- Combinaison ---- */}
       {!p ? <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Aucune combinaison pour ce scénario.</p> : (
-        <section aria-label="Combinaison à noter" className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] md:items-start">
+        <section aria-label="Combinaison à noter" className={large ? 'grid grid-cols-[minmax(0,1fr)_360px] items-start gap-4' : 'grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] md:items-start'} style={large ? { marginInline: 'calc(50% - 50vw + 24px)' } : undefined}>
           <div className="grid min-w-0 gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-neutral-600" aria-live="polite">Lot {lot} · proposition {(index % 3) + 1} sur 3 · n° {index + 1}{epuise && index >= liste.length - 1 ? ' (dernière)' : ''}</p>
             </div>
-            {apercu && (
-              <DoubleRendu key={`${p.id}|${scenario.couleurs.join()}|${sujets.join()}`} libelle={p.nom} onAppareil={setAppareilVu} mobileDabord={etroit}
-                zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
-                rendu={(app) => <ApercuTheme sansCommandes vignette={app === 'mobile' ? 560 : 520} appareil={app} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />} />
-            )}
+            {apercu && (() => {
+              const cleRendu = `${p.id}|${scenario.couleurs.join()}|${sujets.join()}|${onglet.id}`;
+              const rendu = (app: 'bureau' | 'mobile', hauteur?: number) => <ApercuTheme sansCommandes hauteurCadre={hauteur} animer={animer} appareil={app} vueInitiale={vueDePage(onglet.page as PageStructure)} draft={draftPourOnglet(apercu.draft, onglet)} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
+              const ongletsJsx = (
+                <div role="tablist" aria-label="Pages du scénario" className="flex min-w-0 flex-1 gap-1 overflow-x-auto pb-1">
+                  {onglets.map((o) => (
+                    <button key={o.id} type="button" role="tab" aria-selected={o.id === onglet.id} onClick={() => setOngletId(o.id)}
+                      className={`min-h-11 shrink-0 rounded-lg border px-3 text-sm ${focus} ${o.id === onglet.id ? 'border-teal-800 bg-teal-800 font-semibold text-white' : 'border-neutral-200 bg-white hover:bg-neutral-50'}`}>{o.nom}</button>
+                  ))}
+                </div>
+              );
+              const optionAnimer = <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={animer} onChange={(e) => setAnimer(e.target.checked)} className="size-5 accent-teal-800" />Animer</label>;
+              return large ? (
+                <ApercusCoteACote key={cleRendu} libelle={p.nom} onAppareil={setAppareilVu} mode={modeZone} onMode={setModeZone} options={optionAnimer}
+                  zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile} rendu={rendu} entete={ongletsJsx} />
+              ) : (
+                <>
+                  {ongletsJsx}
+                  <DoubleRendu key={`${cleRendu}|${etroit}`} libelle={p.nom} onAppareil={setAppareilVu} mobileDabord={etroit} largeurMobile={etroit ? 360 : 340}
+                    zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
+                    rendu={(app) => rendu(app, app === 'mobile' ? 640 : 560)} />
+                </>
+              );
+            })()}
           </div>
 
           <div className="grid gap-3 md:sticky md:top-4">
@@ -269,7 +313,14 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
               <li className={puce}>Animation : {p.animation ? LIBELLES_ANIMATIONS[p.animation].split(' ').slice(0, 3).join(' ') : 'image fixe'}</li>
               <li className={puce}>Héros : {p.heros ? themeParId(p.heros)?.court : 'aucun'}</li>
               <li className={puce}>Sujet n° 1 : {sujets[0] ? themeParId(sujets[0])?.court : 'cabinet'}</li>
+              {comp && (['accueil', 'entete-anim', 'transition', 'sections', 'portraits'] as const).map((s) => {
+                const v = (comp.sections.variantes as Record<string, string>)[s];
+                return v ? <li key={s} className={puce}>{NOMS_SECTIONS_VARIABLES[s] ?? s} : {LIBELLES_VARIANTES[s]?.[v] ?? v}{aValider.includes(`composant:${s}:${v}`) && <span className="ml-1 rounded bg-amber-100 px-1 font-semibold text-amber-900">à valider</span>}</li> : null;
+              })}
+              {comp && <li className={puce}>Polices : {pairePolices(comp.police)?.nom ?? comp.police}</li>}
+              {comp && <li className={puce}>Photos : {libelleTraitementPhotos(comp.traitement)}</li>}
             </ul>
+            {aValider.length > 0 && <p className="w-fit rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">Contient {aValider.length} ingrédient{aValider.length > 1 ? 's' : ''} à valider (jamais proposé{aValider.length > 1 ? 's' : ''} aux praticiens avant validation)</p>}
             {p.nuances.length > 0 && <p className="text-xs text-neutral-500">{p.nuances.join(' · ')}</p>}
 
             <fieldset className="grid gap-2">
