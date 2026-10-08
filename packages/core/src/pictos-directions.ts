@@ -15,7 +15,7 @@
 // Règles communes : aucune lettre, aucun chiffre, aucun logo ; aucune couleur littérale (currentColor, --picto-accent / --accent),
 // aucun <style>, aucun identifiant ; orteils : formule égyptienne, 5 orteils quand des orteils sont dessinés ; douleur jamais en
 // cible ; peau jamais noire (« pied nécrosé ») ; accent contrôlé à ≥ 3:1 contre le fond (couleursPictoSur : sinon une variante).
-// Clés d'inventaire : `picto:<id>@direction-<a|b|c>` (variantes du picto de base `picto:<id>`, bases-illustrations.ts) et
+// Clés d'inventaire : `picto:<id>@direction-<a|b|c>` (bases à part entière : refontes, aucun héritage du picto actuel) et
 // `picto:style-icones-<a|b|c>` (tuile « Style d'icônes » : la planche de la direction en situation).
 import { OUTILS_PICTOS as O } from './pictos';
 import { SEMELLE, SEMELLE_ELEMENTS, PLANTE, PLANTE_ENFANT, ORTEILS_ENFANT, CONTOUR_PIED, CHAUSSURE, echantillonner, type P } from './pied';
@@ -85,7 +85,7 @@ export const LIBELLES_ECHANTILLON: Readonly<Record<IdEchantillon, string>> = {
   stationnement: 'Accès, stationnement', 'soins-domicile': 'Soins à domicile',
 };
 
-/** Clé d'inventaire d'un picto dans une direction (variante de `picto:<id>`) */
+/** Clé d'inventaire d'un picto dans une direction (base à part entière, sans héritage de `picto:<id>`) */
 export const cleDirection = (id: string, d: DirectionPicto) => `picto:${id}@direction-${d}`;
 /** Clé de la tuile « Style d'icônes » d'une direction */
 export const cleStyleIcones = (d: DirectionPicto) => `picto:style-icones-${d}`;

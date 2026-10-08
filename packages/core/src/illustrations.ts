@@ -180,8 +180,9 @@ export function inventaireIllustrations(): Illustration[] {
     });
   }
   // Directions de style des pictos à l'essai (2026-10-08, pictos-directions.ts, brouillons « À revoir », rien de branché) : les 12
-  // pictos de l'échantillon dans chaque direction, variantes du picto actuel (base `picto:<id>`, bases-illustrations.ts), sans sujet
-  // ni hashtag (jamais dans un kit) ; et la tuile « Style d'icônes » de chaque direction : sa planche en situation
+  // pictos de l'échantillon dans chaque direction, bases à part entière (refontes : aucun héritage de note, de statut ni de refus du
+  // picto actuel, bases-illustrations.ts), sans sujet ni hashtag (jamais dans un kit) ; et la tuile « Style d'icônes » de chaque
+  // direction : sa planche en situation
   for (const d of DIRECTIONS_PICTOS) {
     for (const id of ECHANTILLON_DIRECTIONS) {
       l.push({

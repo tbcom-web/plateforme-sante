@@ -90,9 +90,9 @@ Aucune animation tant que les pictos de base ne sont pas validés.
 
 ## 5. Où voir et noter
 
-- **Donner mon avis** : les 12 pictos actuels deviennent la base de leurs 3 directions (« Voir les 4 variantes ») ; les directions,
-  jamais notées, partent en duel. Les tuiles **« Style d'icônes »** (`picto:style-icones-a|b|c`) montrent la planche de chaque
+- **Donner mon avis** : chaque direction est une carte à part (`picto:<id>@direction-a|b|c`, « À revoir ») : ce sont des refontes,
+  elles n'héritent ni de la note, ni du statut, ni du refus (1 ★) du picto actuel. Les tuiles **« Style d'icônes »** (`picto:style-icones-a|b|c`) montrent la planche de chaque
   direction en situation (cartes de soins, infos pratiques, téléphone) et se notent seules.
 - **Duel « On compare : le style des icônes »** : `/admin/retours/duel/pictos` (même picto, deux styles à tailles réelles sur trois
-  fonds ; planche contre planche). Aussi : Duel des variantes, base « picto:<id> », dimension Style.
+  fonds ; planche contre planche).
 - Rien n'est branché sur les sites, rien n'est « Validé ». Planches PNG : dossier de travail de la session (`pictos-directions/`).

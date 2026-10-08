@@ -53,8 +53,10 @@ export const HERITAGE_VARIANTES = { plafondEcart: 0.5, lissage: 4 } as const;
 /** Registres (ordre de préférence de l'illustration « basique ») */
 const ORDRE_VARIANTES = ['pedagogique', 'releve', 'decoupe', 'riso', 'volume', 'geometrique', 'ligne', 'direction-a', 'direction-b', 'direction-c'] as const;
 /**
- * Directions de style des pictos à l'essai (2026-10-08, pictos-directions.ts) : `picto:<id>@direction-<a|b|c>` est une variante
- * (dimension « style ») du picto actuel `picto:<id>`, qui est lui-même la base (il rejoint son groupe, en tête).
+ * Directions de style des pictos à l'essai (2026-10-08, pictos-directions.ts) : `picto:<id>@direction-<a|b|c>` est une REFONTE, pas
+ * une variante de rendu : c'est une base à part entière (baseDeCle → null). Elle n'hérite ni de la note, ni du statut, ni du refus
+ * (1 ★, tranches.ts) du picto actuel : un picto actuel à 1 ★ ne doit pas cacher ses trois directions avant que Paul les voie.
+ * Libellé et valeur restent lisibles (« Direction A (trait fin) ») pour les duels du style des icônes.
  */
 const DIRECTION_PICTO = /^(picto:[a-z0-9-]+)@direction-([abc])$/;
 /** Styles expérimentaux (styles-experimentaux.ts, recopiés : module sans dépendance ; test d'égalité) */
@@ -105,8 +107,6 @@ export function baseDeCle(cle: string): string | null {
   if (typeof cle !== 'string') return null;
   const r = lireVarianteRendu(cle);
   if (r) return baseDeCle(r.source) ?? r.source;
-  const dir = DIRECTION_PICTO.exec(cle);
-  if (dir) return dir[1];
   const p = cle.split(':');
   if (p.length === 3 && (p[0] === 'dessin' || p[0] === 'heros' || p[0] === 'materiel') && p[1] && p[2]) return `${p[0]}:${p[1]}`;
   if (p.length === 2 && p[0] === 'ligne') {

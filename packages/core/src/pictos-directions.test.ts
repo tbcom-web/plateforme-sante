@@ -4,8 +4,10 @@ import {
   DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, FONDS_PICTO, CONTRASTE_PICTO, svgPictoDirection, svgPlancheDirection, svgTuileDirection,
   couleursPictoSur, traitOptique, traitDirection, cleDirection, cleStyleIcones, lireCleDirection, echelleTrace,
 } from './pictos-directions';
-import { baseDeCle, regrouperParBase, dedoublonnerParBase, libelleVariante, valeurVariante } from './bases-illustrations';
-import { candidatsVariantes } from './duels';
+import { baseDeCle, regrouperParBase, dedoublonnerParBase, libelleVariante, notesAvecBases, statutEffectif } from './bases-illustrations';
+import { tranchesDepuisSignaux } from './tranches';
+import { poidsAssets, scoreAsset } from './assets-poids';
+import { noteHeritee, notesVisuels, visuelExclu } from './kits-visuels';
 import { inventaireIllustrations } from './illustrations';
 import { gamme } from './gammes';
 import { contraste } from './couleurs';
@@ -67,23 +69,41 @@ test('accent jamais invisible : ≥ 3:1 contre le fond (blanc, teinté, sombre) 
   assert.ok(m.contrasteAccent >= 3);
 });
 
-test('clés : variantes du picto actuel, regroupées sous sa base, picto actuel en tête', () => {
+test('clés : chaque direction est une base à part entière (refonte), jamais une variante du picto actuel', () => {
   assert.equal(cleDirection('ongle-incarne', 'b'), 'picto:ongle-incarne@direction-b');
   assert.deepEqual(lireCleDirection('picto:horaires@direction-c'), { id: 'horaires', direction: 'c' });
-  assert.equal(baseDeCle('picto:horaires@direction-a'), 'picto:horaires');
-  assert.equal(baseDeCle('picto:horaires'), null);
+  for (const d of DIRECTIONS_PICTOS) assert.equal(baseDeCle(cleDirection('horaires', d)), null);
   assert.equal(baseDeCle(cleStyleIcones('a')), null, 'la tuile « Style d’icônes » se note seule');
-  assert.equal(valeurVariante('picto:horaires@direction-b'), 'direction-b');
   assert.equal(libelleVariante('picto:horaires@direction-a'), 'Direction A (trait fin)');
   const items = ['picto:horaires@direction-b', 'picto:telephone', 'picto:horaires', 'picto:horaires@direction-a'].map((cle) => ({ cle }));
-  const { groupes, seuls } = regrouperParBase(items);
-  assert.deepEqual(seuls.map((x) => x.cle), ['picto:telephone']);
-  assert.equal(groupes[0].base, 'picto:horaires');
-  assert.deepEqual(groupes[0].variantes.map((x) => x.cle), ['picto:horaires', 'picto:horaires@direction-a', 'picto:horaires@direction-b']);
-  const file = dedoublonnerParBase(items, (g) => ({ cle: g.base }));
-  assert.deepEqual(file.map((x) => x.cle), ['picto:horaires', 'picto:telephone'], 'une seule carte par picto');
-  const c = candidatsVariantes('picto:horaires', groupes[0].variantes.map((x) => x.cle), { contrastes: false });
-  assert.equal(c.length, 3);
+  assert.equal(regrouperParBase(items).groupes.length, 0);
+  assert.deepEqual(dedoublonnerParBase(items, (g) => ({ cle: g.base })).map((x) => x.cle), items.map((x) => x.cle), 'une carte par direction');
+});
+
+test('picto actuel noté 1 ★ (et retiré) : ses 3 directions restent visibles, sans note, statut ni refus hérités', () => {
+  const actuel = 'picto:horaires';
+  const dirs = DIRECTIONS_PICTOS.map((d) => cleDirection('horaires', d));
+  const lignes = [{ cle: actuel, note: 1 }, { cle: actuel, note: 1 }];
+  // Notes « vues par la file » : la note du picto actuel ne se recopie sur aucune direction
+  assert.deepEqual(notesAvecBases(lignes.map((l) => ({ ...l, empreinte: null }))).map((n) => n.cle), [actuel, actuel]);
+  // Règle « 1 ★ n'apparaît plus » (tranches.ts) : seul le picto actuel est refusé
+  const t = tranchesDepuisSignaux(notesAvecBases(lignes));
+  assert.ok(t.refuses.has(actuel));
+  for (const k of dirs) assert.ok(!t.refuses.has(k) && !t.favoris.has(k) && !t.notes.has(k), k);
+  // Apprentissage : aucun effet hérité (score neutre), statut « retiré » non hérité
+  const poids = poidsAssets([...lignes, { cle: actuel, statut: 'retire' }, ...Array.from({ length: 8 }, () => ({ cle: 'gamme:canard', note: 4 }))]);
+  assert.ok((poids!.effets[actuel] ?? 0) < 0);
+  for (const k of dirs) assert.equal(scoreAsset(k, poids), 0, k);
+  assert.equal(statutEffectif(dirs[0], { [actuel]: 'retire' }), undefined);
+  // Kits / exclusions ≤ 2 ★ : ni note héritée, ni exclusion
+  const notes = notesVisuels(lignes);
+  for (const k of dirs) {
+    assert.equal(noteHeritee(k, notes), null, k);
+    assert.equal(visuelExclu(k, { visuels: [], notes, statuts: { [actuel]: 'retire' }, exclues: new Set([actuel]) }), false, k);
+  }
+  assert.equal(visuelExclu(actuel, { visuels: [], notes }), true);
+  // Tuile « Style d'icônes » : indépendante elle aussi
+  for (const d of DIRECTIONS_PICTOS) { assert.equal(scoreAsset(cleStyleIcones(d), poids), 0); assert.ok(!t.refuses.has(cleStyleIcones(d))); }
 });
 
 test('inventaire : 36 pictos et 3 planches « Style d’icônes », à revoir, sans sujet, rendus non vides', () => {
