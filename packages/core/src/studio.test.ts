@@ -18,7 +18,9 @@ test('studio : inventaire des structures de pages, éléments et effets, clés u
   }
   // Chaque famille d'éléments (dont rendez-vous / contact et formes des cartes) a 3 variantes au moins dans la tuile « Éléments »
   for (const f of FAMILLES_COMPOSANTS) assert.ok(l.filter((a) => a.type === 'composant' && a.soins.includes(f)).length >= (['soins', 'accueil', 'praticiens', 'faq', 'infos', 'pied', 'actualites'].includes(f) ? 3 : 4), f);
-  assert.equal(l.filter((a) => a.type === 'effets' && !a.cle.startsWith('effets:surfaces-')).length, 4);
+  assert.equal(l.filter((a) => a.type === 'effets' && !a.cle.startsWith('effets:surfaces-') && !a.cle.startsWith('effets:photos-')).length, 4);
+  // Traitements des photos (6 × avec / sans grain) : notables depuis la garantie d'inventaire (inventaire-garantie.test.ts)
+  assert.equal(l.filter((a) => a.cle.startsWith('effets:photos-')).length, 12);
   // Hors de la bibliothèque des illustrations
   assert.ok(!inventaireAssets().some((a) => a.rendu.kind === 'studio'));
   assert.ok(titresAssets()['composant:contact:bandeau']);

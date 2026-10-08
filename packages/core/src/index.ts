@@ -101,3 +101,4 @@ export * from './profils';
 export * from './publication-recettes';
 export * from './visuels-heros-animes';
 export * from './icones-illustrees';
+export * from './nouveautes';

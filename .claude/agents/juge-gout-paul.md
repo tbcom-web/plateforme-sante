@@ -58,3 +58,7 @@ le vocabulaire de Paul (« on comprend pas », « trop simple », « trop clipar
   sur le même échantillon.
 - Le dépôt est public : aucune donnée personnelle dans `retours/` (ni e-mail, ni auteur).
 - Tu ne tues jamais un processus que tu n'as pas lancé.
+
+## Nouveaux ingrédients (règle de Paul du 2026-10-08)
+
+Tout nouvel ingrédient doit apparaître dans l'inventaire de notation (`inventaireAssets` / `inventaireStudio`, `packages/core/src/assets.ts` ; garantie : `inventaire-garantie.test.ts`) et dans `packages/core/src/inventaire-connu.json` (`npm run inventaire:maj`, fichier à committer avec l'ingrédient). Après la livraison, donner le lien direct du lot : `/admin/retours?nouveautes=<famille>@<AAAA-MM-JJ>` (docs/retours.md, « Nouveautés à noter »).

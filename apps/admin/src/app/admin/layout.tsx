@@ -3,17 +3,22 @@ import Shell from '@/components/Shell';
 import ContexteImages from '@/components/ContexteImages';
 import { exigerAdmin } from '@/lib/admin';
 import { getUser } from '@/lib/supabase/server';
+import { getNombreNouveautes } from '@/lib/nouveautes';
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   await exigerAdmin();
-  const user = await getUser();
+  const [user, nouveautes] = await Promise.all([getUser(), getNombreNouveautes()]);
 
   return (
     <Shell email={user?.email ?? ''}>
       {/* Téléphone : bandeau défilant horizontalement (dans son conteneur), sur plusieurs lignes à partir de sm. */}
       <nav aria-label="Super admin" className="-mx-4 mb-5 flex items-center gap-2 overflow-x-auto px-4 py-1 text-sm sm:mx-0 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:px-0">
         <span className="mr-2 shrink-0 font-semibold text-amber-900">Super admin</span>
-        <Link href="/admin/retours" className="shrink-0 whitespace-nowrap rounded-full bg-teal-800 px-3 py-1.5 font-semibold text-white ring-1 ring-teal-900 hover:bg-teal-900">Donner mon avis</Link>
+        {/* Badge : nouveautés jamais notées (registre inventaire-connu.json, lib/nouveautes.ts) */}
+        <Link href="/admin/retours" className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-teal-800 px-3 py-1.5 font-semibold text-white ring-1 ring-teal-900 hover:bg-teal-900">
+          Donner mon avis
+          {nouveautes > 0 && <span className="rounded-full bg-amber-300 px-1.5 text-xs font-bold tabular-nums text-amber-950" title={`${nouveautes} nouveauté${nouveautes > 1 ? 's' : ''} à noter`}><span className="sr-only">, nouveautés à noter : </span>{nouveautes}</span>}
+        </Link>
         <Link href="/admin" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Sites</Link>
         <Link href="/admin/leads" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Essais</Link>
         <Link href="/admin/catalogue" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Catalogue de soins</Link>

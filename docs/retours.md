@@ -274,6 +274,55 @@ celle de l'agent des animations de héros).
   d'un sujet qui a une animation affiche « ▶ Version animée » à côté.
 - Duels de variantes (/admin/retours/duel/variantes) : inchangés pour l'instant.
 
+### Nouveautés à noter (2026-10-08, `nouveautes.ts`)
+
+Exigence de Paul : « il faut absolument que tous les nouveaux "ingrédients" passent par le filtre de notation de base ».
+
+- **Garantie** (`packages/core/src/inventaire-garantie.test.ts`) : tout ingrédient tirable par le générateur, le Studio,
+  l'atelier, les duels ou les kits (valeurs de chaque section, premiers écrans, animations d'en-tête, transitions, portraits,
+  gammes, paires de polices, axes typo, détails, menus, effets, traitements des photos, surfaces, pictos et directions, dessins,
+  héros, matériel, kits, animations de soins et leurs ingrédients, registre d'harmonie, et tout ce que les dés tirent
+  réellement) doit être dans l'inventaire de notation (`inventaireAssets` ∪ `inventaireStudio`). Le test échoue en listant les
+  clés absentes. Les valeurs neutres (celle du modèle, « aucun » : `estCleNeutre`) ne sont pas des ingrédients.
+- **Registre « déjà connu »** : `packages/core/src/inventaire-connu.json`, clé unitaire → date de première apparition
+  (AAAA-MM-JJ). `npm run inventaire:maj` ajoute chaque clé absente avec la date du jour (heure de Paris) ; `npm run verifier`
+  le lance en premier (en local : ajoute ; sur GitHub, `--verifier` : échoue s'il manque une clé) et le test
+  `inventaire-connu.test.ts` échoue tant que le registre n'est pas à jour. **Committer le JSON avec l'ingrédient.**
+  Seuls les ingrédients unitaires y sont : les combinaisons (structures de pages, police × palette, paires d'éléments,
+  images × fonds) ne sont jamais des nouveautés.
+- **Tuile « Nouveautés à noter »**, en tête de Donner mon avis : les ingrédients apparus depuis moins de 30 jours et jamais
+  notés (ni eux ni leur illustration de base), hors « Retiré », groupés par lot avec leur nombre et leur date
+  (« Animations d'en-tête empreintes · 10 · 08/10 »). « Noter les nouveautés » ouvre la file dédiée : même carte de notation
+  (animation jouée, picto à 24 / 48 / 96 px, élément dans sa page…), badges « Nouveauté du … » et « À valider », jamais
+  notées seulement, chacune une fois ; une nouveauté notée sort de la tuile. Les tranchés (1 ★ / 5 ★) ne sont jamais redemandés.
+  Le lien « Donner mon avis » du menu porte le nombre de nouveautés à noter.
+- **Lien direct par lot** (à envoyer à Paul après chaque livraison) : `/admin/retours?nouveautes=<lot>` où `<lot>` vaut
+  `<famille>@<AAAA-MM-JJ>` (un lot exact), `<famille>` (toutes ses dates) ou `tout`. Familles (`familleNouveaute`) :
+  `entete-empreintes`, `entete-anim`, `pictos-directions`, `pictos`, `premiers-ecrans`, `transition`, `sections`, `portraits`,
+  `traitements-photos`, `surfaces`, `effets`, `polices`, `typographies`, `details`, `menus`, `illustrations`, `heros`,
+  `traits`, `materiel`, `animations`, `bibliotheque`, `kit-sports`, `photos`, `gammes`, `modeles`, sinon la section de
+  l'élément (`composant:<section>:…` → `<section>`). Exemples : `/admin/retours?nouveautes=entete-empreintes@2026-10-08`,
+  `/admin/retours?nouveautes=pictos-directions@2026-10-08`. Lot déjà noté ou inconnu : message sur l'accueil.
+
+### Animations dans les duels et tuiles d'illustrations
+
+Retour de Paul du 2026-10-08 (« quand je note / A-B teste les illustrations, je ne vois pas d'animations ») : les animations
+sont traitées comme des illustrations de héros (`packages/core/src/visuels-heros-animes.ts`, version minimale en attendant
+celle de l'agent des animations de héros).
+
+- **Duels « Illustrations et héros »** : les animations admissibles du sujet entrent dans les candidats (animation contre
+  animation = dimension « version ») ; environ un duel sur trois quand le sujet a une animation : l'animation jouée face à son
+  image fixe (`animation:fige`, « l'animation apporte-t-elle quelque chose ? », côté `animation:<nom>@fige`) ou face à une
+  illustration fixe du même sujet (`animation:illustration`). Rendu dans un vrai premier écran (PremierEcranAnime : titre,
+  bouton, visuel principal), animation jouée avec Pause / Rejouer. Favoris, exclusions et tranchés (1 ★ jamais, refusés
+  exclus) respectés.
+- **Admissible** : images de base validées (etatAnimation pas « en attente ») et animation non retirée. Les animations d'en-tête
+  dérivées des géométries validées (em-*) et celles « à valider » pour Paul seront ajoutées quand l'agent des animations de
+  héros aura poussé `visuelsHerosAnimes` (leurs fichiers ne sont pas encore dans le dépôt).
+- **Tuile « Illustrations »** : les animations du sujet en font partie (jouées) ; une illustration (héros, dessin, trait)
+  d'un sujet qui a une animation affiche « ▶ Version animée » à côté.
+- Duels de variantes (/admin/retours/duel/variantes) : inchangés pour l'instant.
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

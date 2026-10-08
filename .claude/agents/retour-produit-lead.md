@@ -41,3 +41,7 @@ Tu es un **testeur produit** qui joue un **lead** : un ou une pédicure-podologu
 5. **Ce qui marche bien** (à ne pas casser).
 6. **Non testé** et pourquoi.
 Classe par impact sur la conversion. Pas de liste fleuve : préfère 8 points forts à 40 remarques.
+
+## Nouveaux ingrédients (règle de Paul du 2026-10-08)
+
+Tout nouvel ingrédient doit apparaître dans l'inventaire de notation (`inventaireAssets` / `inventaireStudio`, `packages/core/src/assets.ts` ; garantie : `inventaire-garantie.test.ts`) et dans `packages/core/src/inventaire-connu.json` (`npm run inventaire:maj`, fichier à committer avec l'ingrédient). Après la livraison, donner le lien direct du lot : `/admin/retours?nouveautes=<famille>@<AAAA-MM-JJ>` (docs/retours.md, « Nouveautés à noter »).

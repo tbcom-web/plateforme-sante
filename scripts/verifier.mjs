@@ -4,6 +4,7 @@
 // 3. Constructions locales, sans Supabase : la démo et le site de test qui contient TOUS les soins du catalogue
 //    (apps/sites/src/data/sites/test-tous-soins.ts), sur deux modèles. Sorties dans un dossier temporaire.
 // 4. Contrôle de la charte graphique.
+// 0. Registre des nouveautés (npm run inventaire:maj) : tout nouvel ingrédient daté, pour la tuile « Nouveautés à noter ».
 // S'arrête à la première erreur. Aucun secret, aucune publication.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -23,6 +24,9 @@ const CONSTRUCTIONS = [
 ];
 
 const etapes = [
+  // Registre des nouveautés (packages/core/src/inventaire-connu.json) : en local, chaque nouvel ingrédient de l'inventaire y est
+  // ajouté avec la date du jour (à committer avec l'ingrédient) ; sur GitHub (CI), simple contrôle : échec s'il en manque un.
+  { nom: 'Registre des nouveautés (inventaire:maj)', cmd: `node scripts/inventaire-maj.mjs${process.env.CI ? ' --verifier' : ''}` },
   { nom: 'Types : packages/core', cmd: 'npm run verifier:types -w @plateforme/core' },
   { nom: 'Types : packages/contenus', cmd: 'npm run verifier:types -w @plateforme/contenus' },
   { nom: 'Types : apps/sites (astro check)', cmd: 'npm run verifier:types -w apps/sites' },

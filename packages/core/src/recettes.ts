@@ -817,7 +817,8 @@ export function lireCleStructure(cle: string): { page: PageStructure; ordre: Ord
 export function compositionPourCle(x: CompositionRecette, cle: string): CompositionRecette {
   const [type, a, b] = cle.split(':');
   const tp = lireCleTraitementPhotos(cle);
-  if (tp) return { ...x, traitement: tp };
+  // Traitement des photos (Donner mon avis) : montré sur un premier écran à photos (photos de démonstration si besoin)
+  if (tp) return avecPhotosDemo({ ...x, traitement: tp, sections: { ...x.sections, variantes: { ...x.sections.variantes, accueil: estPremierEcranPhoto(x.sections.variantes.accueil) ? x.sections.variantes.accueil : 'photo-gauche' } } });
   if (type === 'effets' && jeuEffets(a)) return { ...x, effets: a as IdJeuEffets };
   // Habillage : la valeur de la clé posée sur l'habillage de `x` (paire de polices pour typo:police:<id>)
   // Combinaison d'éléments (combinaisons-elements.ts) : les deux valeurs posées
@@ -870,6 +871,8 @@ export function blocsPourCle(cle: string): string[] | undefined {
     // Page sujet, article, fiche : la page entière (vuePourCle)
     return blocs[a];
   }
+  // Traitement des photos : le premier écran à photos et la galerie du cabinet
+  if (lireCleTraitementPhotos(cle)) return ['premier', 'galerie'];
   if (type === 'structure') {
     const blocs: Record<string, string[] | undefined> = { accueil: undefined, soins: ['competences', 'sujets'], acces: ['acces', 'contact'], cabinet: ['praticiens', 'galerie'], questions: ['faq'], fiche: undefined, actualites: ['actualites'], theme: undefined, article: undefined };
     return blocs[a];

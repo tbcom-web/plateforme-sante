@@ -13,7 +13,7 @@
 // Pur.
 
 import { baseDeCle } from './bases-illustrations';
-import { clePhoto } from './assets-poids';
+import { clePhoto, estCleNeutre } from './assets-poids';
 import { clesDetails } from './details';
 import { clesMenu } from './menus';
 import { pairePolices } from './modeles';
@@ -47,7 +47,8 @@ export function noteElement(cle: string, notes?: NotesElements | null): number |
 }
 
 /** Éléments notables d'une composition (gamme, modèle, héros, photos, éléments, effets, traitement, habillage) — pas les structures de page agrégées */
-export const elementsComposition = (x: CompositionRecette, sujets: readonly string[]) => clesRecette(x, sujets).assets.filter((k) => !k.startsWith('structure:'));
+// Valeurs neutres (celle du modèle, « aucun » : estCleNeutre) : pas des éléments à juger, jamais notables, donc pas comptées
+export const elementsComposition = (x: CompositionRecette, sujets: readonly string[]) => clesRecette(x, sujets).assets.filter((k) => !k.startsWith('structure:') && !estCleNeutre(k));
 
 export type QualiteComposition = { total: number; bons: number; trois: number; jamais: number; faibles: number; part: number; texte: string; details: { cle: string; note: number | null }[] };
 
@@ -57,7 +58,7 @@ export function qualiteComposition(x: CompositionRecette, sujets: readonly strin
 
 /** Même jauge pour une liste de clés d'éléments (site d'un praticien : elementsDuSite) */
 export function qualiteCles(cles: readonly string[], notes?: NotesElements | null): QualiteComposition {
-  const details = [...new Set(cles)].map((cle) => ({ cle, note: noteElement(cle, notes) }));
+  const details = [...new Set(cles)].filter((cle) => !estCleNeutre(cle)).map((cle) => ({ cle, note: noteElement(cle, notes) }));
   const bons = details.filter((d) => d.note !== null && d.note >= 4).length;
   const jamais = details.filter((d) => d.note === null).length;
   const faibles = details.filter((d) => d.note !== null && d.note < 2.5).length;

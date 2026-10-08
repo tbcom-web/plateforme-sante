@@ -63,6 +63,8 @@ import { clesAvecSignal, notesAvecBases, statutEffectif } from '@plateforme/core
 import PhotosADecouvrir from './PhotosADecouvrir';
 import ProgressionQualite from './ProgressionQualite';
 import { notesElements, tableauProgression } from '@plateforme/core';
+import { dateCourte, estAValider, lotsDuParametre, lotsNouveautes, type CleRecente, type LotNouveautes } from '@plateforme/core';
+import NouveautesANoter from './NouveautesANoter';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -114,10 +116,19 @@ type Props = {
   /** Retours « Rendu mobile » (0034) : liste de corrections et état mobile des cartes */
   retoursMobile?: RetourMobile[];
   migrationMobile?: boolean;
+  /** Nouveautés (nouveautes.ts) : clés unitaires récentes du registre inventaire-connu.json ; lot demandé par ?nouveautes= */
+  nouveautesRecentes?: CleRecente[];
+  nouveautesInitiales?: string | null;
 };
 
 /** Espaces hors notation : inspirations et photos à découvrir */
 type Espace = 'inspirations' | 'decouvrir';
+
+/** Session limitée à une liste de clés : ingrédients d'une animation en attente, ou file « Nouveautés » (jamais notées seulement) */
+type Selection = { titre: string; cles: string[]; nouveautes?: boolean };
+const selectionNouveautes = (lots: readonly LotNouveautes[]): Selection => ({
+  titre: lots.length === 1 ? `Nouveautés : ${lots[0].libelle} (${dateCourte(lots[0].date)})` : 'Nouveautés à noter', cles: lots.flatMap((l) => l.cles), nouveautes: true,
+});
 
 type Carte =
   | { kind: 'asset'; asset: Asset; empreinte: string | null; svg: string | null }
@@ -339,10 +350,18 @@ export default function Retours(props: Props) {
   // Tranchés (tranches.ts) : 1 ★ et 5 ★ ne sont plus proposés (prochaineCarte) ; « Réévaluer » efface les notes antérieures pour la règle
   const etats = useMemo(() => etatsNotes(notesAvecBases(avecReevaluations(notes, props.reevaluations ?? []))), [notes, props.reevaluations]);
   const signaux = useMemo(() => clesAvecSignal(notes), [notes]);
+  // Nouveautés à noter (nouveautes.ts) : récentes, jamais notées (ni leur illustration de base), hors « Retiré » ; notée → sort du lot
+  const clesInventaire = useMemo(() => new Set(inventaireComplet.map((a) => a.cle)), [inventaireComplet]);
+  const recentes = useMemo(() => new Map((props.nouveautesRecentes ?? []).map((r) => [r.cle, r.date])), [props.nouveautesRecentes]);
+  const lotsNouv = useMemo(() => lotsNouveautes(props.nouveautesRecentes ?? [], { notees: etats, connues: clesInventaire, statuts: props.statuts }), [props.nouveautesRecentes, etats, clesInventaire, props.statuts]);
+  const [messageAccueil, setMessageAccueil] = useState<string | null>(() => (props.nouveautesInitiales && !lotsDuParametre(lotsNouv, props.nouveautesInitiales).length ? `Nouveautés « ${props.nouveautesInitiales} » : rien à noter (déjà notées, ou lot inconnu).` : null));
   // Statuts de la bibliothèque (illustrations_statuts), mis à jour localement depuis une session « ingrédients »
   const [statuts, setStatuts] = useState<Record<string, StatutIllustration>>(props.statuts);
   // Session limitée à une liste de clés (ingrédients d'une animation en attente)
-  const [selection, setSelection] = useState<{ titre: string; cles: string[] } | null>(() => {
+  const [selection, setSelection] = useState<Selection | null>(() => {
+    // ?nouveautes=<lot> (lien direct envoyé après une livraison) : file « Nouveautés » de ce lot
+    const demandes = lotsDuParametre(lotsNouv, props.nouveautesInitiales);
+    if (demandes.length) return selectionNouveautes(demandes);
     const a = props.ingredientsDe ? animationDeCle(props.ingredientsDe) : null;
     const e = a ? etatAnimation(a, props.statuts) : null;
     return e?.aValider.length ? { titre: `Ingrédients de « ${e.titre} »`, cles: e.aValider.map((i) => i.cle) } : null;
@@ -430,7 +449,9 @@ export default function Retours(props: Props) {
       if (!cacheEmpreintes.current.has(a.cle)) cacheEmpreintes.current.set(a.cle, empreinteAsset(a));
       return { cle: a.cle, empreinte: cacheEmpreintes.current.get(a.cle) ?? null, a };
     });
-    const x = prochaineCarteAvecAttente(liste, etats, vus.current, (l) => enAttente(l.a));
+    // File « Nouveautés » : seulement les jamais notées, chacune une fois ; vide → fin de la file
+    const file = selection?.nouveautes ? liste.filter((l) => !etats.has(l.cle) && !vus.current.has(l.cle)) : liste;
+    const x = prochaineCarteAvecAttente(file, etats, vus.current, (l) => enAttente(l.a));
     return x ? preparer(x.a) : null;
   }, [candidatsDe, etats, tirerTheme, migrationAtelier, selection, enAttente]);
 
@@ -441,11 +462,11 @@ export default function Retours(props: Props) {
     if (position < historique.length - 1) { setPosition((p) => p + 1); return; }
     if (!categorie) return;
     const carte = tirer(categorie);
-    if (!carte) return;
+    if (!carte) { if (selection?.nouveautes) { setMessageAccueil(`${selection.titre} : tout est noté, merci.`); setCategorie(null); } return; }
     vus.current.add(cleCarte(carte));
     setHistorique((h) => [...h, carte]);
     setPosition(historique.length);
-  }, [position, historique.length, categorie, tirer]);
+  }, [position, historique.length, categorie, tirer, selection]);
 
   const precedente = () => { reinitialiserSaisie(); setPosition((p) => Math.max(0, p - 1)); };
 
@@ -453,9 +474,10 @@ export default function Retours(props: Props) {
   useEffect(() => { if (!categorie) setSelection(null); }, [categorie]);
 
   // Démarrage d'une catégorie (et carte demandée par ?cle=)
-  const demarrer = (c: CategorieRetours, cles: { titre: string; cles: string[] } | null = null) => {
+  const demarrer = (c: CategorieRetours, cles: Selection | null = null) => {
     cleDemandee.current = null;
     setSelection(cles);
+    setMessageAccueil(null);
     setCategorie(c);
     setHistorique([]);
     setPosition(-1);
@@ -587,6 +609,8 @@ export default function Retours(props: Props) {
     };
     return (
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+        {/* Nouveautés à noter (registre inventaire-connu.json) : en tête, avant les catégories */}
+        <NouveautesANoter lots={lotsNouv} message={messageAccueil} onNoter={(l) => demarrer('hasard', selectionNouveautes(l))} />
         <section className="grid gap-3 rounded-2xl border border-black/10 bg-neutral-50 p-4">
           {bandeau}
           <p className="text-sm text-neutral-700">
@@ -836,6 +860,8 @@ export default function Retours(props: Props) {
             ) : <p className="text-sm text-neutral-700">{carte.p.phrase}</p>}
             <div className="flex flex-wrap gap-1.5 text-xs">
               {carte.kind === 'asset' && !etat && <span className="rounded-full bg-sky-100 px-2 py-0.5 font-semibold text-sky-900">Jamais noté</span>}
+              {carte.kind === 'asset' && recentes.has(carte.asset.cle) && <span className="rounded-full bg-amber-200 px-2 py-0.5 font-semibold text-amber-950">Nouveauté du {dateCourte(recentes.get(carte.asset.cle)!)}</span>}
+              {carte.kind === 'asset' && estAValider(carte.asset.cle) && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900" title="Jamais proposé aux praticiens avant votre validation">À valider</span>}
               {modifieDepuis && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-950">Modifié depuis votre note : comparez avant / après</span>}
               {etat && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">Déjà noté {etat.n} fois ({etat.min === etat.max ? `${etat.min}★` : `${etat.min} à ${etat.max}★`})</span>}
               {st && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">Statut : {LIBELLES_STATUTS_ILLUSTRATION[st]}</span>}
@@ -845,7 +871,8 @@ export default function Retours(props: Props) {
           </div>
           {groupeBase && <VariantesRepliees key={`vb-${groupeBase.base}`} groupe={groupeBase} signaux={signaux} statut={statuts[groupeBase.base]} onStatut={(s) => void changerStatut(s)} />}
           {etatAnim && <IngredientsAnimation etat={etatAnim} onNoterIngredients={noterIngredients} />}
-          {selection && carte.kind === 'asset' && (
+          {/* Statut dans la bibliothèque : session « ingrédients » d'une animation seulement (pas la file des nouveautés) */}
+          {selection && !selection.nouveautes && carte.kind === 'asset' && (
             <div className="grid gap-1.5 rounded-xl bg-neutral-50 p-3 ring-1 ring-black/10">
               <p className="text-sm font-medium">Statut dans la bibliothèque <span className="text-xs font-normal text-neutral-500">(une animation attend sa validation)</span></p>
               <div className="grid grid-cols-3 gap-1.5">

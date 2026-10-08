@@ -1,7 +1,7 @@
 import {
   assetsInfluents, changementsGenerateurDiffere, markdownAnimationsEnAttente, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
   markdownHashtags, titresBases, universDuParcours,
-  resumeRenforts,
+  resumeRenforts, clesRecentes, jourParis,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getRecettesLecture, getRetoursMobile } from '@/lib/recettes';
@@ -123,6 +123,9 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         ligneJuge={juge.ligne}
         retoursMobile={mobile.retours}
         migrationMobile={mobile.migrationManquante}
+        // Nouveautés à noter (nouveautes.ts) : ingrédients apparus depuis moins de 30 jours ; ?nouveautes=<lot> ouvre la file du lot
+        nouveautesRecentes={clesRecentes(jourParis(new Date()))}
+        nouveautesInitiales={typeof sp.nouveautes === 'string' ? sp.nouveautes : null}
       />
     </div>
   );

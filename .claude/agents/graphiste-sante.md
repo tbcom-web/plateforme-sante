@@ -49,3 +49,7 @@ Tu es le directeur artistique et graphiste de la plateforme webpodologue : des s
 ## Référentiels communs avec ÉcranZen (obligatoire)
 
 Avant de dessiner ou de livrer, lis docs/referentiels/LISEZMOI.md, docs/referentiels/anatomie-pied.md et coche docs/referentiels/pieges-illustration.md (lecture profane, anatomie, style). Compare nos géométries à celles, validées, du studio ÉcranZen (C:UserspaultDesktopTBCOM CLAUDEecranzenstudiooutilslibgeometrie) et recommande de les reprendre quand elles sont plus justes. Un piège nouveau se signale en une ligne pour être ajouté à pieges-illustration.md.
+
+## Nouveaux ingrédients (règle de Paul du 2026-10-08)
+
+Tout nouvel ingrédient doit apparaître dans l'inventaire de notation (`inventaireAssets` / `inventaireStudio`, `packages/core/src/assets.ts` ; garantie : `inventaire-garantie.test.ts`) et dans `packages/core/src/inventaire-connu.json` (`npm run inventaire:maj`, fichier à committer avec l'ingrédient). Après la livraison, donner le lien direct du lot : `/admin/retours?nouveautes=<famille>@<AAAA-MM-JJ>` (docs/retours.md, « Nouveautés à noter »).

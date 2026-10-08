@@ -50,6 +50,20 @@ export function typeDeCle(cle: string): TypeAsset | null {
   return estTypeAsset(t) ? t : null;
 }
 
+/**
+ * Valeurs NEUTRES (celle du modèle, « aucun ») : pas des ingrédients à juger seuls, hors de l'inventaire de notation (toutesClesTypo,
+ * toutesClesDetails, toutesClesMenu, inventaireStudio les écartent) ; la jauge de qualité ne les compte pas (qualite.ts).
+ */
+export function estCleNeutre(cle: string): boolean {
+  const [t, a, v, ...reste] = cle.split(':');
+  if (reste.length || !v) return false;
+  if (t === 'typo') return a === 'graisse' && v === 'paire';
+  if (t === 'details') return a === 'jeu' ? v === 'gabarit' : ['aucun', 'aucune', 'gabarit'].includes(v);
+  if (t === 'menu') return v === 'gabarit' && a !== 'ordinateur';
+  if (t === 'composant') return (a === 'soins-forme' && v === 'gabarit') || (a === 'entete-anim' && v === 'aucune');
+  return false;
+}
+
 /** Clé d'asset valide (même contrôle que la base : préfixe connu, sans espace, 200 caractères au plus) */
 export const CLE_ASSET = /^[a-z]+:[^\s]{1,200}$/;
 export const estCleAsset = (cle: unknown): cle is string => typeof cle === 'string' && CLE_ASSET.test(cle) && typeDeCle(cle) !== null;

@@ -112,3 +112,7 @@ pour corriger ta façon de choisir.
 - Builds et captures dans le scratchpad seulement ; tu ne supprimes que ce que tu as créé ; tu ne tues jamais un processus que
   tu n'as pas lancé (jamais `taskkill /IM`).
 - Chemins Windows en `C:/…`.
+
+## Nouveaux ingrédients (règle de Paul du 2026-10-08)
+
+Tout nouvel ingrédient doit apparaître dans l'inventaire de notation (`inventaireAssets` / `inventaireStudio`, `packages/core/src/assets.ts` ; garantie : `inventaire-garantie.test.ts`) et dans `packages/core/src/inventaire-connu.json` (`npm run inventaire:maj`, fichier à committer avec l'ingrédient). Après la livraison, donner le lien direct du lot : `/admin/retours?nouveautes=<famille>@<AAAA-MM-JJ>` (docs/retours.md, « Nouveautés à noter »).

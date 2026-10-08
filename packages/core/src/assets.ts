@@ -30,6 +30,7 @@ import { VARIANTES_SECTIONS } from './modeles';
 import { toutesCombinaisons } from './combinaisons';
 import { cleAssetSurfaces, SURFACES } from './surfaces';
 import { toutesPairesElements } from './combinaisons-elements';
+import { cleTraitementPhotos, libelleTraitementPhotos, TRAITEMENTS_PHOTOS } from './traitements-photos';
 
 export * from './assets-poids';
 
@@ -306,6 +307,14 @@ export function inventaireStudio(): Asset[] {
   // Habillage (habillage.ts) : chaque paire de polices et chaque valeur de typographie, chaque jeu et élément de détails, chaque
   // menu ; rendus en spécimen (typo, détails) ou en premier écran (menus) par l'aperçu de l'admin
   // Répartitions des surfaces (surfaces.ts, tuile « Contrastes et fonds ») et combinaisons d'éléments (combinaisons-elements.ts)
+  // Traitements des photos (traitements-photos.ts, dé « traitement » du Studio) : chaque traitement, avec et sans grain ; manque
+  // trouvé par la garantie d'inventaire (inventaire-garantie.test.ts, 2026-10-08) : tirés par le générateur, jamais notables seuls
+  for (const t of TRAITEMENTS_PHOTOS) {
+    for (const grain of [false, true]) {
+      const cle = cleTraitementPhotos({ id: t.id, grain });
+      l.push({ cle, type: 'effets', titre: `Traitement des photos « ${libelleTraitementPhotos({ id: t.id, grain })} »`, detail: 'Traitement des photos · toutes les photos du site', source: 'packages/core/src/traitements-photos.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle } });
+    }
+  }
   for (const s of SURFACES) if (s.id !== 'modele') l.push({ cle: cleAssetSurfaces(s.id), type: 'effets', titre: `Surfaces « ${s.nom} »`, detail: s.detail, source: 'packages/core/src/surfaces.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle: cleAssetSurfaces(s.id) } });
   for (const p of toutesPairesElements()) l.push({ cle: p.cle, type: 'composant', titre: p.titre, detail: 'Combinaison d’éléments', source: 'packages/core/src/combinaisons-elements.ts', soins: [], statutParDefaut: 'a_revoir', rendu: { kind: 'studio', cle: p.cle } });
   // Combinaisons police × palette (combinaisons.ts) : tuile « Police × palette », type typo (aucune migration)
@@ -316,6 +325,23 @@ export function inventaireStudio(): Asset[] {
   studio = l;
   return l;
 }
+
+/**
+ * Ingrédient UNITAIRE (registre des nouveautés, nouveautes.ts) : tout sauf les combinaisons (produit cartésien des structures de
+ * pages, police × palette, paires d'éléments, images × fonds). Structure d'une page à une seule section sans élément notable à
+ * part (fiche d'un soin) : unitaire.
+ */
+export function estIngredientUnitaire(cle: string): boolean {
+  if (cle.startsWith('typo:combinaison:') || cle.startsWith('composant:paire:') || cle.startsWith('effets:image@')) return false;
+  if (cle.startsWith('structure:')) {
+    const p = PAGES_STRUCTURE.find((x) => x.id === cle.split(':')[1]);
+    return Boolean(p && !p.ordre && p.sections.length === 1 && !(FAMILLES_COMPOSANTS as string[]).includes(p.sections[0]));
+  }
+  return true;
+}
+
+/** Clés unitaires de l'inventaire du code (bibliothèque + studio, sans photos des jeux) : registre inventaire-connu.json */
+export const clesUnitairesInventaire = (): string[] => [...new Set([...assetsDuCode(), ...inventaireStudio()].map((a) => a.cle).filter(estIngredientUnitaire))].sort();
 
 /** Clé connue de l'inventaire (sans les photos des jeux : celles-ci sont vérifiées à part) */
 export const estAssetDuCode = (cle: string) => CLE_ASSET.test(cle) && assetsDuCode().some((a) => a.cle === cle);
