@@ -112,3 +112,4 @@ export * from './degustation-directions';
 export * from './contenus-revue';
 export * from './personnalisations-site';
 export * from './chaine-modeles-format';
+export * from './chaine-modeles';
