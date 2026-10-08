@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BoutonParcoursTest from '@/components/BoutonParcoursTest';
 import { redirect } from 'next/navigation';
 import { baseDeCle, clesUnitairesInventaire, profilsDePratique, publicationDepuisLigne, publicationsDuProfil } from '@plateforme/core';
 import { ESPACES } from '@plateforme/core/admin-espaces';
@@ -77,6 +78,7 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
           </Link>
         ))}
       </dl>
+      <BoutonParcoursTest />
       <section aria-labelledby="tb-espaces" className="grid gap-3">
         <h2 id="tb-espaces" className="text-lg font-semibold">Espaces</h2>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

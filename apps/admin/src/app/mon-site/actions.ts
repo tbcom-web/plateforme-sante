@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { formaterTelephone, validerChoixLogo, GAMMES, REGISTRES_MODELE, SECTIONS_ACCUEIL, SUJETS_FICHES_CONSEILS, universCatalogue, normaliserDraft, nettoyerEquipements, nettoyerEquipementsAutres, SPECIALITES, validerPersonnalisation, type SiteDraft } from '@plateforme/core';
 import { nettoyerPortrait } from '@plateforme/core/portrait';
+import { normaliserChoixClient } from '@plateforme/core/onboarding';
 import { createClient } from '@/lib/supabase/server';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getMarquesImportees } from '@/lib/marques';
@@ -127,6 +128,8 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
     ...(Array.isArray(d.fichesConseils) ? { fichesConseils: d.fichesConseils.filter((f) => SUJETS_FICHES_CONSEILS.some((x) => x.id === f)).slice(0, 12) } : {}),
     // Couleurs aimées (étape « Vos couleurs ») : identifiants connus, 3 au plus ; absentes = étape pas encore vue.
     ...(d.couleursPreferees !== undefined ? { couleursPreferees: normaliserCouleursPreferees(d.couleursPreferees) ?? [] } : {}),
+    // Choix de l'onboarding client (onboarding.ts) : relus et bornés, jamais des données de l'annuaire.
+    ...(d.choixClient !== undefined && normaliserChoixClient(d.choixClient) ? { choixClient: normaliserChoixClient(d.choixClient) } : {}),
     soins: d.soins.filter((s) => /^[a-z0-9-]{1,80}$/.test(s)).slice(0, 30),
     // Hiérarchie du site : thèmes connus, 3 + 3 au plus, sans doublon ; thèmes différés refusés sauf drapeau THEMES_ACTIVES.
     priorites: prioritesSelectionnables(d.priorites, themesActives()),

@@ -185,6 +185,12 @@ export type SiteDraft = {
    */
   couleursPreferees?: string[];
   /**
+   * Choix du praticien dans l'onboarding client (/essai/votre-site, onboarding.ts) : avis « J'aime / Pas pour moi » sur les
+   * propositions, proposition retenue, activités, couleurs. Préférences de CE client (jamais le goût global de Paul) ;
+   * lues par /admin/choix-clients. Absent : site créé autrement.
+   */
+  choixClient?: import('./onboarding').ChoixClient;
+  /**
    * Activités à mettre en avant (profils.ts, étape « Vos sujets » quand un thème s'y prête : basket, tennis…), 3 au plus, dans
    * l'ordre ; absent = aucune. Choisissent les visuels de l'activité (validés seulement, sinon ceux du thème) et l'ordre des soins.
    */

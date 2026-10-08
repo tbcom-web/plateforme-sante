@@ -57,7 +57,8 @@ export default function Commencer({ turnstile }: { turnstile: string | null }) {
     }
     const r = await demarrerEssai();
     if (!r.ok) return setEtat({ type: 'erreur', message: r.message });
-    router.replace('/creer');
+    // Parcours client (profession, informations préremplies, style) ; un site déjà commencé y est renvoyé vers /creer.
+    router.replace(params.get('suite') === 'creer' ? '/creer' : '/essai/votre-site');
   }, [params, router]);
 
   // Sans Turnstile, ou session déjà ouverte : démarrage direct. Avec Turnstile : le widget donne le jeton.

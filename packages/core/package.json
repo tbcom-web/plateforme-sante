@@ -30,7 +30,10 @@
     "./propositions-claude-tags": "./src/propositions-claude-tags.ts",
     "./professions": "./src/professions.ts",
     "./arrivages": "./src/arrivages.ts",
-    "./admin-espaces": "./src/admin-espaces.ts"
+    "./admin-espaces": "./src/admin-espaces.ts",
+    "./annuaire-sante": "./src/annuaire-sante.ts",
+    "./onboarding": "./src/onboarding.ts",
+    "./onboarding-professions": "./src/onboarding-professions.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

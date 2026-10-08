@@ -1,6 +1,7 @@
 import Shell from '@/components/Shell';
 import ContexteImages from '@/components/ContexteImages';
 import NavAdmin from '@/components/NavAdmin';
+import BoutonParcoursTest from '@/components/BoutonParcoursTest';
 import { professionsActives } from '@plateforme/core/professions';
 import { exigerAdmin } from '@/lib/admin';
 import { getNombreArrivages, getNombreNouveautesANoter } from '@/lib/arrivages';
@@ -21,6 +22,8 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
         professions={professionsActives().map((p) => ({ id: p.id, libelle: p.libelle, court: p.court }))}
         profession={profession.id}
       />
+      {/* Parcours client en mode test (aucune écriture) : components/BoutonParcoursTest.tsx */}
+      <div className="mb-4 flex justify-end text-sm"><BoutonParcoursTest compact /></div>
       {/* Contexte d'images (photos exclues, kits par sujet : contexte-images.ts ; arrivages non acceptés) posé avant les aperçus */}
       <ContexteImages />
       {children}
