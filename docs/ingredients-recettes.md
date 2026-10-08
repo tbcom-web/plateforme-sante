@@ -273,6 +273,25 @@ renforce chaque photo du kit (`renfortsKits` : ±0,5 ★, cumul plafonné ±1 �
 spécialité (après une personnalisation explicite) et suit le premier écran dans les tirages ; sites en style « Photos » : kit du
 sujet n° 1, avant un jeu de photos partagé (un jeu exclusif du site reste prioritaire). Migration 0039 (`kits_images_notes`).
 
+### Compléter un kit : suggestions (`suggestions-kits.ts`, 2026-10-08)
+
+« Il faut que le tool suggère des photos à ajouter au kit. » Dans `/admin/retours/kits`, compteur « Kit Enfants : 7/10 emplacements
+avec une photo ≥ 4 ★ » et bouton **Compléter ce kit** : les emplacements vides, faibles (photo non notée ou < 3,5 ★) ou complétés
+par « général » défilent un par un (clavier : U utiliser ici, G garder, X pas pour ici, ↑ ↓ suggestion, → emplacement suivant).
+
+- **Banque d'abord** (`suggestionsBanque`) : photos importées ou intégrées, jamais exclues (≤ 2 ★, retirées, à retravailler), ni
+  déjà dans le kit ou étiquetées pour l'emplacement. Score = 3 (même sujet ; 1,5 voisin ; 1 « général ») + 2 par mot de
+  l'emplacement retrouvé dans ses hashtags, son nom ou sa requête d'origine + 2·(note − 3) + 3·effet appris. **Utiliser ici** ajoute le
+  sujet et le hashtag de l'emplacement (`#<slug du soin>`, `#accueil`, `#cabinet`, `#page-sujet`) dans `assets_sujets` /
+  `assets_hashtags` : le kit se recompose. **Pas pour ici** est mémorisé pour CET emplacement (`classement_suggestions`, contexte
+  photos, nature hashtag, raison `kit-pas-ici:<clé>` : aucune migration).
+- **Nouvelles** (Pexels / Pixabay, clés serveur, limites de débit et cache existants) : requêtes ciblées par soin et emplacement
+  (`REQUETES_SOINS`, `REQUETES_PAGES`, `REQUETES_CABINET` : orthonyxie → « toenail brace », verrues → « plantar wart foot »,
+  cabinet → « podiatry clinic interior »… ; test : toujours un mot du métier), tirées par couverture (`choisirRequete`).
+  **Garder** = flux existant (`deciderPhoto`, lien seulement) avec le sujet, `#<emplacement>` et `#kit-<sujet>` pré-cochés ; la
+  photo apparaît « en attente d'import » dans le kit et EN TÊTE de `/admin/photos` (« pour le kit Enfants · orthonyxie ») ; elle
+  entre dans le kit après « Valider et importer » (les hashtags suivent la photo à l'import).
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

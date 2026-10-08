@@ -1,7 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import {
-  clesImagesExclues, kitsCompacts, kitsGardes, notesPhotos, soinsParDefautScenario, SUJETS_KITS,
+  cleCandidatePhoto, clesImagesExclues, etiquetteKit, kitsCompacts, PREFIXE_REFUS_KIT, refusKitDepuisLignes, kitsGardes, notesPhotos, soinsParDefautScenario, SUJETS_KITS,
   type DonneesKits, type KitCompact, type NoteKit,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
@@ -50,3 +50,49 @@ export const getContexteImages = cache(async (): Promise<{ exclues: string[]; ki
     return { exclues: [], kits: {} };
   }
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// Compléter un kit (suggestions-kits.ts)
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Refus « Pas pour ici » (classement_suggestions, raison kit-pas-ici:<clé>) ; vide sans la migration 0033 */
+export async function getRefusKits(): Promise<Set<string>> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('classement_suggestions').select('contexte, nature, valeur, decision, raison')
+      .eq('contexte', 'photos').eq('nature', 'hashtag').eq('decision', 'refusee').like('raison', `${PREFIXE_REFUS_KIT}%`).limit(5000);
+    return error || !data ? new Set() : refusKitDepuisLignes(data as { valeur: string; decision: string; raison: string | null }[]);
+  } catch {
+    return new Set();
+  }
+}
+
+/** Requête d'origine des photos libres importées (mots qui décrivent la photo), par URL */
+export async function getRequetesPhotos(): Promise<Record<string, string>> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from('photos_libres').select('url, requete').not('url', 'is', null).limit(5000);
+    return Object.fromEntries(((data ?? []) as { url: string; requete: string | null }[]).filter((l) => l.url && l.requete).map((l) => [l.url, l.requete!]));
+  } catch {
+    return {};
+  }
+}
+
+export type PhotoEnAttenteKit = { id: string; sujet: string; emplacement: string | null; apercu: string | null; libelle: string };
+
+/** Photos gardées pour un kit (#kit-<sujet>) mais pas encore importées : « en attente d'import » dans l'emplacement */
+export async function getEnAttenteKits(): Promise<PhotoEnAttenteKit[]> {
+  try {
+    const supabase = await createClient();
+    const [{ data }, { hashtags }] = await Promise.all([
+      supabase.from('photos_libres').select('id, source, id_source, apercu_url, statut, url').eq('statut', 'a_valider').is('url', null).limit(2000),
+      getHashtagsAssets().catch(() => ({ hashtags: {} as Record<string, string[]> })),
+    ]);
+    return ((data ?? []) as { id: string; source: string; id_source: string; apercu_url: string | null }[]).flatMap((l) => {
+      const e = etiquetteKit(hashtags[cleCandidatePhoto(l.source as 'pexels', l.id_source)] ?? []);
+      return e ? [{ id: l.id, sujet: e.sujet, emplacement: e.emplacement, apercu: l.apercu_url, libelle: e.libelle }] : [];
+    });
+  } catch {
+    return [];
+  }
+}

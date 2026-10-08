@@ -5,7 +5,7 @@
 // Thèmes et HASHTAGS (0029) : filtre « #… », recherche (auteur, thème, mot-clé, hashtag), ajout / retrait sur chaque photo.
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { cleCandidatePhoto, clePhoto, correspondHashtag, hashtagsDe, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
+import { cleCandidatePhoto, clePhoto, correspondHashtag, etiquetteKit, hashtagsDe, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import type { PhotoLibre } from '@/lib/photos-libres';
 import { changerStatutPhotoLibre, importerPhotoLibre } from './actions';
@@ -47,12 +47,15 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
   const [resultat, setResultat] = useState<{ ok: boolean; texte: string } | null>(null);
   // Clé d'asset : photo importée → clé de l'inventaire ; candidate → photo:libre:<source>-<id> (reportée à l'import)
   const lignes = useMemo(() => photos.map((p) => ({ p, cle: p.url ? clePhoto(p.url) : cleCandidatePhoto(p.source, p.idSource) })), [photos]);
+  // Photos gardées pour un kit d'images (#kit-<sujet>, suggestions-kits.ts) et pas encore importées : en tête, étiquetées
+  const kitDe = (cle: string | null, p: PhotoLibre) => (cle && !p.url && p.statut !== 'retiree' ? etiquetteKit(hashtagsDe(hashtags, cle)) : null);
   const visibles = lignes.filter(({ p, cle }) => {
     if (filtre && (!cle || !correspondHashtag(hashtags, cle, filtre, true))) return false;
     const q = recherche.trim().toLowerCase().replace(/^#/, '');
     if (!q) return true;
     return [p.auteur, libelleSujet(p.sujet), p.sujet, p.source, p.idSource, ...p.motsCles, ...(cle ? hashtagsDe(hashtags, cle) : [])].some((t) => t.toLowerCase().includes(q));
   });
+  visibles.sort((a, b) => Number(Boolean(kitDe(b.cle, b.p))) - Number(Boolean(kitDe(a.cle, a.p))));
   const aImporter = visibles.filter(({ p }) => !p.url && p.statut !== 'retiree').length;
 
   return (
@@ -82,6 +85,7 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
                     Aperçu {LICENCES_SOURCES[p.source].libelle}, non importée
                   </figcaption>
                 )}
+                {kitDe(cle, p) && <span className="absolute bottom-2 left-2 rounded-full bg-teal-800 px-2 py-0.5 text-[11px] font-semibold text-white">{kitDe(cle, p)!.libelle}</span>}
               </figure>
               <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs">
                 <dt className="text-neutral-500">Sujet</dt><dd>{libelleSujet(p.sujet)}</dd>

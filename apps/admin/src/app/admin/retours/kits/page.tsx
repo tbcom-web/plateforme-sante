@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { composerKit, libelleSujetKit, SUJETS_KITS, universDuParcours } from '@plateforme/core';
+import { composerKit, compteurKit, emplacementsAFaire, libelleSujetKit, suggestionsBanque, SUJETS_KITS, universDuParcours } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
-import { getDonneesKits, getNotesKits } from '@/lib/kits-images';
+import { getDonneesKits, getEnAttenteKits, getNotesKits, getRefusKits, getRequetesPhotos } from '@/lib/kits-images';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
@@ -27,6 +27,11 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
   const { error } = await supabase.from('kits_images_notes').select('id').limit(1);
   const resume = SUJETS_KITS.map((s) => { const k = composerKit(s, d, 0); return { sujet: s, libelle: libelleSujetKit(s), note: k.noteMoyenne, trous: k.trous.length, photos: k.photos.length, garde: k.garde }; });
   const kit = composerKit(sujet, d, rang);
+  // Compléter ce kit (suggestions-kits.ts) : emplacements vides ou faibles, suggestions de la banque, photos en attente d'import
+  const [refus, requetes, enAttente] = await Promise.all([getRefusKits(), getRequetesPhotos(), getEnAttenteKits()]);
+  const soins = d.soins?.[sujet] ?? [];
+  const aFaire = emplacementsAFaire(kit, soins).map((e) => ({ ...e, banque: suggestionsBanque(kit, e.emplacement, { ...d, requetes }, refus, 6) }));
+  const compteur = compteurKit(kit, soins);
   const notesSujet = notes.filter((n) => n.sujet === sujet);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
@@ -48,6 +53,9 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
         sujet={sujet}
         rang={rang}
         kit={kit}
+        aFaire={aFaire}
+        compteur={compteur.texte}
+        enAttente={enAttente.filter((x) => x.sujet === sujet)}
         resume={resume}
         notes={notesSujet.map((n) => ({ note: n.note, garder: n.garder, le: n.le }))}
         migrationManquante={Boolean(error)}

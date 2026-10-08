@@ -17,6 +17,9 @@ import ApercuTheme from '@/components/ApercuTheme';
 import { draftStudio } from '@/components/ApercuStudio';
 import type { SoinCatalogue } from '@/lib/sites';
 import { noterKit } from './actions';
+import CompleterKit from './CompleterKit';
+import type { EmplacementAFaire, SuggestionBanque } from '@plateforme/core';
+import type { PhotoEnAttenteKit } from '@/lib/kits-images';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const CLE_LOCAUX = 'kits:locaux';
@@ -25,6 +28,9 @@ type Props = {
   sujet: string;
   rang: number;
   kit: KitImages;
+  aFaire: (EmplacementAFaire & { banque: SuggestionBanque[] })[];
+  compteur: string;
+  enAttente: PhotoEnAttenteKit[];
   resume: { sujet: string; libelle: string; note: number | null; trous: number; photos: number; garde: boolean }[];
   notes: { note: number | null; garder: boolean; le: string | null }[];
   migrationManquante: boolean;
@@ -117,6 +123,8 @@ export default function Kits(props: Props) {
         </ul>
       )}
 
+      <CompleterKit key={sujet} sujet={sujet} aFaire={props.aFaire} compteur={props.compteur} enAttente={props.enAttente} />
+
       <ul aria-label="Planche du kit" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {kit.photos.map((p) => (
           <li key={p.emplacement + p.url} className="grid content-start gap-1 rounded-xl border border-black/10 bg-white p-1.5">
@@ -127,6 +135,16 @@ export default function Kits(props: Props) {
               {p.etiquetee && <span className="rounded bg-teal-100 px-1 text-teal-900">étiquetée</span>}
               {p.complement && <span className="rounded bg-amber-100 px-1 text-amber-900">complément</span>}
             </span>
+          </li>
+        ))}
+        {props.enAttente.map((p) => (
+          <li key={p.id} className="grid content-start gap-1 rounded-xl border border-dashed border-amber-300 bg-white p-1.5">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-neutral-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {p.apercu && <img src={p.apercu} alt="" referrerPolicy="no-referrer" className="size-full object-cover opacity-70" />}
+            </div>
+            <span className="text-xs font-semibold">{p.emplacement ? libelleEmplacement(p.emplacement) : 'Kit'}</span>
+            <span className="text-[11px] text-amber-900">en attente d’import</span>
           </li>
         ))}
       </ul>
