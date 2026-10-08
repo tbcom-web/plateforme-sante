@@ -55,8 +55,8 @@ function suivreStyles(source: Document, cible: Document) {
   return () => { mo.disconnect(); for (const c of copies.values()) c.remove(); copies.clear(); };
 }
 
-/** Raccourcis de l'admin (z : signaler une zone, Échap) même quand le focus est dans l'iframe */
-const TOUCHES_RELAYEES = new Set(['z', 'Z', 'Escape']);
+/** Raccourcis de l'admin (z : signaler une zone, h : masquer le repère, o : ouvrir le menu, Échap) même quand le focus est dans l'iframe */
+const TOUCHES_RELAYEES = new Set(['z', 'Z', 'h', 'H', 'o', 'O', 'Escape']);
 
 function Iframe({ largeur, hauteurVue, echelle, defile, mobile, titre, children }: { largeur: number; hauteurVue: number; echelle: number; defile: boolean; mobile: boolean; titre: string; children: ReactNode }) {
   const ref = useRef<HTMLIFrameElement>(null);

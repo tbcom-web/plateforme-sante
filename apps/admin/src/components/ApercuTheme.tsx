@@ -250,7 +250,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   const taillePlein = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : herosDiaporama ? 1180 * 0.48 : 1180 * 0.6, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
   const tailleScinde = tailleTitre(texteTitre, mobile ? LARGEUR.mobile - 40 : 1180 * 0.5, j.policeTitres === 'instrument' ? 76 : pedago ? 54 : 64);
   const heroPlein = (
-    <section style={{ position: 'relative', minHeight: '100svh', display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
+    <section data-zone="premier-ecran" style={{ position: 'relative', minHeight: '100svh', display: 'grid', alignItems: 'end', color: 'var(--blanc)' }}>
       {/* Photo : plein cadre sous un voile ; dessin ou animation : fond plan, visuel à droite du titre */}
       {renduPlein.type === 'photo'
         ? <div style={{ position: 'absolute', inset: 0 }}><Visuel registre={registre} rendu={renduPlein} filtre={filtre} hauteur="100%" /></div>
@@ -266,7 +266,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
     </section>
   );
   const heroScinde = (
-    <section className="ap-cadre" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.05fr 0.95fr', gap: mobile ? 28 : 56, alignItems: 'center', paddingBlock: mobile ? '36px 48px' : '72px 96px' }}>
+    <section data-zone="premier-ecran" className="ap-cadre" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.05fr 0.95fr', gap: mobile ? 28 : 56, alignItems: 'center', paddingBlock: mobile ? '36px 48px' : '72px 96px' }}>
       <div>
         <Sur>{surTitre}</Sur>
         <p className="ap-h1" style={{ fontSize: tailleScinde }}>{titreHero}</p>
@@ -281,7 +281,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   // quel que soit le style visuel), carte claire avec titre, téléphone et rendez-vous ; sans photo, schéma pédagogique.
   const photoLieu = d.photos.accueil || d.photos.panorama || d.photos.cabinet[0] || jeu.accueil.photo;
   const heroLieu = (
-    <section style={{ paddingTop: 16 }}>
+    <section data-zone="premier-ecran" style={{ paddingTop: 16 }}>
       <div className="ap-cadre">
         <Visuel registre={registre} rendu={photoLieu ? { type: 'photo', src: photoLieu, cadrage: '50% 50%' } : { type: 'dessin', dessin: jeu.accueil.dessin }} filtre={filtre} hauteur={mobile ? 260 : 460} rayon={Math.round(j.rayon * 1.3)} />
       </div>
@@ -503,7 +503,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   );
   const pageArticle = <ApercuArticle {...commun} variante={varianteArticle(m)} auteur={noms.length === 1 ? `${noms[0]}, ${titre.toLowerCase()}` : nomCabinet}
     autres={[{ titre: 'Diabète : 5 gestes quotidiens pour protéger vos pieds', theme: 'Diabète' }, { titre: 'Bien choisir les chaussures de son enfant', theme: 'Enfants' }]} />;
-  const pageSimple = (b: string[]) => { let dd = false; return b.map((s, k) => { dd = !dd; return <div key={s}>{sections[s]?.(k + 1, dd)}</div>; }); };
+  const pageSimple = (b: string[]) => { let dd = false; return b.map((s, k) => { dd = !dd; return <div key={s} data-zone={s}>{sections[s]?.(k + 1, dd)}</div>; }); };
   const pageClassique: Partial<Record<Vue, ReactNode>> = {
     soin: ficheSoin, theme: pageSujet, article: pageArticle,
     actualites: pageSimple(['actualites']), cabinet: pageSimple(['praticiens', 'galerie']), acces: pageSimple(['acces']), questions: pageSimple(['faq']), soins: pageSimple(['competences']),
@@ -585,6 +585,8 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                   : <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 42, padding: '0 18px', fontSize: 14, ...(transparent ? { background: 'var(--blanc)', color: 'var(--encre)' } : {}) }}>{rdv}</span>}
               </div>
             </header>
+            {/* Tiroir du menu (téléphone) : fermé ; ouvert quand la racine porte mn-ouvert (état « Ouvert » des tuiles et duels de menus, comme le <dialog> du site) */}
+            {mobile && <nav aria-hidden="true" className="tiroir ap-tiroir">{construireNavigation(d, soins).menu.map((l, k) => <span key={l.libelle} className="ap-tiroir__lien" aria-current={k === 0 ? 'page' : undefined}>{l.libelle}</span>)}<span className="ap-bouton ap-bouton--plein" style={{ marginTop: 20, justifyContent: 'center' }}>{rdv}</span></nav>}
             {/* Pas de <main> : l'aperçu est inclus dans une page de l'admin, qui a déjà le sien */}
             <div>
               {vue === 'accueil' ? (
@@ -592,7 +594,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
                   {herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soinsAffiches} replis={r} sur={surTitre} registre={registre} illustration={(() => { const h = herosApercu('portrait'); return h?.type === 'svg' ? h.html : ''; })()} /> : m.accueil.hero === 'lieu' ? heroLieu : m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
                   {ordre.map((s, k) => {
                     if (s !== 'panorama') douce = !douce;
-                    return <div key={s}>{sections[s]?.(k + 1, s !== 'panorama' && douce)}</div>;
+                    return <div key={s} data-zone={s}>{sections[s]?.(k + 1, s !== 'panorama' && douce)}</div>;
                   })}
                 </>
               ) : pageClassique[vue]}
@@ -657,6 +659,11 @@ const CSS = `
 .ap-menu > i { position: relative; width: 16px; height: var(--filet-fort); background: currentColor; }
 .ap-menu > i::before, .ap-menu > i::after { content: ''; position: absolute; left: 0; width: 16px; height: var(--filet-fort); background: currentColor; }
 .ap-menu > i::before { top: -5px; }
+.ap-tiroir { display: none; }
+.ap.mn-ouvert .ap-tiroir { display: flex; flex-direction: column; position: fixed; inset: 0; z-index: 61; padding: 84px 24px 28px; gap: 4px; overflow-y: auto; background: var(--fond); color: var(--encre); }
+.ap.mn-ouvert .ap-menu { position: fixed; top: 14px; right: 16px; z-index: 62; background: var(--fond); color: var(--encre); }
+.ap-tiroir__lien { display: flex; align-items: center; min-height: 56px; border-bottom: var(--filet) solid var(--ligne); font-family: var(--police-titres); font-weight: var(--graisse-titres); font-size: 1.9rem; letter-spacing: -0.02em; }
+.ap-tiroir__lien[aria-current] { color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); padding-left: 14px; }
 .ap-menu > i::after { top: 5px; width: 10px; }
 @media (max-width: 479px) { .ap-menu { justify-content: center; min-width: 44px; padding: 0; } .ap-menu > b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 .ap-svg svg { width: 100%; height: 100%; }

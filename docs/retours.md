@@ -62,6 +62,26 @@ priment toujours.
   (`predireDuel`, colonne `prediction`), accord dans la page et dans la synthèse. Export : `retours/duels.json` et section
   « Duels : classements par sujet » de `SYNTHESE.md`. Sans la migration : duels gardés dans le navigateur.
 
+### Ce qui est évalué (repère)
+
+Retour de Paul du 2026-10-08 (« montrer direct avec un encadré ce qui est évalué, parfois on ne sait pas trop ») :
+
+- **Duels** : bandeau « On compare : la police des titres et du texte » (ou « le traitement des photos », « le premier
+  écran », « la forme des cartes de soins », « le menu »…) avec les valeurs lisibles (« A : Revue à empattements · B :
+  Grotesque affirmée ») ; duel libre : « Thème complet : jugez l'ensemble », sans encadré.
+- **Tuiles** : « Vous notez : la paire de polices « Revue à empattements » », « le menu sur téléphone « Panneau plein
+  écran » (ordinateur : … · téléphone : … · rendez-vous : …) », « l'animation d'en-tête « … » »…
+- **Encadré** dans les aperçus de page : contour animé couleur de l'admin (ardoise + halo blanc, étiquette « Évalué
+  ici ») autour des éléments touchés (titres, photos, premier écran, bloc de la page, barre de menu…), défilement
+  automatique vers la zone ; « Masquer le repère » (touche h, préférence gardée dans le navigateur) pour juger sans artefact.
+- **Menus** : planche complète (ordinateur : rubrique active, survol simulé, après défilement ; téléphone : interactif et
+  ouvert côte à côte), bouton « Menu » cliquable dans l'aperçu, « Ouvrir / fermer le menu » (touche o) ; duels de menus :
+  états Fermé / Ouvert / Survol / Après défilement communs à A et B.
+- Table pure : `packages/core/src/reperes.ts` (repereDimension, repereCle, valeursDuel ; testée : chaque dimension tirable a
+  une entrée, préfixes `composant:*` et `variante:*` couverts, famille inconnue → `[data-zone="<famille>"]`). Zones :
+  attributs `data-zone` de l'aperçu de l'ADMIN seulement (ApercuTheme, ApercuGabarit) ; le site publié ne change pas.
+  Composants : `apps/admin/src/components/RepereEvaluation.tsx` (bandeau, PiloteApercu), `PlancheMenu.tsx`.
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

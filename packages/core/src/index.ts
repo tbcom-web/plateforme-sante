@@ -73,3 +73,4 @@ export * from './habillage-attributs';
 export * from './duels';
 export * from './couverture-sujets';
 export * from './notation-recettes';
+export * from './reperes';

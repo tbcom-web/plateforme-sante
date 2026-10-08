@@ -15,8 +15,8 @@ import {
   accordJuge, appliquerRecette, choisirStyle, classementsParContexte, cleComposition, clesDifferentes, clesJugeDuel, clesRecette, compositionInitiale,
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
-  modeleIntegre, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  variablesCharte, variablesGamme, vueDePage,
+  modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -24,6 +24,7 @@ import {
 import type { PredictionJuge } from '@plateforme/core/juge';
 import ApercuTheme from '@/components/ApercuTheme';
 import { draftStudio } from '@/components/ApercuStudio';
+import PiloteApercu, { BandeauEvaluation, useRepereVisible } from '@/components/RepereEvaluation';
 import type { SoinCatalogue } from '@/lib/sites';
 import Apercu from '../tri/ApercuVisuel';
 import { enregistrerDuel } from './actions';
@@ -33,11 +34,12 @@ const CLE_LOCAUX = 'duels:locaux';
 const SUJETS_CLIENT = SUJETS_VISUELS.filter((s) => s.id !== 'general');
 const libelleSujet = (id: string) => SUJETS_VISUELS.find((s) => s.id === id)?.libelle ?? id;
 const EMPLACEMENTS = [{ id: 'accueil', nom: 'Premier écran' }, { id: 'page-sujet', nom: 'Page sujet' }, { id: 'galerie', nom: 'Galerie' }] as const;
-const NOMS_DIMENSIONS: Record<string, string> = {
-  couleurs: 'les couleurs', polices: 'les polices', effets: 'les effets', visuels: 'le style des illustrations', typo: 'la typographie', details: 'les détails',
-  menu: 'le menu', traitement: 'le traitement des photos', photo: 'la photo', style: 'le style du dessin', version: 'le dessin (même style)',
+/** États du menu montrés dans un duel de menus (bascule commune à A et B) */
+type EtatMenu = 'haut' | 'ouvert' | 'survol' | 'defile';
+const ETATS_MENU: Record<'bureau' | 'mobile', [EtatMenu, string][]> = {
+  bureau: [['haut', 'Haut de page'], ['survol', 'Survol simulé'], ['defile', 'Après défilement']],
+  mobile: [['haut', 'Fermé'], ['ouvert', 'Ouvert'], ['defile', 'Après défilement']],
 };
-const nomDimension = (d: string | null) => (d === null ? 'tout (duel libre entre deux recettes)' : d.startsWith('composant:') ? `la présentation « ${(NOMS_SECTIONS_VARIABLES[d.slice(10)] ?? d.slice(10)).toLowerCase()} »` : NOMS_DIMENSIONS[d] ?? d);
 
 type Rendu = { kind: 'compo'; x: CompositionRecette } | { kind: 'asset'; asset: Asset };
 type Cote = { cle: string; ingredients: IngredientsDuel; rendu: Rendu };
@@ -143,6 +145,9 @@ export default function Duel(props: Props) {
   const [pourquoi, setPourquoi] = useState(false);
   const [etiquettes, setEtiquettes] = useState<string[]>([]);
   const [remarque, setRemarque] = useState('');
+  // Repère « ce qui est évalué » (h : masquer) ; duels de menus : état du menu (o : ouvrir / fermer)
+  const [repereVisible, basculerRepere] = useRepereVisible();
+  const [etatMenu, setEtatMenu] = useState<EtatMenu>('haut');
 
   const modele = useCallback((id: string) => props.modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id), [props.modeles]);
   const inventaire = useMemo(() => inventaireAssets({ photosJeux: props.photosJeux }), [props.photosJeux]);
@@ -227,7 +232,7 @@ export default function Duel(props: Props) {
   const lancer = useCallback((t: TypeDuel, g: number, hist: readonly DuelLocal[]) => {
     const c = generer(t, g, hist);
     setCourant(c);
-    setEtiquettes([]); setRemarque(''); setPourquoi(false);
+    setEtiquettes([]); setRemarque(''); setPourquoi(false); setEtatMenu('haut');
     if (!c) setMessage(`Plus de duel inédit pour ${sujetChoisi ? libelleSujet(sujetChoisi) : 'ces sujets'} : changez de sujet ou de type.`);
   }, [generer, sujetChoisi]);
 
@@ -261,11 +266,14 @@ export default function Duel(props: Props) {
   // Clavier : ← A, → B, ↓ égalité, ↑ les deux sont mauvais
   const refChoisir = useRef(choisir);
   refChoisir.current = choisir;
+  const refMenu = useRef(false);
+  refMenu.current = courant?.dimension === 'menu';
   useEffect(() => {
     if (!type) return;
     const f = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      if ((e.key === 'o' || e.key === 'O') && refMenu.current && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); setEtatMenu((x) => (x === 'ouvert' ? 'haut' : 'ouvert')); setAppareil('mobile'); return; }
       const m: Record<string, ResultatDuel> = { ArrowLeft: 'a', ArrowRight: 'b', ArrowDown: 'egalite', ArrowUp: 'mauvais' };
       if (m[e.key]) { e.preventDefault(); void refChoisir.current(m[e.key]); }
     };
@@ -373,6 +381,12 @@ export default function Duel(props: Props) {
     </figure>
   );
 
+  // Ce qui est comparé (reperes.ts) : libellé, zones encadrées dans les aperçus, valeurs lisibles de A et B
+  const repere = repereDimension(courant?.dimension ?? null);
+  const valeurs: [string, string] | null = !courant ? null
+    : courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' ? valeursDuel(courant.dimension, courant.a.rendu.x, courant.b.rendu.x)
+    : [libelleElement(courant.a.cle), libelleElement(courant.b.cle)];
+
   const bouton = (r: ResultatDuel, texte: ReactNode, touche: string, cls: string) => (
     <button type="button" onClick={() => void choisir(r)} disabled={!courant} className={`flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold md:min-h-12 md:px-3 md:text-base disabled:opacity-40 ${focus} ${cls}`}>
       {texte}<kbd className="hidden rounded bg-black/10 px-1.5 text-xs md:inline">{touche}</kbd>
@@ -411,13 +425,27 @@ export default function Duel(props: Props) {
           <p className="text-sm text-neutral-700">
             Client : <strong>{libelleSujet(courant.scenario.sujets[0] ?? 'general')}</strong>
             {courant.scenario.emplacement ? <> · emplacement : {EMPLACEMENTS.find((e) => e.id === courant.scenario.emplacement)?.nom}</> : null}
-            {' · '}ce qui change : <strong>{nomDimension(courant.dimension)}</strong>
           </p>
-          <section aria-label="Les deux propositions" onTouchStart={toucher} onTouchEnd={lacher(false)}
-            className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
-            {cote('A', courant.a)}
-            {cote('B', courant.b)}
-          </section>
+          <BandeauEvaluation prefixe="On compare" repere={repere} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
+            {courant.dimension === 'menu' && (
+              <div role="group" aria-label="État du menu montré" className="flex flex-wrap gap-1 rounded-xl bg-neutral-100 p-1">
+                {ETATS_MENU[appareil].map(([id, nom]) => (
+                  <button key={id} type="button" aria-pressed={etatMenu === id} onClick={() => setEtatMenu(id)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${etatMenu === id ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>
+                    {nom}{id === 'ouvert' && <kbd className="ml-1 hidden rounded bg-black/10 px-1 text-xs md:inline">o</kbd>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </BandeauEvaluation>
+          <PiloteApercu selecteurs={repere.selecteurs} visible={repereVisible} cle={`${courant.a.cle}|${courant.b.cle}|${appareil}|${etatMenu === 'defile' ? 'd' : ''}`}
+            defiler={etatMenu === 'defile' && courant.dimension === 'menu' ? 520 : 'repere'}
+            menu={courant.dimension === 'menu' ? { ouvert: etatMenu === 'ouvert', survol: etatMenu === 'survol', rubriqueActive: true, onBascule: (o) => setEtatMenu(o ? 'ouvert' : 'haut') } : undefined}>
+            <section aria-label="Les deux propositions" onTouchStart={toucher} onTouchEnd={lacher(false)}
+              className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+              {cote('A', courant.a)}
+              {cote('B', courant.b)}
+            </section>
+          </PiloteApercu>
 
           <div className="fixed inset-x-0 bottom-0 z-20 grid gap-1.5 border-t border-black/10 bg-white/95 p-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0"
             onTouchStart={toucher} onTouchEnd={lacher(true)}>

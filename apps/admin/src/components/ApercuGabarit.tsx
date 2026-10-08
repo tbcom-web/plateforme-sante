@@ -223,7 +223,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const premier = v.accueil === 'figure' ? (
     // Comme PremierEcran.astro (.pe--figure) : sur le papier ; téléphone = sur-titre, titre, figure, puis le reste ; ordinateur =
     // texte à gauche, figure à droite (planche pastel 4/3 entre deux filets)
-    <section style={{ background: 'var(--g-page)', color: 'var(--g-encre)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'minmax(0, 7fr) minmax(0, 5fr)', columnGap: 64, rowGap: mobile ? 18 : 0, alignContent: 'center', paddingBlock: mobile ? '36px 44px' : '96px 88px' }}>
+    <section data-zone="premier-ecran" style={{ background: 'var(--g-page)', color: 'var(--g-encre)' }}><div style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'minmax(0, 7fr) minmax(0, 5fr)', columnGap: 64, rowGap: mobile ? 18 : 0, alignContent: 'center', paddingBlock: mobile ? '36px 44px' : '96px 88px' }}>
       <span className="td-sur" style={{ gridColumn: mobile ? undefined : 1, fontSize: 15.2, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--g-encre-douce)' }}>{surTitre}</span>
       <div style={{ gridColumn: mobile ? undefined : 1, margin: mobile ? 0 : '18px 0 26px' }}>{titreH1}</div>
       {(heros || soins[0]) && (
@@ -243,7 +243,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       </div>
     </div></section>
   ) : v.accueil === 'notice' ? (
-    <section style={{ position: 'relative', background: 'var(--g-aplat)', color: 'var(--g-aplat-texte)' }}>
+    <section data-zone="premier-ecran" style={{ position: 'relative', background: 'var(--g-aplat)', color: 'var(--g-aplat-texte)' }}>
       <span aria-hidden="true" style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, color-mix(in srgb, var(--g-encre) 14%, transparent) var(--trame-point), transparent calc(var(--trame-point) + 0.6px))', backgroundSize: 'var(--trame-pas) var(--trame-pas)', WebkitMaskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)', maskImage: 'linear-gradient(100deg, transparent 35%, var(--blanc) 85%)' }} />
       <div style={{ ...cadre, position: 'relative', display: 'grid', gridTemplateColumns: mobile ? '1fr' : '7fr 5fr', columnGap: 48, rowGap: 18, alignItems: 'center', paddingBlock: mobile ? '28px 36px' : '64px 72px' }}>
       <div style={{ display: 'grid', gap: 18 }}>
@@ -263,7 +263,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       {heros && !mobile && <div style={{ aspectRatio: '3 / 4', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: '6%' }}><HerosVue h={heros} /></div>}
     </div></section>
   ) : (
-    <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.45fr 1fr', gap: mobile ? 20 : 64, paddingTop: 14, alignItems: 'center' }}>
+    <section data-zone="premier-ecran" style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.45fr 1fr', gap: mobile ? 20 : 64, paddingTop: 14, alignItems: 'center' }}>
       <div style={{ borderRadius: 'var(--rayon)', background: mobile ? 'var(--g-aplat)' : 'var(--g-carte)', boxShadow: mobile ? 'none' : 'inset 0 0 0 1px var(--g-ligne)', color: 'var(--g-encre)', padding: mobile ? 26 : 48, display: 'grid', gap: 16, justifyItems: 'start' }}>
         <span className="td-sur" style={{ padding: '6px 14px', borderRadius: 999, background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)', fontSize: 14, fontWeight: 600 }}>● {surTitre}</span>
         {titreH1}
@@ -428,9 +428,9 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const actionContact = (a: string, k: number) => <span key={a} className={k === 0 ? 'eff-bouton td-bouton' : 'td-bouton'} style={{ ...bouton(k === 0), minHeight: 52 }}>{a}</span>;
   const contactBloc = (v.contact === 'bandeau' || v.contact === 'carte') && actionsContact.length ? (
     v.contact === 'bandeau' ? (
-      <aside style={{ marginTop: 56, padding: mobile ? '28px 0' : '40px 0', background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: mobile ? 'flex-start' : 'center' }}>{actionsContact.map(actionContact)}</div></aside>
+      <aside data-zone="contact" style={{ marginTop: 56, padding: mobile ? '28px 0' : '40px 0', background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: mobile ? 'flex-start' : 'center' }}>{actionsContact.map(actionContact)}</div></aside>
     ) : (
-      <aside style={{ ...cadre, marginTop: 56 }}><div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr auto', gap: 18, alignItems: 'center', padding: mobile ? 24 : 40, borderRadius: 'var(--rayon)', background: 'var(--g-doux)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
+      <aside data-zone="contact" style={{ ...cadre, marginTop: 56 }}><div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr auto', gap: 18, alignItems: 'center', padding: mobile ? 24 : 40, borderRadius: 'var(--rayon)', background: 'var(--g-doux)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
         <div style={{ display: 'grid', gap: 6, minWidth: 0 }}><strong style={{ fontFamily: 'var(--police-titres)', fontWeight: 'var(--graisse-titres)' as unknown as number, fontSize: mobile ? 22 : 27 }}>{nomCabinet}</strong>{tel && <span style={{ fontWeight: 650, fontSize: 20 }}>{tel}</span>}{d.cabinet.email && <span style={{ fontWeight: 650, fontSize: 19, overflowWrap: 'anywhere' }}>{d.cabinet.email}</span>}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>{actionsContact.map(actionContact)}</div>
       </div></aside>
@@ -492,12 +492,12 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   return (
     <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
       {!seul && entete}
-      {vue === 'accueil' ? <>{montrer('premier') && (herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soins} replis={r} sur={surTitre} registre={registre} illustration={heros?.type === 'svg' ? heros.html : ''} /> : premier)}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section">{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
+      {vue === 'accueil' ? <>{montrer('premier') && (herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soins} replis={r} sur={surTitre} registre={registre} illustration={heros?.type === 'svg' ? heros.html : ''} /> : premier)}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section" data-zone={b}>{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
         : vue === 'soin' ? fiche
         : vue === 'theme' ? pageSujet
         : vue === 'article' ? pageArticle
         // Pages internes (studio, onglets) : les blocs de la page, avec l'en-tête et le pied du site
-        : <div className="eff-section" style={{ paddingTop: 8 }}>{vue === 'actualites' ? actualitesSection : vue === 'cabinet' ? <>{equipeSection}{galerieSection}</> : vue === 'acces' ? accesSection : vue === 'questions' ? faqSection : <>{sujetsSection}{soinsSection}</>}</div>}
+        : <div className="eff-section" style={{ paddingTop: 8 }} data-zone={vue === 'actualites' ? 'actualites' : vue === 'acces' ? 'acces' : vue === 'questions' ? 'faq' : undefined}>{vue === 'actualites' ? actualitesSection : vue === 'cabinet' ? <><div data-zone="praticiens">{equipeSection}</div><div data-zone="galerie">{galerieSection}</div></> : vue === 'acces' ? accesSection : vue === 'questions' ? faqSection : <><div data-zone="sujets">{sujetsSection}</div><div data-zone="competences">{soinsSection}</div></>}</div>}
       {seul?.includes('actualites') && !blocs.includes('actualites') && actualitesSection}
       {seul?.includes('galerie') && !blocs.includes('galerie') && galerieSection}
       {montrer('contact') && contactBloc}

@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   animationDeCle, CATEGORIES_RETOURS, categorieDuType, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
-  ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
+  ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
   type PoidsAtelier, type Proposition, type StatutIllustration, type Univers,
@@ -40,6 +40,8 @@ import { correspondHashtag, type HashtagsAssets } from '@plateforme/core';
 import type { Inspiration } from '@/lib/inspirations';
 import EnvoyerRetours from '@/components/EnvoyerRetours';
 import DoubleRendu from '@/components/DoubleRendu';
+import PlancheMenu from '@/components/PlancheMenu';
+import PiloteApercu, { BandeauEvaluation, useRepereVisible } from '@/components/RepereEvaluation';
 import RenduMobile from '@/components/RenduMobile';
 import { empreinteMobile, etatsMobile, type AppareilRetour, type RetourMobile, type Zone } from '@plateforme/core';
 import RenduMobileARevoir from './RenduMobileARevoir';
@@ -346,6 +348,8 @@ export default function Retours(props: Props) {
   const [negatif, setNegatif] = useState('');
   const [modeEtiquettes, setModeEtiquettes] = useState(false);
   const [statut, setStatut] = useState<{ ok: boolean; message: string } | null>(null);
+  // Repère « Vous notez » : encadré des zones notées, masquable (touche h)
+  const [repereVisible, basculerRepere] = useRepereVisible();
   const [session, setSession] = useState(0);
   const [envois, setEnvois] = useState(0);
   const [gammeApercu, setGammeApercu] = useState('canard');
@@ -710,6 +714,9 @@ export default function Retours(props: Props) {
     if (r.ok) setStatuts((m) => ({ ...m, [cleA]: s }));
     setStatut({ ok: r.ok, message: `${carte.asset.titre} : ${r.message}` });
   };
+  // « Vous notez : … » (reperes.ts) : libellé simple et zones encadrées quand l'élément est montré dans une page complète
+  const repere = carte.kind === 'asset' ? repereCle(carte.asset.cle, carte.asset.titre) : repereTheme(carte.p.nom);
+  const estMenu = carte.kind === 'asset' && carte.asset.type === 'menu';
   const modifieDepuis = Boolean(carte.kind === 'asset' && etat && carte.empreinte && etat.empreinte && etat.empreinte !== carte.empreinte);
   // Juge : Paul a-t-il noté CETTE version (même empreinte ; photos : la clé suffit) ?
   const empreinteJuge = carte.kind === 'asset' ? empreintePourJuge(carte.empreinte, carte.asset.rendu.kind === 'image' ? carte.asset.rendu.src : null) : null;
@@ -758,6 +765,13 @@ export default function Retours(props: Props) {
       <section aria-label="Élément à noter" className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] md:items-start">
         <div className="grid min-w-0 gap-2">
           {carte.kind === 'asset' && modifieDepuis && carte.asset.rendu.kind !== 'studio' && <AvantApres key={`aa-${carte.asset.cle}`} cle={carte.asset.cle}><ApercuAsset c={carte} /></AvantApres>}
+          <BandeauEvaluation prefixe="Vous notez" repere={repere} visible={repereVisible} onBasculer={basculerRepere} />
+          {/* Menus : la planche (barre, survol, défilement ; téléphone fermé et ouvert), interactive (o : ouvrir le menu) */}
+          {estMenu && carte.kind === 'asset' ? (
+            <PlancheMenu key={cleCarte(carte)} cle={carte.asset.cle} selecteurs={repere.selecteurs} repereVisible={repereVisible}
+              proposes={proposes} modeles={modeles} catalogue={catalogue} marquesImportees={marquesImportees} themesActives={themesActives} />
+          ) : (
+          <PiloteApercu selecteurs={repere.selecteurs} visible={repereVisible} cle={cleCarte(carte)}>
           {/* Ordinateur ET mobile, annotables (z) ; la note porte sur le choix, l'adaptation mobile a son bloc à part */}
           <DoubleRendu key={cleCarte(carte)} libelle={titre} onAppareil={setAppareilVu}
             zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile}
@@ -767,6 +781,8 @@ export default function Retours(props: Props) {
               : carte.kind === 'asset'
                 ? (app === 'mobile' ? <ApercuAssetMobile c={carte} /> : <div className="bg-white p-2"><ApercuAsset c={carte} /></div>)
                 : apercuTheme && <ApercuTheme key={`${carte.cle}|${app}`} sansCommandes vignette={app === 'mobile' ? 560 : 520} appareil={app} draft={apercuTheme.draft} modele={apercuTheme.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />} />
+          </PiloteApercu>
+          )}
         </div>
 
         <div className="grid gap-3 md:sticky md:top-4">

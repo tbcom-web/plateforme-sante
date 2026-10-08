@@ -23,6 +23,10 @@ type Props = {
   mobile?: boolean;
   /** Rendu nu (DoubleRendu : le cadre est fourni par le parent ; sans commandes) */
   nu?: boolean;
+  /** Rendu nu : hauteur affichée de la vignette (défaut 600 téléphone, 560 ordinateur) */
+  vignette?: number;
+  /** Rendu nu : hauteur imposée AVEC défilement (planche des menus : barre collante au défilement) ; prime sur `vignette` */
+  hauteur?: number;
 };
 
 /** Photos de démonstration de la galerie du cabinet (banque intégrée, jamais « posture ») */
@@ -40,7 +44,7 @@ export function draftStudio(principaux: string[], secondaires: string[] = [], co
   return d;
 }
 
-export default function ApercuStudio({ cle, proposes, modeles, catalogue, marquesImportees, themesActives, mobile = false, nu = false }: Props) {
+export default function ApercuStudio({ cle, proposes, modeles, catalogue, marquesImportees, themesActives, mobile = false, nu = false, vignette, hauteur }: Props) {
   const modele = (id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);
   // Structure rendue : la première dont le gabarit porte les variantes (tableau, village, revue), parmi celles du parcours
   const structure = useMemo<Structure>(() => STRUCTURES.find((s) => proposes.some((u) => u.id === s) && gabaritModele(modele(universCatalogue(s)?.preReglage.modele ?? 'tableau')) !== 'classique') ?? 'clair-pratique',
@@ -61,7 +65,7 @@ export default function ApercuStudio({ cle, proposes, modeles, catalogue, marque
   // Typographies et détails : spécimen lisible (titre, surtitre, paragraphe, bouton, carte, citation) ; menus : l'accueil (en-tête)
   if (/^(typo|details):/.test(cle)) return nu ? <SpecimenHabillage cle={cle} mobile={mobile} vignette={mobile ? 600 : 560} /> : <div aria-hidden="true" className={`overflow-hidden bg-neutral-100 ring-1 ring-black/10 ${mobile ? 'mx-auto w-[300px] max-w-full rounded-[22px] ring-4 ring-neutral-800' : 'rounded-xl'}`}><SpecimenHabillage cle={cle} mobile={mobile} /></div>;
   if (!apercu) return <p className="text-sm text-neutral-600">Aperçu indisponible.</p>;
-  if (nu) return <ApercuTheme key={`${cle}|${mobile}`} sansCommandes vignette={mobile ? 600 : 560} vueInitiale={vuePourCle(cle)} survol={survol} seul={blocsPourCle(cle)} appareil={mobile ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
+  if (nu) return <ApercuTheme key={`${cle}|${mobile}`} sansCommandes vignette={hauteur ? undefined : vignette ?? (mobile ? 600 : 560)} hauteurCadre={hauteur} vueInitiale={vuePourCle(cle)} survol={survol} seul={blocsPourCle(cle)} appareil={mobile ? 'mobile' : 'bureau'} draft={apercu.draft} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
   return (
     <div className="grid gap-2">
       {effets && (
