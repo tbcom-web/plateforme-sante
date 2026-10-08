@@ -19,6 +19,7 @@ Super admin (/admin : tableau de bord)
 │                   /admin/retours                   Tuiles à noter (compteur : nouveautés à noter)
 │                   /admin/retours/duel              Duels A ou B
 │                   /admin/retours/recettes          Recettes complètes
+│                   /chaine                          Chaîne des modèles (hors /admin : ouverte aux contributeurs ; docs/chaine-modeles.md)
 ├─ Cuisine          /admin/cuisine                   (accueil de l'espace)
 │                   /admin/cuisine/studio            Studio
 │                   /admin/cuisine/atelier           Atelier

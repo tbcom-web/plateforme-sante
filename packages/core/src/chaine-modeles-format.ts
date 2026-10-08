@@ -151,7 +151,9 @@ export function normaliserTicket(brut: unknown): TicketModele | null {
   const z = t.zone as Record<string, unknown> | null | undefined;
   const zone: ZoneTicket | null = z && typeof z === 'object' ? { forme: z.forme === 'ellipse' ? 'ellipse' : 'rect', x: borne01(z.x), y: borne01(z.y), l: borne01(z.l), h: borne01(z.h) } : null;
   const origine: OrigineTicket = t.origine === 'testeur' ? 'testeur' : 'humain';
+  // Champs en plus (empreinte, suggestion… du testeur) conservés tels quels : le format peut s'enrichir sans casser la lecture
   return {
+    ...(t as object),
     numero: Number.isInteger(t.numero) ? (t.numero as number) : 0,
     modele: String(t.modele ?? ''),
     page: t.page,

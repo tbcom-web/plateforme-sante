@@ -45,6 +45,8 @@ export const ESPACES: readonly Espace[] = [
       { href: '/admin/retours', libelle: 'Tuiles à noter', compteur: 'nouveautes' },
       { href: '/admin/retours/duel', libelle: 'Duels A ou B' },
       { href: '/admin/retours/recettes', libelle: 'Recettes complètes' },
+      // Chaîne de production des modèles (2026-10-09) : hors de /admin, ouverte aussi aux contributeurs de l'équipe
+      { href: '/chaine', libelle: 'Chaîne des modèles' },
     ],
   },
   {

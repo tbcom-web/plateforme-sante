@@ -319,4 +319,34 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
   }
 }
 
+// Chaîne des modèles (0050, chaine-modeles.ts) : tickets ouverts priorisés pour la retouche de Claude (finalistes en retouche d'abord)
+// → retours/tickets-modeles.json + section de SYNTHESE.md ; versions à faire passer au testeur → retours/modeles-a-tester.json.
+// Jamais d'auteur ni d'e-mail (dépôt public) : origine humain / testeur seulement. Table absente : rien n'est écrit.
+{
+  const tmpChaine = mkdtempSync(join(tmpdir(), 'exporter-chaine-'));
+  let ch;
+  try {
+    await build({ entryPoints: [join(racine, 'packages', 'core', 'src', 'chaine-modeles.ts')], bundle: true, platform: 'node', format: 'esm', outfile: join(tmpChaine, 'chaine.mjs'), logLevel: 'warning', loader: { '.svg': 'text' } });
+    ch = await import(pathToFileURL(join(tmpChaine, 'chaine.mjs')).href);
+  } finally {
+    rmSync(tmpChaine, { recursive: true, force: true });
+  }
+  const [lf, lv, lt] = await Promise.all([
+    lireTout('modeles_fiches', 'id,nom,profession,profil,statut,version_courante,version_publiee,tags,rang,scenario,cle,origine,created_at', 'created_at.asc'),
+    lireTout('modeles_versions', 'modele,version,composition,cle,journal,test,created_at', 'modele.asc,version.asc'),
+    lireTout('modeles_tickets', 'modele,numero,page,appareil,zone,element,etiquette,commentaire,origine,gravite,controle,statut,version_ouverture,version_correction,created_at', 'modele.asc,numero.asc'),
+  ]);
+  if (lf !== null && lv !== null && lt !== null) {
+    const tableau = (v) => (Array.isArray(v) ? v : []);
+    const fiches = lf.map((l) => ({ id: l.id, nom: l.nom, profession: l.profession, profil: l.profil, statut: l.statut, versionCourante: l.version_courante, versionPubliee: l.version_publiee, tags: l.tags ?? {}, tagsValides: false, recette: null, origine: l.origine, cle: l.cle, rang: l.rang, scenario: { principaux: tableau(l.scenario?.principaux), secondaires: tableau(l.scenario?.secondaires), couleurs: tableau(l.scenario?.couleurs) }, creeLe: jour(l.created_at) }));
+    const versions = lv.map((l) => ({ modele: l.modele, version: l.version, composition: l.composition, cle: l.cle, journal: tableau(l.journal), auteur: '', test: l.test ?? null, creeLe: jour(l.created_at) }));
+    const tickets = lt.map((l) => ({ numero: l.numero, modele: l.modele, page: l.page, appareil: l.appareil, zone: l.zone, element: l.element, etiquette: l.etiquette, commentaire: texte(l.commentaire) ?? '', origine: l.origine, gravite: l.gravite ?? undefined, auteur: '', statut: l.statut, versionOuverture: l.version_ouverture, versionCorrection: l.version_correction, controle: l.controle, creeLe: jour(l.created_at) }));
+    const exp = ch.exportTicketsModeles(fiches, versions, tickets);
+    ecrire('tickets-modeles.json', exp);
+    ecrire('modeles-a-tester.json', ch.modelesATester(fiches, versions));
+    const synthese = readFileSync(join(sortie, 'SYNTHESE.md'), 'utf8').replace(/\n+$/, '');
+    ecrire('SYNTHESE.md', `${synthese}\n\n${ch.markdownTicketsModeles(exp)}\n`);
+  }
+}
+
 console.log(`Retours exportés dans ${sortie} : ${notesAssets.length} notes d’assets, ${notesAtelier.length} notes de l’atelier, ${journal.length} revues, ${courants.length} statuts, ${listeInspirations.length} inspirations.`);

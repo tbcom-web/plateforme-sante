@@ -345,7 +345,8 @@ export function ligneCorrection(t: Pick<TicketModele, 'numero' | 'page' | 'appar
 export function appliquerResultatTest(tickets: readonly TicketModele[], r: ResultatTestModele): { nouveaux: TicketModele[]; fermes: number[] } {
   const cle = (t: Pick<TicketModele, 'controle' | 'page' | 'appareil' | 'etiquette'>) => `${t.controle ?? t.etiquette}|${t.page}|${t.appareil}`;
   const ouvertsTesteur = tickets.filter((t) => t.origine === 'testeur' && (t.statut === 'ouvert' || t.statut === 'corrige'));
-  const deja = new Set(ouvertsTesteur.map(cle));
+  // Déjà connus : tickets du testeur encore ouverts, et tout ticket du testeur ouvert sur CETTE version (même fermé « sans objet » : jamais recréé)
+  const deja = new Set([...ouvertsTesteur, ...tickets.filter((t) => t.origine === 'testeur' && t.versionOuverture === r.version)].map(cle));
   const rouges = new Set(r.controles.filter((c) => c.verdict !== 'vert').map((c) => c.id));
   let n = numeroSuivant(tickets);
   const nouveaux: TicketModele[] = [];
@@ -666,16 +667,18 @@ export function tagsAutomatiques(composition: Record<string, unknown>, p: { prof
 export type Attente = { modele: string | null; nom: string; statut: StatutModele | null; texte: string; href: string };
 
 /**
- * Ce qui attend un humain, pour UNE personne : présélection (profils sous l'objectif), votes du tournoi, avis de page (cellules
- * qu'elle n'a pas encore vues), revalidations ; pour le validateur en plus : modèles prêts pour validation.
+ * Ce qui attend un humain, pour UNE personne : avis de page (cellules pas encore vues), revalidations, pour le validateur les
+ * modèles prêts pour validation ; puis votes des tournois ouverts ; puis la présélection des 3 profils les moins remplis.
  */
 export function attentesHumain(e: EtatChaine, personne: { id: string; role: RoleEquipe }, profils: readonly { id: string; nom: string; profession: string }[]): Attente[] {
   const l: Attente[] = [];
+  const tournois: Attente[] = [];
+  const reserves: (Attente & { n: number })[] = [];
   for (const p of profils) {
     const cand = e.fiches.filter((f) => f.profil === p.id && f.profession === p.profession && f.statut === 'candidat');
-    if (cand.length < CHAINE.objectifCandidats) l.push({ modele: null, nom: p.nom, statut: null, texte: `Présélection : ${cand.length} / ${CHAINE.objectifCandidats} candidats`, href: `/chaine/preselection?profil=${encodeURIComponent(p.id)}` });
+    if (cand.length < CHAINE.objectifCandidats) reserves.push({ modele: null, nom: p.nom, statut: null, texte: `Présélection : ${cand.length} / ${CHAINE.objectifCandidats} candidats`, href: `/chaine/preselection?profil=${encodeURIComponent(p.id)}`, n: cand.length });
     const t = etatTournoi(cand.map((f) => f.id), e.votes);
-    if (t.ouvert && !t.arrete) l.push({ modele: null, nom: p.nom, statut: 'candidat', texte: `Tournoi : ${t.texte}`, href: `/chaine/tournoi?profil=${encodeURIComponent(p.id)}` });
+    if (t.ouvert && !t.arrete) tournois.push({ modele: null, nom: p.nom, statut: 'candidat', texte: `Tournoi : ${t.texte}`, href: `/chaine/tournoi?profil=${encodeURIComponent(p.id)}` });
   }
   for (const f of e.fiches) {
     if (f.statut === 'avis-humain') {
@@ -688,7 +691,8 @@ export function attentesHumain(e: EtatChaine, personne: { id: string; role: Role
       l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: 'Validation finale et publication', href: `/chaine/modele/${f.id}` });
     }
   }
-  return l;
+  // Ordre : modèles (avis, revalidations, validation), puis tournois ouverts, puis les 3 profils les moins remplis
+  return [...l, ...tournois, ...reserves.sort((a, b) => a.n - b.n).slice(0, 3).map(({ n: _n, ...x }) => x)];
 }
 
 /** Ce qui tourne tout seul : agent, Claude, automate (avec un mot de ce qui est attendu) */
