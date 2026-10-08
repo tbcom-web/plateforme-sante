@@ -40,7 +40,13 @@ export default async function PersonnalisationsAdmin() {
           <li key={s.id} className={`grid gap-2 rounded-xl border p-4 ${s.casse ? 'border-red-200 bg-red-50/40' : 'border-black/10 bg-white'}`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-semibold">{s.nom} <span className="text-xs font-normal text-neutral-500">· version {s.perso.revision}{s.perso.le ? ` · ${new Date(s.perso.le).toLocaleDateString('fr-FR')}` : ''}{s.perso.par === 'admin' ? ' · par un conseiller' : ''}</span></p>
-              {s.casse && <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-900">Casse la charte</span>}
+              <span className="flex flex-wrap gap-2">
+                {/* État de publication : version figée en ligne comparée au brouillon */}
+                {s.publication.etat === 'publie'
+                  ? <span className="rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-900">Publié</span>
+                  : <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-950">{s.publication.etat === 'jamais' ? 'Jamais publié' : `Modifications non publiées${s.publication.revisionEnLigne ? ` (en ligne : version ${s.publication.revisionEnLigne})` : ''}`}</span>}
+                {s.casse && <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-900">Casse la charte</span>}
+              </span>
             </div>
             <p className="text-sm text-neutral-700">{s.resume.length ? s.resume.map((x) => `${x.libelle} : ${x.valeur}`).join(' · ') : 'Revenu au modèle'}</p>
             {s.alertes.filter((a) => a.niveau !== 'info').length > 0 && (

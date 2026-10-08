@@ -18,6 +18,7 @@ import type { SoinCatalogue } from '@/lib/sites';
 import type { EmplacementImage, VersionJournal } from '@/lib/personnalisations-site';
 import { controleDimensions, envoyerImagePerso, lireImage, recadrerEnWebp, zoneRecadree, type ImageLue } from '@/lib/image-perso';
 import { annulerPersonnalisations, enregistrerPersonnalisations, publierPersonnalisations, type ResultatPerso } from './actions';
+import ChampRiche from './ChampRiche';
 
 type Gamme = { id: string; nom: string; accent: string; duo: string | null; fondDoux: string; famille: string };
 type Props = {
@@ -187,7 +188,7 @@ export default function Personnaliser(p: Props) {
           {onglet === 'couleurs' && <OngletCouleurs r={r} gammes={p.gammes} secondaires={p.secondaires} changer={changer} modele={modele} actuelle={{ couleur: p.draft.theme.couleur, gamme: p.draft.theme.gamme }} />}
           {onglet === 'images' && <OngletImages r={r} images={p.images} siteId={p.siteId} changer={changer} modele={modele} />}
           {onglet === 'textes' && <OngletTextes r={r} catalogue={p.catalogue as LigneCatalogue[]} soins={p.draft.soins} modeles={modelesPages} changer={changer} onPage={setPageTextes} />}
-          {onglet === 'historique' && <OngletHistorique nomsPages={nomsPages} p={p.initial} journal={p.journal} charger={(x, n) => { changer(() => x); setMessage({ ok: true, message: `Version ${n} chargée dans l’aperçu : enregistrez ou publiez pour la garder.` }); }} />}
+          {onglet === 'historique' && <OngletHistorique nomsPages={nomsPages} p={p.initial} journal={p.journal} apercu={(x) => { const d = appliquerPersonnalisations(p.draft, { reglages: x }); return <ApercuTheme vignette={420} draft={d} modele={modeleDuSite(p.modele, d.theme)} catalogue={pagesPersonnalisees(p.catalogue as LigneCatalogue[], x)} marquesImportees={p.marquesImportees} jeuPhotos={p.jeuPhotos} appareil="mobile" />; }} charger={(x, n) => { changer(() => x); setMessage({ ok: true, message: `Version ${n} chargée dans l’aperçu : enregistrez ou publiez pour la garder.` }); }} />}
         </section>
         <section className={`${vueMobile === 'apercu' ? 'block' : 'hidden'} min-w-0 lg:sticky lg:top-20 lg:block`} aria-label="Aperçu du site">
           <ApercuTheme draft={draftA} modele={modeleA} catalogue={catalogueA} marquesImportees={p.marquesImportees} jeuPhotos={p.jeuPhotos} appareil="mobile" />
@@ -304,7 +305,9 @@ function OngletCouleurs({ r, gammes, secondaires, changer, modele, actuelle }: {
   );
 }
 
-function Vignette({ url, alt }: { url: string | null; alt: string }) {
+function Vignette({ url, alt, dessin }: { url: string | null; alt: string; dessin?: string | null }) {
+  // Sans image : le VRAI dessin du modèle à cet emplacement (lib/personnalisations-site.ts), sinon la mention seule
+  if (!url && dessin) return <span role="img" aria-label={`Illustration du modèle : ${alt}`} className="grid aspect-[4/3] w-28 shrink-0 place-items-center overflow-hidden rounded-lg bg-teal-50 p-1.5 text-teal-950 [&_svg]:h-full [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: dessin }} />;
   if (!url) return <span className="grid aspect-[4/3] w-28 shrink-0 place-items-center rounded-lg bg-neutral-100 text-center text-[11px] text-neutral-500">Illustration du modèle</span>;
   return (
     <span className="relative block aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
@@ -369,7 +372,7 @@ function OngletImages({ r, images, siteId, changer, modele }: { r: ReglagesPerso
           return (
             <li key={e.cle} className="grid gap-2 rounded-xl border border-black/10 p-3">
               <div className="flex gap-3">
-                <Vignette url={url} alt={e.libelle} />
+                <Vignette url={url} alt={e.libelle} dessin={e.dessin} />
                 <div className="grid min-w-0 content-start gap-1">
                   <p className="font-semibold leading-tight">{e.libelle}</p>
                   <p className="text-xs text-neutral-600">{perso ? (perso.source === 'televersee' ? 'Votre image' : 'Image du kit') : 'Image du modèle'}{url && estImageDemo(url) ? ' · Démo : remplacez-la, elle ne sera pas publiée' : ''}</p>
@@ -515,12 +518,13 @@ function EditeurBloc({ b, modele, premier, dernier, onMaj, onSupprimer, onDeplac
       ) : b.type === 'question' ? (
         <>
            <Champ valeur={b.texte} max={LIMITES_BLOCS.question} label="Question" onChange={(v) => onMaj({ ...b, texte: v })} />
-          <Champ valeur={b.reponse ?? ''} max={LIMITES_BLOCS.reponse} label="Réponse" onChange={(v) => onMaj({ ...b, reponse: v })} />
+          <ChampRiche valeur={b.reponse ?? ''} max={LIMITES_BLOCS.reponse} label="Réponse" onChange={(v) => onMaj({ ...b, reponse: v })} />
         </>
       ) : (
-        <Champ ligne={b.type === 'intertitre'} valeur={b.texte} max={b.type === 'intertitre' ? LIMITES_BLOCS.intertitre : b.type === 'encadre' ? LIMITES_BLOCS.encadre : LIMITES_BLOCS.paragraphe} label={b.type === 'intertitre' ? 'Intertitre' : 'Texte'} onChange={(v) => onMaj({ ...b, texte: v })} />
+        b.type === 'intertitre'
+          ? <Champ ligne valeur={b.texte} max={LIMITES_BLOCS.intertitre} label="Intertitre" onChange={(v) => onMaj({ ...b, texte: v })} />
+          : <ChampRiche valeur={b.texte} max={b.type === 'encadre' ? LIMITES_BLOCS.encadre : LIMITES_BLOCS.paragraphe} label="Texte" onChange={(v) => onMaj({ ...b, texte: v })} />
       )}
-      {!b.verrou && /\*\*/.test([b.texte, ...(b.items ?? [])].join(' ')) && <p className="text-xs text-neutral-500">Les mots entre ** ** s’affichent en gras sur le site.</p>}
       {vide && !b.verrou && <p className="text-xs text-neutral-500">Bloc vide : il ne sera pas enregistré.</p>}
       {avert.length > 0 && (
         <div className="grid gap-1 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
@@ -533,8 +537,9 @@ function EditeurBloc({ b, modele, premier, dernier, onMaj, onSupprimer, onDeplac
   );
 }
 
-function OngletHistorique({ p, journal, charger, nomsPages }: { nomsPages: Record<string, string>; p: PersonnalisationsSite; journal: VersionJournal[]; charger: (r: ReglagesPerso, n: number) => void }) {
+function OngletHistorique({ p, journal, charger, nomsPages, apercu }: { nomsPages: Record<string, string>; p: PersonnalisationsSite; journal: VersionJournal[]; charger: (r: ReglagesPerso, n: number) => void; apercu: (r: ReglagesPerso) => React.ReactNode }) {
   const versions = [...p.historique].reverse();
+  const [compare, setCompare] = useState<number | null>(null);
   const actions: Record<string, string> = { enregistrement: 'Enregistrée', publication: 'Publiée', restauration: 'Restaurée', annulation: 'Annulée (administration)' };
   return (
     <div className="grid gap-3">
@@ -548,7 +553,20 @@ function OngletHistorique({ p, journal, charger, nomsPages }: { nomsPages: Recor
               <p className="flex flex-wrap items-center justify-between gap-2"><strong>Version {v.revision}</strong><span className="text-xs text-neutral-500">{dateFr(v.le)} · {v.par === 'admin' ? 'conseiller' : 'vous'}{pub ? ' · publiée' : ''}</span></p>
               {v.note && <p className="text-xs text-neutral-600">{v.note}</p>}
               <p className="text-xs text-neutral-700">{resume.length ? resume.map((x) => `${x.libelle} : ${x.valeur}`).join(' · ') : 'Site du modèle, sans personnalisation'}</p>
-              {v.revision !== p.revision && <button type="button" className={`${lien} justify-self-start`} onClick={() => charger(v.reglages, v.revision)}>Revenir à cette version</button>}
+              <div className="flex flex-wrap gap-x-4">
+                <button type="button" className={`${lien} justify-self-start`} aria-expanded={compare === v.revision} onClick={() => setCompare(compare === v.revision ? null : v.revision)}>{compare === v.revision ? 'Masquer l’aperçu' : 'Voir avant / après'}</button>
+                {v.revision !== p.revision && <button type="button" className={`${lien} justify-self-start`} onClick={() => charger(v.reglages, v.revision)}>Revenir à cette version</button>}
+              </div>
+              {/* Avant / après : la version précédente (ou le modèle) et celle-ci, sur téléphone */}
+              {compare === v.revision && (() => {
+                const avant = p.historique.filter((x) => x.revision < v.revision).at(-1);
+                return (
+                  <div className="grid grid-cols-2 gap-2">
+                    <figure className="grid gap-1"><figcaption className="text-xs font-semibold text-neutral-600">Avant{avant ? ` (version ${avant.revision})` : ' (modèle)'}</figcaption><div className="overflow-hidden rounded-lg ring-1 ring-black/10">{apercu(avant?.reglages ?? {})}</div></figure>
+                    <figure className="grid gap-1"><figcaption className="text-xs font-semibold text-neutral-600">Après (version {v.revision})</figcaption><div className="overflow-hidden rounded-lg ring-1 ring-black/10">{apercu(v.reglages)}</div></figure>
+                  </div>
+                );
+              })()}
             </li>
           );
         })}

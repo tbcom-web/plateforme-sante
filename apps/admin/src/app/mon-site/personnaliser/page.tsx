@@ -31,7 +31,7 @@ export default async function PagePersonnaliser({ searchParams }: PageProps<'/mo
   const modele = modeleDeBase(modeles, site.draft.theme.modele);
   const [polices, images, journal, jeuPhotos] = await Promise.all([
     policesDuSite(site.draft, modele),
-    imagesDuSite(site.draft, catalogue),
+    imagesDuSite(site.draft, catalogue, modele),
     journalPersonnalisations(site.id),
     site.draft.theme.jeuPhotos ? lireJeuPhotos(site.draft.theme.jeuPhotos) : Promise.resolve(null),
   ]);

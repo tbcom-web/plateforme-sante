@@ -4,7 +4,8 @@ import 'server-only';
 // pages de contenus modifiables, journal des versions (migration 0047, facultatif).
 import {
   compatibiliteFamille, estImageDemo, familleDominante, gabaritModele, lirePersonnalisations, modeleDuSite, modeleIntegre, notesPolices,
-  paireDuModele, policePermise, policesProposees, soinsParDefaut, SUJET_DE_SPECIALITE, urlImagePermise, type ModeleManifeste,
+  paireDuModele, policePermise, policesProposees, soinsParDefaut, SUJET_DE_SPECIALITE, urlImagePermise, jeuVisuel, completerJeuVisuel, visuelSoinJeu, svgDessin,
+  registreModele, themeParId, packVisuel, type ModeleManifeste, type NomDessin,
   type PersonnalisationsSite, type PoliceProposee, type ReglagesPerso, type SiteDraft,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
@@ -29,13 +30,14 @@ export async function policesDuSite(d: SiteDraft, modele: ModeleManifeste): Prom
   return policesProposees({ modele: actuelle, notes, compatible: (id) => policePermise(id, gabarit) && (!famille || compatibiliteFamille('police', id, famille) !== 'exclu') });
 }
 
-export type EmplacementImage = { cle: string; libelle: string; actuelle: string | null; options: string[] };
+/** `dessin` : rendu RÉEL (SVG) de l'illustration du modèle à cet emplacement quand aucune image n'y est posée (vignette « Illustration du modèle ») */
+export type EmplacementImage = { cle: string; libelle: string; actuelle: string | null; options: string[]; dessin?: string | null };
 
 /**
  * Emplacements d'images du site et images validées du kit du profil proposées pour chacun (photos importées, notées 4-5 ★ ;
  * jamais une image « Démo », jamais une image exclue).
  */
-export async function imagesDuSite(d: SiteDraft, catalogue: readonly SoinCatalogue[]): Promise<EmplacementImage[]> {
+export async function imagesDuSite(d: SiteDraft, catalogue: readonly SoinCatalogue[], modele?: ModeleManifeste): Promise<EmplacementImage[]> {
   const ctx = await getContexteImages(true);
   const sujet = sujetDuSite(d);
   const kit = ctx.kits[sujet] ?? {};
@@ -52,7 +54,25 @@ export async function imagesDuSite(d: SiteDraft, catalogue: readonly SoinCatalog
     ...[0, 1, 2].map((i) => ({ cle: `cabinet:${i}`, libelle: `Cabinet, photo ${i + 1}`, actuelle: d.photos.cabinet[i] || kit.galerie?.[i] || null, options: propres([...(kit.galerie ?? []), ...banque]) })),
     ...d.praticiens.slice(0, 6).map((p, i) => ({ cle: `portrait:${i}`, libelle: `Portrait : ${[p.prenom, p.nom].filter(Boolean).join(' ') || `praticien ${i + 1}`}`, actuelle: p.photo || null, options: [] })),
   ];
-  return l;
+  // Illustration du modèle (jeu visuel de la spécialité, registre du modèle) là où aucune image n'est posée : la vignette montre le
+  // vrai dessin (même source que l'aperçu : jeuVisuel, visuelSoinJeu), jamais une case grise
+  const jeu = completerJeuVisuel(jeuVisuel(d.theme.specialite, d.theme.specialiteSecondaire || null));
+  const registre = modele ? registreModele(modeleDuSite(modele, d.theme)) : 'releve';
+  const dessinDe = (cle: string): NomDessin | null => {
+    if (cle === 'accueil') return jeu.accueil.dessin;
+    if (cle === 'panorama') return jeu.panorama.dessin;
+    if (cle.startsWith('soin:')) return visuelSoinJeu(jeu, cle.slice(5)).dessin;
+    if (cle.startsWith('sujet:')) { const t = themeParId(cle.slice(6)); return t ? packVisuel(t.specialite).dessins?.[0] ?? jeu.accueil.dessin : jeu.accueil.dessin; }
+    if (cle.startsWith('cabinet:')) return jeu.accueil.dessin;
+    return null;
+  };
+  return l.map((e) => {
+    if (e.actuelle) return e;
+    const n = dessinDe(e.cle);
+    let dessin: string | null = null;
+    try { dessin = n ? svgDessin(n, { registre, id: `vig-${e.cle.replace(/[^a-z0-9]/gi, '-')}` }) : null; } catch { dessin = null; }
+    return { ...e, dessin };
+  });
 }
 
 /** Modèle de présentation du site (importé par l'admin ou intégré) */
@@ -84,11 +104,25 @@ export async function journaliser(siteId: string, p: PersonnalisationsSite, acti
 }
 
 /** Sites qui ont des personnalisations (vue admin / commercial ; RLS : admin seulement pour les sites des autres) */
-export async function sitesPersonnalises(): Promise<{ id: string; nom: string; config: unknown; perso: PersonnalisationsSite; updatedAt: string }[]> {
+export type EtatPublicationPerso = { etat: 'publie' | 'non-publie' | 'jamais'; revisionEnLigne: number | null };
+
+/**
+ * État de publication des personnalisations : comparaison de la version figée en ligne (sites.config_publiee, 0017) et du brouillon
+ * (sites.config). Mêmes réglages en ligne : « publié » ; sinon « modifications non publiées » ; aucune version figée : « jamais ».
+ */
+export function etatPublicationPerso(config: unknown, configPubliee: unknown): EtatPublicationPerso {
+  if (!configPubliee) return { etat: 'jamais', revisionEnLigne: null };
+  const brouillon = lirePersonnalisations(config), enLigne = lirePersonnalisations(configPubliee);
+  return { etat: JSON.stringify(brouillon.reglages) === JSON.stringify(enLigne.reglages) ? 'publie' : 'non-publie', revisionEnLigne: enLigne.revision || null };
+}
+
+export async function sitesPersonnalises(): Promise<{ id: string; nom: string; config: unknown; perso: PersonnalisationsSite; updatedAt: string; publication: EtatPublicationPerso }[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from('sites').select('id, config, updated_at').order('updated_at', { ascending: false }).limit(500);
+  const lire = (colonnes: string) => supabase.from('sites').select(colonnes).order('updated_at', { ascending: false }).limit(500) as unknown as Promise<{ data: Record<string, unknown>[] | null; error: unknown }>;
+  let { data, error } = await lire('id, config, config_publiee, updated_at');
+  if (error) ({ data } = await lire('id, config, updated_at'));
   return (data ?? [])
-    .map((l) => ({ id: l.id as string, config: l.config, perso: lirePersonnalisations(l.config), updatedAt: l.updated_at as string, nom: nomDuSite(l.config) }))
+    .map((l) => ({ id: l.id as string, config: l.config, perso: lirePersonnalisations(l.config), updatedAt: l.updated_at as string, nom: nomDuSite(l.config), publication: etatPublicationPerso(l.config, l.config_publiee ?? null) }))
     .filter((s) => s.perso.revision > 0);
 }
 const nomDuSite = (c: unknown) => {
