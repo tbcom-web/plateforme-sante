@@ -25,6 +25,7 @@
 
 import { normaliserPoidsAssets, type PoidsAssets } from './assets-poids';
 import type { ApprisHarmonie, PoidsHarmonie } from './harmonie';
+import type { NotesPhotos } from './favoris';
 
 /** Ingrédients d'une combinaison notée (enregistrés tels quels dans atelier_notes.ingredients) */
 export type IngredientsAtelier = {
@@ -88,6 +89,8 @@ export type PoidsAtelier = {
   n: number; moyenne: number; effets: Record<string, number>; /** Notes et statuts des assets (0027) */ assets?: PoidsAssets | null;
   /** Recettes complètes notées (notation-recettes.ts, migration 0038) : ingrédients, paires et familles, globaux et par sujet */
   harmonie?: ApprisHarmonie | null;
+  /** Notes brutes des photos (moyenne, nombre) : « Favoris d'abord » (favoris.ts, photos ≥ 4 ★ puis ≥ 3,5 ★) */
+  notesPhotos?: NotesPhotos | null;
   /** Effets propres au mobile (duels joués sur téléphone, duels-appareils.ts) : ajoutés selon la portée de la clé (porteeMobile) */
   mobile?: Record<string, number> | null;
 };
@@ -175,7 +178,9 @@ export function normaliserPoidsAtelier(v: unknown): PoidsAtelier | null {
   }
   const assets = normaliserPoidsAssets(o.assets);
   const harmonie = normaliserApprisHarmonie(o.harmonie);
-  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, ...(assets ? { assets } : {}), ...(harmonie ? { harmonie } : {}) };
+  const notesPhotos: Record<string, { m: number; n: number }> = {};
+  if (o.notesPhotos && typeof o.notesPhotos === 'object') for (const [k, x] of Object.entries(o.notesPhotos as Record<string, { m?: unknown; n?: unknown }>)) if (k.startsWith('photo:') && k.length <= 220 && typeof x?.m === 'number' && typeof x?.n === 'number') notesPhotos[k] = { m: Math.max(1, Math.min(5, x.m)), n: Math.max(0, Math.floor(x.n)) };
+  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, ...(assets ? { assets } : {}), ...(harmonie ? { harmonie } : {}), ...(Object.keys(notesPhotos).length ? { notesPhotos } : {}) };
 }
 
 /** Apprentissage des recettes complètes reçu de l'extérieur : valeurs numériques bornées à ±1, clés courtes ; invalide → null */

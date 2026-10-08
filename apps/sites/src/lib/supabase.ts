@@ -30,6 +30,10 @@ import {
   avecSujets,
   surchargesDepuisLignes,
   sujetsDeSpecialite,
+  contexteImagesSite,
+  definirContexteImages,
+  sansImagesExclues,
+  SUJET_DE_SPECIALITE,
   validerChoixLogo,
   marquesLogo,
   assainirMarque,
@@ -48,6 +52,27 @@ import {
 } from '@plateforme/core';
 import { defautsProfession } from './defaults';
 import { rendusPortrait } from '@plateforme/core/portrait';
+
+/** Lignes Supabase du contexte d'images d'un site (kits-images.ts, contexteImagesSite) ; tables absentes : listes vides */
+async function lireContexteImages(d: SiteDraft, slugs: readonly string[]) {
+  const vide = <T,>(p: Promise<T[]>) => p.catch(() => [] as T[]);
+  const [lignesAssets, sujets, lignesHashtags, libres, jeux, kits] = await Promise.all([
+    vide(lire<{ cle_asset: string; note: number | null; statut: string | null; etiquettes: string[] | null }[]>('rpc/assets_notes_apprentissage')),
+    vide(lire<{ cle_asset: string; sujet: string; action: string }[]>('rpc/assets_sujets_effectifs')),
+    vide(lire<{ cle_asset: string; hashtag: string; action: string }[]>('rpc/assets_hashtags_effectifs')),
+    vide(lire<{ url: string | null; sujet: string; statut: string }[]>('photos_libres?statut=eq.validee&url=not.is.null&select=url,sujet,statut')),
+    vide(lire<{ photos: unknown; specialite: string; actif: boolean; site_id: string | null; id: string; nom: string; source: string }[]>('jeux_photos?actif=eq.true&site_id=is.null&select=id,nom,specialite,photos,source,site_id,actif')),
+    vide(lire<{ sujet: string; note: number | null; garder: boolean; photos: { emplacement: string; url: string }[]; appareil: string | null }[]>('rpc/kits_images_apprentissage')),
+  ]);
+  const sujet = d.priorites?.principaux?.[0] ?? SUJET_DE_SPECIALITE[d.theme.specialite] ?? 'general';
+  return contexteImagesSite({
+    sujet, soins: (d.soins ?? []).filter((x) => slugs.includes(x)), lignesAssets,
+    surcharges: surchargesDepuisLignes(sujets.map((l) => ({ cle: l.cle_asset, sujet: l.sujet, action: l.action }))),
+    lignesHashtags, libres,
+    jeux: jeux.map((l) => { const j = jeuPhotosDepuisLigne(l); return { photos: j.photos, specialite: j.specialite, sujets: j.specialite === 'generale' ? ['general'] : sujetsDeSpecialite(j.specialite) }; }),
+    notesKits: kits.map((k) => ({ sujet: k.sujet, note: k.note, garder: k.garder, photos: Array.isArray(k.photos) ? k.photos : [], appareil: k.appareil })),
+  });
+}
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
 
@@ -145,7 +170,14 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   );
   // Recette du studio (style « photos ») : ses photos tirées de la banque passent devant celles du jeu (accueil, panorama, diaporama)
   // (vitrine : premier écran et blocs des sujets, lib/vitrine.ts) ; le jeu et les données structurées ne changent pas.
-  const persoPack = persoDuJeuPhotos(jeuPhotos, persoBanque, poidsPhotos, sujetsDeSpecialite(d.theme.specialite));
+  // Contexte d'images (contexte-images.ts, kits-images.ts) : photos exclues (moyenne ou dernière note ≤ 2 ★, retirées, à retravailler)
+  // jamais posées, quel que soit le chemin (pack, jeu, recette, soins) ; style « Photos » : kit d'images du sujet n° 1 du site (photos
+  // validées et importées seulement), avant les photos par défaut et le jeu de photos PARTAGÉ (un jeu exclusif du site reste prioritaire)
+  const photosStyle = d.theme.modeVisuel === 'photos';
+  const images = await lireContexteImages(d, catalogue.map((c) => c.slug)).catch(() => null);
+  if (images) definirContexteImages({ exclues: images.exclues, kits: images.kit && photosStyle ? { [d.theme.specialite]: images.kit } : {} });
+  const jeuRetenu = images?.kit && photosStyle && jeuPhotos && !jeuPhotos.siteId ? null : jeuPhotos;
+  const persoPack = persoDuJeuPhotos(jeuRetenu, persoBanque, poidsPhotos, sujetsDeSpecialite(d.theme.specialite));
   const pack = fusionnerPack(packVisuel(d.theme.specialite), persoPack);
   // Spécialité secondaire : complète les visuels de la principale (avec sa propre personnalisation admin).
   const [persoSecondaire] = d.theme.specialiteSecondaire
@@ -375,7 +407,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       // Animation choisie (proposition, structure Technique) prioritaire sur celle de la spécialité ; case décochée : aucune
       animation: d.theme.animation ? (d.theme.animationAccueil ?? pack.animation) : null,
       ...(d.theme.animation && d.theme.animationAccueil ? { animationAccueil: d.theme.animationAccueil } : {}),
-      ...(d.theme.modeVisuel === 'photos' && d.theme.photosRecette?.length ? { photosRecette: d.theme.photosRecette } : {}),
+      ...(d.theme.modeVisuel === 'photos' && sansImagesExclues(d.theme.photosRecette ?? []).length ? { photosRecette: sansImagesExclues(d.theme.photosRecette ?? []) } : {}),
       photos: visuelsSpecialite.photos,
       // Jeu visuel (jeux.ts) : secondaire et personnalisations de l'admin, recombinées au build.
       ...(d.theme.specialiteSecondaire ? { specialiteSecondaire: d.theme.specialiteSecondaire } : {}),

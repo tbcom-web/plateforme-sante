@@ -82,3 +82,6 @@ export * from './duels-compositions';
 export * from './duels-appareils';
 export * from './focal';
 export * from './atelier-compositions';
+export * from './favoris';
+export * from './contexte-images';
+export * from './kits-images';

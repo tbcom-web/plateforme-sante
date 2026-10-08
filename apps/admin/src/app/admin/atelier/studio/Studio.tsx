@@ -29,6 +29,7 @@ import {
   APPRECIATIONS, appreciationDeNote, groupeDeCle, nombreZones, noteAppreciation, type AmeliorationPage, type Appreciation,
 } from '@plateforme/core';
 import SimulateurClient, { type CabinetDemo } from './SimulateurClient';
+import ChoixModeTirage, { useModeTirage } from '@/components/ModeTirage';
 import RecetteVignette from './RecetteVignette';
 import { rangeesHabillage } from './PanneauHabillage';
 import ParametresGroupes, { type RangeeStudio } from './ParametresGroupes';
@@ -122,8 +123,10 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const [avecNonImportees, setAvecNonImportees] = useState(true);
   // Harmonie (harmonie.ts) : règles actives sauf « Hors règles (explorer) » ; poids souples appris des recettes notées
   const [explorer, setExplorer] = useState(false);
+  // « Favoris d'abord · Équilibré · Découverte » (favoris.ts) : persistant par navigateur
+  const [modeTirage, setModeTirage] = useModeTirage();
   const poidsHarmonie = useMemo(() => apprendreHarmonie(recettes.filter((r) => r.note !== null && r.statut === 'active').map((r) => ({ note: r.note!, composition: r.composition }))), [recettes]);
-  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos: banque, nonImportees: avecNonImportees, sujetsSeulement: true, modele, horsRegles: explorer, poidsHarmonie }), [scenario, poids, banque, avecNonImportees, modele, explorer, poidsHarmonie]);
+  const ctx = useMemo<ContexteRecette>(() => ({ sujets: [...scenario.principaux, ...scenario.secondaires], principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids, photos: banque, nonImportees: avecNonImportees, sujetsSeulement: true, modele, horsRegles: explorer, poidsHarmonie, modeTirage }), [scenario, poids, banque, avecNonImportees, modele, explorer, poidsHarmonie, modeTirage]);
   const [comp, setComp] = useState<CompositionRecette>(() => compositionInitiale({ sujets: ['sport'], principaux: 1, photos, sujetsSeulement: true, modele: modeleIntegre }));
   const [historique, setHistorique] = useState<Record<string, Partial<CompositionRecette>[]>>({});
   const [verrous, setVerrous] = useState<string[]>([]);
@@ -550,6 +553,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
         {bloques > 0 && <button type="button" onClick={() => setVerrous([])} className={`min-h-9 rounded-lg px-2 font-semibold text-teal-900 underline ${focus}`}>Tout débloquer</button>}
       </div>
       <IndicateurHarmonie compact composition={comp} contexte={ctx} onCorriger={setComp} explorer={explorer} onExplorer={setExplorer} />
+      <ChoixModeTirage mode={modeTirage} onChange={setModeTirage} />
       {defauts.length > 0 && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-900">{defauts.join(' ')}</p>}
     </section>
   );

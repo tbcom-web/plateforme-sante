@@ -26,6 +26,7 @@ import ApercuTheme from '@/components/ApercuTheme';
 import { draftStudio } from '@/components/ApercuStudio';
 import type { PropositionClaude } from '@/lib/directeur-format';
 import type { SoinCatalogue } from '@/lib/sites';
+import ChoixModeTirage, { useModeTirage } from '@/components/ModeTirage';
 import { noterRecetteComplete } from './actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -114,7 +115,12 @@ export default function NotationRecettes(props: Props) {
   const tour = useRef(0);
   const claudeVues = useRef(0);
   const vues = useRef(new Set<string>());
-  const contexte = useCallback((s: ScenarioRecette) => contexteScenario(s, { poids: props.poids, photos: props.photos, modele }), [props.poids, props.photos, modele]);
+  // « Favoris d'abord · Équilibré · Découverte » (favoris.ts) : pondération des recettes générées, persistant par navigateur
+  const [modeTirage, setModeTirage] = useModeTirage();
+  const contexte = useCallback((s: ScenarioRecette) => contexteScenario(s, { poids: props.poids, photos: props.photos, modele, modeTirage }), [props.poids, props.photos, modele, modeTirage]);
+  // Changement de mode : les recettes déjà préparées après la recette en cours sont refaites
+  const modePrec = useRef(modeTirage);
+  useEffect(() => { if (modePrec.current !== modeTirage) { modePrec.current = modeTirage; setFile((f) => f.slice(0, pos + 1)); } }, [modeTirage, pos]);
 
   const propositionEnItem = useCallback((p: PropositionClaude): Item | null => {
     const scenario: ScenarioRecette = { principaux: p.scenario.principaux, secondaires: p.scenario.secondaires, couleurs: p.scenario.couleurs, soins: [] };
@@ -263,10 +269,13 @@ export default function NotationRecettes(props: Props) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4" style={style}>
       <style>{SURFACES_CSS}</style>
+      <div className="flex flex-wrap items-center justify-between gap-2">
       <div role="tablist" aria-label="Recettes complètes" className="flex flex-wrap gap-1 rounded-xl bg-neutral-100 p-1 justify-self-start">
         {([['noter', 'Noter des recettes'], ['appris', 'Ce que le système a appris']] as const).map(([id, nom]) => (
           <button key={id} type="button" role="tab" aria-selected={onglet === id} onClick={() => setOnglet(id)} className={`min-h-11 rounded-lg px-3 text-sm font-semibold ${focus} ${onglet === id ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>{nom}</button>
         ))}
+      </div>
+      {onglet === 'noter' && <ChoixModeTirage mode={modeTirage} onChange={setModeTirage} />}
       </div>
 
       {onglet === 'appris' ? <Appris palmares={props.palmares} resume={{ ...props.resume, notes: total }} /> : (

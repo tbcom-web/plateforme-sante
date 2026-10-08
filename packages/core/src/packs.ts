@@ -11,6 +11,7 @@
 // `fusionnerPack`, `LIBELLES_ANIMATIONS` et `specialiteDuProfil` restent exportés à l'identique.
 
 import type { NomDessin } from './univers';
+import { contexteImages, imageExclue, kitDeSpecialite, premiereNonExclue, sansImagesExclues } from './contexte-images';
 
 export const ANIMATIONS = ['podoscope', 'coureur', 'trajectoire', 'premiers-pas', 'semelle', 'meulage'] as const;
 export type Animation = (typeof ANIMATIONS)[number];
@@ -179,11 +180,17 @@ export type PersonnalisationPack = {
   cadrages?: Record<string, string>;
 };
 
-export function fusionnerPack(pack: Specialite, perso: PersonnalisationPack | null | undefined): Specialite {
-  if (!perso) return pack;
+export function fusionnerPack(brut: Specialite, perso: PersonnalisationPack | null | undefined): Specialite {
+  // Kit d'images du sujet (contexte-images.ts, kits-images.ts) : avant les photos par défaut de la spécialité, après la personnalisation
+  const kit = kitDeSpecialite(brut.value);
+  const pack: Specialite = kit ? {
+    ...brut,
+    photos: { accueil: kit.accueil || brut.photos.accueil, panorama: kit.panorama || kit.galerie?.[0] || brut.photos.panorama, diaporama: kit.galerie?.length ? [...kit.galerie] : brut.photos.diaporama },
+  } : brut;
+  if (!perso) return sansPhotosExclues(pack);
   const p = perso.photos ?? {};
   const diaporama = (p.diaporama ?? []).filter(Boolean);
-  return {
+  return sansPhotosExclues({
     ...pack,
     animation: perso.animation === 'aucune' ? null : perso.animation && (ANIMATIONS as readonly string[]).includes(perso.animation) ? perso.animation : pack.animation,
     photos: {
@@ -191,5 +198,18 @@ export function fusionnerPack(pack: Specialite, perso: PersonnalisationPack | nu
       panorama: p.panorama || pack.photos.panorama,
       diaporama: diaporama.length ? diaporama : pack.photos.diaporama,
     },
-  };
+  });
+}
+
+/**
+ * Photos exclues (notées ≤ 2 ★, retirées, à retravailler : contexte-images.ts) retirées d'un pack : premier écran et panorama
+ * remplacés par la première photo non exclue (galerie du pack, puis des autres spécialités), galerie filtrée.
+ */
+export function sansPhotosExclues(pack: Specialite): Specialite {
+  if (!contexteImages().exclues.size) return pack;
+  const diaporama = sansImagesExclues(pack.photos.diaporama);
+  const secours = [...diaporama, ...SPECIALITES.flatMap((s) => [s.photos.accueil, s.photos.panorama, ...s.photos.diaporama])];
+  const accueil = imageExclue(pack.photos.accueil) ? premiereNonExclue(secours) : pack.photos.accueil;
+  const panorama = imageExclue(pack.photos.panorama) ? premiereNonExclue(secours.filter((u) => u !== accueil)) || accueil : pack.photos.panorama;
+  return { ...pack, photos: { accueil, panorama, diaporama: diaporama.length ? diaporama : [accueil].filter(Boolean) } };
 }

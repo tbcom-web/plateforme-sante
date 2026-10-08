@@ -34,6 +34,7 @@ import { cleComposition } from './duels';
 import { normaliserScenario, sujetsDuScenario, type ScenarioRecette } from './simulateur';
 import { themeParId } from './themes';
 import { gammesPreferees } from './suivi-scenario';
+import { MODE_TIRAGE_DEFAUT, reglageMode } from './favoris';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Constantes
@@ -349,7 +350,7 @@ const DES_LOCAUX: readonly (DimensionRecette | `page:${string}`)[] = ['couleurs'
 export type OptionsGeneration = {
   n: number;
   graine: number;
-  /** Part d'exploration (≈ 0,2) */
+  /** Part d'exploration (défaut : celle du mode de tirage du contexte, ≈ 10 % en « Favoris d'abord ») */
   exploration?: number;
   /** Essais de la recherche locale par candidate */
   iterations?: number;
@@ -376,10 +377,12 @@ const hache = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length;
 /**
  * Recettes candidates pour un scénario : départ harmonieux (« Tout changer », poids appris compris), réparation des ingrédients
  * refusés, puis recherche locale (un dé à la fois, gardé si l'objectif monte) ; objectif = score prédit (+ κ · incertitude en
- * exploration). Les candidates d'exploration sont les n° 5, 10, 15… (≈ 20 %, part réglable). Déterministe pour une graine.
+ * exploration). Les candidates d'exploration sont les n° 10, 20… en « Favoris d'abord » (≈ 10 % ; 20 % en Équilibré, 35 % en
+ * Découverte ; part réglable), tirées en mode Découverte. Déterministe pour une graine.
  */
-export function genererCandidates(scenario: ScenarioRecette, c: ContexteRecette, o: OptionsGeneration): CandidateRecette[] {
-  const part = o.exploration ?? 0.2;
+export function genererCandidates(scenario: ScenarioRecette, c0: ContexteRecette, o: OptionsGeneration): CandidateRecette[] {
+  const c = c0;
+  const part = o.exploration ?? reglageMode(c.modeTirage ?? MODE_TIRAGE_DEFAUT).exploration;
   const iterations = o.iterations ?? 16;
   const kappa = o.kappa ?? 2.5;
   const vues = new Set(o.deja ?? []);
@@ -389,6 +392,8 @@ export function genererCandidates(scenario: ScenarioRecette, c: ContexteRecette,
     const exploration = pas > 0 && (res.length + 1) % pas === 0;
     const g = hache(`${o.graine}|${essais}`);
     const r = alea(g, 'locale');
+    // Exploration : tirages en mode « Découverte » (ingrédients jamais notés permis), candidate badgée
+    const c = exploration ? { ...c0, modeTirage: 'decouverte' as const } : c0;
     const objectif = (x: CompositionRecette) => { const p = scorePredit(x, c, o.stats); return { p, v: p.brut + (exploration ? kappa * p.incertitude : 0) }; };
     let x = toutChanger(compositionInitiale(c, g), [], c, g);
     // Réparation : quelques dés tant que la composition n'est pas admissible

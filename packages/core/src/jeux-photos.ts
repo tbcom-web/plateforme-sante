@@ -10,6 +10,7 @@ import { SPECIALITES, type PersonnalisationPack } from './packs';
 import { CADRAGES_PHOTOS, VISUEL_SOIN_PAR_DEFAUT, type JeuVisuel } from './jeux';
 import { clePhoto, EFFETS_SUJET, ordonnerPhotos, retireDesSujets, scoreMoyen, type PoidsAssets } from './assets-poids';
 import { THEMES } from './themes';
+import { imageExclue, sansImagesExclues } from './contexte-images';
 
 /** Sujets (thèmes actifs + « général ») d'une spécialité : surcharges de sujets de Paul sur les photos */
 export const sujetsDeSpecialite = (specialite: string): string[] => [
@@ -194,7 +195,9 @@ export function persoDuJeuPhotos(jeu: Pick<JeuPhotos, 'photos'> | null | undefin
   if (!jeu) return base ?? null;
   // Notes des photos : galerie de la mieux à la moins bien notée, photos « retirées » (ou retirées par Paul des sujets du site)
   // enlevées s'il en reste au moins 3
-  const p = poids ? { ...jeu.photos, galerie: ordonnerPhotos(jeu.photos.galerie, poids, 3, sujets) } : jeu.photos;
+  const p0 = poids ? { ...jeu.photos, galerie: ordonnerPhotos(jeu.photos.galerie, poids, 3, sujets) } : jeu.photos;
+  // Photos exclues (contexte-images.ts : ≤ 2 ★, retirées, à retravailler) : jamais posées, la banque prend le relais
+  const p = { ...p0, accueil: imageExclue(p0.accueil) ? '' : p0.accueil, panorama: imageExclue(p0.panorama) ? '' : p0.panorama, galerie: sansImagesExclues(p0.galerie), soins: Object.fromEntries(Object.entries(p0.soins).filter(([, u]) => !imageExclue(u))) };
   const b = base?.photos ?? {};
   return {
     ...(base ?? {}),
@@ -219,6 +222,7 @@ export function completerJeuVisuel(jeu: JeuVisuel, perso?: PersonnalisationPack 
   const recadrer = <T extends { photo: string; cadrage: string }>(c: T): T => (cadrages[c.photo] ? { ...c, cadrage: cadrages[c.photo] } : c);
   const soins = { ...jeu.soins };
   for (const [slug, photo] of Object.entries(soinsPerso)) {
+    if (imageExclue(photo)) continue;
     soins[slug] = { ...(jeu.soins[slug] ?? VISUEL_SOIN_PAR_DEFAUT), photo, cadrage: cadrages[photo] ?? CADRAGES_PHOTOS[photo] ?? '50% 50%', photoBonne: true };
   }
   return {

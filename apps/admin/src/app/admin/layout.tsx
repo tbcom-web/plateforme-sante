@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Shell from '@/components/Shell';
+import ContexteImages from '@/components/ContexteImages';
 import { exigerAdmin } from '@/lib/admin';
 import { getUser } from '@/lib/supabase/server';
 
@@ -27,6 +28,8 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
         <Link href="/admin/logos" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Logos</Link>
         <Link href="/admin/maintenance" className="shrink-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 ring-1 ring-black/10 hover:bg-neutral-50">Maintenance</Link>
       </nav>
+      {/* Contexte d'images (photos exclues, kits par sujet : contexte-images.ts) posé avant les aperçus */}
+      <ContexteImages />
       {children}
     </Shell>
   );

@@ -221,6 +221,58 @@ juste le hero ». `/admin/atelier` (Atelier.tsx) :
   « Options d'aperçu » (page entière réduite, défilement synchronisé, animer), onglets des pages du scénario ; zones (z). Sur
   téléphone : un rendu à la fois avec bascule, cadre défilant.
 
+## Favoris d'abord, exclusion stricte et kits d'images (2026-10-08)
+
+Demandes de Paul : « pousser plus de belles photos dans les thèmes à évaluer […] mettre en avant le plus possible les éléments
+notés le mieux » ; « je ne veux pas qu'il me présente dans des thèmes complets des photos que j'ai notées 1 étoile […] des kits
+d'images par thème à partir des notes et des tags ».
+
+### Mode de tirage (`favoris.ts`)
+
+Réglage **Favoris d'abord · Équilibré · Découverte** (défaut : Favoris d'abord), dans le Studio et la tuile Recettes complètes,
+gardé par navigateur (`localStorage` `tirage:mode`). Poids d'une valeur dans un tirage (couleurs, polices, style, structure, pages,
+éléments, effets, traitement, typographie, détails, menus ; tirages harmonieux compris) :
+
+| Mode | Valeur notée | Jamais notée | Exploration du générateur |
+|---|---|---|---|
+| Favoris d'abord | 2^(3 · effet) | 0,15 | 10 % |
+| Équilibré (= avant) | 2^effet | 1 | 20 % |
+| Découverte | 2^(0,5 · effet) | 1,6 | 35 % |
+
+Toujours exclues (poids 0) : statut « retiré » ou « à retravailler », note estimée (moyenne + effet) ≤ 2 ★. Mesuré (test) : le top 3
+des polices notées fait 65 % des tirages en Favoris d'abord, contre 16 % en Équilibré. Les dés du Studio n'explorent pas en Favoris
+d'abord ; l'exploration se fait dans le générateur de recettes à noter (candidates badgées « exploration », tirées en mode Découverte)
+ou en choisissant Découverte. Duels : `candidatsDuelFavoris` (core, à brancher dans Duel.tsx) oppose les éléments notés au-dessus de la
+moyenne, avec ≈ 10 % de duels de découverte ; les duels de thèmes passent par les dés, donc par le mode.
+
+### Photos les mieux notées d'abord
+
+`classerPhotos` / `tirerPhotosFavorites` : photos du sujet n° 1 notées en moyenne ≥ 4 ★, puis ≥ 3,5 ★ (triées par effet appris), puis
+non notées, puis les meilleures des autres sujets du scénario et de « général » (complément) ; premier écran en rotation parmi les
+4 meilleures. `manquePhotosNotees` : « Peu de photos notées pour Diabète » (moins de 3 photos ≥ 3,5 ★). Notes brutes des photos :
+`PoidsAtelier.notesPhotos` (getPoidsAtelier).
+
+### Exclusion stricte (`contexte-images.ts`)
+
+Exclue = moyenne ≤ 2 ★, **dernière** note ≤ 2 ★, « retirée » ou « à retravailler » (photos, héros, dessins, traits, pictos,
+matériel). Registre posé une fois (admin : layouts `/admin`, `/creer`, `/edition`, `/mon-site` → `ContexteImages` ; sites : chargement
+Supabase du site) et lu par tous les chemins qui posent une photo : `fusionnerPack` (pack de spécialité, personnalisation, jeu de
+photos), `jeuVisuel` / `completerJeuVisuel` (premier écran, panorama, galerie, soins, couvertures), `persoDuJeuPhotos`,
+`appliquerRecette`, `photosCompatibles` / `tirerPhotos`, kits, photos de recette des sites. Une photo exclue est remplacée par la
+suivante non exclue, sinon l'illustration. Test : `kits-images.test.ts` échoue si une photo exclue sort d'un seul de ces chemins.
+
+### Kits d'images par sujet (`kits-images.ts`, vue `/admin/retours/kits`)
+
+Pour enfant, sport, senior, diabète, ongles, semelles, pédicurie et général, composé en direct (banque : photos importées et
+intégrées, jamais « à valider ») : premier écran, page sujet, une photo par soin du sujet, galerie du cabinet (4). Score d'une photo
+pour un emplacement : `3·(4 − palier) + 3·effet + (note ou 3) + 2,5·étiquette` (étiquette : `#accueil`, `#cabinet`, `#<slug du soin>`
+= 3, `#fiche-soin` = 1). Un soin n'a une photo que si elle est étiquetée (`#<slug>` ou `#fiche-soin`), sinon **trou** signalé et
+l'illustration reste. Pas de doublon ni de photo de la même série ; traitement photo commun (le mieux noté) ; héros illustré le mieux
+noté. Complément « général » affiché. Rotation (« Autre kit ») ; « Garder ce kit » le fait passer en premier ; « Noter ce kit »
+renforce chaque photo du kit (`renfortsKits` : ±0,5 ★, cumul plafonné ±1 ★). Le kit passe avant les photos par défaut de la
+spécialité (après une personnalisation explicite) et suit le premier écran dans les tirages ; sites en style « Photos » : kit du
+sujet n° 1, avant un jeu de photos partagé (un jeu exclusif du site reste prioritaire). Migration 0039 (`kits_images_notes`).
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

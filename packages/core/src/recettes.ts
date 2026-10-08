@@ -29,6 +29,8 @@ import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
+import { contexteImages, imageExclue, sansImagesExclues } from './contexte-images';
+import { classerPhotos, MODE_TIRAGE_DEFAUT, poidsFavori, tirerPhotosFavorites, type ModeTirage } from './favoris';
 import { clePhoto, effetHerite, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
 import { estSujetDeVisuel, sujetsEffectifs } from './sujets-visuels';
 import { urlImageAutorisee, type SourcePhotoLibre } from './photos-libres';
@@ -246,6 +248,11 @@ export type ContexteRecette = {
   praticien?: boolean;
   valides?: ReadonlySet<string> | null;
   poidsHarmonie?: PoidsHarmonie | null;
+  /**
+   * Mode de tirage (favoris.ts, réglage « Favoris d'abord · Équilibré · Découverte ») : pondération des notes apprises, valeurs
+   * jamais notées, photos les mieux notées d'abord. Absent : « Favoris d'abord ».
+   */
+  modeTirage?: ModeTirage | null;
 };
 
 /** Sujets actifs (posture et sujets différés jamais pris en compte) */
@@ -296,11 +303,21 @@ function choisir<T>(l: readonly { v: T; p: number }[], r: () => number, eviter?:
   for (const e of c) { x -= Math.max(0, e.p); if (x < 0) return e.v; }
   return c[c.length - 1].v;
 }
-/** Poids d'une clé apprise : 2^effet (atelier, renforts compris), plafonné */
-const masse = (effet: number) => 2 ** Math.max(-3, Math.min(2, effet));
 // Effet global + effet propre au mobile selon la portée de la clé (duels « Mobile seulement », duels-appareils.ts)
 const effetAtelier = (c: ContexteRecette, cle: string) => effetAvecMobile(c.poids?.effets, c.poids?.mobile, cle);
 const effetAsset = (c: ContexteRecette, cle: string, sujet?: string | null) => scoreAssetPourSujet(cle, sujet, c.poids?.assets);
+/**
+ * Poids d'une valeur selon ses clés apprises (atelier, assets) et le mode de tirage (favoris.ts) : 2^(g · effet), valeur jamais
+ * notée à poids fixe (Favoris : rare), exclue si retirée, à retravailler ou notée ≤ 2 ★.
+ */
+function pese(c: ContexteRecette, atelier: readonly string[], assets: readonly string[] = [], sujet?: string | null): number {
+  const a = c.poids?.assets;
+  if (assets.some((k) => a?.statuts[k] || imageExclue(k))) return 0;
+  const connu = atelier.some((k) => c.poids?.effets[k] !== undefined) || assets.some((k) => a?.effets[k] !== undefined);
+  if (!connu) return poidsFavori(undefined, c.modeTirage ?? MODE_TIRAGE_DEFAUT);
+  const e = atelier.reduce((s, k) => s + effetAtelier(c, k), 0) + assets.reduce((s, k) => s + effetAsset(c, k, sujet), 0);
+  return poidsFavori(e, c.modeTirage ?? MODE_TIRAGE_DEFAUT, { moyenne: c.poids?.moyenne || 3 });
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Couleur libre
@@ -424,9 +441,9 @@ export function photosCompatibles(pool: readonly PhotoBanque[], c: ContexteRecet
   return pool
     // Photos non importées : studio seulement (case « photos gardées non importées »)
     .filter((p) => p.importee !== false || c.nonImportees === true)
-    .filter((p) => !p.sujets.includes('posture') && !/posture/.test(p.url) && p.sujets.some((s) => (s === 'general' && !c.sujetsSeulement) || sujets.includes(s)))
+    .filter((p) => !imageExclue(p.url) && !imageExclue(p.cle ?? null) && !p.sujets.includes('posture') && !/posture/.test(p.url) && p.sujets.some((s) => (s === 'general' && !c.sujetsSeulement) || sujets.includes(s)))
     .filter((p) => { const k = cle(p); return !k || !(a?.statuts[k] === 'retire' || retireDesSujets(k, sujets.length ? sujets : ['general'], a)); })
-    .map((p) => { const k = cle(p); return { p, masse: masse(k ? scoreAssetPourSujet(k, sujets[0], a) : 0) * (sujets[0] && p.sujets.includes(sujets[0]) ? 2 : 1) }; });
+    .map((p) => { const k = cle(p); return { p, masse: (k ? pese(c, [], [k], sujets[0]) : poidsFavori(undefined, c.modeTirage ?? MODE_TIRAGE_DEFAUT)) * (sujets[0] && p.sujets.includes(sujets[0]) ? 2 : 1) }; });
 }
 
 /**
@@ -446,8 +463,31 @@ export function photosDuScenario(c: ContexteRecette): { importees: PhotoBanque[]
   };
 }
 
+/** Photos du scénario classées « favoris d'abord » (paliers ≥ 4 ★, ≥ 3,5 ★, non notées, autres sujets ; exclues retirées) */
+export function photosClassees(c: ContexteRecette) {
+  const pool = (c.photos ?? photosIntegreesBanque()).filter((p) => (p.importee !== false || c.nonImportees === true) && !p.sujets.includes('posture') && !/posture/.test(p.url));
+  const sujets = sujetsActifs(c.sujets);
+  const permis = pool.filter((p) => p.sujets.some((s) => (s === 'general' && !c.sujetsSeulement) || sujets.includes(s)));
+  return classerPhotos(permis, sujets, c.poids?.assets, c.poids?.notesPhotos);
+}
+/** « Peu de photos notées pour <sujet> » : moins de 3 photos ≥ 3,5 ★ pour le sujet n° 1 du scénario ; null sinon */
+export function manquePhotosNotees(c: ContexteRecette): string | null {
+  const s1 = sujetsActifs(c.sujets)[0];
+  if (!s1) return null;
+  const n = photosClassees(c).filter((x) => x.palier <= 2).length;
+  return n >= 3 ? null : `Peu de photos notées pour ${themeParId(s1)?.court ?? s1} (${n} à 3,5 ★ ou plus) : complété avec les meilleures des sujets voisins.`;
+}
 /** Tirage de `n` photos sans remise (accueil d'abord), pondéré ; déterministe pour une graine */
 export function tirerPhotos(c: ContexteRecette, r: () => number, n = 5, eviter: readonly string[] = []): string[] {
+  // Favoris d'abord (défaut) : photos les mieux notées du sujet, premier écran en rotation parmi les meilleures (favoris.ts)
+  if ((c.modeTirage ?? MODE_TIRAGE_DEFAUT) === 'favoris') {
+    const classees = photosClassees(c);
+    const t = tirerPhotosFavorites(classees, r, n, eviter).photos;
+    // Kit d'images du sujet n° 1 (kits-images.ts, registre contexte-images.ts) : ses photos suivent le premier écran
+    const kit = contexteImages().kits[sujetsActifs(c.sujets)[0] ?? ''];
+    const duKit = [kit?.accueil, kit?.panorama, ...(kit?.galerie ?? [])].filter((u): u is string => Boolean(u) && classees.some((x) => x.p.url === u) && !eviter.includes(u as string));
+    return [...new Set([...t.slice(0, 1), ...duKit, ...t.slice(1)])].slice(0, n);
+  }
   const l = photosCompatibles(c.photos ?? photosIntegreesBanque(), c);
   const res: string[] = [];
   let reste = l.filter((x) => !eviter.includes(x.p.url) || l.length <= n);
@@ -468,7 +508,7 @@ function tirerCouleurs(x: CompositionRecette, c: ContexteRecette, r: () => numbe
   const preferees = gammesDesCouleurs({ priorites: { principaux: sujetsActifs(c.sujets), secondaires: [] }, couleursPreferees: c.couleursPreferees ?? [] });
   const dusujet = REGLES_THEMES[sujetUn(c)].gammes;
   const options = GAMMES.filter((g) => !exclues.has(g.id) && !(avecDiabete(c) && estRougeVif(g.accent)))
-    .map((g) => ({ v: g.id, p: (preferees.includes(g.id) ? 3 : dusujet.includes(g.id) ? 1.6 : 1) * masse(effetAsset(c, `gamme:${g.id}`) + effetAtelier(c, `gamme=${g.id}`)) }));
+    .map((g) => ({ v: g.id, p: (preferees.includes(g.id) ? 3 : dusujet.includes(g.id) ? 1.6 : 1) * pese(c, [`gamme=${g.id}`], [`gamme:${g.id}`]) }));
   // Une fois sur cinq environ : couleur libre dérivée (AA vérifié), sauf si une couleur préférée est choisie
   if (r() < (preferees.length ? 0.1 : 0.2)) {
     const libre = tirerCouleurLibre(c, x.structure, r);
@@ -481,16 +521,16 @@ function tirerCouleurs(x: CompositionRecette, c: ContexteRecette, r: () => numbe
 function tirerPolices(x: CompositionRecette, c: ContexteRecette, r: () => number): IdPairePolices {
   // Budget polices : paires permises par le gabarit (revue : italique des titres compris, typo.ts policePermise)
   const g = gabaritDe(c, x.structure);
-  return choisir(PAIRES_POLICES.filter((p) => policePermise(p.id, g)).map((p) => ({ v: p.id, p: masse(effetAtelier(c, `police=${p.id}`)) })), r, (v) => v === x.police) ?? x.police;
+  return choisir(PAIRES_POLICES.filter((p) => policePermise(p.id, g)).map((p) => ({ v: p.id, p: pese(c, [`police=${p.id}`]) })), r, (v) => v === x.police) ?? x.police;
 }
 
 function tirerVisuels(x: CompositionRecette, c: ContexteRecette, r: () => number): CompositionRecette['visuels'] {
   const r1 = REGLES_THEMES[sujetUn(c)];
   const styles = stylesPermis(c, x.structure);
-  const style = choisir(styles.map((s) => ({ v: s, p: (r1.styles[s] ?? 1) * masse(effetAtelier(c, `style=${s}`)) })), r, (v) => v === x.visuels.style) ?? styles[0];
+  const style = choisir(styles.map((s) => ({ v: s, p: (r1.styles[s] ?? 1) * pese(c, [`style=${s}`]) })), r, (v) => v === x.visuels.style) ?? styles[0];
   const { registre } = reglageStyle(style, x.structure);
   const heros = herosPossibles(c);
-  const herosSujet = heros.length ? choisir(heros.map((h, i) => ({ v: h, p: (i === 0 ? 2.5 : 1) * masse(effetAsset(c, `heros:${h}:${registre}`, h)) })), r) ?? heros[0] : null;
+  const herosSujet = heros.length ? choisir(heros.map((h, i) => ({ v: h, p: (i === 0 ? 2.5 : 1) * pese(c, [], [`heros:${h}:${registre}`], h) })), r) ?? heros[0] : null;
   return { style, herosSujet, animation: animationDe(c, x.structure, style) };
 }
 const animationDe = (c: ContexteRecette, s: Structure, style: StyleIllustration) =>
@@ -511,7 +551,7 @@ export function animationsPermises(c: ContexteRecette, s: Structure, style: Styl
 export function tirerAnimation(x: CompositionRecette, c: ContexteRecette, graine: number): CompositionRecette {
   const l = animationsPermises(c, x.structure, x.visuels.style);
   if (l.length < 2) return x;
-  const a = choisir(l.map((v) => ({ v, p: masse(effetAsset(c, `animation:${v}`)) })), alea(graine, 'animation'), (v) => v === x.visuels.animation) ?? x.visuels.animation;
+  const a = choisir(l.map((v) => ({ v, p: pese(c, [], [`animation:${v}`]) })), alea(graine, 'animation'), (v) => v === x.visuels.animation) ?? x.visuels.animation;
   return { ...x, visuels: { ...x.visuels, animation: a } };
 }
 /**
@@ -556,9 +596,9 @@ export function choisirStyle(x: CompositionRecette, style: StyleIllustration, c:
 
 function tirerStructure(x: CompositionRecette, c: ContexteRecette, r: () => number, changerModele = true, garder: readonly string[] = []): Pick<CompositionRecette, 'structure' | 'sections'> {
   const permises = structuresPermises(c);
-  const structure = changerModele ? choisir(permises.map((s) => ({ v: s, p: (REGLES_THEMES[sujetUn(c)].structures[s] ?? 1) * masse(effetAsset(c, `modele:${s}`) + effetAtelier(c, `structure=${s}`)) })), r, (v) => v === x.structure) ?? x.structure : x.structure;
+  const structure = changerModele ? choisir(permises.map((s) => ({ v: s, p: (REGLES_THEMES[sujetUn(c)].structures[s] ?? 1) * pese(c, [`structure=${s}`], [`modele:${s}`]) })), r, (v) => v === x.structure) ?? x.structure : x.structure;
   const g = gabaritDe(c, structure);
-  const ordre = garder.includes('page:accueil') ? x.sections.ordre : choisir(ORDRES_ACCUEIL.map((o) => ({ v: o.id, p: (o.id === 'modele' ? 1.5 : 1) * masse(effetAtelier(c, `ordre=${o.id}`)) })), r) ?? 'modele';
+  const ordre = garder.includes('page:accueil') ? x.sections.ordre : choisir(ORDRES_ACCUEIL.map((o) => ({ v: o.id, p: (o.id === 'modele' ? 1.5 : 1) * pese(c, [`ordre=${o.id}`]) })), r) ?? 'modele';
   const variantes: Partial<Variantes> = {};
   // Éléments verrouillés (`composant:<famille>`) ou pages verrouillées (`page:<id>`) : variante gardée si le gabarit la permet
   const fige = (s: keyof Variantes) => garder.includes(`composant:${s}`) || PAGES_STRUCTURE.some((p) => garder.includes(`page:${p.id}`) && (p.sections as readonly string[]).includes(s));
@@ -571,19 +611,19 @@ function tirerStructure(x: CompositionRecette, c: ContexteRecette, r: () => numb
     const tirables = valeursTirables(s, g, x.visuels.style === 'photos', c);
     // Animation d'en-tête : « aucune » reste la plus fréquente (trois fois plus que chaque animation)
     const base = (v: string) => (v === '' ? 2 : (s === 'entete-anim' && v === 'aucune') || (s === 'portraits' && v === 'sobre') ? 3 : 1);
-    const v = choisir(tirables.map((v) => ({ v, p: base(v) * mobile(v) * masse(v === '' ? 0 : effetAtelier(c, `variante=${s}:${v}`) + effetAsset(c, `composant:${s}:${v}`)) })), r)!;
+    const v = choisir(tirables.map((v) => ({ v, p: base(v) * mobile(v) * (v === '' ? 1 : pese(c, [`variante=${s}:${v}`], [`composant:${s}:${v}`])) })), r)!;
     if (v) (variantes as Record<string, string>)[s] = v;
   }
   return { structure, sections: { ordre, variantes } };
 }
 
 function tirerEffets(x: CompositionRecette, c: ContexteRecette, r: () => number): IdJeuEffets {
-  return choisir(JEUX_EFFETS.map((j) => ({ v: j.id, p: masse(effetAtelier(c, `effets=${j.id}`)) })), r, (v) => v === x.effets) ?? x.effets;
+  return choisir(JEUX_EFFETS.map((j) => ({ v: j.id, p: pese(c, [`effets=${j.id}`]) })), r, (v) => v === x.effets) ?? x.effets;
 }
 
 /** Traitement des photos : un des jeux (pondéré par les notes de sa clé), grain une fois sur quatre environ */
 function tirerTraitement(x: CompositionRecette, c: ContexteRecette, r: () => number): TraitementPhotos {
-  const options = TRAITEMENTS_PHOTOS.map((t) => ({ v: t.id, p: masse(effetAsset(c, cleTraitementPhotos({ id: t.id, grain: false }))) }));
+  const options = TRAITEMENTS_PHOTOS.map((t) => ({ v: t.id, p: pese(c, [], [cleTraitementPhotos({ id: t.id, grain: false })]) }));
   const id = choisir(options, r, (v) => v === x.traitement.id) ?? x.traitement.id;
   return { id, grain: r() < 0.25 };
 }
@@ -807,7 +847,7 @@ const AXES_DIMENSION = {
 export function tirerHabillageRecette(x: CompositionRecette, cible: 'typo' | 'details' | 'menu' | AxeHabillage, c: ContexteRecette, graine: number, verrous: readonly string[] = []): CompositionRecette {
   const axes = typeof cible === 'string' ? AXES_DIMENSION[cible] : [cible];
   const sel = typeof cible === 'string' ? cible : verrouAxe(cible);
-  const h = tirerHabillage(habillageDe(x), alea(graine, sel), { axes, verrous, effet: (k) => effetAtelier(c, k), gabarit: gabaritDe(c, x.structure) });
+  const h = tirerHabillage(habillageDe(x), alea(graine, sel), { axes, verrous, effet: (k) => effetAtelier(c, k), poids: (k) => pese(c, [k]), gabarit: gabaritDe(c, x.structure) });
   return reparerComposition({ ...x, ...h }, c);
 }
 
@@ -1037,7 +1077,8 @@ export function appliquerRecette(
   if (infosEnTete) theme.infosEnTete = true; else delete theme.infosEnTete;
   if (x.visuels.herosSujet) theme.herosSujet = x.visuels.herosSujet; else delete theme.herosSujet;
   // Sites (et parcours) : photos importées seulement ; l'aperçu du studio montre aussi les photos non importées
-  const photos = opts.photosNonImportees ? x.photos : photosImportees(x.photos);
+  // Photos exclues (contexte-images.ts : ≤ 2 ★, retirées, à retravailler) : jamais posées
+  const photos = sansImagesExclues(opts.photosNonImportees ? x.photos : photosImportees(x.photos));
   if (photos.length) theme.photosRecette = [...photos]; else delete theme.photosRecette;
   theme.effets = x.effets;
   const tp = normaliserTraitementPhotos(x.traitement);

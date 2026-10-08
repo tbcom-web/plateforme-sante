@@ -1,6 +1,7 @@
 import 'server-only';
-import { ajouterPairesApprises, pairesDesNotes, pairesDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
-import { getNotationsApprentissage } from '@/lib/notation-recettes';
+import { notesPhotos, renfortsKits, ajouterPairesApprises, pairesDesNotes, pairesDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { getNotesKits } from '@/lib/kits-images';
+import { getLignesAssetsApprentissage, getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
@@ -38,6 +39,8 @@ export async function getNotesAtelier(): Promise<{ notes: NoteAtelierAdmin[]; mi
  */
 export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
   const [atelier, assets, recettes, pages, duels, notations] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets(), getRecettesLecture(1), getNotesPagesLecture(), getDuelsApprentissage(), getNotationsApprentissage()]);
+  // Notes brutes des photos (« Favoris d'abord », favoris.ts : photos ≥ 4 ★ puis ≥ 3,5 ★ d'abord, ≤ 2 ★ jamais)
+  const photos = notesPhotos(await getLignesAssetsApprentissage());
   const base = !atelier?.poids && !assets ? null : { ...(atelier?.poids ?? { n: 0, moyenne: 0, effets: {} }), ...(assets ? { assets } : {}) };
   // Recettes gardées depuis la tuile « Recettes complètes » : apprises par leur notation (0038), pas une seconde fois comme recette
   const gardees = new Set(notations.map((n) => n.recette).filter(Boolean));
@@ -46,7 +49,8 @@ export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
   const sources = [...sourcesRecettes(recettes.filter((r) => !gardees.has(r.id))), ...sourcesCombinaisons(atelier?.lignes ?? []), ...sourcesNotesPages(pages)];
   // Duels « A ou B ? » (0037, duels.ts) : ±0,5 ★ au plus par clé, cumulés aux renforts des notes dans la limite de ±1 ★
   // Recettes complètes notées (0038, notation-recettes.ts) : ±0,75 ★ au plus par clé, même cumul plafonné à ±1 ★
-  const renforts = fusionnerRenforts(fusionnerRenforts(sources.length ? renfortsPoids(sources, base?.moyenne || 3) : { atelier: {}, assets: {} }, renfortsDuels(duels)), renfortsNotations(notations));
+  const renforts = fusionnerRenforts(fusionnerRenforts(sources.length ? renfortsPoids(sources, base?.moyenne || 3) : { atelier: {}, assets: {} }, renfortsDuels(duels)), fusionnerRenforts(renfortsNotations(notations), renfortsKits(await getNotesKits())));
+  // (+ kits d'images notés, 0039 : chaque photo du kit, ±0,5 ★ ; même plafond cumulé ±1 ★)
   const poids = Object.keys(renforts.atelier).length || Object.keys(renforts.assets).length ? appliquerRenforts(base, renforts) : base;
   // Ingrédients, PAIRES et familles appris des recettes complètes : lus par les tirages harmonieux (harmonie.ts) et propositions.ts
   // + combinaisons police × palette (duels « Police × palette » et tuile du même nom, duels-compositions.ts) : paires
@@ -55,7 +59,8 @@ export async function getPoidsAtelier(): Promise<PoidsAtelier | null> {
   // Effets propres au mobile (duels joués sur téléphone) : lus par effetAtelier selon la portée de la clé (duels-appareils.ts)
   const mobile = renfortsDuelsMobiles(duels);
   const avecMobile = Object.keys(mobile).length ? { ...(poids ?? { n: 1, moyenne: 3, effets: {} }), mobile } : poids;
-  return harmonie ? { ...(avecMobile ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : avecMobile;
+  const fin = harmonie ? { ...(avecMobile ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : avecMobile;
+  return fin && Object.keys(photos).length ? { ...fin, notesPhotos: photos } : fin;
 }
 
 type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null; appareil?: string | null };

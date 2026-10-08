@@ -11,6 +11,7 @@
 import { SPECIALITES, packVisuel, fusionnerPack, type Animation, type PersonnalisationPack, type Specialite } from './packs';
 import type { NomDessin } from './univers';
 import type { ModeVisuel } from './draft';
+import { contexteImages, imageExclue, kitDeSpecialite, premiereNonExclue } from './contexte-images';
 
 export type VisuelCase = {
   /** Photo de banque (ou du praticien), à afficher selon le style visuel */
@@ -268,6 +269,14 @@ export function jeuVisuel(
     }
   }
 
+  // Kit d'images du sujet (contexte-images.ts) : photo étiquetée pour chaque soin ; photos exclues (≤ 2 ★, retirées) remplacées
+  const kit = kitDeSpecialite(p.value);
+  for (const [slug, photo] of Object.entries(kit?.soins ?? {})) if (!imageExclue(photo)) soins[slug] = { ...(soins[slug] ?? VISUEL_SOIN_PAR_DEFAUT), photo, cadrage: cadrage(photo), photoBonne: true };
+  if (contexteImages().exclues.size) {
+    const secours = [p.photos.accueil, p.photos.panorama, ...diaporama];
+    for (const [slug, v] of Object.entries(soins)) if (imageExclue(v.photo)) { const photo = premiereNonExclue(secours); soins[slug] = { ...v, photo, cadrage: cadrage(photo), photoBonne: false }; }
+    for (const [nom, v] of Object.entries(photosDessins)) if (imageExclue(v.photo)) { const photo = premiereNonExclue(secours); photosDessins[nom as NomDessin] = { photo, cadrage: cadrage(photo) }; }
+  }
   return {
     specialite: p.value,
     label: p.label,

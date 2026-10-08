@@ -623,6 +623,12 @@ export default function Retours(props: Props) {
                 <span className="text-sm text-neutral-600">Une recette entière à la fois (générée par le système ou proposée par Claude) : étoiles, pour / contre, « Garder ». Le système apprend les meilleurs ingrédients et combinaisons.</span>
               </Link>
             </li>
+            <li>
+              <Link href="/admin/retours/kits" className={`grid h-full content-start gap-2 rounded-2xl border border-black/10 bg-white p-4 hover:border-teal-700 hover:bg-teal-50/40 ${focus}`}>
+                <span className="text-lg font-bold">Kits d’images</span>
+                <span className="text-sm text-neutral-600">Par sujet, le jeu de photos composé à partir de vos notes et étiquettes (premier écran, soins, cabinet) : ses trous, « Noter ce kit », « Garder ce kit », « Autre kit ».</span>
+              </Link>
+            </li>
           </ul>
         </section>
 

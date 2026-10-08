@@ -16,7 +16,7 @@ const compo = (g: number, c: ContexteRecette = ctx0) => toutChanger(compositionI
 test('génération : aucune violation d’harmonie ni des garde-fous, part d’exploration ≈ 20 %', () => {
   for (const t of SCENARIOS_TYPES.slice(0, 3)) {
     const c = contexteScenario(t.scenario, {});
-    const l = genererCandidates(t.scenario, c, { n: 5, graine: 7, iterations: 6 });
+    const l = genererCandidates(t.scenario, c, { n: 5, graine: 7, iterations: 6, exploration: 0.2 });
     assert.equal(l.length, 5);
     for (const x of l) {
       assert.deepEqual(violationsDures(x.composition, c), [], `${t.id} : règle dure violée`);

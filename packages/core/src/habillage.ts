@@ -59,9 +59,10 @@ const PREFERENCES: Record<string, number> = {
  * (`effet(cle)` : clés atelier `typo=<axe>:<v>`, `details=…`, `menu=…`). `axes` absent : tout l'habillage ; le jeu de détails tiré
  * pose tous ses éléments (sauf verrouillés). Déterministe pour un même générateur.
  */
-export function tirerHabillage(h: Habillage, r: () => number, opts: { axes?: readonly AxeHabillage[]; verrous?: readonly string[]; effet?: (cle: string) => number; gabarit?: Gabarit } = {}): Habillage {
+export function tirerHabillage(h: Habillage, r: () => number, opts: { axes?: readonly AxeHabillage[]; verrous?: readonly string[]; effet?: (cle: string) => number; /** Poids complet d'une clé (mode de tirage, favoris.ts) ; prioritaire sur `effet` */ poids?: (cle: string) => number; gabarit?: Gabarit } = {}): Habillage {
   const verrous = new Set(opts.verrous ?? []);
   const effet = opts.effet ?? (() => 0);
+  const pese = (k: string) => (opts.poids ? opts.poids(k) : masse(effet(k)));
   const g = opts.gabarit ?? 'tableau';
   const tous: AxeHabillage[] = opts.axes ? [...opts.axes] : [
     ...(Object.keys(AXES_TYPO) as AxeTypo[]).map((axe) => ({ groupe: 'typo' as const, axe })),
@@ -71,14 +72,14 @@ export function tirerHabillage(h: Habillage, r: () => number, opts: { axes?: rea
   const typo = { ...h.typo } as Record<string, string>;
   let details = { ...h.details } as Record<string, string>;
   const menu = { ...h.menu } as Record<string, string>;
-  const poids = (groupe: string, axe: string, v: string) => (PREFERENCES[`${groupe}:${axe}:${v}`] ?? 1) * masse(effet(`${groupe}=${axe}:${v}`));
+  const poids = (groupe: string, axe: string, v: string) => (PREFERENCES[`${groupe}:${axe}:${v}`] ?? 1) * pese(`${groupe}=${axe}:${v}`);
   for (const a of tous) {
     if (verrous.has(verrouAxe(a))) continue;
     if (a.groupe === 'typo') {
       const vals = (AXES_TYPO[a.axe] as readonly { id: string }[]).map((x) => x.id);
       typo[a.axe] = choisir(vals.map((v) => ({ v, p: poids('typo', a.axe, v) })), r, opts.axes ? typo[a.axe] : undefined);
     } else if (a.groupe === 'details' && a.axe === 'jeu') {
-      const jeu = choisir(JEUX_DETAILS.map((j) => ({ v: j.id as string, p: (j.id === 'gabarit' ? 0.5 : 1) * masse(effet(`details=jeu:${j.id}`)) })), r, details.jeu);
+      const jeu = choisir(JEUX_DETAILS.map((j) => ({ v: j.id as string, p: (j.id === 'gabarit' ? 0.5 : 1) * pese(`details=jeu:${j.id}`) })), r, details.jeu);
       const nouveau = detailsDuJeu(jeu) as Record<string, string>;
       for (const e of Object.keys(ELEMENTS_DETAILS)) if (verrous.has(`hab:details:${e}`)) nouveau[e] = details[e];
       details = nouveau;

@@ -21,6 +21,7 @@
 // Module pur, sans dépendance d'exécution vers recettes.ts (recettes.ts l'appelle ; aucune boucle d'imports).
 
 import { GAMMES, gamme as gammeParId } from './gammes';
+import { MODE_TIRAGE_DEFAUT, poidsFavori, type ModeTirage } from './favoris';
 import { contraste, rvb } from './couleurs';
 import { PAIRES_POLICES, VARIANTES_SECTIONS } from './modeles';
 import { JEUX_EFFETS } from './effets';
@@ -129,6 +130,8 @@ export type ContexteHarmonie = {
   horsRegles?: boolean;
   /** Poids appris par famille et par ingrédient (apprendreHarmonie) ; sinon dérivés de `poids` */
   poidsHarmonie?: PoidsHarmonie | null;
+  /** Mode de tirage (favoris.ts) : « Favoris d'abord » par défaut */
+  modeTirage?: ModeTirage | null;
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1139,13 +1142,23 @@ export function choisirFamille(x: CompositionHarmonie, verrous: readonly string[
 const interditContexte = (dim: DimensionHarmonie, v: string, c?: ContexteHarmonie | null) =>
   dim === 'effets' && v === 'vivant' && (c?.sujets ?? []).some((s) => SUJETS_CALMES.includes(s));
 
+/**
+ * Poids appris d'une valeur (favoris.ts) : 2^(g · effet) avec effet = atelier + ingrédient appris + paires avec le reste ; jamais notée :
+ * poids fixe du mode (Favoris : rare) ; note estimée ≤ 2 ★ : exclue.
+ */
+function poidsValeurHarmonie(c: ContexteHarmonie | null | undefined, ph: PoidsHarmonie, dim: DimensionHarmonie, v: string, x: CompositionHarmonie): number {
+  const mode = c?.modeTirage ?? MODE_TIRAGE_DEFAUT;
+  const connu = c?.poids?.effets?.[cleAtelier(dim, v)] !== undefined || ph.ingredients[`${dim}:${v}`] !== undefined;
+  if (!connu) return poidsFavori(undefined, mode);
+  return poidsFavori(effetApprisHarmonie(c, dim, v) + (ph.ingredients[`${dim}:${v}`] ?? 0) + effetPairesHarmonie(ph, dim, v, x), mode);
+}
 /** Une valeur pour une dimension dans une famille : préférées ×3, admises ×1, exclues jamais ; notes apprises en masse */
 function valeurDansFamille<T extends CompositionHarmonie>(dim: DimensionHarmonie, f: IdFamilleStyle, x: T, c: ContexteHarmonie | null | undefined, r: () => number, outils: OutilsTirage<T>): string | undefined {
   const permis = outils.permis?.(dim, x) ?? null;
   const base = permis ? [...permis] : valeursDimensionHarmonie(dim);
   const ph = poidsHarmonie(c);
   const l = base.filter((v) => compatibiliteFamille(dim, v, f) !== 'exclu' && !interditContexte(dim, v, c))
-    .map((v) => ({ v, p: (compatibiliteFamille(dim, v, f) === 'prefere' ? 4 : (etiquetteIngredient(dim, v)?.neutre ?? true) ? 2 : 1) * masse(effetApprisHarmonie(c, dim, v) + (ph.ingredients[`${dim}:${v}`] ?? 0) + effetPairesHarmonie(ph, dim, v, x)) }));
+    .map((v) => ({ v, p: (compatibiliteFamille(dim, v, f) === 'prefere' ? 4 : (etiquetteIngredient(dim, v)?.neutre ?? true) ? 2 : 1) * poidsValeurHarmonie(c, ph, dim, v, x) }));
   return choisir(l, r);
 }
 
