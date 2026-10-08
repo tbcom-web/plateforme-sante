@@ -28,6 +28,8 @@ export type ProfessionParcours = {
    * « DU Podologie du sport » propose le thème sport. Rien n'est coché sans donnée réelle.
    */
   angles: readonly { motif: RegExp; theme: string }[];
+  /** Thèmes qui ouvrent l'écran « Les activités de vos patients » (ex. Sport) ; [] = jamais */
+  themesActivites: readonly string[];
 };
 
 export const PROFESSIONS_PARCOURS: readonly ProfessionParcours[] = [
@@ -42,12 +44,13 @@ export const PROFESSIONS_PARCOURS: readonly ProfessionParcours[] = [
       { motif: /\bsport|activit[ée]s? phys/i, theme: 'sport' },
       { motif: /diab[eè]t/i, theme: 'diabete' },
     ],
+    themesActivites: ['sport'],
   },
-  { id: 'masseur-kinesitherapeute', libelle: 'Masseur-kinésithérapeute', codesRpps: ['70'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [] },
-  { id: 'osteopathe', libelle: 'Ostéopathe', codesRpps: [], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [] },
-  { id: 'infirmier', libelle: 'Infirmier ou infirmière', codesRpps: ['60'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [] },
-  { id: 'orthophoniste', libelle: 'Orthophoniste', codesRpps: ['91'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [] },
-  { id: 'sage-femme', libelle: 'Sage-femme', codesRpps: ['50'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [] },
+  { id: 'masseur-kinesitherapeute', libelle: 'Masseur-kinésithérapeute', codesRpps: ['70'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [], themesActivites: [] },
+  { id: 'osteopathe', libelle: 'Ostéopathe', codesRpps: [], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [], themesActivites: [] },
+  { id: 'infirmier', libelle: 'Infirmier ou infirmière', codesRpps: ['60'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [], themesActivites: [] },
+  { id: 'orthophoniste', libelle: 'Orthophoniste', codesRpps: ['91'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [], themesActivites: [] },
+  { id: 'sage-femme', libelle: 'Sage-femme', codesRpps: ['50'], disponible: false, codesDiplomeEtat: [], diplomeEtat: '', angles: [], themesActivites: [] },
 ];
 
 export const professionParcours = (id: string | null | undefined, registre: readonly ProfessionParcours[] = PROFESSIONS_PARCOURS): ProfessionParcours | undefined =>

@@ -74,7 +74,7 @@ export default function PorteRendu({
           </div>
           <label className="flex items-start gap-3 text-sm text-neutral-800">
             <input type="checkbox" name="recontact" className="mt-0.5 size-5 shrink-0 accent-teal-800" {...attributs('recontact')} />
-            <span>J’accepte d’être recontacté(e) au sujet de mon site. <Link href="/essai/confidentialite" target="_blank" className="font-semibold text-teal-800 underline">Confidentialité</Link></span>
+            <span>J’accepte d’être recontacté(e) au sujet de mon site <span className="font-semibold">(obligatoire pour voir le rendu)</span>. <Link href="/essai/confidentialite" target="_blank" className="font-semibold text-teal-800 underline">Confidentialité</Link></span>
           </label>
           {aide('recontact')}
           <label className="flex items-start gap-3 text-sm text-neutral-800">

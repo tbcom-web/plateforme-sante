@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { EnteteEssai, EtapesEssai, PiedEssai } from '../Cadre';
+import { EnteteEssai, PiedEssai } from '../Cadre';
 import Commencer from './Commencer';
 
 export const metadata: Metadata = {
@@ -17,7 +17,6 @@ export default function PageCommencer() {
     <div className="flex min-h-screen flex-col bg-neutral-50">
       <EnteteEssai />
       <main className="mx-auto grid w-full max-w-lg flex-1 content-start gap-4 px-4 py-6 sm:py-12">
-        <EtapesEssai active={1} />
         <Suspense>
           <Commencer turnstile={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null} />
         </Suspense>

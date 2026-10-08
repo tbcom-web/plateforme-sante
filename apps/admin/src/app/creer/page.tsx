@@ -2,7 +2,8 @@ import { notFound, redirect } from 'next/navigation';
 import Shell from '@/components/Shell';
 import Parcours from './Parcours';
 import { capturerRendu, choisirModele, finaliserAcces, noterProgressionEssai, publierApercuParcours, publierParcours, sauvegarderParcours } from './actions';
-import { joursRestants } from '@plateforme/core';
+import { etapeDeReprise, joursRestants } from '@plateforme/core';
+import { issuDuParcoursClient } from '@plateforme/core/onboarding';
 import { dateLongue, getMonEssai } from '@/lib/essai';
 import { getUser } from '@/lib/supabase/server';
 import { getCatalogue, getMonSite, getSiteParId } from '@/lib/sites';
@@ -89,7 +90,9 @@ export default async function CreerPage({ searchParams }: PageProps<'/creer'>) {
     <Shell email={user.email ?? ''} anonyme={Boolean(user.is_anonymous)}>
       <Parcours
         siteId={site.id}
-        etapeInitiale={changerModele ? 3 : fin ? 7 : undefined}
+        // Site commencé dans le parcours client (/essai/votre-site) : profession, informations, sujets, couleurs et style sont
+        // faits ; reprise à « Vos horaires » (jamais redemandés)
+        etapeInitiale={changerModele ? 3 : fin ? 7 : !pourClient && issuDuParcoursClient(site.draft) && site.draft.theme.univers && etapeDeReprise(site.draft) <= 5 ? 5 : undefined}
         verifInitiale={fin}
         messageInitial={typeof erreur === 'string' ? erreur.slice(0, 200) : null}
         version={site.updatedAt}

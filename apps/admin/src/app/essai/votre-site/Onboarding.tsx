@@ -12,12 +12,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   activitePratique, activitesProposees, appliquerRecette, basculerActivite, deplacerActivite, lotsPropositions, modeleDuSite, modeleIntegre, pratiqueDe,
-  propositionDeRecette, recettesPourPraticien, themeParId, universDuParcours, ACTIVITES_MAX,
+  propositionDeRecette, recettesPourPraticien, themeParId, universDuParcours, ACTIVITES_MAX, COULEURS_PREFEREES, distance, gamme as gammeParId, gammesDesCouleurs,
   type MarqueImportee, type ModeleManifeste, type PratiqueProfession, type Proposition, type PropositionRecette, type PublicationRecette, type Recette, type SiteDraft,
   type Univers, type Priorites,
 } from '@plateforme/core';
 import {
-  avancementOnboarding, brouillonOnboarding, diplomesConfirmes, etapesOnboarding, grilleDuTour, identiteVide, phraseAvancement, themesDuMetier,
+  apercuInsecable, brouillonOnboarding, descriptionClaire, diplomesConfirmes, etapesOnboarding, grilleDuTour, identiteVide, numeroOnboarding, phraseAvancement,
+  pourcentageParcours, themesDuMetier, TOTAL_PARCOURS, ETAPES_AVANT_RENDU,
   propositionRetenue, propositionSuivante, TOURS_STYLE_MAX, type AvisStyle, type ChoixClient, type EtapeOnboarding, type IdentiteConfirmee, type Verdict,
 } from '@plateforme/core/onboarding';
 import { anglesDesDiplomes, professionDuCodeRpps, professionParcours, professionsProposees, type ProfessionParcours } from '@plateforme/core/onboarding-professions';
@@ -47,7 +48,7 @@ const TITRES: Record<EtapeOnboarding, { titre: string; consigne: string }> = {
   profession: { titre: 'Votre profession', consigne: 'Votre site est préparé pour votre métier : textes, sujets et illustrations.' },
   identite: { titre: 'Vos informations', consigne: 'Elles apparaissent sur votre site. Vérifiez-les : vous gardez la main sur chaque ligne.' },
   sujets: { titre: 'Vos sujets', consigne: 'Jusqu’à 3 sujets principaux, dans l’ordre : ils structurent l’accueil et le menu.' },
-  activites: { titre: 'Les activités que vous suivez', consigne: `Jusqu’à ${ACTIVITES_MAX}, dans l’ordre : elles sont citées sur votre site et orientent ses illustrations.` },
+  activites: { titre: 'Les activités de vos patients', consigne: `Jusqu’à ${ACTIVITES_MAX}, dans l’ordre : celles que vous voyez le plus au cabinet. Elles sont citées sur votre site et orientent ses illustrations.` },
   couleurs: { titre: 'Vos couleurs', consigne: 'Jusqu’à 3 couleurs que vous aimez. Nous vérifions qu’elles restent lisibles.' },
   style: { titre: 'Choisissez votre style', consigne: 'Voici votre site sous plusieurs formes. Dites ce qui vous plaît : les propositions suivantes en tiennent compte.' },
   rendu: { titre: 'Votre site', consigne: '' },
@@ -72,12 +73,14 @@ type Etat = {
   grilles: string[][];
   retenue: string | null;
   contact: boolean;
+  /** Numéro le plus avancé atteint dans le parcours complet : le pourcentage ne recule jamais */
+  maxNumero: number;
   siteId: string | null;
   version: string | null;
 };
 
 const etatVide = (): Etat => ({
-  v: 1, etape: 'profession', faites: [], profession: null, identite: identiteVide(), priorites: { principaux: [], secondaires: [] }, angles: [], anglesAppliques: false,
+  v: 1, etape: 'profession', faites: [], profession: null, identite: { ...identiteVide(), diplomeEtat: true }, maxNumero: 1, priorites: { principaux: [], secondaires: [] }, angles: [], anglesAppliques: false,
   activites: [], couleurs: undefined, avis: {}, journal: [], tour: 0, grilles: [], retenue: null, contact: false, siteId: null, version: null,
 });
 
@@ -102,7 +105,8 @@ function identiteDepuisFiche(f: FicheAnnuaire, codesDE: readonly string[], lieu 
     ...identiteVide(),
     prenom: f.prenom, nom: f.nom, nomCabinet: l?.nom ?? '', adresse: l?.adresse ?? '', codePostal: l?.codePostal ?? '', ville: l?.ville ?? '', telephone: l?.telephone ?? '',
     rpps: f.source === 'annuaire' ? f.rpps : '',
-    diplomeEtat: diplomeEtatPresent(f, codesDE),
+    // Profession réglementée : diplôme d'État coché d'office (le praticien peut décocher)
+    diplomeEtat: codesDE.length > 0 || diplomeEtatPresent(f, codesDE),
     // DU : jamais coché d'office ; le praticien coche ceux qu'il veut afficher
     diplomesUniversitaires: [],
     source: f.source === 'annuaire' ? 'annuaire' : 'demonstration',
@@ -113,6 +117,15 @@ const pratiqueDuMetier = (p: ProfessionParcours | undefined): PratiqueProfession
 const anglesDe = (f: FicheAnnuaire, p: ProfessionParcours | undefined) => anglesDesDiplomes(diplomesUniversitairesDe(f), p, themesDuMetier(pratiqueDuMetier(p)));
 const libellesActivites = (ids: readonly string[], pratique: PratiqueProfession | undefined) =>
   pratique ? ids.map((id) => activitePratique(pratique, id)?.libelle).filter((x): x is string => Boolean(x)) : [];
+
+/** Couleur la plus proche parmi celles que le praticien connaît (« bleu », « beige ») */
+const nommerCouleur = (hex: string) => {
+  let meilleur = COULEURS_PREFEREES[0];
+  for (const c of COULEURS_PREFEREES) if (distance(hex, c.hex) < distance(hex, meilleur.hex)) meilleur = c;
+  return meilleur.nom.toLowerCase();
+};
+/** Deux couleurs visibles d'une gamme : la couleur principale et sa compagne (ou le fond doux) */
+const couleursDeGamme = (id: string) => { const g = gammeParId(id); return g ? [g.vif ?? g.accent, g.duo ?? g.fondDoux] : []; };
 
 function useEtroit() {
   const [etroit, setEtroit] = useState(false);
@@ -177,13 +190,13 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
       const p = professionParcours('podologue')!;
       const f = persona.fiche ? ficheDemo(persona.fiche) : null;
       setFiche(f);
-      const base: Etat = { ...etatVide(), profession: 'podologue', identite: f ? { ...identiteDepuisFiche(f, p.codesDiplomeEtat), diplomesUniversitaires: diplomesUniversitairesDe(f) } : identiteVide(), angles: f ? anglesDe(f, p) : [] };
+      const base: Etat = { ...etatVide(), profession: 'podologue', identite: f ? identiteDepuisFiche(f, p.codesDiplomeEtat) : { ...identiteVide(), diplomeEtat: true }, angles: f ? anglesDe(f, p) : [] };
       const saut = ETAPES_SAUT_TEST.find((x) => x.id === test.etape)?.id;
       if (saut && persona.id !== 'vierge') {
         const remplie: Etat = { ...base, priorites: persona.sujets, anglesAppliques: true, activites: persona.activites, couleurs: persona.couleurs };
-        const etapes = etapesOnboarding(pratiqueDuMetier(p), remplie.priorites);
+        const etapes = etapesOnboarding(pratiqueDuMetier(p), remplie.priorites, p.themesActivites);
         const cible = etapes.includes(saut) ? saut : 'couleurs';
-        setE({ ...remplie, etape: cible, faites: etapes.slice(0, etapes.indexOf(cible)) });
+        setE({ ...remplie, etape: cible, faites: etapes.slice(0, etapes.indexOf(cible)), maxNumero: numeroOnboarding(cible) });
       } else {
         setE({ ...base, etape: persona.id === 'vierge' ? 'profession' : 'identite', faites: persona.id === 'vierge' ? [] : ['profession'] });
       }
@@ -195,8 +208,10 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
 
   const profession = professionParcours(e.profession);
   const pratique = pratiqueDuMetier(profession);
-  const etapes = useMemo(() => etapesOnboarding(pratique, e.priorites), [pratique, e.priorites]);
-  const pourcent = avancementOnboarding(rendu ? [...e.faites, 'rendu'] : e.faites, etapes);
+  const etapes = useMemo(() => etapesOnboarding(pratique, e.priorites, profession?.themesActivites ?? []), [pratique, e.priorites, profession]);
+  // Numérotation UNIQUE de /essai à la fin de /creer (onboarding.ts : PARCOURS_COMPLET, 10 étapes) ; le pourcentage ne recule jamais
+  const numero = rendu ? ETAPES_AVANT_RENDU : numeroOnboarding(e.etape);
+  const pourcent = pourcentageParcours(Math.max(e.maxNumero, numero) - 1 + (rendu ? 1 : 0));
 
   // ---- Brouillon et propositions (recalculés à chaque réponse : l'aperçu se construit en direct) ----
   const base = useMemo(() => (profession && pratique ? brouillonOnboarding({ profession: profession.id, identite: e.identite, priorites: e.priorites, activites: e.activites, couleurs: e.couleurs }, profession, pratique) : null), [profession, pratique, e.identite, e.priorites, e.activites, e.couleurs]);
@@ -216,9 +231,14 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
     const duStudio = ordre.map((x) => propositionDeRecette(x.recette));
     const lots = lotsPropositions({ priorites: base.priorites, couleursPreferees: base.couleursPreferees ?? [] }, 4).flat();
     const vus = new Set<string>();
-    return [...duStudio, ...lots]
+    const tous = [...duStudio, ...lots]
       .filter((p) => disponibles.has(p.univers) && !vus.has(p.id) && vus.add(p.id))
-      .map((p) => ({ id: p.id, univers: p.univers, style: p.style, gamme: p.gamme, famille: p.famille, police: 'recette' in p ? (p as PropositionRecette).recette.composition.police ?? null : null, proposition: p, badge: badges.get(p.id) ?? null }));
+      .map((p) => ({ id: p.id, univers: p.univers, style: p.style, gamme: p.gamme, famille: p.famille, police: 'recette' in p ? (p as PropositionRecette).recette.composition.police ?? null : null, proposition: p, badge: badges.get(p.id) ?? null, description: descriptionClaire(p, nommerCouleur, couleursDeGamme) }));
+    // Couleurs choisies : seulement les gammes qui les reprennent ; s'il en manque, des variantes proches signalées (lisibilité)
+    if (!base.couleursPreferees?.length) return tous;
+    const compatibles = new Set(gammesDesCouleurs({ priorites: base.priorites, couleursPreferees: base.couleursPreferees }));
+    const dedans = tous.filter((c) => compatibles.has(c.gamme));
+    return dedans.length >= 8 ? dedans : [...dedans, ...tous.filter((c) => !compatibles.has(c.gamme)).map((c) => ({ ...c, ecart: true }))];
   }, [base, recettes, publiees, defautsMobile, disponibles, e.profession]);
   const apercuDe = useCallback((p: Proposition): { draft: SiteDraft; modele: ModeleManifeste } | null => {
     if (!base) return null;
@@ -226,7 +246,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
       ? appliquerRecette(base, (p as PropositionRecette).recette.composition, { id: (p as PropositionRecette).recette.id, proposes, modeles: modeles.map((m) => m.manifeste), soinsConnus: slugs, themesActives })
       : apercuProposition(base, p, { proposes, modeles, slugs, themesActives });
     if (!x) return null;
-    return { draft: x.draft, modele: x.modele ?? modeleDuSite(modeles.find((m) => m.id === x.draft.theme.modele)?.manifeste ?? modeleIntegre(x.draft.theme.modele), x.draft.theme) };
+    return { draft: apercuInsecable(x.draft), modele: x.modele ?? modeleDuSite(modeles.find((m) => m.id === x.draft.theme.modele)?.manifeste ?? modeleIntegre(x.draft.theme.modele), x.draft.theme) };
   }, [base, proposes, modeles, slugs, themesActives]);
   const retenue = pool.find((c) => c.id === e.retenue) ?? propositionRetenue(pool, e.avis) ?? pool[0];
   const vignette = (p: Proposition, hauteur: number, mobile: boolean) => {
@@ -258,11 +278,12 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
     setE((x) => {
       const i = etapes.indexOf(x.etape), j = etapes.indexOf(cible);
       const faites = j > i && !x.faites.includes(x.etape) ? [...x.faites, x.etape] : x.faites;
+      const maxNumero = Math.max(x.maxNumero ?? 1, numeroOnboarding(cible));
       // Sujets : DU réel de l'annuaire → sujet pré-coché une fois (le praticien confirme ou retire)
       if (cible === 'sujets' && !x.anglesAppliques && x.angles.length && !x.priorites.principaux.length) {
-        return { ...x, faites, etape: cible, anglesAppliques: true, priorites: { principaux: x.angles.slice(0, 3), secondaires: [] } };
+        return { ...x, faites, maxNumero, etape: cible, anglesAppliques: true, priorites: { principaux: x.angles.slice(0, 3), secondaires: [] } };
       }
-      return { ...x, faites, etape: cible };
+      return { ...x, faites, maxNumero, etape: cible };
     });
   };
   const suivante = etapes[etapes.indexOf(e.etape) + 1];
@@ -325,7 +346,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
       <main className={`mx-auto grid max-w-6xl gap-6 px-4 py-5 lg:items-start ${e.etape === 'style' ? '' : 'lg:grid-cols-[minmax(0,1fr)_300px]'}`}>
         <section aria-labelledby="titre-onboarding" className="grid min-w-0 content-start gap-4">
           <div className="grid gap-1.5">
-            <p className="text-sm text-neutral-600">Étape {etapes.indexOf(e.etape) + 1} sur {etapes.length - 1}</p>
+            <p className="text-sm text-neutral-600">Étape {numero} sur {TOTAL_PARCOURS}{numero < ETAPES_AVANT_RENDU ? ` · votre site dans ${ETAPES_AVANT_RENDU - numero} étape${ETAPES_AVANT_RENDU - numero > 1 ? 's' : ''}` : ''}</p>
             <h1 id="titre-onboarding" ref={titre} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none sm:text-3xl">{infos.titre}</h1>
             {infos.consigne && <p className="max-w-2xl text-neutral-700">{infos.consigne}</p>}
           </div>
@@ -373,7 +394,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
                   Proposé d’après votre diplôme inscrit dans l’annuaire : <strong>{e.angles.map((s) => themeParId(s)?.court).join(', ')}</strong>. Confirmez ou modifiez.
                 </p>
               )}
-              <ChoixSujets priorites={e.priorites} onChange={(priorites) => maj({ priorites })} soins={[]} soinsConnus={slugs} themesActives={themesActives} masquerIndisponibles />
+              <ChoixSujets priorites={e.priorites} onChange={(priorites) => maj({ priorites })} soins={[]} soinsConnus={slugs} themesActives={themesActives} masquerIndisponibles compact />
             </div>
           )}
           {e.etape === 'activites' && pratique && <EtapeActivites valeur={e.activites} pratique={pratique} themes={[...e.priorites.principaux, ...e.priorites.secondaires]} onChange={(activites) => maj({ activites })} />}
@@ -417,7 +438,7 @@ export default function Onboarding({ siteCommence, test, annuaire, catalogue, mo
             {suivante && (
               <button
                 type="button"
-                className={btnPrincipal}
+                className={passer(e) ? btnSecondaire : btnPrincipal}
                 disabled={!peutContinuer(e, profession)}
                 onClick={() => aller(suivante)}
               >
@@ -472,10 +493,12 @@ function peutContinuer(e: Etat, p: ReturnType<typeof professionParcours>): boole
   if (e.etape === 'identite') return Boolean(e.identite.nom.trim() || e.identite.nomCabinet.trim());
   return true;
 }
+/** Étape laissée vide : bouton secondaire (« Passer cette étape », pas de couleur choisie) */
+const passer = (e: Etat) => (e.etape === 'sujets' && !e.priorites.principaux.length) || (e.etape === 'activites' && !e.activites.length) || (e.etape === 'couleurs' && !e.couleurs?.length);
 function libelleSuivant(e: Etat): string {
   if (e.etape === 'sujets') return e.priorites.principaux.length ? 'Continuer →' : 'Passer cette étape →';
   if (e.etape === 'activites') return e.activites.length ? 'Continuer →' : 'Passer cette étape →';
-  if (e.etape === 'couleurs') return e.couleurs?.length ? 'Choisir mon style →' : 'Laissez-nous proposer →';
+  if (e.etape === 'couleurs') return e.couleurs?.length ? 'Choisir mon style →' : 'Continuer sans couleur →';
   return 'Continuer →';
 }
 
@@ -548,7 +571,7 @@ function EtapeProfession({ valeur, annuaire, chercher, listeAttente, identite, o
         <form onSubmit={rechercher} className="grid gap-2 rounded-2xl border border-black/10 bg-white p-4">
           <label htmlFor="rpps" className="font-semibold">Votre n° RPPS <span className="font-normal text-neutral-600">(facultatif, pour préremplir)</span></label>
           <div className="flex gap-2">
-            <input id="rpps" inputMode="numeric" autoComplete="off" maxLength={14} value={rpps} onChange={(ev) => setRpps(ev.target.value)} placeholder="11 chiffres" className={champ} aria-describedby="rpps-aide" />
+            <input id="rpps" inputMode="numeric" autoComplete="off" maxLength={14} value={rpps} onChange={(ev) => setRpps(ev.target.value.replace(/\D/g, '').slice(0, 11))} placeholder="11 chiffres" className={champ} aria-describedby="rpps-aide" />
             <button type="submit" disabled={enCours || rpps.replace(/\s/g, '').length !== 11} className={`${btnSecondaire} shrink-0`}>{enCours ? 'Recherche…' : 'Préremplir'}</button>
           </div>
           <p id="rpps-aide" className="text-xs text-neutral-600">Nous reprenons votre profession, votre nom d’exercice et l’adresse de votre cabinet depuis l’annuaire public des professionnels de santé. Vous vérifiez tout à l’étape suivante.</p>
@@ -633,7 +656,7 @@ function EtapeIdentite({ identite, fiche, profession, annuaire, chercher, onFich
     setEnCours(false);
     if (r.etat === 'fiche') { setResultats(null); onFiche(r.fiche); }
     else if (r.etat === 'liste') setResultats(r.resultats);
-    else { setResultats(null); setEtat(messageAnnuaire(r)); }
+    else { setResultats(null); setEtat(r.etat === 'introuvable' && !d.id ? 'Aucune fiche à ce nom dans cette ville : remplissez les champs ci-dessous.' : messageAnnuaire(r)); }
   };
   const champTexte = (k: keyof IdentiteConfirmee, libelle: string, o: { auto?: string; requis?: boolean; mode?: 'tel' | 'numeric'; plein?: boolean } = {}) => (
     <label className={`grid gap-1 text-sm font-medium text-neutral-800 ${o.plein ? 'sm:col-span-2' : ''}`}>
@@ -653,8 +676,8 @@ function EtapeIdentite({ identite, fiche, profession, annuaire, chercher, onFich
         <details className="rounded-2xl border border-black/10 bg-white p-4" open={!identite.nom}>
           <summary className={`cursor-pointer font-semibold ${focus}`}>Retrouver ma fiche dans l’annuaire <span className="font-normal text-neutral-600">(facultatif)</span></summary>
           <form className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end" onSubmit={(ev) => { ev.preventDefault(); void lancer(recherche); }}>
-            <label className="grid gap-1 text-sm font-medium">Nom d’exercice<input value={recherche.nom} onChange={(ev) => setRecherche({ ...recherche, nom: ev.target.value })} autoComplete="family-name" className={champ} /></label>
-            <label className="grid gap-1 text-sm font-medium">Ville<input value={recherche.ville} onChange={(ev) => setRecherche({ ...recherche, ville: ev.target.value })} autoComplete="address-level2" className={champ} /></label>
+            <label className="grid gap-1 text-sm font-medium">Nom à chercher<input value={recherche.nom} onChange={(ev) => setRecherche({ ...recherche, nom: ev.target.value })} autoComplete="family-name" className={champ} /></label>
+            <label className="grid gap-1 text-sm font-medium">Ville à chercher<input value={recherche.ville} onChange={(ev) => setRecherche({ ...recherche, ville: ev.target.value })} autoComplete="address-level2" className={champ} /></label>
             <button type="submit" disabled={enCours || recherche.nom.trim().length < 2} className={btnSecondaire}>{enCours ? 'Recherche…' : 'Rechercher'}</button>
           </form>
           {etat && <p role="status" className="mt-2 text-sm text-amber-900">{etat}</p>}
@@ -689,7 +712,7 @@ function EtapeIdentite({ identite, fiche, profession, annuaire, chercher, onFich
         {champTexte('nomCabinet', 'Nom du cabinet', { auto: 'organization', plein: true })}
         {champTexte('adresse', 'Adresse du cabinet', { auto: 'street-address', plein: true })}
         {champTexte('codePostal', 'Code postal', { auto: 'postal-code', mode: 'numeric' })}
-        {champTexte('ville', 'Ville', { auto: 'address-level2', requis: true })}
+        {champTexte('ville', 'Ville du cabinet', { auto: 'address-level2', requis: true })}
         {champTexte('telephone', 'Téléphone du cabinet', { auto: 'tel', mode: 'tel', plein: true })}
       </div>
 
@@ -704,11 +727,14 @@ function EtapeIdentite({ identite, fiche, profession, annuaire, chercher, onFich
             </label>
           )}
           {dus.map((du) => (
-            <label key={du} className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-0.5 size-5" checked={identite.diplomesUniversitaires.includes(du)}
-                onChange={(ev) => onChange({ ...identite, diplomesUniversitaires: diplomesConfirmes(ev.target.checked ? [...identite.diplomesUniversitaires, du] : identite.diplomesUniversitaires.filter((x) => x !== du), dus) })} />
-              <span>{du} <span className="text-neutral-500">(inscrit dans l’annuaire)</span></span>
-            </label>
+            <div key={du} className="grid gap-2 rounded-xl bg-teal-50 p-3 text-sm text-teal-950">
+              <p>Diplôme universitaire inscrit dans l’annuaire : <strong>{du}</strong></p>
+              <label className="flex min-h-11 items-center gap-2 font-semibold">
+                <input type="checkbox" className="size-5 accent-teal-800" checked={identite.diplomesUniversitaires.includes(du)}
+                  onChange={(ev) => onChange({ ...identite, diplomesUniversitaires: diplomesConfirmes(ev.target.checked ? [...identite.diplomesUniversitaires, du] : identite.diplomesUniversitaires.filter((x) => x !== du), dus) })} />
+                Afficher ce DU sur mon site
+              </label>
+            </div>
           ))}
           {!dus.length && fiche && <p className="text-xs text-neutral-500">Aucun diplôme universitaire n’est inscrit dans l’annuaire pour votre fiche. Vous pourrez en ajouter plus tard.</p>}
         </fieldset>

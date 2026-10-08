@@ -5,13 +5,15 @@ import assert from 'node:assert/strict';
 import {
   avancementOnboarding, brouillonOnboarding, diplomesConfirmes, etapesOnboarding, grilleDuTour, identiteVide, normaliserChoixClient,
   phraseAvancement, propositionRetenue, propositionSuivante, syntheseChoixClients, themesDuMetier, type CandidatStyle,
+  numeroOnboarding, numeroCreer, etapeCreerDuNumero, pourcentageParcours, TOTAL_PARCOURS, insecable, apercuInsecable, descriptionClaire, issuDuParcoursClient,
 } from './onboarding';
+import { draftVide } from './draft';
 import { anglesDesDiplomes, professionDuCodeRpps, professionParcours, professionsProposees, PROFESSIONS_PARCOURS, type ProfessionParcours } from './onboarding-professions';
 import { pratiqueDe, PRATIQUES, type PratiqueProfession } from './pratiques';
 import { activitesProposees, basculerActivite } from './profils';
 
 // Métier FICTIF : le parcours ne dépend que des registres (onboarding-professions.ts, pratiques.ts)
-const LUTHIER: ProfessionParcours = { id: 'luthier-du-pied', libelle: 'Luthier du pied', codesRpps: ['99'], disponible: true, codesDiplomeEtat: ['DE99'], diplomeEtat: 'Diplôme fictif', angles: [{ motif: /musique/i, theme: 'violon' }] };
+const LUTHIER: ProfessionParcours = { id: 'luthier-du-pied', libelle: 'Luthier du pied', codesRpps: ['99'], disponible: true, codesDiplomeEtat: ['DE99'], diplomeEtat: 'Diplôme fictif', angles: [{ motif: /musique/i, theme: 'violon' }], themesActivites: ['scene'] };
 const PRATIQUE_LUTHIER: PratiqueProfession = {
   profession: 'luthier-du-pied',
   vocabulaire: { metier: 'luthier du pied', discipline: 'lutherie', generaliste: 'un atelier généraliste' },
@@ -133,4 +135,44 @@ test('préférences client : bornées, aucune valeur inconnue, synthèse pour l�
   assert.deepEqual(c.activites, ['basket']);
   const s = syntheseChoixClients([c, undefined, { ...c, avis: [{ id: 'p2', verdict: 'non', tour: 1 }], retenue: 'p2' }]);
   assert.deepEqual(s, [{ id: 'recette~r1', aime: 1, non: 0, retenue: 1 }, { id: 'p2', aime: 0, non: 1, retenue: 1 }]);
+});
+
+test('activités : seulement pour un thème qui s’y prête vraiment (Sport), pas pour Enfant ou Senior', () => {
+  const podo = pratiqueDe('podologue');
+  const t = professionParcours('podologue')!.themesActivites;
+  assert.ok(!etapesOnboarding(podo, { principaux: ['enfant', 'senior'], secondaires: [] }, t).includes('activites'));
+  assert.ok(etapesOnboarding(podo, { principaux: ['diabete'], secondaires: ['sport'] }, t).includes('activites'));
+});
+
+test('numérotation unique de /essai à la fin de /creer : jamais de saut, pourcentage qui ne recule pas', () => {
+  assert.equal(TOTAL_PARCOURS, 10);
+  assert.equal(numeroOnboarding('activites'), numeroOnboarding('sujets'), 'les activités sont un second écran des sujets');
+  const ordre = (['profession', 'identite', 'sujets', 'activites', 'couleurs', 'style', 'rendu'] as const).map(numeroOnboarding);
+  assert.deepEqual(ordre, [1, 2, 3, 3, 4, 5, 6]);
+  // /creer reprend à 7 (horaires), puis 8, 9, et la vérification = 10
+  assert.deepEqual([numeroCreer(5, false), numeroCreer(6, false), numeroCreer(7, false), numeroCreer(7, true)], [7, 8, 9, 10]);
+  for (let n = 2; n <= 9; n++) { const e = etapeCreerDuNumero(n); if (e) assert.ok(numeroCreer(e, false) === n || n === 6, `aller-retour ${n}`); }
+  let avant = -1;
+  for (let f = 0; f <= TOTAL_PARCOURS; f++) { const p = pourcentageParcours(f); assert.ok(p >= avant); avant = p; }
+  assert.equal(pourcentageParcours(TOTAL_PARCOURS - 1), 90);
+  assert.equal(pourcentageParcours(TOTAL_PARCOURS), 100);
+  assert.ok(issuDuParcoursClient({ choixClient: {} }) && !issuDuParcoursClient({}));
+});
+
+test('noms composés insécables à l’affichage seulement', () => {
+  assert.equal(insecable('Bernard-Fontaine'), 'Bernard\u2011Fontaine');
+  assert.equal(insecable('Saint-Rémy-de-Provence'), 'Saint\u2011Rémy\u2011de\u2011Provence');
+  assert.equal(insecable('9h - 12h'), '9h - 12h');
+  const d = draftVide();
+  d.praticiens[0].nom = 'Bernard-Fontaine';
+  d.cabinet.nom = 'Cabinet de Catherine Bernard-Fontaine';
+  const a = apercuInsecable(d);
+  assert.ok(!/-/.test(a.cabinet.nom) && !/-/.test(a.praticiens[0].nom));
+  assert.equal(d.praticiens[0].nom, 'Bernard-Fontaine', 'le brouillon enregistré garde le vrai trait d’union');
+});
+
+test('description en clair : aucun nom interne de gamme ni de registre', () => {
+  const t = descriptionClaire({ univers: 'elegant-sobre', style: 'ligne', gamme: 'ardoise' }, (h) => (h === '#1' ? 'bleu' : 'beige'), () => ['#1', '#2']);
+  assert.equal(t, 'Sobre, bleu et beige, dessins au trait');
+  assert.ok(!/ardoise|relev|cobalt/i.test(descriptionClaire({ univers: 'technique-precis', style: 'releve', gamme: 'cobalt' }, () => 'bleu', () => ['#1', '#1'])));
 });

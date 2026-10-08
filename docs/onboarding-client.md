@@ -24,6 +24,19 @@ En tête : « Votre site est prêt à N % » (`avancementOnboarding`, pondéré,
 
 Propositions : recettes **publiées** pour les profils de pratique les plus proches (`recettesPourPraticien`, badge « Conçu pour … », migration 0043 ; vide sans elle), puis recettes bien notées du même scénario, puis le générateur (`lotsPropositions`). Le choix est appliqué par le même chemin que `/creer` (`choisirModele`).
 
+## Corrections après le retour des personas (2026-10-09)
+
+- **Une seule numérotation** de `/essai` à la fin de `/creer` : 10 étapes (`PARCOURS_COMPLET`, onboarding.ts) ; 1 à 6 pour voir son site (profession, informations, sujets, couleurs, style, rendu), 7 à 10 dans `/creer` (horaires, soins, textes, accès). Les activités sont un second écran de l'étape 3 (le compteur ne saute plus). Le pourcentage ne recule jamais (numéro maximal atteint gardé). Un site issu du parcours client (`choixClient`) reprend `/creer` à « Vos horaires » ; profession, informations, sujets, couleurs et style y sont marqués faits (`ProgressionGlobale`).
+- `/essai` : « 3 minutes pour voir votre site », étapes réelles (1 à 6, 7 à 10, mise en ligne) ; le repère « 4 étapes » est retiré de `/essai` et `/essai/commencer`.
+- Recherche sans résultat : « Aucune fiche à ce nom dans cette ville : remplissez les champs ci-dessous. » ; libellés distincts « Nom à chercher » / « Ville à chercher » et « Ville du cabinet ».
+- « Les activités de vos patients » : seulement si un thème qui s'y prête vraiment est choisi (`themesActivites`, Sport pour la podologie).
+- « Choisissez votre style » : « Proposition A, B, C, D » et une description en clair (« Sobre, bleu et beige, dessins au trait ») ; aucun nom interne ; « Dernier tour » quand il n'y en aura plus ; boutons J'aime / Pas pour moi collés en bas de l'écran sur téléphone ; fond « Préparation de l'aperçu… » au lieu d'un cadre vide.
+- Couleurs choisies respectées (`gammesDesCouleurs`) ; une variante proche n'est ajoutée que s'il en manque, avec la phrase « Couleurs proches des vôtres, un peu ajustées pour rester lisibles. »
+- Noms et villes composés insécables dans les aperçus (`apercuInsecable`, trait d'union U+2011 à l'affichage seulement ; les sites publiés le font déjà au build, `insecablesHtml`, contrôlé par `controle:debordement`).
+- Diplôme d'État coché d'office (profession réglementée, décochable) ; DU de l'annuaire dans un encadré avec la case « Afficher ce DU sur mon site » (jamais cochée d'office).
+- Porte de l'e-mail : « (obligatoire pour voir le rendu) » ; conseils facultatifs.
+- Sujets : chaque sujet une seule fois à l'écran (`ChoixSujets compact`), « traités aussi » repliés ; « Passer cette étape » et « Continuer sans couleur » en boutons secondaires ; un seul « Laissez-nous proposer » ; RPPS saisi avec espaces normalisé.
+
 ## Piloté par la profession
 
 - `packages/core/src/onboarding-professions.ts` : disponibilité, codes TRE_G15, codes et intitulé du diplôme d'État, « angles » tirés d'un DU. Aucun texte de métier dans les écrans.

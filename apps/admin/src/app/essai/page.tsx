@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { universDuParcours } from '@plateforme/core';
-import { EnteteEssai, EtapesEssai, PiedEssai } from './Cadre';
+import { EnteteEssai, PiedEssai } from './Cadre';
 import { MARQUE } from '@/lib/marque';
 
 // Page d'essai gratuit (« Gratuit pendant 3 mois ») : page publique, rendue statique au build, mobile d'abord, sans
@@ -32,10 +32,11 @@ const POINTS = [
   'Une conseillère vérifie tout avec vous avant la mise en ligne',
 ];
 
+// Mêmes étapes et même numérotation que le parcours (onboarding.ts, PARCOURS_COMPLET : 6 étapes pour voir le site, 4 pour le finir)
 const ETAPES = [
-  { titre: 'Votre site, guidé', texte: 'Sans inscription préalable : vos sujets, le modèle, le cabinet, les horaires et les soins, une étape par écran, environ 10 minutes.' },
-  { titre: 'Le rendu', texte: 'Laissez votre e-mail pour voir votre site sur téléphone et sur ordinateur. Aucune carte bancaire.' },
-  { titre: 'Votre accès, votre lien privé', texte: 'Un mot de passe pour garder votre site et l’ouvrir sur un lien privé non indexé. La mise en ligne se fait avec votre conseillère.' },
+  { titre: 'Étapes 1 à 6 · votre site en 3 minutes', texte: 'Votre profession, vos informations (reprises de l’annuaire des professionnels de santé si vous le souhaitez, vous les vérifiez), vos sujets, vos couleurs et votre style. Votre e-mail est demandé pour voir le rendu.' },
+  { titre: 'Étapes 7 à 10 · à votre rythme', texte: 'Vos horaires, vos soins et vos textes, puis votre accès (un mot de passe) pour garder votre site sur un lien privé, non indexé.' },
+  { titre: 'Ensuite · la mise en ligne', texte: 'Votre conseillère vérifie vos informations avec vous avant toute mise en ligne sur votre nom de domaine.' },
 ];
 
 const FAQ: { q: string; r: React.ReactNode }[] = [
@@ -102,10 +103,9 @@ export default function PageEssai() {
             </div>
             <div id="creer" className="grid scroll-mt-4 gap-4 rounded-2xl border border-black/10 bg-white p-4 shadow-sm sm:p-6">
               <div className="grid gap-3">
-                <h2 className="text-xl font-bold">Votre site en 10 minutes</h2>
-                <EtapesEssai active={1} />
+                <h2 className="text-xl font-bold">3 minutes pour voir votre site</h2>
               </div>
-              <p className="text-neutral-700">Commencez tout de suite, sans inscription : vous répondez à quelques questions et votre site se construit sous vos yeux.</p>
+              <p className="text-neutral-700">Sans inscription : 6 questions courtes, et votre site se construit sous vos yeux. Les horaires, les soins et les textes viennent ensuite, à votre rythme.</p>
               <a href="/essai/commencer" data-commencer className={boutonSecondaire}>Créer mon site gratuit</a>
               <p className="text-xs text-neutral-600">Sans carte bancaire. Votre e-mail est demandé seulement pour voir le rendu ; un mot de passe, pour garder votre site. Déjà commencé sur cet appareil ? Le même bouton vous ramène où vous en étiez.</p>
             </div>

@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : parcours client corrigé après le test des personas Catherine et Julien : une seule numérotation sur 10 étapes de /essai à la fin de /creer (pourcentage jamais en recul, /creer reprend aux horaires sans redemander cabinet, sujets ni couleurs), /essai « 3 minutes pour voir votre site », « Choisissez votre style » en Propositions A-D décrites en clair dans les couleurs choisies, noms composés insécables, diplôme d'État coché, DU à confirmer, recontact signalé obligatoire
 - 2026-10-09 : Professions : textes des sites tirés du pack de la profession (rendu podologue identique), Frigo par profession (chips, « Aussi pour … » en lot, suggestions de partage), Sites / Essais filtrés par profession, démo psychomotricien provisoire.
 - 2026-10-09 : Kit démo par profession : sets de prompts « cabinet fictif » et « praticiens fictifs » (Cuisine › Images à générer), import en lot avec usage obligatoire (« Démo uniquement » / « Utilisable sur les sites »), kit démo posé dans tous les aperçus avec le bandeau « Photos d’exemple », jamais publié (normaliserDraft, contrôle bloquant de publication). Migration 0048 à exécuter.
 - 2026-10-09 : Psychomotricien : recherche réglementaire sourcée (docs/professions/psychomotricien.md) et pack de contenus en préparation, non publiable avant relecture (packages/contenus/professions/psychomotricien, contrôle npm run controle:packs)

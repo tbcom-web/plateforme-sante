@@ -45,6 +45,7 @@ import {
   type PublicationRecette,
   type VisuelsActivite,
 } from '@plateforme/core';
+import { etapeCreerDuNumero, issuDuParcoursClient, numeroCreer, PARCOURS_COMPLET, phraseAvancement, pourcentageParcours, TOTAL_PARCOURS, ETAPES_AVANT_RENDU } from '@plateforme/core/onboarding';
 import ChoixSujets from '@/components/ChoixSujets';
 import ApercuTheme, { type Appareil } from '@/components/ApercuTheme';
 import SaisieGardee from '@/components/SaisieGardee';
@@ -137,6 +138,8 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
   const [d, setD] = useState(initial);
   const [id, setId] = useState(siteId);
   const proposes = useMemo(() => universDuParcours(univers), [univers]);
+  // Site commencé dans le parcours client : numérotation sur 10 (sujets, couleurs, site et cabinet déjà faits)
+  const globale = issuDuParcoursClient(initial) && !client;
   const [etape, setEtape] = useState<number>(() => etapeInitiale ?? (siteId ? etapeDeReprise(initial) : 1));
   const [verif, setVerif] = useState(verifInitiale && Boolean(siteId));
   const [etat, setEtat] = useState<Etat>(messageInitial ? { type: 'erreur', message: messageInitial } : { type: 'repos' });
@@ -349,7 +352,7 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
         </p>
       )}
 
-      {essai && <BandeauEssai essai={essai} etape={etape} verif={verif} sansVille={sansVille} onVoirRendu={essai.anonyme && renduPossible && !verif ? voirRendu : null} />}
+      {essai && <BandeauEssai essai={essai} etape={etape} verif={verif} globale={globale} sansVille={sansVille} onVoirRendu={essai.anonyme && renduPossible && !verif ? voirRendu : null} />}
 
       {/* Reprise après abandon : rendu déjà vu, accès pas encore créé → l'action attendue en tête */}
       {essai?.anonyme && contact.rendu && !verif && (
@@ -361,7 +364,9 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
         </div>
       )}
 
-      <Progression etape={etape} pret={pret} onAller={aller} etat={etat} />
+      {globale
+        ? <ProgressionGlobale etape={etape} verif={verif} onAller={aller} etat={etat} />
+        : <Progression etape={etape} pret={pret} onAller={aller} etat={etat} />}
 
       <section aria-labelledby="titre-etape" className="grid grid-cols-[minmax(0,1fr)] gap-4">
         <div className="grid gap-2">
@@ -560,8 +565,13 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
 }
 
 /** Bandeau de l'essai gratuit : ton encourageant, jours restants, rappel « privé tant que vous ne demandez pas » */
-function BandeauEssai({ essai, etape, verif, sansVille, onVoirRendu }: { essai: NonNullable<Props['essai']>; etape: number; verif: boolean; sansVille: boolean; onVoirRendu: (() => void) | null }) {
-  const encouragement = encouragementParcours(etape, verif, essai.prenom);
+function BandeauEssai({ essai, etape, verif, globale = false, sansVille, onVoirRendu }: { essai: NonNullable<Props['essai']>; etape: number; verif: boolean; globale?: boolean; sansVille: boolean; onVoirRendu: (() => void) | null }) {
+  // Site commencé dans le parcours client : même numérotation et même pourcentage que /essai/votre-site (jamais en recul)
+  const n = numeroCreer(etape, verif);
+  const reste = TOTAL_PARCOURS - n;
+  const encouragement = globale
+    ? `${phraseAvancement(pourcentageParcours(Math.max(n, ETAPES_AVANT_RENDU + 1) - 1))} : ${reste ? `encore ${reste} étape${reste > 1 ? 's' : ''} après celle-ci.` : 'dernière étape.'}`
+    : encouragementParcours(etape, verif, essai.prenom);
   return (
     <div className="grid gap-1 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-950 sm:flex sm:items-center sm:justify-between sm:gap-4">
       <p className="font-medium">{encouragement}</p>
@@ -578,6 +588,45 @@ function BandeauEssai({ essai, etape, verif, sansVille, onVoirRendu }: { essai: 
           {sansVille && <span id="rendu-sans-ville" className="text-xs text-amber-900">Ajoutez votre ville pour un rendu fidèle</span>}
         </span>
       )}
+    </div>
+  );
+}
+
+/**
+ * Site commencé dans le parcours client (/essai/votre-site) : numérotation UNIQUE sur 10 (onboarding.ts, PARCOURS_COMPLET).
+ * Profession, informations, sujets, couleurs, style et rendu sont marqués faits ; ils restent modifiables.
+ */
+function ProgressionGlobale({ etape, verif, onAller, etat }: { etape: number; verif: boolean; onAller: (n: number) => void; etat: Etat }) {
+  const libelle = etat.type === 'enCours' ? 'Enregistrement…' : etat.type === 'ok' ? 'Brouillon enregistré' : etat.message ?? '';
+  const n = numeroCreer(etape, verif);
+  const courant = Math.max(n, n <= ETAPES_AVANT_RENDU ? n : ETAPES_AVANT_RENDU + 1);
+  return (
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
+        <p className="font-semibold text-teal-900">Étape {courant} sur {TOTAL_PARCOURS}</p>
+        <p role="status" className={etat.type === 'erreur' || etat.type === 'conflit' ? 'text-red-700' : 'text-neutral-500'}>{libelle}</p>
+      </div>
+      <ol className="grid grid-cols-10 gap-1" aria-label="Étapes de votre site">
+        {PARCOURS_COMPLET.map((titre, i) => {
+          const numero = i + 1;
+          const cible = etapeCreerDuNumero(numero);
+          const fait = numero <= ETAPES_AVANT_RENDU || numero < courant;
+          return (
+            <li key={titre}>
+              <button
+                type="button"
+                disabled={cible === null && numero !== TOTAL_PARCOURS}
+                onClick={() => (cible !== null ? onAller(cible) : undefined)}
+                aria-current={numero === courant ? 'step' : undefined}
+                aria-label={`Étape ${numero} : ${titre}${fait ? ' (faite)' : ''}`}
+                className="group grid w-full gap-1.5 text-left focus-visible:outline-none disabled:cursor-default"
+              >
+                <span className={`h-2 rounded-full ${fait || numero === courant ? 'bg-teal-700' : 'bg-neutral-200'} group-focus-visible:ring-2 group-focus-visible:ring-teal-700 group-focus-visible:ring-offset-2`} />
+              </button>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

@@ -37,9 +37,14 @@ type Props = {
    * voit grisés « bientôt disponible », ou sélectionnables si le drapeau THEMES_ACTIVES les active.
    */
   masquerIndisponibles?: boolean;
+  /**
+   * Parcours client (/essai/votre-site) : chaque sujet n'apparaît qu'une fois à l'écran (les principaux choisis seulement dans la
+   * liste ordonnée ; les sujets « traités aussi » repliés tant qu'on ne les ouvre pas)
+   */
+  compact?: boolean;
 };
 
-export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, themesActives = [], conseils = false, masquerIndisponibles = false }: Props) {
+export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, themesActives = [], conseils = false, masquerIndisponibles = false, compact = false }: Props) {
   const proposes = themesProposes(themesActives).filter((t) => t.disponible || !masquerIndisponibles);
   const plein = priorites.principaux.length >= PRINCIPAUX_MAX;
   // Aperçu : soins cochés, sinon ceux des sujets (que le praticien confirmera à l'étape « Vos soins »)
@@ -86,7 +91,7 @@ export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, t
           </ol>
         )}
         <ul className="flex flex-wrap gap-2" aria-label="Sujets proposés">
-          {proposes.map(({ theme: t, disponible }) => {
+          {proposes.filter(({ theme: t }) => !compact || !priorites.principaux.includes(t.id)).map(({ theme: t, disponible }) => {
             const rang = priorites.principaux.indexOf(t.id);
             const actif = rang >= 0;
             return (
@@ -110,6 +115,7 @@ export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, t
         {plein && <p className="text-xs text-neutral-600">Trois sujets choisis : retirez-en un pour en changer.</p>}
       </section>
 
+      <Repli compact={compact} ouvert={priorites.secondaires.length > 0} titre={`Ajouter des sujets que vous traitez aussi (facultatif)`}>
       <section className="grid gap-3" aria-labelledby="titre-secondaires">
         <div>
           <h2 id="titre-secondaires" className="text-lg font-semibold">Jusqu’à {SECONDAIRES_MAX} sujets que vous traitez aussi</h2>
@@ -131,6 +137,7 @@ export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, t
           })}
         </ul>
       </section>
+      </Repli>
 
       <section className="grid gap-2 rounded-xl border border-black/10 bg-neutral-50 p-4" aria-labelledby="titre-menu" aria-live="polite">
         <h2 id="titre-menu" className="font-semibold">Votre menu</h2>
@@ -140,5 +147,16 @@ export default function ChoixSujets({ priorites, onChange, soins, soinsConnus, t
         {sansSoin.length > 0 && <p className="text-sm text-amber-800">Sans soin coché, ces sujets ne s’affichent pas : {sansSoin.map((id) => themeParId(id)?.libelle).join(', ')}.</p>}
       </section>
     </div>
+  );
+}
+
+/** Section repliée en mode compact (parcours client), affichée telle quelle sinon */
+function Repli({ compact, ouvert, titre, children }: { compact: boolean; ouvert: boolean; titre: string; children: React.ReactNode }) {
+  if (!compact) return <>{children}</>;
+  return (
+    <details open={ouvert} className="rounded-xl border border-black/10 bg-white p-4 [&[open]>summary]:mb-3">
+      <summary className={`min-h-11 cursor-pointer content-center font-semibold ${focus}`}>{titre}</summary>
+      {children}
+    </details>
   );
 }

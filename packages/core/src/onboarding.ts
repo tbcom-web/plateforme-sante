@@ -22,9 +22,11 @@ export type EtapeOnboarding = 'profession' | 'identite' | 'sujets' | 'activites'
  * Étapes du parcours : l'étape « activités » n'existe que si un thème choisi s'y prête (pratique du métier, profils.ts :
  * questionActivites) ; aucun métier codé en dur.
  */
-export function etapesOnboarding(pratique: PratiqueProfession | undefined, priorites: Priorites | null | undefined): EtapeOnboarding[] {
-  const themes = [...(priorites?.principaux ?? []), ...(priorites?.secondaires ?? [])];
-  const sport = Boolean(pratique && questionActivites(pratique, themes));
+export function etapesOnboarding(pratique: PratiqueProfession | undefined, priorites: Priorites | null | undefined, themesActivites?: readonly string[]): EtapeOnboarding[] {
+  const tous = [...(priorites?.principaux ?? []), ...(priorites?.secondaires ?? [])];
+  // Seulement pour les thèmes qui s'y prêtent vraiment (ex. Sport : onboarding-professions.ts, themesActivites)
+  const themes = themesActivites ? tous.filter((t) => themesActivites.includes(t)) : tous;
+  const sport = Boolean(pratique && themes.length && questionActivites(pratique, themes));
   return ['profession', 'identite', 'sujets', ...(sport ? ['activites' as const] : []), 'couleurs', 'style', 'rendu'];
 }
 
@@ -270,4 +272,72 @@ export function syntheseChoixClients(choix: readonly (ChoixClient | undefined)[]
     if (c.retenue) ligneDe(c.retenue).retenue += 1;
   }
   return [...m.values()].sort((a, b) => b.retenue - a.retenue || b.aime - a.aime || a.non - b.non || (a.id < b.id ? -1 : 1));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Numérotation UNIQUE de /essai jusqu'à la fin de /creer (retour des personas du 2026-10-09)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Le parcours complet tel que le praticien le voit : 6 étapes pour voir son site (/essai/votre-site), puis 4 pour le finir
+ * (/creer : horaires, soins, textes, accès). Les activités sont un second écran de l'étape « Vos sujets » : le compteur ne
+ * saute jamais. /creer ne redemande pas sujets, couleurs, site ni cabinet (déjà faits).
+ */
+export const PARCOURS_COMPLET = [
+  'Votre profession', 'Vos informations', 'Vos sujets', 'Vos couleurs', 'Votre style', 'Votre site',
+  'Vos horaires', 'Vos soins', 'Vos textes', 'Votre accès',
+] as const;
+export const TOTAL_PARCOURS = PARCOURS_COMPLET.length;
+/** Étapes faites avant de voir son site */
+export const ETAPES_AVANT_RENDU = 6;
+
+const NUMERO_ONBOARDING: Record<EtapeOnboarding, number> = { profession: 1, identite: 2, sujets: 3, activites: 3, couleurs: 4, style: 5, rendu: 6 };
+export const numeroOnboarding = (e: EtapeOnboarding) => NUMERO_ONBOARDING[e];
+
+/** Étape de /creer (1 à 7, vérification) → numéro dans le parcours complet (sujets 3, couleurs 4, site 5, cabinet 2…) */
+export function numeroCreer(etape: number, verification: boolean): number {
+  if (verification) return 10;
+  return ({ 1: 3, 2: 4, 3: 5, 4: 2, 5: 7, 6: 8, 7: 9 } as Record<number, number>)[etape] ?? 7;
+}
+/** Numéro du parcours complet → étape de /creer (null : étape de /essai/votre-site sans équivalent, ex. la profession) */
+export function etapeCreerDuNumero(n: number): number | null {
+  return ({ 2: 4, 3: 1, 4: 2, 5: 3, 6: 3, 7: 5, 8: 6, 9: 7 } as Record<number, number>)[n] ?? null;
+}
+
+/** Pourcentage du parcours complet (arrondi à 5) : étapes FAITES / total ; jamais 100 avant la fin */
+export const pourcentageParcours = (faites: number) => Math.min(faites >= TOTAL_PARCOURS ? 100 : 95, Math.round(((100 * Math.max(0, faites)) / TOTAL_PARCOURS) / 5) * 5);
+
+/** Le site vient du parcours client (choix enregistrés) : /creer reprend à « Vos horaires » et numérote sur 10 */
+export const issuDuParcoursClient = (d: { choixClient?: unknown }) => Boolean(d.choixClient);
+
+/** Noms propres et villes composés insécables À L'AFFICHAGE (trait d'union U+2011) ; le texte enregistré garde le vrai trait d'union */
+export const insecable = (s: string) => s.replace(/(?<=[\p{L}\p{M}’'])-(?=[\p{L}\p{M}’'])/gu, '\u2011');
+
+/** Brouillon pour un APERÇU : noms du praticien, du cabinet et villes insécables (jamais enregistré) */
+export function apercuInsecable(d: SiteDraft): SiteDraft {
+  return {
+    ...d,
+    cabinet: { ...d.cabinet, nom: insecable(d.cabinet.nom), ville: insecable(d.cabinet.ville) },
+    lieux: d.lieux.map((l) => ({ ...l, ville: insecable(l.ville), nom: insecable(l.nom) })),
+    praticiens: d.praticiens.map((x) => ({ ...x, prenom: insecable(x.prenom), nom: insecable(x.nom) })),
+  };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Description en clair d'une proposition (« Choisissez votre style ») : aucun nom interne (gamme, registre)
+// ---------------------------------------------------------------------------------------------------------------------
+
+export const LETTRES_PROPOSITIONS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+
+const TONS: Record<string, string> = { 'clair-pratique': 'Clair', 'simple-proche': 'Chaleureux', 'elegant-sobre': 'Sobre', 'technique-precis': 'Moderne' };
+const VISUELS: Record<string, string> = { releve: 'schémas du pied', pedagogique: 'illustrations douces', ligne: 'dessins au trait', photos: 'photos' };
+
+/**
+ * « Sobre, bleu et beige, dessins au trait » : ton de la structure, deux couleurs nommées simplement (la plus proche des
+ * couleurs que le praticien connaît, COULEURS_PREFEREES), style d'image en mots courants.
+ */
+export function descriptionClaire(p: { univers: string; style: string; gamme: string }, nommer: (hex: string) => string, couleurs: (gamme: string) => string[]): string {
+  const noms = [...new Set(couleurs(p.gamme).map(nommer).filter(Boolean))].slice(0, 2);
+  const c = noms.length === 2 ? `${noms[0]} et ${noms[1]}` : noms[0] ?? '';
+  return [TONS[p.univers] ?? 'Sobre', c, VISUELS[p.style] ?? ''].filter(Boolean).join(', ');
 }
