@@ -75,3 +75,38 @@ Frigo, tableau de bord, Sites. Dégustation et Profils lisent le même cookie. A
 - Gestes : A / → accepter, R / ← refuser, glisser au doigt (droite = accepter), Z annule la dernière décision (30 gardées).
 - Frigo = inventaire unitaire (bibliothèque + éléments du studio) moins arrivages en attente ou refusés, retirés, à retravailler,
   tranchés 1 ★.
+
+## Lots, filtres et contenus (2026-10-09)
+
+Demande de Paul : « dans les Arrivages on devrait aussi avoir les CONTENUS créés, les nouvelles icônes associées, etc. »
+
+- **Couverture vérifiée** : les 250 nouveautés du registre (`inventaire-connu.json`, 16 lots du 08/10 : directions de pictos
+  A/B/C/D, 8 pictos et 4 illustrations des manques, animations `em-*` et `il-*`, premiers écrans, portraits, visuel du premier
+  écran, traitements photo, polices, typographies, menus, détails, surfaces, transitions, sections) sont toutes connues de
+  l'inventaire et arrivent dans la file. Seul manque corrigé : la file s'arrêtait aux 150 plus récentes ; elle les contient
+  maintenant toutes (aperçus chargés par paquets de 6 : `arrivages/visuels.ts`).
+- **Lots** (`lotsArrivages`, même libellé que la tuile Nouveautés : « Style d’icônes A/B/C/D · 50 · 08/10 ») : « Trier ce lot »
+  (`/admin/arrivages?lot=<famille>@<date>`), « Tout accepter » / « Tout refuser » avec confirmation, annulable (Z).
+- **Filtres de type** : Visuels (photos, illustrations, palettes) · Icônes · Animations · Mises en page (mises en page, polices,
+  éléments) · Contenus. Source « Contenus (textes des packs) ». Filtre par profession : sélecteur global.
+
+### Contenus des packs de professions (`contenus-revue.ts`, `lib/packs-contenus.ts`)
+
+- Une carte par page, fiche (avec sa FAQ), question de la FAQ ; mentions, textes de prise en charge et questions d'onboarding
+  groupés (pack Psychomotricien : 29 cartes). Texte rendu dans un cadre de téléphone (champs du cabinet d'exemple surlignés,
+  sections conditionnelles signalées, appels de sources numérotés), sources réglementaires en marge (« à revérifier » si non
+  relue), erreurs et avertissements du contrôle des packs (`controlerPack<Id>`, comme `npm run controle:packs`).
+- Gestes : **Accepter** (bon pour publication) → revue `valide` ; **À retravailler** (touche T, commentaire obligatoire) →
+  `a_retravailler` ; **Refuser** → `retire` ; **Annuler** → `a_revoir`. Clé `contenu:<profession>:<page|fiche|faq|mentions|
+  prise-en-charge|onboarding>:<id>` dans `illustrations_revues` / `illustrations_statuts` avec l'**empreinte** du texte
+  (FNV-1a, 8 hexadécimaux) : toute modification du texte remet la carte en arrivage (« Modifié depuis votre revue »).
+  **Aucune migration.**
+- **Règle de publication** : un pack n'est publiable (profession disponible pour le parcours client) que lorsque tous ses
+  contenus obligatoires sont acceptés pour leur texte actuel, sans erreur du contrôle et hors statut « en préparation »
+  (`progressionPack`, `packPubliable(profession)` de `lib/packs-contenus.ts`, à lire par le parcours /essai). Progression en
+  tête des Arrivages : « Pack Psychomotricien : 5/29 contenus acceptés ».
+- **Export** (`scripts/exporter-retours.mjs`) : section « Contenus à retravailler (Arrivages) » de `retours/SYNTHESE.md` (clé,
+  date, empreinte, commentaire de Paul) et `retours/contenus-revues.json` ; ces clés sont exclues de la synthèse des assets.
+- Ajouter le pack d'une autre profession : une ligne dans `PACKS` (`apps/admin/src/lib/packs-contenus.ts`).
+- Podologie : pas encore de pack de contenus (ses fiches vivent dans `soins_catalogue`, modifiées dans /admin/catalogue) ;
+  elles entreront dans les Arrivages quand elles seront livrées sous forme de pack.

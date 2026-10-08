@@ -77,6 +77,16 @@ try {
   rmSync(tmpHashtags, { recursive: true, force: true });
 }
 
+// Contenus des packs à retravailler (Arrivages, contenus-revue.ts) : fonctions pures, assemblées à part
+const tmpContenus = mkdtempSync(join(tmpdir(), 'exporter-contenus-'));
+let coreContenus;
+try {
+  await build({ entryPoints: [join(racine, 'packages', 'core', 'src', 'contenus-revue.ts')], bundle: true, platform: 'node', format: 'esm', outfile: join(tmpContenus, 'contenus.mjs'), logLevel: 'warning' });
+  coreContenus = await import(pathToFileURL(join(tmpContenus, 'contenus.mjs')).href);
+} finally {
+  rmSync(tmpContenus, { recursive: true, force: true });
+}
+
 const jour = (d) => (typeof d === 'string' ? d.slice(0, 10) : null);
 const texte = (t) => (typeof t === 'string' && t.trim() ? t.trim() : null);
 
@@ -138,7 +148,8 @@ const derniers = new Map();
 for (const r of journal) if (r.commentaire) derniers.set(r.cle, r);
 const titres = core.titresAssets();
 const sAssets = core.syntheseAssets(notesAssets.map((n) => ({ ...n, le: n.jour })), {
-  statuts: courants.map((s) => ({ cle: s.cle, statut: s.statut, commentaire: derniers.get(s.cle)?.commentaire ?? null, le: s.jour })),
+  // Revues des contenus des packs (clés contenu:…) : section dédiée plus bas, pas dans la synthèse des assets
+  statuts: courants.filter((s) => !coreContenus.estCleContenu(s.cle)).map((s) => ({ cle: s.cle, statut: s.statut, commentaire: derniers.get(s.cle)?.commentaire ?? null, le: s.jour })),
   titres,
 });
 const sAtelier = core.syntheseAtelier(notesAtelier.map((n) => ({ ...n, le: n.jour })));
@@ -193,8 +204,12 @@ const md = [
   '',
   zonesMd,
   '',
+  // Commentaires « À retravailler » des textes des packs de professions (Arrivages) : Claude corrige le texte du pack
+  coreContenus.markdownContenusARetravailler(journal),
+  '',
 ].join('\n');
 ecrire('SYNTHESE.md', md);
+ecrire('contenus-revues.json', journal.filter((r) => coreContenus.estCleContenu(r.cle)));
 
 // Juge du goût de Paul (juge.ts) : prédictions de retours/predictions.json comparées aux notes sur le même élément (clé +
 // empreinte ; photos et structures : adresse de l'image) → section automatique de CALIBRATION.md, entre les marqueurs

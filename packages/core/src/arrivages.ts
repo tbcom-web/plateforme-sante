@@ -14,14 +14,16 @@
 // Pur.
 
 import { baseDeCle } from './bases-illustrations';
+import { familleNouveaute, libelleLot } from './nouveautes';
 
 export type EtatArrivage = 'en_attente' | 'accepte' | 'refuse';
 
-export type SourceArrivage = 'photos-libres' | 'images-generees' | 'nouveautes';
+export type SourceArrivage = 'photos-libres' | 'images-generees' | 'nouveautes' | 'contenus';
 export const SOURCES_ARRIVAGES: readonly { id: SourceArrivage; libelle: string }[] = [
   { id: 'photos-libres', libelle: 'Photos à découvrir (Pexels, Pixabay)' },
   { id: 'images-generees', libelle: 'Images générées importées' },
   { id: 'nouveautes', libelle: 'Nouveautés poussées par Claude' },
+  { id: 'contenus', libelle: 'Contenus (textes des packs)' },
 ];
 
 /** Types d'ingrédients (Arrivages et Frigo) */
@@ -36,6 +38,42 @@ export const TYPES_INGREDIENTS: readonly { id: TypeIngredient; libelle: string; 
   { id: 'mise-en-page', libelle: 'Mise en page', pluriel: 'Mises en page' },
   { id: 'element', libelle: 'Élément', pluriel: 'Éléments' },
 ];
+/** Type d'un arrivage : ingrédient du frigo, ou texte d'un pack de contenus (contenus-revue.ts) */
+export type TypeArrivage = TypeIngredient | 'contenu';
+
+/** Filtres de type des Arrivages (demande de Paul du 2026-10-09) : Visuels · Icônes · Animations · Mises en page · Contenus */
+export const FILTRES_TYPES_ARRIVAGES: readonly { id: string; libelle: string; types: readonly TypeArrivage[] }[] = [
+  { id: 'visuels', libelle: 'Visuels', types: ['photo', 'illustration', 'palette'] },
+  { id: 'icones', libelle: 'Icônes', types: ['icone'] },
+  { id: 'animations', libelle: 'Animations', types: ['animation'] },
+  { id: 'mises-en-page', libelle: 'Mises en page', types: ['mise-en-page', 'police', 'element'] },
+  { id: 'contenus', libelle: 'Contenus', types: ['contenu'] },
+];
+/** Filtre de type d'un arrivage (chaque type est dans exactement un filtre) */
+export const filtreTypeArrivage = (t: TypeArrivage) => FILTRES_TYPES_ARRIVAGES.find((f) => f.types.includes(t))!.id;
+
+export type LotArrivages = { id: string; libelle: string; date: string; cles: string[] };
+
+/**
+ * Lots des nouveautés en attente (même découpage et même libellé que la tuile « Nouveautés à noter » : famille × date,
+ * « Style d'icônes A/B/C/D · 46 · 08/10 ») ; plus récents d'abord, puis par libellé.
+ */
+export function lotsArrivages(enAttente: readonly { cle: string; date: string }[]): (LotArrivages & { titre: string })[] {
+  const m = new Map<string, LotArrivages>();
+  for (const { cle, date } of enAttente) {
+    const f = familleNouveaute(cle);
+    const id = `${f.id}@${date}`;
+    const l = m.get(id) ?? { id, libelle: f.libelle, date, cles: [] };
+    l.cles.push(cle);
+    m.set(id, l);
+  }
+  return [...m.values()].map((l) => ({ ...l, titre: libelleLot(l) }))
+    .sort((a, b) => (a.date === b.date ? a.libelle.localeCompare(b.libelle, 'fr') : a.date < b.date ? 1 : -1));
+}
+
+/** Lot d'une nouveauté */
+export const lotDeCle = (cle: string, date: string) => `${familleNouveaute(cle).id}@${date}`;
+
 export const estTypeIngredient = (x: unknown): x is TypeIngredient => TYPES_INGREDIENTS.some((t) => t.id === x);
 
 /** Type d'ingrédient d'une clé d'inventaire */

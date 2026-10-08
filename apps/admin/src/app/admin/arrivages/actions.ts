@@ -5,6 +5,8 @@ import {
   cleCandidatePhoto, clePhoto, clesUnitairesInventaire, estSourcePhotoLibre, estSujetDeVisuel, hashtagsValides, type SourcePhotoLibre,
 } from '@plateforme/core';
 import { statutAnnulation } from '@plateforme/core/arrivages';
+import { estCleContenu, STATUT_GESTE_CONTENU } from '@plateforme/core';
+import { contenuActuel } from '@/lib/packs-contenus';
 import { exigerAdmin } from '@/lib/admin';
 import { createClient, getUser } from '@/lib/supabase/server';
 import { changerStatutPhotoLibre, importerPhotoLibre } from '../photos/actions';
@@ -29,13 +31,17 @@ export type Choix = {
 export type Arrivage =
   | { kind: 'nouveaute'; cle: string; precedent: string | null }
   | { kind: 'photo'; id: string }
-  | { kind: 'candidate'; source: string; idSource: string; requete: string };
+  | { kind: 'candidate'; source: string; idSource: string; requete: string }
+  /** Texte d'un pack de contenus (contenus-revue.ts) : empreinte du texte affiché */
+  | { kind: 'contenu'; cle: string; empreinte: string; precedent: string | null };
 
 /** Ce qu'il faut pour annuler la décision (renvoyé au navigateur, rejoué par annulerArrivage) */
 export type Annulation =
   | { kind: 'nouveaute'; cle: string; precedent: string | null }
   | { kind: 'photo'; id: string }
-  | { kind: 'rejet-candidate' };
+  | { kind: 'rejet-candidate' }
+  | { kind: 'contenu'; cle: string; empreinte: string }
+  | { kind: 'lot'; elements: { cle: string; precedent: string | null }[] };
 
 export type Resultat = { ok: boolean; message: string; annulation?: Annulation; migrationManquante?: boolean };
 
@@ -66,10 +72,19 @@ async function enregistrerClassement(cle: string, c: Choix): Promise<string> {
 }
 
 /** Revue d'une nouveauté du code (journal 0021 ; le statut courant suit par déclencheur) */
-async function revue(cle: string, statut: string, commentaire: string | null) {
+async function revue(cle: string, statut: string, commentaire: string | null, empreinte: string | null = null) {
   const supabase = await createClient();
   const auteur = (await getUser())?.id ?? null;
-  return supabase.from('illustrations_revues').insert({ cle, statut, commentaire, auteur });
+  return supabase.from('illustrations_revues').insert({ cle, statut, commentaire, auteur, ...(empreinte ? { empreinte } : {}) });
+}
+
+/** Contenu d'un pack : la décision porte sur le texte affiché, qui doit être encore le texte actuel */
+async function contenuVerifie(a: { cle: string; empreinte: string }): Promise<string | null> {
+  if (!estCleContenu(a.cle) || !/^[0-9a-f]{8}$/.test(String(a.empreinte))) return 'Contenu inconnu.';
+  const c = await contenuActuel(a.cle);
+  if (!c) return 'Contenu inconnu.';
+  if (c.empreinte !== a.empreinte) return 'Ce texte a changé depuis l’affichage : rechargez la page.';
+  return null;
 }
 
 const noteValide = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 5;
@@ -89,6 +104,14 @@ export async function accepterArrivage(a: Arrivage, c: Choix): Promise<Resultat>
     if (error && !noteOk) return { ok: false, message: MIGRATION_ACCEPTE, migrationManquante: true };
     revalider();
     return { ok: true, message: `Accepté : au frigo${noteOk ? `, ${c.note} ★` : ''}.${manque}`, annulation: { kind: 'nouveaute', cle: a.cle, precedent: a.precedent } };
+  }
+  if (a?.kind === 'contenu') {
+    const e = await contenuVerifie(a);
+    if (e) return { ok: false, message: e };
+    const { error } = await revue(a.cle, STATUT_GESTE_CONTENU.accepter, 'Accepté : bon pour publication (Arrivages)', a.empreinte);
+    if (error) return { ok: false, message: 'Enregistrement impossible (migration 0021 ?).' };
+    revalider();
+    return { ok: true, message: 'Accepté : bon pour publication.', annulation: { kind: 'contenu', cle: a.cle, empreinte: a.empreinte } };
   }
   if (a?.kind === 'photo') {
     if (!UUID.test(a.id)) return { ok: false, message: 'Photo inconnue.' };
@@ -134,6 +157,14 @@ export async function accepterArrivage(a: Arrivage, c: Choix): Promise<Resultat>
 
 export async function refuserArrivage(a: Arrivage): Promise<Resultat> {
   await exigerAdmin();
+  if (a?.kind === 'contenu') {
+    const e = await contenuVerifie(a);
+    if (e) return { ok: false, message: e };
+    const { error } = await revue(a.cle, STATUT_GESTE_CONTENU.refuser, 'Refusé (Arrivages)', a.empreinte);
+    if (error) return { ok: false, message: 'Enregistrement impossible (migration 0021 ?).' };
+    revalider();
+    return { ok: true, message: 'Refusé : jamais publié.', annulation: { kind: 'contenu', cle: a.cle, empreinte: a.empreinte } };
+  }
   if (a?.kind === 'nouveaute') {
     if (!estNouveauteConnue(a.cle)) return { ok: false, message: 'Élément inconnu.' };
     const { error } = await revue(a.cle, 'retire', 'Refusé (Arrivages)');
@@ -171,6 +202,51 @@ export async function annulerArrivage(x: Annulation): Promise<Resultat> {
     revalider();
     return { ok: true, message: 'Décision annulée : la photo attend de nouveau (elle reste hébergée si elle a été importée).' };
   }
+  if (x?.kind === 'contenu') {
+    if (!estCleContenu(x.cle) || !/^[0-9a-f]{8}$/.test(String(x.empreinte))) return { ok: false, message: 'Contenu inconnu.' };
+    const { error } = await revue(x.cle, 'a_revoir', 'Décision annulée (Arrivages)', x.empreinte);
+    if (error) return { ok: false, message: 'Annulation impossible.' };
+    revalider();
+    return { ok: true, message: 'Décision annulée : de nouveau dans les arrivages.' };
+  }
+  if (x?.kind === 'lot') {
+    const l = (Array.isArray(x.elements) ? x.elements : []).filter((e) => estNouveauteConnue(e?.cle)).slice(0, 500);
+    if (!l.length) return { ok: false, message: 'Rien à annuler.' };
+    const supabase = await createClient();
+    const auteur = (await getUser())?.id ?? null;
+    const { error } = await supabase.from('illustrations_revues').insert(l.map((e) => ({ cle: e.cle, statut: statutAnnulation(e.precedent), commentaire: 'Décision du lot annulée (Arrivages)', auteur })));
+    if (error) return { ok: false, message: 'Annulation impossible.' };
+    revalider();
+    return { ok: true, message: `Décision du lot annulée : ${l.length} élément${l.length > 1 ? 's' : ''} de nouveau dans les arrivages.` };
+  }
   if (x?.kind === 'rejet-candidate') return { ok: true, message: 'Remise dans la file de cette séance (le refus reste noté chez la source : « Accepter » le remplace).' };
   return { ok: false, message: 'Rien à annuler.' };
+}
+
+/** « À retravailler » d'un contenu : commentaire obligatoire, exporté vers retours/ (SYNTHESE.md, contenus à retravailler) */
+export async function retravaillerContenu(a: { cle: string; empreinte: string; precedent: string | null }, commentaire: string): Promise<Resultat> {
+  await exigerAdmin();
+  const e = await contenuVerifie(a);
+  if (e) return { ok: false, message: e };
+  const texte = String(commentaire ?? '').trim().slice(0, 4000);
+  if (texte.length < 3) return { ok: false, message: 'Dites ce qu’il faut retravailler (le commentaire part à Claude).' };
+  const { error } = await revue(a.cle, STATUT_GESTE_CONTENU.retravailler, texte, a.empreinte);
+  if (error) return { ok: false, message: 'Enregistrement impossible (migration 0021 ?).' };
+  revalider();
+  return { ok: true, message: 'À retravailler : commentaire envoyé à Claude avec le prochain export.', annulation: { kind: 'contenu', cle: a.cle, empreinte: a.empreinte } };
+}
+
+/** « Tout accepter » / « Tout refuser » d'un lot de nouveautés (confirmé dans le navigateur) ; 500 éléments au plus */
+export async function deciderLot(elements: { cle: string; precedent: string | null }[], geste: 'accepter' | 'refuser'): Promise<Resultat> {
+  await exigerAdmin();
+  if (geste !== 'accepter' && geste !== 'refuser') return { ok: false, message: 'Geste inconnu.' };
+  const l = (Array.isArray(elements) ? elements : []).filter((e) => estNouveauteConnue(e?.cle)).slice(0, 500).map((e) => ({ cle: e.cle, precedent: typeof e.precedent === 'string' ? e.precedent : null }));
+  if (!l.length) return { ok: false, message: 'Lot vide.' };
+  const supabase = await createClient();
+  const auteur = (await getUser())?.id ?? null;
+  const statut = geste === 'accepter' ? 'accepte' : 'retire';
+  const { error } = await supabase.from('illustrations_revues').insert(l.map((e) => ({ cle: e.cle, statut, commentaire: `${geste === 'accepter' ? 'Accepté' : 'Refusé'} avec son lot (Arrivages)`, auteur })));
+  if (error) return { ok: false, message: geste === 'accepter' ? MIGRATION_ACCEPTE : 'Enregistrement impossible (migration 0021 ?).', migrationManquante: geste === 'accepter' };
+  revalider();
+  return { ok: true, message: `${l.length} élément${l.length > 1 ? 's' : ''} ${geste === 'accepter' ? 'accepté' : 'refusé'}${l.length > 1 ? 's' : ''}.`, annulation: { kind: 'lot', elements: l } };
 }

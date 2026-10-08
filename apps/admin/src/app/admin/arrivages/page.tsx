@@ -1,61 +1,53 @@
 import {
-  cleCandidatePhoto, clePhoto, estSourcePhotoLibre, gamme as gammeParId, hashtagsDe, inventaireAssets, inventaireStudio, libelleSujet, motsClesDuSujet,
-  SUJETS_VISUELS, sujetsDuVisuel, universDuParcours, variablesGamme, type Asset,
+  cleCandidatePhoto, clePhoto, estSourcePhotoLibre, hashtagsDe, inventaireAssets, inventaireStudio, libelleProgression, libelleSujet, LIBELLES_NATURES, motsClesDuSujet,
+  SUJETS_VISUELS, sujetsDuVisuel, universDuParcours,
 } from '@plateforme/core';
-import { typeIngredient } from '@plateforme/core/arrivages';
-import { sujetDeLaProfession } from '@plateforme/core/professions';
+import { lotDeCle, lotsArrivages, typeIngredient } from '@plateforme/core/arrivages';
+import { professionDe, sujetDeLaProfession } from '@plateforme/core/professions';
 import { exigerAdmin } from '@/lib/admin';
 import { getArrivagesEnAttente } from '@/lib/arrivages';
 import { getSurchargesSujets } from '@/lib/assets-notes';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
+import { contenusEnAttente, getPacksRevue } from '@/lib/packs-contenus';
 import { getMotsClesEnBase, sourcesConfigurees } from '@/lib/photos-libres';
 import { getProfession } from '@/lib/profession';
 import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
-import Arrivages, { type ItemArrivage, type VisuelArrivage } from './Arrivages';
+import Arrivages, { type ItemArrivage } from './Arrivages';
+import { visuelDe } from './visuels';
 
 export const metadata = { title: 'Super admin · Arrivages' };
 
-// ARRIVAGES (décision de Paul du 2026-10-08, docs/espaces-admin.md) : boîte d'entrée unique de tout ce qui est nouveau —
-// nouveautés poussées par Claude (registre inventaire-connu.json : icônes, animations, mises en page, polices…), photos gardées ou
-// images générées « à valider », et, à la demande, photos à découvrir (Pexels, Pixabay). Un geste : Accepter (au frigo) ou Refuser.
-// Ce qui n'est pas accepté n'est pas utilisable par le générateur (ContexteImages, arrivages.ts).
+// ARRIVAGES (décisions de Paul du 2026-10-08 et du 2026-10-09, docs/espaces-admin.md) : boîte d'entrée unique de tout ce qui est
+// nouveau — nouveautés poussées par Claude (registre inventaire-connu.json : icônes, animations, mises en page, polices…), groupées
+// par lot (« Tout accepter / Tout refuser »), photos gardées ou images générées « à valider », photos à découvrir (Pexels, Pixabay)
+// et CONTENUS des packs de professions (pages, fiches, FAQ, mentions… : contenus-revue.ts). Accepter, À retravailler (contenus),
+// Refuser. Ce qui n'est pas accepté n'est pas utilisable par le générateur (ContexteImages) ni publiable (packs).
 
-const MAX_NOUVEAUTES = 150;
+/** Aperçus rendus avec la page ; les suivants sont chargés par paquets dans le navigateur (visuelsNouveautes) */
+const APERCUS_INITIAUX = 12;
 
-function visuelDe(a: Asset | undefined): VisuelArrivage {
-  if (!a) return { kind: 'aucun' };
-  if (a.rendu.kind === 'svg') {
-    let svg = '';
-    try { svg = a.rendu.svg(); } catch { svg = ''; }
-    return svg ? { kind: 'svg', svg, fond: a.rendu.fond, picto: a.type === 'picto' } : { kind: 'aucun' };
-  }
-  if (a.rendu.kind === 'image') return { kind: 'image', src: a.rendu.src };
-  if (a.rendu.kind === 'gamme') {
-    const g = gammeParId(a.rendu.gamme);
-    return { kind: 'gamme', couleurs: g ? Object.values(variablesGamme(g)).filter((v): v is string => typeof v === 'string' && v.startsWith('#')).slice(0, 6) : [] };
-  }
-  return { kind: 'studio', cle: a.rendu.cle };
-}
+/** Cabinet d'exemple de l'aperçu des textes ({ville}, {cabinet}…) */
+const CHAMPS: Record<string, string> = { ville: 'Lyon', cabinet: 'Cabinet Rousseau', praticien: 'Camille Rousseau' };
 
 export default async function PageArrivages({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await exigerAdmin();
   const sp = await searchParams;
   const profession = await getProfession();
-  const [attente, surcharges, hashtags, motsCles] = await Promise.all([getArrivagesEnAttente(profession), getSurchargesSujets(), getHashtagsAssets(), getMotsClesEnBase()]);
+  const [attente, surcharges, hashtags, motsCles, packs] = await Promise.all([getArrivagesEnAttente(profession), getSurchargesSujets(), getHashtagsAssets(), getMotsClesEnBase(), getPacksRevue(profession.id)]);
   const parCle = new Map([...inventaireAssets(), ...inventaireStudio()].map((a) => [a.cle, a]));
   const sujetsProfession = SUJETS_VISUELS.filter((s) => sujetDeLaProfession(s, profession));
 
   const items: ItemArrivage[] = [];
-  for (const n of attente.nouveautes.slice(0, MAX_NOUVEAUTES)) {
+  for (const [i, n] of attente.nouveautes.entries()) {
     const a = parCle.get(n.cle);
     items.push({
-      id: `n:${n.cle}`, source: 'nouveautes', type: typeIngredient(n.cle), titre: a?.titre ?? n.cle, detail: a?.detail ?? null, date: n.date,
+      id: `n:${n.cle}`, source: 'nouveautes', type: typeIngredient(n.cle), titre: a?.titre ?? n.cle, detail: a?.detail ?? null, date: n.date, lot: lotDeCle(n.cle, n.date),
       arrivage: { kind: 'nouveaute', cle: n.cle, precedent: attente.statuts[n.cle] ?? null },
-      visuel: visuelDe(a),
+      visuel: i < APERCUS_INITIAUX || a?.rendu.kind === 'studio' ? await visuelDe(a) : { kind: 'differe', cle: n.cle },
       sujets: a && a.rendu.kind !== 'studio' ? sujetsDuVisuel(a, surcharges).sujets : [],
       hashtags: hashtagsDe(hashtags.hashtags, n.cle),
     });
@@ -74,6 +66,21 @@ export default async function PageArrivages({ searchParams }: { searchParams: Pr
       credit: p.source === 'ia' ? null : `${p.auteur}`, pageUrl: p.pageUrl,
     });
   }
+  // Contenus des packs de la profession : texte rendu, sources, avertissements du contrôle (controle:packs)
+  for (const pk of packs) {
+    const nom = professionDe(pk.profession).libelle;
+    for (const c of contenusEnAttente(pk)) {
+      items.push({
+        id: `c:${c.cle}`, source: 'contenus', type: 'contenu', titre: c.titre.replace(/\{([a-z_]+)\}/g, (m, k: string) => CHAMPS[k] ?? m), detail: `${LIBELLES_NATURES[c.nature]} · pack ${nom}`, date: null,
+        arrivage: { kind: 'contenu', cle: c.cle, empreinte: c.empreinte, precedent: c.precedent },
+        visuel: { kind: 'contenu', contenu: { titre: c.titre, chapo: c.chapo ?? null, nature: c.nature, blocs: c.blocs, sources: c.sourcesDetail, erreurs: c.erreurs, avertissements: c.avertissements, modifie: Boolean(c.precedent && c.precedent !== 'a_revoir') } },
+        sujets: [], hashtags: [],
+      });
+    }
+  }
+  const progressions = packs.map((pk) => ({ ...pk.progression, libelle: libelleProgression(professionDe(pk.profession).libelle, pk.progression), statutPack: pk.statutPack, erreursControle: pk.erreursControle }));
+  const lots = lotsArrivages(attente.nouveautes).map((l) => ({ id: l.id, titre: l.titre, n: l.cles.length }));
+
   // Éléments du studio (polices, menus, mises en page, animations d'en-tête…) : aperçu de site de l'admin, données chargées à part
   const avecStudio = items.some((i) => i.visuel.kind === 'studio');
   const [modeles, catalogue, marquesImportees, univers] = avecStudio
@@ -85,23 +92,22 @@ export default async function PageArrivages({ searchParams }: { searchParams: Pr
       <div>
         <h1 className="text-2xl font-bold">Arrivages</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-          Tout ce qui est nouveau, au même endroit. Accepter : l’élément entre au frigo et le générateur peut l’utiliser. Refuser : il n’est
-          jamais utilisé. Touches A / R ou flèches → / ←, glisser au doigt ; Z annule la dernière décision.
+          Tout ce qui est nouveau, au même endroit. Accepter : l’élément entre au frigo et le générateur peut l’utiliser (un texte devient
+          bon pour publication). Refuser : il n’est jamais utilisé. Touches A / R ou flèches → / ←, glisser au doigt ; Z annule la dernière décision.
         </p>
-        {attente.nouveautes.length > MAX_NOUVEAUTES && (
-          <p className="mt-1 text-sm text-neutral-600">
-            {attente.nouveautes.length} nouveautés en attente : les {MAX_NOUVEAUTES} plus récentes sont dans la file, les suivantes arrivent au rechargement.
-          </p>
-        )}
       </div>
       <Arrivages
         items={items}
+        lots={lots}
+        progressions={progressions}
+        champs={{ ...CHAMPS, titre_praticien: `${profession.libelle.toLowerCase()} diplômé d’État` }}
         sujets={sujetsProfession.map((s) => ({ id: s.id, libelle: s.libelle }))}
         sourcesPhotos={sourcesConfigurees()}
         motsCles={Object.fromEntries(sujetsProfession.map((s) => [s.id, motsClesDuSujet(s.id, motsCles.motsCles)]))}
         frequencesHashtags={Object.fromEntries(Object.values(hashtags.hashtags).flat().reduce((m, h) => m.set(h, (m.get(h) ?? 0) + 1), new Map<string, number>()))}
         sourceInitiale={typeof sp.source === 'string' ? sp.source : null}
         typeInitial={typeof sp.type === 'string' ? sp.type : null}
+        lotInitial={typeof sp.lot === 'string' ? sp.lot : null}
         studio={{ proposes: universDuParcours(univers.univers), modeles: modeles.map((m) => ({ id: m.id, manifeste: m.manifeste })), catalogue, marquesImportees, themesActives: themesActives() }}
       />
     </div>

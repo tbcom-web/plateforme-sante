@@ -4,6 +4,7 @@ import { baseDeCle, clesRecentes, clesUnitairesInventaire, jourParis, SUJETS_VIS
 import { clesExcluesArrivages, etatPhotoLibre, nouveautesEnAttente } from '@plateforme/core/arrivages';
 import { estDeLaProfession, sujetDeLaProfession, type Profession } from '@plateforme/core/professions';
 import { lireAssetsNotesApprentissage } from '@/lib/assets-notes';
+import { contenusEnAttente, getPacksRevue } from '@/lib/packs-contenus';
 import { getPhotosLibres, type PhotoLibre } from '@/lib/photos-libres';
 
 // Arrivages (/admin/arrivages, packages/core/src/arrivages.ts) : nouveautés du code (registre inventaire-connu.json, nouveautes.ts)
@@ -63,11 +64,11 @@ export const getArrivagesEnAttente = cache(async (profession: Profession): Promi
   return { nouveautes, photos, statuts: etats.statuts, migrationPhotos: libres.migrationManquante };
 });
 
-/** Compteur du menu et du tableau de bord */
+/** Compteur du menu : nouveautés, photos et contenus des packs en attente */
 export const getNombreArrivages = cache(async (profession: Profession): Promise<number> => {
   try {
-    const a = await getArrivagesEnAttente(profession);
-    return a.nouveautes.length + a.photos.length;
+    const [a, packs] = await Promise.all([getArrivagesEnAttente(profession), getPacksRevue(profession.id)]);
+    return a.nouveautes.length + a.photos.length + packs.reduce((s, p) => s + contenusEnAttente(p).length, 0);
   } catch {
     return 0;
   }

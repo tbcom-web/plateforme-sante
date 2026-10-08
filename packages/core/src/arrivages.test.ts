@@ -73,3 +73,21 @@ test('espaces de l’admin : menu, fil d’Ariane, redirections', () => {
   assert.equal(nouvelleAdresse('/admin/retours/tri'), '/admin/frigo/tri');
   assert.equal(nouvelleAdresse('/admin/retours/images-a-generer/importer'), null);
 });
+
+test('arrivages : lots (famille × date, libellé de la tuile Nouveautés), filtres de type', async () => {
+  const { lotsArrivages, lotDeCle, FILTRES_TYPES_ARRIVAGES, filtreTypeArrivage, TYPES_INGREDIENTS } = await import('./arrivages');
+  const lots = lotsArrivages([
+    { cle: 'picto:danse@direction-d', date: '2026-10-08' }, { cle: 'picto:enfant@direction-a', date: '2026-10-08' },
+    { cle: 'composant:entete-anim:em-marche', date: '2026-10-08' }, { cle: 'picto:orthonyxie', date: '2026-10-01' },
+  ]);
+  assert.equal(lots.length, 3);
+  assert.equal(lots[lots.length - 1].date, '2026-10-01');
+  const icones = lots.find((l) => l.cles.includes('picto:danse@direction-d'))!;
+  assert.equal(icones.cles.length, 2);
+  assert.match(icones.titre, / · 2 · 08\/10$/);
+  assert.equal(lotDeCle('picto:danse@direction-d', '2026-10-08'), icones.id);
+  // Chaque type d'arrivage est dans exactement un filtre
+  for (const t of [...TYPES_INGREDIENTS.map((x) => x.id), 'contenu' as const]) assert.equal(FILTRES_TYPES_ARRIVAGES.filter((f) => f.types.includes(t)).length, 1, t);
+  assert.deepEqual(FILTRES_TYPES_ARRIVAGES.map((f) => f.libelle), ['Visuels', 'Icônes', 'Animations', 'Mises en page', 'Contenus']);
+  assert.equal(filtreTypeArrivage('police'), 'mises-en-page');
+});

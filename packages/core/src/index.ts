@@ -109,3 +109,4 @@ export * from './packs-professions';
 export * from './kit-demo';
 export * from './recherche-photos-professions';
 export * from './degustation-directions';
+export * from './contenus-revue';

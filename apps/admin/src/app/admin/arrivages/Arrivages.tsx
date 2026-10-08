@@ -1,32 +1,47 @@
 'use client';
 
-// File des Arrivages (packages/core/src/arrivages.ts) : un élément à la fois, ACCEPTER (thèmes et hashtags pré-cochés modifiables,
-// note rapide facultative) ou REFUSER ; touches A / R, flèches → / ←, glisser au doigt (droite = accepter) ; Z (ou Ctrl+Z) annule la
-// dernière décision. Filtres par source et par type ; « Chercher des photos » ajoute des photos à découvrir (Pexels, Pixabay) à la file.
+// File des Arrivages (packages/core/src/arrivages.ts, contenus-revue.ts) : un élément à la fois, ACCEPTER (thèmes et hashtags
+// pré-cochés modifiables, note rapide facultative) ou REFUSER ; touches A / R, flèches → / ←, glisser au doigt (droite = accepter) ;
+// Z (ou Ctrl+Z) annule la dernière décision. Contenus des packs : texte rendu dans un cadre de téléphone, sources en marge,
+// avertissements du contrôle, « À retravailler » avec commentaire (touche T). Lots de nouveautés : « Tout accepter / Tout refuser »
+// (confirmation). Filtres par source et par type (Visuels · Icônes · Animations · Mises en page · Contenus).
 import '@plateforme/core/dessins.css';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as PE } from 'react';
-import { gamme as gammeParId, SURFACES_CSS, variablesCharte, variablesGamme, type MarqueImportee, type ModeleManifeste, type SourcePhotoLibre, type Univers } from '@plateforme/core';
-import { gesteClavier, gesteGlisse, SOURCES_ARRIVAGES, TYPES_INGREDIENTS, type SourceArrivage, type TypeIngredient } from '@plateforme/core/arrivages';
+import { gamme as gammeParId, htmlContenu, SURFACES_CSS, variablesCharte, variablesGamme, type BlocContenu, type MarqueImportee, type ModeleManifeste, type SourcePhotoLibre, type Univers } from '@plateforme/core';
+import { FILTRES_TYPES_ARRIVAGES, filtreTypeArrivage, gesteClavier, gesteGlisse, SOURCES_ARRIVAGES, TYPES_INGREDIENTS, type SourceArrivage, type TypeArrivage } from '@plateforme/core/arrivages';
 import ApercuStudio from '@/components/ApercuStudio';
 import { SaisieHashtags } from '@/components/HashtagsVisuel';
 import type { SoinCatalogue } from '@/lib/sites';
 import { candidatsPhotos } from '../retours/actions-photos';
-import { accepterArrivage, annulerArrivage, refuserArrivage, type Annulation, type Arrivage } from './actions';
+import { accepterArrivage, annulerArrivage, deciderLot, refuserArrivage, retravaillerContenu, type Annulation, type Arrivage } from './actions';
+import { visuelsNouveautes } from './visuels';
+
+export type ContenuAffiche = {
+  titre: string; chapo: string | null; nature: string; blocs: BlocContenu[];
+  sources: { id: string; organisme: string; titre: string; url: string; verifie: boolean }[];
+  erreurs: string[]; avertissements: string[];
+  /** Déjà revu, texte modifié depuis : de nouveau en arrivage */
+  modifie: boolean;
+};
 
 export type VisuelArrivage =
   | { kind: 'svg'; svg: string; fond: string; picto: boolean }
   | { kind: 'image'; src: string }
   | { kind: 'gamme'; couleurs: string[] }
   | { kind: 'studio'; cle: string }
+  | { kind: 'differe'; cle: string }
+  | { kind: 'contenu'; contenu: ContenuAffiche }
   | { kind: 'aucun' };
 
 export type ItemArrivage = {
   id: string;
   source: SourceArrivage;
-  type: TypeIngredient;
+  type: TypeArrivage;
   titre: string;
   detail: string | null;
   date: string | null;
+  /** Lot de nouveautés (famille × date) */
+  lot?: string;
   arrivage: Arrivage;
   visuel: VisuelArrivage;
   /** Thèmes et hashtags proposés (pré-cochés) */
@@ -36,57 +51,109 @@ export type ItemArrivage = {
   pageUrl?: string | null;
 };
 
+type Progression = { profession: string; libelle: string; acceptes: number; total: number; aRetravailler: number; refuses: number; enAttente: number; publiable: boolean; statutPack: string; erreursControle: number };
+
 type Props = {
   items: ItemArrivage[];
+  lots: { id: string; titre: string; n: number }[];
+  progressions: Progression[];
+  /** Champs du cabinet d'exemple pour l'aperçu des textes ({ville}, {cabinet}…) */
+  champs: Record<string, string>;
   sujets: { id: string; libelle: string }[];
   sourcesPhotos: Record<SourcePhotoLibre, boolean>;
   motsCles: Record<string, string[]>;
   frequencesHashtags: Record<string, number>;
   sourceInitiale: string | null;
   typeInitial: string | null;
+  lotInitial: string | null;
   studio: { proposes: Univers[]; modeles: { id: string; manifeste: ModeleManifeste }[]; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[]; themesActives: string[] };
 };
 
-type Decision = { item: ItemArrivage; geste: 'accepter' | 'refuser'; annulation: Annulation | undefined };
+type Geste = 'accepter' | 'refuser' | 'retravailler';
+type Decision = { items: ItemArrivage[]; geste: Geste; annulation: Annulation | undefined; titre: string };
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const dateCourte = (d: string | null) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : '');
+const PARTICIPE: Record<Geste, string> = { accepter: 'acceptée', refuser: 'refusée', retravailler: 'à retravailler' };
 
-export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, frequencesHashtags, sourceInitiale, typeInitial, studio }: Props) {
+export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progressions, champs, sujets, sourcesPhotos, frequencesHashtags, sourceInitiale, typeInitial, lotInitial, studio }: Props) {
   const [items, setItems] = useState<ItemArrivage[]>(initiaux);
   const [faits, setFaits] = useState<Set<string>>(new Set());
   const [historique, setHistorique] = useState<Decision[]>([]);
   const [source, setSource] = useState<SourceArrivage | 'tout'>(SOURCES_ARRIVAGES.some((s) => s.id === sourceInitiale) ? (sourceInitiale as SourceArrivage) : 'tout');
-  const [type, setType] = useState<TypeIngredient | 'tout'>(TYPES_INGREDIENTS.some((t) => t.id === typeInitial) ? (typeInitial as TypeIngredient) : 'tout');
+  const [filtreType, setFiltreType] = useState<string>(FILTRES_TYPES_ARRIVAGES.some((t) => t.id === typeInitial) ? typeInitial! : 'tout');
+  const [lot, setLot] = useState<string | null>(lotsInitiaux.some((l) => l.id === lotInitial) ? lotInitial : null);
   const [message, setMessage] = useState<{ ok: boolean; texte: string } | null>(null);
   const [occupe, setOccupe] = useState(false);
   const [theme, setTheme] = useState(sujets[0]?.id ?? 'general');
   const [chargement, setChargement] = useState(false);
+  const [visuels, setVisuels] = useState<Record<string, VisuelArrivage>>({});
   const vues = useRef(new Set<string>());
 
   const restants = useMemo(() => items.filter((i) => !faits.has(i.id)), [items, faits]);
-  const file = useMemo(() => restants.filter((i) => (source === 'tout' || i.source === source) && (type === 'tout' || i.type === type)), [restants, source, type]);
+  const correspond = useCallback((i: ItemArrivage, o: { source?: boolean; type?: boolean; lot?: boolean } = {}) =>
+    (o.source === false || source === 'tout' || i.source === source) && (o.type === false || filtreType === 'tout' || filtreTypeArrivage(i.type) === filtreType) && (o.lot === false || !lot || i.lot === lot), [source, filtreType, lot]);
+  const file = useMemo(() => restants.filter((i) => correspond(i)), [restants, correspond]);
   const courant = file[0] ?? null;
+  const lots = useMemo(() => lotsInitiaux.map((l) => ({ ...l, restants: restants.filter((i) => i.lot === l.id) })).filter((l) => l.restants.length), [lotsInitiaux, restants]);
+
+  // Aperçus différés : l'élément affiché et les 5 suivants
+  const visuelDe = (i: ItemArrivage): VisuelArrivage => (i.visuel.kind === 'differe' ? visuels[i.visuel.cle] ?? i.visuel : i.visuel);
+  useEffect(() => {
+    const manquants = file.slice(0, 6).filter((i) => i.visuel.kind === 'differe' && !visuels[(i.visuel as { cle: string }).cle]).map((i) => (i.visuel as { cle: string }).cle);
+    if (!manquants.length) return;
+    let actif = true;
+    void visuelsNouveautes(manquants).then((v) => { if (actif) setVisuels((x) => ({ ...x, ...v })); }).catch(() => undefined);
+    return () => { actif = false; };
+  }, [file, visuels]);
 
   // Choix de l'élément affiché (remis aux valeurs proposées à chaque élément)
   const [choixSujets, setChoixSujets] = useState<string[]>([]);
   const [choixTags, setChoixTags] = useState<string[]>([]);
   const [note, setNote] = useState<number | null>(null);
-  useEffect(() => { setChoixSujets(courant?.sujets ?? []); setChoixTags(courant?.hashtags ?? []); setNote(null); }, [courant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [commentaire, setCommentaire] = useState('');
+  const [retravail, setRetravail] = useState(false);
+  const champCommentaire = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { setChoixSujets(courant?.sujets ?? []); setChoixTags(courant?.hashtags ?? []); setNote(null); setCommentaire(''); setRetravail(false); }, [courant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (retravail) champCommentaire.current?.focus(); }, [retravail]);
 
-  const decider = useCallback(async (geste: 'accepter' | 'refuser') => {
+  const noter = (d: Decision, ok: boolean, texte: string) => {
+    setMessage({ ok, texte: `${d.titre} : ${texte}` });
+    if (!ok) return;
+    setFaits((f) => { const n = new Set(f); for (const i of d.items) n.add(i.id); return n; });
+    setHistorique((h) => [...h, d].slice(-30));
+  };
+
+  const decider = useCallback(async (geste: Geste) => {
     if (!courant || occupe) return;
+    const contenu = courant.arrivage.kind === 'contenu';
+    if (geste === 'retravailler') {
+      if (!contenu) return;
+      if (!retravail) { setRetravail(true); return; }
+      if (commentaire.trim().length < 3) { setMessage({ ok: false, texte: 'Dites ce qu’il faut retravailler : le commentaire part à Claude.' }); champCommentaire.current?.focus(); return; }
+    }
     if (geste === 'accepter' && courant.type === 'photo' && !choixSujets.length) { setMessage({ ok: false, texte: 'Cochez au moins un thème pour accepter une photo.' }); return; }
     setOccupe(true);
-    const r = await (geste === 'accepter'
-      ? accepterArrivage(courant.arrivage, { sujets: choixSujets, sujetsProposes: courant.sujets, hashtags: choixTags, hashtagsProposes: courant.hashtags, note })
-      : refuserArrivage(courant.arrivage)).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.', annulation: undefined }));
+    const a = courant.arrivage;
+    const r = await (geste === 'retravailler' && a.kind === 'contenu' ? retravaillerContenu(a, commentaire)
+      : geste === 'accepter' ? accepterArrivage(a, { sujets: choixSujets, sujetsProposes: courant.sujets, hashtags: choixTags, hashtagsProposes: courant.hashtags, note })
+        : refuserArrivage(a)).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.', annulation: undefined }));
     setOccupe(false);
-    setMessage({ ok: r.ok, texte: `${courant.titre} : ${r.message}` });
-    if (!r.ok) return;
-    setFaits((f) => new Set(f).add(courant.id));
-    setHistorique((h) => [...h, { item: courant, geste, annulation: r.annulation }].slice(-30));
-  }, [courant, occupe, choixSujets, choixTags, note]);
+    noter({ items: [courant], geste, annulation: r.annulation, titre: courant.titre }, r.ok, r.message);
+  }, [courant, occupe, choixSujets, choixTags, note, commentaire, retravail]);
+
+  const deciderLeLot = async (id: string, geste: 'accepter' | 'refuser') => {
+    const l = lots.find((x) => x.id === id);
+    if (!l || occupe) return;
+    const nouveautes = l.restants.filter((i) => i.arrivage.kind === 'nouveaute');
+    if (!window.confirm(`${geste === 'accepter' ? 'Accepter' : 'Refuser'} les ${nouveautes.length} éléments du lot « ${l.titre} » ?`)) return;
+    setOccupe(true);
+    const r = await deciderLot(nouveautes.map((i) => ({ cle: (i.arrivage as { cle: string }).cle, precedent: (i.arrivage as { precedent: string | null }).precedent })), geste)
+      .catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.', annulation: undefined }));
+    setOccupe(false);
+    noter({ items: nouveautes, geste, annulation: r.annulation, titre: `Lot ${l.titre}` }, r.ok, r.message);
+    if (r.ok && lot === id) setLot(null);
+  };
 
   const annuler = useCallback(async () => {
     const d = historique[historique.length - 1];
@@ -94,18 +161,18 @@ export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, freq
     setOccupe(true);
     const r = d.annulation ? await annulerArrivage(d.annulation).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.' })) : { ok: true, message: 'Remis dans la file.' };
     setOccupe(false);
-    setMessage({ ok: r.ok, texte: `${d.item.titre} : ${r.message}` });
+    setMessage({ ok: r.ok, texte: `${d.titre} : ${r.message}` });
     if (!r.ok) return;
     setHistorique((h) => h.slice(0, -1));
     // Une candidate acceptée est devenue une photo de la base : elle revient sous sa nouvelle forme (« à valider »)
-    const remis: ItemArrivage = d.item.arrivage.kind === 'candidate' && d.annulation?.kind === 'photo'
-      ? { ...d.item, id: `p:${d.annulation.id}`, arrivage: { kind: 'photo', id: d.annulation.id }, detail: 'Hébergée chez nous' }
-      : d.item;
-    setFaits((f) => { const n = new Set(f); n.delete(d.item.id); return n; });
-    setItems((l) => [remis, ...l.filter((x) => x.id !== d.item.id && x.id !== remis.id)]);
+    const remis = d.items.map((it): ItemArrivage => (it.arrivage.kind === 'candidate' && d.annulation?.kind === 'photo'
+      ? { ...it, id: `p:${d.annulation.id}`, arrivage: { kind: 'photo', id: d.annulation.id }, detail: 'Hébergée chez nous' } : it));
+    const ids = new Set([...d.items, ...remis].map((x) => x.id));
+    setFaits((f) => { const n = new Set(f); for (const x of d.items) n.delete(x.id); return n; });
+    setItems((l) => [...remis, ...l.filter((x) => !ids.has(x.id))]);
   }, [historique, occupe]);
 
-  // Clavier : A / → accepter, R / ← refuser, Z ou Ctrl+Z annuler (hors champs de saisie)
+  // Clavier : A / → accepter, R / ← refuser, T à retravailler (contenus), Z ou Ctrl+Z annuler (hors champs de saisie)
   useEffect(() => {
     const f = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
@@ -113,12 +180,13 @@ export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, freq
       if (e.altKey || e.metaKey) return;
       if ((e.key === 'z' || e.key === 'Z') && !e.shiftKey) { e.preventDefault(); void annuler(); return; }
       if (e.ctrlKey) return;
+      if ((e.key === 't' || e.key === 'T') && courant?.arrivage.kind === 'contenu') { e.preventDefault(); void decider('retravailler'); return; }
       const g = gesteClavier(e.key);
       if (g) { e.preventDefault(); void decider(g); }
     };
     window.addEventListener('keydown', f);
     return () => window.removeEventListener('keydown', f);
-  }, [decider, annuler]);
+  }, [decider, annuler, courant]);
 
   // Glisser au doigt
   const depart = useRef<{ x: number; y: number; id: number } | null>(null);
@@ -156,36 +224,77 @@ export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, freq
   const compte = (f: (i: ItemArrivage) => boolean) => restants.filter(f).length;
   const style = useMemo(() => ({ ...variablesCharte(), ...variablesGamme(gammeParId('canard')!) }) as CSSProperties, []);
   const sourcesPretes = Object.values(sourcesPhotos).some(Boolean);
+  const estContenu = courant?.arrivage.kind === 'contenu';
+  const v = courant ? visuelDe(courant) : null;
+  const libelleType = (t: TypeArrivage) => (t === 'contenu' ? 'Contenu' : TYPES_INGREDIENTS.find((x) => x.id === t)?.libelle);
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4" style={style}>
-      <style>{SURFACES_CSS + '.ar-svg svg{width:100%;height:100%;display:block}'}</style>
+      <style>{SURFACES_CSS + '.ar-svg svg{width:100%;height:100%;display:block}' + CSS_CONTENU}</style>
+
+      {progressions.map((p) => (
+        <section key={p.profession} aria-label={p.libelle} className="grid gap-2 rounded-2xl border border-black/5 bg-white p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-semibold">{p.libelle}</h2>
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${p.publiable ? 'bg-teal-100 text-teal-900' : 'bg-amber-100 text-amber-900'}`}>
+              {p.publiable ? 'Publiable' : 'Pas encore publiable'}
+            </span>
+          </div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-neutral-100" role="progressbar" aria-valuemin={0} aria-valuemax={p.total} aria-valuenow={p.acceptes} aria-label="Contenus acceptés">
+            <div className="h-full bg-teal-700" style={{ width: `${p.total ? (100 * p.acceptes) / p.total : 0}%` }} />
+          </div>
+          <p className="text-xs text-neutral-600">
+            {p.enAttente} en attente · {p.aRetravailler} à retravailler · {p.refuses} refusé{p.refuses > 1 ? 's' : ''}
+            {p.statutPack === 'en-preparation' ? ' · pack « en préparation » (relecture d’un professionnel attendue)' : ''}{p.erreursControle ? ` · ${p.erreursControle} erreur${p.erreursControle > 1 ? 's' : ''} du contrôle` : ''}.
+            {' '}Le pack ne s’ouvre au parcours client que lorsque tous ses contenus obligatoires sont acceptés.
+          </p>
+        </section>
+      ))}
+
       <div className="grid gap-2">
         <div role="group" aria-label="Source" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          {([['tout', 'Toutes les sources'], ...SOURCES_ARRIVAGES.map((s) => [s.id, s.libelle])] as [SourceArrivage | 'tout', string][]).map(([id, libelle]) => (
+          {([['tout', 'Toutes les sources'], ...SOURCES_ARRIVAGES.map((s) => [s.id, s.libelle])] as [SourceArrivage | 'tout', string][]).filter(([id]) => id === 'tout' || compte((i) => i.source === id) > 0 || id === source || id === 'photos-libres').map(([id, libelle]) => (
             <button key={id} type="button" aria-pressed={source === id} onClick={() => setSource(id)}
               className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm ring-1 ${focus} ${source === id ? 'bg-teal-800 font-semibold text-white ring-teal-900' : 'bg-white ring-black/10 hover:bg-neutral-50'}`}>
-              {libelle} <span className="tabular-nums opacity-80">{compte((i) => id === 'tout' || i.source === id)}</span>
+              {libelle} <span className="tabular-nums opacity-80">{compte((i) => correspond(i, { source: false, type: false, lot: false }) && (id === 'tout' || i.source === id))}</span>
             </button>
           ))}
         </div>
         <div role="group" aria-label="Type" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          {([['tout', 'Tous les types'], ...TYPES_INGREDIENTS.map((t) => [t.id, t.pluriel])] as [TypeIngredient | 'tout', string][]).filter(([id]) => id === 'tout' || compte((i) => i.type === id) > 0 || id === type).map(([id, libelle]) => (
-            <button key={id} type="button" aria-pressed={type === id} onClick={() => setType(id)}
-              className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm ring-1 ${focus} ${type === id ? 'bg-neutral-800 font-semibold text-white ring-neutral-900' : 'bg-white ring-black/10 hover:bg-neutral-50'}`}>
-              {libelle} <span className="tabular-nums opacity-80">{compte((i) => (source === 'tout' || i.source === source) && (id === 'tout' || i.type === id))}</span>
+          {([['tout', 'Tous les types'], ...FILTRES_TYPES_ARRIVAGES.map((t) => [t.id, t.libelle])] as [string, string][]).map(([id, libelle]) => (
+            <button key={id} type="button" aria-pressed={filtreType === id} onClick={() => setFiltreType(id)}
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm ring-1 ${focus} ${filtreType === id ? 'bg-neutral-800 font-semibold text-white ring-neutral-900' : 'bg-white ring-black/10 hover:bg-neutral-50'}`}>
+              {libelle} <span className="tabular-nums opacity-80">{compte((i) => correspond(i, { type: false, lot: false }) && (id === 'tout' || filtreTypeArrivage(i.type) === id))}</span>
             </button>
           ))}
         </div>
       </div>
 
+      {lots.length > 0 && (source === 'tout' || source === 'nouveautes') && filtreType !== 'contenus' && (
+        <details className="rounded-2xl border border-black/5 bg-white p-3" open={Boolean(lot)}>
+          <summary className={`cursor-pointer rounded-lg px-1 py-1 font-semibold ${focus}`}>Par lot ({lots.length}){lot ? ` · lot affiché : ${lots.find((l) => l.id === lot)?.titre ?? ''}` : ''}</summary>
+          <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+            {[...lots].sort((x, y) => Number(y.id === lot) - Number(x.id === lot)).map((l) => (
+              <li key={l.id} className={`grid gap-2 rounded-xl p-2.5 ring-1 ${lot === l.id ? 'bg-teal-50 ring-teal-300' : 'ring-black/10'}`}>
+                <p className="text-sm font-semibold">{l.titre.replace(/ · \d+ · /, ` · ${l.restants.length} · `)}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button type="button" onClick={() => setLot(lot === l.id ? null : l.id)} aria-pressed={lot === l.id} className={`min-h-10 rounded-lg px-3 text-sm ring-1 ring-black/15 hover:bg-neutral-50 ${focus}`}>{lot === l.id ? 'Tous les lots' : 'Trier ce lot'}</button>
+                  <button type="button" disabled={occupe} onClick={() => void deciderLeLot(l.id, 'accepter')} className={`min-h-10 rounded-lg bg-teal-800 px-3 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>Tout accepter</button>
+                  <button type="button" disabled={occupe} onClick={() => void deciderLeLot(l.id, 'refuser')} className={`min-h-10 rounded-lg px-3 text-sm font-semibold text-red-800 ring-1 ring-red-700 hover:bg-red-50 disabled:opacity-50 ${focus}`}>Tout refuser</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {message && <p role="status" className={`rounded-lg px-3 py-2 text-sm ring-1 ${message.ok ? 'bg-teal-50 text-teal-950 ring-teal-200' : 'bg-amber-50 text-amber-950 ring-amber-200'}`}>{message.texte}</p>}
 
-      {courant ? (
+      {courant && v ? (
         <article aria-labelledby="ar-titre" className="grid gap-3 rounded-2xl border border-black/10 bg-white p-3 sm:p-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div onPointerDown={bas} onPointerMove={bouge} onPointerUp={haut} onPointerCancel={() => { depart.current = null; setDx(0); }}
             className="relative touch-pan-y select-none" style={{ transform: dx ? `translateX(${dx}px) rotate(${dx / 40}deg)` : undefined, transition: dx ? 'none' : 'transform .2s' }}>
-            <Visuel item={courant} studio={studio} />
+            <Visuel item={courant} visuel={v} studio={studio} champs={champs} />
             {Math.abs(dx) > 40 && (
               <span className={`pointer-events-none absolute top-3 rounded-lg px-3 py-1 text-lg font-bold text-white ${dx > 0 ? 'left-3 bg-teal-700' : 'right-3 bg-red-700'}`}>{dx > 0 ? 'Accepter' : 'Refuser'}</span>
             )}
@@ -194,8 +303,9 @@ export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, freq
             <div>
               <p className="flex flex-wrap gap-1.5 text-xs">
                 <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">{SOURCES_ARRIVAGES.find((s) => s.id === courant.source)?.libelle}</span>
-                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">{TYPES_INGREDIENTS.find((t) => t.id === courant.type)?.libelle}</span>
+                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">{libelleType(courant.type)}</span>
                 {courant.date && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">Arrivé le {dateCourte(courant.date)}</span>}
+                {v.kind === 'contenu' && v.contenu.modifie && <span className="rounded-full bg-sky-100 px-2 py-0.5 font-semibold text-sky-900">Modifié depuis votre revue</span>}
               </p>
               <h2 id="ar-titre" className="mt-1.5 text-lg font-bold">{courant.titre}</h2>
               {courant.detail && <p className="text-sm text-neutral-600">{courant.detail}</p>}
@@ -203,32 +313,48 @@ export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, freq
                 <p className="text-xs text-neutral-500">{courant.credit ? `Auteur : ${courant.credit}` : ''}{courant.pageUrl && <> · <a href={courant.pageUrl} target="_blank" rel="noopener noreferrer" className="underline">page source</a></>}</p>
               )}
             </div>
-            <fieldset className="grid gap-1.5">
-              <legend className="text-sm font-semibold">Thèmes</legend>
-              <div className="flex flex-wrap gap-1.5">
-                {sujets.map((s) => {
-                  const actif = choixSujets.includes(s.id);
-                  return (
-                    <button key={s.id} type="button" aria-pressed={actif} onClick={() => setChoixSujets((l) => (actif ? l.filter((x) => x !== s.id) : [...l, s.id]))}
-                      className={`min-h-10 rounded-full px-3 text-sm ring-1 ${focus} ${actif ? 'bg-teal-800 text-white ring-teal-900' : 'bg-white ring-black/15 hover:bg-neutral-50'}`}>{s.libelle}</button>
-                  );
-                })}
-              </div>
-            </fieldset>
-            <SaisieHashtags compact valeurs={choixTags} connus={frequencesHashtags}
-              onAjout={(l) => setChoixTags((v) => [...v, ...l.filter((h) => !v.includes(h))])} onRetrait={(h) => setChoixTags((v) => v.filter((x) => x !== h))} />
-            <fieldset className="grid gap-1.5">
-              <legend className="text-sm font-semibold">Note rapide <span className="font-normal text-neutral-500">(facultative)</span></legend>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" aria-pressed={note === n} aria-label={`${n} étoile${n > 1 ? 's' : ''}`} onClick={() => setNote(note === n ? null : n)}
-                    className={`grid size-11 place-items-center rounded-lg text-xl ring-1 ${focus} ${note !== null && n <= note ? 'bg-amber-400 text-amber-950 ring-amber-500' : 'bg-white text-neutral-400 ring-black/15'}`}>★</button>
-                ))}
-              </div>
-            </fieldset>
-            <div className="grid grid-cols-2 gap-2">
+            {v.kind === 'contenu' ? <MargeContenu c={v.contenu} /> : (
+              <>
+                <fieldset className="grid gap-1.5">
+                  <legend className="text-sm font-semibold">Thèmes</legend>
+                  <div className="flex flex-wrap gap-1.5">
+                    {sujets.map((s) => {
+                      const actif = choixSujets.includes(s.id);
+                      return (
+                        <button key={s.id} type="button" aria-pressed={actif} onClick={() => setChoixSujets((l) => (actif ? l.filter((x) => x !== s.id) : [...l, s.id]))}
+                          className={`min-h-10 rounded-full px-3 text-sm ring-1 ${focus} ${actif ? 'bg-teal-800 text-white ring-teal-900' : 'bg-white ring-black/15 hover:bg-neutral-50'}`}>{s.libelle}</button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+                <SaisieHashtags compact valeurs={choixTags} connus={frequencesHashtags}
+                  onAjout={(l) => setChoixTags((x) => [...x, ...l.filter((h) => !x.includes(h))])} onRetrait={(h) => setChoixTags((x) => x.filter((y) => y !== h))} />
+                <fieldset className="grid gap-1.5">
+                  <legend className="text-sm font-semibold">Note rapide <span className="font-normal text-neutral-500">(facultative)</span></legend>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button key={n} type="button" aria-pressed={note === n} aria-label={`${n} étoile${n > 1 ? 's' : ''}`} onClick={() => setNote(note === n ? null : n)}
+                        className={`grid size-11 place-items-center rounded-lg text-xl ring-1 ${focus} ${note !== null && n <= note ? 'bg-amber-400 text-amber-950 ring-amber-500' : 'bg-white text-neutral-400 ring-black/15'}`}>★</button>
+                    ))}
+                  </div>
+                </fieldset>
+              </>
+            )}
+            {estContenu && retravail && (
+              <label className="grid gap-1 text-sm">
+                <span className="font-semibold">Ce qu’il faut retravailler <span className="font-normal text-neutral-500">(part à Claude avec l’export)</span></span>
+                <textarea ref={champCommentaire} value={commentaire} onChange={(e) => setCommentaire(e.target.value)} rows={3} maxLength={4000}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void decider('retravailler'); } }}
+                  className="rounded-lg border border-neutral-300 p-2" placeholder="Ex. « la deuxième section promet trop », « source à préciser »" />
+              </label>
+            )}
+            <div className={`grid gap-2 ${estContenu ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <button type="button" disabled={occupe} onClick={() => void decider('refuser')}
                 className={`min-h-14 rounded-xl border-2 border-red-700 bg-white text-base font-bold text-red-800 hover:bg-red-50 disabled:opacity-50 ${focus}`}>← Refuser <span className="text-xs font-normal">(R)</span></button>
+              {estContenu && (
+                <button type="button" disabled={occupe} onClick={() => void decider('retravailler')}
+                  className={`min-h-14 rounded-xl border-2 border-amber-600 bg-white px-1 text-sm font-bold text-amber-900 hover:bg-amber-50 disabled:opacity-50 ${focus}`}>{retravail ? 'Envoyer' : 'À retravailler'} <span className="text-xs font-normal">(T)</span></button>
+              )}
               <button type="button" disabled={occupe} onClick={() => void decider('accepter')}
                 className={`min-h-14 rounded-xl bg-teal-800 text-base font-bold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>Accepter → <span className="text-xs font-normal">(A)</span></button>
             </div>
@@ -244,7 +370,7 @@ export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, freq
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => void annuler()} disabled={!historique.length || occupe}
           className={`min-h-11 rounded-xl px-4 text-sm font-semibold ring-1 ring-black/15 hover:bg-neutral-50 disabled:opacity-40 ${focus}`}>
-          Annuler la dernière décision{historique.length ? ` (${historique[historique.length - 1].geste === 'accepter' ? 'acceptée' : 'refusée'})` : ''} <span className="font-normal text-neutral-500">(Z)</span>
+          Annuler la dernière décision{historique.length ? ` (${historique[historique.length - 1].items.length > 1 ? 'lot ' : ''}${PARTICIPE[historique[historique.length - 1].geste]})` : ''} <span className="font-normal text-neutral-500">(Z)</span>
         </button>
       </div>
 
@@ -267,9 +393,74 @@ export default function Arrivages({ items: initiaux, sujets, sourcesPhotos, freq
   );
 }
 
-function Visuel({ item, studio }: { item: ItemArrivage; studio: Props['studio'] }) {
-  const v = item.visuel;
+const CSS_CONTENU = `.ct-page{font-family:var(--police-texte,system-ui);color:#1f2937;line-height:1.55}
+.ct-page h1{font-size:1.45rem;line-height:1.2;font-weight:700;margin:0 0 .5rem}
+.ct-page h2{font-size:1.1rem;font-weight:700;margin:1.1rem 0 .35rem}
+.ct-page h3,.ct-page h4{font-size:1rem;font-weight:700;margin:.9rem 0 .3rem}
+.ct-page p{margin:.4rem 0}.ct-page ul{list-style:disc;padding-left:1.2rem;margin:.4rem 0}.ct-page ol{list-style:decimal;padding-left:1.3rem;margin:.4rem 0}
+.ct-champ{background:#ecfeff;border-radius:3px;padding:0 2px}.ct-vide{background:#fef3c7;font-family:ui-monospace,monospace;font-size:.85em}
+.ct-chapo{color:#4b5563;font-size:.95rem}.ct-condition{font-size:.75rem;color:#92400e;background:#fffbeb;border-radius:4px;padding:1px 6px;display:inline-block}
+.ct-src{font-size:.7rem;color:#0f766e;vertical-align:super;margin-left:2px}`;
+
+/** Aperçu d'un texte de pack dans un cadre de téléphone (390 px), champs du cabinet d'exemple surlignés */
+function TexteContenu({ c, champs }: { c: ContenuAffiche; champs: Record<string, string> }) {
+  const index = new Map(c.sources.map((s, i) => [s.id, i + 1]));
+  const appel = (b: BlocContenu) => b.sources.map((s) => index.get(s)).filter(Boolean).map((n) => `<span class="ct-src">[${n}]</span>`).join('');
+  const html = [
+    `<h1>${htmlContenu(c.titre, champs).replace(/^<p>|<\/p>$/g, '')}</h1>`,
+    c.chapo ? `<div class="ct-chapo">${htmlContenu(c.chapo, champs)}</div>` : '',
+    ...c.blocs.map((b) => [
+      b.titre ? `<h2>${htmlContenu(b.titre, champs).replace(/^<p>|<\/p>$/g, '')}${appel(b)}</h2>` : '',
+      b.condition ? `<span class="ct-condition">Affiché seulement si : ${b.condition}</span>` : '',
+      htmlContenu(b.corps, champs).replace(/<\/p>$/, `${b.titre ? '' : appel(b)}</p>`),
+    ].join('')),
+  ].join('');
+  return (
+    <div className="grid place-items-center rounded-xl bg-neutral-100 p-3">
+      <div className="w-full max-w-[390px] overflow-hidden rounded-[28px] border-[6px] border-neutral-800 bg-white shadow-lg">
+        <div className="flex items-center justify-between border-b border-black/5 px-4 py-2 text-xs text-neutral-500"><span>{champs.cabinet}</span><span aria-hidden="true">☰</span></div>
+        <div className="ct-page max-h-[640px] overflow-y-auto px-4 py-3 text-[15px]" dangerouslySetInnerHTML={{ __html: html }} />
+      </div>
+    </div>
+  );
+}
+
+/** Marge d'un contenu : sources réglementaires numérotées, erreurs et avertissements du contrôle des packs */
+function MargeContenu({ c }: { c: ContenuAffiche }) {
+  return (
+    <div className="grid gap-3 text-sm">
+      {(c.erreurs.length > 0 || c.avertissements.length > 0) && (
+        <div className="grid gap-1.5">
+          <h3 className="font-semibold">Contrôle du pack</h3>
+          <ul className="grid gap-1">
+            {c.erreurs.map((e) => <li key={e} className="rounded-lg bg-red-50 px-2 py-1 text-red-900 ring-1 ring-red-200">Erreur : {e}</li>)}
+            {c.avertissements.map((e) => <li key={e} className="rounded-lg bg-amber-50 px-2 py-1 text-amber-950 ring-1 ring-amber-200">{e}</li>)}
+          </ul>
+        </div>
+      )}
+      <div className="grid gap-1.5">
+        <h3 className="font-semibold">Sources ({c.sources.length})</h3>
+        {c.sources.length ? (
+          <ol className="grid gap-1.5">
+            {c.sources.map((s, i) => (
+              <li key={s.id} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-1">
+                <span className="text-xs font-semibold text-teal-800">[{i + 1}]</span>
+                <span className="min-w-0">
+                  <span className="font-semibold">{s.organisme}</span> · <a href={s.url} target="_blank" rel="noopener noreferrer" className="break-words underline">{s.titre}</a>
+                  {!s.verifie && <span className="ml-1 rounded bg-amber-100 px-1 text-xs text-amber-900">à revérifier</span>}
+                </span>
+              </li>
+            ))}
+          </ol>
+        ) : <p className="text-neutral-600">Aucune source citée (texte sans affirmation réglementaire).</p>}
+      </div>
+    </div>
+  );
+}
+
+function Visuel({ item, visuel: v, studio, champs }: { item: ItemArrivage; visuel: VisuelArrivage; studio: Props['studio']; champs: Record<string, string> }) {
   const cadre = 'grid aspect-[4/3] w-full place-items-center overflow-hidden rounded-xl ring-1 ring-black/10';
+  if (v.kind === 'contenu') return <TexteContenu c={v.contenu} champs={champs} />;
   if (v.kind === 'image') {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={v.src} alt={item.titre} draggable={false} className="aspect-[4/3] w-full rounded-xl bg-neutral-100 object-contain" />;
@@ -283,5 +474,6 @@ function Visuel({ item, studio }: { item: ItemArrivage; studio: Props['studio'] 
   }
   if (v.kind === 'gamme') return <div className={`${cadre} grid-cols-6 gap-0`}>{v.couleurs.map((c, i) => <span key={i} className="h-full w-full" style={{ background: c }} />)}</div>;
   if (v.kind === 'studio') return <div className="overflow-hidden rounded-xl ring-1 ring-black/10"><ApercuStudio cle={v.cle} {...studio} /></div>;
+  if (v.kind === 'differe') return <div className={`${cadre} animate-pulse bg-neutral-100 text-sm text-neutral-500`}>Chargement de l’aperçu…</div>;
   return <div className={`${cadre} bg-neutral-50 text-sm text-neutral-500`}>Sans aperçu</div>;
 }
