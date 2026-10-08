@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
   appliquerPersonnalisations, ajusterCouleurPrincipale, ajusterCouleurSecondaire, avertissementsTexte, blocsAStocker, blocsDuModele, blocsEffectifs,
   contenuDesBlocs, controlerPersonnalisations, cssTaillesTexte, facteurTailleTexte, lirePersonnalisations, motsTropLongs, normaliserReglagesPerso,
-  nouvelleVersionPerso, pagesPersonnalisees, policesProposees, revenirAuModele, variablesSecondaire, versionPerso, type Bloc,
+  nouvelleVersionPerso, pagesPersonnalisees, remarqueCouleur, policesProposees, revenirAuModele, variablesSecondaire, versionPerso, type Bloc,
 } from './personnalisations-site';
 import { appliquerRecette, compositionInitiale, tirerDimension } from './recettes';
 import { draftVide, normaliserDraft, type SiteDraft } from './draft';
@@ -160,6 +160,11 @@ test('avertissements doux : promesses, « guérir », superlatifs, avis ; reform
   assert.ok(a.every((x) => !x.bloquante));
   assert.ok(a.some((x) => x.reformulation && /prendre en charge/.test(x.reformulation)));
   assert.ok(a.every((x) => x.suggestion));
+  // Formulations relevées par le test des personas (2026-10-09)
+  for (const phrase of ['Nos semelles soignent définitivement la fasciite plantaire.', 'Le plus réputé de Lyon.', 'Nous soignons tout.']) assert.ok(avertissementsTexte(phrase).length, phrase);
+  assert.equal(avertissementsTexte('Le bilan dure environ quarante-cinq minutes.').length, 0);
+  assert.ok(remarqueCouleur('#d4008d'));
+  assert.equal(remarqueCouleur('#1f6b64'), null);
 });
 
 test('images « Démo » : signalées, visibles dans l’aperçu, jamais publiées (ni par la couche, ni depuis le brouillon)', () => {

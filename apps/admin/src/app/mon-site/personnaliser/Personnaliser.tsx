@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import Link from 'next/link';
 import {
   ajusterCouleurPrincipale, ajusterCouleurSecondaire, appliquerPersonnalisations, avertissementsTexte, blocsAStocker, blocsDuModele, blocsEffectifs,
-  contraste, controlerPersonnalisations, estImageDemo, formatEmplacement, LIMITES_BLOCS, modeleDuSite, pageCommeLeModele, pagesPersonnalisees, pilePolice,
+  contraste, controlerPersonnalisations, estImageDemo, formatEmplacement, LIMITES_BLOCS, modeleDuSite, pageCommeLeModele, pagesPersonnalisees, pilePolice, remarqueCouleur,
   resumePersonnalisations, revenirAuModele, TAILLES_TEXTE, TYPES_BLOCS, type AlertePerso, type Bloc, type CleReglage, type ChoixImage, type JeuPhotos,
   type MarqueImportee, type ModeleManifeste, type PersonnalisationsSite, type PoliceProposee, type ReglagesPerso, type SiteDraft, type TypeBloc,
 } from '@plateforme/core';
@@ -33,7 +33,7 @@ type LigneCatalogue = SoinCatalogue & { faq?: { q: string; r: string }[] };
 
 const bouton = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold disabled:opacity-50 sm:px-4';
 const boutonPlein = `${bouton} bg-teal-800 text-white hover:bg-teal-900`;
-const boutonLigne = `${bouton} border border-black/15 bg-white text-neutral-800 hover:bg-neutral-50`;
+const boutonLigne = `${bouton} min-w-11 border border-black/15 bg-white text-neutral-800 hover:bg-neutral-50`;
 const lien = 'min-h-11 text-sm font-semibold text-teal-800 underline-offset-4 hover:underline';
 const dateFr = (iso: string) => { try { return new Date(iso).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }); } catch { return iso; } };
 
@@ -75,8 +75,26 @@ export default function Personnaliser(p: Props) {
     return () => removeEventListener('beforeunload', avant);
   }, [modifie]);
 
+  // Liens internes (menu, tableau de bord) : confirmation tant que des modifications ne sont pas enregistrées
+  useEffect(() => {
+    if (!modifie) return;
+    const clic = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!a || a.target === '_blank' || e.defaultPrevented) return;
+      if (!confirm('Vos modifications ne sont pas enregistrées. Quitter quand même ? (« Annuler » pour rester et cliquer sur « Enregistrer »)')) { e.preventDefault(); e.stopPropagation(); }
+    };
+    document.addEventListener('click', clic, true);
+    return () => document.removeEventListener('click', clic, true);
+  }, [modifie]);
+
   // Aperçu en direct : la couche appliquée en dernier, sur une copie du brouillon
-  const draftA = useMemo(() => appliquerPersonnalisations(p.draft, { reglages: r }), [p.draft, r]);
+  const [pageTextes, setPageTextes] = useState<string | null>(null);
+  const draftA = useMemo(() => {
+    const x = appliquerPersonnalisations(p.draft, { reglages: r });
+    // Onglet Textes : la page modifiée est celle de « Une page soin » dans l'aperçu
+    const slug = onglet === 'textes' && pageTextes ? pageTextes.slice(5) : null;
+    return slug ? { ...x, soins: x.soins.length && !x.soins.includes(slug) ? [...x.soins, slug] : x.soins, theme: { ...x.theme, soinsEnAvant: [slug, ...(x.theme.soinsEnAvant ?? []).filter((y) => y !== slug)] } } : x;
+  }, [p.draft, r, onglet, pageTextes]);
   const modeleA = useMemo(() => modeleDuSite(p.modele, draftA.theme), [p.modele, draftA.theme]);
   const catalogueA = useMemo(() => pagesPersonnalisees(p.catalogue as LigneCatalogue[], r), [p.catalogue, r]);
   const modelesPages = useMemo(() => Object.fromEntries((p.catalogue as LigneCatalogue[]).map((c) => [`soin:${c.slug}`, blocsDuModele(c.corps ?? '', c.faq ?? [])])), [p.catalogue]);
@@ -168,8 +186,8 @@ export default function Personnaliser(p: Props) {
           {onglet === 'police' && <OngletPolice r={r} polices={p.polices} changer={changer} modele={modele} />}
           {onglet === 'couleurs' && <OngletCouleurs r={r} gammes={p.gammes} secondaires={p.secondaires} changer={changer} modele={modele} actuelle={{ couleur: p.draft.theme.couleur, gamme: p.draft.theme.gamme }} />}
           {onglet === 'images' && <OngletImages r={r} images={p.images} siteId={p.siteId} changer={changer} modele={modele} />}
-          {onglet === 'textes' && <OngletTextes r={r} catalogue={p.catalogue as LigneCatalogue[]} soins={p.draft.soins} modeles={modelesPages} changer={changer} />}
-          {onglet === 'historique' && <OngletHistorique p={p.initial} journal={p.journal} charger={(x, n) => { changer(() => x); setMessage({ ok: true, message: `Version ${n} chargée dans l’aperçu : enregistrez ou publiez pour la garder.` }); }} />}
+          {onglet === 'textes' && <OngletTextes r={r} catalogue={p.catalogue as LigneCatalogue[]} soins={p.draft.soins} modeles={modelesPages} changer={changer} onPage={setPageTextes} />}
+          {onglet === 'historique' && <OngletHistorique nomsPages={nomsPages} p={p.initial} journal={p.journal} charger={(x, n) => { changer(() => x); setMessage({ ok: true, message: `Version ${n} chargée dans l’aperçu : enregistrez ou publiez pour la garder.` }); }} />}
         </section>
         <section className={`${vueMobile === 'apercu' ? 'block' : 'hidden'} min-w-0 lg:sticky lg:top-20 lg:block`} aria-label="Aperçu du site">
           <ApercuTheme draft={draftA} modele={modeleA} catalogue={catalogueA} marquesImportees={p.marquesImportees} jeuPhotos={p.jeuPhotos} appareil="mobile" />
@@ -252,8 +270,8 @@ function OngletCouleurs({ r, gammes, secondaires, changer, modele, actuelle }: {
   const [avis, setAvis] = useState<string | null>(null);
   const [avis2, setAvis2] = useState<string | null>(null);
   const principale = r.couleurs?.gamme ? gammes.find((g) => g.id === r.couleurs!.gamme)!.accent : r.couleurs?.principale ?? (gammes.find((g) => g.id === actuelle.gamme)?.accent ?? actuelle.couleur);
-  const libre = (c: string) => { const a = ajusterCouleurPrincipale(c); setAvis(a.message); changer((y) => ({ ...y, couleurs: { ...(y.couleurs?.secondaire ? { secondaire: y.couleurs.secondaire } : {}), principale: a.couleur } })); };
-  const second = (c: string) => { const a = ajusterCouleurSecondaire(c); setAvis2(a.message); changer((y) => ({ ...y, couleurs: { ...(y.couleurs ?? {}), secondaire: a.couleur } })); };
+  const libre = (c: string) => { const a = ajusterCouleurPrincipale(c); setAvis([a.message, remarqueCouleur(c)].filter(Boolean).join(' ') || null); changer((y) => ({ ...y, couleurs: { ...(y.couleurs?.secondaire ? { secondaire: y.couleurs.secondaire } : {}), principale: a.couleur } })); };
+  const second = (c: string) => { const a = ajusterCouleurSecondaire(c); setAvis2([a.message, remarqueCouleur(c)].filter(Boolean).join(' ') || null); changer((y) => ({ ...y, couleurs: { ...(y.couleurs ?? {}), secondaire: a.couleur } })); };
   const ratio = contraste('#ffffff', principale);
   return (
     <div className="grid gap-5">
@@ -266,8 +284,7 @@ function OngletCouleurs({ r, gammes, secondaires, changer, modele, actuelle }: {
         <label className="flex flex-wrap items-center gap-3 text-sm">
           <span>Couleur libre</span>
           <input type="color" value={principale} onChange={(e) => libre(e.target.value)} className="h-11 w-16 cursor-pointer rounded-lg border border-black/15 bg-white" aria-label="Choisir une couleur principale libre" />
-          <code className="text-xs text-neutral-600">{principale}</code>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ratio >= 4.5 ? 'bg-teal-50 text-teal-900' : 'bg-red-50 text-red-900'}`}>Contraste {ratio.toFixed(1).replace('.', ',')}:1 {ratio >= 4.5 ? '✓' : ''}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ratio >= 4.5 ? 'bg-teal-50 text-teal-900' : 'bg-red-50 text-red-900'}`}>{ratio >= 4.5 ? 'Bien lisible ✓' : 'Peu lisible'}</span>
         </label>
         {avis && <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">{avis}</p>}
       </fieldset>
@@ -324,7 +341,7 @@ function OngletImages({ r, images, siteId, changer, modele }: { r: ReglagesPerso
       const blob = await recadrerEnWebp(recadrage.img, ratio, recadrage.focal);
       const url = await envoyerImagePerso(siteId, recadrage.cle, blob);
       poser(recadrage.cle, { url, source: 'televersee', focal: recadrage.focal });
-      setEtat(`Image envoyée (${Math.round(blob.size / 1024)} Ko, WebP).`);
+      setEtat('Image envoyée et allégée pour le web.');
       setRecadrage(null);
     } catch (e) { setEtat((e as Error).message); }
   }
@@ -402,10 +419,11 @@ function Recadrage({ cle, img, url, focal, onFocal }: { cle: string; img: ImageL
 const nouvelId = () => `p${Date.now().toString(36)}${Math.floor(Math.random() * 36 ** 2).toString(36)}`.slice(0, 20);
 const nouveauBloc = (type: TypeBloc): Bloc => ({ id: nouvelId(), type, texte: '', ...(type === 'liste' ? { items: [''] } : {}), ...(type === 'question' ? { reponse: '' } : {}), ...(type === 'intertitre' ? { niveau: 2 as const } : {}) });
 
-function OngletTextes({ r, catalogue, soins, modeles, changer }: { r: ReglagesPerso; catalogue: LigneCatalogue[]; soins: string[]; modeles: Record<string, Bloc[]>; changer: Changer }) {
+function OngletTextes({ r, catalogue, soins, modeles, changer, onPage }: { r: ReglagesPerso; catalogue: LigneCatalogue[]; soins: string[]; modeles: Record<string, Bloc[]>; changer: Changer; onPage: (cle: string) => void }) {
   const pages = catalogue.filter((c) => soins.length ? soins.includes(c.slug) : true);
   const [cle, setCle] = useState(pages[0] ? `soin:${pages[0].slug}` : '');
   const soin = catalogue.find((c) => `soin:${c.slug}` === cle);
+  useEffect(() => { if (cle) onPage(cle); }, [cle, onPage]);
   const modele = useMemo(() => modeles[cle] ?? [], [modeles, cle]);
   const blocs = useMemo(() => blocsEffectifs(modele, r.pages?.[cle]), [modele, r.pages, cle]);
   if (!soin) return <p className="text-sm text-neutral-600">Aucune page de soin à modifier pour l’instant.</p>;
@@ -496,7 +514,7 @@ function EditeurBloc({ b, modele, premier, dernier, onMaj, onSupprimer, onDeplac
         </div>
       ) : b.type === 'question' ? (
         <>
-          <Champ ligne valeur={b.texte} max={LIMITES_BLOCS.question} label="Question" onChange={(v) => onMaj({ ...b, texte: v })} />
+           <Champ valeur={b.texte} max={LIMITES_BLOCS.question} label="Question" onChange={(v) => onMaj({ ...b, texte: v })} />
           <Champ valeur={b.reponse ?? ''} max={LIMITES_BLOCS.reponse} label="Réponse" onChange={(v) => onMaj({ ...b, reponse: v })} />
         </>
       ) : (
@@ -506,7 +524,7 @@ function EditeurBloc({ b, modele, premier, dernier, onMaj, onSupprimer, onDeplac
       {vide && !b.verrou && <p className="text-xs text-neutral-500">Bloc vide : il ne sera pas enregistré.</p>}
       {avert.length > 0 && (
         <div className="grid gap-1 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-950">
-          {[...new Map(avert.map((a) => [`${a.extrait}|${a.raison}`, a])).values()].slice(0, 4).map((a, i) => <p key={i}><strong>« {a.extrait} »</strong> : {a.raison}.{a.suggestion ? ` ${a.suggestion}` : ''}</p>)}
+          {[...new Map(avert.map((a) => [`${a.extrait}|${a.raison}`, a])).values()].slice(0, 4).map((a, i) => <p key={i}><strong>« {a.extrait} »</strong> : {a.raison.replace(/\.$/, '')}.{a.suggestion ? ` ${a.suggestion}` : ''}</p>)}
           {avert[0].reformulation && (b.type === 'paragraphe' || b.type === 'encadre' || b.type === 'intertitre') && <button type="button" className={`${lien} justify-self-start`} onClick={() => onMaj({ ...b, texte: avert[0].reformulation! })}>Utiliser la reformulation proposée</button>}
         </div>
       )}
@@ -515,7 +533,7 @@ function EditeurBloc({ b, modele, premier, dernier, onMaj, onSupprimer, onDeplac
   );
 }
 
-function OngletHistorique({ p, journal, charger }: { p: PersonnalisationsSite; journal: VersionJournal[]; charger: (r: ReglagesPerso, n: number) => void }) {
+function OngletHistorique({ p, journal, charger, nomsPages }: { nomsPages: Record<string, string>; p: PersonnalisationsSite; journal: VersionJournal[]; charger: (r: ReglagesPerso, n: number) => void }) {
   const versions = [...p.historique].reverse();
   const actions: Record<string, string> = { enregistrement: 'Enregistrée', publication: 'Publiée', restauration: 'Restaurée', annulation: 'Annulée (administration)' };
   return (
@@ -523,7 +541,7 @@ function OngletHistorique({ p, journal, charger }: { p: PersonnalisationsSite; j
       {!versions.length && <p className="text-sm text-neutral-600">Aucune version enregistrée pour l’instant.</p>}
       <ol className="grid gap-2">
         {versions.map((v) => {
-          const resume = resumePersonnalisations(v.reglages);
+          const resume = resumePersonnalisations(v.reglages, nomsPages);
           const pub = journal.find((j) => j.revision === v.revision && j.action === 'publication');
           return (
             <li key={v.revision} className="grid gap-1 rounded-xl border border-black/10 p-3 text-sm">
@@ -535,7 +553,7 @@ function OngletHistorique({ p, journal, charger }: { p: PersonnalisationsSite; j
           );
         })}
       </ol>
-      {journal.length > 0 && <p className="text-xs text-neutral-500">Journal : {journal.map((j) => `v${j.revision} ${actions[j.action] ?? j.action}`).slice(0, 8).join(', ')}.</p>}
+      {journal.length > 0 && <p className="text-xs text-neutral-500">Dernières actions : {journal.map((j) => `version ${j.revision} ${(actions[j.action] ?? j.action).toLowerCase()}`).slice(0, 6).join(', ')}.</p>}
     </div>
   );
 }

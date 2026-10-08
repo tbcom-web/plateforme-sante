@@ -19,7 +19,7 @@ export default async function PersonnalisationsAdmin() {
     }));
     const titres = catalogue.filter((c) => d.soins.includes(c.slug)).map((c) => c.titre_court);
     const alertes = controlerPersonnalisations(s.perso.reglages, { titres, majuscules: d.theme.typo?.casse === 'majuscules', modele, nomsPages: Object.fromEntries(catalogue.map((c) => [`soin:${c.slug}`, c.titre_court])) });
-    return { ...s, alertes, resume: resumePersonnalisations(s.perso.reglages), casse: casseLaCharte(alertes) };
+    return { ...s, alertes, resume: resumePersonnalisations(s.perso.reglages, Object.fromEntries(catalogue.map((c) => [`soin:${c.slug}`, c.titre_court]))), casse: casseLaCharte(alertes) };
   }).sort((a, b) => Number(b.casse) - Number(a.casse));
 
   async function annuler(form: FormData) {

@@ -345,6 +345,16 @@ function depuisTsl(t: number, s: number, l: number): string {
  * Couleur secondaire : pastilles, pictos et soulignés (élément graphique ≥ 3:1 sur blanc) et teinte très pâle des sections
  * alternées. Trop claire pour être vue sur blanc : foncée (même teinte).
  */
+/** Remarque douce sur une couleur peu courante pour un cabinet de santé (rouge vif, fuchsia, fluo) : jamais bloquante */
+export function remarqueCouleur(c: string): string | null {
+  if (!HEX.test(c)) return null;
+  const [t, s, l] = tsl(c);
+  const h = t * 360;
+  if (s > 0.6 && l > 0.25 && l < 0.75 && (h < 15 || h > 285)) return 'Couleur très vive, peu courante pour un cabinet de santé : vérifiez qu’elle vous ressemble (une gamme plus douce rassure souvent les patients).';
+  if (s > 0.85 && l > 0.45 && h > 60 && h < 170) return 'Couleur fluo : elle peut fatiguer la lecture ; une teinte plus douce est souvent plus confortable.';
+  return null;
+}
+
 export function ajusterCouleurSecondaire(c: string): CouleurAjustee {
   if (!HEX.test(c)) return { couleur: '', ajustee: true, message: 'Couleur non reconnue.' };
   let x = c.toLowerCase();
@@ -506,6 +516,8 @@ export function pagesPersonnalisees<T extends { slug: string; corps?: string; fa
 // ---------------------------------------------------------------------------------------------------------------
 
 const AVIS: { motif: RegExp; raison: string; suggestion: string }[] = [
+  { motif: /\bsoign(?:e|es|ent|ons|ez)\s+(?:d[ée]finitivement|tout|toutes?)\b|\bd[ée]finitivement\b/gi, raison: 'Promesse de résultat', suggestion: 'Décrivez la prise en charge : « nous prenons en charge… », « le soin vise à… ».' },
+  { motif: /\b(?:le|la|les)\s+plus\s+(?:r[ée]put[ée]|connu|comp[ée]tent|exp[ée]riment[ée]|qualifi[ée]|recommand[ée])e?s?(?![a-zà-ÿ])|\br[ée]put[ée]e?s?(?![a-zà-ÿ])/gi, raison: 'Superlatif ou réputation revendiquée', suggestion: 'Présentez plutôt les formations suivies et l’expérience, sans comparaison.' },
   { motif: /\bavis\s+(?:de\s+(?:nos|mes|ses)\s+)?patients?\b|\bt[ée]moignages?\b|\b[0-5](?:[.,]\d)?\s?\/\s?5\b|\b\d\s?[ée]toiles\b|\bpatients?\s+satisfaits?\b|\brecommand[ée]e?s?\s+par\b/gi, raison: 'Avis ou témoignages de patients (interdits sur le site d’un professionnel de santé)', suggestion: 'Décrivez plutôt le déroulement du soin et ce que le cabinet propose.' },
 ];
 const SUGGESTIONS_INTERDITS: Record<string, string> = {
@@ -660,7 +672,7 @@ export function formatEmplacement(e: string): { ratio: number; min: [number, num
 }
 
 /** Résumé lisible des réglages (admin / commercial, historique) */
-export function resumePersonnalisations(r: ReglagesPerso): { cle: CleReglage; libelle: string; valeur: string }[] {
+export function resumePersonnalisations(r: ReglagesPerso, nomsPages: Record<string, string> = {}): { cle: CleReglage; libelle: string; valeur: string }[] {
   const l: { cle: CleReglage; libelle: string; valeur: string }[] = [];
   if (r.police) l.push({ cle: 'police', libelle: 'Police', valeur: pairePolices(r.police)?.nom ?? r.police });
   if (r.taille) l.push({ cle: 'taille', libelle: 'Taille des textes', valeur: tailleTexte(r.taille)?.nom ?? r.taille });
@@ -668,7 +680,7 @@ export function resumePersonnalisations(r: ReglagesPerso): { cle: CleReglage; li
   if (r.couleurs?.principale) l.push({ cle: 'couleurs.principale', libelle: 'Couleur principale', valeur: r.couleurs.principale });
   if (r.couleurs?.secondaire) l.push({ cle: 'couleurs.secondaire', libelle: 'Couleur secondaire', valeur: r.couleurs.secondaire });
   for (const [e, im] of Object.entries(r.images ?? {})) l.push({ cle: `image:${e}`, libelle: libelleEmplacementPerso(e), valeur: `${im.source === 'televersee' ? 'Image envoyée' : 'Image du kit'}${estImageDemo(im.url) ? ' (Démo, non publiée)' : ''}` });
-  for (const [c, b] of Object.entries(r.pages ?? {})) l.push({ cle: `page:${c}`, libelle: libellePageDefaut(c), valeur: `${b.filter((x) => !('ref' in x)).length} bloc(s) modifié(s) ou ajouté(s), ${b.length} au total` });
+  for (const [c, b] of Object.entries(r.pages ?? {})) l.push({ cle: `page:${c}`, libelle: nomsPages[c] ? `Page « ${nomsPages[c]} »` : libellePageDefaut(c), valeur: `${b.filter((x) => !('ref' in x)).length} bloc(s) modifié(s) ou ajouté(s), ${b.length} au total` });
   return l;
 }
 
