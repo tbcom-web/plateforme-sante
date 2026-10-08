@@ -11,6 +11,10 @@
 //   photo       : deux photos du même sujet, au même emplacement, avec le même traitement (seule la photo change)
 //   illustration: deux illustrations / héros du même sujet : même dessin dans deux styles (dimension « style »), ou deux dessins
 //                 du même style (dimension « version »)
+//                 + VARIANTES d'une même illustration de base (2026-10-08, bases-illustrations.ts) : dimension « variante:contraste »
+//                 (contraste fort / doux / d'origine, filtre CSS au rendu), « variante:couleur » (deux gammes) ou « variante:style »
+//                 (deux registres ou styles du même dessin) ; UNE seule dimension diffère (genererDuelVariantes) ; résultat → écart
+//                 propre de la variante (renfortsDuels sur la clé de variante, ajouté à l'effet hérité de la base).
 //
 // 2. PAIRES (genererPaireElements, genererDuelComposition) : même sujet / même scénario ; la plupart des duels ne diffèrent que
 //   par UNE dimension (contrôlée : champsDifferents / variantesDifferentes) ; ~15 % de duels « libres » entre deux recettes bien
@@ -36,6 +40,8 @@
 //
 // 5. JUGE (juge.ts, retours/predictions.json) : predireDuel compare les notes prédites des éléments qui diffèrent ; l'admin
 //   affiche « Claude prévoyait A » APRÈS le choix de Paul ; accordJuge mesure l'accord (calibration).
+
+import { cleVarianteRendu, CONTRASTES, DIMENSIONS_VARIANTE, dimensionDuelVariante, lireVarianteRendu, rangVariante, valeurVariante, type DimensionVariante } from './bases-illustrations';
 
 export const TYPES_DUEL = ['theme', 'typo', 'traitement', 'element', 'photo', 'illustration'] as const;
 export type TypeDuel = (typeof TYPES_DUEL)[number];
@@ -352,6 +358,8 @@ export const elementDuCote = (d: Duel, c: 'a' | 'b') => (c === 'a' ? d.aIngredie
 /** Famille de classement : photos, illustrations, ou dimension des compositions (« polices », « couleurs »…) ; libre = compositions */
 export function familleClassement(d: Pick<Duel, 'type' | 'dimension'>): string {
   if (d.type === 'photo') return 'photo';
+  // Variantes d'une illustration de base : classement à part (contrastes, couleurs, styles du même dessin)
+  if (d.type === 'illustration' && d.dimension?.startsWith('variante:')) return d.dimension;
   if (d.type === 'illustration') return 'illustration';
   return d.dimension ?? 'libre';
 }
@@ -390,6 +398,7 @@ export function classementDuels(duels: readonly Duel[]): LigneClassement[] {
 export type ClassementContexte = { contexte: string; type: TypeDuel; famille: string; sujet: string; titre: string; duels: number; lignes: LigneClassement[] };
 
 const NOMS_FAMILLES: Record<string, string> = {
+  'variante:contraste': 'contrastes d’illustration', 'variante:couleur': 'couleurs d’illustration', 'variante:style': 'styles d’une même illustration',
   photo: 'photos', illustration: 'illustrations et héros', couleurs: 'palettes', polices: 'paires de polices', effets: 'effets', typo: 'typographies',
   'typo:echelle': 'échelles de titres', 'typo:casse': 'casses de titres', 'typo:graisse': 'graisses de titres', 'typo:interlettrage': 'interlettrages de titres',
   'police-couleurs': 'combinaisons police × palette',
@@ -541,6 +550,82 @@ export function genererPaireElements(type: 'photo' | 'illustration', candidats: 
   // Toutes les paires ont déjà été jouées : on en repose une (la plus incertaine), plutôt que rien ; sinon le mode libre
   if (type === 'illustration' && !libre) return genererPaireElements(type, candidats, historique, { ...opts, partLibre: 1 });
   return null;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Variantes d'une illustration de base (contraste, couleur, style) : une seule dimension diffère
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Une variante candidate : clé (de rendu ou d'inventaire), sa base, et la valeur de chaque dimension */
+export type CandidatVariante = {
+  cle: string; base: string; valeurs: Readonly<Partial<Record<DimensionVariante, string>>>;
+  /** Variante de RENDU (`<clé>@contraste=…`, `<clé>@couleur=…`) : comparée seulement à d'autres variantes de rendu */
+  rendu?: boolean;
+  /** Axe d'une variante de rendu (contraste ou couleur) : deux variantes de rendu ne se comparent que sur le même axe */
+  axe?: 'contraste' | 'couleur';
+};
+
+/** Dimension (unique) qui distingue deux variantes de la MÊME base ; null si base différente, aucune ou plusieurs dimensions */
+export function dimensionUniqueVariantes(a: CandidatVariante, b: CandidatVariante): DimensionVariante | null {
+  if (a.base !== b.base || a.cle === b.cle || Boolean(a.rendu) !== Boolean(b.rendu) || a.axe !== b.axe) return null;
+  const d = DIMENSIONS_VARIANTE.filter((x) => (a.valeurs[x] ?? '') !== (b.valeurs[x] ?? ''));
+  if (d.length !== 1) return null;
+  // Style : variantes d'inventaire (le renfort va à la vraie clé) ; contraste / couleur : variantes de rendu seulement
+  return (d[0] === 'style') === !a.rendu ? d[0] : null;
+}
+
+/**
+ * Candidats d'une base : chaque variante d'inventaire (dimension « style », clé réelle) et, pour l'illustration « basique »,
+ * des variantes de RENDU (`<clé>@contraste=normal|fort|doux`, `<clé>@couleur=<gamme>`, aucune source modifiée) comparées
+ * entre elles : le renfort d'un duel de contraste ne touche jamais la clé réelle du dessin.
+ */
+export function candidatsVariantes(base: string, cles: readonly string[], opts: { contrastes?: boolean; gammes?: readonly string[]; gammeDeBase?: string } = {}): CandidatVariante[] {
+  const l = [...cles].sort((a, b) => rangVariante(a) - rangVariante(b) || a.localeCompare(b));
+  if (!l.length) return [];
+  const g0 = opts.gammeDeBase ?? 'origine';
+  const res: CandidatVariante[] = l.map((cle) => ({ cle, base, valeurs: { style: valeurVariante(cle) ?? cle, contraste: 'normal', couleur: g0 } }));
+  const rep = l[0], style = valeurVariante(rep) ?? rep;
+  if (opts.contrastes !== false) for (const c of CONTRASTES) res.push({ cle: cleVarianteRendu(rep, 'contraste', c), base, valeurs: { style, contraste: c, couleur: g0 }, rendu: true, axe: 'contraste' });
+  if (opts.gammes?.length) {
+    // Couleurs : variantes de rendu au contraste d'origine, la gamme de base comprise (sous sa clé couleur=…)
+    for (const g of [...new Set([g0, ...opts.gammes])]) res.push({ cle: cleVarianteRendu(rep, 'couleur', g), base, valeurs: { style, contraste: 'normal', couleur: g }, rendu: true, axe: 'couleur' });
+  }
+  return res;
+}
+
+export type PaireVariantes = { a: CandidatVariante; b: CandidatVariante; dimension: string };
+
+/**
+ * Duel de variantes : même base, UNE dimension différente (`variante:contraste` par défaut si demandé). Priorité : paire jamais
+ * jouée, dimension demandée, variantes sans signal ; ordre A / B tiré au hasard. null s'il n'y a pas deux variantes comparables.
+ */
+export function genererDuelVariantes(candidats: readonly CandidatVariante[], historique: readonly Pick<Duel, 'aCle' | 'bCle'>[], opts: { graine: number; dimension?: DimensionVariante | null }): PaireVariantes | null {
+  const r = hasard(opts.graine);
+  const joues = new Set(historique.map((d) => cleDePaire(d.aCle, d.bCle)));
+  const vus = new Set(historique.flatMap((d) => [d.aCle, d.bCle]));
+  let meilleur: { a: CandidatVariante; b: CandidatVariante; dim: DimensionVariante; score: number } | null = null;
+  for (let i = 0; i < candidats.length; i++) for (let j = i + 1; j < candidats.length; j++) {
+    const a = candidats[i], b = candidats[j];
+    const dim = dimensionUniqueVariantes(a, b);
+    if (!dim) continue;
+    if (opts.dimension && dim !== opts.dimension) continue;
+    const score = (joues.has(cleDePaire(a.cle, b.cle)) ? -100 : 0) + (vus.has(a.cle) ? 0 : 1) + (vus.has(b.cle) ? 0 : 1) + 0.5 * r();
+    if (!meilleur || score > meilleur.score) meilleur = { a, b, dim, score };
+  }
+  if (!meilleur) return null;
+  const dimension = dimensionDuelVariante(meilleur.dim);
+  return r() < 0.5 ? { a: meilleur.a, b: meilleur.b, dimension } : { a: meilleur.b, b: meilleur.a, dimension };
+}
+
+/**
+ * Préférence globale d'une dimension de rendu (tous dessins confondus) : Bradley-Terry sur les VALEURS (« fort », « doux »,
+ * « normal ») des duels `variante:<dimension>` ; du plus au moins préféré.
+ */
+export function preferencesVariantes(duels: readonly Duel[], dimension: 'contraste' | 'couleur'): LigneClassement[] {
+  const valeur = (k: string) => { const v = lireVarianteRendu(k); return v && v.dimension === dimension ? v.valeur : null; };
+  const l = duels.filter((d) => d.type === 'illustration' && d.dimension === dimensionDuelVariante(dimension))
+    .map((d) => ({ ...d, aIngredients: { element: valeur(d.aCle) ?? d.aCle }, bIngredients: { element: valeur(d.bCle) ?? d.bCle } }));
+  return classementDuels(l);
 }
 
 /** Dimensions des duels de compositions, par type */

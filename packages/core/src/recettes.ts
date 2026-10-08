@@ -28,7 +28,7 @@ import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
-import { clePhoto, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
+import { clePhoto, effetHerite, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
 import { estSujetDeVisuel, sujetsEffectifs } from './sujets-visuels';
 import { urlImageAutorisee, type SourcePhotoLibre } from './photos-libres';
 import type { HashtagsAssets } from './hashtags';
@@ -1107,7 +1107,8 @@ export function appliquerRenforts(poids: PoidsAtelier | null | undefined, r: { a
   if (!p.n && Object.keys(r.atelier).length) p.n = 1;
   if (Object.keys(r.assets).length) {
     const a: PoidsAssets = p.assets ? { ...p.assets, effets: { ...p.assets.effets } } : { n: 0, moyenne: 3, effets: {}, statuts: {} };
-    for (const [k, d] of Object.entries(r.assets)) a.effets[k] = borne((a.effets[k] ?? 0) + d);
+    // Variante d'une illustration de base sans effet propre : le renfort s'ajoute à l'effet hérité de sa base (bases-illustrations.ts)
+    for (const [k, d] of Object.entries(r.assets)) a.effets[k] = borne(effetHerite(k, a) + d);
     p.assets = a;
   }
   return p;

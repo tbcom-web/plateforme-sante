@@ -5,6 +5,7 @@
 
 import type { TypeAsset } from './assets-poids';
 import { scoreAsset } from './assets-poids';
+import { baseDeCle } from './bases-illustrations';
 import type { PoidsAtelier } from './atelier-poids';
 import { libelleCombinaison } from './atelier';
 import { lotsPropositions } from './propositions';
@@ -175,7 +176,9 @@ export function assetsInfluents(poids: PoidsAtelier | null | undefined, titres: 
   const a = poids?.assets;
   if (!a) return { favorises: [], evites: [] };
   const cles = [...new Set([...Object.keys(a.effets), ...Object.keys(a.statuts)])];
-  const l = cles.map((cle) => ({ cle, titre: titres[cle] ?? cle, score: scoreAsset(cle, a) }));
+  // Variante qui ne fait qu'hériter de sa base (même score) : seule la base est listée (bases-illustrations.ts)
+  const l = cles.map((cle) => ({ cle, titre: titres[cle] ?? cle, score: scoreAsset(cle, a) }))
+    .filter((x) => { const b = baseDeCle(x.cle); return !b || !cles.includes(b) || scoreAsset(b, a) !== x.score; });
   return {
     favorises: l.filter((x) => x.score >= 0.3).sort((x, y) => y.score - x.score || (x.cle < y.cle ? -1 : 1)).slice(0, nb),
     evites: l.filter((x) => x.score <= -0.75).sort((x, y) => x.score - y.score || (x.cle < y.cle ? -1 : 1)).slice(0, nb),
