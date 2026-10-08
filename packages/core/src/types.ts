@@ -97,6 +97,11 @@ export type SiteConfig = {
     typo?: import('./typo').ReglagesTypo;
     details?: import('./details').ReglagesDetails;
     menu?: import('./menus').ReglagesMenu;
+    /** Personnalisations du praticien (personnalisations-site.ts) : taille globale des textes et couleur secondaire ; absentes = recette */
+    taille?: import('./personnalisations-site').TailleTexte;
+    couleurSecondaire?: string;
+    /** Image du premier écran choisie par le praticien : affichée quel que soit le style visuel */
+    accueilPhoto?: true;
     mise_en_page: 'sobre' | 'chaleureux' | 'premium';
     style_images: 'organique' | 'lignes' | 'minimal';
   };
@@ -130,7 +135,7 @@ export type SiteConfig = {
   message: string;
   communes: string[];
   /** URLs des photos ; vide = photo d'illustration par défaut */
-  photos: { accueil: string; panorama: string; cabinet: string[]; /** Photos du praticien par soin (slug → URL), facultatif */ soins?: Record<string, string> };
+  photos: { accueil: string; panorama: string; cabinet: string[]; /** Photos du praticien par soin (slug → URL), facultatif */ soins?: Record<string, string>; /** Photo choisie par le praticien pour un sujet (id de thème → URL), facultatif */ sujets?: Record<string, string> };
   /** Marque de logo importée par l'admin, quand le praticien l'a choisie (nettoyée, voir marques-importees.ts) */
   marqueImportee?: import('./marques-importees').MarqueImportee;
   /**

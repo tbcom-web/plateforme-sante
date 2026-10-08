@@ -55,6 +55,9 @@ function photosTheme(id: string | null): { src: string; cadrage: string }[] {
  */
 export function visuelTheme(id: string | null, usage: 'principal' | 'second' = 'principal', deja: Set<string> = new Set()): VisuelTheme {
   const d = (id && DESSINS_THEME[id]) || DEFAUT;
+  // Photo choisie par le praticien pour ce sujet (« Personnaliser mon site ») : prioritaire, quel que soit le style
+  const perso = id ? site.photos.sujets?.[id] : undefined;
+  if (perso && usage === 'principal' && !deja.has(perso)) { deja.add(perso); return { type: 'photo', src: perso, cadrage: '50% 50%' }; }
   // Usage principal : l'illustration « héros » composée du thème (core, heros-themes.ts, illustrationTheme), sinon le dessin
   if (!vitrinePhoto) return usage === 'second' ? { type: 'dessin', ...d.second, animation: null } : { type: 'dessin', ...d.principal, ...(id && themeIllustre(id) ? { heros: id } : {}) };
   const candidates = photosTheme(id);
@@ -89,7 +92,7 @@ const visuelHerosChoisi = (site.modele.variantes as Record<string, string> | und
  */
 export const animationPremierEcran = animationDuHeros(site.modele.variantes as never, themeHeros);
 /** Visuel du premier écran : photo d'accueil du praticien d'abord (style « photos » ou visuel « photo »), sinon le visuel du thème n° 1 */
-export const visuelPremierEcran: VisuelTheme = (visuelHerosChoisi === 'photo' || (vitrinePhoto && visuelHerosChoisi !== 'illustration')) && site.photos.accueil
+export const visuelPremierEcran: VisuelTheme = (visuelHerosChoisi === 'photo' || site.theme.accueilPhoto || (vitrinePhoto && visuelHerosChoisi !== 'illustration')) && site.photos.accueil
   ? (montrees.add(site.photos.accueil), { type: 'photo', src: site.photos.accueil, cadrage: '50% 50%' })
   : visuelTheme(themeHeros, 'principal', montrees);
 /** Visuels des blocs des sujets principaux de l'accueil, dans l'ordre de préférence (le sujet du héros prend son second visuel) */

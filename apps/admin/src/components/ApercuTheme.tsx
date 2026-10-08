@@ -37,6 +37,7 @@ import type { SoinCatalogue } from '@/lib/sites';
 import ApercuGabarit, { ActionsRapidesApercu, HerosVue, tailleTitre, type HerosApercu } from './ApercuGabarit';
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
 import { cssTransitionsSections } from '@plateforme/core';
+import { styleTaillePerso, variablesSecondaire } from '@plateforme/core';
 import { appliquerKitDemo, kitDemoDe, kitDemoUtilise, RIEN_APPLIQUE } from '@plateforme/core';
 import BandeauExemples from './BandeauExemples';
 import { animationDuHeros, cssVisuelAnime, htmlVisuelAnime, styleCouleursHeros } from '@plateforme/core';
@@ -172,6 +173,8 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
       ...variablesTheme(m, { couleur: d.theme.couleur, gamme: d.theme.gamme || null }),
       // Gabarits tableau, village… : couleurs dérivées de la couleur du cabinet, garde-fous de contraste (vide en classique)
       ...variablesGabarit(m, { couleur: d.theme.couleur, gamme: d.theme.gamme || null }),
+      // Couleur secondaire du praticien (personnalisations-site.ts), après le thème et le gabarit
+      ...variablesSecondaire(d.theme),
       '--rayon': `${j.rayon}px`,
       '--rayon-bouton': { pilule: '999px', arrondi: '12px', carre: '2px' }[j.boutons],
       '--graisse-titres': String(j.graisseTitres),
@@ -182,7 +185,7 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
     if (!v['--doux']) v['--doux'] = 'var(--accent-tres-pale)';
     if (m.pied === 'accent') v['--pied'] = 'var(--accent-fonce)';
     return v as CSSProperties;
-  }, [m, j, pedago, d.theme.couleur, d.theme.gamme]);
+  }, [m, j, pedago, d.theme]);
 
   // Contenu tiré du formulaire, avec les replis du site publié (jamais « Votre ville » ni « 00 00 00 00 00 »)
   const lieu = d.lieux[0];
@@ -584,7 +587,7 @@ export default function ApercuTheme({ draft: d0, exemples = true, modele: m, cat
             data-forme={formeDesCartes(m)}
             data-survol={survol || undefined}
             data-photos={avecTraitement ? traitementPh!.id : undefined}
-            style={{ ...style, minHeight: '100vh', paddingBottom: mobile ? MARGE_BARRE_MOBILE : undefined }}
+            style={{ ...style, ...(styleTaillePerso(d.theme, mobile) as CSSProperties), minHeight: '100vh', paddingBottom: mobile ? MARGE_BARRE_MOBILE : undefined }}
           >
             <style>{CSS + SURFACES_CSS + CSS_PRESSION}</style>
             {/* Habillage d'une recette (typographie, détails, menu : habillage.ts) : même feuille que le site publié */}

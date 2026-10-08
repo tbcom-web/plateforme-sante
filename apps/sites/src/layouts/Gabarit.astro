@@ -2,6 +2,7 @@
 // Gabarit commun à toutes les pages d'un site praticien.
 // La présentation suit la fiche du modèle (site.modele) ; tout ce qui sert le SEO est produit ici, quel que soit le modèle.
 import { cssTransitionsSections } from '@plateforme/core';
+import { attributTaille, cssTaillesTexte, variablesSecondaire } from '@plateforme/core';
 import { cssEffets, cssFormes, formeDesCartes, jeuEffets, couleursTraitement, cssTraitementPhotos, normaliserTraitementPhotos, svgTraitementPhotos, traitementNeutre, voileTraitement } from '@plateforme/core';
 import '@fontsource-variable/inter';
 // Fraunces : axes graisse + taille optique (droit) et graisse + « wonk » (italique des mots en retrait), soit
@@ -205,6 +206,8 @@ const couleurs = [
   // Voile du premier écran, renforcé de l'éclaircissement maximal du traitement des photos (AA du titre posé sur la photo)
   `--voile:${Math.min(0.9, Math.round((m.accueil.voile / 100 + voileTraitement(traitementPhotosSite, couleursPhotosSite)) * 100) / 100)}`,
   ...Object.entries(variablesGabarit(m, site.theme)).map(([k, v]) => `${k}:${v}`),
+  // Couleur secondaire choisie par le praticien (personnalisations-site.ts) : duo et fond des sections alternées, après le gabarit
+  ...Object.entries(variablesSecondaire(site.theme)).map(([k, v]) => `${k}:${v}`),
 ].join(';');
 const FICHIERS_POLICES = {
   inter: policeInter, fraunces: policeFraunces, manrope: policeManrope, schibsted: policeSchibsted, instrument: policeInstrument, nunito: policeNunito, geist: policeGeist, publicsans: policePublicSans, bodoni: policeBodoni, newsreader: policeNewsreader,
@@ -293,7 +296,7 @@ const scriptMenu = nouveau && menuABouton(habillage.menu, gabarit) ? SCRIPT_MENU
 const appelBarre = attributAppelBarre(appelDansBarre({ gabarit, contact: variantes.contact, menuMobile: habillage.menu.mobile, rdvEnLigne, aTelephone }));
 ---
 <!doctype html>
-<html lang="fr" {...attrsHab} data-appel-barre={appelBarre} style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-photos={avecTraitementPhotos ? traitementPhotosSite!.id : undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" {...attrsHab} data-appel-barre={appelBarre} data-taille={attributTaille(site.theme.taille)} style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-photos={avecTraitementPhotos ? traitementPhotosSite!.id : undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -319,7 +322,7 @@ const appelBarre = attributAppelBarre(appelDansBarre({ gabarit, contact: variant
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}${cssTransitionsSections(site.modele.variantes?.sections)}${cssHab}${appelBarre ? CSS_APPEL_DOUBLON : ''}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}${cssTransitionsSections(site.modele.variantes?.sections)}${cssHab}${attributTaille(site.theme.taille) ? cssTaillesTexte() : ''}${appelBarre ? CSS_APPEL_DOUBLON : ''}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>

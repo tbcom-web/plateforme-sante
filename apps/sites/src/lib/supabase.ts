@@ -54,6 +54,10 @@ import {
   type PersonnalisationPack,
   validerManifeste,
   normaliserDraft,
+  appliquerPersonnalisations,
+  pagesPersonnalisees,
+  reglagesDuDraft,
+  extrasThemePerso,
   estImageGeneree,
   mentionCreditPhotos,
   photosDuJeu,
@@ -169,7 +173,9 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   ).catch(() => []);
 
   // Site public : version publiée (repli sur le brouillon si elle n'existe pas encore) ; aperçu (APERCU=1) : brouillon.
-  const d = normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config));
+  // Personnalisations du praticien (personnalisations-site.ts) : couche appliquée EN DERNIER (recette → pack → profil/kit → praticien) ;
+  // images « Démo » jamais posées sur un site construit.
+  const d = appliquerPersonnalisations(normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config)), { publication: true });
 
   // Modèle de présentation : fiche importée par l'admin (table « modeles »), sinon modèle intégré.
   const [ligneModele] = await lire<{ manifeste: unknown }[]>(`modeles?id=eq.${encodeURIComponent(d.theme.modele)}&actif=eq.true&select=manifeste`).catch(() => []);
@@ -237,7 +243,8 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     apercu: process.env.APERCU === '1',
     d,
     prof,
-    catalogue,
+    // Pages de contenus personnalisées (blocs du praticien ; blocs réglementaires du pack toujours présents)
+    catalogue: pagesPersonnalisees(catalogue, reglagesDuDraft(d), s.profession_slug),
     articles: publies.map((p) => p.article).filter((a): a is LigneArticle => Boolean(a)),
     modele,
     pack,
@@ -404,7 +411,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       tarifs: [],
     },
     rdv: { url: rdvCabinet, plateforme: d.rdv.outil },
-    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}), ...(d.theme.herosSujet ? { herosSujet: d.theme.herosSujet } : {}), ...(d.theme.effets ? { effets: d.theme.effets } : {}), ...(d.theme.traitementPhotos ? { traitementPhotos: d.theme.traitementPhotos } : {}), ...(d.theme.typo ? { typo: d.theme.typo } : {}), ...(d.theme.details ? { details: d.theme.details } : {}), ...(d.theme.menu ? { menu: d.theme.menu } : {}), mise_en_page: 'sobre', style_images: 'minimal' },
+    theme: { couleur: d.theme.couleur, ...(d.theme.gamme ? { gamme: d.theme.gamme } : {}), logo, ...(d.theme.logoPerso?.url ? { logoPerso: d.theme.logoPerso } : {}), modeVisuel: d.theme.modeVisuel, ...(d.theme.styleIllustration ? { styleIllustration: d.theme.styleIllustration } : {}), ...(d.theme.herosSujet ? { herosSujet: d.theme.herosSujet } : {}), ...(d.theme.effets ? { effets: d.theme.effets } : {}), ...(d.theme.traitementPhotos ? { traitementPhotos: d.theme.traitementPhotos } : {}), ...(d.theme.typo ? { typo: d.theme.typo } : {}), ...(d.theme.details ? { details: d.theme.details } : {}), ...(d.theme.menu ? { menu: d.theme.menu } : {}), ...extrasThemePerso(d.theme), mise_en_page: 'sobre', style_images: 'minimal' },
     accroche: {
       titre: defauts.accrocheTitre,
       texte: `${enPhrase(titreMetier, lieuExercice)} : ${listeSoins.length ? enListe(listeSoins) : 'soins du pied'}.`,

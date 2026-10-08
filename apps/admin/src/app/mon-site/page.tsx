@@ -47,9 +47,16 @@ export default async function MonSitePage({ searchParams }: PageProps<'/mon-site
           </span>
           <span className="flex gap-3 font-semibold">
             <Link href={`/edition/${site.id}`} className="underline-offset-4 hover:underline">Édition visuelle</Link>
+            <Link href={`/mon-site/personnaliser?site=${site.id}`} className="underline-offset-4 hover:underline">Personnalisations</Link>
             <Link href="/admin/sites" className="underline-offset-4 hover:underline">← Tous les sites</Link>
           </span>
         </div>
+      )}
+      {site.id && (
+        <Link href={pourClient ? `/mon-site/personnaliser?site=${site.id}` : '/mon-site/personnaliser'} className="mb-4 flex min-h-14 flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-200 bg-teal-50/60 px-4 py-3 text-sm hover:bg-teal-50">
+          <span><strong className="text-teal-900">Personnaliser mon site</strong> <span className="text-neutral-700">: police et taille des textes, couleurs, images, textes des pages.</span></span>
+          <span className="font-semibold text-teal-800" aria-hidden="true">→</span>
+        </Link>
       )}
       <Editeur siteId={site.id} version={site.updatedAt} publicationEnCours={etatPublication(site.publication.etat, site.publication.debut)?.cle === 'en_cours'} titre={pourClient ? `Site de ${nomClient}` : 'Mon site'} initial={site.draft} lienChangerModele={pourClient ? `/creer?site=${site.id}&etape=3` : '/creer?etape=3'} catalogue={catalogue} modeles={modeles} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} themesActives={themesActives()} essai={essai} masquerSujetsIndisponibles={!admin} />
     </Shell>

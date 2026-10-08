@@ -157,6 +157,9 @@ export async function enregistrerSite(id: string | null, draft: SiteDraft, versi
   // Jeu de photos : tiré au hasard à la création et quand la spécialité principale change (lib/jeux-photos.ts).
   const ancien = existant ? normaliserDraft(existant.config).theme : null;
   config.theme.jeuPhotos = await jeuPhotosAEnregistrer(supabase, id, ancien, config.theme.specialite);
+  // Personnalisations du praticien (« Personnaliser mon site ») : jamais modifiées par ce formulaire, toujours reprises de la base
+  const perso = (existant?.config as { personnalisations?: unknown } | null)?.personnalisations;
+  if (perso) (config as SiteDraft & { personnalisations?: unknown }).personnalisations = perso;
 
   let data: { id: string; updated_at: string } | null = null;
   let error: unknown = null;
