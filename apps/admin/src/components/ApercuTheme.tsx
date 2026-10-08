@@ -103,21 +103,21 @@ const SECTIONS_LIBELLES: Record<string, string> = {
 };
 
 /** Visuel d'une case : photo traitée, dessin sur grille, ou image fixe de l'animation sur fond plan */
-function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 'releve' }: { rendu: Rendu; filtre: string; hauteur: number | string; rayon?: number; sombre?: boolean; registre?: Registre }) {
+function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 'releve', classe }: { rendu: Rendu; filtre: string; hauteur: number | string; rayon?: number; sombre?: boolean; registre?: Registre; /** forme-visuel : forme des cartes (formes.ts) */ classe?: string }) {
   const cadre: CSSProperties = { height: hauteur, borderRadius: rayon, overflow: 'hidden', position: 'relative' };
   if (rendu.type === 'photo') {
     // eslint-disable-next-line @next/next/no-img-element
-    return <div style={cadre}><img src={rendu.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: rendu.cadrage, filter: filtre }} /></div>;
+    return <div className={classe} style={cadre}><img src={rendu.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: rendu.cadrage, filter: filtre }} /></div>;
   }
   const anim = useContext(ContexteAnimations);
   const svg = rendu.type === 'animation' ? htmlAnimationApercu(rendu.animation, registre, anim) : svgDessin(rendu.dessin, { registre });
   // Registre pédagogique : schéma calme sur fond doux, jamais de plan sombre ni d'indication « animé »
   if (registre === 'pedagogique') {
-    return <div style={{ ...cadre, display: 'grid', placeItems: 'center', background: 'var(--doux)' }}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svg }} /></div>;
+    return <div className={classe} style={{ ...cadre, display: 'grid', placeItems: 'center', background: 'var(--doux)' }}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svg }} /></div>;
   }
   const plan = sombre || rendu.type === 'animation';
   return (
-    <div className={plan ? 'surface-plan' : 'surface-grille'} style={{ ...cadre, display: 'grid', placeItems: 'center' }}>
+    <div className={`${plan ? 'surface-plan' : 'surface-grille'}${classe ? ` ${classe}` : ''}`} style={{ ...cadre, display: 'grid', placeItems: 'center' }}>
       <div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svg }} />
       {rendu.type === 'animation' && <span className="ap-mono" style={{ position: 'absolute', left: 14, bottom: 10, color: 'var(--signal)', fontSize: 11 }}>● animé</span>}
     </div>
@@ -389,28 +389,29 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
           <Sur n={n}>{SECTIONS_LIBELLES.competences}</Sur>
           <h2 className="ap-h2">{titreSoins(d.voix)}</h2>
           {m.competences === 'cartes' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
+            // Classes forme-* : la forme des cartes (formes.ts, data-forme) s'applique aussi au gabarit classique (comme le site : Competences.astro)
+            <div className="forme-grille" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 18 }}>
               {soinsAffiches.map((s) => {
                 const r = rendreCase(visuelSoinJeu(jeu, s.slug), mode, 'liste');
                 return (
-                  <div key={s.slug} className="ap-carte">
-                    <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={150} rayon={Math.max(0, j.rayon - 6)} />
-                    <h3 className="ap-h3" style={{ marginTop: 14 }}>{s.titre_court}</h3>
-                    <p style={{ color: 'var(--encre-douce)', fontSize: 15, margin: '6px 0 0' }}>{s.resume.slice(0, 96)}…</p>
+                  <div key={s.slug} className="ap-carte forme-carte">
+                    <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={150} rayon={Math.max(0, j.rayon - 6)} classe="forme-visuel" />
+                    <h3 className="ap-h3 forme-texte" style={{ marginTop: 14 }}>{s.titre_court}</h3>
+                    <p className="forme-texte" style={{ color: 'var(--encre-douce)', fontSize: 15, margin: '6px 0 0' }}>{s.resume.slice(0, 96)}…</p>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <ol style={{ listStyle: 'none', padding: 0, margin: 0, borderTop: 'var(--filet) solid var(--ligne)' }}>
+            <ol className="forme-grille" style={{ listStyle: 'none', padding: 0, margin: 0, borderTop: 'var(--filet) solid var(--ligne)' }}>
               {soinsAffiches.map((s, k) => {
                 const r = rendreCase(visuelSoinJeu(jeu, s.slug), mode, 'liste');
                 return (
-                  <li key={s.slug} style={{ display: 'grid', gridTemplateColumns: mobile ? '40px 1fr' : '60px 1fr 1.2fr 120px', gap: 20, alignItems: 'center', padding: '18px 0', borderBottom: 'var(--filet) solid var(--ligne)' }}>
+                  <li key={s.slug} className="forme-carte" style={{ display: 'grid', gridTemplateColumns: mobile ? '40px 1fr' : '60px 1fr 1.2fr 120px', gap: 20, alignItems: 'center', padding: '18px 0', borderBottom: 'var(--filet) solid var(--ligne)' }}>
                     <span className="ap-mono" style={{ color: 'var(--encre-pale)' }}>{String(k + 1).padStart(2, '0')}</span>
-                    <h3 className="ap-h3">{s.titre_court}</h3>
-                    {!mobile && <p style={{ color: 'var(--encre-douce)', fontSize: 15, margin: 0 }}>{s.resume.slice(0, 90)}…</p>}
-                    {!mobile && <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={72} rayon={Math.max(0, j.rayon - 8)} />}
+                    <h3 className="ap-h3 forme-texte">{s.titre_court}</h3>
+                    {!mobile && <p className="forme-texte" style={{ color: 'var(--encre-douce)', fontSize: 15, margin: 0 }}>{s.resume.slice(0, 90)}…</p>}
+                    {!mobile && <Visuel registre={registre} rendu={r} filtre={filtre} hauteur={72} rayon={Math.max(0, j.rayon - 8)} classe="forme-visuel" />}
                   </li>
                 );
               })}

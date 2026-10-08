@@ -2,7 +2,8 @@
 // Compétences en grille « bento » : même gabarit que la liste des compétences (Expertises) et les « autres
 // compétences » d'une fiche — filet en tête, numéro en mono, visuel sur surface grille (dessin technique ; photo
 // du soin seulement en style « Photos », source unique lib/visuels-soins.ts), titre et résumé. Pas de carte
-// blanche : la première tuile est simplement plus grande.
+// blanche : la première tuile est simplement plus grande. Classes forme-* : la « forme des cartes » de la recette s'y applique
+// (formes.ts, <html data-forme>), comme aux cartes des sujets et des gabarits nouveaux.
 import Dessin from '../dessins/Dessin.astro';
 import { site } from '../../lib/site';
 import { texte, champ } from '../../lib/edition';
@@ -32,18 +33,18 @@ const visuels = soins.map((s) => {
   return { ...v, avecPhoto: rendreCase(v, modeVisuel, 'liste').type === 'photo' };
 });
 ---
-<ul class="bento">
+<ul class="bento forme-grille">
   {soins.map((s, i) => (
     <li class:list={['tuile', `tuile--${format(i)}`, 'apparait']} style={`--i:${i}`}>
-      <a href={`/soins/${s.slug}`}>
+      <a class="forme-carte" href={`/soins/${s.slug}`}>
         <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>
-        <span class:list={['tuile__visuel', { 'surface-grille': !visuels[i].avecPhoto, 'tuile__visuel--photo': visuels[i].avecPhoto }]} aria-hidden="true">
+        <span class:list={['tuile__visuel', 'forme-visuel', { 'surface-grille': !visuels[i].avecPhoto, 'tuile__visuel--photo': visuels[i].avecPhoto }]} aria-hidden="true">
           {visuels[i].avecPhoto && <img class="tuile__photo" src={visuels[i].photo} {...photoResponsive(visuels[i].photo, '(min-width: 1000px) 30vw, (min-width: 640px) 50vw, 100vw')} alt="" width="800" height="500" loading="lazy" decoding="async" style={`object-position:${visuels[i].cadrage}`} />}
           {!visuels[i].avecPhoto && <Dessin nom={visuels[i].dessin} />}
         </span>
         <span class="tuile__corps">
-          <span class="tuile__titre">{s.titreCourt}</span>
-          <span class="tuile__texte" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
+          <span class="tuile__titre forme-texte">{s.titreCourt}</span>
+          <span class="tuile__texte forme-texte" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
           <span class="tuile__lien">En savoir plus<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" /></svg></span>
         </span>
       </a>

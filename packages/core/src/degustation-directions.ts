@@ -261,11 +261,12 @@ export const famillesPreferees = (f: ReturnType<typeof famillesDesDuels>, sujet:
 // ---------------------------------------------------------------------------------------------------------------
 
 /**
- * Sections qu'un gabarit déclare variables mais que l'APERÇU ne rend pas sur la page donnée (constat du 2026-10-09 : gabarit
- * classique, page Soins, cartes `.ap-carte` sans `data-forme` → la forme des cartes ne change rien). Une grille ne fait jamais
- * varier une section invisible.
+ * Sections qu'un gabarit déclare variables mais que l'APERÇU ne rend pas sur la page donnée. Une grille ne fait jamais varier une
+ * section invisible. Vide depuis le 2026-10-09 : la forme des cartes s'applique aussi au gabarit classique (cartes `.ap-carte` et
+ * tuiles du site marquées forme-carte / forme-visuel / forme-grille), l'exclusion temporaire `classique: ['soins-forme']` est
+ * retirée (mécanisme gardé pour un prochain cas).
  */
-export const SECTIONS_NON_RENDUES: Readonly<Record<string, readonly string[]>> = { classique: ['soins-forme'] };
+export const SECTIONS_NON_RENDUES: Readonly<Record<string, readonly string[]>> = {};
 
 /** Gabarit d'une composition (fiche du modèle de sa structure) */
 export function gabaritComposition(x: CompositionRecette, modele?: ContexteRecette['modele']): string {

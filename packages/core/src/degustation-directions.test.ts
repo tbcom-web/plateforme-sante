@@ -76,10 +76,12 @@ test('non-régression « Mises en page · profil Semelles » (2026-10-09) : jama
       assert.deepEqual(pairesIdentiques(empreintes), [], `${d} graine ${graine}`);
     }
   }
-  // Le cas exact : structure à gabarit classique, page Soins → seule la forme des cartes varierait, invisible : pas de grille
+  // Structure à gabarit classique, page Soins : la forme des cartes y est RENDUE depuis le 2026-10-09 (classes forme-* des cartes
+  // classiques) → elle varie dans la grille, et chaque vignette diffère sur elle
   const base = { ...baseFavoris(c, null, 1), structure: 'technique-precis' as const };
-  assert.deepEqual(sectionsRendues(base, 'soins', c.modele), []);
-  assert.equal(grilleCompositions('pages', 'page:soins', { contexte: c, graine: 1, base }), null);
+  assert.deepEqual(sectionsRendues(base, 'soins', c.modele), ['soins-forme']);
+  const gc = grilleCompositions('pages', 'page:soins', { contexte: c, graine: 1, base });
+  if (gc) for (const p of gc.propositions) assert.ok(differenceRendue(gc.base!, p.x!, 'soins', c.modele));
   assert.deepEqual(pairesIdentiques(['a', 'b', 'a', null, null]), [[0, 2]]);
 });
 

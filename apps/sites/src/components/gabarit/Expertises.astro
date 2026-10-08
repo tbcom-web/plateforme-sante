@@ -19,15 +19,15 @@ const vignette = (slug: string) => {
   return r.type === 'photo' ? r : null;
 };
 ---
-<ol class="expertises">
+<ol class="expertises forme-grille">
   {soins.map((s, i) => (
     <li class="apparait">
-      <a href={`/soins/${s.slug}`} class="expertise">
+      <a href={`/soins/${s.slug}`} class="expertise forme-carte">
         <span class="expertise__num mono" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-        <span class="expertise__dessin surface-grille" aria-hidden="true"><VignetteSoin slug={s.slug} /></span>
+        <span class="expertise__dessin surface-grille forme-visuel" aria-hidden="true"><VignetteSoin slug={s.slug} /></span>
         {vignette(s.slug) && <img class="expertise__vignette" src={vignette(s.slug)!.src} {...photoResponsive(vignette(s.slug)!.src, '230px')} alt="" loading="lazy" width="320" height="240" style={`object-position:${vignette(s.slug)!.cadrage}`} />}
-        <span class="expertise__titre">{s.titreCourt}</span>
-        <span class="expertise__resume" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
+        <span class="expertise__titre forme-texte">{s.titreCourt}</span>
+        <span class="expertise__resume forme-texte" {...champ(`soin.${s.slug}.resume`)}>{texte(`soin.${s.slug}.resume`, s.resume)}</span>
         <span class="expertise__fleche" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 14 14 6M7 6h7v7" /></svg></span>
       </a>
     </li>
