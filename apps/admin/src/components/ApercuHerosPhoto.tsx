@@ -4,6 +4,7 @@
 // maillé, bento) : EXACTEMENT le HTML et la feuille du site (packages/core/src/heros-photo.ts, htmlHeros et CSS_HEROS), dans
 // l'iframe de l'aperçu (CadreApercu). Le diaporama joue tout de suite (toutes les photos chargées) ; bouton pause actif.
 // Sans photo, une variante à photos n'est pas rendue (null) : l'appelant garde son premier écran, comme le site.
+import { CLASSE_PAUSE } from './AnimationsBudget';
 import { useEffect, useRef, useState } from 'react';
 import {
   CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
@@ -48,7 +49,8 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
   useEffect(() => {
     const h = boite.current?.querySelector<HTMLElement>('.hp[data-ea]');
     if (!h || !animation) return;
-    const jouer = () => { h.classList.remove('ea-joue'); void h.offsetWidth; h.classList.add('ea-joue'); };
+    // Aperçu en pause (budget des animations, AnimationsBudget.tsx) : pas de nouvelle lecture, l'en-tête reste à son état final
+    const jouer = () => { if (h.ownerDocument.documentElement.classList.contains(CLASSE_PAUSE)) return; h.classList.remove('ea-joue'); void h.offsetWidth; h.classList.add('ea-joue'); };
     jouer();
     const t = setInterval(jouer, DUREE_ENTETE + 1700);
     const l = h.querySelector<HTMLElement>('.ea--lueur i');

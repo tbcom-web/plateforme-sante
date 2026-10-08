@@ -9,6 +9,7 @@
 import { createContext, useEffect, type RefObject } from 'react';
 import { animationCanvas, cssLectureAnimations, svgAnimationFixe, svgAnimationLecture, type Animation, type Registre } from '@plateforme/core';
 import { renduCanvas } from './animations-canvas';
+import { CLASSE_PAUSE, EVENEMENT_REPRISE, IMAGES_PAR_SECONDE } from './AnimationsBudget';
 
 export type ReglageAnimations = { jouer: boolean; enAttente: readonly string[] };
 export const ContexteAnimations = createContext<ReglageAnimations>({ jouer: false, enAttente: [] });
@@ -58,17 +59,36 @@ export function useAnimationsCanvas(racine: RefObject<HTMLElement | null>, actif
         suivis.set(cv, s);
       }
     };
-    relire();
-    const scrute = window.setInterval(relire, 400);
+    // Boucle : 30 images/s au plus ; arrêtée quand aucun canvas ne joue (hors écran, onglet caché, aperçu en pause : budget
+    // des animations, AnimationsBudget.tsx), relancée à la reprise (événement de CadreApercu) ou à la relecture suivante
     let id = 0;
-    let avant = performance.now();
+    let avant = performance.now(), dernier = 0, attente = 0;
+    const joue = (s: Suivi, cv: HTMLCanvasElement) => s.visible && !cv.ownerDocument.documentElement.classList.contains(CLASSE_PAUSE);
     const image = (maintenant: number) => {
+      id = 0;
       const dt = Math.min(100, maintenant - avant);
       avant = maintenant;
-      if (!document.hidden) for (const s of suivis.values()) if (s.visible) { s.t += dt; s.r.dessiner(s.t, true); }
+      if (document.hidden) return;
+      let actifs = 0;
+      attente += dt;
+      const dessiner = maintenant - dernier >= 1000 / IMAGES_PAR_SECONDE - 2;
+      for (const [cv, s] of suivis) if (joue(s, cv)) { actifs++; if (dessiner) { s.t += attente; s.r.dessiner(s.t, true); } }
+      if (dessiner) { dernier = maintenant; attente = 0; }
+      if (actifs) id = requestAnimationFrame(image);
+    };
+    const relancer = () => {
+      if (id || document.hidden || ![...suivis].some(([cv, s]) => joue(s, cv))) return;
+      avant = performance.now(); attente = 0;
       id = requestAnimationFrame(image);
     };
-    id = requestAnimationFrame(image);
-    return () => { window.clearInterval(scrute); cancelAnimationFrame(id); for (const s of suivis.values()) s.fin(); suivis.clear(); };
+    relire(); relancer();
+    const scrute = window.setInterval(() => { relire(); relancer(); }, 400);
+    window.addEventListener(EVENEMENT_REPRISE, relancer);
+    document.addEventListener('visibilitychange', relancer);
+    return () => {
+      window.clearInterval(scrute); cancelAnimationFrame(id);
+      window.removeEventListener(EVENEMENT_REPRISE, relancer); document.removeEventListener('visibilitychange', relancer);
+      for (const s of suivis.values()) s.fin(); suivis.clear();
+    };
   }, [racine, actif, cle]);
 }

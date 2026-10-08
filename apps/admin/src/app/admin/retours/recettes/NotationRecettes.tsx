@@ -15,7 +15,7 @@ import '@plateforme/core/dessins.css';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
-  appliquerRecette, cleRecetteNotee, contexteScenario, draftPourOnglet, ETIQUETTES_POUR_CONTRE, gamme as gammeParId, genererCandidates, jeuEffets,
+  appliquerRecette, cleRecetteNotee, contexteScenario, draftPourOnglet, ETIQUETTES_POUR_CONTRE, gamme as gammeParId, jeuEffets, contexteImages, executerDemandeGeneration, type DemandeGeneration,
   libelleScenario, libelleTraitementPhotos, LIBELLES_SOURCES_NOTATION, LIBELLES_STRUCTURES, LIBELLES_STYLES, LIBELLES_VARIANTES, lireDimension, modeleIntegre,
   nomRecette, nomValeurHarmonie, normaliserComposition, ongletsDuScenario, pairePolices, scorePredit, serialiserComposition, SURFACES_CSS, sujetsDuScenario,
   SUJETS_VISUELS, variablesCharte, variablesGamme, vueDePage,
@@ -130,17 +130,40 @@ export default function NotationRecettes(props: Props) {
     return { cle: cleRecetteNotee(x), source: 'claude', sourceId: p.id, nom: p.nom, scenario, composition: x, predit: scorePredit(x, c, props.stats), exploration: false, aValider: [] };
   }, [contexte, props.stats]);
 
+  // Génération dans un Web Worker (perf, 2026-10-08 : ~1 s par lot sur le fil principal auparavant) : même demande, même
+  // graine, mêmes recettes (generation-recettes.ts du core) ; repli sur le fil principal si le worker est indisponible.
+  const worker = useRef<{ w: Worker; n: number; attente: Map<number, (r: { ok: boolean; candidates?: CandidateRecette[] }) => void> } | null>(null);
+  useEffect(() => {
+    let w: Worker;
+    try { w = new Worker(new URL('./generation.worker.ts', import.meta.url)); } catch { return; }
+    const attente = new Map<number, (r: { ok: boolean; candidates?: CandidateRecette[] }) => void>();
+    w.onmessage = (e: MessageEvent<{ id: number; ok: boolean; candidates?: CandidateRecette[] }>) => { attente.get(e.data.id)?.(e.data); attente.delete(e.data.id); };
+    w.onerror = () => { for (const f of attente.values()) f({ ok: false }); attente.clear(); worker.current = null; };
+    worker.current = { w, n: 0, attente };
+    return () => { w.terminate(); worker.current = null; for (const f of attente.values()) f({ ok: false }); };
+  }, []);
+  const generer = useCallback((demande: DemandeGeneration): Promise<CandidateRecette[]> => {
+    const surPlace = () => executerDemandeGeneration({ ...demande, images: null });
+    const wk = worker.current;
+    if (!wk) return new Promise((ok) => setTimeout(() => ok(surPlace()), 30));
+    const id = ++wk.n;
+    return new Promise((ok) => { wk.attente.set(id, (r) => ok(r.ok && r.candidates ? r.candidates : surPlace())); wk.w.postMessage({ id, demande }); });
+  }, []);
+
   const remplir = useCallback(() => {
     if (!props.scenarios.length) return;
     setPrepa(true);
-    // Laisser l'écran se peindre avant le calcul (quelques dizaines de millisecondes par recette)
-    setTimeout(() => {
+    {
       const t = tour.current++;
       const sc = props.scenarios[t % props.scenarios.length];
       const deja = new Set([...dejaNotees, ...vues.current]);
-      const gen = genererCandidates(sc.scenario, contexte(sc.scenario), {
-        n: 3, graine: (Date.now() % 100000) + t, iterations: 12, refusees, estAValider: (k) => aValider.has(k), deja, stats: props.stats,
-      });
+      const images = contexteImages();
+      const demande: DemandeGeneration = {
+        scenario: sc.scenario, contexte: { poids: props.poids, photos: props.photos, modeTirage }, modeles: props.modeles.map((m) => m.manifeste),
+        options: { n: 3, graine: (Date.now() % 100000) + t, iterations: 12, refusees: [...refusees], aValider: [...aValider], deja: [...deja], stats: props.stats },
+        images: { exclues: [...images.exclues], kits: { ...images.kits }, vivier: images.vivier ? { ...images.vivier } : null },
+      };
+      generer(demande).then((gen) => {
       const ajout: Item[] = [...gen];
       // Une proposition de Claude (non notée) tous les deux lots : une source parmi d'autres
       if (t % 2 === 1) {
@@ -152,8 +175,9 @@ export default function NotationRecettes(props: Props) {
       for (const x of ajout) vues.current.add(x.cle);
       setFile((f) => [...f, ...ajout]);
       setPrepa(false);
-    }, 30);
-  }, [props.scenarios, props.propositions, props.stats, dejaNotees, contexte, refusees, aValider, propositionEnItem]);
+      });
+    }
+  }, [props.scenarios, props.propositions, props.stats, props.poids, props.photos, props.modeles, modeTirage, dejaNotees, refusees, aValider, propositionEnItem, generer]);
 
   useEffect(() => { if (onglet === 'noter' && !prepa && file.length - pos < 2) remplir(); }, [onglet, prepa, file.length, pos, remplir]);
 

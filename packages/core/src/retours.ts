@@ -163,17 +163,38 @@ export type ChangementGenerateur = { sujet: string; libelleSujet: string; ecarte
  */
 export function changementsGenerateur(poids: PoidsAtelier | null | undefined, opts: { lots?: number } = {}): { total: number; sujets: ChangementGenerateur[] } {
   if (!poids || (!poids.n && !poids.assets)) return { total: 0, sujets: [] };
-  const lots = opts.lots ?? 2;
+  const sujets = SUJETS_CHANGEMENTS().map((t) => changementDuSujet(t, poids, opts.lots ?? 2)).filter((x): x is ChangementGenerateur => x !== null);
+  return { total: totalChangements(sujets), sujets };
+}
+
+/** Sujets parcourus par changementsGenerateur (actifs, puis « cabinet » sans sujet) */
+const SUJETS_CHANGEMENTS = () => [...THEMES.filter((x) => x.statut === 'actif').map((x) => x.id), 'cabinet'];
+const totalChangements = (sujets: readonly ChangementGenerateur[]) => sujets.reduce((s, x) => s + x.ecartees.length + x.remontees.length, 0) / 2;
+function changementDuSujet(t: string, poids: PoidsAtelier, lots: number): ChangementGenerateur | null {
+  const e = { priorites: { principaux: t === 'cabinet' ? [] : [t], secondaires: [] }, couleursPreferees: [] };
+  const avant = lotsPropositions(e, lots).flat().map((p) => p.id);
+  const apres = lotsPropositions(e, lots, { poids }).flat().map((p) => p.id);
+  const ecartees = avant.filter((id) => !apres.includes(id)).map(libelleCombinaison);
+  const remontees = apres.filter((id) => !avant.includes(id)).map(libelleCombinaison);
+  return ecartees.length || remontees.length ? { sujet: t, libelleSujet: THEMES.find((x) => x.id === t)?.court ?? 'Sans sujet', ecartees, remontees } : null;
+}
+
+/**
+ * Même résultat que changementsGenerateur, calculé sujet par sujet en rendant la main entre deux (`pause`, défaut : une tâche
+ * plus tard) : /admin/retours envoie la page sans attendre ce calcul (~0,5 s), la section « Ce que vos avis ont changé » suit
+ * (perf, 2026-10-08 ; égalité : perf-memo.test.ts).
+ */
+export async function changementsGenerateurDiffere(poids: PoidsAtelier | null | undefined, opts: { lots?: number; pause?: () => Promise<unknown> } = {}): Promise<{ total: number; sujets: ChangementGenerateur[] }> {
+  const pause = opts.pause ?? (() => new Promise((ok) => setTimeout(ok, 0)));
+  await pause();
+  if (!poids || (!poids.n && !poids.assets)) return { total: 0, sujets: [] };
   const sujets: ChangementGenerateur[] = [];
-  for (const t of [...THEMES.filter((x) => x.statut === 'actif').map((x) => x.id), 'cabinet']) {
-    const e = { priorites: { principaux: t === 'cabinet' ? [] : [t], secondaires: [] }, couleursPreferees: [] };
-    const avant = lotsPropositions(e, lots).flat().map((p) => p.id);
-    const apres = lotsPropositions(e, lots, { poids }).flat().map((p) => p.id);
-    const ecartees = avant.filter((id) => !apres.includes(id)).map(libelleCombinaison);
-    const remontees = apres.filter((id) => !avant.includes(id)).map(libelleCombinaison);
-    if (ecartees.length || remontees.length) sujets.push({ sujet: t, libelleSujet: THEMES.find((x) => x.id === t)?.court ?? 'Sans sujet', ecartees, remontees });
+  for (const t of SUJETS_CHANGEMENTS()) {
+    const c = changementDuSujet(t, poids, opts.lots ?? 2);
+    if (c) sujets.push(c);
+    await pause();
   }
-  return { total: sujets.reduce((s, x) => s + x.ecartees.length + x.remontees.length, 0) / 2, sujets };
+  return { total: totalChangements(sujets), sujets };
 }
 
 /** Assets que l'apprentissage favorise (score ≥ 0,3) ou évite (score ≤ −0,75 : mal notés, retirés, à retravailler) */

@@ -92,3 +92,4 @@ export * from './duels-historique';
 export * from './kits-visuels';
 export * from './prompts-images';
 export * from './images-generees';
+export * from './generation-recettes';

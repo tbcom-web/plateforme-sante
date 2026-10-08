@@ -1,5 +1,5 @@
 import {
-  assetsInfluents, changementsGenerateur, markdownAnimationsEnAttente, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
+  assetsInfluents, changementsGenerateurDiffere, markdownAnimationsEnAttente, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
   markdownHashtags, titresBases, universDuParcours,
   resumeRenforts,
 } from '@plateforme/core';
@@ -92,7 +92,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         statuts={Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut]))}
         photosJeux={photosJeux}
         markdown={`${markdown}\n\n${markdownHashtags(hashtags.hashtags, { titres })}`}
-        changements={changementsGenerateur(poids)}
+        // Calcul lourd (~0,5 s) fait sujet par sujet après l'envoi de la page : la section suit dans le flux (perf, 2026-10-08)
+        changements={changementsGenerateurDiffere(poids)}
         influents={assetsInfluents(poids, titres)}
         changementsClaude={changementsClaude}
         renfortsRecettes={resumeRenforts(recettes, 6)}

@@ -21,7 +21,7 @@
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { Suspense, use, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
   ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, blocFocal, lireCleSurfaces, inventaireImagesFonds, lireCleImageFond, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
@@ -72,7 +72,8 @@ type Props = {
   statuts: Record<string, StatutIllustration>;
   photosJeux: PhotoDeJeu[];
   markdown: string;
-  changements: { total: number; sujets: ChangementGenerateur[] };
+  /** Calculés après l'affichage (perf, 2026-10-08) : promesse résolue par le serveur dans le flux de la page */
+  changements: Promise<ChangementsGenerateur>;
   influents: { favorises: { cle: string; titre: string; score: number }[]; evites: { cle: string; titre: string; score: number }[] };
   changementsClaude: ChangementClaude[];
   /** Recettes du studio notées : ce qu'elles renforcent ou affaiblissent (recettes.ts, resumeRenforts) */
@@ -579,7 +580,7 @@ export default function Retours(props: Props) {
           {bandeau}
           <p className="text-sm text-neutral-700">
             {palier.atteint
-              ? <>Palier de <strong>{palier.atteint} avis</strong> atteint, merci. Le générateur a déjà changé <strong>{Math.round(changements.total)}</strong> proposition{Math.round(changements.total) > 1 ? 's' : ''} grâce à vos notes.</>
+              ? <>Palier de <strong>{palier.atteint} avis</strong> atteint, merci. Le générateur a déjà changé <Suspense fallback={<strong>…</strong>}><NombreChangements promesse={changements} /></Suspense> grâce à vos notes.</>
               : <>Encore <strong>{palier.reste}</strong> avis pour le premier palier ({palier.suivant}).</>}
             {palier.atteint && palier.suivant ? <> Prochain palier : {palier.suivant} (encore {palier.reste}).</> : null}
           </p>
@@ -671,16 +672,7 @@ export default function Retours(props: Props) {
             </div>
             <div className="grid min-w-0 content-start gap-1.5">
               <h3 className="text-sm font-semibold">Propositions modifiées (sans couleur choisie)</h3>
-              {changements.sujets.length ? (
-                <ul className="grid gap-2 text-sm">
-                  {changements.sujets.slice(0, 4).map((s) => (
-                    <li key={s.sujet}><strong>{s.libelleSujet}</strong> : {s.ecartees.length} écartée{s.ecartees.length > 1 ? 's' : ''}, {s.remontees.length} remontée{s.remontees.length > 1 ? 's' : ''}
-                      {s.remontees[0] && <span className="block truncate text-xs text-neutral-500" title={s.remontees[0]}>↑ {s.remontees[0]}</span>}
-                      {s.ecartees[0] && <span className="block truncate text-xs text-neutral-500" title={s.ecartees[0]}>↓ {s.ecartees[0]}</span>}
-                    </li>
-                  ))}
-                </ul>
-              ) : <p className="text-xs text-neutral-500">Les premières propositions sont encore celles d’origine.</p>}
+              <Suspense fallback={<p className="text-xs text-neutral-500">Calcul en cours…</p>}><PropositionsModifiees promesse={changements} /></Suspense>
             </div>
           </div>
           {renfortsRecettes.length > 0 && (
@@ -917,4 +909,24 @@ export default function Retours(props: Props) {
       </section>
     </div>
   );
+}
+
+// « Ce que vos avis ont changé » : propositions modifiées, calculées après l'affichage de la page (perf, 2026-10-08)
+type ChangementsGenerateur = { total: number; sujets: ChangementGenerateur[] };
+function NombreChangements({ promesse }: { promesse: Promise<ChangementsGenerateur> }) {
+  const n = Math.round(use(promesse).total);
+  return <><strong>{n}</strong> proposition{n > 1 ? 's' : ''}</>;
+}
+function PropositionsModifiees({ promesse }: { promesse: Promise<ChangementsGenerateur> }) {
+  const changements = use(promesse);
+  return changements.sujets.length ? (
+    <ul className="grid gap-2 text-sm">
+      {changements.sujets.slice(0, 4).map((s) => (
+        <li key={s.sujet}><strong>{s.libelleSujet}</strong> : {s.ecartees.length} écartée{s.ecartees.length > 1 ? 's' : ''}, {s.remontees.length} remontée{s.remontees.length > 1 ? 's' : ''}
+          {s.remontees[0] && <span className="block truncate text-xs text-neutral-500" title={s.remontees[0]}>↑ {s.remontees[0]}</span>}
+          {s.ecartees[0] && <span className="block truncate text-xs text-neutral-500" title={s.ecartees[0]}>↓ {s.ecartees[0]}</span>}
+        </li>
+      ))}
+    </ul>
+  ) : <p className="text-xs text-neutral-500">Les premières propositions sont encore celles d’origine.</p>;
 }

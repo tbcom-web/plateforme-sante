@@ -18,6 +18,7 @@ import {
   LIBELLES_ANIMATIONS, LIBELLES_STRUCTURES, LIBELLES_STYLES, lotsPropositions, pastilleGamme, sujetsPris, THEMES, themeParId, alea, tirerPhotos,
   type PhotoBanque, type MarqueImportee, type ModeleManifeste, type PoidsAtelier, type SiteDraft, type Univers,
 } from '@plateforme/core';
+import { OptionAnimerContinu } from '@/components/AnimationsBudget';
 import ApercuTheme from '@/components/ApercuTheme';
 import ApercusCoteACote from './studio/ApercusCoteACote';
 import {
@@ -292,7 +293,7 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
                   ))}
                 </div>
               );
-              const optionAnimer = <label className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={animer} onChange={(e) => setAnimer(e.target.checked)} className="size-5 accent-teal-800" />Animer</label>;
+              const optionAnimer = <OptionAnimerContinu />;
               return large ? (
                 <ApercusCoteACote key={cleRendu} libelle={p.nom} onAppareil={setAppareilVu} mode={modeZone} onMode={setModeZone} options={optionAnimer}
                   zonesOrdinateur={zonesOrdi} zonesMobile={zonesMobile} onZonesOrdinateur={setZonesOrdi} onZonesMobile={setZonesMobile} rendu={rendu} entete={ongletsJsx} />

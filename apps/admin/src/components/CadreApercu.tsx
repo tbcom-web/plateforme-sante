@@ -13,6 +13,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { dimensionsCadre, type AppareilApercu } from '@plateforme/core';
+import { DUREE_ANIMATIONS_MS, EVENEMENT_REPRISE, pauserAnimations, useAnimerContinu } from './AnimationsBudget';
 
 type Props = {
   appareil: AppareilApercu;
@@ -58,9 +59,56 @@ function suivreStyles(source: Document, cible: Document) {
 /** Raccourcis de l'admin (z : signaler une zone, h : masquer le repère, o : ouvrir le menu, Échap) même quand le focus est dans l'iframe */
 const TOUCHES_RELAYEES = new Set(['z', 'Z', 'h', 'H', 'o', 'O', 'Escape']);
 
+/**
+ * Budget des animations de l'aperçu (AnimationsBudget.tsx) : jeu pendant DUREE_ANIMATIONS_MS après le montage, après chaque
+ * changement du contenu (dé, recette, duel) et pendant le survol / toucher ; pause hors écran, onglet caché ; toujours en
+ * jeu avec « Animer en continu ». Renvoie la fonction d'arrêt.
+ */
+function budgetAnimations(iframe: HTMLIFrameElement, d: Document, continu: { current: boolean }, reveil: { current: () => void }): () => void {
+  const win = iframe.ownerDocument.defaultView ?? window;
+  let jusqua = 0, visible = true, actif: boolean | null = null;
+  let minuterie = 0, rescan = 0;
+  const appliquer = () => {
+    const a = !win.document.hidden && visible && (continu.current || win.performance.now() < jusqua);
+    if (a !== actif) {
+      actif = a;
+      pauserAnimations(d, !a);
+      win.clearInterval(rescan);
+      // En pause : les animations infinies apparues depuis (classe rejouée…) sont arrêtées à leur tour
+      if (!a) rescan = win.setInterval(() => pauserAnimations(d, true), 2000);
+      else win.dispatchEvent(new Event(EVENEMENT_REPRISE));
+    }
+    win.clearTimeout(minuterie);
+    if (a && !continu.current) minuterie = win.setTimeout(appliquer, Math.max(50, jusqua - win.performance.now() + 20));
+  };
+  const jouer = () => { jusqua = win.performance.now() + DUREE_ANIMATIONS_MS; appliquer(); };
+  reveil.current = appliquer;
+  const mo = new MutationObserver(jouer);
+  mo.observe(d.body, { childList: true, subtree: true, characterData: true });
+  const io = new win.IntersectionObserver((e) => { visible = e.some((x) => x.isIntersecting); appliquer(); });
+  io.observe(iframe);
+  const evts = ['pointermove', 'pointerdown', 'touchstart', 'wheel'] as const;
+  for (const t of evts) d.addEventListener(t, jouer, { passive: true });
+  iframe.addEventListener('pointerenter', jouer);
+  win.document.addEventListener('visibilitychange', appliquer);
+  jouer();
+  return () => {
+    mo.disconnect(); io.disconnect();
+    for (const t of evts) d.removeEventListener(t, jouer);
+    iframe.removeEventListener('pointerenter', jouer);
+    win.document.removeEventListener('visibilitychange', appliquer);
+    win.clearTimeout(minuterie); win.clearInterval(rescan);
+    reveil.current = () => undefined;
+  };
+}
+
 function Iframe({ largeur, hauteurVue, echelle, defile, mobile, titre, children }: { largeur: number; hauteurVue: number; echelle: number; defile: boolean; mobile: boolean; titre: string; children: ReactNode }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [corps, setCorps] = useState<HTMLElement | null>(null);
+  const continu = useAnimerContinu();
+  const refContinu = useRef(continu);
+  const reveil = useRef<() => void>(() => undefined);
+  useEffect(() => { refContinu.current = continu; reveil.current(); }, [continu]);
   // Document minimal en mode standard ; base = l'admin (polices, photos, /_next/…). Barre de défilement masquée sur
   // téléphone (largeur de mise en page = 390 comme sur l'appareil), fine sur ordinateur, absente des vignettes.
   const [doc] = useState(() => {
@@ -82,7 +130,8 @@ function Iframe({ largeur, hauteurVue, echelle, defile, mobile, titre, children 
         window.dispatchEvent(new KeyboardEvent('keydown', { key: e.key, code: e.code, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, shiftKey: e.shiftKey, bubbles: true, cancelable: true }));
       };
       d.addEventListener('keydown', relais);
-      fin = () => { arretStyles(); d.removeEventListener('keydown', relais); };
+      const arretBudget = budgetAnimations(iframe, d, refContinu, reveil);
+      fin = () => { arretStyles(); arretBudget(); d.removeEventListener('keydown', relais); };
       setCorps(d.body);
     };
     pret();

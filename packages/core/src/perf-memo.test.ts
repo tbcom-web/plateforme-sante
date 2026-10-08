@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { jourParis } from './essai';
-import { serieAvis, changementsGenerateur } from './retours';
+import { serieAvis, changementsGenerateur, changementsGenerateurDiffere } from './retours';
 import { bonusAssets, clePhoto, COEFS_ASSETS, poidsAssets, scoreAsset, scoreAssetPourSujet, scorePrefixe, type AssetsProposition, type PoidsAssets } from './assets-poids';
 import { lotsPropositions } from './propositions';
 import { poidsAtelier } from './atelier-poids';
@@ -69,4 +69,14 @@ test('Générateur : mêmes propositions et mêmes changements avec la mémoire 
   assert.deepEqual(b, a);
   assert.deepEqual(froid, a);
   assert.deepEqual(changementsGenerateur(poids), changementsGenerateur(structuredClone(poids)));
+});
+
+test('changementsGenerateurDiffere (sujet par sujet) = changementsGenerateur', async () => {
+  const notes = lire('assets-notes.json') as { cle: string; note: number; etiquettes: string[] }[];
+  const atelier = lire('atelier-notes.json') as { ingredients: Record<string, unknown>; note: number; etiquettes: string[] }[];
+  const poids = { ...poidsAtelier(atelier.map((n) => ({ ingredients: n.ingredients, note: n.note, etiquettes: n.etiquettes }))), assets: poidsAssets(notes.map((n) => ({ cle: n.cle, note: n.note, etiquettes: n.etiquettes, statut: null })))! };
+  const attendu = changementsGenerateur(poids);
+  assert.ok(attendu.sujets.length > 0);
+  assert.deepEqual(await changementsGenerateurDiffere(poids), attendu);
+  assert.deepEqual(await changementsGenerateurDiffere(null), changementsGenerateur(null));
 });

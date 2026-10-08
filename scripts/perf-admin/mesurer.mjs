@@ -5,7 +5,8 @@
 //    1 500 duels, 300 recettes notées, 200 photos, 50 kits) et une latence simulée (25 ms par aller-retour).
 // 3. Serveur : temps de rendu de chaque page (fin du flux HTML), nombre et volume des requêtes Supabase.
 //    Navigateur (Playwright, processeur ralenti ×4, graine et horloge figées) : JS téléchargé, iframes d'aperçu, tâches longues,
-//    temps jusqu'à interactif (hors images d'animation : tâches ≥ 120 ms), mémoire, « Tout changer » (Studio), duel suivant.
+//    temps jusqu'à interactif (hors images d'animation : tâches ≥ 120 ms), mémoire, occupation au repos (processeur ×4),
+//    « Tout changer » (Studio), duel suivant.
 // Aucun secret lu (.env ignoré : variables factices), aucun appel au vrai Supabase, aucune écriture hors du dossier temporaire.
 // Options : --tours=5 (serveur) --tours-client=2 --latence=25 --sans-client --garder (garde le dossier temporaire) --json=<fichier>
 import { spawn, spawnSync } from 'node:child_process';
@@ -139,16 +140,19 @@ try {
           interactifMs: Math.round(r.fin), tbtMs: Math.round(lt.reduce((s, [, d]) => s + Math.max(0, d - 50), 0)), plusLongueMs: Math.round(Math.max(0, ...lt.map(([, d]) => d))),
           jsKo: Math.round(octets.Script / 1024), polices: octets.n, policesKo: Math.round(octets.Font / 1024), iframes: await p.evaluate(() => document.querySelectorAll('iframe').length), tasMo: +(met.JSHeapUsedSize / 1048576).toFixed(1),
         };
+        // Occupation du fil principal au repos (premier tour) : 12 s après le chargement, sur 5 s, sans interaction
+        // (animations des aperçus : pause après ~6 s, AnimationsBudget.tsx)
+        if (t === 0) { await p.waitForTimeout(8000); const a = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map((x) => [x.name, x.value])); await p.waitForTimeout(5000); const z = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map((x) => [x.name, x.value])); m.reposPct = Math.round((100 * (z.TaskDuration - a.TaskDuration)) / 5); }
         const action = async (nom, faire) => { const d = []; for (let i = 0; i < 5; i++) { const avant = await p.evaluate(() => performance.now()); await faire(); const x = await calme(p, avant, 1000, 120, 20000); d.push({ ms: x.fin - avant, bloque: x.l.reduce((s, [, y]) => s + y, 0) }); } m[nom] = { ms: Math.round(med(d.map((x) => x.ms))), bloqueMs: Math.round(med(d.map((x) => x.bloque))) }; };
         if (page.startsWith('/admin/atelier/studio')) await action('toutChanger', () => p.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Tout changer/.test(b.textContent ?? ''))?.click()));
         if (page.startsWith('/admin/retours/duel')) await action('duelSuivant', async () => { await p.mouse.click(5, 5); await p.keyboard.press('ArrowLeft'); });
         tours.push(m);
         await ctx.close();
       }
-      const fin = { ...tours.at(-1) };
-      for (const k of Object.keys(fin)) if (typeof fin[k] === 'number') fin[k] = med(tours.map((x) => x[k]));
+      const fin = { ...tours.at(-1), reposPct: tours[0].reposPct };
+      for (const k of Object.keys(fin)) if (typeof fin[k] === 'number') fin[k] = med(tours.map((x) => x[k]).filter((v) => typeof v === 'number'));
       resultats.client[page] = fin;
-      console.log(`  ${page.padEnd(32)} interactif ${String(fin.interactifMs).padStart(6)} ms  TBT ${String(fin.tbtMs).padStart(5)} ms  JS ${fin.jsKo} Ko  iframes ${fin.iframes}${fin.toutChanger ? `  « Tout changer » ${fin.toutChanger.ms} ms` : ''}${fin.duelSuivant ? `  duel suivant ${fin.duelSuivant.ms} ms` : ''}`);
+      console.log(`  ${page.padEnd(32)} interactif ${String(fin.interactifMs).padStart(6)} ms  TBT ${String(fin.tbtMs).padStart(5)} ms  JS ${fin.jsKo} Ko  iframes ${fin.iframes}${fin.reposPct !== undefined ? `  repos ${fin.reposPct} %` : ''}${fin.toutChanger ? `  « Tout changer » ${fin.toutChanger.ms} ms` : ''}${fin.duelSuivant ? `  duel suivant ${fin.duelSuivant.ms} ms` : ''}`);
     }
     await navigateur.close();
   }

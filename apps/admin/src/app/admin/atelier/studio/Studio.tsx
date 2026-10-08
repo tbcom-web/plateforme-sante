@@ -39,6 +39,7 @@ import IndicateurHarmonie from './IndicateurHarmonie';
 import ZonesAAmeliorer from './ZonesAAmeliorer';
 import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
+import { OptionAnimerContinu } from '@/components/AnimationsBudget';
 import RenduMobile from '@/components/RenduMobile';
 import type { SoinCatalogue } from '@/lib/sites';
 import { EVENEMENT_OUVRIR, type DetailOuvrir } from './PropositionsClaude';
@@ -622,7 +623,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
   const rendu = (app: 'bureau' | 'mobile', hauteur?: number) => apercu && <ApercuTheme sansCommandes hauteurCadre={hauteur} animer={animer} animationsEnAttente={animationsEnAttente} vueInitiale={vueDePage(page)} survol={survolActif} appareil={app} draft={draftPourOnglet(apercu.draft, onglet)} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;
   const optionsApercu = (
     <>
-      <label className="flex min-h-11 items-center gap-2 text-sm" title="Illustrations animées jouées comme sur le site"><input type="checkbox" checked={animer} onChange={(e) => setAnimer(e.target.checked)} className="size-5 accent-teal-800" />Animer</label>
+      <OptionAnimerContinu />
       <button type="button" onClick={() => setRejouer((n) => n + 1)} className={`min-h-11 rounded-lg px-1 text-left text-sm underline ${focus}`}>Rejouer l’apparition</button>
     </>
   );
