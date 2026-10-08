@@ -2,11 +2,13 @@ import 'server-only';
 import { cache } from 'react';
 import { duelDepuisLigne, type Duel } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { getDuelsDegustation } from '@/lib/degustation';
 
 // Duels « A ou B ? » (migration 0037, packages/core/src/duels.ts) :
 // - getDuels : journal complet (remarques comprises), lu par le super admin (/admin/retours/duel) ;
 // - getDuelsApprentissage : duels_apprentissage() (ni auteur ni remarque) pour les poids du générateur (getPoidsAtelier), tout
-//   compte connecté ; [] sans la migration.
+//   compte connecté ; [] sans la migration. + duels équivalents des grilles de la Dégustation (0042, degustation.ts : même
+//   moteur, même plafond, mêmes clés ; profession choisie + goût transversal).
 
 export const MIGRATION_DUELS = 'Migration 0037 à exécuter (supabase/migrations/0037_duels.sql) : les duels ne peuvent pas encore être enregistrés en base.';
 
@@ -33,9 +35,9 @@ export const getDuels = cache(getDuelsSansMemo);
 async function getDuelsApprentissageSansMemo(): Promise<Duel[]> {
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc('duels_apprentissage', { p_limite: 20000 });
-    if (error || !Array.isArray(data)) return [];
-    return (data as Record<string, unknown>[]).map(duelDepuisLigne).filter((d): d is Duel => d !== null);
+    const [{ data, error }, grilles] = await Promise.all([supabase.rpc('duels_apprentissage', { p_limite: 20000 }), getDuelsDegustation()]);
+    const duels = error || !Array.isArray(data) ? [] : (data as Record<string, unknown>[]).map(duelDepuisLigne).filter((d): d is Duel => d !== null);
+    return grilles.length ? [...duels, ...grilles] : duels;
   } catch {
     return [];
   }
