@@ -103,8 +103,8 @@ const principale = actionsContact[0];
             {site.cabinet.email && <p class="c-contact__ligne"><a href={`mailto:${site.cabinet.email}`}>{site.cabinet.email}</a></p>}
           </div>
         )}
-        <ul class="c-contact__actions">
-          {actionsContact.map((a, i) => <li><a class:list={['c-contact__action', { 'c-contact__action--plein': i === 0 }]} href={a.href} {...(a.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icone nom={a.icone} secours={a.secours} />{a.libelle}</a></li>)}
+        <ul class="c-contact__actions appel-groupe">
+          {actionsContact.map((a, i) => <li class:list={{ 'appel-bouton': a.href === telLien }}><a class:list={['c-contact__action', { 'c-contact__action--plein': i === 0 }]} href={a.href} {...(a.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icone nom={a.icone} secours={a.secours} />{a.libelle}</a></li>)}
         </ul>
       </div>
     </aside>

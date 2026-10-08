@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { actionsRapides, APPAREILS_APERCU, dimensionsCadre } from './cadre-apercu';
+import { actionsRapides, appelDansBarre, appelMasqueApercu, attributAppelBarre, APPAREILS_APERCU, CSS_APPEL_DOUBLON, dimensionsCadre } from './cadre-apercu';
 
 test('cadre : fenêtres simulées de la largeur réelle de l’appareil', () => {
   assert.deepEqual(APPAREILS_APERCU.mobile, { largeur: 390, hauteur: 844 });
@@ -81,4 +81,42 @@ test('actions rapides : barre du gabarit classique (Gabarit.astro)', () => {
   assert.deepEqual(actionsRapides({ ...base, rdvEnLigne: false, aAdresse: false, gabarit: 'classique' }), {
     forme: 'barre-classique', appel: true, actions: [{ libelle: 'Appeler le cabinet', icone: 'telephone', plein: true }],
   });
+});
+
+test('doublon d’appel : masqué là où la barre du bas porte l’appel, jamais sans téléphone', () => {
+  const tout = { etroit: true, large: true };
+  const rien = { etroit: false, large: false };
+  // Sans téléphone : rien n'est masqué, quel que soit le gabarit
+  for (const gabarit of ['classique', 'tableau', 'village', 'revue'] as const) assert.deepEqual(appelDansBarre({ gabarit, rdvEnLigne: false, aTelephone: false }), rien);
+  // Classique : sa barre porte toujours l'appel
+  assert.deepEqual(appelDansBarre({ gabarit: 'classique', rdvEnLigne: true, aTelephone: true }), tout);
+  // Coquille, barre (bandeau, carte compris) : partout sous 900 px
+  assert.deepEqual(appelDansBarre({ gabarit: 'tableau', contact: 'barre', rdvEnLigne: true, aTelephone: true }), tout);
+  assert.deepEqual(appelDansBarre({ gabarit: 'revue', contact: 'bandeau', rdvEnLigne: false, aTelephone: true }), tout);
+  // Bouton flottant : pas de bandeau, rien de masqué
+  assert.deepEqual(appelDansBarre({ gabarit: 'village', contact: 'flottant', rdvEnLigne: false, aTelephone: true }), rien);
+  // Barre d'onglets (sous 760 px) : son bouton plein est le rendez-vous en ligne, l'appel seulement sans rendez-vous en ligne
+  assert.deepEqual(appelDansBarre({ gabarit: 'tableau', menuMobile: 'onglets', rdvEnLigne: true, aTelephone: true }), { etroit: false, large: true });
+  assert.deepEqual(appelDansBarre({ gabarit: 'tableau', menuMobile: 'onglets', rdvEnLigne: false, aTelephone: true }), tout);
+  assert.deepEqual(appelDansBarre({ gabarit: 'tableau', contact: 'flottant', menuMobile: 'onglets', rdvEnLigne: false, aTelephone: true }), { etroit: true, large: false });
+  // Attribut du site
+  assert.equal(attributAppelBarre(tout), 'tout');
+  assert.equal(attributAppelBarre({ etroit: false, large: true }), 'large');
+  assert.equal(attributAppelBarre({ etroit: true, large: false }), 'etroit');
+  assert.equal(attributAppelBarre(rien), undefined);
+  // Aperçu : téléphone (390 px, plage étroite) seulement ; ordinateur jamais
+  assert.equal(appelMasqueApercu(true, tout), true);
+  assert.equal(appelMasqueApercu(false, tout), false);
+  assert.equal(appelMasqueApercu(true, { etroit: false, large: true }), false);
+});
+
+test('doublon d’appel : CSS d’affichage seul, sous 900 px, sans :has imbriqué', () => {
+  assert.match(CSS_APPEL_DOUBLON, /@media \(max-width:759px\)/);
+  assert.match(CSS_APPEL_DOUBLON, /@media \(min-width:760px\) and \(max-width:899px\)/);
+  assert.doesNotMatch(CSS_APPEL_DOUBLON, /min-width:900px/);
+  assert.match(CSS_APPEL_DOUBLON, /a\[href\^="tel:"\]/);
+  assert.match(CSS_APPEL_DOUBLON, /\.hp__actions/);
+  assert.doesNotMatch(CSS_APPEL_DOUBLON, /:has\([^)]*:has\(/);
+  // Accolades équilibrées
+  assert.equal((CSS_APPEL_DOUBLON.match(/\{/g) ?? []).length, (CSS_APPEL_DOUBLON.match(/\}/g) ?? []).length);
 });

@@ -50,7 +50,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
     <div class="pe__suite">
       <p class="pe__qui">{quiOu}</p>
       {soinsPhrase && <p class="pe__soins">{soinsPhrase}</p>}
-      <div class="pe__actions">
+      <div class="pe__actions appel-groupe">
         <a class="g-bouton g-bouton--plein" href={rdv}>{libelleRdv}</a>
         {rdvEnLigne && aTelephone && <a class="g-bouton pe__tel" href={telLien}>{site.cabinet.telephone}</a>}
       </div>
@@ -65,7 +65,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
     <div class="pe__suite">
       <p class="pe__qui">{quiOu}</p>
       {soinsPhrase && <p class="pe__soins">{soinsPhrase}</p>}
-      <div class="pe__actions">
+      <div class="pe__actions appel-groupe">
         <a class="g-bouton g-bouton--plein" href={rdv}>{libelleRdv}</a>
         {rdvEnLigne && aTelephone && <a class="g-bouton pe__tel" href={telLien}>{site.cabinet.telephone}</a>}
       </div>
@@ -83,7 +83,7 @@ const sur = [titreMetierAffiche, localisation].filter(Boolean).join(' · ');
         <li>{ou}</li>
         {soinsPhrase && <li>{soinsPhrase}</li>}
       </ul>
-      <div class="pe__actions">
+      <div class="pe__actions appel-groupe">
         <a class="pe__bouton pe__bouton--plein" href={rdv}>{libelleRdv}{rdvEnLigne && !plusieurs && viaPlateforme && <span>{viaPlateforme}</span>}</a>
         {rdvEnLigne && aTelephone && <a class="pe__bouton" href={telLien}>Appeler le {site.cabinet.telephone}</a>}
       </div>

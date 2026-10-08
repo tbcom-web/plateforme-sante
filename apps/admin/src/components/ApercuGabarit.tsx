@@ -12,7 +12,7 @@
 // bulles à picto « façon annuaire » ; village = aplat tramé, titre expressif, illustration en cadre portrait sur ombre pleine ;
 // « pédicurie-podologie » insécable, titre ajusté à sa colonne.
 import type { CSSProperties, ReactNode } from 'react';
-import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, actionsRapides, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
+import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, actionsRapides, appelDansBarre, appelMasqueApercu, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import { facteurChasse, facteurTitres, menuABouton, normaliserHabillage } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
@@ -143,6 +143,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   // Habillage de la recette (habillage.ts) : la feuille CSS commune est posée par ApercuTheme ; ici, les tailles calculées en pixels
   // (titre du premier écran) suivent l'échelle et la casse, et le bouton « Menu » du téléphone s'affiche (classes mn-*, td-*, ap-*)
   const habillage = normaliserHabillage(d.theme, gabaritModele(m));
+  // Doublon « bouton d'appel » (comme le site, cadre-apercu.ts) : sur téléphone, quand la barre du bas porte l'appel, le bouton
+  // d'appel du premier écran et du bandeau de contact n'est pas repris (principal hors ligne compris : il reste celui de la barre)
+  const appelMasque = appelMasqueApercu(mobile, appelDansBarre({ gabarit: village ? 'village' : revue ? 'revue' : 'tableau', contact: v.contact, menuMobile: habillage.menu.mobile, rdvEnLigne: enLigne, aTelephone: r.aTelephone }));
+  const principalMasque = appelMasque && !enLigne;
   const burger = mobile && menuABouton(habillage.menu, gabaritModele(m)) ? <span className="mn-burger"><span className="mn-burger__traits" aria-hidden="true" /><span>Menu</span></span> : null;
   const noms = r.noms;
   const qui = noms.join(' et ') || nomCabinet;
@@ -236,10 +240,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       <div style={{ gridColumn: mobile ? undefined : 1, display: 'grid', gap: 10, justifyItems: 'start' }}>
         <span style={{ fontSize: 19.2, maxWidth: '34em' }}>{quiOu}</span>
         {principaux && <span style={{ fontStyle: 'italic', fontSize: 17.9, color: 'var(--g-encre-douce)', maxWidth: '34em' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
-        <div style={{ display: mobile ? 'grid' : 'flex', width: mobile ? '100%' : undefined, flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+        {!principalMasque && <div style={{ display: mobile ? 'grid' : 'flex', width: mobile ? '100%' : undefined, flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
           <span className="td-bouton" style={{ ...bouton(true), boxShadow: 'none' }}>{libelleRdv}</span>
-          {enLigne && r.aTelephone && <span className="td-bouton" style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 var(--filet-fort) var(--g-encre)' }}>{tel}</span>}
-        </div>
+          {enLigne && r.aTelephone && !appelMasque && <span className="td-bouton" style={{ ...bouton(false), background: 'transparent', boxShadow: 'inset 0 0 0 var(--filet-fort) var(--g-encre)' }}>{tel}</span>}
+        </div>}
       </div>
     </div></section>
   ) : v.accueil === 'notice' ? (
@@ -255,10 +259,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         <span style={ligne}>{pid('itineraire')}{adresse}</span>
         {principaux && <span style={ligne}>{pid('bilan')}{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: 12 }}>
+      {!principalMasque && <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', gap: 12 }}>
         <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-plein)', color: 'var(--g-plein-texte)', fontWeight: 700, textAlign: 'center', padding: '0 12px' }}>{libelleRdv}</span>
-        {enLigne && r.aTelephone && <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-encre)', fontWeight: 700 }}>Appeler le {tel}</span>}
-      </div>
+        {enLigne && r.aTelephone && !appelMasque && <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-encre)', fontWeight: 700 }}>Appeler le {tel}</span>}
+      </div>}
       </div>
       {heros && !mobile && <div style={{ aspectRatio: '3 / 4', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: '6%' }}><HerosVue h={heros} /></div>}
     </div></section>
@@ -269,10 +273,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         {titreH1}
         <span style={{ fontWeight: 600 }}>{quiOu}</span>
         {principaux && <span style={{ color: mobile ? 'var(--g-aplat-doux)' : 'var(--g-encre-douce)' }}>{principaux.charAt(0).toUpperCase() + principaux.slice(1)}.</span>}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+        {!principalMasque && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           <span className="td-bouton" style={bouton(true)}>{libelleRdv}</span>
-          {enLigne && r.aTelephone && <span className="td-bouton" style={bouton(false)}>{tel}</span>}
-        </div>
+          {enLigne && r.aTelephone && !appelMasque && <span className="td-bouton" style={bouton(false)}>{tel}</span>}
+        </div>}
       </div>
       {heros ? (
         <div data-fond={heros.type === 'svg' && heros.sombre ? 'sombre' : undefined} className={heros.type === 'svg' && heros.sombre ? 'surface-plan' : undefined} style={{ position: 'relative', aspectRatio: '1 / 1', width: '100%', maxWidth: mobile ? 320 : 440, justifySelf: 'center', alignSelf: 'center', borderRadius: '50%', background: heros.type === 'svg' && heros.sombre ? undefined : 'var(--g-carte)', boxShadow: '0 0 0 10px var(--g-vif)', overflow: 'hidden', margin: 10 }}>
@@ -425,7 +429,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const actionsContact = [
     ...(enLigne ? ['Prendre rendez-vous'] : []), ...(r.aTelephone ? ['Appeler le cabinet'] : []), ...(d.cabinet.email ? ['Écrire au cabinet'] : []), ...(r.aAdresse ? ['Itinéraire'] : []),
   ];
-  const actionContact = (a: string, k: number) => <span key={a} className={k === 0 ? 'eff-bouton td-bouton' : 'td-bouton'} style={{ ...bouton(k === 0), minHeight: 52 }}>{a}</span>;
+  const actionContact = (a: string, k: number) => appelMasque && a === 'Appeler le cabinet' ? null : <span key={a} className={k === 0 ? 'eff-bouton td-bouton' : 'td-bouton'} style={{ ...bouton(k === 0), minHeight: 52 }}>{a}</span>;
   const contactBloc = (v.contact === 'bandeau' || v.contact === 'carte') && actionsContact.length ? (
     v.contact === 'bandeau' ? (
       <aside data-zone="contact" style={{ marginTop: 56, padding: mobile ? '28px 0' : '40px 0', background: 'var(--g-aplat)' }}><div style={{ ...cadre, display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: mobile ? 'flex-start' : 'center' }}>{actionsContact.map(actionContact)}</div></aside>
@@ -492,7 +496,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   return (
     <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
       {!seul && entete}
-      {vue === 'accueil' ? <>{montrer('premier') && (herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soins} replis={r} sur={surTitre} registre={registre} illustration={heros?.type === 'svg' ? heros.html : ''} /> : premier)}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section" data-zone={b}>{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
+      {vue === 'accueil' ? <>{montrer('premier') && (herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soins} replis={r} sur={surTitre} registre={registre} illustration={heros?.type === 'svg' ? heros.html : ''} masquerAppel={appelMasque} /> : premier)}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section" data-zone={b}>{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
         : vue === 'soin' ? fiche
         : vue === 'theme' ? pageSujet
         : vue === 'article' ? pageArticle

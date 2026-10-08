@@ -105,3 +105,40 @@ export function actionsRapides(o: {
   else if (o.aAdresse) actions.push({ libelle: 'Itinéraire', icone: 'itineraire', plein: false });
   return { forme: 'barre', actions };
 }
+
+/**
+ * Doublon « bouton d'appel » (retour de Paul du 2026-10-08 : « sur mobile, on peut éviter le doublon APPELER LE CABINET s'il
+ * apparaît déjà dans le bandeau du bas »). Plages de largeur où la barre du bas (visible sous 900 px) porte l'appel :
+ * - `large` : 760 à 899 px ; `etroit` : sous 760 px (la barre d'onglets du menu « onglets », gabarits coquille, y remplace
+ *   la barre d'actions : son bouton plein est le lien de rendez-vous, l'appel seulement sans rendez-vous en ligne).
+ * Bouton flottant (variante « contact : flottant ») : ce n'est pas un bandeau, rien n'est masqué (hors barre d'onglets).
+ * Gabarit classique : sa barre (.barre-mobile) porte toujours l'appel quand il y a un téléphone (pas de barre d'onglets).
+ */
+export function appelDansBarre(o: { gabarit: 'classique' | 'tableau' | 'village' | 'revue'; contact?: string | null; menuMobile?: string | null; rdvEnLigne: boolean; aTelephone: boolean }): { etroit: boolean; large: boolean } {
+  if (!o.aTelephone) return { etroit: false, large: false };
+  if (o.gabarit === 'classique') return { etroit: true, large: true };
+  const barre = o.contact !== 'flottant';
+  const onglets = o.menuMobile === 'onglets';
+  return { large: barre, etroit: onglets ? !o.rdvEnLigne : barre };
+}
+
+/** Valeur de l'attribut data-appel-barre de la racine (site) : plages où le doublon est masqué, absent si aucune */
+export function attributAppelBarre(p: { etroit: boolean; large: boolean }): 'tout' | 'etroit' | 'large' | undefined {
+  return p.etroit && p.large ? 'tout' : p.etroit ? 'etroit' : p.large ? 'large' : undefined;
+}
+
+/**
+ * Boutons d'appel masqués (affichage seulement : le lien reste dans le HTML, SEO identique ; ordinateur inchangé) : liens
+ * tel: directs d'un groupe de boutons du premier écran (.hp__actions des premiers écrans photo, .appel-groupe posé sur les
+ * groupes des gabarits) et éléments .appel-bouton de ces groupes (élément de liste du bandeau de contact). Le numéro en texte (coordonnées, pied
+ * de page, page Accès) n'est jamais dans ces groupes. Un groupe qui ne contient plus que des boutons d'appel disparaît (pas
+ * de trou) ; les autres boutons gardent leur mise en page (grille pleine largeur sur téléphone).
+ */
+const GROUPE_APPEL = ':is(.appel-groupe,.hp__actions)';
+const BOUTON_APPEL = 'a[href^="tel:"],.appel-bouton';
+const masquerAppel = (racine: string) => `${racine} ${GROUPE_APPEL}>:is(${BOUTON_APPEL}){display:none!important}${racine} ${GROUPE_APPEL}:not(:has(>:not(${BOUTON_APPEL}))){display:none!important}`;
+export const CSS_APPEL_DOUBLON = `@media (max-width:759px){${masquerAppel(':is([data-appel-barre=tout],[data-appel-barre=etroit])')}}`
+  + `@media (min-width:760px) and (max-width:899px){${masquerAppel(':is([data-appel-barre=tout],[data-appel-barre=large])')}}`;
+
+/** Aperçu de l'admin (téléphone : 390 px, plage « étroit ») : le bouton d'appel du premier écran est-il retiré ? */
+export const appelMasqueApercu = (mobile: boolean, p: { etroit: boolean; large: boolean }) => mobile && p.etroit;

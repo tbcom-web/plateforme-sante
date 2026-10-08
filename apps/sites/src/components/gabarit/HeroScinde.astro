@@ -23,7 +23,7 @@ const altAccueil = site.photos.accueil && photoAccueilAffichee === site.photos.a
     <p class="sur">{[titreMetierAffiche, localisation].filter(Boolean).join(' · ')}</p>
     <h1>Cabinet de {specialite} {aLaVille && <span class="pale">{aLaVille}</span>}</h1>
     <p class="chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
-    <div class="actions">
+    <div class="actions appel-groupe">
       <a class="bouton bouton--plein" href={rdvAccueil}>
         {libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}
         <svg class="fleche" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 10h10M11 6l4 4-4 4" /></svg>

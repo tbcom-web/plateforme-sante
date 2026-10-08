@@ -44,7 +44,7 @@ const enPratique = [
 <article class="dessins-annotes">
   <TetePage crumbs={crumbs} sur={titreCompetences} chapo={soin.resume}>
     <h1 slot="titre">{espacesFines(soin.titre)}</h1>
-    <div class="actions">
+    <div class="actions appel-groupe">
       <a class="g-bouton g-bouton--plein" href={rdv}>{rdvEnLigne ? 'Prendre rendez-vous' : libelleContact}{rdvEnLigne && !plusieurs && viaPlateforme && <span class="g-via">{viaPlateforme}</span>}</a>
       {rdvEnLigne && aTelephone && <a class="g-bouton g-bouton--ligne" href={telLien}><Icone nom="picto:telephone" secours="lucide:phone" />{site.cabinet.telephone}</a>}
     </div>

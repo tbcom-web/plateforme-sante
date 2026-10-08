@@ -36,7 +36,7 @@ const schemaDansCarte = Boolean(photoLieuAccueil) && process.env.ACCUEIL_SCHEMA 
         <p class="lieu__chapo" {...champ('accueil.chapo')}>{texte('accueil.chapo', phraseAccueil)}</p>
       </div>
       <div class="lieu__contact">
-      <div class="lieu__actions">
+      <div class="lieu__actions appel-groupe">
         {rdvEnLigne ? (
           <>
             <a class="bouton bouton--plein lieu__bouton" href={rdvAccueil}><Icone nom="lucide:calendar" />{libelleRdv}{rdvAccueil !== '#praticiens' && viaPlateforme && <span class="via">{viaPlateforme}</span>}</a>

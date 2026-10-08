@@ -78,13 +78,14 @@ import policeFigtree from '@fontsource-variable/figtree/files/figtree-latin-wght
 import policeDmSans from '@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2?url';
 import policeWorkSans from '@fontsource-variable/work-sans/files/work-sans-latin-wght-normal.woff2?url';
 import policeSourceSans from '@fontsource-variable/source-sans-3/files/source-sans-3-latin-wght-normal.woff2?url';
-import { BUDGET_POLICES, REDUCTION, poidsPolices, paireDuModele, accentEffectif, attributsHabillage, cssHabillage, facteurChasse, menuABouton, normaliserHabillage, SCRIPT_MENU } from '@plateforme/core';
+import { BUDGET_POLICES, REDUCTION, poidsPolices, paireDuModele, accentEffectif, attributsHabillage, cssHabillage, facteurChasse, menuABouton, normaliserHabillage, SCRIPT_MENU, appelDansBarre, attributAppelBarre, CSS_APPEL_DOUBLON } from '@plateforme/core';
 import Coquille from '../components/gabarits/Coquille.astro';
 import Icone from '../components/Icone.astro';
 import Logo from '../components/Logo.astro';
 import Consent from '../components/Consent.astro';
 import EditionApercu from '../components/EditionApercu.astro';
 import { APERCU } from '../lib/edition';
+import { variantes } from '../lib/gabarits';
 import Empreintes from '../components/dessins/Empreintes.astro';
 import Dessin from '../components/dessins/Dessin.astro';
 import { CONTOUR } from '../components/animations/pied';
@@ -286,9 +287,12 @@ const cssHab = cssHabillage(habillage, { police: paireSite, gabarit, mono: !sans
 const attrsHab = attributsHabillage(habillage, gabarit);
 // Bouton « Menu » du téléphone (panneau ou tiroir, gabarits coquille) : script en ligne < 1 Ko après l'en-tête (Coquille.astro)
 const scriptMenu = nouveau && menuABouton(habillage.menu, gabarit) ? SCRIPT_MENU : '';
+// Doublon « bouton d'appel » (retour de Paul du 2026-10-08) : là où la barre du bas porte l'appel (sous 900 px), les boutons
+// d'appel du premier écran et du bandeau de contact sont masqués (CSS seul, liens conservés dans le HTML ; cadre-apercu.ts)
+const appelBarre = attributAppelBarre(appelDansBarre({ gabarit, contact: variantes.contact, menuMobile: habillage.menu.mobile, rdvEnLigne, aTelephone }));
 ---
 <!doctype html>
-<html lang="fr" {...attrsHab} style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-photos={avecTraitementPhotos ? traitementPhotosSite!.id : undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
+<html lang="fr" {...attrsHab} data-appel-barre={appelBarre} style={`${style};--mot-long:${motLong}`} data-modele={m.id} data-titres={m.jetons.policeTitres} data-pied={m.pied} data-images={m.jetons.images} data-motif={motif} data-registre={pedagogique ? 'pedagogique' : 'releve'} data-teinte={m.jetons.teinte} data-trame={m.jetons.teinte === 'gamme' ? undefined : 'gamme'} data-gabarit={nouveau ? gabarit : undefined} data-effets={effets || undefined} data-photos={avecTraitementPhotos ? traitementPhotosSite!.id : undefined} data-forme={forme !== 'gabarit' ? forme : undefined} class:list={[{ 'entete-transparent': transparent, 'sans-animations': m.animations === 'aucune' }]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -314,7 +318,7 @@ const scriptMenu = nouveau && menuABouton(habillage.menu, gabarit) ? SCRIPT_MENU
     <meta name="twitter:card" content="summary_large_image" />
     {versionMarkdown && <link rel="alternate" type="text/markdown" href={versionMarkdown} title="Version Markdown de la page" />}
     <link rel="describedby" type="text/plain" href="/llms.txt" title="Résumé pour les assistants IA" />
-    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}${cssTransitionsSections(site.modele.variantes?.sections)}${cssHab}</style>`} />
+    <Fragment set:html={`<style>${feuilleCharte()}${m.jetons.teinte === 'gamme' ? CSS_TEINTE_GAMME : CSS_TRAME_GAMME}${policesRepli}${cssEffets(effets)}${cssFormes(forme)}${cssTraitementPhotos(traitementPhotosSite, '[data-photos] main')}${cssTransitionsSections(site.modele.variantes?.sections)}${cssHab}${appelBarre ? CSS_APPEL_DOUBLON : ''}</style>`} />
     {allSchemas.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
   </head>
   <body>

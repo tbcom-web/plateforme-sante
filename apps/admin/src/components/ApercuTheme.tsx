@@ -30,7 +30,7 @@ import {
   completerJeuVisuel, construireNavigation, cssEffets, cssSurvolSimule, cssFormes, formeDesCartes, jeuEffets, ordonnerSoins, couleursImportee, couleursMarque, faitEquipement, initiales, jeuVisuel, persoDuJeuPhotos, PAYS, POLICES, registreModele, rendreCase, SURFACES_CSS, svgAnimationFixe,
   svgDessin, svgMarque, svgMarqueImportee, traitementLogo, variablesCharte, variablesTheme, variablesGabarit, gabaritModele, visuelSoinJeu,
   avecVille, horairesRenseignes, replisApercu, soinsParDefaut, titreSoins, REPLIS, illustrationTheme, themeIllustre, themeParId, packVisuel, svgLigne, cssPressionGamme,
-  ARTICLE_DEMO, varianteArticle, varianteTheme, type VuePage, APPAREILS_APERCU, MARGE_BARRE_MOBILE, actionsRapides, svgPicto,
+  ARTICLE_DEMO, varianteArticle, varianteTheme, type VuePage, APPAREILS_APERCU, MARGE_BARRE_MOBILE, actionsRapides, appelDansBarre, appelMasqueApercu, svgPicto,
   type Animation, type NomDessin, type NomLigne, type FormatHeros, type JeuPhotos, type MarqueImportee, type ModeleManifeste, type Registre, type Rendu, type SiteDraft,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -234,6 +234,9 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
   };
   const transparent = m.entete === 'transparent' && (m.accueil.hero === 'plein' || m.accueil.hero === 'diaporama') && vue === 'accueil' && !herosPhotoActif(d, m);
   const tel = r.telephone;
+  // Doublon « bouton d'appel » (comme le site, cadre-apercu.ts) : sur téléphone, la barre du bas porte l'appel ; le bouton
+  // d'appel du premier écran n'est pas repris (principal hors ligne compris : il reste celui de la barre)
+  const appelMasque = appelMasqueApercu(mobile, appelDansBarre({ gabarit: 'classique', rdvEnLigne: r.rdvEnLigne, aTelephone: r.aTelephone }));
 
   const Sur = ({ n, children }: { n?: number; children: ReactNode }) => (
     <p className="ap-sur">{n !== undefined && !pedago && <span className="ap-mono" style={{ opacity: 0.7 }}>{String(n).padStart(2, '0')} —</span>}{children}</p>
@@ -261,7 +264,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <p className="ap-sur" style={{ color: 'var(--blanc)' }}>{surTitre}</p>
         <p className="ap-h1" style={{ color: 'var(--blanc)', maxWidth: herosDiaporama && !mobile ? '48%' : mobile ? 'none' : '14ch', fontSize: taillePlein }}>{titreHero}</p>
         <p style={{ maxWidth: '46ch', opacity: 0.88, marginTop: 18 }}>{presentation}</p>
-        <span className="ap-bouton" style={{ background: 'var(--blanc)', color: 'var(--encre)', marginTop: 12 }}>{rdv}</span>
+        {!(appelMasque && !r.rdvEnLigne) && <span className="ap-bouton" style={{ background: 'var(--blanc)', color: 'var(--encre)', marginTop: 12 }}>{rdv}</span>}
       </div>
     </section>
   );
@@ -271,7 +274,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
         <Sur>{surTitre}</Sur>
         <p className="ap-h1" style={{ fontSize: tailleScinde }}>{titreHero}</p>
         <p className="ap-chapo">{presentation}</p>
-        <span className="ap-bouton ap-bouton--plein">{rdv}</span>
+        {!(appelMasque && !r.rdvEnLigne) && <span className="ap-bouton ap-bouton--plein">{rdv}</span>}
       </div>
       <Visuel registre={registre} rendu={accueil} filtre={filtre} hauteur={mobile ? 300 : 460} rayon={Math.round(j.rayon * 1.3)} />
     </section>
@@ -295,7 +298,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
           <div style={{ display: 'grid', gap: 10 }}>
             {r.rdvEnLigne && <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 58 }}>Prendre rendez-vous</span>}
             {r.aTelephone
-              ? <span className={`ap-bouton ${r.rdvEnLigne ? '' : 'ap-bouton--plein'}`} style={{ minHeight: 58, boxShadow: r.rdvEnLigne ? 'inset 0 0 0 1.5px var(--ligne)' : undefined }}>☏ {tel}</span>
+              ? !appelMasque && <span className={`ap-bouton ${r.rdvEnLigne ? '' : 'ap-bouton--plein'}`} style={{ minHeight: 58, boxShadow: r.rdvEnLigne ? 'inset 0 0 0 1.5px var(--ligne)' : undefined }}>☏ {tel}</span>
               : !r.rdvEnLigne && <span className="ap-bouton ap-bouton--plein" style={{ minHeight: 58 }}>{r.libelleContact}</span>}
             <p style={{ margin: '8px 0 0', color: 'var(--encre-douce)', fontSize: 16 }}>{r.adresse}</p>
           </div>
@@ -591,7 +594,7 @@ export default function ApercuTheme({ draft: d, modele: m, catalogue, marquesImp
             <div>
               {vue === 'accueil' ? (
                 <>
-                  {herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soinsAffiches} replis={r} sur={surTitre} registre={registre} illustration={(() => { const h = herosApercu('portrait'); return h?.type === 'svg' ? h.html : ''; })()} /> : m.accueil.hero === 'lieu' ? heroLieu : m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
+                  {herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soinsAffiches} replis={r} sur={surTitre} registre={registre} illustration={(() => { const h = herosApercu('portrait'); return h?.type === 'svg' ? h.html : ''; })()} masquerAppel={appelMasque} /> : m.accueil.hero === 'lieu' ? heroLieu : m.accueil.hero === 'scinde' ? heroScinde : heroPlein}
                   {ordre.map((s, k) => {
                     if (s !== 'panorama') douce = !douce;
                     return <div key={s} data-zone={s}>{sections[s]?.(k + 1, s !== 'panorama' && douce)}</div>;

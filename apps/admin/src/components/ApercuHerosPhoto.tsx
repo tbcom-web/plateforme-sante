@@ -22,6 +22,8 @@ type Props = {
   registre: Registre;
   /** Repli (sujet sans illustration composée) : SVG en ligne du visuel du premier écran */
   illustration: string;
+  /** Téléphone, la barre du bas porte l'appel (cadre-apercu.ts, appelDansBarre) : boutons d'appel non repris */
+  masquerAppel?: boolean;
 };
 
 /** Photos du premier écran (comme le site, lib/heros-photo.ts) : style « Photos », sinon celles importées par le praticien */
@@ -36,7 +38,7 @@ export function herosPhotoActif(d: SiteDraft, m: ModeleManifeste): boolean {
 }
 
 /** Le nouveau premier écran de la recette, ou null (premier écran du gabarit ou du modèle) */
-export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r, sur, registre, illustration }: Props) {
+export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r, sur, registre, illustration, masquerAppel = false }: Props) {
   const [pause, setPause] = useState(false);
   const v = m.variantes?.accueil;
   if (!estPremierEcranNouveau(v)) return null;
@@ -59,8 +61,8 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     qui: r.aAdresse ? `${qui} · ${r.rue}` : qui,
     soins: soinsPhrase.charAt(0).toUpperCase() + soinsPhrase.slice(1),
     actions: [
-      { href: '#', libelle: r.rdvEnLigne ? 'Prendre rendez-vous' : r.libelleContact, plein: true },
-      ...(r.rdvEnLigne && r.aTelephone ? [{ href: '#', libelle: r.telephone }] : []),
+      ...(masquerAppel && !r.rdvEnLigne ? [] : [{ href: '#', libelle: r.rdvEnLigne ? 'Prendre rendez-vous' : r.libelleContact, plein: true }]),
+      ...(r.rdvEnLigne && r.aTelephone && !masquerAppel ? [{ href: '#', libelle: r.telephone }] : []),
     ],
     via: r.rdvEnLigne && !plusieurs && d.rdv.outil ? `Réservation via ${d.rdv.outil}, 24h/24` : null,
     photos: photosMontrees(v, photos),
