@@ -16,7 +16,7 @@ import {
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
   modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, appareilUnique, tirerAppareilUnique, candidatsDuelFavoris, candidatsDuelTranches, clesJugeesEnDuel, poidsFavori, manquePhotosNotees, appliquerSurfaces, cleAssetSurfaces, cleDePaire, cleImageFond, cleImageRendu, couleursGabarit, filtreImage, FONDS_IMAGE, fondImageCss, gabaritModele, ingredientPaire, lireDimensionPaire, mesurerSurfaces, ratioLisible, reparerComposition, repereSurfaces, surface, surfacesConformes, TRAITEMENTS_IMAGE, varierPaire, type Repere, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, visuelsHerosAnimes, cleImageFixe, animationDeImageFixe, animationDeCle, appareilUnique, tirerAppareilUnique, candidatsDuelFavoris, candidatsDuelTranches, clesJugeesEnDuel, poidsFavori, manquePhotosNotees, appliquerSurfaces, cleAssetSurfaces, cleDePaire, cleImageFond, cleImageRendu, couleursGabarit, filtreImage, FONDS_IMAGE, fondImageCss, gabaritModele, ingredientPaire, lireDimensionPaire, mesurerSurfaces, ratioLisible, reparerComposition, repereSurfaces, surface, surfacesConformes, TRAITEMENTS_IMAGE, varierPaire, type Repere, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -32,6 +32,7 @@ import CadreApercu from '@/components/CadreApercu';
 import SpecimenHabillage from '@/components/SpecimenHabillage';
 import { ComparaisonFocale } from '@/components/BlocFocal';
 import VisuelSurFond from '@/components/VisuelSurFond';
+import PremierEcranAnime from '@/components/PremierEcranAnime';
 import type { SoinCatalogue } from '@/lib/sites';
 import Apercu from '../tri/ApercuVisuel';
 import { enregistrerDuel } from './actions';
@@ -78,7 +79,8 @@ function CadreTelephone({ children, hauteur }: { children: ReactNode; hauteur: n
 
 type Rendu = { kind: 'compo'; x: CompositionRecette } | { kind: 'asset'; asset: Asset };
 /** `surfaces` : répartition des surfaces (surfaces.ts) ; `image` : la même image sur un fond / avec un traitement (combinaisons-elements.ts) */
-type Cote = { cle: string; ingredients: IngredientsDuel; rendu: Rendu; surfaces?: string; image?: { fond: string; traitement: string } };
+/** `fige` : l'image fixe d'une animation (clé `animation:<nom>@fige`) */
+type Cote = { cle: string; ingredients: IngredientsDuel; rendu: Rendu; fige?: boolean; surfaces?: string; image?: { fond: string; traitement: string } };
 /** `mobileSeul` : duel « Mobile seulement » (duels-appareils.ts) : A et B montrés QU'EN cadre téléphone, appareil enregistré « mobile » */
 type Courant = { type: TypeDuel; scenario: ScenarioDuel; a: Cote; b: Cote; dimension: string | null; prediction: 'a' | 'b' | 'egalite' | null; vue: VuePage; mobileSeul?: boolean;
   /** Un seul appareil pour A et B (pages complètes, thèmes libres : duels-appareils.ts) ; la bascule le change des deux côtés */
@@ -248,13 +250,16 @@ export default function Duel(props: Props) {
   const inventaire = useMemo(() => inventaireAssets({ photosJeux: props.photosJeux }), [props.photosJeux]);
   const titres = useMemo(() => ({ ...titresAssets(), ...Object.fromEntries(inventaire.map((a) => [a.cle, a.titre])) }), [inventaire]);
   const libelleElement = useCallback((k: string) => (titres[k] ?? (k.startsWith('compo:') ? `Composition ${k.slice(6, 12)}` : libelleCleRenfort(k))), [titres]);
+  const sujetsDe = useCallback((a: Asset) => sujetsDuVisuel({ cle: a.cle, type: a.type, soins: a.soins }, props.surcharges).sujets, [props.surcharges]);
+  const animationsAdmissibles = useMemo(() => new Set(SUJETS_VISUELS.flatMap((s) => visuelsHerosAnimes(s.id, { assets: inventaire, sujetsDe, statuts: props.statuts }).filter((v) => v.admissible).map((v) => v.cle))), [inventaire, sujetsDe, props.statuts]);
   const candidats = useMemo(() => {
     const vers = (a: Asset): CandidatElement => ({ cle: a.cle, sujets: sujetsDuVisuel({ cle: a.cle, type: a.type, soins: a.soins }, props.surcharges).sujets, ...groupeEtVariante(a.cle), exclu: props.statuts[a.cle] === 'retire' });
     return {
       photo: inventaire.filter((a) => a.type === 'photo').map(vers),
-      illustration: inventaire.filter((a) => ['heros', 'dessin', 'ligne', 'materiel'].includes(a.type)).map(vers),
+      // Animations = illustrations de héros (visuels-heros-animes.ts) : seulement celles dont les images de base sont validées
+      illustration: inventaire.filter((a) => ['heros', 'dessin', 'ligne', 'materiel'].includes(a.type) || (a.type === 'animation' && animationsAdmissibles.has(a.cle))).map(vers),
     };
-  }, [inventaire, props.surcharges, props.statuts]);
+  }, [inventaire, props.surcharges, props.statuts, animationsAdmissibles]);
   const parCle = useMemo(() => new Map(inventaire.map((a) => [a.cle, a])), [inventaire]);
   const dimensionsDispo = useCallback((l: readonly string[]) => l.filter((d) => DIMENSIONS_RECETTE.some((x) => x.id === d)), []);
 
@@ -262,6 +267,8 @@ export default function Duel(props: Props) {
 
   /** Côté « composition » : clés d'apprentissage et composition stockée */
   const coteCompo = (x: CompositionRecette, s: string): Cote => ({ cle: cleComposition(x), ingredients: { ...clesRecette(x, [s]), composition: JSON.parse(serialiserComposition(x)) }, rendu: { kind: 'compo', x } });
+  /** Image fixe d'une animation : même asset, rendu figé, clé `animation:<nom>@fige` */
+  const coteFige = (cle: string): Cote | null => { const a = parCle.get(cle); return a ? { cle: cleImageFixe(cle), ingredients: { assets: [cleImageFixe(cle)], element: cleImageFixe(cle) }, rendu: { kind: 'asset', asset: a }, fige: true } : null; };
   const coteAsset = (cle: string): Cote | null => { const a = parCle.get(cle); return a ? { cle, ingredients: { assets: [cle], element: cle, juge: [cle] }, rendu: { kind: 'asset', asset: a } } : null; };
 
   /** Élément classé d'un côté : la clé lisible qui diffère (police, gamme, présentation…) */
@@ -306,6 +313,24 @@ export default function Duel(props: Props) {
     }
     if (t === 'photo' || t === 'illustration') {
       for (const s of ordre) {
+        // Visuel animé du premier écran (≈ 35 % des duels d'illustrations quand le sujet a une animation admissible) : l'animation
+        // jouée face à son image fixe (« apporte-t-elle quelque chose ? ») ou face à une illustration fixe du même sujet
+        if (t === 'illustration' && r() < 0.35) {
+          const refuses = new Set(props.tranches?.refuses ?? []);
+          const anims = visuelsHerosAnimes(s, { assets: inventaire, sujetsDe, statuts: props.statuts }).filter((v) => v.admissible && !refuses.has(v.cle));
+          if (anims.length) {
+            const v = anims[Math.floor(r() * anims.length)];
+            const fixes = candidats.illustration.filter((x) => !x.exclu && !x.cle.startsWith('animation:') && x.sujets.includes(s) && !refuses.has(x.cle));
+            const versFixe = r() < 0.5 || !fixes.length;
+            const autre = versFixe ? coteFige(v.cle) : coteAsset(fixes[Math.floor(r() * fixes.length)].cle);
+            const anim = coteAsset(v.cle);
+            if (anim && autre && !historique.some((d) => cleDePaire(d.aCle, d.bCle) === cleDePaire(anim.cle, autre.cle))) {
+              const [a, b] = r() < 0.5 ? [anim, autre] : [autre, anim];
+              const nom = (c: Cote) => (c.fige ? `${v.titre} (image fixe)` : `${libelleElement(c.cle)}${c.rendu.kind === 'asset' && c.rendu.asset.type === 'animation' ? ' (animée)' : ''}`);
+              return { type: t, scenario: { sujets: [s] }, a, b, dimension: versFixe ? 'animation:fige' : 'animation:illustration', prediction: null, vue: 'accueil', valeursForcees: [nom(a), nom(b)] };
+            }
+          }
+        }
         // Favoris d'abord (favoris.ts) : surtout de bons éléments entre eux, ≈ 10 % de découverte, jamais les exclus (≤ 2 ★, retirés)
         // Tranchés (tranches.ts) : jamais un refusé ; un favori (5 ★) seulement en « Champion » face à un élément jamais jugé (≈ 10 %)
         const T = { refuses: new Set(props.tranches?.refuses ?? []), favoris: new Set(props.tranches?.favoris ?? []), notes: new Set(props.tranches?.notes ?? []) };
@@ -610,7 +635,9 @@ export default function Duel(props: Props) {
       const page = <ApercuCompo x={x} sujet={courant!.scenario.sujets[0] ?? 'sport'} appareil={app} vue={courant!.vue} hauteur={h} props={props} />;
       return c.surfaces ? <StyleSurfaces id={c.surfaces}>{page}</StyleSurfaces> : page;
     }
-    const visuel = c.image ? <VisuelSurFond asset={c.rendu.asset} fond={c.image.fond} traitement={c.image.traitement} />
+    const visuel = c.rendu.asset.type === 'animation' && animationDeCle(c.rendu.asset.cle)
+      ? <PremierEcranAnime asset={c.rendu.asset} fige={c.fige} sujet={libelleSujet(courant!.scenario.sujets[0] ?? 'general')} compact={app === 'mobile' || vu === 'les-deux'} />
+      : c.image ? <VisuelSurFond asset={c.rendu.asset} fond={c.image.fond} traitement={c.image.traitement} />
       : courant!.type === 'photo' && c.rendu.asset.rendu.kind === 'image'
       ? <CadrePhoto src={c.rendu.asset.rendu.src} emplacement={courant!.scenario.emplacement ?? 'accueil'} sujet={courant!.scenario.sujets[0] ?? 'general'} />
       : <Apercu a={c.rendu.asset} grand />;
