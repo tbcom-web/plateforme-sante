@@ -23,7 +23,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, use, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
+  avecReevaluations, animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
   ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, blocFocal, lireCleSurfaces, inventaireImagesFonds, lireCleImageFond, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
   serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
@@ -67,6 +67,8 @@ const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 type NoteLegere = { cle: string; note: number; empreinte: string | null; le: string };
 type Props = {
   notesAssets: NoteLegere[];
+  /** « Réévaluer » (page Éléments tranchés, migration 0041) : notes antérieures ignorées par la règle des tranchés */
+  reevaluations?: { cle: string; le: string }[];
   datesAtelier: string[];
   dejaNotees: Record<string, number>;
   statuts: Record<string, StatutIllustration>;
@@ -327,7 +329,8 @@ export default function Retours(props: Props) {
   const [datesAtelier, setDatesAtelier] = useState<string[]>(props.datesAtelier);
   const [dejaNotees, setDejaNotees] = useState(props.dejaNotees);
   // Notes de variantes comptées aussi pour leur base (agrégation) ; signaux : clés notées (variantes nouvelles → duel)
-  const etats = useMemo(() => etatsNotes(notesAvecBases(notes)), [notes]);
+  // Tranchés (tranches.ts) : 1 ★ et 5 ★ ne sont plus proposés (prochaineCarte) ; « Réévaluer » efface les notes antérieures pour la règle
+  const etats = useMemo(() => etatsNotes(notesAvecBases(avecReevaluations(notes, props.reevaluations ?? []))), [notes, props.reevaluations]);
   const signaux = useMemo(() => clesAvecSignal(notes), [notes]);
   // Statuts de la bibliothèque (illustrations_statuts), mis à jour localement depuis une session « ingrédients »
   const [statuts, setStatuts] = useState<Record<string, StatutIllustration>>(props.statuts);
@@ -602,6 +605,10 @@ export default function Retours(props: Props) {
             </label>
           </div>
           <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-4">{CATEGORIES_RETOURS.map(tuile)}</ul>
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-700">
+            <span>Il reste <strong className="tabular-nums">{inventaire.filter((a) => !etats.has(a.cle)).length}</strong> éléments jamais notés : ils passent avant tout le reste. Les éléments notés 1 ★ ou 5 ★ ne vous sont plus proposés.</span>
+            <Link href="/admin/retours/tranches" className="font-semibold text-teal-900 underline">Éléments tranchés →</Link>
+          </p>
         </section>
 
         <RenduMobileARevoir retours={retoursMobile} migrationManquante={Boolean(props.migrationMobile)} inventaire={inventaireComplet} empreinte={(a) => cacheEmpreinte(a)}

@@ -339,6 +339,26 @@ par « général » défilent un par un (clavier : U utiliser ici, G garder, X p
   défaut, l'animation d'en-tête du kit sur celle de la spécialité (`jeuVisuel`) — Studio, atelier, recettes à noter, duels de
   thèmes ; `/creer`, `/edition`, `/mon-site` et sites générés (`kitVisuelSite`) : éléments validés seulement.
 
+### Éléments tranchés : 1 ★ et 5 ★ (2026-10-08, `tranches.ts`)
+
+Règle de Paul : « Si un élément a été noté 1 étoile, il n'apparaît plus (idem pour une combinaison exacte). Idem pour un élément ou
+une combinaison noté 5 étoiles, je ne veux plus qu'il apparaisse, sinon on répète tout le temps les mêmes choses. »
+
+- **Refusé** (dernière note 1 ★, ou moyenne ≤ 1,5 ★ ; combinaison exacte notée 1 ★ ; duel « les deux sont mauvais » : les deux
+  compositions) : plus jamais à évaluer, ni dans aucune composition — registre `contexte-images.ts` (tous types d'éléments : polices,
+  gammes, éléments, typographie, photos, illustrations…), lu par les tirages du Studio, de l'atelier, des recettes, des duels, des kits,
+  de /creer et des sites.
+- **Favori** (dernière note 5 ★ ou « Garder ») : plus jamais proposé à l'évaluation (Donner mon avis, tri, recettes complètes, atelier),
+  toujours tiré comme favori dans les compositions. Duels : une paire déjà jugée n'est jamais reposée ; un favori n'apparaît plus
+  qu'en **Champion** face à un élément jamais jugé (≈ 10 % des duels, `PART_CHAMPION`, signalé « Champion »).
+- **Noté 2-4 ★** : ne revient qu'après tous les jamais notés, ou s'il a changé (nouvelle version : empreinte différente).
+- Compteur « Il reste N éléments jamais notés » sur l'accueil de Donner mon avis ; page **Éléments tranchés**
+  (`/admin/retours/tranches`, filtrable par état et par type) avec **Réévaluer** (migration 0041, `elements_reevalues` : les notes
+  antérieures sont ignorées par la règle, l'élément revient dans la file jusqu'à sa prochaine note). Pour les sites et /creer, la
+  réévaluation d'un 1 ★ ne prend effet qu'à sa prochaine note (lecture sans dates côté praticiens).
+- Hors règle pour l'instant : kits notés en bloc (« Noter ce kit ») ; la notation en ligne de « Compléter ce kit » montre les favoris
+  comme photos à utiliser, sans les redemander.
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

@@ -540,7 +540,7 @@ function tirerCouleurs(x: CompositionRecette, c: ContexteRecette, r: () => numbe
 function tirerPolices(x: CompositionRecette, c: ContexteRecette, r: () => number): IdPairePolices {
   // Budget polices : paires permises par le gabarit (revue : italique des titres compris, typo.ts policePermise)
   const g = gabaritDe(c, x.structure);
-  return choisir(PAIRES_POLICES.filter((p) => policePermise(p.id, g)).map((p) => ({ v: p.id, p: pese(c, [`police=${p.id}`]) })), r, (v) => v === x.police) ?? x.police;
+  return choisir(PAIRES_POLICES.filter((p) => policePermise(p.id, g)).map((p) => ({ v: p.id, p: pese(c, [`police=${p.id}`], [`typo:police:${p.id}`]) })), r, (v) => v === x.police) ?? x.police;
 }
 
 function tirerVisuels(x: CompositionRecette, c: ContexteRecette, r: () => number): CompositionRecette['visuels'] {
@@ -645,7 +645,7 @@ function tirerStructure(x: CompositionRecette, c: ContexteRecette, r: () => numb
 }
 
 function tirerEffets(x: CompositionRecette, c: ContexteRecette, r: () => number): IdJeuEffets {
-  return choisir(JEUX_EFFETS.map((j) => ({ v: j.id, p: pese(c, [`effets=${j.id}`]) })), r, (v) => v === x.effets) ?? x.effets;
+  return choisir(JEUX_EFFETS.map((j) => ({ v: j.id, p: pese(c, [`effets=${j.id}`], [`effets:${j.id}`]) })), r, (v) => v === x.effets) ?? x.effets;
 }
 
 /** Traitement des photos : un des jeux (pondéré par les notes de sa clé), grain une fois sur quatre environ */

@@ -69,7 +69,7 @@ test('anciennes notes de variantes : agrégées pour leur base (file), sans faux
     { cle: 'dessin:orthonyxie:releve', note: 5, empreinte: 'cccccccc', le: '2026-10-03' },
   ];
   const e = etatsNotes(notesAvecBases(n));
-  assert.deepEqual(e.get('dessin:orthonyxie'), { n: 2, empreinte: null, min: 2, max: 5, le: '2026-10-03' });
+  assert.deepEqual(e.get('dessin:orthonyxie'), { n: 2, empreinte: null, min: 2, max: 5, le: '2026-10-03', derniere: 5, somme: 7 });
   assert.equal(e.get('dessin:x')!.n, 1);
   assert.equal(e.get('dessin:x:releve')!.empreinte, 'aaaaaaaa', 'la note d’origine reste lue');
 });

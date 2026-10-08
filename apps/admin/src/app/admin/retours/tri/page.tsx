@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getTranches } from '@/lib/tranches';
 import { debutHashtag, estFamilleTri, estSujetDeVisuel, inventaireAssets, statutsAvecHeritage } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
@@ -42,7 +43,8 @@ export default async function PageTri({ searchParams }: { searchParams: Promise<
         surcharges={surcharges}
         hashtags={hashtags.hashtags}
         migrationHashtags={hashtags.migrationManquante}
-        statuts={statutsAvecHeritage(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), inventaireAssets({ photosJeux }).map((a) => a.cle))}
+        // Tranchés 1 ★ (tranches.ts) : plus jamais dans la file, comme un visuel retiré
+        statuts={{ ...statutsAvecHeritage(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), inventaireAssets({ photosJeux }).map((a) => a.cle)), ...Object.fromEntries([...(await getTranches()).tranches.refuses].map((k) => [k, 'retire' as const])) }}
         sujetInitial={sujet}
         hashtagInitial={hashtag}
         familleInitiale={famille}

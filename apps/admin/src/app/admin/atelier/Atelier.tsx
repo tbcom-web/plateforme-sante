@@ -45,6 +45,8 @@ type Props = {
   migrationManquante: boolean;
   /** Photos de la banque (jeux de photos, photos libres validées, photos intégrées) : montrées en style « photos » */
   photos?: PhotoBanque[];
+  /** Propositions tranchées (`prop:<id>`, tranches.ts : notées 1 ★ ou 5 ★) : jamais reproposées */
+  tranchees?: string[];
 };
 
 /** Même format de scénario que le Studio et les recettes (simulateur.ts) : soins = [] → soins de base des sujets */
@@ -84,7 +86,8 @@ function useEtroit() {
   return etroit;
 }
 
-export default function Atelier({ proposes, modeles, catalogue, marquesImportees, themesActives, poids, dejaNotees, migrationManquante, photos = [] }: Props) {
+export default function Atelier(props: Props) {
+  const { proposes, modeles, catalogue, marquesImportees, themesActives, poids, dejaNotees, migrationManquante, photos = [] } = props;
   const [scenario, setScenario] = useState<Scenario>({ principaux: ['sport'], secondaires: [], couleurs: [], soins: [] });
   const [apprentissage, setApprentissage] = useState(true);
   const [nbLots, setNbLots] = useState(1);
@@ -111,7 +114,9 @@ export default function Atelier({ proposes, modeles, catalogue, marquesImportees
   // avec ces photos seulement (tirerPhotos) ; sinon illustrations et bandeau « Peu de photos 4-5 ★ … → Compléter le vivier »
   const sujetUn = sujetsPris(entree)[0] ?? 'general';
   const vivier = vivierDuSujet(sujetUn);
-  const liste = useMemo(() => avecPartPhotos(lots.flat().filter((p) => disponibles.has(p.univers)), sujetUn, vivier?.length ?? 0), [lots, disponibles, sujetUn, vivier]);
+  // Tranchées (tranches.ts : combinaison notée 1 ★ ou 5 ★) : jamais reproposées
+  const tranchees = useMemo(() => new Set(props.tranchees ?? []), [props.tranchees]);
+  const liste = useMemo(() => avecPartPhotos(lots.flat().filter((p) => disponibles.has(p.univers) && !tranchees.has(`prop:${p.id}`)), sujetUn, vivier?.length ?? 0).filter((p) => !tranchees.has(`prop:${p.id}`)), [lots, disponibles, sujetUn, vivier, tranchees]);
   const epuise = lots.length < nbLots;
   const p = liste[index] ?? null;
 

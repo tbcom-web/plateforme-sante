@@ -19,6 +19,7 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import Retours from './Retours';
+import { getReevaluations } from '@/lib/tranches';
 
 export const metadata = { title: 'Super admin · Donner mon avis' };
 
@@ -86,6 +87,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         </p>
       )}
       <Retours
+        reevaluations={(await getReevaluations()).reevaluations}
         notesAssets={assets.notes.map((n) => ({ cle: n.cle, note: n.note, empreinte: n.empreinte, le: n.le }))}
         datesAtelier={atelier.notes.map((n) => n.le ?? '').filter(Boolean)}
         dejaNotees={dejaNotees}

@@ -59,7 +59,10 @@ export const categorieDuType = (t: TypeAsset): CategorieRetours => CATEGORIES_RE
 // ---------------------------------------------------------------------------------------------------------------
 
 /** État d'un asset vis-à-vis des notes : nombre, empreinte du rendu lors de la dernière note, notes extrêmes */
-export type EtatNotesAsset = { n: number; empreinte?: string | null; min: number; max: number };
+export type EtatNotesAsset = { n: number; empreinte?: string | null; min: number; max: number; /** Dernière note et somme (tranches.ts) */ derniere?: number; somme?: number };
+
+/** Tranché (tranches.ts) : dernière note 1 ★ ou moyenne ≤ 1,5 (refusé), dernière note 5 ★ (favori) : plus jamais proposé à l'évaluation */
+export const etatNotesTranche = (e: EtatNotesAsset | undefined) => Boolean(e && e.n && (e.derniere === 1 || e.derniere === 5 || (e.somme !== undefined && e.somme / e.n <= 1.5)));
 
 /**
  * Palier de priorité : 0 modifié depuis la dernière note (avant / après à juger, demande de Paul 2026-10-07), 1 jamais noté,
@@ -83,8 +86,10 @@ export function prochaineCarte<T extends { cle: string; empreinte?: string | nul
   aleatoire: () => number = Math.random,
 ): T | null {
   const etat = (k: string) => (etats instanceof Map ? etats.get(k) : (etats as Record<string, EtatNotesAsset>)[k]);
-  const libres = candidats.filter((c) => !exclues.has(c.cle));
-  const pool = libres.length ? libres : candidats;
+  // Éléments tranchés (1 ★ ou 5 ★, tranches.ts) : jamais proposés à l'évaluation
+  const ouverts = candidats.filter((c) => !etatNotesTranche(etat(c.cle)));
+  const libres = ouverts.filter((c) => !exclues.has(c.cle));
+  const pool = libres.length ? libres : ouverts;
   if (!pool.length) return null;
   const paliers: T[][] = [[], [], [], []];
   for (const c of pool) paliers[prioriteAsset(etat(c.cle), c.empreinte)].push(c);
@@ -117,8 +122,10 @@ export function etatsNotes(notes: readonly { cle: string; note: number; empreint
   for (const x of notes) {
     const e = m.get(x.cle);
     const le = x.le ?? '';
-    if (!e) { m.set(x.cle, { n: 1, empreinte: x.empreinte ?? null, min: x.note, max: x.note, le }); continue; }
+    if (!e) { m.set(x.cle, { n: 1, empreinte: x.empreinte ?? null, min: x.note, max: x.note, le, derniere: x.note, somme: x.note }); continue; }
     e.n++;
+    e.somme = (e.somme ?? 0) + x.note;
+    if (le > e.le || (!le && !e.le && e.derniere === undefined)) e.derniere = x.note;
     e.min = Math.min(e.min, x.note);
     e.max = Math.max(e.max, x.note);
     if (le > e.le) { e.le = le; e.empreinte = x.empreinte ?? e.empreinte; }

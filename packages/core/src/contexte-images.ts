@@ -71,6 +71,18 @@ export const SUJET_DE_SPECIALITE: Readonly<Record<string, string>> = { sport: 's
 /** Kit enregistré pour une spécialité (clé directe, sinon sujet de la spécialité) */
 export const kitDeSpecialite = (specialite: string): KitCompact | undefined => ETAT.kits[specialite] ?? ETAT.kits[SUJET_DE_SPECIALITE[specialite] ?? ''];
 
+/** Tous types d'assets : dernière note 1 ★ ou moyenne ≤ 1,5 ★ (lignes plus récentes d'abord) */
+function refusTous(lignes: readonly { cle: string; note?: number | null }[]): Map<string, boolean> {
+  const m = new Map<string, { s: number; n: number; derniere: number }>();
+  for (const l of lignes) {
+    const n = l.note;
+    if (!l?.cle || typeof n !== 'number' || !Number.isInteger(n) || n < 1 || n > 5) continue;
+    const a = m.get(l.cle);
+    if (a) { a.s += n; a.n++; } else m.set(l.cle, { s: n, n: 1, derniere: n });
+  }
+  return new Map([...m].map(([k, a]) => [k, a.derniere === 1 || a.s / a.n <= 1.5]));
+}
+
 /**
  * Clés exclues d'après les lignes d'apprentissage des assets (assets_notes_apprentissage : notes, PLUS RÉCENTES D'ABORD, puis
  * statuts) : moyenne ≤ 2 ★, dernière note ≤ 2 ★, statut « retiré » ou « à retravailler ». Photos et illustrations (photo:, heros:,
@@ -89,5 +101,7 @@ export function clesImagesExclues(lignes: readonly { cle: string; note?: number 
     }
   }
   for (const [k, a] of notes) if (a.s / a.n <= 2 || a.derniere <= 2) r.add(k);
+  // Tranchés 1 ★ (tranches.ts) : n'importe quel élément noté (polices, gammes, éléments, typographie…), jamais dans une composition
+  for (const [k, a] of refusTous(lignes)) if (a) r.add(k);
   return r;
 }

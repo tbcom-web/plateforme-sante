@@ -14,6 +14,7 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import Duel from './Duel';
+import { getTranches, tranchesEnListes } from '@/lib/tranches';
 
 export const metadata = { title: 'Super admin · Duel A ou B' };
 
@@ -63,6 +64,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
         statuts={statutsAvecHeritage(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut])), inventaireAssets({ photosJeux }).map((a) => a.cle))}
         predictions={predictionsParCle(predictions)}
         typeInitial={type}
+        tranches={tranchesEnListes((await getTranches()).tranches)}
         mobileInitial={sp.mobile === '1'}
         pageInitiale={typeof sp.page === 'string' ? sp.page : null}
       />

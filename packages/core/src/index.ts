@@ -93,3 +93,4 @@ export * from './kits-visuels';
 export * from './prompts-images';
 export * from './images-generees';
 export * from './generation-recettes';
+export * from './tranches';

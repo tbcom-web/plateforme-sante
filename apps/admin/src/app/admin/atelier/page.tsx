@@ -1,4 +1,5 @@
 import { markdownAtelier, poidsAtelier, syntheseAtelier, universDuParcours } from '@plateforme/core';
+import { getTranches } from '@/lib/tranches';
 import Link from 'next/link';
 import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { exigerAdmin } from '@/lib/admin';
@@ -72,6 +73,7 @@ export default async function PageAtelier() {
         themesActives={themesActives()}
         poids={poids.n || poids.assets ? poids : null}
         dejaNotees={dejaNotees}
+        tranchees={[...(await getTranches()).tranches.refuses, ...(await getTranches()).tranches.favoris].filter((k) => k.startsWith('prop:'))}
         migrationManquante={migrationManquante}
         photos={photos}
       />

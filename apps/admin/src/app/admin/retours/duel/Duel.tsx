@@ -16,7 +16,7 @@ import {
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
   modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, appareilUnique, tirerAppareilUnique, candidatsDuelFavoris, poidsFavori, manquePhotosNotees, appliquerSurfaces, cleAssetSurfaces, cleDePaire, cleImageFond, cleImageRendu, couleursGabarit, filtreImage, FONDS_IMAGE, fondImageCss, gabaritModele, ingredientPaire, lireDimensionPaire, mesurerSurfaces, ratioLisible, reparerComposition, repereSurfaces, surface, surfacesConformes, TRAITEMENTS_IMAGE, varierPaire, type Repere, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, appareilUnique, tirerAppareilUnique, candidatsDuelFavoris, candidatsDuelTranches, clesJugeesEnDuel, poidsFavori, manquePhotosNotees, appliquerSurfaces, cleAssetSurfaces, cleDePaire, cleImageFond, cleImageRendu, couleursGabarit, filtreImage, FONDS_IMAGE, fondImageCss, gabaritModele, ingredientPaire, lireDimensionPaire, mesurerSurfaces, ratioLisible, reparerComposition, repereSurfaces, surface, surfacesConformes, TRAITEMENTS_IMAGE, varierPaire, type Repere, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -85,7 +85,7 @@ type Courant = { type: TypeDuel; scenario: ScenarioDuel; a: Cote; b: Cote; dimen
   /** « Peu de photos notées pour <sujet> » (recettes.ts, manquePhotosNotees) quand une composition photo est montrée */
   manquePhotos?: string | null;
   /** Favoris d'abord : duel de découverte (candidats non encore bien notés) */
-  decouverte?: boolean; valeursForcees?: [string, string]; repereForce?: Repere };
+  decouverte?: boolean; valeursForcees?: [string, string]; repereForce?: Repere; champion?: boolean };
 type DuelLocal = DuelCore & { remarque?: string | null };
 
 type Props = {
@@ -105,6 +105,8 @@ type Props = {
   predictions: Record<string, PredictionJuge[]>;
   /** Type de duel ou mode (MODES_DUEL) */
   typeInitial: string | null;
+  /** Tranchés (tranches.ts) : refusés (1 ★, « les deux sont mauvais ») et favoris (5 ★) */
+  tranches?: { refuses: string[]; favoris: string[]; notes: string[] };
   /** ?mobile=1 : série « Mobile seulement » */
   mobileInitial?: boolean;
   /** ?page=<id> : duels de pages complètes sur cette page */
@@ -304,9 +306,18 @@ export default function Duel(props: Props) {
     if (t === 'photo' || t === 'illustration') {
       for (const s of ordre) {
         // Favoris d'abord (favoris.ts) : surtout de bons éléments entre eux, ≈ 10 % de découverte, jamais les exclus (≤ 2 ★, retirés)
-        const fav = candidatsDuelFavoris(candidats[t], props.poids?.assets, null, r);
+        // Tranchés (tranches.ts) : jamais un refusé ; un favori (5 ★) seulement en « Champion » face à un élément jamais jugé (≈ 10 %)
+        const T = { refuses: new Set(props.tranches?.refuses ?? []), favoris: new Set(props.tranches?.favoris ?? []), notes: new Set(props.tranches?.notes ?? []) };
+        const tr = candidatsDuelTranches(candidats[t].filter((x) => x.sujets.includes(s)), T, clesJugeesEnDuel(historique), r);
+        if (tr.champion) {
+          const a = coteAsset(tr.champion.a.cle), b = coteAsset(tr.champion.b.cle);
+          if (a && b) return { type: t, scenario: { sujets: [s] }, a, b, dimension: null, prediction: null, vue: 'accueil', champion: true };
+        }
+        const ouverts = new Set(tr.candidats.map((x) => x.cle));
+        const fav0 = candidatsDuelFavoris(candidats[t], props.poids?.assets, null, r);
+        const fav = { ...fav0, candidats: fav0.candidats.filter((x) => ouverts.has(x.cle) || !x.sujets.includes(s)) };
         const nonExclus = candidats[t].filter((x) => poidsFavori(props.poids?.assets?.effets[x.cle], null, { moyenne: props.poids?.assets?.moyenne || 3, exclue: Boolean(props.poids?.assets?.statuts[x.cle]) }) > 0);
-        const p = genererPaireElements(t, fav.candidats, historique, { graine: g, sujet: s }) ?? genererPaireElements(t, nonExclus, historique, { graine: g, sujet: s });
+        const p = genererPaireElements(t, fav.candidats, historique, { graine: g, sujet: s }) ?? genererPaireElements(t, nonExclus.filter((x) => ouverts.has(x.cle) || !x.sujets.includes(s)), historique, { graine: g, sujet: s });
         if (!p) continue;
         const a = coteAsset(p.a.cle), b = coteAsset(p.b.cle);
         if (!a || !b) continue;
@@ -391,6 +402,9 @@ export default function Duel(props: Props) {
       // Deux recettes complètes vues sur la page : dimension page-libre:<page>
       const d = pageCible && !d0.dimension ? { ...d0, dimension: `page-libre:${pageCible}` } : d0;
       const a = coteCompo(d.a, s), b = coteCompo(d.b, s);
+      // Combinaison exacte refusée (1 ★, « les deux sont mauvais ») : re-tirée ; deux favoris : déjà tranché
+      const ref = new Set(props.tranches?.refuses ?? []), fv = new Set(props.tranches?.favoris ?? []);
+      if (ref.has(a.cle) || ref.has(b.cle) || (fv.has(a.cle) && fv.has(b.cle))) continue;
       const base0 = { type: t, aCle: a.cle, bCle: b.cle, aIngredients: a.ingredients, bIngredients: b.ingredients };
       const diff = clesDifferentes(base0);
       // Page complète : l'élément classé est la structure de CETTE page (structure:<page>:…) ; recettes libres : la composition
@@ -732,6 +746,7 @@ export default function Duel(props: Props) {
             )}
           </BandeauEvaluation>
           {courant.manquePhotos && <p role="note" className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950 ring-1 ring-amber-200">{courant.manquePhotos}</p>}
+          {courant.champion && <p className="text-xs font-semibold text-amber-900">Champion : un élément que vous avez noté 5 ★ face à une nouveauté jamais jugée, pour la situer.</p>}
           {courant.decouverte && <p className="text-xs text-neutral-600">Duel de découverte : des éléments pas encore bien notés.</p>}
           {enFocal && bloc ? (
             // Bloc focalisé : A au-dessus de B (ou superposés), par appareil montré ; aucun encadré (tout le bloc est le sujet)

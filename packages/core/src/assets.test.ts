@@ -134,7 +134,7 @@ test('retours : tirage prioritaire, série de jours, paliers, changements', () =
   const etats = etatsNotes([
     { cle: 'a', note: 4, empreinte: '1', le: '1' }, { cle: 'a', note: 4, empreinte: '1', le: '2' },
     { cle: 'b', note: 3, empreinte: 'x', le: '1' }, { cle: 'b', note: 3, empreinte: 'x', le: '2' },
-    { cle: 'c', note: 1, empreinte: '3' },
+    { cle: 'c', note: 2, empreinte: '3' },
   ]);
   assert.equal(prochaineCarte(c, etats)?.cle, 'b', 'modifié depuis la note d’abord (avant / après)');
   assert.equal(prochaineCarte(c, etats, new Set(['b']))?.cle, 'd', 'puis jamais noté');
