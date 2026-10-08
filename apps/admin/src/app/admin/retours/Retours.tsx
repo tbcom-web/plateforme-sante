@@ -61,6 +61,8 @@ import Inspirations from './Inspirations';
 import VariantesRepliees, { inventaireParBase } from './VariantesBase';
 import { clesAvecSignal, notesAvecBases, statutEffectif } from '@plateforme/core';
 import PhotosADecouvrir from './PhotosADecouvrir';
+import ProgressionQualite from './ProgressionQualite';
+import { notesElements, tableauProgression } from '@plateforme/core';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -326,6 +328,11 @@ export default function Retours(props: Props) {
     [notables, groupesBases, filtreSujet, surcharges, hashtags, filtreHashtag],
   );
   const [notes, setNotes] = useState<NoteLegere[]>(props.notesAssets);
+  // Objectif « compositions 100 % 4-5 ★ » (qualite.ts) : dimensions couvertes (≥ 2 éléments 4-5 ★), priorités à noter
+  const progression = useMemo(() => {
+    const a = [...inventaireAssets({ photosJeux }), ...inventaireStudio()];
+    return tableauProgression(a.map((x) => ({ cle: x.cle, sujets: x.type === 'photo' ? sujetsDuVisuel(x, surcharges).sujets : [] })), notesElements(notes));
+  }, [photosJeux, surcharges, notes]);
   const [datesAtelier, setDatesAtelier] = useState<string[]>(props.datesAtelier);
   const [dejaNotees, setDejaNotees] = useState(props.dejaNotees);
   // Notes de variantes comptées aussi pour leur base (agrégation) ; signaux : clés notées (variantes nouvelles → duel)
@@ -609,6 +616,7 @@ export default function Retours(props: Props) {
             <span>Il reste <strong className="tabular-nums">{inventaire.filter((a) => !etats.has(a.cle)).length}</strong> éléments jamais notés : ils passent avant tout le reste. Les éléments notés 1 ★ ou 5 ★ ne vous sont plus proposés.</span>
             <Link href="/admin/retours/tranches" className="font-semibold text-teal-900 underline">Éléments tranchés →</Link>
           </p>
+          <ProgressionQualite progression={progression} />
         </section>
 
         <RenduMobileARevoir retours={retoursMobile} migrationManquante={Boolean(props.migrationMobile)} inventaire={inventaireComplet} empreinte={(a) => cacheEmpreinte(a)}

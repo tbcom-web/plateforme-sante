@@ -35,6 +35,7 @@ import { normaliserScenario, sujetsDuScenario, type ScenarioRecette } from './si
 import { themeParId } from './themes';
 import { gammesPreferees } from './suivi-scenario';
 import { MODE_TIRAGE_DEFAUT, reglageMode } from './favoris';
+import { versQuatreCinq } from './qualite';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Constantes
@@ -341,6 +342,8 @@ export type CandidateRecette = {
   exploration: boolean;
   /** Ingrédients « à valider » présents (exploration seulement) */
   aValider: string[];
+  /** « Un seul nouveau à la fois » (qualite.ts) : élément(s) non noté(s) ou à 3 ★ que la note de la recette doit renseigner */
+  nouveaux?: string[];
   nom?: string;
 };
 
@@ -411,11 +414,17 @@ export function genererCandidates(scenario: ScenarioRecette, c0: ContexteRecette
       const oy = objectif(y);
       if (oy.v > cur.v) { x = y; cur = oy; }
     }
+    // Objectif 4-5 ★ (qualite.ts) : hors exploration, un seul élément à juger par recette ; les autres 4-5 ★ là où il en existe
+    let nouveaux: string[] | undefined;
+    if (!exploration && c.poids?.notesElements && Object.keys(c.poids.notesElements).length) {
+      const p = versQuatreCinq(x, c, c.poids.notesElements, { maxNouveaux: 1, essais: 4, graine: g });
+      x = p.composition; nouveaux = p.nouveaux; cur = objectif(x);
+    }
     const cle = cleRecetteNotee(x);
     if (vues.has(cle)) continue;
     vues.add(cle);
     const a = admissible(x, c, o, exploration);
-    res.push({ cle, source: 'generateur', scenario: normaliserScenario(scenario), composition: x, predit: cur.p, exploration, aValider: a.aValider });
+    res.push({ cle, source: 'generateur', scenario: normaliserScenario(scenario), composition: x, predit: cur.p, exploration, aValider: a.aValider, ...(nouveaux ? { nouveaux } : {}) });
   }
   return res;
 }

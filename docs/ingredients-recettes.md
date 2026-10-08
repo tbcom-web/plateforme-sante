@@ -359,6 +359,31 @@ une combinaison noté 5 étoiles, je ne veux plus qu'il apparaisse, sinon on ré
 - Hors règle pour l'instant : kits notés en bloc (« Noter ce kit ») ; la notation en ligne de « Compléter ce kit » montre les favoris
   comme photos à utiliser, sans les redemander.
 
+## Objectif : des compositions 100 % 4-5 ★ (2026-10-08, `qualite.ts`)
+
+Objectif de Paul, qui oriente tout le système : « arriver progressivement à des compositions qui contiennent uniquement des éléments
+notés 4 ou 5 étoiles ».
+
+- **Jauge** (`qualiteComposition`, composant `JaugeQualite`) : « 9/12 éléments 4-5 ★ · 2 jamais notés · 1 à 3 ★ », détail élément
+  par élément au survol. Éléments comptés : palette, modèle, héros, photos, éléments de sections, jeu d'effets, traitement des photos,
+  polices et habillage (pas les structures de page agrégées ni les combinaisons). Une variante sans note propre prend la note de sa
+  base. Affichée dans le Studio, l'atelier, les recettes à noter et les duels de thèmes ; sur la fiche d'un site praticien
+  (`/admin/sites/[id]`, `elementsDuSite` + `qualiteCles`).
+- **Un seul nouveau à la fois** (`versQuatreCinq`) : une composition À ÉVALUER (recettes complètes hors exploration, atelier, socle des
+  duels de thèmes) relance chaque dé dont les éléments ne sont pas tous 4-5 ★ et garde le tirage qui laisse le moins d'éléments à
+  juger, jusqu'à n'en laisser qu'UN : la note de la composition renseigne alors sur cet élément, signalé « Nouveau à juger : … ».
+  Une dimension sans aucun 4-5 ★ garde son tirage (le mieux noté par les poids habituels) et reste signalée. Jamais d'élément ≤ 2 ★
+  (exclusions inchangées). Atelier : la proposition notée (palette, visuels, photos) n'est pas relancée, seulement ses réglages.
+- **Studio, Favoris d'abord** : même relance avec zéro élément à juger (`maxNouveaux: 0`), dés verrouillés respectés ; les éléments
+  restés sous 4 ★ sont signalés « Pas encore de 4-5 ★ pour : … ».
+- **Tableau de progression** (accueil de Donner mon avis, `tableauProgression`) : par dimension (palettes, polices, chaque axe de
+  typographie, détails, menus, éléments, effets, icônes, illustrations par registre, photos par sujet…), nombre d'éléments 4-5 ★
+  disponibles ; **couverte** à partir de 2. « Compositions 100 % 4-5 ★ possibles : X % des dimensions couvertes » et « Prochaines
+  priorités à noter » (les plus proches de la couverture d'abord), chacune avec un lien vers la tuile qui les fait noter.
+- **Praticiens** (/creer, sites) : règle inchangée (éléments validés, jamais ≤ 2 ★) ; le taux 4-5 ★ du site est seulement exposé.
+- Limites : les notes lues sont celles des éléments (assets_notes) ; un élément 4-5 ★ « réévalué » reste compté jusqu'à sa prochaine
+  note ; les kits n'ont pas encore de jauge.
+
 ## Feuille de route
 
 - [x] Niveau 1 : notes, étiquettes, export, apprentissage (`assets-poids.ts`), atelier des combinaisons (`atelier-poids.ts`).

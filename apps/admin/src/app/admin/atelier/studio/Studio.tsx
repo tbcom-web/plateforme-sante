@@ -36,6 +36,7 @@ import { rangeesHabillage } from './PanneauHabillage';
 import ParametresGroupes, { type RangeeStudio } from './ParametresGroupes';
 import ApercusCoteACote from './ApercusCoteACote';
 import IndicateurHarmonie from './IndicateurHarmonie';
+import JaugeQualite from '@/components/JaugeQualite';
 import ZonesAAmeliorer from './ZonesAAmeliorer';
 import ApercuTheme from '@/components/ApercuTheme';
 import DoubleRendu from '@/components/DoubleRendu';
@@ -566,6 +567,7 @@ export default function Studio({ proposes, modeles, catalogue, marquesImportees,
       </div>
       <IndicateurHarmonie compact composition={comp} contexte={ctx} onCorriger={setComp} explorer={explorer} onExplorer={setExplorer} />
       <ChoixModeTirage mode={modeTirage} onChange={setModeTirage} />
+      <JaugeQualite composition={comp} sujets={ctx.sujets} notes={poids?.notesElements} />
       {defauts.length > 0 && <p role="alert" className="rounded-lg bg-red-50 p-2 text-sm text-red-900">{defauts.join(' ')}</p>}
     </section>
   );

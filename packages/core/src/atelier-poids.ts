@@ -91,6 +91,8 @@ export type PoidsAtelier = {
   harmonie?: ApprisHarmonie | null;
   /** Notes brutes des photos (moyenne, nombre) : « Favoris d'abord » (favoris.ts, photos ≥ 4 ★ puis ≥ 3,5 ★) */
   notesPhotos?: NotesPhotos | null;
+  /** Notes brutes de TOUS les éléments notés (qualite.ts : jauge 4-5 ★, « un seul nouveau à la fois ») */
+  notesElements?: Record<string, { m: number; n: number }> | null;
   /** Effets propres au mobile (duels joués sur téléphone, duels-appareils.ts) : ajoutés selon la portée de la clé (porteeMobile) */
   mobile?: Record<string, number> | null;
 };
@@ -178,9 +180,11 @@ export function normaliserPoidsAtelier(v: unknown): PoidsAtelier | null {
   }
   const assets = normaliserPoidsAssets(o.assets);
   const harmonie = normaliserApprisHarmonie(o.harmonie);
+  const notesElements: Record<string, { m: number; n: number }> = {};
+  if (o.notesElements && typeof o.notesElements === 'object') for (const [k, x] of Object.entries(o.notesElements as Record<string, { m?: unknown; n?: unknown }>)) if (/^[a-z]+:[^\s]{1,200}$/.test(k) && typeof x?.m === 'number' && typeof x?.n === 'number') notesElements[k] = { m: Math.max(1, Math.min(5, x.m)), n: Math.max(0, Math.floor(x.n)) };
   const notesPhotos: Record<string, { m: number; n: number }> = {};
   if (o.notesPhotos && typeof o.notesPhotos === 'object') for (const [k, x] of Object.entries(o.notesPhotos as Record<string, { m?: unknown; n?: unknown }>)) if (k.startsWith('photo:') && k.length <= 220 && typeof x?.m === 'number' && typeof x?.n === 'number') notesPhotos[k] = { m: Math.max(1, Math.min(5, x.m)), n: Math.max(0, Math.floor(x.n)) };
-  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, ...(assets ? { assets } : {}), ...(harmonie ? { harmonie } : {}), ...(Object.keys(notesPhotos).length ? { notesPhotos } : {}) };
+  return { n: Math.max(0, Math.floor(o.n)), moyenne: typeof o.moyenne === 'number' ? o.moyenne : 0, effets, ...(assets ? { assets } : {}), ...(harmonie ? { harmonie } : {}), ...(Object.keys(notesPhotos).length ? { notesPhotos } : {}), ...(Object.keys(notesElements).length ? { notesElements } : {}) };
 }
 
 /** Apprentissage des recettes complètes reçu de l'extérieur : valeurs numériques bornées à ±1, clés courtes ; invalide → null */

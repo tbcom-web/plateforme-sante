@@ -27,6 +27,7 @@ import { draftStudio } from '@/components/ApercuStudio';
 import type { PropositionClaude } from '@/lib/directeur-format';
 import type { SoinCatalogue } from '@/lib/sites';
 import ChoixModeTirage, { useModeTirage } from '@/components/ModeTirage';
+import JaugeQualite from '@/components/JaugeQualite';
 import { noterRecetteComplete } from './actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -321,6 +322,7 @@ export default function NotationRecettes(props: Props) {
                   {courant.nom && <span className="text-neutral-700">« {courant.nom} »</span>}
                   <span className="text-neutral-500">{total} recette{total > 1 ? 's' : ''} notée{total > 1 ? 's' : ''} · {session.length} cette session</span>
                 </p>
+                <JaugeQualite className="w-fit" composition={courant.composition} sujets={sujetsDuScenario(courant.scenario)} notes={props.poids?.notesElements} nouveaux={courant.nouveaux} />
                 <ul className="flex flex-wrap gap-1.5 text-xs" aria-label="Ingrédients de la recette">
                   {ingredientsLisibles(courant.composition).map((i) => (
                     <li key={i.id + i.nom} className="flex items-center gap-1 rounded-lg bg-white px-2 py-1 ring-1 ring-black/10">

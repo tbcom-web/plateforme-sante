@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { notesPhotos, renfortsKits, ajouterPairesApprises, pairesDesNotes, pairesDuels, pairesElementsDesNotes, pairesElementsDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
+import { notesElements, notesPhotos, renfortsKits, ajouterPairesApprises, pairesDesNotes, pairesDuels, pairesElementsDesNotes, pairesElementsDuels, renfortsDuelsMobiles, apprisHarmonie, appliquerRenforts, estEtiquetteAtelier, fusionnerRenforts, poidsAtelier, renfortsDuels, renfortsNotations, renfortsPoids, sourcesCombinaisons, sourcesNotesPages, sourcesRecettes, statsNotation, type IngredientsAtelier, type NoteAtelierLue, type PoidsAtelier } from '@plateforme/core';
 import { getNotesKits } from '@/lib/kits-images';
 import { getLignesAssetsApprentissage, getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
@@ -42,7 +42,10 @@ export const getNotesAtelier = cache(getNotesAtelierSansMemo);
 async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
   const [atelier, assets, recettes, pages, duels, notations] = await Promise.all([poidsDesCombinaisons(), getPoidsAssets(), getRecettesLecture(1), getNotesPagesLecture(), getDuelsApprentissage(), getNotationsApprentissage()]);
   // Notes brutes des photos (« Favoris d'abord », favoris.ts : photos ≥ 4 ★ puis ≥ 3,5 ★ d'abord, ≤ 2 ★ jamais)
-  const photos = notesPhotos(await getLignesAssetsApprentissage());
+  const lignesAssets = await getLignesAssetsApprentissage();
+  const photos = notesPhotos(lignesAssets);
+  // Notes brutes de tous les éléments (qualite.ts : jauge 4-5 ★, « un seul nouveau à la fois », Favoris d'abord 100 % 4-5 ★)
+  const elements = notesElements(lignesAssets);
   const base = !atelier?.poids && !assets ? null : { ...(atelier?.poids ?? { n: 0, moyenne: 0, effets: {} }), ...(assets ? { assets } : {}) };
   // Recettes gardées depuis la tuile « Recettes complètes » : apprises par leur notation (0038), pas une seconde fois comme recette
   const gardees = new Set(notations.map((n) => n.recette).filter(Boolean));
@@ -64,7 +67,8 @@ async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
   const mobile = renfortsDuelsMobiles(duels);
   const avecMobile = Object.keys(mobile).length ? { ...(poids ?? { n: 1, moyenne: 3, effets: {} }), mobile } : poids;
   const fin = harmonie ? { ...(avecMobile ?? { n: 0, moyenne: 3, effets: {} }), harmonie } : avecMobile;
-  return fin && Object.keys(photos).length ? { ...fin, notesPhotos: photos } : fin;
+  const avecPhotos = fin && Object.keys(photos).length ? { ...fin, notesPhotos: photos } : fin;
+  return avecPhotos && Object.keys(elements).length ? { ...avecPhotos, notesElements: elements } : avecPhotos;
 }
 export const getPoidsAtelier = cache(getPoidsAtelierSansMemo);
 

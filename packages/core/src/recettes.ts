@@ -29,6 +29,7 @@ import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
+import { versQuatreCinq } from './qualite';
 import { contexteImages, imageExclue, sansImagesExclues, VIVIER_PHOTOS, vivierDuSujet } from './contexte-images';
 import { classerPhotos, MODE_TIRAGE_DEFAUT, poidsFavori, tirerPhotosFavorites, type ModeTirage } from './favoris';
 import { clePhoto, effetHerite, retireDesSujets, scoreAsset, scoreAssetPourSujet, type PoidsAssets, type SurchargesSujets } from './assets-poids';
@@ -883,7 +884,12 @@ export function tirerHabillageRecette(x: CompositionRecette, cible: 'typo' | 'de
 /** « Tout changer » : un dé sur chaque dimension non verrouillée (structure d'abord : elle conditionne styles et couleurs) */
 export function toutChanger(x: CompositionRecette, verrous: readonly string[], c: ContexteRecette, graine: number): CompositionRecette {
   // Harmonie (harmonie.ts) : une famille de style d'abord (sujet n° 1, notes, verrous), puis chaque dimension dans la famille
-  if (!c.horsRegles) return toutChangerHarmonieux(x, verrous, c, graine, { ...outilsHarmonie(c), brut: (y, g) => toutChanger(y, verrous, { ...c, horsRegles: true }, g) });
+  if (!c.horsRegles) {
+    const y = toutChangerHarmonieux(x, verrous, c, graine, { ...outilsHarmonie(c), brut: (z, g) => toutChanger(z, verrous, { ...c, horsRegles: true }, g) });
+    // Favoris d'abord (qualite.ts) : 100 % d'éléments 4-5 ★ là où il en existe (dés non verrouillés)
+    const notes = c.poids?.notesElements;
+    return (c.modeTirage ?? MODE_TIRAGE_DEFAUT) === 'favoris' && notes && Object.keys(notes).length ? versQuatreCinq(y, c, notes, { maxNouveaux: 0, essais: 6, graine, verrous }).composition : y;
+  }
   let y = x;
   const sousVerrous = verrous.filter((v) => v.startsWith('page:') || v.startsWith('composant:'));
   for (const d of ['structure', 'couleurs', 'polices', 'visuels', 'photos', 'effets', 'traitement', 'typo', 'details', 'menu'] as const) {

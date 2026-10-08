@@ -21,7 +21,8 @@ import {
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
 } from '@plateforme/core';
-import { ANIMATIONS_ENTETE, compositionPourCle, PREMIERS_ECRANS_LOT2 } from '@plateforme/core';
+import { ANIMATIONS_ENTETE, compositionPourCle, PREMIERS_ECRANS_LOT2, versQuatreCinq } from '@plateforme/core';
+import JaugeQualite from '@/components/JaugeQualite';
 import type { PredictionJuge } from '@plateforme/core/juge';
 import { compositionPourCle as poserCle, PRESENTATIONS_PORTRAITS } from '@plateforme/core';
 import ApercuTheme from '@/components/ApercuTheme';
@@ -332,7 +333,8 @@ export default function Duel(props: Props) {
         ? [...new Set([COULEURS_PREFEREES[Math.floor(r() * COULEURS_PREFEREES.length)].id, ...(r() < 0.4 ? [COULEURS_PREFEREES[Math.floor(r() * COULEURS_PREFEREES.length)].id] : [])])] : [];
       const c = { ...contexte(s), couleursPreferees: couleurs };
       const libres = recettesPourScenario(props.recettes, [s]).slice(0, 8).map((x) => x.composition);
-      let base = libres.length && r() < 0.6 ? libres[Math.floor(r() * libres.length)] : compositionInitiale(c, g);
+      // Objectif 4-5 ★ (qualite.ts) : socle fait d'éléments 4-5 ★ là où il en existe ; seule la dimension comparée est « à juger »
+      let base = libres.length && r() < 0.6 ? libres[Math.floor(r() * libres.length)] : versQuatreCinq(compositionInitiale(c, g), c, props.poids?.notesElements, { maxNouveaux: 0, essais: 3, graine: g }).composition;
       let dims: string[];
       let varier: (x: CompositionRecette, dim: string, gg: number) => CompositionRecette;
       // Contrastes et fonds : même palette, deux répartitions des surfaces conformes AA (calculées sur les couleurs du gabarit)
@@ -701,6 +703,13 @@ export default function Duel(props: Props) {
             Client : <strong>{libelleSujet(courant.scenario.sujets[0] ?? 'general')}</strong>
             {courant.scenario.emplacement ? <> · emplacement : {EMPLACEMENTS.find((e) => e.id === courant.scenario.emplacement)?.nom}</> : null}
           </p>
+          {courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' && (
+            <div className="flex flex-wrap gap-2" aria-label="Qualité des deux compositions">
+              {([['A', courant.a.rendu.x], ['B', courant.b.rendu.x]] as const).map(([l, x]) => (
+                <div key={l} className="flex items-center gap-1.5"><span className="text-xs font-bold text-teal-900">{l}</span><JaugeQualite composition={x} sujets={courant.scenario.sujets} notes={props.poids?.notesElements} /></div>
+              ))}
+            </div>
+          )}
           <BandeauEvaluation prefixe="On compare" repere={{ ...repere, ...(enFocal ? { selecteurs: [] } : {}), detail: [repere.detail, courant.appareilFixe ? (courant.appareilFixe === 'mobile' ? 'sur téléphone' : 'sur ordinateur') : courant.mobileSeul ? 'sur téléphone uniquement' : VU_SUR[vu]].filter(Boolean).join(' · ') }} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
             {(courant.dimension === 'couleurs' || courant.dimension === 'police-couleurs') && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' && (
               <div className="grid gap-1.5">

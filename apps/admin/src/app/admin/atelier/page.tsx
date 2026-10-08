@@ -1,4 +1,5 @@
-import { markdownAtelier, poidsAtelier, syntheseAtelier, universDuParcours } from '@plateforme/core';
+import { markdownAtelier, notesElements, poidsAtelier, syntheseAtelier, universDuParcours } from '@plateforme/core';
+import { getLignesAssetsApprentissage } from '@/lib/notation-recettes';
 import { getTranches } from '@/lib/tranches';
 import Link from 'next/link';
 import EnvoyerRetours from '@/components/EnvoyerRetours';
@@ -26,7 +27,8 @@ export default async function PageAtelier() {
   const synthese = syntheseAtelier(notes);
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
   // Poids des combinaisons + notes et statuts des assets (0027) : exactement ce que reçoit le parcours
-  const poids = { ...poidsAtelier(notes), ...(assets ? { assets } : {}) };
+  const elements = notesElements(await getLignesAssetsApprentissage());
+  const poids = { ...poidsAtelier(notes), ...(assets ? { assets } : {}), ...(Object.keys(elements).length ? { notesElements: elements } : {}) };
   // Combinaisons déjà notées (clé stable des ingrédients) : nombre de notes et dernière note
   const dejaNotees: Record<string, { n: number; derniere: number }> = {};
   for (const x of notes) {
@@ -71,7 +73,7 @@ export default async function PageAtelier() {
         catalogue={catalogue}
         marquesImportees={marquesImportees}
         themesActives={themesActives()}
-        poids={poids.n || poids.assets ? poids : null}
+        poids={poids.n || poids.assets || poids.notesElements ? poids : null}
         dejaNotees={dejaNotees}
         tranchees={[...(await getTranches()).tranches.refuses, ...(await getTranches()).tranches.favoris].filter((k) => k.startsWith('prop:'))}
         migrationManquante={migrationManquante}

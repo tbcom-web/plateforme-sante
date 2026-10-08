@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { jeuPhotosAutorise, jeuPhotosDepuisLigne, normaliserDraft, specialite as specialiteDe } from '@plateforme/core';
+import { elementsDuSite, jeuPhotosAutorise, jeuPhotosDepuisLigne, normaliserDraft, notesElements, qualiteCles, specialite as specialiteDe } from '@plateforme/core';
+import { getLignesAssetsApprentissage } from '@/lib/notation-recettes';
 import { createClient } from '@/lib/supabase/server';
 import { COLONNES_JEU, UUID } from '@/lib/jeux-photos';
 import { getCatalogue } from '@/lib/sites';
@@ -35,6 +36,8 @@ export default async function PhotosDuSite({ params }: PageProps<'/admin/sites/[
   const licences: Record<string, Licence> = Object.fromEntries(
     (lignesLicences ?? []).map((l) => [l.photo_url, { reference: l.reference_licence, dateAchat: l.date_achat ?? '', transferee: l.transferee_au_client, notes: l.notes }]),
   );
+  // Objectif « 100 % 4-5 ★ » (qualite.ts) : part des éléments du site notés 4-5 ★ par Paul
+  const qualite = qualiteCles(elementsDuSite(d.theme), notesElements(await getLignesAssetsApprentissage()));
   const nom = d.cabinet.nom || [d.praticiens[0]?.prenom, d.praticiens[0]?.nom].filter(Boolean).join(' ') || 'Site sans nom';
 
   return (
@@ -43,6 +46,7 @@ export default async function PhotosDuSite({ params }: PageProps<'/admin/sites/[
         <Link href="/admin" className="text-sm text-teal-800">← Sites</Link>
         <h1 className="mt-2 text-2xl font-bold">Photos du site : {nom}</h1>
         <p className="text-sm text-neutral-600">Spécialité principale : {specialiteDe(d.theme.specialite).label} · statut : {STATUTS[site.statut as Statut]?.label ?? site.statut}</p>
+        {qualite.total > 0 && <p className="mt-1 w-fit rounded-lg bg-neutral-50 px-2 py-1 text-xs text-neutral-700 ring-1 ring-black/10" title={qualite.details.map((x) => `${x.note ?? 'jamais noté'} — ${x.cle}`).join('\n')}>Qualité des éléments du site : {qualite.texte}</p>}
       </div>
       {error && <p className="text-sm text-red-700">Lecture impossible : la base de données n’est pas à jour (mise à jour 0016, jeux de photos, à installer).</p>}
 

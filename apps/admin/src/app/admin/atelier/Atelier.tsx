@@ -23,9 +23,10 @@ import ApercuTheme from '@/components/ApercuTheme';
 import ApercusCoteACote from './studio/ApercusCoteACote';
 import {
   aValiderDansComposition, appliquerPriorites, appliquerRecette, avecPartPhotos, compositionAtelier, vivierDuSujet, VIVIER_PHOTOS, draftPourOnglet, libelleTraitementPhotos, LIBELLES_VARIANTES, modeleIntegre,
-  NOMS_SECTIONS_VARIABLES, ongletsDuScenario, pairePolices, reglagesAtelier, soinsDuScenario, vueDePage, type ContexteRecette, type PageStructure,
+  NOMS_SECTIONS_VARIABLES, ongletsDuScenario, pairePolices, reglagesAtelier, soinsDuScenario, versQuatreCinq, vueDePage, type ContexteRecette, type PageStructure,
 } from '@plateforme/core';
 import DoubleRendu from '@/components/DoubleRendu';
+import JaugeQualite from '@/components/JaugeQualite';
 import RenduMobile from '@/components/RenduMobile';
 import { empreinteMobile, type AppareilRetour, type ScenarioRecette, type Zone } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -131,7 +132,15 @@ export default function Atelier(props: Props) {
   // Combinaison complète : la proposition + tous les autres ingrédients du Studio (registre, harmonie), « à valider » compris
   const modele = useCallback((id: string) => modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id), [modeles]);
   const ctxRecette = useMemo<ContexteRecette>(() => ({ sujets: sujetsPris(entree), principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids: apprentissage ? poids : null, photos, modele }), [entree, scenario.principaux.length, scenario.couleurs, apprentissage, poids, photos, modele]);
-  const comp = useMemo(() => (p ? compositionAtelier(p, ctxRecette, photosP, 0) : null), [p, ctxRecette, photosP]);
+  // Objectif 4-5 ★ (qualite.ts) : réglages relancés vers les éléments 4-5 ★, un seul élément « à juger » ; la proposition elle-même
+  // (palette, visuels, photos) reste celle notée
+  const progressif = useMemo(() => {
+    if (!p) return null;
+    const x = compositionAtelier(p, ctxRecette, photosP, 0);
+    const notes = apprentissage ? poids?.notesElements : null;
+    return versQuatreCinq(x, ctxRecette, notes, { maxNouveaux: 1, essais: 4, graine: 0, verrous: ['couleurs', 'visuels', 'photos', 'structure'] });
+  }, [p, ctxRecette, photosP, apprentissage, poids]);
+  const comp = progressif?.composition ?? null;
   const aValider = useMemo(() => (comp ? aValiderDansComposition(comp) : []), [comp]);
   const ingredients = useMemo(() => (p && comp ? { ...ingredientsProposition(p, entree, photosP), reglages: reglagesAtelier(comp, sujetsPris(entree)) } : null), [p, comp, entree, photosP]);
   const cle = useMemo(() => (ingredients ? cleCombinaison(ingredients) : ''), [ingredients]);
@@ -336,6 +345,7 @@ export default function Atelier(props: Props) {
               {comp && <li className={puce}>Polices : {pairePolices(comp.police)?.nom ?? comp.police}</li>}
               {comp && <li className={puce}>Photos : {libelleTraitementPhotos(comp.traitement)}</li>}
             </ul>
+            {comp && <JaugeQualite className="w-fit" composition={comp} sujets={ctxRecette.sujets} notes={poids?.notesElements} nouveaux={progressif?.nouveaux} />}
             {aValider.length > 0 && <p className="w-fit rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">Contient {aValider.length} ingrédient{aValider.length > 1 ? 's' : ''} à valider (jamais proposé{aValider.length > 1 ? 's' : ''} aux praticiens avant validation)</p>}
             {p.nuances.length > 0 && <p className="text-xs text-neutral-500">{p.nuances.join(' · ')}</p>}
 
