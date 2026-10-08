@@ -16,7 +16,7 @@ import { jourParis } from './essai';
 // Catégories (tuiles de l'accueil)
 // ---------------------------------------------------------------------------------------------------------------
 
-export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets' | 'typographies' | 'details' | 'menus' | 'combinaisons' | 'surfaces';
+export type CategorieRetours = 'hasard' | 'themes' | 'illustrations' | 'icones' | 'photos' | 'animations' | 'couleurs' | 'structures' | 'pages' | 'elements' | 'effets' | 'typographies' | 'details' | 'menus' | 'combinaisons' | 'surfaces' | 'images-fonds';
 
 export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: string; description: string; types: readonly TypeAsset[] }[] = [
   { id: 'hasard', libelle: 'Tout au hasard', description: 'Un peu de tout, les jamais notés d’abord', types: [] },
@@ -38,6 +38,8 @@ export const CATEGORIES_RETOURS: readonly { id: CategorieRetours; libelle: strin
   // Combinaisons police × palette (combinaisons.ts) : spécimen de la paire de polices dans les couleurs de la gamme
   { id: 'combinaisons', libelle: 'Combinaisons', description: 'Police × palette, cartes × illustrations, premier écran × animation, menu × police…', types: ['typo', 'composant'] },
   // Contrastes couleur × fond (surfaces.ts) : la même palette répartie autrement, toujours AA
+  // Images × fonds (combinaisons-elements.ts) : une image sur un fond de la gamme
+  { id: 'images-fonds', libelle: 'Images × fonds', description: 'Héros, dessins et photos posés sur un fond : blanc, gamme, teinte, aplat, dégradé', types: ['effets'] },
   { id: 'surfaces', libelle: 'Contrastes et fonds', description: 'Fond blanc ou teinté, texte franc ou doux, accent plein ou léger : même palette', types: ['effets'] },
 ];
 
@@ -49,7 +51,7 @@ export const categorieRetours = (id: string | null | undefined) => CATEGORIES_RE
  * le reste suit son type. Elles ne sont pas tirées par « Tout au hasard » (414 combinaisons : elles écraseraient le reste).
  */
 export const categorieDeCle = (a: { cle: string; type: TypeAsset }): CategorieRetours =>
-  a.cle.startsWith('typo:combinaison:') || a.cle.startsWith('composant:paire:') ? 'combinaisons' : a.cle.startsWith('effets:surfaces-') ? 'surfaces' : categorieDuType(a.type);
+  a.cle.startsWith('typo:combinaison:') || a.cle.startsWith('composant:paire:') ? 'combinaisons' : a.cle.startsWith('effets:surfaces-') ? 'surfaces' : a.cle.startsWith('effets:image@') ? 'images-fonds' : categorieDuType(a.type);
 export const categorieDuType = (t: TypeAsset): CategorieRetours => CATEGORIES_RETOURS.find((c) => c.types.includes(t))?.id ?? 'illustrations';
 
 // ---------------------------------------------------------------------------------------------------------------

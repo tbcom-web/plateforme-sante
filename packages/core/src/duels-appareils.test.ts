@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appareilDimension, duelMobileSeulement, effetAvecMobile, PART_DUELS_MOBILES, porteeMobile, renfortsDuelsMobiles } from './duels-appareils';
+import { appareilDimension, appareilUnique, PART_APPAREIL_UNIQUE_MOBILE, tirerAppareilUnique, duelMobileSeulement, effetAvecMobile, PART_DUELS_MOBILES, porteeMobile, renfortsDuelsMobiles } from './duels-appareils';
 import { DIMENSIONS_DUEL, MODES_DUEL, type Duel } from './duels';
 import { FAMILLES_COMPOSANTS } from './recettes';
 
@@ -45,4 +45,12 @@ test('apprentissage mobile : duels sur téléphone seulement, portée de la clé
   assert.equal(effetAvecMobile({ 'typo=echelle:modeste': 0.2 }, { 'typo=echelle:modeste': 0.4 }, 'typo=echelle:modeste'), 0.4);
   assert.equal(effetAvecMobile({ 'gamme=cobalt': 0.2 }, { 'gamme=cobalt': 0.4 }, 'gamme=cobalt'), 0.2);
   assert.equal(effetAvecMobile(undefined, null, 'x'), 0);
+});
+
+test('un seul appareil par duel : pages complètes et thèmes libres, 60 % téléphone', () => {
+  assert.ok(appareilUnique('page:acces') && appareilUnique('page-libre:fiche') && appareilUnique(null));
+  assert.ok(!appareilUnique('polices') && !appareilUnique('composant:horaires'));
+  assert.equal(PART_APPAREIL_UNIQUE_MOBILE, 0.6);
+  const n = Array.from({ length: 1000 }, (_, i) => tirerAppareilUnique(i / 1000)).filter((x) => x === 'mobile').length;
+  assert.equal(n, 600);
 });

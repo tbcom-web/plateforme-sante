@@ -49,7 +49,7 @@ import type { Univers } from './catalogue-univers';
 import { lireCleCombinaison } from './combinaisons';
 import { effetAvecMobile } from './duels-appareils';
 import { lireCleSurfaces } from './surfaces';
-import { lireClePaire, poserPaire } from './combinaisons-elements';
+import { lireClePaire, lireCleImageFond, poserPaire } from './combinaisons-elements';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Dimensions, ordres de l'accueil
@@ -1331,7 +1331,7 @@ export const estEtiquetteStudio = (x: unknown): x is string => ETIQUETTES_STUDIO
 export function estCleStudio(k: unknown): k is string {
   if (typeof k !== 'string' || k.length > 200) return false;
   const [type, a, b] = k.split(':');
-  if (type === 'effets') return (Boolean(jeuEffets(a)) && b === undefined) || Boolean(lireCleTraitementPhotos(k)) || lireCleSurfaces(k) !== null;
+  if (type === 'effets') return (Boolean(jeuEffets(a)) && b === undefined) || Boolean(lireCleTraitementPhotos(k)) || lireCleSurfaces(k) !== null || lireCleImageFond(k) !== null;
   if (type === 'composant' && a === 'paire') return lireClePaire(k) !== null;
   if (type === 'typo') return estCleTypo(k) || lireCleCombinaison(k) !== null;
   if (type === 'details') return estCleDetails(k);

@@ -17,7 +17,7 @@ import { lireCleTraitementPhotos, libelleTraitementPhotos } from './traitements-
 import { AXES_TYPO, NOMS_AXES_TYPO, libelleCleTypo, type AxeTypo } from './typo';
 import { jeuDetails, libelleCleDetails, libelleDetails } from './details';
 import { lireCleSurfaces, surface } from './surfaces';
-import { lireClePaire, lireDimensionPaire, libellePaire, nomPaire } from './combinaisons-elements';
+import { FONDS_IMAGE, lireCleImageFond, lireClePaire, lireDimensionPaire, libellePaire, nomPaire } from './combinaisons-elements';
 import { lireDimension, nomValeurHarmonie, type CompositionHarmonie } from './harmonie';
 import { ELEMENTS_DETAILS } from './details';
 import { AXES_MENU, MENU_PAR_DEFAUT, NOMS_AXES_MENU, libelleCleMenu, menuPourCle, type AxeMenu } from './menus';
@@ -186,6 +186,9 @@ const sansPrefixe = (s: string) => s.replace(/^[^:]+ : /, '');
 export function repereCle(cle: string, titre?: string | null): Repere {
   const [type, a, b] = cle.split(':');
   const t = titre ?? cle;
+  // Image × fond (tuile « Images × fonds ») : l'image et son fond, sans encadré
+  const imf = lireCleImageFond(cle);
+  if (imf) return ensemble(`l’image « ${(t.lastIndexOf(' sur ') > 0 ? t.slice(0, t.lastIndexOf(' sur ')) : t)} » sur le fond « ${FONDS_IMAGE.find((f) => f.id === imf.fond)?.nom ?? imf.fond} »`, 'l’accord de l’image et du fond');
   const sf = lireCleSurfaces(cle);
   if (sf) { const x = surface(sf)!; return x.zones.length ? repere(`la répartition des surfaces « ${x.nom} »`, x.zones, x.detail) : ensemble(`la répartition des surfaces « ${x.nom} »`, `${x.detail} : toute la page`); }
   const pe = lireClePaire(cle);

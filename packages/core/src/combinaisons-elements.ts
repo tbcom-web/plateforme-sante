@@ -14,6 +14,7 @@
 import { baseDeCle } from './bases-illustrations';
 import { clePaireHarmonie, DIMENSIONS_HARMONIE, ecrireDimension, lireDimension, NOMS_DIMENSIONS_HARMONIE, nomValeurHarmonie, valeursDimensionHarmonie, violationsDures, type CompositionHarmonie, type ContexteHarmonie, type DimensionHarmonie } from './harmonie';
 import type { Duel } from './duels';
+import type { Asset } from './assets';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Image × fond
@@ -152,6 +153,45 @@ export function pairesElementsDesNotes(effets: Readonly<Record<string, number>>)
   for (const [k, e] of Object.entries(effets)) {
     const p = lireClePaire(k);
     if (p) { const v = Math.round(Math.max(-0.5, Math.min(0.5, 0.5 * e)) * 1000) / 1000; if (v) r[clePaireHarmonie(p.a, p.va, p.b, p.vb)] = v; }
+  }
+  return r;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Tuile « Images × fonds » : clé notable `effets:image@<fond>:<clé de l'image>` (type effets : aucune migration ; jamais lue
+// comme une variante de l'illustration : baseDeCle ne la découpe pas)
+// ---------------------------------------------------------------------------------------------------------------
+
+export const cleAssetImageFond = (cle: string, fond: string) => `effets:image@${fond}:${cle}`;
+export function lireCleImageFond(cle: unknown): { cle: string; fond: string } | null {
+  if (typeof cle !== 'string') return null;
+  const m = /^effets:image@([a-z-]+):([a-z]+:[^\s@]+)$/.exec(cle);
+  return m && FONDS_IMAGE.some((f) => f.id === m[1]) ? { fond: m[1], cle: m[2] } : null;
+}
+
+/** Une image par illustration de base (héros, dessins) et les photos, chacune sur chaque fond */
+export function inventaireImagesFonds(assets: readonly Asset[], maxPhotos = 12): Asset[] {
+  const vues = new Set<string>();
+  const sources = assets.filter((a) => {
+    if (a.type !== 'heros' && a.type !== 'dessin' && a.type !== 'photo') return false;
+    const b = baseDeCle(a.cle) ?? a.cle;
+    if (vues.has(b)) return false;
+    vues.add(b);
+    return true;
+  });
+  const photos = sources.filter((a) => a.type === 'photo').slice(0, maxPhotos);
+  return [...sources.filter((a) => a.type !== 'photo'), ...photos].flatMap((a) => FONDS_IMAGE.map((f) => ({
+    ...a, cle: cleAssetImageFond(a.cle, f.id), type: 'effets' as const, titre: `${a.titre} sur ${f.nom.toLowerCase()}`, detail: 'Image × fond',
+    source: 'packages/core/src/combinaisons-elements.ts', statutParDefaut: 'a_revoir' as const, rendu: { kind: 'studio' as const, cle: cleAssetImageFond(a.cle, f.id) },
+  })));
+}
+
+/** Notes de la tuile → clés apprises image × fond (assets : `image:<base>&surface:<fond>`), moitié de l'effet, ±0,5 ★ */
+export function imagesFondsDesNotes(effets: Readonly<Record<string, number>>): Record<string, number> {
+  const r: Record<string, number> = {};
+  for (const [k, e] of Object.entries(effets)) {
+    const x = lireCleImageFond(k);
+    if (x) { const v = Math.round(Math.max(-0.5, Math.min(0.5, 0.5 * e)) * 1000) / 1000; if (v) r[cleImageFond(x.cle, 'fond', x.fond)] = v; }
   }
   return r;
 }

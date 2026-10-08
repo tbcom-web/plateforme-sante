@@ -142,3 +142,25 @@ test('réglages fins (espacements, ombres, arrondis…) : un élément de détai
   }
   assert.ok(ok > 15, `trop peu : ${ok}`);
 });
+
+test('tuile « Images × fonds » : clés, inventaire (une image par base), apprentissage', async () => {
+  const { inventaireImagesFonds, lireCleImageFond, cleAssetImageFond, imagesFondsDesNotes, cleImageFond: cif } = await import('./combinaisons-elements');
+  const { inventaireAssets } = await import('./assets');
+  const { baseDeCle } = await import('./bases-illustrations');
+  const inv = inventaireImagesFonds(inventaireAssets({ photosJeux: [] }));
+  assert.ok(inv.length > 20 && new Set(inv.map((a) => a.cle)).size === inv.length);
+  for (const a of inv.slice(0, 40)) {
+    const x = lireCleImageFond(a.cle)!;
+    assert.ok(x && estCleStudio(a.cle));
+    assert.equal(categorieDeCle(a), 'images-fonds');
+    assert.equal(baseDeCle(a.cle), null);
+  }
+  const k = cleAssetImageFond('dessin:verrue:releve', 'aplat');
+  assert.deepEqual(lireCleImageFond(k), { cle: 'dessin:verrue:releve', fond: 'aplat' });
+  assert.equal(lireCleImageFond('effets:image@inconnu:dessin:x'), null);
+  assert.deepEqual(imagesFondsDesNotes({ [k]: 2 }), { [cif('dessin:verrue:releve', 'fond', 'aplat')]: 0.5 });
+});
+
+test('« Vous notez » de la tuile Images × fonds', () => {
+  assert.equal(repereCle('effets:image@aplat:dessin:verrue:releve', 'Verrue sur aplat d’accent').libelle, 'l’image « Verrue » sur le fond « Aplat d’accent »');
+});

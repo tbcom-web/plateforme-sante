@@ -56,3 +56,13 @@ export function effetAvecMobile(effets: Readonly<Record<string, number>> | undef
   const m = mobile?.[cle] ?? 0;
   return m ? Math.round((g + porteeMobile(cle) * m) * 1000) / 1000 : g;
 }
+
+/**
+ * UN SEUL APPAREIL par duel (retour de Paul du 2026-10-08 : « pour les comparaisons de pages complètes, fais comparer juste le
+ * mode ordi OU mobile ») : pages complètes (`page:`, `page-libre:`) et thèmes complets libres (dimension null). Jamais « les
+ * deux » ; A et B toujours sur le même appareil (la bascule change le duel des deux côtés). Part du téléphone : 60 % — les pages
+ * d'un cabinet sont surtout lues sur téléphone, l'ordinateur garde 40 % pour que ses mises en page larges soient jugées aussi.
+ */
+export const PART_APPAREIL_UNIQUE_MOBILE = 0.6;
+export const appareilUnique = (dimension: string | null | undefined) => !dimension || /^page(-libre)?:/.test(dimension);
+export const tirerAppareilUnique = (r: number, part = PART_APPAREIL_UNIQUE_MOBILE): 'bureau' | 'mobile' => (r < part ? 'mobile' : 'bureau');

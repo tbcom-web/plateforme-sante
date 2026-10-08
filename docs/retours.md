@@ -217,6 +217,24 @@ combinaisons d'éléments » ; « tester les padding, les ombres… ») :
   Ces réglages sont ceux de details.ts (déjà rendus à l'identique sur le site et dans l'aperçu, étiquetés dans harmonie.ts) ;
   de nouveaux crans (gouttières, rythme vertical, ombres colorées) restent à ajouter dans details.ts.
 
+### Un seul appareil par duel de page, favoris dans les duels, tuile Images × fonds
+
+Retour de Paul du 2026-10-08 (« pour les comparaisons de pages complètes, fais comparer juste le mode ordi OU mobile ») :
+
+- **Pages complètes et thèmes complets libres** (duels-appareils.ts : appareilUnique) : jamais « Les deux » ; chaque duel est
+  soit ordinateur seul (deux pages ordinateur côte à côte), soit téléphone seul (deux téléphones côte à côte). Tirage : 60 %
+  téléphone (les pages d'un cabinet sont surtout lues sur téléphone ; 40 % d'ordinateur pour juger aussi les mises en page
+  larges) ; série « Mobile seulement » : téléphone. Bandeau « … · sur ordinateur » / « … · sur téléphone », appareil
+  enregistré en conséquence. La bascule « Ordinateur · Mobile » reste, et change le duel pour A et B à la fois. Les duels
+  à une dimension (polices, couleurs, éléments…) gardent « Ordinateur · Mobile · Les deux ».
+- **Photos et illustrations** : « Favoris d'abord » (candidatsDuelFavoris, favoris.ts) : surtout de bons éléments entre eux,
+  ≈ 10 % de duels de découverte (signalés), jamais les exclus (≤ 2 ★, retirés, à retravailler).
+- **Thèmes** : quand une composition photo est montrée faute de photos bien notées, « Peu de photos notées pour <sujet> »
+  (manquePhotosNotees) sous le bandeau.
+- **Tuile « Images × fonds »** : une image par illustration de base (héros, dessins) et quelques photos, sur chaque fond
+  (blanc, fond de la gamme, teinte, aplat, dégradé) ; clé `effets:image@<fond>:<clé>` (aucune migration), apprise en
+  `image:<base>&surface:<fond>` (imagesFondsDesNotes) ; hors « Tout au hasard ».
+
 ## Comment les retours arrivent dans le dépôt
 
 Workflow `.github/workflows/exporter-retours.yml` :

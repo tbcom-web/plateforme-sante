@@ -16,7 +16,7 @@ import {
   DIMENSIONS_DUEL, DIMENSIONS_RECETTE, ETIQUETTES_DUEL, FAMILLES_COMPOSANTS, gamme as gammeParId, genererDuelComposition, genererPaireElements, groupeEtVariante,
   hasard, inventaireAssets, libelleCleRenfort, LIBELLES_TYPES_DUEL, NOMS_SECTIONS_VARIABLES, PAGES_STRUCTURE, predireDuel, recettesPourScenario,
   modeleIntegre, repereDimension, serialiserComposition, serieDuels, stylesPermis, SUJETS_VISUELS, sujetsDuVisuel, SURFACES_CSS, tirerDimension, tirerPage, titresAssets, TYPES_DUEL,
-  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, appliquerSurfaces, cleAssetSurfaces, cleDePaire, cleImageFond, cleImageRendu, couleursGabarit, filtreImage, FONDS_IMAGE, fondImageCss, gabaritModele, ingredientPaire, lireDimensionPaire, mesurerSurfaces, ratioLisible, reparerComposition, repereSurfaces, surface, surfacesConformes, TRAITEMENTS_IMAGE, varierPaire, type Repere, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
+  valeursDuel, variablesCharte, variablesGamme, vueDePage, COULEURS_PREFEREES, MODES_DUEL, modeDuel, modeDuDuel, nuancier, varierDuel, appareilDimension, duelMobileSeulement, appareilUnique, tirerAppareilUnique, candidatsDuelFavoris, poidsFavori, manquePhotosNotees, appliquerSurfaces, cleAssetSurfaces, cleDePaire, cleImageFond, cleImageRendu, couleursGabarit, filtreImage, FONDS_IMAGE, fondImageCss, gabaritModele, ingredientPaire, lireDimensionPaire, mesurerSurfaces, ratioLisible, reparerComposition, repereSurfaces, surface, surfacesConformes, TRAITEMENTS_IMAGE, varierPaire, type Repere, PAGES_DUEL, pageDeDimension, blocFocal, habillageDe, valeurFocale,
   type Asset, type CandidatElement, type CompositionRecette, type ContexteRecette, type DimensionRecette, type Duel as DuelCore, type IngredientsDuel,
   type MarqueImportee, type ModeleManifeste, type PhotoBanque, type PhotoDeJeu, type PoidsAtelier, type Recette, type ResultatDuel, type ScenarioDuel,
   type StatutIllustration, type SurchargesSujets, type TypeDuel, type Univers, type VuePage,
@@ -30,6 +30,7 @@ import PiloteApercu, { BandeauEvaluation, StyleSurfaces, useRepereVisible } from
 import CadreApercu from '@/components/CadreApercu';
 import SpecimenHabillage from '@/components/SpecimenHabillage';
 import { ComparaisonFocale } from '@/components/BlocFocal';
+import VisuelSurFond from '@/components/VisuelSurFond';
 import type { SoinCatalogue } from '@/lib/sites';
 import Apercu from '../tri/ApercuVisuel';
 import { enregistrerDuel } from './actions';
@@ -63,20 +64,6 @@ function Nuancier({ x, lettre }: { x: CompositionRecette; lettre: string }) {
   );
 }
 
-/** Images × fonds : la même image posée sur un fond de la gamme, avec un traitement (combinaisons-elements.ts) */
-function VisuelSurFond({ asset, fond, traitement }: { asset: Asset; fond: string; traitement: string }) {
-  const g = gammeParId('canard')!;
-  const filtre = filtreImage(traitement);
-  return (
-    <div className="grid aspect-[4/3] w-full place-items-center rounded-2xl p-[8%] ring-1 ring-black/10" style={{ background: fondImageCss(fond, g) }}>
-      {asset.rendu.kind === 'image'
-        // eslint-disable-next-line @next/next/no-img-element
-        ? <img src={asset.rendu.src} alt="" className="max-h-full max-w-full rounded-xl object-cover" style={{ filter: filtre }} />
-        : asset.rendu.kind === 'svg' ? <div className="tr-svg h-full w-full" style={{ filter: filtre }} dangerouslySetInnerHTML={{ __html: asset.rendu.svg() }} /> : null}
-    </div>
-  );
-}
-
 /** Un visuel (photo dans son cadre de site, illustration) dans le vrai cadre du téléphone : mise en page mobile de la section */
 function CadreTelephone({ children, hauteur }: { children: ReactNode; hauteur: number }) {
   return (
@@ -92,7 +79,13 @@ type Rendu = { kind: 'compo'; x: CompositionRecette } | { kind: 'asset'; asset: 
 /** `surfaces` : répartition des surfaces (surfaces.ts) ; `image` : la même image sur un fond / avec un traitement (combinaisons-elements.ts) */
 type Cote = { cle: string; ingredients: IngredientsDuel; rendu: Rendu; surfaces?: string; image?: { fond: string; traitement: string } };
 /** `mobileSeul` : duel « Mobile seulement » (duels-appareils.ts) : A et B montrés QU'EN cadre téléphone, appareil enregistré « mobile » */
-type Courant = { type: TypeDuel; scenario: ScenarioDuel; a: Cote; b: Cote; dimension: string | null; prediction: 'a' | 'b' | 'egalite' | null; vue: VuePage; mobileSeul?: boolean; valeursForcees?: [string, string]; repereForce?: Repere };
+type Courant = { type: TypeDuel; scenario: ScenarioDuel; a: Cote; b: Cote; dimension: string | null; prediction: 'a' | 'b' | 'egalite' | null; vue: VuePage; mobileSeul?: boolean;
+  /** Un seul appareil pour A et B (pages complètes, thèmes libres : duels-appareils.ts) ; la bascule le change des deux côtés */
+  appareilFixe?: 'bureau' | 'mobile';
+  /** « Peu de photos notées pour <sujet> » (recettes.ts, manquePhotosNotees) quand une composition photo est montrée */
+  manquePhotos?: string | null;
+  /** Favoris d'abord : duel de découverte (candidats non encore bien notés) */
+  decouverte?: boolean; valeursForcees?: [string, string]; repereForce?: Repere };
 type DuelLocal = DuelCore & { remarque?: string | null };
 
 type Props = {
@@ -310,12 +303,15 @@ export default function Duel(props: Props) {
     }
     if (t === 'photo' || t === 'illustration') {
       for (const s of ordre) {
-        const p = genererPaireElements(t, candidats[t], historique, { graine: g, sujet: s });
+        // Favoris d'abord (favoris.ts) : surtout de bons éléments entre eux, ≈ 10 % de découverte, jamais les exclus (≤ 2 ★, retirés)
+        const fav = candidatsDuelFavoris(candidats[t], props.poids?.assets, null, r);
+        const nonExclus = candidats[t].filter((x) => poidsFavori(props.poids?.assets?.effets[x.cle], null, { moyenne: props.poids?.assets?.moyenne || 3, exclue: Boolean(props.poids?.assets?.statuts[x.cle]) }) > 0);
+        const p = genererPaireElements(t, fav.candidats, historique, { graine: g, sujet: s }) ?? genererPaireElements(t, nonExclus, historique, { graine: g, sujet: s });
         if (!p) continue;
         const a = coteAsset(p.a.cle), b = coteAsset(p.b.cle);
         if (!a || !b) continue;
         const scenario: ScenarioDuel = { sujets: [p.sujet], ...(t === 'photo' ? { emplacement: EMPLACEMENTS[Math.floor(r() * EMPLACEMENTS.length)].id } : {}) };
-        return { type: t, scenario, a, b, dimension: p.dimension, prediction: predireDuel([p.a.cle], [p.b.cle], props.predictions), vue: 'accueil' };
+        return { type: t, scenario, a, b, dimension: p.dimension, prediction: predireDuel([p.a.cle], [p.b.cle], props.predictions), vue: 'accueil', decouverte: fav.decouverte };
       }
       return null;
     }
@@ -411,7 +407,10 @@ export default function Duel(props: Props) {
       const famille = d.dimension?.startsWith('composant:') ? d.dimension.slice(10) : null;
       const page = pageDim ? PAGES_STRUCTURE.find((p) => p.id === pageDim) : famille ? PAGES_STRUCTURE.find((p) => (p.sections as readonly string[]).includes(famille)) : null;
       const vue: VuePage = famille === 'theme' ? 'theme' : famille === 'article' ? 'article' : page ? vueDePage(page.id) : 'accueil';
-      return { type: t, scenario: { sujets: [s], principaux: 1, ...(couleurs.length ? { couleurs } : {}), ...(page ? { page: page.id } : {}) }, a, b, dimension: d.dimension, prediction: predireDuel(ja, jb, props.predictions), vue, mobileSeul: duelMobileSeulement(d.dimension, r(), { serie: serieMobile }) };
+      return { type: t, scenario: { sujets: [s], principaux: 1, ...(couleurs.length ? { couleurs } : {}), ...(page ? { page: page.id } : {}) }, a, b, dimension: d.dimension, prediction: predireDuel(ja, jb, props.predictions), vue, mobileSeul: duelMobileSeulement(d.dimension, r(), { serie: serieMobile }),
+        // Pages complètes et thèmes libres : un seul appareil (60 % téléphone) ; série « Mobile seulement » : téléphone
+        ...(appareilUnique(d.dimension) ? { appareilFixe: serieMobile ? 'mobile' as const : tirerAppareilUnique(r()) } : {}),
+        manquePhotos: d.a.visuels.style === 'photos' || d.b.visuels.style === 'photos' ? manquePhotosNotees(c) : null };
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -430,7 +429,7 @@ export default function Duel(props: Props) {
   const choisir = useCallback(async (resultat: ResultatDuel) => {
     if (!courant) return;
     // Appareil réellement affiché
-    const app = courant.mobileSeul ? 'mobile' : appareil === 'les-deux' ? 'les-deux' : appareil === 'mobile' ? 'mobile' : 'ordinateur';
+    const app = courant.appareilFixe ? (courant.appareilFixe === 'mobile' ? 'mobile' : 'ordinateur') : courant.mobileSeul ? 'mobile' : appareil === 'les-deux' ? 'les-deux' : appareil === 'mobile' ? 'mobile' : 'ordinateur';
     const d: DuelLocal = {
       type: courant.type, scenario: courant.scenario, aCle: courant.a.cle, bCle: courant.b.cle, aIngredients: courant.a.ingredients, bIngredients: courant.b.ingredients,
       dimension: courant.dimension, resultat, etiquettes, appareil: app, prediction: courant.prediction, le: new Date().toISOString(), remarque: remarque.trim() || null,
@@ -572,11 +571,11 @@ export default function Duel(props: Props) {
 
   // ======================= Duel =======================
   // Appareil effectif : un duel « Mobile seulement » n'est montré qu'en téléphone (pas de bascule)
-  const vu: Appareil = courant?.mobileSeul ? 'mobile' : appareil;
+  const vu: Appareil = courant?.appareilFixe ?? (courant?.mobileSeul ? 'mobile' : appareil);
   const cote = (lettre: 'A' | 'B', c: Cote) => (
-    <figure className="grid min-w-0 content-start gap-2">
-      <figcaption className="flex items-center gap-2">
-        <span className="grid size-8 place-items-center rounded-full bg-teal-800 text-sm font-bold text-white">{lettre}</span>
+    <figure className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-2">
+      <figcaption className="flex min-w-0 items-center gap-2">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-teal-800 text-sm font-bold text-white">{lettre}</span>
         {courant?.dimension && <span className="truncate text-sm text-neutral-700">{courant.valeursForcees ? courant.valeursForcees[lettre === 'A' ? 0 : 1] : libelleElement(c.ingredients.element ?? c.cle)}</span>}
       </figcaption>
       {/* Un cadre par appareil montré ; « Les deux » : ordinateur et vrai cadre téléphone côte à côte */}
@@ -654,7 +653,15 @@ export default function Duel(props: Props) {
           </label>
         )}
         {courant?.mobileSeul && <p className="flex min-h-11 items-center gap-2 rounded-xl bg-slate-900 px-3 text-sm font-semibold text-white">Téléphone uniquement</p>}
-        {courant && !courant.mobileSeul && (
+        {/* Un seul appareil (pages, thèmes libres) : Ordinateur ou Mobile, pour A ET B à la fois */}
+        {courant?.appareilFixe && (
+          <div role="group" aria-label="Appareil du duel (A et B)" className="flex gap-1 rounded-xl bg-neutral-100 p-1 ring-1 ring-black/10">
+            {(['bureau', 'mobile'] as const).map((id) => (
+              <button key={id} type="button" aria-pressed={courant.appareilFixe === id} onClick={() => setCourant((x) => (x ? { ...x, appareilFixe: id } : x))} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${courant.appareilFixe === id ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>{id === 'bureau' ? 'Ordinateur' : 'Mobile'}</button>
+            ))}
+          </div>
+        )}
+        {courant && !courant.mobileSeul && !courant.appareilFixe && (
           <div role="group" aria-label="Appareil montré" className="flex gap-1 rounded-xl bg-neutral-100 p-1 ring-1 ring-black/10">
             {APPAREILS.map(([id, nom]) => (
               <button key={id} type="button" aria-pressed={appareil === id} onClick={() => setAppareil(id)} className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${focus} ${appareil === id ? 'bg-white text-teal-900 shadow-sm' : 'text-neutral-700'}`}>{nom}</button>
@@ -680,7 +687,7 @@ export default function Duel(props: Props) {
             Client : <strong>{libelleSujet(courant.scenario.sujets[0] ?? 'general')}</strong>
             {courant.scenario.emplacement ? <> · emplacement : {EMPLACEMENTS.find((e) => e.id === courant.scenario.emplacement)?.nom}</> : null}
           </p>
-          <BandeauEvaluation prefixe="On compare" repere={{ ...repere, ...(enFocal ? { selecteurs: [] } : {}), detail: [repere.detail, courant.mobileSeul ? 'sur téléphone uniquement' : VU_SUR[vu]].filter(Boolean).join(' · ') }} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
+          <BandeauEvaluation prefixe="On compare" repere={{ ...repere, ...(enFocal ? { selecteurs: [] } : {}), detail: [repere.detail, courant.appareilFixe ? (courant.appareilFixe === 'mobile' ? 'sur téléphone' : 'sur ordinateur') : courant.mobileSeul ? 'sur téléphone uniquement' : VU_SUR[vu]].filter(Boolean).join(' · ') }} valeurs={valeurs} visible={repereVisible} onBasculer={basculerRepere}>
             {(courant.dimension === 'couleurs' || courant.dimension === 'police-couleurs') && courant.a.rendu.kind === 'compo' && courant.b.rendu.kind === 'compo' && (
               <div className="grid gap-1.5">
                 <Nuancier x={courant.a.rendu.x} lettre="A" />
@@ -724,6 +731,8 @@ export default function Duel(props: Props) {
               </div>
             )}
           </BandeauEvaluation>
+          {courant.manquePhotos && <p role="note" className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950 ring-1 ring-amber-200">{courant.manquePhotos}</p>}
+          {courant.decouverte && <p className="text-xs text-neutral-600">Duel de découverte : des éléments pas encore bien notés.</p>}
           {enFocal && bloc ? (
             // Bloc focalisé : A au-dessus de B (ou superposés), par appareil montré ; aucun encadré (tout le bloc est le sujet)
             <section ref={refPropositions} aria-label="Les deux propositions, bloc focalisé" className={`grid grid-cols-[minmax(0,1fr)] gap-6 ${vu === 'les-deux' ? 'lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]' : ''}`}>
