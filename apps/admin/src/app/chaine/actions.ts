@@ -5,7 +5,7 @@ import {
   cleComposition, choixDePreselection, designDe, estAppareilModele, estEtiquetteTicket, estPageModele, estRoleEquipe, groupeTournoi, nomRecette, nouvelleVersion, peut, peutPublier,
   prochainEcran, profilDemo, profilsCompatibles, profilsDePratique, serialiserComposition, serialiserRecetteAvecScenario, statutModele, tagsAutomatiques, tournoiDuProfil, validerChoixGrille, type TagsModele,
 } from '@plateforme/core';
-import { exigerContributeur, exigerValidateur, lireChaine, MIGRATION_CHAINE, signauxCandidats } from '@/lib/chaine-modeles';
+import { exigerContributeur, exigerValidateur, lireChaine, MIGRATION_CHAINE, oublierAutomate, signauxCandidats } from '@/lib/chaine-modeles';
 import { getRecettes } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
 import { compositionDe, verrousDeLaFiche } from './validation';
@@ -18,7 +18,7 @@ import { profilsChaine } from './donnees';
 export type Retour = { ok: boolean; message: string };
 const UUID = /^[0-9a-f-]{36}$/;
 const echec = (e: { code?: string } | null): Retour => ({ ok: false, message: e?.code === '42P01' || e?.code === 'PGRST205' ? MIGRATION_CHAINE : 'Enregistrement impossible pour le moment.' });
-const rafraichir = (...chemins: string[]) => { for (const c of ['/chaine', ...chemins]) revalidatePath(c); };
+const rafraichir = (...chemins: string[]) => { oublierAutomate(); for (const c of ['/chaine', ...chemins]) revalidatePath(c); };
 
 // ---------------------------------------------------------------------------------------------------------------
 // 1. Présélection

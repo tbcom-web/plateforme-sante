@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : pages de la chaîne et Dégustation plus rapides : l'automate de la chaîne tourne au plus toutes les 30 s (et aussitôt après chaque geste), les poids appris du générateur sont gardés une minute par compte et recalculés en arrière-plan.
 - 2026-10-09 : Dégustation et Frigo plus légers : le journal des duels est gardé en mémoire tant qu'aucun duel n'est ajouté, et une lecture lente n'est plus retentée en boucle (nouvel essai seulement si une colonne manque).
 - 2026-10-09 : modèles canons, 2e passe — gabarit Technique et précis : le nom du praticien s'affichait sans espace (« CamilleRousseau ») et débordait avec un nom long, ancre « Nos praticiens » cassée, ville longue qui recouvrait le texte de la page d'accès : corrigés ; rendus de démonstration et testeur sans aucune photo refusée (≤ 2 ★, retirée, à revoir) et avec les photos importées notées 4-5 ★ (fichier photos-validees.json rempli par l'export de la nuit) : un design en style Photos passe le testeur ; testeur plus juste (résumés coupés par « … », petites polices fines, barre du bas, animations) ; les 8 modèles canons sont verts
 - 2026-10-09 : admin plus rapide : le menu n'attend plus ses compteurs, la politique d'évaluation est calculée au plus une fois par minute (servie aussitôt, recalculée en arrière-plan), et chaque requête Supabase côté serveur a un délai maximal de 20 s.

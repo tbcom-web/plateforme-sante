@@ -190,11 +190,21 @@ export async function lireFichierRetours(nom: string): Promise<unknown> {
 
 export type BilanAutomate = { tests: number; retouches: number; tickets: number; actions: ActionAuto[] };
 
+// Automate au plus une fois toutes les AUTOMATE_MS par profession sur une instance (2026-10-09, « la chaîne met super longtemps à
+// charger ») : entre deux tours, la page relit la chaîne (toujours fraîche) sans refaire les lectures GitHub ni les écritures.
+// Après chaque geste humain (actions.ts, rafraichir), oublierAutomate() : le tour suivant est immédiat (résultats identiques).
+const AUTOMATE_MS = 30_000;
+const dernierTour = new Map<string, number>();
+export function oublierAutomate() { dernierTour.clear(); }
+
 /** Applique tests du dépôt, retouches de Claude et transitions automatiques ; renvoie ce qui a été fait */
 export async function faireTournerChaine(profession: string | null): Promise<BilanAutomate & { chaine: Chaine }> {
   let chaine = await lireChaine(profession);
   const bilan: BilanAutomate = { tests: 0, retouches: 0, tickets: 0, actions: [] };
   if (chaine.migrationManquante || !chaine.fiches.length) return { ...bilan, chaine };
+  const k = profession ?? '*';
+  if (Date.now() - (dernierTour.get(k) ?? 0) < AUTOMATE_MS) return { ...bilan, chaine: { ...chaine, signaux: await signauxCandidats(chaine) } };
+  dernierTour.set(k, Date.now());
   const supabase = await createClient();
   const [testsBruts, retouchesBrutes] = await Promise.all([lireFichierRetours('tests-modeles.json'), lireFichierRetours('retouches-modeles.json')]);
   let change = false;

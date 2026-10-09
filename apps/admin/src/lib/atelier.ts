@@ -5,7 +5,9 @@ import { getNotesKits } from '@/lib/kits-images';
 import { getLignesAssetsApprentissage, getNotationsApprentissage } from '@/lib/notation-recettes';
 import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
+import { memoRecent } from '@/lib/memo-journal';
+import { professionDegustation } from '@/lib/degustation';
 import { colonneAbsente } from '@/lib/erreurs-supabase';
 import { getPoidsAssets } from '@/lib/assets-notes';
 import { getRenfortsPolitique } from '@/lib/politique-evaluation';
@@ -77,7 +79,12 @@ async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
   const avecPhotos = fin && Object.keys(photos).length ? { ...fin, notesPhotos: photos } : fin;
   return avecPhotos && Object.keys(elements).length ? { ...avecPhotos, notesElements: elements } : avecPhotos;
 }
-export const getPoidsAtelier = cache(getPoidsAtelierSansMemo);
+// Mémorisés quelques minutes par compte et profession (memo-journal.ts, 2026-10-09 : chaîne et Dégustation lentes) : le calcul relit
+// tous les journaux ; frais 1 min, puis servis aussitôt et recalculés en arrière-plan (10 min au plus)
+export const getPoidsAtelier = cache(async (): Promise<PoidsAtelier | null> => {
+  const [user, p] = await Promise.all([getUser().catch(() => null), professionDegustation()]);
+  return user ? memoRecent(`poids|${user.id}|${p.id}`, getPoidsAtelierSansMemo) : getPoidsAtelierSansMemo();
+});
 
 type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null; appareil?: string | null };
 

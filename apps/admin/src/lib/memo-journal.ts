@@ -43,3 +43,24 @@ export async function memoParSignature<T>(nom: string, utilisateur: string | nul
   valeur.catch(() => { if (memo.get(cle)?.valeur === valeur) memo.delete(cle); });
   return valeur;
 }
+
+// Calculs lourds MÉMORISÉS QUELQUES MINUTES (poids appris du générateur, comme getPolitique) : frais (< fraisMs) → servis tels
+// quels ; plus anciens (< maxMs) → servis aussitôt et recalculés en arrière-plan pour la requête suivante ; sinon recalculés.
+// La clé doit contenir le compte (et tout ce dont dépend le calcul : profession…). Un échec n'est pas mémorisé.
+type Recent = { le: number; valeur: unknown; aValeur: boolean; enCours: Promise<unknown> | null };
+const recents = new Map<string, Recent>();
+export function oublierRecents(prefixe = '') { for (const k of [...recents.keys()]) if (k.startsWith(prefixe)) recents.delete(k); }
+export async function memoRecent<T>(cle: string, lire: () => Promise<T>, fraisMs = 60_000, maxMs = 10 * 60_000): Promise<T> {
+  const m = recents.get(cle);
+  const age = m?.aValeur ? Date.now() - m.le : Infinity;
+  const lancer = () => {
+    const p = lire().then((valeur) => { recents.set(cle, { le: Date.now(), valeur, aValeur: true, enCours: null }); return valeur; },
+      (err) => { const x = recents.get(cle); if (x) x.enCours = null; throw err; });
+    recents.set(cle, { le: m?.le ?? 0, valeur: m?.valeur, aValeur: m?.aValeur ?? false, enCours: p });
+    if (recents.size > 60) recents.delete(recents.keys().next().value!);
+    return p;
+  };
+  if (m?.aValeur && age < fraisMs) return m.valeur as T;
+  if (m?.aValeur && age < maxMs) { if (!m.enCours) lancer().catch(() => null); return m.valeur as T; }
+  return (m?.enCours as Promise<T> | null) ?? lancer();
+}
