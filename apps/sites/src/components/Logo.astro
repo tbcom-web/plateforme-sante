@@ -54,18 +54,21 @@ const href = p.href === undefined ? '/' : p.href;
 // Logo existant du cabinet (fichier envoyé par le praticien) : prioritaire, sauf démonstration d'une marque précise.
 const perso = !p.choix ? site.theme.logoPerso : undefined;
 const Element = href ? 'a' : 'span';
+// Nom accessible = texte visible (WCAG 2.5.3, axe « label-content-name-mismatch ») : avec le nom et la ligne affichés, aucun
+// aria-label (le lien se lit par son texte) ; marque seule (monogramme, logo complet du cabinet) : « Accueil — <cabinet> ».
+const texteVisible = perso ? !perso.complet : choix.disposition !== 'monogramme';
 const style = `--logo-taille:${taille}px;--logo-graisse:${t.graisse};--logo-nom:${choix.disposition === 'empilee' && !t.serif ? LOGO.nom.tailleEmpilee : t.tailleNom}`;
 ---
 <Element
   class:list={['logo', perso ? 'logo--perso' : [`logo--${choix.disposition}`, `logo--${t.marque}`], { 'logo--clair': p.clair, 'logo--serif': t.serif }]}
   href={href ?? undefined}
-  aria-label={href ? `Accueil — ${titreCabinet}` : undefined}
+  aria-label={href && !texteVisible ? `Accueil — ${titreCabinet}` : undefined}
   style={style}
 >
   {perso
     ? <img class="logo__image" src={perso.url} alt={perso.complet ? titreCabinet : ''} height="48" decoding="async" />
     : <span class="logo__marque" set:html={svg} />}
-  {(perso ? !perso.complet : choix.disposition !== 'monogramme') && (
+  {texteVisible && (
     <span class="logo__texte">
       <strong>{nom}</strong>
       <small>{ligne}</small>

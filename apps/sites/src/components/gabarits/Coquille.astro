@@ -145,9 +145,9 @@ const principale = actionsContact[0];
     {aTelephone
       ? <a href={telLien} class:list={{ 'c-barre__plein': !rdvEnLigne }}><Icone nom="picto:telephone" secours="lucide:phone" />{rdvEnLigne ? 'Appeler' : 'Appeler le cabinet'}</a>
       : !rdvEnLigne && <a href={lienContact} class="c-barre__plein"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />{libelleContact}</a>}
-    {rdvEnLigne
-      ? <a href={lienRendezVous} class="c-barre__plein"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Rendez-vous</a>
-      : itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
+    {rdvEnLigne && <a href={lienRendezVous} class="c-barre__plein"><Icone nom="picto:rendez-vous" secours="lucide:calendar" />Rendez-vous</a>}
+    {/* Itinéraire dès qu'une adresse existe (comme le gabarit classique, cadre-apercu.ts : actionsRapides) */}
+    {itineraire && <a href={itineraire} target="_blank" rel="noopener"><Icone nom="picto:itineraire" secours="lucide:map-pin" />Itinéraire</a>}
   </nav>
   )}
 </div>
@@ -311,6 +311,9 @@ const principale = actionsContact[0];
   .c-barre a :global(.icone) { width: 22px; height: 22px; flex: none; }
   /* Une seule action (ni téléphone ni itinéraire, ou l'un des deux) : toute la largeur, sur une ligne */
   .c-barre > a:only-child { grid-column: 1 / -1; white-space: nowrap; }
+  /* Trois actions : Appeler et Itinéraire à la largeur de leur libellé, le rendez-vous prend le reste (aucun libellé coupé) */
+  .c-barre:has(> a:nth-child(3)) { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .c-barre:has(> a:nth-child(3)) > a { padding-inline: 10px; gap: 6px; white-space: nowrap; }
   .c-barre__plein { background: var(--g-vif); color: var(--g-vif-texte) !important; }
   @media (min-width: 900px) { .c-barre { display: none; } }
   /* ———— Rendez-vous et contact (variante « contact ») : liens seulement, cibles ≥ 44 px, couleurs des rôles --g-* ———— */

@@ -51,11 +51,13 @@ test('cadre : ordinateur, 1440 réduit à la largeur ; plein écran : toute la h
 
 const base = { rdvEnLigne: true, aTelephone: true, aAdresse: true, email: 'cabinet@exemple.fr', libelleContact: 'Appeler le cabinet' };
 
-test('actions rapides : barre des gabarits (Coquille.astro), Appeler | Rendez-vous plein', () => {
+test('actions rapides : barre des gabarits (Coquille.astro), Appeler | Rendez-vous plein | Itinéraire', () => {
   for (const contact of ['barre', 'bandeau', 'carte', undefined]) {
     const a = actionsRapides({ ...base, gabarit: 'tableau', contact });
-    assert.deepEqual(a, { forme: 'barre', actions: [{ libelle: 'Appeler', icone: 'telephone', plein: false }, { libelle: 'Rendez-vous', icone: 'rendez-vous', plein: true }] });
+    assert.deepEqual(a, { forme: 'barre', actions: [{ libelle: 'Appeler', icone: 'telephone', plein: false }, { libelle: 'Rendez-vous', icone: 'rendez-vous', plein: true }, { libelle: 'Itinéraire', icone: 'itineraire', plein: false }] });
   }
+  // Sans adresse : Appeler | Rendez-vous
+  assert.equal((actionsRapides({ ...base, aAdresse: false, gabarit: 'tableau' }) as { actions: unknown[] }).actions.length, 2);
   // Sans rendez-vous en ligne : Appeler le cabinet (plein) | Itinéraire
   assert.deepEqual(actionsRapides({ ...base, rdvEnLigne: false, gabarit: 'village', contact: 'barre' }), {
     forme: 'barre', actions: [{ libelle: 'Appeler le cabinet', icone: 'telephone', plein: true }, { libelle: 'Itinéraire', icone: 'itineraire', plein: false }],

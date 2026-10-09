@@ -102,7 +102,8 @@ export function actionsRapides(o: {
   if (o.aTelephone) actions.push({ libelle: o.rdvEnLigne ? 'Appeler' : 'Appeler le cabinet', icone: 'telephone', plein: !o.rdvEnLigne });
   else if (!o.rdvEnLigne) actions.push({ libelle: o.libelleContact, icone: 'rendez-vous', plein: true });
   if (o.rdvEnLigne) actions.push({ libelle: 'Rendez-vous', icone: 'rendez-vous', plein: true });
-  else if (o.aAdresse) actions.push({ libelle: 'Itinéraire', icone: 'itineraire', plein: false });
+  // Itinéraire dès qu'une adresse existe (comme la barre du gabarit classique ; testeur de modèles, 2026-10-09)
+  if (o.aAdresse) actions.push({ libelle: 'Itinéraire', icone: 'itineraire', plein: false });
   return { forme: 'barre', actions };
 }
 

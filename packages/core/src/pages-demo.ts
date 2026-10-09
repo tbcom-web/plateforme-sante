@@ -12,8 +12,8 @@ export const ARTICLE_DEMO: Article = {
   resume: 'Chaussures, ongles, ampoules : les bons réflexes dans les semaines qui précèdent une course.',
   date: '2026-09-22',
   theme: 'Sport',
-  image: '/photos/sport-foulee-herbe.webp',
-  imageAlt: 'Jambes d’un coureur en pleine foulée sur un chemin herbeux',
+  image: '/photos/sport-course.webp',
+  imageAlt: 'Jambes d’un coureur en chaussures de course sur une route',
   corps: `Que vous prépariez votre premier 10 km ou un marathon, vos pieds vont être très sollicités. Voici quelques repères simples pour arriver serein le jour J.
 
 ## Plusieurs semaines avant

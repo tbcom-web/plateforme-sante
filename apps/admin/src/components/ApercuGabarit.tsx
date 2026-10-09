@@ -86,6 +86,8 @@ const CSS_ACTIONS = `
 .apb-barre>span{display:flex;align-items:center;justify-content:center;gap:8px;min-height:60px;padding-inline:12px;color:var(--g-encre);font-weight:650;font-size:16px;line-height:1.6}
 .apb-barre>span>svg{width:22px;height:22px;flex:none}
 .apb-barre>span:only-child{grid-column:1/-1;white-space:nowrap}
+.apb-barre:has(>span:nth-child(3)){grid-template-columns:auto minmax(0,1fr) auto}
+.apb-barre:has(>span:nth-child(3))>span{padding-inline:10px;gap:6px;white-space:nowrap}
 .apb-barre>.apb-plein{background:var(--g-vif);color:var(--g-vif-texte)}
 .apb-flottant{position:fixed;z-index:40;right:16px;bottom:16px}
 .apb-flottant>span{display:grid;place-items:center;width:60px;height:60px;border-radius:50%;background:var(--g-vif);color:var(--g-vif-texte);box-shadow:0 6px 18px color-mix(in srgb,var(--g-encre) 22%,transparent)}
