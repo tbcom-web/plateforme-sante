@@ -9,14 +9,14 @@ import { lireManques, lirePropositionsClaude, type AvisDirecteur, type LotPropos
 // retours/MANQUES.md du dépôt, par l'API GitHub (même jeton que predictions.json), sinon dans le dossier local (développement) ;
 // avis de Paul dans la table directeur_avis (migration 0035), sinon rien (le Studio garde alors les avis dans le navigateur).
 
-async function lireRetour(fichier: string): Promise<string | null> {
+async function lireRetour(fichier: string, frais = false): Promise<string | null> {
   const token = process.env.GITHUB_TOKEN;
   const repo = process.env.GITHUB_REPO;
   if (token && repo) {
     try {
       const r = await fetch(`https://api.github.com/repos/${repo}/contents/retours/${fichier}?ref=main`, {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' },
-        next: { revalidate: 600 }, signal: AbortSignal.timeout(5000),
+        ...(frais ? { cache: 'no-store' as const } : { next: { revalidate: 600 } }), signal: AbortSignal.timeout(5000),
       });
       if (r.ok) return await r.text();
     } catch { /* repli local */ }
@@ -27,11 +27,13 @@ async function lireRetour(fichier: string): Promise<string | null> {
   return null;
 }
 
-async function getPropositionsClaudeSansMemo(): Promise<LotPropositions> {
-  const t = await lireRetour('recettes-proposees.json');
+async function getPropositionsClaudeSansMemo(frais = false): Promise<LotPropositions> {
+  const t = await lireRetour('recettes-proposees.json', frais);
   try { return lirePropositionsClaude(t ? JSON.parse(t) : null); } catch { return { profil: null, le: null, propositions: [] }; }
 }
 export const getPropositionsClaude = cache(getPropositionsClaudeSansMemo);
+/** Relecture sans le cache de 10 min (import dans la chaîne juste après un envoi de Claude) */
+export const getPropositionsClaudeFraiches = () => getPropositionsClaudeSansMemo(true);
 
 async function getManquesSansMemo(): Promise<ManqueSignale[]> {
   const t = await lireRetour('MANQUES.md');

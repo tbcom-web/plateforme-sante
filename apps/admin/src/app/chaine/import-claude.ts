@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cleComposition, designDe, profilsCompatibles, tagsAutomatiques } from '@plateforme/core';
 import { exigerContributeur, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
-import { getPropositionsClaude } from '@/lib/directeur';
+import { getPropositionsClaudeFraiches } from '@/lib/directeur';
 import { createClient } from '@/lib/supabase/server';
 import { profilsChaine } from './donnees';
 import { compositionDe } from './validation';
@@ -18,7 +18,7 @@ export type RetourImport = { ok: boolean; message: string };
 export async function importerPropositionsClaude(): Promise<RetourImport> {
   const moi = await exigerContributeur();
   const { profession, profils } = await profilsChaine();
-  const lot = await getPropositionsClaude();
+  const lot = await getPropositionsClaudeFraiches();
   const designs = lot.propositions.filter((p) => p.id.startsWith('canon-') && p.composition && typeof p.composition === 'object');
   if (!designs.length) return { ok: true, message: 'Aucune proposition de design de Claude à importer.' };
   const supabase = await createClient();
