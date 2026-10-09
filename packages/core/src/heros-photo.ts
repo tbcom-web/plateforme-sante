@@ -557,6 +557,13 @@ export function cssTransitionsSections(id: TransitionSections | string | null | 
       return `@supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){${SECTIONS}>*{animation:ts-revele linear both;animation-timeline:view();animation-range:entry 0% cover 28%}}}@keyframes ts-revele{from{opacity:0;transform:translate3d(0,48px,0) scale(.98)}}`;
     case 'empilees':
       return `:is(.sujets__blocs,.ap-sujets){grid-template-columns:minmax(0,1fr)!important}:is(.sujets__blocs>.sujet,.ap-sujets>li){position:sticky;top:calc(84px + var(--i,0) * 18px);grid-column:auto!important;padding:clamp(14px,2vw,22px);border-radius:var(--rayon-carte,var(--rayon,20px));background:var(--g-carte,var(--fond));box-shadow:0 -14px 34px -22px rgb(var(--nuit-rgb,7 18 20) / .32),inset 0 0 0 1px var(--g-ligne,var(--ligne))}.ap-sujets>li:nth-child(2){--i:1}.ap-sujets>li:nth-child(3){--i:2}.ap-sujets>li:nth-child(4){--i:3}`;
+    case 'chevrons': {
+      // Liant « chevrons de vitesse » (2026-10-09, sport) : cinq chevrons de plus en plus nets au-dessus de chaque section, couleur
+      // de l'accent ; ils filent en place quand la section entre à l'écran (transform, opacity) ; sans prise en charge ou en
+      // réduction des animations : posés, fixes. Position absolue : aucun décalage de mise en page.
+      const m = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 20' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3l8 7-8 7' stroke-opacity='.2'/%3E%3Cpath d='M34 3l8 7-8 7' stroke-opacity='.4'/%3E%3Cpath d='M60 3l8 7-8 7' stroke-opacity='.6'/%3E%3Cpath d='M86 3l8 7-8 7' stroke-opacity='.8'/%3E%3Cpath d='M112 3l8 7-8 7' stroke-opacity='1'/%3E%3C/svg%3E") center/contain no-repeat`;
+      return `${SECTIONS}+${SECTIONS}{position:relative}${SECTIONS}+${SECTIONS}::before{content:'';position:absolute;top:0;left:50%;width:132px;height:20px;margin:-10px 0 0 -66px;pointer-events:none;background:var(--g-accent-texte,var(--accent,currentColor));-webkit-mask:${m};mask:${m};opacity:.6}@supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){${SECTIONS}+${SECTIONS}::before{animation:ts-chevrons linear both;animation-timeline:view();animation-range:entry 0% cover 25%}}}@keyframes ts-chevrons{from{opacity:0;transform:translate3d(-48px,0,0)}}`;
+    }
     default:
       return '';
   }

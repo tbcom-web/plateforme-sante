@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : animations du pied (à valider, lot « Animations du pied ») : carte de pression, isothermes (variante froide pour le diabète), semelle thermoformée qui se compose, petits pas d'enfant en rond, famille, talon douloureux, chevrons de vitesse (aussi en liant entre sections : composant:sections:chevrons), chronomètre, montagne trail/randonnée — géométries validées seulement, < 5 Ko, image fixe.
 - 2026-10-09 : base lente : une requête Supabase n'est plus retentée trois fois après son délai maximal (Frigo 87 s → 20 s dans le pire cas mesuré).
 - 2026-10-09 : pages de la chaîne et Dégustation plus rapides : l'automate de la chaîne tourne au plus toutes les 30 s (et aussitôt après chaque geste), les poids appris du générateur sont gardés une minute par compte et recalculés en arrière-plan.
 - 2026-10-09 : Dégustation et Frigo plus légers : le journal des duels est gardé en mémoire tant qu'aucun duel n'est ajouté, et une lecture lente n'est plus retentée en boucle (nouvel essai seulement si une colonne manque).

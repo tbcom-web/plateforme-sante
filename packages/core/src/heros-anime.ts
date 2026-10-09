@@ -15,6 +15,7 @@
 
 import { animationsPretesDefinies, ANIMATIONS_HEROS, LIBELLES_ANIMATIONS_ENTETE, SOURCE_ANIMATION_HEROS, estAValider, estAnimationHeros, type AnimationEntete } from './heros-photo-variantes';
 import { cssEmpreintes, estAnimationEmpreintes, htmlEmpreintes } from './entete-empreintes';
+import { ANIMATIONS_PIED, ANIMATIONS_PIED_VIVES, SUJETS_ANIMATIONS_PIED, cssPied, estAnimationPied, htmlPied } from './entete-pied';
 import { cssAnimationEntete, htmlAnimationEntete } from './entete-anim';
 import { cssLectureAnimations, svgAnimationLecture } from './animations-lecture';
 import { etatAnimation } from './animations-sources';
@@ -29,18 +30,19 @@ export type TonVisuelAnime = 'sombre' | 'clair';
 
 /** Animation par défaut d'un sujet (quand le dé d'animation n'en impose pas une qui tient en grand) */
 const PAR_SUJET: Record<string, AnimationEntete[]> = {
-  semelles: ['il-semelle', 'em-respire'],
-  sport: ['em-marche', 'em-deroule'],
-  diabete: ['em-sensibilite', 'em-trace'],
-  enfant: ['il-premiers-pas', 'em-petits-pas'],
-  senior: ['em-marche', 'em-trace'],
+  // Animations du pied (2026-10-09, à valider) en fin de liste : jamais par défaut avant les validées
+  semelles: ['il-semelle', 'em-respire', 'pi-couches', 'pi-pression'],
+  sport: ['em-marche', 'em-deroule', 'pi-pression', 'pi-trail-montagne'],
+  diabete: ['em-sensibilite', 'em-trace', 'pi-isothermes-froid'],
+  enfant: ['il-premiers-pas', 'em-petits-pas', 'pi-ronde', 'pi-famille'],
+  senior: ['em-marche', 'em-trace', 'pi-isothermes-froid'],
   ongles: ['em-trace', 'em-respire'],
   pedicurie: ['em-trace', 'em-respire'],
   posture: ['il-trajectoire', 'em-deroule'],
 };
 /** Animations qui ont du sens pour un sujet (les vives jamais pour le diabète ni les seniors) */
-const VIVES = ['em-petits-pas', 'em-particules', 'taches'];
-const PROPRES: Partial<Record<AnimationEntete, string[]>> = { 'em-petits-pas': ['enfant'], 'em-sensibilite': ['diabete', 'senior', 'pedicurie'], 'il-premiers-pas': ['enfant'], 'il-semelle': ['semelles'], 'il-trajectoire': ['posture', 'semelles', 'senior', 'sport'] };
+const VIVES: string[] = ['em-petits-pas', 'em-particules', 'taches', ...ANIMATIONS_PIED_VIVES];
+const PROPRES: Partial<Record<AnimationEntete, string[]>> = { 'em-petits-pas': ['enfant'], 'em-sensibilite': ['diabete', 'senior', 'pedicurie'], 'il-premiers-pas': ['enfant'], 'il-semelle': ['semelles'], 'il-trajectoire': ['posture', 'semelles', 'senior', 'sport'], ...Object.fromEntries(ANIMATIONS_PIED.map((a) => [a, [...SUJETS_ANIMATIONS_PIED[a]]])) };
 const pourSujet = (a: AnimationEntete, sujet: string) => (!PROPRES[a] || PROPRES[a]!.includes(sujet)) && !(VIVES.includes(a) && (sujet === 'diabete' || sujet === 'senior'));
 
 const rang = (sujet: string, a: AnimationEntete) => { const i = (PAR_SUJET[sujet] ?? []).indexOf(a); return i < 0 ? 99 : i; };
@@ -97,6 +99,7 @@ const ID = (a: string) => a.replace(/[^a-z0-9-]/g, '');
 export function htmlVisuelAnime(a: AnimationEntete, o: { ton?: TonVisuelAnime; vif?: boolean; nu?: boolean } = {}): string {
   const clair = o.ton === 'clair';
   if (estAnimationEmpreintes(a)) return htmlEmpreintes(a, { placement: 'scene', vif: o.vif }).replace('class="ea ea--em', `class="ea${clair ? ' ea--clair' : ''}${o.nu ? ' ea--nu' : ''} ea--em`);
+  if (estAnimationPied(a)) return htmlPied(a, { placement: 'scene' }).replace('class="ea ea--pi', `class="ea${clair ? ' ea--clair' : ''}${o.nu ? ' ea--nu' : ''} ea--pi`);
   const source = SOURCE_ANIMATION_HEROS[a];
   if (source) return `<span class="ea ea--grand ea--il${o.nu ? ' ea--nu' : ''}" aria-hidden="true">${svgAnimationLecture(source, `ha-${ID(a)}`) ?? ''}</span>`;
   return htmlAnimationEntete(a).replace(/class="ea ea--\w+ /, `class="ea ea--grand${clair ? ' ea--clair' : ''}${o.nu ? ' ea--nu' : ''} `);
@@ -106,6 +109,7 @@ export function htmlVisuelAnime(a: AnimationEntete, o: { ton?: TonVisuelAnime; v
 export function cssVisuelAnime(a: AnimationEntete): string {
   const nu = '.ea--nu{background:none!important}';
   if (estAnimationEmpreintes(a)) return cssEmpreintes(a) + nu;
+  if (estAnimationPied(a)) return cssPied(a) + nu;
   const source = SOURCE_ANIMATION_HEROS[a];
   if (source) {
     // Mêmes images clés que l'admin et le site (animations-lecture.ts), jouées UNE fois sous .ea-joue, cycle resserré (≤ ~6 s)

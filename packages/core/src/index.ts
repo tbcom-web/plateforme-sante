@@ -124,3 +124,4 @@ export * from './politique-evaluation';
 export * from './regles-apprises';
 export * from './photos-validees';
 export * from './prospection';
+export * from './entete-pied';

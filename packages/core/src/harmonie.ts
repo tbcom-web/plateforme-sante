@@ -493,6 +493,18 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.visuel-heros:photo': E('Photo en visuel', { t: 0.2 }, { pref: [F.na, F.ed, F.ma] }),
   'v.visuel-heros:illustration': E('Illustration en visuel', { f: 0.1 }, { pref: [F.te, F.mi, F.dx, F.cl] }),
   'v.visuel-heros:animation': E('Animation en visuel', { e: 0.4 }, { pref: [F.te, F.mi, F.ma, F.po] }),
+  // Animations du pied (entete-pied.ts, 2026-10-09, à valider) : en grand, l'élément expressif de l'écran ; tempo calme pour le
+  // diabète et les seniors (vives : petits pas en rond, chevrons, chronomètre)
+  'v.entete-anim:pi-pression': E('Pied : carte de pression', { e: 0.45, c: 0.5, d: 0.2 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx], fort: 0.8 }),
+  'v.entete-anim:pi-isothermes': E('Pied : isothermes', { e: 0.4, r: 0.6, c: 0.4 }, { pref: [F.te, F.mi, F.po, F.na], fort: 0.8 }),
+  'v.entete-anim:pi-isothermes-froid': E('Pied : isothermes froides', { e: 0.3, r: 0.6, f: 0.3, d: -0.2 }, { pref: [F.mi, F.cl, F.te, F.ed], jamais: [F.po], fort: 0.7 }),
+  'v.entete-anim:pi-couches': E('Semelle en couches', { e: 0.45, c: 0.4, f: 0.2 }, { pref: [F.te, F.mi, F.ma, F.cl], fort: 0.7 }),
+  'v.entete-anim:pi-ronde': E('Petits pas d’enfant en rond', { e: 0.75, r: 0.95, t: 0.5, f: -0.5 }, { pref: [F.dx, F.po, F.na], jamais: [F.te, F.ed, F.mi], fort: 0.8 }),
+  'v.entete-anim:pi-famille': E('Empreintes de la famille', { e: 0.35, r: 0.6, t: 0.4 }, { pref: [F.dx, F.na, F.cl, F.ed], fort: 0.7 }),
+  'v.entete-anim:pi-talon': E('Talon : halo qui respire', { e: 0.25, r: 0.7, f: 0.2, d: -0.3 }, { pref: [F.mi, F.cl, F.dx, F.ed], fort: 0.6 }),
+  'v.entete-anim:pi-chevrons': E('Chevrons de vitesse', { e: 0.9, r: -0.6, c: 0.7 }, { pref: [F.te, F.po, F.ma], jamais: [F.dx, F.na, F.cl, F.ed, F.mi], fort: 0.8 }),
+  'v.entete-anim:pi-chrono': E('Chronomètre', { e: 0.75, c: 0.5 }, { pref: [F.te, F.ma, F.po], jamais: [F.dx], fort: 0.8 }),
+  'v.entete-anim:pi-trail-montagne': E('Montagne : sentier et lignes de niveau', { e: 0.45, r: 0.6, t: 0.3 }, { pref: [F.na, F.te, F.po], jamais: [F.ed], fort: 0.8 }),
   'v.entete-anim:em-encre': E('Empreintes à l’encre, fond clair', { e: 0.3, f: 0.4, t: 0.2, c: -0.2 }, { pref: [F.ed, F.cl, F.na, F.mi], jamais: [F.po], fort: 0.7 }),
   'v.transition:fondu': E('Fondu enchaîné', {}),
   'v.transition:ken-burns': E('Ken Burns', { e: 0.4, f: 0.2 }, { pref: [F.ed, F.na] }),
@@ -505,6 +517,8 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.sections:chevauchement': E('Sections qui se recouvrent', { e: 0.5, c: 0.3 }, { pref: [F.ma, F.po] }),
   'v.sections:revelation': E('Révélation au défilement', { e: 0.6 }, { pref: [F.po, F.ed], jamais: [F.mi] }),
   'v.sections:empilees': E('Cartes empilées', { e: 0.8, d: 0.3 }, { pref: [F.po, F.ma], jamais: [F.mi, F.cl, F.ed], fort: 0.6 }),
+  // Liant « chevrons de vitesse » (2026-10-09) : énergie forte, sport ; jamais pour le diabète ni les seniors (règle 6 bis)
+  'v.sections:chevrons': E('Chevrons de vitesse entre sections', { e: 0.9, r: -0.6, c: 0.5 }, { pref: [F.te, F.po, F.ma], jamais: [F.dx, F.na, F.cl, F.ed, F.mi], fort: 0.6 }),
 
   // Présentations des pages (étiquetage léger : densité, formalité)
   'v.sujets:une': E('Le premier à la une', { c: 0.5, f: 0.4, e: 0.3 }, { pref: [F.ed, F.ma] }),
@@ -682,10 +696,10 @@ const RONDS: [DimensionHarmonie, string][] = [
   ['details.coins', 'tres-arrondis'], ['v.soins-forme', 'bulles'], ['v.soins-forme', 'organiques'], ['v.soins-forme', 'pilules'], ['details.cadre', 'organique'],
   ['details.fond', 'formes'], ['details.separateur', 'ondulation'], ['details.souligne', 'vague'], ['v.sections', 'vague'], ['v.accueil', 'maille'], ['details.boutons', 'pilule'],
   ['v.accueil', 'organique'], ['v.accueil', 'organique-fondu'], ['v.accueil', 'duo-taches'], ['v.accueil', 'tache-morph'], ['v.accueil', 'forme-respire'],
-  ['v.accueil', 'maille-anime'], ['v.accueil', 'bandes-ondulantes'], ['v.entete-anim', 'taches'], ['v.entete-anim', 'onde'], ['v.entete-anim', 'rubans'], ['v.entete-anim', 'em-petits-pas'],
+  ['v.accueil', 'maille-anime'], ['v.accueil', 'bandes-ondulantes'], ['v.entete-anim', 'taches'], ['v.entete-anim', 'onde'], ['v.entete-anim', 'rubans'], ['v.entete-anim', 'em-petits-pas'], ['v.entete-anim', 'pi-ronde'],
 ];
 /** Animations d'en-tête trop vives pour le diabète et les seniors (énergie ≥ 0,7 : il faut rassurer) */
-const ANIMATIONS_VIVES = ['foulee', 'mots', 'empreintes', 'rubans', 'em-petits-pas', 'em-particules'];
+const ANIMATIONS_VIVES = ['foulee', 'mots', 'empreintes', 'rubans', 'em-petits-pas', 'em-particules', 'pi-ronde', 'pi-chevrons', 'pi-chrono'];
 /** Animations qui pulsent : jamais avec les illustrations douces (registre pédagogique : « rien qui pulse », charte) */
 const ANIMATIONS_PULSEES = ['points-pression', 'onde', 'em-respire', 'em-marche'];
 
@@ -765,6 +779,10 @@ export function violationsDures(x: CompositionHarmonie, c?: ContexteHarmonie | n
   const anim = val(x, 'v.entete-anim');
   if (anim && ANIMATIONS_VIVES.includes(anim) && calmes.length) {
     v.push({ code: 'animation-calme', message: `Animation d’en-tête « ${nomValeurHarmonie('v.entete-anim', anim)} » pour ${calmes.map((s) => (s === 'diabete' ? 'le diabète' : 'les seniors')).join(' et ')} : trop vive, il faut rassurer.`, dims: ['v.entete-anim'], corrections: [{ dim: 'v.entete-anim', valeur: 'voute-trace' }, { dim: 'v.entete-anim', valeur: 'aucune' }] });
+  }
+  // Liant « chevrons de vitesse » entre les sections : même règle (énergie forte)
+  if (val(x, 'v.sections') === 'chevrons' && calmes.length) {
+    v.push({ code: 'animation-calme', message: `Chevrons de vitesse entre les sections pour ${calmes.map((s) => (s === 'diabete' ? 'le diabète' : 'les seniors')).join(' et ')} : trop vif, il faut rassurer.`, dims: ['v.sections'], corrections: [{ dim: 'v.sections', valeur: 'aucune' }] });
   }
   if (anim && ANIMATIONS_PULSEES.includes(anim) && x.visuels.style === 'pedagogique') {
     v.push({ code: 'pulse-pedagogique', message: `« ${nomValeurHarmonie('v.entete-anim', anim)} » avec les illustrations douces : en registre pédagogique, rien ne pulse.`, dims: ['v.entete-anim'], corrections: [{ dim: 'v.entete-anim', valeur: 'voute-trace' }, { dim: 'v.entete-anim', valeur: 'aucune' }] });

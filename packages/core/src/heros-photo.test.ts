@@ -151,8 +151,8 @@ test('animations d’en-tête : < 3 Ko (empreintes : < 5 Ko), transform et opaci
   assert.deepEqual(mots, ['Bilan podologique', 'semelles orthopédiques', 'soins de pédicurie']);
   // il-* : animations d'illustrations, seulement en visuel du héros (heros-anime.test.ts)
   for (const a of ANIMATIONS_ENTETE.filter((x) => x !== 'aucune' && !x.startsWith('il-'))) {
-    // Empreintes en lignes de niveau (entete-empreintes.ts) : < 5 Ko et stroke-dashoffset permis (tracé des contours)
-    const em = a.startsWith('em-');
+    // Empreintes en lignes de niveau (entete-empreintes.ts) et animations du pied (entete-pied.ts) : < 5 Ko, stroke-dashoffset permis
+    const em = a.startsWith('em-') || a.startsWith('pi-');
     const html = htmlAnimationEntete(a, mots), css = cssAnimationEntete(a);
     assert.ok(html.length > 20, a);
     assert.ok(Buffer.byteLength(html + css) < (em ? 5120 : 3072), `${a} : ${Buffer.byteLength(html + css)} octets`);

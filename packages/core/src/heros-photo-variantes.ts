@@ -46,7 +46,7 @@ export type TransitionDiaporama = (typeof TRANSITIONS_DIAPORAMA)[number];
  * chevauchement (chaque section recouvre légèrement la précédente) ; révélation au défilement (animation-timeline: view()) ;
  * cartes des sujets empilées (position: sticky).
  */
-export const TRANSITIONS_SECTIONS = ['aucune', 'vague', 'chevauchement', 'revelation', 'empilees'] as const;
+export const TRANSITIONS_SECTIONS = ['aucune', 'vague', 'chevauchement', 'revelation', 'empilees', 'chevrons'] as const;
 export type TransitionSections = (typeof TRANSITIONS_SECTIONS)[number];
 
 export const LIBELLES_PREMIERS_ECRANS: Record<PremierEcranNouveau, string> = {
@@ -80,7 +80,7 @@ export const LIBELLES_TRANSITIONS_DIAPORAMA: Record<TransitionDiaporama, string>
   fondu: 'Fondu enchaîné', 'ken-burns': 'Ken Burns (zoom lent)', glissement: 'Glissement', volet: 'Volet', rideau: 'Rideau', flou: 'Fondu flou',
 };
 export const LIBELLES_TRANSITIONS_SECTIONS: Record<TransitionSections, string> = {
-  aucune: 'Aucune', vague: 'Vague', chevauchement: 'Sections qui se recouvrent', revelation: 'Révélation au défilement', empilees: 'Cartes des sujets empilées',
+  aucune: 'Aucune', vague: 'Vague', chevauchement: 'Sections qui se recouvrent', revelation: 'Révélation au défilement', empilees: 'Cartes des sujets empilées', chevrons: 'Chevrons de vitesse entre les sections (à valider)',
 };
 
 /**
@@ -137,6 +137,9 @@ export const ANIMATIONS_ENTETE = [
   // Animations d'ILLUSTRATIONS existantes (animations-lecture.ts : mêmes tracés que l'illustration du sujet), en visuel du héros
   // seulement, et seulement quand leurs images de base sont validées (animations-sources.ts, règle de Paul du 2026-10-07)
   'il-semelle', 'il-trajectoire', 'il-premiers-pas',
+  // Animations du pied (entete-pied.ts, demande de Paul du 2026-10-09) : carte de pression, isothermes, semelle en couches, petits
+  // pas en rond, famille, talon douloureux, chevrons de vitesse, chronomètre, montagne — géométries validées, rien d'inventé
+  'pi-pression', 'pi-isothermes', 'pi-isothermes-froid', 'pi-couches', 'pi-ronde', 'pi-famille', 'pi-talon', 'pi-chevrons', 'pi-chrono', 'pi-trail-montagne',
 ] as const;
 export type AnimationEntete = (typeof ANIMATIONS_ENTETE)[number];
 export const estAnimationEntete = (v: unknown): v is AnimationEntete => (ANIMATIONS_ENTETE as readonly unknown[]).includes(v);
@@ -165,6 +168,16 @@ export const LIBELLES_ANIMATIONS_ENTETE: Record<AnimationEntete, string> = {
   'il-semelle': 'Semelle : courbes de relief qui se dessinent (à valider)',
   'il-trajectoire': 'Équilibre : centre de pression qui se déplace (à valider)',
   'il-premiers-pas': 'Premiers pas de l’enfant (à valider)',
+  'pi-pression': 'Pied : carte de pression qui monte en anneaux (à valider)',
+  'pi-isothermes': 'Pied : courbes de température en forme de pied (à valider)',
+  'pi-isothermes-froid': 'Pied : courbes de température, teintes froides (à valider)',
+  'pi-couches': 'Semelle thermoformée qui se compose couche par couche (à valider)',
+  'pi-ronde': 'Petits pas d’enfant colorés en rond (à valider)',
+  'pi-famille': 'Empreintes de la famille qui se dessinent (à valider)',
+  'pi-talon': 'Talon douloureux : halo qui respire (à valider)',
+  'pi-chevrons': 'Chevrons de vitesse en cascade (à valider)',
+  'pi-chrono': 'Chronomètre dont l’aiguille s’emballe puis s’arrête (à valider)',
+  'pi-trail-montagne': 'Montagne : sentier en lacets et lignes de niveau (à valider)',
 };
 /**
  * Emplacement : bande au-dessus du titre, emblème à côté du titre, fond du premier écran ; « scene » (empreintes) : en grand dans
@@ -176,6 +189,7 @@ export const PLACEMENT_ANIMATIONS_ENTETE: Record<Exclude<AnimationEntete, 'aucun
   'em-respire': 'scene', 'em-trace': 'scene', 'em-deroule': 'scene', 'em-marche': 'scene', 'em-petits-pas': 'scene', 'em-sensibilite': 'scene',
   'em-particules': 'scene', 'em-topographie': 'scene', 'em-defilement': 'scene', 'em-encre': 'scene',
   'il-semelle': 'scene', 'il-trajectoire': 'scene', 'il-premiers-pas': 'scene',
+  'pi-pression': 'scene', 'pi-isothermes': 'scene', 'pi-isothermes-froid': 'scene', 'pi-couches': 'scene', 'pi-ronde': 'scene', 'pi-famille': 'scene', 'pi-talon': 'scene', 'pi-chevrons': 'scene', 'pi-chrono': 'scene', 'pi-trail-montagne': 'scene',
 };
 /** Premiers écrans qui posent une animation « scène » en grand (carte visuelle) ; ailleurs elle passe en emblème */
 export const HOTES_SCENE_ENTETE: readonly string[] = ['bento'];
@@ -205,6 +219,16 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
   'il-semelle': { famille: 'sobre', energie: 0.4, rondeur: 0.6, expressif: true },
   'il-trajectoire': { famille: 'sobre', energie: 0.45, rondeur: 0.5, expressif: true },
   'il-premiers-pas': { famille: 'organique', energie: 0.5, rondeur: 0.8, expressif: true },
+  'pi-pression': { famille: 'sobre', energie: 0.45, rondeur: 0.7, expressif: true },
+  'pi-isothermes': { famille: 'organique', energie: 0.4, rondeur: 0.8, expressif: true },
+  'pi-isothermes-froid': { famille: 'sobre', energie: 0.3, rondeur: 0.8, expressif: true },
+  'pi-couches': { famille: 'sobre', energie: 0.45, rondeur: 0.6, expressif: true },
+  'pi-ronde': { famille: 'organique', energie: 0.7, rondeur: 0.95, expressif: true },
+  'pi-famille': { famille: 'sobre', energie: 0.35, rondeur: 0.7, expressif: true },
+  'pi-talon': { famille: 'sobre', energie: 0.25, rondeur: 0.8, expressif: true },
+  'pi-chevrons': { famille: 'vitesse', energie: 0.85, rondeur: 0.1, expressif: true },
+  'pi-chrono': { famille: 'vitesse', energie: 0.75, rondeur: 0.6, expressif: true },
+  'pi-trail-montagne': { famille: 'organique', energie: 0.45, rondeur: 0.7, expressif: true },
 };
 
 /**
@@ -212,7 +236,7 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
  * empreintes en lignes de niveau, formes abstraites qui s'adaptent à leur cadre (taches, onde, formes géométriques) et animations
  * d'illustrations existantes (il-*). Les autres (bandes, emblèmes, lueur) restent des animations d'en-tête.
  */
-export const ANIMATIONS_HEROS: readonly AnimationEntete[] = ANIMATIONS_ENTETE.filter((a) => a.startsWith('em-') || a.startsWith('il-') || a === 'taches' || a === 'onde' || a === 'geometrie');
+export const ANIMATIONS_HEROS: readonly AnimationEntete[] = ANIMATIONS_ENTETE.filter((a) => a.startsWith('em-') || a.startsWith('il-') || a.startsWith('pi-') || a === 'taches' || a === 'onde' || a === 'geometrie');
 export const estAnimationHeros = (a: unknown): a is AnimationEntete => (ANIMATIONS_HEROS as readonly unknown[]).includes(a);
 /**
  * Registre des animations d'illustrations PRÊTES (images de base validées) : posé par l'admin à partir des statuts de la
@@ -254,6 +278,8 @@ export const INGREDIENTS_A_VALIDER: ReadonlySet<string> = new Set([
   ...PREMIERS_ECRANS_LOT2.map((v) => `composant:accueil:${v}`),
   ...ANIMATIONS_ENTETE.filter((a) => a !== 'aucune').map((a) => `composant:entete-anim:${a}`),
   'composant:visuel-heros:animation',
+  // Liant « chevrons de vitesse » entre les sections (2026-10-09, sport)
+  'composant:sections:chevrons',
 ]);
 export const estAValider = (cle: string, valides?: ReadonlySet<string> | null) => INGREDIENTS_A_VALIDER.has(cle) && !valides?.has(cle);
 

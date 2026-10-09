@@ -17,7 +17,7 @@ export const TOLERANCE = 0.7;
 export const ECHELLE_GEO = 4;
 
 /** Ramer-Douglas-Peucker sur une polyligne ouverte */
-function rdp(pts: P[], tol: number): P[] {
+export function rdp(pts: P[], tol: number): P[] {
   if (pts.length < 3) return pts;
   const [a, b] = [pts[0], pts[pts.length - 1]];
   const dx = b[0] - a[0], dy = b[1] - a[1], n = Math.hypot(dx, dy) || 1;
@@ -31,7 +31,7 @@ function rdp(pts: P[], tol: number): P[] {
 
 const pair = (v: number) => 2 * Math.round((v * ECHELLE_GEO) / 2);
 /** Points de contrôle allégés d'une polyligne (repère ×4, entiers pairs, sans doublon) */
-function arrondir(pts: P[]): P[] {
+export function arrondir(pts: P[]): P[] {
   const res: P[] = [];
   for (const [x, y] of pts) {
     const q: P = [pair(x), pair(y)];
@@ -40,7 +40,7 @@ function arrondir(pts: P[]): P[] {
   return res;
 }
 /** Boucle fermée → points de contrôle allégés */
-function controles(pts: P[], tol = TOLERANCE): P[] {
+export function controles(pts: P[], tol = TOLERANCE): P[] {
   // Coupée en deux au point le plus éloigné du premier : RDP sur deux arcs ouverts
   const d0 = (p: P) => Math.hypot(p[0] - pts[0][0], p[1] - pts[0][1]);
   const loin = pts.reduce((k, p, i) => (d0(p) > d0(pts[k]) ? i : k), 0);

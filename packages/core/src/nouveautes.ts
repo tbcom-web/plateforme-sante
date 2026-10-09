@@ -57,6 +57,7 @@ export function clesRecentes(jour: string, opts: { jours?: number; registre?: Re
 
 /** Règles de la plus précise à la plus générale (premier test vrai) */
 const FAMILLES: readonly { id: string; libelle: string; test: (k: string) => boolean }[] = [
+  { id: 'animations-pied', libelle: 'Animations du pied', test: (k) => k.startsWith('composant:entete-anim:pi-') || k === 'composant:sections:chevrons' },
   { id: 'entete-empreintes', libelle: 'Animations d’en-tête empreintes', test: (k) => k.startsWith('composant:entete-anim:em-') },
   { id: 'pictos-directions', libelle: 'Style d’icônes A/B/C/D', test: (k) => /^picto:.+@direction-[a-z]$/.test(k) || k.startsWith('picto:style-icones-') },
   { id: 'premiers-ecrans', libelle: 'Premiers écrans', test: (k) => k.startsWith('composant:accueil:') },
