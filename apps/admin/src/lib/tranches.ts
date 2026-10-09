@@ -7,6 +7,7 @@ import { getNotesAtelier } from '@/lib/atelier';
 import { getNotationsAdmin } from '@/lib/notation-recettes';
 import { getDuelsAlleges } from '@/lib/duels';
 import { getPolitiqueBornee } from '@/lib/politique-evaluation';
+import { avecDelai, DELAIS } from '@/lib/delai';
 
 // Éléments tranchés (packages/core/src/tranches.ts, migration 0041) côté serveur, pour Paul :
 // - getReevaluations : journal elements_reevalues (« Réévaluer ») ; [] sans la migration ;
@@ -34,7 +35,7 @@ export type DetailTranche = { cle: string; etat: 'refuse' | 'favori'; famille: '
 export const getTranches = cache(async (): Promise<{ tranches: Tranches; details: DetailTranche[]; signaux: SignalTranche[] }> => {
   const [{ reevaluations }, assets, atelier, recettes, duels, politique] = await Promise.all([
     getReevaluations(), getNotesAssets().catch(() => ({ notes: [] })), getNotesAtelier().catch(() => ({ notes: [] })),
-    getNotationsAdmin().catch(() => ({ notations: [] })), getDuelsAlleges().catch(() => ({ duels: [] })), getPolitiqueBornee(),
+    getNotationsAdmin().catch(() => ({ notations: [] })), avecDelai(getDuelsAlleges(), DELAIS.politique, { duels: [], migrationManquante: false }), getPolitiqueBornee(),
   ]);
   const sAssets: SignalTranche[] = assets.notes.map((n) => ({ cle: n.cle, note: n.note, le: n.le ?? null }));
   const sAtelier: SignalTranche[] = atelier.notes.flatMap((n) => [

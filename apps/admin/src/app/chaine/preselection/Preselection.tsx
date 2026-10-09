@@ -64,9 +64,9 @@ export default function Preselection(props: Props) {
     const cle = `${profil.id}|${g}`;
     const deja = grilles.current.get(cle);
     if (deja) return deja;
-    const surPlace = () => grilleDirectionsDegustation({ contexte: ctxDe(profil), notes: props.poids?.notesElements ?? {}, tranches, graine: g });
+    const surPlace = () => { try { return grilleDirectionsDegustation({ contexte: ctxDe(profil), notes: props.poids?.notesElements ?? {}, tranches, graine: g }); } catch (err) { console.warn('[présélection] grille impossible', err); return null; } };
     const promesse: Promise<GrilleDegustation | null> = avecOuvriers.current
-      ? demanderOuvrier('grilles', { type: 'grille', profil, graine: g }).then((r) => (r?.ok ? (r.grille as GrilleDegustation | null) ?? null : surPlace()))
+      ? demanderOuvrier('grilles', { type: 'grille', profil, graine: g }).then((r) => (r?.ok ? (r.grille as GrilleDegustation | null) ?? null : new Promise<GrilleDegustation | null>((ok) => setTimeout(() => ok(surPlace()), 0))))
       : new Promise((ok) => setTimeout(() => ok(surPlace()), 0));
     grilles.current.set(cle, promesse);
     return promesse;

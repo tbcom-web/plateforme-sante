@@ -153,9 +153,9 @@ export default function Degustation(props: Props) {
     const cle = `${graine}|${famille ?? ''}|${JSON.stringify(c)}`;
     const deja = preparees.current.get(cle);
     if (deja) return deja;
-    const surPlace = () => construireCarte(donnees, c, graine, famille, outils);
+    const surPlace = () => { try { return construireCarte(donnees, c, graine, famille, outils); } catch (err) { console.warn('[dégustation] carte impossible', err); return null; } };
     const promesse: Promise<CarteConstruite | null> = avecOuvriers.current
-      ? demanderOuvrier('cartes', { type: 'carte', carte: c, graine, famille }).then((r) => (r?.ok ? (r.carte as CarteConstruite | null) ?? null : surPlace()))
+      ? demanderOuvrier('cartes', { type: 'carte', carte: c, graine, famille }).then((r) => (r?.ok ? (r.carte as CarteConstruite | null) ?? null : new Promise<CarteConstruite | null>((ok) => setTimeout(() => ok(surPlace()), 0))))
       : new Promise((ok) => setTimeout(() => ok(surPlace()), 0));
     const e: Preparee = { promesse, prete: false };
     void promesse.then((v) => { e.valeur = v; e.prete = true; });
