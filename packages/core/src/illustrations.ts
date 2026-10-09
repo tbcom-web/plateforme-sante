@@ -20,6 +20,7 @@ import { THEMES } from './themes';
 import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
 import { clesSport, sujetsDesKits } from './kits';
 import { DESSINS_UNIVERS, FICHES_DESSINS_UNIVERS, svgDessinUnivers, sujetsUnivers } from './dessins-univers';
+import { DESSINS_DIABETE, HEROS_DIABETE, FICHES_UNIVERS_DIABETE, REGISTRES_DIABETE, svgDessinDiabete, herosDiabete } from './univers-diabete';
 import { DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, LIBELLES_ECHANTILLON, cleDirection, cleStyleIcones, svgTuileDirection, svgPlancheDirection } from './pictos-directions';
 import { ICONES_ILLUSTREES_IDS, FICHES_ICONES_ILLUSTREES, FICHE_DIRECTION_D, SOURCE_ICONES_ILLUSTREES, CLE_STYLE_ICONES_D, cleIconeIllustree, svgTuileIllustree, svgPlancheIllustree } from './icones-illustrees';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, FICHES_STYLES, LIBELLES_SUJETS_STYLES, SUJET_VISUEL_STYLES, cleStyleExperimental, svgStyleExperimental, type StyleExperimental } from './styles-experimentaux';
@@ -143,6 +144,18 @@ export function inventaireIllustrations(): Illustration[] {
       svg: () => svgDessinUnivers(nom, { id: `rv-du-${nom}` }),
     });
   }
+  // Univers DIABÈTE (2026-10-09, brouillons « À revoir », univers-diabete.ts, docs/univers-diabete.md) : illustrations de cartes dans
+  // la grammaire du matériel (relevé, pédagogique), bases à part entière `dessin:diabete-<id>` ; sujet « diabete » par défaut
+  for (const nom of DESSINS_DIABETE) {
+    const f = FICHES_UNIVERS_DIABETE[nom];
+    for (const registre of REGISTRES_DIABETE) {
+      l.push({
+        cle: `dessin:${nom}:${registre}`, type: 'dessin', registre, titre: f.libelle, detail: `${LIBELLES_REGISTRES[registre]} · univers diabète · ${f.regard}`,
+        source: `packages/core/src/univers-diabete.ts — corpsDessin('${nom}')`, soins: ['diabete'], statutParDefaut: 'a_revoir', fond: registre === 'releve' ? 'grille' : 'doux',
+        svg: () => svgDessinDiabete(nom, { registre, id: `rv-dd-${nom}-${registre}` }),
+      });
+    }
+  }
   // Registres expérimentaux (2026-10-07, brouillons à noter) : 5 sujets × 4 styles, clé dessin:<sujet>:<style>, hashtag #style-<style>
   // (HASHTAGS_PAR_DEFAUT, kits.ts) ; vue agrandie = format portrait (premier écran téléphone)
   for (const style of STYLES_EXPERIMENTAUX) {
@@ -230,6 +243,19 @@ export function inventaireIllustrations(): Illustration[] {
         source: `packages/core/src/heros-themes.ts — COMPOSITIONS.${t}.${registre}`, soins: [...(theme?.soins ?? [])], statutParDefaut: 'a_revoir', fond: 'clair',
         svg: () => illustrationTheme(t, { format: 'paysage', registre, id: `rv-h-${t}-${registre}` }),
         svgVariante: () => illustrationTheme(t, { format: 'portrait', registre, id: `rv-hp-${t}-${registre}` }),
+      });
+    }
+  }
+  // Héros de l'univers diabète (2026-10-09, brouillons) : premier écran d'un site diabète une fois validés par Paul (kit du sujet,
+  // kits-visuels.ts) ; vue agrandie = format portrait (téléphone)
+  for (const nom of HEROS_DIABETE) {
+    const f = FICHES_UNIVERS_DIABETE[nom];
+    for (const registre of REGISTRES_DIABETE) {
+      l.push({
+        cle: `heros:${nom}:${registre}`, type: 'heros', registre, titre: f.libelle, detail: `${LIBELLES_REGISTRES[registre]} · paysage 16:9 et portrait 3:4 · univers diabète`,
+        source: `packages/core/src/univers-diabete.ts — corpsHeros('${nom}')`, soins: ['diabete'], statutParDefaut: 'a_revoir', fond: 'clair',
+        svg: () => herosDiabete(nom, { format: 'paysage', registre, id: `rv-hd-${nom}-${registre}` }),
+        svgVariante: () => herosDiabete(nom, { format: 'portrait', registre, id: `rv-hdp-${nom}-${registre}` }),
       });
     }
   }

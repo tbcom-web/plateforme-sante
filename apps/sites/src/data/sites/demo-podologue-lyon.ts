@@ -1,6 +1,6 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
 import { readFileSync } from 'node:fs';
-import { activitesReconnues, normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
+import { activitesReconnues, definirContexteImages, lireCleHerosDiabete, normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
 import { estPresentationPortraits, libellesComposition, lotsPropositions, PORTRAITS_DEMO, PRATICIENS_DEMO, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
@@ -689,6 +689,12 @@ if (process.env.ACTIVITE) {
   const autre = (u: string) => activitesReconnues({ cle: u, url: u }, p).some((a) => !ids.includes(a));
   const GENERIQUE = { image: '/photos/sport-chaussure.webp', imageAlt: 'Chaussure de sport posée au sol' };
   site.articles = site.articles.map((a) => (a.image && autre(a.image) && !autre(GENERIQUE.image) ? { ...a, ...GENERIQUE } : a));
+}
+// HEROS_KIT=heros:diabete-<id>:<registre> : aperçu d'un héros de l'univers diabète comme s'il était VALIDÉ par Paul et retenu par le
+// kit illustré du site (univers-diabete.ts ; un vrai site ne le reçoit que validé, kits-visuels.ts). Démo seulement (PRINCIPAUX=diabete).
+if (process.env.HEROS_KIT) {
+  if (!lireCleHerosDiabete(process.env.HEROS_KIT)) throw new Error(`Héros inconnu : ${process.env.HEROS_KIT}`);
+  definirContexteImages({ kits: { [site.visuels.specialite]: { sujet: 'diabete', heros: process.env.HEROS_KIT } } });
 }
 // SURCHARGES={"chemin.pointé": valeur, …} (JSON ou chemin d'un fichier .json) : cas de test du testeur de modèles (nom très long,
 // lien mort, photo refusée…) posés en dernier sur la démo, ex. {"cabinet.nom": "…", "photos.accueil": "/photos/x.webp"}.

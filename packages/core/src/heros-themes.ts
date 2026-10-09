@@ -116,6 +116,36 @@ function couleurs(g: Gamme | undefined, registre: Registre): string {
   return `--doux:${g.fondDoux};--aplat:${v.aplat};--dessin-trait:${v.encre};--dessin-ligne:${v.encre};--dessin-accent:${accent};--accent:${accent};--dessin-fond:${g.fond}`;
 }
 
+/** Fond du héros : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne) */
+function fondHeros(registre: Registre, L: number, H: number): string {
+  if (registre === 'releve') {
+    const pas = 40;
+    const grille = [...Array.from({ length: Math.floor(L / pas) }, (_, i) => `M${(i + 1) * pas} 0V${H}`), ...Array.from({ length: Math.floor(H / pas) }, (_, i) => `M0 ${(i + 1) * pas}H${L}`)].join('');
+    return `<rect width="${L}" height="${H}" fill="var(--plan, ${PLAN.fond})"></rect><path d="${grille}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.07" stroke-width="1"></path><path d="M16 12H${L - 16}M16 ${H - 12}H${L - 16}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.28" stroke-width="1"></path>`;
+  }
+  if (registre === 'pedagogique') {
+    // Aplat doux centré : le sujet (pieds, jambes) le déborde
+    const [x, y, l, h] = [L * 0.1, H * 0.1, L * 0.8, H * 0.8];
+    return `<rect x="${r1(x + l * 0.06)}" y="${r1(y + h * 0.04)}" width="${r1(l * 0.88)}" height="${r1(h * 0.92)}" rx="${r1(Math.min(l, h) * 0.12)}" fill="var(--aplat, var(--doux))"></rect>`;
+  }
+  return '';
+}
+
+/**
+ * Habille un dessin (<svg> complet, repère 4:3) en héros de premier écran, exactement comme les héros des thèmes : format paysage
+ * ou portrait, fond du registre, couleurs de la gamme, sujet dans le <title> (jamais affiché). Sert aux héros d'un univers
+ * (univers-diabete.ts) qui ne sont pas des thèmes.
+ */
+export function habillerHeros(svg: string, o: { format?: FormatHeros; registre?: Registre; gamme?: string | Gamme | null; titre?: string; classe?: string } = {}): string {
+  const format = o.format ?? 'paysage', registre = o.registre ?? 'releve';
+  const g = typeof o.gamme === 'string' ? gammeParId(o.gamme) : (o.gamme ?? undefined);
+  const { largeur: L, hauteur: H } = FORMATS_HEROS[format];
+  const style = couleurs(g, registre);
+  const classes = ['heros-theme', `heros-theme--${format}`, `heros-theme--${registre}`, o.classe].filter(Boolean).join(' ');
+  const titre = o.titre ? `<title>${o.titre.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</title>` : '';
+  return `<svg class="${classes}" viewBox="0 0 ${L} ${H}" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" fill="none"${style ? ` style="${style}"` : ''}>${titre}${fondHeros(registre, L, H)}${poser(svg, ...CADRES[format])}</svg>`;
+}
+
 /**
  * Illustration « héros » d'un thème (<svg>…</svg>, décorative, aria-hidden). `format` : paysage 640 × 360 (16:9) ou portrait
  * 360 × 480 (3:4, téléphone) ; `registre` : relevé (surface « plan » sombre aux couleurs de la gamme, trame de pression), pédagogique
@@ -132,18 +162,8 @@ export function illustrationTheme(
   const { largeur: L, hauteur: H } = FORMATS_HEROS[format];
   const id = o.id ?? `h-${themeId}-${format[0]}-${registre[0]}`;
   const piece = COMPOSITIONS[themeId][registre];
-  const R = registre === 'releve';
   // Fond : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne)
-  let fond = '';
-  if (R) {
-    const pas = 40;
-    const grille = [...Array.from({ length: Math.floor(L / pas) }, (_, i) => `M${(i + 1) * pas} 0V${H}`), ...Array.from({ length: Math.floor(H / pas) }, (_, i) => `M0 ${(i + 1) * pas}H${L}`)].join('');
-    fond = `<rect width="${L}" height="${H}" fill="var(--plan, ${PLAN.fond})"></rect><path d="${grille}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.07" stroke-width="1"></path><path d="M16 12H${L - 16}M16 ${H - 12}H${L - 16}" stroke="var(--papier, ${NEUTRES.papier})" stroke-opacity="0.28" stroke-width="1"></path>`;
-  } else if (registre === 'pedagogique') {
-    // Aplat doux centré : le sujet (pieds, jambes) le déborde
-    const [x, y, l, h] = [L * 0.1, H * 0.1, L * 0.8, H * 0.8];
-    fond =`<rect x="${r1(x + l * 0.06)}" y="${r1(y + h * 0.04)}" width="${r1(l * 0.88)}" height="${r1(h * 0.92)}" rx="${r1(Math.min(l, h) * 0.12)}" fill="var(--aplat, var(--doux))"></rect>`;
-  }
+  const fond = fondHeros(registre, L, H);
   // Sujet dans le <title> (jamais affiché) : thème et pièces, pour l'accessibilité des outils et les agents
   const titre = `<title>${titreTheme(themeId)} — ${sourcesTheme(themeId, registre).join(', ')}</title>`;
   const corps = piece.type === 'scene' ? sceneHeros(piece.nom, { format, registre }) : poser(svgPiece(piece, registre, `${id}-a`), ...CADRES[format]);

@@ -10,7 +10,7 @@ import Animation from '../animations/Animation.astro';
 import { photoResponsive, registre as registreSite } from '../../lib/visuels';
 import { site } from '../../lib/site';
 import type { VisuelTheme } from '../../lib/vitrine';
-import { illustrationTheme, htmlVisuelAnime, cssVisuelAnime, styleCouleursHeros, SCRIPT_VISUEL_ANIME, SCRIPT_PARTICULES, type AnimationEntete, type FormatHeros, type Registre } from '@plateforme/core';
+import { illustrationTheme, herosDiabete, lireCleHerosDiabete, htmlVisuelAnime, cssVisuelAnime, styleCouleursHeros, SCRIPT_VISUEL_ANIME, SCRIPT_PARTICULES, type AnimationEntete, type FormatHeros, type Registre } from '@plateforme/core';
 
 interface Props {
   visuel: VisuelTheme;
@@ -47,7 +47,11 @@ const gammeHeros = site.modele.jetons.teinte === 'gamme' && registre === 'releve
 // Illustration validée de l'activité du praticien (lib/vitrine.ts) : à la place du dessin du thème (jamais d'une animation) ;
 // sur un fond sombre (registre relevé), trait clair
 const svgActivite = visuel.type === 'dessin' && visuel.svg && !animation ? visuel.svg : '';
-const heros = visuel.type === 'dessin' && visuel.heros && !animation && !seul
+// Héros d'un univers (diabète) validé par Paul et retenu par le kit illustré du site : son propre registre, même habillage
+const univers = visuel.type === 'dessin' && !animation && !seul ? lireCleHerosDiabete(visuel.herosUnivers) : null;
+const heros = univers
+  ? herosDiabete(univers.nom, { format, registre: univers.registre, gamme: univers.registre === 'releve' && site.modele.jetons.teinte === 'gamme' ? null : site.theme.gamme || null, id: `hu-${univers.nom}-${format[0]}` })
+  : visuel.type === 'dessin' && visuel.heros && !animation && !seul
   ? illustrationTheme(visuel.heros, { format, registre, gamme: gammeHeros, id: `h-${visuel.heros}-${format[0]}-${registre[0]}` })
   : '';
 ---

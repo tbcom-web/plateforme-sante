@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Univers diabète (docs/univers-diabete.md) : 3 héros de premier écran (heros:diabete-sensibilite, -nature-morte, -miroir) et 8 illustrations de cartes (dessin:diabete-*), relevé et pédagogique, brouillons « À revoir », sujet diabète ; un héros diabète n'arrive au premier écran que validé (kit du site) ; à noter : /admin/retours?nouveautes=univers-diabete@2026-10-09
 - 2026-10-09 : « La page Dégustation prend vraiment beaucoup de temps à charger » : les cartes de la Dégustation et les grilles « Directions » de la Présélection sont préparées en arrière-plan (Web Workers) : la session du jour est planifiée dès l'arrivée sur la page, ses premières cartes prêtes avant le clic sur « Commencer », les suivantes préparées pendant que vous jouez ; la page suivante de la Présélection aussi. Carte suivante : ~1,5 s → ~0,4 s ; première carte : ~2 s → ~1 s après « Commencer » (ordinateur de mesure). Mêmes cartes et mêmes grilles qu'avant pour une même graine
 - 2026-10-09 : Démo qui suit le jeu d'activité (images d'articles), « marche » n'est plus une activité ; composition saine du testeur verte sur 7 jeux
 - 2026-10-09 : Testeur de modèles par jeu de démonstration (profils de la chaîne, images du kit, verdict par jeu, contrôle des visuels d'une autre activité) — docs/testeur-modeles.md

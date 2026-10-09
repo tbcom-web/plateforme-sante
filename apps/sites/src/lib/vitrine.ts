@@ -9,7 +9,7 @@
 //   nouvelle ; animation seulement au premier écran du gabarit classique (registre relevé) ;
 // - pas deux fois la même image en haut de l'accueil : le bloc du thème n° 1 prend le second dessin (ou la seconde photo)
 //   de son sujet, le premier écran ayant le principal.
-import { animationDuHeros, packVisuel, themeParId, themeIllustre, type Animation, type NomDessin, type NomLigne } from '@plateforme/core';
+import { animationDuHeros, kitDeSpecialite, lireCleHerosDiabete, packVisuel, themeParId, themeIllustre, type Animation, type NomDessin, type NomLigne } from '@plateforme/core';
 import { site } from './site';
 import { jeu } from './visuels-soins';
 import { modeVisuel } from './visuels';
@@ -34,7 +34,8 @@ const DEFAUT: (typeof DESSINS_THEME)[string] = { principal: { dessin: 'analyse',
 
 export type VisuelTheme =
   | { type: 'photo'; src: string; cadrage: string }
-  | { type: 'dessin'; dessin: NomDessin; ligne: NomLigne; animation: Animation | null; heros?: string; /** Illustration VALIDÉE de l'activité (lib/activites.ts) à la place du dessin du thème */ svg?: string };
+  | { type: 'dessin'; dessin: NomDessin; ligne: NomLigne; animation: Animation | null; heros?: string; /** Illustration VALIDÉE de l'activité (lib/activites.ts) à la place du dessin du thème */ svg?: string;
+    /** Héros d'un univers (univers-diabete.ts, clé `heros:diabete-<id>:<registre>`) VALIDÉ par Paul, venu du kit illustré du site */ herosUnivers?: string };
 
 /** Photo seulement si le praticien a choisi le style « photos » */
 export const vitrinePhoto = modeVisuel === 'photos';
@@ -95,12 +96,15 @@ export const animationPremierEcran = animationDuHeros(site.modele.variantes as n
 /** Visuel du premier écran : photo d'accueil du praticien d'abord (style « photos » ou visuel « photo »), sinon le visuel du thème n° 1 */
 // Activité du praticien (#basket…) avec des visuels VALIDÉS pour le sujet du héros : sa photo (style « photos ») ou son
 // illustration (styles illustrés) ; une animation garde celle du thème ; sans visuel validé : visuel du thème (repli)
+// Héros de l'univers diabète (univers-diabete.ts) : seulement s'il est le héros du kit illustré du site, kit qui ne retient que des
+// visuels VALIDÉS par Paul (kits-visuels.ts, kitVisuelSite : praticien) ; jamais avant. Sujet du héros = diabète.
+const herosUnivers = themeHeros === 'diabete' && lireCleHerosDiabete(kitDeSpecialite(site.visuels.specialite)?.heros) ? kitDeSpecialite(site.visuels.specialite)!.heros : undefined;
 const photoAct = themeHeros ? photoActivite(themeHeros) : null;
 const svgAct = themeHeros ? illustrationActivite(themeHeros) : null;
 export const visuelPremierEcran: VisuelTheme = (visuelHerosChoisi === 'photo' || site.theme.accueilPhoto || (vitrinePhoto && visuelHerosChoisi !== 'illustration')) && site.photos.accueil
   ? (montrees.add(site.photos.accueil), { type: 'photo', src: site.photos.accueil, cadrage: '50% 50%' })
   : photoAct && ((vitrinePhoto && visuelHerosChoisi !== 'illustration') || visuelHerosChoisi === 'photo')
     ? (montrees.add(photoAct), { type: 'photo', src: photoAct, cadrage: '50% 50%' })
-    : ((v: VisuelTheme): VisuelTheme => (v.type === 'dessin' && svgAct ? { ...v, svg: svgAct, heros: undefined } : v))(visuelTheme(themeHeros, 'principal', montrees));
+    : ((v: VisuelTheme): VisuelTheme => (v.type === 'dessin' && svgAct ? { ...v, svg: svgAct, heros: undefined } : v.type === 'dessin' && herosUnivers ? { ...v, herosUnivers, heros: undefined } : v))(visuelTheme(themeHeros, 'principal', montrees));
 /** Visuels des blocs des sujets principaux de l'accueil, dans l'ordre de préférence (le sujet du héros prend son second visuel) */
 export const visuelsSujets: VisuelTheme[] = navigation.principaux.map((t) => visuelTheme(t.theme.id, t.theme.id === themeHeros && !(vitrinePhoto && site.photos.accueil) ? 'second' : 'principal', montrees));

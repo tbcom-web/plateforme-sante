@@ -61,6 +61,7 @@ const FAMILLES: readonly { id: string; libelle: string; test: (k: string) => boo
   { id: 'pictos-directions', libelle: 'Style d’icônes A/B/C/D', test: (k) => /^picto:.+@direction-[a-z]$/.test(k) || k.startsWith('picto:style-icones-') },
   { id: 'premiers-ecrans', libelle: 'Premiers écrans', test: (k) => k.startsWith('composant:accueil:') },
   { id: 'entete-anim', libelle: 'Animations d’en-tête', test: (k) => k.startsWith('composant:entete-anim:') },
+  { id: 'univers-diabete', libelle: 'Univers diabète', test: (k) => /^(heros|dessin):diabete-/.test(k) },
   { id: 'kit-sports', libelle: 'Kit Sports', test: (k) => /^(dessin|ligne):sport-/.test(k) || k.startsWith('picto:sport-') },
   { id: 'traitements-photos', libelle: 'Traitements des photos', test: (k) => k.startsWith('effets:photos-') },
   { id: 'surfaces', libelle: 'Contrastes et fonds', test: (k) => k.startsWith('effets:surfaces-') },

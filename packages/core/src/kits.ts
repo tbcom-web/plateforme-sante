@@ -10,6 +10,7 @@
 import { SPORTS, FICHES_SPORTS, idPictoSport, type Sport } from './sports';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, cleStyleExperimental, hashtagsStyleExperimental } from './styles-experimentaux';
 import { HASHTAGS_UNIVERS } from './dessins-univers';
+import { HASHTAGS_UNIVERS_DIABETE } from './univers-diabete';
 
 export type StatutKit = 'brouillon' | 'valide' | 'retire';
 
@@ -77,4 +78,6 @@ export const HASHTAGS_PAR_DEFAUT: Readonly<Record<string, readonly string[]>> = 
   ...STYLES_EXPERIMENTAUX.flatMap((st) => SUJETS_STYLES.map((s) => [cleStyleExperimental(s, st), hashtagsStyleExperimental(s, st)] as const)),
   // Planche « ce qui manque » (2026-10-08, dessins-univers.ts) : hashtags suggérés des illustrations et pictos nouveaux
   ...Object.entries(HASHTAGS_UNIVERS),
+  // Univers diabète (2026-10-09, univers-diabete.ts) : #diabete rattache chaque élément au vivier du sujet (à valider par Paul)
+  ...Object.entries(HASHTAGS_UNIVERS_DIABETE),
 ]);
