@@ -4,13 +4,16 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { peutPublier, type StatutModele, type TagsModele, type VerrouValidation } from '@plateforme/core';
-import { publierModele, repecher, verifierTags } from '../../actions';
+import { justifierTest, publierModele, repecher, verifierTags } from '../../actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
-export default function Validation({ modele, validateur, statut, verrous, jauge, bloquants, tags, tagsValides }: {
+export default function Validation({ modele, validateur, statut, verrous, jauge, bloquants, tags, tagsValides, verdict, justification }: {
   modele: string; validateur: boolean; statut: StatutModele; verrous: VerrouValidation[]; jauge: string | null; bloquants: string[]; tags: TagsModele; tagsValides: boolean;
+  /** Verdict du dernier test de la version courante ; justification de Paul déjà écrite pour cette version */
+  verdict: string | null; justification: string | null;
 }) {
+  const [texteJustif, setTexteJustif] = useState(justification ?? '');
   const router = useRouter();
   const [enCours, demarrer] = useTransition();
   const [message, setMessage] = useState('');
@@ -31,6 +34,14 @@ export default function Validation({ modele, validateur, statut, verrous, jauge,
         ))}
       </ul>
       {jauge && <p className="text-xs text-neutral-600">Jauge : {jauge}</p>}
+      {(verdict === 'orange' || justification || !verrous.find((v) => v.id === 'testeur')?.ok && verdict === 'vert') && (
+        <div className="grid gap-1 text-sm" data-justification="">
+          <label className="grid gap-1 font-medium">Justification du test orange (Paul, 15 caractères au moins)
+            <textarea value={texteJustif} onChange={(e) => setTexteJustif(e.target.value.slice(0, 1000))} disabled={!validateur} rows={3} className="rounded-lg border border-neutral-300 bg-white p-2 text-base md:text-sm" />
+          </label>
+          {validateur && <button type="button" disabled={enCours || texteJustif.trim().length < 15} onClick={() => agir(() => justifierTest(modele, texteJustif))} className={`min-h-11 justify-self-start rounded-lg border border-neutral-300 bg-white px-3 text-sm disabled:opacity-50 ${focus}`} data-action="justifier">Enregistrer la justification</button>}
+        </div>
+      )}
       {bloquants.length > 0 && <details className="text-xs"><summary className="cursor-pointer">Éléments à valider ({bloquants.length})</summary><ul className="mt-1 list-disc pl-5">{bloquants.slice(0, 12).map((b) => <li key={b}>{b}</li>)}</ul></details>}
       <div className="grid gap-2 text-sm">
         <p className="font-medium">Tags {tagsValides ? '(vérifiés)' : '(pré-remplis automatiquement)'}</p>

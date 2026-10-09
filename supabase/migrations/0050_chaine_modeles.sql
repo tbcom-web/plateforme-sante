@@ -6,7 +6,10 @@
 -- - est_contributeur() / est_validateur() : contributeur = rôle d'équipe quelconque ou admin ; validateur = 'validateur' ou admin ;
 -- - modeles_fiches : fiche d'un modèle (la table `modeles` de 0010 reste celle des manifestes JSON) : profession, profil, statut de la
 --   chaîne, version courante, version PUBLIÉE (reste en ligne pendant une retouche), tags, rang au tournoi, recette liée (publication
---   par profil, recettes_publications de 0043). Statut « publie », version publiée et tags vérifiés : validateur seulement (déclencheur) ;
+--   par profil, recettes_publications de 0043). SÉCURITÉ : un contributeur ne modifie JAMAIS directement le statut, le rang ni la
+--   version de retouche (déclencheur) : les passages d'étape passent par avancer_modele(id, vers) (security definer : transition
+--   autorisée, rôle, conditions vérifiées en base) ; version courante = dernière version existante seulement ; publication, version
+--   publiée, tags vérifiés, recette liée, repêchage : validateur ou service ;
 -- - modeles_versions : composition de chaque version (jamais modifiée), journal des corrections (« corrigé : ticket #12 — … »),
 --   résultat du testeur automatique (colonne `test`, format ResultatTestModele ; seule colonne modifiable). SÉCURITÉ : le résultat
 --   de test n'est écrit QUE par le validateur ou le service (CI du testeur) — un contributeur ne peut ni le modifier ni créer une
@@ -54,9 +57,10 @@ as $$
   );
 $$;
 
--- Écriture « machine » ou validateur : rôle de base service_role / postgres (CI, clé secrète, console SQL) ou validateur connecté.
--- current_user vaut le rôle d'appel (authenticated / anon pour l'API) dans les fonctions SANS security definer.
-create or replace function public.ecriture_testeur_permise()
+-- Écriture privilégiée : rôle de base service_role / postgres (CI, clé secrète, console SQL, fonctions security definer comme
+-- avancer_modele) ou validateur connecté. current_user vaut le rôle d'appel (authenticated / anon pour l'API) dans les fonctions
+-- SANS security definer (déclencheurs ci-dessous).
+create or replace function public.ecriture_privilegiee()
 returns boolean
 language sql
 stable
@@ -64,8 +68,8 @@ set search_path = ''
 as $$
   select current_user not in ('authenticated', 'anon') or public.est_validateur();
 $$;
-revoke all on function public.ecriture_testeur_permise() from public, anon;
-grant execute on function public.ecriture_testeur_permise() to authenticated, service_role;
+revoke all on function public.ecriture_privilegiee() from public, anon;
+grant execute on function public.ecriture_privilegiee() to authenticated, service_role;
 
 revoke all on function public.est_contributeur() from public, anon;
 revoke all on function public.est_validateur() from public, anon;
@@ -103,6 +107,9 @@ create table if not exists public.modeles_fiches (
   version_courante integer not null default 1 check (version_courante >= 1),
   version_publiee integer check (version_publiee is null or version_publiee >= 1),
   version_retouche integer check (version_retouche is null or version_retouche >= 1),
+  -- Test orange accepté par Paul : justification écrite (≥ 15 caractères, regleValidationModele) et version justifiée
+  justification_test text check (justification_test is null or char_length(btrim(justification_test)) between 15 and 1000),
+  justification_version integer check (justification_version is null or justification_version >= 1),
   tags jsonb not null default '{}'::jsonb check (jsonb_typeof(tags) = 'object' and pg_column_size(tags) <= 4000),
   tags_valides boolean not null default false,
   recette uuid references public.recettes (id) on delete set null,
@@ -115,10 +122,17 @@ create table if not exists public.modeles_fiches (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+-- Table créée avant l'ajout des colonnes de justification : rejouable
+alter table public.modeles_fiches add column if not exists justification_test text;
+alter table public.modeles_fiches add column if not exists justification_version integer;
+alter table public.modeles_fiches drop constraint if exists modeles_fiches_justification_test_check;
+alter table public.modeles_fiches add constraint modeles_fiches_justification_test_check
+  check (justification_test is null or char_length(btrim(justification_test)) between 15 and 1000);
 create unique index if not exists modeles_fiches_cle_idx on public.modeles_fiches (profession, profil, cle);
 create index if not exists modeles_fiches_statut_idx on public.modeles_fiches (statut, profession, profil);
 
--- Publication, version publiée et tags vérifiés : validateur seulement ; jamais de candidat créé directement à un autre statut
+-- Statut, rang, version de retouche : jamais modifiés directement par un contributeur (avancer_modele) ; version courante = dernière
+-- version existante ; publication, version publiée, tags, recette, repêchage : validateur ou service
 create or replace function public.modeles_fiches_proteger()
 returns trigger
 language plpgsql
@@ -126,14 +140,26 @@ set search_path = ''
 as $$
 begin
   if tg_op = 'INSERT' then
-    if not public.est_validateur() then
+    if not public.ecriture_privilegiee() then
       new.statut := 'candidat'; new.version_publiee := null; new.tags_valides := false; new.version_courante := 1;
+      new.rang := null; new.version_retouche := null; new.recette := null; new.justification_test := null; new.justification_version := null;
     end if;
   else
     new.updated_at := now();
-    if not public.est_validateur() then
-      if new.statut = 'publie' and old.statut <> 'publie' then raise exception 'Publier un modèle est réservé au validateur'; end if;
-      if old.statut = 'ecarte' and new.statut <> 'ecarte' then raise exception 'Repêcher un modèle est réservé au validateur'; end if;
+    if not public.ecriture_privilegiee() then
+      if new.statut is distinct from old.statut then
+        raise exception 'Le statut d''un modèle change par avancer_modele (transition vérifiée) ou par le validateur';
+      end if;
+      if new.rang is distinct from old.rang or new.version_retouche is distinct from old.version_retouche then
+        raise exception 'Rang et version de retouche sont posés par avancer_modele';
+      end if;
+      if new.version_courante is distinct from old.version_courante
+        and new.version_courante is distinct from (select max(v.version) from public.modeles_versions v where v.modele = new.id) then
+        raise exception 'La version courante est la dernière version enregistrée';
+      end if;
+      if new.justification_test is distinct from old.justification_test or new.justification_version is distinct from old.justification_version then
+        raise exception 'La justification d''un test orange est écrite par le validateur';
+      end if;
       new.version_publiee := old.version_publiee;
       new.tags_valides := old.tags_valides;
       new.recette := old.recette;
@@ -202,10 +228,10 @@ set search_path = ''
 as $$
 begin
   if tg_op = 'INSERT' then
-    if new.test is not null and not public.ecriture_testeur_permise() then
+    if new.test is not null and not public.ecriture_privilegiee() then
       raise exception 'Le résultat du testeur est écrit par le testeur (service) ou le validateur';
     end if;
-  elsif new.test is distinct from old.test and not public.ecriture_testeur_permise() then
+  elsif new.test is distinct from old.test and not public.ecriture_privilegiee() then
     raise exception 'Le résultat du testeur est écrit par le testeur (service) ou le validateur';
   end if;
   return new;
@@ -256,7 +282,7 @@ begin
     new.updated_at := now();
     -- Ticket technique : seul le re-check (service) ou le validateur le ferme ou en change le contenu ;
     -- un contributeur peut seulement le marquer corrigé (retouche appliquée) ou le rouvrir
-    if old.origine = 'testeur' and not public.ecriture_testeur_permise() then
+    if old.origine = 'testeur' and not public.ecriture_privilegiee() then
       if new.statut in ('ferme', 'sans-objet') and new.statut is distinct from old.statut then
         raise exception 'Un ticket technique est fermé par le re-check du testeur ou le validateur';
       end if;
@@ -264,7 +290,7 @@ begin
       new.gravite := old.gravite; new.controle := old.controle;
     end if;
   elsif new.origine = 'testeur' then
-    if not public.ecriture_testeur_permise() then
+    if not public.ecriture_privilegiee() then
       raise exception 'Un ticket technique est créé par le testeur (service) ou le validateur';
     end if;
     new.auteur := null;
@@ -359,6 +385,81 @@ create policy "modeles_revues : ajout équipe" on public.modeles_revues for inse
 revoke all on public.modeles_revues from anon, authenticated;
 grant select, insert on public.modeles_revues to authenticated;
 grant select, insert, update, delete on public.modeles_revues to service_role;
+
+-- ---------------------------------------------------------------------------------------------------------------
+-- Passages d'étape (seule voie pour un contributeur) : transition autorisée, rôle, conditions vérifiées en base
+-- ---------------------------------------------------------------------------------------------------------------
+
+create or replace function public.avancer_modele(p_id uuid, p_vers text, p_rang smallint default null)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  f public.modeles_fiches%rowtype;
+  t jsonb;
+  ouverts integer;
+  boucle integer;
+begin
+  if not public.est_contributeur() then raise exception 'Réservé à l''équipe de la chaîne'; end if;
+  select * into f from public.modeles_fiches where id = p_id for update;
+  if not found then raise exception 'Modèle introuvable'; end if;
+  if f.statut = p_vers then return f.statut; end if;
+  -- Transitions automatiques (chaine-modeles.ts, TRANSITIONS) ; publier et repêcher : validateur, hors de cette fonction
+  if (f.statut, p_vers) not in (
+    ('candidat', 'finaliste'), ('candidat', 'ecarte'), ('finaliste', 'check-agent'), ('check-agent', 'avis-humain'),
+    ('avis-humain', 'retouche'), ('avis-humain', 'pret-validation'), ('avis-humain', 'recheck-agent'), ('retouche', 'recheck-agent'),
+    ('recheck-agent', 'revalidation'), ('recheck-agent', 'retouche'), ('recheck-agent', 'pret-validation'),
+    ('revalidation', 'retouche'), ('revalidation', 'pret-validation'), ('revalidation', 'recheck-agent'),
+    ('pret-validation', 'retouche'), ('pret-validation', 'recheck-agent'), ('publie', 'retouche'), ('publie', 'recheck-agent')
+  ) then
+    raise exception 'Transition non autorisée : % → %', f.statut, p_vers;
+  end if;
+  select v.test into t from public.modeles_versions v where v.modele = f.id and v.version = f.version_courante;
+  select count(*) into ouverts from public.modeles_tickets k where k.modele = f.id and k.statut = 'ouvert';
+  if p_vers in ('avis-humain', 'revalidation', 'pret-validation') and (t is null or (t ->> 'version')::integer is distinct from f.version_courante) then
+    raise exception 'Le testeur n''a pas encore passé la version courante';
+  end if;
+  -- Orange admis jusqu'à la validation (Paul justifie par écrit) ; rouge jamais
+  if p_vers = 'pret-validation' and (coalesce(t ->> 'verdict', '') not in ('vert', 'orange') or ouverts > 0) then
+    raise exception 'Prêt pour validation : test vert ou orange et aucun ticket ouvert';
+  end if;
+  if p_vers = 'retouche' and ouverts = 0 then raise exception 'Retouche : aucun ticket ouvert'; end if;
+  -- Avis complet (16 cellules page × appareil de la version courante : « rien » ou ticket humain) avant de sortir de l'avis
+  if f.statut = 'avis-humain' and p_vers in ('retouche', 'pret-validation') and (
+    select count(*) from (
+      select r.page, r.appareil from public.modeles_revues r where r.modele = f.id and r.version = f.version_courante and r.page is not null and r.verdict in ('rien', 'tickets')
+      union
+      select k.page, k.appareil from public.modeles_tickets k where k.modele = f.id and k.origine = 'humain' and k.version_ouverture = f.version_courante
+    ) c
+  ) < 16 then
+    raise exception 'Avis incomplet : chaque page × appareil doit avoir un avis';
+  end if;
+  -- Revalidation faite (1 clic sur la version courante) avant « prêt pour validation »
+  if f.statut = 'revalidation' and p_vers = 'pret-validation' and not exists (
+    select 1 from public.modeles_revues r where r.modele = f.id and r.version = f.version_courante and r.page is null and r.verdict = 'revalide'
+  ) then
+    raise exception 'Revalidation de la version courante manquante';
+  end if;
+  if f.statut = 'retouche' and p_vers = 'recheck-agent' and f.version_courante <= coalesce(f.version_retouche, f.version_courante) then
+    raise exception 'Re-check : aucune nouvelle version depuis la demande de retouche';
+  end if;
+  if p_vers = 'check-agent' then
+    select count(*) into boucle from public.modeles_fiches b
+      where b.statut in ('check-agent', 'avis-humain', 'retouche', 'recheck-agent', 'revalidation');
+    if boucle >= 10 then raise exception 'Boucle de révision pleine (10 modèles)'; end if;
+  end if;
+  update public.modeles_fiches set
+    statut = p_vers,
+    rang = case when p_vers in ('finaliste', 'ecarte') then coalesce(p_rang, rang) else rang end,
+    version_retouche = case when p_vers = 'retouche' then version_courante else version_retouche end
+  where id = f.id;
+  return p_vers;
+end;
+$$;
+revoke all on function public.avancer_modele(uuid, text, smallint) from public, anon;
+grant execute on function public.avancer_modele(uuid, text, smallint) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------------------------------------------
 -- Présélection : les contributeurs versent leurs choix dans le journal de la Dégustation (0042)

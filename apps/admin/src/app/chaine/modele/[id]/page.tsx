@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { libellePageModele, statutModele, ticketsOuverts } from '@plateforme/core';
+import { libellePageModele, modeTestPourEtape, statutModele, ticketsOuverts } from '@plateforme/core';
+import BoutonTesterModele from '@/components/BoutonTesterModele';
+import RapportTestModele from '@/components/RapportTestModele';
+import { lireResultatTestModele } from '@/lib/tests-modeles';
 import { exigerContributeur, faireTournerChaine } from '@/lib/chaine-modeles';
 import { donneesRendu } from '../../donnees';
 import { verrousDeLaFiche } from '../../validation';
@@ -18,7 +21,8 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   const { chaine } = await faireTournerChaine(null);
   const f = chaine.fiches.find((x) => x.id === id);
   if (!f) notFound();
-  const [rendu, { verrous, jauge, bloquants }] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine)]);
+  const [rendu, { verrous, jauge, bloquants }, rapport] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null)]);
+  const modeTest = modeTestPourEtape(f.statut);
   const versions = chaine.versions.filter((v) => v.modele === f.id).sort((a, b) => b.version - a.version);
   const courante = versions.find((v) => v.version === f.versionCourante);
   const tickets = chaine.tickets.filter((t) => t.modele === f.id).sort((a, b) => b.numero - a.numero);
@@ -32,7 +36,7 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
         <p className="text-sm text-neutral-600">Fini quand : {st.fini}</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="grid min-w-0 gap-2">
+        <div className="grid min-w-0 content-start gap-2">
           {courante && <ApercuModele composition={courante.composition} scenario={f.scenario} rendu={rendu} appareil="ordinateur" hauteur={480} />}
           <Link href={`/chaine/revision/${f.id}`} className="inline-flex min-h-11 items-center justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold" data-action="signaler">{f.statut === 'publie' ? 'Signaler une zone (rouvre une retouche, reste en ligne)' : 'Pages et avis'}</Link>
         </div>
@@ -45,8 +49,15 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
           bloquants={bloquants}
           tags={f.tags}
           tagsValides={f.tagsValides}
+          verdict={courante?.test?.verdict ?? null}
+          justification={f.justificationVersion === f.versionCourante ? f.justificationTest ?? null : null}
         />
       </div>
+      <section aria-labelledby="fi-test" className="grid gap-2">
+        <h2 id="fi-test" className="font-semibold">Testeur de modèles · v{f.versionCourante}</h2>
+        {modeTest && <BoutonTesterModele modele={f.id} version={f.versionCourante} mode={modeTest} />}
+        <RapportTestModele resultat={rapport} />
+      </section>
       <section aria-labelledby="fi-versions" className="grid gap-2">
         <h2 id="fi-versions" className="font-semibold">Versions</h2>
         <ol className="grid gap-1 text-sm">

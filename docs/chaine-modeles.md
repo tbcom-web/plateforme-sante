@@ -46,7 +46,11 @@ finalistes, aucun des 6 pires.
 
 ## Verrous de la validation finale (`verrousValidation`)
 
-Tous au vert, recalculés côté serveur juste avant de publier : testeur au vert sur la version courante ; jauge 100 % 4-5 ★
+Tous au vert, recalculés côté serveur juste avant de publier : testeur (`verrouTesteur` / `regleValidationModele` de
+`testeur-modeles.ts` : vert sur la version courante ; orange ou vérification visuelle absente = validation possible seulement avec
+la justification écrite de Paul pour CETTE version, ≥ 15 caractères, colonnes `justification_test` / `justification_version`
+écrites par le validateur seul ; rouge, absent ou autre version = refus) ; avis humain et revalidation calculés depuis
+`modeles_revues` et les tickets (`avisFaits`), jamais depuis le statut ; jauge 100 % 4-5 ★
 (`qualiteComposition`) ; éléments validés (`verifierPublicationRecette` : rien « à valider », exclu ou non importé) ; 0 ticket
 ouvert ni corrigé en attente de revalidation ; avis et revalidation faits ; tags vérifiés (profession, profils, couleurs —
 pré-remplis automatiquement par `tagsAutomatiques`, Paul les corrige et clique « Tags vérifiés »).
@@ -70,6 +74,13 @@ fermés ni modifiés que par le validateur ou le service (déclencheur `modeles_
 les marquer « corrigé » ou les rouvrir ; la fermeture vient du re-check. Conséquence : l'import des résultats du dépôt par
 l'automate ne s'applique que lorsque le validateur ouvre la chaîne, ou quand la CI écrit directement en base. Un
 contributeur qui se connecte arrive sur `/chaine` ; il n'a pas accès au super admin.
+
+**Statuts** : un contributeur ne modifie jamais directement le statut, le rang ni la version de retouche d'une fiche (déclencheur) ;
+les passages d'étape passent par `avancer_modele(id, vers, rang)` (security definer) qui vérifie la transition autorisée, le rôle et
+les conditions en base (test de la version courante passé, vert ou orange et aucun ticket ouvert avant « prêt pour validation »,
+16 cellules avec un avis avant de sortir de l'avis humain, revalidation avant « prêt », ticket ouvert pour une retouche, nouvelle
+version pour un re-check, 10 modèles au plus dans la boucle). La version courante ne peut désigner que la dernière version
+enregistrée. Le validateur et le service gardent la main (publication, repêchage).
 
 ## Ce qui est automatique
 

@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { etatRevision, pagesChangees, statutModele } from '@plateforme/core';
+import { etatRevision, modeTestPourEtape, pagesChangees, statutModele } from '@plateforme/core';
+import BoutonTesterModele from '@/components/BoutonTesterModele';
+import RapportTestModele from '@/components/RapportTestModele';
+import { lireResultatTestModele } from '@/lib/tests-modeles';
 import { exigerContributeur, faireTournerChaine } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu } from '../../donnees';
 import Revision from './Revision';
@@ -16,7 +19,8 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
   const { chaine } = await faireTournerChaine(null);
   const f = chaine.fiches.find((x) => x.id === id);
   if (!f) notFound();
-  const [rendu, gen] = await Promise.all([donneesRendu(), donneesGeneration()]);
+  const [rendu, gen, rapport] = await Promise.all([donneesRendu(), donneesGeneration(), lireResultatTestModele(f.id, f.versionCourante).catch(() => null)]);
+  const modeTest = modeTestPourEtape(f.statut);
   const v = chaine.versions.find((x) => x.modele === f.id && x.version === f.versionCourante) ?? null;
   const prec = chaine.versions.find((x) => x.modele === f.id && x.version === f.versionCourante - 1) ?? null;
   const tickets = chaine.tickets.filter((t) => t.modele === f.id);
@@ -43,6 +47,14 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
           photos={gen.photos}
         />
       )}
+      {/* Rapport du testeur (contrôles, avant / après du re-check, tickets avec vignettes) : surtout utile en revalidation */}
+      <details className="rounded-2xl border border-violet-200 bg-white p-3" open={f.statut === 'revalidation'}>
+        <summary className="min-h-11 cursor-pointer font-semibold">Rapport du testeur · v{f.versionCourante}</summary>
+        <div className="mt-2 grid gap-2">
+          {modeTest && <BoutonTesterModele modele={f.id} version={f.versionCourante} mode={modeTest} />}
+          <RapportTestModele resultat={rapport} />
+        </div>
+      </details>
     </div>
   );
 }

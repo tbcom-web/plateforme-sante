@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  appliquerResultatTest, attentesHumain, CHAINE, CELLULES_REVISION, choixDePreselection, classementTournoi, etatRevision, etatTournoi, exportTicketsModeles, fairetournerChaine,
+  appliquerResultatTest, attentesHumain, avisFaits, CHAINE, CELLULES_REVISION, choixDePreselection, classementTournoi, etatRevision, etatTournoi, exportTicketsModeles, fairetournerChaine,
   filtreLeger, ligneCorrection, lireRetouches, markdownTicketsModeles, modelesATester, nomTeinte, nouvelleVersion, pagesChangees, peut, peutPublier, poidsVote, prochainDuel,
   retouchesAAppliquer, roleEffectif, tagsAutomatiques, transitionPermise, verrousValidation,
   type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele,
@@ -213,7 +213,11 @@ test('parcours complet par l’automate : candidat → finaliste → check agent
   assert.equal(e.fiches.find((x) => x.id === m)!.statut, 'pret-validation');
   // Validation : verrous
   const fm = e.fiches.find((x) => x.id === m)!;
-  const ver = (over: Partial<Parameters<typeof verrousValidation>[0]> = {}) => verrousValidation({ fiche: fm, version: e.versions.find((v) => v.modele === m && v.version === 2)!, tickets: e.tickets.filter((t) => t.modele === m), jauge: { part: 1, total: 9 }, elements: { ok: true, bloquants: 0 }, ...over });
+  const avis = avisFaits(2, e.versions.filter((v) => v.modele === m), e.revues.filter((r) => r.modele === m), e.tickets.filter((t) => t.modele === m));
+  assert.deepEqual([avis.ok, avis.base], [true, 1], 'avis complet sur la v1 puis revalidé sur la v2 (depuis modeles_revues)');
+  assert.equal(avisFaits(2, e.versions.filter((v) => v.modele === m), e.revues.filter((r) => r.modele === m && r.verdict !== 'revalide'), e.tickets.filter((t) => t.modele === m)).ok, false, 'sans revalidation : verrou au rouge, quel que soit le statut');
+  assert.equal(avisFaits(1, e.versions.filter((v) => v.modele === m), [], []).ok, false, 'aucun avis : rouge');
+  const ver = (over: Partial<Parameters<typeof verrousValidation>[0]> = {}) => verrousValidation({ fiche: fm, version: e.versions.find((v) => v.modele === m && v.version === 2)!, tickets: e.tickets.filter((t) => t.modele === m), jauge: { part: 1, total: 9 }, elements: { ok: true, bloquants: 0 }, avis, ...over });
   assert.equal(peutPublier(ver()), false, 'tags pré-remplis mais pas encore vérifiés');
   assert.equal(peutPublier(ver({ fiche: { ...fm, tagsValides: true } })), true);
   assert.equal(peutPublier(ver({ fiche: { ...fm, tagsValides: true }, jauge: { part: 0.9, total: 10 } })), false, 'jauge < 100 %');
@@ -253,4 +257,19 @@ test('tableau : ce qui attend chaque personne ; tags pré-remplis', () => {
   assert.equal(nomTeinte('#c2410c'), 'orange');
   assert.equal(nomTeinte('#1d4ed8'), 'bleu');
   assert.equal(nomTeinte('#f5f5f5'), 'blanc');
+});
+
+test('test orange : le modèle va jusqu’à la validation (justification de Paul) ; rouge : jamais', () => {
+  const orange = (id: string): ResultatTestModele => ({ ...testVert(id, 1), verdict: 'orange' });
+  const rouge = (id: string): ResultatTestModele => ({ ...testVert(id, 1), verdict: 'rouge' });
+  const { etat } = fairetournerChaine({ fiches: [fiche('o', { statut: 'avis-humain' }), fiche('r', { statut: 'avis-humain' })], versions: [version('o', 1, { test: orange('o') }), version('r', 1, { test: rouge('r') })], tickets: [], votes: [], revues: [...rienPartout('o', 1), ...rienPartout('r', 1)] });
+  assert.equal(etat.fiches.find((f) => f.id === 'o')!.statut, 'pret-validation');
+  assert.equal(etat.fiches.find((f) => f.id === 'r')!.statut, 'avis-humain');
+});
+
+test('automate : les avis d’un modèle ne valent jamais pour un autre (même version)', () => {
+  const a = fiche('a', { statut: 'avis-humain' }), b = fiche('b', { statut: 'avis-humain' });
+  const { etat } = fairetournerChaine({ fiches: [a, b], versions: [version('a', 1, { test: testVert('a', 1) }), version('b', 1, { test: testVert('b', 1) })], tickets: [], votes: [], revues: rienPartout('a', 1) });
+  assert.equal(etat.fiches.find((f) => f.id === 'a')!.statut, 'pret-validation');
+  assert.equal(etat.fiches.find((f) => f.id === 'b')!.statut, 'avis-humain', 'b n’a reçu aucun avis');
 });

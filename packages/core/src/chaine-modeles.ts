@@ -153,6 +153,9 @@ export type FicheModele = {
   rang: number | null;
   /** Version courante au moment où la retouche a été demandée (la retouche est faite quand une version plus récente existe) */
   versionRetouche?: number | null;
+  /** Justification écrite de Paul pour valider malgré un test orange (regleValidationModele, ≥ 15 caractères) et sa version */
+  justificationTest?: string | null;
+  justificationVersion?: number | null;
   /** Scénario du client simulé (principaux, secondaires, couleurs) */
   scenario: { principaux: string[]; secondaires: string[]; couleurs: string[] };
   creeLe: string;
@@ -533,6 +536,8 @@ export function automate(e: EtatChaine): ActionAuto[] {
   }
   // 2. Tickets techniques refermés par le testeur (contrôle repassé au vert sur la version courante)
   const ticketsDe = (id: string) => e.tickets.filter((t) => t.modele === id);
+  // Avis et tickets DU modèle seulement (jamais ceux d'un autre modèle à la même version)
+  const revuesDe = (id: string) => e.revues.filter((r) => r.modele === id);
   const fermes = new Set<string>();
   for (const f of e.fiches) {
     const v = versionDe(e, f.id, f.versionCourante);
@@ -549,12 +554,13 @@ export function automate(e: EtatChaine): ActionAuto[] {
   for (const f of e.fiches) {
     const v = versionDe(e, f.id, f.versionCourante);
     const teste = Boolean(v?.test && v.test.version === f.versionCourante);
-    const vert = teste && v!.test!.verdict === 'vert';
+    // Rouge : jamais prêt. Orange : peut aller jusqu'à la validation, où Paul justifie par écrit (regleValidationModele)
+    const vert = teste && v!.test!.verdict !== 'rouge';
     const s = statut.get(f.id)!;
     if (s === 'check-agent' && teste) passer(f, 'avis-humain', 'le testeur a passé la version');
     else if (s === 'avis-humain') {
       const prec = versionDe(e, f.id, f.versionCourante - 1);
-      const rev = etatRevision(f.versionCourante, e.revues, e.tickets, prec ? { precedente: prec.version, changees: pagesChangees(prec.composition, v?.composition) } : undefined);
+      const rev = etatRevision(f.versionCourante, revuesDe(f.id), ticketsDe(f.id), prec ? { precedente: prec.version, changees: pagesChangees(prec.composition, v?.composition) } : undefined);
       if (rev.terminee) {
         if (ouverts(f.id).length) passer(f, 'retouche', `${ouverts(f.id).length} ticket(s) ouvert(s) à corriger`);
         else if (vert) passer(f, 'pret-validation', 'avis complet, aucun ticket, testeur au vert');
@@ -566,7 +572,7 @@ export function automate(e: EtatChaine): ActionAuto[] {
       else if (vert) passer(f, 'pret-validation', 'corrections techniques au vert, sans humain');
     } else if (s === 'revalidation') {
       if (ouverts(f.id).length) passer(f, 'retouche', 'tickets rouverts ou nouveaux');
-      else if (vert && etatRevision(f.versionCourante, e.revues, e.tickets).revalidee) passer(f, 'pret-validation', 'revalidé, testeur au vert');
+      else if (vert && etatRevision(f.versionCourante, revuesDe(f.id), ticketsDe(f.id)).revalidee) passer(f, 'pret-validation', 'revalidé, testeur au vert');
     } else if (s === 'pret-validation' || s === 'publie') {
       if (ouverts(f.id).length) passer(f, 'retouche', s === 'publie' ? 'zone signalée sur un modèle publié (reste en ligne)' : 'nouveau ticket');
       else if (v && !teste && v.version > (f.versionPubliee ?? 0)) passer(f, 'recheck-agent', 'nouvelle version à tester');
@@ -613,23 +619,46 @@ export function fairetournerChaine(e: EtatChaine): { etat: EtatChaine; actions: 
 // Validation finale (Paul) et tags
 // ---------------------------------------------------------------------------------------------------------------
 
+/**
+ * « Avis humain et revalidation faits », calculé UNIQUEMENT depuis les avis (modeles_revues), les tickets et les versions — jamais
+ * depuis le statut de la fiche : (a) une version de base dont les 16 cellules page × appareil sont couvertes (« rien à signaler » ou
+ * ticket humain ; une relance hérite des avis de la version précédente pour les pages qu'elle ne change pas), puis (b) si une version
+ * postérieure contient une correction de goût ou une relance, une revalidation (« revalide ») sur la version courante.
+ */
+export function avisFaits(versionCourante: number, versions: readonly Pick<VersionModele, 'version' | 'journal' | 'composition'>[], revues: readonly RevueModele[], tickets: readonly TicketModele[]): { ok: boolean; detail: string; base: number | null } {
+  let base: number | null = null;
+  for (let v = versionCourante; v >= 1 && base === null; v--) {
+    const cur = versions.find((x) => x.version === v), prec = versions.find((x) => x.version === v - 1);
+    if (etatRevision(v, revues, tickets, cur && prec ? { precedente: prec.version, changees: pagesChangees(prec.composition, cur.composition) } : undefined).terminee) base = v;
+  }
+  if (base === null) return { ok: false, detail: 'avis page par page incomplet', base };
+  const apres = versions.filter((x) => x.version > base! && x.version <= versionCourante && aChangementHumain(x));
+  if (!apres.length) return { ok: true, detail: `avis complet sur la v${base}`, base };
+  const revalide = revues.some((r) => r.version === versionCourante && r.page === null && r.verdict === 'revalide');
+  return { ok: revalide, detail: revalide ? `avis v${base}, revalidé v${versionCourante}` : `v${versionCourante} à revalider`, base };
+}
+
 export type VerrouValidation = { id: 'testeur' | 'jauge' | 'elements' | 'tickets' | 'avis' | 'tags'; libelle: string; ok: boolean; detail: string };
 
 /** Verrous automatiques de la validation finale : TOUS au vert pour que « Publier pour les praticiens » soit possible */
 export function verrousValidation(p: {
-  fiche: Pick<FicheModele, 'statut' | 'versionCourante' | 'tags' | 'tagsValides'>; version: Pick<VersionModele, 'version' | 'test'> | null;
+  fiche: Pick<FicheModele, 'versionCourante' | 'tags' | 'tagsValides'>; version: Pick<VersionModele, 'version' | 'test'> | null;
   tickets: readonly TicketModele[]; jauge: { part: number; total: number } | null; elements: { ok: boolean; bloquants: number } | null;
+  /** avisFaits(…) : depuis modeles_revues et les tickets, jamais depuis le statut */
+  avis: { ok: boolean; detail: string };
+  /** Verrou testeur calculé par verrouTesteur (testeur-modeles.ts : vert, ou orange justifié par Paul) ; défaut : vert strict */
+  testeur?: { libelle: string; ok: boolean; detail: string };
 }): VerrouValidation[] {
   const t = p.version?.test;
   const ouverts = ticketsOuverts(p.tickets).length;
   const enAttente = p.tickets.filter((x) => x.statut === 'corrige').length;
   const tagsOk = Boolean(p.fiche.tags.profession && p.fiche.tags.profils.length && p.fiche.tags.couleurs.length);
   return [
-    { id: 'testeur', libelle: 'Testeur au vert sur la version', ok: Boolean(t && t.version === p.fiche.versionCourante && t.verdict === 'vert'), detail: t ? `v${t.version} : ${t.verdict}` : 'pas encore passé' },
+    p.testeur ? { id: 'testeur', ...p.testeur } : { id: 'testeur', libelle: 'Testeur au vert sur la version', ok: Boolean(t && t.version === p.fiche.versionCourante && t.verdict === 'vert'), detail: t ? `v${t.version} : ${t.verdict}` : 'pas encore passé' },
     { id: 'jauge', libelle: 'Jauge 100 % 4-5 ★', ok: Boolean(p.jauge && p.jauge.total > 0 && p.jauge.part >= 1), detail: p.jauge ? `${Math.round(p.jauge.part * 100)} % de ${p.jauge.total} éléments` : 'inconnue' },
     { id: 'elements', libelle: 'Éléments validés (aucun à valider ni exclu)', ok: Boolean(p.elements?.ok), detail: p.elements ? (p.elements.ok ? 'tous validés' : `${p.elements.bloquants} à valider ou remplacer`) : 'inconnu' },
     { id: 'tickets', libelle: '0 ticket ouvert', ok: ouverts === 0 && enAttente === 0, detail: ouverts || enAttente ? `${ouverts} ouvert(s), ${enAttente} corrigé(s) à revalider` : 'aucun' },
-    { id: 'avis', libelle: 'Avis humain et revalidation faits', ok: p.fiche.statut === 'pret-validation' || p.fiche.statut === 'publie', detail: statutModele(p.fiche.statut).libelle },
+    { id: 'avis', libelle: 'Avis humain et revalidation faits', ok: p.avis.ok, detail: p.avis.detail },
     { id: 'tags', libelle: 'Tags vérifiés (profession, profils, couleurs)', ok: tagsOk && p.fiche.tagsValides, detail: tagsOk ? (p.fiche.tagsValides ? 'vérifiés' : 'pré-remplis, à vérifier') : 'incomplets' },
   ];
 }
@@ -682,7 +711,7 @@ export function attentesHumain(e: EtatChaine, personne: { id: string; role: Role
   }
   for (const f of e.fiches) {
     if (f.statut === 'avis-humain') {
-      const r = etatRevision(f.versionCourante, e.revues, e.tickets);
+      const r = etatRevision(f.versionCourante, e.revues.filter((x) => x.modele === f.id), e.tickets.filter((x) => x.modele === f.id));
       const miennes = e.revues.filter((x) => x.modele === f.id && x.version === f.versionCourante && x.auteur === personne.id).length;
       if (!r.terminee) l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: `Avis : ${r.faites} / ${r.total} pages vues${miennes ? ` (dont ${miennes} par vous)` : ''}`, href: `/chaine/revision/${f.id}` });
     } else if (f.statut === 'revalidation') {

@@ -208,6 +208,22 @@ export async function verifierTags(modele: string, tags: TagsModele): Promise<Re
   return { ok: true, message: 'Tags vérifiés.' };
 }
 
+/** Test orange : justification écrite de Paul pour la version courante (≥ 15 caractères, regleValidationModele) */
+export async function justifierTest(modele: string, texte: string): Promise<Retour> {
+  await exigerValidateur();
+  if (!UUID.test(modele)) return { ok: false, message: 'Modèle inconnu.' };
+  const j = String(texte ?? '').trim().slice(0, 1000);
+  if (j.length < 15) return { ok: false, message: 'Justification trop courte (15 caractères au moins).' };
+  const chaine = await lireChaine(null);
+  const f = chaine.fiches.find((x) => x.id === modele);
+  if (!f) return { ok: false, message: 'Modèle introuvable.' };
+  const supabase = await createClient();
+  const { error } = await supabase.from('modeles_fiches').update({ justification_test: j, justification_version: f.versionCourante }).eq('id', modele);
+  if (error) return echec(error);
+  rafraichir(`/chaine/modele/${modele}`);
+  return { ok: true, message: `Justification enregistrée pour la v${f.versionCourante}.` };
+}
+
 /** « Publier pour les praticiens » : verrous recalculés ici, recette créée ou mise à jour, publication par profil (0043) */
 export async function publierModele(modele: string): Promise<Retour> {
   await exigerValidateur();

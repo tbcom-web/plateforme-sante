@@ -65,6 +65,8 @@ export function ficheDepuisLigne(l: Record<string, unknown>): FicheModele | null
     id: l.id, nom: String(l.nom ?? ''), profession: String(l.profession ?? 'podologue'), profil: String(l.profil ?? ''), statut: l.statut,
     versionCourante: Number(l.version_courante) || 1, versionPubliee: l.version_publiee == null ? null : Number(l.version_publiee),
     versionRetouche: l.version_retouche == null ? null : Number(l.version_retouche),
+    justificationTest: typeof l.justification_test === 'string' ? l.justification_test : null,
+    justificationVersion: l.justification_version == null ? null : Number(l.justification_version),
     tags: { profession: String(t.profession ?? l.profession ?? ''), profils: tableau(t.profils), couleurs: tableau(t.couleurs) }, tagsValides: Boolean(l.tags_valides),
     recette: typeof l.recette === 'string' ? l.recette : null, origine: l.origine === 'recette' || l.origine === 'claude' ? l.origine : 'preselection',
     cle: String(l.cle ?? ''), rang: l.rang == null ? null : Number(l.rang),
@@ -205,10 +207,8 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
   const { actions } = fairetournerChaine(chaine);
   for (const a of actions) {
     if (a.kind === 'statut') {
-      const maj: Record<string, unknown> = { statut: a.vers };
-      if (a.rang !== undefined) maj.rang = a.rang;
-      if (a.versionRetouche !== undefined) maj.version_retouche = a.versionRetouche;
-      const { error } = await supabase.from('modeles_fiches').update(maj).eq('id', a.modele).eq('statut', a.de);
+      // Passage d'étape par la base (avancer_modele, 0050) : transition autorisée, rôle et conditions revérifiés côté serveur
+      const { error } = await supabase.rpc('avancer_modele', { p_id: a.modele, p_vers: a.vers, p_rang: a.rang ?? null });
       if (!error) bilan.actions.push(a);
     } else {
       const { error } = await supabase.from('modeles_tickets').update({ statut: 'ferme', version_correction: a.version }).eq('modele', a.modele).eq('numero', a.numero).neq('statut', 'ferme');
