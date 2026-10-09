@@ -11,7 +11,7 @@ import { CADRAGES_PHOTOS, VISUEL_SOIN_PAR_DEFAUT, type JeuVisuel } from './jeux'
 import { clePhoto, EFFETS_SUJET, ordonnerPhotos, retireDesSujets, scoreMoyen, type PoidsAssets } from './assets-poids';
 import { THEMES } from './themes';
 import { imageExclue, sansImagesExclues } from './contexte-images';
-import { estImageDemo, estImageGeneree } from './photos-libres';
+import { estImageGeneree, estImageNonPubliable, estPhotoSousLicence } from './photos-libres';
 
 /** Sujets (thèmes actifs + « général ») d'une spécialité : surcharges de sujets de Paul sur les photos */
 export const sujetsDeSpecialite = (specialite: string): string[] => [
@@ -92,8 +92,9 @@ const UUID = /^[0-9a-f-]{36}$/;
 /** Photos d'un jeu nettoyées : URLs non autorisées retirées, galerie bornée, cadrages valides seulement. */
 export function nettoyerPhotosJeu(brut: unknown, prefixeStockage: string, siteId: string | null): PhotosJeu {
   const b = (brut && typeof brut === 'object' ? brut : {}) as Record<string, unknown>;
-  // Image de DÉMONSTRATION (kit-demo.ts) : jamais dans un jeu de photos (il est publié)
-  const ok = (v: unknown) => { const s = String(v ?? '').trim(); return s && !estImageDemo(s) && photoJeuAutorisee(s, prefixeStockage, siteId) ? s : ''; };
+  // Image de DÉMONSTRATION (kit-demo.ts) ou aperçu « comp » d'une banque payante : jamais dans un jeu de photos (il est publié).
+  // Photo sous licence (photos-sous-licence.ts) : jamais dans un jeu PARTAGÉ (une licence = un site), seulement un jeu exclusif.
+  const ok = (v: unknown) => { const s = String(v ?? '').trim(); return s && !estImageNonPubliable(s) && !(siteId === null && estPhotoSousLicence(s)) && photoJeuAutorisee(s, prefixeStockage, siteId) ? s : ''; };
   // Galerie (page « Le cabinet ») : jamais une image générée par IA (elle serait prise pour le vrai cabinet)
   const galerie = [...new Set((Array.isArray(b.galerie) ? b.galerie : []).map(ok).filter((u) => u && !estImageGeneree(u)))].slice(0, GALERIE_MAX);
   const soins: Record<string, string> = {};

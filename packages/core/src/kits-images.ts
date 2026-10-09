@@ -26,7 +26,7 @@ import { poidsAssets, type SurchargesSujets } from './assets-poids';
 import { hashtagsDepuisLignes } from './hashtags';
 import { HASHTAGS_PAR_DEFAUT } from './kits';
 import { photosDuJeu, type PhotosJeu } from './jeux-photos';
-import { estImageGeneree, SUJETS_VISUELS } from './photos-libres';
+import { estImageGeneree, estPhotoSousLicence, SUJETS_VISUELS } from './photos-libres';
 
 export const SUJETS_KITS = ['enfant', 'sport', 'senior', 'diabete', 'ongles', 'semelles', 'pedicurie', 'general'] as const;
 export type SujetKit = (typeof SUJETS_KITS)[number];
@@ -90,6 +90,8 @@ export type PhotoVivier = { p: PhotoBanque; cle: string; note: number | null; ef
 export function estCuree(p: PhotoBanque, sujet: string, d: Pick<DonneesKits, 'surcharges' | 'hashtags' | 'exclues' | 'assets' | 'notes'>): boolean {
   const cle = p.cle ?? clePhoto(p.url);
   if (!cle || !p.sujets.includes(sujet) || /posture/.test(p.url) || p.sujets.includes('posture')) return false;
+  // Photo PREMIUM sous licence (photos-sous-licence.ts) : jamais dans un kit (le kit d'un site n'a pas de licence), aperçus du Studio seulement
+  if (estPhotoSousLicence(p.url)) return false;
   if (imageExclue(p.url, d.exclues) || imageExclue(cle, d.exclues) || d.assets?.statuts[cle]) return false;
   const note = d.notes?.[cle]?.m;
   if (typeof note === 'number' && note <= 2) return false;

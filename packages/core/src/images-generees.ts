@@ -370,10 +370,14 @@ export const largeursImageGeneree = (largeurSource: number) => largeursAProduire
 
 export const MENTION_IMAGES_GENEREES = 'Certaines photos d’illustration sont des images générées par intelligence artificielle ; elles ne représentent ni des patients ni le cabinet';
 
-/** Mention « Crédits photos » des mentions légales d'un site (Adobe Stock, images générées) ; null si aucune */
-export function mentionCreditPhotos(e: { adobe?: boolean; ia?: boolean; urls?: readonly (string | null | undefined)[] }): string | null {
+/**
+ * Mention « Crédits photos » des mentions légales d'un site (Adobe Stock, images générées, photos premium sous licence) ; null si
+ * aucune. `premium` : crédits exigés par les licences des photos premium du site (photos-sous-licence.ts, creditsPhotosPremium).
+ */
+export function mentionCreditPhotos(e: { adobe?: boolean; ia?: boolean; urls?: readonly (string | null | undefined)[]; premium?: readonly string[] }): string | null {
   const l: string[] = [];
   if (e.adobe) l.push('Photos : Adobe Stock');
+  for (const c of e.premium ?? []) if (c && !l.includes(c)) l.push(c);
   if (e.ia || (e.urls ?? []).some((u) => estImageGeneree(u))) l.push(MENTION_IMAGES_GENEREES);
   return l.length ? l.join('. ') : null;
 }

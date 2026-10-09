@@ -50,6 +50,7 @@ import {
 import ChoixSujets from '@/components/ChoixSujets';
 import Apercu from '@/components/Apercu';
 import ApercuTheme from '@/components/ApercuTheme';
+import AvisPhotosPremium from '@/components/AvisPhotosPremium';
 import Photo from '@/components/Photo';
 import EditeurHoraires from '@/components/EditeurHoraires';
 import PortraitPraticien from '@/components/PortraitPraticien';
@@ -716,6 +717,8 @@ export default function Editeur({ siteId, version: versionInitiale = null, titre
         {ongletAffiche === 'theme'
           ? <ApercuTheme exemples={false} draft={d} modele={modeleDuSite(modeleCourant, d.theme)} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
           : <Apercu draft={d} catalogue={catalogue} />}
+        {/* Photo premium (banque payante) dans le modèle ou le choix : option à demander, ou remplacement */}
+        <div className="mt-3"><AvisPhotosPremium siteId={id} draft={d} onRemplacer={(x) => maj(x)} /></div>
       </div>
     </div>
   );

@@ -125,3 +125,4 @@ export * from './regles-apprises';
 export * from './photos-validees';
 export * from './prospection';
 export * from './entete-pied';
+export * from './photos-sous-licence';

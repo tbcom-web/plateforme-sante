@@ -509,6 +509,16 @@ export const estImageGeneree = (urlOuCle: string | null | undefined) => /(^|\/|p
  */
 export const estImageDemo = (urlOuCle: string | null | undefined) => /(^|\/|photo:)banque\/ia\/demo-[a-z0-9-]+\//.test(String(urlOuCle ?? ''));
 
+/**
+ * PHOTO SOUS LICENCE d'une banque payante (photos-sous-licence.ts, demande de Paul du 2026-10-09) : dossier banque/licence/…
+ * (apercu/ : aperçu « comp » filigrané ou basse définition ; achetee/ : fichier acheté). Badge « Photo premium » dans les aperçus.
+ */
+export const estPhotoSousLicence = (urlOuCle: string | null | undefined) => /(^|\/|photo:)banque\/licence\/(apercu|achetee)\//.test(String(urlOuCle ?? ''));
+/** APERÇU d'une banque payante (licence « comp ») : démo uniquement, comme une image démo (jamais enregistré, jamais publié) */
+export const estApercuSousLicence = (urlOuCle: string | null | undefined) => /(^|\/|photo:)banque\/licence\/apercu\//.test(String(urlOuCle ?? ''));
+/** Image JAMAIS publiable : image démo (cabinet ou praticien fictif) ou aperçu « comp » d'une banque payante */
+export const estImageNonPubliable = (urlOuCle: string | null | undefined) => estImageDemo(urlOuCle) || estApercuSousLicence(urlOuCle);
+
 /** Photo importée chez nous (fichier hébergé) : la seule forme utilisable par les jeux, le générateur et les sites */
 export const estPhotoImportee = (p: { statut: string; chemin?: string | null; url?: string | null }) => p.statut === 'validee' && Boolean(p.chemin) && Boolean(p.url);
 

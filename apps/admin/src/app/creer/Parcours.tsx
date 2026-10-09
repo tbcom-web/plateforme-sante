@@ -48,6 +48,7 @@ import {
 import { etapeCreerDuNumero, issuDuParcoursClient, numeroCreer, PARCOURS_COMPLET, phraseAvancement, pourcentageParcours, TOTAL_PARCOURS, ETAPES_AVANT_RENDU } from '@plateforme/core/onboarding';
 import ChoixSujets from '@/components/ChoixSujets';
 import ApercuTheme, { type Appareil } from '@/components/ApercuTheme';
+import AvisPhotosPremium from '@/components/AvisPhotosPremium';
 import SaisieGardee from '@/components/SaisieGardee';
 import { garderLocalement, oublierLocalement } from '@/lib/brouillon-local';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -454,6 +455,8 @@ export default function Parcours({ siteId, etapeInitiale, version, initial, cata
               <div role="region" aria-label="Aperçu du site">
                 <ApercuTheme key={etroit ? 'mobile' : 'bureau'} appareil={etroit ? 'mobile' as Appareil : 'bureau'} draft={draftApercu} modele={modeleRendu} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={jeuPhotos} />
               </div>
+              {/* Photo premium (banque payante) dans le modèle ou le choix : option à demander, ou remplacement */}
+              <AvisPhotosPremium siteId={id} draft={d} onRemplacer={(x) => setD(x)} />
             </div>
           </div>
         )}

@@ -66,6 +66,12 @@ import {
   appliquerExclusionsSite,
   clesExcluesSite,
   jourParis,
+  creditsPhotosPremium,
+  photosPremiumDans,
+  photosPremiumNonAutorisees,
+  photoSousLicenceDepuisLigne,
+  sansPhotosPremium,
+  type PhotoSousLicence,
   type Faq,
   type PraticienPublic,
   type SiteConfig,
@@ -194,7 +200,15 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   // Site public : version publiée (repli sur le brouillon si elle n'existe pas encore) ; aperçu (APERCU=1) : brouillon.
   // Personnalisations du praticien (personnalisations-site.ts) : couche appliquée EN DERNIER (recette → pack → profil/kit → praticien) ;
   // images « Démo » jamais posées sur un site construit.
-  const d0 = appliquerPersonnalisations(normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config)), { publication: true });
+  const d00 = appliquerPersonnalisations(normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config)), { publication: true });
+  // PHOTOS PREMIUM sous licence (photos-sous-licence.ts, 0057) : défense en profondeur après le contrôle bloquant de l'admin ; une photo
+  // sans licence achetée, rattachée à ce site et valable est retirée (son repli reprend) ; tables illisibles : toutes retirées.
+  const premium = await lirePhotosPremium(d00);
+  const jourPremium = jourParis(new Date());
+  const premiumRetirees = photosPremiumNonAutorisees(d00, { siteId: s.id, photos: premium, jour: jourPremium });
+  if (premiumRetirees.length) console.log(`[photos premium] ${s.slug ?? s.id} : ${premiumRetirees.length} photo(s) sans licence pour ce site retirée(s)`);
+  const d0 = premiumRetirees.length ? sansPhotosPremium(d00, premiumRetirees) : d00;
+  const creditsPremium = creditsPhotosPremium(d0, { siteId: s.id, photos: premium, jour: jourPremium });
   // Exclusions de l'admin appliquées au site publié : un élément refusé de la configuration est remplacé par son repli
   const exclusionsSite = await lireExclusionsSite().catch(() => new Set<string>());
   const { draft: d, retires } = appliquerExclusionsSite(d0, exclusionsSite);
@@ -279,7 +293,18 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     marqueImportee,
     creditAdobe: jeuPhotos?.source === 'adobe',
     creditIa,
+    creditsPremium,
   });
+}
+
+/** Photos sous licence citées par le brouillon, avec TOUS leurs rattachements (limite de sites par licence) ; erreur : aucune */
+async function lirePhotosPremium(d: SiteDraft): Promise<PhotoSousLicence[]> {
+  const ids = [...new Set(photosPremiumDans(d).map((u) => /lic-([0-9a-f]{16})-/.exec(u)?.[1]).filter(Boolean) as string[])];
+  if (!ids.length) return [];
+  const lignes = await lire<(Record<string, unknown> & { photos_sous_licence_sites?: Record<string, unknown>[] })[]>(
+    `photos_sous_licence?id_fichier=in.(${ids.join(',')})&select=*,photos_sous_licence_sites(site_id,statut,reference_licence,titulaire,date_achat,expire_le,demande_le)`,
+  ).catch(() => []);
+  return lignes.map((l) => photoSousLicenceDepuisLigne(l, l.photos_sous_licence_sites ?? []));
 }
 
 /** Données lues (Supabase ou fichier local de test) nécessaires pour assembler un site, sans accès réseau. */
@@ -301,6 +326,8 @@ export type EntreeAssemblage = {
   creditAdobe?: boolean;
   /** Le site affiche au moins une image générée par IA (mention dans les crédits) */
   creditIa?: boolean;
+  /** Crédits exigés par les licences des photos premium du site (photos-sous-licence.ts) */
+  creditsPremium?: string[];
   /** Visuels validés de l'activité n° 1 du praticien (profils.ts), null : aucun (repli sur le thème) */
   visuelsActivite?: VisuelsActivite | null;
 };
@@ -450,7 +477,7 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
       hebergeur: 'Cloudflare, Inc., 101 Townsend St, San Francisco, CA 94107, États-Unis',
       // Licence Adobe Stock : mention de la source, sans nom de fichier.
       // Images générées par IA : mention qu'elles ne représentent ni des patients ni le cabinet
-      ...((m) => (m ? { creditPhotos: m } : {}))(mentionCreditPhotos({ adobe: e.creditAdobe, ia: e.creditIa })),
+      ...((m) => (m ? { creditPhotos: m } : {}))(mentionCreditPhotos({ adobe: e.creditAdobe, ia: e.creditIa, premium: e.creditsPremium })),
     },
 
     pays: d.pays,

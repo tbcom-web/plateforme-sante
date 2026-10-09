@@ -3,6 +3,7 @@ import { controlerImagesDemo, gardeApercuEssai, gardeProduction, normaliserDraft
 import { createClient } from '@/lib/supabase/server';
 import { getRole } from '@/lib/admin';
 import { essaiBloqueProduction, proprietaireSansAcces } from '@/lib/essai';
+import { controlerPremiumSite } from '@/lib/photos-sous-licence';
 
 type Resultat = { ok: boolean; message: string };
 
@@ -43,9 +44,15 @@ async function refusSansAcces(siteId: string): Promise<Resultat | null> {
  * version). Message clair, rien n'est lancé.
  */
 async function refusImagesDemo(siteId: string, colonne: 'config' | 'config_publiee' = 'config'): Promise<Resultat | null> {
-  const { data } = await (await createClient()).from('sites').select(colonne).eq('id', siteId).maybeSingle();
-  const c = controlerImagesDemo((data as Record<string, unknown> | null)?.[colonne] ?? null);
-  return c.ok ? null : { ok: false, message: c.message };
+  const supabase = await createClient();
+  const { data } = await supabase.from('sites').select(colonne).eq('id', siteId).maybeSingle();
+  const config = (data as Record<string, unknown> | null)?.[colonne] ?? null;
+  const c = controlerImagesDemo(config);
+  if (!c.ok) return { ok: false, message: c.message };
+  // PHOTOS PREMIUM (photos-sous-licence.ts, 0057) : chaque photo sous licence doit avoir une licence achetée, rattachée à CE site,
+  // non expirée, dans la limite de sa licence ; sinon rien n'est construit (« Cette photo nécessite l'option Photos premium »).
+  const p = await controlerPremiumSite(supabase, siteId, config);
+  return p.ok ? null : { ok: false, message: p.message };
 }
 
 /**
@@ -142,13 +149,18 @@ export async function declencherPublications(siteIds: string[]): Promise<Resulta
   let lances = 0;
   let ignores = 0;
   let bloquesDemo = 0;
+  let bloquesPremium = 0;
   for (let i = 0; i < demandes.length; i += 100) {
     const lot = demandes.slice(i, i + 100);
     const { data, error } = await supabase.from('sites').select('id, config, config_publiee').in('id', lot).neq('statut', 'suspendu');
     if (error) return { ok: false, message: 'Lecture des sites impossible.' };
     // Image de démonstration dans la version publiée (ou le brouillon d'un site sans version publiée) : jamais republié
-    const sains = (data ?? []).filter((s) => controlerImagesDemo(s.config_publiee ?? s.config).ok);
-    bloquesDemo += (data ?? []).length - sains.length;
+    const sansDemo = (data ?? []).filter((s) => controlerImagesDemo(s.config_publiee ?? s.config).ok);
+    // Photo premium sans licence pour le site : jamais republié (même contrôle que la publication)
+    const premium = await Promise.all(sansDemo.map((s) => controlerPremiumSite(supabase, s.id as string, s.config_publiee ?? s.config)));
+    const sains = sansDemo.filter((_, i) => premium[i].ok);
+    bloquesPremium += sansDemo.length - sains.length;
+    bloquesDemo += (data ?? []).length - sansDemo.length;
     const ids = sains.map((s) => s.id as string);
     ignores += lot.length - (data ?? []).length;
     if (!ids.length) continue;
@@ -167,7 +179,8 @@ export async function declencherPublications(siteIds: string[]): Promise<Resulta
   }
   const suspendus = ignores ? ` ${ignores} site(s) suspendu(s) ou introuvable(s) ignoré(s).` : '';
   const demos = bloquesDemo ? ` ${bloquesDemo} site(s) non republié(s) : photo d’exemple (image de démonstration) à remplacer.` : '';
-  return { ok: true, message: `${lances} site(s) en cours de republication (quelques minutes, 4 en parallèle).${suspendus}${demos}` };
+  const premiums = bloquesPremium ? ` ${bloquesPremium} site(s) non republié(s) : photo premium sans licence pour le site.` : '';
+  return { ok: true, message: `${lances} site(s) en cours de republication (quelques minutes, 4 en parallèle).${suspendus}${demos}${premiums}` };
 }
 
 export type Cible = { specialite?: string; modele?: string; marque?: string; jeuPhotos?: string; soin?: string; tous?: boolean };

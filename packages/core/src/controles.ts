@@ -7,7 +7,7 @@
 // affiche un repli sobre (replis.ts, appliqué au chargement des données dans apps/sites/src/lib/supabase.ts).
 import type { SiteDraft } from './draft';
 import { verifierTexte, type NiveauConformite } from './lexique';
-import { imagesDemoDans, MESSAGE_IMAGES_DEMO } from './kit-demo';
+import { imagesDemoDans, messageImagesNonPubliables } from './kit-demo';
 import { EQUIPEMENTS } from './equipements';
 import { REPLIS, TEXTE_PROVISOIRE, adresseUtilisable, telephoneUtilisable } from './replis';
 import { lienRdvPrecis } from './format';
@@ -44,7 +44,8 @@ export const rppsAffichable = (n: string) => { const v = n.replace(/\s/g, ''); r
 export function controlerPublication(d: SiteDraft, niveau: NiveauConformite = 'standard'): ResultatControle {
   // Un seul bloquant : une image de DÉMONSTRATION (cabinet ou praticien fictif, kit-demo.ts) ne peut jamais être publiée.
   // Les remplacements sont aussi des conseils (repris à la fin).
-  const bloquants: string[] = imagesDemoDans(d, 1).length ? [MESSAGE_IMAGES_DEMO] : [];
+  const nonPubliables = imagesDemoDans(d, 1);
+  const bloquants: string[] = nonPubliables.length ? [messageImagesNonPubliables(nonPubliables)] : [];
   const conseils: string[] = [];
   const remplacements: string[] = [];
   const remplace = (m: string) => remplacements.push(m);

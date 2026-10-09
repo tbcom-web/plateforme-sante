@@ -38,7 +38,7 @@ import ApercuGabarit, { ActionsRapidesApercu, HerosVue, tailleTitre, type HerosA
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
 import { cssTransitionsSections } from '@plateforme/core';
 import { styleTaillePerso, variablesSecondaire } from '@plateforme/core';
-import { appliquerKitDemo, kitDemoDe, kitDemoUtilise, RIEN_APPLIQUE } from '@plateforme/core';
+import { appliquerKitDemo, kitDemoDe, kitDemoUtilise, LIBELLE_PHOTO_PREMIUM, photosPremiumDans, RIEN_APPLIQUE } from '@plateforme/core';
 import BandeauExemples from './BandeauExemples';
 import { animationDuHeros, cssVisuelAnime, htmlVisuelAnime, styleCouleursHeros } from '@plateforme/core';
 import { ApercuArticle, ApercuPageSujet } from './ApercuPages';
@@ -140,6 +140,8 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
   // Mots composés insécables À L'AFFICHAGE (comme les sites, lib/typo.mjs) : noms, cabinet, villes (« Saint-Rémy-de-Provence ») avec
   // un trait d'union insécable ; le brouillon enregistré garde le vrai trait d'union. Tous les aperçus passent par ici.
   const { draft: d, applique: kitApplique } = useMemo(() => { const di = apercuInsecable(d0); return exemples ? appliquerKitDemo(di, kitDemoDe()) : { draft: di, applique: RIEN_APPLIQUE }; }, [d0, exemples]);
+  // Photo PREMIUM sous licence dans le brouillon ou la recette (photos-sous-licence.ts) : badge discret « Photo premium » sur l'aperçu
+  const avecPremium = useMemo(() => photosPremiumDans(d0, 1).length > 0, [d0]);
   // Animations jouées (Studio) : contexte lu par les visuels, canvas pilotés dans l'iframe de l'aperçu
   const reglageAnim = useMemo(() => ({ jouer: animer, enAttente: animationsEnAttente }), [animer, animationsEnAttente]);
   const racineAp = useRef<HTMLDivElement>(null);
@@ -591,7 +593,8 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
       {/* Photos d'exemple (kit démo) : bandeau discret, invitation à téléverser ses vraies photos ; jamais publiées */}
       {!vignette && !sansCommandes && kitDemoUtilise(kitApplique) && <BandeauExemples />}
       {/* Iframe de la largeur réelle de l'appareil (CadreApercu) : media queries, position fixe et défilement comme sur l'appareil */}
-      <div className={vignette ? 'overflow-hidden bg-neutral-100' : 'bg-neutral-100'}>
+      <div className={vignette ? 'relative overflow-hidden bg-neutral-100' : 'relative bg-neutral-100'}>
+        {avecPremium && <span className="pointer-events-none absolute right-2 top-2 z-10 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-neutral-900 shadow-sm ring-1 ring-black/10" title="Cette photo nécessite l’option Photos premium pour être publiée">{LIBELLE_PHOTO_PREMIUM}</span>}
         <CadreApercu appareil={appareil} vignette={vignette} plein={plein} hauteur={hauteurCadre} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>
           <ContexteAnimations.Provider value={reglageAnim}>
           <ContexteMetierApercu.Provider value={metierPack}>

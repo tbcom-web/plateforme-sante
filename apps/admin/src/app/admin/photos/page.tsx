@@ -87,6 +87,11 @@ export default async function JeuxPhotos() {
           <Link href="/admin/cuisine/images-a-generer" className="font-semibold text-teal-900 underline underline-offset-4">Images à générer</Link>.
           Importées « à valider », avec l’outil, le prompt et les conditions de l’outil ; jamais dans la galerie du cabinet.
         </p>
+        <p className="max-w-3xl text-sm text-neutral-600">
+          Photos de banques payantes (Adobe Stock, iStock, Getty…) pour les démos, avec l’option Photos premium :{' '}
+          <Link href="/admin/photos-sous-licence" className="font-semibold text-teal-900 underline underline-offset-4">Photos sous licence</Link>
+          {' '}(aperçu jamais publié ; photo achetée publiée seulement sur les sites qui ont leur licence).
+        </p>
         {libres.migrationManquante ? (
           <p className="text-sm text-amber-900">Migration 0028 à exécuter (<code>supabase/migrations/0028_inspirations_photos_libres.sql</code>).</p>
         ) : libres.photos.length === 0 ? (

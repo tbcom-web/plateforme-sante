@@ -35,6 +35,7 @@ export const ESPACES: readonly Espace[] = [
       { href: '/admin/frigo/tranches', libelle: 'Éléments tranchés' },
       { href: '/admin/frigo/bibliotheque', libelle: 'Bibliothèque complète' },
       { href: '/admin/frigo/photos', libelle: 'Jeux de photos' },
+      { href: '/admin/photos-sous-licence', libelle: 'Photos sous licence' },
     ],
   },
   {

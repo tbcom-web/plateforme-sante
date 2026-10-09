@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 import { colonneAbsente } from '@/lib/erreurs-supabase';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getHashtagsAssets } from '@/lib/hashtags';
+import { photosPremiumPourBanque } from '@/lib/photos-sous-licence';
 
 // Recettes du studio côté serveur (migration 0032) :
 // - getRecettes : toutes les recettes (super admin, /admin/atelier/studio), avec remarques ;
@@ -121,11 +122,12 @@ export function getPhotosBanque(opts: { nonImportees?: boolean } = {}): Promise<
 const photosBanque = cache(async (nonImportees: boolean): Promise<PhotoBanque[]> => {
   const opts = { nonImportees };
   const supabase = await createClient();
-  const [jeux, { data: libres }, surcharges, { hashtags }] = await Promise.all([
+  const [jeux, { data: libres }, surcharges, { hashtags }, premium] = await Promise.all([
     getPhotosDesJeux().catch(() => []),
     lirePhotosLibres(supabase),
     getSurchargesSujets(),
     getHashtagsAssets(),
+    photosPremiumPourBanque(),
   ]);
   const sujetsJeu = (specialite: string) => (specialite === 'generale' ? ['general'] : sujetsDeSpecialite(specialite));
   const entrees: EntreeBanquePhotos[] = [
@@ -142,6 +144,9 @@ const photosBanque = cache(async (nonImportees: boolean): Promise<PhotoBanque[]>
       return [{ url: l.apercu_url, origine: 'libre', sujets, importee: false, cle: cleCandidatePhoto(l.source, l.id_source), idLibre: l.id, source: l.source }];
     }),
     ...photosIntegreesBanque().map((p) => ({ url: p.url, origine: 'integree' as const, sujets: p.sujets })),
+    // PHOTOS PREMIUM sous licence validées (photos-sous-licence.ts, 0057) : tirages des aperçus (badge « Photo premium ») ; un aperçu
+    // (comp) est retiré à l'enregistrement, une photo achetée n'est publiée qu'avec la licence du site
+    ...premium.map((p) => ({ url: p.url, origine: 'libre' as const, sujets: SUJETS_VISUELS.some((x) => x.id === p.sujet) ? [p.sujet] : ['general'] })),
   ];
   return banquePhotos(entrees, { surcharges, hashtags });
 });

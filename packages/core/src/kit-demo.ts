@@ -14,7 +14,7 @@
 // 4-5 ★ d'abord. Cabinet : galerie de 4 + panorama, pris dans le MÊME LOT (série cohérente : même lumière, mêmes matières), complétés
 // par les autres lots si besoin ; praticiens : 1 à 3 portraits fictifs. Rotation : `rang` change de lot et fait tourner les images.
 
-import { estImageDemo } from './photos-libres';
+import { estApercuSousLicence, estImageDemo, estImageNonPubliable } from './photos-libres';
 import { cleImage, imageExclue, type KitCompact } from './contexte-images';
 import { PROFESSION_PAR_DEFAUT } from './professions';
 import type { SiteDraft } from './draft';
@@ -153,13 +153,13 @@ export const BANDEAU_EXEMPLES = {
 // Garde-fous de publication
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Adresses d'images démo trouvées n'importe où dans une valeur (brouillon, configuration, site assemblé), sans doublon */
+/** Adresses d'images démo (et d'aperçus « comp » de banques payantes, photos-sous-licence.ts) trouvées n'importe où dans une valeur (brouillon, configuration, site assemblé), sans doublon */
 export function imagesDemoDans(v: unknown, max = 50): string[] {
   const r = new Set<string>();
   const vus = new Set<unknown>();
   const parcourir = (x: unknown, profondeur: number) => {
     if (r.size >= max || profondeur > 12) return;
-    if (typeof x === 'string') { if (estImageDemo(x)) r.add(x); return; }
+    if (typeof x === 'string') { if (estImageNonPubliable(x)) r.add(x); return; }
     if (!x || typeof x !== 'object' || vus.has(x)) return;
     vus.add(x);
     for (const y of Array.isArray(x) ? x : Object.values(x as Record<string, unknown>)) parcourir(y, profondeur + 1);
@@ -170,16 +170,20 @@ export function imagesDemoDans(v: unknown, max = 50): string[] {
 
 export const MESSAGE_IMAGES_DEMO = 'Photo d’exemple détectée : une image de démonstration (cabinet ou praticien fictif) ne peut jamais être publiée. Remplacez-la par votre propre photo (cabinet, portrait) ou retirez-la ; sans photo, le site garde ses illustrations.';
 
-/** Contrôle BLOQUANT : la configuration contient-elle encore une image démo ? */
+export const MESSAGE_APERCU_SOUS_LICENCE = 'Photo premium en aperçu : cette version (filigranée ou basse définition, licence « comp ») sert seulement aux démonstrations et ne peut jamais être publiée. Choisissez l’option Photos premium ou remplacez la photo par une photo du kit ou la vôtre.';
+/** Message du contrôle : image démo d'abord, sinon aperçu d'une banque payante */
+export const messageImagesNonPubliables = (images: readonly string[]) => (images.some((u) => estImageDemo(u)) || !images.some((u) => estApercuSousLicence(u)) ? MESSAGE_IMAGES_DEMO : MESSAGE_APERCU_SOUS_LICENCE);
+
+/** Contrôle BLOQUANT : la configuration contient-elle encore une image démo (ou un aperçu « comp » d'une banque payante) ? */
 export function controlerImagesDemo(config: unknown): { ok: true } | { ok: false; message: string; images: string[] } {
   const images = imagesDemoDans(config);
-  return images.length ? { ok: false, message: MESSAGE_IMAGES_DEMO, images } : { ok: true };
+  return images.length ? { ok: false, message: messageImagesNonPubliables(images), images } : { ok: true };
 }
 
 /** Une chaîne démo devient vide ; dans une liste, l'élément démo (chaîne, ou rendu dont url / src est démo) est retiré */
 function nettoyer(x: unknown): unknown {
-  if (typeof x === 'string') return estImageDemo(x) ? '' : x;
-  if (Array.isArray(x)) return x.filter((y) => !(typeof y === 'string' && estImageDemo(y)) && !(y && typeof y === 'object' && ['url', 'src'].some((k) => estImageDemo((y as Record<string, unknown>)[k] as string)))).map(nettoyer);
+  if (typeof x === 'string') return estImageNonPubliable(x) ? '' : x;
+  if (Array.isArray(x)) return x.filter((y) => !(typeof y === 'string' && estImageNonPubliable(y)) && !(y && typeof y === 'object' && ['url', 'src'].some((k) => estImageNonPubliable((y as Record<string, unknown>)[k] as string)))).map(nettoyer);
   if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x as Record<string, unknown>).map(([k, v]) => [k, nettoyer(v)]));
   return x;
 }
@@ -194,7 +198,7 @@ export function sansImagesDemo<D extends object>(d: D): D {
   const r = nettoyer(d) as D & { praticiens?: { photo?: string; portrait?: unknown }[] };
   const avant = (d as { praticiens?: { photo?: string }[] }).praticiens;
   if (Array.isArray(r.praticiens) && Array.isArray(avant)) {
-    r.praticiens = r.praticiens.map((p, i) => (estImageDemo(avant[i]?.photo) ? (({ portrait: _p, ...reste }) => ({ ...reste, photo: '' }))(p) : p));
+    r.praticiens = r.praticiens.map((p, i) => (estImageNonPubliable(avant[i]?.photo) ? (({ portrait: _p, ...reste }) => ({ ...reste, photo: '' }))(p) : p));
   }
   return r;
 }

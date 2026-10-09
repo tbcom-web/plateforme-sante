@@ -19,7 +19,7 @@ import { buildTheme } from './theme';
 import { GAMMES, gamme as gammeParIdentifiant, variantesGamme, type Gamme } from './gammes';
 import { PAIRES_POLICES, pairePolices } from './modeles';
 import { verifierTexte, PREFERER, type Alerte } from './lexique';
-import { estImageDemo } from './photos-libres';
+import { estImageDemo, estImageNonPubliable } from './photos-libres';
 import type { SiteDraft } from './draft';
 import type { Faq } from './types';
 
@@ -569,7 +569,7 @@ export function appliquerPersonnalisations(d: SiteDraft, opts: { reglages?: Regl
   if (r.couleurs?.gamme) { const g = gammeParIdentifiant(r.couleurs.gamme)!; t.gamme = g.id; t.couleur = g.accent; }
   else if (r.couleurs?.principale) { t.gamme = ''; t.couleur = ajusterCouleurPrincipale(r.couleurs.principale).couleur; }
   if (r.couleurs?.secondaire) t.couleurSecondaire = ajusterCouleurSecondaire(r.couleurs.secondaire).couleur;
-  const sansDemo = (u: string | undefined) => (u && !(opts.publication && estImageDemo(u)) ? u : '');
+  const sansDemo = (u: string | undefined) => (u && !(opts.publication && estImageNonPubliable(u)) ? u : '');
   for (const [e, choix] of Object.entries(r.images ?? {})) {
     const u = sansDemo(choix.url);
     if (!u) continue;
@@ -588,12 +588,12 @@ export function appliquerPersonnalisations(d: SiteDraft, opts: { reglages?: Regl
   if (opts.publication) {
     x.photos.accueil = sansDemo(x.photos.accueil);
     x.photos.panorama = sansDemo(x.photos.panorama);
-    for (const p of x.praticiens) if (estImageDemo(p.photo)) { p.photo = ''; delete p.portrait; }
-    if (x.photos.soins) x.photos.soins = Object.fromEntries(Object.entries(x.photos.soins).filter(([, u]) => !estImageDemo(u)));
-    if (x.photos.sujets) x.photos.sujets = Object.fromEntries(Object.entries(x.photos.sujets).filter(([, u]) => !estImageDemo(u)));
-    if (x.theme.photosRecette) x.theme.photosRecette = x.theme.photosRecette.filter((u) => !estImageDemo(u));
+    for (const p of x.praticiens) if (estImageNonPubliable(p.photo)) { p.photo = ''; delete p.portrait; }
+    if (x.photos.soins) x.photos.soins = Object.fromEntries(Object.entries(x.photos.soins).filter(([, u]) => !estImageNonPubliable(u)));
+    if (x.photos.sujets) x.photos.sujets = Object.fromEntries(Object.entries(x.photos.sujets).filter(([, u]) => !estImageNonPubliable(u)));
+    if (x.theme.photosRecette) x.theme.photosRecette = x.theme.photosRecette.filter((u) => !estImageNonPubliable(u));
   }
-  x.photos.cabinet = x.photos.cabinet.filter((u) => u && !(opts.publication && estImageDemo(u)));
+  x.photos.cabinet = x.photos.cabinet.filter((u) => u && !(opts.publication && estImageNonPubliable(u)));
   return x;
 }
 
