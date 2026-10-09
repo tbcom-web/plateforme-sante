@@ -245,3 +245,14 @@ test('kit « course » : jamais une photo d’une autre activité (tennis tagué
   const k2 = kitDuProfil(profil, { photos: { banque: banque.filter((p) => p.cle !== 'photo:libre-course'), hashtags } });
   assert.deepEqual(visuelsDeLActivite(k2, 'course').photos, [`${U}e5f6.webp`]);
 });
+
+test('« marche » seule n’est pas une activité : l’analyse de la marche n’est pas de la randonnée', async () => {
+  const { activitesReconnues: reconnues } = await import('./profils');
+  const p = pratiqueDe('podologue');
+  assert.deepEqual(reconnues({ cle: 'photo:accueil-observation-marche', url: '/photos/accueil-observation-marche.webp' }, p), []);
+  assert.deepEqual(reconnues({ cle: 'photo:x', tags: ['marche'] }, p), []);
+  assert.deepEqual(reconnues({ cle: 'photo:rando-montagne' }, p), ['randonnee']);
+  assert.deepEqual(reconnues({ cle: 'photo:x', url: '/photos/batons-chemin.webp' }, p), ['randonnee']);
+  assert.deepEqual(reconnues({ cle: 'photo:x', tags: ['randonnee'] }, p), ['randonnee']);
+  assert.deepEqual(reconnues({ cle: 'photo:sport-course', url: '/photos/sport-course.webp' }, p), ['course']);
+});

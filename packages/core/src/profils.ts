@@ -265,19 +265,29 @@ const familleVide = (): Record<FamilleKit, ElementProfil[]> => ({ photo: [], ill
 
 /** Un élément porte-t-il l'activité ? (hashtag de l'activité, ou scène du kit de visuels : sport-<scene>) */
 export function porteActivite(cle: string, tags: readonly string[], a: Pick<ActivitePratique, 'hashtags' | 'scene'>): boolean {
-  if (a.hashtags.some((h) => tags.includes(h))) return true;
+  if (a.hashtags.some((h) => !MOTS_AMBIGUS.has(h) && tags.includes(h))) return true;
   return Boolean(a.scene && new RegExp(`(^|[:-])sport-${a.scene}(:|$)`).test(cle));
 }
 
 // Mots trop généraux des requêtes de photos (« tennis shoes court » → tennis) : jamais un indice d'activité à eux seuls
 const MOTS_GENERAUX = new Set(['shoes', 'shoe', 'boots', 'boot', 'court', 'grass', 'floor', 'road', 'path', 'indoor', 'field', 'feet', 'foot', 'sole', 'edge', 'deck', 'mat', 'snow', 'binding', 'pedal', 'ball', 'sneakers', 'slippers', 'sandals', 'walking', 'trail', 'stirrup', 'tatami', 'arts', 'course']);
 
+/**
+ * Mots AMBIGUS, jamais lus comme une activité à eux seuls (retour du 2026-10-09 : « accueil-observation-marche » classée randonnée) :
+ * « marche » désigne aussi l'analyse de la marche, la marche du quotidien — pas une activité sportive. La randonnée se reconnaît à
+ * ses mots propres (randonnee, rando, trail, montagne, bâtons, hiking).
+ */
+const MOTS_AMBIGUS = new Set(['marche']);
+/** Mots propres d'une activité en plus de ses hashtags (indices non ambigus) */
+const MOTS_PROPRES: Readonly<Record<string, readonly string[]>> = { randonnee: ['rando', 'montagne', 'batons', 'baton', 'hiking'] };
+
 /** Mots qui trahissent une activité dans l'adresse ou la requête d'origine d'une photo : hashtags + premiers mots des requêtes */
 export function motsActivite(a: Pick<ActivitePratique, 'hashtags' | 'requetes' | 'scene'>): string[] {
   const l = new Set<string>([...a.hashtags.flatMap((h) => [h, h.replace(/-/g, '')]), ...(a.scene ? [a.scene] : [])]);
   for (const r of a.requetes) for (const m of r.toLowerCase().split(/[^a-z]+/).slice(0, 2)) if (m.length > 3 && !MOTS_GENERAUX.has(m)) l.add(m);
   if (a.hashtags.includes('trail')) l.add('trail');
-  return [...l];
+  for (const h of a.hashtags) for (const m of MOTS_PROPRES[h] ?? []) l.add(m);
+  return [...l].filter((m) => !MOTS_AMBIGUS.has(m));
 }
 
 /**

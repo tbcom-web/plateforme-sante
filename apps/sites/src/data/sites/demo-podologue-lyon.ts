@@ -1,6 +1,6 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
 import { readFileSync } from 'node:fs';
-import { normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
+import { activitesReconnues, normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
 import { estPresentationPortraits, libellesComposition, lotsPropositions, PORTRAITS_DEMO, PRATICIENS_DEMO, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
@@ -683,6 +683,12 @@ if (process.env.ACTIVITE) {
   const v = visuelsPourPraticien(tableVisuelsActivites(null, {}), themes, ids);
   site.activites = { ids, illustration: v?.repli ? null : v?.illustration ?? null, photos: v?.photosActivite ?? [], repli: v?.repli ?? true };
   site.soins = ordonnerSoins(site.soins, soinsEnAvantActivites(pratiqueDe(null), ids, site.soins.map((x) => x.slug)));
+  // Contenu de démonstration qui SUIT le jeu (testeur de modèles, 2026-10-09) : un article dont l'image montre une AUTRE activité
+  // (« course » dans un jeu basket) prend une image de sport générique, sans activité identifiable, et un texte alternatif neutre.
+  const p = pratiqueDe(null);
+  const autre = (u: string) => activitesReconnues({ cle: u, url: u }, p).some((a) => !ids.includes(a));
+  const GENERIQUE = { image: '/photos/sport-chaussure.webp', imageAlt: 'Chaussure de sport posée au sol' };
+  site.articles = site.articles.map((a) => (a.image && autre(a.image) && !autre(GENERIQUE.image) ? { ...a, ...GENERIQUE } : a));
 }
 // SURCHARGES={"chemin.pointé": valeur, …} (JSON ou chemin d'un fichier .json) : cas de test du testeur de modèles (nom très long,
 // lien mort, photo refusée…) posés en dernier sur la démo, ex. {"cabinet.nom": "…", "photos.accueil": "/photos/x.webp"}.

@@ -49,7 +49,9 @@ porte son `jeu` (champ facultatif du format commun) ; un même défaut vu dans p
 
 Nouveau contrôle **activités** : dans un jeu d'activité, aucun visuel (photo, dessin, image de fond, photos de la composition du
 jeu) dont l'activité reconnue (`activitesReconnues`) n'est pas celle du profil : bloquant ; image d'un article de démonstration
-d'une autre activité (elle suit le sujet de l'article) : majeur, signalé hors modèle.
+d'une autre activité (elle suit le sujet de l'article) : majeur, signalé hors modèle (filet : la démo remplace déjà l'image d'un article
+d'une autre activité par une image de sport générique, demo-podologue-lyon.ts). « marche » seule n'est jamais une activité
+(analyse de la marche) : la randonnée se reconnaît à randonnee, rando, trail, montagne, bâtons, hiking (profils.ts, MOTS_AMBIGUS).
 
 ### Jeux historiques (sans liste de jeux : recette avec ses propres photos, modèle intégré)
 
@@ -173,7 +175,7 @@ Résultats du 2026-10-09 (`retours/tests-modeles/test-*.json`) :
 | re-check (saine comme v2 de la cassée) | orange | 4,7 min | 63 corrigés (dont 56 avec vignettes avant / après), 40 toujours ouverts, 1 nouveau |
 | saine, jeux sport-basket, diabete, enfant | **orange** (basket orange, diabète et enfant verts) | 3,3 min | 1 majeur : image de l'article de démo « course » dans le jeu basket (contenu, hors modèle) ; les défauts plateforme de la 1re passe sont corrigés (1466c02) |
 | cassée, mêmes jeux | **rouge** (3 jeux rouges) | 3,5 min | 61 bloquants dont la photo `sport-course` de la composition dans le jeu basket (contrôle activités) |
-| saine, 7 jeux (toutes les familles) | rouge avant la règle « article », orange après | 6,1 min | 6 jeux verts |
+| saine, 7 jeux (toutes les familles), après correction du contenu de démo et de « marche » | **VERT** (7 jeux verts) | 6,8 min | 0 bloquant, 0 majeur, 34 mineurs |
 
 Limite connue : la vignette « après » reprend les MÊMES coordonnées ; si la mise en page a bougé entre les versions, la zone peut
 être décalée (la vignette « avant » reste juste).

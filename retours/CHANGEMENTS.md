@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Démo qui suit le jeu d'activité (images d'articles), « marche » n'est plus une activité ; composition saine du testeur verte sur 7 jeux
 - 2026-10-09 : Testeur de modèles par jeu de démonstration (profils de la chaîne, images du kit, verdict par jeu, contrôle des visuels d'une autre activité) — docs/testeur-modeles.md
 - 2026-10-09 : Sourcing automatique de photos en séries cohérentes (Pexels / Pixabay) : l'agent part des trous, propose 2-3 séries de 6 à 12 photos dans les Arrivages (planche, cohérence, aperçu appliqué), acceptées d'un geste ; boutons Profils et Kits, workflow sourcer-photos désactivé par défaut, revue facultative par l'agent sourceur-photos. Migration 0053 à exécuter.
 - 2026-10-09 : Chaîne des modèles : modèle = design sans thème (images du kit du profil), tournoi en grilles (≈ 16-30 écrans au lieu de ≈ 95 duels, précision égale ou meilleure), images cohérentes avec l'activité, migration 0052
