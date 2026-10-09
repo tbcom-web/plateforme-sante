@@ -44,21 +44,23 @@ const clesPhotos = photos_libres.filter((p) => p.chemin).map((p) => `photo:${p.c
 const assets_notes = Array.from({ length: 2000 }, (_, i) => {
   const ex = pick(assetsEx);
   const cle = i % 5 === 0 ? pick(clesPhotos) : ex.cle;
-  const note = Math.max(1, Math.min(5, ex.note + (alea() < 0.3 ? (alea() < 0.5 ? -1 : 1) : 0)));
+  // Notes réelles de l'export (répartition des étoiles gardée : ~5 % de 1 ★)
+  const note = ex.note;
   return { id: uid(), cle_asset: cle, type: cle.split(':')[0], note, etiquettes: ex.etiquettes ?? [], commentaire: i % 9 === 0 ? 'Commentaire fictif.' : null, positif: null, negatif: null, empreinte: ex.empreinte ?? null, appareil: pick(['les-deux', 'mobile', 'ordinateur']), auteur: ADMIN, created_at: date(i, 2000) };
 });
 
 // Notes d'atelier (500)
 const atelier_notes = Array.from({ length: 500 }, (_, i) => {
   const ex = pick(atelierEx);
-  return { id: uid(), cle_combinaison: i < atelierEx.length ? ex.cle : hex(16), ingredients: ex.ingredients, note: Math.max(1, Math.min(5, ex.note + (alea() < 0.3 ? -1 : 0))), etiquettes: ex.etiquettes ?? [], commentaire: null, positif: null, negatif: null, appareil: ex.appareil ?? 'les-deux', auteur: ADMIN, created_at: date(i, 500) };
+  return { id: uid(), cle_combinaison: i < atelierEx.length ? ex.cle : hex(16), ingredients: ex.ingredients, note: ex.note, etiquettes: ex.etiquettes ?? [], commentaire: null, positif: null, negatif: null, appareil: ex.appareil ?? 'les-deux', auteur: ADMIN, created_at: date(i, 500) };
 });
 
 // Duels (1 500) : formes réelles (ingrédients complets, composition comprise), résultats tirés
 const duels = Array.from({ length: 1500 }, (_, i) => {
   const ex = pick(duelsEx);
   const inv = alea() < 0.5;
-  const res = pick(['a', 'b', 'a', 'b', 'egalite', 'mauvais']);
+  // Résultat réel de l'export (« les deux sont mauvais » ~4 %), côtés éventuellement inversés
+  const res = inv && (ex.resultat === 'a' || ex.resultat === 'b') ? (ex.resultat === 'a' ? 'b' : 'a') : ex.resultat;
   return {
     id: uid(), type: ex.type, scenario: ex.scenario, a_cle: inv ? ex.b : ex.a, b_cle: inv ? ex.a : ex.b,
     a_ingredients: inv ? ex.bIngredients : ex.aIngredients, b_ingredients: inv ? ex.aIngredients : ex.bIngredients,

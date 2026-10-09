@@ -16,6 +16,7 @@ import {
   FAMILLES_STYLE, planifierSession, predireDuel, pretProfil, SUJETS_VISUELS, famillesPreferees, grilleDirectionsDegustation, repereEvalue, type IdFamilleStyle, type famillesDesDuels, scoreBatsClaude, serialiserComposition, serieDegustation, sessionReprenable, tempsEstime, texteDuree, xpCarte,
   type CarteSession, type ChoixGrille, type Duel, type EtatApprentissage, type FormatGrille, type GrilleDegustation, type MarqueImportee, type Medaille, type ModeleManifeste,
   type PhotoBanque, type PoidsAtelier, type PropositionDegustation, type ScenarioRecette, type ScoreBatsClaude, type Univers, type DefiDuJour, type ElementInventaire,
+  construireCarte, lireRegistresTirage, outilsCartes, type CarteConstruite, type DonneesCartes,
 } from '@plateforme/core';
 import type { PredictionJuge } from '@plateforme/core/juge';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -112,46 +113,62 @@ export default function Degustation(props: Props) {
   const famillesSession = useRef(new Map<string, IdFamilleStyle>());
 
   // ---- Génération d'une carte ----
+  // Calcul sorti dans le core (degustation-cartes.ts : construireCarte, même code) pour tourner dans un Web Worker et préparer
+  // les cartes suivantes pendant que Paul joue (perf, 2026-10-09) ; ici, la version synchrone (grille libre, regénération).
+  const donnees = useMemo<DonneesCartes>(() => ({ profils: props.profils, photos: props.photos, poids: props.poids, predictions: props.predictions, familles: props.familles, modeles: props.modeles, tranches: props.tranches }),
+    [props.profils, props.photos, props.poids, props.predictions, props.familles, props.modeles, props.tranches]);
+  const outils = useMemo(() => outilsCartes(donnees), [donnees]);
+  const familleSessionDe = (c: CarteSession) => (c.kind === 'grille' ? famillesSession.current.get(c.profil) ?? null : null);
   const construire = useCallback((c: CarteSession, graine: number): Courant | null => {
-    const debut = Date.now();
-    if (c.kind === 'note') {
-      const url = c.cle.startsWith('photo:') ? props.photos.find((p) => (p.cle ?? clePhoto(p.url)) === c.cle)?.url ?? null : null;
-      if (c.cle.startsWith('photo:') && !url) return null;
-      return { kind: 'note', carte: c, profil: profilDe(c.profil), cle: c.cle, url, pari: noteJuge(c.cle) === null ? null : Math.round(noteJuge(c.cle)!), debut };
-    }
-    const profil = profilDe(c.profil);
-    if (!profil) return null;
-    const ctx = contexteScenario(profil.scenario, { poids: props.poids, photos: props.photos, modele, modeTirage: 'favoris' });
-    if (c.kind === 'duel') {
-      const base = baseFavoris(ctx, notes, graine);
-      const a = compositionPourCle(base, c.a), b = compositionPourCle(base, c.b);
-      const prop = (x: typeof base, k: string): PropositionDegustation => ({ cle: cleComposition(JSON.parse(serialiserComposition(x))), nouveau: k, x, ingredients: { ...clesRecette(x, ctx.sujets), element: k, juge: [k], composition: JSON.parse(serialiserComposition(x)) } });
-      const pa = prop(a, c.a), pb = prop(b, c.b);
-      if (pa.cle === pb.cle) return null;
-      return { kind: 'duel', carte: c, profil, grille: { format: 'compositions', dimension: c.dimension, base, propositions: [pa, pb] }, pari: predireDuel([c.a], [c.b], props.predictions), debut };
-    }
-    const o = { contexte: ctx, notes, tranches, graine };
-    // Entonnoir : famille choisie pour ce profil dans une grille « Directions » de la session, sinon famille préférée apprise
-    const famille = famillesSession.current.get(profil.id) ?? famillesPreferees(props.familles, profil.sujets[0] ?? 'cabinet')[0] ?? null;
-    let g: GrilleDegustation | null = null;
-    if (c.format === 'directions') {
-      g = grilleDirectionsDegustation({ ...o, priorite: famillesPreferees(props.familles, profil.sujets[0] ?? 'cabinet').slice(0, 2) });
-    } else if (c.format === 'kits') {
-      const cl = classerPhotos(props.photos, ctx.sujets, props.poids?.assets ?? null, props.poids?.notesPhotos ?? null).filter((x) => x.sujetUn && x.cle);
-      const urls = cl.map((x) => x.p.url);
-      g = grilleKit(urls.slice(0, 4), urls.slice(1), { sujets: ctx.sujets, notes, tranches, graine });
-    } else if (c.format === 'icones') {
-      g = grilleIcones(ECHANTILLON_DIRECTIONS[graine % ECHANTILLON_DIRECTIONS.length], { tranches, graine });
-    } else {
-      const dims = [c.dimension, ...DIMENSIONS_FORMAT[c.format].filter((d) => d !== c.dimension)];
-      for (const d of dims) { g = grilleCompositions(c.format, d, { ...o, famille }); if (g) break; }
-    }
-    if (!g) return null;
-    // Directions : le juge parie sur la moyenne prédite des éléments de chaque site (la famille seule n'a pas de prédiction)
-    const pari = pariGrille(g.propositions.map((p) => (g!.format === 'directions' ? { cle: p.cle, juge: p.ingredients.assets ?? [] } : { cle: p.cle, nouveau: p.nouveau })), noteJuge);
-    return { kind: 'grille', carte: c, profil, grille: g, pari, debut };
+    const x = construireCarte(donnees, c, graine, familleSessionDe(c), outils);
+    return x ? ({ ...x, debut: Date.now() } as Courant) : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.photos, props.poids, props.predictions, props.familles, profilDe, modele, notes, tranches, noteJuge]);
+  }, [donnees, outils]);
+
+  // ---- Préparation des cartes (Web Workers, 1 à 3 selon les cœurs) : carte demandée = (carte, graine, famille de session) ;
+  // résultats gardés ; chaque carte part au worker le moins chargé (les cartes sans grille possible sont écartées en parallèle)
+  type Preparee = { promesse: Promise<CarteConstruite | null>; valeur?: CarteConstruite | null; prete: boolean };
+  type Ouvrier = { w: Worker; enCours: number };
+  const pool = useRef<{ ouvriers: Ouvrier[]; n: number; attente: Map<number, (x: CarteConstruite | null | undefined) => void> } | null>(null);
+  const preparees = useRef(new Map<string, Preparee>());
+  useEffect(() => {
+    preparees.current.clear();
+    const attente = new Map<number, (x: CarteConstruite | null | undefined) => void>();
+    const ouvriers: Ouvrier[] = [];
+    const nb = Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 2) - 1));
+    const registres = lireRegistresTirage();
+    for (let k = 0; k < nb; k++) {
+      let w: Worker;
+      try { w = new Worker(new URL('./cartes.worker.ts', import.meta.url)); } catch { break; }
+      const o: Ouvrier = { w, enCours: 0 };
+      w.onmessage = (e: MessageEvent<{ id: number; ok: boolean; carte?: CarteConstruite | null }>) => { o.enCours--; attente.get(e.data.id)?.(e.data.ok ? e.data.carte ?? null : undefined); attente.delete(e.data.id); };
+      w.onerror = () => { const i = ouvriers.indexOf(o); if (i >= 0) ouvriers.splice(i, 1); };
+      w.postMessage({ type: 'donnees', donnees, registres });
+      ouvriers.push(o);
+    }
+    pool.current = ouvriers.length ? { ouvriers, n: 0, attente } : null;
+    return () => { for (const o of ouvriers) o.w.terminate(); pool.current = null; for (const f of attente.values()) f(undefined); attente.clear(); preparees.current.clear(); };
+  }, [donnees]);
+  const demander = useCallback((c: CarteSession, graine: number): Preparee => {
+    const famille = familleSessionDe(c);
+    const cle = `${graine}|${famille ?? ''}|${JSON.stringify(c)}`;
+    const deja = preparees.current.get(cle);
+    if (deja) return deja;
+    const surPlace = () => construireCarte(donnees, c, graine, famille, outils);
+    const p = pool.current;
+    const o = p?.ouvriers.length ? p.ouvriers.reduce((a, b) => (b.enCours < a.enCours ? b : a)) : null;
+    const promesse: Promise<CarteConstruite | null> = p && o
+      ? new Promise((ok) => { const id = ++p.n; o.enCours++; p.attente.set(id, (x) => ok(x === undefined ? surPlace() : x)); o.w.postMessage({ type: 'carte', id, carte: c, graine, famille }); })
+      : new Promise((ok) => setTimeout(() => ok(surPlace()), 0));
+    const e: Preparee = { promesse, prete: false };
+    void promesse.then((v) => { e.valeur = v; e.prete = true; });
+    preparees.current.set(cle, e);
+    return e;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [donnees, outils]);
+  const graineCarte = (s: { id: string }, i: number) => (hasard(i + 1)() * 1e9) >>> 0 ^ s.id.length * 7919 + i;
+  /** Cartes suivantes préparées pendant que Paul joue (les six prochaines) */
+  const prechauffer = useCallback((s: EtatSession, i: number) => { for (let k = i; k < Math.min(s.cartes.length, i + 6); k++) demander(s.cartes[k], graineCarte(s, k)); }, [demander]);
 
   // ---- Session ----
   const [session, setSession] = useState<EtatSession | null>(null);
@@ -166,18 +183,36 @@ export default function Degustation(props: Props) {
   const [confettis, setConfettis] = useState(0);
   const libre = useRef<{ profil: string; format: FormatGrille }>({ profil: props.profils[0]?.id ?? '', format: 'compositions' });
 
-  const ouvrir = useCallback((s: EtatSession, pos: number) => {
+  const [attenteCarte, setAttenteCarte] = useState(false);
+  const jeton = useRef(0);
+  const ouvrir = useCallback(async (s: EtatSession, pos: number) => {
+    const j = ++jeton.current;
     for (let i = pos; i < s.cartes.length; i++) {
-      const c = construire(s.cartes[i], (hasard(i + 1)() * 1e9) >>> 0 ^ s.id.length * 7919 + i);
-      if (c) { const n = { ...s, position: i }; setSession(n); ecrire(K.session, n); setCourant(c); return; }
+      const e = demander(s.cartes[i], graineCarte(s, i));
+      if (!e.prete) { setCourant(null); setAttenteCarte(true); prechauffer(s, i + 1); }
+      const x = e.prete ? e.valeur ?? null : await e.promesse;
+      if (j !== jeton.current) return;
+      if (x) { const n = { ...s, position: i }; setSession(n); ecrire(K.session, n); setAttenteCarte(false); setCourant({ ...x, debut: Date.now() } as Courant); prechauffer(s, i + 1); return; }
     }
+    setAttenteCarte(false);
     setSession({ ...s, position: s.cartes.length }); ecrire(K.session, null); setCourant(null); setFin(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [construire]);
+  }, [demander, prechauffer]);
+
+  // Session du jour planifiée dès l'arrivée sur la page et ses premières cartes préparées en arrière-plan (première carte prête
+  // au clic sur « Commencer ») : même planification, mêmes graines qu'au clic
+  const planPrepare = useRef<{ id: string; cartes: CarteSession[]; etat: unknown } | null>(null);
+  useEffect(() => {
+    const p = { id: `s-${Date.now().toString(36)}`, cartes: planifierSession(props.etat, { graine: Date.now() % 100000 }), etat: props.etat };
+    planPrepare.current = p;
+    prechauffer({ id: p.id, debut: '', position: 0, cartes: p.cartes }, 0);
+  }, [props.etat, prechauffer]);
 
   const commencer = useCallback(() => {
-    const id = `s-${Date.now().toString(36)}`;
-    const cartes = planifierSession(props.etat, { graine: Date.now() % 100000 });
+    const prepare = planPrepare.current && planPrepare.current.etat === props.etat ? planPrepare.current : null;
+    planPrepare.current = null;
+    const id = prepare?.id ?? `s-${Date.now().toString(36)}`;
+    const cartes = prepare?.cartes ?? planifierSession(props.etat, { graine: Date.now() % 100000 });
     setSessionDuels([]); setSessionJouees([]); setFin(false); setReprise(null); setRevelation(null);
     ouvrir({ id, debut: new Date().toISOString(), position: 0, cartes }, 0);
   }, [props.etat, ouvrir]);
@@ -415,7 +450,7 @@ export default function Degustation(props: Props) {
       ) : fin ? (
         <FinSession jouees={sessionJouees} duels={sessionDuels} profils={props.profils} avant={props.etat.pret} apres={pretApres} nouvelles={finInfos?.nouvelles ?? []} niveauAvant={niveauPalais(xpTotal - xpSession)} niveau={niveau}
           score={score} defi={defiJour} defiAv={defiAv} onRecommencer={commencer} onPalais={() => setOnglet('palais')} />
-      ) : onglet === 'session' && !courant ? (
+      ) : onglet === 'session' && !courant && !attenteCarte ? (
         <Accueil etat={props.etat} reprise={reprise} onCommencer={commencer} onReprendre={reprendre} defi={defiJour} defiAv={defiAv} profils={props.profils} />
       ) : (
         <>
@@ -440,6 +475,7 @@ export default function Degustation(props: Props) {
               <style>{'@keyframes degustation-xp { from { transform: translateY(6px); opacity: 0 } to { transform: none; opacity: 1 } }'}</style>
             </p>
           )}
+          {attenteCarte && !courant && <p role="status" className="rounded-2xl border border-black/10 bg-white p-6 text-center text-sm text-neutral-700">Préparation de la carte…</p>}
           {courant?.kind === 'grille' && (
             <CarteGrille c={courant} selection={selection} modePire={modePire} rendu={rendu} onToucher={toucher} onSurvol={(i) => { survol.current = i; }} agrandi={agrandi} onAgrandir={setAgrandi}
               onPire={() => setModePire((m) => !m)} onValider={validerStable} onAnnuler={annuler} onPasser={suivante}
@@ -548,16 +584,19 @@ function CarteGrille({ c, selection, modePire, rendu, onToucher, onSurvol, agran
   useEffect(() => {
     setRecadrage(null);
     if (!FORMATS_PAGES.has(c.grille.format) || focale) return;
-    const t = setTimeout(() => {
+    let annule = false;
+    const t = setTimeout(async () => {
       const cartes = Array.from(liste.current?.querySelectorAll<HTMLLIElement>('li[data-carte]') ?? []);
       const iframes = cartes.map((li) => li.querySelector('iframe'));
-      const empreintes = iframes.map(empreinteIframe);
+      // Une vignette par tâche (perf, 2026-10-09) : même empreinte, le fil principal respire entre deux
+      const empreintes: ReturnType<typeof empreinteIframe>[] = [];
+      for (const x of iframes) { empreintes.push(empreinteIframe(x)); await new Promise((ok) => setTimeout(ok, 0)); if (annule) return; }
       const hauteurVue = iframes.find((x) => x?.contentWindow)?.contentWindow?.innerHeight ?? 800;
       const r = comparerEmpreintes(empreintes, Math.round(hauteurVue * 0.9));
       if (r.identiques.length) { onIdentiques(r.identiques); return; }
       if (r.y > 0 && !directions) { for (const x of iframes) x?.contentWindow?.scrollTo(0, r.y); setRecadrage(r.y); }
     }, 2200);
-    return () => clearTimeout(t);
+    return () => { annule = true; clearTimeout(t); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [c.grille]);
 

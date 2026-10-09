@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CHAINE, designDe, elementsComposition, filtreLeger, grilleDirectionsDegustation, profilDemo, serialiserComposition, type PhotoBanque, type PoidsAtelier,
+  lireRegistresTirage, type GrilleDegustation,
 } from '@plateforme/core';
 import { empreinteIframe } from '../../admin/degustation/Vignettes';
 import ApercuModele, { type RenduChaine } from '../ApercuModele';
@@ -42,31 +43,85 @@ export default function Preselection(props: Props) {
   const ctxDe = useCallback((p: ProfilRendu) => contexteDuProfil(p, { poids: props.poids, photos: props.photos, modeles: props.rendu.modeles }), [props.poids, props.photos, props.rendu.modeles]);
   const scenario = (p: ProfilRendu) => ({ principaux: p.scenario.principaux, secondaires: p.scenario.secondaires, couleurs: p.scenario.couleurs });
 
-  /** Une page de 6 designs, rendue avec un profil de démonstration différent de la page précédente */
-  const generer = useCallback((): Page | null => {
-    const g0 = graine.current;
-    const profil = profilDemo(props.profils, g0 * 2654435761, dernierProfil.current);
-    if (!profil) return null;
-    dernierProfil.current = profil.id;
-    const ctx = ctxDe(profil);
-    const retenues: Carte[] = [];
-    for (let essai = 0; essai < 6 && retenues.length < CHAINE.tailleGrille; essai++) {
-      const g = grilleDirectionsDegustation({ contexte: ctx, notes: props.poids?.notesElements ?? {}, tranches, graine: (graine.current++ * 7919 + 17) >>> 0 });
-      for (const p of g?.propositions ?? []) {
-        if (retenues.length >= CHAINE.tailleGrille || !p.x) continue;
-        const design = designDe(p.x);
-        const cle = p.cle;
-        const f = filtreLeger({ cle: p.cle, violationsDures: 0, elements: elementsComposition(p.x, ctx.sujets), exclus: tranches.refuses, dejaVues: vues.current });
-        if (!f.garde) continue;
-        vues.current.add(p.cle);
-        retenues.push({ cle, nom: `${p.etiquette ?? 'Direction'} ${p.cle.slice(5, 9)}`, design, ingredients: p.ingredients as Record<string, unknown>, profilDemo: profil.id,
-          legende: [p.etiquette, ...(p.mots ?? [])].filter(Boolean).join(' · '), rendue: JSON.parse(serialiserComposition(p.x)), vu: profil.id });
-      }
+  // ---- Grilles « Directions » dans des Web Workers (perf, 2026-10-09 : 0,2 à 2 s par grille, jusqu'à 6 par page, sur le fil
+  // principal auparavant) : grille demandée = (profil, graine), même calcul (grilles.worker.ts) ; la page suivante est préparée
+  // pendant que l'on regarde celle-ci (même profil de démonstration et mêmes graines que lorsqu'elle sera demandée)
+  type Ouvrier = { w: Worker; enCours: number };
+  const pool = useRef<{ ouvriers: Ouvrier[]; n: number; attente: Map<number, (g: GrilleDegustation | null | undefined) => void> } | null>(null);
+  const grilles = useRef(new Map<string, Promise<GrilleDegustation | null>>());
+  useEffect(() => {
+    grilles.current.clear();
+    const attente = new Map<number, (g: GrilleDegustation | null | undefined) => void>();
+    const ouvriers: Ouvrier[] = [];
+    const nb = Math.max(1, Math.min(2, (navigator.hardwareConcurrency || 2) - 1));
+    const registres = lireRegistresTirage();
+    for (let k = 0; k < nb; k++) {
+      let w: Worker;
+      try { w = new Worker(new URL('./grilles.worker.ts', import.meta.url)); } catch { break; }
+      const o: Ouvrier = { w, enCours: 0 };
+      w.onmessage = (e: MessageEvent<{ id: number; ok: boolean; grille?: GrilleDegustation | null }>) => { o.enCours--; attente.get(e.data.id)?.(e.data.ok ? e.data.grille ?? null : undefined); attente.delete(e.data.id); };
+      w.onerror = () => { const i = ouvriers.indexOf(o); if (i >= 0) ouvriers.splice(i, 1); };
+      w.postMessage({ type: 'donnees', donnees: { poids: props.poids, photos: props.photos, modeles: props.rendu.modeles, tranches: { refuses: props.tranches.refuses, favoris: props.tranches.favoris } }, registres });
+      ouvriers.push(o);
     }
-    return retenues.length >= 2 ? { id: g0, profil: profil.id, propositions: retenues, selection: [], etat: 'ouverte', masquees: [], debut: Date.now() } : null;
-  }, [props.profils, props.poids, ctxDe, tranches]);
+    pool.current = ouvriers.length ? { ouvriers, n: 0, attente } : null;
+    return () => { for (const o of ouvriers) o.w.terminate(); pool.current = null; for (const f of attente.values()) f(undefined); attente.clear(); grilles.current.clear(); };
+  }, [props.poids, props.photos, props.rendu.modeles, props.tranches]);
+  const grille = useCallback((profil: ProfilRendu, g: number): Promise<GrilleDegustation | null> => {
+    const cle = `${profil.id}|${g}`;
+    const deja = grilles.current.get(cle);
+    if (deja) return deja;
+    const surPlace = () => grilleDirectionsDegustation({ contexte: ctxDe(profil), notes: props.poids?.notesElements ?? {}, tranches, graine: g });
+    const p = pool.current;
+    const o = p?.ouvriers.length ? p.ouvriers.reduce((a, b) => (b.enCours < a.enCours ? b : a)) : null;
+    const promesse: Promise<GrilleDegustation | null> = p && o
+      ? new Promise((ok) => { const id = ++p.n; o.enCours++; p.attente.set(id, (x) => ok(x === undefined ? surPlace() : x)); o.w.postMessage({ type: 'grille', id, profil, graine: g }); })
+      : new Promise((ok) => setTimeout(() => ok(surPlace()), 0));
+    grilles.current.set(cle, promesse);
+    return promesse;
+  }, [ctxDe, props.poids, tranches]);
+  const grainesPage = (g: number) => Array.from({ length: 6 }, (_, k) => ((g + k) * 7919 + 17) >>> 0);
+  /** Page suivante préparée : son profil de démonstration et ses graines sont déjà connus */
+  const preparerSuivante = useCallback(() => {
+    const profil = profilDemo(props.profils, graine.current * 2654435761, dernierProfil.current);
+    if (profil) for (const g of grainesPage(graine.current)) void grille(profil, g);
+  }, [props.profils, grille]);
 
-  useEffect(() => { const p = generer(); setPages(p ? [p] : []); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  /** Une page de 6 designs, rendue avec un profil de démonstration différent de la page précédente */
+  const enCours = useRef(false);
+  const generer = useCallback(async (): Promise<Page | null> => {
+    enCours.current = true;
+    try {
+      const g0 = graine.current;
+      const profil = profilDemo(props.profils, g0 * 2654435761, dernierProfil.current);
+      if (!profil) return null;
+      dernierProfil.current = profil.id;
+      const ctx = ctxDe(profil);
+      const retenues: Carte[] = [];
+      // Les six grilles possibles de la page sont demandées ensemble (en parallèle dans les workers), lues dans l'ordre
+      const attendues = grainesPage(g0).map((g) => grille(profil, g));
+      for (let essai = 0; essai < 6 && retenues.length < CHAINE.tailleGrille; essai++) {
+        graine.current++;
+        const g = await attendues[essai];
+        for (const p of g?.propositions ?? []) {
+          if (retenues.length >= CHAINE.tailleGrille || !p.x) continue;
+          const design = designDe(p.x);
+          const cle = p.cle;
+          const f = filtreLeger({ cle: p.cle, violationsDures: 0, elements: elementsComposition(p.x, ctx.sujets), exclus: tranches.refuses, dejaVues: vues.current });
+          if (!f.garde) continue;
+          vues.current.add(p.cle);
+          retenues.push({ cle, nom: `${p.etiquette ?? 'Direction'} ${p.cle.slice(5, 9)}`, design, ingredients: p.ingredients as Record<string, unknown>, profilDemo: profil.id,
+            legende: [p.etiquette, ...(p.mots ?? [])].filter(Boolean).join(' · '), rendue: JSON.parse(serialiserComposition(p.x)), vu: profil.id });
+        }
+      }
+      return retenues.length >= 2 ? { id: g0, profil: profil.id, propositions: retenues, selection: [], etat: 'ouverte', masquees: [], debut: Date.now() } : null;
+    } finally {
+      enCours.current = false;
+      preparerSuivante();
+    }
+  }, [props.profils, ctxDe, tranches, grille, preparerSuivante]);
+
+  useEffect(() => { void generer().then((p) => setPages(p ? [p] : [])); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const garder = useCallback(async (id: number) => {
     const p = pages.find((x) => x.id === id);
@@ -80,10 +135,13 @@ export default function Preselection(props: Props) {
   }, [pages, appareil]);
 
   const fin = useRef<HTMLDivElement>(null);
-  const suivante = useCallback(() => {
+  const suivante = useCallback(async () => {
+    if (enCours.current) return;
     for (const p of pages.filter((x) => x.etat === 'ouverte' && x.selection.length)) void garder(p.id);
-    const n = generer();
-    if (n) setPages((l) => [...l.map((p) => (p.etat === 'ouverte' && !p.selection.length ? { ...p, etat: 'passee' as const } : p)), n].slice(-6));
+    // Pages encore ouvertes sans choix : passées tout de suite (comme avant), la nouvelle page arrive quand ses grilles sont prêtes
+    setPages((l) => l.map((p) => (p.etat === 'ouverte' && !p.selection.length ? { ...p, etat: 'passee' as const } : p)));
+    const n = await generer();
+    if (n) setPages((l) => [...l, n].slice(-6));
   }, [pages, garder, generer]);
   useEffect(() => {
     const el = fin.current;

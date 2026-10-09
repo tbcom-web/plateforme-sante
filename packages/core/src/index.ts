@@ -118,3 +118,4 @@ export * from './testeur-modeles';
 export * from './tournoi-grilles';
 export * from './chaine-design';
 export * from './sourcing-photos';
+export * from './degustation-cartes';

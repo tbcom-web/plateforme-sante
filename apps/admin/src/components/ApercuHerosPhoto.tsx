@@ -60,7 +60,9 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     const h = boite.current?.querySelector<HTMLElement>('.hp[data-ea]');
     if (!h || !animation) return;
     // Aperçu en pause (budget des animations, AnimationsBudget.tsx) : pas de nouvelle lecture, l'en-tête reste à son état final
-    const jouer = () => { if (h.ownerDocument.documentElement.classList.contains(CLASSE_PAUSE)) return; h.classList.remove('ea-joue'); void h.offsetWidth; h.classList.add('ea-joue'); };
+    // Relecture : retirer la classe, forcer la mise en page, la reposer ; première lecture : la poser suffit (pas de mise en page
+    // forcée de toute l'iframe à chaque aperçu monté, ~0,1 s par aperçu : perf, 2026-10-09)
+    const jouer = () => { if (h.ownerDocument.documentElement.classList.contains(CLASSE_PAUSE)) return; if (h.classList.contains('ea-joue')) { h.classList.remove('ea-joue'); void h.offsetWidth; } h.classList.add('ea-joue'); };
     // Particules des empreintes (canvas) : même script que le site, exécuté sur la section de l'aperçu (il suit la classe ea-joue)
     if (animation === 'em-particules') new Function('h', CORPS_PARTICULES)(h);
     jouer();

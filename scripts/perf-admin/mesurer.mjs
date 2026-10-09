@@ -22,7 +22,7 @@ const opt = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/,
 const TOURS = Number(opt.tours ?? 5), TOURS_CLIENT = Number(opt['tours-client'] ?? 2), LATENCE = Number(opt.latence ?? 25);
 const PORT_SUPA = 54490 + Math.floor(Math.random() * 300), PORT_APP = 3390 + Math.floor(Math.random() * 300);
 const SUPA = `http://127.0.0.1:${PORT_SUPA}`, BASE = `http://localhost:${PORT_APP}`;
-const PAGES = ['/admin/atelier/studio', '/admin/atelier', '/admin/retours', '/admin/retours/duel?type=theme', '/admin/retours/recettes', '/admin/retours/kits', '/admin/retours/tri', '/admin/photos'];
+const PAGES = ['/admin/atelier/studio', '/admin/atelier', '/admin/retours', '/admin/retours/duel?type=theme', '/admin/retours/recettes', '/admin/retours/kits', '/admin/retours/tri', '/admin/photos', '/admin/degustation', '/chaine/preselection'];
 
 // ---- Copie ----
 const tmp = mkdtempSync(join(tmpdir(), 'perf-admin-'));
@@ -31,6 +31,8 @@ console.log(`▶ Copie dans ${tmp}`);
 for (const f of ['src', 'public', 'package.json', 'tsconfig.json', 'postcss.config.mjs']) cpSync(join(RACINE, 'apps', 'admin', f), join(app, f), { recursive: true });
 cpSync(join(RACINE, 'packages', 'core'), join(tmp, 'node_modules', '@plateforme', 'core'), { recursive: true, filter: (s) => !s.includes('node_modules') });
 cpSync(join(RACINE, 'retours'), join(tmp, 'retours'), { recursive: true });
+// Contenus (packs par profession) : importés par chemin relatif depuis l'admin
+cpSync(join(RACINE, 'packages', 'contenus'), join(tmp, 'packages', 'contenus'), { recursive: true, filter: (x) => !x.includes('node_modules') });
 mkdirSync(join(app, 'public', 'photos'), { recursive: true });
 cpSync(join(RACINE, 'apps', 'sites', 'public', 'photos'), join(app, 'public', 'photos'), { recursive: true, filter: (f) => !f.endsWith('.md') });
 writeFileSync(join(tmp, 'package.json'), JSON.stringify({ name: 'perf-admin', private: true, workspaces: ['apps/*'] }));
@@ -146,13 +148,39 @@ try {
         const action = async (nom, faire) => { const d = []; for (let i = 0; i < 5; i++) { const avant = await p.evaluate(() => performance.now()); await faire(); const x = await calme(p, avant, 1000, 120, 20000); d.push({ ms: x.fin - avant, bloque: x.l.reduce((s, [, y]) => s + y, 0) }); } m[nom] = { ms: Math.round(med(d.map((x) => x.ms))), bloqueMs: Math.round(med(d.map((x) => x.bloque))) }; };
         if (page.startsWith('/admin/atelier/studio')) await action('toutChanger', () => p.evaluate(() => [...document.querySelectorAll('button')].find((b) => /Tout changer/.test(b.textContent ?? ''))?.click()));
         if (page.startsWith('/admin/retours/duel')) await action('duelSuivant', async () => { await p.mouse.click(5, 5); await p.keyboard.press('ArrowLeft'); });
+        // Dégustation : « Commencer » → première carte prête (aperçus remplis, calme), puis cartes suivantes (2 choix ou une note)
+        if (page.startsWith('/admin/degustation')) {
+          const numero = () => p.evaluate(() => Number(/Carte (\d+) \//.exec(document.body.innerText)?.[1] ?? 0));
+          const prete = async (avant, n0) => {
+            const t = Date.now();
+            while (Date.now() - t < 30000) {
+              const ok = await p.evaluate((n) => { const m = /Carte (\d+) \//.exec(document.body.innerText); const c = document.querySelector('section[aria-label^="Grille"], section[aria-label*="uel"], section[aria-label*="ote"]'); return Boolean(c) && Number(m?.[1] ?? 0) > n && [...c.querySelectorAll('iframe')].every((f) => f.contentDocument?.body?.firstElementChild); }, n0);
+              if (ok) break;
+              await p.waitForTimeout(50);
+            }
+            const x = await calme(p, avant, 800, 120, 20000);
+            return Math.round(Math.max(x.fin, (await p.evaluate(() => performance.now())) - 800) - avant);
+          };
+          let avant = await p.evaluate(() => performance.now());
+          await p.evaluate(() => [...document.querySelectorAll('button')].find((x) => /Commencer la dégustation/.test(x.textContent ?? ''))?.click());
+          m.premiereCarteMs = await prete(avant, 0);
+          const d = [];
+          for (let i = 0; i < 4; i++) {
+            const n0 = await numero();
+            avant = await p.evaluate(() => performance.now());
+            const grille = await p.evaluate(() => { const bt = [...document.querySelectorAll('section[aria-label^="Grille"] li[data-carte] > button[aria-pressed]')]; if (bt.length) { bt[0].click(); setTimeout(() => bt[1]?.click(), 30); } return bt.length > 0; });
+            if (!grille) await p.keyboard.press('3');
+            d.push(await prete(avant, n0));
+          }
+          m.carteSuivanteMs = med(d);
+        }
         tours.push(m);
         await ctx.close();
       }
       const fin = { ...tours.at(-1), reposPct: tours[0].reposPct };
       for (const k of Object.keys(fin)) if (typeof fin[k] === 'number') fin[k] = med(tours.map((x) => x[k]).filter((v) => typeof v === 'number'));
       resultats.client[page] = fin;
-      console.log(`  ${page.padEnd(32)} interactif ${String(fin.interactifMs).padStart(6)} ms  TBT ${String(fin.tbtMs).padStart(5)} ms  JS ${fin.jsKo} Ko  iframes ${fin.iframes}${fin.reposPct !== undefined ? `  repos ${fin.reposPct} %` : ''}${fin.toutChanger ? `  « Tout changer » ${fin.toutChanger.ms} ms` : ''}${fin.duelSuivant ? `  duel suivant ${fin.duelSuivant.ms} ms` : ''}`);
+      console.log(`  ${page.padEnd(32)} interactif ${String(fin.interactifMs).padStart(6)} ms  TBT ${String(fin.tbtMs).padStart(5)} ms  JS ${fin.jsKo} Ko  iframes ${fin.iframes}${fin.reposPct !== undefined ? `  repos ${fin.reposPct} %` : ''}${fin.toutChanger ? `  « Tout changer » ${fin.toutChanger.ms} ms` : ''}${fin.duelSuivant ? `  duel suivant ${fin.duelSuivant.ms} ms` : ''}${fin.premiereCarteMs !== undefined ? `  1re carte ${fin.premiereCarteMs} ms, suivante ${fin.carteSuivanteMs} ms (validation auto 450 ms comprise)` : ''}`);
     }
     await navigateur.close();
   }
