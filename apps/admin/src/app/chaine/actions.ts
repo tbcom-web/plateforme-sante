@@ -136,7 +136,7 @@ export async function servirEcran(profil: string | null): Promise<Ecran> {
   const supabase = await createClient();
   const demo = demoDe(e.propositions.join(''));
   const { data, error } = await supabase.from('modeles_grilles').insert({ profession: profession.id, profil, profil_demo: demo || null, propositions: e.propositions, votant: moi.id }).select('id').maybeSingle();
-  if (error || !data) return { kind: 'fini', texte: MIGRATION_GRILLES, certitude: t.certitude };
+  if (error || !data) return { kind: 'fini', texte: `${MIGRATION_GRILLES}${error?.message ? ` (détail : ${error.message})` : ''}`, certitude: t.certitude };
   return { kind: 'grille', id: data.id as string, propositions: e.propositions, profilDemo: demo, ...base };
 }
 
@@ -151,7 +151,7 @@ export async function repondreGrille(id: string, meilleures: number[], pire: num
   const pi = pire !== null && Number.isInteger(pire) && pire >= 0 && pire < 6 && !m.includes(pire) ? pire : null;
   const supabase = await createClient();
   const { data, error } = await supabase.from('modeles_grilles').update({ meilleures: m, pire: pi, appareil: estAppareilModele(appareil) ? appareil : null }).eq('id', id).select('id');
-  if (error) return { ok: false, message: error.message?.includes('déjà') ? 'Grille déjà répondue.' : MIGRATION_GRILLES };
+  if (error) return { ok: false, message: error.message?.includes('déjà') ? 'Grille déjà répondue.' : `${MIGRATION_GRILLES} (détail : ${error.message})` };
   if (!data?.length) return { ok: false, message: 'Grille introuvable ou déjà répondue.' };
   return { ok: true, message: 'Choix enregistré.' };
 }
