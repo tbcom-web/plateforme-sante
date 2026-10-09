@@ -36,8 +36,10 @@ premier écran en mouvement réduit). Si le script échoue avant la fin : le dir
 À lire avant : `.claude/agents/juge-gout-paul.md` (grille et éliminatoires), `docs/gout-paul.md`,
 `docs/referentiels/pieges-illustration.md`, `docs/referentiels/` (anatomie et géométrie du pied validées).
 
-Regarde (outil Read sur les PNG) chaque page du jeu `sport-basket` en **1440 et 375 px**, et l'accueil des deux autres jeux en
-375 px. Pages : accueil, sujets (themes), liste des soins, fiches soins, cabinet, accès / contact, articles, FAQ (dans les fiches),
+Jeux = profils de démonstration (champ `jeux` de `retours/modeles-a-tester.json`, un par famille de thèmes ; le design est habillé
+des images du kit de chaque profil). Regarde (outil Read sur les PNG) chaque page du PREMIER jeu en **1440 et 375 px**, et chaque
+page des autres jeux en 375 px (images du kit : cohérentes avec le thème et l'activité du profil, jamais une autre activité). Mets
+le `jeu` dans chaque ticket. Pages : accueil, sujets (themes), liste des soins, fiches soins, cabinet, accès / contact, articles, FAQ (dans les fiches),
 mentions légales, 404. Liste de contrôle :
 
 | Point | Ce qui fait un ticket |

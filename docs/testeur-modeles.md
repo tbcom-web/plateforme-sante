@@ -33,7 +33,25 @@ En ligne : workflow **tester-modele** (`.github/workflows/tester-modele.yml`), �
 version, mode) ou depuis l'admin (`declencherTestModele`, `apps/admin/src/lib/tests-modeles.ts`, bouton `BoutonTesterModele`).
 **Seul Paul déclenche** un workflow ; le testeur ne publie jamais rien.
 
-## Jeux de données (fictifs : `apps/sites/src/data/sites/demo-podologue-lyon.ts`)
+## Jeux de données = profils de démonstration (chaîne : modèle = design sans images, 4b24e6b)
+
+Pour un modèle de la chaîne, les jeux viennent du champ `jeux` de `retours/modeles-a-tester.json` (un profil par famille de thèmes
+compatibles, `jeuxDuModele`), ou de `--jeux sport-basket,diabete,enfant` (input `jeux` du workflow, paramètre de
+`declencherTestModele`). Pour CHACUN (`jeuxTesteurDeProfils`, `testeur-modeles.ts`) :
+- thèmes et activités du profil (`PRINCIPAUX`, `SECONDAIRES`, `ACTIVITE`) ;
+- le design est habillé des images du **kit du profil** (`designDe` puis `habillerPourProfil` ; photos de la banque intégrée du thème
+  ou de l'activité du profil, jamais d'une autre activité : `photosDuKitProfil`) → `<sortie>/composition-<jeu>.json` ;
+- forme des données tournante : 1er jeu données maximales à 3 praticiens, 2e cabinet seul aux noms et villes longs, 3e données
+  minimales, puis on recommence.
+
+Verdict : chaque jeu a le sien (le pire de ses tickets, `verdictsParJeu`) et le verdict global est le pire de tous. Chaque ticket
+porte son `jeu` (champ facultatif du format commun) ; un même défaut vu dans plusieurs jeux reste UN ticket (« ×n, jeux : a, b »).
+
+Nouveau contrôle **activités** : dans un jeu d'activité, aucun visuel (photo, dessin, image de fond, photos de la composition du
+jeu) dont l'activité reconnue (`activitesReconnues`) n'est pas celle du profil : bloquant ; image d'un article de démonstration
+d'une autre activité (elle suit le sujet de l'article) : majeur, signalé hors modèle.
+
+### Jeux historiques (sans liste de jeux : recette avec ses propres photos, modèle intégré)
 
 | Jeu | Variables | Ce qu'il éprouve |
 |---|---|---|
@@ -120,6 +138,12 @@ Bloc `schedule` du workflow, **commenté par défaut** (lundi 4 h 23 UTC) : il t
 
 ## Durée
 
+Profils (2026-10-09, Windows, autres agents actifs, 6 onglets en parallèle, toutes les largeurs dans une même file) : **50 à
+110 s par jeu** (construction ≈ 25-40 s, en recouvrement avec les contrôles du jeu précédent ; le 1er jeu est le plus long :
+captures 375 + 1440 px, axe aux 2 largeurs, performance). 3 jeux : **3,3 à 3,5 min** ; 7 jeux (toutes les familles de la
+podologie) : **6,1 min**. Au-delà de 7 jeux, compter ~1 min par jeu de plus. Durée par jeu dans `resultat.jeux[].dureeMs`.
+
+Jeux historiques : 
 Objectif < 10 min par modèle. Mesuré en local le 2026-10-09 (Windows, d'autres agents construisant en même temps) : **4,2 à 4,7 min**
 par passage complet (3 constructions ≈ 30-40 s chacune, en recouvrement avec les contrôles ; ~260 rendus page × largeur ;
 WebKit ≈ 1 min 45 en parallèle ; performance ≈ 30 s).
@@ -144,9 +168,12 @@ Résultats du 2026-10-09 (`retours/tests-modeles/test-*.json`) :
 
 | Composition | Verdict | Durée | Tickets |
 |---|---|---|---|
-| saine v1 | **orange** | 4,2 min | 0 bloquant, 4 majeurs, 37 mineurs : 4 défauts de la PLATEFORME, pas du modèle (logo : nom accessible ≠ texte visible, axe « label-content-name-mismatch » ; barre mobile du gabarit sans « Itinéraire » ; photo d'article de démo `sport-foulee-herbe` notée ≤ 2 ★ ; 1 écart de `controle:charte` en cours chez un autre chantier) |
-| cassée v1 | **rouge** | 4,4 min | 60 bloquants : contraste 1,15:1 (couleur claire), débordement à 1024 px (nom « Delacroix-Montgolfier-Saint-Exupéry-Vandenbroucke »), photo refusée `soins-pied-tenu` (composition et rendu), lien mort `/tarifs-detailles` ; majeur : ancre `#horaires-inexistants` |
+| saine v1 (jeux historiques) | **orange** | 4,2 min | 0 bloquant, 4 majeurs, 37 mineurs : 4 défauts de la PLATEFORME, pas du modèle (logo : nom accessible ≠ texte visible, axe « label-content-name-mismatch » ; barre mobile du gabarit sans « Itinéraire » ; photo d'article de démo `sport-foulee-herbe` notée ≤ 2 ★ ; 1 écart de `controle:charte` en cours chez un autre chantier) |
+| cassée v1 (jeux historiques) | **rouge** | 4,4 min | 60 bloquants : contraste 1,15:1 (couleur claire), débordement à 1024 px (nom « Delacroix-Montgolfier-Saint-Exupéry-Vandenbroucke »), photo refusée `soins-pied-tenu` (composition et rendu), lien mort `/tarifs-detailles` ; majeur : ancre `#horaires-inexistants` |
 | re-check (saine comme v2 de la cassée) | orange | 4,7 min | 63 corrigés (dont 56 avec vignettes avant / après), 40 toujours ouverts, 1 nouveau |
+| saine, jeux sport-basket, diabete, enfant | **orange** (basket orange, diabète et enfant verts) | 3,3 min | 1 majeur : image de l'article de démo « course » dans le jeu basket (contenu, hors modèle) ; les défauts plateforme de la 1re passe sont corrigés (1466c02) |
+| cassée, mêmes jeux | **rouge** (3 jeux rouges) | 3,5 min | 61 bloquants dont la photo `sport-course` de la composition dans le jeu basket (contrôle activités) |
+| saine, 7 jeux (toutes les familles) | rouge avant la règle « article », orange après | 6,1 min | 6 jeux verts |
 
 Limite connue : la vignette « après » reprend les MÊMES coordonnées ; si la mise en page a bougé entre les versions, la zone peut
 être décalée (la vignette « avant » reste juste).

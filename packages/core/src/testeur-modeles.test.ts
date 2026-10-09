@@ -7,6 +7,7 @@ import {
   pageModeleDeChemin, ratioContraste, regleValidationModele, seuilContraste, verdictControle, verdictTest, verrouTesteur, type ResultatTesteur,
 } from './testeur-modeles';
 import { normaliserResultatTest } from './chaine-modeles-format';
+import { jeuxTesteurDeProfils, visuelsAutreActivite, photosDuKitProfil, verdictsParJeu } from './testeur-modeles';
 
 const ticket = (o: Partial<Parameters<typeof creerTicket>[0]> = {}) =>
   creerTicket({ modele: 'm1', version: 2, controle: 'contraste', chemin: '/soins/bilan', largeur: 375, gravite: 'majeur', commentaire: 'Texte peu lisible', suggestion: 'Foncer le texte', ...o });
@@ -45,6 +46,7 @@ test('ticket : format commun, zone normalisée, empreinte stable, données masqu
   assert.equal(r?.tickets[0].empreinte, t.empreinte);
   assert.equal(r?.tickets[0].suggestion, 'Foncer le texte');
   assert.equal(r?.tickets[0].chemin, '/soins/bilan');
+  assert.equal(normaliserResultatTest({ modele: 'm1', version: 2, verdict: 'orange', controles: [], tickets: [{ ...t, jeu: 'sport-basket' }], le: '' })?.tickets[0].jeu, 'sport-basket');
 });
 
 test('verdicts : bloquant → rouge, majeur ou non mesuré → orange, mineur → vert', () => {
@@ -212,4 +214,30 @@ test('verrou testeur de la validation finale', () => {
   assert.equal(verrouTesteur({ versionCourante: 2, test: { version: 2, verdict: 'orange', tickets: [] } }).ok, false);
   assert.equal(verrouTesteur({ versionCourante: 2, test: { version: 2, verdict: 'orange', tickets: [] }, justification: 'Logo du cabinet imposé par le praticien.' }).ok, true);
   assert.equal(verrouTesteur({ versionCourante: 2, test: null }).ok, false);
+});
+
+test('jeux = profils de démonstration : thèmes, activités, forme des données tournante', () => {
+  const j = jeuxTesteurDeProfils(['sport-basket', 'diabete', 'inconnu', 'enfant', 'generaliste']);
+  assert.deepEqual(j.map((x) => [x.id, x.forme]), [['sport-basket', 'max'], ['diabete', 'noms-longs'], ['enfant', 'minimal'], ['generaliste', 'max']]);
+  assert.equal(j[0].env.ACTIVITE, 'basket');
+  assert.equal(j[0].env.PRINCIPAUX, 'sport');
+  assert.equal(j[0].env.PRATICIENS, '3');
+  assert.equal(j[1].env.CAS, 'solo,noms-longs');
+  assert.equal(j[1].env.ACTIVITE, undefined);
+  assert.equal(j[3].env.PRIORITES, 'aucune');
+});
+
+test('aucun visuel d’une autre activité dans un jeu d’activité', () => {
+  const urls = ['/photos/sport-tennis-court.webp', '/photos/sport-basket-parquet.webp', '/photos/generale-pieds-nus.webp'];
+  const autres = visuelsAutreActivite(urls, ['basket']);
+  assert.deepEqual(autres.map((x) => x.url), ['/photos/sport-tennis-court.webp']);
+  assert.deepEqual(autres[0].activites, ['tennis']);
+  assert.deepEqual(visuelsAutreActivite(urls, []), []);
+  const kit = photosDuKitProfil(urls.map((url) => ({ url, sujets: ['sport'], origine: 'integree' as const })), { activites: ['basket'] });
+  assert.deepEqual(kit.map((x) => x.url), ['/photos/sport-basket-parquet.webp', '/photos/generale-pieds-nus.webp']);
+});
+
+test('verdict par jeu : le pire de ses tickets', () => {
+  const v = verdictsParJeu([{ jeu: 'a', gravite: 'mineur' }, { jeu: 'b', gravite: 'bloquant' }, { jeu: 'b', gravite: 'majeur' }], ['a', 'b', 'c']);
+  assert.deepEqual(v, { a: 'vert', b: 'rouge', c: 'vert' });
 });

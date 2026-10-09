@@ -89,6 +89,8 @@ export type TicketModele = {
   suggestion?: string;
   /** technique (mesuré) ou goût (vérification visuelle) */
   categorie?: 'technique' | 'gout';
+  /** Jeu de démonstration (profil, ex. sport-basket) où le défaut apparaît */
+  jeu?: string | null;
   /** Chemin exact de la page (404, mentions…) et largeur de rendu (px) */
   chemin?: string;
   largeur?: number | null;
@@ -166,6 +168,7 @@ function champsTesteur(t: Record<string, unknown>): Partial<TicketModele> {
   if (texte(t.suggestion, 400)) c.suggestion = texte(t.suggestion, 400);
   if (t.categorie === 'technique' || t.categorie === 'gout') c.categorie = t.categorie;
   if (typeof t.chemin === 'string' && /^\/[\w./-]{0,200}$/.test(t.chemin)) c.chemin = t.chemin;
+  if (typeof t.jeu === 'string' && /^[a-z0-9~.+_-]{1,80}$/.test(t.jeu)) c.jeu = t.jeu;
   if (typeof t.largeur === 'number' && t.largeur > 0 && t.largeur < 5000) c.largeur = t.largeur;
   if (texte(t.mesure, 120)) c.mesure = texte(t.mesure, 120);
   if (texte(t.seuil, 120)) c.seuil = texte(t.seuil, 120);

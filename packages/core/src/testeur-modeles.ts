@@ -18,6 +18,9 @@ import {
 } from './chaine-modeles-format';
 import type { Rvb } from './couleurs';
 import type { StatutModele } from './chaine-modeles';
+import { profilsDePratique, activitesReconnues, type ProfilPratique } from './profils';
+import { pratiqueDe } from './pratiques';
+import type { PhotoBanque } from './recettes';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Seuils (documentés dans docs/testeur-modeles.md)
@@ -88,6 +91,7 @@ export const CONTROLES_TESTEUR = [
   { id: 'console', libelle: 'Console sans erreur JS', etiquette: 'technique:console', categorie: 'technique' },
   { id: 'animations', libelle: 'Animations : mouvement réduit respecté, image fixe correcte', etiquette: 'technique:rendu', categorie: 'technique' },
   { id: 'tiers', libelle: 'Aucune requête vers un service tiers', etiquette: 'technique:rendu', categorie: 'technique' },
+  { id: 'activites', libelle: 'Aucun visuel d’une autre activité (jeux d’activité)', etiquette: 'technique:image', categorie: 'technique' },
   // Vérification visuelle (agent Claude testeur-modeles)
   { id: 'visuel', libelle: 'Vérification visuelle (grille du goût de Paul)', etiquette: 'a-revoir', categorie: 'gout' },
 ] as const satisfies readonly { id: string; libelle: string; etiquette: string; categorie: CategorieTicket }[];
@@ -151,7 +155,8 @@ export type ResultatTesteur = Omit<ResultatTestModele, 'controles' | 'tickets'> 
   source: 'script' | 'claude' | 'script+claude';
   controles: ControleTesteur[];
   tickets: TicketTesteur[];
-  jeux: { id: string; libelle: string }[];
+  /** Jeux de démonstration (profils) : verdict propre (le pire de ses tickets) et durée de construction + contrôles */
+  jeux: { id: string; libelle: string; verdict?: VerdictTest; dureeMs?: number | null; activites?: string[] }[];
   pages: string[];
   largeurs: number[];
   /** Captures (chemins relatifs au dossier de sortie du passage ; artefacts du workflow) */
@@ -651,4 +656,61 @@ export function aRetester(dernierLe: string | null | undefined, maintenant: Date
 export function verrouTesteur(p: { versionCourante: number; test: Parameters<typeof regleValidationModele>[0]['dernierTest']; justification?: string | null }): { id: 'testeur'; libelle: string; ok: boolean; detail: string } {
   const d = regleValidationModele({ versionCourante: p.versionCourante, dernierTest: p.test, justification: p.justification });
   return { id: 'testeur', libelle: 'Testeur au vert sur la version (orange : justification de Paul)', ok: d.autorise, detail: p.test ? `v${p.test.version} : ${p.test.verdict} — ${d.raison}` : d.raison };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Jeux de démonstration = profils (chaîne : un profil par famille de thèmes compatibles, retours/modeles-a-tester.json « jeux »)
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Formes de données tournantes d'un jeu à l'autre : maximales à 3 praticiens, cabinet seul aux noms longs, données minimales */
+export const FORMES_DONNEES_JEU = [
+  { id: 'max', libelle: '3 praticiens, données maximales', env: { PRATICIENS: '3' } },
+  { id: 'noms-longs', libelle: 'cabinet seul, noms et villes longs', env: { CAS: 'solo,noms-longs' } },
+  { id: 'minimal', libelle: 'cabinet seul, données minimales', env: { CAS: 'solo,minimal' } },
+] as const;
+
+export type JeuTesteur = { id: string; libelle: string; principal: string | null; secondaires: string[]; activites: string[]; forme: (typeof FORMES_DONNEES_JEU)[number]['id']; env: Record<string, string> };
+
+/**
+ * Jeux du testeur à partir d'identifiants de profils de démonstration (profils.ts) : thèmes et activités du profil, forme des données
+ * tournante (le 1er jeu a les données maximales). Profil inconnu ignoré.
+ */
+export function jeuxTesteurDeProfils(ids: readonly string[], profession = 'podologue'): JeuTesteur[] {
+  const profils = profilsDePratique(profession);
+  const connus = ids.map((id) => profils.find((x) => x.id === id)).filter((p): p is ProfilPratique => Boolean(p));
+  return connus.map((p, i) => {
+    const forme = FORMES_DONNEES_JEU[i % FORMES_DONNEES_JEU.length];
+    const env: Record<string, string> = { ...forme.env };
+    if (p.principal) { env.PRINCIPAUX = p.principal; env.SECONDAIRES = p.secondaires.join(','); } else env.PRIORITES = 'aucune';
+    if (p.activites.length) env.ACTIVITE = p.activites.join(',');
+    return { id: p.id, libelle: `${p.court} · ${forme.libelle}`, principal: p.principal, secondaires: [...p.secondaires], activites: [...p.activites], forme: forme.id, env };
+  });
+}
+
+/** Activités reconnues dans une image (URL ou clé) pour une profession */
+export const activitesDeLImage = (u: string, profession = 'podologue') => activitesReconnues({ cle: u, url: u }, pratiqueDe(profession));
+
+/**
+ * Visuels d'une AUTRE activité dans un jeu d'activité : image dont une activité reconnue n'est pas celle du profil (jamais une photo de
+ * tennis chez « Sport · course »). Jeu sans activité : rien à signaler ici (le kit générique exclut déjà toute activité).
+ */
+export function visuelsAutreActivite(urls: readonly string[], activitesProfil: readonly string[], profession = 'podologue'): { url: string; activites: string[] }[] {
+  if (!activitesProfil.length) return [];
+  const vus = new Set<string>();
+  return urls.flatMap((u) => {
+    if (vus.has(u)) return [];
+    vus.add(u);
+    const autres = activitesDeLImage(u, profession).filter((a) => !activitesProfil.includes(a));
+    return autres.length ? [{ url: u, activites: autres }] : [];
+  });
+}
+
+/** Photos du kit d'un profil dans une banque : activité du profil ou aucune activité reconnue (jamais une autre activité) */
+export function photosDuKitProfil(banque: readonly PhotoBanque[], p: Pick<ProfilPratique, 'activites'>, profession = 'podologue'): PhotoBanque[] {
+  return banque.filter((x) => activitesDeLImage(x.url, profession).every((a) => p.activites.includes(a)));
+}
+
+/** Verdict par jeu (le pire de ses tickets) et verdict agrégé : le pire l'emporte */
+export function verdictsParJeu(tickets: readonly Pick<TicketTesteur, 'jeu' | 'gravite'>[], jeux: readonly string[]): Record<string, VerdictTest> {
+  return Object.fromEntries(jeux.map((j) => [j, verdictControle(tickets.filter((t) => t.jeu === j))]));
 }

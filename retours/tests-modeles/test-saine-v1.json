@@ -25,10 +25,10 @@
    "page": null,
    "appareil": null,
    "verdict": "vert",
-   "detail": "260 rendus page × largeur",
+   "detail": "235 rendus page × largeur",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "260 rendus page × largeur",
+   "mesure": "235 rendus page × largeur",
    "seuil": "aucun débordement (360, 375, 768, 1024, 1440 px)",
    "tickets": 0
   },
@@ -64,10 +64,10 @@
    "page": null,
    "appareil": null,
    "verdict": "vert",
-   "detail": "5 715 textes mesurés sur le rendu, 0 sous AA",
+   "detail": "5 156 textes mesurés sur le rendu, 0 sous AA",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "5 715 textes mesurés sur le rendu, 0 sous AA",
+   "mesure": "5 156 textes mesurés sur le rendu, 0 sous AA",
    "seuil": "≥ 4,5:1 (grand texte ≥ 3:1)",
    "tickets": 0
   },
@@ -77,10 +77,10 @@
    "page": null,
    "appareil": null,
    "verdict": "vert",
-   "detail": "2 764 cibles mesurées (360 et 375 px)",
+   "detail": "2 546 cibles mesurées (360 et 375 px)",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "2 764 cibles mesurées (360 et 375 px)",
+   "mesure": "2 546 cibles mesurées (360 et 375 px)",
    "seuil": "≥ 44 px (échec < 24 px)",
    "tickets": 8
   },
@@ -90,10 +90,10 @@
    "page": null,
    "appareil": null,
    "verdict": "vert",
-   "detail": "1 549 liens, 0 page(s) introuvable(s), 0 ancre(s) absente(s)",
+   "detail": "1 384 liens, 0 page(s) introuvable(s), 0 ancre(s) absente(s)",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "1 549 liens, 0 page(s) introuvable(s), 0 ancre(s) absente(s)",
+   "mesure": "1 384 liens, 0 page(s) introuvable(s), 0 ancre(s) absente(s)",
    "seuil": "aucun lien interne cassé",
    "tickets": 0
   },
@@ -115,13 +115,13 @@
    "libelle": "Barre d’actions mobile (appel, itinéraire, RDV)",
    "page": null,
    "appareil": null,
-   "verdict": "orange",
+   "verdict": "vert",
    "detail": "3 essai(s) (375 px)",
    "valeur": null,
    "categorie": "technique",
    "mesure": "3 essai(s) (375 px)",
    "seuil": "appel, itinéraire, RDV, ≥ 44 px",
-   "tickets": 1
+   "tickets": 0
   },
   {
    "id": "formulaires",
@@ -141,13 +141,13 @@
    "libelle": "Images (chargées, dimensions, alt, poids, aucune démo ni refusée)",
    "page": null,
    "appareil": null,
-   "verdict": "orange",
+   "verdict": "vert",
    "detail": "36 images rendues, 28 fichiers pesés, 28 éléments de composition vérifiés",
    "valeur": null,
    "categorie": "technique",
    "mesure": "36 images rendues, 28 fichiers pesés, 28 éléments de composition vérifiés",
    "seuil": "chargées, alt, dimensions, ≤ 293 Ko, ni démo ni refusée",
-   "tickets": 1
+   "tickets": 0
   },
   {
    "id": "polices",
@@ -155,10 +155,10 @@
    "page": null,
    "appareil": null,
    "verdict": "vert",
-   "detail": "260 familles vérifiées",
+   "detail": "235 familles vérifiées",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "260 familles vérifiées",
+   "mesure": "235 familles vérifiées",
    "seuil": "chargées, auto-hébergées",
    "tickets": 0
   },
@@ -167,13 +167,13 @@
    "libelle": "Accessibilité (axe-core)",
    "page": null,
    "appareil": null,
-   "verdict": "orange",
-   "detail": "73 pages passées à axe-core",
+   "verdict": "vert",
+   "detail": "65 pages passées à axe-core",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "73 pages passées à axe-core",
+   "mesure": "65 pages passées à axe-core",
    "seuil": "aucune violation axe WCAG 2.2 AA (critique = bloquant)",
-   "tickets": 1
+   "tickets": 0
   },
   {
    "id": "seo",
@@ -181,12 +181,12 @@
    "page": null,
    "appareil": null,
    "verdict": "vert",
-   "detail": "52 pages",
+   "detail": "47 pages",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "52 pages",
+   "mesure": "47 pages",
    "seuil": "title, description, canonical, 1 H1, JSON-LD valide",
-   "tickets": 29
+   "tickets": 23
   },
   {
    "id": "agents",
@@ -200,21 +200,21 @@
    "mesure": "score 100/100",
    "seuil": "score ≥ 90/100",
    "tickets": 0,
-   "dureeMs": 827
+   "dureeMs": 942
   },
   {
    "id": "charte",
    "libelle": "Charte graphique (controle:charte)",
    "page": null,
    "appareil": null,
-   "verdict": "orange",
-   "detail": "1 écart(s)",
+   "verdict": "vert",
+   "detail": "conforme",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "1 écart(s)",
+   "mesure": "conforme",
    "seuil": "controle:charte sans écart",
-   "tickets": 1,
-   "dureeMs": 11388
+   "tickets": 0,
+   "dureeMs": 4839
   },
   {
    "id": "webkit",
@@ -228,7 +228,7 @@
    "mesure": "5/5 pages conformes",
    "seuil": "≤ 4 % de pixels par zone",
    "tickets": 0,
-   "dureeMs": 85908
+   "dureeMs": 80375
   },
   {
    "id": "performance",
@@ -236,13 +236,13 @@
    "page": null,
    "appareil": null,
    "verdict": "vert",
-   "detail": "/ (sport-basket) LCP 1.53 s · CLS 0.000 · TBT 0 ms · 59 Ko ; /soins/bilan-podologique (sport-basket) LCP 0.93 s · CLS 0.000 · TBT 0 ms · 52 Ko ; / (enfant-minimal) LCP 1.02 s · CLS 0.000 · TBT 0 ms · 61 Ko",
+   "detail": "/ (sport-basket) LCP 1.53 s · CLS 0.000 · TBT 0 ms · 58 Ko ; /soins/bilan-podologique (sport-basket) LCP 0.99 s · CLS 0.000 · TBT 0 ms · 52 Ko ; / (enfant) LCP 1.04 s · CLS 0.000 · TBT 0 ms · 61 Ko",
    "valeur": null,
    "categorie": "technique",
-   "mesure": "/ (sport-basket) LCP 1.53 s · CLS 0.000 · TBT 0 ms · 59 Ko ; /soins/bilan-podologique (sport-basket) LCP 0.93 s · CLS 0.000 · TBT 0 ms · 52 Ko ; / (enfant-minimal) LCP 1.02 s · CLS 0.000 · TBT 0 ms · 61 Ko",
+   "mesure": "/ (sport-basket) LCP 1.53 s · CLS 0.000 · TBT 0 ms · 58 Ko ; /soins/bilan-podologique (sport-basket) LCP 0.99 s · CLS 0.000 · TBT 0 ms · 52 Ko ; / (enfant) LCP 1.04 s · CLS 0.000 · TBT 0 ms · 61 Ko",
    "seuil": "LCP ≤ 2.5 s, CLS ≤ 0.05, TBT ≤ 200 ms, ≤ 977 Ko",
    "tickets": 0,
-   "dureeMs": 27141
+   "dureeMs": 27297
   },
   {
    "id": "console",
@@ -282,9 +282,50 @@
    "mesure": "requêtes réseau de toutes les pages",
    "seuil": "aucune requête tierce",
    "tickets": 0
+  },
+  {
+   "id": "activites",
+   "libelle": "Aucun visuel d’une autre activité (jeux d’activité)",
+   "page": null,
+   "appareil": null,
+   "verdict": "orange",
+   "detail": "22 visuels vérifiés dans les jeux d’activité",
+   "valeur": null,
+   "categorie": "technique",
+   "mesure": "22 visuels vérifiés dans les jeux d’activité",
+   "seuil": "aucun visuel d’une autre activité (bloquant)",
+   "tickets": 1
   }
  ],
  "tickets": [
+  {
+   "numero": 0,
+   "modele": "test-saine",
+   "page": "article",
+   "appareil": "mobile",
+   "zone": null,
+   "element": "/photos/sport-course.webp",
+   "etiquette": "technique:image",
+   "commentaire": "Image d’article d’une autre activité (course) dans le jeu « Sport · basket · 3 praticiens, données maximales » : /photos/sport-course.webp (contenu de l’article, hors modèle)",
+   "origine": "testeur",
+   "gravite": "majeur",
+   "auteur": "testeur",
+   "statut": "ouvert",
+   "versionOuverture": 1,
+   "versionCorrection": null,
+   "controle": "activites",
+   "creeLe": "2026-10-09T07:59:09.607Z",
+   "chemin": "/actualites/preparer-ses-pieds-course-a-pied",
+   "largeur": null,
+   "jeu": "sport-basket",
+   "zonePx": null,
+   "categorie": "technique",
+   "mesure": null,
+   "seuil": null,
+   "suggestion": "Contenu de démonstration : choisir des articles de l’activité du profil, ou accepter (l’image suit le sujet de l’article).",
+   "vignette": null,
+   "empreinte": "130705e7"
+  },
   {
    "numero": 0,
    "modele": "test-saine",
@@ -293,21 +334,21 @@
    "zone": {
     "forme": "rect",
     "x": 0.042666666666666665,
-    "y": 0.0028169014084507044,
+    "y": 0.0028763183125599234,
     "l": 0.768,
-    "h": 0.01971830985915493
+    "h": 0.020134228187919462
    },
-   "element": ".logo",
+   "element": "header a.logo.logo--horizontale",
    "etiquette": "technique:accessibilite",
-   "commentaire": "Elements must have their visible text as part of their accessible name — .logo (×73)",
+   "commentaire": "Cible tactile trop petite : header a.logo.logo--horizontale « Cabinet de podologie Pédicures-podologues · Lyon » (288 × 42 px) (×29, jeux : sport-basket, enfant)",
    "origine": "testeur",
-   "gravite": "majeur",
+   "gravite": "mineur",
    "auteur": "testeur",
    "statut": "ouvert",
    "versionOuverture": 1,
    "versionCorrection": null,
-   "controle": "accessibilite",
-   "creeLe": "2026-10-08T23:54:17.944Z",
+   "controle": "cibles-tactiles",
+   "creeLe": "2026-10-09T07:59:10.682Z",
    "chemin": "/404",
    "largeur": 375,
    "jeu": "sport-basket",
@@ -318,100 +359,128 @@
     "h": 42
    },
    "categorie": "technique",
-   "mesure": "axe label-content-name-mismatch (serious)",
-   "seuil": "aucune violation WCAG 2.2 AA",
-   "suggestion": "Corriger selon la règle axe « label-content-name-mismatch » (https://dequeuniversity.com/rules/axe/4.10/label-content-name-mismatch).",
+   "mesure": "288 × 42 px",
+   "seuil": "≥ 44 px",
+   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
    "vignette": "tests-modeles/test-saine-v1/t-0001.jpg",
-   "empreinte": "0115680f"
+   "empreinte": "02d0e142"
   },
   {
    "numero": 0,
    "modele": "test-saine",
    "page": "accueil",
    "appareil": "mobile",
-   "zone": null,
-   "element": null,
-   "etiquette": "technique:rendu",
-   "commentaire": "Barre d’actions sans itinéraire (×3)",
+   "zone": {
+    "forme": "rect",
+    "x": 0.042666666666666665,
+    "y": 0.48322147651006714,
+    "l": 0.33066666666666666,
+    "h": 0.011505273250239693
+   },
+   "element": "footer a",
+   "etiquette": "technique:accessibilite",
+   "commentaire": "Cible tactile trop petite : footer a « [téléphone] » (124 × 24 px) (×47, jeux : sport-basket, diabete, enfant)",
    "origine": "testeur",
-   "gravite": "majeur",
+   "gravite": "mineur",
    "auteur": "testeur",
    "statut": "ouvert",
    "versionOuverture": 1,
    "versionCorrection": null,
-   "controle": "barre-actions",
-   "creeLe": "2026-10-08T23:55:39.675Z",
-   "chemin": "/",
+   "controle": "cibles-tactiles",
+   "creeLe": "2026-10-09T07:59:10.682Z",
+   "chemin": "/404",
    "largeur": 375,
    "jeu": "sport-basket",
    "zonePx": {
-    "x": 0,
-    "y": 740,
-    "l": 375,
-    "h": 60
+    "x": 16,
+    "y": 1008,
+    "l": 124,
+    "h": 24
    },
    "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Ajouter « Itinéraire » (lien carte).",
+   "mesure": "124 × 24 px",
+   "seuil": "≥ 44 px",
+   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
    "vignette": "tests-modeles/test-saine-v1/t-0002.jpg",
-   "empreinte": "8476be4b"
+   "empreinte": "59100d5f"
   },
   {
    "numero": 0,
    "modele": "test-saine",
-   "page": "accueil",
+   "page": "fiche",
    "appareil": "mobile",
-   "zone": null,
-   "element": null,
-   "etiquette": "technique:rendu",
-   "commentaire": "Charte : 2 couleur(s) littérale(s) hors charte :",
+   "zone": {
+    "forme": "rect",
+    "x": 0.24266666666666667,
+    "y": 0.02744886975242196,
+    "l": 0.112,
+    "h": 0.007893792608539648
+   },
+   "element": "nav a",
+   "etiquette": "technique:accessibilite",
+   "commentaire": "Cible tactile trop petite : nav a « Soins » (42 × 44 px) (×19, jeux : sport-basket, diabete, enfant)",
    "origine": "testeur",
-   "gravite": "majeur",
+   "gravite": "mineur",
    "auteur": "testeur",
    "statut": "ouvert",
    "versionOuverture": 1,
    "versionCorrection": null,
-   "controle": "charte",
-   "creeLe": "2026-10-08T23:54:15.263Z",
-   "chemin": "/",
-   "largeur": null,
+   "controle": "cibles-tactiles",
+   "creeLe": "2026-10-09T07:59:21.951Z",
+   "chemin": "/soins/bilan-podologique",
+   "largeur": 375,
    "jeu": "sport-basket",
-   "zonePx": null,
+   "zonePx": {
+    "x": 91,
+    "y": 153,
+    "l": 42,
+    "h": 44
+   },
    "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "npm run controle:charte -w apps/sites (docs/charte-graphique.md).",
-   "vignette": null,
-   "empreinte": "6f7cfa3f"
+   "mesure": "42 × 44 px",
+   "seuil": "≥ 44 px",
+   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
+   "vignette": "tests-modeles/test-saine-v1/t-0003.jpg",
+   "empreinte": "5d32f41d"
   },
   {
    "numero": 0,
    "modele": "test-saine",
-   "page": "article",
+   "page": "fiche",
    "appareil": "mobile",
-   "zone": null,
-   "element": "img[src=\"/photos/sport-foulee-herbe.webp\"]",
-   "etiquette": "technique:image-cassee",
-   "commentaire": "Image refusée (≤ 2 ★, retirée ou à retravailler) venue du contenu de démonstration ou d’une banque partagée, hors modèle : photo:sport-foulee-herbe (×9)",
+   "zone": {
+    "forme": "rect",
+    "x": 0.042666666666666665,
+    "y": 0.42500897021887335,
+    "l": 0.5066666666666667,
+    "h": 0.005023322569070686
+   },
+   "element": "main#contenu a",
+   "etiquette": "technique:accessibilite",
+   "commentaire": "Cible tactile trop petite : main#contenu a « Matériel du cabinet » (190 × 28 px) (×12, jeux : sport-basket, diabete)",
    "origine": "testeur",
-   "gravite": "majeur",
+   "gravite": "mineur",
    "auteur": "testeur",
    "statut": "ouvert",
    "versionOuverture": 1,
    "versionCorrection": null,
-   "controle": "images",
-   "creeLe": "2026-10-08T23:54:03.822Z",
-   "chemin": "/actualites/preparer-ses-pieds-course-a-pied",
-   "largeur": null,
+   "controle": "cibles-tactiles",
+   "creeLe": "2026-10-09T07:59:21.952Z",
+   "chemin": "/soins/bilan-podologique",
+   "largeur": 375,
    "jeu": "sport-basket",
-   "zonePx": null,
+   "zonePx": {
+    "x": 16,
+    "y": 2369,
+    "l": 190,
+    "h": 28
+   },
    "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Retirer l’image de la banque ou du contenu partagé (défaut de la plateforme, pas du modèle).",
-   "vignette": null,
-   "empreinte": "f803b82b"
+   "mesure": "190 × 28 px",
+   "seuil": "≥ 44 px",
+   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
+   "vignette": "tests-modeles/test-saine-v1/t-0004.jpg",
+   "empreinte": "09bd4c6c"
   },
   {
    "numero": 0,
@@ -421,13 +490,13 @@
    "zone": {
     "forme": "rect",
     "x": 0.044444444444444446,
-    "y": 0.002758620689655172,
+    "y": 0.0028155795401220087,
     "l": 0.8,
-    "h": 0.019310344827586208
+    "h": 0.019709056780854058
    },
    "element": "header a.logo.logo--horizontale",
    "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : header a.logo.logo--horizontale « Cabinet de podologie Pédicures-podologues · Lyon » (288 × 42 px) (×32)",
+   "commentaire": "Cible tactile trop petite : header a.logo.logo--horizontale « Cabinet de podologie Pédicures-podologues · Lyon » (288 × 42 px) (×29, jeux : sport-basket, enfant)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -435,7 +504,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:05.075Z",
+   "creeLe": "2026-10-09T08:00:15.572Z",
    "chemin": "/404",
    "largeur": 360,
    "jeu": "sport-basket",
@@ -460,13 +529,13 @@
    "zone": {
     "forme": "rect",
     "x": 0.044444444444444446,
-    "y": 0.4574712643678161,
+    "y": 0.4669169404035664,
     "l": 0.34444444444444444,
-    "h": 0.011034482758620689
+    "h": 0.011262318160488035
    },
    "element": "footer a",
    "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : footer a « [téléphone] » (124 × 24 px) (×52)",
+   "commentaire": "Cible tactile trop petite : footer a « [téléphone] » (124 × 24 px) (×47, jeux : sport-basket, diabete, enfant)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -474,7 +543,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:05.075Z",
+   "creeLe": "2026-10-09T08:00:15.572Z",
    "chemin": "/404",
    "largeur": 360,
    "jeu": "sport-basket",
@@ -499,13 +568,13 @@
    "zone": {
     "forme": "rect",
     "x": 0.25277777777777777,
-    "y": 0.02356020942408377,
+    "y": 0.02675292883371219,
     "l": 0.11666666666666667,
-    "h": 0.006775485063135201
+    "h": 0.007693652736492394
    },
    "element": "nav a",
    "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : nav a « Soins » (42 × 44 px) (×19)",
+   "commentaire": "Cible tactile trop petite : nav a « Soins » (42 × 44 px) (×19, jeux : sport-basket, diabete, enfant)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -513,8 +582,8 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:08.318Z",
-   "chemin": "/soins/cors-durillons",
+   "creeLe": "2026-10-09T08:00:17.413Z",
+   "chemin": "/soins/bilan-podologique",
    "largeur": 360,
    "jeu": "sport-basket",
    "zonePx": {
@@ -538,13 +607,13 @@
    "zone": {
     "forme": "rect",
     "x": 0.044444444444444446,
-    "y": 0.36280834914611004,
+    "y": 0.4294457072914845,
     "l": 0.5277777777777778,
-    "h": 0.005313092979127135
+    "h": 0.004895960832313341
    },
    "element": "main#contenu a",
    "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : main#contenu a « Matériel du cabinet » (190 × 28 px) (×12)",
+   "commentaire": "Cible tactile trop petite : main#contenu a « Matériel du cabinet » (190 × 28 px) (×12, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -552,13 +621,13 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:09.153Z",
-   "chemin": "/soins/pied-diabetique",
+   "creeLe": "2026-10-09T08:00:17.413Z",
+   "chemin": "/soins/bilan-podologique",
    "largeur": 360,
    "jeu": "sport-basket",
    "zonePx": {
     "x": 16,
-    "y": 1912,
+    "y": 2456,
     "l": 190,
     "h": 28
    },
@@ -572,168 +641,12 @@
   {
    "numero": 0,
    "modele": "test-saine",
-   "page": "article",
-   "appareil": "mobile",
-   "zone": {
-    "forme": "rect",
-    "x": 0.042666666666666665,
-    "y": 0.0029239766081871343,
-    "l": 0.768,
-    "h": 0.02046783625730994
-   },
-   "element": "header a.logo.logo--horizontale",
-   "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : header a.logo.logo--horizontale « Cabinet de podologie Pédicures-podologues · Lyon » (288 × 42 px) (×32)",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:13.029Z",
-   "chemin": "/actualites",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "zonePx": {
-    "x": 16,
-    "y": 6,
-    "l": 288,
-    "h": 42
-   },
-   "categorie": "technique",
-   "mesure": "288 × 42 px",
-   "seuil": "≥ 44 px",
-   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
-   "vignette": "tests-modeles/test-saine-v1/t-0003.jpg",
-   "empreinte": "02d0e142"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "article",
-   "appareil": "mobile",
-   "zone": {
-    "forme": "rect",
-    "x": 0.042666666666666665,
-    "y": 0.452729044834308,
-    "l": 0.33066666666666666,
-    "h": 0.011695906432748537
-   },
-   "element": "footer a",
-   "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : footer a « [téléphone] » (124 × 24 px) (×52)",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:13.029Z",
-   "chemin": "/actualites",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "zonePx": {
-    "x": 16,
-    "y": 929,
-    "l": 124,
-    "h": 24
-   },
-   "categorie": "technique",
-   "mesure": "124 × 24 px",
-   "seuil": "≥ 44 px",
-   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
-   "vignette": "tests-modeles/test-saine-v1/t-0004.jpg",
-   "empreinte": "59100d5f"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "fiche",
-   "appareil": "mobile",
-   "zone": {
-    "forme": "rect",
-    "x": 0.24266666666666667,
-    "y": 0.02723389106443574,
-    "l": 0.112,
-    "h": 0.007831968672125312
-   },
-   "element": "nav a",
-   "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : nav a « Soins » (42 × 44 px) (×19)",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:32.025Z",
-   "chemin": "/soins/bilan-podologique",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "zonePx": {
-    "x": 91,
-    "y": 153,
-    "l": 42,
-    "h": 44
-   },
-   "categorie": "technique",
-   "mesure": "42 × 44 px",
-   "seuil": "≥ 44 px",
-   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
-   "vignette": "tests-modeles/test-saine-v1/t-0005.jpg",
-   "empreinte": "5d32f41d"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "fiche",
-   "appareil": "mobile",
-   "zone": {
-    "forme": "rect",
-    "x": 0.042666666666666665,
-    "y": 0.4216803132787469,
-    "l": 0.5066666666666667,
-    "h": 0.004983980064079744
-   },
-   "element": "main#contenu a",
-   "etiquette": "technique:accessibilite",
-   "commentaire": "Cible tactile trop petite : main#contenu a « Matériel du cabinet » (190 × 28 px) (×12)",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "cibles-tactiles",
-   "creeLe": "2026-10-08T23:54:32.025Z",
-   "chemin": "/soins/bilan-podologique",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "zonePx": {
-    "x": 16,
-    "y": 2369,
-    "l": 190,
-    "h": 28
-   },
-   "categorie": "technique",
-   "mesure": "190 × 28 px",
-   "seuil": "≥ 44 px",
-   "suggestion": "Agrandir la zone cliquable (padding, min-height: 44px) sans changer le dessin.",
-   "vignette": "tests-modeles/test-saine-v1/t-0006.jpg",
-   "empreinte": "09bd4c6c"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
    "page": "accueil",
    "appareil": "mobile",
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 99 caractères (> 65) (×2)",
+   "commentaire": "Title de 99 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -741,7 +654,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.806Z",
+   "creeLe": "2026-10-09T07:59:09.583Z",
    "chemin": "/",
    "largeur": null,
    "jeu": "sport-basket",
@@ -761,7 +674,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Méta description de 339 caractères (×2)",
+   "commentaire": "Méta description de 339 caractères (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -769,7 +682,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.807Z",
+   "creeLe": "2026-10-09T07:59:09.585Z",
    "chemin": "/",
    "largeur": null,
    "jeu": "sport-basket",
@@ -789,7 +702,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 93 caractères (> 65) (×2)",
+   "commentaire": "Title de 93 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -797,7 +710,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.810Z",
+   "creeLe": "2026-10-09T07:59:09.586Z",
    "chemin": "/actualites/pied-diabetique-gestes-quotidien",
    "largeur": null,
    "jeu": "sport-basket",
@@ -817,7 +730,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 82 caractères (> 65) (×2)",
+   "commentaire": "Title de 82 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -825,7 +738,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.810Z",
+   "creeLe": "2026-10-09T07:59:09.587Z",
    "chemin": "/actualites/preparer-ses-pieds-course-a-pied",
    "largeur": null,
    "jeu": "sport-basket",
@@ -845,7 +758,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 113 caractères (> 65) (×2)",
+   "commentaire": "Title de 113 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -853,7 +766,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.811Z",
+   "creeLe": "2026-10-09T07:59:09.587Z",
    "chemin": "/le-cabinet",
    "largeur": null,
    "jeu": "sport-basket",
@@ -873,7 +786,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Méta description de 256 caractères (×3)",
+   "commentaire": "Méta description de 256 caractères (×3, jeux : sport-basket, diabete, enfant)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -881,7 +794,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.811Z",
+   "creeLe": "2026-10-09T07:59:09.587Z",
    "chemin": "/le-cabinet",
    "largeur": null,
    "jeu": "sport-basket",
@@ -901,7 +814,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Méta description de 195 caractères (×2)",
+   "commentaire": "Méta description de 195 caractères (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -909,7 +822,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.812Z",
+   "creeLe": "2026-10-09T07:59:09.588Z",
    "chemin": "/soins",
    "largeur": null,
    "jeu": "sport-basket",
@@ -929,7 +842,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 103 caractères (> 65) (×2)",
+   "commentaire": "Title de 103 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -937,7 +850,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.812Z",
+   "creeLe": "2026-10-09T07:59:09.588Z",
    "chemin": "/soins/bilan-podologique",
    "largeur": null,
    "jeu": "sport-basket",
@@ -957,7 +870,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 108 caractères (> 65) (×2)",
+   "commentaire": "Title de 108 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -965,7 +878,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.813Z",
+   "creeLe": "2026-10-09T07:59:09.589Z",
    "chemin": "/soins/cors-durillons",
    "largeur": null,
    "jeu": "sport-basket",
@@ -985,7 +898,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 103 caractères (> 65) (×2)",
+   "commentaire": "Title de 103 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -993,7 +906,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.813Z",
+   "creeLe": "2026-10-09T07:59:09.589Z",
    "chemin": "/soins/ongles-epais",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1013,7 +926,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 107 caractères (> 65) (×2)",
+   "commentaire": "Title de 107 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -1021,7 +934,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.814Z",
+   "creeLe": "2026-10-09T07:59:09.590Z",
    "chemin": "/soins/pied-diabetique",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1049,7 +962,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.814Z",
+   "creeLe": "2026-10-09T07:59:09.590Z",
    "chemin": "/soins/podologie-du-sport",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1069,7 +982,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 104 caractères (> 65) (×2)",
+   "commentaire": "Title de 104 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -1077,7 +990,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.815Z",
+   "creeLe": "2026-10-09T07:59:09.590Z",
    "chemin": "/soins/podologie-enfant",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1097,7 +1010,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 116 caractères (> 65) (×2)",
+   "commentaire": "Title de 116 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -1105,7 +1018,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.815Z",
+   "creeLe": "2026-10-09T07:59:09.591Z",
    "chemin": "/soins/semelles-orthopediques",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1125,7 +1038,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 104 caractères (> 65) (×2)",
+   "commentaire": "Title de 104 caractères (> 65) (×2, jeux : sport-basket, diabete)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -1133,7 +1046,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.816Z",
+   "creeLe": "2026-10-09T07:59:09.591Z",
    "chemin": "/soins/soins-de-pedicurie",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1153,174 +1066,6 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 100 caractères (> 65)",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.816Z",
-   "chemin": "/themes/enfant",
-   "largeur": null,
-   "jeu": "sport-basket",
-   "zonePx": null,
-   "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Raccourcir le titre : il sera coupé dans les résultats Google.",
-   "vignette": null,
-   "empreinte": "2f706940"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "theme",
-   "appareil": "mobile",
-   "zone": null,
-   "element": "head",
-   "etiquette": "technique:texte-manquant",
-   "commentaire": "Méta description de 198 caractères",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.816Z",
-   "chemin": "/themes/enfant",
-   "largeur": null,
-   "jeu": "sport-basket",
-   "zonePx": null,
-   "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Viser 70 à 170 caractères.",
-   "vignette": null,
-   "empreinte": "e99b6236"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "theme",
-   "appareil": "mobile",
-   "zone": null,
-   "element": "head",
-   "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 115 caractères (> 65) (×2)",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.817Z",
-   "chemin": "/themes/ongles",
-   "largeur": null,
-   "jeu": "sport-basket",
-   "zonePx": null,
-   "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Raccourcir le titre : il sera coupé dans les résultats Google.",
-   "vignette": null,
-   "empreinte": "df1f74de"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "theme",
-   "appareil": "mobile",
-   "zone": null,
-   "element": "head",
-   "etiquette": "technique:texte-manquant",
-   "commentaire": "Méta description de 216 caractères",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.817Z",
-   "chemin": "/themes/ongles",
-   "largeur": null,
-   "jeu": "sport-basket",
-   "zonePx": null,
-   "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Viser 70 à 170 caractères.",
-   "vignette": null,
-   "empreinte": "2850bac4"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "theme",
-   "appareil": "mobile",
-   "zone": null,
-   "element": "head",
-   "etiquette": "technique:texte-manquant",
-   "commentaire": "Title de 100 caractères (> 65) (×2)",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.818Z",
-   "chemin": "/themes/senior",
-   "largeur": null,
-   "jeu": "sport-basket",
-   "zonePx": null,
-   "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Raccourcir le titre : il sera coupé dans les résultats Google.",
-   "vignette": null,
-   "empreinte": "64738b48"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "theme",
-   "appareil": "mobile",
-   "zone": null,
-   "element": "head",
-   "etiquette": "technique:texte-manquant",
-   "commentaire": "Méta description de 203 caractères",
-   "origine": "testeur",
-   "gravite": "mineur",
-   "auteur": "testeur",
-   "statut": "ouvert",
-   "versionOuverture": 1,
-   "versionCorrection": null,
-   "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.818Z",
-   "chemin": "/themes/senior",
-   "largeur": null,
-   "jeu": "sport-basket",
-   "zonePx": null,
-   "categorie": "technique",
-   "mesure": null,
-   "seuil": null,
-   "suggestion": "Viser 70 à 170 caractères.",
-   "vignette": null,
-   "empreinte": "2e87ef2e"
-  },
-  {
-   "numero": 0,
-   "modele": "test-saine",
-   "page": "theme",
-   "appareil": "mobile",
-   "zone": null,
-   "element": "head",
-   "etiquette": "technique:texte-manquant",
    "commentaire": "Title de 105 caractères (> 65)",
    "origine": "testeur",
    "gravite": "mineur",
@@ -1329,7 +1074,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.818Z",
+   "creeLe": "2026-10-09T07:59:09.591Z",
    "chemin": "/themes/sport",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1357,7 +1102,7 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:54:03.818Z",
+   "creeLe": "2026-10-09T07:59:09.592Z",
    "chemin": "/themes/sport",
    "largeur": null,
    "jeu": "sport-basket",
@@ -1385,10 +1130,10 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:56:04.582Z",
+   "creeLe": "2026-10-09T08:00:50.024Z",
    "chemin": "/acces",
    "largeur": null,
-   "jeu": "diabete-senior",
+   "jeu": "diabete",
    "zonePx": null,
    "categorie": "technique",
    "mesure": null,
@@ -1413,10 +1158,10 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:56:04.582Z",
+   "creeLe": "2026-10-09T08:00:50.024Z",
    "chemin": "/acces",
    "largeur": null,
-   "jeu": "diabete-senior",
+   "jeu": "diabete",
    "zonePx": null,
    "categorie": "technique",
    "mesure": null,
@@ -1441,10 +1186,10 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:56:04.583Z",
+   "creeLe": "2026-10-09T08:00:50.026Z",
    "chemin": "/mentions-legales",
    "largeur": null,
-   "jeu": "diabete-senior",
+   "jeu": "diabete",
    "zonePx": null,
    "categorie": "technique",
    "mesure": null,
@@ -1461,7 +1206,7 @@
    "zone": null,
    "element": "head",
    "etiquette": "technique:texte-manquant",
-   "commentaire": "Méta description de 66 caractères (×2)",
+   "commentaire": "Méta description de 66 caractères (×2, jeux : diabete, enfant)",
    "origine": "testeur",
    "gravite": "mineur",
    "auteur": "testeur",
@@ -1469,10 +1214,10 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:56:04.583Z",
+   "creeLe": "2026-10-09T08:00:50.026Z",
    "chemin": "/mentions-legales",
    "largeur": null,
-   "jeu": "diabete-senior",
+   "jeu": "diabete",
    "zonePx": null,
    "categorie": "technique",
    "mesure": null,
@@ -1497,10 +1242,10 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:56:04.584Z",
+   "creeLe": "2026-10-09T08:00:50.026Z",
    "chemin": "/soins",
    "largeur": null,
-   "jeu": "diabete-senior",
+   "jeu": "diabete",
    "zonePx": null,
    "categorie": "technique",
    "mesure": null,
@@ -1525,10 +1270,10 @@
    "versionOuverture": 1,
    "versionCorrection": null,
    "controle": "seo",
-   "creeLe": "2026-10-08T23:56:04.588Z",
+   "creeLe": "2026-10-09T08:00:50.030Z",
    "chemin": "/themes/diabete",
    "largeur": null,
-   "jeu": "diabete-senior",
+   "jeu": "diabete",
    "zonePx": null,
    "categorie": "technique",
    "mesure": null,
@@ -1538,21 +1283,30 @@
    "empreinte": "9f61e0b0"
   }
  ],
- "le": "2026-10-08T23:57:33.292Z",
- "dureeMs": 254284,
+ "le": "2026-10-09T08:02:06.116Z",
+ "dureeMs": 198770,
  "outil": "tester-modele.mjs 1",
  "jeux": [
   {
    "id": "sport-basket",
-   "libelle": "Sport · basket, 3 praticiens, données maximales"
+   "libelle": "Sport · basket · 3 praticiens, données maximales",
+   "verdict": "orange",
+   "dureeMs": 102991,
+   "activites": [
+    "basket"
+   ]
   },
   {
-   "id": "diabete-senior",
-   "libelle": "Diabète · senior, cabinet seul, noms et villes longs"
+   "id": "diabete",
+   "libelle": "Diabète · cabinet seul, noms et villes longs",
+   "verdict": "vert",
+   "dureeMs": 85960
   },
   {
-   "id": "enfant-minimal",
-   "libelle": "Enfant, cabinet seul, données minimales"
+   "id": "enfant",
+   "libelle": "Enfant · cabinet seul, données minimales",
+   "verdict": "vert",
+   "dureeMs": 53207
   }
  ],
  "pages": [
@@ -1573,11 +1327,9 @@
   "/soins/podologie-enfant",
   "/soins/semelles-orthopediques",
   "/soins/soins-de-pedicurie",
-  "/themes/enfant",
-  "/themes/ongles",
-  "/themes/senior",
   "/themes/sport",
-  "/themes/diabete"
+  "/themes/diabete",
+  "/themes/enfant"
  ],
  "largeurs": [
   360,
@@ -1588,14 +1340,6 @@
  ],
  "captures": [
   {
-   "chemin": "/actualites",
-   "page": "article",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/actualites.png"
-  },
-  {
    "chemin": "/404",
    "page": "accueil",
    "appareil": "mobile",
@@ -1604,20 +1348,12 @@
    "fichier": "captures/sport-basket/375/404.png"
   },
   {
-   "chemin": "/acces",
-   "page": "acces",
+   "chemin": "/actualites",
+   "page": "article",
    "appareil": "mobile",
    "largeur": 375,
    "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/acces.png"
-  },
-  {
-   "chemin": "/",
-   "page": "accueil",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/accueil.png"
+   "fichier": "captures/sport-basket/375/actualites.png"
   },
   {
    "chemin": "/actualites/pied-diabetique-gestes-quotidien",
@@ -1636,6 +1372,22 @@
    "fichier": "captures/sport-basket/375/actualites__preparer-ses-pieds-course-a-pied.png"
   },
   {
+   "chemin": "/acces",
+   "page": "acces",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "sport-basket",
+   "fichier": "captures/sport-basket/375/acces.png"
+  },
+  {
+   "chemin": "/",
+   "page": "accueil",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "sport-basket",
+   "fichier": "captures/sport-basket/375/accueil.png"
+  },
+  {
    "chemin": "/le-cabinet",
    "page": "cabinet",
    "appareil": "mobile",
@@ -1650,6 +1402,14 @@
    "largeur": 375,
    "jeu": "sport-basket",
    "fichier": "captures/sport-basket/375/mentions-legales.png"
+  },
+  {
+   "chemin": "/soins",
+   "page": "soins",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "sport-basket",
+   "fichier": "captures/sport-basket/375/soins.png"
   },
   {
    "chemin": "/soins/bilan-podologique",
@@ -1668,28 +1428,20 @@
    "fichier": "captures/sport-basket/375/soins__cors-durillons.png"
   },
   {
-   "chemin": "/soins/pied-diabetique",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/soins__pied-diabetique.png"
-  },
-  {
-   "chemin": "/soins",
-   "page": "soins",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/soins.png"
-  },
-  {
    "chemin": "/soins/ongles-epais",
    "page": "fiche",
    "appareil": "mobile",
    "largeur": 375,
    "jeu": "sport-basket",
    "fichier": "captures/sport-basket/375/soins__ongles-epais.png"
+  },
+  {
+   "chemin": "/soins/pied-diabetique",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "sport-basket",
+   "fichier": "captures/sport-basket/375/soins__pied-diabetique.png"
   },
   {
    "chemin": "/soins/podologie-du-sport",
@@ -1708,14 +1460,6 @@
    "fichier": "captures/sport-basket/375/soins__podologie-enfant.png"
   },
   {
-   "chemin": "/soins/semelles-orthopediques",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/soins__semelles-orthopediques.png"
-  },
-  {
    "chemin": "/soins/soins-de-pedicurie",
    "page": "fiche",
    "appareil": "mobile",
@@ -1724,28 +1468,12 @@
    "fichier": "captures/sport-basket/375/soins__soins-de-pedicurie.png"
   },
   {
-   "chemin": "/themes/enfant",
-   "page": "theme",
+   "chemin": "/soins/semelles-orthopediques",
+   "page": "fiche",
    "appareil": "mobile",
    "largeur": 375,
    "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/themes__enfant.png"
-  },
-  {
-   "chemin": "/themes/ongles",
-   "page": "theme",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/themes__ongles.png"
-  },
-  {
-   "chemin": "/themes/senior",
-   "page": "theme",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/375/themes__senior.png"
+   "fichier": "captures/sport-basket/375/soins__semelles-orthopediques.png"
   },
   {
    "chemin": "/themes/sport",
@@ -1756,12 +1484,12 @@
    "fichier": "captures/sport-basket/375/themes__sport.png"
   },
   {
-   "chemin": "/404",
+   "chemin": "/",
    "page": "accueil",
    "appareil": "ordinateur",
    "largeur": 1440,
    "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/404.png"
+   "fichier": "captures/sport-basket/1440/accueil.png"
   },
   {
    "chemin": "/actualites",
@@ -1772,6 +1500,14 @@
    "fichier": "captures/sport-basket/1440/actualites.png"
   },
   {
+   "chemin": "/actualites/pied-diabetique-gestes-quotidien",
+   "page": "article",
+   "appareil": "ordinateur",
+   "largeur": 1440,
+   "jeu": "sport-basket",
+   "fichier": "captures/sport-basket/1440/actualites__pied-diabetique-gestes-quotidien.png"
+  },
+  {
    "chemin": "/acces",
    "page": "acces",
    "appareil": "ordinateur",
@@ -1780,20 +1516,12 @@
    "fichier": "captures/sport-basket/1440/acces.png"
   },
   {
-   "chemin": "/",
+   "chemin": "/404",
    "page": "accueil",
    "appareil": "ordinateur",
    "largeur": 1440,
    "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/accueil.png"
-  },
-  {
-   "chemin": "/actualites/pied-diabetique-gestes-quotidien",
-   "page": "article",
-   "appareil": "ordinateur",
-   "largeur": 1440,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/actualites__pied-diabetique-gestes-quotidien.png"
+   "fichier": "captures/sport-basket/1440/404.png"
   },
   {
    "chemin": "/actualites/preparer-ses-pieds-course-a-pied",
@@ -1836,6 +1564,14 @@
    "fichier": "captures/sport-basket/1440/soins__bilan-podologique.png"
   },
   {
+   "chemin": "/soins/cors-durillons",
+   "page": "fiche",
+   "appareil": "ordinateur",
+   "largeur": 1440,
+   "jeu": "sport-basket",
+   "fichier": "captures/sport-basket/1440/soins__cors-durillons.png"
+  },
+  {
    "chemin": "/soins/ongles-epais",
    "page": "fiche",
    "appareil": "ordinateur",
@@ -1844,12 +1580,12 @@
    "fichier": "captures/sport-basket/1440/soins__ongles-epais.png"
   },
   {
-   "chemin": "/soins/cors-durillons",
+   "chemin": "/soins/podologie-enfant",
    "page": "fiche",
    "appareil": "ordinateur",
    "largeur": 1440,
    "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/soins__cors-durillons.png"
+   "fichier": "captures/sport-basket/1440/soins__podologie-enfant.png"
   },
   {
    "chemin": "/soins/pied-diabetique",
@@ -1868,12 +1604,12 @@
    "fichier": "captures/sport-basket/1440/soins__podologie-du-sport.png"
   },
   {
-   "chemin": "/soins/podologie-enfant",
+   "chemin": "/soins/soins-de-pedicurie",
    "page": "fiche",
    "appareil": "ordinateur",
    "largeur": 1440,
    "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/soins__podologie-enfant.png"
+   "fichier": "captures/sport-basket/1440/soins__soins-de-pedicurie.png"
   },
   {
    "chemin": "/soins/semelles-orthopediques",
@@ -1884,44 +1620,12 @@
    "fichier": "captures/sport-basket/1440/soins__semelles-orthopediques.png"
   },
   {
-   "chemin": "/soins/soins-de-pedicurie",
-   "page": "fiche",
-   "appareil": "ordinateur",
-   "largeur": 1440,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/soins__soins-de-pedicurie.png"
-  },
-  {
-   "chemin": "/themes/enfant",
-   "page": "theme",
-   "appareil": "ordinateur",
-   "largeur": 1440,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/themes__enfant.png"
-  },
-  {
-   "chemin": "/themes/ongles",
-   "page": "theme",
-   "appareil": "ordinateur",
-   "largeur": 1440,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/themes__ongles.png"
-  },
-  {
    "chemin": "/themes/sport",
    "page": "theme",
    "appareil": "ordinateur",
    "largeur": 1440,
    "jeu": "sport-basket",
    "fichier": "captures/sport-basket/1440/themes__sport.png"
-  },
-  {
-   "chemin": "/themes/senior",
-   "page": "theme",
-   "appareil": "ordinateur",
-   "largeur": 1440,
-   "jeu": "sport-basket",
-   "fichier": "captures/sport-basket/1440/themes__senior.png"
   },
   {
    "chemin": "/",
@@ -1944,280 +1648,264 @@
    "page": "accueil",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/404.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/404.png"
   },
   {
    "chemin": "/actualites",
    "page": "article",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/actualites.png"
-  },
-  {
-   "chemin": "/acces",
-   "page": "acces",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/acces.png"
-  },
-  {
-   "chemin": "/",
-   "page": "accueil",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/accueil.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/actualites.png"
   },
   {
    "chemin": "/actualites/pied-diabetique-gestes-quotidien",
    "page": "article",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/actualites__pied-diabetique-gestes-quotidien.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/actualites__pied-diabetique-gestes-quotidien.png"
   },
   {
    "chemin": "/actualites/preparer-ses-pieds-course-a-pied",
    "page": "article",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/actualites__preparer-ses-pieds-course-a-pied.png"
-  },
-  {
-   "chemin": "/mentions-legales",
-   "page": "accueil",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/mentions-legales.png"
-  },
-  {
-   "chemin": "/le-cabinet",
-   "page": "cabinet",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/le-cabinet.png"
-  },
-  {
-   "chemin": "/soins",
-   "page": "soins",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins.png"
-  },
-  {
-   "chemin": "/soins/bilan-podologique",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__bilan-podologique.png"
-  },
-  {
-   "chemin": "/soins/cors-durillons",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__cors-durillons.png"
-  },
-  {
-   "chemin": "/soins/pied-diabetique",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__pied-diabetique.png"
-  },
-  {
-   "chemin": "/soins/ongles-epais",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__ongles-epais.png"
-  },
-  {
-   "chemin": "/soins/podologie-du-sport",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__podologie-du-sport.png"
-  },
-  {
-   "chemin": "/soins/podologie-enfant",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__podologie-enfant.png"
-  },
-  {
-   "chemin": "/soins/soins-de-pedicurie",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__soins-de-pedicurie.png"
-  },
-  {
-   "chemin": "/soins/semelles-orthopediques",
-   "page": "fiche",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/soins__semelles-orthopediques.png"
-  },
-  {
-   "chemin": "/themes/diabete",
-   "page": "theme",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/themes__diabete.png"
-  },
-  {
-   "chemin": "/themes/senior",
-   "page": "theme",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/themes__senior.png"
-  },
-  {
-   "chemin": "/themes/ongles",
-   "page": "theme",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/themes__ongles.png"
-  },
-  {
-   "chemin": "/",
-   "page": "accueil",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/375/accueil--image-fixe.png"
-  },
-  {
-   "chemin": "/",
-   "page": "accueil",
-   "appareil": "ordinateur",
-   "largeur": 1440,
-   "jeu": "diabete-senior",
-   "fichier": "captures/diabete-senior/1440/accueil--image-fixe.png"
-  },
-  {
-   "chemin": "/404",
-   "page": "accueil",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/404.png"
-  },
-  {
-   "chemin": "/actualites",
-   "page": "article",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/actualites.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/actualites__preparer-ses-pieds-course-a-pied.png"
   },
   {
    "chemin": "/acces",
    "page": "acces",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/acces.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/acces.png"
   },
   {
    "chemin": "/",
    "page": "accueil",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/accueil.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/accueil.png"
   },
   {
    "chemin": "/mentions-legales",
    "page": "accueil",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/mentions-legales.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/mentions-legales.png"
   },
   {
    "chemin": "/le-cabinet",
    "page": "cabinet",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/le-cabinet.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/le-cabinet.png"
   },
   {
    "chemin": "/soins",
    "page": "soins",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/soins.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins.png"
+  },
+  {
+   "chemin": "/soins/ongles-epais",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__ongles-epais.png"
+  },
+  {
+   "chemin": "/soins/cors-durillons",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__cors-durillons.png"
   },
   {
    "chemin": "/soins/bilan-podologique",
    "page": "fiche",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/soins__bilan-podologique.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__bilan-podologique.png"
   },
   {
-   "chemin": "/soins/semelles-orthopediques",
+   "chemin": "/soins/pied-diabetique",
    "page": "fiche",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/soins__semelles-orthopediques.png"
-  },
-  {
-   "chemin": "/themes/enfant",
-   "page": "theme",
-   "appareil": "mobile",
-   "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/themes__enfant.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__pied-diabetique.png"
   },
   {
    "chemin": "/soins/soins-de-pedicurie",
    "page": "fiche",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/soins__soins-de-pedicurie.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__soins-de-pedicurie.png"
+  },
+  {
+   "chemin": "/soins/podologie-enfant",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__podologie-enfant.png"
+  },
+  {
+   "chemin": "/soins/podologie-du-sport",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__podologie-du-sport.png"
+  },
+  {
+   "chemin": "/soins/semelles-orthopediques",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/soins__semelles-orthopediques.png"
+  },
+  {
+   "chemin": "/themes/diabete",
+   "page": "theme",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/themes__diabete.png"
   },
   {
    "chemin": "/",
    "page": "accueil",
    "appareil": "mobile",
    "largeur": 375,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/375/accueil--image-fixe.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/375/accueil--image-fixe.png"
   },
   {
    "chemin": "/",
    "page": "accueil",
    "appareil": "ordinateur",
    "largeur": 1440,
-   "jeu": "enfant-minimal",
-   "fichier": "captures/enfant-minimal/1440/accueil--image-fixe.png"
+   "jeu": "diabete",
+   "fichier": "captures/diabete/1440/accueil--image-fixe.png"
+  },
+  {
+   "chemin": "/404",
+   "page": "accueil",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/404.png"
+  },
+  {
+   "chemin": "/actualites",
+   "page": "article",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/actualites.png"
+  },
+  {
+   "chemin": "/mentions-legales",
+   "page": "accueil",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/mentions-legales.png"
+  },
+  {
+   "chemin": "/acces",
+   "page": "acces",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/acces.png"
+  },
+  {
+   "chemin": "/",
+   "page": "accueil",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/accueil.png"
+  },
+  {
+   "chemin": "/le-cabinet",
+   "page": "cabinet",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/le-cabinet.png"
+  },
+  {
+   "chemin": "/soins",
+   "page": "soins",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/soins.png"
+  },
+  {
+   "chemin": "/themes/enfant",
+   "page": "theme",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/themes__enfant.png"
+  },
+  {
+   "chemin": "/soins/soins-de-pedicurie",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/soins__soins-de-pedicurie.png"
+  },
+  {
+   "chemin": "/soins/semelles-orthopediques",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/soins__semelles-orthopediques.png"
+  },
+  {
+   "chemin": "/soins/bilan-podologique",
+   "page": "fiche",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/soins__bilan-podologique.png"
+  },
+  {
+   "chemin": "/",
+   "page": "accueil",
+   "appareil": "mobile",
+   "largeur": 375,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/375/accueil--image-fixe.png"
+  },
+  {
+   "chemin": "/",
+   "page": "accueil",
+   "appareil": "ordinateur",
+   "largeur": 1440,
+   "jeu": "enfant",
+   "fichier": "captures/enfant/1440/accueil--image-fixe.png"
   }
  ],
  "run": null

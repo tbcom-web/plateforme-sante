@@ -54,7 +54,7 @@ async function chargerCore() {
   await esbuild({
     stdin: {
       contents: `export * from '../../packages/core/src/testeur-modeles.ts';
-export { clesImagesExclues, cleImage, estImageDemo, verifierPublicationRecette, normaliserComposition, MODELES_INTEGRES } from '@plateforme/core';`,
+export { clesImagesExclues, cleImage, estImageDemo, verifierPublicationRecette, normaliserComposition, MODELES_INTEGRES, photosIntegreesBanque, contexteScenario, habillerPourProfil, designDe, serialiserComposition, modeleIntegre } from '@plateforme/core';`,
       resolveDir: racineSites, loader: 'ts',
     },
     bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent', loader: { '.svg': 'text' },
@@ -130,14 +130,31 @@ const mode = args.mode === 'recheck' ? 'recheck' : 'check';
 // ---------------------------------------------------------------------------------------------------------------
 // Jeux de données de démonstration (apps/sites/src/data/sites/demo-podologue-lyon.ts : données FICTIVES)
 // ---------------------------------------------------------------------------------------------------------------
-const JEUX = [
-  { id: 'sport-basket', libelle: 'Sport · basket, 3 praticiens, données maximales', env: { PRINCIPAUX: 'sport,ongles', SECONDAIRES: 'enfant,senior', ACTIVITE: 'basket', PRATICIENS: '3' }, captures: [375, 1440], axe: [375, 1440] },
+// 1. Jeux de la CHAÎNE (modèle = design sans images) : --jeux a,b ou champ « jeux » de retours/modeles-a-tester.json pour ce
+//    modèle et cette version : un profil de démonstration par famille de thèmes compatibles (jeuxDuModele, chaine-design.ts) ; le
+//    design est habillé des images du KIT de chaque profil (habillerPourProfil : photos du thème ou de l'activité du profil, jamais
+//    d'une autre activité) ; forme des données tournante (maximales, noms longs, minimales : jeuxTesteurDeProfils).
+// 2. Sinon, les 3 jeux historiques ci-dessous (recette avec ses propres photos, modèle intégré).
+const aTester = (() => {
+  const p = join(DEPOT, 'retours', 'modeles-a-tester.json');
+  if (!existsSync(p)) return null;
+  const l = lireJson(p);
+  return (Array.isArray(l) ? l : []).find((x) => x.modele === modele.id && Number(x.version) === modele.version) ?? null;
+})();
+const idsJeux = args.jeux && args.jeux !== true ? String(args.jeux).split(',').map((x) => x.trim()).filter(Boolean) : Array.isArray(aTester?.jeux) ? aTester.jeux : null;
+if (aTester?.composition && modele.type !== 'recette') Object.assign(modele, { type: 'recette', composition: aTester.composition });
+const JEUX_PROFILS = idsJeux ? core.jeuxTesteurDeProfils(idsJeux, profession).map((j, i) => ({ ...j, profil: true, captures: i === 0 ? [375, 1440] : [375], axe: i === 0 ? [375, 1440] : [375] })) : [];
+if (idsJeux && !JEUX_PROFILS.length) throw new Error('Aucun profil connu parmi les jeux : ' + idsJeux.join(', '));
+const JEUX = JEUX_PROFILS.length ? JEUX_PROFILS : [
+  { id: 'sport-basket', libelle: 'Sport · basket, 3 praticiens, données maximales', activites: ['basket'], env: { PRINCIPAUX: 'sport,ongles', SECONDAIRES: 'enfant,senior', ACTIVITE: 'basket', PRATICIENS: '3' }, captures: [375, 1440], axe: [375, 1440] },
   { id: 'diabete-senior', libelle: 'Diabète · senior, cabinet seul, noms et villes longs', env: { PRINCIPAUX: 'diabete,senior', SECONDAIRES: 'ongles', CAS: 'solo,noms-longs' }, captures: [375], axe: [375] },
   { id: 'enfant-minimal', libelle: 'Enfant, cabinet seul, données minimales', env: { PRINCIPAUX: 'enfant', SECONDAIRES: '', CAS: 'solo,minimal' }, captures: [375], axe: [375] },
 ].filter((j) => !args.profil || args.profil === true || j.id === args.profil || j.id.startsWith(String(args.profil)));
 if (!JEUX.length) throw new Error(`Profil inconnu : ${args.profil} (sport-basket, diabete-senior, enfant-minimal).`);
 
 const LARGEURS = [...S.largeurs];
+/** Onglets en parallèle (--parallele n, défaut 6) */
+const PARALLELE = Math.max(1, Math.min(12, Number(args.parallele) || 6));
 const sortie = sortieAutorisee(args.sortie && args.sortie !== true ? String(args.sortie) : join(tmpdir(), 'testeur-modeles', `${modele.id}-v${modele.version}`));
 const dossierResultats = sortieAutorisee(args.resultats && args.resultats !== true ? String(args.resultats) : join(DEPOT, 'retours', 'tests-modeles'));
 const cheminJson = join(dossierResultats, core.cheminResultatTest(modele.id, modele.version).split('/').pop());
@@ -151,6 +168,23 @@ if (modele.type === 'recette') {
   writeFileSync(join(sortie, 'composition.json'), JSON.stringify(modele.composition));
   envModele.RECETTE = join(sortie, 'composition.json');
 } else envModele.MODELE = modele.id;
+// Design habillé pour chaque profil : composition propre au jeu (RECETTE du jeu)
+if (modele.type === 'recette') {
+  const banque = core.photosIntegreesBanque();
+  for (const j of JEUX.filter((x) => x.profil)) {
+    const scenario = { principaux: j.principal ? [j.principal] : [], secondaires: j.secondaires, couleurs: [], soins: [] };
+    const photos = core.photosDuKitProfil(banque, j, profession);
+    const ctx = core.contexteScenario(scenario, { poids: null, photos, modele: core.modeleIntegre, modeTirage: 'favoris' });
+    const design = core.normaliserComposition(core.designDe(modele.composition), ctx);
+    const habille = design ? JSON.parse(core.serialiserComposition(core.habillerPourProfil(design, ctx, 1))) : { ...modele.composition };
+    // Cas de test (surcharges d'une composition de test) : les photos explicitement posées restent
+    if (modele.surcharges && Array.isArray(modele.composition.photos)) habille.photos = [...new Set([...(habille.photos ?? []), ...modele.composition.photos])];
+    const fichier = join(sortie, `composition-${j.id}.json`);
+    writeFileSync(fichier, JSON.stringify(habille));
+    j.env = { ...j.env, RECETTE: fichier };
+    j.photosKit = habille.photos ?? [];
+  }
+}
 if (modele.surcharges) {
   writeFileSync(join(sortie, 'surcharges.json'), JSON.stringify(modele.surcharges));
   envModele.SURCHARGES = join(sortie, 'surcharges.json');
@@ -167,8 +201,11 @@ const ajouter = (controle, o) => {
   const t = core.creerTicket({ modele: modele.id, version: modele.version, controle, creeLe: new Date().toISOString(), ...o });
   const n = (occurrences.get(t.empreinte) ?? 0) + 1;
   occurrences.set(t.empreinte, n);
+  if (o.jeu) { parJeu.push({ jeu: o.jeu, gravite: t.gravite }); jeuxDe.set(t.empreinte, new Set([...(jeuxDe.get(t.empreinte) ?? []), o.jeu])); }
   if (n === 1) tickets.push(t);
 };
+const parJeu = []; // { jeu, gravite } de chaque occurrence : verdict par jeu (le pire l'emporte)
+const jeuxDe = new Map(); // empreinte → jeux où le défaut apparaît
 const compter = (controle, cle, n = 1) => { mesures[controle] ??= {}; mesures[controle][cle] = (mesures[controle][cle] ?? 0) + n; };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -193,6 +230,7 @@ async function construire(jeu) {
     const r = await executer('npx', ['astro', 'build', '--outDir', q(dist)], { env });
     if (r.code === 0 && existsSync(join(dist, 'index.html'))) {
       journal(`Construction ${jeu.id} : ${((Date.now() - t) / 1000).toFixed(0)} s`);
+      dureesJeux[jeu.id] = (dureesJeux[jeu.id] ?? 0) + (Date.now() - t);
       return dist;
     }
     journal(`Construction ${jeu.id} : échec (essai ${essai})`);
@@ -324,6 +362,27 @@ function controlesStatiques(jeu, dist) {
         compter('images', 'fichiers');
         if (taille > S.poidsImage) ajouter('images', { chemin, jeu: jeu.id, gravite: 'majeur', element: `img[src="${src}"]`, cle: `images|poids|${src}`, mesure: `${Math.round(taille / 1024)} Ko`, seuil: `≤ ${Math.round(S.poidsImage / 1024)} Ko`, commentaire: `Image lourde : ${src} (${Math.round(taille / 1024)} Ko)`, suggestion: 'Recompresser (WebP qualité 70) ou fournir des variantes plus petites (srcset).' });
       }
+    }
+  }
+  // Aucun visuel d'une autre activité dans un jeu d'activité (photos, dessins rendus ; photos de la composition du jeu)
+  if (jeu.activites?.length) {
+    const visuels = [];
+    for (const { chemin, html } of lus) {
+      for (const u of [...extraire(html, /<img\b[^>]*?\ssrc="([^"]+)"/g), ...extraire(html, /\shref="(\/dessins\/[^"#]+)/g), ...extraire(html, /url\((\/photos\/[^)]+)\)/g)]) visuels.push({ chemin, u });
+    }
+    for (const u of jeu.photosKit ?? []) visuels.push({ chemin: '/', u });
+    compter('activites', 'visuels', visuels.length);
+    // Image d'un ARTICLE (contenu, ex. « Préparer ses pieds avant une course ») : elle suit le sujet de l'article, pas le kit du profil
+    // → majeur, signalé hors modèle ; tout autre visuel (kit, composition, pages du site) → bloquant
+    const kit = new Set(jeu.photosKit ?? []);
+    const imagesArticles = new Set(lus.filter((p) => /^\/actualites\/./.test(p.chemin)).flatMap((p) => extraire(p.html.replace(/<(header|footer|nav)\b[\s\S]*?<\/\1>/g, ''), /<img\b[^>]*?\ssrc="([^"]+)"/g)));
+    const vus = new Set();
+    for (const { chemin, u } of visuels) {
+      if (vus.has(u)) continue;
+      vus.add(u);
+      const [autre] = core.visuelsAutreActivite([u], jeu.activites, profession);
+      if (autre && imagesArticles.has(u) && !kit.has(u)) ajouter('activites', { chemin, jeu: jeu.id, gravite: 'majeur', element: u, cle: `activites|${jeu.id}|${u}`, commentaire: `Image d’article d’une autre activité (${autre.activites.join(', ')}) dans le jeu « ${jeu.libelle} » : ${u} (contenu de l’article, hors modèle)`, suggestion: 'Contenu de démonstration : choisir des articles de l’activité du profil, ou accepter (l’image suit le sujet de l’article).' });
+      else if (autre) ajouter('activites', { chemin, jeu: jeu.id, gravite: 'bloquant', element: u, cle: `activites|${jeu.id}|${u}`, commentaire: `Visuel d’une autre activité (${autre.activites.join(', ')}) dans le jeu « ${jeu.libelle} » : ${u}`, suggestion: `Ne montrer que les visuels de l’activité du profil (${jeu.activites.join(', ')}) ou du thème sans activité (kitDuProfil).` });
     }
   }
   return { pages, fichiers };
@@ -762,6 +821,7 @@ async function controleExterne(id, script, argv, analyse) {
 // Passage
 // ---------------------------------------------------------------------------------------------------------------
 const durees = {};
+const dureesJeux = {}; // construction + contrôles de chaque jeu
 const navigateurBrut = await chromium.launch();
 // Toute requête hors du serveur local est notée (contrôle « tiers ») puis bloquée : aucun appel sortant, aucune attente réseau
 const navigateur = {
@@ -806,19 +866,23 @@ for (let k = 0; k < JEUX.length; k++) {
   }
   const { url, fermer } = await servir(dist);
   const t = Date.now();
-  // Toutes les pages × toutes les largeurs, 4 onglets en parallèle par largeur
-  for (const largeur of LARGEURS) {
-    const ctx = await navigateur.newContext({ viewport: { width: largeur, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce', ...(largeur <= 600 ? { isMobile: true, hasTouch: true } : {}) });
-    const file = [...pages];
-    const tl = Date.now();
-    await Promise.all(Array.from({ length: 4 }, async () => { for (let c = file.shift(); c; c = file.shift()) await avecDelai(controlerPage(ctx, jeu, url, c, largeur), 90000, () => ajouter('construction', { chemin: c, jeu: jeu.id, largeur, gravite: 'majeur', cle: `delai|${c}|${largeur}`, commentaire: `Page non contrôlée en 90 s à ${largeur} px`, suggestion: 'Ouvrir la page : chargement bloqué (script, redirection, image) ?' })); }));
-    await ctx.close();
-    journal(`  ${jeu.id} à ${largeur} px : ${((Date.now() - tl) / 1000).toFixed(0)} s`);
-  }
+  // Toutes les pages × toutes les largeurs : une seule file, PARALLELE onglets (largeurs avec captures d'abord : les plus longues)
+  const contextes = new Map();
+  for (const largeur of LARGEURS) contextes.set(largeur, await navigateur.newContext({ viewport: { width: largeur, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce', ...(largeur <= 600 ? { isMobile: true, hasTouch: true } : {}) }));
+  const ordre = [...LARGEURS].sort((a, b) => Number(jeu.captures.includes(b)) - Number(jeu.captures.includes(a)));
+  const file = ordre.flatMap((largeur) => pages.map((c) => [largeur, c]));
+  await Promise.all(Array.from({ length: PARALLELE }, async () => {
+    for (let x = file.shift(); x; x = file.shift()) {
+      const [largeur, c] = x;
+      await avecDelai(controlerPage(contextes.get(largeur), jeu, url, c, largeur), 90000, () => ajouter('construction', { chemin: c, jeu: jeu.id, largeur, gravite: 'majeur', cle: `delai|${c}|${largeur}`, commentaire: `Page non contrôlée en 90 s à ${largeur} px`, suggestion: 'Ouvrir la page : chargement bloqué (script, redirection, image) ?' }));
+    }
+  }));
+  for (const c of contextes.values()) await c.close();
   await controlesInteractifs(navigateur, jeu, url);
   durees[`pages-${jeu.id}`] = Date.now() - t;
   journal(`Contrôles ${jeu.id} : ${pages.length} pages × ${LARGEURS.length} largeurs (${((Date.now() - t) / 1000).toFixed(0)} s)`);
-  if (!args['sans-perf'] && (k === 0 || jeu.id === 'enfant-minimal')) {
+  dureesJeux[jeu.id] = (dureesJeux[jeu.id] ?? 0) + (Date.now() - t);
+  if (!args['sans-perf'] && (k === 0 || jeu.id === 'enfant-minimal' || jeu.forme === 'minimal')) {
     const tp = Date.now();
     const cibles = k === 0 ? ['/', pages.find((p) => p.startsWith('/soins/')) ?? '/soins'] : ['/'];
     for (const c of cibles) perfs.push({ jeu: jeu.id, chemin: c, ...(await performanceStable(navigateur, jeu, url, c)) });
@@ -857,7 +921,11 @@ const captureProche = (t) => {
 };
 rmSync(dossierVignettes, { recursive: true, force: true }); // vignettes de CE modèle-version seulement (sorties du testeur)
 const occ = (t) => occurrences.get(t.empreinte) ?? 1;
-for (const t of tickets) if (occ(t) > 1) t.commentaire = `${t.commentaire} (×${occ(t)})`.slice(0, 500);
+for (const t of tickets) {
+  const j = [...(jeuxDe.get(t.empreinte) ?? [])];
+  if (occ(t) > 1) t.commentaire = `${t.commentaire} (×${occ(t)}${j.length > 1 ? `, jeux : ${j.join(', ')}` : ''})`.slice(0, 500);
+}
+const verdictsJeux = core.verdictsParJeu(parJeu, JEUX.map((j) => j.id));
 const tries = core.dedoublonner(tickets).sort((a, b) => RANG[a.gravite] - RANG[b.gravite] || a.controle.localeCompare(b.controle));
 let nV = 0;
 for (const t of tries) {
@@ -893,13 +961,14 @@ const resumes = {
   console: () => `${f((mesures.console?.console ?? 0) + (mesures.console?.exception ?? 0))} erreur(s)`,
   animations: () => `${f(mesures.animations?.animees ?? 0)} animation(s) repérée(s) à l’accueil`,
   tiers: () => 'requêtes réseau de toutes les pages',
+  activites: () => (JEUX.some((j) => j.activites?.length) ? `${f(mesures.activites?.visuels ?? 0)} visuels vérifiés dans les jeux d’activité` : 'aucun jeu d’activité'),
 };
 const SEUILS_LISIBLES = {
   construction: 'construction réussie', debordement: `aucun débordement (${LARGEURS.join(', ')} px)`, 'mots-coupes': 'aucun mot composé ni mot ≥ 10 lettres coupé', chevauchements: `< ${S.chevauchement * 100} % de recouvrement`,
   contraste: `≥ ${String(S.contrasteTexte).replace('.', ',')}:1 (grand texte ≥ 3:1)`, 'cibles-tactiles': `≥ ${S.cibleTactile} px (échec < ${S.cibleTactileMin} px)`, liens: 'aucun lien interne cassé', 'menu-mobile': 'ouvre, Échap ferme, focus géré',
   'barre-actions': 'appel, itinéraire, RDV, ≥ 44 px', formulaires: 'étiquettes et envoi', images: `chargées, alt, dimensions, ≤ ${Math.round(S.poidsImage / 1024)} Ko, ni démo ni refusée`, polices: 'chargées, auto-hébergées',
   accessibilite: 'aucune violation axe WCAG 2.2 AA (critique = bloquant)', seo: 'title, description, canonical, 1 H1, JSON-LD valide', agents: `score ≥ ${S.scoreAgents}/100`, charte: 'controle:charte sans écart', webkit: '≤ 4 % de pixels par zone',
-  performance: `LCP ≤ ${S.lcpMs / 1000} s, CLS ≤ ${S.cls}, TBT ≤ ${S.tbtMs} ms, ≤ ${Math.round(S.poidsPage / 1024)} Ko`, console: 'aucune erreur', animations: 'reduced-motion respecté, image fixe visible', tiers: 'aucune requête tierce',
+  performance: `LCP ≤ ${S.lcpMs / 1000} s, CLS ≤ ${S.cls}, TBT ≤ ${S.tbtMs} ms, ≤ ${Math.round(S.poidsPage / 1024)} Ko`, console: 'aucune erreur', animations: 'reduced-motion respecté, image fixe visible', tiers: 'aucune requête tierce', activites: 'aucun visuel d’une autre activité (bloquant)',
 };
 const controles = core.CONTROLES_TESTEUR.filter((c) => c.id !== 'visuel').map((c) =>
   core.bilanControle(c.id, tries, { mesure: resumes[c.id]?.() ?? '', seuil: SEUILS_LISIBLES[c.id] ?? '', nonMesure: nonMesures.has(c.id), dureeMs: durees[c.id] }),
@@ -910,7 +979,7 @@ const dureeMs = Date.now() - debut;
 let resultat = {
   format: 'testeur-modeles/1', mode, source: 'script', modele: modele.id, version: modele.version,
   verdict: core.verdictTest(controles, tries), controles, tickets: tries, le: new Date().toISOString(), dureeMs, outil: 'tester-modele.mjs 1',
-  jeux: JEUX.map((j) => ({ id: j.id, libelle: j.libelle })), pages: [...pagesTestees], largeurs: LARGEURS, captures: capturesFaites,
+  jeux: JEUX.map((j) => ({ id: j.id, libelle: j.libelle, verdict: verdictsJeux[j.id], dureeMs: dureesJeux[j.id] ?? null, ...(j.activites?.length ? { activites: j.activites } : {}) })), pages: [...pagesTestees], largeurs: LARGEURS, captures: capturesFaites,
   run: process.env.RUN_URL ?? null,
 };
 
@@ -948,6 +1017,7 @@ if (!args.resultats || args.resultats === true) {
 
 const pastille = { vert: '🟢', orange: '🟠', rouge: '🔴' };
 console.log(`\n${pastille[resultat.verdict]} Verdict ${resultat.verdict.toUpperCase()} — ${modele.nom} v${modele.version} (${(dureeMs / 60000).toFixed(1).replace('.', ',')} min)`);
+for (const j of resultat.jeux) console.log(`  jeu ${j.id} : ${j.verdict} (${((j.dureeMs ?? 0) / 1000).toFixed(0)} s de construction et de contrôles)`);
 for (const c of controles) console.log(`  ${pastille[c.verdict]} ${c.libelle} : ${c.mesure}${c.tickets ? ` — ${c.tickets} ticket(s)` : ''}`);
 const parGravite = (g) => tries.filter((t) => t.gravite === g).length;
 console.log(`\n${tries.length} ticket(s) : ${parGravite('bloquant')} bloquant(s), ${parGravite('majeur')} majeur(s), ${parGravite('mineur')} mineur(s)`);

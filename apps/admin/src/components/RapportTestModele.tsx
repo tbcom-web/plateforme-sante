@@ -62,6 +62,18 @@ export default function RapportTestModele({ resultat }: { resultat: ResultatTest
         {r.run && <a href={r.run} className="text-sm font-semibold text-teal-900 underline" target="_blank" rel="noopener">Run et captures</a>}
       </div>
 
+      {r.jeux.length > 0 && (
+        <ul className="flex flex-wrap gap-2 text-sm" aria-label="Jeux de démonstration" data-jeux>
+          {r.jeux.map((j) => (
+            <li key={j.id} className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-2 py-0.5" data-jeu={j.id}>
+              {j.verdict && <Pastille verdict={j.verdict} />}
+              <span>{j.libelle}</span>
+              {j.dureeMs ? <span className="text-neutral-600">· {Math.round(j.dureeMs / 1000)} s</span> : null}
+            </li>
+          ))}
+        </ul>
+      )}
+
       {cmp && (
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm" data-comparaison>
           <p className="font-semibold">Depuis la v{cmp.versionPrecedente} ({LIBELLE[cmp.verdictPrecedent].toLowerCase()}) : {cmp.corriges.length} corrigé(s), {cmp.toujoursOuverts.length} toujours ouvert(s), {cmp.nouveaux.length} nouveau(x)</p>
