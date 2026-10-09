@@ -2,7 +2,7 @@
 
 import { validerChoixGrille } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
-import { MIGRATION_DEGUSTATION } from '@/lib/degustation';
+import { MIGRATION_DEGUSTATION, tableAbsente } from '@/lib/degustation';
 import { createClient, getUser } from '@/lib/supabase/server';
 
 /**
@@ -21,7 +21,7 @@ export async function enregistrerChoixGrille(brut: Record<string, unknown>): Pro
     format: c.format, type: c.type, dimension: c.dimension, scenario: c.scenario, propositions: c.propositions, meilleures: c.meilleures, pire: c.pire,
     pari: c.pari, appareil: c.appareil, session: c.session, duree_ms: c.dureeMs, profession: c.profession, profil: c.profil, auteur: user?.id ?? null,
   });
-  if (error) return { ok: false, message: MIGRATION_DEGUSTATION, migrationManquante: true };
+  if (error) return tableAbsente(error) ? { ok: false, message: MIGRATION_DEGUSTATION, migrationManquante: true } : { ok: false, message: `Choix non enregistré (${error.message || error.code}) : gardé dans ce navigateur.` };
   // Pas de revalidatePath : la session continue sans recharger la page (état tenu par le navigateur)
   return { ok: true, message: 'Choix enregistré.' };
 }

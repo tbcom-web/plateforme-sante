@@ -14,6 +14,12 @@ import { createClient } from '@/lib/supabase/server';
 
 export const MIGRATION_DEGUSTATION = 'Migration 0042 à exécuter (supabase/migrations/0042_degustation.sql) : vos choix restent dans ce navigateur.';
 
+/** Vraie absence de la table (et non un délai dépassé, un droit refusé…) : seule cause du message « Migration 0042 » */
+export function tableAbsente(e: { code?: string; message?: string } | null | undefined): boolean {
+  if (!e) return false;
+  return e.code === '42P01' || e.code === 'PGRST205' || /does not exist|schema cache/i.test(e.message ?? '');
+}
+
 export type ProfessionDegustation = { id: string; libelle: string; parDefaut: string; specialites: readonly string[] | null };
 
 /** Profession choisie dans l'en-tête de l'admin (cookie du registre), sinon celle par défaut ; rien de codé en dur ici */
@@ -44,7 +50,7 @@ export async function profilsDegustation(p: ProfessionDegustation): Promise<Prof
     .map((t) => ({ id: t.id, nom: t.libelle, sujets: [...t.scenario.principaux, ...t.scenario.secondaires], scenario: t.scenario }));
 }
 
-export const getChoixGrille = cache(async (): Promise<{ choix: ChoixGrille[]; migrationManquante: boolean }> => {
+export const getChoixGrille = cache(async (): Promise<{ choix: ChoixGrille[]; migrationManquante: boolean; erreur?: string }> => {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from('degustation_choix')

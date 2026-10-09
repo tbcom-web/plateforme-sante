@@ -31,7 +31,7 @@ export const metadata = { title: 'Super admin · Dégustation' };
 export default async function PageDegustation() {
   await exigerAdmin();
   const profession = await professionDegustation();
-  const [profils, { choix, migrationManquante }, { duels }, modeles, catalogue, marquesImportees, { univers }, poids, photos, photosJeux, surcharges, predictions, tranches, { notations }] = await Promise.all([
+  const [profils, { choix, migrationManquante, erreur: erreurChoix }, { duels }, modeles, catalogue, marquesImportees, { univers }, poids, photos, photosJeux, surcharges, predictions, tranches, { notations }] = await Promise.all([
     profilsDegustation(profession), getChoixGrille(), getDuelsAlleges(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(),
     getPhotosDesJeux(), getSurchargesSujets(), getPredictions(), getTranches(), getNotationsAdmin(),
   ]);
