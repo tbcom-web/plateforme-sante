@@ -12,6 +12,8 @@ import {
 } from '@plateforme/core';
 import { empreinteIframe } from '../../admin/degustation/Vignettes';
 import ApercuModele, { type RenduChaine } from '../ApercuModele';
+import { apercusMontes } from '@/components/CadreApercu';
+import { demander as demanderOuvrier, diffuser, nbOuvriers } from '@/components/pool-workers';
 import { garderPreselection, type PropositionPreselection } from '../actions';
 import { contexteDuProfil, rendreDesign, type ProfilRendu } from '../rendu-profil';
 
@@ -46,36 +48,21 @@ export default function Preselection(props: Props) {
   // ---- Grilles « Directions » dans des Web Workers (perf, 2026-10-09 : 0,2 à 2 s par grille, jusqu'à 6 par page, sur le fil
   // principal auparavant) : grille demandée = (profil, graine), même calcul (grilles.worker.ts) ; la page suivante est préparée
   // pendant que l'on regarde celle-ci (même profil de démonstration et mêmes graines que lorsqu'elle sera demandée)
-  type Ouvrier = { w: Worker; enCours: number };
-  const pool = useRef<{ ouvriers: Ouvrier[]; n: number; attente: Map<number, (g: GrilleDegustation | null | undefined) => void> } | null>(null);
+  // Workers partagés par l'onglet (pool-workers.ts : réchauffés dès l'arrivée dans l'admin), données de la page envoyées ici
+  const avecOuvriers = useRef(false);
   const grilles = useRef(new Map<string, Promise<GrilleDegustation | null>>());
   useEffect(() => {
     grilles.current.clear();
-    const attente = new Map<number, (g: GrilleDegustation | null | undefined) => void>();
-    const ouvriers: Ouvrier[] = [];
-    const nb = Math.max(1, Math.min(2, (navigator.hardwareConcurrency || 2) - 1));
-    const registres = lireRegistresTirage();
-    for (let k = 0; k < nb; k++) {
-      let w: Worker;
-      try { w = new Worker(new URL('./grilles.worker.ts', import.meta.url)); } catch { break; }
-      const o: Ouvrier = { w, enCours: 0 };
-      w.onmessage = (e: MessageEvent<{ id: number; ok: boolean; grille?: GrilleDegustation | null }>) => { o.enCours--; attente.get(e.data.id)?.(e.data.ok ? e.data.grille ?? null : undefined); attente.delete(e.data.id); };
-      w.onerror = () => { const i = ouvriers.indexOf(o); if (i >= 0) ouvriers.splice(i, 1); };
-      w.postMessage({ type: 'donnees', donnees: { poids: props.poids, photos: props.photos, modeles: props.rendu.modeles, tranches: { refuses: props.tranches.refuses, favoris: props.tranches.favoris } }, registres });
-      ouvriers.push(o);
-    }
-    pool.current = ouvriers.length ? { ouvriers, n: 0, attente } : null;
-    return () => { for (const o of ouvriers) o.w.terminate(); pool.current = null; for (const f of attente.values()) f(undefined); attente.clear(); grilles.current.clear(); };
+    avecOuvriers.current = diffuser('grilles', nbOuvriers(2), { type: 'donnees', donnees: { poids: props.poids, photos: props.photos, modeles: props.rendu.modeles, tranches: { refuses: props.tranches.refuses, favoris: props.tranches.favoris } }, registres: lireRegistresTirage() });
+    return () => { grilles.current.clear(); };
   }, [props.poids, props.photos, props.rendu.modeles, props.tranches]);
   const grille = useCallback((profil: ProfilRendu, g: number): Promise<GrilleDegustation | null> => {
     const cle = `${profil.id}|${g}`;
     const deja = grilles.current.get(cle);
     if (deja) return deja;
     const surPlace = () => grilleDirectionsDegustation({ contexte: ctxDe(profil), notes: props.poids?.notesElements ?? {}, tranches, graine: g });
-    const p = pool.current;
-    const o = p?.ouvriers.length ? p.ouvriers.reduce((a, b) => (b.enCours < a.enCours ? b : a)) : null;
-    const promesse: Promise<GrilleDegustation | null> = p && o
-      ? new Promise((ok) => { const id = ++p.n; o.enCours++; p.attente.set(id, (x) => ok(x === undefined ? surPlace() : x)); o.w.postMessage({ type: 'grille', id, profil, graine: g }); })
+    const promesse: Promise<GrilleDegustation | null> = avecOuvriers.current
+      ? demanderOuvrier('grilles', { type: 'grille', profil, graine: g }).then((r) => (r?.ok ? (r.grille as GrilleDegustation | null) ?? null : surPlace()))
       : new Promise((ok) => setTimeout(() => ok(surPlace()), 0));
     grilles.current.set(cle, promesse);
     return promesse;
@@ -154,7 +141,9 @@ export default function Preselection(props: Props) {
   // Rendu identique à l'œil (empreinte du rendu, comme la Dégustation) : le doublon est masqué
   const verifierRendus = useCallback((id: number, racine: HTMLElement | null) => {
     if (!racine) return;
-    setTimeout(() => {
+    setTimeout(async () => {
+      // Aperçus montés progressivement (CadreApercu) : le contrôle attend qu'ils soient tous montés et remplis
+      await apercusMontes(racine);
       const sig = Array.from(racine.querySelectorAll('iframe')).map((f) => { const e = empreinteIframe(f); return e ? e.map((x) => x.sig).join('\n') : null; });
       const masquees: number[] = [];
       sig.forEach((s, i) => { if (s && sig.slice(0, i).includes(s)) masquees.push(i); });

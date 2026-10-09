@@ -20,3 +20,18 @@ export function historiqueDuelsAllege<D extends AvecIngredients>(duels: readonly
     ? d
     : { ...d, aIngredients: sansComposition(d.aIngredients), bIngredients: sansComposition(d.bIngredients) }));
 }
+
+// ---- Lecture allégée de la table des duels (perf, 2026-10-09) ----
+// PostgREST lit dans les ingrédients seulement ce dont l'historique allégé a besoin (comme duels_apprentissage), sauf pour les
+// duels de combinaisons d'éléments (dimension `paire:…`), lus complets. Même résultat que historiqueDuelsAllege(getDuels)
+// (duels-historique.test.ts), environ un quart de données en moins.
+const CLES_INGREDIENTS = ['atelier', 'assets', 'juge', 'element'] as const;
+/** Colonnes PostgREST : ingrédients sans la composition, en colonnes séparées (a_atelier, a_assets…) */
+export const COLONNES_INGREDIENTS_LEGERS = (['a', 'b'] as const).flatMap((c) => CLES_INGREDIENTS.map((k) => `${c}_${k}:${c}_ingredients->${k}`)).join(', ');
+/** Ligne allégée → ligne au format de la table (a_ingredients / b_ingredients reconstitués), pour duelDepuisLigne */
+export function ligneDuelLegere(l: Record<string, unknown>): Record<string, unknown> {
+  const ing = (c: 'a' | 'b') => Object.fromEntries(CLES_INGREDIENTS.flatMap((k) => (l[`${c}_${k}`] === undefined || l[`${c}_${k}`] === null ? [] : [[k, l[`${c}_${k}`]]])));
+  const r: Record<string, unknown> = { ...l, a_ingredients: ing('a'), b_ingredients: ing('b') };
+  for (const c of ['a', 'b']) for (const k of CLES_INGREDIENTS) delete r[`${c}_${k}`];
+  return r;
+}

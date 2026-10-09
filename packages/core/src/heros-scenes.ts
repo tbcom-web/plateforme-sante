@@ -582,7 +582,16 @@ export function sceneDessin(nom: SceneHeros, registre: RegistreScene): string {
  * Scène dessinée d'un héros (contenu d'un <svg> au format du héros : 640 × 360 en paysage, 360 × 480 en portrait), sans fond ni
  * texte : classes des dessins (dessins.css) dans un groupe .dessin du registre.
  */
+// Scènes déjà dessinées (perf, 2026-10-09 : la même scène revient dans chaque aperçu d'une grille) ; fonction pure de (nom,
+// format, registre) : même texte, calculé une fois
+const memoScenes = new Map<string, string>();
 export function sceneHeros(nom: SceneHeros, o: { format: FormatScene; registre: RegistreScene }): string {
+  const cle = `${nom}|${o.format}|${o.registre}`;
+  let r = memoScenes.get(cle);
+  if (r === undefined) { r = sceneHerosCalculee(nom, o); memoScenes.set(cle, r); }
+  return r;
+}
+function sceneHerosCalculee(nom: SceneHeros, o: { format: FormatScene; registre: RegistreScene }): string {
   const R = REPERE[o.format];
   const corps = FONCTIONS_SCENES()[nom](o.format, o.registre);
   return `<g transform="scale(${+R.s.toFixed(4)})"><g class="dessin dessin--heros-${nom} dessin--${o.registre}" fill="none" stroke-linecap="round" stroke-linejoin="round">${corps}</g></g>`;

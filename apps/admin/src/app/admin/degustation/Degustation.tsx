@@ -23,6 +23,8 @@ import type { SoinCatalogue } from '@/lib/sites';
 import { enregistrerDuel } from '../retours/duel/actions';
 import { ajouterNoteAsset } from '../retours/actions';
 import { enregistrerChoixGrille } from './actions';
+import { apercusMontes } from '@/components/CadreApercu';
+import { demander as demanderOuvrier, diffuser, nbOuvriers } from '@/components/pool-workers';
 import { ApercuIngredient, comparerEmpreintes, Confettis, DIMENSIONS_FOCALES, empreinteIframe, jouerSon, VignetteProposition, type ContexteRendu } from './Vignettes';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -127,27 +129,14 @@ export default function Degustation(props: Props) {
 
   // ---- Préparation des cartes (Web Workers, 1 à 3 selon les cœurs) : carte demandée = (carte, graine, famille de session) ;
   // résultats gardés ; chaque carte part au worker le moins chargé (les cartes sans grille possible sont écartées en parallèle)
+  // Workers partagés par l'onglet (pool-workers.ts : réchauffés dès l'arrivée dans l'admin), données de la page envoyées ici
   type Preparee = { promesse: Promise<CarteConstruite | null>; valeur?: CarteConstruite | null; prete: boolean };
-  type Ouvrier = { w: Worker; enCours: number };
-  const pool = useRef<{ ouvriers: Ouvrier[]; n: number; attente: Map<number, (x: CarteConstruite | null | undefined) => void> } | null>(null);
+  const avecOuvriers = useRef(false);
   const preparees = useRef(new Map<string, Preparee>());
   useEffect(() => {
     preparees.current.clear();
-    const attente = new Map<number, (x: CarteConstruite | null | undefined) => void>();
-    const ouvriers: Ouvrier[] = [];
-    const nb = Math.max(1, Math.min(3, (navigator.hardwareConcurrency || 2) - 1));
-    const registres = lireRegistresTirage();
-    for (let k = 0; k < nb; k++) {
-      let w: Worker;
-      try { w = new Worker(new URL('./cartes.worker.ts', import.meta.url)); } catch { break; }
-      const o: Ouvrier = { w, enCours: 0 };
-      w.onmessage = (e: MessageEvent<{ id: number; ok: boolean; carte?: CarteConstruite | null }>) => { o.enCours--; attente.get(e.data.id)?.(e.data.ok ? e.data.carte ?? null : undefined); attente.delete(e.data.id); };
-      w.onerror = () => { const i = ouvriers.indexOf(o); if (i >= 0) ouvriers.splice(i, 1); };
-      w.postMessage({ type: 'donnees', donnees, registres });
-      ouvriers.push(o);
-    }
-    pool.current = ouvriers.length ? { ouvriers, n: 0, attente } : null;
-    return () => { for (const o of ouvriers) o.w.terminate(); pool.current = null; for (const f of attente.values()) f(undefined); attente.clear(); preparees.current.clear(); };
+    avecOuvriers.current = diffuser('cartes', nbOuvriers(), { type: 'donnees', donnees, registres: lireRegistresTirage() });
+    return () => { preparees.current.clear(); };
   }, [donnees]);
   const demander = useCallback((c: CarteSession, graine: number): Preparee => {
     const famille = familleSessionDe(c);
@@ -155,10 +144,8 @@ export default function Degustation(props: Props) {
     const deja = preparees.current.get(cle);
     if (deja) return deja;
     const surPlace = () => construireCarte(donnees, c, graine, famille, outils);
-    const p = pool.current;
-    const o = p?.ouvriers.length ? p.ouvriers.reduce((a, b) => (b.enCours < a.enCours ? b : a)) : null;
-    const promesse: Promise<CarteConstruite | null> = p && o
-      ? new Promise((ok) => { const id = ++p.n; o.enCours++; p.attente.set(id, (x) => ok(x === undefined ? surPlace() : x)); o.w.postMessage({ type: 'carte', id, carte: c, graine, famille }); })
+    const promesse: Promise<CarteConstruite | null> = avecOuvriers.current
+      ? demanderOuvrier('cartes', { type: 'carte', carte: c, graine, famille }).then((r) => (r?.ok ? (r.carte as CarteConstruite | null) ?? null : surPlace()))
       : new Promise((ok) => setTimeout(() => ok(surPlace()), 0));
     const e: Preparee = { promesse, prete: false };
     void promesse.then((v) => { e.valeur = v; e.prete = true; });
@@ -586,6 +573,9 @@ function CarteGrille({ c, selection, modePire, rendu, onToucher, onSurvol, agran
     if (!FORMATS_PAGES.has(c.grille.format) || focale) return;
     let annule = false;
     const t = setTimeout(async () => {
+      // Aperçus montés progressivement (CadreApercu) : le contrôle attend qu'ils soient tous montés et remplis
+      await apercusMontes(liste.current);
+      if (annule) return;
       const cartes = Array.from(liste.current?.querySelectorAll<HTMLLIElement>('li[data-carte]') ?? []);
       const iframes = cartes.map((li) => li.querySelector('iframe'));
       // Une vignette par tâche (perf, 2026-10-09) : même empreinte, le fil principal respire entre deux

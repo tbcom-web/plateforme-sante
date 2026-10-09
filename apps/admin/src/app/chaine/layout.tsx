@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Shell from '@/components/Shell';
+import PrechauffageOuvriers from '@/components/PrechauffageOuvriers';
 import { exigerContributeur } from '@/lib/chaine-modeles';
 import { LIBELLES_ROLES } from '@plateforme/core';
 
@@ -21,6 +22,7 @@ export default async function LayoutChaine({ children }: { children: React.React
         {moi.role === 'validateur' && <Link href="/chaine/equipe" className="inline-flex min-h-11 items-center rounded-full border border-neutral-300 bg-white px-3 hover:bg-teal-50">Équipe</Link>}
         <span className="ml-auto rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-700" data-role={moi.role}>{LIBELLES_ROLES[moi.role]}</span>
       </nav>
+      <PrechauffageOuvriers />
       {children}
     </Shell>
   );

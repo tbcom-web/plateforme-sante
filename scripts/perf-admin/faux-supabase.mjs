@@ -33,9 +33,15 @@ const json = (res, code, corps, entetes = {}) => {
   res.end(txt);
 };
 const valeur = (v) => (v === 'null' ? null : v === 'true' ? true : v === 'false' ? false : v);
+// Motif LIKE (* ou %) → expression régulière ; caractères spéciaux échappés (barre oblique inverse : code 92)
+const BS = String.fromCharCode(92);
+const motif = (p) => new RegExp('^' + p.split(/[*%]/).map((x) => [...x].map((c) => (('.+?^$' + '{}()|[]' + BS).includes(c) ? BS + c : c)).join('')).join('.*') + '$');
+// Condition PostgREST simple (col.op.valeur) pour or=(…)
+const condition = (c) => { const [col, ...reste] = c.split('.'); return (l) => filtrer([l], [[col, reste.join('.')]]).length === 1; };
 function filtrer(lignes, params) {
   let r = lignes;
   for (const [k, brut] of params) {
+    if (k === 'or') { const conds = brut.replace(/^\(|\)$/g, '').split(',').map(condition); r = r.filter((l) => conds.some((f) => f(l))); continue; }
     if (['select', 'order', 'limit', 'offset', 'on_conflict', 'columns'].includes(k)) continue;
     const [op, ...rest] = brut.split('.');
     const v = rest.join('.');
@@ -45,6 +51,8 @@ function filtrer(lignes, params) {
     else if (op === 'lte') r = r.filter((l) => String(l[k]) <= v);
     else if (op === 'is') r = r.filter((l) => (l[k] ?? null) === valeur(v));
     else if (op === 'not' && rest[0] === 'is') r = r.filter((l) => (l[k] ?? null) !== valeur(rest.slice(1).join('.')));
+    else if (op === 'like' || op === 'ilike') r = r.filter((l) => motif(v).test(String(l[k] ?? '')));
+    else if (op === 'not' && (rest[0] === 'like' || rest[0] === 'ilike')) r = r.filter((l) => l[k] !== null && l[k] !== undefined && !motif(rest.slice(1).join('.')).test(String(l[k])));
     else if (op === 'in') { const set = v.replace(/^\(|\)$/g, '').split(',').map((s) => s.replace(/^"|"$/g, '')); r = r.filter((l) => set.includes(String(l[k]))); }
   }
   return r;
@@ -58,7 +66,10 @@ function rest(req, res, url) {
   const lim = Number(url.searchParams.get('limit') || 0);
   if (lim) l = l.slice(0, lim);
   const sel = url.searchParams.get('select');
-  if (sel && sel !== '*' && !sel.includes('(') && !sel.includes('->')) { const cols = sel.split(',').map((c) => c.trim()); l = l.map((x) => Object.fromEntries(cols.filter((c) => c in x).map((c) => [c, x[c]]))); }
+  if (sel && sel !== '*' && !sel.includes('(')) {
+    const cols = sel.split(',').map((c) => c.trim()).map((c) => { const [alias, chemin] = c.includes(':') ? c.split(':') : [c.replace('->', '_'), c]; const [col, cle] = chemin.split('->'); return { alias: cle ? alias : chemin, col, cle }; });
+    l = l.map((x) => Object.fromEntries(cols.filter((c) => c.col in x).map((c) => [c.alias, c.cle ? (x[c.col]?.[c.cle] ?? null) : x[c.col]])));
+  }
   if (String(req.headers.accept ?? '').includes('vnd.pgrst.object')) return l.length === 1 ? json(res, 200, l[0]) : json(res, 406, { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' });
   return json(res, 200, l, { 'content-range': `0-${Math.max(0, l.length - 1)}/${l.length}` });
 }

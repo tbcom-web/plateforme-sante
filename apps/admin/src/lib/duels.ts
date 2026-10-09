@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { duelDepuisLigne, duelsPourApprentissage, type Duel } from '@plateforme/core';
+import { COLONNES_INGREDIENTS_LEGERS, duelDepuisLigne, duelsPourApprentissage, ligneDuelLegere, type Duel } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getDuelsDegustation, professionDegustation } from '@/lib/degustation';
 import { getExclusionsProfession } from '@/lib/professions-ingredients';
@@ -40,6 +40,39 @@ async function getDuelsSansMemo(): Promise<{ duels: DuelAdmin[]; migrationManqua
   }
 }
 export const getDuels = cache(getDuelsSansMemo);
+
+/**
+ * Journal ALLÉGÉ (perf, 2026-10-09) : même résultat que historiqueDuelsAllege(getDuels().duels) — composition lue seulement pour
+ * les duels de combinaisons d'éléments (dimension `paire:…`, matchsPaires) ; ailleurs, ingrédients sans composition
+ * (COLONNES_INGREDIENTS_LEGERS, duels-historique.ts). Pour la Dégustation, le duel A/B et les éléments tranchés.
+ */
+async function getDuelsAllegesSansMemo(): Promise<{ duels: DuelAdmin[]; migrationManquante: boolean }> {
+  try {
+    const supabase = await createClient();
+    const base = COLONNES.replace('a_ingredients, b_ingredients, ', '');
+    type Reponse = Promise<{ data: unknown[] | null; error: { code?: string; message?: string } | null }>;
+    const lire = (avecProfession: boolean) => {
+      const p = avecProfession ? ', profession' : '';
+      return Promise.all([
+        supabase.from('duels').select(`${base}, ${COLONNES_INGREDIENTS_LEGERS}${p}`).or('dimension_differente.is.null,dimension_differente.not.like.paire:*').order('created_at', { ascending: false }).limit(5000) as unknown as Reponse,
+        supabase.from('duels').select(`${COLONNES}${p}`).like('dimension_differente', 'paire:*').order('created_at', { ascending: false }).limit(5000) as unknown as Reponse,
+      ]);
+    };
+    let [a, b] = await lire(true);
+    if (colonneProfessionAbsente(a.error) || colonneProfessionAbsente(b.error)) [a, b] = await lire(false);
+    if (a.error || b.error) return { duels: [], migrationManquante: true };
+    const lignes = [...((a.data ?? []) as Record<string, unknown>[]).map(ligneDuelLegere), ...((b.data ?? []) as Record<string, unknown>[])]
+      .sort((x, y) => String(y.created_at ?? '').localeCompare(String(x.created_at ?? ''))).slice(0, 5000);
+    const duels = lignes.map((l) => {
+      const d = duelDepuisLigne(l);
+      return d ? { ...d, remarque: typeof l.remarque === 'string' ? l.remarque : null } : null;
+    }).filter((d): d is DuelAdmin => d !== null);
+    return { duels, migrationManquante: false };
+  } catch {
+    return { duels: [], migrationManquante: true };
+  }
+}
+export const getDuelsAlleges = cache(getDuelsAllegesSansMemo);
 
 async function getDuelsApprentissageSansMemo(): Promise<Duel[]> {
   try {

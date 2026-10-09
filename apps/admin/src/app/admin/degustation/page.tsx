@@ -8,7 +8,7 @@ import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getPoidsAtelier } from '@/lib/atelier';
 import { getChoixGrille, MIGRATION_DEGUSTATION, professionDegustation, profilsDegustation } from '@/lib/degustation';
-import { getDuels } from '@/lib/duels';
+import { getDuelsAlleges } from '@/lib/duels';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getNotationsAdmin } from '@/lib/notation-recettes';
@@ -31,7 +31,7 @@ export default async function PageDegustation() {
   await exigerAdmin();
   const profession = await professionDegustation();
   const [profils, { choix, migrationManquante }, { duels }, modeles, catalogue, marquesImportees, { univers }, poids, photos, photosJeux, surcharges, predictions, tranches, { notations }] = await Promise.all([
-    profilsDegustation(profession), getChoixGrille(), getDuels(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(),
+    profilsDegustation(profession), getChoixGrille(), getDuelsAlleges(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(),
     getPhotosDesJeux(), getSurchargesSujets(), getPredictions(), getTranches(), getNotationsAdmin(),
   ]);
   const mesChoix = choixDeLaProfession(choix, profession.id, profession.parDefaut);

@@ -1,5 +1,6 @@
 import Shell from '@/components/Shell';
 import ContexteImages from '@/components/ContexteImages';
+import PrechauffageOuvriers from '@/components/PrechauffageOuvriers';
 import NavAdmin from '@/components/NavAdmin';
 import BoutonParcoursTest from '@/components/BoutonParcoursTest';
 import { professionsAdmin } from '@plateforme/core/professions';
@@ -26,6 +27,8 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
       <div className="mb-4 flex justify-end text-sm"><BoutonParcoursTest compact /></div>
       {/* Contexte d'images (photos exclues, kits par sujet : contexte-images.ts ; arrivages non acceptés) posé avant les aperçus */}
       <ContexteImages />
+      {/* Workers de la Dégustation et de la Présélection réchauffés au repos (pool-workers.ts) */}
+      <PrechauffageOuvriers />
       {children}
     </Shell>
   );

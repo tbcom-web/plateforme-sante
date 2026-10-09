@@ -846,7 +846,22 @@ const ZOOM: Record<string, { x: number; y: number; r: number }> = { verrue: { x:
  * `registre` : « releve » (par défaut, relevé de podoscope), « pedagogique » (schéma au trait) ou « ligne » (trait continu du même
  * sujet, LIGNE_DESSIN ; options `ligne` : épaisseur, boucles, animation du tracé).
  */
+// Dessins déjà calculés (perf, 2026-10-09 : la Présélection et la Dégustation rendent les mêmes dessins dans 6 à 18 aperçus) :
+// svgDessin est une fonction pure de ses arguments (géométrie du code seulement) ; même texte rendu, calculé une fois
+const memoDessins = new Map<string, string>();
+const sansFonction = (o: unknown): boolean => !o || typeof o !== 'object' || Object.values(o as Record<string, unknown>).every((v) => typeof v !== 'function' && sansFonction(v));
 export function svgDessin(nom: NomDessin, opts: { id?: string; classe?: string; registre?: Registre; variante?: VarianteDessin; ligne?: OptionsLigne } = {}): string {
+  if (!sansFonction(opts)) return svgDessinCalcule(nom, opts);
+  const cle = JSON.stringify([nom, opts]);
+  let r = memoDessins.get(cle);
+  if (r === undefined) {
+    r = svgDessinCalcule(nom, opts);
+    if (memoDessins.size >= 400) memoDessins.delete(memoDessins.keys().next().value!);
+    memoDessins.set(cle, r);
+  }
+  return r;
+}
+function svgDessinCalcule(nom: NomDessin, opts: { id?: string; classe?: string; registre?: Registre; variante?: VarianteDessin; ligne?: OptionsLigne }): string {
   const id = opts.id ?? `d-${nom}`;
   const registre = opts.registre ?? 'releve';
   if (registre === 'ligne') return svgLigne(LIGNE_DESSIN[nom] ?? 'pied-dessous', { ...opts.ligne, classe: opts.classe, nomClasse: nom });

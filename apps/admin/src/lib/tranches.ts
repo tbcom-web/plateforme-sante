@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getNotesAssets } from '@/lib/assets-notes';
 import { getNotesAtelier } from '@/lib/atelier';
 import { getNotationsAdmin } from '@/lib/notation-recettes';
-import { getDuels } from '@/lib/duels';
+import { getDuelsAlleges } from '@/lib/duels';
 import { getPolitique } from '@/lib/politique-evaluation';
 
 // Éléments tranchés (packages/core/src/tranches.ts, migration 0041) côté serveur, pour Paul :
@@ -34,7 +34,7 @@ export type DetailTranche = { cle: string; etat: 'refuse' | 'favori'; famille: '
 export const getTranches = cache(async (): Promise<{ tranches: Tranches; details: DetailTranche[]; signaux: SignalTranche[] }> => {
   const [{ reevaluations }, assets, atelier, recettes, duels, politique] = await Promise.all([
     getReevaluations(), getNotesAssets().catch(() => ({ notes: [] })), getNotesAtelier().catch(() => ({ notes: [] })),
-    getNotationsAdmin().catch(() => ({ notations: [] })), getDuels().catch(() => ({ duels: [] })), getPolitique().catch(() => null),
+    getNotationsAdmin().catch(() => ({ notations: [] })), getDuelsAlleges().catch(() => ({ duels: [] })), getPolitique().catch(() => null),
   ]);
   const sAssets: SignalTranche[] = assets.notes.map((n) => ({ cle: n.cle, note: n.note, le: n.le ?? null }));
   const sAtelier: SignalTranche[] = atelier.notes.flatMap((n) => [

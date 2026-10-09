@@ -68,15 +68,17 @@ function budgetAnimations(iframe: HTMLIFrameElement, d: Document, continu: { cur
   const win = iframe.ownerDocument.defaultView ?? window;
   let jusqua = 0, visible = true, actif: boolean | null = null;
   let minuterie = 0, rescan = 0;
+  // En pause : une animation infinie relancée par un changement de classe est arrêtée à son tour (au lieu d'un balayage de
+  // getAnimations() toutes les 2 s dans chaque aperçu : perf, 2026-10-09)
+  const classes = new MutationObserver(() => { if (actif === false) { win.clearTimeout(rescan); rescan = win.setTimeout(() => pauserAnimations(d, true), 300); } });
+  classes.observe(d.body, { attributes: true, attributeFilter: ['class'], subtree: true });
   const appliquer = () => {
     const a = !win.document.hidden && visible && (continu.current || win.performance.now() < jusqua);
     if (a !== actif) {
       actif = a;
       pauserAnimations(d, !a);
-      win.clearInterval(rescan);
-      // En pause : les animations infinies apparues depuis (classe rejouée…) sont arrêtées à leur tour
-      if (!a) rescan = win.setInterval(() => pauserAnimations(d, true), 2000);
-      else win.dispatchEvent(new Event(EVENEMENT_REPRISE));
+      win.clearTimeout(rescan);
+      if (a) win.dispatchEvent(new Event(EVENEMENT_REPRISE));
     }
     win.clearTimeout(minuterie);
     if (a && !continu.current) minuterie = win.setTimeout(appliquer, Math.max(50, jusqua - win.performance.now() + 20));
@@ -97,7 +99,7 @@ function budgetAnimations(iframe: HTMLIFrameElement, d: Document, continu: { cur
     for (const t of evts) d.removeEventListener(t, jouer);
     iframe.removeEventListener('pointerenter', jouer);
     win.document.removeEventListener('visibilitychange', appliquer);
-    win.clearTimeout(minuterie); win.clearInterval(rescan);
+    win.clearTimeout(minuterie); win.clearTimeout(rescan); classes.disconnect();
     reveil.current = () => undefined;
   };
 }
@@ -148,10 +150,55 @@ function Iframe({ largeur, hauteurVue, echelle, defile, mobile, titre, children 
   );
 }
 
+// ---- Montage progressif des aperçus (perf, 2026-10-09 : 5 à 18 aperçus montés dans la même tâche figeaient la page) : deux
+// aperçus montés tout de suite, les suivants un par image, dans l'ordre des demandes. `apercusMontes(racine)` : résolue quand
+// plus aucun aperçu n'attend et que les iframes sous `racine` sont remplies (contrôles d'empreinte de la Dégustation et de la
+// Présélection : faits sur les mêmes aperçus complets qu'avant).
+const IMMEDIATS = 2;
+const fileMontage: { f: () => void; annule: boolean }[] = [];
+let accordesCetteImage = 0, boucleMontage = 0;
+const tourMontage = () => {
+  boucleMontage = 0; accordesCetteImage = 0;
+  // Après l'image peinte : un aperçu de plus, puis l'image suivante
+  setTimeout(() => {
+    let x = fileMontage.shift();
+    while (x?.annule) x = fileMontage.shift();
+    if (x) { accordesCetteImage++; x.f(); }
+    if (fileMontage.length && !boucleMontage) boucleMontage = requestAnimationFrame(tourMontage);
+  }, 0);
+};
+function demanderMontage(f: () => void): () => void {
+  if (!fileMontage.length && accordesCetteImage < IMMEDIATS) {
+    accordesCetteImage++;
+    if (!boucleMontage) boucleMontage = requestAnimationFrame(tourMontage);
+    f();
+    return () => undefined;
+  }
+  const x = { f, annule: false };
+  fileMontage.push(x);
+  if (!boucleMontage) boucleMontage = requestAnimationFrame(tourMontage);
+  return () => { x.annule = true; };
+}
+export async function apercusMontes(racine: Element | null, maxMs = 4000): Promise<void> {
+  const debut = performance.now();
+  for (;;) {
+    const enAttente = fileMontage.some((x) => !x.annule);
+    const vides = racine ? Array.from(racine.querySelectorAll('iframe')).some((f) => !f.contentDocument?.body?.firstElementChild) : false;
+    if ((!enAttente && !vides) || performance.now() - debut > maxMs) return;
+    await new Promise((ok) => setTimeout(ok, 50));
+  }
+}
+
 export default function CadreApercu({ appareil, vignette, plein = false, paresseux = Boolean(vignette), hauteur: hauteurImposee, titre = 'Aperçu du site', children }: Props) {
   const boite = useRef<HTMLDivElement>(null);
   const [mesure, setMesure] = useState<{ largeur: number; hauteur: number } | null>(null);
   const [visible, setVisible] = useState(!paresseux);
+  // Montage accordé par la file (deux tout de suite, puis un par image)
+  const [autorise, setAutorise] = useState(false);
+  useIsoLayoutEffect(() => {
+    if (!visible || autorise) return;
+    return demanderMontage(() => setAutorise(true));
+  }, [visible, autorise]);
 
   useIsoLayoutEffect(() => {
     const el = boite.current;
@@ -194,7 +241,7 @@ export default function CadreApercu({ appareil, vignette, plein = false, paresse
 
   const ecran = d && (
     <div style={{ width: d.largeurAffichee, height: d.hauteurAffichee, overflow: 'hidden', position: 'relative', borderRadius: coque ? 22 : undefined, background: '#fff' }}>
-      {visible
+      {visible && autorise
         ? <Iframe key={`${appareil}|${d.largeur}`} largeur={d.largeur} hauteurVue={d.hauteurVue} echelle={d.echelle} defile={!vignette} mobile={mobile} titre={titre}>{children}</Iframe>
         : <div aria-hidden="true" className="h-full w-full bg-neutral-100" />}
     </div>
