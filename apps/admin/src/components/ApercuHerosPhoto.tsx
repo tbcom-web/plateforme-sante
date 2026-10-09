@@ -8,7 +8,7 @@ import { useMetierApercu } from './ApercuMetier';
 import { CLASSE_PAUSE } from './AnimationsBudget';
 import { useEffect, useRef, useState } from 'react';
 import {
-  animationDuHeros, CORPS_PARTICULES, CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
+  animationDuHeros, familleDePolice, fondHerosEffectif, paireDuModele, CORPS_PARTICULES, CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
   TRANSITIONS_DIAPORAMA, illustrationTheme, themeIllustre, type Registre, type ModeleManifeste, type ReplisApercu, type SiteDraft, type TransitionDiaporama,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -83,6 +83,11 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
   const soinsPhrase = principaux.length ? `${principaux.slice(0, -1).join(', ')}${principaux.length > 1 ? ' et ' : ''}${principaux.at(-1)}.` : '';
   const qui = r.noms.join(' et ') || d.cabinet.nom;
   const plusieurs = r.noms.length > 1 && r.rdvEnLigne;
+  // Illustration du sujet du héros (fente : maillé et bento sans photo, fond « illustration ») ; fond du premier écran sans visuel
+  // (fonds-heros.ts) : celui de la recette, sinon celui de la famille de style (police du modèle) — jamais un premier écran vide
+  const nav = construireNavigation(d, soins).principaux.map((x) => x.theme.id);
+  const sujet = d.theme.herosSujet && nav.includes(d.theme.herosSujet) ? d.theme.herosSujet : nav[0];
+  const fond = fondHerosEffectif(v, (m.variantes as Record<string, string> | undefined)?.['fond-heros'], { famille: familleDePolice(paireDuModele(m)?.id), illustration: Boolean(sujet && themeIllustre(sujet)), style: registre });
   const { avant, apres, fente, css } = htmlHeros({
     variante: v,
     transition,
@@ -106,14 +111,13 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     pause,
     animation: animationBrute,
     visuelAnime,
+    fond,
     tempo: tempoApercu(construireNavigation(d, soins).principaux.map((x) => x.theme.id as string)),
   });
   // Illustration de l'emplacement : celle du site (VisuelTheme : illustration composée du sujet du héros, gamme du site sauf
   // modèle à teinte « gamme » en relevé)
-  const nav = construireNavigation(d, soins).principaux.map((x) => x.theme.id);
-  const sujet = d.theme.herosSujet && nav.includes(d.theme.herosSujet) ? d.theme.herosSujet : nav[0];
   const gamme = m.jetons.teinte === 'gamme' && registre === 'releve' ? null : d.theme.gamme || null;
-  const svg = fente && sujet && themeIllustre(sujet) ? illustrationTheme(sujet, { format: v === 'bento' ? 'paysage' : 'portrait', registre, gamme, id: `hp-${sujet}` }) : illustration;
+  const svg = fente && sujet && themeIllustre(sujet) ? illustrationTheme(sujet, { format: v === 'bento' || fond === 'illustration' ? 'paysage' : 'portrait', registre, gamme, id: `hp-${sujet}` }) : illustration;
   return (
     <div ref={boite} onClick={(e) => { if ((e.target as Element).closest?.('.hp__pause')) setPause((p) => !p); }}>
       <style dangerouslySetInnerHTML={{ __html: CSS_HEROS + css }} />

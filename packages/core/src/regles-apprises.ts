@@ -18,6 +18,7 @@
 import { ETIQUETTES_HARMONIE, type ProfilHarmonie } from './harmonie';
 import { gamme as gammeParId } from './gammes';
 import { rvb } from './couleurs';
+import { PREMIERS_ECRANS_SANS_VISUEL } from './heros-photo-variantes';
 
 export const REGLAGES_REGLES = { supportMin: 3, coherenceMin: 0.5, parSupport: 0.15, plafondCumule: 1, maxRegles: 12 } as const;
 
@@ -53,6 +54,8 @@ export type RegleCatalogue = {
 const alerte = (a: AttributsElement, ...ids: string[]) => (a.alertes ?? []).some((x) => ids.includes(x));
 const tag = (a: AttributsElement, re: RegExp) => (a.hashtags ?? []).some((x) => re.test(x));
 const p = (a: AttributsElement, k: keyof ProfilHarmonie) => a.profil?.[k] ?? 0;
+/** Premiers écrans à faible densité visuelle : sans visuel principal (texte sur un aplat) et fond uni (fonds-heros.ts) */
+const CLES_VIDES = new Set([...PREMIERS_ECRANS_SANS_VISUEL.map((v) => `composant:accueil:${v}`), 'composant:fond-heros:aucun']);
 
 export const CATALOGUE_REGLES: readonly RegleCatalogue[] = [
   {
@@ -81,6 +84,14 @@ export const CATALOGUE_REGLES: readonly RegleCatalogue[] = [
     etiquettes: ['fade', 'couleurs-fades'], mots: /\bfade|terne|triste|p[âa]lot|morne|sans relief|plat\b|d[ée]lav/i,
     cible: (k, a) => (k.startsWith('photo:') ? alerte(a, 'sombre-ou-flou') || (a.saturation !== null && a.saturation !== undefined && a.saturation < 0.18) : p(a, 'e') <= -0.3 && p(a, 'c') <= 0.2),
     sourcing: { saturationMin: 0.2, luminositeMin: 0.35 },
+  },
+  {
+    // Retour de Paul du 2026-10-09 (présélection « Éditorial chic · typo didone · typographique », fond violet uni) : « assez vide :
+    // juste du texte sur fond de couleur, il manque de la matière en arrière-plan » — premier signal (SIGNAUX_CONSIGNES)
+    id: 'trop-vide', constat: '« Trop vide » sur des premiers écrans sans matière', action: 'Pénaliser les compositions à faible densité visuelle', type: 'penaliser', effetMax: 0.75,
+    portee: 'premiers écrans sans visuel principal (typographique, formes seules) et fond uni : juste du texte sur un aplat',
+    etiquettes: ['trop-vide', 'vide', 'manque-de-matiere'], mots: /\bvides?\b|\bfade|manque (de (la )?)?mati[eè]re|\bplat\b|juste du texte|rien d.autre|trop sobre|pas assez rempli/i,
+    cible: (k) => CLES_VIDES.has(k),
   },
   {
     id: 'clipart', constat: '« Clipart » sur des illustrations', action: 'Pénaliser les illustrations au rendu clipart', type: 'penaliser', effetMax: 0.75,
@@ -120,6 +131,7 @@ export const RAISONS_REFUS: readonly { id: string; libelle: string }[] = [
   { id: 'couleur-criarde', libelle: 'Couleur criarde' },
   { id: 'photo-visage', libelle: 'Photo de visage' },
   { id: 'fade', libelle: 'Fade' },
+  { id: 'trop-vide', libelle: 'Trop vide' },
   { id: 'clipart', libelle: 'Clipart' },
   { id: 'texte-marque', libelle: 'Texte ou marque' },
   { id: 'anatomie-fausse', libelle: 'Anatomie fausse' },
@@ -291,13 +303,28 @@ export function motsFrequents(signaux: readonly SignalRetour[], o: { min?: numbe
     .map(([mot, v]) => ({ mot, n: v, couvert: CATALOGUE_REGLES.some((r) => r.mots.test(mot)) }));
 }
 
-/** Retours de Paul → signaux pour l'apprentissage des règles (notes, recettes, duels, grilles, expositions, tickets) */
+/**
+ * Retours de Paul donnés dans la conversation (pas encore dans un journal de l'admin) : comptés comme des signaux comme les autres
+ * (signauxDepuisRetours les ajoute par défaut). 2026-10-09 : présélection « Éditorial chic · aéré · typo didone · trait fin,
+ * typographique », gamme violette (prune), fond uni.
+ */
+export const SIGNAUX_CONSIGNES: readonly SignalRetour[] = [
+  {
+    cles: ['composant:accueil:typographique', 'composant:fond-heros:aucun', 'typo:police:didone', 'gamme:prune', 'modele:elegant-sobre'], etiquettes: ['trop-vide'],
+    texte: 'Je trouve ce modèle assez vide : juste du texte sur fond de couleur, il manque de la matière en arrière-plan, comme une illustration ou autre.',
+    negatif: true, source: 'grille', le: '2026-10-09',
+  },
+];
+
+/** Retours de Paul → signaux pour l'apprentissage des règles (notes, recettes, duels, grilles, expositions, tickets, consignes) */
 export function signauxDepuisRetours(o: {
   notes?: readonly { cle: string; note: number; etiquettes?: readonly string[] | null; texte?: string | null; le?: string | null }[];
   recettes?: readonly { cles: readonly string[]; note: number | null; contre?: readonly string[] | null; texte?: string | null; le?: string | null }[];
   duels?: readonly { perdant: readonly string[]; gagnant: readonly string[]; mauvais: boolean; etiquettes?: readonly string[] | null; texte?: string | null; le?: string | null }[];
   expositions?: readonly { cle: string; resultat: string; etiquettes?: readonly string[] | null; texte?: string | null; le?: string | null; surface?: string }[];
   tickets?: readonly { cles: readonly string[]; etiquette?: string | null; texte?: string | null; le?: string | null }[];
+  /** Retours donnés dans la conversation (défaut : SIGNAUX_CONSIGNES) ; [] pour les ignorer */
+  consignes?: readonly SignalRetour[];
 }): SignalRetour[] {
   const l: SignalRetour[] = [];
   for (const n of o.notes ?? []) l.push({ cles: [n.cle], etiquettes: n.etiquettes ?? null, texte: n.texte ?? null, negatif: n.note <= 2, source: 'note', le: n.le ?? null });
@@ -311,5 +338,6 @@ export function signauxDepuisRetours(o: {
     l.push({ cles: [e.cle], etiquettes: e.etiquettes ?? null, texte: e.texte ?? null, negatif: e.resultat === 'refuse' || e.resultat === 'pire' || e.resultat === 'ignore', source: e.surface === 'arrivages' ? 'arrivage' : e.surface === 'kits' ? 'kit' : 'grille', le: e.le ?? null });
   }
   for (const t of o.tickets ?? []) l.push({ cles: t.cles, etiquettes: t.etiquette ? [t.etiquette] : null, texte: t.texte ?? null, negatif: true, source: 'ticket', le: t.le ?? null });
+  l.push(...(o.consignes ?? SIGNAUX_CONSIGNES));
   return l;
 }

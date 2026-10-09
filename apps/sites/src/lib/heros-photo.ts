@@ -1,11 +1,11 @@
 // Données des nouveaux premiers écrans (packages/core/src/heros-photo.ts) pour le site publié : variante choisie par la recette
 // (variantes.accueil, tous gabarits), photos (style « Photos » : photo d'accueil du praticien, photos de la recette, jeu de la
 // spécialité ; sinon photos importées par le praticien), textes et liens identiques au premier écran des gabarits.
-import { estAnimationEntete, gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcranNouveau, herosRenduPossible, photosMontrees, styleCouleursHeros, motLongTitre, type DonneesHeros, type PhotoHeros, type TransitionDiaporama, TRANSITIONS_DIAPORAMA } from '@plateforme/core';
+import { estAnimationEntete, familleDePolice, fondHerosEffectif, FOND_HEROS_SUR, paireDuModele, gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcranNouveau, herosRenduPossible, photosMontrees, styleCouleursHeros, motLongTitre, type DonneesHeros, type PhotoHeros, type TransitionDiaporama, TRANSITIONS_DIAPORAMA } from '@plateforme/core';
 import { site } from './site';
 import { discipline } from './pack';
 import { jeu } from './visuels-soins';
-import { photoResponsive } from './visuels';
+import { photoResponsive, registre } from './visuels';
 import { vitrinePhoto, visuelPremierEcran, animationPremierEcran } from './vitrine';
 import { navigation } from './navigation';
 import { nomLieu } from './gabarits';
@@ -39,6 +39,18 @@ const animation = estAnimationEntete(animationBrute) ? animationBrute : null;
 const sujetsSite = navigation.principaux.map((t) => t.theme.id as string);
 const tempo = sujetsSite.includes('sport') && !sujetsSite.some((s) => s === 'diabete' || s === 'senior') ? 'vif' as const : 'calme' as const;
 
+// Fond du premier écran (fonds-heros.ts) : un premier écran sans visuel porte toujours de la matière. Choix de la recette, sinon le
+// fond de la famille de style (police du modèle) sur la démo, la trame (signature déjà en place) sur un site de praticien ;
+// « illustration » seulement avec l'illustration héros du thème (SVG en ligne : jamais candidate au LCP, le titre le reste)
+const fondChoisi = site.modele.variantes?.['fond-heros'];
+const fond = fondHerosEffectif(brute, fondChoisi, {
+  famille: familleDePolice(paireDuModele(site.modele)?.id),
+  permis: site.demo ? undefined : (f) => f === fondChoisi || f === FOND_HEROS_SUR,
+  illustration: visuelPremierEcran.type === 'dessin' && Boolean(visuelPremierEcran.heros),
+  // Illustrations douces, relevé : le héros illustré du thème, net devant les aplats (formes du lot 2) ou estompé (typographique)
+  style: vitrinePhoto ? 'photos' : registre,
+});
+
 const specialite = discipline;
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : aTelephone ? telLien : lienContact;
@@ -70,6 +82,7 @@ export const donneesHeros: DonneesHeros | null = varianteHeros ? {
   tempo,
   // Visuel animé du premier écran (heros-anime.ts) : à la place de la photo ou de l'illustration, même cadre
   visuelAnime: animationPremierEcran,
+  fond,
 } : null;
 
 /** Variante du premier écran des gabarits tableau, village, revue quand le nouveau premier écran n'est pas rendu (pas de photo) */

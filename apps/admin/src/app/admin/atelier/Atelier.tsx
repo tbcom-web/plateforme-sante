@@ -338,7 +338,7 @@ export default function Atelier(props: Props) {
               <li className={puce}>Animation : {p.animation ? LIBELLES_ANIMATIONS[p.animation].split(' ').slice(0, 3).join(' ') : 'image fixe'}</li>
               <li className={puce}>Héros : {p.heros ? themeParId(p.heros)?.court : 'aucun'}</li>
               <li className={puce}>Sujet n° 1 : {sujets[0] ? themeParId(sujets[0])?.court : 'cabinet'}</li>
-              {comp && (['accueil', 'entete-anim', 'transition', 'sections', 'portraits'] as const).map((s) => {
+              {comp && (['accueil', 'entete-anim', 'fond-heros', 'transition', 'sections', 'portraits'] as const).map((s) => {
                 const v = (comp.sections.variantes as Record<string, string>)[s];
                 return v ? <li key={s} className={puce}>{NOMS_SECTIONS_VARIABLES[s] ?? s} : {LIBELLES_VARIANTES[s]?.[v] ?? v}{aValider.includes(`composant:${s}:${v}`) && <span className="ml-1 rounded bg-amber-100 px-1 font-semibold text-amber-900">à valider</span>}</li> : null;
               })}

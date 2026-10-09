@@ -9,7 +9,7 @@
 
 import { GAMMES } from './gammes';
 import type { Registre } from './dessins';
-import { ANIMATIONS_ENTETE, VISUELS_HEROS, PREMIERS_ECRANS_NOUVEAUX, TRANSITIONS_DIAPORAMA, TRANSITIONS_SECTIONS, estPremierEcranNouveau } from './heros-photo-variantes';
+import { ANIMATIONS_ENTETE, FONDS_HEROS, VISUELS_HEROS, PREMIERS_ECRANS_NOUVEAUX, TRANSITIONS_DIAPORAMA, TRANSITIONS_SECTIONS, estPremierEcranNouveau } from './heros-photo-variantes';
 import { PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 
 /**
@@ -66,6 +66,13 @@ export const VARIANTES_SECTIONS = {
    * même cadre et même masque. Premiers écrans à visuel principal seulement (pas les photos plein écran).
    */
   'visuel-heros': VISUELS_HEROS,
+  /**
+   * Fond du premier écran (retour de Paul du 2026-10-09 : « assez vide, il manque de la matière en arrière-plan ») : couche statique
+   * derrière le texte des premiers écrans SANS visuel principal (typographique, formes du lot 2), obligatoire pour eux
+   * (fonds-heros.ts) : empreintes en filigrane, lignes de niveau, formes de la gamme, trame, illustration estompée, trajectoires.
+   * Facultatif (absent = fond de la famille de style à la lecture) ; ignoré par les premiers écrans à visuel.
+   */
+  'fond-heros': FONDS_HEROS,
   /** Transitions entre les sections (toutes pages) : vague, chevauchement, révélation au défilement, cartes empilées */
   sections: TRANSITIONS_SECTIONS,
   /** Soins : trois rangées (Soins, Pour qui, Infos pratiques) en bulles à picto, ou en grille de boutons */
@@ -133,9 +140,11 @@ export const VARIANTES_SECTIONS = {
   article: ['standard', 'lecture', 'laterale', 'chapo'],
 } as const;
 export type SectionVariable = keyof typeof VARIANTES_SECTIONS;
-export type Variantes = { [S in Exclude<SectionVariable, 'portraits'>]: (typeof VARIANTES_SECTIONS)[S][number] } & {
+export type Variantes = { [S in Exclude<SectionVariable, 'portraits' | 'fond-heros'>]: (typeof VARIANTES_SECTIONS)[S][number] } & {
   /** Présentation des portraits : facultative (absente = « sobre », celle du gabarit) ; fiches et variantes antérieures inchangées */
   portraits?: (typeof VARIANTES_SECTIONS)['portraits'][number];
+  /** Fond du premier écran : facultatif (absent = fond de la famille de style pour un premier écran sans visuel, fonds-heros.ts) */
+  'fond-heros'?: (typeof VARIANTES_SECTIONS)['fond-heros'][number];
 };
 /** Variantes par défaut de chaque gabarit (la fiche peut en changer une partie). */
 export const VARIANTES_PAR_DEFAUT: Record<Exclude<Gabarit, 'classique'>, Variantes> = {
@@ -151,7 +160,7 @@ export function variantesModele(m: Pick<ModeleManifeste, 'gabarit' | 'variantes'
   return g === 'classique' ? null : { ...VARIANTES_PAR_DEFAUT[g], ...(m.variantes ?? {}) };
 }
 /** Sections dont la variante s'applique aussi au gabarit classique (présentation des sujets seulement) */
-export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme', 'theme', 'article', 'accueil', 'transition', 'entete-anim', 'visuel-heros', 'sections', 'portraits'];
+export const VARIANTES_CLASSIQUE: readonly SectionVariable[] = ['sujets', 'soins-forme', 'theme', 'article', 'accueil', 'transition', 'entete-anim', 'visuel-heros', 'fond-heros', 'sections', 'portraits'];
 /** Forme des cartes (tous gabarits) ; défaut : celle du modèle */
 export const formeDesCartes = (m: Pick<ModeleManifeste, 'variantes'>): Variantes['soins-forme'] =>
   (VARIANTES_SECTIONS['soins-forme'] as readonly string[]).includes(m.variantes?.['soins-forme'] as string) ? m.variantes!['soins-forme']! : 'gabarit';

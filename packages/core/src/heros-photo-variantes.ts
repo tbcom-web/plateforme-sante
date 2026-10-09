@@ -266,6 +266,42 @@ export const LIBELLES_VISUELS_HEROS: Record<VisuelHeros, string> = {
   auto: 'Selon le style (photo ou illustration)', photo: 'Photo', illustration: 'Illustration', animation: 'Animation (à valider)',
 };
 
+// ---------------------------------------------------------------------------------------------------------------
+// Fond du premier écran (retour de Paul du 2026-10-09, sur un premier écran typographique violet : « je trouve ce modèle assez
+// vide : juste du texte sur fond de couleur, il manque de la matière en arrière-plan, comme une illustration ou autre »).
+// RÈGLE : un premier écran SANS visuel principal (typographique, compositions de formes du lot 2) porte toujours une couche de
+// matière en arrière-plan (fonds-heros.ts : statique, < 4 Ko, contraste AA du texte calculé). « aucun » n'est jamais tiré ;
+// les premiers écrans à visuel (photo, illustration, animation) n'en ont pas besoin (la valeur y est ignorée).
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Premiers écrans sans visuel principal (ni photo, ni illustration, ni animation du thème) : fond obligatoire */
+export const PREMIERS_ECRANS_SANS_VISUEL: readonly string[] = ['typographique', ...PREMIERS_ECRANS_LOT2_LIBRES];
+export const estPremierEcranSansVisuel = (v: unknown): boolean => PREMIERS_ECRANS_SANS_VISUEL.includes(v as string);
+
+export const FONDS_HEROS = ['aucun', 'empreintes', 'topographie', 'formes', 'formes-franches', 'trame', 'illustration', 'trajectoires'] as const;
+export type FondHeros = (typeof FONDS_HEROS)[number];
+export const estFondHeros = (v: unknown): v is FondHeros => (FONDS_HEROS as readonly unknown[]).includes(v);
+export const LIBELLES_FONDS_HEROS: Record<FondHeros, string> = {
+  aucun: 'Aucun (fond uni)',
+  empreintes: 'Empreintes en lignes de niveau, en filigrane (à valider)',
+  topographie: 'Lignes de niveau qui débordent du cadre (à valider)',
+  formes: 'Formes organiques de la gamme qui se chevauchent (à valider)',
+  'formes-franches': 'Formes franches de la gamme (à valider)',
+  trame: 'Trame de points de pression',
+  illustration: 'Illustration du thème en grand, estompée (à valider)',
+  trajectoires: 'Trajectoires du déroulé du pas (à valider)',
+};
+/**
+ * Fond par défaut selon la famille de style (harmonie.ts) : éditorial et classique = filigrane fin ; pop = formes franches ;
+ * doux et nature = formes organiques ; technique = lignes de niveau ; magazine = trame ; minimal = trajectoires.
+ */
+export const FOND_HEROS_PAR_FAMILLE: Record<string, Exclude<FondHeros, 'aucun'>> = {
+  'editorial-chic': 'empreintes', 'classique-sobre': 'empreintes', 'graphique-pop': 'formes-franches', 'doux-rond': 'formes',
+  'nature-chaleureuse': 'formes', 'technique-net': 'topographie', 'magazine-affirme': 'trame', 'minimal-clinique': 'trajectoires',
+};
+/** Fond toujours permis (signature de la marque, déjà présente sur le typographique) : repli pour un praticien */
+export const FOND_HEROS_SUR: Exclude<FondHeros, 'aucun'> = 'trame';
+
 /**
  * Ingrédients « à valider » (lot 2 des premiers écrans, animations d'en-tête) : disponibles dans le Studio (libellé « à
  * valider »), dans « Donner mon avis » et les duels ; jamais tirés ni proposés à un praticien tant que Paul ne les a pas validés
@@ -280,6 +316,8 @@ export const INGREDIENTS_A_VALIDER: ReadonlySet<string> = new Set([
   'composant:visuel-heros:animation',
   // Liant « chevrons de vitesse » entre les sections (2026-10-09, sport)
   'composant:sections:chevrons',
+  // Fonds du premier écran (2026-10-09) : nouveaux, sauf la trame (signature déjà en place sur le typographique)
+  ...FONDS_HEROS.filter((f) => f !== 'aucun' && f !== FOND_HEROS_SUR).map((f) => `composant:fond-heros:${f}`),
 ]);
 export const estAValider = (cle: string, valides?: ReadonlySet<string> | null) => INGREDIENTS_A_VALIDER.has(cle) && !valides?.has(cle);
 

@@ -228,6 +228,7 @@ test('signaux depuis les retours et mots fréquents non compris', () => {
     notes: [{ cle: 'gamme:a', note: 2, texte: 'vraiment kitsch' }, { cle: 'gamme:b', note: 4 }],
     expositions: [{ cle: 'photo:x', resultat: 'refuse', etiquettes: ['photo-visage'], surface: 'arrivages' }, { cle: 'photo:y', resultat: 'choisi' }],
     duels: [{ perdant: ['gamme:c'], gagnant: ['gamme:d'], mauvais: false, etiquettes: ['fade'] }],
+    consignes: [],
   });
   assert.deepEqual(s.map((x) => `${x.source}:${x.negatif}`), ['note:true', 'note:false', 'duel:true', 'arrivage:true']);
   const m = motsFrequents([1, 2, 3].map(() => ({ cles: ['x:y'], texte: 'Typographie bancale, trop chargé', negatif: true, source: 'note' as const })));

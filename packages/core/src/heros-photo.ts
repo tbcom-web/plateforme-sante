@@ -20,15 +20,17 @@ import { contraste, melanger, rvb } from './couleurs';
 import { CYCLES, COURBES, DUREES, NEUTRES } from './charte';
 import { couleursGabarit, type CouleursGabarit } from './gabarits';
 import type { ModeleManifeste } from './modeles';
-import { estPremierEcranAnime, estPremierEcranPhoto, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, type AnimationEntete, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
+import { estPremierEcranAnime, estPremierEcranPhoto, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, estPremierEcranSansVisuel, type AnimationEntete, type FondHeros, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
 import { AVEC_COMPOSITION, cssLot2, FONDS_LOT2, FORMES_LOT2, teintesSousTexte } from './heros-organiques';
 import { cssAnimationEntete, htmlAnimationEntete, motsDesSoins } from './entete-anim';
 import { cssVisuelAnime, htmlVisuelAnime } from './heros-anime';
+import { alphaFondHeros, cssFondHeros, htmlFondHeros, PLAFONDS_FONDS_HEROS } from './fonds-heros';
 
 export * from './heros-photo-variantes';
 export { teintesSousTexte, cssLot2 } from './heros-organiques';
 export { cssAnimationEntete, htmlAnimationEntete, motsDesSoins, SCRIPT_ENTETE, DUREE_ENTETE } from './entete-anim';
 export { animationDuHeros, animationsHerosDuSujet, animationsPretesDepuisStatuts, cssVisuelAnime, htmlVisuelAnime, statutAnimationHeros, SCRIPT_VISUEL_ANIME, type StatutAnimationHeros, type TonVisuelAnime } from './heros-anime';
+export * from './fonds-heros';
 export { ANIMATIONS_EMPREINTES, CORPS_PARTICULES, SCRIPT_PARTICULES, estAnimationEmpreintes, type AnimationEmpreintes } from './entete-empreintes';
 
 /** Photos montrées au plus par le diaporama (3 à 5 demandées) */
@@ -118,6 +120,12 @@ export type DonneesHeros = {
    * dans le même cadre et sous le même masque ; aucune autre animation dans l'en-tête. Premiers écrans à visuel seulement.
    */
   visuelAnime?: AnimationEntete | null;
+  /**
+   * Fond du premier écran (fonds-heros.ts, fondHerosEffectif) : couche de matière derrière le texte des premiers écrans SANS
+   * visuel (typographique, formes du lot 2) ; ignoré ailleurs. « illustration » : l'appelant pose l'illustration du thème dans la
+   * fente. Absent ou « aucun » : rendu d'avant (fond uni).
+   */
+  fond?: FondHeros | null;
 };
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -174,6 +182,8 @@ function titre(d: DonneesHeros): string {
     + (d.via ? `<p class="hp__via">${esc(d.via)}</p>` : '');
 }
 
+/** Hauteur (px, marge comprise, au plus juste) de la composition du lot 2 au-dessus du texte sur téléphone (heros-organiques.ts) */
+const HAUT_COMPO_TEL: Record<string, number> = { 'papier-decoupe': 250, 'tache-morph': 300, 'maille-anime': 110, 'forme-respire': 120 };
 /** Variantes dont la photo est posée sur le fond de la page (fondue, découpée, masquée) */
 const SUR_PAGE: readonly string[] = ['fondu', 'fondu-double', 'oblique', 'parallelogramme', 'organique', 'organique-fondu', ...PREMIERS_ECRANS_LOT2];
 const TAILLES: Partial<Record<PremierEcranNouveau, string>> = {
@@ -192,7 +202,7 @@ const DECORS: Partial<Record<PremierEcranNouveau, string>> = {
 
 /**
  * HTML du premier écran, en deux morceaux autour de l'emplacement du visuel du sujet (`fente` : illustration du thème, rendue par
- * le site ou l'aperçu ; seulement « maille » et « bento » sans photo). Toujours rendu : une variante photo sans photo est remplacée
+ * le site ou l'aperçu ; « maille » et « bento » sans photo, et le fond « illustration » des premiers écrans sans visuel). Toujours rendu : une variante photo sans photo est remplacée
  * par l'appelant (herosRenduPossible).
  */
 export function htmlHeros(d0: DonneesHeros): { avant: string; apres: string; fente: boolean; css: string } {
@@ -210,23 +220,39 @@ export function htmlHeros(d0: DonneesHeros): { avant: string; apres: string; fen
   const classes = ['hp', `hp--${v}`, surPhoto && 'hp--sur-photo', surPage && 'hp--sur-page', anime && `hp--t-${d.transition}`, anime && d.mode === 'apercu' && !d.pause && 'hp--joue', d.pause && 'hp--pause'].filter(Boolean).join(' ');
   const style = [d.couleurs, `--mot-long:${d.motLong}`, anime ? `--hp-anim:hp-${d.transition}-${photos.length};--hp-anim-pt:hp-pt-${photos.length};--hp-cycle:${photos.length * DUREE_DIAPO}ms;--hp-d:${DUREE_DIAPO}ms;--hp-t:${DUREE_TRANSITION}ms` : ''].filter(Boolean).join(';');
   const ouverture = `<section class="${classes}" style="${esc(style)}" aria-label="Le cabinet en bref"${anime ? ` data-hp-diapos="${photos.length}"` : ''}${animation || va ? ' data-ea' : ''}${va ? ' data-visuel-anime' : ''}>${lueur}`;
-  const css = keyframesHeros(anime ? d.transition : null, photos.length) + cssLot2(v) + cssAnimationEntete(animation) + (va ? cssVisuelAnime(va) : '');
+  // Fond du premier écran (fonds-heros.ts) : seulement sans visuel principal ; opacité calculée pour l'AA du texte de la variante
+  const fond = d.fond && d.fond !== 'aucun' && estPremierEcranSansVisuel(v) ? d.fond : null;
+  // Formes du lot 2 : texte dans sa colonne (42 % sur ordinateur), composition au-dessus sur téléphone : hors du texte, la couche
+  // prend une opacité franche (≥ 0,55 : aucun texte dessous), masquée sous la colonne du texte
+  const zone = fond && v !== 'typographique' ? { alpha: Math.max(0.55, PLAFONDS_FONDS_HEROS[fond as Exclude<FondHeros, 'aucun'>]), mobile: HAUT_COMPO_TEL[v] ?? null } : null;
+  const fh = fond ? htmlFondHeros(fond, alphaFondHeros(fond, v, d.couleurs), zone) : { avant: '', apres: '' };
+  const css = keyframesHeros(anime ? d.transition : null, photos.length) + cssLot2(v) + cssAnimationEntete(animation) + (va ? cssVisuelAnime(va) : '') + cssFondHeros(fond);
   const texte = (cl = '') => `<div class="hp__texte${cl}">${titre(d)}</div>`;
+  // Couche du fond juste après l'ouverture (sous tout le reste) ; « illustration » : fente remplie par l'appelant
+  const avecFond = (reste: string) => (fh.apres
+    ? { avant: `${ouverture}${fh.avant}`, apres: `${fh.apres}${reste}`, fente: true, css }
+    : { avant: `${ouverture}${fh.avant}${reste}`, apres: '', fente: false, css });
   if (surPage) {
     // Photo posée sur le fond de la page (fondue, découpée, masquée) : le texte reste sur le fond uni (AA du gabarit)
     // Lot 2 sans photo : composition de formes à la place de la photo (ou fond seul)
     const libre = (PREMIERS_ECRANS_LOT2_LIBRES as readonly string[]).includes(v);
+    // Formes du lot 2 + fond « illustration » : le héros illustré du thème NET, devant les aplats, dans la zone visuelle (jamais
+    // sous le texte : aucun voile nécessaire) — retour de Paul du 2026-10-09 et M17
+    if (libre && fond === 'illustration') {
+      return { avant: `${ouverture}${DECORS[v] ?? FONDS_LOT2[v] ?? ''}<div class="hp__media hp__compo hp__fh-visuel" aria-hidden="true">${AVEC_COMPOSITION.includes(v) ? FORMES_LOT2[v] : ''}`, apres: `</div><div class="hp__cadre">${texte()}</div></section>`, fente: true, css };
+    }
     const visuel = libre
       ? (AVEC_COMPOSITION.includes(v) ? `<div class="hp__media hp__compo" aria-hidden="true">${FORMES_LOT2[v]}</div>` : '')
       : media(d, photos, TAILLES[v] ?? '100vw', false, FORMES_LOT2[v] ?? '', vaHtml);
-    return { avant: `${ouverture}${DECORS[v] ?? FONDS_LOT2[v] ?? ''}${visuel}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
+    return avecFond(`${DECORS[v] ?? FONDS_LOT2[v] ?? ''}${visuel}<div class="hp__cadre">${texte()}</div></section>`);
   }
   if (surPhoto || v === 'scinde-photo') {
     const sizes = v === 'scinde-photo' ? '(min-width: 900px) 50vw, 100vw' : '100vw';
     return { avant: `${ouverture}${media(d, photos, sizes, surPhoto, '', v === 'scinde-photo' ? vaHtml : '')}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
   }
   if (v === 'typographique') {
-    return { avant: `${ouverture}<span class="hp__trame" aria-hidden="true"></span><div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
+    // Sans fond choisi : la trame discrète d'avant ; avec un fond, la couche du fond la remplace
+    return avecFond(`${fond ? '' : '<span class="hp__trame" aria-hidden="true"></span>'}<div class="hp__cadre">${texte()}</div></section>`);
   }
   const visuel = photos[0] ? img(photos[0], 0, d, v === 'maille' ? '(min-width: 900px) 45vw, 100vw' : '(min-width: 900px) 40vw, 100vw') : null;
   if (v === 'maille' && va) {
