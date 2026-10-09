@@ -75,18 +75,17 @@ avis » → implémentation, ligne dans `retours/CHANGEMENTS.md`, manque retiré
 
 | Sujet | Héros | Illustr. relevé | Illustr. illustrations douces | Illustr. trait fin | Icônes | Photos importées | Photos intégrées | Animations validées |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Sport | 9 | 12 | 24 | 24 | 16 | 47 | 4 | 0/2 |
-| Diabète | 12 | 7 | 7 | 7 | 4 | 11 | 0 | 0/2 |
+| Sport | 9 | 13 | 25 | 25 | 16 | 49 | 4 | 0/2 |
+| Diabète | 12 | 7 | 10 | 7 | 7 | 12 | 0 | 0/2 |
 | Ongles | 9 | 6 | 6 | 6 | 5 | 5 | 2 | 0/1 |
-| Enfants | 12 | 12 | 12 | 12 | 3 | 13 | 6 | 0/3 |
-| Seniors | 12 | 6 | 6 | 6 | 4 | 8 | 2 | 0/1 |
-| Semelles | 9 | 10 | 10 | 10 | 3 | 0 | 4 | 0/2 |
-| Pédicurie | 12 | 6 | 6 | 6 | 3 | 0 | 2 | 0/1 |
-| Général | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 0/1 |
+| Enfants | 12 | 13 | 12 | 12 | 3 | 14 | 6 | 0/3 |
+| Seniors | 12 | 7 | 9 | 7 | 6 | 13 | 2 | 0/1 |
+| Semelles | 9 | 12 | 12 | 11 | 3 | 0 | 4 | 0/2 |
+| Pédicurie | 12 | 8 | 9 | 8 | 5 | 2 | 2 | 0/1 |
+| Général | 0 | 1 | 2 | 2 | 3 | 0 | 5 | 0/1 |
 
 Manques (tri : /admin/retours/tri?sujet=<sujet>&famille=<famille>) :
 - **Semelles : 0 photo importée** — tri : `?sujet=semelles&famille=photos`
-- **Pédicurie : 0 photo importée** — tri : `?sujet=pedicurie&famille=photos`
 - **Général : 0 photo importée** — tri : `?sujet=general&famille=photos`
 - Sport : aucune animation validée (2 en attente) — tri : `?sujet=sport&famille=animations`
 - Diabète : aucune animation validée (2 en attente) — tri : `?sujet=diabete&famille=animations`

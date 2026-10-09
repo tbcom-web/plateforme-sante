@@ -94,5 +94,13 @@
     "remarque": null,
     "profil": null,
     "jour": "2026-10-07"
+  },
+  {
+    "nature": "proposition",
+    "cle": "enfant-1",
+    "decision": "enregistree",
+    "remarque": null,
+    "profil": null,
+    "jour": "2026-10-08"
   }
 ]

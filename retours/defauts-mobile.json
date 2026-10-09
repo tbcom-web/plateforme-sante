@@ -70,5 +70,17 @@
     "empreinte": "e2ce14c1",
     "statut": "sans_objet",
     "le": "2026-10-07"
+  },
+  {
+    "cle": "modele:technique-precis",
+    "page": null,
+    "verdict": "a_revoir",
+    "etiquettes": [],
+    "remarque": "menu trop collé au logo du haut",
+    "note": null,
+    "zones": null,
+    "empreinte": "ca74f582",
+    "statut": "a_corriger",
+    "le": "2026-10-08"
   }
 ]

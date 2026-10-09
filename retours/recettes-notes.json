@@ -445,5 +445,150 @@
       }
     },
     "jour": "2026-10-07"
+  },
+  {
+    "recette": "e6dd2a34-bbc0-44d0-9802-a705dc34a4c8",
+    "nom": "Seniors · Clair et pratique · Lavande & citron · Moderne amicale",
+    "page": null,
+    "appareil": "les-deux",
+    "note": 5,
+    "etiquettes": [
+      "gardee"
+    ],
+    "positif": null,
+    "negatif": null,
+    "zones": null,
+    "composition": {
+      "structure": "clair-pratique",
+      "gamme": "lavande",
+      "couleur": "#5a36e0",
+      "police": "jakarta",
+      "visuels": {
+        "style": "pedagogique",
+        "herosSujet": "pedicurie",
+        "animation": null
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "equipe-haut",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "simple",
+          "fiche": "encadre",
+          "infos": "volets",
+          "soins": "bulles",
+          "theme": "colonnes",
+          "sujets": "cartes",
+          "accueil": "maille",
+          "article": "lecture",
+          "contact": "bandeau",
+          "galerie": "bande",
+          "horaires": "carte",
+          "sections": "aucune",
+          "portraits": "sobre",
+          "actualites": "cartes",
+          "praticiens": "cartes",
+          "entete-anim": "aucune",
+          "soins-forme": "arrondies"
+        }
+      },
+      "effets": "doux",
+      "traitement": {
+        "id": "mat",
+        "grain": true
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "large",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "pastille"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "pastilles",
+        "mobile": "onglets",
+        "rdv": "flottant"
+      }
+    },
+    "jour": "2026-10-08"
+  },
+  {
+    "recette": "92152110-0c8d-4cd3-b3e2-5552df0e9675",
+    "nom": "Petits pas · Pistache & framboise · Ronde",
+    "page": null,
+    "appareil": "les-deux",
+    "note": 5,
+    "etiquettes": [
+      "gardee"
+    ],
+    "positif": null,
+    "negatif": null,
+    "zones": null,
+    "composition": {
+      "structure": "elegant-sobre",
+      "gamme": "pistache",
+      "couleur": "#4a6b12",
+      "police": "ronde",
+      "visuels": {
+        "style": "ligne",
+        "herosSujet": "enfant",
+        "animation": null
+      },
+      "photos": [],
+      "sections": {
+        "ordre": "modele",
+        "variantes": {
+          "soins-forme": "organiques"
+        }
+      },
+      "effets": "sobre",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      },
+      "typo": {
+        "echelle": "affirmee",
+        "casse": "normale",
+        "graisse": "paire",
+        "interlettrage": "normal",
+        "accent": "aucun",
+        "alignement": "gauche",
+        "surtitre": "simple"
+      },
+      "details": {
+        "jeu": "gabarit",
+        "separateur": "aucun",
+        "souligne": "aucun",
+        "citation": "gabarit",
+        "badge": "gabarit",
+        "fond": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "cadre": "aucun"
+      },
+      "menu": {
+        "ordinateur": "gabarit",
+        "mobile": "gabarit",
+        "rdv": "gabarit"
+      }
+    },
+    "jour": "2026-10-08"
   }
 ]

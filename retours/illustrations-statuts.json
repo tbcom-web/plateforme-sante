@@ -552,6 +552,42 @@
     "jour": "2026-10-07"
   },
   {
+    "cle": "menu:mobile:defilant",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "menu:ordinateur:centre",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "menu:ordinateur:collante",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "menu:ordinateur:gabarit",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "menu:ordinateur:laterale",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "menu:ordinateur:pastilles",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
     "cle": "photo:accueil-observation-marche",
     "statut": "a_revoir",
     "empreinte": null,
@@ -580,5 +616,197 @@
     "statut": "retire",
     "empreinte": null,
     "jour": "2026-10-07"
+  },
+  {
+    "cle": "picto:auto-examen",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:chaussettes",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:chaussure-confort",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:creme-hydratation",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:hygiene-mains",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:laser",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:ongle-incarne@direction-b",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:pied-diabetique@direction-d",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:podoscope@direction-a",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:premiers-pas@direction-b",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:prevention-chutes@direction-d",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:semelle-orthopedique@direction-a",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:senior-canne@direction-b",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:sport-course@direction-c",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:sport@direction-d",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:stationnement@direction-b",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:style-icones-a",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:style-icones-b",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:style-icones-c",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:style-icones-d",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:transports",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:troubles-marche@direction-d",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:verrue-plantaire@direction-b",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:accent:couleur",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:accent:italique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:alignement:centre",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:casse:petites-capitales",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:echelle:affirmee",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:graisse:grasse",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:interlettrage:large",
+    "statut": "retire",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:interlettrage:normal",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
+  },
+  {
+    "cle": "typo:interlettrage:serre",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-08"
   }
 ]

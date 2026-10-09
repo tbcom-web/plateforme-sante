@@ -1,4 +1,39 @@
 {
+  "dessin:laser:pedagogique": [
+    "laser"
+  ],
+  "dessin:laser:releve": [
+    "laser"
+  ],
+  "dessin:orthoplastie:releve": [
+    "orthoplastie"
+  ],
+  "ligne:pied-dessus": [
+    "pied"
+  ],
+  "photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp": [
+    "accueil",
+    "image-generee"
+  ],
+  "photo:banque/libres/pedicurie/pixabay-6648076-1280.webp": [
+    "accueil",
+    "kit-pedicurie"
+  ],
+  "photo:banque/libres/pedicurie/pixabay-6762801-1280.webp": [
+    "accueil",
+    "kit-pedicurie",
+    "orthonyxie"
+  ],
+  "photo:banque/libres/senior/pexels-13641693-1920.webp": [
+    "accueil"
+  ],
+  "photo:banque/libres/senior/pexels-18326821-1920.webp": [
+    "accueil"
+  ],
+  "photo:banque/libres/senior/pexels-38030071-1920.webp": [
+    "accueil",
+    "page-sujet"
+  ],
   "photo:banque/libres/senior/pexels-8795584-1920.webp": [
     "nordic",
     "senior",
@@ -7,6 +42,10 @@
   "photo:banque/libres/sport/pexels-11156954-1920.webp": [
     "child",
     "skiing"
+  ],
+  "photo:banque/libres/sport/pexels-13124397-1920.webp": [
+    "podologie-du-sport",
+    "tennis"
   ],
   "photo:banque/libres/sport/pexels-1325681-1920.webp": [
     "golf"
@@ -26,7 +65,11 @@
   "photo:banque/libres/sport/pexels-29732064-1920.webp": [
     "golf"
   ],
+  "photo:banque/libres/sport/pexels-30307746-1920.webp": [
+    "podologie-du-sport"
+  ],
   "photo:banque/libres/sport/pexels-32289808-1920.webp": [
+    "podologie-du-sport",
     "tennis"
   ],
   "photo:banque/libres/sport/pexels-33974329-1920.webp": [
@@ -41,7 +84,15 @@
     "rugby"
   ],
   "photo:banque/libres/sport/pexels-5067702-1920.webp": [
+    "podologie-du-sport",
     "racetrack"
+  ],
+  "photo:banque/libres/sport/pexels-5067774-1920.webp": [
+    "page-sujet"
+  ],
+  "photo:banque/libres/sport/pexels-5067813-1920.webp": [
+    "page-sujet",
+    "tennis"
   ],
   "photo:banque/libres/sport/pexels-5644641-1920.webp": [
     "golf"
@@ -62,6 +113,9 @@
   "photo:banque/libres/sport/pexels-8542685-1920.webp": [
     "tennis"
   ],
+  "photo:banque/libres/sport/pexels-8693984-1920.webp": [
+    "podologie-du-sport"
+  ],
   "photo:libre:pexels-11156954": [
     "child",
     "skiing"
@@ -72,8 +126,16 @@
   "photo:libre:pexels-12955703": [
     "child"
   ],
+  "photo:libre:pexels-13667247": [
+    "accueil",
+    "kit-ongles"
+  ],
   "photo:libre:pexels-14353976": [
     "soccer"
+  ],
+  "photo:libre:pexels-17895637": [
+    "kit-enfant",
+    "podologie-enfant"
   ],
   "photo:libre:pexels-21050394": [
     "tennis"
@@ -97,6 +159,10 @@
   ],
   "photo:libre:pexels-38503137": [
     "tennis"
+  ],
+  "photo:libre:pexels-4436289": [
+    "accueil",
+    "kit-senior"
   ],
   "photo:libre:pexels-4920429": [
     "runner-feet"
@@ -150,6 +216,18 @@
   "photo:libre:pexels-8224655": [
     "tennis"
   ],
+  "photo:libre:pexels-8457630": [
+    "kit-enfant",
+    "podologie-enfant"
+  ],
+  "photo:libre:pexels-8654776": [
+    "kit-enfant",
+    "podologie-enfant"
+  ],
+  "photo:libre:pexels-8795587": [
+    "accueil",
+    "kit-senior"
+  ],
   "photo:libre:pexels-9367717": [
     "soccer"
   ],
@@ -165,8 +243,31 @@
   "photo:libre:pixabay-2647068": [
     "badminton"
   ],
+  "photo:libre:pixabay-3084870": [
+    "accueil",
+    "kit-pedicurie"
+  ],
+  "photo:libre:pixabay-5548985": [
+    "ballet",
+    "dance"
+  ],
+  "photo:libre:pixabay-5593945": [
+    "enfant"
+  ],
   "photo:libre:pixabay-6143052": [
     "handball"
+  ],
+  "photo:libre:pixabay-6648076": [
+    "accueil",
+    "kit-pedicurie"
+  ],
+  "photo:libre:pixabay-6668583": [
+    "ballet"
+  ],
+  "photo:libre:pixabay-6762801": [
+    "accueil",
+    "kit-pedicurie",
+    "orthonyxie"
   ],
   "photo:libre:pixabay-858206": [
     "basketball"

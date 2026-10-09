@@ -56,30 +56,45 @@ La justesse de v1 se mesure sur les prochaines notes de Paul (80 prédictions su
 <!-- mesure-auto -->
 ## Mesure automatique (export quotidien)
 
-Notes comparables jusqu’au 2026-10-07 : 105.
+Notes comparables jusqu’au 2026-10-08 : 106.
 
 | Profil | Notes | Exactes | À ±1 | Écart moyen | Biais | Corrélation | Accord éliminatoires |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 2026-10-07.v1 | 73 | 24 (33 %) | 58 (79 %) | 0,95 | +0,18 | 0,51 | 54/73 |
-| 2026-10-07.v0 | 32 | 11 (34 %) | 30 (94 %) | 0,72 | -0,22 | 0,68 | 28/32 |
-| 20 dernières | 20 | 9 (45 %) | 19 (95 %) | 0,60 | +0,00 | 0,64 | 18/20 |
+| 2026-10-07.v1 | 73 | 25 (34 %) | 59 (81 %) | 0,89 | +0,10 | 0,55 | 56/73 |
+| 2026-10-07.v0 | 33 | 11 (33 %) | 31 (94 %) | 0,73 | -0,18 | 0,66 | 29/33 |
+| 20 dernières | 20 | 5 (25 %) | 15 (75 %) | 1,00 | +0,50 | 0,70 | 15/20 |
 
 Plus gros écarts récents :
 
+- `photo:posture-marche-sable` : prédit 4 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
 - `materiel:thermoformage:ligne` : prédit 2 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v1)
-- `photo:chaussage` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
-- `photo:enfant-baskets` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
-- `photo:posture-marche-sable` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
 - `picto:chaussure-enfant` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
-- `biblio:POD-AT-0006:dorsal:tong-posee` : prédit 4 ★, Paul 2 ★ (2026-10-07, profil 2026-10-07.v1)
-- `dessin:senior:pedagogique` : prédit 3 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v0)
-- `heros:enfant:ligne` : prédit 3 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v0)
+- `biblio:TRV-AT-0009` : prédit 3 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
+- `photo:chaussage` : prédit 4 ★, Paul 2 ★ (2026-10-08, profil 2026-10-07.v1)
+- `photo:enfant-baskets` : prédit 4 ★, Paul 2 ★ (2026-10-08, profil 2026-10-07.v1)
+- `photo:generale-pied-profil` : prédit 3 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
+- `photo:generale-pied-sol` : prédit 3 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
 <!-- /mesure-auto -->
 
 <!-- propositions-claude-tags -->
 ## Propositions de tags de Claude : note prédite vs note de Paul
 
-Fichier retours/propositions-claude-tags.json (profil 2026-10-07.v2, 2026-10-08) : 460 visuels tagués, 93 notes prédites (éléments jamais notés). Notes de Paul données le jour de la proposition ou après, jusqu’au 2026-10-07 : 0.
+Fichier retours/propositions-claude-tags.json (profil 2026-10-07.v2, 2026-10-08) : 460 visuels tagués, 93 notes prédites (éléments jamais notés). Notes de Paul données le jour de la proposition ou après, jusqu’au 2026-10-08 : 67.
 
-Pas encore de note de Paul sur ces éléments : la mesure se fera au prochain export.
+| Échantillon | Notes | Exactes | À ±1 | Écart moyen | Biais |
+|---|---:|---:|---:|---:|---:|
+| Toutes | 67 | 12 (18 %) | 39 (58 %) | 1,48 | -1,24 |
+| Confiance moyenne | 22 | 7 (32 %) | 10 (45 %) | 1,86 | -1,59 |
+| Confiance faible | 45 | 5 (11 %) | 29 (64 %) | 1,29 | -1,07 |
+
+Plus gros écarts :
+
+- `picto:hygiene-autoclave@direction-a` : prédit 3 ★, Paul 5 ★ (2026-10-08, confiance faible)
+- `picto:hygiene-autoclave@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance faible)
+- `picto:hygiene-autoclave@direction-c` : prédit 2 ★, Paul 5 ★ (2026-10-08, confiance faible)
+- `picto:monofilament@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance faible)
+- `picto:semelle-orthopedique@direction-c` : prédit 3 ★, Paul 5 ★ (2026-10-08, confiance faible)
+- `picto:sport-course@direction-a` : prédit 3 ★, Paul 5 ★ (2026-10-08, confiance faible)
+- `picto:sport-course@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance faible)
+- `picto:verrue-plantaire@direction-c` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance moyenne)
 <!-- /propositions-claude-tags -->

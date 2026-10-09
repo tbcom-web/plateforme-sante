@@ -5,6 +5,433 @@
     ],
     "retraits": []
   },
+  "biblio:EZ-HTML/chaussure-running": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "biblio:EZ-HTML/semelle-ortho": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "biblio:EZ-HTML/semelle-ortho:dessous:neuve": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "biblio:EZ-HTML/semelle-ortho:profil:neuve": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0003": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0003:profil-medial:ongle-epais": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0003:profil-medial:ongle-epais-meulage": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0004": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0004:dessous:coque": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009:dorsale-gros-plan:incarne": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009:dorsale-gros-plan:mycose": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009:dorsale-gros-plan:onychoplastie": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009:dorsale-gros-plan:orthonyxie": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009:dorsale-gros-plan:repos": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009:dorsale:incarne": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0009:dorsale:incarne-sites": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0010": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "biblio:POD-AT-0010:coupe-transversale:incarne": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "dessin:analyse:pedagogique": {
+    "ajouts": [
+      "sport",
+      "semelles",
+      "general"
+    ],
+    "retraits": []
+  },
+  "dessin:analyse:releve": {
+    "ajouts": [
+      "sport",
+      "semelles",
+      "pedicurie",
+      "general"
+    ],
+    "retraits": []
+  },
+  "dessin:appuis:pedagogique": {
+    "ajouts": [
+      "general"
+    ],
+    "retraits": []
+  },
+  "dessin:appuis:releve": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "dessin:arriere-pied:releve": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "dessin:cors-durillons:releve": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "dessin:diabete:pedagogique": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "dessin:equilibre:pedagogique": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "dessin:equilibre:releve": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "dessin:ongles-epais:releve": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "dessin:onychoplastie:pedagogique": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "dessin:orthoplastie:pedagogique": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "dessin:orthoplastie:releve": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "dessin:senior:pedagogique": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "dessin:sport:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:voutes:pedagogique": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "dessin:voutes:releve": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "heros:diabete:releve": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "heros:enfant:pedagogique": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "heros:pedicurie:ligne": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "heros:semelles:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "heros:senior:pedagogique": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "ligne:empreintes": {
+    "ajouts": [
+      "sport",
+      "senior"
+    ],
+    "retraits": []
+  },
+  "ligne:ongle": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "ligne:orthonyxie": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "ligne:orthoplastie": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "ligne:pied-dessous": {
+    "ajouts": [
+      "pedicurie",
+      "general"
+    ],
+    "retraits": []
+  },
+  "ligne:pied-dessus": {
+    "ajouts": [
+      "general"
+    ],
+    "retraits": []
+  },
+  "ligne:pied-profil": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "ligne:pieds-dessus": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "ligne:podoscope": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "materiel:aspiration:ligne": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "materiel:aspiration:pedagogique": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "materiel:aspiration:releve": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "materiel:empreinte-mousse:ligne": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:empreinte-mousse:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:empreinte-mousse:releve": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:fraiseuse-numerique:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:laser:releve": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "materiel:monofilament-diapason:ligne": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "materiel:monofilament-diapason:releve": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "materiel:plateforme-pression:ligne": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:plateforme-pression:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:sachets-individuels:pedagogique": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "materiel:sachets-individuels:releve": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "materiel:scanner-3d:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:stabilometrie:pedagogique": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "materiel:stabilometrie:releve": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "materiel:touret-poncage:ligne": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "materiel:touret-poncage:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/diabete/pexels-12197307-1920.webp": {
     "ajouts": [
       "diabete"
@@ -168,6 +595,25 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/pedicurie/pixabay-6648076-1280.webp": {
+    "ajouts": [
+      "enfant",
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/pedicurie/pixabay-6762801-1280.webp": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/senior/pexels-13641693-1920.webp": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/senior/pexels-14177316-1920.webp": {
     "ajouts": [
       "senior"
@@ -181,6 +627,18 @@
     "retraits": []
   },
   "photo:banque/libres/senior/pexels-16901400-1920.webp": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/senior/pexels-18326821-1920.webp": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/senior/pexels-38030071-1920.webp": {
     "ajouts": [
       "senior"
     ],
@@ -325,6 +783,20 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-5067774-1920.webp": {
+    "ajouts": [
+      "sport",
+      "senior"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5067813-1920.webp": {
+    "ajouts": [
+      "sport",
+      "senior"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-5644641-1920.webp": {
     "ajouts": [
       "sport"
@@ -376,6 +848,30 @@
   "photo:banque/libres/sport/pexels-8693984-1920.webp": {
     "ajouts": [
       "sport"
+    ],
+    "retraits": []
+  },
+  "photo:enfant-bebe": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:enfant-chaussures": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:enfant-herbe": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:enfant-pied": {
+    "ajouts": [
+      "enfant"
     ],
     "retraits": []
   },
@@ -447,6 +943,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-13667247": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-14114690": {
     "ajouts": [
       "sport"
@@ -498,6 +1000,12 @@
   "photo:libre:pexels-1750045": {
     "ajouts": [
       "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-17895637": {
+    "ajouts": [
+      "enfant"
     ],
     "retraits": []
   },
@@ -781,6 +1289,12 @@
   "photo:libre:pexels-4379291": {
     "ajouts": [
       "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-4436289": {
+    "ajouts": [
+      "senior"
     ],
     "retraits": []
   },
@@ -1079,6 +1593,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-8457630": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-8462769": {
     "ajouts": [
       "sport"
@@ -1097,6 +1617,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-8654776": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-8680763": {
     "ajouts": [
       "sport"
@@ -1112,6 +1638,12 @@
   "photo:libre:pexels-8693984": {
     "ajouts": [
       "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-8795587": {
+    "ajouts": [
+      "senior"
     ],
     "retraits": []
   },
@@ -1219,6 +1751,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pixabay-3084870": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
   "photo:libre:pixabay-3437942": {
     "ajouts": [
       "sport"
@@ -1267,9 +1805,41 @@
     ],
     "retraits": []
   },
+  "photo:libre:pixabay-5548985": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-5593945": {
+    "ajouts": [
+      "sport",
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:libre:pixabay-6143052": {
     "ajouts": [
       "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-6648076": {
+    "ajouts": [
+      "enfant",
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-6668583": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-6762801": {
+    "ajouts": [
+      "pedicurie"
     ],
     "retraits": []
   },
@@ -1295,6 +1865,48 @@
     "ajouts": [
       "sport",
       "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:sport-chaussure": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:sport-course": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "picto:hallux-ongle": {
+    "ajouts": [
+      "pedicurie"
+    ],
+    "retraits": []
+  },
+  "picto:ongle-epais": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "picto:onychoplastie": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "picto:orthonyxie": {
+    "ajouts": [
+      "ongles"
+    ],
+    "retraits": []
+  },
+  "picto:semelle-orthopedique": {
+    "ajouts": [
+      "sport"
     ],
     "retraits": []
   }
