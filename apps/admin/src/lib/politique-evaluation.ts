@@ -12,7 +12,8 @@ import { getRole } from '@/lib/admin';
 import { getNotesAssets } from '@/lib/assets-notes';
 import { getNotesAtelier } from '@/lib/atelier';
 import { getNotationsAdmin } from '@/lib/notation-recettes';
-import { getDuels } from '@/lib/duels';
+import { getDuelsAlleges } from '@/lib/duels';
+import { avecDelai, DELAIS } from '@/lib/delai';
 import { getChoixGrille } from '@/lib/degustation';
 import { getNotesKits } from '@/lib/kits-images';
 import { getReevaluations } from '@/lib/tranches';
@@ -105,7 +106,7 @@ async function getPolitiqueSansMemo(): Promise<Politique | null> {
   if ((await getRole()) !== 'admin') return null;
   const [table, assets, atelier, recettes, duels, grilles, kits, chaine, { reevaluations }, desac, tags, hashtags] = await Promise.all([
     getExpositionsTable(), getNotesAssets().catch(() => ({ notes: [] })), getNotesAtelier().catch(() => ({ notes: [] })), getNotationsAdmin().catch(() => ({ notations: [] })),
-    getDuels().catch(() => ({ duels: [] })), getChoixGrille().catch(() => ({ choix: [] })), getNotesKits().catch(() => []), getChaineLegere(), getReevaluations(),
+    getDuelsAlleges().catch(() => ({ duels: [] })), getChoixGrille().catch(() => ({ choix: [] })), getNotesKits().catch(() => []), getChaineLegere(), getReevaluations(),
     getReglesDesactivees(), getPropositionsTags().catch(() => null), getHashtagsAssets().catch(() => ({ hashtags: {} })),
   ]);
   const elementsRecette = (n: (typeof recettes.notations)[number]) => { try { return elementsComposition(n.composition, sujetsDuScenario(n.scenario)); } catch { return []; } };
@@ -152,13 +153,19 @@ async function getPolitiqueSansMemo(): Promise<Politique | null> {
 export const getPolitique = cache(getPolitiqueSansMemo);
 
 /**
+ * Politique BORNÉE (2026-10-09, « l'admin ne charge pas ») : lue par les pages, le générateur (getRenfortsPolitique), les tranches
+ * et le tableau de bord ; passé DELAIS.politique, null (rien d'imposé, comme sans la migration) au lieu de bloquer l'affichage.
+ */
+export const getPolitiqueBornee = cache((): Promise<Politique | null> => avecDelai(getPolitique(), DELAIS.politique, null));
+
+/**
  * État compact pour les pages de notation : 120 derniers écrans, implicites, pénalités et écartements des règles, jamais-notés à
  * FORT POTENTIEL (note prédite ≥ 4 par le juge ou par Claude, illustration de base notée ≥ 4 ★, nouveauté acceptée).
  */
 export const getEtatPolitique = cache(async (): Promise<EtatPolitique> => {
-  const p = await getPolitique().catch(() => null);
+  const p = await getPolitiqueBornee();
   if (!p) return { ...ETAT_POLITIQUE_VIDE, maintenant: new Date().toISOString() };
-  const [preds, tags, nouv] = await Promise.all([getPredictions().catch(() => []), getPropositionsTags().catch(() => null), getEtatsNouveautes().catch(() => ({ recentes: [], statuts: {} as Record<string, string>, dernieresNotes: {} }))]);
+  const [preds, tags, nouv] = await Promise.all([avecDelai(getPredictions(), DELAIS.compteurs, []), avecDelai(getPropositionsTags(), DELAIS.compteurs, null), avecDelai(getEtatsNouveautes(), DELAIS.compteurs, { recentes: [], statuts: {} as Record<string, string>, dernieresNotes: {} })]);
   const notee = (k: string) => Boolean(p.notes[k]);
   const fort = new Set<string>();
   for (const x of preds) if (x.note >= POLITIQUE_EVALUATION.seuilPotentiel && !notee(x.cle)) fort.add(x.cle);
@@ -171,7 +178,7 @@ export const getEtatPolitique = cache(async (): Promise<EtatPolitique> => {
 
 /** Rétrogradation dans le générateur : implicites (−0,75 ★) et pénalités des règles apprises, plafonnées par fusionnerRenforts */
 export const getRenfortsPolitique = cache(async (): Promise<{ atelier: Record<string, number>; assets: Record<string, number> }> => {
-  const p = await getPolitique().catch(() => null);
+  const p = await getPolitiqueBornee();
   if (!p) return { atelier: {}, assets: {} };
   const assets: Record<string, number> = { ...renfortsImplicites(p.implicites.filter((x) => !x.cle.startsWith('compo:'))) };
   for (const [k, v] of Object.entries(p.penalites)) assets[k] = Math.max(-1, (assets[k] ?? 0) + v);
@@ -180,9 +187,9 @@ export const getRenfortsPolitique = cache(async (): Promise<{ atelier: Record<st
 
 /** Indicateurs du tableau de bord (taux de répétition, qualité présentée, jamais-notés, règles, tendance 30 jours) */
 export const getIndicateursPolitique = cache(async (): Promise<(IndicateursPolitique & { migrationManquante: boolean }) | null> => {
-  const p = await getPolitique().catch(() => null);
+  const p = await getPolitiqueBornee();
   if (!p) return null;
-  const preds = await getPredictions().catch(() => []);
+  const preds = await avecDelai(getPredictions(), DELAIS.compteurs, []);
   const predite = new Map<string, number>();
   for (const x of preds) predite.set(x.cle, x.note);
   const ind = indicateursPolitique(p.memoire, {

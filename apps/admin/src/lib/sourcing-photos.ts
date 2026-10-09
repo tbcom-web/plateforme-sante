@@ -167,7 +167,7 @@ async function getRevuesClaudeSansMemo(): Promise<Record<string, RevueSerieClaud
   if (token && repo) {
     try {
       const r = await fetch(`https://api.github.com/repos/${repo}/contents/retours/${nom}?ref=main`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' }, next: { revalidate: 600 },
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' }, next: { revalidate: 600 }, signal: AbortSignal.timeout(5000),
       });
       if (r.ok) return lireRevuesSeries(JSON.parse(await r.text()));
     } catch { /* repli local */ }

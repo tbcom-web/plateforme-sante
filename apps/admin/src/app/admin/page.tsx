@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import BoutonParcoursTest from '@/components/BoutonParcoursTest';
 import { redirect } from 'next/navigation';
 import { baseDeCle, clesUnitairesInventaire, profilsDePratique, publicationDepuisLigne, publicationsDuProfil } from '@plateforme/core';
@@ -10,6 +11,7 @@ import { lireAssetsNotesApprentissage } from '@/lib/assets-notes';
 import { getProfession } from '@/lib/profession';
 import { createClient } from '@/lib/supabase/server';
 import { getIndicateursPolitique } from '@/lib/politique-evaluation';
+import { avecDelai, DELAIS } from '@/lib/delai';
 import IndicateursEvaluation from './IndicateursEvaluation';
 
 export const metadata = { title: 'Super admin · Tableau de bord' };
@@ -17,11 +19,18 @@ export const metadata = { title: 'Super admin · Tableau de bord' };
 // Tableau de bord du super admin (décision de Paul du 2026-10-08) : court, par profession (sélecteur de l'en-tête). Compteurs :
 // arrivages en attente, nouveautés reçues, à déguster, profils de pratique prêts / en cours, sites à publier ; un lien par espace.
 // + Évaluation (politique-evaluation.ts, 2026-10-09) : taux de répétition, qualité présentée, jamais-notés, règles apprises, 30 jours.
+// Affichage immédiat (2026-10-09, « l'admin ne charge pas ») : compteurs bornés (DELAIS.compteurs, repli à 0), section Évaluation
+// calculée APRÈS l'affichage (Suspense, politique bornée : getPolitiqueBornee) ; une table absente ou lente ne bloque plus rien.
 // Ancienne adresse de la liste des sites : ses paramètres de filtre (?q=, ?statut=…) sont redirigés vers /admin/sites.
 
 const PARAMS_SITES = ['q', 'statut', 'test', 'edition', 'echec', 'modifs', 'tri', 'page'];
 
 let unitaires: string[] | null = null;
+
+/** Indicateurs de la politique d'évaluation, rendus en différé (Suspense) : rien si la politique dépasse son délai */
+async function SectionEvaluation() {
+  return <IndicateursEvaluation ind={await getIndicateursPolitique().catch(() => null)} />;
+}
 
 export default async function TableauDeBord({ searchParams }: PageProps<'/admin'>) {
   await exigerAdmin();
@@ -33,19 +42,18 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
   const profession = await getProfession();
   const deLaProfession = estDeLaProfession({}, profession.id);
   const supabase = await createClient();
-  const compter = async (f: (r: ReturnType<typeof base>) => ReturnType<typeof base>) => (deLaProfession ? (await f(base())).count ?? 0 : 0);
+  const compter = (f: (r: ReturnType<typeof base>) => ReturnType<typeof base>) => avecDelai((async () => (deLaProfession ? (await f(base())).count ?? 0 : 0))(), DELAIS.compteurs, 0);
   const base = () => supabase.from('sites').select('id', { count: 'exact', head: true });
 
-  const [arrivages, nouveautes, notes, modifs, brouillons, echecs, publications, evaluation] = await Promise.all([
-    getArrivagesEnAttente(profession),
-    getEtatsNouveautes(),
-    lireAssetsNotesApprentissage(),
+  const D = DELAIS.compteurs;
+  const [arrivages, nouveautes, notes, modifs, brouillons, echecs, publications] = await Promise.all([
+    avecDelai(getArrivagesEnAttente(profession), D, { nouveautes: [], photos: [], statuts: {}, migrationPhotos: false }),
+    avecDelai(getEtatsNouveautes(), D, { recentes: [], statuts: {}, dernieresNotes: {} }),
+    avecDelai(Promise.resolve(lireAssetsNotesApprentissage()), D, { data: null, error: null } as unknown as Awaited<ReturnType<typeof lireAssetsNotesApprentissage>>),
     compter((r) => r.eq('modifs_non_publiees', true).not('publiee_le', 'is', null).eq('test', false)),
     compter((r) => r.eq('statut', 'brouillon').eq('test', false)),
     compter((r) => r.eq('publication_etat', 'echec')),
-    supabase.from('recettes_publications').select('recette, profession, profils, ordre, publiee, publiee_le').limit(2000),
-    // Politique d'évaluation unique : répétition, qualité présentée, jamais-notés, règles apprises, tendance 30 jours
-    getIndicateursPolitique().catch(() => null),
+    avecDelai(Promise.resolve(supabase.from('recettes_publications').select('recette, profession, profils, ordre, publiee, publiee_le').limit(2000)).then((r) => ({ data: r.data as unknown[] | null, error: r.error as unknown })), D, { data: null, error: 'délai' as unknown }),
   ]);
 
   // À déguster : ingrédients unitaires jamais notés (ni eux ni leur illustration de base), hors arrivages en attente
@@ -83,7 +91,10 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
           </Link>
         ))}
       </dl>
-      <IndicateursEvaluation ind={evaluation} />
+      {/* Politique d'évaluation unique : répétition, qualité présentée, jamais-notés, règles apprises, tendance 30 jours (après l'affichage) */}
+      <Suspense fallback={<p className="text-sm text-neutral-500">Évaluation en cours de calcul…</p>}>
+        <SectionEvaluation />
+      </Suspense>
       <BoutonParcoursTest />
       <section aria-labelledby="tb-espaces" className="grid gap-3">
         <h2 id="tb-espaces" className="text-lg font-semibold">Espaces</h2>

@@ -8,13 +8,15 @@ import { exigerAdmin } from '@/lib/admin';
 import { getNombreArrivages, getNombreNouveautesANoter } from '@/lib/arrivages';
 import { getProfession } from '@/lib/profession';
 import { getUser } from '@/lib/supabase/server';
+import { avecDelai, DELAIS } from '@/lib/delai';
 
 // Super admin réorganisé en espaces (décision de Paul du 2026-10-08, docs/espaces-admin.md) : Arrivages, Frigo, Dégustation,
 // Cuisine, Clients ; sélecteur de profession global ; fil d'Ariane ; tiroir sur téléphone (NavAdmin, admin-espaces.ts).
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   await exigerAdmin();
   const profession = await getProfession();
-  const [user, arrivages, nouveautes] = await Promise.all([getUser(), getNombreArrivages(profession), getNombreNouveautesANoter(profession)]);
+  // Compteurs du menu bornés (2026-10-09, « l'admin ne charge pas ») : lents ou en erreur → 0, l'admin s'affiche quand même
+  const [user, arrivages, nouveautes] = await Promise.all([getUser(), avecDelai(getNombreArrivages(profession), DELAIS.compteurs, 0), avecDelai(getNombreNouveautesANoter(profession), DELAIS.compteurs, 0)]);
 
   return (
     <Shell email={user?.email ?? ''}>

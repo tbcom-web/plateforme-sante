@@ -25,7 +25,7 @@ async function getChangementsClaudeSansMemo(): Promise<ChangementClaude[]> {
     try {
       const r = await fetch(`https://api.github.com/repos/${repo}/contents/retours/CHANGEMENTS.md?ref=main`, {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' },
-        next: { revalidate: 600 },
+        next: { revalidate: 600 }, signal: AbortSignal.timeout(5000),
       });
       if (r.ok) return lireChangements(await r.text());
     } catch { /* repli local */ }

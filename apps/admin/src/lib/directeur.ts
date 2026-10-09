@@ -16,7 +16,7 @@ async function lireRetour(fichier: string): Promise<string | null> {
     try {
       const r = await fetch(`https://api.github.com/repos/${repo}/contents/retours/${fichier}?ref=main`, {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' },
-        next: { revalidate: 600 },
+        next: { revalidate: 600 }, signal: AbortSignal.timeout(5000),
       });
       if (r.ok) return await r.text();
     } catch { /* repli local */ }
