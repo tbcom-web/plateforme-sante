@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  cleComposition, choixDePreselection, estAppareilModele, estEtiquetteTicket, estPageModele, estRoleEquipe, nomRecette, nouvelleVersion, peut, peutPublier, profilsDePratique,
-  serialiserComposition, serialiserRecetteAvecScenario, statutModele, tagsAutomatiques, profilsCiblesParDefaut, validerChoixGrille, type TagsModele,
+  cleComposition, choixDePreselection, designDe, estAppareilModele, estEtiquetteTicket, estPageModele, estRoleEquipe, groupeTournoi, nomRecette, nouvelleVersion, peut, peutPublier,
+  prochainEcran, profilDemo, profilsCompatibles, profilsDePratique, serialiserComposition, serialiserRecetteAvecScenario, statutModele, tagsAutomatiques, tournoiDuProfil, validerChoixGrille, type TagsModele,
 } from '@plateforme/core';
-import { exigerContributeur, exigerValidateur, lireChaine, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
+import { exigerContributeur, exigerValidateur, lireChaine, MIGRATION_CHAINE, signauxCandidats } from '@/lib/chaine-modeles';
 import { getRecettes } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
 import { compositionDe, verrousDeLaFiche } from './validation';
@@ -24,19 +24,29 @@ const rafraichir = (...chemins: string[]) => { for (const c of ['/chaine', ...ch
 // 1. Présélection
 // ---------------------------------------------------------------------------------------------------------------
 
-export type PropositionPreselection = { cle: string; nom: string; composition: Record<string, unknown>; ingredients: Record<string, unknown> };
+export type PropositionPreselection = { cle: string; nom: string; design: Record<string, unknown>; ingredients: Record<string, unknown>; profilDemo: string };
 
-/** Sites touchés d'une page de 6 → candidats (fiche + version 1) ; points versés au journal de la Dégustation */
-export async function garderPreselection(p: { profil: string; propositions: PropositionPreselection[]; selection: number[]; appareil: 'ordinateur' | 'mobile'; dureeMs?: number }): Promise<Retour & { ajoutes?: number }> {
+/** Profils compatibles d'un design (harmonie, chaine-design.ts), calculés côté serveur à partir des profils de la profession */
+function compatibles(design: Record<string, unknown>, profils: { id: string; sujets: string[]; scenario: { principaux: string[]; secondaires: string[]; couleurs: string[] } }[]): string[] {
+  const p0 = profils[0];
+  if (!p0) return [];
+  const x = compositionDe({ scenario: p0.scenario }, design);
+  return x ? profilsCompatibles(x, profils).map((p) => p.id) : profils.map((p) => p.id);
+}
+
+/**
+ * Designs touchés d'une page de 6 → candidats (fiche SANS profil + version 1 = design sans images) ; points versés au journal de la
+ * Dégustation ; un « J'aime » par votant et par design (signal a priori du tournoi). Profils compatibles pré-calculés dans les tags.
+ */
+export async function garderPreselection(p: { propositions: PropositionPreselection[]; selection: number[]; appareil: 'ordinateur' | 'mobile'; dureeMs?: number }): Promise<Retour & { ajoutes?: number }> {
   const moi = await exigerContributeur();
   if (!peut(moi.role, 'preselectionner')) return { ok: false, message: 'Action réservée à l’équipe.' };
   const { profession, profils } = await profilsChaine();
-  const profil = profils.find((x) => x.id === p.profil);
-  if (!profil) return { ok: false, message: 'Profil inconnu.' };
   if (!Array.isArray(p.propositions) || p.propositions.length > 6) return { ok: false, message: 'Page invalide.' };
+  const demo = profils.find((x) => x.id === p.propositions[0]?.profilDemo) ?? profils[0];
+  if (!demo) return { ok: false, message: 'Aucun profil de démonstration.' };
   const supabase = await createClient();
-  // Points (même moteur que la Dégustation) : 1 ou 2 « meilleures » d'après l'ordre des touches
-  const choix = choixDePreselection({ propositions: p.propositions, selection: p.selection, profil: profil.id, profession: profession.id, scenario: { sujets: profil.sujets }, appareil: p.appareil, dureeMs: p.dureeMs ?? null });
+  const choix = choixDePreselection({ propositions: p.propositions.map((x) => ({ cle: x.cle, ingredients: x.ingredients })), selection: p.selection, profil: demo.id, profession: profession.id, scenario: { sujets: demo.sujets }, appareil: p.appareil, dureeMs: p.dureeMs ?? null });
   if (choix) {
     const v = validerChoixGrille(choix);
     if (v.ok) {
@@ -45,57 +55,109 @@ export async function garderPreselection(p: { profil: string; propositions: Prop
     }
   }
   let ajoutes = 0;
-  const pratiques = (() => { try { return profilsDePratique(profession.id); } catch { return []; } })();
   for (const i of [...new Set(p.selection)]) {
     const x = p.propositions[i];
-    if (!x || !x.composition || typeof x.composition !== 'object') continue;
-    const cle = cleComposition(x.composition);
-    const cibles = pratiques.length ? profilsCiblesParDefaut(profil.scenario, profession.id) : [];
+    if (!x || !x.design || typeof x.design !== 'object') continue;
+    const design = designDe(x.design);
+    const cle = cleComposition(design);
+    const scenarioDemo = profils.find((q) => q.id === x.profilDemo)?.scenario ?? demo.scenario;
     const { data, error } = await supabase.from('modeles_fiches').insert({
-      nom: String(x.nom || 'Modèle').slice(0, 120), profession: profession.id, profil: profil.id, cle, origine: 'preselection',
-      scenario: { principaux: profil.scenario.principaux, secondaires: profil.scenario.secondaires, couleurs: profil.scenario.couleurs },
-      tags: tagsAutomatiques(x.composition, { profession: profession.id, profil: profil.id, profilsCibles: cibles }),
+      nom: String(x.nom || 'Design').slice(0, 120), profession: profession.id, profil: null, cle, origine: 'preselection',
+      scenario: { principaux: scenarioDemo.principaux, secondaires: scenarioDemo.secondaires, couleurs: scenarioDemo.couleurs },
+      tags: tagsAutomatiques(design, { profession: profession.id, profilsCibles: compatibles(design, profils) }),
     }).select('id').maybeSingle();
-    if (error?.code === '23505') continue; // déjà candidat
-    if (error || !data) return { ...echec(error), ajoutes };
-    await supabase.from('modeles_versions').insert({ modele: data.id, version: 1, composition: x.composition, cle, journal: [{ type: 'creation', texte: `présélection par ${moi.email || 'l’équipe'}` }], auteur: moi.id });
-    ajoutes++;
+    let id = data?.id as string | undefined;
+    if (error?.code === '23505') {
+      // Déjà candidat : seulement un « J'aime » de plus
+      const { data: d2 } = await supabase.from('modeles_fiches').select('id').eq('profession', profession.id).eq('cle', cle).is('profil', null).maybeSingle();
+      id = d2?.id as string | undefined;
+    } else if (error || !data) return { ...echec(error), ajoutes };
+    else {
+      await supabase.from('modeles_versions').insert({ modele: data.id, version: 1, composition: design, cle, journal: [{ type: 'creation', texte: `présélection par ${moi.email || 'l’équipe'} (vu avec « ${demo.nom} »)` }], auteur: moi.id });
+      ajoutes++;
+    }
+    if (id) await supabase.from('modeles_jaime').insert({ modele: id, votant: moi.id });
   }
   rafraichir('/chaine/preselection');
-  return { ok: true, message: ajoutes ? `${ajoutes} candidat${ajoutes > 1 ? 's' : ''} ajouté${ajoutes > 1 ? 's' : ''}.` : 'Rien de gardé sur cette page.', ajoutes };
+  return { ok: true, message: ajoutes ? `${ajoutes} candidat${ajoutes > 1 ? 's' : ''} ajouté${ajoutes > 1 ? 's' : ''}.` : 'J’aime enregistré (déjà candidats).', ajoutes };
 }
 
-/** Recettes existantes (actives, du profil) importées comme candidats */
-export async function importerRecettes(profilId: string): Promise<Retour> {
+/** Recettes existantes (actives) importées comme candidats : leur design (images retirées) */
+export async function importerRecettes(): Promise<Retour> {
   const moi = await exigerContributeur();
   const { profession, profils } = await profilsChaine();
-  const profil = profils.find((x) => x.id === profilId);
-  if (!profil) return { ok: false, message: 'Profil inconnu.' };
   const { recettes } = await getRecettes();
-  const du = recettes.filter((r) => r.statut === 'active' && r.sujets[0] === profil.sujets[0]).slice(0, 50);
   const supabase = await createClient();
   let n = 0;
-  for (const r of du) {
-    const composition = JSON.parse(serialiserComposition(r.composition)) as Record<string, unknown>;
-    const cle = cleComposition(composition);
+  for (const r of recettes.filter((x) => x.statut === 'active').slice(0, 60)) {
+    const design = designDe(JSON.parse(serialiserComposition(r.composition)));
+    const cle = cleComposition(design);
+    const demo = profils.find((p) => p.sujets[0] === r.sujets[0]) ?? profils[0];
     const { data, error } = await supabase.from('modeles_fiches').insert({
-      nom: r.nom.slice(0, 120), profession: profession.id, profil: profil.id, cle, origine: 'recette', recette: r.id,
-      scenario: { principaux: profil.scenario.principaux, secondaires: profil.scenario.secondaires, couleurs: profil.scenario.couleurs },
-      tags: tagsAutomatiques(composition, { profession: profession.id, profil: profil.id }),
+      nom: r.nom.slice(0, 120), profession: profession.id, profil: null, cle, origine: 'recette', recette: r.id,
+      scenario: demo ? { principaux: demo.scenario.principaux, secondaires: demo.scenario.secondaires, couleurs: demo.scenario.couleurs } : {},
+      tags: tagsAutomatiques(design, { profession: profession.id, profilsCibles: compatibles(design, profils) }),
     }).select('id').maybeSingle();
     if (error || !data) continue;
-    await supabase.from('modeles_versions').insert({ modele: data.id, version: 1, composition, cle, journal: [{ type: 'creation', texte: `importée de la recette « ${r.nom} »` }], auteur: moi.id });
+    await supabase.from('modeles_versions').insert({ modele: data.id, version: 1, composition: design, cle, journal: [{ type: 'creation', texte: `importée de la recette « ${r.nom} »` }], auteur: moi.id });
     n++;
   }
   rafraichir('/chaine/preselection');
-  return { ok: true, message: n ? `${n} recette${n > 1 ? 's' : ''} importée${n > 1 ? 's' : ''} comme candidats.` : 'Aucune nouvelle recette à importer pour ce profil.' };
+  return { ok: true, message: n ? `${n} recette${n > 1 ? 's' : ''} importée${n > 1 ? 's' : ''} comme candidats.` : 'Aucune nouvelle recette à importer.' };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// 2. Tournoi
+// 2. Tournoi en grilles (tournoi-grilles.ts, migration 0052)
 // ---------------------------------------------------------------------------------------------------------------
 
-export async function voter(p: { profil: string; a: string; b: string; resultat: 'a' | 'b' | 'egalite'; appareil: 'ordinateur' | 'mobile' }): Promise<Retour> {
+export type Ecran = { kind: 'grille'; id: string; propositions: string[]; profilDemo: string; texte: string; certitude: number } | { kind: 'duel'; a: string; b: string; profilDemo: string; texte: string; certitude: number } | { kind: 'fini'; texte: string; certitude: number };
+
+/**
+ * Prochain écran du votant pour un groupe (profession, ou profession + profil des anciens modèles) : grille de 6 autour de la frontière
+ * du top 10 (réservée à ce votant 15 minutes : ses candidats ne sont pas servis à un autre votant), ou duel de départage. Même profil
+ * de démonstration pour les 6 (contenu égal). Une grille déjà servie et pas répondue est resservie au même votant.
+ */
+export async function servirEcran(profil: string | null): Promise<Ecran> {
+  const moi = await exigerContributeur();
+  const { profession, profils } = await profilsChaine();
+  const chaine = await lireChaine(profession.id);
+  const groupe = `${profession.id}|${profil ?? '*'}`;
+  const cand = chaine.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === groupe).map((f) => f.id);
+  const signaux = await signauxCandidats(chaine);
+  const t = tournoiDuProfil({ ...chaine, signaux }, cand);
+  const base = { texte: t.texte, certitude: t.certitude };
+  const demoDe = (seed: string) => { const l = profils.filter((p) => !profil || p.id === profil); return profilDemo(l, [...seed].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7))?.id ?? profils[0]?.id ?? ''; };
+  const mienne = chaine.grillesEnCours.find((g) => g.votant === moi.id && g.propositions.every((x) => cand.includes(x)));
+  if (mienne) return { kind: 'grille', id: mienne.id, propositions: mienne.propositions, profilDemo: demoDe(mienne.id), ...base };
+  const reserves = new Set(chaine.grillesEnCours.filter((g) => g.votant !== moi.id).flatMap((g) => g.propositions));
+  const e = prochainEcran(t, { reserves, graine: chaine.grilles?.length ?? 0 });
+  if (!e) return { kind: 'fini', ...base };
+  if (e.kind === 'duel') return { kind: 'duel', a: e.a, b: e.b, profilDemo: demoDe(`${e.a}${e.b}`), ...base };
+  const supabase = await createClient();
+  const demo = demoDe(e.propositions.join(''));
+  const { data, error } = await supabase.from('modeles_grilles').insert({ profession: profession.id, profil, profil_demo: demo || null, propositions: e.propositions, votant: moi.id }).select('id').maybeSingle();
+  if (error || !data) return { kind: 'fini', texte: MIGRATION_GRILLES, certitude: t.certitude };
+  return { kind: 'grille', id: data.id as string, propositions: e.propositions, profilDemo: demo, ...base };
+}
+
+const MIGRATION_GRILLES = 'Migration 0052 à exécuter (supabase/migrations/0052_tournoi_grilles.sql) : le tournoi en grilles ne peut pas encore être enregistré.';
+
+/** Réponse à une grille : 1 ou 2 préférées (dans l'ordre touché), « celle qui ne va pas » facultative */
+export async function repondreGrille(id: string, meilleures: number[], pire: number | null, appareil: 'ordinateur' | 'mobile'): Promise<Retour> {
+  await exigerContributeur();
+  if (!UUID.test(id)) return { ok: false, message: 'Grille inconnue.' };
+  const m = [...new Set(meilleures)].filter((i) => Number.isInteger(i) && i >= 0 && i < 6).slice(0, 2);
+  if (!m.length) return { ok: false, message: 'Choisissez une ou deux préférées.' };
+  const pi = pire !== null && Number.isInteger(pire) && pire >= 0 && pire < 6 && !m.includes(pire) ? pire : null;
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('modeles_grilles').update({ meilleures: m, pire: pi, appareil: estAppareilModele(appareil) ? appareil : null }).eq('id', id).select('id');
+  if (error) return { ok: false, message: error.message?.includes('déjà') ? 'Grille déjà répondue.' : MIGRATION_GRILLES };
+  if (!data?.length) return { ok: false, message: 'Grille introuvable ou déjà répondue.' };
+  return { ok: true, message: 'Choix enregistré.' };
+}
+
+/** Duel de départage (rangs 9-12) : table modeles_votes */
+export async function voter(p: { profil: string | null; a: string; b: string; resultat: 'a' | 'b' | 'egalite'; appareil: 'ordinateur' | 'mobile' }): Promise<Retour> {
   const moi = await exigerContributeur();
   if (!UUID.test(p.a) || !UUID.test(p.b) || p.a === p.b || !['a', 'b', 'egalite'].includes(p.resultat)) return { ok: false, message: 'Vote invalide.' };
   const { profession } = await profilsChaine();
@@ -181,7 +243,8 @@ export async function garderRelance(modele: string, composition: Record<string, 
   if (!f) return { ok: false, message: 'Modèle introuvable.' };
   const x = compositionDe(f, composition);
   if (!x) return { ok: false, message: 'Composition invalide.' };
-  const propre = JSON.parse(serialiserComposition(x)) as Record<string, unknown>;
+  // Design (profil nul) : on garde le design, sans les images du profil de démonstration
+  const propre = (f.profil === null ? designDe(JSON.parse(serialiserComposition(x))) : JSON.parse(serialiserComposition(x))) as Record<string, unknown>;
   const nv = nouvelleVersion({ fiche: f, composition: propre, cle: cleComposition(propre), tickets: chaine.tickets.filter((t) => t.modele === modele), corrections: [], auteur: moi.id, type: 'relance', note: `relance 🎲 (${String(quoi).slice(0, 120)}) par ${moi.email || 'l’équipe'}` });
   const supabase = await createClient();
   const { error } = await supabase.from('modeles_versions').insert({ modele, version: nv.version.version, composition: propre, cle: nv.version.cle, journal: nv.version.journal, auteur: moi.id });
@@ -251,7 +314,7 @@ export async function publierModele(modele: string): Promise<Retour> {
   }
   const connus = new Set((() => { try { return profilsDePratique(f.profession).map((p) => p.id); } catch { return []; } })());
   const profils = f.tags.profils.filter((p) => !connus.size || connus.has(p));
-  const { error: e2 } = await supabase.from('recettes_publications').upsert({ recette, profession: f.profession, profils: profils.length ? profils : [f.profil], publiee: true }, { onConflict: 'recette' });
+  const { error: e2 } = await supabase.from('recettes_publications').upsert({ recette, profession: f.profession, profils: profils.length ? profils : f.profil ? [f.profil] : [], publiee: true }, { onConflict: 'recette' });
   if (e2) return { ok: false, message: 'Publication impossible (migration 0043 exécutée ?).' };
   const { error: e3 } = await supabase.from('modeles_fiches').update({ statut: 'publie', version_publiee: f.versionCourante, recette }).eq('id', f.id);
   if (e3) return echec(e3);

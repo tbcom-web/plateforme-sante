@@ -90,12 +90,14 @@ export async function getDefautsMobileOuverts(): Promise<string[]> {
   }
 }
 
-type LigneLibre = { id: string; source: string; id_source: string; sujet: string; statut: string; chemin: string | null; url: string | null; apercu_url?: string | null };
+type LigneLibre = { id: string; source: string; id_source: string; sujet: string; statut: string; chemin: string | null; url: string | null; apercu_url?: string | null; requete?: string | null };
 /** Photos libres non retirées ; sans les colonnes de 0031 (aperçu), lecture sans elles ; table absente (0028) : aucune */
 async function lirePhotosLibres(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ data: LigneLibre[] | null }> {
   const lire = (colonnes: string) => supabase.from('photos_libres').select(colonnes).neq('statut', 'retiree').order('created_at', { ascending: false }).limit(2000);
   try {
-    let { data, error } = await lire('id, source, id_source, sujet, statut, chemin, url, apercu_url');
+    // Requête d'origine (0028) : indice d'activité des photos (une photo de tennis taguée seulement « sport »)
+    let { data, error } = await lire('id, source, id_source, sujet, statut, chemin, url, apercu_url, requete');
+    if (error) ({ data, error } = await lire('id, source, id_source, sujet, statut, chemin, url, apercu_url'));
     if (error) ({ data, error } = await lire('id, source, id_source, sujet, statut, chemin, url'));
     return { data: error ? null : (data as unknown as LigneLibre[]) };
   } catch {
@@ -133,7 +135,7 @@ const photosBanque = cache(async (nonImportees: boolean): Promise<PhotoBanque[]>
       // Image générée par IA (0040) : comme une photo libre importée, une fois validée (jamais d'aperçu externe)
       if (l.source === 'ia') return estPhotoImportee(l) ? [{ url: l.url!, origine: 'libre', sujets, idLibre: l.id }] : [];
       if (!estSourcePhotoLibre(l.source)) return [];
-      if (estPhotoImportee(l)) return [{ url: l.url!, origine: 'libre', sujets, idLibre: l.id, source: l.source }];
+      if (estPhotoImportee(l)) return [{ url: l.url!, origine: 'libre', sujets, idLibre: l.id, source: l.source, ...(l.requete ? { requete: l.requete } : {}) }];
       // Gardée, pas encore importée : aperçu de la source, clé de la candidate (sujets et hashtags saisis au « Garder »)
       if (!opts.nonImportees || l.statut !== 'a_valider' || l.url || !l.apercu_url || !apercuAutorise(l.source, l.apercu_url)) return [];
       return [{ url: l.apercu_url, origine: 'libre', sujets, importee: false, cle: cleCandidatePhoto(l.source, l.id_source), idLibre: l.id, source: l.source }];

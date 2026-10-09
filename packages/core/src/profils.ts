@@ -269,6 +269,27 @@ export function porteActivite(cle: string, tags: readonly string[], a: Pick<Acti
   return Boolean(a.scene && new RegExp(`(^|[:-])sport-${a.scene}(:|$)`).test(cle));
 }
 
+// Mots trop généraux des requêtes de photos (« tennis shoes court » → tennis) : jamais un indice d'activité à eux seuls
+const MOTS_GENERAUX = new Set(['shoes', 'shoe', 'boots', 'boot', 'court', 'grass', 'floor', 'road', 'path', 'indoor', 'field', 'feet', 'foot', 'sole', 'edge', 'deck', 'mat', 'snow', 'binding', 'pedal', 'ball', 'sneakers', 'slippers', 'sandals', 'walking', 'trail', 'stirrup', 'tatami', 'arts', 'course']);
+
+/** Mots qui trahissent une activité dans l'adresse ou la requête d'origine d'une photo : hashtags + premiers mots des requêtes */
+export function motsActivite(a: Pick<ActivitePratique, 'hashtags' | 'requetes' | 'scene'>): string[] {
+  const l = new Set<string>([...a.hashtags.flatMap((h) => [h, h.replace(/-/g, '')]), ...(a.scene ? [a.scene] : [])]);
+  for (const r of a.requetes) for (const m of r.toLowerCase().split(/[^a-z]+/).slice(0, 2)) if (m.length > 3 && !MOTS_GENERAUX.has(m)) l.add(m);
+  if (a.hashtags.includes('trail')) l.add('trail');
+  return [...l];
+}
+
+/**
+ * Activités RECONNUES sur un visuel (retour de Paul du 2026-10-09 : des photos de tennis dans « Sport · course ») : hashtag ou scène
+ * (porteActivite), sinon un mot de l'activité dans la clé, l'adresse ou la requête d'origine (photo taguée seulement « sport » mais
+ * nommée « tennis-shoes-court… » = tennis). Activités de la profession seulement.
+ */
+export function activitesReconnues(e: { cle: string; tags?: readonly string[]; url?: string | null; requete?: string | null }, p: Pick<PratiqueProfession, 'activites'>): string[] {
+  const jetons = new Set(`${e.cle} ${e.url ?? ''} ${e.requete ?? ''}`.toLowerCase().replace(/%20/g, ' ').split(/[^a-z0-9]+/).filter(Boolean));
+  return p.activites.filter((a) => porteActivite(e.cle, e.tags ?? [], a) || motsActivite(a).some((m) => jetons.has(m))).map((a) => a.id);
+}
+
 export type DonneesProfil = { visuels?: DonneesVisuels | null; photos?: DonneesKits | null };
 
 /**
@@ -280,15 +301,20 @@ export function kitDuProfil(profil: ProfilPratique, d: DonneesProfil, opts: { pr
   const p = pratiqueDe(profil.profession, opts.registre ?? PRATIQUES);
   const sujet = themePratique(p, profil.principal)?.sujetVisuel ?? 'general';
   const ok = (e: ElementProfil) => !opts.praticien || !e.aValider;
-  const tous: (ElementProfil & { tags: string[] })[] = [];
-  if (d.photos) for (const v of vivierCure(sujet, d.photos)) tous.push({ cle: v.cle, famille: 'photo', note: v.note, aValider: !v.importee, url: v.p.url, tags: v.tags });
+  const tous: (ElementProfil & { tags: string[]; activites: string[] })[] = [];
+  const reconnues = (cle: string, tags: string[], url?: string, requete?: string | null) => activitesReconnues({ cle, tags, url, requete }, p);
+  if (d.photos) for (const v of vivierCure(sujet, d.photos)) tous.push({ cle: v.cle, famille: 'photo', note: v.note, aValider: !v.importee, url: v.p.url, tags: v.tags, activites: reconnues(v.cle, v.tags, v.p.url, v.p.requete ?? null) });
   if (d.visuels) {
     const v = vivierVisuels(sujet, d.visuels);
-    for (const f of FAMILLES_KIT) if (f !== 'photo') for (const x of v[f]) tous.push({ cle: x.cle, famille: f, note: x.note, aValider: x.aValider, tags: x.tags });
+    for (const f of FAMILLES_KIT) if (f !== 'photo') for (const x of v[f]) tous.push({ cle: x.cle, famille: f, note: x.note, aValider: x.aValider, tags: x.tags, activites: reconnues(x.cle, x.tags) });
   }
   const tri = (l: ElementProfil[]) => l.sort((a, b) => Number(a.aValider) - Number(b.aValider) || (b.note ?? 0) - (a.note ?? 0) || (a.cle < b.cle ? -1 : 1));
+  // Kit générique du thème = visuels SANS activité identifiable (jamais une photo de tennis dans le repli d'un profil « course ») ;
+  // famille vide et profil sans activité : tout le thème (rien à confondre)
   const generique = familleVide();
-  for (const e of tous) if (ok(e)) generique[e.famille].push({ cle: e.cle, famille: e.famille, note: e.note, aValider: e.aValider, ...(e.url ? { url: e.url } : {}) });
+  const neutre = (e: (typeof tous)[number]) => !e.activites.length;
+  for (const e of tous) if (ok(e) && neutre(e)) generique[e.famille].push({ cle: e.cle, famille: e.famille, note: e.note, aValider: e.aValider, ...(e.url ? { url: e.url } : {}) });
+  if (!profil.activites.length) for (const f of FAMILLES_KIT) if (!generique[f].length) for (const e of tous) if (ok(e) && e.famille === f) generique[f].push({ cle: e.cle, famille: e.famille, note: e.note, aValider: e.aValider, ...(e.url ? { url: e.url } : {}) });
   for (const f of FAMILLES_KIT) tri(generique[f]);
   const activites: KitActivite[] = [];
   const replis: string[] = [];
@@ -296,7 +322,11 @@ export function kitDuProfil(profil: ProfilPratique, d: DonneesProfil, opts: { pr
     const a = activitePratique(p, id);
     if (!a) continue;
     const familles = familleVide();
-    for (const f of FAMILLES_KIT) familles[f] = generique[f].filter((e) => porteActivite(e.cle, tous.find((t) => t.cle === e.cle)?.tags ?? [], a));
+    // Visuels de l'activité : reconnus comme ELLE, et aucune autre activité (une photo « tennis et course » n'illustre pas la course)
+    for (const f of FAMILLES_KIT) {
+      familles[f] = tri(tous.filter((t) => t.famille === f && ok(t) && t.activites.includes(id) && t.activites.every((x) => x === id))
+        .map((e) => ({ cle: e.cle, famille: e.famille, note: e.note, aValider: e.aValider, ...(e.url ? { url: e.url } : {}) })));
+    }
     activites.push({ activite: id, hashtag: a.hashtags[0], libelle: a.libelle, familles });
     if (FAMILLES_KIT.every((f) => !familles[f].length)) replis.push(id);
   }

@@ -223,3 +223,25 @@ test('« Trouver des photos pré-filtrées #basket » : recherches et hashtag de
   assert.ok(requetesEmplacement('sport', 'activite:basket').includes('basketball shoes court'));
   assert.equal(hashtagEmplacement('activite:basket'), 'basket');
 });
+
+test('kit « course » : jamais une photo d’une autre activité (tennis tagué seulement « sport » reconnu par son nom ou sa requête)', () => {
+  const U = 'https://x.supabase.co/storage/v1/object/public/photos/libres/';
+  const banque = [
+    { url: `${U}tennis-shoes-court-1.webp`, sujets: ['sport'], origine: 'libre' as const, cle: 'photo:libre-tennis' },
+    { url: `${U}a1b2.webp`, sujets: ['sport'], origine: 'libre' as const, cle: 'photo:libre-padel', requete: 'padel court shoes' },
+    { url: `${U}c3d4.webp`, sujets: ['sport'], origine: 'libre' as const, cle: 'photo:libre-course' },
+    { url: `${U}e5f6.webp`, sujets: ['sport'], origine: 'libre' as const, cle: 'photo:libre-neutre' },
+  ];
+  const hashtags = { 'photo:libre-tennis': ['sport'], 'photo:libre-padel': ['sport'], 'photo:libre-course': ['sport', 'running'], 'photo:libre-neutre': ['sport'] };
+  const profil = profilDepuisReponses({ profession: 'podologue', principaux: ['sport'], activites: ['course'] });
+  const k = kitDuProfil(profil, { photos: { banque, hashtags } });
+  const course = k.activites.find((a) => a.activite === 'course')!;
+  assert.deepEqual(course.familles.photo.map((e) => e.cle), ['photo:libre-course']);
+  assert.ok(!k.generique.photo.some((e) => /tennis|padel/.test(e.cle)), 'repli du thème sans autre activité identifiable');
+  assert.deepEqual(k.generique.photo.map((e) => e.cle), ['photo:libre-neutre']);
+  const v = visuelsDeLActivite(k, 'course');
+  assert.ok(v.photos.every((u) => !/tennis/.test(u)));
+  // Même sans photo de course : repli neutre, jamais le tennis
+  const k2 = kitDuProfil(profil, { photos: { banque: banque.filter((p) => p.cle !== 'photo:libre-course'), hashtags } });
+  assert.deepEqual(visuelsDeLActivite(k2, 'course').photos, [`${U}e5f6.webp`]);
+});

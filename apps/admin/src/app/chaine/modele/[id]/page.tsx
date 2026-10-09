@@ -5,7 +5,8 @@ import BoutonTesterModele from '@/components/BoutonTesterModele';
 import RapportTestModele from '@/components/RapportTestModele';
 import { lireResultatTestModele } from '@/lib/tests-modeles';
 import { exigerContributeur, faireTournerChaine } from '@/lib/chaine-modeles';
-import { donneesRendu } from '../../donnees';
+import { donneesGeneration, donneesRendu, profilsDemo } from '../../donnees';
+import ApercuDesign from '../../ApercuDesign';
 import { verrousDeLaFiche } from '../../validation';
 import ApercuModele from '../../ApercuModele';
 import Validation from './Validation';
@@ -21,7 +22,10 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   const { chaine } = await faireTournerChaine(null);
   const f = chaine.fiches.find((x) => x.id === id);
   if (!f) notFound();
-  const [rendu, { verrous, jauge, bloquants }, rapport] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null)]);
+  const [rendu, { verrous, jauge, bloquants }, rapport, gen, demo] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), donneesGeneration(), profilsDemo()]);
+  // Design (profil nul) : rendu avec le kit de chaque profil compatible (tags pré-calculés, confirmés par Paul)
+  const compatibles = demo.profils.filter((p) => f.tags.profils.includes(p.id));
+  const profilsRendu = compatibles.length ? compatibles : demo.profils;
   const modeTest = modeTestPourEtape(f.statut);
   const versions = chaine.versions.filter((v) => v.modele === f.id).sort((a, b) => b.version - a.version);
   const courante = versions.find((v) => v.version === f.versionCourante);
@@ -37,7 +41,10 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="grid min-w-0 content-start gap-2">
-          {courante && <ApercuModele composition={courante.composition} scenario={f.scenario} rendu={rendu} appareil="ordinateur" hauteur={480} />}
+          {courante && (f.profil === null
+            ? <ApercuDesign design={courante.composition} profils={profilsRendu} poids={gen.poids} photos={gen.photos} rendu={rendu} hauteur={480} scenarioDefaut={f.scenario} />
+            : <ApercuModele composition={courante.composition} scenario={f.scenario} rendu={rendu} appareil="ordinateur" hauteur={480} />)}
+          {f.profil === null && <p className="text-xs text-neutral-600" data-profils-compatibles={compatibles.length}>Profils compatibles (pré-calculés, à confirmer dans les tags) : {compatibles.map((p) => p.nom).join(', ') || 'aucun'}</p>}
           <Link href={`/chaine/revision/${f.id}`} className="inline-flex min-h-11 items-center justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold" data-action="signaler">{f.statut === 'publie' ? 'Signaler une zone (rouvre une retouche, reste en ligne)' : 'Pages et avis'}</Link>
         </div>
         <Validation

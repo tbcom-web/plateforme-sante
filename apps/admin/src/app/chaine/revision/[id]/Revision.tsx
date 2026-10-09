@@ -11,6 +11,8 @@ import {
 } from '@plateforme/core';
 import AnnotateurZones from '@/components/AnnotateurZones';
 import ApercuModele, { type RenduChaine, type ScenarioChaine } from '../../ApercuModele';
+import { useRenduProfil } from '../../ApercuDesign';
+import type { ProfilRendu } from '../../rendu-profil';
 import { creerTickets, garderRelance, revalider, rienASignaler } from '../../actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
@@ -28,6 +30,8 @@ type Props = {
   rendu: RenduChaine;
   poids: PoidsAtelier | null;
   photos: PhotoBanque[];
+  /** Design (profil nul) : profils compatibles avec lesquels on peut voir les pages ; [] = ancien modèle (son scénario) */
+  profilsRendu: ProfilRendu[];
 };
 
 export default function Revision(p: Props) {
@@ -56,7 +60,16 @@ export default function Revision(p: Props) {
   const [verrous, setVerrous] = useState<string[]>([]);
   const [relances, setRelances] = useState<string[]>([]);
   const [graine, setGraine] = useState(1);
-  const affichee = essai ?? p.composition;
+  // Design : chaque page vue avec le kit d'un profil compatible (sélecteur « Voir avec »), même avant / après
+  const vue = useRenduProfil(p.profilsRendu, { poids: p.poids, photos: p.photos, rendu: p.rendu });
+  const design = p.profilsRendu.length > 0;
+  const scenarioVu = (design && vue.scenario) || p.fiche.scenario;
+  const affichee = useMemo(() => (design ? vue.rendre(essai ?? p.composition) : essai ?? p.composition),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [essai, p.composition, design, vue.profil?.id]);
+  const precedenteVue = useMemo(() => (p.precedente && design ? vue.rendre(p.precedente) : p.precedente),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [p.precedente, design, vue.profil?.id]);
   const elements = useMemo(() => (base ? elementsComposition(base, ctx.sujets).slice(0, 10) : []), [base, ctx.sujets]);
   const relancer = (d: DimensionRecette | null) => {
     const x = essai ? normaliserComposition(essai, ctx) : base;
@@ -128,19 +141,20 @@ export default function Revision(p: Props) {
           <button type="button" disabled={enCours} onClick={() => agir(() => rienASignaler(p.fiche.id, page, appareil))} className={`min-h-11 rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white ${focus}`} data-action="rien">Rien à signaler sur cette page</button>
         )}
         {message && <span role="status" className="text-sm text-neutral-700">{message}</span>}
+        {design && vue.selecteur}
       </div>
 
       <div className={`grid gap-3 ${revalidation && p.precedente ? 'lg:grid-cols-2' : 'lg:grid-cols-[minmax(0,1fr)_20rem]'}`}>
         {revalidation && p.precedente && (
           <figure className="grid gap-1"><figcaption className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Avant (v{p.fiche.version - 1})</figcaption>
-            <ApercuModele composition={p.precedente} scenario={p.fiche.scenario} rendu={p.rendu} page={page} appareil={appareil} hauteur={h} />
+            <ApercuModele composition={precedenteVue ?? p.precedente} scenario={scenarioVu} rendu={p.rendu} page={page} appareil={appareil} hauteur={h} />
           </figure>
         )}
         <figure className="grid min-w-0 gap-1">
           <figcaption className="text-xs font-semibold uppercase tracking-wide text-neutral-500">{revalidation ? `Après (v${p.fiche.version})` : essai ? 'Proposition 🎲 (pas encore gardée)' : `${libellePageModele(page)} · ${appareil === 'mobile' ? 'téléphone' : 'ordinateur'}`}</figcaption>
           <div className={appareil === 'mobile' ? 'mx-auto w-full max-w-[400px]' : ''}>
             <AnnotateurZones zones={zones} onChange={setZones} appareil={appareil} mode={mode} onMode={setMode} libelle={`Page ${libellePageModele(page)}`}>
-              <ApercuModele composition={affichee} scenario={p.fiche.scenario} rendu={p.rendu} page={page} appareil={appareil} hauteur={h} />
+              <ApercuModele composition={affichee} scenario={scenarioVu} rendu={p.rendu} page={page} appareil={appareil} hauteur={h} />
             </AnnotateurZones>
           </div>
           {zones.length > 0 && <button type="button" disabled={enCours} onClick={envoyerZones} className={`min-h-11 justify-self-start rounded-lg bg-orange-700 px-4 text-sm font-semibold text-white ${focus}`} data-action="tickets-zones">Créer {zones.length} ticket{zones.length > 1 ? 's' : ''}</button>}

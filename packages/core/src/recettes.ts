@@ -383,7 +383,7 @@ function tirerCouleurLibre(c: ContexteRecette, s: Structure, r: () => number): s
  * sur un site (appliquerRecette, photosImportees). `cle` : clé de l'inventaire (photo:… ; candidate : photo:libre:<source>-<id>) ;
  * `idLibre` : identifiant photos_libres (bouton « Valider et importer »).
  */
-export type PhotoBanque = { url: string; sujets: readonly string[]; origine: 'jeu' | 'libre' | 'integree'; importee?: boolean; cle?: string | null; idLibre?: string; source?: SourcePhotoLibre };
+export type PhotoBanque = { url: string; sujets: readonly string[]; origine: 'jeu' | 'libre' | 'integree'; importee?: boolean; cle?: string | null; idLibre?: string; source?: SourcePhotoLibre; /** Requête d'origine (photo libre) : indice d'activité (profils.ts, activitesReconnues) */ requete?: string };
 
 /** Aperçu d'une photo libre non importée (https, hôtes d'images de Pexels / Pixabay) */
 export const estApercuPhotoLibre = (url: string) => typeof url === 'string' && url.length <= 500 && (urlImageAutorisee('pexels', url) || urlImageAutorisee('pixabay', url));
@@ -405,6 +405,7 @@ export type EntreeBanquePhotos = {
   cle?: string | null;
   idLibre?: string;
   source?: SourcePhotoLibre;
+  requete?: string;
 };
 
 /**
@@ -423,7 +424,7 @@ export function banquePhotos(entrees: readonly EntreeBanquePhotos[], opts: { sur
     if (!sujets.length) continue;
     vues.set(e.url, {
       url: e.url, sujets, origine: e.origine, ...(e.importee === false ? { importee: false } : {}), ...(cle ? { cle } : {}),
-      ...(e.idLibre ? { idLibre: e.idLibre } : {}), ...(e.source ? { source: e.source } : {}),
+      ...(e.idLibre ? { idLibre: e.idLibre } : {}), ...(e.source ? { source: e.source } : {}), ...(e.requete ? { requete: e.requete } : {}),
     });
   }
   return [...vues.values()];

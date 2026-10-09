@@ -1,5 +1,6 @@
 import 'server-only';
-import { universDuParcours } from '@plateforme/core';
+import { kitDuProfil, profilParId, universDuParcours, visuelsDeLActivite } from '@plateforme/core';
+import { getDonneesKits } from '@/lib/kits-images';
 import { predictionsParCle } from '@plateforme/core/juge';
 import { professionDegustation, profilsDegustation } from '@/lib/degustation';
 import { getMarquesImportees } from '@/lib/marques';
@@ -33,3 +34,23 @@ export async function profilsChaine() {
   const profils = await profilsDegustation(profession);
   return { profession, profils };
 }
+
+/**
+ * Profils de démonstration de la chaîne (MODÈLE = DESIGN, chaine-design.ts) avec les photos AUTORISÉES de chacun : kit du profil
+ * (profils.ts, kitDuProfil → visuelsDeLActivite : photos de l'activité, sinon photos du thème sans autre activité identifiable).
+ * `photos` null : profil sans pratique (scénario type) → photos de ses sujets.
+ */
+export async function profilsDemo() {
+  const { profession, profils } = await profilsChaine();
+  const dk = await sur(getDonneesKits(), null);
+  return {
+    profession,
+    profils: profils.map((p) => {
+      const pp = profilParId(p.id, profession.id);
+      let photos: string[] | null = null;
+      if (pp && dk) { try { photos = visuelsDeLActivite(kitDuProfil(pp, { photos: dk }), pp.activites[0] ?? null).photos; } catch { photos = null; } }
+      return { ...p, photos };
+    }),
+  };
+}
+export type ProfilDemoChaine = Awaited<ReturnType<typeof profilsDemo>>['profils'][number];

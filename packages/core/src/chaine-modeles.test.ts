@@ -249,7 +249,7 @@ test('tableau : ce qui attend chaque personne ; tags pré-remplis', () => {
   const e: EtatChaine = { fiches: [fiche('a', { statut: 'avis-humain' }), fiche('b', { statut: 'pret-validation' })], versions: [], tickets: [], votes: [], revues: rienPartout('a', 1, 'moi').slice(0, 3) };
   const p = [{ id: 'sport', nom: 'Sport', profession: 'podologue' }];
   const contrib = attentesHumain(e, { id: 'moi', role: 'contributeur' }, p);
-  assert.ok(contrib.some((x) => x.texte.startsWith('Présélection : 0 / 50')));
+  assert.ok(contrib.some((x) => x.texte.startsWith('Présélection : 0 / 30') && x.nom === 'Tous profils'), 'présélection par profession, sans thème');
   assert.ok(contrib.some((x) => x.modele === 'a' && /3 \/ 16 pages vues \(dont 3 par vous\)/.test(x.texte)));
   assert.ok(!contrib.some((x) => x.modele === 'b'), 'la validation finale n’attend que Paul');
   assert.ok(attentesHumain(e, { id: 'paul', role: 'validateur' }, p).some((x) => x.modele === 'b'));
@@ -272,4 +272,27 @@ test('automate : les avis d’un modèle ne valent jamais pour un autre (même v
   const { etat } = fairetournerChaine({ fiches: [a, b], versions: [version('a', 1, { test: testVert('a', 1) }), version('b', 1, { test: testVert('b', 1) })], tickets: [], votes: [], revues: rienPartout('a', 1) });
   assert.equal(etat.fiches.find((f) => f.id === 'a')!.statut, 'pret-validation');
   assert.equal(etat.fiches.find((f) => f.id === 'b')!.statut, 'avis-humain', 'b n’a reçu aucun avis');
+});
+
+test('modèle = design : images retirées, rendu avec le kit du profil ; profils compatibles (énergique exclu de diabète / senior)', async () => {
+  const { designDe, habillerPourProfil, profilsCompatibles, jeuxDeDemo, profilDemo, familleDuDesign } = await import('./chaine-design');
+  const { normaliserComposition, compositionInitiale, toutChanger } = await import('./recettes');
+  const { modeleIntegre } = await import('./modeles');
+  const ctxSport = { sujets: ['sport'], principaux: 1, couleursPreferees: [], modele: modeleIntegre };
+  const base = compositionInitiale(ctxSport, 3);
+  const x = normaliserComposition({ ...JSON.parse(JSON.stringify(base)), visuels: { ...base.visuels, style: 'photos', herosSujet: 'sport' }, photos: ['/photos/sport-chaussure.webp'] }, ctxSport)!;
+  const d = designDe(x) as Record<string, unknown> & { photos: string[]; visuels: { herosSujet: string | null } };
+  assert.deepEqual(d.photos, []);
+  assert.equal(d.visuels.herosSujet, null);
+  const ctxEnfant = { sujets: ['enfant'], principaux: 1, couleursPreferees: [], modele: modeleIntegre, photos: [{ url: '/photos/enfant-pieds.webp', sujets: ['enfant'], origine: 'integree' as const }] };
+  const h = habillerPourProfil(normaliserComposition(d, ctxEnfant)!, ctxEnfant, 3);
+  assert.equal(h.visuels.herosSujet, 'enfant');
+  assert.ok(h.photos.every((u) => !u.includes('sport')), 'aucune image du profil de départ');
+  const profils = [{ id: 'sport-basket', sujets: ['sport'] }, { id: 'diabete', sujets: ['diabete'] }, { id: 'senior', sujets: ['senior'] }, { id: 'sport-course', sujets: ['sport'] }];
+  let pop = null;
+  for (let g = 1; g < 400 && !pop; g++) { const y = toutChanger(base, [], ctxSport, g * 7919); if (familleDuDesign(y) === 'graphique-pop') pop = y; }
+  assert.ok(pop, 'un design « Graphique pop » tiré');
+  assert.deepEqual(profilsCompatibles(pop!, profils).map((p) => p.id), ['sport-basket', 'sport-course'], 'énergique : ni diabète ni senior');
+  assert.deepEqual(jeuxDeDemo(profils).map((p) => p.id), ['sport-basket', 'diabete', 'senior']);
+  assert.notEqual(profilDemo(profils, 5, 'sport-basket')?.id, 'sport-basket');
 });

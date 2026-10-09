@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {
-  attentesHumain, attentesMachines, CHAINE, compteursChaine, etatTournoi, reserveCandidats, STATUTS_MODELE, statutModele, ticketsOuverts, type Main, type StatutModele,
+  attentesHumain, attentesMachines, CHAINE, compteursChaine, reserveCandidats, tournoiDuProfil, STATUTS_MODELE, statutModele, ticketsOuverts, type Main, type StatutModele,
 } from '@plateforme/core';
 import { professionDe, professionsAdmin } from '@plateforme/core/professions';
 import { exigerContributeur, faireTournerChaine, getEquipe, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
@@ -35,7 +35,8 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
   const filtre = un(sp.profil);
   const fiches = chaine.fiches.filter((f) => !filtre || f.profil === filtre);
   const comptes = compteursChaine(fiches);
-  const nomProfil = (id: string) => profils.find((p) => p.id === id)?.nom ?? id;
+  // Designs (profil nul) : « tous profils » ; anciens modèles : nom du profil
+  const nomProfil = (id: string | null) => (id ? profils.find((p) => p.id === id)?.nom ?? id : 'Design (profils compatibles)');
   const etat = { ...chaine, fiches };
   const personnes = moi.role === 'validateur' && equipe.length ? equipe : [{ id: moi.id, email: moi.email, role: moi.role }];
   const profilsVus = profils.filter((p) => !filtre || p.id === filtre).map((p) => ({ id: p.id, nom: p.nom, profession: profession.id }));
@@ -118,11 +119,11 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${MAINS[st.main].classe}`}>{MAINS[st.main].texte}</span>
                   </div>
                   <p className="mt-1 text-2xl font-bold" data-compteur={s}>{comptes[s]}</p>
-                  {s === 'candidat' && profilsVus.slice(0, 4).map((p) => {
-                    const r = reserveCandidats(chaine.fiches.filter((f) => f.profession === profession.id), p.id);
-                    const t = etatTournoi(chaine.fiches.filter((f) => f.profil === p.id && f.statut === 'candidat').map((f) => f.id), chaine.votes);
-                    return <p key={p.id} className="text-xs text-neutral-600">{p.nom} : {r.texte}{t.ouvert ? ` · tournoi ${t.votes} votes` : ''}</p>;
-                  })}
+                  {s === 'candidat' && (() => {
+                    const r = reserveCandidats(chaine.fiches.filter((f) => f.profession === profession.id), null);
+                    const t = tournoiDuProfil(chaine, chaine.fiches.filter((f) => f.profil === null && f.statut === 'candidat').map((f) => f.id));
+                    return <p className="text-xs text-neutral-600" data-tournoi={t.certitude}>{r.texte}{t.ouvert ? ` · ${t.texte}` : ''}</p>;
+                  })()}
                   {s === 'check-agent' && <p className="text-xs text-neutral-600">Boucle : {enBoucle} / {CHAINE.maxRevision}</p>}
                   <ul className="mt-2 grid max-h-80 gap-1.5 overflow-y-auto">
                     {l.slice(0, 30).map((f) => (

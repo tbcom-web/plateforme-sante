@@ -14,8 +14,8 @@ export `scripts/exporter-retours.mjs`. Tests : `packages/core/src/chaine-modeles
 | # | Statut | Qui a la main | Ce qui se passe | « Fini » quand |
 |---|---|---|---|---|
 | 0 | Ingrédients | humain (Arrivages) | Rien de nouveau : lien et compteur des Arrivages sur le tableau | — |
-| 1 | `candidat` (présélection) | humain | Pages de 6 sites complets du même profil, générés automatiquement (grilles « Directions » : favoris 4-5 ★, harmonie, diversité garantie entre les 6). On touche ceux qui plaisent (multi-sélection, défilement infini, mobile d'abord) → candidats ; chaque page gardée verse des points dans le journal de la Dégustation | Objectif ≈ 50 candidats par profil (compteur) ; le tournoi s'ouvre dès 20 |
-| 2 | `candidat` (tournoi) | humain | Duels A/B, appariement suisse automatique, multi-votants | Classement stable (voir « Arrêt du tournoi ») : les 10 premiers deviennent `finaliste`, les autres `ecarte` |
+| 1 | `candidat` (présélection) | humain | Présélection INFINIE SANS THÈME : pages de 6 DESIGNS (grilles « Directions » : favoris 4-5 ★, harmonie, diversité garantie), chaque page rendue avec un profil de démonstration différent et SES images ; « Voir avec un autre thème » sur chaque carte. On touche ceux qui plaisent → candidats (designs) + points dans la Dégustation + « J'aime » | Objectif ≈ 30 candidats par profession (compteur, réglable : `CHAINE.objectifCandidats`) ; le tournoi s'ouvre dès 20 |
+| 2 | `candidat` (tournoi) | humain | Tournoi EN GRILLES par profession : « tes 2 préférés parmi 6 » (+ celui qui ne va pas), les 6 rendus avec le même profil ; a priori, top 10 seulement, quelques duels de départage ; multi-votants en parallèle | Top 10 sûr à 90 % (voir « Tournoi en grilles ») : les 10 premiers deviennent `finaliste`, les autres `ecarte` |
 | — | `finaliste` | automatique | File d'attente : 10 modèles au plus dans la boucle de révision, meilleur rang d'abord | Une place se libère |
 | 3 | `check-agent` | agent | Le testeur automatique (et la vérification visuelle de Claude) passe la version : verdict, contrôles, tickets techniques créés seuls, corrections techniques automatiques si possible | Un résultat de test existe pour la version courante |
 | 4 | `avis-humain` | humain | Page par page (accueil, page sujet, fiche soin, cabinet, contact et accès, article, FAQ, liste des soins) × ordinateur ET téléphone, uniforme pour tous les modèles : entourer une zone ou toucher un élément + étiquette + commentaire → ticket ; 🔒 verrouiller ce qui plaît, 🎲 relancer le reste ou une dimension ; « Rien à signaler sur cette page » | Les 16 cellules ont un avis (ticket ou « Rien à signaler ») → `retouche` s'il reste un ticket ouvert, sinon `pret-validation` si le testeur est au vert |
@@ -31,18 +31,76 @@ d'après l'empreinte du rendu comme la Dégustation).
 Une relance 🎲 gardée pendant l'avis crée une nouvelle version : les avis déjà donnés valent pour les pages que la relance n'a
 pas changées (`pagesChangees`) ; le testeur repasse sur la nouvelle version.
 
-## Arrêt du tournoi (critère documenté)
+## Modèle = design (décision de Paul du 2026-10-09)
 
-Classement Bradley-Terry agrégé de tous les votants (`ajusterBT` des duels, a priori N(0, 1)), **vote du validateur ×2** (poids
-posé par la base, déclencheur `modeles_votes_poids`). Appariement « suisse » (`prochainDuel`) : le candidat le moins joué (puis le
-plus incertain) contre l'adversaire de niveau le plus proche, en préférant l'incertitude et en évitant les paires déjà jouées —
-jamais deux fois la même paire pour un même votant tant qu'il en reste d'autres.
+« Je préfère voir une série de modèles très très grande, voire infinie, où je sélectionne ceux qui me plaisent SANS thème précis. »
+Un modèle est un DESIGN (`chaine-design.ts`) : structure par page, gamme ou couleur, polices et typographie, détails, menus, premier
+écran, style d'illustration ou photo, traitement, effets. Les IMAGES n'en font pas partie : la version enregistrée n'a ni photos ni
+sujet du premier écran (`designDe`) ; à chaque rendu, `habillerPourProfil` prend celles du KIT du profil (`kitDuProfil` →
+`visuelsDeLActivite` : visuels de l'activité, sinon visuels du thème SANS autre activité identifiable).
 
-Arrêt automatique (`etatTournoi`) quand **(a)** chaque candidat a au moins 5 duels **et (b)** l'ensemble des 10 premiers est le
-même (à un échange près à la frontière 10e / 11e) dans les classements recalculés tous les 10 votes sur les 30 derniers ; ou
-**(c)** quand le budget de 10 votes × nombre de candidats est atteint. Les 10 premiers → `finaliste`, les autres → `ecarte`
-(le validateur peut repêcher). Mesure (tests) : 24 candidats aux forces simulées, 200 votes : arrêt, les 5 vrais meilleurs
-finalistes, aucun des 6 pires.
+- Fiche : `profil` nul (migration 0052 ; les fiches existantes gardent leur profil et leur tournoi par profil), `scenario` = profil
+  de démonstration de la présélection (rendu par défaut). Présélection, tournoi et classement : par PROFESSION.
+- Pages d'avis et fiche : « Voir avec » un profil compatible (même design, autres images).
+- Profils compatibles (`profilsCompatibles`) : famille de style dominante du design × poids de la famille pour le thème n° 1 du
+  profil (`FAMILLES_PAR_SUJET`, seuil 1) — un design « Graphique pop » n'est proposé ni pour diabète ni pour senior. Pré-calculés dans
+  les tags à la présélection, confirmés par Paul (« Tags vérifiés ») ; la publication rend le modèle disponible pour tous ces profils.
+- Testeur : `retours/modeles-a-tester.json` donne pour chaque version les `jeux` (un profil par famille de thèmes compatibles,
+  `jeuxDuModele`) ; le testeur passe toutes les pages pour chacun.
+
+### Cohérence des images (bug du 2026-10-09 : du tennis dans « Sport · course »)
+
+`activitesReconnues` (profils.ts) reconnaît l'activité d'un visuel par son hashtag ou sa scène, sinon par un mot de l'activité dans sa
+clé, son adresse ou la REQUÊTE D'ORIGINE de la photo libre (colonne `photos_libres.requete`) : une photo de tennis taguée seulement
+« sport » mais nommée `tennis-shoes-court…` ou trouvée par « padel court shoes » est reconnue tennis. Le kit d'une activité ne prend
+que ses visuels (et aucune autre activité) ; le kit générique du thème (repli) ne prend que des visuels SANS activité identifiable.
+Test : `profils.test.ts` (kit « course » : jamais de tennis, repli neutre).
+
+## Tournoi en grilles (retour de Paul du 2026-10-09 : « 160 batailles pour arriver à un seul modèle, c'est énorme »)
+
+Code : `packages/core/src/tournoi-grilles.ts`, page `/chaine/tournoi`, migration 0052 (`modeles_grilles`, `modeles_jaime`).
+
+1. **Grilles « tes 2 préférés parmi 6 »** (+ « celui qui ne va pas », facultatif), les 6 rendus avec le MÊME profil de démonstration
+   (contenu égal). Modèle de choix Plackett-Luce / meilleur-pire décomposé en comparaisons (n° 1 bat 5, n° 2 bat 4, les 3 du milieu
+   battent la pire : 12 comparaisons), chacune pondérée 0,6 (comparaisons d'une même grille corrélées) × poids du votant (Paul ×2).
+2. **A priori** (`aPriori`) : moyenne de départ de chaque candidat = 0,25 × J'aime (0 à 3, centrés) + 0,2 × note prédite du juge
+   (1-5, centrée sur 3) + 0,2 × jauge 4-5 ★ (centrée), plafonnée à ±0,6 (écart-type a priori 1).
+3. **Top 10 seulement** : forces Bradley-Terry MAP avec a priori ; grilles composées des candidats dont l'intervalle chevauche la
+   frontière des rangs 10 / 11 (incertitude Φ(−|θ − frontière| / σ)), puis des moins vus ; **élimination rapide** : vu 3 fois sans
+   jamais être choisi (et hors du top 10) ; **duels de départage** quand il ne reste que 2 à 4 incertains.
+4. **Arrêt** : précision ATTENDUE du top 10 ≥ 90 % — moyenne, sur 300 tirages des forces dans leur a posteriori gaussien, de la part
+   du top 10 estimé présente dans le top 10 tiré — et chaque candidat montré au moins une fois ; ou budget de 40 grilles.
+5. **Parallèle** : chaque grille servie est réservée 15 minutes à son votant (ses candidats ne sont pas servis à un autre) ; barre
+   « Top 10 sûr à 72 % · ~6 grilles restantes ».
+
+### Preuve chiffrée : jury synthétique
+
+`simulerGrilles` / `mondeJury` (tournoi-grilles.ts ; script de comparaison dans le dossier de travail de l'agent). 30 candidats, goût
+caché de chaque votant = goût commun + 0,35 de goût propre, vérité recherchée = goût AGRÉGÉ du jury (Paul ×2) ; choix Plackett-Luce
+bruités (« bruit » = netteté des préférences : 1 très hésitant, 2 réaliste, 3 net) ; signaux a priori bruités. Ancien tournoi = duels
+A/B suisses avec son arrêt (classement stable, ≥ 5 duels par candidat). 40 tirages par ligne.
+
+| Jury | Écrans à l'arrêt — grilles (dont duels) | Précision — grilles | Écrans — ancien (duels) | Précision — ancien | Précision à 15 écrans : grilles / duels |
+|---|---:|---:|---:|---:|---:|
+| 1 votant, bruit 2 | 15,7 (0,1) | 0,83 | 90 | 0,80 | 0,81 / 0,52 |
+| 2 votants, bruit 2 | 23,8 (0,7) | 0,85 | 96 | 0,76 | 0,80 / 0,51 |
+| 3 votants, bruit 2 | 30,4 (5,7) | 0,87 | 98 | 0,78 | 0,83 / 0,54 |
+| 1 votant, bruit 3 | 14,8 | 0,89 | 89 | 0,84 | 0,87 / 0,54 |
+| 2 votants, bruit 3 | 22,7 | 0,90 | 94 | 0,80 | 0,87 / 0,53 |
+| 3 votants, bruit 3 | 24,5 | 0,90 | 93 | 0,80 | 0,86 / 0,56 |
+| 2 votants, bruit 1 | 30,5 | 0,77 | 95 | 0,65 | 0,71 / 0,48 |
+| 2 votants, bruit 2, 50 candidats | 38,4 | 0,83 | 154 | 0,68 | 0,68 / 0,36 |
+| 2 votants, bruit 2, sans a priori | 25,3 | 0,87 | — | — | 0,81 / — |
+
+Lecture : avec 30 candidats, le tournoi en grilles s'arrête en **≈ 16 à 30 écrans pour TOUT le jury** (≈ 8 à 12 par personne à
+2-3 votants, ≈ 3-4 minutes) au lieu de **≈ 90-100 duels** (154 avec 50 candidats, d'où les « 160 batailles »), avec une précision du
+top 10 **égale ou meilleure** dans toutes les configurations (+3 à +15 points). À budget égal de 15 écrans : 0,80-0,87 contre 0,51-0,56 ;
+même à clics égaux (53 duels ≈ 15 grilles × 3,5 clics), les duels n'atteignent que 0,58-0,77. La médiane du premier écran où la
+précision atteint 90 % est de 9 à 15 grilles (bruit 2-3), contre 64 à 105 duels (jamais à bruit 1-2 pour la moitié des tirages).
+Limite honnête : atteindre 90 % de précision du top 10 dans ≥ 90 % des tirages n'est possible ni avec l'ancien tournoi ni avec le
+nouveau tant que les préférences sont hésitantes (bruit 1-2 : les rangs 9 à 12 sont presque à égalité) ; le compromis retenu
+(arrêt à 90 % de précision ATTENDUE) donne 0,83-0,90 en ≈ 16-30 écrans. L'a priori fait gagner ≈ 2 écrans et 1-2 points.
+Parcours Playwright (2 votants au goût net) : 15 grilles + 2 duels, précision 90 %.
 
 ## Verrous de la validation finale (`verrousValidation`)
 
@@ -109,11 +167,12 @@ seul » (testeur attendu, retouches de Claude, file des finalistes).
 
 ## Routine de 15 min / jour
 
-- **Contributeur (10 min)** : ouvrir `/chaine` → « Ce qui attend un humain » ; 2 ou 3 pages de présélection sur le profil le moins
-  rempli ; 20 votes au tournoi ; un modèle en avis (les pages « à voir ») ; les revalidations en 1 clic.
+- **Contributeur (10 min)** : ouvrir `/chaine` → « Ce qui attend un humain » ; 2 ou 3 pages de présélection (sans thème) ; 5 à 10
+  grilles du tournoi (≈ 3-4 min) ; un modèle en avis (les pages « à voir ») ; les revalidations en 1 clic.
 - **Paul (5 min)** : les modèles « Prêt pour validation » : verrous, tags, Publier ; un coup d'œil aux tickets rouverts.
 
 ## Migration
 
-`supabase/migrations/0050_chaine_modeles.sql`, rejouable, à exécuter après 0049 (non exécutée par les agents). Sans elle, `/chaine`
-affiche « Migration 0050 à exécuter ».
+`supabase/migrations/0050_chaine_modeles.sql` (après 0049) puis `0052_tournoi_grilles.sql` (après 0051 : grilles du tournoi, J'aime,
+profil facultatif des fiches, des duels et des grilles), rejouables, non exécutées par les agents. Sans 0050, `/chaine` affiche
+« Migration 0050 à exécuter » ; sans 0052, le tournoi affiche « Migration 0052 à exécuter ».

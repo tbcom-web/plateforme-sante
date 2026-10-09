@@ -14,6 +14,8 @@
 // Format des tickets et des résultats de test : chaine-modeles-format.ts. Docs : docs/chaine-modeles.md. Module pur.
 
 import { ajusterBT, type MatchBT } from './duels';
+import { jeuxDuModele } from './chaine-design';
+import { etatTournoiGrilles, type EtatTournoiGrilles, type GrilleTournoi, type SignauxCandidat } from './tournoi-grilles';
 import {
   APPAREILS_MODELE, libellePageModele, PAGES_MODELE, normaliserResultatTest, type AppareilModele, type PageModele, type ResultatTestModele, type TicketModele,
 } from './chaine-modeles-format';
@@ -23,8 +25,8 @@ import {
 // ---------------------------------------------------------------------------------------------------------------
 
 export const CHAINE = {
-  /** Objectif de candidats par profil (compteur de la présélection) */
-  objectifCandidats: 50,
+  /** Objectif de candidats par profession (modèles = designs sans profil ; 30 depuis le tournoi en grilles, retour de Paul du 2026-10-09) */
+  objectifCandidats: 30,
   /** Le tournoi d'un profil s'ouvre à partir de ce nombre de candidats */
   ouvertureTournoi: 20,
   /** Nombre de finalistes par profil */
@@ -137,7 +139,8 @@ export type FicheModele = {
   id: string;
   nom: string;
   profession: string;
-  profil: string;
+  /** Profil du tournoi (anciens modèles) ; null = DESIGN de la profession, rendu avec le kit de chaque profil (chaine-design.ts) */
+  profil: string | null;
   statut: StatutModele;
   versionCourante: number;
   /** Version en ligne pour les praticiens (null = jamais publiée) ; reste en place pendant une retouche */
@@ -178,7 +181,7 @@ export type VersionModele = {
 };
 
 export type ResultatVote = 'a' | 'b' | 'egalite';
-export type VoteModele = { profil: string; a: string; b: string; resultat: ResultatVote; votant: string; poids: number; le: string };
+export type VoteModele = { profil: string | null; a: string; b: string; resultat: ResultatVote; votant: string; poids: number; le: string };
 
 /** Avis d'un humain sur une cellule (page × appareil) d'une version ; page null = revalidation de toute la version (1 clic) */
 export type RevueModele = { modele: string; version: number; page: PageModele | null; appareil: AppareilModele | null; auteur: string; verdict: 'rien' | 'tickets' | 'revalide'; le: string };
@@ -218,8 +221,8 @@ export function choixDePreselection(p: {
 }
 
 /** Compteur de la réserve de candidats d'un profil */
-export function reserveCandidats(fiches: readonly Pick<FicheModele, 'profil' | 'statut'>[], profil: string): { n: number; objectif: number; part: number; texte: string } {
-  const n = fiches.filter((f) => f.profil === profil && f.statut === 'candidat').length;
+export function reserveCandidats(fiches: readonly Pick<FicheModele, 'profil' | 'statut'>[], profil: string | null = null): { n: number; objectif: number; part: number; texte: string } {
+  const n = fiches.filter((f) => (f.profil ?? null) === profil && f.statut === 'candidat').length;
   return { n, objectif: CHAINE.objectifCandidats, part: Math.min(1, n / CHAINE.objectifCandidats), texte: `${n} / ${CHAINE.objectifCandidats} candidats` };
 }
 
@@ -499,9 +502,23 @@ export type EtatChaine = {
   /** Toutes les versions connues (au moins la courante de chaque fiche) */
   versions: readonly VersionModele[];
   tickets: readonly TicketModele[];
+  /** Duels A/B (ancien tournoi, et duels de départage du tournoi en grilles) */
   votes: readonly VoteModele[];
   revues: readonly RevueModele[];
+  /** Grilles répondues du tournoi (tournoi-grilles.ts, migration 0052) */
+  grilles?: readonly GrilleTournoi[];
+  /** Signaux a priori par candidat (J'aime de la présélection, juge, jauge) */
+  signaux?: Readonly<Record<string, SignauxCandidat>>;
 };
+
+/** Groupe de tournoi d'une fiche : la profession (designs) ou la profession et le profil (anciens modèles) */
+export const groupeTournoi = (f: Pick<FicheModele, 'profession' | 'profil'>) => `${f.profession}|${f.profil ?? '*'}`;
+
+/** Tournoi d'un groupe (grilles + duels de départage + a priori) : tournoi-grilles.ts */
+export function tournoiDuProfil(e: Pick<EtatChaine, 'votes' | 'grilles' | 'signaux'>, candidats: readonly string[]): EtatTournoiGrilles {
+  const set = new Set(candidats);
+  return etatTournoiGrilles(candidats, (e.grilles ?? []).filter((g) => g.propositions.every((p) => set.has(p))), e.votes.filter((v) => set.has(v.a) && set.has(v.b)), e.signaux ?? {}, { ouverture: CHAINE.ouvertureTournoi });
+}
 
 export type ActionAuto =
   | { kind: 'statut'; modele: string; de: StatutModele; vers: StatutModele; raison: string; rang?: number | null; versionRetouche?: number }
@@ -523,14 +540,15 @@ export function automate(e: EtatChaine): ActionAuto[] {
     statut.set(f.id, vers);
   };
   // 1. Fin des tournois (par profil)
-  const profils = [...new Set(e.fiches.filter((f) => f.statut === 'candidat').map((f) => `${f.profession}|${f.profil}`))];
+  // Un tournoi par profession pour les designs (profil nul) ; par profil pour les anciens modèles
+  const profils = [...new Set(e.fiches.filter((f) => f.statut === 'candidat').map(groupeTournoi))];
   for (const pp of profils) {
-    const cand = e.fiches.filter((f) => f.statut === 'candidat' && `${f.profession}|${f.profil}` === pp);
-    const t = etatTournoi(cand.map((f) => f.id), e.votes);
+    const cand = e.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === pp);
+    const t = tournoiDuProfil(e, cand.map((f) => f.id));
     if (!t.arrete) continue;
     const rangs = new Map(t.classement.map((l) => [l.id, l.rang]));
     for (const f of cand) {
-      if (t.finalistes.includes(f.id)) passer(f, 'finaliste', `tournoi ${t.raison === 'budget' ? 'au budget' : 'stable'} : rang ${rangs.get(f.id)}`, rangs.get(f.id) ?? null);
+      if (t.top.includes(f.id)) passer(f, 'finaliste', `tournoi ${t.raison === 'budget' ? 'au budget' : `sûr à ${Math.round(t.certitude * 100)} %`} : rang ${rangs.get(f.id)}`, rangs.get(f.id) ?? null);
       else passer(f, 'ecarte', `tournoi terminé : rang ${rangs.get(f.id)}`, rangs.get(f.id) ?? null);
     }
   }
@@ -683,10 +701,10 @@ export function nomTeinte(hex: string): string {
   return 'rose';
 }
 
-/** Tags pré-remplis automatiquement : profession, profils (profil du tournoi + profils cibles par défaut), couleurs (gamme + teinte) */
-export function tagsAutomatiques(composition: Record<string, unknown>, p: { profession: string; profil: string; profilsCibles?: readonly string[] }): TagsModele {
+/** Tags pré-remplis automatiquement : profession, profils (profil du tournoi et/ou profils compatibles calculés), couleurs (gamme + teinte) */
+export function tagsAutomatiques(composition: Record<string, unknown>, p: { profession: string; profil?: string | null; profilsCibles?: readonly string[] }): TagsModele {
   const couleurs = [typeof composition.gamme === 'string' && composition.gamme ? `gamme:${composition.gamme}` : null, typeof composition.couleur === 'string' ? nomTeinte(composition.couleur) : null].filter((x): x is string => Boolean(x));
-  return { profession: p.profession, profils: [...new Set([p.profil, ...(p.profilsCibles ?? [])])].slice(0, 12), couleurs };
+  return { profession: p.profession, profils: [...new Set([...(p.profil ? [p.profil] : []), ...(p.profilsCibles ?? [])])].slice(0, 30), couleurs };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -703,11 +721,15 @@ export function attentesHumain(e: EtatChaine, personne: { id: string; role: Role
   const l: Attente[] = [];
   const tournois: Attente[] = [];
   const reserves: (Attente & { n: number })[] = [];
-  for (const p of profils) {
-    const cand = e.fiches.filter((f) => f.profil === p.id && f.profession === p.profession && f.statut === 'candidat');
-    if (cand.length < CHAINE.objectifCandidats) reserves.push({ modele: null, nom: p.nom, statut: null, texte: `Présélection : ${cand.length} / ${CHAINE.objectifCandidats} candidats`, href: `/chaine/preselection?profil=${encodeURIComponent(p.id)}`, n: cand.length });
-    const t = etatTournoi(cand.map((f) => f.id), e.votes);
-    if (t.ouvert && !t.arrete) tournois.push({ modele: null, nom: p.nom, statut: 'candidat', texte: `Tournoi : ${t.texte}`, href: `/chaine/tournoi?profil=${encodeURIComponent(p.id)}` });
+  // Designs : présélection et tournoi par PROFESSION ; anciens modèles par profil (s'il en reste des candidats)
+  const groupes = [...new Set([...profils.map((p) => `${p.profession}|*`), ...e.fiches.filter((f) => f.statut === 'candidat').map(groupeTournoi)])];
+  for (const g of groupes) {
+    const profil = g.split('|')[1];
+    const nom = profil === '*' ? 'Tous profils' : profils.find((p) => p.id === profil)?.nom ?? profil;
+    const cand = e.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === g);
+    if (profil === '*' && cand.length < CHAINE.objectifCandidats) reserves.push({ modele: null, nom, statut: null, texte: `Présélection : ${cand.length} / ${CHAINE.objectifCandidats} candidats`, href: '/chaine/preselection', n: cand.length });
+    const t = tournoiDuProfil(e, cand.map((f) => f.id));
+    if (t.ouvert && !t.arrete) tournois.push({ modele: null, nom, statut: 'candidat', texte: `Tournoi : ${t.texte}`, href: `/chaine/tournoi${profil === '*' ? '' : `?profil=${encodeURIComponent(profil)}`}` });
   }
   for (const f of e.fiches) {
     if (f.statut === 'avis-humain') {
@@ -720,7 +742,7 @@ export function attentesHumain(e: EtatChaine, personne: { id: string; role: Role
       l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: 'Validation finale et publication', href: `/chaine/modele/${f.id}` });
     }
   }
-  // Ordre : modèles (avis, revalidations, validation), puis tournois ouverts, puis les 3 profils les moins remplis
+  // Ordre : modèles (avis, revalidations, validation), puis tournois ouverts, puis la présélection
   return [...l, ...tournois, ...reserves.sort((a, b) => a.n - b.n).slice(0, 3).map(({ n: _n, ...x }) => x)];
 }
 
@@ -782,7 +804,8 @@ export function markdownTicketsModeles(l: ReturnType<typeof exportTicketsModeles
 export function modelesATester(fiches: readonly FicheModele[], versions: readonly VersionModele[]) {
   return fiches.filter((f) => STATUTS_BOUCLE.includes(f.statut) || f.statut === 'pret-validation' || f.statut === 'publie').flatMap((f) => {
     const v = versions.find((x) => x.modele === f.id && x.version === f.versionCourante);
-    return v && !v.test ? [{ modele: f.id, version: v.version, profession: f.profession, profil: f.profil, scenario: f.scenario, composition: v.composition }] : [];
+    // Design : un jeu de démonstration par famille de thèmes compatibles (chaine-design.ts, jeuxDuModele)
+    return v && !v.test ? [{ modele: f.id, version: v.version, profession: f.profession, profil: f.profil, scenario: f.scenario, composition: v.composition, jeux: f.profil ? [f.profil] : jeuxDuModele(f.profession, f.tags.profils) }] : [];
   });
 }
 

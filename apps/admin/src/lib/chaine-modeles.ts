@@ -5,9 +5,12 @@ import { join } from 'node:path';
 import { redirect } from 'next/navigation';
 import {
   appliquerResultatTest, fairetournerChaine, lireResultatsTests, lireRetouches, nouvelleVersion, normaliserResultatTest, normaliserTicket, retouchesAAppliquer, roleEffectif,
-  estStatutModele, STATUTS_BOUCLE, type ActionAuto, type EtatChaine, type FicheModele, type RevueModele, type RoleEquipe, type TicketModele, type VersionModele, type VoteModele,
+  estStatutModele, STATUTS_BOUCLE, elementsComposition, modeleIntegre, normaliserComposition, qualiteComposition, type ActionAuto, type GrilleTournoi, type SignauxCandidat, type EtatChaine, type FicheModele, type RevueModele, type RoleEquipe, type TicketModele, type VersionModele, type VoteModele,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { predictionsParCle } from '@plateforme/core/juge';
+import { getPoidsAtelier } from '@/lib/atelier';
+import { getPredictions } from '@/lib/predictions';
 
 // CHAÎNE DE PRODUCTION DES MODÈLES côté serveur (migration 0050, packages/core/src/chaine-modeles.ts, docs/chaine-modeles.md) :
 // - rôles : getEquipier (rôle effectif : super admin = validateur), exigerContributeur, exigerValidateur ;
@@ -62,7 +65,7 @@ export function ficheDepuisLigne(l: Record<string, unknown>): FicheModele | null
   const t = (l.tags ?? {}) as Record<string, unknown>;
   const sc = (l.scenario ?? {}) as Record<string, unknown>;
   return {
-    id: l.id, nom: String(l.nom ?? ''), profession: String(l.profession ?? 'podologue'), profil: String(l.profil ?? ''), statut: l.statut,
+    id: l.id, nom: String(l.nom ?? ''), profession: String(l.profession ?? 'podologue'), profil: typeof l.profil === 'string' && l.profil ? l.profil : null, statut: l.statut,
     versionCourante: Number(l.version_courante) || 1, versionPubliee: l.version_publiee == null ? null : Number(l.version_publiee),
     versionRetouche: l.version_retouche == null ? null : Number(l.version_retouche),
     justificationTest: typeof l.justification_test === 'string' ? l.justification_test : null,
@@ -91,7 +94,7 @@ export function ticketDepuisLigne(l: Record<string, unknown>): (TicketModele & {
 }
 
 const voteDepuisLigne = (l: Record<string, unknown>): VoteModele => ({
-  profil: String(l.profil), a: String(l.a), b: String(l.b), resultat: l.resultat === 'a' || l.resultat === 'b' ? l.resultat : 'egalite', votant: String(l.votant ?? ''), poids: Number(l.poids) || 1, le: String(l.created_at ?? ''),
+  profil: l.profil == null ? null : String(l.profil), a: String(l.a), b: String(l.b), resultat: l.resultat === 'a' || l.resultat === 'b' ? l.resultat : 'egalite', votant: String(l.votant ?? ''), poids: Number(l.poids) || 1, le: String(l.created_at ?? ''),
 });
 const revueDepuisLigne = (l: Record<string, unknown>): RevueModele => ({
   modele: String(l.modele), version: Number(l.version), page: (l.page ?? null) as RevueModele['page'], appareil: (l.appareil ?? null) as RevueModele['appareil'], auteur: String(l.auteur ?? ''),
@@ -103,7 +106,31 @@ export const ligneTicket = (t: TicketModele) => ({
   origine: t.origine, gravite: t.gravite ?? null, controle: t.controle ?? null, statut: t.statut, version_ouverture: t.versionOuverture, version_correction: t.versionCorrection ?? null,
 });
 
-export type Chaine = EtatChaine & { tickets: (TicketModele & { id: string })[]; migrationManquante: boolean };
+/** Grilles du tournoi (0052) : répondues → GrilleTournoi ; en cours depuis moins de 15 min → réservations */
+function grillesDepuisLignes(lignes: Record<string, unknown>[], ids: ReadonlySet<string>) {
+  const grilles: GrilleTournoi[] = [], grillesEnCours: Chaine['grillesEnCours'] = [];
+  const limite = Date.now() - 15 * 60 * 1000;
+  for (const l of lignes) {
+    const propositions = Array.isArray(l.propositions) ? (l.propositions as string[]).map(String) : [];
+    if (!propositions.length || !propositions.every((p) => ids.has(p))) continue;
+    if (l.repondue_le && Array.isArray(l.meilleures)) {
+      grilles.push({ profil: l.profil == null ? null : String(l.profil), propositions, meilleures: (l.meilleures as number[]).map(Number), pire: l.pire == null ? null : Number(l.pire), votant: String(l.votant), poids: Number(l.poids) || 1, le: String(l.repondue_le) });
+    } else if (Date.parse(String(l.servie_le)) >= limite) {
+      grillesEnCours.push({ id: String(l.id), profil: l.profil == null ? null : String(l.profil), propositions, votant: String(l.votant), servieLe: String(l.servie_le) });
+    }
+  }
+  return { grilles, grillesEnCours };
+}
+
+export type Chaine = EtatChaine & {
+  tickets: (TicketModele & { id: string })[];
+  migrationManquante: boolean;
+  /** Grilles servies et pas encore répondues (réservations, 15 min) */
+  grillesEnCours: { id: string; profil: string | null; propositions: string[]; votant: string; servieLe: string }[];
+  /** « J'aime » de la présélection par modèle (0052) */
+  jaime: Record<string, number>;
+  migrationGrilles: boolean;
+};
 
 /** Toute la chaîne d'une profession (null = toutes) */
 export async function lireChaine(profession: string | null): Promise<Chaine> {
@@ -113,14 +140,16 @@ export async function lireChaine(profession: string | null): Promise<Chaine> {
   let qf = supabase.from('modeles_fiches').select('*').order('created_at', { ascending: true }).limit(3000).abortSignal(s);
   if (profession) qf = qf.eq('profession', profession);
   const { data: fl, error } = await qf;
-  if (error) return { fiches: [], versions: [], tickets: [], votes: [], revues: [], migrationManquante: true };
+  if (error) return { fiches: [], versions: [], tickets: [], votes: [], revues: [], grilles: [], grillesEnCours: [], jaime: {}, migrationManquante: true, migrationGrilles: true };
   const fiches = ((fl ?? []) as Record<string, unknown>[]).map(ficheDepuisLigne).filter((f): f is FicheModele => f !== null);
   const ids = new Set(fiches.map((f) => f.id));
-  const [vl, tl, vol, rl] = await Promise.all([
+  const [vl, tl, vol, rl, gl, jl] = await Promise.all([
     supabase.from('modeles_versions').select('*').order('version', { ascending: true }).limit(10000).abortSignal(s),
     supabase.from('modeles_tickets').select('*').order('numero', { ascending: true }).limit(10000).abortSignal(s),
     supabase.from('modeles_votes').select('profil, a, b, resultat, votant, poids, created_at').order('created_at', { ascending: true }).limit(20000).abortSignal(s),
     supabase.from('modeles_revues').select('modele, version, page, appareil, auteur, verdict, created_at').limit(20000).abortSignal(s),
+    supabase.from('modeles_grilles').select('id, profil, propositions, votant, servie_le, meilleures, pire, poids, repondue_le').order('servie_le', { ascending: true }).limit(20000).abortSignal(s),
+    supabase.from('modeles_jaime').select('modele, votant').limit(50000).abortSignal(s),
   ]);
   return {
     fiches,
@@ -128,6 +157,9 @@ export async function lireChaine(profession: string | null): Promise<Chaine> {
     tickets: ((tl.data ?? []) as Record<string, unknown>[]).map(ticketDepuisLigne).filter((t): t is TicketModele & { id: string } => t !== null && ids.has(t.modele)),
     votes: ((vol.data ?? []) as Record<string, unknown>[]).map(voteDepuisLigne).filter((v) => ids.has(v.a) && ids.has(v.b)),
     revues: ((rl.data ?? []) as Record<string, unknown>[]).map(revueDepuisLigne).filter((r) => ids.has(r.modele)),
+    ...grillesDepuisLignes((gl.data ?? []) as Record<string, unknown>[], ids),
+    jaime: ((jl.data ?? []) as { modele: string }[]).reduce<Record<string, number>>((m, l) => { m[l.modele] = (m[l.modele] ?? 0) + 1; return m; }, {}),
+    migrationGrilles: Boolean(gl.error),
     migrationManquante: false,
   };
 }
@@ -203,7 +235,8 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
     bilan.retouches++; change = true;
   }
   if (change) chaine = await lireChaine(profession);
-  // 4. Automate : transitions jusqu'au point fixe
+  // 4. Automate : transitions jusqu'au point fixe (a priori du tournoi : J'aime, juge, jauge)
+  chaine = { ...chaine, signaux: await signauxCandidats(chaine) };
   const { actions } = fairetournerChaine(chaine);
   for (const a of actions) {
     if (a.kind === 'statut') {
@@ -215,8 +248,33 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
       if (!error) bilan.actions.push(a);
     }
   }
-  if (bilan.actions.length) chaine = await lireChaine(profession);
+  if (bilan.actions.length) chaine = { ...(await lireChaine(profession)), signaux: chaine.signaux };
   return { ...bilan, chaine };
+}
+
+/**
+ * Signaux a priori du tournoi (tournoi-grilles.ts, aPriori) pour les candidats : J'aime de la présélection (modeles_jaime), note
+ * prédite par le juge (moyenne des prédictions des éléments du design), jauge 4-5 ★ (qualiteComposition).
+ */
+export async function signauxCandidats(chaine: Pick<Chaine, 'fiches' | 'versions' | 'jaime'>): Promise<Record<string, SignauxCandidat>> {
+  const cand = chaine.fiches.filter((f) => f.statut === 'candidat');
+  if (!cand.length) return {};
+  const [poids, predictions] = await Promise.all([getPoidsAtelier().catch(() => null), getPredictions().catch(() => [])]);
+  const parCle = predictionsParCle(predictions);
+  const r: Record<string, SignauxCandidat> = {};
+  for (const f of cand) {
+    const v = chaine.versions.find((x) => x.modele === f.id && x.version === f.versionCourante);
+    const sujets = [...f.scenario.principaux, ...f.scenario.secondaires];
+    const x = v ? normaliserComposition(v.composition, { sujets, principaux: f.scenario.principaux.length, couleursPreferees: f.scenario.couleurs, modele: modeleIntegre }) : null;
+    const elements = x ? elementsComposition(x, sujets) : [];
+    const notes = elements.flatMap((k) => { const l = parCle[k]; return l?.length ? [[...l].sort((a, b) => (a.le < b.le ? 1 : -1))[0].note] : []; });
+    r[f.id] = {
+      jaime: chaine.jaime[f.id] ?? 0,
+      juge: notes.length ? notes.reduce((a, b) => a + b, 0) / notes.length : null,
+      jauge: x ? qualiteComposition(x, sujets, poids?.notesElements ?? null).part : null,
+    };
+  }
+  return r;
 }
 
 /** Équipe (tableau « par personne ») : fonction equipe_chaine() de 0050 */

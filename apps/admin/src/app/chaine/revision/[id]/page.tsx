@@ -5,7 +5,7 @@ import BoutonTesterModele from '@/components/BoutonTesterModele';
 import RapportTestModele from '@/components/RapportTestModele';
 import { lireResultatTestModele } from '@/lib/tests-modeles';
 import { exigerContributeur, faireTournerChaine } from '@/lib/chaine-modeles';
-import { donneesGeneration, donneesRendu } from '../../donnees';
+import { donneesGeneration, donneesRendu, profilsDemo } from '../../donnees';
 import Revision from './Revision';
 
 export const metadata = { title: 'Chaîne · Avis page par page' };
@@ -19,7 +19,8 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
   const { chaine } = await faireTournerChaine(null);
   const f = chaine.fiches.find((x) => x.id === id);
   if (!f) notFound();
-  const [rendu, gen, rapport] = await Promise.all([donneesRendu(), donneesGeneration(), lireResultatTestModele(f.id, f.versionCourante).catch(() => null)]);
+  const [rendu, gen, rapport, demo] = await Promise.all([donneesRendu(), donneesGeneration(), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), profilsDemo()]);
+  const compatibles = demo.profils.filter((p) => f.tags.profils.includes(p.id));
   const modeTest = modeTestPourEtape(f.statut);
   const v = chaine.versions.find((x) => x.modele === f.id && x.version === f.versionCourante) ?? null;
   const prec = chaine.versions.find((x) => x.modele === f.id && x.version === f.versionCourante - 1) ?? null;
@@ -45,6 +46,7 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
           rendu={rendu}
           poids={gen.poids}
           photos={gen.photos}
+          profilsRendu={f.profil === null ? (compatibles.length ? compatibles : demo.profils) : []}
         />
       )}
       {/* Rapport du testeur (contrôles, avant / après du re-check, tickets avec vignettes) : surtout utile en revalidation */}

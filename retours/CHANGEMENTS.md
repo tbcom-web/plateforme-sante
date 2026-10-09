@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Chaîne des modèles : modèle = design sans thème (images du kit du profil), tournoi en grilles (≈ 16-30 écrans au lieu de ≈ 95 duels, précision égale ou meilleure), images cohérentes avec l'activité, migration 0052
 - 2026-10-09 : Testeur de modèles au vert sur la composition saine : logo accessible, « Itinéraire » dans la barre mobile des gabarits, aucune image refusée dans le contenu de démonstration (contrôlé).
 - 2026-10-09 : Chaîne des modèles : statuts par avancer_modele (vérifié en base), verrou « avis » depuis modeles_revues, test orange validable avec la justification écrite de Paul, rapport du testeur dans la fiche (migration 0050)
 - 2026-10-09 : Testeur de modèles (npm run tester:modele, agent testeur-modeles, workflow tester-modele, check / re-check, règle de validation vert ou orange justifié) — docs/testeur-modeles.md
