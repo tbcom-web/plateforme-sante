@@ -72,6 +72,9 @@ export default async function PageDegustation() {
       {migrationManquante && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_DEGUSTATION}</p>
       )}
+      {erreurChoix && (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">Lecture de vos choix impossible pour l’instant ({erreurChoix}) : la migration n’est pas en cause, rechargez dans un moment.</p>
+      )}
       {!profils.length ? (
         <p className="rounded-2xl border border-black/10 bg-white p-6 text-sm text-neutral-700">Aucun profil à déguster pour cette profession pour l’instant. <Link className="font-semibold text-teal-900 underline" href="/admin">Retour</Link></p>
       ) : (
