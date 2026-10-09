@@ -27,6 +27,8 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      # Facultatif : date de modification des situations d'exercice (API FHIR de l'ANS, migration 0056)
+      ANNUAIRE_SANTE_API_KEY: ${{ secrets.ANNUAIRE_SANTE_API_KEY || secrets.ESANTE_API_KEY }}
       PROFESSIONS: ${{ inputs.professions || '80' }}
       # Autorité racine IGC-Santé présentée par service.annuaire.sante.fr (vérification TLS conservée)
       NODE_EXTRA_CA_CERTS: scripts/certificats/igc-sante-racine.pem

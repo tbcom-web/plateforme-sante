@@ -13,7 +13,7 @@ export const metadata = { title: 'Super admin · Prospection' };
 // Aucun message n'est envoyé d'ici. Les adresses MSSanté ne sont jamais importées (messagerie réservée aux échanges de santé).
 
 const jour = (iso: string | null) => (iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
-const couleurSignal: Record<string, string> = { siret: 'bg-teal-100 text-teal-900', rpps: 'bg-violet-100 text-violet-900', nom: 'bg-amber-100 text-amber-900' };
+const couleurSignal: Record<string, string> = { siret: 'bg-teal-100 text-teal-900', rpps: 'bg-violet-100 text-violet-900', nom: 'bg-amber-100 text-amber-900', ans: 'bg-sky-100 text-sky-900' };
 const champ = 'min-h-10 rounded-lg border border-neutral-300 px-2';
 
 function Fiche({ p }: { p: LigneProspection }) {
@@ -114,7 +114,8 @@ export default async function Prospection({ searchParams }: PageProps<'/admin/pr
       <p className="text-xs text-neutral-500">
         Signaux : <span className="rounded-full bg-teal-100 px-1.5 text-teal-900">SIRET créé</span> date de création du cabinet à l’INSEE ·{' '}
         <span className="rounded-full bg-violet-100 px-1.5 text-violet-900">Nouveau au RPPS</span> apparu dans l’annuaire depuis le premier import (arrivée dans un cabinet existant, nouveau diplômé) ·{' '}
-        <span className="rounded-full bg-amber-100 px-1.5 text-amber-900">Trouvé par nom</span> sans SIRET au RPPS, à confirmer.
+        <span className="rounded-full bg-amber-100 px-1.5 text-amber-900">Trouvé par nom</span> sans SIRET au RPPS, à confirmer ·{' '}
+        <span className="rounded-full bg-sky-100 px-1.5 text-sky-900">Situation modifiée au RPPS</span> dernière modification du cabinet dans l’annuaire de l’ANS (changement de lieu ou de rôle, parfois simple correction).
       </p>
 
       <ul className="grid gap-3">

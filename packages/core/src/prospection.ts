@@ -6,7 +6,9 @@
 //    transféré : un transfert crée aussi un établissement) ;
 //  - « rpps » : première apparition de la situation d'exercice dans l'extraction quotidienne (connue à partir de l'import
 //    initial seulement : arrivée dans un cabinet de groupe déjà existant, nouveau diplômé, déménagement) ;
-//  - « nom » : établissement trouvé par nom et code postal, faute de SIRET au RPPS (à confirmer au téléphone).
+//  - « nom » : établissement trouvé par nom et code postal, faute de SIRET au RPPS (à confirmer au téléphone) ;
+//  - « ans » : dernière modification d'une situation d'exercice dans l'API FHIR de l'ANS (meta.lastUpdated, 0056) : changement de
+//    cabinet, d'adresse, de rôle… mais aussi simple correction (téléphone) : « à vérifier », utile quand rien d'autre ne date.
 
 export const STATUTS_PROSPECTION = [
   { id: 'a_contacter', libelle: 'À contacter' },
@@ -40,17 +42,18 @@ export function moisAvant(aujourdhui: string, mois: number): string {
   return cible.toISOString().slice(0, 10);
 }
 
-export type SourceInstallation = 'siret' | 'nom' | 'rpps';
+export type SourceInstallation = 'siret' | 'nom' | 'rpps' | 'ans';
 export type Installation = { date: string; source: SourceInstallation; libelle: string } | null;
 
 /** Signal d'installation le plus récent d'une ligne de prospection_praticiens */
-export function installation(p: { siret_cree_le?: string | null; siret_source?: string | null; apparu_le?: string | null }): Installation {
+export function installation(p: { siret_cree_le?: string | null; siret_source?: string | null; apparu_le?: string | null; situation_maj_le?: string | null }): Installation {
   const candidats: { date: string; source: SourceInstallation }[] = [];
   if (p.siret_cree_le) candidats.push({ date: p.siret_cree_le.slice(0, 10), source: p.siret_source === 'nom' ? 'nom' : 'siret' });
   if (p.apparu_le) candidats.push({ date: p.apparu_le.slice(0, 10), source: 'rpps' });
+  if (p.situation_maj_le) candidats.push({ date: p.situation_maj_le.slice(0, 10), source: 'ans' });
   const c = candidats.sort((a, b) => b.date.localeCompare(a.date))[0];
   if (!c) return null;
-  const libelle = { siret: 'SIRET créé', nom: 'Établissement trouvé par nom (à confirmer)', rpps: 'Nouveau au RPPS' }[c.source];
+  const libelle = { siret: 'SIRET créé', nom: 'Établissement trouvé par nom (à confirmer)', rpps: 'Nouveau au RPPS', ans: 'Situation modifiée au RPPS' }[c.source];
   return { ...c, libelle };
 }
 

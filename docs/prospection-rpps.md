@@ -15,6 +15,8 @@ L'extraction ne contient **aucune date d'installation**. Trois signaux la rempla
 - **Nouveau au RPPS** : la situation d'exercice apparaît dans l'extraction quotidienne. Ce signal ne fonctionne qu'à partir du premier import : l'import initial ne marque personne comme nouveau. Il couvre les cas où aucun SIRET n'est créé (arrivée dans un cabinet de groupe, remplaçant qui s'installe, nouveau diplômé).
 - **Trouvé par nom** : faute de SIRET au RPPS, l'établissement est cherché par nom, code postal et code NAF (86.90E pour les podologues). Il n'est gardé que si le nom correspond. Ce signal est à confirmer au téléphone.
 
+- **Situation modifiée au RPPS** (migration 0056, clé API ANS) : date de la dernière modification d'une situation d'exercice dans l'API FHIR de l'ANS (`meta.lastUpdated` des `PractitionerRole`), relevée chaque nuit pour toute la profession (`Practitioner?qualification-code=…|80&_revinclude=PractitionerRole:practitioner`, environ 150 pages). Il s'agit d'un changement de lieu, de rôle (collaborateur devenu titulaire), mais parfois d'une simple correction : à vérifier. Seul signal pour les entreprises individuelles non diffusibles à l'INSEE. Les jours de mise à jour en masse (plus de 10 % des praticiens le même jour) sont écartés.
+
 La date du signal le plus récent est affichée sur la fiche. Le filtre « Installation » (3, 6, 12 ou 24 mois) garde une fiche dès qu'un de ses signaux tombe dans la période.
 
 ## Règles
@@ -28,7 +30,8 @@ La date du signal le plus récent est affichée sur la fiche. Le filtre « Insta
 
 1. Supabase → SQL Editor : exécuter `supabase/migrations/0055_prospection_rpps.sql`.
 2. GitHub → Actions → **synchro-rpps** → Run workflow. Le premier passage dure environ une heure (environ 15 000 vérifications SIRET). Ensuite, le workflow tourne chaque nuit à 5 h 43 (UTC). Il utilise les secrets existants `SUPABASE_URL` et `SUPABASE_SECRET_KEY`.
-3. Donner l'accès à la commerciale : la page est réservée aux comptes admin, comme /admin/leads.
+3. Clé API ANS (portail Gravitee portal.api.esante.gouv.fr, abonnement « API Annuaire Santé en libre accès ») : secret GitHub `ANNUAIRE_SANTE_API_KEY` (ou `ESANTE_API_KEY`), puis exécuter `supabase/migrations/0056_prospection_ans.sql`. Sans clé, l'étape est sautée.
+4. Donner l'accès à la commerciale : la page est réservée aux comptes admin, comme /admin/leads.
 
 Autres professions : lancer le workflow à la main avec `professions` = `80,70`, par exemple (codes TRE_G15 : 60 infirmier, 70 masseur-kinésithérapeute, 80 pédicure-podologue). Pour les garder chaque nuit, changer la valeur par défaut dans `.github/workflows/synchro-rpps.yml`.
 

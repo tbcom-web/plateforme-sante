@@ -10,7 +10,7 @@ export type LigneProspection = {
   raison_sociale: string | null; enseigne: string | null; adresse: string | null; code_postal: string | null; commune: string | null; departement: string | null;
   telephone: string | null; email: string | null; siret: string | null; apparu_le: string | null; disparu_le: string | null;
   siret_cree_le: string | null; siret_source: string | null; siret_ferme: boolean | null; entreprise_nom: string | null;
-  statut: string | null; note: string | null; relance_le: string | null;
+  statut: string | null; note: string | null; relance_le: string | null; situation_maj_le?: string | null;
 };
 export type Synchro = { le: string; lignes: number | null; nouveaux: number | null; disparus: number | null; verifies: number | null };
 
@@ -18,10 +18,15 @@ const COLONNES = 'cle,rpps,civilite,nom,prenom,profession,mode_exercice,raison_s
   + 'apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,entreprise_nom,statut,note,relance_le';
 export const PAR_PAGE = 50;
 
-export async function lireProspection(f: FiltresProspection, { tout = false } = {}): Promise<{ lignes: LigneProspection[]; total: number } | null> {
+export async function lireProspection(f: FiltresProspection, options: { tout?: boolean } = {}): Promise<{ lignes: LigneProspection[]; total: number } | null> {
+  // Avec la date de l'API ANS (0056) ; sans elle si la migration n'est pas passée
+  return (await lireAvec(f, options, true)) ?? lireAvec(f, options, false);
+}
+
+async function lireAvec(f: FiltresProspection, { tout = false } = {}, ans: boolean): Promise<{ lignes: LigneProspection[]; total: number } | null> {
   const supabase = await createClient();
   const aujourdhui = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
-  let req = supabase.from('prospection_liste').select(COLONNES, { count: 'exact' });
+  let req = supabase.from('prospection_liste').select(ans ? `${COLONNES},situation_maj_le` : COLONNES, { count: 'exact' });
   if (f.departement) req = req.eq('departement', f.departement);
   if (f.liberal) req = req.ilike('mode_exercice', 'lib%');
   if (f.actifs) req = req.is('disparu_le', null).not('siret_ferme', 'is', true);
@@ -30,10 +35,13 @@ export async function lireProspection(f: FiltresProspection, { tout = false } = 
   const mois = PERIODES_INSTALLATION.find((p) => p.id === f.periode)?.mois ?? null;
   if (mois) {
     const limite = moisAvant(aujourdhui, mois);
-    ou.push(`siret_cree_le.gte.${limite},apparu_le.gte.${limite}`);
+    ou.push(`siret_cree_le.gte.${limite},apparu_le.gte.${limite}${ans ? `,situation_maj_le.gte.${limite}` : ''}`);
   }
   // Sans date : ni SIRET daté (souvent une entreprise individuelle non diffusible à l'INSEE), ni apparition depuis le premier import
-  if (f.periode === 'sans_date') req = req.is('siret_cree_le', null).is('apparu_le', null);
+  if (f.periode === 'sans_date') {
+    req = req.is('siret_cree_le', null).is('apparu_le', null);
+    if (ans) req = req.is('situation_maj_le', null);
+  }
   if (f.statut === 'relance') req = req.lte('relance_le', aujourdhui).not('statut', 'in', '(gagne,perdu,hors_cible)');
   else if (f.statut === 'a_contacter') ou.push('statut.is.null,statut.eq.a_contacter');
   else if (f.statut) req = req.eq('statut', f.statut);

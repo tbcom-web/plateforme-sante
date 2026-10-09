@@ -11,8 +11,9 @@
 // Certificat : le serveur de l'ANS présente l'autorité racine IGC-Santé, absente des magasins usuels → la lancer avec
 //   NODE_EXTRA_CA_CERTS=scripts/certificats/igc-sante-racine.pem (vérification TLS conservée).
 // Variables : SUPABASE_URL, SUPABASE_SECRET_KEY ; PROFESSIONS (défaut « 80 ») ; VERIF_MAX (défaut 20000 vérifications SIRET).
-// Usage : node scripts/synchro-rpps.mjs [--fichier=chemin.zip] [--essai] [--sans-verif]
-//   --essai : lit le fichier et affiche des comptes, sans rien écrire (pas besoin de Supabase).
+// Facultatif : ANNUAIRE_SANTE_API_KEY (ou ESANTE_API_KEY) → date de modification des situations d'exercice (API FHIR, 0056).
+// Usage : node scripts/synchro-rpps.mjs [--fichier=chemin.zip] [--essai [--ans]] [--sans-verif]
+//   --essai : lit le fichier et affiche des comptes, sans rien écrire (pas besoin de Supabase) ; --ans : interroge aussi l'API ANS.
 
 import { createWriteStream, createReadStream, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { open } from 'node:fs/promises';
@@ -354,6 +355,89 @@ async function verifierPaquet(aVerifier, memo, dejaFaites) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// 5. Date de modification des situations d'exercice (API FHIR Annuaire Santé de l'ANS, migration 0056)
+// ---------------------------------------------------------------------------------------------------------------------
+// Practitioner?qualification-code=<profession>&_revinclude=PractitionerRole:practitioner : tous les praticiens de la profession
+// avec leurs situations d'exercice, page par page (lien « next »). Pas de filtre _lastUpdated : il porterait sur la fiche du
+// praticien, pas sur ses situations. 17 appels par seconde au plus par application.
+
+const URL_FHIR = (process.env.ANNUAIRE_SANTE_URL || 'https://gateway.api.esante.gouv.fr/fhir/v2').replace(/\/$/, '');
+const CLE_ANS = process.env.ANNUAIRE_SANTE_API_KEY || process.env.ESANTE_API_KEY || '';
+const SYSTEME_G15 = 'https://mos.esante.gouv.fr/NOS/TRE_G15-ProfessionSante/FHIR/TRE-G15-ProfessionSante';
+
+/** RPPS (11 chiffres) d'une ressource Practitioner : identifiant RPPS, ou IDNPS « 8 » + RPPS */
+function rppsFhir(praticien) {
+  const ids = (praticien.identifier ?? []).map((i) => String(i.value ?? ''));
+  return ids.find((v) => /^\d{11}$/.test(v)) ?? ids.find((v) => /^8\d{11}$/.test(v))?.slice(1) ?? null;
+}
+
+async function fhir(url) {
+  for (let essai = 1; essai <= 5; essai++) {
+    const pause = dernierAppelAns + 80 - Date.now(); // ≈ 12 appels par seconde (limite : 17)
+    if (pause > 0) await attendre(pause);
+    dernierAppelAns = Date.now();
+    const r = await fetch(url, { headers: { 'ESANTE-API-KEY': CLE_ANS, accept: 'application/fhir+json' } });
+    if (r.ok) return r.json();
+    if (r.status === 401 || r.status === 403) throw new Error(`API ANS : HTTP ${r.status} (clé refusée ou abonnement manquant)`);
+    if (r.status === 429 || r.status >= 500) { await attendre(2000 * essai); continue; }
+    throw new Error(`API ANS : HTTP ${r.status}`);
+  }
+  throw new Error('API ANS : trop d’échecs');
+}
+let dernierAppelAns = 0;
+
+async function synchroAns() {
+  if (!CLE_ANS) { console.log('API ANS : pas de clé (ANNUAIRE_SANTE_API_KEY), étape sautée'); return 0; }
+  const parRpps = new Map(); // rpps → { praticien, situation, situations }
+  const idVersRpps = new Map();
+  const roles = [];
+  for (const code of PROFESSIONS) {
+    let url = `${URL_FHIR}/Practitioner?${new URLSearchParams({ 'qualification-code': `${SYSTEME_G15}|${code}`, _revinclude: 'PractitionerRole:practitioner', _count: '100' })}`;
+    for (let page = 1; url; page++) {
+      const b = await fhir(url);
+      for (const { resource: r } of b.entry ?? []) {
+        if (r?.resourceType === 'Practitioner') {
+          const rpps = rppsFhir(r);
+          if (!rpps) continue;
+          idVersRpps.set(r.id, rpps);
+          const e = parRpps.get(rpps) ?? { praticien: null, situation: null, situations: 0 };
+          e.praticien = r.meta?.lastUpdated?.slice(0, 10) ?? e.praticien;
+          parRpps.set(rpps, e);
+        } else if (r?.resourceType === 'PractitionerRole' && r.active !== false) roles.push(r);
+      }
+      url = (b.link ?? []).find((l) => l.relation === 'next')?.url ?? null;
+      if (page % 50 === 0) console.log(`  API ANS : ${page} pages, ${parRpps.size} praticiens`);
+    }
+  }
+  for (const r of roles) {
+    const rpps = idVersRpps.get(String(r.practitioner?.reference ?? '').split('/').pop());
+    const e = rpps && parRpps.get(rpps);
+    const d = r.meta?.lastUpdated?.slice(0, 10);
+    if (!e || !d) continue;
+    e.situations++;
+    if (!e.situation || d > e.situation) e.situation = d;
+  }
+  // Mises à jour en masse (reprise de données par l'ANS) : un même jour pour plus de 10 % des praticiens → pas un signal
+  const parJour = {};
+  for (const e of parRpps.values()) if (e.situation) parJour[e.situation] = (parJour[e.situation] ?? 0) + 1;
+  const masse = new Set(Object.entries(parJour).filter(([, n]) => n > parRpps.size * 0.1).map(([j]) => j));
+  if (masse.size) console.log(`  API ANS : dates de mise à jour en masse écartées : ${[...masse].join(', ')}`);
+  const lignesAns = [...parRpps].map(([rpps, e]) => ({
+    rpps, situation_maj_le: e.situation && !masse.has(e.situation) ? e.situation : null, praticien_maj_le: e.praticien, situations: e.situations, vu_le: aujourdhui,
+  }));
+  console.log(`API ANS : ${parRpps.size} praticiens, ${roles.length} situations, ${lignesAns.filter((l) => l.situation_maj_le).length} datées`);
+  if (ESSAI) {
+    const recents = Object.entries(parJour).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 15);
+    console.log('  Jours de modification les plus récents (jour : praticiens) :', recents.map(([j, n]) => `${j}:${n}`).join(' '));
+    return parRpps.size;
+  }
+  for (let i = 0; i < lignesAns.length; i += 1000) {
+    await sb('prospection_ans?on_conflict=rpps', { method: 'POST', body: lignesAns.slice(i, i + 1000), prefer: 'resolution=merge-duplicates,return=minimal' });
+  }
+  return parRpps.size;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Programme
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -382,6 +466,7 @@ try {
     const lib = liste.filter((p) => /^lib/i.test(p.mode_exercice ?? ''));
     console.log(`Libéraux : ${lib.length} ; avec téléphone : ${lib.filter((p) => p.telephone).length} ; avec e-mail : ${lib.filter((p) => p.email).length} ; avec SIRET : ${lib.filter((p) => p.siret).length}`);
     console.log('Exemple :', liste[0]);
+    if (args.ans) await synchroAns();
   } else {
     await enregistrer(liste, praticiens, fichier);
   }
@@ -407,6 +492,8 @@ async function enregistrer(liste, praticiens, fichier) {
   }
   console.log(`${importInitial ? 'Import initial' : `${nouveaux} nouvelle(s) situation(s)`}, ${disparus.length} disparue(s)`);
 
+  // Étape facultative : sans clé ou sans la migration 0056, la synchro continue
+  try { await synchroAns(); } catch (e) { console.log(`API ANS : ${e.message.slice(0, 200)} (étape sautée)`); }
   const verifies = args['sans-verif'] ? 0 : await verifierInstallations();
   await sb('prospection_synchros', {
     method: 'POST', prefer: 'return=minimal',

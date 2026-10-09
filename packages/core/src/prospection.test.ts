@@ -15,6 +15,7 @@ test('installation : signal le plus récent, source lisible', () => {
   assert.deepEqual(installation({ siret_cree_le: '2024-07-29', siret_source: 'siret', apparu_le: null }), { date: '2024-07-29', source: 'siret', libelle: 'SIRET créé' });
   assert.equal(installation({ siret_cree_le: '2018-02-12', siret_source: 'siret', apparu_le: '2026-10-01' })?.source, 'rpps');
   assert.equal(installation({ siret_cree_le: '2026-09-01', siret_source: 'nom' })?.libelle, 'Établissement trouvé par nom (à confirmer)');
+  assert.deepEqual(installation({ siret_cree_le: null, situation_maj_le: '2025-11-03' }), { date: '2025-11-03', source: 'ans', libelle: 'Situation modifiée au RPPS' });
 });
 
 test('filtres : valeurs par défaut et saisies refusées', () => {
