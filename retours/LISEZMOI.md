@@ -13,6 +13,7 @@ Retours de Paul sur les assets et les combinaisons, exportés automatiquement de
 | `illustrations-statuts.json` | Statut courant par clé (table `illustrations_statuts`). |
 | `assets-sujets.json` | Sujets des visuels ajoutés / retirés par Paul (table `assets_sujets`, 0028) : état courant par clé (`ajouts`, `retraits`). |
 | `inspirations.json` | Inspirations (table `inspirations`, 0028) : étiquettes « ce qui plaît », ce qu'on veut en tirer, sujet, type, palette, domaine du lien, jour. Jamais l'image ni une URL signée : référence seulement, jamais réutilisée sur les sites. |
+| `photos-validees.json` | Photos libres validées, hébergées (stockage public « photos ») et notées 4-5 ★ : URL publique, clé, sujets, note, source (jamais d'auteur). Lu par les rendus hors ligne (démo, testeur de modèles) : `docs/testeur-modeles.md`. |
 | `CHANGEMENTS.md` | Tenu à la main par Claude : corrections faites d'après les retours (affichées dans /admin/retours). |
 
 Aucune donnée personnelle : ni auteur, ni e-mail, ni identifiant de compte, ni donnée de lead, de prospect ou de site

@@ -377,4 +377,29 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
   }
 }
 
+// Photos validées 4-5 ★ (manque M15 du 2026-10-09) → retours/photos-validees.json : rendus HORS LIGNE (démo, testeur de modèles,
+// rendre-recettes) : photos libres validées et hébergées dans le stockage PUBLIC « photos » (URL publique, déjà servie par les sites),
+// sujets effectifs, moyenne ≥ 4 ★, jamais exclues (photos-validees.ts, manifestePhotosValidees). Colonnes explicites : ni auteur,
+// ni identifiant de compte, ni requête de recherche. Table absente : rien n'est écrit.
+{
+  const tmpPhotos = mkdtempSync(join(tmpdir(), 'exporter-photos-'));
+  let pv;
+  try {
+    await build({ entryPoints: [join(racine, 'packages', 'core', 'src', 'photos-validees.ts')], bundle: true, platform: 'node', format: 'esm', outfile: join(tmpPhotos, 'photos.mjs'), logLevel: 'warning', loader: { '.svg': 'text' } });
+    pv = await import(pathToFileURL(join(tmpPhotos, 'photos.mjs')).href);
+  } finally {
+    rmSync(tmpPhotos, { recursive: true, force: true });
+  }
+  const libres = await lireTout('photos_libres', 'url,chemin,statut,sujet,source', 'url.asc');
+  if (libres !== null) {
+    const photos = pv.manifestePhotosValidees(libres, notesAssets, { statuts: courants, surcharges: surchargesSujets, hashtags: hashtagsAssets });
+    ecrire('photos-validees.json', {
+      version: 1,
+      note: 'Photos libres validées, hébergées et notées 4-5 ★ par Paul (moyenne), jamais exclues : rendus hors ligne seulement (démo, testeur de modèles). Aucune donnée personnelle.',
+      photos,
+    });
+    console.log(`Photos validées 4-5 ★ : ${photos.length}.`);
+  }
+}
+
 console.log(`Retours exportés dans ${sortie} : ${notesAssets.length} notes d’assets, ${notesAtelier.length} notes de l’atelier, ${journal.length} revues, ${courants.length} statuts, ${listeInspirations.length} inspirations.`);

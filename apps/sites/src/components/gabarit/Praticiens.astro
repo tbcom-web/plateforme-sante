@@ -44,7 +44,7 @@ const seul = site.praticiens.length === 1;
       </div>
       <div class="praticien__texte">
         <p class="praticien__statut mono">{p.photo ? `${String(i + 1).padStart(2, '0')} — ` : ''}{STATUTS[p.statut]}</p>
-        <h3>{p.prenom} {p.nom}</h3>
+        <h3>{`${p.prenom} ${p.nom}`.trim()}</h3>
         <p class="praticien__titre">{p.titre}{site.cabinet.ville && ` à ${site.cabinet.ville}`}</p>
         {p.orientations.length > 0 && (
           <ul class="praticien__orientations" aria-label="Orientations">
@@ -83,15 +83,19 @@ const seul = site.praticiens.length === 1;
   .praticien__releve :global(.praticien__empreintes) { position: absolute; right: 6%; bottom: -14%; width: 52%; color: var(--sur-sombre-doux); }
   /* Monogramme plein, en papier sur le plan, posé sur un filet (pas de lettres détourées) */
   .praticien__monogramme { position: absolute; left: 16px; bottom: 16px; padding-top: 8px; border-top: var(--filet-fort) solid var(--signal); font-family: var(--police-titres); font-weight: var(--graisse-titres, 600); font-size: clamp(2.6rem, 12cqi, 4rem); line-height: 0.9; letter-spacing: -0.04em; color: var(--papier); }
-  .praticien__texte { display: grid; gap: 6px; align-content: start; padding: 22px 12px 10px; }
+  /* Colonne unique bornée : un nom ou un statut très long ne peut pas élargir la fiche (testeur, noms longs à 768-1024 px) */
+  .praticien__texte { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; padding: 22px 12px 10px; }
   @container (min-width: 620px) {
     .praticien__carte { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 8px; }
     .praticien__portrait { aspect-ratio: auto; height: 100%; min-height: 320px; }
     .praticien__texte { padding: 22px 22px 18px; }
   }
   p { margin: 0; }
-  .praticien__statut { color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--taille-donnees-petit); margin-bottom: 4px; }
+  .praticien__statut { min-width: 0; overflow-wrap: anywhere; color: var(--accent-vif); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--taille-donnees-petit); margin-bottom: 4px; }
   h3 { font-family: var(--police-titres); font-size: clamp(1.6rem, 6cqi, 2.2rem); letter-spacing: -0.04em; line-height: 1; }
+  /* Nom composé très long (« Delacroix-Montgolfier ») : jamais coupé (mot lié), réduit juste assez pour tenir dans la colonne */
+  .praticien__texte h3 { container-type: inline-size; }
+  h3 :global(mot-lie[style]) { font-size: min(1em, calc(100cqi / (var(--n) * 0.6))); }
   .praticien__titre { color: var(--encre-douce); }
   .praticien__orientations { list-style: none; padding: 0; margin: 10px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; }
   .praticien__orientations li { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; padding: 6px 12px 6px 10px; border-radius: 999px; box-shadow: inset 0 0 0 var(--filet) var(--ligne); color: var(--encre); }

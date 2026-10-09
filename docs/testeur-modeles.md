@@ -75,12 +75,12 @@ requêtes tierces bloquées (et notées).
 |---|---|---|
 | Débordement | `scrollWidth` > largeur | bloquant |
 | Mots coupés | mot composé (trait d'union) ou mot ≥ 10 lettres sur 2 lignes (Range.getClientRects) | métier ou composé : bloquant ; autre : majeur |
-| Chevauchements | blocs de texte / interactifs (hors parents, `<details>` fermés exclus) | recouvrement ≥ 25 % de la plus petite boîte : majeur |
+| Chevauchements | blocs de texte / interactifs (hors parents, `<details>` fermés exclus ; texte tronqué par line-clamp / ellipsis : lignes visibles seulement) | recouvrement ≥ 25 % de la plus petite boîte : majeur |
 | Contrastes AA réels | pixels de la capture sous chaque texte (fond dominant, 10e centile si fond varié), alpha et opacité compris | ≥ 4,5:1 (grand texte ≥ 3:1) ; < 3:1 bloquant |
 | Cibles tactiles (360, 375) | boîte des liens / boutons (liens en ligne d'un paragraphe exemptés) | ≥ 44 px ; < 24 px majeur, sinon mineur |
 | Liens et ancres | tous les `<a href>` internes, statique sur `dist` | page absente : bloquant ; ancre absente : majeur |
 | Menu mobile (360, 375) | ouvrir, focus dans le menu, Échap, retour du focus | ne s'ouvre pas : bloquant ; reste majeur / mineur |
-| Barre d'actions (375) | appel `tel:`, itinéraire, RDV, ≥ 44 px, ne masque pas le pied de page | majeur |
+| Barre d'actions (375) | appel `tel:`, itinéraire, RDV, ≥ 44 px, ne masque pas le pied de page (mesuré en bas de page, hauteur stabilisée : pied en `content-visibility: auto`) | majeur |
 | Formulaires | étiquettes, bouton d'envoi | majeur |
 | Images | chargées, `alt`, dimensions, poids ≤ 300 Ko, aucune image démo, aucune refusée (≤ 2 ★, retirée, à retravailler, à valider : `retours/assets-notes.json`, `illustrations-statuts.json`, `verifierPublicationRecette`) | non chargée / démo / refusée du modèle : bloquant ; refusée hors modèle (contenu de démo, banque) : majeur |
 | Polices | familles chargées (`document.fonts`), aucune police tierce | tierce : bloquant |
@@ -91,12 +91,33 @@ requêtes tierces bloquées (et notées).
 | WebKit | `controle:webkit` (iPhone) sur 5 pages | ≤ 4 % de pixels différents par zone |
 | Performance mobile | Chromium, 4G lente simulée (150 ms, 1,6 Mb/s), processeur ×4, cache vide, gzip ; accueil + 1 fiche (jeu 1), accueil (jeu minimal) | LCP ≤ 2,5 s (> 4 s bloquant), CLS ≤ 0,05 (> 0,25 bloquant), TBT ≤ 200 ms (> 600 bloquant), ≤ 1 000 Ko (> 2 500 bloquant) |
 | Console | erreurs `console.error`, exceptions | exception : bloquant ; erreur : majeur |
-| Animations | sans mouvement réduit : animations repérées ; avec : aucune ne tourne, chaque élément animé reste visible (image fixe), capture `accueil--image-fixe.png` | majeur |
+| Animations | sans mouvement réduit : animations repérées ; avec : aucune ne tourne, chaque élément animé (sélecteur exact `:nth-of-type`, retrouvé sous mouvement réduit) reste visible (image fixe ; un tracé droit d'une seule dimension nulle est visible), capture `accueil--image-fixe.png` | majeur |
 | Tiers | toute requête hors du site | majeur |
 
 Contraste (2026-10-09) : les lettres sont reconnues à leur couleur PEINTE (texte rgba mélangé au fond le plus fréquent) et les
 pixels d'anticrénelage (voisins d'une lettre, de couleur entre le texte et le fond dominant) sont écartés du 10e centile ; sans cela,
-les polices fines (Bodoni, mono, condensée) et le texte blanc à 80 % sur fond sombre donnaient de faux « 1,5:1 (fond varié) ».
+les polices fines (Bodoni, mono, condensée) et le texte blanc à 80 % sur fond sombre donnaient de faux « 1,5:1 (fond varié) ». Traits
+très fins (mono 13 px, aucun pixel à la couleur du texte) : un pixel à mi-chemin texte → fond, avec du fond dominant à 2 px au plus,
+compte comme cœur de lettre et ses voisins intermédiaires comme anticrénelage (« 22 SEPTEMBRE 2026 » mesuré 3,69:1 → 5,9:1, réel 6,3:1) ;
+une plage claire de photo derrière un texte blanc n'est pas un trait fin et reste comptée.
+
+## Rendus hors ligne : exclusions et photos validées (M15, 2026-10-09)
+
+La démo, le testeur et `scripts/rendre-recettes.mjs` n'ont pas Supabase. Avant tout choix de photo, ils posent le registre d'images
+(`definirContexteImages`) depuis les exports du dépôt (`apps/sites/src/lib/retours-hors-ligne.ts`, fonctions pures
+`packages/core/src/photos-validees.ts`) :
+- **exclusions strictes** (`clesExcluesHorsLigne`) : moyenne ou dernière note ≤ 2 ★ (notes remises les plus récentes d'abord),
+  retirées, à retravailler, **à revoir** (`retours/assets-notes.json`, `retours/illustrations-statuts.json`) ; le testeur juge avec
+  la même liste ;
+- **vivier 4-5 ★** par sujet : photos du manifeste `retours/photos-validees.json` (photos libres validées et hébergées, moyenne
+  ≥ 4 ★, jamais exclues : URL publique, clé, sujets, note, source ; aucune donnée personnelle) puis photos intégrées notées ≥ 4 ★.
+  Un design en style « Photos » ne tire QUE là (`tirerPhotos`) ; un sujet sans photo 4-5 ★ n'en reçoit aucune.
+
+Le manifeste est écrit par l'export nocturne (`scripts/exporter-retours.mjs`, workflow exporter-retours, clé service en secret
+GitHub). Le testeur sert ces photos depuis un cache local (`<tmp>/testeur-photos-plateforme`, téléchargées une fois) : elles ne
+comptent pas comme requêtes tierces. Variables : `RETOURS_HORS_LIGNE=non` (comportement d'avant), `PHOTOS_VALIDEES=<chemin>`
+(autre manifeste). Essai du 2026-10-09 : D4 passé en style Photos (manifeste d'essai de 53 photos 4-5 ★), jeux diabète, senior,
+sport-course : **VERT** (photos visibles toutes ≥ 4 ★).
 
 La performance est mesurée « maison » (même réglage que Lighthouse mobile, appliqué par Chromium) : Lighthouse n'est pas une
 dépendance du dépôt. axe-core est la seule dépendance ajoutée (devDependency de `apps/sites`).

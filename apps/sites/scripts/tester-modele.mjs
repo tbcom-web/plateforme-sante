@@ -54,7 +54,7 @@ async function chargerCore() {
   await esbuild({
     stdin: {
       contents: `export * from '../../packages/core/src/testeur-modeles.ts';
-export { clesImagesExclues, cleImage, estImageDemo, verifierPublicationRecette, normaliserComposition, MODELES_INTEGRES, photosIntegreesBanque, contexteScenario, habillerPourProfil, designDe, serialiserComposition, modeleIntegre } from '@plateforme/core';`,
+export { clesImagesExclues, contexteImagesHorsLigne, lireManifestePhotos, definirContexteImages, cleImage, estImageDemo, verifierPublicationRecette, normaliserComposition, MODELES_INTEGRES, photosIntegreesBanque, contexteScenario, habillerPourProfil, designDe, serialiserComposition, modeleIntegre } from '@plateforme/core';`,
       resolveDir: racineSites, loader: 'ts',
     },
     bundle: true, format: 'esm', platform: 'node', outfile: sortie, logLevel: 'silent', loader: { '.svg': 'text' },
@@ -168,9 +168,20 @@ if (modele.type === 'recette') {
   writeFileSync(join(sortie, 'composition.json'), JSON.stringify(modele.composition));
   envModele.RECETTE = join(sortie, 'composition.json');
 } else envModele.MODELE = modele.id;
+// Rendu hors ligne (M15) : exclusions STRICTES (≤ 2 ★, dernière note ≤ 2 ★, retirées, à retravailler, à revoir) et vivier des photos
+// 4-5 ★ (manifeste retours/photos-validees.json de l'export nocturne + photos intégrées bien notées), lus dans les exports du dépôt ;
+// mêmes règles que la démo (apps/sites/src/lib/retours-hors-ligne.ts) : le testeur juge ce que la construction montre.
+const lireRetours = (f) => { const p = join(DEPOT, 'retours', f); return existsSync(p) ? lireJson(p) : []; };
+const cheminManifeste = process.env.PHOTOS_VALIDEES || join(DEPOT, 'retours', 'photos-validees.json');
+const manifeste = existsSync(cheminManifeste) ? core.lireManifestePhotos(lireJson(cheminManifeste)) : [];
+const horsLigne = core.contexteImagesHorsLigne(lireRetours('assets-notes.json'), lireRetours('illustrations-statuts.json'), manifeste);
+core.definirContexteImages({ exclues: horsLigne.exclues, vivier: horsLigne.vivier });
+/** Photos hébergées de la plateforme (stockage public « photos ») servies aux rendus : celles du manifeste */
+const photosPlateforme = new Set(manifeste.map((p) => p.url));
 // Design habillé pour chaque profil : composition propre au jeu (RECETTE du jeu)
 if (modele.type === 'recette') {
-  const banque = core.photosIntegreesBanque();
+  // Banque du kit : photos intégrées + photos validées 4-5 ★ du manifeste ; le tirage (vivier) ne garde que les 4-5 ★ non exclues
+  const banque = [...horsLigne.banque.filter((p) => p.origine === 'libre'), ...core.photosIntegreesBanque()];
   for (const j of JEUX.filter((x) => x.profil)) {
     const scenario = { principaux: j.principal ? [j.principal] : [], secondaires: j.secondaires, couleurs: [], soins: [] };
     const photos = core.photosDuKitProfil(banque, j, profession);
@@ -291,7 +302,7 @@ for (const f of ['assets-notes.json', 'illustrations-statuts.json']) {
   const p = join(DEPOT, 'retours', f);
   if (existsSync(p)) lignesRetours.push(...lireJson(p));
 }
-const exclues = core.clesImagesExclues(lignesRetours);
+const exclues = horsLigne.exclues;
 const statuts = Object.fromEntries(lignesRetours.filter((l) => l.statut && l.cle).map((l) => [l.cle, l.statut]));
 // Image refusée : BLOQUANTE si elle vient du modèle (photos de la composition, image posée par les surcharges du cas de test) ;
 // MAJEURE si elle vient du contenu du jeu de démonstration ou d'une banque partagée (défaut de la plateforme, signalé sans
@@ -475,7 +486,18 @@ function analyserPage({ contraste, cibles, images }) {
     let lignes = null;
     if (!interactif) {
       // boîte serrée du texte propre (un bloc pleine largeur ne recouvre pas son voisin flottant)
-      const rects = [...e.childNodes].filter((c) => c.nodeType === 3 && c.data.trim()).flatMap((c) => { const p = document.createRange(); p.selectNodeContents(c); return [...p.getClientRects()]; }).filter((b) => b.width > 0);
+      let rects = [...e.childNodes].filter((c) => c.nodeType === 3 && c.data.trim()).flatMap((c) => { const p = document.createRange(); p.selectNodeContents(c); return [...p.getClientRects()]; }).filter((b) => b.width > 0);
+      // Texte tronqué (line-clamp, ellipsis : overflow masqué) : seules ses lignes VISIBLES comptent ; les lignes coupées par « … »
+      // ont des boîtes sous la partie visible et ne recouvrent rien à l'écran (faux chevauchements des résumés de soins, 360-375 px)
+      const sc = getComputedStyle(e);
+      if (rects.length && (sc.overflowX !== 'visible' || sc.overflowY !== 'visible')) {
+        const masqueX = sc.overflowX !== 'visible', masqueY = sc.overflowY !== 'visible';
+        rects = rects.map((b) => {
+          const l = masqueX ? Math.max(b.left, r.left) : b.left, d = masqueX ? Math.min(b.right, r.right) : b.right;
+          const t = masqueY ? Math.max(b.top, r.top) : b.top, bas = masqueY ? Math.min(b.bottom, r.bottom) : b.bottom;
+          return { left: l, top: t, right: d, bottom: bas, width: d - l, height: bas - t };
+        }).filter((b) => b.width > 1 && b.height > 1);
+      }
       if (rects.length) { const g = Math.min(...rects.map((b) => b.left)), h = Math.min(...rects.map((b) => b.top)); rr = { left: g, top: h, width: Math.max(...rects.map((b) => b.right)) - g, height: Math.max(...rects.map((b) => b.bottom)) - h }; }
       // Boîtes ligne par ligne (un texte en ligne sur deux lignes ne « recouvre » pas son voisin), sans l'interlignage interne des glyphes
       if (rects.length) lignes = rects.slice(0, 40).map((b) => ({ x: b.left, y: b.top + sy + b.height * 0.15, l: b.width, h: b.height * 0.7 }));
@@ -559,7 +581,7 @@ async function controlerPage(ctx, jeu, url, chemin, largeur) {
   // « Failed to load resource » : ressource 404 (contrôle des ressources manquantes) ou requête tierce bloquée (contrôle « tiers »)
   page.on('console', (m) => { if (m.type() === 'error' && !/^Failed to load resource/.test(m.text())) erreurs.push({ type: 'console', texte: m.text() }); });
   page.on('pageerror', (e) => erreurs.push({ type: 'exception', texte: String(e.message ?? e) }));
-  page.on('request', (r) => { const h = new URL(r.url()).host; if (!/^127\.0\.0\.1(:\d+)?$/.test(h) && !r.url().startsWith('data:')) tiers.add(`${r.resourceType()} ${h}`); });
+  page.on('request', (r) => { const h = new URL(r.url()).host; if (!/^127\.0\.0\.1(:\d+)?$/.test(h) && !r.url().startsWith('data:') && !photosPlateforme.has(r.url().split('?')[0])) tiers.add(`${r.resourceType()} ${h}`); });
   page.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(url) && r.request().resourceType() !== 'document') manquants.push({ url: r.url().slice(url.length), type: r.request().resourceType() }); });
   const mobile = largeur <= 600;
   const avecCapture = jeu.captures.includes(largeur);
@@ -725,8 +747,15 @@ async function controlesInteractifs(navigateur, jeu, url) {
         if (!a(/maps|itin[ée]raire|geo:|openstreetmap/i)) ajouter('barre-actions', { ...lieu, gravite: 'majeur', zonePx: barre.boite, cle: 'barre|itineraire', commentaire: 'Barre d’actions sans itinéraire', suggestion: 'Ajouter « Itinéraire » (lien carte).' });
         if (!a(/\/rdv|doctolib|rendez-vous|rdv/i)) ajouter('barre-actions', { ...lieu, gravite: 'majeur', zonePx: barre.boite, cle: 'barre|rdv', commentaire: 'Barre d’actions sans prise de rendez-vous', suggestion: 'Ajouter « Rendez-vous ».' });
         for (const l of barre.liens) if (l.h < S.cibleTactile) ajouter('barre-actions', { ...lieu, gravite: 'majeur', zonePx: barre.boite, cle: `barre|cible|${l.texte}`, commentaire: `Bouton « ${l.texte} » de la barre trop bas (${Math.round(l.h)} px)`, suggestion: 'min-height: 48px.' });
-        const recouvre = await page.evaluate((hBarre) => {
-          window.scrollTo(0, document.documentElement.scrollHeight);
+        const recouvre = await page.evaluate(async (hBarre) => {
+          // Jusqu'en bas, hauteur stabilisée : le pied en content-visibility: auto prend sa vraie hauteur une fois affiché (la page
+          // s'allonge après le premier saut ; mesurer à ce moment-là donnait un faux « masque le pied »)
+          for (let k = 0; k < 8; k++) {
+            const h = document.documentElement.scrollHeight;
+            window.scrollTo(0, h);
+            await new Promise((ok) => setTimeout(ok, 250));
+            if (k > 0 && document.documentElement.scrollHeight === h) break;
+          }
           const pied = document.querySelector('footer');
           const textes = pied ? [...pied.querySelectorAll('a, p, span, li')].filter((e) => e.getBoundingClientRect().height > 0) : [];
           const dernier = textes[textes.length - 1];
@@ -744,7 +773,24 @@ async function controlesInteractifs(navigateur, jeu, url) {
     const p1 = await normal.newPage();
     await p1.goto(`${url}/`, { waitUntil: 'load' });
     await p1.waitForTimeout(1200);
-    const animees = await p1.evaluate(() => [...new Set(document.getAnimations().filter((a) => a.playState === 'running').map((a) => a.effect?.target).filter((t) => t instanceof Element).map((t) => { const s = t.closest('[id]'); return t.id ? `#${CSS.escape(t.id)}` : s ? `#${CSS.escape(s.id)} ${t.tagName.toLowerCase()}${t.classList[0] ? `.${CSS.escape(t.classList[0])}` : ''}` : `${t.tagName.toLowerCase()}${t.classList[0] ? `.${CSS.escape(t.classList[0])}` : ''}`; }))].slice(0, 40));
+    // Chaque élément animé : un sélecteur EXACT (chemin :nth-of-type jusqu'à l'ancêtre à identifiant) pour retrouver le même élément
+    // sous mouvement réduit (« #contenu path » désignait le 1er tracé de la page, souvent un autre dessin, masqué) + un nom lisible
+    const animees = await p1.evaluate(() => {
+      const vus = new Map();
+      for (const t of document.getAnimations().filter((a) => a.playState === 'running').map((a) => a.effect?.target).filter((x) => x instanceof Element)) {
+        const pas = [];
+        let x = t;
+        for (; x && x !== document.documentElement && !x.id; x = x.parentElement) {
+          const memes = x.parentElement ? [...x.parentElement.children].filter((f) => f.tagName === x.tagName) : [x];
+          pas.unshift(`${CSS.escape(x.localName)}:nth-of-type(${memes.indexOf(x) + 1})`);
+        }
+        const sel = `${x?.id ? `#${CSS.escape(x.id)}` : 'html'} > ${pas.join(' > ')}`.replace(/ > $/, '');
+        const s = t.closest('[id]');
+        const nom = t.id ? `#${t.id}` : `${s ? `#${s.id} ` : ''}${t.tagName.toLowerCase()}${t.classList[0] ? `.${t.classList[0]}` : ''}`;
+        if (!vus.has(sel)) vus.set(sel, { sel, nom });
+      }
+      return [...vus.values()].slice(0, 40);
+    });
     await normal.close();
     const reduit = await navigateur.newContext({ viewport: { width: largeur, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
     const p2 = await reduit.newPage();
@@ -752,7 +798,8 @@ async function controlesInteractifs(navigateur, jeu, url) {
     await p2.waitForTimeout(1200);
     const etat = await p2.evaluate((cibles) => ({
       jouees: document.getAnimations().filter((a) => a.playState === 'running').filter((a) => { const t = a.effect?.getComputedTiming?.(); return t && (t.iterations === Infinity || Number(t.duration) > 150); }).map((a) => (a.effect?.target instanceof Element ? `${a.effect.target.tagName.toLowerCase()}${a.effect.target.classList[0] ? `.${a.effect.target.classList[0]}` : ''}` : 'animation')).slice(0, 10),
-      invisibles: cibles.filter((c) => { try { const e = document.querySelector(c); if (!e) return false; const r = e.getBoundingClientRect(); let op = 1; for (let x = e; x && x !== document.documentElement; x = x.parentElement) op *= Number(getComputedStyle(x).opacity); return r.top < innerHeight && (r.width < 2 || r.height < 2 || op < 0.1 || getComputedStyle(e).visibility === 'hidden'); } catch { return false; } }),
+      // Tracé droit (filet horizontal ou vertical) : une seule dimension nulle ne le rend pas invisible
+      invisibles: [...new Set(cibles.filter((c) => { try { const e = document.querySelector(c.sel); if (!e) return false; const r = e.getBoundingClientRect(); let op = 1; for (let x = e; x && x !== document.documentElement; x = x.parentElement) op *= Number(getComputedStyle(x).opacity); return r.top < innerHeight && ((r.width < 2 && r.height < 2) || op < 0.1 || getComputedStyle(e).visibility === 'hidden'); } catch { return false; } }).map((c) => c.nom))],
     }), animees);
     compter('animations', 'animees', animees.length);
     for (const j of [...new Set(etat.jouees)]) ajouter('animations', { ...lieu, gravite: 'majeur', element: j, cle: `anim|jouee|${j}|${largeur}`, commentaire: `Animation jouée malgré « mouvement réduit » : ${j}`, suggestion: 'Arrêter l’animation sous @media (prefers-reduced-motion: reduce).' });
@@ -824,10 +871,32 @@ const durees = {};
 const dureesJeux = {}; // construction + contrôles de chaque jeu
 const navigateurBrut = await chromium.launch();
 // Toute requête hors du serveur local est notée (contrôle « tiers ») puis bloquée : aucun appel sortant, aucune attente réseau
+const cachePhotos = join(tmpdir(), 'testeur-photos-plateforme');
+const enCours = new Map();
+/** Photo du manifeste : cache disque partagé entre les passages, sinon téléchargement (une fois) ; null hors réseau */
+function photoPlateforme(u) {
+  if (!enCours.has(u)) enCours.set(u, (async () => {
+    const f = join(cachePhotos, u.split('/storage/v1/object/public/photos/')[1].replace(/[^a-z0-9.-]+/gi, '_'));
+    if (existsSync(f)) return readFileSync(f);
+    try {
+      const r = await fetch(u);
+      if (!r.ok) return null;
+      const b = Buffer.from(await r.arrayBuffer());
+      mkdirSync(cachePhotos, { recursive: true });
+      writeFileSync(f, b);
+      return b;
+    } catch { return null; }
+  })());
+  return enCours.get(u);
+}
 const navigateur = {
   newContext: async (o) => {
     const c = await navigateurBrut.newContext(o);
-    await c.route((u) => !/^http:\/\/127\.0\.0\.1[:/]/.test(u.href) && !u.href.startsWith('data:'), (r) => r.abort());
+    await c.route((u) => !/^http:\/\/127\.0\.0\.1[:/]/.test(u.href) && !u.href.startsWith('data:'), async (r) => {
+      // Photo validée de la plateforme (manifeste) : servie depuis un cache local (téléchargée une fois), comme l'hébergement du site
+      const corps = photosPlateforme.has(r.request().url().split('?')[0]) ? await photoPlateforme(r.request().url().split('?')[0]) : null;
+      return corps ? r.fulfill({ status: 200, contentType: 'image/webp', body: corps, headers: { 'cache-control': 'no-store' } }) : r.abort();
+    });
     return c;
   },
   close: () => navigateurBrut.close(),

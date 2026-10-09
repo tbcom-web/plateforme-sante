@@ -577,6 +577,10 @@ const appelBarre = attributAppelBarre(appelDansBarre({ gabarit, contact: variant
   .tete-page__grille { display: grid; gap: clamp(28px, 4vw, 56px); align-items: end; padding-top: clamp(20px, 3vw, 32px); border-top: var(--filet-fort) solid var(--encre); }
   @media (min-width: 960px) { .tete-page__grille { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); } }
   .tete-page h1 { max-width: 17ch; }
+  /* Ville composée très longue dans le titre (« Saint-Rémy-de-Provence ») : le mot lié se réduit à la largeur de sa colonne au lieu
+     de déborder sur la colonne voisine (page d'accès, 1024-1440 px) */
+  .tete-page__grille > div:has(> h1) { container-type: inline-size; }
+  .tete-page h1 mot-lie[style] { font-size: min(1em, calc(100cqi / (var(--n) * 0.6))); }
   .tete-page .chapo { margin: 22px 0 0; }
   .tete-page .planche { width: 100%; }
   .mono { font-family: var(--police-mono); font-size: var(--taille-donnees); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }

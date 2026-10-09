@@ -401,6 +401,7 @@ export function analyserFondTexte(
     return false;
   };
   const bords: boolean[] = [];
+  const positions: number[] = [];
   // Fond dominant cherché d'abord parmi les pixels qui ne bordent aucune lettre (l'anticrénelage ne peut pas l'emporter)
   const bacsNets = new Map<number, { n: number; s: [number, number, number] }>();
   for (let y = y0; y < y1; y += pas) {
@@ -409,6 +410,7 @@ export function analyserFondTexte(
       const p: Rvb = [pixels[i], pixels[i + 1], pixels[i + 2]];
       if (dTexte(i) < 60) continue; // lettre
       fonds.push(p);
+      positions.push(x, y);
       const bord = bordLettre(x, y);
       bords.push(bord);
       const cle = ((p[0] >> 4) << 8) | ((p[1] >> 4) << 4) | (p[2] >> 4);
@@ -429,16 +431,42 @@ export function analyserFondTexte(
   // Pixels de fond intermédiaires (anticrénelage : voisins d'une lettre ET de couleur entre le texte et le fond dominant, cas des
   // polices fines, serifs à déliés, petits corps) : écartés du 10e centile et de la mesure d'uniformité ; un vrai fond varié (photo,
   // dégradé, motif) garde ses pixels.
-  const entre = (p: Rvb) => {
-    const v = [fond[0] - peint[0], fond[1] - peint[1], fond[2] - peint[2]];
-    const n2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
-    if (n2 < 1) return false;
-    const t = ((p[0] - peint[0]) * v[0] + (p[1] - peint[1]) * v[1] + (p[2] - peint[2]) * v[2]) / n2;
-    if (t <= 0 || t >= 1) return false;
+  const v = [fond[0] - peint[0], fond[1] - peint[1], fond[2] - peint[2]];
+  const n2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+  /** Position d'un pixel sur le segment texte → fond (0 = texte, 1 = fond) s'il en est proche, sinon -1 */
+  const surSegment = (p: ArrayLike<number>, i = 0) => {
+    if (n2 < 1) return -1;
+    const t = ((p[i] - peint[0]) * v[0] + (p[i + 1] - peint[1]) * v[1] + (p[i + 2] - peint[2]) * v[2]) / n2;
+    if (t <= 0 || t >= 1) return -1;
     // Anticrénelage en sRGB : courbe, pas tout à fait sur le segment ; tolérance proportionnelle à l'écart texte / fond
-    return Math.hypot(p[0] - peint[0] - t * v[0], p[1] - peint[1] - t * v[1], p[2] - peint[2] - t * v[2]) < Math.max(28, 0.25 * Math.sqrt(n2));
+    return Math.hypot(p[i] - peint[0] - t * v[0], p[i + 1] - peint[1] - t * v[1], p[i + 2] - peint[2] - t * v[2]) < Math.max(28, 0.25 * Math.sqrt(n2)) ? t : -1;
   };
-  const nets = fonds.filter((p, k) => !(bords[k] && entre(p)));
+  const entre = (p: Rvb) => surSegment(p) >= 0;
+  // Polices très fines en petit corps (mono 13 px, déliés) : aucun pixel n'atteint la couleur du texte, les lettres ne sont faites
+  // que de pixels intermédiaires. Un pixel « plus près du texte que du fond » sur le segment compte alors comme cœur de lettre, et
+  // ses voisins intermédiaires comme bords (le contraste retenu ne dépasse jamais celui du texte sur le fond dominant).
+  // Trait FIN seulement : un pixel de fond dominant à 2 px au plus (une plage claire d'une photo derrière un texte blanc n'est pas
+  // une lettre : ses pixels intérieurs n'ont aucun fond dominant à côté et restent comptés)
+  const tolFond = Math.max(28, 0.25 * Math.sqrt(n2));
+  const procheFond = (xx: number, yy: number) => {
+    if (xx < 0 || yy < 0 || xx >= largeur || yy >= hauteur) return false;
+    const j = (yy * largeur + xx) * 4;
+    return Math.hypot(pixels[j] - fond[0], pixels[j + 1] - fond[1], pixels[j + 2] - fond[2]) < tolFond;
+  };
+  const coeur = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= largeur || y >= hauteur) return false;
+    const i = (y * largeur + x) * 4;
+    const t = dTexte(i) < 60 ? 0 : surSegment(pixels, i);
+    if (t < 0 || t > 0.5) return false;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (procheFond(x + dx, y + dy)) return true;
+    return false;
+  };
+  const bordFin = (k: number) => {
+    const x = positions[2 * k], y = positions[2 * k + 1];
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (coeur(x + dx, y + dy)) return true;
+    return false;
+  };
+  const nets = fonds.filter((p, k) => !((bords[k] || bordFin(k)) && entre(p)));
   const base = nets.length >= 4 ? nets : fonds;
   const ratios = base.map((p) => ratioContraste(melangerAlpha(texte, alpha, p), p)).sort((a, b) => a - b);
   const ratioP10 = ratios[Math.floor(ratios.length * 0.1)];

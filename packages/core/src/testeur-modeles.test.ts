@@ -95,6 +95,10 @@ test('contraste réel : fond uni, texte clair, texte sur photo', () => {
   const fine = analyserFondTexte(image((x, y) => (x % 4 === 0 ? [20, 30, 60] : x % 4 === 1 ? [140, 145, 160] : x % 4 === 3 ? [200, 202, 210] : [255, 250, 245])), L, H, { x: 0, y: 0, l: L, h: H }, [20, 30, 60])!;
   assert.equal(fine.uni, true);
   assert.ok(fine.retenu > 10, `contraste mesuré ${fine.retenu}`);
+  // Mono 13 px très fine (2026-10-09, « 22 SEPTEMBRE 2026 » bleu sur blanc mesuré 3,69:1) : AUCUN pixel n'atteint la couleur du texte,
+  // traits d'un pixel à mi-chemin bordés de pixels plus pâles : le contraste reste celui du texte
+  const sansCoeur = analyserFondTexte(image((x) => (x % 5 === 0 ? [110, 130, 225] : x % 5 === 1 ? [190, 200, 240] : [250, 250, 255])), L, H, { x: 0, y: 0, l: L, h: H }, [36, 73, 216])!;
+  assert.ok(sansCoeur.retenu > 6, `contraste mesuré ${sansCoeur.retenu}`);
   // Texte blanc à 80 % sur bleu nuit (pied de page) : lettres peintes (206, 207, 211) reconnues, contraste élevé
   const peint = analyserFondTexte(image((x) => (x % 3 === 0 ? [206, 207, 211] : [10, 15, 34])), L, H, { x: 0, y: 0, l: L, h: H }, [255, 255, 255], 0.8)!;
   assert.ok(peint.retenu > 10, `contraste mesuré ${peint.retenu}`);

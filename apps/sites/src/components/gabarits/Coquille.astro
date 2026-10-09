@@ -215,7 +215,8 @@ const principale = actionsContact[0];
   .coquille :global(.g-bouton--ligne) { background: var(--g-carte); color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-ligne); }
   .coquille :global(.g-bouton--ligne:hover) { color: var(--g-encre); box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
   .coquille :global(.g-bouton .icone) { width: 1.3em; height: 1.3em; }
-  .coquille :global(.g-via) { display: block; flex-basis: 100%; font-size: 0.8rem; font-weight: 500; opacity: 0.9; }
+  /* Pleine opacité : « via Doctolib » en petit corps sur le bouton plein reste ≥ 4,5:1 (testeur, D5 : 4,40:1 à 0,9) */
+  .coquille :global(.g-via) { display: block; flex-basis: 100%; font-size: 0.8rem; font-weight: 500; }
 
   /* ———— Bulles de navigation (soins, « pour qui », infos pratiques) ———— */
   .coquille :global(.g-bulles) { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }

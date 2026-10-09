@@ -740,8 +740,15 @@
           "ongles": "vert",
           "senior": "vert"
         },
-        "explication": "vert sur les 2 jeux (0 bloquant, 0 majeur).",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux (0 bloquant, 0 majeur), testeur relancé après les corrections du 2026-10-09 (M15, M16). 33 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "vert",
+          "jeux": {
+            "ongles": "vert",
+            "senior": "vert"
+          }
+        }
       },
       "score": 4.4,
       "raisons": [
@@ -845,13 +852,20 @@
         "generaliste"
       ],
       "testeur": {
-        "verdict": "rouge",
+        "verdict": "vert",
         "jeux": {
-          "semelles": "orange",
-          "generaliste": "rouge"
+          "semelles": "vert",
+          "generaliste": "vert"
         },
-        "explication": "rouge (jeu cabinet seul aux noms longs) : défauts du GABARIT Technique et précis, pas du design (M16) : statut du praticien en mono qui déborde à 768-1024 px, ancre #praticiens absente, recouvrements sur la page d’accès, barre d’actions sur le pied de page ; jeu semelles orange.",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux après correction du gabarit Technique et précis (M16 : nom du praticien sans espace et colonne non bornée, ancre #praticiens, ville longue du titre de la page d’accès) ; un 2e passage a été nécessaire : TBT 272-323 ms au 1er (machine chargée, même mesure sur l’ancienne construction). 30 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "rouge",
+          "jeux": {
+            "semelles": "orange",
+            "generaliste": "rouge"
+          }
+        }
       },
       "score": 4.3,
       "raisons": [
@@ -969,8 +983,15 @@
           "enfant": "vert",
           "senior": "vert"
         },
-        "explication": "vert sur les 2 jeux.",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux (0 bloquant, 0 majeur), testeur relancé après les corrections du 2026-10-09 (M15, M16). 33 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "vert",
+          "jeux": {
+            "enfant": "vert",
+            "senior": "vert"
+          }
+        }
       },
       "score": 4.3,
       "raisons": [
@@ -1087,8 +1108,15 @@
           "diabete": "vert",
           "senior": "vert"
         },
-        "explication": "vert sur les 2 jeux.",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux (0 bloquant, 0 majeur), testeur relancé après les corrections du 2026-10-09 (M15, M16). 33 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "vert",
+          "jeux": {
+            "diabete": "vert",
+            "senior": "vert"
+          }
+        }
       },
       "score": 3.9,
       "raisons": [
@@ -1199,13 +1227,20 @@
         "enfant"
       ],
       "testeur": {
-        "verdict": "orange",
+        "verdict": "vert",
         "jeux": {
-          "senior": "orange",
-          "enfant": "orange"
+          "senior": "vert",
+          "enfant": "vert"
         },
-        "explication": "orange : 1 recouvrement mesuré sur un résumé de soin tronqué à 360 px (texte coupé par « … », rien de visible à l’œil) et « via Doctolib » à 4,40:1 (seuil 4,5) dans l’en-tête d’une fiche.",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux : résumés tronqués par « … » plus comptés comme recouvrements (testeur), « via Doctolib » à pleine opacité. 33 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "orange",
+          "jeux": {
+            "senior": "orange",
+            "enfant": "orange"
+          }
+        }
       },
       "score": 4.2,
       "raisons": [
@@ -1314,13 +1349,20 @@
         "senior"
       ],
       "testeur": {
-        "verdict": "orange",
+        "verdict": "vert",
         "jeux": {
-          "enfant": "orange",
-          "senior": "orange"
+          "enfant": "vert",
+          "senior": "vert"
         },
-        "explication": "orange : recouvrements mesurés sur les résumés tronqués des cartes de soins à 360-375 px (boîte du texte coupé plus haute que la partie visible ; vignettes regardées : aucun chevauchement visible).",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux : résumés tronqués par « … » plus comptés comme recouvrements (testeur). 31 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "orange",
+          "jeux": {
+            "enfant": "orange",
+            "senior": "orange"
+          }
+        }
       },
       "score": 4.2,
       "raisons": [
@@ -1433,13 +1475,20 @@
         "ongles"
       ],
       "testeur": {
-        "verdict": "orange",
+        "verdict": "vert",
         "jeux": {
-          "diabete": "orange",
+          "diabete": "vert",
           "ongles": "vert"
         },
-        "explication": "orange : un résumé tronqué à 360 px (même mesure que D5) et TBT 491 ms à la mesure de performance (machine chargée par d’autres constructions) ; jeu ongles vert.",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux : résumé tronqué plus compté comme recouvrement (testeur) ; TBT normal. 33 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "orange",
+          "jeux": {
+            "diabete": "orange",
+            "ongles": "vert"
+          }
+        }
       },
       "score": 3.9,
       "raisons": [
@@ -1551,13 +1600,20 @@
         "semelles"
       ],
       "testeur": {
-        "verdict": "orange",
+        "verdict": "vert",
         "jeux": {
-          "sport-course": "orange",
-          "semelles": "orange"
+          "sport-course": "vert",
+          "semelles": "vert"
         },
-        "explication": "orange : recouvrements mesurés sur les résumés tronqués des cartes de soins (même mesure que D6).",
-        "le": "2026-10-09"
+        "explication": "vert sur les 2 jeux : résumés tronqués plus comptés comme recouvrements (testeur). 33 mineurs.",
+        "le": "2026-10-09",
+        "avant": {
+          "verdict": "orange",
+          "jeux": {
+            "sport-course": "orange",
+            "semelles": "orange"
+          }
+        }
       },
       "score": 4,
       "raisons": [

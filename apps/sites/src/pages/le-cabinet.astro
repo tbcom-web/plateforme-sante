@@ -83,7 +83,7 @@ const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Le cabinet', path: '/le
     </div>
     {site.photos.cabinet.length > 0 && <div class="galerie"><Galerie /></div>}
   </section>
-  {site.praticiens.length > 0 && <section class="section section--douce">
+  {site.praticiens.length > 0 && <section class="section section--douce" id="praticiens">
     <div class="cadre">
       <p class="sur sur--num">{titreMetierAffiche}</p>
       <h2>{titrePraticiens}</h2>

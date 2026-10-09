@@ -128,6 +128,13 @@ meilleurs designs plafonnent à **72-80 % d'éléments 4-5 ★** : les manques c
 - **Impact** : aucun design « Photos » ne peut passer le testeur (images refusées = bloquant) ; style Photos écarté des canons.
 - **Proposition** (code) : passer `notesPhotos` / exclusions (`clesImagesExclues`) au contexte du testeur et de `rendu-profil` ;
   copier en banque intégrée 3 photos ≥ 4,5 ★ par thème (sport, diabète) avec leurs crédits.
+- **Fait (2026-10-09, 2e passe)** : rendus hors ligne (démo, testeur, rendre-recettes) avec les exclusions STRICTES des exports
+  (≤ 2 ★, dernière note ≤ 2 ★, retirées, à retravailler, à revoir ; `photos-validees.ts`, `apps/sites/src/lib/retours-hors-ligne.ts`) ;
+  manifeste `retours/photos-validees.json` (photos libres validées, hébergées, 4-5 ★ ; URL publiques, sans donnée personnelle) écrit
+  par l'export nocturne ; vivier 4-5 ★ hors ligne = manifeste + intégrées bien notées ; le testeur sert ces photos depuis un cache
+  local (pas des requêtes tierces). Essai : D4 passé en style Photos, 3 jeux (diabète, senior, sport-course) **VERT**, photos visibles
+  toutes ≥ 4 ★ (manifeste d'essai reconstruit des clés notées ; le vrai arrive au prochain export). Reste : og:image de la démo
+  (`examen-mains`, 3 ★, non affichée) ; copier en banque intégrée n'est plus nécessaire pour les rendus.
 - **Qui** : intégrateur ; Paul (choix des photos). **Priorité** : haute.
 
 ### M16 — Gabarit « Technique et précis » : défauts techniques au testeur
@@ -137,6 +144,12 @@ meilleurs designs plafonnent à **72-80 % d'éléments 4-5 ★** : les manques c
 - **Impact** : tout design sur Technique et précis (structure la mieux notée, 4,05 à l'atelier) part rouge au testeur.
 - **Proposition** : `overflow-wrap: anywhere` + `min-width: 0` sur le statut ; `id="praticiens"` sur la section équipe du cabinet ;
   revoir la grille de la page d'accès ; marge basse du pied de page = hauteur de la barre.
+- **Fait (2026-10-09, 2e passe)** : la cause du débordement était le NOM : `{p.prenom} {p.nom}` rendait « Marie-DominiqueDelacroix-
+  Montgolfier » (espace perdu par Astro, aussi « CamilleRousseau » sur tous les sites Technique) dans une colonne de grille non bornée ;
+  nom corrigé, colonne `minmax(0, 1fr)`, statut `overflow-wrap: anywhere`, nom composé très long réduit à la largeur de la fiche
+  (cqi) ; `id="praticiens"` au cabinet ; ville longue du titre de l'accès réduite à sa colonne ; « Matériel du cabinet » ≥ 24 px.
+  Barre d'actions : faux positif du testeur (pied en `content-visibility: auto`, mesure avant sa vraie hauteur), corrigé dans le
+  testeur ; animation « #contenu path » : sélecteur ambigu (1er tracé de la page, masqué), corrigé. D2 **VERT** (2 jeux).
 - **Qui** : intégrateur. **Priorité** : haute.
 
 ### M17 — Premiers écrans « libres » du lot 2 sans illustration
@@ -176,6 +189,8 @@ meilleurs designs plafonnent à **72-80 % d'éléments 4-5 ★** : les manques c
   plus haute que sa partie visible ; vignettes regardées, rien de visible) : ce sont les seuls majeurs de D5, D6, D7, D8 (orange).
 - **Fait aussi** : cibles tactiles ≥ 24 px pour le lien d'auteur des articles, le téléphone / e-mail du pied de page et l'étiquette
   « Matériel du cabinet » des fiches (les polices à petit œil — Bodoni, Ronde — les rendaient « majeures »).
+- **Fait (2026-10-09, 2e passe)** : lignes masquées par line-clamp / ellipsis ignorées aux chevauchements ; traits très fins (mono
+  13 px) reconnus au contraste ; « via Doctolib » à pleine opacité (gabarits nouveaux). Les 8 canons sont VERTS au testeur.
 - **Qui** : intégrateur. **Priorité** : moyenne.
 
 ### M21 — Harmonie sous-estime la combinaison n° 1 de Paul

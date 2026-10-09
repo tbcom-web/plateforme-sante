@@ -128,7 +128,8 @@ const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
   .encart__titre { margin: 0; color: var(--accent-vif); text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); }
   .materiel-soin { margin-top: 32px; max-width: 68ch; border-top: var(--filet-fort) solid var(--encre); }
   .materiel-soin__titre { margin: 0; padding: 12px 0; text-transform: uppercase; letter-spacing: var(--interlettrage-donnees); border-bottom: var(--filet) solid var(--ligne); }
-  .materiel-soin__titre a { color: var(--accent-vif); text-decoration: none; }
+  /* Cible tactile ≥ 24 px sans changer la hauteur de la ligne (testeur de modèles) */
+  .materiel-soin__titre a { color: var(--accent-vif); text-decoration: none; display: inline-flex; align-items: center; min-height: 28px; margin-block: -6px; }
   .materiel-soin__titre a:hover { text-decoration: underline; }
   .materiel-soin ul { list-style: none; margin: 0; padding: 0; }
   .materiel-soin li { padding: 10px 0 10px 18px; border-bottom: var(--filet) solid var(--ligne); color: var(--encre-douce); font-size: 0.95rem; position: relative; }

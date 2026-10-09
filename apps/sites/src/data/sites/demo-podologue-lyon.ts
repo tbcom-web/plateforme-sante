@@ -1,7 +1,14 @@
 // Site de démonstration : praticienne, adresse, téléphone et RPPS FICTIFS.
 import { readFileSync } from 'node:fs';
-import { activitesReconnues, definirContexteImages, lireCleHerosDiabete, normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
+import { activitesReconnues, contexteImages, definirContexteImages, lireCleHerosDiabete, normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
 import { estPresentationPortraits, libellesComposition, lotsPropositions, PORTRAITS_DEMO, PRATICIENS_DEMO, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
+import { contexteRetoursHorsLigne } from '../../lib/retours-hors-ligne';
+
+// Rendu hors ligne (M15, 2026-10-09) : la démo n'a pas Supabase ; les exclusions de Paul (≤ 2 ★, dernière note ≤ 2 ★, retirées, à
+// retravailler, à revoir) et le vivier des photos 4-5 ★ (photos validées du manifeste retours/photos-validees.json + photos intégrées
+// bien notées) viennent des exports du dépôt, AVANT tout choix de photo (packs, jeux, recettes). RETOURS_HORS_LIGNE=non : comme avant.
+const horsLigne = contexteRetoursHorsLigne();
+if (horsLigne) definirContexteImages({ exclues: horsLigne.exclues, vivier: horsLigne.vivier });
 
 // Modèle de la démo (variable MODELE), avec sa couleur conseillée.
 // POLICE_TITRES=… pour essayer une autre police de titres sur le même modèle (arbitrages de style).
@@ -694,7 +701,8 @@ if (process.env.ACTIVITE) {
 // kit illustré du site (univers-diabete.ts ; un vrai site ne le reçoit que validé, kits-visuels.ts). Démo seulement (PRINCIPAUX=diabete).
 if (process.env.HEROS_KIT) {
   if (!lireCleHerosDiabete(process.env.HEROS_KIT)) throw new Error(`Héros inconnu : ${process.env.HEROS_KIT}`);
-  definirContexteImages({ kits: { [site.visuels.specialite]: { sujet: 'diabete', heros: process.env.HEROS_KIT } } });
+  // Aperçu explicite d'un brouillon : le héros demandé n'est pas écarté par l'exclusion hors ligne « à revoir » (les autres le restent)
+  definirContexteImages({ exclues: [...contexteImages().exclues].filter((k) => k !== process.env.HEROS_KIT), kits: { [site.visuels.specialite]: { sujet: 'diabete', heros: process.env.HEROS_KIT } } });
 }
 // SURCHARGES={"chemin.pointé": valeur, …} (JSON ou chemin d'un fichier .json) : cas de test du testeur de modèles (nom très long,
 // lien mort, photo refusée…) posés en dernier sur la démo, ex. {"cabinet.nom": "…", "photos.accueil": "/photos/x.webp"}.
