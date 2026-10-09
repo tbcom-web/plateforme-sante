@@ -413,3 +413,11 @@ notés 4 ou 5 étoiles ».
   - « Garder celui-ci » fige le choix dans le brouillon ;
   - les choix et rejets des praticiens alimentent les notes.
 - [ ] Sorties : rendu d'une recette en 9:16 (écran ÉcranZen et Reels / stories, même format) et en 1:1, 4:5 pour les publications, depuis le même moteur.
+
+## Politique d'évaluation et règles apprises (2026-10-09)
+
+Le générateur (`getPoidsAtelier`) rétrograde de 0,75 ★ les éléments vus sans être choisis et applique les pénalités des règles apprises
+des retours (« trop chargé » → densité forte, « couleur criarde » → gammes saturées…, cumul plafonné ±1 ★). Les recettes à noter
+n'utilisent jamais un élément « vu sans être choisi » ni écarté par une règle, et une recette montrée récemment n'est pas reproposée.
+Détail : [politique-evaluation.md](politique-evaluation.md).
+

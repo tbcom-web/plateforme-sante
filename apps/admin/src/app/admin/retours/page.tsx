@@ -19,6 +19,7 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import Retours from './Retours';
+import { getEtatPolitique } from '@/lib/politique-evaluation';
 import { getReevaluations } from '@/lib/tranches';
 
 export const metadata = { title: 'Super admin · Donner mon avis' };
@@ -126,6 +127,8 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         // Nouveautés à noter (nouveautes.ts) : ingrédients apparus depuis moins de 30 jours ; ?nouveautes=<lot> ouvre la file du lot
         nouveautesRecentes={clesRecentes(jourParis(new Date()))}
         nouveautesInitiales={typeof sp.nouveautes === 'string' ? sp.nouveautes : null}
+        // Politique d'évaluation unique (politique-evaluation.ts) : mémoire commune, implicites, règles apprises, fort potentiel
+        politique={await getEtatPolitique()}
       />
     </div>
   );

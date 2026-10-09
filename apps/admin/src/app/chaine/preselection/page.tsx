@@ -2,6 +2,7 @@ import { CHAINE } from '@plateforme/core';
 import { exigerContributeur, lireChaine, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
 import Preselection from './Preselection';
+import { getEtatPolitique } from '@/lib/politique-evaluation';
 
 export const metadata = { title: 'Chaîne · Présélection' };
 
@@ -11,7 +12,10 @@ export const metadata = { title: 'Chaîne · Présélection' };
 export default async function PagePreselection() {
   await exigerContributeur();
   const { profession, profils } = await profilsDemo();
-  const [rendu, gen, chaine] = await Promise.all([donneesRendu(), donneesGeneration(), lireChaine(profession.id)]);
+  const [rendu, gen, chaine, politique] = await Promise.all([donneesRendu(), donneesGeneration(), lireChaine(profession.id), getEtatPolitique()]);
+  // Politique d'évaluation unique : compositions montrées récemment (toutes surfaces) pas reproposées pendant le délai de retour ;
+  // éléments vus sans être choisis exclus par les tranches (gen.tranches)
+  const recentes = politique.ecrans.flatMap((e) => e.cles.filter((k) => k.startsWith('compo:')));
   const candidats = chaine.fiches.filter((f) => f.profil === null && f.statut === 'candidat').length;
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
@@ -21,7 +25,7 @@ export default async function PagePreselection() {
       </div>
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {!profils.length ? <p className="text-sm">Aucun profil de démonstration pour cette profession.</p> : (
-        <Preselection profils={profils} candidats={candidats} dejaVues={chaine.fiches.map((f) => f.cle)} rendu={rendu} poids={gen.poids} photos={gen.photos} tranches={gen.tranches} />
+        <Preselection profils={profils} candidats={candidats} dejaVues={[...chaine.fiches.map((f) => f.cle), ...recentes]} rendu={rendu} poids={gen.poids} photos={gen.photos} tranches={gen.tranches} />
       )}
     </div>
   );

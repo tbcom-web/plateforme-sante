@@ -1,3 +1,5 @@
+import { ordonnerBoiteEntree } from '@plateforme/core';
+import { getEtatPolitique } from '@/lib/politique-evaluation';
 import {
   cleCandidatePhoto, clePhoto, estSourcePhotoLibre, hashtagsDe, inventaireAssets, inventaireStudio, libelleProgression, libelleSujet, LIBELLES_NATURES, motsClesDuSujet,
   SUJETS_VISUELS, sujetsDuVisuel, universDuParcours, profilsDePratique,
@@ -47,7 +49,11 @@ export default async function PageArrivages({ searchParams }: { searchParams: Pr
 
   // Séries de l'agent d'abord (une série = un lot, sourcing-photos.ts), plus récentes en tête, meilleure série d'un lancement d'abord
   const items: ItemArrivage[] = [...series.series].sort((a, b) => (a.groupe === b.groupe ? a.rang - b.rang : a.creeLe < b.creeLe ? 1 : -1)).map((s) => itemSerie(serieAffichee(s, revues[s.id])));
-  for (const [i, n] of attente.nouveautes.entries()) {
+  // Politique d'évaluation unique : fort potentiel d'abord, jamais deux variantes d'un même visuel à la suite, écartés en dernier
+  const politique = await getEtatPolitique();
+  const fort = new Set(politique.fortPotentiel), ecartes = new Set(politique.ecartes);
+  const nouveautes = ordonnerBoiteEntree(attente.nouveautes, { potentiel: (k) => (fort.has(k) ? 4.5 : null), regles: (k) => ({ effet: politique.penalites[k] ?? 0, ecarte: ecartes.has(k) }) });
+  for (const [i, n] of nouveautes.entries()) {
     const a = parCle.get(n.cle);
     items.push({
       id: `n:${n.cle}`, source: 'nouveautes', type: typeIngredient(n.cle), titre: a?.titre ?? n.cle, detail: a?.detail ?? null, date: n.date, lot: lotDeCle(n.cle, n.date),
@@ -115,6 +121,7 @@ export default async function PageArrivages({ searchParams }: { searchParams: Pr
         lotInitial={typeof sp.lot === 'string' ? sp.lot : null}
         profilsSourcing={profilsDePratique(profession.id).filter((x) => x.principal).map((x) => ({ id: x.id, court: x.court }))}
         migrationSeries={series.migrationManquante}
+        politique={politique}
         studio={{ proposes: universDuParcours(univers.univers), modeles: modeles.map((m) => ({ id: m.id, manifeste: m.manifeste })), catalogue, marquesImportees, themesActives: themesActives() }}
       />
     </div>

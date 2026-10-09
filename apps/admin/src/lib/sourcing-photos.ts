@@ -9,6 +9,7 @@ import {
   type CandidateAnalysee, type CandidateSourcing, type CaracteristiquesPhoto, type CibleSourcing, type EntreesCibles, type JournalSourcing, type LigneSerie, type RevueSerieClaude,
   type SerieEnregistree, type SourcePhotoLibre,
 } from '@plateforme/core';
+import { contraintesSourcing, motsDuTexte, respecteContraintes } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { ErreurSource, rechercher, sourcesConfigurees } from '@/lib/photos-libres';
 import { getHashtagsAssets } from '@/lib/hashtags';
@@ -84,6 +85,8 @@ export type ContexteExecution = {
   graine?: number;
   /** Sources permises (par défaut : celles dont la clé est configurée) */
   sources?: readonly SourcePhotoLibre[];
+  /** Règles apprises des retours de Paul (regles-apprises.ts, contraintesSourcing) : saturation, luminosité, mots interdits en plus */
+  contraintes?: ReturnType<typeof contraintesSourcing> | null;
 };
 
 /**
@@ -114,7 +117,13 @@ export async function executerSourcing(cible: CibleSourcing, ctx: ContexteExecut
   const aAnalyser = alterner(gardees, QUOTAS_SOURCING.apercusParCible);
   const cars = await parPaquets(aAnalyser, 8, (c) => analyserApercu(c));
   const analysees: CandidateAnalysee[] = [];
-  aAnalyser.forEach((c, i) => { const car = cars[i]; if (car) analysees.push(analyserCandidate(c, car, cible)); else journal.ecartees.apercu = (journal.ecartees.apercu ?? 0) + 1; });
+  aAnalyser.forEach((c, i) => {
+    const car = cars[i];
+    if (!car) { journal.ecartees.apercu = (journal.ecartees.apercu ?? 0) + 1; return; }
+    // Règles apprises (« couleur criarde », « fade », « photo de visage »…) : la candidate qui les enfreint est écartée (comptée « apercu »)
+    if (ctx.contraintes && respecteContraintes(car, motsDuTexte(`${c.description} ${c.tags.join(' ')}`), ctx.contraintes)) { journal.ecartees.apercu = (journal.ecartees.apercu ?? 0) + 1; return; }
+    analysees.push(analyserCandidate(c, car, cible));
+  });
   journal.analysees = analysees.length;
   const { series, motif } = composerSeriesPhotos(analysees, cible);
   return { series, journal, motif: motif ?? (journal.erreurs.length && !series.length ? journal.erreurs.join(' ') : null) };

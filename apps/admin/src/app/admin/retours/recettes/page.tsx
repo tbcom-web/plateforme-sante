@@ -12,6 +12,7 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import NotationRecettes from './NotationRecettes';
+import { getEtatPolitique } from '@/lib/politique-evaluation';
 
 export const metadata = { title: 'Super admin · Recettes complètes' };
 
@@ -26,7 +27,11 @@ export default async function PageRecettesCompletes() {
     getNotationsAdmin(), getNotationsApprentissage(), getLignesAssetsApprentissage(),
   ]);
   const stats = statsNotation(apprentissage);
-  const refusees = [...clesRefusees({ assets: lignesAssets, stats })];
+  // + politique d'évaluation : éléments vus sans être choisis et écartés par une règle apprise (jamais dans une recette à noter)
+  const politique = await getEtatPolitique();
+  const refusees = [...new Set([...clesRefusees({ assets: lignesAssets, stats }), ...politique.implicites.filter((k) => !k.startsWith('compo:')), ...politique.ecartes])];
+  // Recettes montrées récemment (toutes surfaces) : pas reproposées tant que dure le délai de retour
+  const recentes = politique.ecrans.flatMap((e) => e.cles.filter((k) => k.startsWith('compo:')));
   // « À valider » : statut « à revoir » de la bibliothèque, et nouveaux ingrédients déclarés à valider par le core (premiers écrans
   // du lot 2, animations d'en-tête : INGREDIENTS_A_VALIDER, lu s'il existe) — seulement en exploration, signalés
   const declares = (core as unknown as { INGREDIENTS_A_VALIDER?: ReadonlySet<string> }).INGREDIENTS_A_VALIDER;
@@ -65,11 +70,12 @@ export default async function PageRecettesCompletes() {
       <NotationRecettes
         scenarios={scenarios}
         propositions={lot.propositions}
-        notees={[...new Set(notations.map((n) => n.cle).filter((k): k is string => Boolean(k)))]}
+        notees={[...new Set([...notations.map((n) => n.cle).filter((k): k is string => Boolean(k)), ...recentes])]}
         resume={{ notes: notations.length, gardees, apprises: stats.n }}
         stats={stats}
         palmares={palmaresNotation(stats)}
         refusees={refusees}
+        politique={politique}
         aValider={aValider}
         migrationManquante={migrationManquante}
         proposes={universDuParcours(univers)}

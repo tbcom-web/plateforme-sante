@@ -93,3 +93,11 @@ récompense : lien vers « Publier la meilleure recette de ce profil », /admin/
 dimension 100 % 4-5 ★ possible, profil prêt, mission, Claude a compris), confettis discrets (aucun si l'animation est réduite),
 son désactivé par défaut. Écran de fin : trois lignes concrètes (« Tu préfères la palette « Canard » pour Sport »), effet sur les
 profils (part prête estimée avant → après), éléments tranchés, accord de Claude. Le jeu ne pilote jamais le mélange.
+
+## Politique d'évaluation (2026-10-09)
+
+Les grilles de la Dégustation et de la présélection entrent dans la mémoire commune ([politique-evaluation.md](politique-evaluation.md)) :
+préférées = « choisi », « celle qui ne va pas » = « pire », les autres = « pas choisi ». Un élément jamais choisi en 3 apparitions, ou
+sorti une fois en « celle qui ne va pas », n'est plus proposé comme nouveau dans une grille (tranches) et est rétrogradé dans la
+génération ; « Réévaluer » le rend.
+

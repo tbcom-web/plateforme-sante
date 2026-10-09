@@ -9,11 +9,14 @@ import { getArrivagesEnAttente, getEtatsNouveautes } from '@/lib/arrivages';
 import { lireAssetsNotesApprentissage } from '@/lib/assets-notes';
 import { getProfession } from '@/lib/profession';
 import { createClient } from '@/lib/supabase/server';
+import { getIndicateursPolitique } from '@/lib/politique-evaluation';
+import IndicateursEvaluation from './IndicateursEvaluation';
 
 export const metadata = { title: 'Super admin · Tableau de bord' };
 
 // Tableau de bord du super admin (décision de Paul du 2026-10-08) : court, par profession (sélecteur de l'en-tête). Compteurs :
 // arrivages en attente, nouveautés reçues, à déguster, profils de pratique prêts / en cours, sites à publier ; un lien par espace.
+// + Évaluation (politique-evaluation.ts, 2026-10-09) : taux de répétition, qualité présentée, jamais-notés, règles apprises, 30 jours.
 // Ancienne adresse de la liste des sites : ses paramètres de filtre (?q=, ?statut=…) sont redirigés vers /admin/sites.
 
 const PARAMS_SITES = ['q', 'statut', 'test', 'edition', 'echec', 'modifs', 'tri', 'page'];
@@ -33,7 +36,7 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
   const compter = async (f: (r: ReturnType<typeof base>) => ReturnType<typeof base>) => (deLaProfession ? (await f(base())).count ?? 0 : 0);
   const base = () => supabase.from('sites').select('id', { count: 'exact', head: true });
 
-  const [arrivages, nouveautes, notes, modifs, brouillons, echecs, publications] = await Promise.all([
+  const [arrivages, nouveautes, notes, modifs, brouillons, echecs, publications, evaluation] = await Promise.all([
     getArrivagesEnAttente(profession),
     getEtatsNouveautes(),
     lireAssetsNotesApprentissage(),
@@ -41,6 +44,8 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
     compter((r) => r.eq('statut', 'brouillon').eq('test', false)),
     compter((r) => r.eq('publication_etat', 'echec')),
     supabase.from('recettes_publications').select('recette, profession, profils, ordre, publiee, publiee_le').limit(2000),
+    // Politique d'évaluation unique : répétition, qualité présentée, jamais-notés, règles apprises, tendance 30 jours
+    getIndicateursPolitique().catch(() => null),
   ]);
 
   // À déguster : ingrédients unitaires jamais notés (ni eux ni leur illustration de base), hors arrivages en attente
@@ -78,6 +83,7 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
           </Link>
         ))}
       </dl>
+      <IndicateursEvaluation ind={evaluation} />
       <BoutonParcoursTest />
       <section aria-labelledby="tb-espaces" className="grid gap-3">
         <h2 id="tb-espaces" className="text-lg font-semibold">Espaces</h2>

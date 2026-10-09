@@ -255,6 +255,14 @@ une combinaison noté 5 étoiles, je ne veux plus qu'il apparaisse, sinon on ré
 - Hors règle pour l'instant : kits notés en bloc (« Noter ce kit ») ; la notation en ligne de « Compléter ce kit » montre les favoris
   comme photos à utiliser, sans les redemander.
 
+### Politique d'évaluation unique (2026-10-09, `politique-evaluation.ts`)
+
+Toutes les surfaces de notation suivent la même politique (détail et chiffres : [politique-evaluation.md](politique-evaluation.md)) :
+mémoire commune des écrans montrés (une exposition dans une surface compte partout), délai de retour de 50 écrans / 2 jours par
+groupe visuel, « vu 3 fois sans être choisi » ou « celle qui ne va pas » traité comme ≤ 2 ★ (page « Éléments tranchés » : « Vu sans
+être choisi », « Réévaluer »), jamais-notés à fort potentiel d'abord. Les étiquettes et commentaires deviennent des règles apprises :
+page « Ce que j'ai compris de tes retours » (`/admin/retours/compris`). Une carte passée (« Passer ») est journalisée (migration 0054).
+
 ### Animations dans les duels et tuiles d'illustrations
 
 Retour de Paul du 2026-10-08 (« quand je note / A-B teste les illustrations, je ne vois pas d'animations ») : les animations

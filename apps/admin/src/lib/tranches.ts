@@ -1,17 +1,20 @@
 import 'server-only';
 import { cache } from 'react';
-import { fusionnerTranches, tranchesDepuisDuels, tranchesDepuisSignaux, type Reevaluation, type SignalTranche, type Tranches } from '@plateforme/core';
+import { fusionnerTranches, tranchesDepuisDuels, tranchesDepuisSignaux, tranchesImplicites, type Reevaluation, type SignalTranche, type Tranches } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { getNotesAssets } from '@/lib/assets-notes';
 import { getNotesAtelier } from '@/lib/atelier';
 import { getNotationsAdmin } from '@/lib/notation-recettes';
 import { getDuels } from '@/lib/duels';
+import { getPolitique } from '@/lib/politique-evaluation';
 
 // Éléments tranchés (packages/core/src/tranches.ts, migration 0041) côté serveur, pour Paul :
 // - getReevaluations : journal elements_reevalues (« Réévaluer ») ; [] sans la migration ;
 // - getTranches : refusés (1 ★), favoris (5 ★ / « Garder ») et notés, réunis pour les éléments (assets_notes), les combinaisons de
 //   l'atelier (clé de combinaison ET identifiant de proposition `prop:<id>`), les recettes complètes (compo:…) et les duels
 //   « les deux sont mauvais » ; avec le détail (dernière note, date, type) pour la page « Éléments tranchés ».
+// - + VUS SANS ÊTRE CHOISIS (politique d'évaluation, politique-evaluation.ts) : montrés 3 fois sans jamais être choisis, ou sortis en
+//   « celle qui ne va pas » : refusés pour toutes les files (duels, Dégustation, présélection, tri, atelier) ; « Réévaluer » les rend.
 
 export const MIGRATION_TRANCHES = 'Migration 0041 à exécuter (supabase/migrations/0041_elements_reevalues.sql) : « Réévaluer » ne peut pas encore être enregistré.';
 
@@ -26,12 +29,12 @@ export const getReevaluations = cache(async (): Promise<{ reevaluations: Reevalu
   }
 });
 
-export type DetailTranche = { cle: string; etat: 'refuse' | 'favori'; famille: 'element' | 'combinaison' | 'recette' | 'duel'; note: number | null; le: string | null };
+export type DetailTranche = { cle: string; etat: 'refuse' | 'favori'; famille: 'element' | 'combinaison' | 'recette' | 'duel' | 'implicite'; note: number | null; le: string | null };
 
 export const getTranches = cache(async (): Promise<{ tranches: Tranches; details: DetailTranche[]; signaux: SignalTranche[] }> => {
-  const [{ reevaluations }, assets, atelier, recettes, duels] = await Promise.all([
+  const [{ reevaluations }, assets, atelier, recettes, duels, politique] = await Promise.all([
     getReevaluations(), getNotesAssets().catch(() => ({ notes: [] })), getNotesAtelier().catch(() => ({ notes: [] })),
-    getNotationsAdmin().catch(() => ({ notations: [] })), getDuels().catch(() => ({ duels: [] })),
+    getNotationsAdmin().catch(() => ({ notations: [] })), getDuels().catch(() => ({ duels: [] })), getPolitique().catch(() => null),
   ]);
   const sAssets: SignalTranche[] = assets.notes.map((n) => ({ cle: n.cle, note: n.note, le: n.le ?? null }));
   const sAtelier: SignalTranche[] = atelier.notes.flatMap((n) => [
@@ -44,6 +47,8 @@ export const getTranches = cache(async (): Promise<{ tranches: Tranches; details
     combinaison: tranchesDepuisSignaux(sAtelier, reevaluations),
     recette: tranchesDepuisSignaux(sRecettes, reevaluations),
     duel: tranchesDepuisDuels(duels.duels.map((d) => ({ aCle: d.aCle, bCle: d.bCle, resultat: d.resultat, le: d.le ?? null })), reevaluations),
+    // Implicites : jamais un favori (un 5 ★ ou un « Garder » n'est jamais « vu sans être choisi ») ; « Réévaluer » appliqué par la mémoire
+    implicite: tranchesImplicites(politique?.implicites ?? []),
   };
   const tranches = fusionnerTranches(...Object.values(parts));
   const tous = [...sAssets, ...sAtelier, ...sRecettes];
@@ -51,7 +56,7 @@ export const getTranches = cache(async (): Promise<{ tranches: Tranches; details
   for (const s of tous) { const d = derniere.get(s.cle); if (!d || (s.le ?? '') > (d.le ?? '')) derniere.set(s.cle, { note: s.note ?? null, le: s.le ?? null }); }
   const details: DetailTranche[] = [];
   for (const [famille, t] of Object.entries(parts) as [DetailTranche['famille'], Tranches][]) {
-    for (const k of t.refuses) if (!details.some((x) => x.cle === k)) details.push({ cle: k, etat: 'refuse', famille, note: derniere.get(k)?.note ?? 1, le: derniere.get(k)?.le ?? null });
+    for (const k of t.refuses) if (!details.some((x) => x.cle === k)) details.push({ cle: k, etat: 'refuse', famille, note: famille === 'implicite' ? derniere.get(k)?.note ?? null : derniere.get(k)?.note ?? 1, le: famille === 'implicite' ? politique?.implicites.find((x) => x.cle === k)?.dernier ?? null : derniere.get(k)?.le ?? null });
     for (const k of t.favoris) if (!tranches.refuses.has(k) && !details.some((x) => x.cle === k)) details.push({ cle: k, etat: 'favori', famille, note: derniere.get(k)?.note ?? 5, le: derniere.get(k)?.le ?? null });
   }
   details.sort((a, b) => ((b.le ?? '') < (a.le ?? '') ? -1 : 1));

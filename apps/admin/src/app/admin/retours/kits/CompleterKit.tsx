@@ -7,6 +7,7 @@
 // /admin/photos) ; « Pas pour ici » mémorisé. Vivier insuffisant : « Trouver des photos » → Photos à découvrir (COUCHE 1) pré-filtré
 // sur le sujet et les requêtes ciblées de l'emplacement, puis retour au kit.
 // Clavier : U utiliser (ou importer et utiliser), X pas pour ici, 1-5 noter, ↑ ↓ suggestion, → emplacement suivant.
+import { useExpositions } from '@/components/useExpositions';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -36,6 +37,8 @@ export default function CompleterKit({ sujet, aFaire, compteur, enAttente }: { s
   const [message, setMessage] = useState('');
   const [occupe, setOccupe] = useState(false);
   const [refusLocaux, setRefusLocaux] = useState<string[]>([]);
+  // Politique d'évaluation : « Pas pour ici » entre dans la mémoire commune (une photo écartée 3 fois n'est plus proposée)
+  const { montrer } = useExpositions('kits', null);
   useEffect(() => { try { const l = JSON.parse(localStorage.getItem(CLE_REFUS) ?? '[]'); setRefusLocaux(Array.isArray(l) ? l : []); } catch { /* indisponible */ } }, []);
   const e = aFaire[Math.min(i, Math.max(0, aFaire.length - 1))];
   const items = useMemo(() => (e ? e.banque.filter((s) => !refusLocaux.includes(`${e.emplacement}|${s.cle}`)) : []), [e, refusLocaux]);
@@ -61,6 +64,7 @@ export default function CompleterKit({ sujet, aFaire, compteur, enAttente }: { s
     const l = [...refusLocaux, `${e.emplacement}|${s.cle}`];
     setRefusLocaux(l);
     try { localStorage.setItem(CLE_REFUS, JSON.stringify(l.slice(-2000))); } catch { /* indisponible */ }
+    montrer([{ cle: s.cle, resultat: 'pas-choisi' }], { journaliser: true });
     const r = await pasPourIci(s.cle, e.emplacement).catch(() => ({ ok: false, message: 'Connexion perdue : refus gardé dans ce navigateur.' }));
     setMessage(r.message);
   };

@@ -12,6 +12,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { gamme as gammeParId, htmlContenu, SURFACES_CSS, variablesCharte, variablesGamme, type BlocContenu, type MarqueImportee, type ModeleManifeste, type SourcePhotoLibre, type Univers } from '@plateforme/core';
 import { FILTRES_TYPES_ARRIVAGES, filtreTypeArrivage, gesteClavier, gesteGlisse, SOURCES_ARRIVAGES, TYPES_INGREDIENTS, type SourceArrivage, type TypeArrivage } from '@plateforme/core/arrivages';
 import ApercuStudio from '@/components/ApercuStudio';
+import { cleImage, RAISONS_REFUS, type EtatPolitique } from '@plateforme/core';
+import { useExpositions } from '@/components/useExpositions';
 import { SaisieHashtags } from '@/components/HashtagsVisuel';
 import type { SoinCatalogue } from '@/lib/sites';
 import { candidatsPhotos } from '../retours/actions-photos';
@@ -76,6 +78,8 @@ type Props = {
   /** Profils de la profession pour « Sourcer automatiquement » ; migration 0053 absente */
   profilsSourcing: { id: string; court: string }[];
   migrationSeries: boolean;
+  /** Politique d'évaluation unique (politique-evaluation.ts) : décisions et raisons de refus journalisées (règles apprises) */
+  politique?: EtatPolitique;
 };
 
 
@@ -87,7 +91,10 @@ const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 const dateCourte = (d: string | null) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : '');
 const PARTICIPE: Record<Geste, string> = { accepter: 'acceptée', refuser: 'refusée', retravailler: 'à retravailler' };
 
-export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progressions, champs, sujets, sourcesPhotos, frequencesHashtags, sourceInitiale, typeInitial, lotInitial, studio, profilsSourcing, migrationSeries }: Props) {
+export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progressions, champs, sujets, sourcesPhotos, frequencesHashtags, sourceInitiale, typeInitial, lotInitial, studio, profilsSourcing, migrationSeries, politique }: Props) {
+  const { montrer } = useExpositions('arrivages', politique);
+  // Raisons du refus (facultatives) : deviennent des règles apprises (« Ce que j'ai compris de tes retours »)
+  const [raisons, setRaisons] = useState<string[]>([]);
   const [items, setItems] = useState<ItemArrivage[]>(initiaux);
   const [faits, setFaits] = useState<Set<string>>(new Set());
   const [historique, setHistorique] = useState<Decision[]>([]);
@@ -129,7 +136,7 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
   const [selection, setSelection] = useState<Set<string>>(new Set());
   const [progression, setProgression] = useState<string | null>(null);
   useEffect(() => {
-    setChoixSujets(courant?.sujets ?? []); setChoixTags(courant?.hashtags ?? []); setNote(null); setCommentaire(''); setRetravail(false);
+    setChoixSujets(courant?.sujets ?? []); setChoixTags(courant?.hashtags ?? []); setNote(null); setCommentaire(''); setRetravail(false); setRaisons([]);
     setSelection(new Set(courant?.visuel.kind === 'serie' ? courant.visuel.serie.photos.map((p) => p.cle) : []));
   }, [courant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (retravail) champCommentaire.current?.focus(); }, [retravail]);
@@ -194,7 +201,10 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
         : refuserArrivage(a)).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.', annulation: undefined }));
     setOccupe(false);
     noter({ items: [courant], geste, annulation: r.annulation, titre: courant.titre }, r.ok, r.message);
-  }, [courant, occupe, choixSujets, choixTags, note, commentaire, retravail, deciderSerie]);
+    // Politique d'évaluation : décision et raisons dans la mémoire commune (nouveautés et photos : clé de l'élément)
+    const cle = a.kind === 'nouveaute' ? a.cle : courant.visuel.kind === 'image' ? cleImage(courant.visuel.src) : null;
+    if (r.ok && cle && geste !== 'retravailler') montrer([{ cle, resultat: geste === 'accepter' ? 'accepte' : 'refuse', note, etiquettes: geste === 'refuser' ? raisons : null, texte: commentaire.trim() || null }], { journaliser: true });
+  }, [courant, occupe, choixSujets, choixTags, note, commentaire, retravail, deciderSerie, raisons, montrer]);
 
   const deciderLeLot = async (id: string, geste: 'accepter' | 'refuser') => {
     const l = lots.find((x) => x.id === id);
@@ -457,6 +467,17 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
                   onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); void decider('retravailler'); } }}
                   className="rounded-lg border border-neutral-300 p-2" placeholder="Ex. « la deuxième section promet trop », « source à préciser »" />
               </label>
+            )}
+            {!estContenu && (
+              <fieldset className="grid gap-1">
+                <legend className="text-xs font-semibold text-neutral-700">Pourquoi refuser ? <span className="font-normal text-neutral-500">(facultatif, appris pour la suite)</span></legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {RAISONS_REFUS.map((x) => (
+                    <button key={x.id} type="button" aria-pressed={raisons.includes(x.id)} onClick={() => setRaisons((l) => (l.includes(x.id) ? l.filter((y) => y !== x.id) : [...l, x.id]))}
+                      className={`min-h-9 rounded-full border px-3 text-xs ${raisons.includes(x.id) ? 'border-red-700 bg-red-50 font-semibold text-red-900' : 'border-neutral-300 bg-white text-neutral-800'} ${focus}`}>{x.libelle}</button>
+                  ))}
+                </div>
+              </fieldset>
             )}
             <div className={`grid gap-2 ${estContenu ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <button type="button" disabled={occupe} onClick={() => void decider('refuser')}

@@ -120,3 +120,5 @@ export * from './chaine-design';
 export * from './sourcing-photos';
 export * from './degustation-cartes';
 export * from './univers-diabete';
+export * from './politique-evaluation';
+export * from './regles-apprises';

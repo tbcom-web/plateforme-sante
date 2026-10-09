@@ -65,6 +65,8 @@ import ProgressionQualite from './ProgressionQualite';
 import { notesElements, tableauProgression } from '@plateforme/core';
 import { dateCourte, estAValider, lotsDuParametre, lotsNouveautes, type CleRecente, type LotNouveautes } from '@plateforme/core';
 import NouveautesANoter from './NouveautesANoter';
+import { choisirEcran, ecranBloque, etatNotesTranche, fileEvaluation, type EtatPolitique } from '@plateforme/core';
+import { useExpositions } from '@/components/useExpositions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -119,6 +121,8 @@ type Props = {
   /** Nouveautés (nouveautes.ts) : clés unitaires récentes du registre inventaire-connu.json ; lot demandé par ?nouveautes= */
   nouveautesRecentes?: CleRecente[];
   nouveautesInitiales?: string | null;
+  /** Politique d'évaluation unique (politique-evaluation.ts) : derniers écrans de toutes les surfaces, implicites, règles apprises */
+  politique?: EtatPolitique;
 };
 
 /** Espaces hors notation : inspirations et photos à découvrir */
@@ -412,6 +416,18 @@ export default function Retours(props: Props) {
   const slugs = useMemo(() => catalogue.map((c) => c.slug), [catalogue]);
   const disponibles = useMemo(() => new Set(proposes.map((u) => u.id)), [proposes]);
 
+  // Politique d'évaluation unique : mémoire commune (délai de retour, groupes visuels), implicites, règles, fort potentiel d'abord
+  const { ctx: politique, montrer } = useExpositions('tuiles', props.politique);
+  const decides = useRef(new Set<string>());
+  const choisirParPolitique = useCallback(<L extends { cle: string; empreinte?: string | null }>(l: readonly L[]): L | null => {
+    const cands = l.filter((x) => !vus.current.has(x.cle)).map((x) => {
+      const e = etats.get(x.cle);
+      return { cle: x.cle, note: e?.n ? (e.somme ?? e.min) / e.n : null, n: e?.n ?? 0, ecart: e ? e.max - e.min : 0, tranche: etatNotesTranche(e),
+        modifie: Boolean(e?.n && x.empreinte && e.empreinte && e.empreinte !== x.empreinte), potentiel: politique.fortPotentiel.has(x.cle) ? 4.5 : null, l: x };
+    });
+    return choisirEcran(fileEvaluation(cands, politique), 1, { parmi: 3 }).choix[0]?.x.l ?? null;
+  }, [etats, politique]);
+
   const tirerTheme = useCallback((): Carte | null => {
     let repli: Carte | null = null;
     for (let i = 0; i < 12; i++) {
@@ -419,12 +435,12 @@ export default function Retours(props: Props) {
       const e = { priorites: { principaux: scenario.principaux, secondaires: scenario.secondaires }, couleursPreferees: scenario.couleurs };
       const liste = lotsPropositions(e, 2, { poids }).flat().filter((p) => disponibles.has(p.univers));
       const cartes = liste.map((p) => { const ingredients = ingredientsProposition(p, e); return { kind: 'theme' as const, scenario, p, ingredients, cle: cleCombinaison(ingredients) }; });
-      const libres = cartes.filter((c) => !dejaNotees[c.cle] && !vus.current.has(`theme:${c.cle}`));
+      const libres = cartes.filter((c) => !dejaNotees[c.cle] && !vus.current.has(`theme:${c.cle}`) && !ecranBloque([`prop:${c.p.id}`], politique));
       if (libres.length) return libres[Math.floor(Math.random() * libres.length)];
       repli ??= cartes[0] ?? null;
     }
     return repli;
-  }, [poids, disponibles, dejaNotees]);
+  }, [poids, disponibles, dejaNotees, politique]);
 
   const candidatsDe = useCallback((c: CategorieRetours) => {
     if (selection) return inventaireComplet.filter((a) => selection.cles.includes(a.cle));
@@ -451,22 +467,34 @@ export default function Retours(props: Props) {
     });
     // File « Nouveautés » : seulement les jamais notées, chacune une fois ; vide → fin de la file
     const file = selection?.nouveautes ? liste.filter((l) => !etats.has(l.cle) && !vus.current.has(l.cle)) : liste;
-    const x = prochaineCarteAvecAttente(file, etats, vus.current, (l) => enAttente(l.a));
+    // Liste explicite (ingrédients d'une animation) : son ordre ; sinon la politique (prêts d'abord, animations en attente ensuite)
+    if (selection && !selection.nouveautes) { const x = prochaineCarteAvecAttente(file, etats, vus.current, (l) => enAttente(l.a)); return x ? preparer(x.a) : null; }
+    const x = choisirParPolitique(file.filter((l) => !enAttente(l.a))) ?? choisirParPolitique(file.filter((l) => enAttente(l.a)));
     return x ? preparer(x.a) : null;
-  }, [candidatsDe, etats, tirerTheme, migrationAtelier, selection, enAttente]);
+  }, [candidatsDe, etats, tirerTheme, migrationAtelier, selection, enAttente, choisirParPolitique]);
 
   const reinitialiserSaisie = () => { setEtiquettes([]); setPositif(''); setNegatif(''); setModeEtiquettes(false); setZonesOrdi([]); setZonesMobile([]); };
 
   const suivante = useCallback(() => {
     reinitialiserSaisie();
     if (position < historique.length - 1) { setPosition((p) => p + 1); return; }
+    // Carte passée sans réponse : « ignorée », journalisée (politique d'évaluation : mémoire commune, signal implicite)
+    const actuelle = historique[position];
+    if (actuelle && !decides.current.has(cleCarte(actuelle))) {
+      decides.current.add(cleCarte(actuelle));
+      montrer([{ cle: actuelle.kind === 'asset' ? actuelle.asset.cle : `prop:${actuelle.p.id}`, resultat: 'ignore' }], { journaliser: true, surface: selection?.nouveautes ? 'nouveautes' : 'tuiles' });
+    }
     if (!categorie) return;
     const carte = tirer(categorie);
-    if (!carte) { if (selection?.nouveautes) { setMessageAccueil(`${selection.titre} : tout est noté, merci.`); setCategorie(null); } return; }
+    if (!carte) {
+      setMessageAccueil(selection?.nouveautes ? `${selection.titre} : tout est noté, merci.` : `${CATEGORIES_RETOURS.find((x) => x.id === categorie)?.libelle ?? 'Cette tuile'} : plus rien de nouveau à noter pour l’instant (tout est noté, tranché ou montré récemment).`);
+      setCategorie(null);
+      return;
+    }
     vus.current.add(cleCarte(carte));
     setHistorique((h) => [...h, carte]);
     setPosition(historique.length);
-  }, [position, historique.length, categorie, tirer, selection]);
+  }, [position, historique, categorie, tirer, selection, montrer]);
 
   const precedente = () => { reinitialiserSaisie(); setPosition((p) => Math.max(0, p - 1)); };
 
@@ -492,7 +520,10 @@ export default function Retours(props: Props) {
     // pas ici : en développement, React rejoue l'effet et la 2e passe tirait une autre carte)
     const demandee = cleDemandee.current ? inventaireComplet.find((a) => a.cle === cleDemandee.current) ?? notables.find((a) => a.cle === cleDemandee.current) : undefined;
     const carte = demandee ? preparer(demandee) : tirer(categorie);
-    if (!carte) return;
+    if (!carte) {
+      if (!selection) { setMessageAccueil(`${CATEGORIES_RETOURS.find((x) => x.id === categorie)?.libelle ?? 'Cette tuile'} : plus rien de nouveau à noter pour l’instant (tout est noté, tranché ou montré récemment).`); setCategorie(null); }
+      return;
+    }
     vus.current.add(cleCarte(carte));
     setHistorique([carte]);
     setPosition(0);
@@ -508,6 +539,7 @@ export default function Retours(props: Props) {
 
   const noter = useCallback(async (n: number) => {
     if (!carte) return;
+    decides.current.add(cleCarte(carte));
     const etq = etiquettes;
     const toutes = [...zonesOrdi, ...zonesMobile];
     const remarques = { positif, negatif, appareil: appareilVu, zones: toutes.length ? { appareil: appareilVu, empreinte: carte.kind === 'asset' ? carte.empreinte : null, zones: toutes } : null };

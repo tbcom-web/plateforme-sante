@@ -10,6 +10,8 @@
 // d'abord). Sans la migration 0037 : duels gardés dans ce navigateur (localStorage).
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
+import { ecranBloque, filtrerCandidatsPolitique, type EtatPolitique } from '@plateforme/core';
+import { useExpositions } from '@/components/useExpositions';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type TouchEvent } from 'react';
 import {
   accordJuge, appliquerRecette, choisirStyle, classementsParContexte, cleComposition, clesDifferentes, clesJugeDuel, clesRecette, compositionInitiale,
@@ -109,6 +111,8 @@ type Props = {
   /** Type de duel ou mode (MODES_DUEL) */
   typeInitial: string | null;
   /** Tranchés (tranches.ts) : refusés (1 ★, « les deux sont mauvais ») et favoris (5 ★) */
+  /** Politique d'évaluation unique (politique-evaluation.ts) : mémoire commune des écrans, implicites, règles apprises */
+  politique?: EtatPolitique;
   tranches?: { refuses: string[]; favoris: string[]; notes: string[] };
   /** ?mobile=1 : série « Mobile seulement » */
   mobileInitial?: boolean;
@@ -277,7 +281,12 @@ export default function Duel(props: Props) {
     return l.find((k) => libelleCleRenfort(k) !== k) ?? l[0] ?? cle;
   };
 
+  // Politique d'évaluation : délai de retour et groupes visuels entre surfaces, jamais un « vu sans être choisi » ni un écarté par une
+  // règle apprise ; un duel dont l'élément jugé est bloqué est re-tiré (3 essais), sinon servi quand même (départage, rien d'autre)
+  const { ctx: politique, montrer } = useExpositions('duels', props.politique);
   const generer = useCallback((m: string, g: number, historique: readonly DuelLocal[]): Courant | null => {
+    let repli: Courant | null = null;
+    let bloques = 0;
     const md = modeDuel(m);
     const t = (md?.type ?? m) as TypeDuel;
     const r = hasard(g);
@@ -334,7 +343,7 @@ export default function Duel(props: Props) {
         // Favoris d'abord (favoris.ts) : surtout de bons éléments entre eux, ≈ 10 % de découverte, jamais les exclus (≤ 2 ★, retirés)
         // Tranchés (tranches.ts) : jamais un refusé ; un favori (5 ★) seulement en « Champion » face à un élément jamais jugé (≈ 10 %)
         const T = { refuses: new Set(props.tranches?.refuses ?? []), favoris: new Set(props.tranches?.favoris ?? []), notes: new Set(props.tranches?.notes ?? []) };
-        const tr = candidatsDuelTranches(candidats[t].filter((x) => x.sujets.includes(s)), T, clesJugeesEnDuel(historique), r);
+        const tr = candidatsDuelTranches(filtrerCandidatsPolitique(candidats[t].filter((x) => x.sujets.includes(s)), politique, 4), T, clesJugeesEnDuel(historique), r);
         if (tr.champion) {
           const a = coteAsset(tr.champion.a.cle), b = coteAsset(tr.champion.b.cle);
           if (a && b) return { type: t, scenario: { sujets: [s] }, a, b, dimension: null, prediction: null, vue: 'accueil', champion: true };
@@ -448,14 +457,16 @@ export default function Duel(props: Props) {
       const famille = d.dimension?.startsWith('composant:') ? d.dimension.slice(10) : null;
       const page = pageDim ? PAGES_STRUCTURE.find((p) => p.id === pageDim) : famille ? PAGES_STRUCTURE.find((p) => (p.sections as readonly string[]).includes(famille)) : null;
       const vue: VuePage = famille === 'theme' ? 'theme' : famille === 'article' ? 'article' : page ? vueDePage(page.id) : 'accueil';
-      return { type: t, scenario: { sujets: [s], principaux: 1, ...(couleurs.length ? { couleurs } : {}), ...(page ? { page: page.id } : {}) }, a, b, dimension: d.dimension, prediction: predireDuel(ja, jb, props.predictions), vue, mobileSeul: duelMobileSeulement(d.dimension, r(), { serie: serieMobile }),
+      const res: Courant = { type: t, scenario: { sujets: [s], principaux: 1, ...(couleurs.length ? { couleurs } : {}), ...(page ? { page: page.id } : {}) }, a, b, dimension: d.dimension, prediction: predireDuel(ja, jb, props.predictions), vue, mobileSeul: duelMobileSeulement(d.dimension, r(), { serie: serieMobile }),
         // Pages complètes et thèmes libres : un seul appareil (60 % téléphone) ; série « Mobile seulement » : téléphone
         ...(appareilUnique(d.dimension) ? { appareilFixe: serieMobile ? 'mobile' as const : tirerAppareilUnique(r()) } : {}),
         manquePhotos: d.a.visuels.style === 'photos' || d.b.visuels.style === 'photos' ? manquePhotosNotees(c) : null };
+      if (ecranBloque([a.ingredients.element, b.ingredients.element], politique) && bloques++ < 3) { repli ??= res; continue; }
+      return res;
     }
-    return null;
+    return repli;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sujetChoisi, serieMobile, pageChoisie, candidats, contexte, props.recettes, props.predictions, dimensionsDispo]);
+  }, [sujetChoisi, serieMobile, pageChoisie, candidats, contexte, props.recettes, props.predictions, dimensionsDispo, politique]);
 
   const lancer = useCallback((t: string, g: number, hist: readonly DuelLocal[]) => {
     const c = generer(t, g, hist);
@@ -476,6 +487,9 @@ export default function Duel(props: Props) {
       dimension: courant.dimension, resultat, etiquettes, appareil: app, prediction: courant.prediction, le: new Date().toISOString(), remarque: remarque.trim() || null,
     };
     setSession((s) => [d, ...s]);
+    // Mémoire commune de la session (le duel lui-même est journalisé dans `duels`, relu par la politique au prochain chargement)
+    const res = (c: 'a' | 'b') => (resultat === 'mauvais' ? 'pire' as const : resultat === 'egalite' ? 'note' as const : resultat === c ? 'choisi' as const : 'pas-choisi' as const);
+    montrer([{ cle: courant.a.ingredients.element ?? courant.a.cle, resultat: res('a') }, { cle: courant.b.ingredients.element ?? courant.b.cle, resultat: res('b') }]);
     setDernier({ resultat, prediction: courant.prediction });
     const g = graine + 1;
     setGraine(g);
@@ -490,7 +504,7 @@ export default function Duel(props: Props) {
       }
       setMessage(r.message);
     } else setMessage('');
-  }, [courant, appareil, type, etiquettes, remarque, graine, lancer, historique]);
+  }, [courant, appareil, type, etiquettes, remarque, graine, lancer, historique, montrer]);
 
   // Clavier : ← A, → B, ↓ égalité, ↑ les deux sont mauvais
   const refChoisir = useRef(choisir);

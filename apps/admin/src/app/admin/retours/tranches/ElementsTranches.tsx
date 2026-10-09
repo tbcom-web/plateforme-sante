@@ -9,7 +9,7 @@ import Apercu from '../tri/ApercuVisuel';
 import { reevaluer } from './actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
-const FAMILLES: Record<DetailTranche['famille'], string> = { element: 'Élément', combinaison: 'Combinaison de l’atelier', recette: 'Recette complète', duel: 'Duel (les deux mauvais)' };
+const FAMILLES: Record<DetailTranche['famille'], string> = { element: 'Élément', combinaison: 'Combinaison de l’atelier', recette: 'Recette complète', duel: 'Duel (les deux mauvais)', implicite: 'Vu sans être choisi' };
 
 const typeDe = (d: DetailTranche) => (d.famille === 'element' ? d.cle.slice(0, d.cle.indexOf(':')) : d.famille);
 
@@ -60,7 +60,7 @@ export default function ElementsTranches({ details }: { details: DetailTranche[]
                 {a ? <Apercu a={a} /> : <div className="grid aspect-square place-items-center rounded-xl bg-neutral-100 p-2 text-center text-xs text-neutral-600">{FAMILLES[d.famille]}</div>}
                 <span className="min-w-0 break-words text-xs font-semibold" title={d.cle}>{titre(d)}</span>
                 <span className="flex flex-wrap items-center gap-1 text-[11px]">
-                  <span className={`rounded px-1.5 py-0.5 font-semibold ${d.etat === 'refuse' ? 'bg-red-100 text-red-900' : 'bg-amber-100 text-amber-900'}`}>{d.etat === 'refuse' ? '1 ★ · plus jamais montré' : '5 ★ · favori, plus redemandé'}</span>
+                  <span className={`rounded px-1.5 py-0.5 font-semibold ${d.etat === 'refuse' ? 'bg-red-100 text-red-900' : 'bg-amber-100 text-amber-900'}`}>{d.famille === 'implicite' ? 'Vu sans être choisi · plus montré à noter' : d.etat === 'refuse' ? '1 ★ · plus jamais montré' : '5 ★ · favori, plus redemandé'}</span>
                   <span className="text-neutral-500">{libelleType(typeDe(d))}{d.le ? ` · ${d.le.slice(0, 10)}` : ''}</span>
                 </span>
                 <span className="flex flex-wrap gap-1">

@@ -6,6 +6,8 @@ import { exigerAdmin } from '@/lib/admin';
 import { getProfession } from '@/lib/profession';
 import { createClient } from '@/lib/supabase/server';
 import { sourcesConfigurees } from '@/lib/photos-libres';
+import { contraintesSourcing } from '@plateforme/core';
+import { getPolitique } from '@/lib/politique-evaluation';
 import { contexteSourcing, enregistrerSeries, executerSourcing, getRevuesClaude, getSerie, MIGRATION_SERIES, nouveauGroupe } from '@/lib/sourcing-photos';
 import { changerStatutPhotoLibre, importerPhotoLibre } from '../photos/actions';
 import { deciderPhoto } from '../retours/actions-photos';
@@ -41,8 +43,11 @@ async function lancer(o: { profil?: string | null; kit?: string | null; cible?: 
   if (!cibles.length) return { ok: true, message: 'Aucun trou prioritaire : tout est couvert ou une série attend déjà votre décision.', series: [] };
   const lignes: LigneSerie[] = [];
   const motifs: string[] = [];
+  // Règles apprises des retours (politique d'évaluation) appliquées au sourcing : saturation, luminosité, visages…
+  const politique = await getPolitique().catch(() => null);
+  const contraintes = politique ? contraintesSourcing(politique.regles) : null;
   for (const c of cibles) {
-    const { series, journal, motif } = await executerSourcing(c, { dejaVues: ctx.dejaVues, couverture: ctx.couverture });
+    const { series, journal, motif } = await executerSourcing(c, { dejaVues: ctx.dejaVues, couverture: ctx.couverture, contraintes });
     const groupe = nouveauGroupe();
     for (const s of series) { lignes.push(ligneDeSerie(s, groupe, journal)); for (const p of s.photos) ctx.dejaVues.add(p.cle); }
     if (!series.length) motifs.push(`${c.libelle} : ${motif ?? 'aucune série'}`);

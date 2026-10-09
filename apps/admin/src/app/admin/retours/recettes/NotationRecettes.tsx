@@ -12,6 +12,8 @@
 // palmarès auto-noté (ingrédients, combinaisons, familles, à éviter) par sujet.
 // Sans la migration 0038 : notes gardées dans ce navigateur (localStorage).
 import '@plateforme/core/dessins.css';
+import { useExpositions } from '@/components/useExpositions';
+import type { EtatPolitique } from '@plateforme/core';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
@@ -40,6 +42,8 @@ type Item = CandidateRecette & { sourceId?: string | null };
 type Locale = { cle: string; note: number | null; garder: boolean; le: string };
 
 type Props = {
+  /** Politique d'évaluation unique (politique-evaluation.ts) : recette passée sans note journalisée « ignorée » */
+  politique?: EtatPolitique;
   scenarios: { id: string; libelle: string; scenario: ScenarioRecette }[];
   propositions: PropositionClaude[];
   notees: string[];
@@ -101,6 +105,7 @@ export default function NotationRecettes(props: Props) {
   const router = useRouter();
   const { large, etroit, h } = useLargeur();
   const [onglet, setOnglet] = useState<'noter' | 'appris'>('noter');
+  const { montrer } = useExpositions('recettes', props.politique);
   const modele = useCallback((id: string) => props.modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id), [props.modeles]);
   const refusees = useMemo(() => new Set(props.refusees), [props.refusees]);
   const aValider = useMemo(() => new Set(props.aValider), [props.aValider]);
@@ -212,7 +217,7 @@ export default function NotationRecettes(props: Props) {
   const enregistrer = useCallback(async (garder: boolean) => {
     if (!courant || envoi) return;
     const rien = !note && !garder && !pour.length && !contre.length && !pourTexte.trim() && !contreTexte.trim();
-    if (rien) { setPos((p) => p + 1); raz(); setMessage('Recette passée sans note.'); return; }
+    if (rien) { montrer([{ cle: courant.cle, resultat: 'ignore' }], { journaliser: true }); setPos((p) => p + 1); raz(); setMessage('Recette passée sans note.'); return; }
     setEnvoi(true);
     const app = large ? 'les-deux' : appareil === 'mobile' ? 'mobile' : 'ordinateur';
     const saisie = {
@@ -233,7 +238,7 @@ export default function NotationRecettes(props: Props) {
     }
     setMessage(`${r.message} Le système prévoyait ${prevu}★.`);
     setEnvoi(false);
-  }, [courant, envoi, note, pour, contre, pourTexte, contreTexte, large, appareil]);
+  }, [courant, envoi, note, pour, contre, pourTexte, contreTexte, large, appareil, montrer]);
 
   const ouvrirStudio = () => {
     if (!courant) return;

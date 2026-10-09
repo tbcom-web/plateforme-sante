@@ -4,7 +4,7 @@ import { predictionsParCle } from '@plateforme/core/juge';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getPoidsAtelier } from '@/lib/atelier';
-import { getDuels } from '@/lib/duels';
+import { getDuelsAlleges } from '@/lib/duels';
 import { getRevuesIllustrations } from '@/lib/illustrations';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
@@ -15,6 +15,7 @@ import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import Duel from './Duel';
 import { getTranches, tranchesEnListes } from '@/lib/tranches';
+import { getEtatPolitique } from '@/lib/politique-evaluation';
 
 export const metadata = { title: 'Super admin · Duel A ou B' };
 
@@ -25,7 +26,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
   await exigerAdmin();
   const sp = await searchParams;
   const [{ duels, migrationManquante }, modeles, catalogue, marquesImportees, { univers }, poids, photos, { recettes }, photosJeux, surcharges, revues, predictions] = await Promise.all([
-    getDuels(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(), getRecettes(),
+    getDuelsAlleges(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(), getRecettes(),
     getPhotosDesJeux(), getSurchargesSujets(), getRevuesIllustrations(), getPredictions(),
   ]);
   // Historique allégé (perf, 2026-10-08) : compositions retirées là où le navigateur ne les lit pas (duels-historique.ts)
@@ -65,6 +66,7 @@ export default async function PageDuel({ searchParams }: { searchParams: Promise
         predictions={predictionsParCle(predictions)}
         typeInitial={type}
         tranches={tranchesEnListes((await getTranches()).tranches)}
+        politique={await getEtatPolitique()}
         mobileInitial={sp.mobile === '1'}
         pageInitiale={typeof sp.page === 'string' ? sp.page : null}
       />

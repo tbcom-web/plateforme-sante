@@ -7,6 +7,7 @@ import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
 import { getPoidsAssets } from '@/lib/assets-notes';
+import { getRenfortsPolitique } from '@/lib/politique-evaluation';
 
 // Notes de l'atelier des propositions (migration 0026).
 // - getNotesAtelier : journal complet, lu par le super admin (/admin/atelier) ;
@@ -54,7 +55,10 @@ async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
   const sources = [...sourcesRecettes(recettes.filter((r) => !gardees.has(r.id))), ...sourcesCombinaisons(atelier?.lignes ?? []), ...sourcesNotesPages(pages)];
   // Duels « A ou B ? » (0037, duels.ts) : ±0,5 ★ au plus par clé, cumulés aux renforts des notes dans la limite de ±1 ★
   // Recettes complètes notées (0038, notation-recettes.ts) : ±0,75 ★ au plus par clé, même cumul plafonné à ±1 ★
-  const renforts = fusionnerRenforts(fusionnerRenforts(sources.length ? renfortsPoids(sources, base?.moyenne || 3) : { atelier: {}, assets: {} }, renfortsDuels(duels)), fusionnerRenforts(renfortsNotations(notations), renfortsKits(await getNotesKits())));
+  const renforts0 = fusionnerRenforts(fusionnerRenforts(sources.length ? renfortsPoids(sources, base?.moyenne || 3) : { atelier: {}, assets: {} }, renfortsDuels(duels)), fusionnerRenforts(renfortsNotations(notations), renfortsKits(await getNotesKits())));
+  // Politique d'évaluation (politique-evaluation.ts, admin) : éléments vus sans être choisis (−0,75 ★) et règles apprises des retours
+  // (« trop chargé » → densité forte pénalisée…) RÉTROGRADÉS dans la génération, même plafond cumulé ±1 ★
+  const renforts = fusionnerRenforts(renforts0, await getRenfortsPolitique().catch(() => ({ atelier: {}, assets: {} })));
   // (+ kits d'images notés, 0039 : chaque photo du kit, ±0,5 ★ ; même plafond cumulé ±1 ★)
   const poids = Object.keys(renforts.atelier).length || Object.keys(renforts.assets).length ? appliquerRenforts(base, renforts) : base;
   // Ingrédients, PAIRES et familles appris des recettes complètes : lus par les tirages harmonieux (harmonie.ts) et propositions.ts

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { composerKit, composerKitVisuel, compteurKit, emplacementsAFaire, emplacementsVisuelsAFaire, etatVivier, etatVivierVisuels, photosARattacher, suggestionsVisuels, visuelsARattacher, libelleSujetKit, lienTrouverPhotos, manqueVivier, suggestionsVivier, SUJETS_KITS, universDuParcours } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getDonneesKits, getDonneesVisuels, getEnAttenteKits, getNotesKits, getRefusKits } from '@/lib/kits-images';
+import { getEtatPolitique } from '@/lib/politique-evaluation';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
@@ -37,7 +38,10 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
   const [refus, enAttente] = await Promise.all([getRefusKits(), getEnAttenteKits()]);
   const soins = d.soins?.[sujet] ?? [];
   // Couche 2 : suggestions du vivier curé seulement ; vivier insuffisant → « Trouver des photos » (couche 1, Photos à découvrir)
-  const aFaire = emplacementsAFaire(kit, soins).map((e) => ({ ...e, banque: suggestionsVivier(kit, e.emplacement, d, refus, 8), manque: manqueVivier(sujet, e.emplacement, d), trouver: lienTrouverPhotos(sujet, e.emplacement) }));
+  // Politique d'évaluation unique : jamais une photo vue sans être choisie ni écartée par une règle apprise
+  const politique = await getEtatPolitique();
+  const bloquees = new Set([...politique.implicites, ...politique.ecartes]);
+  const aFaire = emplacementsAFaire(kit, soins).map((e) => ({ ...e, banque: suggestionsVivier(kit, e.emplacement, d, refus, 12).filter((x) => !bloquees.has(x.cle)).slice(0, 8), manque: manqueVivier(sujet, e.emplacement, d), trouver: lienTrouverPhotos(sujet, e.emplacement) }));
   const compteur = compteurKit(kit, soins);
   // Kit multi-visuels (kits-visuels.ts) : illustrations (un seul style), icônes, animations (« à valider » visibles pour Paul) ;
   // emplacements vides : suggestions du vivier curé dans le même ordre que les photos
