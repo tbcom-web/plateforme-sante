@@ -32,7 +32,7 @@ test('configuration avec un élément refusé → remplacé par le repli ; sans 
     ...d0,
     theme: { ...d0.theme, gamme: 'mangue', variantes: { accueil: 'arche-photo', soins: 'filets' }, menu: { ...MENU_PAR_DEFAUT, mobile: 'pastilles' }, typo: { ...TYPO_PAR_DEFAUT, casse: 'capitales' }, photosRecette: ['/photos/pied-x.webp', '/photos/ok.webp'] },
     photos: { ...d0.photos, accueil: '/photos/pied-x.webp', cabinet: ['/photos/ok.webp', '/photos/pied-x.webp'] },
-  } as typeof d0;
+  } as unknown as typeof d0;
   const exclues = new Set(['gamme:mangue', 'composant:accueil:arche-photo', 'menu:mobile:pastilles', 'typo:casse:capitales', 'photo:pied-x']);
   const { draft, retires } = appliquerExclusionsSite(d, exclues);
   assert.equal(draft.theme.gamme, '');

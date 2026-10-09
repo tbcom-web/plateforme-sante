@@ -56,7 +56,7 @@ const heros = visuel.type === 'dessin' && visuel.heros && !animation && !seul
     <Fragment set:html={`<style>${cssVisuelAnime(animationHeros!)}</style>${anime}`} />
   </div>
 ) : (
-<div class:list={['vt', `vt--${heros || svgActivite ? 'heros' : visuel.type}`, animation ? 'vt--anime' : '', classe]} aria-hidden="true" style={svgActivite && registre === 'releve' ? '--dessin-ligne:var(--sur-sombre-doux,#eef2ff);--dessin-trait:var(--sur-sombre-doux,#eef2ff)' : undefined}>
+<div class:list={['vt', `vt--${heros || svgActivite ? 'heros' : visuel.type}`, animation ? 'vt--anime' : '', classe]} aria-hidden="true" style={svgActivite && registre === 'releve' ? '--dessin-ligne:var(--sur-sombre-doux);--dessin-trait:var(--sur-sombre-doux)' : undefined}>
   {visuel.type === 'photo' ? (
     <img src={visuel.src} {...photoResponsive(visuel.src, sizes)} alt="" width="1600" height="1067" style={`object-position:${visuel.cadrage}`} loading={prioritaire ? 'eager' : 'lazy'} fetchpriority={prioritaire ? 'high' : 'auto'} decoding={prioritaire ? 'sync' : 'async'} />
   ) : animation ? (
