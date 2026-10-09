@@ -1,0 +1,120 @@
+// PROSPECTION À PARTIR DU RPPS (migration 0055, scripts/synchro-rpps.mjs, /admin/prospection ; docs/prospection-rpps.md).
+// Fonctions pures : statuts du suivi de la commerciale, signal « récemment installé », lecture des filtres de la page, export CSV.
+//
+// Deux signaux d'installation, du plus sûr au moins sûr :
+//  - « siret » : date de création de l'établissement à l'INSEE, pour le SIRET déclaré au RPPS (nouveau cabinet, ou cabinet
+//    transféré : un transfert crée aussi un établissement) ;
+//  - « rpps » : première apparition de la situation d'exercice dans l'extraction quotidienne (connue à partir de l'import
+//    initial seulement : arrivée dans un cabinet de groupe déjà existant, nouveau diplômé, déménagement) ;
+//  - « nom » : établissement trouvé par nom et code postal, faute de SIRET au RPPS (à confirmer au téléphone).
+
+export const STATUTS_PROSPECTION = [
+  { id: 'a_contacter', libelle: 'À contacter' },
+  { id: 'contacte', libelle: 'Contacté' },
+  { id: 'rappeler', libelle: 'À rappeler' },
+  { id: 'rendez_vous', libelle: 'Rendez-vous' },
+  { id: 'gagne', libelle: 'Gagné' },
+  { id: 'perdu', libelle: 'Pas intéressé' },
+  { id: 'hors_cible', libelle: 'Hors cible' },
+] as const;
+export type StatutProspection = (typeof STATUTS_PROSPECTION)[number]['id'];
+export const estStatutProspection = (s: unknown): s is StatutProspection => STATUTS_PROSPECTION.some((x) => x.id === s);
+export const libelleStatutProspection = (s: string | null | undefined) => STATUTS_PROSPECTION.find((x) => x.id === s)?.libelle ?? 'À contacter';
+
+export const PERIODES_INSTALLATION = [
+  { id: '3', mois: 3, libelle: 'Installés depuis 3 mois' },
+  { id: '6', mois: 6, libelle: 'Depuis 6 mois' },
+  { id: '12', mois: 12, libelle: 'Depuis 1 an' },
+  { id: '24', mois: 24, libelle: 'Depuis 2 ans' },
+  { id: 'tous', mois: null, libelle: 'Tous' },
+] as const;
+export type PeriodeInstallation = (typeof PERIODES_INSTALLATION)[number]['id'];
+
+/** Date ISO (AAAA-MM-JJ) `mois` mois avant `aujourdhui` (fin de mois ramenée au dernier jour) */
+export function moisAvant(aujourdhui: string, mois: number): string {
+  const [a, m, j] = aujourdhui.slice(0, 10).split('-').map(Number);
+  const cible = new Date(Date.UTC(a, m - 1 - mois, 1));
+  const dernier = new Date(Date.UTC(cible.getUTCFullYear(), cible.getUTCMonth() + 1, 0)).getUTCDate();
+  cible.setUTCDate(Math.min(j, dernier));
+  return cible.toISOString().slice(0, 10);
+}
+
+export type SourceInstallation = 'siret' | 'nom' | 'rpps';
+export type Installation = { date: string; source: SourceInstallation; libelle: string } | null;
+
+/** Signal d'installation le plus récent d'une ligne de prospection_praticiens */
+export function installation(p: { siret_cree_le?: string | null; siret_source?: string | null; apparu_le?: string | null }): Installation {
+  const candidats: { date: string; source: SourceInstallation }[] = [];
+  if (p.siret_cree_le) candidats.push({ date: p.siret_cree_le.slice(0, 10), source: p.siret_source === 'nom' ? 'nom' : 'siret' });
+  if (p.apparu_le) candidats.push({ date: p.apparu_le.slice(0, 10), source: 'rpps' });
+  const c = candidats.sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (!c) return null;
+  const libelle = { siret: 'SIRET créé', nom: 'Établissement trouvé par nom (à confirmer)', rpps: 'Nouveau au RPPS' }[c.source];
+  return { ...c, libelle };
+}
+
+export type FiltresProspection = {
+  departement: string;
+  q: string;
+  periode: PeriodeInstallation;
+  statut: StatutProspection | 'relance' | '';
+  /** Exercice libéral seulement (la cible d'un site de cabinet) */
+  liberal: boolean;
+  /** Masquer les praticiens disparus du RPPS et les établissements fermés */
+  actifs: boolean;
+  page: number;
+};
+
+const premier = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
+export const departementSaisi = (s: string) => {
+  const v = s.trim().toUpperCase();
+  return /^(\d{2}|2[AB]|97\d)$/.test(v) ? v : '';
+};
+
+export function lireFiltresProspection(sp: Record<string, string | string[] | undefined>): FiltresProspection {
+  const periode = premier(sp.periode);
+  const statut = premier(sp.statut);
+  const page = Number.parseInt(premier(sp.page), 10);
+  return {
+    departement: departementSaisi(premier(sp.dep)),
+    q: premier(sp.q).replace(/[^\p{L}\p{N} '-]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 60),
+    periode: PERIODES_INSTALLATION.some((p) => p.id === periode) ? (periode as PeriodeInstallation) : '12',
+    statut: statut === 'relance' || estStatutProspection(statut) ? statut : '',
+    liberal: premier(sp.liberal) !== 'non',
+    actifs: premier(sp.actifs) !== 'non',
+    page: Number.isFinite(page) && page > 0 ? Math.min(page, 1000) : 1,
+  };
+}
+
+/** Paramètres d'adresse (liens de pagination, export) : seulement ce qui diffère des valeurs par défaut */
+export function parametresProspection(f: FiltresProspection, page = f.page): string {
+  const p = new URLSearchParams();
+  if (f.departement) p.set('dep', f.departement);
+  if (f.q) p.set('q', f.q);
+  if (f.periode !== '12') p.set('periode', f.periode);
+  if (f.statut) p.set('statut', f.statut);
+  if (!f.liberal) p.set('liberal', 'non');
+  if (!f.actifs) p.set('actifs', 'non');
+  if (page > 1) p.set('page', String(page));
+  return p.toString();
+}
+
+export type LigneExport = {
+  nom: string; prenom: string; profession: string; cabinet: string; adresse: string; codePostal: string; commune: string;
+  telephone: string; email: string; installation: string; signal: string; statut: string; relance: string; note: string; rpps: string;
+};
+
+/** CSV pour Excel (point-virgule, BOM UTF-8). Les cellules qui commencent par = + - @ sont neutralisées. */
+export function csvProspection(lignes: LigneExport[]): string {
+  const entetes: [keyof LigneExport, string][] = [
+    ['nom', 'Nom'], ['prenom', 'Prénom'], ['profession', 'Profession'], ['cabinet', 'Cabinet'], ['adresse', 'Adresse'], ['codePostal', 'Code postal'],
+    ['commune', 'Commune'], ['telephone', 'Téléphone'], ['email', 'E-mail'], ['installation', 'Installation'], ['signal', 'Signal'],
+    ['statut', 'Statut'], ['relance', 'Relance'], ['note', 'Note'], ['rpps', 'RPPS'],
+  ];
+  const cellule = (v: string) => {
+    const t = String(v ?? '').replace(/\r?\n/g, ' ');
+    const sur = /^[=+\-@]/.test(t) ? `'${t}` : t;
+    return /[";]/.test(sur) ? `"${sur.replace(/"/g, '""')}"` : sur;
+  };
+  return '﻿' + [entetes.map(([, l]) => l).join(';'), ...lignes.map((l) => entetes.map(([k]) => cellule(l[k])).join(';'))].join('\r\n') + '\r\n';
+}
