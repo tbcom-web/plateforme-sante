@@ -2,6 +2,7 @@ import { CHAINE } from '@plateforme/core';
 import { exigerContributeur, lireChaine, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
 import Preselection from './Preselection';
+import BoutonImporterClaude from '../BoutonImporterClaude';
 import { getEtatPolitique } from '@/lib/politique-evaluation';
 
 export const metadata = { title: 'Chaîne · Présélection' };
@@ -22,6 +23,7 @@ export default async function PagePreselection() {
       <div>
         <h1 className="text-2xl font-bold">Présélection</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">Des designs de site à l’infini, six par page, montrés chaque fois avec un cabinet différent (et ses images). Touchez ceux qui vous plaisent, puis « Garder ». Objectif : {CHAINE.objectifCandidats} candidats.</p>
+        <div className="mt-2"><BoutonImporterClaude /></div>
       </div>
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {!profils.length ? <p className="text-sm">Aucun profil de démonstration pour cette profession.</p> : (

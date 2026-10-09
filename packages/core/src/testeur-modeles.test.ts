@@ -90,6 +90,14 @@ test('contraste réel : fond uni, texte clair, texte sur photo', () => {
   const transparent = analyserFondTexte(image(() => [255, 255, 255]), L, H, { x: 0, y: 0, l: L, h: H }, [0, 0, 0], 0.3)!;
   assert.ok(transparent.retenu < 3);
   assert.equal(analyserFondTexte(blanc, L, H, { x: 0, y: 0, l: 1, h: 1 }, [0, 0, 0]), null);
+  // Police fine (déliés d'une serif, mono) : lettres d'un pixel bordées d'anticrénelage gris entre le texte et le fond ; le fond reste
+  // uni et le contraste est celui du texte (faux positif des canons du 2026-10-09 : « 1,35:1 (fond varié) » sur du texte lisible)
+  const fine = analyserFondTexte(image((x, y) => (x % 4 === 0 ? [20, 30, 60] : x % 4 === 1 ? [140, 145, 160] : x % 4 === 3 ? [200, 202, 210] : [255, 250, 245])), L, H, { x: 0, y: 0, l: L, h: H }, [20, 30, 60])!;
+  assert.equal(fine.uni, true);
+  assert.ok(fine.retenu > 10, `contraste mesuré ${fine.retenu}`);
+  // Texte blanc à 80 % sur bleu nuit (pied de page) : lettres peintes (206, 207, 211) reconnues, contraste élevé
+  const peint = analyserFondTexte(image((x) => (x % 3 === 0 ? [206, 207, 211] : [10, 15, 34])), L, H, { x: 0, y: 0, l: L, h: H }, [255, 255, 255], 0.8)!;
+  assert.ok(peint.retenu > 10, `contraste mesuré ${peint.retenu}`);
 });
 
 test('chevauchements : textes qui se recouvrent, parents exclus', () => {

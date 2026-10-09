@@ -376,28 +376,74 @@ export function analyserFondTexte(
   const pas = Math.max(1, Math.floor(Math.sqrt(((x1 - x0) * (y1 - y0)) / 6000)));
   const bacs = new Map<number, { n: number; s: [number, number, number] }>();
   const fonds: Rvb[] = [];
+  // Couleur PEINTE des lettres : texte semi-transparent (rgba, ex. blanc à 80 % sur bleu nuit) mélangé au fond le plus fréquent de
+  // la boîte ; sans ce mélange, les lettres ne sont pas reconnues et comptent comme « fond » (faux contraste de 1,5:1)
+  let peint: readonly number[] = texte;
+  if (alpha < 1) {
+    const compte = new Map<number, { n: number; s: [number, number, number] }>();
+    for (let y = y0; y < y1; y += 2) for (let x = x0; x < x1; x += 2) {
+      const i = (y * largeur + x) * 4;
+      const k = ((pixels[i] >> 4) << 8) | ((pixels[i + 1] >> 4) << 4) | (pixels[i + 2] >> 4);
+      const b = compte.get(k);
+      if (b) { b.n++; b.s[0] += pixels[i]; b.s[1] += pixels[i + 1]; b.s[2] += pixels[i + 2]; } else compte.set(k, { n: 1, s: [pixels[i], pixels[i + 1], pixels[i + 2]] });
+    }
+    let m = { n: 0, s: [0, 0, 0] as [number, number, number] };
+    for (const b of compte.values()) if (b.n > m.n) m = b;
+    if (m.n) peint = melangerAlpha(texte, alpha, [m.s[0] / m.n, m.s[1] / m.n, m.s[2] / m.n]);
+  }
+  const dTexte = (i: number) => Math.abs(pixels[i] - peint[0]) + Math.abs(pixels[i + 1] - peint[1]) + Math.abs(pixels[i + 2] - peint[2]);
+  // Pixel voisin (± 1 px) d'une lettre : bord anticrénelé possible (trié plus bas, une fois le fond dominant connu)
+  const bordLettre = (x: number, y: number) => {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const xx = x + dx, yy = y + dy;
+      if ((dx || dy) && xx >= 0 && yy >= 0 && xx < largeur && yy < hauteur && dTexte((yy * largeur + xx) * 4) < 60) return true;
+    }
+    return false;
+  };
+  const bords: boolean[] = [];
+  // Fond dominant cherché d'abord parmi les pixels qui ne bordent aucune lettre (l'anticrénelage ne peut pas l'emporter)
+  const bacsNets = new Map<number, { n: number; s: [number, number, number] }>();
   for (let y = y0; y < y1; y += pas) {
     for (let x = x0; x < x1; x += pas) {
       const i = (y * largeur + x) * 4;
       const p: Rvb = [pixels[i], pixels[i + 1], pixels[i + 2]];
-      const d = Math.abs(p[0] - texte[0]) + Math.abs(p[1] - texte[1]) + Math.abs(p[2] - texte[2]);
-      if (d < 60) continue; // lettre
+      if (dTexte(i) < 60) continue; // lettre
       fonds.push(p);
+      const bord = bordLettre(x, y);
+      bords.push(bord);
       const cle = ((p[0] >> 4) << 8) | ((p[1] >> 4) << 4) | (p[2] >> 4);
-      const b = bacs.get(cle);
-      if (b) { b.n++; b.s[0] += p[0]; b.s[1] += p[1]; b.s[2] += p[2]; } else bacs.set(cle, { n: 1, s: [p[0], p[1], p[2]] });
+      for (const m of bord ? [bacs] : [bacs, bacsNets]) {
+        const b = m.get(cle);
+        if (b) { b.n++; b.s[0] += p[0]; b.s[1] += p[1]; b.s[2] += p[2]; } else m.set(cle, { n: 1, s: [p[0], p[1], p[2]] });
+      }
     }
   }
   if (fonds.length < 4) return null;
   let max = { n: 0, s: [0, 0, 0] as [number, number, number] };
-  for (const b of bacs.values()) if (b.n > max.n) max = b;
+  let cleMax = -1;
+  const nNets = [...bacsNets.values()].reduce((t, b) => t + b.n, 0);
+  for (const [k, b] of nNets >= 4 ? bacsNets : bacs) if (b.n > max.n) { max = b; cleMax = k; }
   const fond: Rvb = [max.s[0] / max.n, max.s[1] / max.n, max.s[2] / max.n];
   const couleur = melangerAlpha(texte, alpha, fond);
   const ratio = ratioContraste(couleur, fond);
-  // Pixels de fond intermédiaires (anticrénelage) : on ne garde, pour le 10e centile, que ceux nettement « fond »
-  const ratios = fonds.map((p) => ratioContraste(melangerAlpha(texte, alpha, p), p)).sort((a, b) => a - b);
+  // Pixels de fond intermédiaires (anticrénelage : voisins d'une lettre ET de couleur entre le texte et le fond dominant, cas des
+  // polices fines, serifs à déliés, petits corps) : écartés du 10e centile et de la mesure d'uniformité ; un vrai fond varié (photo,
+  // dégradé, motif) garde ses pixels.
+  const entre = (p: Rvb) => {
+    const v = [fond[0] - peint[0], fond[1] - peint[1], fond[2] - peint[2]];
+    const n2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+    if (n2 < 1) return false;
+    const t = ((p[0] - peint[0]) * v[0] + (p[1] - peint[1]) * v[1] + (p[2] - peint[2]) * v[2]) / n2;
+    if (t <= 0 || t >= 1) return false;
+    // Anticrénelage en sRGB : courbe, pas tout à fait sur le segment ; tolérance proportionnelle à l'écart texte / fond
+    return Math.hypot(p[0] - peint[0] - t * v[0], p[1] - peint[1] - t * v[1], p[2] - peint[2] - t * v[2]) < Math.max(28, 0.25 * Math.sqrt(n2));
+  };
+  const nets = fonds.filter((p, k) => !(bords[k] && entre(p)));
+  const base = nets.length >= 4 ? nets : fonds;
+  const ratios = base.map((p) => ratioContraste(melangerAlpha(texte, alpha, p), p)).sort((a, b) => a - b);
   const ratioP10 = ratios[Math.floor(ratios.length * 0.1)];
-  const uni = max.n / fonds.length >= 0.6;
+  const dominants = base.filter((p) => (((p[0] >> 4) << 8) | ((p[1] >> 4) << 4) | (p[2] >> 4)) === cleMax).length;
+  const uni = dominants / base.length >= 0.6;
   return { fond, ratio, ratioP10, uni, retenu: uni ? ratio : Math.min(ratio, ratioP10), pixels: fonds.length };
 }
 

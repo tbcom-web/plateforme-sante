@@ -137,6 +137,8 @@ const enPratique = [
   .fiche__materiel { margin-top: 28px; padding-top: 18px; border-top: var(--filet) solid var(--g-ligne); }
   .fiche__materiel ul { margin: 8px 0 0; padding-left: 1.2em; color: var(--g-encre-douce); }
   .fiche__etiquette { font-weight: 700; color: var(--g-accent-texte); }
+  /* Cible tactile ≥ 24 px (WCAG 2.5.8 ; testeur de modèles, canons du 2026-10-09) */
+  .fiche__etiquette a { display: inline-flex; align-items: center; min-height: 24px; }
   .fiche__cote { display: grid; gap: 12px; padding: 26px; border-radius: var(--rayon-carte); background: var(--g-doux); }
   @media (min-width: 960px) { .fiche__cote { position: sticky; top: 110px; } }
   .fiche__lieu { color: var(--g-encre-douce); font-size: 1rem; }

@@ -24,6 +24,11 @@ export `scripts/exporter-retours.mjs`. Tests : `packages/core/src/chaine-modeles
 | 7 | `revalidation` | humain | Seulement ce qui a changé, avant / après ; « Tout revalider » en 1 clic, ou cocher « Pas encore corrigé » pour rouvrir un ticket | Revalidée (1 clic) et testeur au vert → `pret-validation` ; ticket rouvert → `retouche` |
 | 8 | `pret-validation` → `publie` | Paul | Verrous automatiques au vert, tags pré-remplis vérifiés, « Publier pour les praticiens » (publication par profil existante : recette créée ou mise à jour + `recettes_publications`) | Publié. Ensuite, signaler une zone rouvre une retouche SANS dépublier : la nouvelle version n'est publiée qu'après revalidation et nouvelle validation de Paul |
 
+**Propositions de Claude** (2026-10-09) : les designs « canons » de `retours/recettes-proposees.json` (ids `canon-*`, design sans
+images) entrent dans la chaîne par le bouton « Importer les propositions de Claude comme candidats » de la présélection
+(`app/chaine/import-claude.ts`) : fiche SANS profil, `origine: 'claude'`, version 1 = design, tags pré-calculés ; une proposition déjà
+candidate (même clé) est ignorée. Rien n'est validé ni publié : elles passent le tournoi comme les autres.
+
 Le testeur n'intervient **pas** avant la présélection ni pendant le tournoi : la génération garde seulement son filtre léger
 (`filtreLeger` : règles dures d'harmonie, éléments exclus ≤ 2 ★ ou retirés, composition déjà vue, rendu identique à l'œil
 d'après l'empreinte du rendu comme la Dégustation).

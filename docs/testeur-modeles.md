@@ -94,6 +94,10 @@ requêtes tierces bloquées (et notées).
 | Animations | sans mouvement réduit : animations repérées ; avec : aucune ne tourne, chaque élément animé reste visible (image fixe), capture `accueil--image-fixe.png` | majeur |
 | Tiers | toute requête hors du site | majeur |
 
+Contraste (2026-10-09) : les lettres sont reconnues à leur couleur PEINTE (texte rgba mélangé au fond le plus fréquent) et les
+pixels d'anticrénelage (voisins d'une lettre, de couleur entre le texte et le fond dominant) sont écartés du 10e centile ; sans cela,
+les polices fines (Bodoni, mono, condensée) et le texte blanc à 80 % sur fond sombre donnaient de faux « 1,5:1 (fond varié) ».
+
 La performance est mesurée « maison » (même réglage que Lighthouse mobile, appliqué par Chromium) : Lighthouse n'est pas une
 dépendance du dépôt. axe-core est la seule dépendance ajoutée (devDependency de `apps/sites`).
 

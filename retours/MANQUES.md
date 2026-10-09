@@ -70,6 +70,126 @@ avis » → implémentation, ligne dans `retours/CHANGEMENTS.md`, manque retiré
 - **Qui** : intégrateur.
 - **Priorité** : basse
 
+## Passe du 2026-10-09 — ce qui plafonne les modèles « canons » (priorisé)
+
+Passe « modèles canons » (8 designs `canon-D1` à `canon-D8` dans `retours/recettes-proposees.json`, analyse dans
+`docs/analyse-gout-2026-10-09.md`). Mesures : jauge 4-5 ★ (`qualiteComposition`), harmonie (`scoreHarmonie`, poids appris des
+exports), rendus réels (accueil, page sujet, fiche soin, contact, 1440 et 375 px) et testeur (`npm run tester:modele`). Les
+meilleurs designs plafonnent à **72-80 % d'éléments 4-5 ★** : les manques ci-dessous expliquent les 20-28 % restants.
+
+### M10 — Axes typographiques jamais notés à 4-5 ★
+- **Constat** : échelle (modeste 2, spectaculaire 3, affirmée jamais notée), casse (normale 3, majuscules 1, petites capitales
+  jamais), interlettrage (aucune note ; « large » retiré), alignement (gauche 3), surtitre (les 4 à 3 ★) : une seule note chacun.
+  Ces 5 axes sont dans CHAQUE composition : 4 à 5 éléments « jamais notés / 3 ★ » sur 36 dans les 8 canons.
+- **Impact** : aucune composition ne peut dépasser ≈ 86 % de 4-5 ★ ; c'est le premier plafond de la jauge (et du verrou « 100 % »).
+- **Proposition** : une session Dégustation « Détail · typographie » (grilles de 6 déjà prêtes : graisse, casse, interlettrage,
+  échelle) — 5 minutes ; l'atelier montre déjà la direction (graisse « paire » 4,86, serré 4,63, à gauche 4,60, petites capitales 4,25).
+- **Qui** : Paul (notes). **Priorité** : haute.
+
+### M11 — Un seul modèle de structure à 4 ★
+- **Constat** : `modele:technique-precis` 4 (2 notes) ; Élégant et sobre 3 (2 notes) alors que l'atelier le donne à 3,82 (154
+  notes) et que 6 canons sur 8 l'utilisent (meilleur accord avec le trait continu et les serifs).
+- **Impact** : un élément « 3 ★ » d'office dans 6 canons ; la recherche est tirée vers Technique et précis, qui a les défauts de
+  gabarit de M16.
+- **Proposition** : faire noter à nouveau les 4 modèles (tuile « Structures », ou duels) sur des rendus récents.
+- **Qui** : Paul. **Priorité** : haute.
+
+### M12 — Pages sans aucune option 5 ★ (accès, cabinet, page sujet, fiche, questions, article)
+- **Constat** : structures notées : accueil 77 variantes à 5 ★ ; mais Contact et accès max 4 (31 variantes), Le cabinet max 4,
+  page sujet max 4 (colonnes 3), fiche soin : seule « encadré » notée (4), questions 3, article 3 (« je préfère les en-têtes image
+  plein écran »). Sur les planches des canons, ces pages se ressemblent d'un design à l'autre (titre, image, liste à filets).
+- **Impact** : le « cran au-dessus » se joue sur l'accueil seulement ; les pages intérieures restent au niveau 4 ★.
+- **Proposition** (code, gabarits) : article à en-tête image plein écran ; page sujet « une grande illustration + 3 conseils
+  illustrés » (pictos 5 ★) ; cabinet : galerie grande + équipe en portraits (portraits 5 ★ à valider) ; contact : carte et
+  horaires côte à côte avec le plan en grand ; puis notation par page (« Donner mon avis », onglet par page).
+- **Qui** : intégrateur, puis Paul. **Priorité** : haute.
+
+### M13 — Héros sport en illustration
+- **Constat** : `heros:sport:releve` 2,5 (refusé par le testeur), pédagogique 3, trait 3,5 (« jambes trop droites ») ; coureur
+  animé 2,5. Deux canons compatibles sport (D2, D8) : D2 ne peut pas être rendu en sport (relevé refusé), D8 passe par le trait (3,5 ★).
+- **Impact** : aucun design sport ne dépasse 3,5 ★ sur l'image principale ; c'est pourtant le thème le plus demandé.
+- **Proposition** : foulée au trait retravaillée (M4) ; à défaut, un héros « objet » : la chaussure de running EZ-HTML (4,89 ★,
+  10 notes, à retravailler) avec la semelle en coupe, une seule idée. Pour les photos : importer en banque intégrée 3 des 15 photos
+  libres de sport à 5 ★ (elles ne sont pas dans les kits rendus hors ligne, M15).
+- **Qui** : illustrateur-medical / graphiste-sante ; Paul pour l'import. **Priorité** : haute.
+
+### M14 — Héros diabète sans instrument (rappel M1, toujours ouvert)
+- **Constat** : en trait et en pédagogique, l'image du diabète montre le monofilament tenu (3 ★ ; « il faut rassurer ») ; le relevé
+  est interdit pour le diabète. Contournement de D7 : premier écran typographique (aucune image en accueil) ; D4 (Canard, bento) garde l'image du monofilament.
+- **Impact** : D4 et D7 plafonnés pour le diabète ; diabète = seul thème sans héros ≥ 4 ★ autorisé.
+- **Proposition** : en cours chez l'agent de l'univers diabète (dessins) : pieds au trait et miroir d'auto-examen, chaussette sans
+  couture ; garder le monofilament pour la fiche de soin.
+- **Qui** : illustrateur-medical (en cours). **Priorité** : haute.
+
+### M15 — Kits photos des rendus hors ligne : photos refusées tirées
+- **Constat** : `habillerPourProfil` avec `poids: null` (testeur, rendus de démonstration) tire les photos du kit SANS les notes :
+  diabète, senior, ongles, semelles reçoivent `cabinet-lumiere` (retirée), `soins-pied-tenu`, `soins-bandages` (1 ★) ; sport reçoit
+  `sport-foulee-herbe` (1 ★). Les 23 photos libres à ≥ 4,5 ★ (15 sport, 5 diabète) ne sont pas dans la banque intégrée.
+- **Impact** : aucun design « Photos » ne peut passer le testeur (images refusées = bloquant) ; style Photos écarté des canons.
+- **Proposition** (code) : passer `notesPhotos` / exclusions (`clesImagesExclues`) au contexte du testeur et de `rendu-profil` ;
+  copier en banque intégrée 3 photos ≥ 4,5 ★ par thème (sport, diabète) avec leurs crédits.
+- **Qui** : intégrateur ; Paul (choix des photos). **Priorité** : haute.
+
+### M16 — Gabarit « Technique et précis » : défauts techniques au testeur
+- **Constat** (testeur, D2) : débordement à 768 et 1024 px du statut du praticien en mono avec des noms longs
+  (`.praticien__statut.mono`, `components/gabarit/Praticiens.astro`), ancre `/le-cabinet#praticiens` absente, chevauchement de mots
+  liés sur la page d'accès à 1024-1440 px, barre d'actions qui masque le pied de page.
+- **Impact** : tout design sur Technique et précis (structure la mieux notée, 4,05 à l'atelier) part rouge au testeur.
+- **Proposition** : `overflow-wrap: anywhere` + `min-width: 0` sur le statut ; `id="praticiens"` sur la section équipe du cabinet ;
+  revoir la grille de la page d'accès ; marge basse du pied de page = hauteur de la barre.
+- **Qui** : intégrateur. **Priorité** : haute.
+
+### M17 — Premiers écrans « libres » du lot 2 sans illustration
+- **Constat** : Tache qui se transforme (5 ★), Papier découpé, Bandes ondulantes, Voûte en aplat, Forme qui respire : formes
+  abstraites seules (rendus D6) ; Paul : « Super mais il faudrait ajouter une photo / illustration devant les aplats ».
+- **Impact** : ces 5 premiers écrans très bien notés ne peuvent pas porter un design (aucune image du sujet) ; les canons se
+  partagent 6 premiers écrans (notice, bento, maille, figure, carte, typographique) et deux se répètent.
+- **Proposition** (code) : poser le héros du kit devant les aplats (même hôte que « maille ») ; puis validation du lot 2.
+- **Qui** : intégrateur, puis Paul (validation). **Priorité** : moyenne.
+
+### M18 — Alternatives conformes aux témoignages et aux chiffres
+- **Constat** : témoignages et bandeaux de chiffres sont interdits (déontologie) ; les accueils des canons enchaînent premier écran,
+  sujets, soins, accès : la page manque d'un bloc de réassurance.
+- **Proposition** (textes des packs uniquement) : « Comment se déroule la séance » en 4 étapes illustrées (déjà dans la fiche bilan),
+  « Hygiène et matériel » avec les pictos 5 ★ (autoclave A/C) et le matériel 5 ★, galerie « le cabinet en images » (grande, 4,5 ★),
+  bloc équipe en portraits 5 ★ (à valider).
+- **Qui** : intégrateur (sections), Paul (validation des portraits). **Priorité** : moyenne.
+
+### M19 — Jeux de détails tous ≤ 3 ★
+- **Constat** : `details:jeu` : classique-sobre 3, éditorial-chic 3, magazine 3, technique-net 2,5, doux-rond 2, graphique-pop 1.
+  Les canons utilisent donc « ceux du modèle » + éléments un à un (coins, boutons, badges, citations 4-4,5 ★).
+- **Impact** : pas de « famille de détails » cohérente prête. Mesuré : un design **Graphique pop** (Géométrique pop × Pistache, 5 ★ chacun)
+  plafonne à 87-89 d'harmonie sans son jeu de détails (1 ★) : aucune proposition pop parmi les canons. Idem Doux et rond (jeu 2 ★) : D3 tient
+  à 90 seulement avec des éléments un à un.
+- **Proposition** : retoucher les jeux d'après les éléments 4 ★ (coins arrondis, ombre douce, boutons pilule / flèche, citation
+  aplat) et les faire renoter ; retirer graphique-pop.
+- **Qui** : graphiste-sante, Paul. **Priorité** : moyenne.
+
+### M20 — Testeur : faux positifs de contraste sur polices fines et fonds texturés
+- **Constat** : premier passage des canons rouge pour des textes lisibles (« 1,35:1 (fond varié) » sur du blanc sur bleu nuit,
+  « 2,02:1 » sur du gris foncé sur rose pâle) : l'anticrénelage des polices fines (Bodoni, mono, condensée) et les fonds grain /
+  trame / grille comptaient comme « fond » au 10e centile.
+- **Fait dans cette passe** : `analyserFondTexte` écarte les pixels de bord de lettre situés entre la couleur du texte et le fond
+  dominant, fond dominant cherché hors bords (test ajouté). Les canons n'utilisent plus de fond texturé (grain / trame / grille).
+- **Reste** : rejouer le testeur sur les modèles déjà testés ; garder un œil sur les fonds à motif sombre (pois du relevé). Autre mesure
+  à corriger : les résumés de soins tronqués (« … ») des cartes à 360-375 px sont comptés comme « chevauchements » (boîte du texte coupé
+  plus haute que sa partie visible ; vignettes regardées, rien de visible) : ce sont les seuls majeurs de D5, D6, D7, D8 (orange).
+- **Fait aussi** : cibles tactiles ≥ 24 px pour le lien d'auteur des articles, le téléphone / e-mail du pied de page et l'étiquette
+  « Matériel du cabinet » des fiches (les polices à petit œil — Bodoni, Ronde — les rendaient « majeures »).
+- **Qui** : intégrateur. **Priorité** : moyenne.
+
+### M21 — Harmonie sous-estime la combinaison n° 1 de Paul
+- **Constat** : Enfants · Simple et proche · Lavande & citron · Illustrations douces (5,0 ★, 4 notes, la meilleure combinaison) est
+  plafonnée à **89** (accord Simple et proche × Pédagogique fixé à 0,7) : elle ne peut pas passer le seuil de 90 des canons.
+- **Proposition** : faire apprendre l'accord structure × style des notes de l'atelier (au lieu de la table fixe `ACCORD_STRUCTURE_STYLE`).
+- **Qui** : intégrateur. **Priorité** : basse.
+
+### M22 — Animations d'en-tête et portraits notés 5 ★ mais « à valider »
+- **Constat** : 8 animations d'en-tête et 5 présentations de portraits à 5 ★ restent « à valider » (lot 2) : les canons les évitent
+  (aucun élément à valider), donc pas de mouvement en accueil ni de portraits riches.
+- **Proposition** : une passe de validation de Paul (statut « Validé » dans /admin/illustrations), à la main.
+- **Qui** : Paul. **Priorité** : basse.
+
 <!-- couverture-auto -->
 ## Couverture par sujet (export automatique)
 

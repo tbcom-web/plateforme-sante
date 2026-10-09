@@ -1,7 +1,7 @@
 {
   "version": 1,
   "profil": "2026-10-07.v2",
-  "le": "2026-10-07",
+  "le": "2026-10-09",
   "methode": "Recherche locale depuis les propositions du générateur : une dimension changée à la fois, rendu réel (accueil, page sujet, accès en 1440 et 375 px), jugement avec la grille du juge du goût. Scores prédits : seule la note de Paul compte.",
   "propositions": [
     {
@@ -640,6 +640,940 @@
         "senior-3-acces-375.png"
       ],
       "essais": 15
+    },
+    {
+      "id": "canon-D1",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "ongles"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "ongles",
+          "senior"
+        ]
+      },
+      "rang": 1,
+      "nom": "Revue corail · Corail & bleu nuit · Revue à empattements",
+      "famille": "editorial-chic",
+      "harmonie": 93,
+      "jauge": "29/37 éléments 4-5 ★ · 4 jamais notés · 4 à 3 ★",
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "corail-nuit",
+        "couleur": "#2a3f7a",
+        "police": "revue",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": null,
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {
+            "accueil": "notice",
+            "actualites": "cartes",
+            "article": "lecture",
+            "contact": "barre",
+            "faq": "colonnes",
+            "fiche": "pratique-haut",
+            "galerie": "grande",
+            "horaires": "bandeau",
+            "infos": "volets",
+            "pied": "centre",
+            "portraits": "sobre",
+            "praticiens": "cartes",
+            "sections": "revelation",
+            "soins": "grille",
+            "soins-forme": "carres",
+            "sujets": "liste",
+            "theme": "heros",
+            "visuel-heros": "auto"
+          }
+        },
+        "effets": "editorial",
+        "traitement": {
+          "id": "modele",
+          "grain": false
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "petites-capitales",
+          "graisse": "paire",
+          "interlettrage": "normal",
+          "accent": "aucun",
+          "alignement": "centre",
+          "surtitre": "filet"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "filet",
+          "souligne": "aucun",
+          "citation": "guillemets",
+          "badge": "contour",
+          "fond": "aucun",
+          "coins": "arrondis",
+          "ombres": "gabarit",
+          "boutons": "fleche",
+          "densite": "aeree",
+          "cadre": "aucun"
+        },
+        "menu": {
+          "ordinateur": "souligne",
+          "mobile": "panneau",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "ongles",
+        "senior"
+      ],
+      "testeur": {
+        "verdict": "vert",
+        "jeux": {
+          "ongles": "vert",
+          "senior": "vert"
+        },
+        "explication": "vert sur les 2 jeux (0 bloquant, 0 majeur).",
+        "le": "2026-10-09"
+      },
+      "score": 4.4,
+      "raisons": [
+        "Couleurs : Corail & bleu nuit, la palette la mieux notée (5 ★, 4 notes ; 4,15 à l'atelier) : bleu nuit pour le texte et les boutons, corail pour la trame et l'accent.",
+        "Police et structure : Revue à empattements (4 ★) sur Élégant et sobre avec le trait continu : l'accord éditorial le plus aimé (structure × style = 1 dans le moteur).",
+        "Premier écran : Notice tramée (4,67 ★, 3 notes) : UNE grande illustration dans un cadre décalé, pas deux images côte à côte.",
+        "Cran au-dessus de la barre : même sobriété que « Seniors · Lavande & citron » mais une serif de revue et une palette 5 ★ ; harmonie 93 (barre 85), 29/37 éléments 4-5 ★ (barre 20/32)."
+      ],
+      "reserves": [
+        "Le trait d'union de « pédicurie-podologie » est très court dans la Bodoni des titres.",
+        "Élégant et sobre est noté 3 ★ comme modèle (M11).",
+        "Petits textes en serif fine (« via Doctolib ») : à surveiller sur téléphone."
+      ],
+      "captures": [
+        "planche-D1.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 9
+    },
+    {
+      "id": "canon-D2",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "semelles"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "semelles",
+          "cabinet"
+        ]
+      },
+      "rang": 2,
+      "nom": "Atelier relevé · Cobalt & abricot · Grotesque affirmée",
+      "famille": "technique-net",
+      "harmonie": 90,
+      "jauge": "18/24 éléments 4-5 ★ · 2 jamais notés · 4 à 3 ★",
+      "composition": {
+        "structure": "technique-precis",
+        "gamme": "cobalt-abricot",
+        "couleur": "#2449d8",
+        "police": "grotesque",
+        "visuels": {
+          "style": "releve",
+          "herosSujet": null,
+          "animation": "semelle"
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "soins-puis-infos",
+          "variantes": {
+            "accueil": "bento",
+            "article": "lecture",
+            "portraits": "sobre",
+            "sections": "revelation",
+            "soins-forme": "carres",
+            "sujets": "cartes",
+            "theme": "heros",
+            "visuel-heros": "auto"
+          }
+        },
+        "effets": "sobre",
+        "traitement": {
+          "id": "modele",
+          "grain": false
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "normale",
+          "graisse": "paire",
+          "interlettrage": "serre",
+          "accent": "aucun",
+          "alignement": "gauche",
+          "surtitre": "simple"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "aucun",
+          "souligne": "aucun",
+          "citation": "gabarit",
+          "badge": "contour",
+          "fond": "aucun",
+          "coins": "gabarit",
+          "ombres": "gabarit",
+          "boutons": "fleche",
+          "densite": "compacte",
+          "cadre": "aucun"
+        },
+        "menu": {
+          "ordinateur": "souligne",
+          "mobile": "gabarit",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "semelles",
+        "generaliste"
+      ],
+      "testeur": {
+        "verdict": "rouge",
+        "jeux": {
+          "semelles": "orange",
+          "generaliste": "rouge"
+        },
+        "explication": "rouge (jeu cabinet seul aux noms longs) : défauts du GABARIT Technique et précis, pas du design (M16) : statut du praticien en mono qui déborde à 768-1024 px, ancre #praticiens absente, recouvrements sur la page d’accès, barre d’actions sur le pied de page ; jeu semelles orange.",
+        "le": "2026-10-09"
+      },
+      "score": 4.3,
+      "raisons": [
+        "Structure Technique et précis (le seul modèle à 4 ★, 4,05 à l'atelier) × Relevé (4,24, 41 notes) × Cobalt & abricot (paire 4,30 ; gamme 5 ★).",
+        "Premier écran Bento (5 ★) : le relevé des semelles en grand sur bleu nuit, les repères (sujets, adresse) en cartes à côté.",
+        "Grotesque affirmée (4 ★) plutôt que la mono : titres nets sans effet « machine à écrire ».",
+        "Cran au-dessus : la combinaison préférée « Semelles · Technique et précis · relevé » (4,5 ★) avec la palette 5 ★ et un premier écran 5 ★."
+      ],
+      "reserves": [
+        "Pas pour le sport : héros relevé du sport à 2,5 ★ (M13).",
+        "Gabarit Technique : défauts techniques au testeur (M16).",
+        "Avec un seul sujet, la carte « Sujets du cabinet » paraît vide."
+      ],
+      "captures": [
+        "planche-D2.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 6
+    },
+    {
+      "id": "canon-D3",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "enfant"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "enfant",
+          "senior"
+        ]
+      },
+      "rang": 3,
+      "nom": "Menthe ronde · Menthe glacée & prune · Ronde pédagogique",
+      "famille": "doux-rond",
+      "harmonie": 90,
+      "jauge": "26/36 éléments 4-5 ★ · 4 jamais notés · 6 à 3 ★",
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "menthe",
+        "couleur": "#0f7563",
+        "police": "ronde",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": null,
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "equipe-haut",
+          "variantes": {
+            "accueil": "maille",
+            "actualites": "cartes",
+            "article": "lecture",
+            "contact": "barre",
+            "entete-anim": "aucune",
+            "faq": "accordeon",
+            "galerie": "mosaique",
+            "horaires": "bandeau",
+            "infos": "volets",
+            "portraits": "sobre",
+            "praticiens": "cartes",
+            "sections": "revelation",
+            "soins": "grille",
+            "soins-forme": "pilules",
+            "sujets": "rangees",
+            "theme": "liste",
+            "visuel-heros": "illustration"
+          }
+        },
+        "effets": "doux",
+        "traitement": {
+          "id": "chaud-doux",
+          "grain": false
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "normale",
+          "graisse": "paire",
+          "interlettrage": "serre",
+          "accent": "aucun",
+          "alignement": "centre",
+          "surtitre": "pastille"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "aucun",
+          "souligne": "aucun",
+          "citation": "aplat",
+          "badge": "plein",
+          "fond": "aucun",
+          "coins": "tres-arrondis",
+          "ombres": "douce",
+          "boutons": "pilule",
+          "densite": "aeree",
+          "cadre": "aucun"
+        },
+        "menu": {
+          "ordinateur": "gabarit",
+          "mobile": "panneau",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "enfant",
+        "senior"
+      ],
+      "testeur": {
+        "verdict": "vert",
+        "jeux": {
+          "enfant": "vert",
+          "senior": "vert"
+        },
+        "explication": "vert sur les 2 jeux.",
+        "le": "2026-10-09"
+      },
+      "score": 4.3,
+      "raisons": [
+        "Ronde pédagogique (5 ★) et Menthe glacée & prune (4,67 ★) : doux et rassurant, sans enfantillage.",
+        "Trait continu : héros enfant 5 ★ (« J'adore » : pieds d'adulte face aux pieds d'enfant), senior 4,5 ★.",
+        "Premier écran Dégradé maillé (5 ★) : une seule image dans un disque, beaucoup d'air.",
+        "Cran au-dessus de « Petits pas » : même douceur, palette et police mieux notées, harmonie 90 (barre 88) et 26/36 éléments 4-5 ★ (barre 6/15)."
+      ],
+      "reserves": [
+        "Proche de la barre « Seniors · Lavande » par sa construction (disque, maillé).",
+        "Jeu de détails neutre : les détails doux sont posés un à un (M19)."
+      ],
+      "captures": [
+        "planche-D3.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 7
+    },
+    {
+      "id": "canon-D4",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "diabete"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "diabete",
+          "senior"
+        ]
+      },
+      "rang": 4,
+      "nom": "Canard humaniste · Canard · Humaniste chaleureuse",
+      "famille": "classique-sobre",
+      "harmonie": 92,
+      "jauge": "28/38 éléments 4-5 ★ · 4 jamais notés · 6 à 3 ★",
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "canard",
+        "couleur": "#1f6b64",
+        "police": "humaniste",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": null,
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "infos-haut",
+          "variantes": {
+            "accueil": "bento",
+            "actualites": "cartes",
+            "article": "lecture",
+            "contact": "barre",
+            "faq": "accordeon",
+            "galerie": "bande",
+            "horaires": "bandeau",
+            "infos": "volets",
+            "pied": "centre",
+            "portraits": "sobre",
+            "praticiens": "cartes",
+            "sections": "aucune",
+            "soins": "grille",
+            "soins-forme": "arrondies",
+            "sujets": "cartes",
+            "theme": "heros",
+            "visuel-heros": "illustration"
+          }
+        },
+        "effets": "doux",
+        "traitement": {
+          "id": "modele",
+          "grain": false
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "petites-capitales",
+          "graisse": "paire",
+          "interlettrage": "serre",
+          "accent": "aucun",
+          "alignement": "centre",
+          "surtitre": "filet"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "filet",
+          "souligne": "aucun",
+          "citation": "aplat",
+          "badge": "contour",
+          "fond": "aucun",
+          "coins": "arrondis",
+          "ombres": "douce",
+          "boutons": "fleche",
+          "densite": "aeree",
+          "cadre": "aucun"
+        },
+        "menu": {
+          "ordinateur": "souligne",
+          "mobile": "panneau",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "diabete",
+        "senior"
+      ],
+      "testeur": {
+        "verdict": "vert",
+        "jeux": {
+          "diabete": "vert",
+          "senior": "vert"
+        },
+        "explication": "vert sur les 2 jeux.",
+        "le": "2026-10-09"
+      },
+      "score": 3.9,
+      "raisons": [
+        "Canard (paire Élégant et sobre × Canard 4,40) et Humaniste chaleureuse (4,5 à l'atelier) : calme, médical sans froideur, pour le diabète et les seniors.",
+        "Premier écran Bento (5 ★) sur structure éditoriale : image, sujets et adresse lisibles d'un coup d'œil.",
+        "Harmonie 92, 28-29/38 éléments 4-5 ★ ; diabète : pas de rouge, pas de relevé."
+      ],
+      "reserves": [
+        "L'image du diabète reste le monofilament tenu (3 ★ ; M14) : à remplacer dès le nouvel héros.",
+        "Le vert-gris du canard peut paraître éteint (« gris éteint = vieillot »)."
+      ],
+      "captures": [
+        "planche-D4.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 5
+    },
+    {
+      "id": "canon-D5",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "senior"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "senior",
+          "enfant"
+        ]
+      },
+      "rang": 5,
+      "nom": "Lavande lisible · Lavande & citron · Publique lisible",
+      "famille": "classique-sobre",
+      "harmonie": 90,
+      "jauge": "28/38 éléments 4-5 ★ · 4 jamais notés · 6 à 3 ★",
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "lavande",
+        "couleur": "#5a36e0",
+        "police": "publique",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": null,
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "questions-haut",
+          "variantes": {
+            "accueil": "figure",
+            "actualites": "cartes",
+            "article": "lecture",
+            "contact": "barre",
+            "faq": "accordeon",
+            "galerie": "grande",
+            "horaires": "bandeau",
+            "infos": "volets",
+            "pied": "centre",
+            "portraits": "sobre",
+            "praticiens": "cartes",
+            "sections": "aucune",
+            "soins": "grille",
+            "soins-forme": "arrondies",
+            "sujets": "cartes",
+            "theme": "heros",
+            "visuel-heros": "illustration"
+          }
+        },
+        "effets": "doux",
+        "traitement": {
+          "id": "voile",
+          "grain": true
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "petites-capitales",
+          "graisse": "paire",
+          "interlettrage": "serre",
+          "accent": "aucun",
+          "alignement": "centre",
+          "surtitre": "simple"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "filet",
+          "souligne": "surligneur",
+          "citation": "filet",
+          "badge": "gabarit",
+          "fond": "aucun",
+          "coins": "arrondis",
+          "ombres": "douce",
+          "boutons": "fleche",
+          "densite": "aeree",
+          "cadre": "aucun"
+        },
+        "menu": {
+          "ordinateur": "souligne",
+          "mobile": "panneau",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "senior",
+        "enfant"
+      ],
+      "testeur": {
+        "verdict": "orange",
+        "jeux": {
+          "senior": "orange",
+          "enfant": "orange"
+        },
+        "explication": "orange : 1 recouvrement mesuré sur un résumé de soin tronqué à 360 px (texte coupé par « … », rien de visible à l’œil) et « via Doctolib » à 4,40:1 (seuil 4,5) dans l’en-tête d’une fiche.",
+        "le": "2026-10-09"
+      },
+      "score": 4.2,
+      "raisons": [
+        "Lavande & citron (Enfants × Lavande 4,67 ; Seniors 4,0) avec Publique lisible (4 ★, 4,25 à l'atelier) : la lisibilité d'abord pour les seniors.",
+        "Premier écran Figure (4 ★) : titre fort, une seule illustration au trait (senior 4,5 ★, enfant 5 ★).",
+        "Cran au-dessus de la barre « Seniors · Lavande & citron » : même palette aimée, mais structure éditoriale au lieu de Clair et pratique (3,49 à l'atelier, « trop fiche Doctolib »), harmonie 90 (85)."
+      ],
+      "reserves": [
+        "Le plus proche de la barre : à départager en tournoi plutôt qu'à garder tous les deux."
+      ],
+      "captures": [
+        "planche-D5.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 7
+    },
+    {
+      "id": "canon-D6",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "enfant"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "enfant",
+          "senior"
+        ]
+      },
+      "rang": 6,
+      "nom": "Tournesol · Tournesol & ardoise · Moderne amicale",
+      "famille": "nature-chaleureuse",
+      "harmonie": 90,
+      "jauge": "24/37 éléments 4-5 ★ · 5 jamais notés · 8 à 3 ★",
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "tournesol",
+        "couleur": "#3e5568",
+        "police": "jakarta",
+        "visuels": {
+          "style": "pedagogique",
+          "herosSujet": null,
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {
+            "accueil": "carte",
+            "actualites": "cartes",
+            "article": "standard",
+            "contact": "barre",
+            "faq": "accordeon",
+            "galerie": "bande",
+            "horaires": "bandeau",
+            "infos": "volets",
+            "portraits": "sobre",
+            "praticiens": "cartes",
+            "sections": "aucune",
+            "soins": "grille",
+            "soins-forme": "arrondies",
+            "sujets": "rangees",
+            "theme": "rangees",
+            "visuel-heros": "photo"
+          }
+        },
+        "effets": "doux",
+        "traitement": {
+          "id": "modele",
+          "grain": false
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "petites-capitales",
+          "graisse": "paire",
+          "interlettrage": "normal",
+          "accent": "couleur",
+          "alignement": "gauche",
+          "surtitre": "simple"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "aucun",
+          "souligne": "surligneur",
+          "citation": "aplat",
+          "badge": "gabarit",
+          "fond": "aucun",
+          "coins": "arrondis",
+          "ombres": "douce",
+          "boutons": "fleche",
+          "densite": "aeree",
+          "cadre": "arrondi"
+        },
+        "menu": {
+          "ordinateur": "gabarit",
+          "mobile": "panneau",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "enfant",
+        "senior"
+      ],
+      "testeur": {
+        "verdict": "orange",
+        "jeux": {
+          "enfant": "orange",
+          "senior": "orange"
+        },
+        "explication": "orange : recouvrements mesurés sur les résumés tronqués des cartes de soins à 360-375 px (boîte du texte coupé plus haute que la partie visible ; vignettes regardées : aucun chevauchement visible).",
+        "le": "2026-10-09"
+      },
+      "score": 4.2,
+      "raisons": [
+        "Tournesol (4,33 ★) × Moderne amicale (combinaison 5 ★ ; la police de la recette 5 ★ « Seniors ») : chaleureux et franc.",
+        "Illustrations pédagogiques : enfant 5 ★, senior 5 ★.",
+        "Premier écran Carte (4 ★) : l'image du sujet dans un médaillon sur aplat jaune, une seule idée."
+      ],
+      "reserves": [
+        "Premier écran Carte noté 4 ★ seulement (2 notes).",
+        "Jaune très présent sur téléphone : à juger sur la page Contact."
+      ],
+      "captures": [
+        "planche-D6.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 6
+    },
+    {
+      "id": "canon-D7",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "diabete"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "diabete",
+          "ongles"
+        ]
+      },
+      "rang": 7,
+      "nom": "Encre clinique · Encre · Mono technique",
+      "famille": "minimal-clinique",
+      "harmonie": 90,
+      "jauge": "25/36 éléments 4-5 ★ · 4 jamais notés · 7 à 3 ★",
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "encre",
+        "couleur": "#0b1c24",
+        "police": "mono",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": null,
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {
+            "accueil": "typographique",
+            "actualites": "cartes",
+            "article": "lecture",
+            "contact": "barre",
+            "entete-anim": "aucune",
+            "faq": "accordeon",
+            "fiche": "pratique-haut",
+            "galerie": "grande",
+            "horaires": "bandeau",
+            "infos": "notice",
+            "pied": "centre",
+            "portraits": "sobre",
+            "praticiens": "cartes",
+            "sections": "aucune",
+            "soins": "grille",
+            "soins-forme": "carres",
+            "sujets": "liste",
+            "theme": "colonnes",
+            "visuel-heros": "auto"
+          }
+        },
+        "effets": "sobre",
+        "traitement": {
+          "id": "modele",
+          "grain": false
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "petites-capitales",
+          "graisse": "paire",
+          "interlettrage": "normal",
+          "accent": "aucun",
+          "alignement": "gauche",
+          "surtitre": "simple"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "filet",
+          "souligne": "aucun",
+          "citation": "aplat",
+          "badge": "contour",
+          "fond": "aucun",
+          "coins": "gabarit",
+          "ombres": "douce",
+          "boutons": "gabarit",
+          "densite": "aeree",
+          "cadre": "aucun"
+        },
+        "menu": {
+          "ordinateur": "gabarit",
+          "mobile": "panneau",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "diabete",
+        "ongles"
+      ],
+      "testeur": {
+        "verdict": "orange",
+        "jeux": {
+          "diabete": "orange",
+          "ongles": "vert"
+        },
+        "explication": "orange : un résumé tronqué à 360 px (même mesure que D5) et TBT 491 ms à la mesure de performance (machine chargée par d’autres constructions) ; jeu ongles vert.",
+        "le": "2026-10-09"
+      },
+      "score": 3.9,
+      "raisons": [
+        "Premier écran Typographique (5 ★) : aucune image en accueil, donc aucun instrument pour le diabète (« il faut rassurer »).",
+        "Encre (3,96 à l'atelier, Encre × trait 4,33) et Mono technique (4 ★) : sobre, précis, sans ornement.",
+        "Trait continu dans les pages (ongles 4 ★) ; harmonie 90."
+      ],
+      "reserves": [
+        "Le titre en mono peut paraître froid pour le diabète.",
+        "Fond encre très sombre : contraste au testeur à vérifier sur les petits textes."
+      ],
+      "captures": [
+        "planche-D7.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 6
+    },
+    {
+      "id": "canon-D8",
+      "source": "claude",
+      "design": true,
+      "scenario": {
+        "id": "canons-2026-10-09",
+        "libelle": "Modèles canons (designs, images du kit au rendu)",
+        "principaux": [
+          "sport"
+        ],
+        "secondaires": [],
+        "couleurs": [],
+        "sujets": [
+          "sport",
+          "semelles"
+        ]
+      },
+      "rang": 8,
+      "nom": "Magazine condensé · Cobalt & abricot · Condensée affirmée",
+      "famille": "magazine-affirme",
+      "harmonie": 90,
+      "jauge": "25/36 éléments 4-5 ★ · 4 jamais notés · 7 à 3 ★",
+      "composition": {
+        "structure": "elegant-sobre",
+        "gamme": "cobalt-abricot",
+        "couleur": "#2449d8",
+        "police": "condensee",
+        "visuels": {
+          "style": "ligne",
+          "herosSujet": null,
+          "animation": null
+        },
+        "photos": [],
+        "sections": {
+          "ordre": "modele",
+          "variantes": {
+            "accueil": "typographique",
+            "actualites": "cartes",
+            "article": "lecture",
+            "contact": "barre",
+            "faq": "accordeon",
+            "fiche": "pratique-haut",
+            "galerie": "mosaique",
+            "horaires": "tableau",
+            "infos": "notice",
+            "pied": "centre",
+            "portraits": "sobre",
+            "praticiens": "cartes",
+            "sections": "revelation",
+            "soins": "grille",
+            "soins-forme": "carres",
+            "sujets": "cartes",
+            "theme": "heros",
+            "visuel-heros": "auto"
+          }
+        },
+        "effets": "editorial",
+        "traitement": {
+          "id": "modele",
+          "grain": false
+        },
+        "typo": {
+          "echelle": "affirmee",
+          "casse": "petites-capitales",
+          "graisse": "grasse",
+          "interlettrage": "serre",
+          "accent": "aucun",
+          "alignement": "gauche",
+          "surtitre": "numero"
+        },
+        "details": {
+          "jeu": "gabarit",
+          "separateur": "filet",
+          "souligne": "aucun",
+          "citation": "guillemets",
+          "badge": "plein",
+          "fond": "aucun",
+          "coins": "gabarit",
+          "ombres": "gabarit",
+          "boutons": "gabarit",
+          "densite": "aeree",
+          "cadre": "aucun"
+        },
+        "menu": {
+          "ordinateur": "transparente",
+          "mobile": "panneau",
+          "rdv": "gabarit"
+        }
+      },
+      "profilsDeRendu": [
+        "sport-course",
+        "semelles"
+      ],
+      "testeur": {
+        "verdict": "orange",
+        "jeux": {
+          "sport-course": "orange",
+          "semelles": "orange"
+        },
+        "explication": "orange : recouvrements mesurés sur les résumés tronqués des cartes de soins (même mesure que D6).",
+        "le": "2026-10-09"
+      },
+      "score": 4,
+      "raisons": [
+        "Condensée affirmée (4,25 à l'atelier ; combinaison avec Cobalt & abricot 5 ★) : énergie de magazine sportif.",
+        "Premier écran Typographique (5 ★) en grand aplat cobalt : le titre fait l'image, pas de coureur raté en accueil.",
+        "Trait continu dans les pages (chaussure de running, foulée) ; harmonie 90."
+      ],
+      "reserves": [
+        "Héros sport au trait à 3,5 ★ (« jambes trop droites ») sur la page sujet (M13).",
+        "Bleu cobalt plein écran : à confirmer sur ordinateur."
+      ],
+      "captures": [
+        "planche-D8.png",
+        "planche-barre-vs-canons.png"
+      ],
+      "essais": 7
     }
   ]
 }

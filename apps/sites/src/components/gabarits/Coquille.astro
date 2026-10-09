@@ -296,6 +296,8 @@ const principale = actionsContact[0];
   .coquille--village .c-pied a:hover { color: var(--g-accent-texte); }
   .c-pied__liens { gap: 0 !important; }
   .c-pied__liens a { display: inline-flex; align-items: center; min-height: var(--cible-tactile); }
+  /* Téléphone et e-mail du pied : cible tactile ≥ 24 px (testeur de modèles, canons du 2026-10-09) */
+  .c-pied__bloc > p > a { display: inline-flex; align-items: center; min-height: 28px; }
   .c-pied small { font-size: 0.85rem; }
   /* Variantes du pied de page (studio de recettes) : même contenu, mêmes liens */
   .c-pied--centre .c-pied__grille { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 22px; }
