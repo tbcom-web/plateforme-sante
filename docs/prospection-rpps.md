@@ -34,11 +34,12 @@ Autres professions : lancer le workflow à la main avec `professions` = `80,70`,
 
 ## Technique
 
-- `scripts/synchro-rpps.mjs` : téléchargement (environ 230 Mo), lecture du zip en flux sans dépendance, repérage des colonnes par leur nom, écriture par lots dans `prospection_praticiens` (clé `RPPS|SIRET`, ou identifiant de structure, ou adresse), puis datation par l'API Entreprises à environ 6 appels par seconde.
+- `scripts/synchro-rpps.mjs` : lecture en flux de la copie data.gouv.fr du fichier `ps-libreacces-personne-activite.txt` (environ 830 Mo, une minute ; déposée chaque jour par l'ANS). En secours, le zip de l'ANS (environ 230 Mo) est lu sans dépendance. Ensuite : repérage des colonnes par leur nom, écriture par lots dans `prospection_praticiens` (clé `RPPS|SIRET`, ou identifiant de structure, ou adresse), puis datation par l'API Entreprises à environ 6 appels par seconde.
   - Essai local sans écriture : `NODE_EXTRA_CA_CERTS=scripts/certificats/igc-sante-racine.pem node scripts/synchro-rpps.mjs --essai`.
 - **Certificat** : `service.annuaire.sante.fr` présente l'autorité racine **IGC-Santé** de l'ANS, absente des magasins usuels.
   - La racine est dans `scripts/certificats/igc-sante-racine.pem` (AC RACINE IGC-SANTE ELEMENTAIRE, valable jusqu'en 2033, SHA-256 `2D:9E:22:CA:…:96:7F`) et passée par `NODE_EXTRA_CA_CERTS`. La vérification TLS reste active.
-- **Limite de débit** : le serveur de l'ANS répond 429 aux téléchargements rapprochés. Le script réessaie après 1, 2, 4 puis 8 minutes.
+- **Limite de débit** : le serveur de l'ANS répond 429 aux téléchargements rapprochés, d'où la source data.gouv.fr en premier. Pour le zip de secours, le script réessaie après 1, 2, 4 puis 8 minutes.
+- Mesures du 2026-10-09 : 15 059 podologues (18 073 situations d'exercice, dont 17 539 libérales) ; parmi les libérales, 8 213 avec téléphone, 4 897 avec e-mail, **837 seulement avec un SIRET**. La recherche par nom date environ 60 % des autres (25 sur un échantillon de 40).
 - Tables : `prospection_praticiens` (écrite par le script seulement), `prospection_suivi` (statut, note, relance par RPPS, auteur et date posés par la base), `prospection_synchros` (journal). La vue `prospection_liste` réunit les deux premières. Les règles RLS réservent tout à l'admin.
 - Code pur et tests : `packages/core/src/prospection.ts`. Lecture : `apps/admin/src/lib/prospection.ts`. Page et export CSV : `apps/admin/src/app/admin/prospection/`.
 
