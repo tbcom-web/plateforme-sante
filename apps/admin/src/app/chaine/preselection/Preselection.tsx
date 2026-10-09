@@ -9,7 +9,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CHAINE, designDe, elementsComposition, filtreLeger, grilleDirectionsDegustation, profilDemo, serialiserComposition, type PhotoBanque, type PoidsAtelier,
   lireRegistresTirage, type GrilleDegustation,
+  ecranBloque, type EtatPolitique,
 } from '@plateforme/core';
+import { useExpositions } from '@/components/useExpositions';
 import { empreinteIframe } from '../../admin/degustation/Vignettes';
 import ApercuModele, { type RenduChaine } from '../ApercuModele';
 import { apercusMontes } from '@/components/CadreApercu';
@@ -30,6 +32,8 @@ type Props = {
   poids: PoidsAtelier | null;
   photos: PhotoBanque[];
   tranches: { refuses: string[]; favoris: string[]; notes: string[] };
+  /** Politique d'évaluation unique (politique-evaluation.ts) : mémoire commune des écrans, implicites, règles apprises */
+  politique?: EtatPolitique;
 };
 
 export default function Preselection(props: Props) {
@@ -74,6 +78,12 @@ export default function Preselection(props: Props) {
     if (profil) for (const g of grainesPage(graine.current)) void grille(profil, g);
   }, [props.profils, grille]);
 
+  // Politique d'évaluation unique : un design montré récemment (toutes surfaces, 50 écrans / 2 jours) ou vu sans être choisi n'est
+  // pas reproposé, sauf si la page ne peut pas se remplir autrement ; page passée sans choix journalisée (« pas choisi »)
+  const { ctx: politique, montrer } = useExpositions('preselection', props.politique);
+  const refPolitique = useRef(politique);
+  refPolitique.current = politique;
+
   /** Une page de 6 designs, rendue avec un profil de démonstration différent de la page précédente */
   const enCours = useRef(false);
   const generer = useCallback(async (): Promise<Page | null> => {
@@ -85,6 +95,7 @@ export default function Preselection(props: Props) {
       dernierProfil.current = profil.id;
       const ctx = ctxDe(profil);
       const retenues: Carte[] = [];
+      const bloquees: Carte[] = [];
       // Les six grilles possibles de la page sont demandées ensemble (en parallèle dans les workers), lues dans l'ordre
       const attendues = grainesPage(g0).map((g) => grille(profil, g));
       for (let essai = 0; essai < 6 && retenues.length < CHAINE.tailleGrille; essai++) {
@@ -96,11 +107,15 @@ export default function Preselection(props: Props) {
           const cle = p.cle;
           const f = filtreLeger({ cle: p.cle, violationsDures: 0, elements: elementsComposition(p.x, ctx.sujets), exclus: tranches.refuses, dejaVues: vues.current });
           if (!f.garde) continue;
+          const carte: Carte = { cle, nom: `${p.etiquette ?? 'Direction'} ${p.cle.slice(5, 9)}`, design, ingredients: p.ingredients as Record<string, unknown>, profilDemo: profil.id,
+            legende: [p.etiquette, ...(p.mots ?? [])].filter(Boolean).join(' · '), rendue: JSON.parse(serialiserComposition(p.x)), vu: profil.id };
+          if (ecranBloque([p.cle], refPolitique.current)) { bloquees.push(carte); continue; }
           vues.current.add(p.cle);
-          retenues.push({ cle, nom: `${p.etiquette ?? 'Direction'} ${p.cle.slice(5, 9)}`, design, ingredients: p.ingredients as Record<string, unknown>, profilDemo: profil.id,
-            legende: [p.etiquette, ...(p.mots ?? [])].filter(Boolean).join(' · '), rendue: JSON.parse(serialiserComposition(p.x)), vu: profil.id });
+          retenues.push(carte);
         }
       }
+      // Épuisement : la page se complète avec les designs bloqués par la politique (les plus récents en dernier)
+      for (const c of bloquees) { if (retenues.length >= CHAINE.tailleGrille) break; if (vues.current.has(c.cle)) continue; vues.current.add(c.cle); retenues.push(c); }
       return retenues.length >= 2 ? { id: g0, profil: profil.id, propositions: retenues, selection: [], etat: 'ouverte', masquees: [], debut: Date.now() } : null;
     } finally {
       enCours.current = false;
@@ -122,14 +137,19 @@ export default function Preselection(props: Props) {
   }, [pages, appareil]);
 
   const fin = useRef<HTMLDivElement>(null);
+  /** Page passée sans choix : chaque design montré journalisé « pas choisi » (mémoire du navigateur sans la migration 0054) */
+  const journaliserSansChoix = useCallback((p: Page) => {
+    montrer(p.propositions.filter((_, i) => !p.masquees.includes(i)).map((c) => ({ cle: c.cle, resultat: 'pas-choisi' as const })), { journaliser: true });
+  }, [montrer]);
   const suivante = useCallback(async () => {
     if (enCours.current) return;
     for (const p of pages.filter((x) => x.etat === 'ouverte' && x.selection.length)) void garder(p.id);
+    for (const p of pages.filter((x) => x.etat === 'ouverte' && !x.selection.length)) journaliserSansChoix(p);
     // Pages encore ouvertes sans choix : passées tout de suite (comme avant), la nouvelle page arrive quand ses grilles sont prêtes
     setPages((l) => l.map((p) => (p.etat === 'ouverte' && !p.selection.length ? { ...p, etat: 'passee' as const } : p)));
     const n = await generer();
     if (n) setPages((l) => [...l, n].slice(-6));
-  }, [pages, garder, generer]);
+  }, [pages, garder, generer, journaliserSansChoix]);
   useEffect(() => {
     const el = fin.current;
     if (!el) return;
@@ -199,7 +219,7 @@ export default function Preselection(props: Props) {
             {p.etat === 'ouverte' ? (
               <>
                 <button type="button" onClick={() => void garder(p.id)} disabled={!p.selection.length} className={`min-h-11 rounded-lg bg-teal-800 px-4 font-semibold text-white disabled:opacity-50 ${focus}`}>Garder ({p.selection.length})</button>
-                <button type="button" onClick={() => setPages((l) => l.map((x) => (x.id === p.id ? { ...x, etat: 'passee', message: 'Passée' } : x)))} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 ${focus}`}>Aucun ne me plaît</button>
+                <button type="button" onClick={() => { journaliserSansChoix(p); setPages((l) => l.map((x) => (x.id === p.id ? { ...x, etat: 'passee', message: 'Passée' } : x))); }} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 ${focus}`}>Aucun ne me plaît</button>
               </>
             ) : <span role="status" className="text-sm text-neutral-700">{p.message}</span>}
           </div>

@@ -25,7 +25,7 @@ export default async function PagePreselection() {
       </div>
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {!profils.length ? <p className="text-sm">Aucun profil de démonstration pour cette profession.</p> : (
-        <Preselection profils={profils} candidats={candidats} dejaVues={[...chaine.fiches.map((f) => f.cle), ...recentes]} rendu={rendu} poids={gen.poids} photos={gen.photos} tranches={gen.tranches} />
+        <Preselection profils={profils} candidats={candidats} dejaVues={[...chaine.fiches.map((f) => f.cle), ...recentes]} rendu={rendu} poids={gen.poids} photos={gen.photos} tranches={gen.tranches} politique={politique} />
       )}
     </div>
   );

@@ -19,6 +19,7 @@ import { themesActives } from '@/lib/themes';
 import { getTranches, tranchesEnListes } from '@/lib/tranches';
 import { getUnivers } from '@/lib/univers';
 import Degustation from './Degustation';
+import { getEtatPolitique } from '@/lib/politique-evaluation';
 
 export const metadata = { title: 'Super admin · Dégustation' };
 
@@ -97,6 +98,7 @@ export default async function PageDegustation() {
           themesActives={themesActives()}
           poids={poids}
           photos={photos}
+          politique={await getEtatPolitique()}
         />
       )}
     </div>

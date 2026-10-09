@@ -79,9 +79,11 @@ Branchement par surface :
 | Générateur | `getPoidsAtelier` : implicites −0,75 ★, pénalités des règles (cumul plafonné ±1 ★) |
 | Sourcing de photos | contraintes des règles actives (saturation, luminosité, mots interdits) |
 
-Reste à brancher (fichiers en cours de modification par un autre agent au moment du travail) : délai de retour et journal des pages
-sans choix DANS `Degustation.tsx` et `Preselection.tsx` (côté serveur, ces deux surfaces reçoivent déjà les implicites et la présélection
-les compositions récentes).
+Dégustation et présélection, côté navigateur (2026-10-09) : `Degustation.tsx` filtre chaque carte par `carteSelonPolitique`
+(degustation-cartes.ts : note ou duel bloqué passé, propositions bloquées retirées d'une grille, au moins 3, sinon carte passée ; servie
+quand même si rien d'autre ne reste), range les notes rapides par `ordonnerNotesPolitique` (file de la politique) et journalise un écran
+« Passer » (`expositionsCarte` : pas choisi, « celle qui ne va pas », note ignorée) ; `Preselection.tsx` ne repropose pas un design en
+délai ou vu sans être choisi (sauf pour compléter la page) et journalise une page passée sans choix (« pas choisi » pour chaque design).
 
 ## 3. Règles apprises (« Ce que j'ai compris de tes retours »)
 

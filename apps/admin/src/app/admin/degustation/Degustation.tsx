@@ -17,7 +17,9 @@ import {
   type CarteSession, type ChoixGrille, type Duel, type EtatApprentissage, type FormatGrille, type GrilleDegustation, type MarqueImportee, type Medaille, type ModeleManifeste,
   type PhotoBanque, type PoidsAtelier, type PropositionDegustation, type ScenarioRecette, type ScoreBatsClaude, type Univers, type DefiDuJour, type ElementInventaire,
   construireCarte, lireRegistresTirage, outilsCartes, type CarteConstruite, type DonneesCartes,
+  carteSelonPolitique, expositionsCarte, ordonnerNotesPolitique, type EtatPolitique,
 } from '@plateforme/core';
+import { useExpositions } from '@/components/useExpositions';
 import type { PredictionJuge } from '@plateforme/core/juge';
 import type { SoinCatalogue } from '@/lib/sites';
 import { enregistrerDuel } from '../retours/duel/actions';
@@ -51,6 +53,8 @@ type Props = ContexteRendu & {
   predictions: Record<string, PredictionJuge[]>;
   poids: PoidsAtelier | null;
   photos: PhotoBanque[];
+  /** Politique d'évaluation unique (politique-evaluation.ts) : mémoire commune des écrans, implicites, règles apprises */
+  politique?: EtatPolitique;
   proposes: Univers[];
   modeles: { id: string; manifeste: ModeleManifeste }[];
   catalogue: SoinCatalogue[];
@@ -120,6 +124,12 @@ export default function Degustation(props: Props) {
   const donnees = useMemo<DonneesCartes>(() => ({ profils: props.profils, photos: props.photos, poids: props.poids, predictions: props.predictions, familles: props.familles, modeles: props.modeles, tranches: props.tranches }),
     [props.profils, props.photos, props.poids, props.predictions, props.familles, props.modeles, props.tranches]);
   const outils = useMemo(() => outilsCartes(donnees), [donnees]);
+  // Politique d'évaluation unique : délai de retour (50 écrans / 2 jours, toutes surfaces), vus sans être choisis et écartés jamais
+  // reproposés (sauf épuisement), notes rapides dans l'ordre de la file (jamais notés à fort potentiel d'abord)
+  const { ctx: politique, montrer } = useExpositions('degustation', props.politique);
+  const refPolitique = useRef(politique);
+  refPolitique.current = politique;
+  const planifier = useCallback((graine: number) => ordonnerNotesPolitique(planifierSession(props.etat, { graine }), refPolitique.current, { notes: outils.notes, noteJuge: outils.noteJuge }), [props.etat, outils]);
   const familleSessionDe = (c: CarteSession) => (c.kind === 'grille' ? famillesSession.current.get(c.profil) ?? null : null);
   const construire = useCallback((c: CarteSession, graine: number): Courant | null => {
     const x = construireCarte(donnees, c, graine, familleSessionDe(c), outils);
@@ -174,13 +184,19 @@ export default function Degustation(props: Props) {
   const jeton = useRef(0);
   const ouvrir = useCallback(async (s: EtatSession, pos: number) => {
     const j = ++jeton.current;
+    const servir = (i: number, x: CarteConstruite) => { const n = { ...s, position: i }; setSession(n); ecrire(K.session, n); setAttenteCarte(false); setCourant({ ...x, debut: Date.now() } as Courant); prechauffer(s, i + 1); };
+    // Carte bloquée par la politique (élément jugé en délai, vu sans être choisi, écarté) : passée, servie seulement si rien ne reste
+    let repli: { i: number; x: CarteConstruite } | null = null;
     for (let i = pos; i < s.cartes.length; i++) {
       const e = demander(s.cartes[i], graineCarte(s, i));
       if (!e.prete) { setCourant(null); setAttenteCarte(true); prechauffer(s, i + 1); }
-      const x = e.prete ? e.valeur ?? null : await e.promesse;
+      const x0 = e.prete ? e.valeur ?? null : await e.promesse;
       if (j !== jeton.current) return;
-      if (x) { const n = { ...s, position: i }; setSession(n); ecrire(K.session, n); setAttenteCarte(false); setCourant({ ...x, debut: Date.now() } as Courant); prechauffer(s, i + 1); return; }
+      const x = x0 ? carteSelonPolitique(x0, refPolitique.current) : null;
+      if (x0 && !x && !repli) repli = { i, x: x0 };
+      if (x) { servir(i, x); return; }
     }
+    if (repli) { servir(repli.i, repli.x); return; }
     setAttenteCarte(false);
     setSession({ ...s, position: s.cartes.length }); ecrire(K.session, null); setCourant(null); setFin(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -190,19 +206,19 @@ export default function Degustation(props: Props) {
   // au clic sur « Commencer ») : même planification, mêmes graines qu'au clic
   const planPrepare = useRef<{ id: string; cartes: CarteSession[]; etat: unknown } | null>(null);
   useEffect(() => {
-    const p = { id: `s-${Date.now().toString(36)}`, cartes: planifierSession(props.etat, { graine: Date.now() % 100000 }), etat: props.etat };
+    const p = { id: `s-${Date.now().toString(36)}`, cartes: planifier(Date.now() % 100000), etat: props.etat };
     planPrepare.current = p;
     prechauffer({ id: p.id, debut: '', position: 0, cartes: p.cartes }, 0);
-  }, [props.etat, prechauffer]);
+  }, [props.etat, prechauffer, planifier]);
 
   const commencer = useCallback(() => {
     const prepare = planPrepare.current && planPrepare.current.etat === props.etat ? planPrepare.current : null;
     planPrepare.current = null;
     const id = prepare?.id ?? `s-${Date.now().toString(36)}`;
-    const cartes = prepare?.cartes ?? planifierSession(props.etat, { graine: Date.now() % 100000 });
+    const cartes = prepare?.cartes ?? planifier(Date.now() % 100000);
     setSessionDuels([]); setSessionJouees([]); setFin(false); setReprise(null); setRevelation(null);
     ouvrir({ id, debut: new Date().toISOString(), position: 0, cartes }, 0);
-  }, [props.etat, ouvrir]);
+  }, [props.etat, ouvrir, planifier]);
   const reprendre = () => { if (!reprise) return; setReprise(null); setFin(false); ouvrir(reprise, reprise.position); };
 
   const lancerLibre = useCallback((profil: string, format: FormatGrille) => {
@@ -288,6 +304,8 @@ export default function Degustation(props: Props) {
     const accord = courant.pari === null ? null : selection.meilleures.includes(courant.pari);
     const xp = xpCarte('grille', { pire: selection.pire !== null, serie }) + (accord === false ? 0 : 0);
     setSessionDuels((l) => [...l, ...duelsDepuisChoix(choix)]);
+    // Mémoire de la session (la grille elle-même est journalisée dans degustation_choix, relue par la politique)
+    montrer(expositionsCarte(courant as unknown as CarteConstruite, { meilleures: selection.meilleures, pire: selection.pire }));
     if (courant.grille.format === 'directions') { const f = courant.grille.propositions[selection.meilleures[0]]?.nouveau.slice(8); if (f) famillesSession.current.set(courant.profil.id, f as IdFamilleStyle); }
     const j: Jouee = { le: choix.le!, kind: 'grille', xp, profil: courant.profil.id, accordClaude: accord, dureeMs: choix.dureeMs ?? 0, session: session?.id ?? 'libre', enBase: !props.migrationManquante };
     noter(j);
@@ -308,6 +326,7 @@ export default function Degustation(props: Props) {
     const [a, b] = courant.grille.propositions;
     const d = { type: 'theme' as const, scenario: scenarioDuel(courant.profil), aCle: a.cle, bCle: b.cle, aIngredients: a.ingredients, bIngredients: b.ingredients, dimension: courant.grille.dimension, resultat: res, etiquettes: [], appareil: 'ordinateur', prediction: courant.pari };
     setSessionDuels((l) => [...l, { ...d, le: new Date().toISOString() }]);
+    montrer(expositionsCarte(courant as unknown as CarteConstruite, { duel: res }));
     const accord = courant.pari === null || courant.pari === 'egalite' ? null : courant.pari === res;
     const xp = xpCarte('duel', { serie });
     noter({ le: new Date().toISOString(), kind: 'duel', xp, profil: courant.profil.id, accordClaude: accord, dureeMs: Date.now() - courant.debut, session: session?.id ?? 'libre' });
@@ -325,6 +344,7 @@ export default function Degustation(props: Props) {
     const tranche = note === 1 || note === 5;
     const xp = xpCarte('note', { tranche, serie });
     const accord = courant.pari === null ? null : Math.abs(courant.pari - note) <= 1;
+    montrer(expositionsCarte(courant as unknown as CarteConstruite, { note }));
     noter({ le: new Date().toISOString(), kind: 'note', xp, profil: courant.profil?.id ?? null, accordClaude: accord, dureeMs: Date.now() - courant.debut, session: session?.id ?? 'libre', tranche });
     setRevelation({ texte: `${note} ★${tranche ? (note === 5 ? ' : favori, plus redemandé' : ' : refusé, plus jamais montré') : ''}${courant.pari !== null ? ` · Claude prévoyait ${courant.pari} ★` : ''}`, accord, xp });
     setNoteSaisie(null);
@@ -333,6 +353,13 @@ export default function Degustation(props: Props) {
     if (!r.ok) setMessage(r.message);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courant, serie, noter, suivante, session]);
+
+  // Passer : écran SANS choix journalisé comme expositions (pas choisi, « celle qui ne va pas », note ignorée) ; sans la migration
+  // 0054 : mémoire de secours du navigateur (useExpositions)
+  const passer = useCallback(() => {
+    if (courant) montrer(expositionsCarte(courant as unknown as CarteConstruite, courant.kind === 'grille' ? { meilleures: selection.meilleures, pire: selection.pire } : null), { journaliser: true });
+    suivante();
+  }, [courant, selection, montrer, suivante]);
 
   // Annuler : ← retire le dernier choix de la grille
   const annuler = useCallback(() => setSelection((s) => (s.pire !== null && modePire ? { ...s, pire: null } : { ...s, meilleures: s.meilleures.slice(0, -1) })), [modePire]);
@@ -465,12 +492,12 @@ export default function Degustation(props: Props) {
           {attenteCarte && !courant && <p role="status" className="rounded-2xl border border-black/10 bg-white p-6 text-center text-sm text-neutral-700">Préparation de la carte…</p>}
           {courant?.kind === 'grille' && (
             <CarteGrille c={courant} selection={selection} modePire={modePire} rendu={rendu} onToucher={toucher} onSurvol={(i) => { survol.current = i; }} agrandi={agrandi} onAgrandir={setAgrandi}
-              onPire={() => setModePire((m) => !m)} onValider={validerStable} onAnnuler={annuler} onPasser={suivante}
+              onPire={() => setModePire((m) => !m)} onValider={validerStable} onAnnuler={annuler} onPasser={passer}
               autoValider={options.autoValider} onIdentiques={identiques} />
           )}
-          {courant?.kind === 'duel' && <CarteDuel c={courant} rendu={rendu} onChoisir={(r) => void duel(r)} onPasser={suivante} />}
+          {courant?.kind === 'duel' && <CarteDuel c={courant} rendu={rendu} onChoisir={(r) => void duel(r)} onPasser={passer} />}
           {courant?.kind === 'note' && (
-            <CarteNote c={courant} rendu={rendu} rafale={options.rafale} saisie={noteSaisie} onSaisie={setNoteSaisie} onNoter={(n) => void noterVite(n)} onRafale={(v) => majOptions({ rafale: v })} onPasser={suivante} />
+            <CarteNote c={courant} rendu={rendu} rafale={options.rafale} saisie={noteSaisie} onSaisie={setNoteSaisie} onNoter={(n) => void noterVite(n)} onRafale={(v) => majOptions({ rafale: v })} onPasser={passer} />
           )}
         </>
       )}

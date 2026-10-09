@@ -18,6 +18,7 @@ import type { ScenarioRecette } from './simulateur';
 import { modeleIntegre, type ModeleManifeste } from './modeles';
 import { contexteImages, definirContexteImages, type KitCompact } from './contexte-images';
 import { animationsPretesDefinies, definirAnimationsPretes } from './heros-photo-variantes';
+import { ecranBloque, fileEvaluation, type ContextePolitique, type ResultatExposition } from './politique-evaluation';
 
 export type ProfilCarte = { id: string; nom: string; sujets: string[]; scenario: ScenarioRecette };
 type Prediction = { cle: string; note: number; le: string };
@@ -115,4 +116,51 @@ export function lireRegistresTirage(): RegistresTirage {
 export function poserRegistresTirage(r: RegistresTirage) {
   definirContexteImages({ exclues: r.images.exclues, kits: r.images.kits, vivier: r.images.vivier });
   definirAnimationsPretes(r.animationsPretes);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Politique d'évaluation (politique-evaluation.ts) dans la Dégustation : délai de retour, file priorisée, expositions
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Clé jugée d'une proposition : la composition pour une grille « Directions », l'élément nouveau sinon */
+export const cleJugeeProposition = (format: string, p: Pick<PropositionDegustation, 'cle' | 'nouveau'>) => (format === 'directions' ? p.cle : p.nouveau || p.cle);
+
+/**
+ * Carte selon la politique : note ou duel dont l'élément jugé est bloqué (en délai de retour, vu sans être choisi, exclu, écarté
+ * par une règle) → null (la page passe à la suivante, et la sert quand même si rien d'autre ne reste) ; grille : propositions
+ * bloquées retirées (au moins 3 gardées, pari du juge oublié), sinon null. Sans mémoire ni règle : la carte telle quelle.
+ */
+export function carteSelonPolitique<P extends ProfilCarte>(x: CarteConstruite<P>, ctx: ContextePolitique): CarteConstruite<P> | null {
+  if (x.kind === 'note') return ecranBloque([x.cle], ctx) ? null : x;
+  if (x.kind === 'duel') return ecranBloque(x.grille.propositions.map((p) => p.nouveau), ctx) ? null : x;
+  const props = x.grille.propositions;
+  const libres = props.filter((p) => !ecranBloque([cleJugeeProposition(x.grille.format, p)], ctx));
+  if (libres.length === props.length) return x;
+  if (libres.length < Math.min(3, props.length)) return null;
+  return { ...x, grille: { ...x.grille, propositions: libres }, pari: null };
+}
+
+/**
+ * Cartes « note rapide » de la session dans l'ordre de la file de la politique (jamais notés à fort potentiel d'abord, puis jamais
+ * notés, départages ; éléments en délai après) aux places des notes du plan ; implicites, exclus et écartés retirés ; éléments déjà
+ * connus ou tranchés gardés en dernier. Les autres cartes ne bougent pas.
+ */
+export function ordonnerNotesPolitique(cartes: readonly CarteSession[], ctx: ContextePolitique & { fortPotentiel?: ReadonlySet<string> }, o: { notes: Readonly<Record<string, { m: number; n: number }>>; noteJuge: (cle: string) => number | null }): CarteSession[] {
+  const notes = cartes.filter((c): c is Extract<CarteSession, { kind: 'note' }> => c.kind === 'note');
+  if (!notes.length) return [...cartes];
+  const cands = notes.map((c) => ({ cle: c.cle, carte: c, note: o.notes[c.cle]?.m ?? null, n: o.notes[c.cle]?.n, potentiel: ctx.fortPotentiel?.has(c.cle) ? 5 : o.noteJuge(c.cle) }));
+  const f = fileEvaluation(cands, ctx);
+  const ordre = [...f.file, ...f.enDelai].map((e) => e.x.carte).concat(f.exclus.filter((e) => e.raison === 'connu' || e.raison === 'tranche').map((e) => e.x.carte));
+  let k = 0;
+  return cartes.flatMap((c): CarteSession[] => (c.kind !== 'note' ? [c] : k < ordre.length ? [ordre[k++]] : []));
+}
+
+/** Expositions d'une carte jouée ou passée : choisies, pas choisies, « celle qui ne va pas », note, ou carte ignorée */
+export function expositionsCarte(x: CarteConstruite, r: { meilleures?: readonly number[]; pire?: number | null; duel?: 'a' | 'b' | null; note?: number | null } | null): { cle: string; resultat: ResultatExposition; note?: number | null }[] {
+  if (x.kind === 'note') return [r?.note ? { cle: x.cle, resultat: 'note', note: r.note } : { cle: x.cle, resultat: 'ignore' }];
+  return x.grille.propositions.map((p, i) => {
+    const cle = cleJugeeProposition(x.grille.format, p);
+    if (x.kind === 'duel') return { cle, resultat: r?.duel ? (r.duel === (i === 0 ? 'a' : 'b') ? 'choisi' : 'pas-choisi') : 'pas-choisi' };
+    return { cle, resultat: r?.pire === i ? 'pire' : r?.meilleures?.includes(i) ? 'choisi' : 'pas-choisi' };
+  });
 }

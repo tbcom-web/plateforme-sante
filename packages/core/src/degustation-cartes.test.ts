@@ -55,3 +55,28 @@ test('construireCarte (copie sérialisée, registres reposés) = construireCarte
   assert.deepEqual([...animationsPretesDefinies()], []);
   viderContexteImages();
 });
+
+test('politique dans la Dégustation : délai de retour, file priorisée, expositions', async () => {
+  const { carteSelonPolitique, ordonnerNotesPolitique, expositionsCarte } = await import('./degustation-cartes');
+  const { memoireExpositions } = await import('./politique-evaluation');
+  const prop = (cle: string, nouveau: string) => ({ cle, nouveau, ingredients: {} });
+  const profil = { id: 'p', nom: 'P', sujets: ['sport'], scenario: { principaux: ['sport'], secondaires: [], couleurs: [], soins: [] } };
+  const grille = { kind: 'grille' as const, carte: { id: 'g', kind: 'grille' as const, format: 'palettes-polices' as const, dimension: 'couleurs', profil: 'p', valeur: 1 }, profil, pari: 2,
+    grille: { format: 'palettes-polices' as const, dimension: 'couleurs', base: null, propositions: ['a', 'b', 'c', 'd'].map((x) => prop(`compo:${x}`, `gamme:${x}`)) } };
+  // Sans mémoire : la carte telle quelle (rendu identique)
+  assert.equal(carteSelonPolitique(grille, {}), grille);
+  const memoire = memoireExpositions([{ cle: 'gamme:b', surface: 'tuiles', ecran: 'e1', le: '2026-10-09T08:00:00Z', resultat: 'note' }]);
+  const x = carteSelonPolitique(grille, { memoire, maintenant: '2026-10-09T09:00:00Z' });
+  assert.deepEqual(x && x.kind === 'grille' ? x.grille.propositions.map((p) => p.nouveau) : null, ['gamme:a', 'gamme:c', 'gamme:d']);
+  assert.equal(x?.pari, null);
+  const memoire3 = memoireExpositions(['a', 'b'].map((k, i) => ({ cle: `gamme:${k}`, surface: 'tuiles' as const, ecran: `e${i}`, le: '2026-10-09T08:00:00Z', resultat: 'note' as const })));
+  assert.equal(carteSelonPolitique(grille, { memoire: memoire3, maintenant: '2026-10-09T09:00:00Z' }), null, 'moins de 3 libres');
+  // File : jamais noté à fort potentiel d'abord, implicite retiré, autres cartes à leur place
+  const n = (cle: string) => ({ id: cle, kind: 'note' as const, cle, profil: null, valeur: 1 });
+  const cartes = [grille.carte, n('photo:connue'), n('photo:jamais'), grille.carte, n('photo:fort'), n('photo:vue')];
+  const o = ordonnerNotesPolitique(cartes, { implicites: new Set(['photo:vue']), fortPotentiel: new Set(['photo:fort']) }, { notes: { 'photo:connue': { m: 4, n: 3 } }, noteJuge: () => null });
+  assert.deepEqual(o.map((c) => (c.kind === 'note' ? c.cle : c.kind)), ['grille', 'photo:fort', 'photo:jamais', 'grille', 'photo:connue']);
+  // Expositions
+  assert.deepEqual(expositionsCarte(grille, { meilleures: [0, 2], pire: 3 }).map((e) => e.resultat), ['choisi', 'pas-choisi', 'choisi', 'pire']);
+  assert.deepEqual(expositionsCarte(grille, null).map((e) => `${e.cle}=${e.resultat}`), ['gamme:a=pas-choisi', 'gamme:b=pas-choisi', 'gamme:c=pas-choisi', 'gamme:d=pas-choisi']);
+});
