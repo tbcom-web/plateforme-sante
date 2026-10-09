@@ -61,7 +61,14 @@ pré-remplis automatiquement par `tagsAutomatiques`, Paul les corrige et clique 
 Paul crée lui-même les comptes ; `/chaine/equipe` attribue le rôle à un compte existant (aucun compte n'est créé par la
 plateforme). Règles en base (0050) : `est_contributeur()`, `est_validateur()` ; publier (`statut = 'publie'`), version publiée,
 tags vérifiés, recette liée et repêchage : validateur seulement (déclencheur `modeles_fiches_proteger`) ; versions jamais
-modifiées (seule la colonne `test` se met à jour) ; journaux de votes et d'avis en ajout seul ; aucune suppression. Un
+modifiées ; journaux de votes et d'avis en ajout seul ; aucune suppression.
+
+**Sécurité du verrou « testeur au vert »** : le résultat de test (`modeles_versions.test`) n'est écrit que par le validateur ou le
+service (CI du testeur, clé secrète) : politique d'écriture réservée au validateur et déclencheur `modeles_versions_proteger` (une
+version créée par un contributeur ne peut pas arriver avec un test rempli). Les tickets d'origine « testeur » ne sont créés,
+fermés ni modifiés que par le validateur ou le service (déclencheur `modeles_tickets_proteger`) : un contributeur peut seulement
+les marquer « corrigé » ou les rouvrir ; la fermeture vient du re-check. Conséquence : l'import des résultats du dépôt par
+l'automate ne s'applique que lorsque le validateur ouvre la chaîne, ou quand la CI écrit directement en base. Un
 contributeur qui se connecte arrive sur `/chaine` ; il n'a pas accès au super admin.
 
 ## Ce qui est automatique

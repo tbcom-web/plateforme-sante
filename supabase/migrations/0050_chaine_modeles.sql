@@ -8,9 +8,13 @@
 --   chaîne, version courante, version PUBLIÉE (reste en ligne pendant une retouche), tags, rang au tournoi, recette liée (publication
 --   par profil, recettes_publications de 0043). Statut « publie », version publiée et tags vérifiés : validateur seulement (déclencheur) ;
 -- - modeles_versions : composition de chaque version (jamais modifiée), journal des corrections (« corrigé : ticket #12 — … »),
---   résultat du testeur automatique (colonne `test`, format ResultatTestModele ; seule colonne modifiable) ;
+--   résultat du testeur automatique (colonne `test`, format ResultatTestModele ; seule colonne modifiable). SÉCURITÉ : le résultat
+--   de test n'est écrit QUE par le validateur ou le service (CI du testeur) — un contributeur ne peut ni le modifier ni créer une
+--   version avec un test déjà rempli (sinon il lèverait seul le verrou « testeur au vert ») ;
 -- - modeles_tickets : page, appareil, zone, élément, étiquette, commentaire, auteur, origine humain / testeur, statut, version
---   d'ouverture et de correction ; numéro lisible unique par modèle ;
+--   d'ouverture et de correction ; numéro lisible unique par modèle. SÉCURITÉ : un ticket d'origine « testeur » n'est créé, fermé
+--   (ferme / sans-objet) ni modifié dans son contenu que par le validateur ou le service (re-check) ; un contributeur peut seulement
+--   le marquer « corrige » (retouche appliquée) ou le rouvrir ;
 -- - modeles_votes : duels du tournoi, multi-votants ; poids posé par le serveur (validateur ×2) ;
 -- - modeles_revues : avis « Rien à signaler » par page × appareil, et revalidation d'une version en 1 clic (page nulle) ;
 -- - degustation_choix : les contributeurs peuvent y AJOUTER leurs choix de présélection (même moteur de points que la Dégustation).
@@ -49,6 +53,19 @@ as $$
     select 1 from public.profiles where id = auth.uid() and (role = 'admin' or role_equipe = 'validateur')
   );
 $$;
+
+-- Écriture « machine » ou validateur : rôle de base service_role / postgres (CI, clé secrète, console SQL) ou validateur connecté.
+-- current_user vaut le rôle d'appel (authenticated / anon pour l'API) dans les fonctions SANS security definer.
+create or replace function public.ecriture_testeur_permise()
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select current_user not in ('authenticated', 'anon') or public.est_validateur();
+$$;
+revoke all on function public.ecriture_testeur_permise() from public, anon;
+grant execute on function public.ecriture_testeur_permise() to authenticated, service_role;
 
 revoke all on function public.est_contributeur() from public, anon;
 revoke all on function public.est_validateur() from public, anon;
@@ -166,12 +183,37 @@ drop policy if exists "modeles_versions : lecture équipe" on public.modeles_ver
 drop policy if exists "modeles_versions : ajout équipe" on public.modeles_versions;
 drop policy if exists "modeles_versions : résultat du testeur" on public.modeles_versions;
 create policy "modeles_versions : lecture équipe" on public.modeles_versions for select to authenticated using (public.est_contributeur());
-create policy "modeles_versions : ajout équipe" on public.modeles_versions for insert to authenticated with check (public.est_contributeur());
-create policy "modeles_versions : résultat du testeur" on public.modeles_versions for update to authenticated using (public.est_contributeur()) with check (public.est_contributeur());
+-- Nouvelle version (retouche, relance) : sans résultat de test, sauf validateur
+create policy "modeles_versions : ajout équipe" on public.modeles_versions for insert to authenticated
+  with check (public.est_contributeur() and (test is null or public.est_validateur()));
+-- Résultat du testeur : validateur seulement par l'API (le service_role contourne la RLS : CI du testeur)
+create policy "modeles_versions : résultat du testeur" on public.modeles_versions for update to authenticated
+  using (public.est_validateur()) with check (public.est_validateur());
 revoke all on public.modeles_versions from anon, authenticated;
 grant select, insert on public.modeles_versions to authenticated;
--- Une version ne change plus : seule la colonne du résultat de test se met à jour
+-- Une version ne change plus : seule la colonne du résultat de test se met à jour (validateur : politique ci-dessus)
 grant update (test) on public.modeles_versions to authenticated;
+
+-- Garde en profondeur (toutes origines, y compris une future politique trop large) : test écrit par le validateur ou le service seulement
+create or replace function public.modeles_versions_proteger()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if tg_op = 'INSERT' then
+    if new.test is not null and not public.ecriture_testeur_permise() then
+      raise exception 'Le résultat du testeur est écrit par le testeur (service) ou le validateur';
+    end if;
+  elsif new.test is distinct from old.test and not public.ecriture_testeur_permise() then
+    raise exception 'Le résultat du testeur est écrit par le testeur (service) ou le validateur';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists modeles_versions_proteger on public.modeles_versions;
+create trigger modeles_versions_proteger before insert or update on public.modeles_versions
+  for each row execute function public.modeles_versions_proteger();
 grant select, insert, update, delete on public.modeles_versions to service_role;
 
 -- ---------------------------------------------------------------------------------------------------------------
@@ -212,7 +254,21 @@ begin
     new.modele := old.modele; new.numero := old.numero; new.origine := old.origine; new.auteur := old.auteur;
     new.page := old.page; new.appareil := old.appareil; new.version_ouverture := old.version_ouverture; new.created_at := old.created_at;
     new.updated_at := now();
-  elsif new.origine = 'humain' then
+    -- Ticket technique : seul le re-check (service) ou le validateur le ferme ou en change le contenu ;
+    -- un contributeur peut seulement le marquer corrigé (retouche appliquée) ou le rouvrir
+    if old.origine = 'testeur' and not public.ecriture_testeur_permise() then
+      if new.statut in ('ferme', 'sans-objet') and new.statut is distinct from old.statut then
+        raise exception 'Un ticket technique est fermé par le re-check du testeur ou le validateur';
+      end if;
+      new.etiquette := old.etiquette; new.commentaire := old.commentaire; new.zone := old.zone; new.element := old.element;
+      new.gravite := old.gravite; new.controle := old.controle;
+    end if;
+  elsif new.origine = 'testeur' then
+    if not public.ecriture_testeur_permise() then
+      raise exception 'Un ticket technique est créé par le testeur (service) ou le validateur';
+    end if;
+    new.auteur := null;
+  else
     new.auteur := auth.uid();
   end if;
   return new;

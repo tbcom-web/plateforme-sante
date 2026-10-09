@@ -12,7 +12,9 @@ import { createClient } from '@/lib/supabase/server';
 // CHAÎNE DE PRODUCTION DES MODÈLES côté serveur (migration 0050, packages/core/src/chaine-modeles.ts, docs/chaine-modeles.md) :
 // - rôles : getEquipier (rôle effectif : super admin = validateur), exigerContributeur, exigerValidateur ;
 // - lecture de la chaîne (fiches, versions, tickets, votes, avis) avec la session de la personne (RLS équipe) ;
-// - faireTournerChaine : ce qui tourne tout seul, à chaque ouverture du tableau ou après une action : résultats du testeur
+// - faireTournerChaine : ce qui tourne tout seul, à chaque ouverture du tableau ou après une action. Écritures « testeur » (résultat
+//   de test, tickets techniques, fermeture au vert) : la base ne les accepte que du validateur ou du service (0050) ; ouvert par
+//   un contributeur, ces écritures échouent sans bruit et attendent le passage du validateur ou l'écriture directe de la CI. Résultats du testeur
 //   (retours/tests-modeles.json du dépôt ou colonne modeles_versions.test) → tickets techniques ; retouches de Claude
 //   (retours/retouches-modeles.json) → nouvelles versions ; puis l'automate (fin des tournois, entrée dans la boucle, passages
 //   d'étape). Aucune publication ici : publier reste un geste du validateur.

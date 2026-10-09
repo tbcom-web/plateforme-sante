@@ -162,7 +162,8 @@ export async function revalider(modele: string, rouvrir: number[] = []): Promise
   if (!f) return { ok: false, message: 'Modèle introuvable.' };
   const ok = rouvrir.filter((n) => Number.isInteger(n) && n > 0);
   if (ok.length) await supabase.from('modeles_tickets').update({ statut: 'ouvert', version_correction: null }).eq('modele', modele).eq('statut', 'corrige').in('numero', ok);
-  let q = supabase.from('modeles_tickets').update({ statut: 'ferme' }).eq('modele', modele).eq('statut', 'corrige');
+  // Tickets HUMAINS corrigés seulement : un ticket technique est refermé par le re-check du testeur (règle de 0050)
+  let q = supabase.from('modeles_tickets').update({ statut: 'ferme' }).eq('modele', modele).eq('statut', 'corrige').eq('origine', 'humain');
   if (ok.length) q = q.not('numero', 'in', `(${ok.join(',')})`);
   await q;
   const { error } = await supabase.from('modeles_revues').insert({ modele, version: f.version_courante, page: null, appareil: null, verdict: 'revalide', auteur: moi.id });
