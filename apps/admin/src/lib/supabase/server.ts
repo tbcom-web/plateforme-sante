@@ -9,7 +9,12 @@ const DELAI_SUPABASE_MS = 20_000;
 const fetchBorne: typeof fetch = (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
   if (init?.signal || url.includes('/storage/v1/')) return fetch(input, init);
-  return fetch(input, { ...init, signal: AbortSignal.timeout(DELAI_SUPABASE_MS) });
+  // abort() simple (AbortError) et non AbortSignal.timeout (TimeoutError) : postgrest-js retente jusqu'à 3 fois une requête en
+  // erreur réseau SAUF une AbortError ; avec TimeoutError, une table lente coûtait 4 × 20 s (mesuré : Frigo 87 s)
+  const c = new AbortController();
+  const minuteur = setTimeout(() => c.abort(), DELAI_SUPABASE_MS);
+  (minuteur as { unref?: () => void }).unref?.();
+  return fetch(input, { ...init, signal: c.signal });
 };
 
 /** Client Supabase côté serveur, authentifié avec la session du visiteur. */

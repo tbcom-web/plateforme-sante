@@ -50,7 +50,8 @@ export const getDonneesKits = cache(async (): Promise<DonneesKits & { exclues: S
 
 export const getContexteImages = cache(async (praticien = false): Promise<{ exclues: string[]; kits: Record<string, KitCompact>; vivier: Record<string, string[]> }> => {
   try {
-    const [d, dv] = await Promise.all([getDonneesKits(), getDonneesVisuels()]);
+    // Lectures en parallèle (2026-10-09) : le kit démo n'attend plus les kits et les visuels
+    const [d, dv, demos] = await Promise.all([getDonneesKits(), getDonneesVisuels(), getImagesDemo()]);
     // Vivier curé 4-5 ★ par sujet (photos importées, meilleures d'abord) : tirages de photos et part du style « Photos »
     const vivier = Object.fromEntries(SUJETS_KITS.map((s) => [s, vivierCure(s, d).filter((v) => v.importee && (v.note ?? 0) >= 4).map((v) => v.p.url)]));
     // Kits multi-visuels (kits-visuels.ts) : dessin par soin et animation d'en-tête du sujet, ajoutés au kit photo ; praticiens
@@ -62,7 +63,6 @@ export const getContexteImages = cache(async (praticien = false): Promise<{ excl
     }
     // Kit DÉMO de chaque profession (kit-demo.ts, clé demo:<profession>) : aperçus seulement (ApercuTheme, planches de portraits),
     // jamais lu par les packs, les jeux ni les recettes ; praticiens : parcours d'inscription avec le bandeau « Photos d'exemple »
-    const demos = await getImagesDemo();
     for (const p of professionsActives()) {
       const k = composerKitDemo(demos.images, { profession: p.id, exclues: demos.exclues });
       if (k) kits[cleKitDemo(p.id)] = kitDemoCompact(k);
