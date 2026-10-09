@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { avecSujets, estCleAsset, photosDuJeu, SUJETS_VISUELS, surchargesDepuisLignes, type SurchargesSujets, poidsAssets, jeuPhotosDepuisLigne, type LigneAppriseAsset, type PhotoDeJeu, type PoidsAssets } from '@plateforme/core';
 import { getCreditsImages } from '@/lib/sources-photos';
 import { createClient } from '@/lib/supabase/server';
+import { colonneAbsente } from '@/lib/erreurs-supabase';
 
 // Notes des assets (migration 0027) : journal lu par le super admin (/admin/retours, /admin/illustrations), poids appris
 // (assets_notes_apprentissage : clé, note, étiquettes, statuts — ni commentaire ni auteur) pour tout compte connecté.
@@ -17,7 +18,7 @@ async function getNotesAssetsSansMemo(): Promise<{ notes: NoteAssetAdmin[]; migr
   const lire = (colonnes: string) => supabase.from('assets_notes').select(colonnes).order('created_at', { ascending: false }).limit(20000);
   // Remarques distinctes (0028) ; sans la migration 0028, lecture sans ces colonnes (l'instantané « apercu » n'est lu qu'à la demande)
   let { data, error } = await lire('id, cle_asset, note, etiquettes, commentaire, positif, negatif, empreinte, created_at');
-  if (error) ({ data, error } = await lire('id, cle_asset, note, etiquettes, commentaire, empreinte, created_at'));
+  if (colonneAbsente(error)) ({ data, error } = await lire('id, cle_asset, note, etiquettes, commentaire, empreinte, created_at'));
   if (error) return { notes: [], migrationManquante: true };
   return {
     notes: ((data ?? []) as unknown as Ligne[]).map((l) => ({

@@ -6,6 +6,7 @@ import {
   type EntreeBanquePhotos, type ModeleManifeste, type NoteRecette, type PhotoBanque, type Recette, type RetourMobile,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { colonneAbsente } from '@/lib/erreurs-supabase';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getHashtagsAssets } from '@/lib/hashtags';
 
@@ -97,8 +98,8 @@ async function lirePhotosLibres(supabase: Awaited<ReturnType<typeof createClient
   try {
     // Requête d'origine (0028) : indice d'activité des photos (une photo de tennis taguée seulement « sport »)
     let { data, error } = await lire('id, source, id_source, sujet, statut, chemin, url, apercu_url, requete');
-    if (error) ({ data, error } = await lire('id, source, id_source, sujet, statut, chemin, url, apercu_url'));
-    if (error) ({ data, error } = await lire('id, source, id_source, sujet, statut, chemin, url'));
+    if (colonneAbsente(error)) ({ data, error } = await lire('id, source, id_source, sujet, statut, chemin, url, apercu_url'));
+    if (colonneAbsente(error)) ({ data, error } = await lire('id, source, id_source, sujet, statut, chemin, url'));
     return { data: error ? null : (data as unknown as LigneLibre[]) };
   } catch {
     return { data: null };

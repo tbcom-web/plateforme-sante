@@ -1,7 +1,8 @@
 import 'server-only';
 import { cache } from 'react';
 import { COLONNES_INGREDIENTS_LEGERS, duelDepuisLigne, duelsPourApprentissage, ligneDuelLegere, type Duel } from '@plateforme/core';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
+import { memoParSignature } from '@/lib/memo-journal';
 import { getDuelsDegustation, professionDegustation } from '@/lib/degustation';
 import { getExclusionsProfession } from '@/lib/professions-ingredients';
 
@@ -72,12 +73,17 @@ async function getDuelsAllegesSansMemo(): Promise<{ duels: DuelAdmin[]; migratio
     return { duels: [], migrationManquante: true };
   }
 }
-export const getDuelsAlleges = cache(getDuelsAllegesSansMemo);
+// Mémorisé entre requêtes tant que la table `duels` ne change pas (memo-journal.ts, 2026-10-09)
+export const getDuelsAlleges = cache(async () => memoParSignature('duels-alleges', (await getUser().catch(() => null))?.id, ['duels'], getDuelsAllegesSansMemo));
 
 async function getDuelsApprentissageSansMemo(): Promise<Duel[]> {
   try {
     const supabase = await createClient();
-    const [{ data, error }, grilles, p] = await Promise.all([supabase.rpc('duels_apprentissage', { p_limite: 20000 }), getDuelsDegustation(), professionDegustation()]);
+    // Lecture d'apprentissage (≈ 6 Mo) mémorisée entre requêtes tant que la table `duels` ne change pas (memo-journal.ts)
+    const lireRpc = async () => { const r = await supabase.rpc('duels_apprentissage', { p_limite: 20000 }); if (r.error) throw r.error; return r.data as unknown; };
+    const utilisateur = (await getUser().catch(() => null))?.id;
+    const [rpc, grilles, p] = await Promise.all([memoParSignature('duels-apprentissage', utilisateur, ['duels'], lireRpc).then((data) => ({ data, error: null }), (error) => ({ data: null, error })), getDuelsDegustation(), professionDegustation()]);
+    const { data, error } = rpc;
     const tous = error || !Array.isArray(data) ? [] : (data as Record<string, unknown>[]).map(duelDepuisLigne).filter((d): d is Duel => d !== null);
     // Goût de la profession choisie + transversal (éléments d'une autre profession : seulement s'ils sont aussi pour elle)
     const horsProfession = tous.some((d) => (d.profession || p.parDefaut) !== p.id) ? new Set(await getExclusionsProfession(p.id).catch(() => [] as string[])) : new Set<string>();

@@ -6,6 +6,7 @@ import { getLignesAssetsApprentissage, getNotationsApprentissage } from '@/lib/n
 import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
+import { colonneAbsente } from '@/lib/erreurs-supabase';
 import { getPoidsAssets } from '@/lib/assets-notes';
 import { getRenfortsPolitique } from '@/lib/politique-evaluation';
 
@@ -24,7 +25,7 @@ async function getNotesAtelierSansMemo(): Promise<{ notes: NoteAtelierAdmin[]; m
   const lire = (colonnes: string) => supabase.from('atelier_notes').select(colonnes).order('created_at', { ascending: false }).limit(5000);
   // Remarques « ce qui va bien / ce qui ne va pas » (0028) ; sans la migration 0028, lecture sans ces colonnes
   let { data, error } = await lire('id, cle_combinaison, ingredients, note, etiquettes, commentaire, positif, negatif, created_at');
-  if (error) ({ data, error } = await lire('id, cle_combinaison, ingredients, note, etiquettes, commentaire, created_at'));
+  if (colonneAbsente(error)) ({ data, error } = await lire('id, cle_combinaison, ingredients, note, etiquettes, commentaire, created_at'));
   if (error) return { notes: [], migrationManquante: true };
   const notes = ((data ?? []) as unknown as Ligne[])
     .filter((l) => l.ingredients && typeof l.ingredients === 'object')

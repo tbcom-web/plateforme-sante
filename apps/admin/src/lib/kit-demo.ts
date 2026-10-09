@@ -5,6 +5,7 @@ import {
 } from '@plateforme/core';
 import { PROFESSION_PAR_DEFAUT } from '@plateforme/core/professions';
 import { createClient } from '@/lib/supabase/server';
+import { colonneAbsente } from '@/lib/erreurs-supabase';
 import { getLignesAssetsApprentissage } from '@/lib/notation-recettes';
 
 // KIT DÉMO côté serveur (packages/core/src/kit-demo.ts) : images générées « Démo uniquement » (photos_libres, source « ia », dossier
@@ -21,7 +22,7 @@ export const getImagesDemo = cache(async (): Promise<{ images: ImageDemo[]; excl
     const lire = (colonnes: string) => supabase.from('photos_libres').select(colonnes).eq('source', 'ia').like('chemin', 'banque/ia/demo-%').order('created_at', { ascending: false }).limit(500);
     let { data, error } = await lire('url, chemin, statut, ia_emplacement, ia_lot, created_at');
     let migration0048 = true;
-    if (error) { migration0048 = false; ({ data, error } = await lire('url, chemin, statut, created_at')); }
+    if (colonneAbsente(error)) { migration0048 = false; ({ data, error } = await lire('url, chemin, statut, created_at')); }
     if (error || !Array.isArray(data)) return { images: [], exclues: new Set(), migration0048 };
     const lignesNotes = await getLignesAssetsApprentissage();
     const notes = notesPhotos(lignesNotes);

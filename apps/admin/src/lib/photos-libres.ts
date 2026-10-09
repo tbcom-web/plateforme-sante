@@ -6,6 +6,7 @@ import {
   type TracabilitePhoto,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { colonneAbsente } from '@/lib/erreurs-supabase';
 
 // Appels aux API Pexels et Pixabay (serveur seulement). Clés : variables d'environnement Vercel PEXELS_API_KEY et
 // PIXABAY_API_KEY, jamais exposées au navigateur (pas de préfixe NEXT_PUBLIC_, aucune adresse contenant la clé renvoyée).
@@ -182,8 +183,8 @@ async function getPhotosLibresSansMemo(): Promise<{ photos: PhotoLibre[]; migrat
   // Colonnes des images générées (0040), sinon celles de l'import différé (0031), sinon celles de 0028
   let { data, error } = await lire(COLONNES_0040);
   let migration0040 = false, migration0031 = false;
-  if (error) { migration0040 = true; ({ data, error } = await lire(COLONNES_PHOTOS_LIBRES)); }
-  if (error) { migration0031 = true; ({ data, error } = await lire(COLONNES_0028)); }
+  if (colonneAbsente(error)) { migration0040 = true; ({ data, error } = await lire(COLONNES_PHOTOS_LIBRES)); }
+  if (colonneAbsente(error)) { migration0031 = true; ({ data, error } = await lire(COLONNES_0028)); }
   if (error) return { photos: [], migrationManquante: true, migration0031, migration0040 };
   return { photos: ((data ?? []) as unknown as LignePhotoLibre[]).map(photoLibreDepuisLigne), migrationManquante: false, migration0031, migration0040 };
 }
