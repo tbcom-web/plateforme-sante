@@ -5,6 +5,8 @@
 // Z (ou Ctrl+Z) annule la dernière décision. Contenus des packs : texte rendu dans un cadre de téléphone, sources en marge,
 // avertissements du contrôle, « À retravailler » avec commentaire (touche T). Lots de nouveautés : « Tout accepter / Tout refuser »
 // (confirmation). Filtres par source et par type (Visuels · Icônes · Animations · Mises en page · Contenus).
+// Séries de l'agent (sourcing-photos.ts, 0053) : planche, signature, aperçu appliqué ; « Accepter la série / la sélection » importe
+// les photos une à une (progression), « Autre série », « Refuser » ; « Sourcer automatiquement » lance l'agent (un profil ou les trous).
 import '@plateforme/core/dessins.css';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as PE } from 'react';
 import { gamme as gammeParId, htmlContenu, SURFACES_CSS, variablesCharte, variablesGamme, type BlocContenu, type MarqueImportee, type ModeleManifeste, type SourcePhotoLibre, type Univers } from '@plateforme/core';
@@ -14,6 +16,9 @@ import { SaisieHashtags } from '@/components/HashtagsVisuel';
 import type { SoinCatalogue } from '@/lib/sites';
 import { candidatsPhotos } from '../retours/actions-photos';
 import { accepterArrivage, annulerArrivage, deciderLot, refuserArrivage, retravaillerContenu, type Annulation, type Arrivage } from './actions';
+import { accepterPhotoDeSerie, annulerSerie, autreSerie, cloreSerie, sourcerSeries } from './actions-series';
+import SerieArrivage from './SerieArrivage';
+import { itemSerie, type SerieAffichee } from './series';
 import { visuelsNouveautes } from './visuels';
 
 export type ContenuAffiche = {
@@ -31,6 +36,7 @@ export type VisuelArrivage =
   | { kind: 'studio'; cle: string }
   | { kind: 'differe'; cle: string }
   | { kind: 'contenu'; contenu: ContenuAffiche }
+  | { kind: 'serie'; serie: SerieAffichee }
   | { kind: 'aucun' };
 
 export type ItemArrivage = {
@@ -67,16 +73,21 @@ type Props = {
   typeInitial: string | null;
   lotInitial: string | null;
   studio: { proposes: Univers[]; modeles: { id: string; manifeste: ModeleManifeste }[]; catalogue: SoinCatalogue[]; marquesImportees: MarqueImportee[]; themesActives: string[] };
+  /** Profils de la profession pour « Sourcer automatiquement » ; migration 0053 absente */
+  profilsSourcing: { id: string; court: string }[];
+  migrationSeries: boolean;
 };
 
+
 type Geste = 'accepter' | 'refuser' | 'retravailler';
-type Decision = { items: ItemArrivage[]; geste: Geste; annulation: Annulation | undefined; titre: string };
+type AnnulationArrivage = Annulation | { kind: 'serie'; id: string; photos: string[] };
+type Decision = { items: ItemArrivage[]; geste: Geste; annulation: AnnulationArrivage | undefined; titre: string };
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const dateCourte = (d: string | null) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : '');
 const PARTICIPE: Record<Geste, string> = { accepter: 'acceptée', refuser: 'refusée', retravailler: 'à retravailler' };
 
-export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progressions, champs, sujets, sourcesPhotos, frequencesHashtags, sourceInitiale, typeInitial, lotInitial, studio }: Props) {
+export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progressions, champs, sujets, sourcesPhotos, frequencesHashtags, sourceInitiale, typeInitial, lotInitial, studio, profilsSourcing, migrationSeries }: Props) {
   const [items, setItems] = useState<ItemArrivage[]>(initiaux);
   const [faits, setFaits] = useState<Set<string>>(new Set());
   const [historique, setHistorique] = useState<Decision[]>([]);
@@ -114,7 +125,13 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
   const [commentaire, setCommentaire] = useState('');
   const [retravail, setRetravail] = useState(false);
   const champCommentaire = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => { setChoixSujets(courant?.sujets ?? []); setChoixTags(courant?.hashtags ?? []); setNote(null); setCommentaire(''); setRetravail(false); }, [courant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Série de l'agent : sélection (toutes les photos retenues par défaut), hashtags en plus, progression de l'import
+  const [selection, setSelection] = useState<Set<string>>(new Set());
+  const [progression, setProgression] = useState<string | null>(null);
+  useEffect(() => {
+    setChoixSujets(courant?.sujets ?? []); setChoixTags(courant?.hashtags ?? []); setNote(null); setCommentaire(''); setRetravail(false);
+    setSelection(new Set(courant?.visuel.kind === 'serie' ? courant.visuel.serie.photos.map((p) => p.cle) : []));
+  }, [courant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (retravail) champCommentaire.current?.focus(); }, [retravail]);
 
   const noter = (d: Decision, ok: boolean, texte: string) => {
@@ -124,8 +141,45 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
     setHistorique((h) => [...h, d].slice(-30));
   };
 
+  /** Série : chaque photo sélectionnée est gardée puis importée (une requête par photo, progression affichée), puis la série est close */
+  const deciderSerie = useCallback(async (geste: 'accepter' | 'refuser' | 'remplacer') => {
+    if (!courant || occupe || courant.visuel.kind !== 'serie') return;
+    const serie = courant.visuel.serie;
+    setOccupe(true);
+    if (geste === 'refuser') {
+      const r = await cloreSerie(serie.id, 'refusee').catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.' }));
+      setOccupe(false);
+      noter({ items: [courant], geste: 'refuser', annulation: r.ok ? { kind: 'serie', id: serie.id, photos: [] } : undefined, titre: serie.titre }, r.ok, r.message);
+      return;
+    }
+    if (geste === 'remplacer') {
+      setProgression('Recherche d’une autre série…');
+      const r = await autreSerie(serie.id).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.', series: [] as SerieAffichee[] }));
+      setProgression(null);
+      setOccupe(false);
+      if (r.series.length) setItems((l) => { const i = l.findIndex((x) => x.id === courant.id); const n = [...l]; n.splice(i + 1, 0, ...r.series.map(itemSerie)); return n; });
+      noter({ items: [courant], geste: 'refuser', annulation: { kind: 'serie', id: serie.id, photos: [] }, titre: serie.titre }, true, r.message);
+      return;
+    }
+    const cles = serie.photos.map((p) => p.cle).filter((c) => selection.has(c));
+    if (!cles.length) { setOccupe(false); setMessage({ ok: false, texte: 'Sélectionnez au moins une photo de la série.' }); return; }
+    const ok: string[] = [], ids: string[] = [], echecs: string[] = [];
+    for (const [i, c] of cles.entries()) {
+      setProgression(`Import ${i + 1}/${cles.length}…`);
+      const r: { ok: boolean; message: string; id?: string } = await accepterPhotoDeSerie(serie.id, c, choixTags).catch(() => ({ ok: false, message: 'Connexion perdue.' }));
+      if (r.ok) ok.push(c); else echecs.push(r.message);
+      if (r.id) ids.push(r.id);
+    }
+    setProgression(null);
+    const fin = ok.length ? await cloreSerie(serie.id, 'acceptee', ok).catch(() => ({ ok: false, message: 'Connexion perdue.' })) : { ok: false, message: '' };
+    setOccupe(false);
+    const texte = `${ok.length}/${cles.length} photo${cles.length > 1 ? 's' : ''} importée${ok.length > 1 ? 's' : ''} (WebP, sans métadonnées), au vivier et au kit${echecs.length ? ` ; ${echecs.length} échec${echecs.length > 1 ? 's' : ''} : ${[...new Set(echecs)].join(' ')}` : ''}.`;
+    noter({ items: [courant], geste: 'accepter', annulation: { kind: 'serie', id: serie.id, photos: ids }, titre: serie.titre }, ok.length > 0 && fin.ok, ok.length ? texte : `Aucune photo importée : ${[...new Set(echecs)].join(' ')}`);
+  }, [courant, occupe, selection, choixTags]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const decider = useCallback(async (geste: Geste) => {
     if (!courant || occupe) return;
+    if (courant.arrivage.kind === 'serie') { if (geste !== 'retravailler') void deciderSerie(geste); return; }
     const contenu = courant.arrivage.kind === 'contenu';
     if (geste === 'retravailler') {
       if (!contenu) return;
@@ -140,7 +194,7 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
         : refuserArrivage(a)).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.', annulation: undefined }));
     setOccupe(false);
     noter({ items: [courant], geste, annulation: r.annulation, titre: courant.titre }, r.ok, r.message);
-  }, [courant, occupe, choixSujets, choixTags, note, commentaire, retravail]);
+  }, [courant, occupe, choixSujets, choixTags, note, commentaire, retravail, deciderSerie]);
 
   const deciderLeLot = async (id: string, geste: 'accepter' | 'refuser') => {
     const l = lots.find((x) => x.id === id);
@@ -159,7 +213,9 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
     const d = historique[historique.length - 1];
     if (!d || occupe) return;
     setOccupe(true);
-    const r = d.annulation ? await annulerArrivage(d.annulation).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.' })) : { ok: true, message: 'Remis dans la file.' };
+    const x = d.annulation;
+    const r = x?.kind === 'serie' ? await annulerSerie(x.id, x.photos).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.' }))
+      : x ? await annulerArrivage(x).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.' })) : { ok: true, message: 'Remis dans la file.' };
     setOccupe(false);
     setMessage({ ok: r.ok, texte: `${d.titre} : ${r.message}` });
     if (!r.ok) return;
@@ -219,6 +275,24 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
     setItems((l) => [...l, ...nouveaux.filter((n) => !l.some((x) => x.id === n.id))]);
     if (source !== 'tout' && source !== 'photos-libres') setSource('photos-libres');
     setMessage({ ok: true, texte: `${nouveaux.length} photo${nouveaux.length > 1 ? 's' : ''} à découvrir ajoutée${nouveaux.length > 1 ? 's' : ''} à la file.` });
+  };
+
+  // « Sourcer automatiquement » : un profil, ou les trous prioritaires (3 cibles au plus) ; séries ajoutées en tête de file
+  const [profilSourcing, setProfilSourcing] = useState('');
+  const [sourcing, setSourcing] = useState(false);
+  const sourcer = async () => {
+    if (sourcing) return;
+    setSourcing(true);
+    setMessage({ ok: true, texte: 'L’agent cherche, analyse les aperçus et compose des séries cohérentes (jusqu’à une ou deux minutes)…' });
+    const r = await sourcerSeries({ profil: profilSourcing || null }).catch(() => ({ ok: false, message: 'Connexion perdue : réessayez.', series: [] as SerieAffichee[] }));
+    setSourcing(false);
+    if (r.series.length) {
+      setItems((l) => [...r.series.map(itemSerie), ...l.filter((x) => !r.series.some((s) => x.id === `s:${s.id}`))]);
+      setSource('series-photos');
+      setFiltreType('tout');
+      setLot(null);
+    }
+    setMessage({ ok: r.ok, texte: r.message });
   };
 
   const compte = (f: (i: ItemArrivage) => boolean) => restants.filter(f).length;
@@ -290,7 +364,43 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
 
       {message && <p role="status" className={`rounded-lg px-3 py-2 text-sm ring-1 ${message.ok ? 'bg-teal-50 text-teal-950 ring-teal-200' : 'bg-amber-50 text-amber-950 ring-amber-200'}`}>{message.texte}</p>}
 
-      {courant && v ? (
+      {courant && v?.kind === 'serie' ? (
+        <article aria-labelledby="ar-titre" className="grid gap-4 rounded-2xl border border-black/10 bg-white p-3 sm:p-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="grid min-w-0 content-start gap-3">
+            <div>
+              <p className="flex flex-wrap gap-1.5 text-xs">
+                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">{SOURCES_ARRIVAGES.find((s) => s.id === courant.source)?.libelle}</span>
+                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700">Série {v.serie.rang + 1}</span>
+                {courant.date && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-900">Arrivé le {dateCourte(courant.date)}</span>}
+              </p>
+              <h2 id="ar-titre" className="mt-1.5 text-lg font-bold">{courant.titre}</h2>
+            </div>
+            <SerieArrivage serie={v.serie} selection={selection} onBasculer={(c) => setSelection((x) => { const n = new Set(x); if (n.has(c)) n.delete(c); else n.add(c); return n; })} />
+          </div>
+          <div className="grid content-start gap-3 xl:sticky xl:top-4">
+            <div className="grid gap-1 text-sm">
+              <p><span className="font-semibold">Profession :</span> {v.serie.vocabulaire.metier}</p>
+              <p><span className="font-semibold">Thèmes :</span> {v.serie.themes.map((t) => t.libelle).join(', ')}</p>
+              <p className="text-xs text-neutral-600">Hashtags posés sur chaque photo : {[...new Set(v.serie.photos.filter((p) => selection.has(p.cle)).flatMap((p) => p.hashtags))].map((h) => `#${h}`).join(' ')}</p>
+            </div>
+            <SaisieHashtags compact libelle="Hashtags en plus" valeurs={choixTags} connus={frequencesHashtags}
+              onAjout={(l) => setChoixTags((x) => [...x, ...l.filter((h) => !x.includes(h))])} onRetrait={(h) => setChoixTags((x) => x.filter((y) => y !== h))} />
+            {progression && <p role="status" className="rounded-lg bg-teal-50 px-3 py-2 text-sm font-semibold text-teal-950 ring-1 ring-teal-200">{progression}</p>}
+            <button type="button" disabled={occupe || !selection.size} onClick={() => void deciderSerie('accepter')}
+              className={`min-h-14 rounded-xl bg-teal-800 px-3 text-base font-bold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>
+              {selection.size === v.serie.photos.length ? `Accepter la série (${selection.size})` : `Accepter la sélection (${selection.size}/${v.serie.photos.length})`} <span className="text-xs font-normal">(A)</span>
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" disabled={occupe} onClick={() => void deciderSerie('remplacer')}
+                className={`min-h-12 rounded-xl border-2 border-neutral-700 bg-white px-2 text-sm font-bold text-neutral-900 hover:bg-neutral-50 disabled:opacity-50 ${focus}`}>Autre série</button>
+              <button type="button" disabled={occupe} onClick={() => void deciderSerie('refuser')}
+                className={`min-h-12 rounded-xl border-2 border-red-700 bg-white px-2 text-sm font-bold text-red-800 hover:bg-red-50 disabled:opacity-50 ${focus}`}>Refuser <span className="text-xs font-normal">(R)</span></button>
+            </div>
+            <p className="text-xs text-neutral-600">Accepter : chaque photo est gardée (licence et traçabilité), importée en WebP sans métadonnées, rattachée au vivier du thème et au kit du profil. Rien n’est importé avant ce clic.</p>
+            <p className="text-sm text-neutral-600"><span className="tabular-nums font-semibold">{file.length}</span> en attente dans ce filtre</p>
+          </div>
+        </article>
+      ) : courant && v ? (
         <article aria-labelledby="ar-titre" className="grid gap-3 rounded-2xl border border-black/10 bg-white p-3 sm:p-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div onPointerDown={bas} onPointerMove={bouge} onPointerUp={haut} onPointerCancel={() => { depart.current = null; setDx(0); }}
             className="relative touch-pan-y select-none" style={{ transform: dx ? `translateX(${dx}px) rotate(${dx / 40}deg)` : undefined, transition: dx ? 'none' : 'transform .2s' }}>
@@ -373,6 +483,27 @@ export default function Arrivages({ items: initiaux, lots: lotsInitiaux, progres
           Annuler la dernière décision{historique.length ? ` (${historique[historique.length - 1].items.length > 1 ? 'lot ' : ''}${PARTICIPE[historique[historique.length - 1].geste]})` : ''} <span className="font-normal text-neutral-500">(Z)</span>
         </button>
       </div>
+
+      <section aria-labelledby="ar-agent" className="grid gap-2 rounded-2xl border border-black/5 bg-white p-4">
+        <h2 id="ar-agent" className="font-semibold">Sélections de l’agent (séries de photos)</h2>
+        <p className="max-w-3xl text-sm text-neutral-600">
+          L’agent part des trous réels (profils, kits, thèmes peu couverts, modèles finalistes), lance plusieurs recherches Pexels et Pixabay,
+          analyse les aperçus et propose 2 ou 3 séries de 6 à 12 photos cohérentes (lumière, température, couleurs). Rien n’est importé avant votre acceptation.
+        </p>
+        {migrationSeries ? <p className="text-sm text-amber-900">Migration 0053 à exécuter (supabase/migrations/0053_photos_series.sql).</p> : sourcesPretes ? (
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="grid gap-1 text-sm">
+              <span className="text-xs text-neutral-600">Pour</span>
+              <select value={profilSourcing} onChange={(e) => setProfilSourcing(e.target.value)} className="h-11 rounded-lg border border-neutral-300 px-2">
+                <option value="">Tous les trous prioritaires</option>
+                {profilsSourcing.map((p) => <option key={p.id} value={p.id}>{p.court}</option>)}
+              </select>
+            </label>
+            <button type="button" onClick={() => void sourcer()} disabled={sourcing}
+              className={`min-h-11 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>{sourcing ? 'Sourcing en cours…' : 'Sourcer automatiquement'}</button>
+          </div>
+        ) : <p className="text-sm text-neutral-600">Clé API à configurer (PEXELS_API_KEY ou PIXABAY_API_KEY) pour sourcer des photos.</p>}
+      </section>
 
       <section aria-labelledby="ar-decouvrir" className="grid gap-2 rounded-2xl border border-black/5 bg-white p-4">
         <h2 id="ar-decouvrir" className="font-semibold">Photos à découvrir (Pexels, Pixabay)</h2>

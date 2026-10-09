@@ -8,6 +8,10 @@ Pas d'Unsplash pour ce flux : son API impose d'afficher les photos depuis ses se
 sites qui doivent rester rapides et autonomes. (La banque intégrée historique, `apps/sites/public/photos`, contient des photos
 Unsplash téléchargées une à une ; crédits dans `apps/sites/public/photos/CREDITS.md`.)
 
+**Sourcing automatique en séries** (2026-10-09) : un agent peut chercher, filtrer, analyser et proposer des séries cohérentes de
+6 à 12 photos, acceptées d'un geste dans les Arrivages (mêmes licences, même import, rien d'importé avant acceptation) :
+`docs/sourcing-photos.md`.
+
 ## Licences en bref
 
 Résumé de travail : **le texte officiel fait foi**, à relire en cas de doute (liens ci-dessous, enregistrés aussi avec chaque photo).

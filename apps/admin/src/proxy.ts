@@ -5,7 +5,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 // /essai : page d'essai gratuit, inscription et textes juridiques (publiques ; la page d'accueil de l'essai est statique et
 // exclue du proxy, voir config.matcher). /api/stripe/webhook : appelé par Stripe, sans session (signature vérifiée).
 // /api/essai/* : capture du prospect et compteur de visites de la page d'essai (sans session, hors proxy aussi).
-const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher', '/essai', '/api/stripe/webhook', '/api/essai/'];
+// /api/sourcing-photos : appelé par le workflow sourcer-photos, sans session (jeton partagé vérifié par la route, docs/sourcing-photos.md).
+const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher', '/essai', '/api/stripe/webhook', '/api/essai/', '/api/sourcing-photos'];
 
 // Rafraîchit la session Supabase à chaque navigation et protège les pages privées.
 export async function proxy(request: NextRequest) {

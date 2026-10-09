@@ -5,6 +5,8 @@
 // | Source                                   | En attente                         | Accepter                                   | Refuser                         |
 // |------------------------------------------|------------------------------------|--------------------------------------------|---------------------------------|
 // | Photos à découvrir (Pexels, Pixabay)     | candidate jamais vue               | « Garder » + import WebP → `validee`       | « Rejeter » (photos_libres_avis)|
+// | Séries de l'agent (photos_series, 0053)  | série « proposee »                 | « Garder » + import WebP de chaque photo   | série « refusee » (photos jamais|
+// |   sourcing-photos.ts                     |                                    |   retenue, rattachées au vivier et au kit  |   reproposées)                  |
 // | Photos gardées non importées, images     | photos_libres `a_valider`          | import WebP (déjà hébergée : rien) →       | `retiree`                       |
 // |   générées importées                     |                                    |   `validee`                                |                                 |
 // | Nouveautés du code (inventaire-connu)    | récente, jamais notée, statut nul  | statut `accepte` (0044) ou note rapide     | statut `retire`                 |
@@ -18,9 +20,11 @@ import { familleNouveaute, libelleLot } from './nouveautes';
 
 export type EtatArrivage = 'en_attente' | 'accepte' | 'refuse';
 
-export type SourceArrivage = 'photos-libres' | 'images-generees' | 'nouveautes' | 'contenus';
+export type SourceArrivage = 'photos-libres' | 'series-photos' | 'images-generees' | 'nouveautes' | 'contenus';
 export const SOURCES_ARRIVAGES: readonly { id: SourceArrivage; libelle: string }[] = [
   { id: 'photos-libres', libelle: 'Photos à découvrir (Pexels, Pixabay)' },
+  // Séries de photos sourcées par l'agent (sourcing-photos.ts, migration 0053) : un lot = une série, acceptée d'un geste
+  { id: 'series-photos', libelle: 'Sélections de l’agent (séries de photos)' },
   { id: 'images-generees', libelle: 'Images générées importées' },
   { id: 'nouveautes', libelle: 'Nouveautés poussées par Claude' },
   { id: 'contenus', libelle: 'Contenus (textes des packs)' },

@@ -14,6 +14,8 @@
 //   empreinte) dans assets-notes.json et atelier-notes.json ; recettes-notes.json (notes de recette et PAR PAGE, sans auteur) ;
 //   defauts-mobile.json (retours « Rendu mobile » : adaptation téléphone) ; sections « Retours mobile » (dont « Rendu mobile à
 //   revoir »), « Par page » et « Zones signalées » (une ligne par zone) dans SYNTHESE.md
+//   series-photos-proposees.json : séries de photos de l'agent de sourcing pas encore revues par Claude (0053, docs/sourcing-photos.md) :
+//   aperçus et pages PUBLICS des sources, identifiants, emplacements, scores ; jamais d'auteur
 // Le dépôt est PUBLIC : seules des colonnes explicites sont lues — jamais d'auteur, d'e-mail, d'identifiant de compte, ni
 // aucune table de leads, prospects ou sites. Dates réduites au jour. Aucune date d'export dans les fichiers : un export
 // sans nouveau retour ne change rien (pas de commit).
@@ -346,6 +348,32 @@ if (cheminPredictions && existsSync(cheminCalibration)) {
     ecrire('modeles-a-tester.json', ch.modelesATester(fiches, versions));
     const synthese = readFileSync(join(sortie, 'SYNTHESE.md'), 'utf8').replace(/\n+$/, '');
     ecrire('SYNTHESE.md', `${synthese}\n\n${ch.markdownTicketsModeles(exp)}\n`);
+  }
+}
+
+// Séries de photos de l'agent (0053, sourcing-photos.ts, docs/sourcing-photos.md) : séries PROPOSÉES, non expirées, que Claude n'a pas
+// encore revues (pas de revue pour leur empreinte exacte dans retours/series-photos-claude.json) → retours/series-photos-proposees.json,
+// lu par l'agent .claude/agents/sourceur-photos.md. Contenu : identifiants, aperçus et pages PUBLICS des sources, emplacements, scores,
+// signature ; jamais d'auteur, d'e-mail ni de clé (dépôt public). Table absente : rien n'est écrit.
+{
+  const tmpSeries = mkdtempSync(join(tmpdir(), 'exporter-series-'));
+  let sp;
+  try {
+    await build({ entryPoints: [join(racine, 'packages', 'core', 'src', 'sourcing-photos.ts')], bundle: true, platform: 'node', format: 'esm', outfile: join(tmpSeries, 'series.mjs'), logLevel: 'warning', loader: { '.svg': 'text' } });
+    sp = await import(pathToFileURL(join(tmpSeries, 'series.mjs')).href);
+  } finally {
+    rmSync(tmpSeries, { recursive: true, force: true });
+  }
+  const lignesSeries = await lireTout('photos_series', 'id,groupe,rang,profession,cible,cible_details,titre,signature,coherence,dispersion,score,gamme,traitement,palette,photos,empreinte,statut,created_at,expire_le', 'created_at.asc,id.asc');
+  if (lignesSeries !== null) {
+    const cheminRevue = [join(sortie, 'series-photos-claude.json'), join(racine, 'retours', 'series-photos-claude.json')].find((c) => existsSync(c));
+    const revues = cheminRevue ? sp.lireRevuesSeries(JSON.parse(readFileSync(cheminRevue, 'utf8'))) : {};
+    const seriesPhotos = lignesSeries.map((l) => sp.serieDepuisLigne(l)).filter(Boolean);
+    ecrire('series-photos-proposees.json', {
+      version: 1,
+      note: 'Séries proposées par l’agent de sourcing, pas encore revues par Claude (agent sourceur-photos). Aperçus publics des sources seulement ; rien n’est importé avant l’acceptation de Paul. Aucune donnée personnelle.',
+      series: sp.seriesARevoir(seriesPhotos, revues).map((x) => sp.seriePourExport(x)),
+    });
   }
 }
 

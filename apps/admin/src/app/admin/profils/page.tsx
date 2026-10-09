@@ -11,8 +11,12 @@ import { getDonneesKits, getDonneesVisuels } from '@/lib/kits-images';
 import { getLignesAssetsApprentissage } from '@/lib/notation-recettes';
 import { getRecettes } from '@/lib/recettes';
 import { getPublications, MIGRATION_PUBLICATIONS, professionAdmin } from '@/lib/profils';
+import { sourcesConfigurees } from '@/lib/photos-libres';
+import SourcerProfil from './SourcerProfil';
 
 export const metadata = { title: 'Super admin · Profils de pratique' };
+// « Sourcer pour ce profil » (action serveur de la page) : jusqu'à 5 minutes
+export const maxDuration = 300;
 
 // PROFILS DE PRATIQUE (décision de Paul du 2026-10-08, packages/core/src/profils.ts) : pour la profession choisie dans l'en-tête,
 // chaque profil de référence (Sport·basket, Diabète…) avec sa JAUGE de préparation (kit complet ? recettes gardées 4-5 ★ ?
@@ -133,7 +137,10 @@ export default async function PageProfils({ searchParams }: { searchParams: Prom
         <section aria-labelledby="titre-profil" className="grid gap-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="titre-profil" className="text-xl font-bold">{choisi.profil.court} <span className="text-base font-normal text-neutral-600">· conçu pour {choisi.profil.pour}</span></h2>
-            <Link href={`/admin/degustation?profil=${choisi.profil.id}`} className={`min-h-11 content-center rounded-lg border border-teal-800 px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>Dégustation de ce profil</Link>
+            <span className="flex flex-wrap items-start gap-2">
+              {choisi.profil.principal && <SourcerProfil profil={choisi.profil.id} libelle={choisi.profil.court} pret={Object.values(sourcesConfigurees()).some(Boolean)} />}
+              <Link href={`/admin/degustation?profil=${choisi.profil.id}`} className={`min-h-11 content-center rounded-lg border border-teal-800 px-3 text-sm font-semibold text-teal-900 hover:bg-teal-50 ${focus}`}>Dégustation de ce profil</Link>
+            </span>
           </div>
 
           <div className="grid gap-2">

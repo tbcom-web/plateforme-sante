@@ -32,6 +32,8 @@ export type Arrivage =
   | { kind: 'nouveaute'; cle: string; precedent: string | null }
   | { kind: 'photo'; id: string }
   | { kind: 'candidate'; source: string; idSource: string; requete: string }
+  /** Série de photos de l'agent (photos_series, 0053) : gestes propres, actions-series.ts */
+  | { kind: 'serie'; id: string }
   /** Texte d'un pack de contenus (contenus-revue.ts) : empreinte du texte affiché */
   | { kind: 'contenu'; cle: string; empreinte: string; precedent: string | null };
 

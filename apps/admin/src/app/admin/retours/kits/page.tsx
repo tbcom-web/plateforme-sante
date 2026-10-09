@@ -8,9 +8,14 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import { createClient } from '@/lib/supabase/server';
+import { sourcesConfigurees } from '@/lib/photos-libres';
+import { getProfession } from '@/lib/profession';
+import SourcerProfil from '../../profils/SourcerProfil';
 import Kits from './Kits';
 
 export const metadata = { title: 'Super admin · Kits d’images' };
+// « Sourcer pour ce kit » (action serveur de la page) : jusqu'à 5 minutes
+export const maxDuration = 300;
 
 // Kits d'images par sujet (demande de Paul du 2026-10-08, packages/core/src/kits-images.ts) : composés en direct depuis Supabase
 // (photos notées, sujets, hashtags, poids appris ; jamais une photo ≤ 2 ★, retirée ou à retravailler). Planche, aperçus ordinateur
@@ -46,7 +51,10 @@ export default async function PageKits({ searchParams }: { searchParams: Promise
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
         <p className="flex flex-wrap gap-x-4 text-sm"><Link href="/admin/cuisine/images-a-generer" className="font-semibold text-teal-900 underline">Images à générer (prompts) →</Link></p>
-        <h1 className="mt-1 text-2xl font-bold">Kits d’images</h1>
+        <div className="mt-1 flex flex-wrap items-start justify-between gap-2">
+          <h1 className="text-2xl font-bold">Kits d’images</h1>
+          {(await getProfession()).id === 'podologue' && sujet !== 'general' && <SourcerProfil kit={sujet} libelle={libelleSujetKit(sujet)} pret={Object.values(sourcesConfigurees()).some(Boolean)} />}
+        </div>
         <p className="mt-1 hidden max-w-3xl text-sm text-neutral-600 md:block">
           Pour chaque sujet, le système compose un kit à partir de vos notes et de vos étiquettes : photo du premier écran, page sujet,
           une photo par soin (étiquetée #nom-du-soin), galerie du cabinet. Jamais une photo notée 2 ★ ou moins, retirée ou à retravailler.

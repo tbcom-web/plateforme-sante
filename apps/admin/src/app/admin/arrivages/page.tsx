@@ -1,6 +1,6 @@
 import {
   cleCandidatePhoto, clePhoto, estSourcePhotoLibre, hashtagsDe, inventaireAssets, inventaireStudio, libelleProgression, libelleSujet, LIBELLES_NATURES, motsClesDuSujet,
-  SUJETS_VISUELS, sujetsDuVisuel, universDuParcours,
+  SUJETS_VISUELS, sujetsDuVisuel, universDuParcours, profilsDePratique,
 } from '@plateforme/core';
 import { lotDeCle, lotsArrivages, typeIngredient } from '@plateforme/core/arrivages';
 import { professionDe, sujetDeLaProfession } from '@plateforme/core/professions';
@@ -16,10 +16,14 @@ import { getProfession } from '@/lib/profession';
 import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
+import { getRevuesClaude, getSeriesEnAttente } from '@/lib/sourcing-photos';
 import Arrivages, { type ItemArrivage } from './Arrivages';
+import { itemSerie, serieAffichee } from './series';
 import { visuelDe } from './visuels';
 
 export const metadata = { title: 'Super admin · Arrivages' };
+// « Sourcer automatiquement » et l'import d'une série (actions de la page) : jusqu'à 5 minutes
+export const maxDuration = 300;
 
 // ARRIVAGES (décisions de Paul du 2026-10-08 et du 2026-10-09, docs/espaces-admin.md) : boîte d'entrée unique de tout ce qui est
 // nouveau — nouveautés poussées par Claude (registre inventaire-connu.json : icônes, animations, mises en page, polices…), groupées
@@ -37,11 +41,12 @@ export default async function PageArrivages({ searchParams }: { searchParams: Pr
   await exigerAdmin();
   const sp = await searchParams;
   const profession = await getProfession();
-  const [attente, surcharges, hashtags, motsCles, packs] = await Promise.all([getArrivagesEnAttente(profession), getSurchargesSujets(), getHashtagsAssets(), getMotsClesEnBase(), getPacksRevue(profession.id)]);
+  const [attente, surcharges, hashtags, motsCles, packs, series, revues] = await Promise.all([getArrivagesEnAttente(profession), getSurchargesSujets(), getHashtagsAssets(), getMotsClesEnBase(), getPacksRevue(profession.id), getSeriesEnAttente(profession.id), getRevuesClaude()]);
   const parCle = new Map([...inventaireAssets(), ...inventaireStudio()].map((a) => [a.cle, a]));
   const sujetsProfession = SUJETS_VISUELS.filter((s) => sujetDeLaProfession(s, profession));
 
-  const items: ItemArrivage[] = [];
+  // Séries de l'agent d'abord (une série = un lot, sourcing-photos.ts), plus récentes en tête, meilleure série d'un lancement d'abord
+  const items: ItemArrivage[] = [...series.series].sort((a, b) => (a.groupe === b.groupe ? a.rang - b.rang : a.creeLe < b.creeLe ? 1 : -1)).map((s) => itemSerie(serieAffichee(s, revues[s.id])));
   for (const [i, n] of attente.nouveautes.entries()) {
     const a = parCle.get(n.cle);
     items.push({
@@ -108,6 +113,8 @@ export default async function PageArrivages({ searchParams }: { searchParams: Pr
         sourceInitiale={typeof sp.source === 'string' ? sp.source : null}
         typeInitial={typeof sp.type === 'string' ? sp.type : null}
         lotInitial={typeof sp.lot === 'string' ? sp.lot : null}
+        profilsSourcing={profilsDePratique(profession.id).filter((x) => x.principal).map((x) => ({ id: x.id, court: x.court }))}
+        migrationSeries={series.migrationManquante}
         studio={{ proposes: universDuParcours(univers.univers), modeles: modeles.map((m) => ({ id: m.id, manifeste: m.manifeste })), catalogue, marquesImportees, themesActives: themesActives() }}
       />
     </div>

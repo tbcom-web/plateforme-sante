@@ -6,6 +6,7 @@ import { estDeLaProfession, sujetDeLaProfession, type Profession } from '@platef
 import { lireAssetsNotesApprentissage } from '@/lib/assets-notes';
 import { contenusEnAttente, getPacksRevue } from '@/lib/packs-contenus';
 import { getPhotosLibres, type PhotoLibre } from '@/lib/photos-libres';
+import { getSeriesEnAttente } from '@/lib/sourcing-photos';
 
 // Arrivages (/admin/arrivages, packages/core/src/arrivages.ts) : nouveautés du code (registre inventaire-connu.json, nouveautes.ts)
 // encore en attente, photos gardées ou images générées « à valider ». Lectures : dernières notes
@@ -64,11 +65,11 @@ export const getArrivagesEnAttente = cache(async (profession: Profession): Promi
   return { nouveautes, photos, statuts: etats.statuts, migrationPhotos: libres.migrationManquante };
 });
 
-/** Compteur du menu : nouveautés, photos et contenus des packs en attente */
+/** Compteur du menu : nouveautés, photos, séries de l'agent (0053) et contenus des packs en attente */
 export const getNombreArrivages = cache(async (profession: Profession): Promise<number> => {
   try {
-    const [a, packs] = await Promise.all([getArrivagesEnAttente(profession), getPacksRevue(profession.id)]);
-    return a.nouveautes.length + a.photos.length + packs.reduce((s, p) => s + contenusEnAttente(p).length, 0);
+    const [a, packs, series] = await Promise.all([getArrivagesEnAttente(profession), getPacksRevue(profession.id), getSeriesEnAttente(profession.id)]);
+    return a.nouveautes.length + a.photos.length + series.series.length + packs.reduce((s, p) => s + contenusEnAttente(p).length, 0);
   } catch {
     return 0;
   }

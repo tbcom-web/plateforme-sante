@@ -1,0 +1,67 @@
+name: sourcer-photos
+run-name: sourcer-photos ${{ inputs.profession || 'hebdomadaire' }}${{ inputs.profil && format(' · {0}', inputs.profil) || '' }}
+
+# SOURCING AUTOMATIQUE DE PHOTOS (docs/sourcing-photos.md) : l'agent propose des SÉRIES de photos Pexels / Pixabay cohérentes pour
+# les trous prioritaires (profils, kits, thèmes peu couverts, modèles finalistes). Rien n'est importé : les séries arrivent dans
+# /admin/arrivages (« Sélections de l'agent ») et Paul les accepte d'un geste.
+# Le script lit Supabase avec la clé secrète du dépôt, appelle l'endpoint protégé de l'admin (les clés Pexels / Pixabay restent sur
+# Vercel) puis enregistre les séries. Aucun commit, aucune publication.
+#
+# Secrets du dépôt nécessaires (Settings → Secrets and variables → Actions) : SUPABASE_URL, SUPABASE_SECRET_KEY (déjà présents),
+# ADMIN_URL (adresse de l'admin, ex. https://admin.exemple.fr) et SOURCING_PHOTOS_JETON (même valeur que la variable Vercel du même
+# nom, 32 caractères au moins).
+#
+# PASSAGE HEBDOMADAIRE : DÉSACTIVÉ par défaut. Pour l'activer, décommenter le bloc « schedule » ci-dessous. Coût : ~24 requêtes
+# d'API par passage (3 cibles × 8), très en dessous des limites (Pexels 200 / h et 20 000 / mois, Pixabay 100 / min).
+on:
+  workflow_dispatch:
+    inputs:
+      profession:
+        description: Profession (podologue, psychomotricien…)
+        required: false
+        default: podologue
+        type: string
+      profil:
+        description: Profil précis (ex. sport-basket) ; vide = trous prioritaires
+        required: false
+        default: ''
+        type: string
+      max_cibles:
+        description: Nombre de cibles (1 à 3)
+        required: false
+        default: '3'
+        type: string
+  # schedule:
+  #   - cron: '41 5 * * 1'   # lundi 5 h 41 UTC
+
+concurrency:
+  group: sourcer-photos
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sourcer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ADMIN_URL: ${{ secrets.ADMIN_URL }}
+      SOURCING_PHOTOS_JETON: ${{ secrets.SOURCING_PHOTOS_JETON }}
+      PROFESSION: ${{ inputs.profession || 'podologue' }}
+      PROFIL: ${{ inputs.profil || '' }}
+      MAX_CIBLES: ${{ inputs.max_cibles || '3' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Proposer des séries de photos (rien n'est importé)
+        run: node scripts/sourcer-photos.mjs
