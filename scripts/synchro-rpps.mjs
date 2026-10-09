@@ -312,13 +312,26 @@ async function parNom(p) {
 }
 
 async function verifierInstallations() {
+  // Supabase renvoie 1 000 lignes au plus par requête (réglage « Max rows ») : on relit la file par paquets. Une fiche traitée en
+  // sort d'elle-même (verifie_le posé à maintenant), la boucle s'arrête donc quand la file est vide ou VERIF_MAX atteint.
   const ilYa30j = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  const aVerifier = await sb(
-    `prospection_praticiens?select=cle,rpps,nom,prenom,siret,code_postal,profession_code&disparu_le=is.null`
-    + `&or=(verifie_le.is.null,and(siret_cree_le.is.null,verifie_le.lt.${ilYa30j}))&order=apparu_le.desc.nullslast&limit=${VERIF_MAX}`,
-  );
-  console.log(`Dates d'installation : ${aVerifier.length} fiche(s) à vérifier`);
   const memo = new Map();
+  let faites = 0, trouves = 0;
+  while (faites < VERIF_MAX) {
+    const paquet = await sb(
+      `prospection_praticiens?select=cle,rpps,nom,prenom,siret,code_postal,profession_code&disparu_le=is.null`
+      + `&or=(verifie_le.is.null,and(siret_cree_le.is.null,verifie_le.lt.${ilYa30j}))&order=apparu_le.desc.nullslast,cle&limit=${Math.min(1000, VERIF_MAX - faites)}`,
+    );
+    if (!paquet.length) break;
+    trouves += await verifierPaquet(paquet, memo, faites);
+    faites += paquet.length;
+    console.log(`  ${faites} vérifiées, ${trouves} datées`);
+  }
+  console.log(`Dates d'installation : ${faites} fiche(s) vérifiée(s), ${trouves} datée(s)`);
+  return faites;
+}
+
+async function verifierPaquet(aVerifier, memo, dejaFaites) {
   let lot = [], trouves = 0;
   for (const [i, p] of aVerifier.entries()) {
     let res = null;
@@ -328,17 +341,16 @@ async function verifierInstallations() {
         res = memo.get(p.siret);
       } else res = await parNom(p);
     } catch (e) {
-      console.log(`  vérification ${i + 1} : ${e.message}`); // jamais de nom ni de RPPS dans les journaux (dépôt public)
+      console.log(`  vérification ${dejaFaites + i + 1} : ${e.message}`); // jamais de nom ni de RPPS dans les journaux (dépôt public)
     }
     if (res) trouves++;
     lot.push({ cle: p.cle, rpps: p.rpps, ...(res ?? { siret_cree_le: null, siret_source: null, siret_ferme: null, entreprise_nom: null, latitude: null, longitude: null }), verifie_le: new Date().toISOString() });
     if (lot.length >= 200 || i === aVerifier.length - 1) {
       await ecrireParLots(lot, 200);
       lot = [];
-      console.log(`  ${i + 1}/${aVerifier.length} vérifiées, ${trouves} datées`);
     }
   }
-  return aVerifier.length;
+  return trouves;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

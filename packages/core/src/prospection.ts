@@ -26,6 +26,7 @@ export const PERIODES_INSTALLATION = [
   { id: '6', mois: 6, libelle: 'Depuis 6 mois' },
   { id: '12', mois: 12, libelle: 'Depuis 1 an' },
   { id: '24', mois: 24, libelle: 'Depuis 2 ans' },
+  { id: 'sans_date', mois: null, libelle: 'Sans date connue' },
   { id: 'tous', mois: null, libelle: 'Tous' },
 ] as const;
 export type PeriodeInstallation = (typeof PERIODES_INSTALLATION)[number]['id'];

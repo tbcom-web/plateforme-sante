@@ -32,6 +32,8 @@ export async function lireProspection(f: FiltresProspection, { tout = false } = 
     const limite = moisAvant(aujourdhui, mois);
     ou.push(`siret_cree_le.gte.${limite},apparu_le.gte.${limite}`);
   }
+  // Sans date : ni SIRET daté (souvent une entreprise individuelle non diffusible à l'INSEE), ni apparition depuis le premier import
+  if (f.periode === 'sans_date') req = req.is('siret_cree_le', null).is('apparu_le', null);
   if (f.statut === 'relance') req = req.lte('relance_le', aujourdhui).not('statut', 'in', '(gagne,perdu,hors_cible)');
   else if (f.statut === 'a_contacter') ou.push('statut.is.null,statut.eq.a_contacter');
   else if (f.statut) req = req.eq('statut', f.statut);
@@ -42,10 +44,23 @@ export async function lireProspection(f: FiltresProspection, { tout = false } = 
   if (ou.length === 1) req = req.or(ou[0]);
   else if (ou.length > 1) req = req.or(`and(${ou.map((o) => `or(${o})`).join(',')})`);
   req = req.order('siret_cree_le', { ascending: false, nullsFirst: false }).order('apparu_le', { ascending: false, nullsFirst: false }).order('nom');
-  const debut = tout ? 0 : (f.page - 1) * PAR_PAGE;
-  const { data, count, error } = await req.range(debut, debut + (tout ? 4999 : PAR_PAGE - 1));
-  if (error) return null;
-  return { lignes: (data ?? []) as unknown as LigneProspection[], total: count ?? 0 };
+  if (!tout) {
+    const debut = (f.page - 1) * PAR_PAGE;
+    const { data, count, error } = await req.range(debut, debut + PAR_PAGE - 1);
+    if (error) return null;
+    return { lignes: (data ?? []) as unknown as LigneProspection[], total: count ?? 0 };
+  }
+  // Export : Supabase renvoie 1 000 lignes au plus par requête (« Max rows ») → paquets de 1 000, 5 000 au plus
+  const lignes: LigneProspection[] = [];
+  let total = 0;
+  for (let debut = 0; debut < 5000; debut += 1000) {
+    const { data, count, error } = await req.range(debut, debut + 999);
+    if (error) return debut ? { lignes, total } : null;
+    total = count ?? total;
+    lignes.push(...((data ?? []) as unknown as LigneProspection[]));
+    if (!data || data.length < 1000) break;
+  }
+  return { lignes, total };
 }
 
 export async function derniereSynchro(): Promise<Synchro | null> {
