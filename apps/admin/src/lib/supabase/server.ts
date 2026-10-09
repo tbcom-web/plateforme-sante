@@ -2,6 +2,16 @@ import { cache } from 'react';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+// Délai maximal de chaque requête Supabase côté serveur (2026-10-09, « l'admin ne charge pas ») : une requête qui ne répond pas
+// (base chargée, réseau) échoue proprement au bout de 20 s (erreur renvoyée comme une table absente : repli de chaque lecture)
+// au lieu de garder la page en chargement sans fin. Stockage (envois de fichiers) et requêtes déjà munies d'un signal : inchangés.
+const DELAI_SUPABASE_MS = 20_000;
+const fetchBorne: typeof fetch = (input, init) => {
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  if (init?.signal || url.includes('/storage/v1/')) return fetch(input, init);
+  return fetch(input, { ...init, signal: AbortSignal.timeout(DELAI_SUPABASE_MS) });
+};
+
 /** Client Supabase côté serveur, authentifié avec la session du visiteur. */
 export async function createClient() {
   const cookieStore = await cookies();
@@ -10,6 +20,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      global: { fetch: fetchBorne },
       cookies: {
         getAll() {
           return cookieStore.getAll();

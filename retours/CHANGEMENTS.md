@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : admin plus rapide : le menu n'attend plus ses compteurs, la politique d'évaluation est calculée au plus une fois par minute (servie aussitôt, recalculée en arrière-plan), et chaque requête Supabase côté serveur a un délai maximal de 20 s.
 - 2026-10-09 : Dégustation bloquée : chaque demande aux workers de préparation a maintenant un délai maximal avec repli sur le calcul dans la page (résultats identiques) ; un worker en erreur, muet ou introuvable est arrêté et n'est plus relancé ; la Présélection a le même garde-fou.
 - 2026-10-09 : admin qui « ne charge pas » après connexion : le tableau de bord attendait la lecture complète des duels pour la section Évaluation ; elle s'affiche maintenant après la page, et les compteurs, le contexte d'images, la politique d'évaluation et l'API GitHub ont un délai maximal (repli vide) : une table absente (0054) ou une donnée lente ne bloque plus l'affichage.
 - 2026-10-09 : modèles canons — analyse du goût (docs/analyse-gout-2026-10-09.md), 8 designs (retours/recettes-proposees.json, canon-D1 à D8 : harmonie 90-93, 7 familles, testeur 3 verts, 4 orange expliqués, 1 rouge = gabarit Technique), bouton « Importer les propositions de Claude comme candidats » (présélection), manques M10-M22 (MANQUES.md) ; testeur : contraste sur la couleur peinte (texte rgba) sans pixels d'anticrénelage, cibles tactiles ≥ 24 px (auteur d'article, téléphone du pied, matériel des fiches).

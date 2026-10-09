@@ -15,13 +15,16 @@ import { avecDelai, DELAIS } from '@/lib/delai';
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   await exigerAdmin();
   const profession = await getProfession();
-  // Compteurs du menu bornés (2026-10-09, « l'admin ne charge pas ») : lents ou en erreur → 0, l'admin s'affiche quand même
-  const [user, arrivages, nouveautes] = await Promise.all([getUser(), avecDelai(getNombreArrivages(profession), DELAIS.compteurs, 0), avecDelai(getNombreNouveautesANoter(profession), DELAIS.compteurs, 0)]);
+  // Compteurs du menu NON ATTENDUS (2026-10-09, « l'admin est lent ») : promesse passée au menu (pastilles affichées dès qu'elles
+  // arrivent), bornée (lents ou en erreur → 0) ; la page et le contexte d'images ne les attendent plus
+  const compteurs = Promise.all([avecDelai(getNombreArrivages(profession), DELAIS.compteurs, 0), avecDelai(getNombreNouveautesANoter(profession), DELAIS.compteurs, 0)])
+    .then(([arrivages, nouveautes]) => ({ arrivages, nouveautes }));
+  const user = await getUser();
 
   return (
     <Shell email={user?.email ?? ''}>
       <NavAdmin
-        compteurs={{ arrivages, nouveautes }}
+        compteurs={compteurs}
         professions={professionsAdmin().map((p) => ({ id: p.id, libelle: p.statut === 'preparation' ? `${p.libelle} (en préparation)` : p.libelle, court: p.court }))}
         profession={profession.id}
       />

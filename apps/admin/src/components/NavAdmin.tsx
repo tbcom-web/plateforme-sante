@@ -9,8 +9,10 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { ACCUEIL_ADMIN, ESPACES, entreeActive, filAriane, type EntreeMenu } from '@plateforme/core/admin-espaces';
 import { choisirProfession } from '@/app/admin/actions-profession';
 
+type Compteurs = { arrivages: number; nouveautes: number };
 type Props = {
-  compteurs: { arrivages: number; nouveautes: number };
+  /** Compteurs, ou leur promesse (layout : le menu s'affiche tout de suite, les pastilles arrivent ensuite) */
+  compteurs: Compteurs | Promise<Compteurs>;
   professions: { id: string; libelle: string; court: string }[];
   profession: string;
 };
@@ -22,7 +24,15 @@ function Pastille({ n, libelle }: { n: number; libelle: string }) {
   return <span className="rounded-full bg-amber-300 px-1.5 text-xs font-bold tabular-nums text-amber-950" title={`${n} ${libelle}`}><span className="sr-only">, {libelle} : </span>{n}</span>;
 }
 
-export default function NavAdmin({ compteurs, professions, profession }: Props) {
+const estPromesse = (x: unknown): x is Promise<Compteurs> => Boolean(x) && typeof (x as { then?: unknown }).then === 'function';
+
+export default function NavAdmin({ compteurs: compteursRecus, professions, profession }: Props) {
+  const [compteurs, setCompteurs] = useState<Compteurs>(() => (estPromesse(compteursRecus) ? { arrivages: 0, nouveautes: 0 } : compteursRecus));
+  useEffect(() => {
+    let actif = true;
+    Promise.resolve(compteursRecus).then((c) => { if (actif && c) setCompteurs(c); }, () => { /* compteurs indisponibles : 0 */ });
+    return () => { actif = false; };
+  }, [compteursRecus]);
   const chemin = usePathname() ?? '/admin';
   const router = useRouter();
   const [ouvert, setOuvert] = useState(false);

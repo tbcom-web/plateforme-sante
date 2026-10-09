@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { CATALOGUE_REGLES, lireExposition, type Exposition } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
-import { COOKIE_REGLES } from '@/lib/politique-evaluation';
+import { COOKIE_REGLES, oublierPolitique } from '@/lib/politique-evaluation';
 
 // Politique d'évaluation (packages/core/src/politique-evaluation.ts, migration 0054) : journal des expositions (écrans passés sans
 // réponse, décisions des Arrivages et leurs raisons, « Pas pour ici » des kits) et « Désactiver » une règle apprise.
@@ -42,6 +42,7 @@ export async function basculerRegle(regle: string, active: boolean): Promise<Res
     const { error } = await supabase.from('regles_apprises_reglages').insert({ regle, active });
     if (error) migrationManquante = true;
   } catch { migrationManquante = true; }
+  oublierPolitique();
   revalidatePath('/admin/retours/compris');
   revalidatePath('/admin');
   return { ok: true, migrationManquante, message: `${active ? 'Règle réactivée' : 'Règle désactivée'}${migrationManquante ? ' (dans ce navigateur : migration 0054 à exécuter)' : ''}.` };

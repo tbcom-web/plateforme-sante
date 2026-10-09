@@ -7,7 +7,7 @@ import {
   renfortsImplicites, signauxDepuisRetours, sujetsDuScenario, POLITIQUE_EVALUATION, type EtatPolitique, type Exposition, type ImpliciteNegatif,
   type IndicateursPolitique, type MemoireExpositions, type RegleApprise,
 } from '@plateforme/core';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
 import { getRole } from '@/lib/admin';
 import { getNotesAssets } from '@/lib/assets-notes';
 import { getNotesAtelier } from '@/lib/atelier';
@@ -150,7 +150,31 @@ async function getPolitiqueSansMemo(): Promise<Politique | null> {
   for (const n of recettes.notations) if (n.cle && n.le && (!premieres[n.cle] || n.le < premieres[n.cle])) premieres[n.cle] = n.le;
   return { expositions, memoire, implicites, regles, penalites, ecartes, mots: motsFrequents(signaux), attributs, notes, premieres, migrationManquante: table.migrationManquante, migrationRegles: desac.migrationManquante, desactivees: desac.desactivees };
 }
-export const getPolitique = cache(getPolitiqueSansMemo);
+// Mémoire ENTRE requêtes (2026-10-09, « l'admin est super lent ») : la politique relit tous les journaux (notes, duels, grilles,
+// expositions…) ; calculée au plus une fois par minute et par compte sur une instance serveur. Fraîche (< MEMO_FRAIS_MS) : servie
+// telle quelle ; plus ancienne (< MEMO_MAX_MS) : servie aussitôt et recalculée en arrière-plan pour la requête suivante ; sinon
+// recalculée. Les écrans de la session restent connus du navigateur (useExpositions) : rien de vu n'est reproposé entre-temps.
+// oublierPolitique() : à appeler après un changement qui doit se voir tout de suite (règle désactivée).
+const MEMO_FRAIS_MS = 60_000, MEMO_MAX_MS = 10 * 60_000;
+type MemoPolitique = { le: number; valeur: Politique | null; enCours: Promise<Politique | null> | null };
+const memoPolitique = new Map<string, MemoPolitique>();
+export function oublierPolitique() { memoPolitique.clear(); }
+async function getPolitiqueMemorisee(): Promise<Politique | null> {
+  const user = await getUser().catch(() => null);
+  if (!user) return null;
+  const m = memoPolitique.get(user.id);
+  const age = m && m.le ? Date.now() - m.le : Infinity;
+  const lancer = () => {
+    const p = getPolitiqueSansMemo().then((valeur) => { memoPolitique.set(user.id, { le: Date.now(), valeur, enCours: null }); return valeur; },
+      (err) => { const x = memoPolitique.get(user.id); if (x) x.enCours = null; throw err; });
+    memoPolitique.set(user.id, { le: m?.le ?? 0, valeur: m?.valeur ?? null, enCours: p });
+    return p;
+  };
+  if (m && age < MEMO_FRAIS_MS) return m.valeur;
+  if (m && age < MEMO_MAX_MS) { if (!m.enCours) lancer().catch(() => null); return m.valeur; }
+  return m?.enCours ?? lancer();
+}
+export const getPolitique = cache(getPolitiqueMemorisee);
 
 /**
  * Politique BORNÉE (2026-10-09, « l'admin ne charge pas ») : lue par les pages, le générateur (getRenfortsPolitique), les tranches
