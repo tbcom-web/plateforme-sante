@@ -1,0 +1,66 @@
+{
+ "id": "test-cassee",
+ "nom": "Test du testeur : composition volontairement cassée",
+ "version": 1,
+ "sujets": [
+  "diabete"
+ ],
+ "composition": {
+  "structure": "elegant-sobre",
+  "couleur": "#f4ec7a",
+  "police": "douce",
+  "visuels": {
+   "style": "pedagogique",
+   "herosSujet": "diabete",
+   "animation": null
+  },
+  "photos": [
+   "/photos/soins-pied-tenu.webp"
+  ],
+  "sections": {
+   "ordre": "modele",
+   "variantes": {}
+  },
+  "effets": "sobre",
+  "traitement": {
+   "id": "modele",
+   "grain": false
+  },
+  "typo": {
+   "echelle": "affirmee",
+   "casse": "normale",
+   "graisse": "paire",
+   "interlettrage": "normal",
+   "accent": "aucun",
+   "alignement": "gauche",
+   "surtitre": "simple"
+  },
+  "details": {
+   "jeu": "gabarit",
+   "separateur": "aucun",
+   "souligne": "aucun",
+   "citation": "gabarit",
+   "badge": "gabarit",
+   "fond": "aucun",
+   "coins": "gabarit",
+   "ombres": "gabarit",
+   "boutons": "gabarit",
+   "densite": "aeree",
+   "cadre": "aucun"
+  },
+  "menu": {
+   "ordinateur": "gabarit",
+   "mobile": "gabarit",
+   "rdv": "gabarit"
+  }
+ },
+ "surcharges": {
+  "cabinet.nom": "Cabinet de pédicurie-podologie, de podologie du sport et de rééducation posturale Marie-Dominique Delacroix-Montgolfier",
+  "praticien.nom": "Delacroix-Montgolfier-Saint-Exupéry-Vandenbroucke",
+  "photos.accueil": "/photos/soins-pied-tenu.webp",
+  "soins.0.corps": "## À quoi sert un bilan podologique ?\n\nLe bilan analyse vos appuis et votre marche. Voir aussi [nos tarifs détaillés](/tarifs-detailles) et [la section horaires](#horaires-inexistants).",
+  "praticiens.0.nom": "Delacroix-Montgolfier-Saint-Exupéry-Vandenbroucke",
+  "praticiens.0.prenom": "Marie-Dominique"
+ },
+ "cssDeTest": "/* Défaut simulé : couleur claire NON corrigée (la plateforme ajuste la couleur libre en AA, ajusterContraste ; ce CSS contourne volontairement cette garde pour vérifier que le testeur la voit) */ main h2, main p a { color: #f4ec7a !important; }"
+}

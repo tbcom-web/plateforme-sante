@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-09 : Testeur de modèles (npm run tester:modele, agent testeur-modeles, workflow tester-modele, check / re-check, règle de validation vert ou orange justifié) — docs/testeur-modeles.md
 - 2026-10-09 : Chaîne des modèles : verrou « testeur au vert » protégé (résultat de test et tickets techniques réservés au testeur / validateur, migration 0050)
 - 2026-10-09 : Personnaliser mon site : vignettes dessinées, Gras / Italique, état de publication côté admin, avant / après dans l'historique.
 - 2026-10-09 : Aperçus de l'admin : « Saint-Rémy-de-Provence » et les autres mots composés ne se coupent plus (trait d'union insécable à l'affichage).

@@ -558,9 +558,11 @@ Selon votre grade de risque, des séances de prévention chez le podologue peuve
   ...(process.env.PRIORITES === 'aucune' ? {} : { priorites: { principaux: process.env.PRINCIPAUX ? process.env.PRINCIPAUX.split(',') : ['sport', 'diabete', 'ongles'], secondaires: process.env.SECONDAIRES !== undefined ? process.env.SECONDAIRES.split(',').filter(Boolean) : ['enfant', 'senior'] } }),
 };
 
+// CAS : un ou plusieurs cas séparés par des virgules (ex. CAS=solo,noms-longs : testeur de modèles, docs/testeur-modeles.md).
+const cas = new Set((process.env.CAS ?? '').split(',').map((c) => c.trim()).filter(Boolean));
 // CAS=solo : praticienne seule, voix « je », cabinet simple identifié par son quartier (cas le plus courant
 // en production), pour vérifier les fiches pleine largeur et les phrases « quartier + ville ».
-if (process.env.CAS === 'solo') {
+if (cas.has('solo')) {
   site.praticiens = site.praticiens.slice(0, 1);
   site.voix = 'je';
   site.cabinet.quartier = 'Brotteaux';
@@ -568,11 +570,25 @@ if (process.env.CAS === 'solo') {
 }
 // CAS=noms-longs : test de charge typographique (mots composés jamais coupés, aucun débordement à 360 px :
 // npm run controle:debordement) — praticienne, cabinet et ville aux noms longs et composés.
-if (process.env.CAS === 'noms-longs') {
+if (cas.has('noms-longs')) {
   site.praticien = { ...site.praticien, prenom: 'Marie-Dominique', nom: 'Delacroix-Montgolfier' };
   site.praticiens = site.praticiens.map((p, i) => (i === 0 ? { ...p, prenom: 'Marie-Dominique', nom: 'Delacroix-Montgolfier' } : p));
   site.cabinet = { ...site.cabinet, nom: 'Cabinet de pédicurie-podologie des Coteaux-du-Lyonnais', ville: 'Saint-Rémy-de-Provence', codePostal: '13210', quartier: '' };
   site.lieux = site.lieux.map((l) => ({ ...l, nom: 'Maison de santé pluriprofessionnelle des Coteaux-du-Lyonnais', ville: 'Saint-Rémy-de-Provence', codePostal: '13210' }));
+}
+// CAS=minimal : données minimales (testeur de modèles) — trois soins, ni FAQ générale, ni articles, ni équipements, ni domicile,
+// ni communes, ni formations, ni langues, ni moyens d'accès détaillés : les sections vides doivent disparaître proprement.
+if (cas.has('minimal')) {
+  site.soins = site.soins.slice(0, 3);
+  site.faqGenerale = [];
+  site.articles = [];
+  site.equipements = [];
+  site.communes = [];
+  site.paiements = [];
+  site.domicile = { ...site.domicile, actif: false, secteurs: [] };
+  site.cabinet = { ...site.cabinet, acces: [], quartier: '' };
+  site.praticien = { ...site.praticien, formations: [], langues: [] };
+  site.praticiens = site.praticiens.map((p) => ({ ...p, formations: [], sports: [] }));
 }
 if (univers) {
   const p = univers.preReglage;
@@ -667,5 +683,20 @@ if (process.env.ACTIVITE) {
   const v = visuelsPourPraticien(tableVisuelsActivites(null, {}), themes, ids);
   site.activites = { ids, illustration: v?.repli ? null : v?.illustration ?? null, photos: v?.photosActivite ?? [], repli: v?.repli ?? true };
   site.soins = ordonnerSoins(site.soins, soinsEnAvantActivites(pratiqueDe(null), ids, site.soins.map((x) => x.slug)));
+}
+// SURCHARGES={"chemin.pointé": valeur, …} (JSON ou chemin d'un fichier .json) : cas de test du testeur de modèles (nom très long,
+// lien mort, photo refusée…) posés en dernier sur la démo, ex. {"cabinet.nom": "…", "photos.accueil": "/photos/x.webp"}.
+// Données FICTIVES uniquement ; jamais lu pour un site praticien (fichier de démo).
+if (process.env.SURCHARGES) {
+  const brut = process.env.SURCHARGES.trim().startsWith('{') ? process.env.SURCHARGES : readFileSync(process.env.SURCHARGES, 'utf8');
+  for (const [chemin, valeur] of Object.entries(JSON.parse(brut) as Record<string, unknown>)) {
+    const cles = chemin.split('.');
+    let cible = site as unknown as Record<string, unknown>;
+    for (const k of cles.slice(0, -1)) {
+      if (cible[k] == null || typeof cible[k] !== 'object') cible[k] = {};
+      cible = cible[k] as Record<string, unknown>;
+    }
+    cible[cles[cles.length - 1]] = valeur;
+  }
 }
 export default site;

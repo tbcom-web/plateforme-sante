@@ -114,3 +114,4 @@ export * from './personnalisations-site';
 export * from './chaine-modeles-format';
 export * from './chaine-modeles';
 export * from './exclusions-site';
+export * from './testeur-modeles';

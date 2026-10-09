@@ -13,6 +13,7 @@
     "verifier": "node scripts/verifier.mjs",
     "inventaire:maj": "node scripts/inventaire-maj.mjs",
     "perf:admin": "node scripts/perf-admin/mesurer.mjs",
-    "archiver-assets": "node scripts/archiver-assets.mjs"
+    "archiver-assets": "node scripts/archiver-assets.mjs",
+    "tester:modele": "node apps/sites/scripts/tester-modele.mjs"
   }
 }

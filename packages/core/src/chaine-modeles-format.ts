@@ -82,6 +82,22 @@ export type TicketModele = {
   /** Testeur : identifiant du contrôle à l'origine (permet de refermer seul le ticket quand le contrôle repasse au vert) */
   controle?: string | null;
   creeLe?: string;
+  // Champs FACULTATIFS du testeur de modèles (testeur-modeles.ts, docs/testeur-modeles.md) : gardés par normaliserTicket
+  /** Même défaut ⇒ même empreinte d'une version à l'autre (re-check : corrigé / toujours ouvert / nouveau) */
+  empreinte?: string;
+  /** Correction proposée */
+  suggestion?: string;
+  /** technique (mesuré) ou goût (vérification visuelle) */
+  categorie?: 'technique' | 'gout';
+  /** Chemin exact de la page (404, mentions…) et largeur de rendu (px) */
+  chemin?: string;
+  largeur?: number | null;
+  /** Mesure et seuil (« 3,2:1 », « ≥ 4,5:1 ») */
+  mesure?: string | null;
+  seuil?: string | null;
+  /** Vignette de la zone (et de la version précédente au re-check), chemin relatif à retours/ */
+  vignette?: string | null;
+  vignetteAvant?: string | null;
 };
 
 /** Verdict d'un contrôle ou d'un test complet */
@@ -141,6 +157,23 @@ export function normaliserResultatTest(brut: unknown): ResultatTestModele | null
   return { modele: r.modele, version, verdict, controles, tickets, le: typeof r.le === 'string' ? r.le : new Date(0).toISOString(), dureeMs: typeof r.dureeMs === 'number' ? r.dureeMs : undefined, outil: typeof r.outil === 'string' ? r.outil : undefined };
 }
 
+const VIGNETTE = /^tests-modeles\/[\w.-]+\/[\w.-]+\.(jpe?g|png|webp)$/;
+/** Champs facultatifs du testeur, lus seulement s'ils sont présents et bien formés */
+function champsTesteur(t: Record<string, unknown>): Partial<TicketModele> {
+  const c: Partial<TicketModele> = {};
+  const texte = (x: unknown, n: number) => (typeof x === 'string' ? x.slice(0, n) : undefined);
+  if (typeof t.empreinte === 'string' && /^[0-9a-f]{8}$/.test(t.empreinte)) c.empreinte = t.empreinte;
+  if (texte(t.suggestion, 400)) c.suggestion = texte(t.suggestion, 400);
+  if (t.categorie === 'technique' || t.categorie === 'gout') c.categorie = t.categorie;
+  if (typeof t.chemin === 'string' && /^\/[\w./-]{0,200}$/.test(t.chemin)) c.chemin = t.chemin;
+  if (typeof t.largeur === 'number' && t.largeur > 0 && t.largeur < 5000) c.largeur = t.largeur;
+  if (texte(t.mesure, 120)) c.mesure = texte(t.mesure, 120);
+  if (texte(t.seuil, 120)) c.seuil = texte(t.seuil, 120);
+  if (typeof t.vignette === 'string' && VIGNETTE.test(t.vignette)) c.vignette = t.vignette;
+  if (typeof t.vignetteAvant === 'string' && VIGNETTE.test(t.vignetteAvant)) c.vignetteAvant = t.vignetteAvant;
+  return c;
+}
+
 const borne01 = (x: unknown) => Math.min(1, Math.max(0, Number(x) || 0));
 
 /** Lecture tolérante d'un ticket ; null s'il manque page, appareil ou étiquette valides */
@@ -170,5 +203,6 @@ export function normaliserTicket(brut: unknown): TicketModele | null {
     versionCorrection: Number.isInteger(t.versionCorrection) ? (t.versionCorrection as number) : null,
     controle: typeof t.controle === 'string' ? t.controle : null,
     creeLe: typeof t.creeLe === 'string' ? t.creeLe : undefined,
+    ...champsTesteur(t),
   };
 }

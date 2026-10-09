@@ -1,0 +1,56 @@
+{
+ "id": "test-saine",
+ "nom": "Test du testeur : composition saine (Prévention douce · Canard · Illustrations douces)",
+ "version": 1,
+ "sujets": [
+  "diabete"
+ ],
+ "composition": {
+  "structure": "elegant-sobre",
+  "gamme": "canard",
+  "couleur": "#1f6b64",
+  "police": "douce",
+  "visuels": {
+   "style": "pedagogique",
+   "herosSujet": "diabete",
+   "animation": null
+  },
+  "photos": [],
+  "sections": {
+   "ordre": "modele",
+   "variantes": {}
+  },
+  "effets": "sobre",
+  "traitement": {
+   "id": "modele",
+   "grain": false
+  },
+  "typo": {
+   "echelle": "affirmee",
+   "casse": "normale",
+   "graisse": "paire",
+   "interlettrage": "normal",
+   "accent": "aucun",
+   "alignement": "gauche",
+   "surtitre": "simple"
+  },
+  "details": {
+   "jeu": "gabarit",
+   "separateur": "aucun",
+   "souligne": "aucun",
+   "citation": "gabarit",
+   "badge": "gabarit",
+   "fond": "aucun",
+   "coins": "gabarit",
+   "ombres": "gabarit",
+   "boutons": "gabarit",
+   "densite": "aeree",
+   "cadre": "aucun"
+  },
+  "menu": {
+   "ordinateur": "gabarit",
+   "mobile": "gabarit",
+   "rdv": "gabarit"
+  }
+ }
+}
