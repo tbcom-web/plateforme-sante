@@ -1,4 +1,4 @@
-import { csvProspection, installation, libelleStatutProspection, lireFiltresProspection } from '@plateforme/core';
+import { csvProspection, installation, libelleSpecialite, libelleStatutProspection, lireFiltresProspection } from '@plateforme/core';
 import { casseNom, telephoneLisible } from '@plateforme/core/annuaire-sante';
 import { exigerAdmin } from '@/lib/admin';
 import { lireProspection } from '@/lib/prospection';
@@ -18,6 +18,7 @@ export async function GET(req: Request) {
       nom: casseNom(p.nom ?? ''), prenom: casseNom(p.prenom ?? ''), profession: p.profession ?? '', cabinet: casseNom(p.enseigne || p.raison_sociale || p.entreprise_nom || ''),
       adresse: p.adresse ?? '', codePostal: p.code_postal ?? '', commune: casseNom(p.commune ?? ''), telephone: p.telephone ? telephoneLisible(p.telephone) : '', email: p.email ?? '',
       installation: inst?.date ?? '', signal: inst?.libelle ?? '', statut: libelleStatutProspection(p.statut), relance: p.relance_le ?? '', note: p.note ?? '', rpps: p.rpps,
+      score: p.score_prospect != null ? String(p.score_prospect) : '', role: p.role ?? '', specialites: (p.specialites ?? []).map(libelleSpecialite).join(', '),
     };
   }));
   const jour = new Date().toISOString().slice(0, 10);

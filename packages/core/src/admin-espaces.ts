@@ -84,6 +84,7 @@ export const ESPACES: readonly Espace[] = [
 const SOUS_PAGES: readonly { prefixe: string; libelle: string }[] = [
   { prefixe: '/admin/sites/', libelle: 'Photos du site' },
   { prefixe: '/admin/leads/', libelle: 'Fiche essai' },
+  { prefixe: '/admin/prospection/praticien/', libelle: 'Fiche praticien' },
   { prefixe: '/admin/catalogue/', libelle: 'Modifier un soin' },
   { prefixe: '/admin/modeles/', libelle: 'Modifier un modèle' },
   { prefixe: '/admin/flux/', libelle: 'Article' },

@@ -6,6 +6,9 @@
 // 3. Date l'installation : date de création de l'établissement (SIRET) à l'INSEE, via l'API Recherche d'entreprises
 //    (recherche-entreprises.api.gouv.fr, gratuite, sans clé, 7 appels par seconde). Sans SIRET au RPPS : recherche par nom, code
 //    postal et code NAF, gardée seulement si le nom correspond.
+// 4. Liens et scores (migration 0057) : rôle, secteur, clés de structure et d'adresse, autres professions à la même adresse,
+//    diplômes complémentaires (fichier PS_LibreAcces_Dipl_AutExerc) et spécialités ; puis scores d'installation et de prospection
+//    (packages/core/src/prospection-score.ts, importé tel quel : Node efface les types).
 // Les adresses MSSanté ne sont jamais gardées (messagerie réservée aux échanges de santé, pas à la prospection).
 //
 // Certificat : le serveur de l'ANS présente l'autorité racine IGC-Santé, absente des magasins usuels → la lancer avec
@@ -23,6 +26,7 @@ import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { createInterface } from 'node:readline';
 import zlib from 'node:zlib';
+import { scorerProspection, specialitesDepuisDiplomes } from '../packages/core/src/prospection-score.ts';
 
 const URL_EXTRACTION = 'https://service.annuaire.sante.fr/annuaire-sante-webservices/V300/services/extraction/PS_LibreAcces';
 const JEU_DATA_GOUV = 'annuaire-sante-extractions-des-donnees-en-libre-acces-des-professionnels-intervenant-dans-le-systeme-de-sante-rpps';
@@ -115,32 +119,43 @@ async function* lignes(chemin, entree) {
   for await (const l of createInterface({ input: texte, crlfDelay: Infinity })) yield l;
 }
 
-/** Copie data.gouv.fr du même fichier (déposée chaque jour par l'ANS, non compressée, environ 830 Mo, lue en flux) */
+/** Fichiers lus : motif dans les ressources data.gouv.fr, motif dans le zip de l'ANS */
+const FICHIERS = { activite: [/personne-activite/i, 'Personne_activite'], diplomes: [/dipl-autexerc/i, 'Dipl_AutExerc'] };
+
+/** Copies data.gouv.fr des fichiers (déposées chaque jour par l'ANS, non compressées, lues en flux ; adresses changeantes) */
 async function sourceDataGouv() {
   const r = await fetch(`https://www.data.gouv.fr/api/1/datasets/${JEU_DATA_GOUV}/`);
   if (!r.ok) throw new Error(`data.gouv.fr : HTTP ${r.status}`);
-  const res = (await r.json()).resources?.find((x) => /personne-activite/i.test(`${x.title} ${x.url}`));
-  if (!res) throw new Error('data.gouv.fr : fichier personne-activite introuvable');
-  const f = await fetch(res.url);
-  if (!f.ok || !f.body) throw new Error(`data.gouv.fr : HTTP ${f.status}`);
-  const flux = Readable.fromWeb(f.body);
-  flux.setEncoding('utf8');
-  return { nom: `data.gouv.fr ${res.title} (${String(res.last_modified ?? '').slice(0, 10)})`, lignes: createInterface({ input: flux, crlfDelay: Infinity }) };
+  const ressources = (await r.json()).resources ?? [];
+  const trouver = (type) => ressources.find((x) => FICHIERS[type][0].test(`${x.title} ${x.url}`));
+  const act = trouver('activite');
+  if (!act) throw new Error('data.gouv.fr : fichier personne-activite introuvable');
+  return {
+    nom: `data.gouv.fr ${act.title} (${String(act.last_modified ?? '').slice(0, 10)})`,
+    async lignes(type) {
+      const res = trouver(type);
+      if (!res) throw new Error(`data.gouv.fr : fichier ${type} introuvable`);
+      const f = await fetch(res.url);
+      if (!f.ok || !f.body) throw new Error(`data.gouv.fr : HTTP ${f.status}`);
+      const flux = Readable.fromWeb(f.body);
+      flux.setEncoding('utf8');
+      return createInterface({ input: flux, crlfDelay: Infinity });
+    },
+  };
 }
+
+const sourceZip = (chemin, nom) => ({ nom, lignes: async (type) => lignes(chemin, await entreeZip(chemin, FICHIERS[type][1])) });
 
 /** Source : --fichier=zip local, sinon data.gouv.fr, sinon le zip de l'ANS (limité en débit : HTTP 429 fréquents) */
 async function ouvrirSource(dossier) {
-  if (args.fichier && existsSync(String(args.fichier))) {
-    const chemin = String(args.fichier);
-    return { nom: chemin, lignes: lignes(chemin, await entreeZip(chemin, 'Personne_activite')) };
-  }
+  if (args.fichier && existsSync(String(args.fichier))) return sourceZip(String(args.fichier), String(args.fichier));
   try {
     return await sourceDataGouv();
   } catch (e) {
     console.log(`${e.message} → extraction de l'ANS`);
   }
   const { chemin, nom } = await telecharger(dossier);
-  return { nom, lignes: lignes(chemin, await entreeZip(chemin, 'Personne_activite')) };
+  return sourceZip(chemin, nom);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -175,6 +190,8 @@ function colonnes(entete) {
     commune: col('Libellé commune'),
     telephone: col('Téléphone'),
     email: col('Adresse e-mail'),
+    role: col('Libellé rôle'),
+    secteur: col("Libellé secteur d'activité"),
   };
   const manquantes = ['rpps', 'nom', 'profCode', 'cp'].filter((k) => c[k] < 0);
   if (manquantes.length) throw new Error(`Colonnes introuvables (${manquantes.join(', ')}). En-tête lu : ${entete}`);
@@ -189,6 +206,12 @@ function departement(codeCommune, cp) {
   if (/^(97|98)/.test(p)) return p.slice(0, 3);
   if (/^20/.test(p)) return Number(p) < 20200 ? '2A' : '2B';
   return /^\d{2}/.test(p) ? p.slice(0, 2) : null;
+}
+
+/** Clé d'adresse : code postal + numéro + indice + voie, normalisés ; null sans voie */
+function cleAdresse(v, c) {
+  const val = (i) => (i >= 0 ? propre(v[i]) : '');
+  return val(c.cp) && val(c.voie) ? normal(`${val(c.cp)} ${val(c.numero)} ${val(c.indice)} ${val(c.typeVoie)} ${val(c.voie)}`).slice(0, 160) : null;
 }
 
 function ligneVersPraticien(v, c) {
@@ -220,8 +243,45 @@ function ligneVersPraticien(v, c) {
     departement: /^(\d{2}|2[AB]|97\d)$/.test(val(c.dep)) ? val(c.dep) : departement(val(c.codeCommune), cp),
     telephone: val(c.telephone) || null,
     email: email && !/mssante\.fr$/.test(email) && email.includes('@') ? email : null,
+    role: val(c.role) || null,
+    secteur: val(c.secteur) || null,
+    adresse_cle: cleAdresse(v, c),
+    structure_cle: val(c.idStructure) || (/^\d{14}$/.test(siret) ? siret : null) || cleAdresse(v, c),
   };
 }
+
+/** Diplômes complémentaires par RPPS (PS_LibreAcces_Dipl_AutExerc) : tout sauf le diplôme d'État (« DE ») de la profession */
+async function lireDiplomes(source, rppsVoulus) {
+  const parRpps = new Map();
+  let c = null;
+  for await (const l of await source.lignes('diplomes')) {
+    const v = l.split('|');
+    if (!c) {
+      const noms = v.map(normal);
+      const col = (d) => noms.findIndex((n) => n.startsWith(normal(d)));
+      c = { rpps: col('Identifiant PP'), type: col('Code type diplôme obtenu'), lib: col('Libellé diplôme obtenu'), aut: col('Libellé type autorisation'), disc: col('Libellé discipline autorisation') };
+      if (c.rpps < 0 || c.lib < 0) throw new Error(`Diplômes : colonnes introuvables. En-tête lu : ${l}`);
+      continue;
+    }
+    const rpps = propre(v[c.rpps]);
+    if (!rppsVoulus.has(rpps)) continue;
+    const type = propre(v[c.type]);
+    // « Autorisation de plein exercice » : mention administrative, sans intérêt commercial
+    const libelles = [type !== 'DE' ? propre(v[c.lib]) : '', c.aut >= 0 ? propre(v[c.aut]) : '', c.disc >= 0 ? propre(v[c.disc]) : '']
+      .filter((x) => x && !/plein exercice/i.test(x));
+    const liste = parRpps.get(rpps) ?? [];
+    for (const lib of libelles) if (!liste.some((d) => d.l === lib) && liste.length < 12) liste.push({ t: type, l: lib });
+    if (liste.length) parRpps.set(rpps, liste);
+  }
+  return parRpps;
+}
+
+const COLONNES_0057 = ['role', 'secteur', 'adresse_cle', 'structure_cle', 'autres_professions', 'diplomes', 'specialites'];
+/** La migration 0057 est-elle passée ? Sinon on n'écrit pas ses colonnes et la synchro continue comme avant. */
+async function avec0057() {
+  try { await sb('prospection_praticiens?select=score_prospect&limit=1'); return true; } catch { return false; }
+}
+const sans0057 = (p) => Object.fromEntries(Object.entries(p).filter(([k]) => !COLONNES_0057.includes(k)));
 
 // ---------------------------------------------------------------------------------------------------------------------
 // 3. Supabase (REST, clé secrète)
@@ -438,24 +498,64 @@ async function synchroAns() {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
+// 6. Scores d'installation et de prospection (migration 0057, packages/core/src/prospection-score.ts)
+// ---------------------------------------------------------------------------------------------------------------------
+
+async function calculerScores() {
+  const champs = 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,commune,telephone,email,specialites';
+  const toutes = await lireTout(`prospection_liste?select=${champs}`);
+  const parProfession = new Map();
+  for (const l of toutes) parProfession.set(l.profession_code, [...(parProfession.get(l.profession_code) ?? []), l]);
+  const aEcrire = [];
+  for (const groupe of parProfession.values()) {
+    const rppsDe = new Map(groupe.map((l) => [l.cle, l.rpps]));
+    for (const [cle, s] of scorerProspection(groupe, aujourdhui)) {
+      aEcrire.push({ cle, rpps: rppsDe.get(cle), score_installation: s.installation, score_prospect: s.prospect, raisons: s.raisons, score_le: aujourdhui });
+    }
+  }
+  await ecrireParLots(aEcrire);
+  console.log(`Scores : ${aEcrire.length} situations, ${aEcrire.filter((x) => x.score_installation >= 50).length} avec une installation probable (score ≥ 50)`);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Programme
 // ---------------------------------------------------------------------------------------------------------------------
 
 const dossier = mkdtempSync(join(tmpdir(), 'rpps-'));
 try {
-  const { lignes: source, nom: fichier } = await ouvrirSource(dossier);
+  const source = await ouvrirSource(dossier);
+  const fichier = source.nom;
   console.log(`Extraction : ${fichier}`);
 
   const praticiens = new Map();
+  // Autres professions présentes à chaque adresse : adresse → { libellé de la profession → nombre de situations }
+  const autresParAdresse = new Map();
   let c = null, total = 0;
-  for await (const l of source) {
+  for await (const l of await source.lignes('activite')) {
     if (!c) { c = colonnes(l); continue; }
     total++;
     const v = l.split('|');
-    if (!PROFESSIONS.has(propre(v[c.profCode]))) continue;
+    const code = propre(v[c.profCode]);
+    if (!PROFESSIONS.has(code)) {
+      const a = cleAdresse(v, c);
+      if (a) {
+        const compte = autresParAdresse.get(a) ?? {};
+        const lib = propre(v[c.prof]) || code;
+        compte[lib] = (compte[lib] ?? 0) + 1;
+        autresParAdresse.set(a, compte);
+      }
+      continue;
+    }
     const p = ligneVersPraticien(v, c);
     if (p && !praticiens.has(p.cle)) praticiens.set(p.cle, p);
   }
+  const diplomes = await lireDiplomes(source, new Set([...praticiens.values()].map((p) => p.rpps)));
+  for (const p of praticiens.values()) {
+    p.autres_professions = (p.adresse_cle && autresParAdresse.get(p.adresse_cle)) || null;
+    p.diplomes = diplomes.get(p.rpps) ?? null;
+    p.specialites = specialitesDepuisDiplomes((p.diplomes ?? []).map((d) => d.l));
+  }
+  autresParAdresse.clear();
   const liste = [...praticiens.values()];
   const parDep = {};
   for (const p of liste) parDep[p.departement ?? '?'] = (parDep[p.departement ?? '?'] ?? 0) + 1;
@@ -465,7 +565,17 @@ try {
     console.log('Départements les plus fournis :', Object.entries(parDep).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([d, n]) => `${d}:${n}`).join(' '));
     const lib = liste.filter((p) => /^lib/i.test(p.mode_exercice ?? ''));
     console.log(`Libéraux : ${lib.length} ; avec téléphone : ${lib.filter((p) => p.telephone).length} ; avec e-mail : ${lib.filter((p) => p.email).length} ; avec SIRET : ${lib.filter((p) => p.siret).length}`);
-    console.log('Exemple :', liste[0]);
+    const parSpec = {}, roles = {}, structures = {};
+    for (const p of lib) {
+      for (const sp of p.specialites) parSpec[sp] = (parSpec[sp] ?? 0) + 1;
+      roles[p.role ?? '?'] = (roles[p.role ?? '?'] ?? 0) + 1;
+      if (p.structure_cle) structures[p.structure_cle] = (structures[p.structure_cle] ?? 0) + 1;
+    }
+    console.log(`Diplômes complémentaires : ${diplomes.size} praticiens ; spécialités (situations libérales) :`, parSpec);
+    console.log('Rôles :', roles);
+    console.log(`Adresse partagée avec une autre profession : ${lib.filter((p) => p.autres_professions).length} situations libérales`);
+    console.log(`Structures avec plusieurs podologues : ${Object.values(structures).filter((n) => n > 1).length}`);
+    console.log('Exemple :', lib.find((p) => p.diplomes && p.autres_professions) ?? liste[0]);
     if (args.ans) await synchroAns();
   } else {
     await enregistrer(liste, praticiens, fichier);
@@ -474,7 +584,10 @@ try {
   rmSync(dossier, { recursive: true, force: true });
 }
 
-async function enregistrer(liste, praticiens, fichier) {
+async function enregistrer(listeComplete, praticiens, fichier) {
+  const v0057 = await avec0057();
+  if (!v0057) console.log('Migration 0057 absente : rôles, liens, diplômes et scores non écrits');
+  const liste = v0057 ? listeComplete : listeComplete.map(sans0057);
   const existants = await lireTout(`prospection_praticiens?select=cle,apparu_le,disparu_le,profession_code`);
   const deja = new Map(existants.map((e) => [e.cle, e]));
   const importInitial = existants.length === 0;
@@ -495,6 +608,7 @@ async function enregistrer(liste, praticiens, fichier) {
   // Étape facultative : sans clé ou sans la migration 0056, la synchro continue
   try { await synchroAns(); } catch (e) { console.log(`API ANS : ${e.message.slice(0, 200)} (étape sautée)`); }
   const verifies = args['sans-verif'] ? 0 : await verifierInstallations();
+  if (v0057) await calculerScores();
   await sb('prospection_synchros', {
     method: 'POST', prefer: 'return=minimal',
     body: { fichier, lignes: liste.length, nouveaux, disparus: disparus.length, verifies, message: importInitial ? 'import initial' : null },

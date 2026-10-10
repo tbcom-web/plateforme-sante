@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { installation, lireFiltresProspection, parametresProspection, PERIODES_INSTALLATION, STATUTS_PROSPECTION } from '@plateforme/core';
+import { installation, lireFiltresProspection, parametresProspection, PERIODES_INSTALLATION, ROLES_PROSPECTION, SPECIALITES_DIPLOMES, STATUTS_PROSPECTION } from '@plateforme/core';
 import { casseNom, telephoneLisible } from '@plateforme/core/annuaire-sante';
 import { exigerAdmin } from '@/lib/admin';
 import { dateCourte } from '@/lib/libelles';
 import { derniereSynchro, lireProspection, PAR_PAGE, type LigneProspection } from '@/lib/prospection';
+import { autresProfessions, jour, Scores, Specialites } from './Elements';
 import Suivi from './Suivi';
 
 export const metadata = { title: 'Super admin · Prospection' };
@@ -12,7 +13,6 @@ export const metadata = { title: 'Super admin · Prospection' };
 // nuit (scripts/synchro-rpps.mjs), triés du plus récemment installé au plus ancien ; suivi de la commerciale par praticien.
 // Aucun message n'est envoyé d'ici. Les adresses MSSanté ne sont jamais importées (messagerie réservée aux échanges de santé).
 
-const jour = (iso: string | null) => (iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 const couleurSignal: Record<string, string> = { siret: 'bg-teal-100 text-teal-900', rpps: 'bg-violet-100 text-violet-900', nom: 'bg-amber-100 text-amber-900', ans: 'bg-sky-100 text-sky-900' };
 const champ = 'min-h-10 rounded-lg border border-neutral-300 px-2';
 
@@ -25,7 +25,8 @@ function Fiche({ p }: { p: LigneProspection }) {
     <li className="grid gap-3 rounded-2xl border border-black/5 bg-white p-4 text-sm lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div className="grid min-w-0 content-start gap-1">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <p className="font-semibold">{nom || '—'}</p>
+          <Link href={`/admin/prospection/praticien/${p.rpps}`} className="font-semibold text-teal-900 underline decoration-teal-800/30 hover:decoration-teal-800">{nom || '—'}</Link>
+          {p.role && <span className="text-xs text-neutral-600">{p.role}</span>}
           {inst && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${couleurSignal[inst.source]}`}>{inst.libelle} le {jour(inst.date)}</span>}
           {p.disparu_le && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Absent du RPPS depuis le {jour(p.disparu_le)}</span>}
           {p.siret_ferme && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Établissement fermé</span>}
@@ -36,7 +37,10 @@ function Fiche({ p }: { p: LigneProspection }) {
           {tel ? <a className="font-semibold text-teal-800 underline" href={`tel:${p.telephone!.replace(/[^\d+]/g, '')}`}>{tel}</a> : <span className="text-neutral-500">Pas de téléphone au RPPS</span>}
           {p.email && <a className="break-all text-teal-800 underline" href={`mailto:${p.email}`}>{p.email}</a>}
         </p>
-        <p className="text-xs text-neutral-500">{[p.mode_exercice, `RPPS ${p.rpps}`, p.siret && `SIRET ${p.siret}`].filter(Boolean).join(' · ')}</p>
+        <Specialites ids={p.specialites} />
+        {autresProfessions(p.autres_professions) && <p className="text-xs text-neutral-600">À la même adresse : {autresProfessions(p.autres_professions)}</p>}
+        <p className="text-xs text-neutral-500">{[p.mode_exercice, p.secteur, `RPPS ${p.rpps}`, p.siret && `SIRET ${p.siret}`].filter(Boolean).join(' · ')}</p>
+        <Scores prospect={p.score_prospect} installation={p.score_installation} raisons={p.raisons} />
       </div>
       <Suivi rpps={p.rpps} statut={p.statut} relance={p.relance_le} note={p.note} />
     </li>
@@ -57,7 +61,7 @@ export default async function Prospection({ searchParams }: PageProps<'/admin/pr
     );
   }
 
-  const { lignes, total } = resultat;
+  const { lignes, total, niveau } = resultat;
   const pages = Math.max(1, Math.ceil(total / PAR_PAGE));
   const lien = (page: number) => `/admin/prospection?${parametresProspection(f, page)}`;
 
@@ -67,7 +71,7 @@ export default async function Prospection({ searchParams }: PageProps<'/admin/pr
         <div>
           <h1 className="text-2xl font-bold">Prospection <span className="text-base font-semibold text-neutral-600">· RPPS</span></h1>
           <p className="text-sm text-neutral-600">
-            {total.toLocaleString('fr-FR')} situation{total > 1 ? 's' : ''} d’exercice · du plus récemment installé au plus ancien.
+            {total.toLocaleString('fr-FR')} situation{total > 1 ? 's' : ''} d’exercice · {niveau >= 57 && f.tri === 'score' ? 'du meilleur score au plus faible' : 'du plus récemment installé au plus ancien'}.
             {synchro ? ` Données issues du RPPS (Annuaire Santé, ANS), mise à jour du ${dateCourte(synchro.le)}${synchro.nouveaux ? ` : ${synchro.nouveaux} nouveauté${synchro.nouveaux > 1 ? 's' : ''}` : ''}.` : ' Première synchronisation pas encore faite.'}
           </p>
         </div>
@@ -104,6 +108,31 @@ export default async function Prospection({ searchParams }: PageProps<'/admin/pr
             <option value="non">Tous</option>
           </select>
         </label>
+        {niveau >= 57 && (
+          <>
+            <label className="grid gap-1">
+              <span className="font-medium">Rôle</span>
+              <select name="role" defaultValue={f.role} className={champ}>
+                <option value="">Tous</option>
+                {ROLES_PROSPECTION.map((r) => <option key={r.id} value={r.id}>{r.libelle}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1">
+              <span className="font-medium">Spécialité (diplôme)</span>
+              <select name="specialite" defaultValue={f.specialite} className={champ}>
+                <option value="">Toutes</option>
+                {SPECIALITES_DIPLOMES.map((s) => <option key={s.id} value={s.id}>{s.libelle}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1">
+              <span className="font-medium">Tri</span>
+              <select name="tri" defaultValue={f.tri} className={champ}>
+                <option value="score">Meilleur score</option>
+                <option value="recent">Installation la plus récente</option>
+              </select>
+            </label>
+          </>
+        )}
         <label className="flex min-h-10 items-center gap-2">
           <input type="checkbox" name="actifs" value="non" defaultChecked={!f.actifs} />
           <span>Inclure fermés et absents</span>

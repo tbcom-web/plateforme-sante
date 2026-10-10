@@ -66,8 +66,20 @@ export type FiltresProspection = {
   liberal: boolean;
   /** Masquer les praticiens disparus du RPPS et les établissements fermés */
   actifs: boolean;
+  /** Spécialité repérée dans les diplômes (prospection-score.ts) */
+  specialite: string;
+  role: RoleProspection | '';
+  /** score : intérêt commercial (0057) ; recent : signal d'installation le plus récent */
+  tri: 'score' | 'recent';
   page: number;
 };
+
+export const ROLES_PROSPECTION = [
+  { id: 'titulaire', libelle: 'Titulaires', motif: 'Titulaire%' },
+  { id: 'collaborateur', libelle: 'Collaborateurs', motif: 'Collaborat%' },
+  { id: 'associe', libelle: 'Associés', motif: 'Associ%' },
+] as const;
+export type RoleProspection = (typeof ROLES_PROSPECTION)[number]['id'];
 
 const premier = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
 export const departementSaisi = (s: string) => {
@@ -86,6 +98,9 @@ export function lireFiltresProspection(sp: Record<string, string | string[] | un
     statut: statut === 'relance' || estStatutProspection(statut) ? statut : '',
     liberal: premier(sp.liberal) !== 'non',
     actifs: premier(sp.actifs) !== 'non',
+    specialite: /^[a-z]{2,12}$/.test(premier(sp.specialite)) ? premier(sp.specialite) : '',
+    role: ROLES_PROSPECTION.some((r) => r.id === premier(sp.role)) ? (premier(sp.role) as RoleProspection) : '',
+    tri: premier(sp.tri) === 'recent' ? 'recent' : 'score',
     page: Number.isFinite(page) && page > 0 ? Math.min(page, 1000) : 1,
   };
 }
@@ -99,6 +114,9 @@ export function parametresProspection(f: FiltresProspection, page = f.page): str
   if (f.statut) p.set('statut', f.statut);
   if (!f.liberal) p.set('liberal', 'non');
   if (!f.actifs) p.set('actifs', 'non');
+  if (f.specialite) p.set('specialite', f.specialite);
+  if (f.role) p.set('role', f.role);
+  if (f.tri !== 'score') p.set('tri', f.tri);
   if (page > 1) p.set('page', String(page));
   return p.toString();
 }
@@ -106,14 +124,15 @@ export function parametresProspection(f: FiltresProspection, page = f.page): str
 export type LigneExport = {
   nom: string; prenom: string; profession: string; cabinet: string; adresse: string; codePostal: string; commune: string;
   telephone: string; email: string; installation: string; signal: string; statut: string; relance: string; note: string; rpps: string;
+  score: string; role: string; specialites: string;
 };
 
 /** CSV pour Excel (point-virgule, BOM UTF-8). Les cellules qui commencent par = + - @ sont neutralisées. */
 export function csvProspection(lignes: LigneExport[]): string {
   const entetes: [keyof LigneExport, string][] = [
-    ['nom', 'Nom'], ['prenom', 'Prénom'], ['profession', 'Profession'], ['cabinet', 'Cabinet'], ['adresse', 'Adresse'], ['codePostal', 'Code postal'],
+    ['score', 'Score'], ['nom', 'Nom'], ['prenom', 'Prénom'], ['role', 'Rôle'], ['profession', 'Profession'], ['cabinet', 'Cabinet'], ['adresse', 'Adresse'], ['codePostal', 'Code postal'],
     ['commune', 'Commune'], ['telephone', 'Téléphone'], ['email', 'E-mail'], ['installation', 'Installation'], ['signal', 'Signal'],
-    ['statut', 'Statut'], ['relance', 'Relance'], ['note', 'Note'], ['rpps', 'RPPS'],
+    ['specialites', 'Spécialités'], ['statut', 'Statut'], ['relance', 'Relance'], ['note', 'Note'], ['rpps', 'RPPS'],
   ];
   const cellule = (v: string) => {
     const t = String(v ?? '').replace(/\r?\n/g, ' ');

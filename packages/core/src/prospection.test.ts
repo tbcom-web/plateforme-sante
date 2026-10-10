@@ -20,7 +20,9 @@ test('installation : signal le plus récent, source lisible', () => {
 
 test('filtres : valeurs par défaut et saisies refusées', () => {
   const f = lireFiltresProspection({});
-  assert.deepEqual(f, { departement: '', q: '', periode: '12', statut: '', liberal: true, actifs: true, page: 1 });
+  assert.deepEqual(f, { departement: '', q: '', periode: '12', statut: '', liberal: true, actifs: true, specialite: '', role: '', tri: 'score', page: 1 });
+  assert.equal(lireFiltresProspection({ specialite: 'sport', role: 'titulaire', tri: 'recent' }).role, 'titulaire');
+  assert.equal(lireFiltresProspection({ specialite: 'x;drop' }).specialite, '');
   const g = lireFiltresProspection({ dep: '2a', q: 'Dupont<script>', periode: '3', statut: 'rappeler', liberal: 'non', page: '4' });
   assert.equal(g.departement, '2A');
   assert.equal(g.q, 'Dupont script');
@@ -35,10 +37,10 @@ test('filtres : valeurs par défaut et saisies refusées', () => {
 test('CSV : séparateur point-virgule, guillemets, formules neutralisées', () => {
   const l: LigneExport = {
     nom: 'Dupont', prenom: 'Anne', profession: 'Pédicure-Podologue', cabinet: 'Cabinet "Les Pins"; Lyon', adresse: '1 rue A', codePostal: '69001', commune: 'Lyon',
-    telephone: '04 00 00 00 00', email: '', installation: '2026-01-01', signal: 'SIRET créé', statut: 'À contacter', relance: '', note: '=HYPERLINK("x")', rpps: '10000000000',
+    telephone: '04 00 00 00 00', email: '', installation: '2026-01-01', signal: 'SIRET créé', statut: 'À contacter', relance: '', note: '=HYPERLINK("x")', rpps: '10000000000', score: '72', role: 'Titulaire de cabinet', specialites: 'Sport',
   };
   const csv = csvProspection([l]);
-  assert.ok(csv.startsWith('﻿Nom;Prénom;'));
+  assert.ok(csv.startsWith('﻿Score;Nom;Prénom;Rôle;'));
   assert.ok(csv.includes('"Cabinet ""Les Pins""; Lyon"'));
   assert.ok(csv.includes(`"'=HYPERLINK(""x"")"`));
 });

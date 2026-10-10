@@ -1,9 +1,10 @@
 import 'server-only';
-import { moisAvant, PERIODES_INSTALLATION, type FiltresProspection } from '@plateforme/core';
+import { moisAvant, PERIODES_INSTALLATION, ROLES_PROSPECTION, type FiltresProspection, type Raison } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 
-// Lecture de la prospection RPPS (migration 0055, docs/prospection-rpps.md) avec la session de la personne : RLS admin seulement.
-// null quand la migration n'est pas passée.
+// Lecture de la prospection RPPS (migrations 0055 à 0057, docs/prospection-rpps.md) avec la session de la personne : RLS admin
+// seulement. Chaque migration ajoute des colonnes : on lit le niveau le plus riche disponible (0057 → 0056 → 0055) ; null quand
+// même 0055 n'est pas passée.
 
 export type LigneProspection = {
   cle: string; rpps: string; civilite: string | null; nom: string | null; prenom: string | null; profession: string | null; mode_exercice: string | null;
@@ -11,25 +12,42 @@ export type LigneProspection = {
   telephone: string | null; email: string | null; siret: string | null; apparu_le: string | null; disparu_le: string | null;
   siret_cree_le: string | null; siret_source: string | null; siret_ferme: boolean | null; entreprise_nom: string | null;
   statut: string | null; note: string | null; relance_le: string | null; situation_maj_le?: string | null;
+  // 0057
+  role?: string | null; secteur?: string | null; structure_cle?: string | null; adresse_cle?: string | null;
+  autres_professions?: Record<string, number> | null; diplomes?: { t: string; l: string }[] | null; specialites?: string[] | null;
+  score_installation?: number | null; score_prospect?: number | null; raisons?: Raison[] | null;
 };
 export type Synchro = { le: string; lignes: number | null; nouveaux: number | null; disparus: number | null; verifies: number | null };
 
-const COLONNES = 'cle,rpps,civilite,nom,prenom,profession,mode_exercice,raison_sociale,enseigne,adresse,code_postal,commune,departement,telephone,email,siret,'
+const BASE = 'cle,rpps,civilite,nom,prenom,profession,mode_exercice,raison_sociale,enseigne,adresse,code_postal,commune,departement,telephone,email,siret,'
   + 'apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,entreprise_nom,statut,note,relance_le';
+const NIVEAUX = [
+  { niveau: 57, colonnes: `${BASE},situation_maj_le,role,secteur,structure_cle,adresse_cle,autres_professions,diplomes,specialites,score_installation,score_prospect,raisons` },
+  { niveau: 56, colonnes: `${BASE},situation_maj_le` },
+  { niveau: 55, colonnes: BASE },
+] as const;
+type Niveau = (typeof NIVEAUX)[number]['niveau'];
 export const PAR_PAGE = 50;
 
-export async function lireProspection(f: FiltresProspection, options: { tout?: boolean } = {}): Promise<{ lignes: LigneProspection[]; total: number } | null> {
-  // Avec la date de l'API ANS (0056) ; sans elle si la migration n'est pas passée
-  return (await lireAvec(f, options, true)) ?? lireAvec(f, options, false);
+export async function lireProspection(f: FiltresProspection, options: { tout?: boolean } = {}): Promise<{ lignes: LigneProspection[]; total: number; niveau: Niveau } | null> {
+  for (const n of NIVEAUX) {
+    const r = await lireAvec(f, options, n.niveau, n.colonnes);
+    if (r) return { ...r, niveau: n.niveau };
+  }
+  return null;
 }
 
-async function lireAvec(f: FiltresProspection, { tout = false } = {}, ans: boolean): Promise<{ lignes: LigneProspection[]; total: number } | null> {
+async function lireAvec(f: FiltresProspection, { tout = false } = {}, niveau: Niveau, colonnes: string): Promise<{ lignes: LigneProspection[]; total: number } | null> {
   const supabase = await createClient();
   const aujourdhui = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' });
-  let req = supabase.from('prospection_liste').select(ans ? `${COLONNES},situation_maj_le` : COLONNES, { count: 'exact' });
+  const ans = niveau >= 56;
+  let req = supabase.from('prospection_liste').select(colonnes, { count: 'exact' });
   if (f.departement) req = req.eq('departement', f.departement);
   if (f.liberal) req = req.ilike('mode_exercice', 'lib%');
   if (f.actifs) req = req.is('disparu_le', null).not('siret_ferme', 'is', true);
+  if (niveau >= 57 && f.specialite) req = req.contains('specialites', [f.specialite]);
+  const role = ROLES_PROSPECTION.find((r) => r.id === f.role);
+  if (niveau >= 57 && role) req = req.ilike('role', role.motif);
   // Conditions « l'une ou l'autre », réunies en un seul filtre or=(and(or(…),or(…)))
   const ou: string[] = [];
   const mois = PERIODES_INSTALLATION.find((p) => p.id === f.periode)?.mois ?? null;
@@ -51,6 +69,7 @@ async function lireAvec(f: FiltresProspection, { tout = false } = {}, ans: boole
   }
   if (ou.length === 1) req = req.or(ou[0]);
   else if (ou.length > 1) req = req.or(`and(${ou.map((o) => `or(${o})`).join(',')})`);
+  if (niveau >= 57 && f.tri === 'score') req = req.order('score_prospect', { ascending: false, nullsFirst: false });
   req = req.order('siret_cree_le', { ascending: false, nullsFirst: false }).order('apparu_le', { ascending: false, nullsFirst: false }).order('nom');
   if (!tout) {
     const debut = (f.page - 1) * PAR_PAGE;
@@ -69,6 +88,32 @@ async function lireAvec(f: FiltresProspection, { tout = false } = {}, ans: boole
     if (!data || data.length < 1000) break;
   }
   return { lignes, total };
+}
+
+export type Lien = { ligne: LigneProspection; via: 'structure' | 'adresse'; depuis: string };
+export type FichePraticien = { situations: LigneProspection[]; liens: Lien[] };
+
+/**
+ * Fiche d'un praticien : toutes ses situations (présentes et passées) et les confrères liés, présents ou passés, par la même
+ * structure RPPS ou la même adresse. L'historique remonte à l'import initial (0055) : il s'enrichit chaque nuit.
+ */
+export async function lireFiche(rpps: string): Promise<FichePraticien | null> {
+  if (!/^\d{11}$/.test(rpps)) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('prospection_liste').select(NIVEAUX[0].colonnes).eq('rpps', rpps).order('disparu_le', { ascending: false, nullsFirst: true });
+  if (error || !data?.length) return null;
+  const situations = data as unknown as LigneProspection[];
+  const structures = [...new Set(situations.map((s) => s.structure_cle).filter((x): x is string => Boolean(x)))];
+  const adresses = [...new Set(situations.map((s) => s.adresse_cle).filter((x): x is string => Boolean(x)))];
+  if (!structures.length && !adresses.length) return { situations, liens: [] };
+  const liste = (cles: string[]) => cles.map((c) => `"${c.replace(/"/g, '')}"`).join(',');
+  const conditions = [structures.length ? `structure_cle.in.(${liste(structures)})` : '', adresses.length ? `adresse_cle.in.(${liste(adresses)})` : ''].filter(Boolean).join(',');
+  const { data: autres } = await supabase.from('prospection_liste').select(NIVEAUX[0].colonnes).neq('rpps', rpps).or(conditions).limit(200);
+  const liens: Lien[] = ((autres ?? []) as unknown as LigneProspection[]).map((l) => {
+    const s = situations.find((x) => (x.structure_cle && x.structure_cle === l.structure_cle) || (x.adresse_cle && x.adresse_cle === l.adresse_cle))!;
+    return { ligne: l, via: s.structure_cle && s.structure_cle === l.structure_cle ? 'structure' : 'adresse', depuis: s.cle };
+  });
+  return { situations, liens };
 }
 
 export async function derniereSynchro(): Promise<Synchro | null> {
