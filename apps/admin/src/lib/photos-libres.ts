@@ -43,6 +43,8 @@ async function appeler(source: SourcePhotoLibre, url: string, cleCache: string):
   }).catch(() => null);
   if (!r) throw new ErreurSource(`${LICENCES_SOURCES[source].libelle} ne répond pas. Réessayez plus tard.`);
   if (r.status === 401 || r.status === 403) throw new ErreurSource(`Clé ${LICENCES_SOURCES[source].libelle} refusée : vérifiez ${LICENCES_SOURCES[source].variable} dans Vercel.`);
+  // Photo supprimée à la source (détail en 404) : « introuvable » (retirée proprement), pas une erreur bloquante
+  if (r.status === 404 && cleCache.startsWith('d:')) return [];
   if (r.status === 429) throw new ErreurSource(`Limite de ${LICENCES_SOURCES[source].libelle} atteinte : réessayez plus tard.`);
   if (!r.ok) throw new ErreurSource(`${LICENCES_SOURCES[source].libelle} : erreur ${r.status}.`);
   const candidats = candidatsDepuisReponse(source, await r.json().catch(() => null));

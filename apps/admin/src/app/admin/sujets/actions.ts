@@ -106,6 +106,8 @@ export async function deciderCarte(carte: RefCarte, geste: GesteSujet, o: { comm
       return { ...r, note: null };
     }
     const r = await accepterArrivage({ kind: 'photo', id }, choix);
+    // Photo supprimée à la source (marquée « retirée » par l'import) : la carte est réglée, on passe à la suivante
+    if (!r.ok && /introuvable/i.test(r.message)) return { ok: true, message: 'Photo retirée par son auteur à la source : écartée, carte suivante.', note: null };
     if (!r.ok) return r;
     // Note (et commentaire) sous la clé de la photo hébergée
     const supabase = await createClient();
