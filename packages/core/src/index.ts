@@ -134,3 +134,4 @@ export * from './retours-resume';
 export * from './analyse-course';
 export * from './univers-minimal';
 export * from './conseils-patients';
+export * from './prospection-zone';

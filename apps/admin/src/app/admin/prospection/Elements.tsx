@@ -20,8 +20,8 @@ export function Scores({ prospect, installation, raisons }: { prospect: number |
       </summary>
       <div className="mt-2 grid gap-3 rounded-lg bg-neutral-50 p-3 sm:grid-cols-3">
         {([
-          { titre: 'Pourquoi maintenant : besoin de se faire connaître', liste: (raisons ?? []).filter((r) => r.k === 'besoin') },
-          { titre: 'Profil et accès', liste: parType('p').filter((r) => r.k !== 'besoin') },
+          { titre: 'Pourquoi maintenant : besoin de se faire connaître', liste: (raisons ?? []).filter((r) => r.k === 'besoin' || r.k === 'zone') },
+          { titre: 'Profil et accès', liste: parType('p').filter((r) => r.k !== 'besoin' && r.k !== 'zone') },
           { titre: `Installation (${installation ?? 0} %)`, liste: parType('i') },
         ]).map((b) => (
           <div key={b.titre}>

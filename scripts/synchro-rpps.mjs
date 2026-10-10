@@ -30,6 +30,7 @@ import { createInterface } from 'node:readline';
 import zlib from 'node:zlib';
 import { estEnseignement, scorerProspection, specialitesDepuisDiplomes } from '../packages/core/src/prospection-score.ts';
 import { evenementsDuJour } from '../packages/core/src/prospection-evenements.ts';
+import { calculerZones } from '../packages/core/src/prospection-zone.ts';
 
 const URL_EXTRACTION = 'https://service.annuaire.sante.fr/annuaire-sante-webservices/V300/services/extraction/PS_LibreAcces';
 const JEU_DATA_GOUV = 'annuaire-sante-extractions-des-donnees-en-libre-acces-des-professionnels-intervenant-dans-le-systeme-de-sante-rpps';
@@ -555,17 +556,39 @@ async function synchroAns() {
 // 6. Scores d'installation et de prospection (migration 0057, packages/core/src/prospection-score.ts)
 // ---------------------------------------------------------------------------------------------------------------------
 
+/** Centres et populations des communes et des arrondissements (API Géo de l'État, geo.api.gouv.fr) ; vide en cas d'échec */
+async function lireCommunes() {
+  const communes = new Map();
+  for (const url of ['https://geo.api.gouv.fr/communes?fields=code,centre,population&format=json',
+    'https://geo.api.gouv.fr/communes?type=arrondissement-municipal&fields=code,centre,population&format=json']) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      for (const c of await r.json()) {
+        const [lon, lat] = c.centre?.coordinates ?? [];
+        if (typeof lat === 'number') communes.set(c.code, { lat, lon, population: c.population ?? 0 });
+      }
+    } catch (e) {
+      console.log(`API Géo : ${e.message} (argument de zone sauté)`);
+      return new Map();
+    }
+  }
+  return communes;
+}
+
 async function calculerScores(v0058) {
   const champs = (AVEC_SIREN ? 'siren_cree_le,ancien_cabinet,etablissements_ouverts,' : '') + 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,code_postal,structure_cle,raison_sociale,enseigne,commune,code_commune,departement,nom,prenom,autres_professions,statut,telephone,email,specialites';
   const toutes = await lireTout(`prospection_liste?select=${champs}`);
   const ilYa2ans = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 10);
   const evenements = v0058 ? await sb(`prospection_evenements?select=type,cle,le,details&type=eq.role&le=gte.${ilYa2ans}&limit=1000`) : [];
+  const communes = await lireCommunes();
   const parProfession = new Map();
   for (const l of toutes) parProfession.set(l.profession_code, [...(parProfession.get(l.profession_code) ?? []), l]);
   const aEcrire = [];
   for (const groupe of parProfession.values()) {
     const rppsDe = new Map(groupe.map((l) => [l.cle, l.rpps]));
-    for (const [cle, s] of scorerProspection(groupe, aujourdhui, evenements)) {
+    const zones = communes.size ? calculerZones(groupe, communes, aujourdhui) : undefined;
+    for (const [cle, s] of scorerProspection(groupe, aujourdhui, evenements, zones)) {
       aEcrire.push({ cle, rpps: rppsDe.get(cle), score_installation: s.installation, score_prospect: s.prospect, raisons: s.raisons, score_le: aujourdhui });
     }
   }

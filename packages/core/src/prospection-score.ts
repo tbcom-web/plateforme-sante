@@ -21,6 +21,9 @@
 //    l'ensemble des podologues libéraux (rôle, type de cabinet, taille, maison de santé, multi-sites, ancienneté RPPS, département,
 //    nom du cabinet, type d'e-mail, ancienneté du cabinet à l'INSEE, concurrence dans la commune : analyse des clients du 2026-10-10,
 //    docs/prospection-rpps.md).
+// 5. ZONE (prospection-zone.ts, calculée par la synchro) : nouveaux podologues installés à 10 km depuis 1 et 3 ans (hors même
+//    adresse) et densité de podologues par habitant comparée à la moyenne nationale : argument de la commerciale, k = 'zone'
+//    (colonne « Pourquoi maintenant »), 15 points au plus.
 // Chaque point est expliqué (raisons), pour que la commerciale sache quoi vérifier au téléphone.
 
 export const SPECIALITES_DIPLOMES = [
@@ -81,6 +84,8 @@ export type LigneScore = {
   specialites?: readonly string[] | null;
 };
 /** t : « i » (installation) ou « p » (prospection) ; l : libellé ; p : points ; k : clé de filtre (« client » : lien avec un client) */
+import type { ZoneCabinet } from './prospection-zone';
+
 export type Raison = { t: 'i' | 'p'; l: string; p: number; k?: string };
 export type ScoreProspection = { installation: number; prospect: number; raisons: Raison[] };
 /** Événements utiles au score (prospection_evenements, 0058) : changements de rôle surtout */
@@ -160,7 +165,7 @@ function seuilRecentDe(parRpps: Map<string, LigneScore[]>): string | null {
   return numeros[Math.floor(numeros.length * 0.95)] ?? null;
 }
 
-export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: string, evenements: readonly EvenementScore[] = []): Map<string, ScoreProspection> {
+export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: string, evenements: readonly EvenementScore[] = [], zones?: ReadonlyMap<string, ZoneCabinet>): Map<string, ScoreProspection> {
   const parAdresse = new Map<string, LigneScore[]>();
   const parRpps = new Map<string, LigneScore[]>();
   const parStructure = new Map<string, LigneScore[]>();
@@ -200,6 +205,10 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
   // Points selon le RANG parmi les podologues libéraux (non clients) : 15 × rang³ → la moitié la moins ressemblante n'a presque rien
   const ordre = liberaux.filter((r) => !clients.has(r)).map((r) => ({ r, v: logRapport(r) })).sort((a, b) => a.v - b.v);
   const rangRessemblance = new Map(ordre.map((x, i) => [x.r, ordre.length > 1 ? i / (ordre.length - 1) : 0]));
+  // Rang de densité de chaque valeur parmi les cabinets (argument de zone)
+  const rapports = [...(zones?.values() ?? [])].map((z) => z.rapport).sort((a, b) => a - b);
+  const rangsDensite = new Map<number, number>();
+  rapports.forEach((r, i) => rangsDensite.set(r, rapports.length > 1 ? i / (rapports.length - 1) : 0));
   const reprises = new Map<string, string>(); // cle → date où la situation est passée à « titulaire »
   for (const e of evenements) if (e.type === 'role' && /titulaire/i.test(String(e.details?.apres ?? '')) && (!reprises.has(e.cle) || e.le > reprises.get(e.cle)!)) reprises.set(e.cle, e.le);
   const seuilRecent = seuilRecentDe(parRpps);
@@ -284,6 +293,21 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
       if ((l.etablissements_ouverts ?? 0) >= 2 && aSiret) besoins.push({ l: 'Second lieu ou nouveau cabinet en cours : faire connaître la nouvelle adresse', p: 8 * aSiret });
       besoins.sort((a, b) => b.p - a.p);
       besoins.forEach((b, i) => { if (b.p >= 1) raisons.push({ t: 'p', l: b.l, p: i === 0 ? Math.round(b.p) : 0, k: 'besoin' }); });
+      // Zone : concurrence récente et densité (argument « beaucoup de nouveaux confrères autour de vous »)
+      const z = zones?.get(l.cle);
+      if (z) {
+        const pts: Raison[] = [];
+        if (z.nouveaux3ans >= 3) pts.push({ t: 'p', l: `${z.nouveaux3ans} podologues se sont installés à moins de ${z.rayonKm} km depuis 3 ans${z.nouveaux1an ? ` (dont ${z.nouveaux1an} cette année)` : ''}, sans compter son cabinet`, p: Math.min(10, z.nouveaux3ans), k: 'zone' });
+        const ecart = Math.round((z.rapport - 1) * 100);
+        const dens = (x: number) => x.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+        // Les podologues sont là où vivent les gens : la plupart des cabinets dépassent la moyenne nationale. Points selon le RANG de
+        // densité parmi les cabinets (10 % les plus denses : 8 ; 25 % : 5 ; 40 % : 3), texte comparé à la moyenne nationale.
+        const rangDensite = rangsDensite.get(z.rapport) ?? 0;
+        if (z.rapport > 1 && rangDensite >= 0.6) pts.push({ t: 'p', l: `Zone dense : ${dens(z.densite)} podologues pour 10 000 habitants à ${z.rayonKm} km, contre ${dens(z.densiteNationale)} en moyenne nationale (+${ecart} %), plus dense que ${Math.round(rangDensite * 100)} % des cabinets`, p: rangDensite >= 0.9 ? 8 : rangDensite >= 0.75 ? 5 : 3, k: 'zone' });
+        else if (z.rapport > 0 && z.rapport <= 0.7) pts.push({ t: 'p', l: `Zone peu dotée : ${dens(z.densite)} podologues pour 10 000 habitants à ${z.rayonKm} km, contre ${dens(z.densiteNationale)} en moyenne (${ecart} %)`, p: 0, k: 'zone' });
+        let reste = 15;
+        for (const r of pts) { r.p = Math.min(r.p, reste); reste -= r.p; raisons.push(r); }
+      }
       // Vie du cabinet, au bénéfice de ceux qui décident
       const confreres = decideur && l.structure_cle ? (parStructure.get(l.structure_cle) ?? []).filter((m) => m.rpps !== l.rpps) : [];
       const arrivee = confreres.filter((m) => m.apparu_le && attenuation(m.apparu_le, aujourdhui)).sort((a, b) => b.apparu_le!.localeCompare(a.apparu_le!))[0];
