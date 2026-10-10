@@ -11,11 +11,21 @@
 //   8. validation pour la production client (Paul, verrous au vert) puis publication                           → pret-validation → publie
 // Le testeur n'intervient PAS avant la présélection ni pendant le tournoi : la génération garde seulement son filtre léger
 // (harmonie, éléments exclus, rendus identiques : filtreLeger).
+//
+// CHAÎNE EN 3 ÉTAPES (décision de Paul du 2026-10-11 : « c'est un peu trop complexe… une seule relecture finale avant publication et
+// ajout au catalogue ») : les statuts ci-dessus restent ceux du moteur (et de la base), mais Paul n'en voit que trois (etapeVisible) :
+//   1. CHOISIR : présélection, « Garder » → candidat = gardé, en file d'attente ordonnée par les signaux (J'aime, juge, jauge) ;
+//      le tournoi n'est plus un passage obligé (vue détaillée seulement, jamais d'écart ni de finaliste décidé par lui) ;
+//   2. VÉRIFICATION (automatique) : dès qu'une place se libère (CHAINE.maxVerification à la fois), le gardé passe finaliste puis
+//      check-agent ; l'admin lance lui-même le testeur (testsALancer : 3 en parallèle, jamais deux fois la même version) ; tickets
+//      techniques → une demande « corrections techniques » à Claude ; rouge persistant après correction → écarté ;
+//   3. RELECTURE FINALE (Paul) : avis page par page, remarques → Claude, pages modifiées en avant / après, puis « Ajouter au
+//      catalogue » (publication, geste de Paul).
 // Format des tickets et des résultats de test : chaine-modeles-format.ts. Docs : docs/chaine-modeles.md. Module pur.
 
 import { ajusterBT, type MatchBT } from './duels';
 import { jeuxDuModele } from './chaine-design';
-import { etatTournoiGrilles, type EtatTournoiGrilles, type GrilleTournoi, type SignauxCandidat } from './tournoi-grilles';
+import { aPriori, etatTournoiGrilles, type EtatTournoiGrilles, type GrilleTournoi, type SignauxCandidat } from './tournoi-grilles';
 import {
   APPAREILS_MODELE, libellePageModele, PAGES_MODELE, normaliserResultatTest, type AppareilModele, type PageModele, type ResultatTestModele, type TicketModele,
 } from './chaine-modeles-format';
@@ -45,6 +55,14 @@ export const CHAINE = {
   poidsValidateur: 2,
   /** Taille d'une page de présélection */
   tailleGrille: 6,
+  /** Designs en vérification en même temps (2026-10-11, chaîne en 3 étapes : au-delà, les gardés attendent en file) */
+  maxVerification: 5,
+  /** Tests automatiques (workflow tester-modele) en parallèle au plus */
+  testsParalleles: 3,
+  /** Un test lancé sans résultat depuis plus longtemps est considéré perdu (le workflow plafonne à 60 min) : relance permise */
+  dureeTestMs: 75 * 60_000,
+  /** Lancements automatiques au plus par version (au-delà : vérification bloquée, relance à la main depuis la fiche) */
+  essaisTest: 2,
 } as const;
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -83,16 +101,16 @@ export const poidsVote = (role: RoleEquipe | null | undefined) => (role === 'val
 export type Main = 'humain' | 'agent' | 'claude' | 'paul' | 'auto' | 'personne';
 
 export const STATUTS_MODELE = [
-  { id: 'candidat', etape: 1, libelle: 'Candidat', main: 'humain' as Main, fini: 'Le tournoi du profil est stable : il est finaliste ou écarté.' },
-  { id: 'finaliste', etape: 2, libelle: 'Finaliste', main: 'auto' as Main, fini: 'Une place se libère dans la boucle de révision (10 au plus).' },
-  { id: 'check-agent', etape: 3, libelle: 'Check agent', main: 'agent' as Main, fini: 'Le testeur a passé la version courante (verdict et tickets techniques enregistrés).' },
+  { id: 'candidat', etape: 1, libelle: 'Gardé, en file', main: 'auto' as Main, fini: 'Une place se libère en vérification (5 designs à la fois, meilleurs signaux d’abord).' },
+  { id: 'finaliste', etape: 2, libelle: 'Gardé pour vérification', main: 'auto' as Main, fini: 'Une place se libère en vérification.' },
+  { id: 'check-agent', etape: 3, libelle: 'Vérification', main: 'agent' as Main, fini: 'Le testeur a passé la version courante (lancé automatiquement par l’admin).' },
   { id: 'avis-humain', etape: 4, libelle: 'Avis humain', main: 'humain' as Main, fini: 'Les 8 pages × 2 appareils ont chacune un avis (ticket ou « Rien à signaler »).' },
   { id: 'retouche', etape: 5, libelle: 'Retouche Claude', main: 'claude' as Main, fini: 'Une nouvelle version corrige les tickets ouverts.' },
   { id: 'recheck-agent', etape: 6, libelle: 'Re-check agent', main: 'agent' as Main, fini: 'Le testeur a passé la nouvelle version.' },
   { id: 'revalidation', etape: 7, libelle: 'Revalidation', main: 'humain' as Main, fini: 'Un humain a revalidé ce qui a changé (1 clic) ou rouvert des tickets.' },
   { id: 'pret-validation', etape: 8, libelle: 'Prêt pour validation', main: 'paul' as Main, fini: 'Paul publie (verrous au vert).' },
   { id: 'publie', etape: 9, libelle: 'Publié', main: 'personne' as Main, fini: 'En ligne pour les praticiens ; un ticket rouvre une retouche sans dépublier.' },
-  { id: 'ecarte', etape: 0, libelle: 'Écarté', main: 'personne' as Main, fini: 'Hors des 10 premiers du tournoi.' },
+  { id: 'ecarte', etape: 0, libelle: 'Écarté', main: 'personne' as Main, fini: 'Écarté (vérification toujours au rouge après correction, ou ancien tournoi).' },
 ] as const;
 export type StatutModele = (typeof STATUTS_MODELE)[number]['id'];
 export const estStatutModele = (x: unknown): x is StatutModele => STATUTS_MODELE.some((s) => s.id === x);
@@ -109,6 +127,9 @@ export const TRANSITIONS: readonly { de: StatutModele; vers: StatutModele; par: 
   { de: 'ecarte', vers: 'candidat', par: ['validateur'] },
   { de: 'finaliste', vers: 'check-agent', par: ['auto'] },
   { de: 'check-agent', vers: 'avis-humain', par: ['auto'] },
+  // Chaîne en 3 étapes (2026-10-11, migration 0064) : corrections techniques avant la relecture finale ; rouge sans correction possible
+  { de: 'check-agent', vers: 'retouche', par: ['auto'] },
+  { de: 'check-agent', vers: 'ecarte', par: ['auto'] },
   { de: 'avis-humain', vers: 'retouche', par: ['auto'] },
   { de: 'avis-humain', vers: 'pret-validation', par: ['auto'] },
   { de: 'avis-humain', vers: 'recheck-agent', par: ['auto'] },
@@ -116,6 +137,9 @@ export const TRANSITIONS: readonly { de: StatutModele; vers: StatutModele; par: 
   { de: 'recheck-agent', vers: 'revalidation', par: ['auto'] },
   { de: 'recheck-agent', vers: 'retouche', par: ['auto'] },
   { de: 'recheck-agent', vers: 'pret-validation', par: ['auto'] },
+  // Corrections techniques vérifiées → relecture finale ; toujours rouge après correction → écarté (0064)
+  { de: 'recheck-agent', vers: 'avis-humain', par: ['auto'] },
+  { de: 'recheck-agent', vers: 'ecarte', par: ['auto'] },
   { de: 'revalidation', vers: 'retouche', par: ['auto'] },
   { de: 'revalidation', vers: 'pret-validation', par: ['auto'] },
   { de: 'revalidation', vers: 'recheck-agent', par: ['auto'] },
@@ -595,33 +619,83 @@ export const versionDe = (e: Pick<EtatChaine, 'versions'>, modele: string, versi
   return ix.get(`${modele}#${version}`) ?? null;
 };
 
+// ---------------------------------------------------------------------------------------------------------------
+// Chaîne en 3 étapes (décision de Paul du 2026-10-11) : étapes vues par Paul, file de vérification
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Les étapes montrées à Paul (les statuts du moteur y sont regroupés) ; le catalogue est l'arrivée */
+export const ETAPES_VISIBLES = [
+  { id: 'choisir', n: 1, libelle: 'Choisir' },
+  { id: 'verification', n: 2, libelle: 'Vérification' },
+  { id: 'relecture', n: 3, libelle: 'Relecture finale' },
+  { id: 'catalogue', n: 4, libelle: 'Catalogue' },
+] as const;
+export type EtapeVisible = (typeof ETAPES_VISIBLES)[number]['id'];
+
 /**
- * Transitions automatiques à appliquer (une passe ; à rappeler jusqu'à ce qu'il n'y en ait plus) : fin de tournoi, entrée dans la
- * boucle de révision (10 au plus, meilleur rang d'abord), check agent fait, avis complet, nouvelle version, revalidation, ticket
- * sur un modèle publié ou prêt. Fermeture des tickets techniques quand le testeur repasse au vert.
+ * Modèles dont la relecture finale a commencé (un avis de page, une revalidation ou une remarque humaine) : avant, une retouche ou un
+ * re-test ne sont que des corrections TECHNIQUES de la vérification ; après, ils font partie de la relecture finale.
+ */
+export function modelesEnRelecture(e: Pick<EtatChaine, 'revues' | 'tickets'>): Set<string> {
+  const s = new Set<string>();
+  for (const r of e.revues) s.add(r.modele);
+  for (const t of e.tickets) if (t.origine === 'humain') s.add(t.modele);
+  return s;
+}
+
+/** Étape vue par Paul d'un statut (relu : la relecture finale du modèle a commencé) ; écarté : null */
+export function etapeVisibleDuStatut(s: StatutModele, relu: boolean): EtapeVisible | null {
+  switch (s) {
+    case 'candidat': return 'choisir';
+    case 'finaliste': case 'check-agent': return 'verification';
+    case 'retouche': case 'recheck-agent': return relu ? 'relecture' : 'verification';
+    case 'avis-humain': case 'revalidation': case 'pret-validation': return 'relecture';
+    case 'publie': return 'catalogue';
+    default: return null;
+  }
+}
+
+/** Étape vue par Paul d'une fiche */
+export const etapeVisible = (e: Pick<EtatChaine, 'revues' | 'tickets'>, f: Pick<FicheModele, 'id' | 'statut'>, relus?: ReadonlySet<string>): EtapeVisible | null =>
+  etapeVisibleDuStatut(f.statut, (relus ?? modelesEnRelecture(e)).has(f.id));
+
+/** Score de file d'attente d'un gardé (signaux a priori : J'aime, juge, jauge ; aPriori de tournoi-grilles.ts) */
+export const scoreFile = (e: Pick<EtatChaine, 'signaux'>, id: string) => aPriori(e.signaux?.[id]);
+
+/**
+ * FILE D'ATTENTE de la vérification : d'abord les finalistes déjà gardés pour vérification (anciens tournois : meilleur rang), puis
+ * les gardés (candidats) aux meilleurs signaux, puis les plus anciens. Jamais un candidat sans sa version courante (il serait vide :
+ * l'automate le répare ou l'écarte, fichesSansVersion). `statuts` : statuts à jour pendant une passe de l'automate.
+ */
+export function fileVerification(e: Pick<EtatChaine, 'fiches' | 'versions' | 'signaux'>, statuts?: ReadonlyMap<string, StatutModele>): FicheModele[] {
+  const st = (f: FicheModele) => statuts?.get(f.id) ?? f.statut;
+  const parAnciennete = (a: FicheModele, b: FicheModele) => (a.creeLe < b.creeLe ? -1 : a.creeLe > b.creeLe ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const finalistes = e.fiches.filter((f) => st(f) === 'finaliste').sort((a, b) => (a.rang ?? 99) - (b.rang ?? 99) || parAnciennete(a, b));
+  const scores = new Map<string, number>();
+  const gardes = e.fiches.filter((f) => st(f) === 'candidat' && versionDe(e, f.id, f.versionCourante) !== null);
+  for (const f of gardes) scores.set(f.id, scoreFile(e, f.id));
+  gardes.sort((a, b) => scores.get(b.id)! - scores.get(a.id)! || parAnciennete(a, b));
+  return [...finalistes, ...gardes];
+}
+
+/**
+ * Transitions automatiques à appliquer (une passe ; à rappeler jusqu'à ce qu'il n'y en ait plus) — chaîne en 3 étapes (2026-10-11) :
+ * entrée en vérification (CHAINE.maxVerification à la fois, boucle de 10 au plus, file ordonnée par les signaux), résultat de la
+ * vérification (corrections techniques, relecture finale, écart si rouge sans correction possible), avis complet, nouvelle version,
+ * revalidation, ticket sur un modèle publié ou prêt. Fermeture des tickets techniques quand le testeur repasse au vert. Le TOURNOI
+ * ne décide plus rien (ni finaliste, ni écart) : son classement reste consultable en vue détaillée.
  */
 export function automate(e: EtatChaine): ActionAuto[] {
   const actions: ActionAuto[] = [];
   const statut = new Map(e.fiches.map((f) => [f.id, f.statut]));
   const passer = (f: FicheModele, vers: StatutModele, raison: string, rang?: number | null) => {
-    if (statut.get(f.id) === vers || !transitionPermise(statut.get(f.id)!, vers, 'auto')) return;
+    if (statut.get(f.id) === vers || !transitionPermise(statut.get(f.id)!, vers, 'auto')) return false;
     actions.push({ kind: 'statut', modele: f.id, de: statut.get(f.id)!, vers, raison, ...(rang !== undefined ? { rang } : {}), ...(vers === 'retouche' ? { versionRetouche: f.versionCourante } : {}) });
     statut.set(f.id, vers);
+    return true;
   };
-  // 1. Fin des tournois (par profil)
-  // Un tournoi par profession pour les designs (profil nul) ; par profil pour les anciens modèles
-  const profils = [...new Set(e.fiches.filter((f) => f.statut === 'candidat').map(groupeTournoi))];
-  for (const pp of profils) {
-    const cand = e.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === pp);
-    const t = tournoiDuProfil(e, cand.map((f) => f.id));
-    if (!t.arrete) continue;
-    const rangs = new Map(t.classement.map((l) => [l.id, l.rang]));
-    for (const f of cand) {
-      if (t.top.includes(f.id)) passer(f, 'finaliste', `tournoi ${t.raison === 'budget' ? 'au budget' : `sûr à ${Math.round(t.certitude * 100)} %`} : rang ${rangs.get(f.id)}`, rangs.get(f.id) ?? null);
-      else passer(f, 'ecarte', `tournoi terminé : rang ${rangs.get(f.id)}`, rangs.get(f.id) ?? null);
-    }
-  }
-  // 2. Tickets techniques refermés par le testeur (contrôle repassé au vert sur la version courante)
+  const relus = modelesEnRelecture(e);
+  // 1. Tickets techniques refermés par le testeur (contrôle repassé au vert sur la version courante)
   const ticketsDe = (id: string) => e.tickets.filter((t) => t.modele === id);
   // Avis et tickets DU modèle seulement (jamais ceux d'un autre modèle à la même version)
   const revuesDe = (id: string) => e.revues.filter((r) => r.modele === id);
@@ -637,42 +711,62 @@ export function automate(e: EtatChaine): ActionAuto[] {
     }
   }
   const ouverts = (id: string) => ticketsDe(id).filter((t) => t.statut === 'ouvert' && !fermes.has(`${id}#${t.numero}`));
-  // 3. Statuts de la boucle
+  // 2. Statuts
   for (const f of e.fiches) {
     const v = versionDe(e, f.id, f.versionCourante);
     const teste = Boolean(v?.test && v.test.version === f.versionCourante);
+    const rouge = teste && v!.test!.verdict === 'rouge';
     // Rouge : jamais prêt. Orange : peut aller jusqu'à la validation, où Paul justifie par écrit (regleValidationModele)
-    const vert = teste && v!.test!.verdict !== 'rouge';
+    const vert = teste && !rouge;
+    const relu = relus.has(f.id);
     const s = statut.get(f.id)!;
-    if (s === 'check-agent' && teste) passer(f, 'avis-humain', 'le testeur a passé la version');
-    else if (s === 'avis-humain') {
+    const n = ouverts(f.id).length;
+    if (s === 'check-agent' && teste) {
+      // Vérification : défauts techniques → une demande de corrections à Claude ; sinon relecture finale
+      if (n) passer(f, 'retouche', `${n} correction${n > 1 ? 's' : ''} technique${n > 1 ? 's' : ''} à demander à Claude`);
+      else if (rouge) passer(f, 'ecarte', 'vérification au rouge sans correction possible : écarté');
+      else passer(f, 'avis-humain', 'vérification passée : relecture finale');
+    } else if (s === 'avis-humain') {
       const prec = versionDe(e, f.id, f.versionCourante - 1);
       const rev = etatRevision(f.versionCourante, revuesDe(f.id), ticketsDe(f.id), prec ? { precedente: prec.version, changees: pagesChangees(prec.composition, v?.composition) } : undefined);
       if (rev.terminee) {
-        if (ouverts(f.id).length) passer(f, 'retouche', `${ouverts(f.id).length} ticket(s) ouvert(s) à corriger`);
+        if (n) passer(f, 'retouche', `${n} ticket(s) ouvert(s) à corriger`);
         else if (vert) passer(f, 'pret-validation', 'avis complet, aucun ticket, testeur au vert');
       }
     } else if (s === 'retouche' && f.versionCourante > (f.versionRetouche ?? f.versionCourante)) passer(f, 'recheck-agent', 'nouvelle version à tester');
     else if (s === 'recheck-agent' && teste) {
-      if (aChangementHumain(v)) passer(f, 'revalidation', 'changements à revalider');
-      else if (ouverts(f.id).length) passer(f, 'retouche', 'le testeur signale encore des tickets');
-      else if (vert) passer(f, 'pret-validation', 'corrections techniques au vert, sans humain');
+      if (!relu) {
+        // Vérification (corrections techniques) : rouge persistant après correction → écarté, avec le message
+        if (rouge) passer(f, 'ecarte', 'vérification toujours au rouge après correction : écarté');
+        else if (n) passer(f, 'retouche', 'le testeur signale encore des défauts techniques');
+        else passer(f, 'avis-humain', 'corrections techniques vérifiées : relecture finale');
+      } else if (aChangementHumain(v)) passer(f, 'revalidation', 'changements à revalider');
+      else if (n) passer(f, 'retouche', 'le testeur signale encore des tickets');
+      else if (vert) {
+        const vs = e.versions.filter((x) => x.modele === f.id);
+        if (avisFaits(f.versionCourante, vs, revuesDe(f.id), ticketsDe(f.id)).ok) passer(f, 'pret-validation', 'corrections techniques au vert, sans humain');
+        else passer(f, 'avis-humain', 'relecture finale à terminer');
+      }
     } else if (s === 'revalidation') {
-      if (ouverts(f.id).length) passer(f, 'retouche', 'tickets rouverts ou nouveaux');
+      if (n) passer(f, 'retouche', 'tickets rouverts ou nouveaux');
       else if (vert && etatRevision(f.versionCourante, revuesDe(f.id), ticketsDe(f.id)).revalidee) passer(f, 'pret-validation', 'revalidé, testeur au vert');
     } else if (s === 'pret-validation' || s === 'publie') {
-      if (ouverts(f.id).length) passer(f, 'retouche', s === 'publie' ? 'zone signalée sur un modèle publié (reste en ligne)' : 'nouveau ticket');
+      if (n) passer(f, 'retouche', s === 'publie' ? 'zone signalée sur un modèle publié (reste en ligne)' : 'nouveau ticket');
       else if (v && !teste && v.version > (f.versionPubliee ?? 0)) passer(f, 'recheck-agent', 'nouvelle version à tester');
     }
   }
-  // 4. Entrée dans la boucle de révision : 10 au plus, meilleur rang du tournoi d'abord
-  let places = CHAINE.maxRevision - e.fiches.filter((f) => STATUTS_BOUCLE.includes(statut.get(f.id)!)).length;
-  const attente = e.fiches.filter((f) => statut.get(f.id) === 'finaliste').sort((a, b) => (a.rang ?? 99) - (b.rang ?? 99) || (a.creeLe < b.creeLe ? -1 : 1));
-  for (const f of attente) {
-    if (places <= 0) break;
-    passer(f, 'check-agent', 'place libre dans la boucle de révision');
-    places--;
-  }
+  // 3. Entrée en vérification : CHAINE.maxVerification designs à la fois (boucle de révision de CHAINE.maxRevision au plus), gardés
+  //    pour vérification d'abord, puis les meilleurs signaux. Un gardé passe finaliste (structure figée) puis check-agent.
+  const enBoucle = e.fiches.filter((f) => STATUTS_BOUCLE.includes(statut.get(f.id)!)).length;
+  const enVerification = e.fiches.filter((f) => etapeVisibleDuStatut(statut.get(f.id)!, relus.has(f.id)) === 'verification' && statut.get(f.id) !== 'finaliste').length;
+  let places = Math.min(CHAINE.maxRevision - enBoucle, CHAINE.maxVerification - enVerification);
+  const file = fileVerification(e, statut);
+  file.forEach((f, k) => {
+    if (places <= 0) return;
+    // Rang = place dans la file (meilleurs signaux d'abord) : les tests se lancent dans cet ordre (comparerProximite)
+    if (statut.get(f.id) === 'candidat' && !passer(f, 'finaliste', `gardé : place libre en vérification (${k + 1}${k ? 'e' : 'er'} de la file)`, k + 1)) return;
+    if (passer(f, 'check-agent', 'vérification automatique')) places--;
+  });
   return actions;
 }
 
@@ -700,6 +794,98 @@ export function fairetournerChaine(e: EtatChaine): { etat: EtatChaine; actions: 
     etat = appliquerActions(etat, a);
   }
   return { etat, actions: toutes };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Vérification automatique (décision de Paul du 2026-10-11 : « le test se lance automatiquement ») : quels tests lancer, où en est
+// la vérification d'un modèle. Le lancement lui-même (workflow tester-modele, rien n'est publié) est fait par l'admin
+// (apps/admin/src/lib/tests-auto.ts) ; le journal des lancements est la table modeles_tests_lances (migration 0064).
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Un lancement du testeur enregistré (modeles_tests_lances) : `echec` = le workflow n'a pas pu démarrer */
+export type TestLance = { modele: string; version: number; essai: number; le: string; echec?: string | null };
+export type TestALancer = { modele: string; version: number; mode: 'check' | 'recheck'; jeux: string[]; essai: number };
+export type SuiviTest = { modele: string; version: number; etat: 'en-cours' | 'a-lancer' | 'bloque'; essais: number; dernier: TestLance | null };
+
+/** Versions courantes qui attendent un résultat du testeur (vérification ou re-test), de la plus proche du catalogue à la plus loin */
+export function versionsATester(e: Pick<EtatChaine, 'fiches' | 'versions' | 'revues' | 'tickets'>): FicheModele[] {
+  return e.fiches.filter((f) => {
+    if (f.statut !== 'check-agent' && f.statut !== 'recheck-agent') return false;
+    const v = versionDe(e, f.id, f.versionCourante);
+    return Boolean(v && !(v.test && v.test.version === f.versionCourante));
+  }).sort(comparerProximite(e));
+}
+
+/**
+ * Suivi des tests de chaque version à tester : « en cours » si un lancement sans échec date de moins de CHAINE.dureeTestMs (ou si un
+ * passage du workflow est en cours sur GitHub : `externes`), « bloqué » après CHAINE.essaisTest lancements, sinon « à lancer ».
+ */
+export function suiviTests(e: Pick<EtatChaine, 'fiches' | 'versions' | 'revues' | 'tickets'>, lances: readonly TestLance[], maintenant: number, externes: readonly { modele: string; version: number }[] = []): SuiviTest[] {
+  return versionsATester(e).map((f) => {
+    const l = lances.filter((x) => x.modele === f.id && x.version === f.versionCourante).sort((a, b) => a.essai - b.essai || (a.le < b.le ? -1 : 1));
+    const dernier = l.at(-1) ?? null;
+    const recent = l.some((x) => !x.echec && maintenant - Date.parse(x.le) < CHAINE.dureeTestMs);
+    const externe = externes.some((x) => x.modele.toLowerCase() === f.id.toLowerCase() && x.version === f.versionCourante);
+    const etat = recent || externe ? 'en-cours' as const : l.length >= CHAINE.essaisTest ? 'bloque' as const : 'a-lancer' as const;
+    return { modele: f.id, version: f.versionCourante, etat, essais: l.length, dernier };
+  });
+}
+
+/**
+ * Tests à lancer MAINTENANT : versions « à lancer », de la plus proche du catalogue à la plus loin, dans la limite de
+ * CHAINE.testsParalleles passages en même temps (lancements récents et passages en cours sur GitHub comptés). Jamais une version
+ * déjà testée, en cours ou bloquée (CHAINE.essaisTest lancements). Mode : check (vérification) ou recheck (version corrigée).
+ */
+export function testsALancer(e: Pick<EtatChaine, 'fiches' | 'versions' | 'revues' | 'tickets'>, lances: readonly TestLance[], maintenant: number, externes: readonly { modele: string; version: number }[] = []): TestALancer[] {
+  const suivi = suiviTests(e, lances, maintenant, externes);
+  const enCours = new Set<string>();
+  for (const s of suivi) if (s.etat === 'en-cours') enCours.add(`${s.modele}#${s.version}`.toLowerCase());
+  for (const x of externes) enCours.add(`${x.modele}#${x.version}`.toLowerCase());
+  for (const x of lances) if (!x.echec && maintenant - Date.parse(x.le) < CHAINE.dureeTestMs && suivi.some((s) => s.modele === x.modele && s.version === x.version)) enCours.add(`${x.modele}#${x.version}`.toLowerCase());
+  let places = CHAINE.testsParalleles - enCours.size;
+  const r: TestALancer[] = [];
+  for (const s of suivi) {
+    if (places <= 0) break;
+    if (s.etat !== 'a-lancer') continue;
+    const f = e.fiches.find((x) => x.id === s.modele)!;
+    r.push({ modele: f.id, version: f.versionCourante, mode: f.statut === 'recheck-agent' ? 'recheck' : 'check', jeux: f.profil ? [f.profil] : jeuxDuModele(f.profession, f.tags.profils), essai: s.essais + 1 });
+    places--;
+  }
+  return r;
+}
+
+/** Pastille de vérification d'un modèle (tableau, fiche) : la seule chose que Paul voit de l'étape 2 */
+export type PastilleVerification = { etat: 'file' | 'en-cours' | 'a-lancer' | 'bloque' | 'corrections' | 'chez-claude' | 'ok' | 'ecarte'; texte: string };
+
+export function pastilleVerification(e: Pick<EtatChaine, 'fiches' | 'versions' | 'revues' | 'tickets' | 'signaux'>, f: FicheModele, suivi: readonly SuiviTest[] = [], opts: { relus?: ReadonlySet<string>; file?: readonly FicheModele[] } = {}): PastilleVerification {
+  const relu = (opts.relus ?? modelesEnRelecture(e)).has(f.id);
+  const v = versionDe(e, f.id, f.versionCourante);
+  const teste = Boolean(v?.test && v.test.version === f.versionCourante);
+  const n = ticketsOuverts(e.tickets.filter((t) => t.modele === f.id)).length;
+  if (f.statut === 'ecarte') return { etat: 'ecarte', texte: raisonEcart(e, f) };
+  if (f.statut === 'candidat' || f.statut === 'finaliste') {
+    const k = (opts.file ?? fileVerification(e)).findIndex((x) => x.id === f.id);
+    return { etat: 'file', texte: k >= 0 ? `En file d’attente (${k + 1}${k ? 'e' : 'er'})` : 'En file d’attente' };
+  }
+  if (f.statut === 'check-agent' || f.statut === 'recheck-agent') {
+    if (teste) return { etat: 'en-cours', texte: 'Résultat reçu : suite au prochain chargement' };
+    const s = suivi.find((x) => x.modele === f.id && x.version === f.versionCourante);
+    if (s?.etat === 'bloque') return { etat: 'bloque', texte: `Vérification bloquée (${s.essais} lancements sans résultat) : à relancer depuis la fiche` };
+    if (s?.etat === 'en-cours') return { etat: 'en-cours', texte: 'Vérification en cours' };
+    return { etat: 'a-lancer', texte: 'Vérification en attente (3 en parallèle au plus)' };
+  }
+  if (f.statut === 'retouche' && !relu) return { etat: 'corrections', texte: `${n} correction${n > 1 ? 's' : ''} technique${n > 1 ? 's' : ''} à envoyer à Claude` };
+  if (f.statut === 'retouche') return { etat: 'chez-claude', texte: `Remarques chez Claude (${n})` };
+  return { etat: 'ok', texte: teste ? `Vérification OK${v!.test!.verdict === 'orange' ? ' (orange : justification à la publication)' : ''}` : 'Vérification OK' };
+}
+
+/** Pourquoi un modèle est écarté (message affiché au tableau et sur la fiche) */
+export function raisonEcart(e: Pick<EtatChaine, 'versions'>, f: Pick<FicheModele, 'id' | 'versionCourante' | 'statut'>): string {
+  if (f.statut !== 'ecarte') return '';
+  const v = versionDe(e, f.id, f.versionCourante);
+  if (v?.test?.verdict === 'rouge') return f.versionCourante > 1 ? 'Écarté : vérification toujours au rouge après correction' : 'Écarté : vérification au rouge sans correction possible';
+  if (!v) return 'Écarté : design non enregistré';
+  return 'Écarté (ancien tournoi ou à la main)';
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -825,48 +1011,42 @@ export const relecturesEntamees = (e: Pick<EtatChaine, 'fiches' | 'versions' | '
   e.fiches.filter((f) => f.statut === 'avis-humain').filter((f) => { const r = revisionDeFiche(e, f); return r.faites > 0 && !r.terminee; });
 
 /**
- * Ce qui attend un humain, pour UNE personne : avis de page (cellules pas encore vues), revalidations, pour le validateur les
- * modèles prêts pour validation ; puis votes des tournois ouverts ; puis la présélection des 3 profils les moins remplis.
+ * Ce qui attend un humain, pour UNE personne (chaîne en 3 étapes, 2026-10-11) : relecture finale (pages pas encore vues, pages
+ * modifiées), pour le validateur l'ajout au catalogue ; puis « Choisir » (présélection) quand la file de vérification est courte.
+ * Le tournoi n'attend plus personne (vue détaillée seulement).
  */
 export function attentesHumain(e: EtatChaine, personne: { id: string; role: RoleEquipe }, profils: readonly { id: string; nom: string; profession: string }[]): Attente[] {
   const l: Attente[] = [];
-  const tournois: Attente[] = [];
-  const reserves: (Attente & { n: number })[] = [];
-  // Designs : présélection et tournoi par PROFESSION ; anciens modèles par profil (s'il en reste des candidats)
-  const groupes = [...new Set([...profils.map((p) => `${p.profession}|*`), ...e.fiches.filter((f) => f.statut === 'candidat').map(groupeTournoi)])];
-  for (const g of groupes) {
-    const profil = g.split('|')[1];
-    const nom = profil === '*' ? 'Tous profils' : profils.find((p) => p.id === profil)?.nom ?? profil;
-    const cand = e.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === g);
-    if (profil === '*' && cand.length < CHAINE.objectifCandidats) reserves.push({ modele: null, nom, statut: null, texte: cand.length < CHAINE.ouvertureTournoi ? `Présélection : ${cand.length} / ${CHAINE.ouvertureTournoi} candidats pour ouvrir le tournoi` : `Présélection : ${cand.length} / ${CHAINE.objectifCandidats} candidats`, href: '/chaine/preselection', n: cand.length });
-    const t = tournoiDuProfil(e, cand.map((f) => f.id));
-    if (t.ouvert && !t.arrete) tournois.push({ modele: null, nom, statut: 'candidat', texte: `Tournoi : ${t.texte}`, href: `/chaine/tournoi${profil === '*' ? '' : `?profil=${encodeURIComponent(profil)}`}` });
-  }
-  // Modèles du plus proche de la publication au plus loin ; une relecture entamée passe avant toute nouvelle relecture (2026-10-10)
+  // Modèles du plus proche du catalogue au plus loin ; une relecture entamée passe avant toute nouvelle relecture (2026-10-10)
   const entamees = new Set(relecturesEntamees(e).map((f) => f.id));
   for (const f of [...e.fiches].sort(comparerProximite(e))) {
     if (f.statut === 'avis-humain') {
       if (entamees.size && !entamees.has(f.id)) continue;
       const r = revisionDeFiche(e, f);
       const miennes = e.revues.filter((x) => x.modele === f.id && x.version === f.versionCourante && x.auteur === personne.id).length;
-      if (!r.terminee) l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: `Avis : ${r.faites} / ${r.total} pages vues${miennes ? ` (dont ${miennes} par vous)` : ''}`, href: `/chaine/revision/${f.id}` });
+      if (!r.terminee) l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: `Relecture finale : ${r.faites} / ${r.total} pages vues${miennes ? ` (dont ${miennes} par vous)` : ''}`, href: `/chaine/revision/${f.id}` });
     } else if (f.statut === 'revalidation') {
-      l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: `Revalider la v${f.versionCourante} (ce qui a changé seulement)`, href: `/chaine/revision/${f.id}` });
+      l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: `Relecture finale : pages modifiées de la v${f.versionCourante}`, href: `/chaine/revision/${f.id}` });
     } else if (f.statut === 'pret-validation' && personne.role === 'validateur') {
-      l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: 'Validation finale et publication', href: `/chaine/modele/${f.id}` });
+      l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: 'Ajouter au catalogue', href: `/chaine/revision/${f.id}` });
     }
   }
-  // Ordre : modèles (validation, revalidations, avis : du plus proche de la publication au plus loin), puis tournois ouverts, puis la
-  // présélection
-  return [...l, ...tournois, ...reserves.sort((a, b) => a.n - b.n).slice(0, 3).map(({ n: _n, ...x }) => x)];
+  // Choisir : par profession (designs) ; seulement si la file d'attente de la vérification est courte
+  const reserves: Attente[] = [];
+  for (const profession of [...new Set(profils.map((p) => p.profession))]) {
+    const gardes = e.fiches.filter((f) => f.statut === 'candidat' && f.profession === profession).length;
+    if (gardes < CHAINE.maxVerification) reserves.push({ modele: null, nom: 'Tous profils', statut: null, texte: `Choisir des designs : ${gardes} gardé${gardes > 1 ? 's' : ''} en file`, href: '/chaine/preselection' });
+  }
+  return [...l, ...reserves.slice(0, 3)];
 }
 
-/** Ce qui tourne tout seul : agent, Claude, automate (avec un mot de ce qui est attendu) */
+/** Ce qui tourne tout seul : vérification, Claude, file d'attente (avec un mot de ce qui est attendu) */
 export function attentesMachines(e: EtatChaine): Attente[] {
+  const relus = modelesEnRelecture(e);
   return [...e.fiches].sort(comparerProximite(e)).flatMap((f): Attente[] => {
-    if (f.statut === 'check-agent' || f.statut === 'recheck-agent') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: `Testeur : passage de la v${f.versionCourante} attendu`, href: `/chaine/modele/${f.id}` }];
-    if (f.statut === 'retouche') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: `Claude : ${ticketsOuverts(e.tickets.filter((t) => t.modele === f.id)).length} ticket(s) à corriger (retours/tickets-modeles.json)`, href: `/chaine/modele/${f.id}` }];
-    if (f.statut === 'finaliste') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: 'En file : entre dans la boucle dès qu’une place se libère', href: `/chaine/modele/${f.id}` }];
+    if (f.statut === 'check-agent' || f.statut === 'recheck-agent') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: `Vérification automatique de la v${f.versionCourante}`, href: `/chaine/modele/${f.id}` }];
+    if (f.statut === 'retouche') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: `Claude : ${ticketsOuverts(e.tickets.filter((t) => t.modele === f.id)).length} ${relus.has(f.id) ? 'remarque(s)' : 'correction(s) technique(s)'} à corriger`, href: `/chaine/modele/${f.id}` }];
+    if (f.statut === 'finaliste') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: 'En file : vérifié dès qu’une place se libère', href: `/chaine/modele/${f.id}` }];
     return [];
   });
 }
@@ -926,15 +1106,22 @@ export function demandeCorrectionsModele(
   tickets: readonly Pick<TicketModele, 'numero' | 'page' | 'appareil' | 'zone' | 'element' | 'etiquette' | 'commentaire' | 'origine' | 'gravite' | 'statut'>[],
 ): string {
   const ouverts = ticketsOuverts(tickets).sort((a, b) => a.numero - b.numero);
+  // Chaîne en 3 étapes (2026-10-11) : avant la relecture finale, seuls les défauts du testeur → « corrections techniques »
+  const technique = ouverts.length > 0 && ouverts.every((t) => t.origine === 'testeur');
+  const quoi = `modele ${f.id}, version de base v${f.versionCourante}, profession ${f.profession}${f.profil ? `, profil ${f.profil}` : ' (design, tous profils compatibles)'}`;
   const l = [
-    `Corrige le modèle « ${f.nom} » de la chaîne des modèles (dépôt plateforme-sante) : modele ${f.id}, version de base v${f.versionCourante}, profession ${f.profession}${f.profil ? `, profil ${f.profil}` : ' (design, tous profils compatibles)'}.`,
+    technique
+      ? `Corrections techniques du modèle « ${f.nom} » (chaîne des modèles, dépôt plateforme-sante) : ${quoi}. Défauts relevés par le testeur automatique, avant la relecture finale de Paul.`
+      : `Corrige le modèle « ${f.nom} » de la chaîne des modèles (dépôt plateforme-sante) : ${quoi}.`,
     '',
     `Tickets ouverts (${ouverts.length}) :`,
     ...ouverts.map((t) => `- #${t.numero} [${t.origine}${t.gravite ? `, ${t.gravite}` : ''}] page ${libellePageModele(t.page)} (${t.appareil === 'mobile' ? 'téléphone' : 'ordinateur'})${t.zone ? ` · zone (${pct(t.zone.x)}, ${pct(t.zone.y)}, ${pct(t.zone.l)} × ${pct(t.zone.h)})` : ' · page entière'}${t.element ? ` · élément ${t.element}` : ''} · ${t.etiquette}${t.commentaire ? ` : ${t.commentaire}` : ''}`),
     ...(ouverts.length ? [] : ['- (aucun ticket ouvert : voir retours/tickets-modeles.json)']),
     '',
     `Composition de départ : retours/tickets-modeles.json (export de la chaîne, modele ${f.id}).`,
-    `Livraison : écrire la correction dans retours/retouches-modeles.json ({ modele: "${f.id}", versionBase: ${f.versionCourante}, composition, corrections: [{ ticket, texte }] }), un texte par ticket, puis pousser sur main. La chaîne crée la v${f.versionCourante + 1}, qui repasse au testeur puis revient en revalidation.`,
+    technique
+      ? `Livraison : écrire la correction dans retours/retouches-modeles.json ({ modele: "${f.id}", versionBase: ${f.versionCourante}, composition (ou "version-base" si la correction est faite dans le code commun des sites), corrections: [{ ticket, texte }], auteur: "testeur" }), un texte par ticket, puis pousser sur main. La chaîne crée la v${f.versionCourante + 1}, la revérifie seule puis la propose en relecture finale.`
+      : `Livraison : écrire la correction dans retours/retouches-modeles.json ({ modele: "${f.id}", versionBase: ${f.versionCourante}, composition, corrections: [{ ticket, texte }] }), un texte par ticket, puis pousser sur main. La chaîne crée la v${f.versionCourante + 1}, la revérifie seule puis la repropose en relecture finale (pages modifiées seulement).`,
   ];
   return l.join('\n');
 }

@@ -8,11 +8,11 @@ import { exigerContributeur } from '@/lib/chaine-modeles';
 import { LIBELLES_ROLES } from '@plateforme/core';
 
 // CHAÎNE DE PRODUCTION DES MODÈLES (docs/chaine-modeles.md) : ouverte à l'équipe TBCOM (contributeurs) et au validateur (Paul,
-// super admin). Hors de /admin : un contributeur n'a pas accès au super admin.
+// super admin). Hors de /admin : un contributeur n'a pas accès au super admin. Chaîne en 3 étapes (2026-10-11) : le tournoi n'est
+// plus un onglet (vue détaillée du tableau).
 const ONGLETS = [
   { href: '/chaine', libelle: 'Tableau' },
-  { href: '/chaine/preselection', libelle: 'Présélection' },
-  { href: '/chaine/tournoi', libelle: 'Tournoi' },
+  { href: '/chaine/preselection', libelle: 'Choisir' },
 ];
 
 export default async function LayoutChaine({ children }: { children: React.ReactNode }) {

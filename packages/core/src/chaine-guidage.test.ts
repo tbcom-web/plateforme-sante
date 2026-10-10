@@ -1,15 +1,16 @@
-// Chaîne guidée (chaine-guidage.ts) : une seule prochaine action, dans l'ordre « plus près des clients d'abord », jamais un écran sans
-// action ni explication, gestes du validateur jamais prescrits à un contributeur, fil des 6 étapes.
+// Chaîne guidée (chaine-guidage.ts), en 3 étapes depuis le 2026-10-11 (Choisir · Vérification · Relecture finale, puis catalogue) :
+// une seule prochaine action, dans l'ordre « plus près du catalogue d'abord », jamais un écran sans action ni explication, gestes du
+// validateur jamais prescrits à un contributeur, fil des 3 étapes, tournoi jamais bloquant.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appliquerActions, attentesHumain, CHAINE, CELLULES_REVISION, comparerProximite, modelesATester, DELAI_FICHE_SANS_VERSION_MS, fairetournerChaine, fichesSansVersion, tournoiDuProfil, type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele } from './chaine-modeles';
+import { attentesHumain, CHAINE, CELLULES_REVISION, comparerProximite, modelesATester, DELAI_FICHE_SANS_VERSION_MS, fairetournerChaine, fichesSansVersion, tournoiDuProfil, type EtatChaine, type FicheModele, type RevueModele, type TestLance, type VersionModele, type VoteModele } from './chaine-modeles';
 import { TOURNOI_GRILLES, etatTournoiGrilles, prochainEcran, type GrilleTournoi } from './tournoi-grilles';
 import { appliquerRecette, normaliserComposition, type CompositionRecette } from './recettes';
 import { draftVide } from './draft';
 import { contexteScenario } from './notation-recettes';
 import { modeleIntegre } from './modeles';
 import type { PoidsAtelier } from './atelier-poids';
-import { etapeDuStatut, prochaineActionChaine, type EntreeGuidage } from './chaine-guidage';
+import { etapeDuStatut, prochaineActionChaine, rangDansLaFile, type EntreeGuidage } from './chaine-guidage';
 import type { ResultatTestModele, TicketModele } from './chaine-modeles-format';
 
 const fiche = (id: string, extra: Partial<FicheModele> = {}): FicheModele => ({
@@ -22,88 +23,112 @@ const vert = (modele: string, v = 1): ResultatTestModele => ({ modele, version: 
 const etat = (fiches: FicheModele[], extra: Partial<EtatChaine> = {}): EtatChaine => ({ fiches, versions: fiches.map((f) => version(f.id)), tickets: [], votes: [], revues: [], grilles: [], ...extra });
 const candidats = (n: number) => Array.from({ length: n }, (_, i) => fiche(`c${i}`));
 const guide = (e: EtatChaine, extra: Partial<EntreeGuidage> = {}) => prochaineActionChaine({ role: 'validateur', etat: e, ...extra });
-const tournoiOuvert = { ouvert: true, arrete: false, grilles: 2, restantes: 6, certitude: 0.72, texte: '' };
+const ticketTesteur = (modele: string, numero: number): TicketModele => ({ numero, modele, page: 'accueil', appareil: 'mobile', zone: null, element: null, etiquette: 'technique:contraste', commentaire: 'contraste faible', origine: 'testeur', auteur: 'testeur', statut: 'ouvert', versionOuverture: 1, versionCorrection: null, controle: 'contraste' });
+const ticketHumain = (modele: string, numero: number): TicketModele => ({ numero, modele, page: 'accueil', appareil: 'mobile', zone: null, element: null, etiquette: 'couleur', commentaire: 'trop pâle', origine: 'humain', auteur: 'u', statut: 'ouvert', versionOuverture: 1, versionCorrection: null });
+/** Avis « rien à signaler » sur les `n` premières cellules de la version courante d'une fiche */
+const avis = (modele: string, n: number, version = 1): RevueModele[] => CELLULES_REVISION.slice(0, n).map(({ page, appareil }) => ({ modele, version, page, appareil, auteur: 'u', verdict: 'rien', le: '2026-10-10' }));
 
-test('guidage : seuil du tournoi à 12 candidats', () => {
-  assert.equal(CHAINE.ouvertureTournoi, 12);
+test('guidage : 3 étapes, file de vérification de 5, 3 tests en parallèle', () => {
+  assert.equal(CHAINE.maxVerification, 5);
+  assert.equal(CHAINE.testsParalleles, 3);
+  assert.deepEqual(guide(etat([])).fil.map((x) => x.libelle), ['Choisir', 'Vérification', 'Relecture finale']);
 });
 
-test('guidage : chaîne vide → importer les propositions de Claude, sinon présélection', () => {
+test('guidage : chaîne vide → importer les propositions de Claude, sinon choisir', () => {
   const a = guide(etat([]), { propositionsClaude: 8 });
   assert.equal(a.id, 'importer-claude');
   assert.match(a.titre, /Importer les 8 modèles proposés par Claude/);
-  assert.deepEqual(a.bouton, { libelle: 'Importer les 8 modèles de Claude', action: 'importer-claude' });
   assert.equal(a.etape, 1);
-  const b = guide(etat(candidats(8)));
+  const b = guide(etat(candidats(2)));
   assert.equal(b.id, 'preselection');
-  assert.match(b.titre, /Garder encore 4 candidats pour ouvrir le tournoi \(8 \/ 12\)/);
-  assert.deepEqual(b.bouton, { libelle: 'Continuer la présélection', href: '/chaine/preselection' });
-  assert.equal(guide(etat([])).bouton?.libelle, 'Commencer la présélection');
+  assert.match(b.titre, /Choisir des designs \(2 gardés en file\)/);
+  assert.deepEqual(b.bouton, { libelle: 'Continuer à choisir', href: '/chaine/preselection' });
+  assert.equal(guide(etat([])).bouton?.libelle, 'Commencer à choisir');
+  // Des gardés existent déjà : plus de proposition d'import en masse
+  assert.equal(guide(etat(candidats(1)), { propositionsClaude: 8 }).id, 'preselection');
 });
 
-test('guidage : tournoi ouvert → jouer la grille suivante', () => {
-  const a = guide(etat(candidats(14)), { tournoi: tournoiOuvert, propositionsClaude: 3 });
-  assert.equal(a.id, 'tournoi');
-  assert.match(a.titre, /Jouer la grille 3 \/ ~8 du tournoi/);
-  assert.deepEqual(a.bouton, { libelle: 'Jouer la grille 3', href: '/chaine/tournoi' });
-  assert.deepEqual(a.fil.map((x) => x.etat), ['fait', 'courante', 'a-venir', 'a-venir', 'a-venir', 'a-venir']);
-  assert.match(a.restant, /Encore 5 étapes/);
-});
-
-test('guidage : plus près des clients d’abord (valider > revalider > retouche > relire > tester > tournoi)', () => {
+test('guidage : plus près du catalogue d’abord (catalogue > pages modifiées > remarques > relire > corrections techniques > relancer > choisir)', () => {
   const fs = [
-    fiche('p', { statut: 'pret-validation', rang: 3 }), fiche('r', { statut: 'revalidation', versionCourante: 2 }), fiche('t', { statut: 'retouche' }),
-    fiche('a', { statut: 'avis-humain' }), fiche('k', { statut: 'check-agent' }), ...candidats(14),
+    fiche('p', { statut: 'pret-validation' }), fiche('r', { statut: 'revalidation', versionCourante: 2 }), fiche('h', { statut: 'retouche' }),
+    fiche('a', { statut: 'avis-humain' }), fiche('t', { statut: 'retouche' }), fiche('k', { statut: 'check-agent' }),
   ];
-  let e = etat(fs, { versions: [...fs.map((f) => version(f.id, f.versionCourante, f.statut === 'check-agent' ? null : vert(f.id, f.versionCourante)))] });
+  const lances: TestLance[] = [1, 2].map((essai) => ({ modele: 'k', version: 1, essai, le: '2026-10-10T00:00:00Z' }));
+  let e = etat(fs, {
+    versions: fs.map((f) => version(f.id, f.versionCourante, f.statut === 'check-agent' ? null : vert(f.id, f.versionCourante))),
+    tickets: [ticketHumain('h', 1), ticketTesteur('t', 1)], revues: [...avis('h', 16), ...avis('r', 16)],
+  });
   const ordre: string[] = [];
-  for (let i = 0; i < 6; i++) {
-    const a = guide(e, { tournoi: tournoiOuvert });
+  for (let i = 0; i < 8; i++) {
+    const a = guide(e, { lances, maintenant: Date.parse('2026-10-11T12:00:00Z') });
     ordre.push(a.id);
-    const vise = { valider: 'p', revalider: 'r', retouche: 't', relire: 'a', tester: 'k' }[a.id as string];
+    const vise = { valider: 'p', revalider: 'r', retouche: 'h', relire: 'a', corrections: 't', tester: 'k' }[a.id as string];
     if (!vise) break;
     e = { ...e, fiches: e.fiches.filter((f) => f.id !== vise) };
   }
-  assert.deepEqual(ordre, ['valider', 'revalider', 'retouche', 'relire', 'tester', 'tournoi']);
+  assert.deepEqual(ordre, ['valider', 'revalider', 'retouche', 'relire', 'corrections', 'tester', 'preselection']);
+});
+
+test('guidage : textes de la chaîne en 3 étapes (catalogue, relecture finale, corrections techniques)', () => {
+  const p = guide(etat([fiche('p', { statut: 'pret-validation' })]));
+  assert.equal(p.titre, 'Ajouter « Design p » au catalogue');
+  assert.deepEqual(p.bouton, { libelle: 'Ajouter au catalogue', href: '/chaine/revision/p' });
+  assert.equal(p.etape, 3);
+  const r = guide(etat([fiche('a', { statut: 'avis-humain' })], { revues: avis('a', 5) }));
+  assert.match(r.titre, /^Relecture finale de « Design a » \(5 \/ 16\)$/);
+  const t = guide(etat([fiche('t', { statut: 'retouche' })], { tickets: [ticketTesteur('t', 1), ticketTesteur('t', 2)] }));
+  assert.equal(t.id, 'corrections');
+  assert.equal(t.etape, 2);
+  assert.match(t.titre, /corrections techniques de « Design t » à Claude \(2\)/);
+  assert.match(t.demande?.texte ?? '', /^Corrections techniques du modèle « Design t »/);
+  assert.match(t.demande?.texte ?? '', /auteur: "testeur"/);
+  const h = guide(etat([fiche('h', { statut: 'retouche' })], { tickets: [ticketHumain('h', 1)] }));
+  assert.equal(h.id, 'retouche');
+  assert.equal(h.etape, 3);
+  assert.match(h.demande?.texte ?? '', /^Corrige le modèle « Design h »/);
+  assert.match(h.demande?.texte ?? '', /pages modifiées seulement/);
 });
 
 test('guidage : un contributeur ne reçoit jamais un geste du validateur', () => {
-  const fs = [fiche('p', { statut: 'pret-validation' }), fiche('t', { statut: 'retouche' }), fiche('k', { statut: 'check-agent' }), ...candidats(14)];
-  const e = etat(fs, { versions: fs.map((f) => version(f.id, 1, f.statut === 'pret-validation' ? vert(f.id) : null)) });
-  const a = prochaineActionChaine({ role: 'contributeur', etat: e, tournoi: tournoiOuvert });
-  assert.equal(a.id, 'tournoi');
-  // Sans tournoi ni présélection à faire : attente expliquée, avec un geste utile
-  const b = prochaineActionChaine({ role: 'contributeur', etat: etat([fiche('k', { statut: 'check-agent' })]), tournoi: { ...tournoiOuvert, ouvert: false } });
-  assert.notEqual(b.id, 'tester');
+  const fs = [fiche('p', { statut: 'pret-validation' }), fiche('t', { statut: 'retouche' }), fiche('k', { statut: 'check-agent' })];
+  const e = etat(fs, { versions: fs.map((f) => version(f.id, 1, f.statut === 'pret-validation' ? vert(f.id) : null)), tickets: [ticketTesteur('t', 1)] });
+  for (const lancementAuto of [true, false]) {
+    const a = prochaineActionChaine({ role: 'contributeur', etat: e, lancementAuto });
+    assert.ok(!['valider', 'retouche', 'corrections', 'tester'].includes(a.id), a.id);
+  }
 });
 
-test('guidage : relecture page par page avec le compte des pages vues', () => {
-  const revues: RevueModele[] = CELLULES_REVISION.slice(0, 5).map((c) => ({ modele: 'a', version: 1, page: c.page, appareil: c.appareil, auteur: 'u', verdict: 'rien', le: '2026-10-10' }));
-  const a = guide(etat([fiche('a', { statut: 'avis-humain' }), ...candidats(14)], { revues }), { tournoi: tournoiOuvert });
-  assert.equal(a.id, 'relire');
-  assert.match(a.titre, /Relire « Design a » page par page \(5 \/ 16\)/);
-  assert.deepEqual(a.bouton, { libelle: 'Relire ce modèle', href: '/chaine/revision/a' });
+test('guidage : vérification automatique indisponible (GitHub non configuré) → « Lancer le test » de la fiche, pour le validateur', () => {
+  const e = etat([fiche('k', { statut: 'check-agent' })]);
+  assert.equal(guide(e, { lancementAuto: true }).id, 'preselection', 'lancement automatique : rien à faire, choisir');
+  const a = guide(e, { lancementAuto: false });
+  assert.equal(a.id, 'tester');
+  assert.deepEqual(a.bouton, { libelle: 'Lancer le test', href: '/chaine/modele/k#fi-test' });
 });
 
-test('guidage : retouche demandée à Claude avec le nombre de tickets', () => {
-  const tickets: TicketModele[] = [1, 2].map((n) => ({ numero: n, modele: 't', page: 'accueil', appareil: 'mobile', zone: null, element: null, etiquette: 'couleur', commentaire: '', origine: 'humain', auteur: 'u', statut: 'ouvert', versionOuverture: 1, versionCorrection: null }));
-  const a = guide(etat([fiche('t', { statut: 'retouche' })], { tickets }));
-  assert.equal(a.id, 'retouche');
-  assert.equal(a.qui, 'claude');
-  assert.match(a.titre, /2 tickets/);
+test('guidage : file pleine → attente expliquée (vérification en cours), avec « Choisir d’autres designs »', () => {
+  const fs = [fiche('k', { statut: 'check-agent' }), ...candidats(6)];
+  const a = guide(etat(fs), { lancementAuto: true });
+  assert.equal(a.id, 'attendre');
+  assert.equal(a.etape, 2);
+  assert.match(a.titre, /Vérification en cours \(1\) · 6 gardés en file/);
+  assert.equal(a.bouton && 'href' in a.bouton ? a.bouton.href : '', '/chaine/preselection');
 });
 
-test('guidage : jamais d’écran sans action ni explication (tous les statuts, deux rôles)', () => {
+test('guidage : jamais d’écran sans action ni explication (tous les statuts, relu ou non, deux rôles)', () => {
   const statuts = ['candidat', 'finaliste', 'check-agent', 'avis-humain', 'retouche', 'recheck-agent', 'revalidation', 'pret-validation', 'publie', 'ecarte'] as const;
   for (const role of ['validateur', 'contributeur'] as const) {
     for (const s of statuts) {
       for (const n of [0, 1, 13]) {
-        const fs = [fiche('x', { statut: s }), ...candidats(n)];
-        const a = prochaineActionChaine({ role, etat: etat(fs), tournoi: n >= 12 ? tournoiOuvert : null });
-        assert.ok(a.titre.length > 5 && a.pourquoi.length > 20, `${role} ${s} ${n}`);
-        assert.ok(a.bouton !== null, `${role} ${s} ${n} : un bouton`);
-        assert.equal(a.fil.length, 6);
-        assert.equal(a.fil.filter((x) => x.ici).length, 1);
+        for (const relu of [false, true]) {
+          const fs = [fiche('x', { statut: s }), ...candidats(n)];
+          const a = prochaineActionChaine({ role, etat: etat(fs, { revues: relu ? avis('x', 1) : [] }), lancementAuto: n !== 1 });
+          assert.ok(a.titre.length > 5 && a.pourquoi.length > 20, `${role} ${s} ${n}`);
+          assert.ok(a.bouton !== null, `${role} ${s} ${n} : un bouton`);
+          assert.equal(a.fil.length, 3);
+          assert.equal(a.fil.filter((x) => x.ici).length, 1);
+          assert.doesNotMatch(`${a.titre} ${a.pourquoi}`, /tournoi/i, 'le tournoi n’est plus une étape');
+        }
       }
     }
   }
@@ -112,25 +137,27 @@ test('guidage : jamais d’écran sans action ni explication (tous les statuts, 
   assert.match(m.pourquoi, /0050/);
 });
 
-test('guidage : fil des étapes et reste jusqu’aux clients', () => {
+test('guidage : fil des 3 étapes et reste jusqu’au catalogue', () => {
   const a = guide(etat(candidats(3)));
   assert.equal(a.fil[0].etat, 'courante');
-  assert.equal(a.fil[0].detail, '3 / 12 candidats');
-  assert.match(a.restant, /Encore 6 étapes avant le premier modèle prêt pour les clients/);
+  assert.equal(a.fil[0].detail, '3 gardés en file');
+  assert.match(a.restant, /Encore 3 étapes avant le premier modèle au catalogue/);
   const b = guide(etat([fiche('a', { statut: 'avis-humain' })]));
-  assert.deepEqual(b.fil.map((x) => x.etat), ['fait', 'fait', 'fait', 'courante', 'a-venir', 'a-venir']);
-  assert.match(b.restant, /Encore 3 étapes/);
-  assert.equal(b.fil[1].detail, 'fait');
+  assert.deepEqual(b.fil.map((x) => x.etat), ['fait', 'fait', 'courante']);
+  assert.match(b.restant, /Encore 1 étape/);
+  // Corrections techniques (relecture pas commencée) : étape 2 ; remarques de la relecture : étape 3
+  assert.equal(etapeDuStatut('retouche'), 2);
+  assert.equal(etapeDuStatut('retouche', true), 3);
+  assert.equal(etapeDuStatut('candidat'), 1);
+  assert.equal(etapeDuStatut('ecarte'), null);
   const c = guide(etat([fiche('a', { statut: 'publie' })]));
   assert.ok(c.fil.every((x) => x.etat === 'fait'));
   assert.equal(c.progression, 1);
-  assert.match(c.restant, /1 modèle prêt pour les clients/);
-  assert.equal(etapeDuStatut('ecarte'), null);
-  assert.equal(etapeDuStatut('revalidation'), 5);
+  assert.match(c.restant, /1 modèle au catalogue/);
 });
 
 // ---------------------------------------------------------------------------------------------------------------
-// Bug « grille 49 » (2026-10-10) : arrêt au plafond d'écrans, comptage identique pour le guidage, la page et l'automate
+// Tournoi : plus jamais bloquant (2026-10-11) ; calculs du tournoi en grilles toujours justes (vue détaillée)
 // ---------------------------------------------------------------------------------------------------------------
 
 /** Tournoi de 30 candidats joué « à contre-courant » (choix contradictoires : jamais sûr) : `g` grilles puis `d` départages */
@@ -158,62 +185,42 @@ function tournoiJoue(g: number, d: number): EtatChaine {
 }
 const idsDe = (e: EtatChaine) => e.fiches.filter((f) => f.statut === 'candidat' && f.profil === null).map((f) => f.id);
 
-test('grille 49 : 47 écrans → « Jouer la grille 48 / ~48 » au plus ; 48 écrans → tournoi arrêté, plus aucun écran', () => {
+test('tournoi (vue détaillée) : plafond de 48 écrans, plus aucun écran une fois arrêté', () => {
   const e47 = tournoiJoue(39, 8);
   const t47 = tournoiDuProfil(e47, idsDe(e47));
   assert.equal(t47.grilles + t47.duels, 47);
   assert.equal(t47.arrete, false);
-  const a = guide(e47, { tournoi: t47 });
-  assert.equal(a.id, 'tournoi');
-  assert.match(a.titre, /^Jouer la grille 48 \/ ~48 du tournoi$/);
-  assert.equal(a.bouton && 'libelle' in a.bouton ? a.bouton.libelle : '', 'Jouer la grille 48');
   const e48 = tournoiJoue(40, 8);
   const t48 = tournoiDuProfil(e48, idsDe(e48));
   assert.equal(t48.arrete, true);
-  assert.equal(t48.raison === 'budget' || t48.raison === 'sur', true);
   assert.equal(prochainEcran(t48), null, 'aucun écran une fois arrêté');
-  // Plafond d'écrans atteint par des départages (39 grilles + 9 duels = 48) : arrêté aussi
   const e48d = tournoiJoue(39, 9);
   const t48d = tournoiDuProfil(e48d, idsDe(e48d));
   assert.equal(t48d.grilles + t48d.duels, TOURNOI_GRILLES.ecransMax);
   assert.equal(t48d.arrete, true);
-  assert.match(t48d.texte, /48 écrans|sûr/);
 });
 
-test('grille 49 : jamais « Jouer la grille » au-delà du plafond, même avec un état incohérent', () => {
-  for (const [grilles, duels] of [[40, 8], [41, 8], [48, 0], [45, 10]]) {
-    const a = guide(etat(candidats(30)), { tournoi: { ouvert: true, arrete: false, grilles, duels, restantes: 3, certitude: 0.8, texte: '' } });
-    assert.notEqual(a.id, 'tournoi');
-    assert.doesNotMatch(a.titre, /Jouer la grille/);
+test('tournoi non bloquant : en cours ou terminé, il n’écarte personne ; les gardés partent en vérification (5 à la fois), le guidage ne le propose jamais', () => {
+  for (const [g, d] of [[0, 0], [10, 0], [40, 8]] as const) {
+    const e = tournoiJoue(g, d);
+    const { actions, etat: apres } = fairetournerChaine(e);
+    assert.equal(actions.filter((a) => a.kind === 'statut' && a.vers === 'ecarte').length, 0, 'jamais d’écart décidé par le tournoi');
+    assert.equal(apres.fiches.filter((f) => f.statut === 'check-agent').length, CHAINE.maxVerification);
+    assert.equal(apres.fiches.filter((f) => f.statut === 'candidat').length, 30 - CHAINE.maxVerification);
+    const a = guide(apres, { lancementAuto: true });
+    assert.notEqual(a.id as string, 'tournoi');
+    assert.doesNotMatch(a.titre, /tournoi|grille/i);
   }
 });
 
-test('grille 49 : fin du tournoi → automate (top 10 finalistes, autres écartés), même comptage que la page et le guidage', () => {
-  const e = tournoiJoue(40, 8);
-  const ids = idsDe(e);
-  const t = tournoiDuProfil(e, ids);
-  assert.equal(t.arrete, true);
-  // Guidage AVANT les passages (automate pas encore passé, ou passage refusé par la base) : explication, lien vers le tableau
-  const avant = guide(e, { tournoi: t });
-  assert.equal(avant.id, 'attendre');
-  assert.equal(avant.etape, 2);
-  assert.match(avant.titre, /Tournoi terminé \(48 écrans\)/);
-  assert.deepEqual(avant.bouton, { libelle: 'Voir les finalistes', href: '/chaine' });
-  // L'automate voit le même tournoi : 10 finalistes (rangs 1-10), 20 écartés, puis 10 au plus entrent dans la boucle
-  const { actions, etat: apres } = fairetournerChaine(e);
-  const vers = (v: string) => actions.filter((a) => a.kind === 'statut' && a.vers === v).map((a) => a.modele);
-  assert.deepEqual(new Set(vers('finaliste')), new Set(t.top));
-  assert.equal(vers('ecarte').length, 20);
-  assert.ok(vers('check-agent').length <= CHAINE.maxRevision);
-  assert.equal(apres.fiches.filter((f) => f.statut === 'candidat').length, 0);
-  // Après les passages : jamais « Jouer la grille », la suite est le test automatique (validateur)
-  const g = guide(apres, { tournoi: null });
-  assert.notEqual(g.id, 'tournoi');
-  assert.equal(g.id, 'tester');
-  // Passages appliqués en partie (base lente) : l'état reste cohérent, rien n'est rejoué deux fois
-  const partiel = appliquerActions(e, actions.slice(0, 7));
-  const suite = fairetournerChaine(partiel).actions;
-  assert.ok(suite.every((a) => !actions.slice(0, 7).some((x) => x.kind === 'statut' && a.kind === 'statut' && x.modele === a.modele && x.vers === a.vers)));
+test('file d’attente : meilleurs signaux d’abord (J’aime, juge, jauge), puis les plus anciens ; rang affiché', () => {
+  const cs = candidats(8);
+  const e = etat(cs, { signaux: { c6: { jaime: 3, juge: 4.8, jauge: 1 }, c3: { jaime: 2 }, c1: { jaime: 0, juge: 1.5, jauge: 0 } } });
+  const { etat: apres } = fairetournerChaine(e);
+  const verif = apres.fiches.filter((f) => f.statut === 'check-agent').map((f) => f.id);
+  assert.deepEqual(verif.sort(), ['c0', 'c2', 'c3', 'c4', 'c6'].sort(), 'c1 (mauvais signaux) attend ; les autres par ancienneté');
+  assert.equal(rangDansLaFile(apres, 'c5'), 1);
+  assert.equal(rangDansLaFile(apres, 'c1'), 3, 'les mauvais signaux passent après les plus récents sans signal');
 });
 
 test('grille 49 : un design vide ou incomplet ne lève jamais d’exception au rendu (aperçu indisponible)', () => {
@@ -278,8 +285,6 @@ test('tournoi mémorisé par contenu : même résultat que le calcul direct ; un
 // Proximité de la publication (décision de Paul du 2026-10-10 : « on priorise un modèle quasi fini à un autre modèle en cours »)
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Avis « rien à signaler » sur les `n` premières cellules de la version courante d'une fiche */
-const avis = (modele: string, n: number, version = 1): RevueModele[] => CELLULES_REVISION.slice(0, n).map(({ page, appareil }) => ({ modele, version, page, appareil, auteur: 'u', verdict: 'rien', le: '2026-10-10' }));
 
 test('proximité : publier > revalider > retouche > retest > relire > tester un finaliste > file > tournoi', () => {
   const fs = [

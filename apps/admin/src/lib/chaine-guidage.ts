@@ -1,8 +1,7 @@
 import 'server-only';
 import {
-  CHAINE, cleComposition, designDe, prochaineActionChaine, serialiserComposition, profilsCompatibles, tagsAutomatiques, tournoiDuProfil, type EtatTournoiGrilles, type ProchaineAction,
+  cleComposition, designDe, prochaineActionChaine, serialiserComposition, profilsCompatibles, tagsAutomatiques, type ProchaineAction,
 } from '@plateforme/core';
-import { PROFESSION_PAR_DEFAUT } from '@plateforme/core/professions';
 import { enregistrerVersionInitiale, getEquipier, lireChaine, VERSION_NON_ENREGISTREE, type Chaine, type Equipier } from '@/lib/chaine-modeles';
 import { getPropositionsClaude, getPropositionsClaudeFraiches } from '@/lib/directeur';
 import { getRecettes } from '@/lib/recettes';
@@ -11,9 +10,9 @@ import { compositionDe } from '@/app/chaine/validation';
 import { profilsChaine } from '@/app/chaine/donnees';
 
 // CHAÎNE GUIDÉE côté serveur (packages/core/src/chaine-guidage.ts, demande de Paul du 2026-10-10) : la prochaine action de la
-// personne connectée, calculée sur la chaîne DÉJÀ lue par la page (aucune lecture Supabase de plus, sauf l'import automatique
-// ci-dessous). Ce qui n'est pas du goût est fait seul : sans assez de candidats pour ouvrir le tournoi, les designs proposés par
-// Claude (retours/recettes-proposees.json, ids canon-*, lus avec le cache de 10 min) deviennent candidats automatiquement.
+// personne connectée, calculée sur la chaîne DÉJÀ lue par la page (aucune lecture Supabase de plus). Chaîne en 3 étapes (2026-10-11) :
+// les designs proposés par Claude (retours/recettes-proposees.json, ids canon-*, cache de 10 min) ne sont importés QUE par le bouton
+// « Importer les propositions de Claude » (un design importé est gardé, donc vérifié : c'est un choix de goût).
 
 export type RetourImport = { ok: boolean; message: string; ajoutes: number };
 
@@ -82,63 +81,28 @@ export async function importerDesignsClaude(moi: Equipier, opts: { frais?: boole
   return { ok: !echecs || n > 0, ajoutes: n, message: echecs ? `${n ? `${msg} ` : ''}${VERSION_NON_ENREGISTREE}` : msg };
 }
 
-// Import automatique au plus une fois toutes les 10 min par profession et par instance (un refus ne se rejoue pas à chaque page)
-const IMPORT_AUTO_MS = 10 * 60_000;
-const dernierImport = new Map<string, number>();
-
 /**
- * Prochaine action de la personne pour la profession (chaîne déjà lue par la page). `tournoi` : déjà calculé par la page (sinon
- * calculé ici, quelques millisecondes). Import automatique des designs de Claude quand il manque des candidats pour ouvrir le
- * tournoi (profession par défaut : les canons sont des designs de podologue) ; la chaîne est alors relue une fois.
+ * Prochaine action de la personne pour la profession (chaîne déjà lue par la page, automate et vérification automatique compris).
+ * Chaîne en 3 étapes (2026-10-11) : plus d'import AUTOMATIQUE des designs de Claude (un design importé est gardé, donc vérifié :
+ * c'est un choix de goût, fait par le bouton « Importer les propositions de Claude ») ; le tournoi n'entre plus dans le guidage.
  */
-export async function guidageChaine(p: { moi: Equipier; profession: string; chaine: Chaine; tournoi?: EtatTournoiGrilles | null; autoImport?: boolean }): Promise<{ action: ProchaineAction; chaine: Chaine; importes: number }> {
-  // Jamais d'exception (2026-10-10, bug « grille 49 ») : en cas d'erreur (import, lecture, calcul), guidage calculé sur la chaîne
-  // déjà lue, sans import ; en dernier recours, sur une chaîne vide (le bandeau reste affiché, la page aussi)
+export async function guidageChaine(p: { moi: Equipier; profession: string; chaine: Chaine }): Promise<{ action: ProchaineAction; chaine: Chaine; importes: number }> {
+  // Jamais d'exception (2026-10-10, bug « grille 49 ») : en dernier recours, guidage sur une chaîne vide (le bandeau reste affiché)
   try {
-    return await guidageSansGarde(p);
+    let claude = 0;
+    if (!p.chaine.migrationManquante && !p.chaine.erreurLecture) {
+      const cles = new Set(p.chaine.fiches.filter((f) => f.profession === p.profession).map((f) => f.cle));
+      const { designs } = await designsClaude().catch(() => ({ le: null, designs: [] as DesignsClaude['designs'] }));
+      claude = designs.filter((d) => !cles.has(d.cle)).length;
+    }
+    const fiches = p.chaine.fiches.filter((f) => f.profession === p.profession);
+    const l = p.chaine.lancements;
+    const action = prochaineActionChaine({ role: p.moi.role, etat: { ...p.chaine, fiches }, migrationManquante: p.chaine.migrationManquante, propositionsClaude: claude, lances: l?.lances ?? [], lancementAuto: l ? l.configure : undefined });
+    return { action, chaine: p.chaine, importes: 0 };
   } catch (e) {
     console.warn(`[chaine] guidage en erreur : ${(e as Error)?.message ?? e}`);
-    try {
-      const fiches = p.chaine.fiches.filter((f) => f.profession === p.profession);
-      const etat = { ...p.chaine, fiches };
-      const cand = fiches.filter((f) => f.profil === null && f.statut === 'candidat').map((f) => f.id);
-      const tournoi = p.tournoi !== undefined ? p.tournoi : cand.length ? tournoiDuProfil(etat, cand) : null;
-      return { action: prochaineActionChaine({ role: p.moi.role, etat, migrationManquante: p.chaine.migrationManquante, tournoi }), chaine: p.chaine, importes: 0 };
-    } catch {
-      return { action: prochaineActionChaine({ role: p.moi.role, etat: { fiches: [], versions: [], tickets: [], votes: [], revues: [] }, tournoi: null }), chaine: p.chaine, importes: 0 };
-    }
+    return { action: prochaineActionChaine({ role: p.moi.role, etat: { fiches: [], versions: [], tickets: [], votes: [], revues: [] } }), chaine: p.chaine, importes: 0 };
   }
-}
-
-async function guidageSansGarde(p: { moi: Equipier; profession: string; chaine: Chaine; tournoi?: EtatTournoiGrilles | null; autoImport?: boolean }): Promise<{ action: ProchaineAction; chaine: Chaine; importes: number }> {
-  let chaine = p.chaine;
-  let importes = 0;
-  const designsCandidats = (c: Chaine) => c.fiches.filter((f) => f.profession === p.profession && f.profil === null && f.statut === 'candidat');
-  const ouverture = CHAINE.ouvertureTournoi;
-  let claude = 0;
-  if (!chaine.migrationManquante && !chaine.erreurLecture) {
-    const cles = new Set(chaine.fiches.filter((f) => f.profession === p.profession).map((f) => f.cle));
-    const { designs } = await designsClaude().catch(() => ({ le: null, designs: [] as DesignsClaude['designs'] }));
-    claude = designs.filter((d) => !cles.has(d.cle)).length;
-    const k = p.profession;
-    if (p.autoImport !== false && claude > 0 && p.profession === PROFESSION_PAR_DEFAUT && designsCandidats(chaine).length < ouverture && Date.now() - (dernierImport.get(k) ?? 0) > IMPORT_AUTO_MS) {
-      dernierImport.set(k, Date.now());
-      const r = await importerDesignsClaude(p.moi, { dejaLa: cles }).catch(() => null);
-      if (r?.ajoutes) {
-        importes = r.ajoutes;
-        const relue = await lireChaine(p.profession, { versions: 'utiles', frais: true }).catch(() => null);
-        if (relue && !relue.erreurLecture) chaine = { ...relue, signaux: chaine.signaux };
-        const apres = new Set(chaine.fiches.map((f) => f.cle));
-        claude = designs.filter((d) => !apres.has(d.cle)).length;
-      }
-    }
-  }
-  const fiches = chaine.fiches.filter((f) => f.profession === p.profession);
-  const etat = { ...chaine, fiches };
-  const cand = designsCandidats(chaine).map((f) => f.id);
-  const tournoi = importes || p.tournoi === undefined ? (cand.length ? tournoiDuProfil(etat, cand) : null) : p.tournoi;
-  const action = prochaineActionChaine({ role: p.moi.role, etat, migrationManquante: chaine.migrationManquante, tournoi, propositionsClaude: claude });
-  return { action, chaine, importes };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -148,8 +112,8 @@ async function guidageSansGarde(p: { moi: Equipier; profession: string; chaine: 
 // ---------------------------------------------------------------------------------------------------------------
 
 export type ActionPrioritaire = { modele: string; nom: string; action: string; titre: string; href: string; etape: number };
-/** Actions « proches de la publication » : valider, revalider, retouche, relecture, test (étapes 3 à 6) */
-const ACTIONS_PROCHES = new Set<ProchaineAction['id']>(['valider', 'revalider', 'retouche', 'relire', 'tester']);
+/** Actions « proches du catalogue » : ajouter au catalogue, pages modifiées, remarques, relecture finale, corrections techniques, test */
+const ACTIONS_PROCHES = new Set<ProchaineAction['id']>(['valider', 'revalider', 'retouche', 'relire', 'corrections', 'tester']);
 
 /** Action de chaîne la plus proche de la publication qui attend la personne connectée (null : rien de proche, hors équipe, erreur) */
 export async function actionChainePrioritaire(profession: string): Promise<ActionPrioritaire | null> {
@@ -159,7 +123,7 @@ export async function actionChainePrioritaire(profession: string): Promise<Actio
     const chaine = await lireChaine(profession, { versions: 'utiles' });
     if (chaine.erreurLecture || chaine.migrationManquante) return null;
     const fiches = chaine.fiches.filter((f) => f.profession === profession);
-    const a = prochaineActionChaine({ role: moi.role, etat: { ...chaine, fiches }, tournoi: null });
+    const a = prochaineActionChaine({ role: moi.role, etat: { ...chaine, fiches } });
     if (!ACTIONS_PROCHES.has(a.id) || !a.bouton || !('href' in a.bouton)) return null;
     const id = a.bouton.href.split('#')[0].split('/').pop() ?? '';
     const f = fiches.find((x) => x.id === id);

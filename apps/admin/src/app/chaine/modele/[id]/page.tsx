@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { libellePageModele, modeTestPourEtape, statutModele, ticketsOuverts } from '@plateforme/core';
+import { etapeVisible, libellePageModele, modeTestPourEtape, pastilleVerification, raisonEcart, statutModele, ticketsOuverts } from '@plateforme/core';
 import BoutonTesterModele from '@/components/BoutonTesterModele';
 import RapportTestModele from '@/components/RapportTestModele';
 import { lireResultatTestModele } from '@/lib/tests-modeles';
@@ -28,7 +28,7 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   if (!f && chaine.erreurLecture) return <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE} <Link href={`/chaine`} className="font-semibold underline">Tableau de la chaîne</Link></p>;
   if (!f) notFound();
   // Chaîne guidée : prochaine étape de la profession du modèle (bandeau compact : on travaille déjà ici)
-  const { action } = await guidageChaine({ moi, profession: f.profession, chaine, autoImport: false });
+  const { action } = await guidageChaine({ moi, profession: f.profession, chaine });
   const [rendu, { verrous, jauge, bloquants }, rapport, gen, demo, choix] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), donneesGeneration(), profilsDemo(), lireChoixImages()]);
   const candidates = f.profil === null ? await candidatesImagesDemo(choix.lignes) : {};
   // Design (profil nul) : rendu avec le kit de chaque profil compatible (tags pré-calculés, confirmés par Paul)
@@ -39,16 +39,21 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   const courante = versions.find((v) => v.version === f.versionCourante);
   const tickets = chaine.tickets.filter((t) => t.modele === f.id).sort((a, b) => b.numero - a.numero);
   const st = statutModele(f.statut);
+  const verification = pastilleVerification(chaine, f, chaine.lancements?.suivi ?? []);
+  const etape = etapeVisible(chaine, f);
+  const LIBELLES_ETAPES = { choisir: '1 · Choisir (gardé, en file)', verification: '2 · Vérification', relecture: '3 · Relecture finale', catalogue: 'Au catalogue' } as const;
+  // « Lancer le test » à la main : vérification bloquée, ou lancement automatique indisponible (GitHub non configuré)
+  const testMain = Boolean(modeTest && (verification.etat === 'bloque' || (verification.etat === 'a-lancer' && chaine.lancements && !chaine.lancements.configure)));
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
         <ProchaineEtape action={action} compact ici={`/chaine/modele/${f.id}`} />
         <p className="mt-2 text-sm"><Link href="/chaine" className="inline-flex min-h-11 items-center font-semibold text-teal-900 underline">← Tableau</Link></p>
         <h1 className="mt-1 text-2xl font-bold">{f.nom}</h1>
-        <p className="mt-1 text-sm text-neutral-700" data-statut={f.statut}>Étape {st.etape} · {st.libelle} · v{f.versionCourante}{f.versionPubliee ? ` · en ligne : v${f.versionPubliee}` : ''}{f.rang ? ` · rang ${f.rang} au tournoi` : ''} · {ticketsOuverts(tickets).length} ticket(s) ouvert(s)</p>
-        <p className="text-sm text-neutral-600">Fini quand : {st.fini}</p>
-        {/* Geste de l'étape au premier écran (téléphone : l'aperçu et la validation font plusieurs écrans) */}
-        {modeTest && <div className="mt-2"><BoutonTesterModele modele={f.id} version={f.versionCourante} mode={modeTest} /></div>}
+        <p className="mt-1 text-sm text-neutral-700" data-statut={f.statut}>{etape ? LIBELLES_ETAPES[etape] : raisonEcart(chaine, f)} · v{f.versionCourante}{f.versionPubliee ? ` · en ligne : v${f.versionPubliee}` : ''} · {ticketsOuverts(tickets).length} ticket(s) ouvert(s)</p>
+        <p className="text-sm text-neutral-600" data-verification={verification.etat}>{verification.texte}.</p>
+        {/* Geste de l'étape au premier écran, seulement si la vérification automatique ne peut pas se faire seule */}
+        {testMain && modeTest && <div className="mt-2"><BoutonTesterModele modele={f.id} version={f.versionCourante} mode={modeTest} /></div>}
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="grid min-w-0 content-start gap-2">
@@ -56,7 +61,7 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
             ? <ApercuDesignImages modele={f.id} design={courante.composition} profils={profilsRendu} poids={gen.poids} photos={gen.photos} rendu={rendu} hauteur={480} scenarioDefaut={f.scenario} candidates={candidates} choix={choix.lignes.filter((l) => l.modele === f.id)} migrationImages={choix.migrationManquante} />
             : <ApercuModele composition={courante.composition} scenario={f.scenario} rendu={rendu} appareil="ordinateur" hauteur={480} />)}
           {f.profil === null && <p className="text-xs text-neutral-600" data-profils-compatibles={compatibles.length}>Profils compatibles (pré-calculés, à confirmer dans les tags) : {compatibles.map((p) => p.nom).join(', ') || 'aucun'}</p>}
-          <Link href={`/chaine/revision/${f.id}`} className="inline-flex min-h-11 items-center justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold" data-action="signaler">{f.statut === 'publie' ? 'Signaler une zone (rouvre une retouche, reste en ligne)' : f.statut === 'pret-validation' ? 'Publier (relecture guidée)' : 'Relecture guidée'}</Link>
+          <Link href={`/chaine/revision/${f.id}`} className="inline-flex min-h-11 items-center justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold" data-action="signaler">{f.statut === 'publie' ? 'Signaler une zone (rouvre une retouche, reste en ligne)' : f.statut === 'pret-validation' ? 'Ajouter au catalogue (relecture finale)' : 'Relecture finale'}</Link>
         </div>
         <Validation
           modele={f.id}
@@ -72,7 +77,8 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
         />
       </div>
       <section aria-labelledby="fi-test" className="grid gap-2">
-        <h2 id="fi-test" className="font-semibold">Testeur de modèles · v{f.versionCourante}</h2>
+        <h2 id="fi-test" className="font-semibold">Vérification automatique · v{f.versionCourante}</h2>
+        <details className="text-sm text-neutral-700"><summary className="flex min-h-11 cursor-pointer items-center">Vue détaillée : statut interne « {st.libelle} »{f.rang ? `, rang ${f.rang}` : ''}</summary><p className="mt-1">Fini quand : {st.fini}</p>{!testMain && modeTest && moi.role === 'validateur' && <div className="mt-2"><BoutonTesterModele modele={f.id} version={f.versionCourante} mode={modeTest} /></div>}</details>
         <RapportTestModele resultat={rapport} />
       </section>
       <section aria-labelledby="fi-versions" className="grid gap-2">

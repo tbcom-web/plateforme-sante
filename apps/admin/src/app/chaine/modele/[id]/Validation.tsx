@@ -1,6 +1,6 @@
 'use client';
 
-// 8. Validation finale (Paul) : verrous automatiques, tags pré-remplis à vérifier, publication. Un contributeur voit l'état, sans bouton.
+// Avant le catalogue (Paul) : verrous automatiques, tags pré-remplis à vérifier, « Ajouter au catalogue » (publication). Un contributeur voit l'état, sans bouton.
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { peutPublier, type StatutModele, type TagsModele, type VerrouValidation } from '@plateforme/core';
@@ -24,7 +24,7 @@ export default function Validation({ modele, validateur, statut, verrous, jauge,
   const pret = peutPublier(verrous);
   return (
     <section aria-labelledby="va-titre" className="grid content-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-3">
-      <h2 id="va-titre" className="font-semibold">Validation pour la production</h2>
+      <h2 id="va-titre" className="font-semibold">Avant le catalogue</h2>
       <ul className="grid gap-1 text-sm">
         {verrous.map((v) => (
           <li key={v.id} className="flex items-start gap-2" data-verrou={v.id} data-ok={v.ok ? 'oui' : 'non'}>
@@ -56,11 +56,11 @@ export default function Validation({ modele, validateur, statut, verrous, jauge,
             <button type="button" disabled={enCours} onClick={() => agir(() => repecher(modele))} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm ${focus}`}>Repêcher</button>
           ) : (
             <button type="button" disabled={enCours || !pret || statut === 'publie'} onClick={() => agir(() => publierModele(modele))} className={`min-h-11 rounded-lg bg-amber-700 px-4 text-sm font-semibold text-white disabled:opacity-50 ${focus}`} data-action="publier">
-              {statut === 'publie' ? 'Publié' : 'Publier pour les praticiens'}
+              {statut === 'publie' ? 'Au catalogue' : 'Ajouter au catalogue'}
             </button>
           )}
         </div>
-      ) : <p className="text-xs text-neutral-600">La validation finale et la publication sont faites par Paul.</p>}
+      ) : <p className="text-xs text-neutral-600">L’ajout au catalogue est fait par Paul.</p>}
       {message && <p role="status" className="text-sm">{message}</p>}
     </section>
   );

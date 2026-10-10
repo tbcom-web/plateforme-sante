@@ -41,7 +41,8 @@ const VUES = {
 };
 // Tables dont les écritures sont gardées (instantanés d'apprentissage : relus par les requêtes suivantes, comme en base)
 // + chaîne des modèles : l'automate écrit tickets, résultats de test et statuts une fois (comme en base), sans les rejouer à chaque page
-const MEMOIRE = new Set(['apprentissage_instantane', 'modeles_fiches', 'modeles_versions', 'modeles_tickets', 'modeles_grilles', 'modeles_votes', 'modeles_jaime', 'modeles_revues']);
+// + lancements du testeur (0064, vérification automatique : verrou par modèle × version × essai)
+const MEMOIRE = new Set(['apprentissage_instantane', 'modeles_fiches', 'modeles_versions', 'modeles_tickets', 'modeles_grilles', 'modeles_votes', 'modeles_jaime', 'modeles_revues', 'modeles_tests_lances']);
 // Valeurs par défaut des colonnes (0050) : une fiche ajoutée sans statut est « candidat », comme en base
 const DEFAUTS = { modeles_fiches: () => ({ statut: 'candidat', version_courante: 1, version_publiee: null, version_retouche: null, tags: {}, tags_valides: false, origine: 'preselection', rang: null, scenario: {}, recette: null }) };
 const nouvelId = () => `${Date.now().toString(16).padStart(8, '0').slice(-8)}-0000-4000-8000-${Math.random().toString(16).slice(2, 14).padEnd(12, '0')}`;

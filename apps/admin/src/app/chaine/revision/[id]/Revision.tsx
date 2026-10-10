@@ -1,11 +1,12 @@
 'use client';
 
-// RELECTURE GUIDÉE d'un modèle (demande de Paul du 2026-10-10 : « on me propose de revoir chaque page du modèle, je valide ou
-// j'indique ce qui manque éventuellement avec des notes […] on me guide pas à pas jusqu'à la publication du modèle »). Mobile d'abord.
+// RELECTURE FINALE d'un modèle (demande de Paul du 2026-10-10 : « on me propose de revoir chaque page du modèle, je valide ou
+// j'indique ce qui manque éventuellement avec des notes […] on me guide pas à pas jusqu'à la publication du modèle » ; une SEULE
+// relecture depuis la chaîne en 3 étapes du 2026-10-11, après la vérification automatique). Mobile d'abord.
 // Une page à la fois (téléphone puis ordinateur), en grand, deux gestes : ✓ « Page OK » ou ✎ « Il manque / à corriger » (note,
 // zone entourée, étiquettes rapides repliées). Barre « Page 3 / 16 », précédente / suivante, reprise à la première page pas vue.
 // Fin : récapitulatif → « Envoyer les corrections à Claude » (demande autonome, tickets en clair : « Envoyer à Claude » par le partage du téléphone, ou copie) ; au retour de la nouvelle version,
-// seules les pages modifiées sont reproposées (revalidation) ; tout au vert → écran « Publier ce modèle pour les praticiens » (Paul).
+// seules les pages modifiées sont reproposées (revalidation) ; tout au vert → écran « Ajouter au catalogue » (Paul).
 // STRUCTURE FIGÉE (décision de Paul du 2026-10-10) : plus de 🔒 / 🎲 ici ; seules les IMAGES se choisissent, en situation, sur la
 // page (ChoixImagesSituation : photos et illustration du haut, candidates du kit du profil) — préférence de rendu, jamais une version.
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -53,6 +54,10 @@ type Props = {
   publication: { verrous: VerrouValidation[]; profils: { id: string; nom: string; coche: boolean }[]; publies: string[] } | null;
   /** Demande autonome à Claude pour la retouche (demandeCorrectionsModele : tickets en clair, livraison attendue) */
   demande: { titre: string; texte: string };
+  /** La relecture finale a commencé (sinon une retouche ou un re-test sont des corrections TECHNIQUES de la vérification) */
+  relu: boolean;
+  /** Pastille de la vérification automatique (pastilleVerification) */
+  verification: { etat: string; texte: string };
 };
 
 type Etape = { page: PageModele; appareil: AppareilModele };
@@ -67,7 +72,8 @@ export default function Revision(p: Props) {
   const [message, setMessage] = useState('');
   const s = p.fiche.statut;
   const revalidation = s === 'revalidation';
-  const attente = s === 'retouche' || s === 'recheck-agent';
+  // Avant la relecture finale (file, vérification, corrections techniques) et pendant une retouche : écran d'attente expliqué
+  const attente = s === 'retouche' || s === 'recheck-agent' || s === 'check-agent' || s === 'finaliste' || s === 'candidat' || s === 'ecarte';
   const [signaler, setSignaler] = useState(false);
   const mode: 'relecture' | 'revalidation' | 'attente' | 'publication' | 'publie' =
     revalidation ? 'revalidation' : s === 'pret-validation' && !signaler ? 'publication' : s === 'publie' && !signaler ? 'publie' : attente ? 'attente' : 'relecture';
@@ -146,13 +152,13 @@ export default function Revision(p: Props) {
   if (mode === 'publie') {
     return (
       <section className="grid gap-3 rounded-2xl border border-teal-200 bg-teal-50/60 p-4" data-ecran="publie">
-        <h2 className="text-xl font-bold">Publié pour les praticiens</h2>
+        <h2 className="text-xl font-bold">Au catalogue</h2>
         <p className="text-sm text-neutral-700">« {p.fiche.nom} » (v{p.fiche.version}) est dans les choix des praticiens{p.publication?.publies.length ? ` : ${p.publication.publies.join(', ')}` : ''}.</p>
         <button type="button" onClick={() => setSignaler(true)} className={`${bouton} justify-self-start`} data-action="signaler">Signaler quelque chose (rouvre une retouche, reste en ligne)</button>
       </section>
     );
   }
-  if (mode === 'attente') return <Attente statut={s} tickets={p.tickets.filter((t) => t.statut === 'ouvert')} validateur={p.validateur} demande={p.demande} />;
+  if (mode === 'attente') return <Attente statut={s} relu={p.relu} verification={p.verification} tickets={p.tickets.filter((t) => t.statut === 'ouvert')} validateur={p.validateur} demande={p.demande} />;
 
   const n = etapes.length;
   const faites = etapes.filter((e) => etatEtape(e) !== 'a-voir').length;
@@ -162,7 +168,7 @@ export default function Revision(p: Props) {
       <section aria-label="Progression" className="grid gap-2 rounded-2xl border border-black/10 bg-white/95 p-3 lg:sticky lg:top-0 lg:z-10 lg:backdrop-blur">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-semibold" data-etape={etape ? `${i + 1}/${n}` : 'recap'}>
-            {mode === 'revalidation' ? 'Revalidation · ' : ''}{etape ? `Page ${i + 1} / ${n} · ${libellePageModele(etape.page)} · ${libelleAppareil(etape.appareil)}` : 'Récapitulatif'}
+            {mode === 'revalidation' ? 'Pages modifiées · ' : ''}{etape ? `Page ${i + 1} / ${n} · ${libellePageModele(etape.page)} · ${libelleAppareil(etape.appareil)}` : 'Récapitulatif'}
           </p>
           <span className="ml-auto text-xs text-neutral-600">{faites} / {n} vues</span>
         </div>
@@ -175,7 +181,6 @@ export default function Revision(p: Props) {
           {etape && <button type="button" onClick={() => aller(n)} className="min-h-11 px-2 text-sm text-teal-900 underline">Récapitulatif</button>}
           {design && vue.selecteur}
         </div>
-        {s !== 'avis-humain' && mode === 'relecture' && s !== 'publie' && s !== 'pret-validation' && <p className="text-xs text-amber-900">Le test automatique passe d’abord ({p.test ? `verdict : ${p.test.verdict}` : 'en attente'}) ; vous pouvez déjà relire.</p>}
       </section>
 
       {etape ? (
@@ -289,20 +294,20 @@ function Recapitulatif(r: {
       ) : r.mode === 'revalidation' ? (
         <div className="grid gap-2">
           <p className="text-sm">{r.corriges.length} correction{r.corriges.length > 1 ? 's' : ''} revue{r.corriges.length > 1 ? 's' : ''}{r.rouvrir.length ? `, ${r.rouvrir.length} à reprendre` : ''}{remarques ? `, ${remarques} page${remarques > 1 ? 's' : ''} avec une nouvelle remarque` : ''}.</p>
-          <button type="button" disabled={r.enCours} onClick={r.onRevalider} className={`min-h-12 justify-self-start rounded-xl bg-teal-800 px-5 font-semibold text-white ${focus}`} data-action="revalider">{r.rouvrir.length ? `Revalider le reste et rouvrir ${r.rouvrir.length} correction(s)` : 'Tout revalider'}</button>
+          <button type="button" disabled={r.enCours} onClick={r.onRevalider} className={`min-h-12 justify-self-start rounded-xl bg-teal-800 px-5 font-semibold text-white ${focus}`} data-action="revalider">{r.rouvrir.length ? `Valider le reste et rouvrir ${r.rouvrir.length} correction(s)` : 'Valider les pages modifiées'}</button>
         </div>
       ) : r.tickets.length > 0 ? (
         <div className="grid gap-2">
           <p className="text-sm">{r.tickets.length} remarque{r.tickets.length > 1 ? 's' : ''} à corriger :</p>
           <ul className="grid gap-1 text-sm">{r.tickets.slice(0, 12).map((t) => <li key={t.numero} className="rounded-lg bg-orange-50 px-3 py-2">#{t.numero} · {libellePageModele(t.page)} ({libelleAppareil(t.appareil)}) · {t.commentaire || t.etiquette}</li>)}</ul>
           {!envoye
-            ? <button type="button" disabled={r.enCours} onClick={() => { setEnvoye(true); r.onEnvoyer(); }} className={`min-h-12 justify-self-start rounded-xl bg-orange-700 px-5 font-semibold text-white ${focus}`} data-action="envoyer-claude">Envoyer les corrections à Claude</button>
+            ? <button type="button" disabled={r.enCours} onClick={() => { setEnvoye(true); r.onEnvoyer(); }} className={`min-h-12 justify-self-start rounded-xl bg-orange-700 px-5 font-semibold text-white ${focus}`} data-action="envoyer-claude">Envoyer les remarques à Claude</button>
             : <><p className="text-sm font-semibold">Dernier geste : demandez la correction à Claude. La nouvelle version revient seule ; vous ne reverrez que les pages modifiées.</p><CopierPhrase demande={r.demande} validateur={r.validateur} /></>}
         </div>
       ) : (
         <div className="grid gap-2">
-          <p className="text-sm">Toutes les pages sont OK. {r.test?.verdict === 'vert' ? 'Le test automatique est au vert : le modèle passe en « Prêt pour validation ».' : 'Dès que le test automatique est au vert, le modèle passe en « Prêt pour validation ».'}</p>
-          <button type="button" onClick={r.onContinuer} className={`min-h-12 justify-self-start rounded-xl bg-teal-800 px-5 font-semibold text-white ${focus}`} data-action="continuer">Continuer vers la publication</button>
+          <p className="text-sm">Toutes les pages sont OK. {r.test?.verdict === 'vert' || r.test?.verdict === 'orange' ? 'La vérification est passée : le modèle est prêt pour le catalogue.' : 'Dès que la vérification est passée, le modèle est prêt pour le catalogue.'}</p>
+          <button type="button" onClick={r.onContinuer} className={`min-h-12 justify-self-start rounded-xl bg-teal-800 px-5 font-semibold text-white ${focus}`} data-action="continuer">Continuer vers le catalogue</button>
         </div>
       )}
       {r.message && <p role="status" className="text-sm text-neutral-700">{r.message}</p>}
@@ -310,14 +315,32 @@ function Recapitulatif(r: {
   );
 }
 
-function Attente({ statut, tickets, validateur, demande }: { statut: StatutModele; tickets: TicketModele[]; validateur: boolean; demande: Props['demande'] }) {
+function Attente({ statut, relu, verification, tickets, validateur, demande }: { statut: StatutModele; relu: boolean; verification: Props['verification']; tickets: TicketModele[]; validateur: boolean; demande: Props['demande'] }) {
+  // Chaîne en 3 étapes (2026-10-11) : avant la relecture finale, la vérification est automatique ; seules les corrections techniques
+  // demandent un geste (« Envoyer à Claude », Paul)
+  const technique = statut === 'retouche' && !relu;
+  const ecran = statut === 'ecarte' ? 'ecarte' : statut === 'candidat' || statut === 'finaliste' ? 'file' : technique ? 'corrections' : statut === 'retouche' ? 'retouche' : relu ? 'reverification' : 'verification';
+  const titre = {
+    ecarte: verification.texte,
+    file: 'En file d’attente pour la vérification',
+    verification: verification.etat === 'bloque' ? 'Vérification bloquée' : 'Vérification automatique en cours',
+    corrections: `Corrections techniques (${tickets.length})`,
+    retouche: `Claude corrige ${tickets.length} remarque${tickets.length > 1 ? 's' : ''}`,
+    reverification: 'Version corrigée en vérification',
+  }[ecran];
+  const texte = {
+    ecarte: 'Ce design ne sera pas proposé aux praticiens. Paul peut le repêcher depuis la fiche du modèle.',
+    file: `Gardé : il entre en vérification dès qu’une place se libère (5 à la fois, les plus aimés d’abord). La relecture finale s’ouvre ensuite. ${verification.texte}.`,
+    verification: verification.etat === 'bloque' ? `${verification.texte}.` : 'Rien à faire : le testeur passe chaque page sur téléphone et ordinateur (10 à 15 min). La relecture finale s’ouvre dès son résultat.',
+    corrections: `Le testeur a relevé des défauts techniques ; une seule demande les regroupe. ${validateur ? '« Envoyer à Claude » : la demande part vers l’app Claude (session Code).' : 'Paul envoie la demande à Claude.'} La version corrigée est revérifiée seule, puis la relecture finale s’ouvre.`,
+    retouche: `${validateur ? '« Envoyer à Claude » : la demande complète part vers l’app Claude (session Code).' : 'Paul envoie la demande ci-dessus à Claude (session Code).'} La nouvelle version arrive seule, revérifiée ; vous ne reverrez que les pages modifiées.`,
+    reverification: 'Rien à faire : dès que la vérification est passée, les pages modifiées vous sont proposées, avant / après.',
+  }[ecran];
   return (
-    <section className="grid gap-3 rounded-2xl border border-violet-200 bg-violet-50/60 p-4" data-ecran="attente">
-      <h2 className="text-xl font-bold">{statut === 'retouche' ? `Claude corrige ${tickets.length} remarque${tickets.length > 1 ? 's' : ''}` : 'Le testeur repasse sur la nouvelle version'}</h2>
-      {statut === 'retouche' && <CopierPhrase demande={demande} validateur={validateur} />}
-      <p className="text-sm text-neutral-700">{statut === 'retouche'
-        ? `${validateur ? '« Envoyer à Claude » : la demande complète part vers l’app Claude (session Code).' : 'Paul envoie la demande ci-dessus à Claude (session Code).'} La nouvelle version arrive seule ; la relecture ne vous reproposera que les pages modifiées.`
-        : 'Rien à faire : dès que le test est passé, les pages modifiées vous sont proposées à revalider.'}</p>
+    <section className="grid gap-3 rounded-2xl border border-violet-200 bg-violet-50/60 p-4" data-ecran="attente" data-attente={ecran}>
+      <h2 className="text-xl font-bold">{titre}</h2>
+      {(ecran === 'corrections' || ecran === 'retouche') && <CopierPhrase demande={demande} validateur={validateur} />}
+      <p className="text-sm text-neutral-700">{texte}</p>
       {tickets.length > 0 && <ul className="grid gap-1 text-sm">{tickets.slice(0, 12).map((t) => <li key={t.numero} className="rounded-lg bg-white px-3 py-2 ring-1 ring-black/5">#{t.numero} · {libellePageModele(t.page)} ({libelleAppareil(t.appareil)}) · {t.commentaire || t.etiquette}</li>)}</ul>}
     </section>
   );
@@ -333,8 +356,8 @@ function Publication(p: Props & { publication: NonNullable<Props['publication']>
   const bloquants = p.publication.verrous.filter((v) => !v.ok && v.id !== 'tags');
   return (
     <section className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4" data-ecran="publication">
-      <h2 className="text-xl font-bold">Publier ce modèle pour les praticiens</h2>
-      <p className="text-sm text-neutral-700">« {p.fiche.nom} » v{p.fiche.version} : relecture terminée{p.test ? `, test automatique ${p.test.verdict === 'vert' ? 'au vert' : p.test.verdict}` : ''}.</p>
+      <h2 className="text-xl font-bold">Ajouter au catalogue</h2>
+      <p className="text-sm text-neutral-700">« {p.fiche.nom} » v{p.fiche.version} : relecture finale terminée{p.test ? `, vérification ${p.test.verdict === 'vert' ? 'au vert' : p.test.verdict}` : ''}. Il sera proposé aux praticiens des profils cochés.</p>
       <ul className="grid gap-1 text-sm">
         {p.publication.verrous.filter((v) => v.id !== 'tags').map((v) => <li key={v.id} className="flex items-start gap-2" data-verrou={v.id} data-ok={v.ok ? 'oui' : 'non'}><span aria-hidden="true">{v.ok ? '🟢' : '🔴'}</span><span><span className="font-medium">{v.libelle}</span> <span className="text-neutral-600">· {v.detail}</span></span></li>)}
       </ul>
@@ -344,21 +367,21 @@ function Publication(p: Props & { publication: NonNullable<Props['publication']>
           <label key={x.id} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="size-5" disabled={!p.validateur} checked={coches.includes(x.id)} onChange={(e) => setCoches((l) => (e.target.checked ? [...l, x.id] : l.filter((y) => y !== x.id)))} /> {x.nom}</label>
         ))}
       </fieldset>
-      {!p.validateur ? <p className="text-sm text-neutral-700">Paul publie ce modèle : rien à faire de votre côté.</p> : bloquants.length ? (
-        <p className="text-sm text-red-800">Pas encore publiable : {bloquants.map((v) => v.libelle).join(', ')}. <a href={`/chaine/modele/${p.fiche.id}`} className="font-semibold underline">Fiche du modèle</a></p>
+      {!p.validateur ? <p className="text-sm text-neutral-700">Paul ajoute ce modèle au catalogue : rien à faire de votre côté.</p> : bloquants.length ? (
+        <p className="text-sm text-red-800">Pas encore prêt pour le catalogue : {bloquants.map((v) => v.libelle).join(', ')}. <a href={`/chaine/modele/${p.fiche.id}`} className="font-semibold underline">Fiche du modèle</a></p>
       ) : !confirmer ? (
-        <button type="button" disabled={!coches.length} onClick={() => setConfirmer(true)} className={`min-h-12 justify-self-start rounded-xl bg-amber-700 px-5 font-semibold text-white disabled:opacity-50 ${focus}`} data-action="publier">Publier ce modèle pour les praticiens</button>
+        <button type="button" disabled={!coches.length} onClick={() => setConfirmer(true)} className={`min-h-12 justify-self-start rounded-xl bg-amber-700 px-5 font-semibold text-white disabled:opacity-50 ${focus}`} data-action="publier">Ajouter au catalogue</button>
       ) : (
         <div className="grid gap-2 rounded-xl bg-white p-3 ring-1 ring-amber-300" data-confirmation="">
-          <p className="text-sm font-semibold">Publier « {p.fiche.nom} » v{p.fiche.version} pour {coches.length} profil{coches.length > 1 ? 's' : ''} ? Il apparaîtra dans les choix des praticiens.</p>
+          <p className="text-sm font-semibold">Ajouter « {p.fiche.nom} » v{p.fiche.version} au catalogue pour {coches.length} profil{coches.length > 1 ? 's' : ''} ? Il apparaîtra dans les choix des praticiens.</p>
           <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={enCours} onClick={() => demarrer(async () => { const r = await publierDepuisParcours(p.fiche.id, coches); setMessage(r.message); if (r.ok) router.refresh(); })} className={`min-h-12 rounded-xl bg-amber-700 px-5 font-semibold text-white ${focus}`} data-action="confirmer-publication">Confirmer la publication</button>
+            <button type="button" disabled={enCours} onClick={() => demarrer(async () => { const r = await publierDepuisParcours(p.fiche.id, coches); setMessage(r.message); if (r.ok) router.refresh(); })} className={`min-h-12 rounded-xl bg-amber-700 px-5 font-semibold text-white ${focus}`} data-action="confirmer-publication">Confirmer l’ajout au catalogue</button>
             <button type="button" onClick={() => setConfirmer(false)} className={bouton}>Annuler</button>
           </div>
         </div>
       )}
       {message && <p role="status" className="text-sm">{message}</p>}
-      <button type="button" onClick={p.onSignaler} className="min-h-11 justify-self-start text-sm text-teal-900 underline">Revoir les pages avant de publier</button>
+      <button type="button" onClick={p.onSignaler} className="min-h-11 justify-self-start text-sm text-teal-900 underline">Revoir les pages avant d’ajouter</button>
     </section>
   );
 }

@@ -3,8 +3,8 @@
 // Présélection infinie SANS THÈME (chaîne des modèles, étape 1 ; décision de Paul du 2026-10-09) : un modèle est un DESIGN. Chaque
 // page de 6 est générée et rendue avec un profil de démonstration (rotation : jamais deux pages de suite avec le même), ses images
 // venant du kit du profil (rendu-profil.ts). Grilles « Directions » (favoris 4-5 ★, harmonie, diversité garantie), filtre léger
-// (exclus, déjà vus, rendus identiques à l'œil). Multi-sélection, « Garder » : candidats (designs) + points dans la Dégustation +
-// « J'aime ». « Voir avec un autre thème » : la même carte rendue avec un autre profil.
+// (exclus, déjà vus, rendus identiques à l'œil). Multi-sélection, « Garder » : designs gardés (candidats, qui partent seuls en
+// vérification : chaîne en 3 étapes du 2026-10-11) + points dans la Dégustation + « J'aime ». « Voir avec un autre thème » : la même carte rendue avec un autre profil.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -192,9 +192,8 @@ export default function Preselection(props: Props) {
   return (
     <div className="grid gap-4">
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 rounded-xl bg-white/95 p-2 text-sm shadow-sm ring-1 ring-black/5 sm:top-16">
-        <span className="font-semibold" data-compteur-candidats={compte}>{compte < CHAINE.ouvertureTournoi ? `${compte} / ${CHAINE.ouvertureTournoi} candidats pour ouvrir le tournoi` : `${compte} candidats · tournoi ouvert`}</span>
-        <span className="h-2 w-24 overflow-hidden rounded-full bg-neutral-200" aria-hidden="true"><span className="block h-full bg-teal-700" style={{ width: `${Math.min(100, (compte / CHAINE.ouvertureTournoi) * 100)}%` }} /></span>
-        {compte >= CHAINE.ouvertureTournoi && <Link href="/chaine/tournoi" className={`inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 font-semibold text-white ${focus}`} data-action="aller-tournoi">Jouer le tournoi</Link>}
+        <span className="font-semibold" data-compteur-candidats={compte}>{compte ? `${compte} gardé${compte > 1 ? 's' : ''} en file · vérification automatique (${CHAINE.maxVerification} à la fois)` : 'Gardez ce qui vous plaît : la vérification suit seule'}</span>
+        <Link href="/chaine" className={`inline-flex min-h-11 items-center rounded-lg border border-teal-800 px-3 font-semibold text-teal-900 ${focus}`} data-action="voir-tableau">Voir le tableau</Link>
         <button type="button" onClick={() => setAppareil(appareil === 'mobile' ? 'ordinateur' : 'mobile')} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 ${focus}`}>{appareil === 'mobile' ? 'Voir sur ordinateur' : 'Voir sur téléphone'}</button>
       </div>
 

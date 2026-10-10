@@ -9,7 +9,7 @@ export default async function CartePresqueFini({ profession }: { profession: str
   if (!a) return null;
   return (
     <Link href={a.href} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border-2 border-teal-700 bg-teal-50/70 px-4 py-2 text-sm hover:bg-teal-100" data-presque-fini={a.modele}>
-      <span className="text-xs font-semibold uppercase tracking-wide text-teal-900">Presque fini · étape {a.etape} / 6</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-teal-900">Presque fini · étape {a.etape} / 3</span>
       <span className="min-w-0 flex-1 basis-56 [overflow-wrap:anywhere]"><strong className="font-semibold text-neutral-950">{a.nom}</strong> — {a.action}</span>
       <span className="font-semibold text-teal-900" aria-hidden="true">→</span>
     </Link>

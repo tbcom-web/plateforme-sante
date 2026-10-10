@@ -6,7 +6,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { importerPropositionsClaude } from './import-claude';
 
-export default function BoutonImporterClaude({ libelle = 'Importer les propositions de Claude comme candidats', principal = false }: { libelle?: string; principal?: boolean }) {
+export default function BoutonImporterClaude({ libelle = 'Importer les propositions de Claude (gardées, puis vérifiées)', principal = false }: { libelle?: string; principal?: boolean }) {
   const [enCours, demarrer] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();

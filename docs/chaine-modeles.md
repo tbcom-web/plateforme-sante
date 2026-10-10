@@ -9,6 +9,45 @@ tickets et des résultats du testeur : `TicketModele`, `ResultatTestModele`), `a
 automate côté serveur), `apps/admin/src/app/chaine/` (pages), migration `supabase/migrations/0050_chaine_modeles.sql`,
 export `scripts/exporter-retours.mjs`. Tests : `packages/core/src/chaine-modeles.test.ts`.
 
+## Chaîne en 3 étapes (décision de Paul du 2026-10-11)
+
+« C’est un peu trop complexe… On pourrait n’avoir qu’une seule relecture finale avant publication et ajout au catalogue de modèles »,
+et le test se lance AUTOMATIQUEMENT. Le moteur garde ses statuts (et la base ses contrôles), mais l’interface n’en montre que trois
+(`etapeVisible`, `ETAPES_VISIBLES` de `chaine-modeles.ts`) :
+
+| Étape vue par Paul | Statuts du moteur | Ce que Paul fait | Ce qui se passe seul |
+|---|---|---|---|
+| 1. **Choisir** | `candidat` (= gardé, en file) | Présélection : pages de 6 designs, « Garder » | Le gardé entre en vérification dès qu’une place se libère : `CHAINE.maxVerification` = 5 à la fois, file ordonnée par les signaux (J’aime, juge, jauge : `fileVerification`, `aPriori`), puis l’ancienneté |
+| 2. **Vérification** (automatique) | `finaliste` (gardé pour vérification, structure figée), `check-agent`, et `retouche` / `recheck-agent` tant que la relecture n’a pas commencé | Rien, sauf « Envoyer à Claude » s’il y a des corrections techniques | L’admin lance le testeur (`testsALancer`, `lib/tests-auto.ts`) ; défauts techniques → UNE demande « corrections techniques » ; version corrigée revérifiée seule ; toujours rouge après correction → écarté avec le message ; sinon → relecture finale. Paul ne voit qu’une pastille (`pastilleVerification` : en file, vérification en cours, corrections techniques, bloquée, OK) |
+| 3. **Relecture finale** (Paul, une seule fois) | `avis-humain`, `retouche` / `recheck-agent` après le début de la relecture, `revalidation`, `pret-validation` | Relecture guidée page par page (✓ / ✎ + note, images en situation) ; remarques → « Envoyer à Claude » ; au retour, seules les pages modifiées (avant / après) ; puis « Ajouter au catalogue » (profils compatibles pré-cochés) | Version corrigée revérifiée seule avant de revenir |
+| **Catalogue** | `publie` | — (signaler une zone rouvre une retouche, le modèle reste en ligne) | — |
+
+« Relecture commencée » (`modelesEnRelecture`) = un avis de page, une revalidation ou une remarque humaine sur le modèle. Rien n’est
+publié sans le clic de Paul (« Ajouter au catalogue » = `publierModele`, publication par profil).
+
+**Ce qui a disparu du parcours** : le tournoi comme passage obligé (il reste en vue détaillée, `/chaine/tournoi`, sans rien décider :
+ni finaliste ni écart), le bouton « Lancer le test » (sauf vérification bloquée ou GitHub non configuré), l’import AUTOMATIQUE des
+designs de Claude (un design importé est gardé donc vérifié : c’est un choix de goût, fait par le bouton), les étapes « revalidation »
+et « validation » séparées (fondues dans la relecture finale), l’onglet Tournoi.
+
+**Lancement automatique du testeur** (autorisé par Paul pour le workflow `tester-modele` SEULEMENT, qui ne publie rien ; aucun
+autre workflow n’est lancé automatiquement) :
+- quand : à chaque chargement de la chaîne (automate `faireTournerChaine` → `verifierAutomatiquement`) et juste après « Garder »
+  ou l’import des propositions de Claude (`after()` de l’action) ;
+- quoi : les versions courantes en `check-agent` (mode `check`) ou `recheck-agent` (mode `recheck`) sans résultat, de la plus
+  proche du catalogue à la plus loin (à étape égale, rang dans la file), avec les jeux de démonstration du design (`jeuxDuModele`) ;
+- limites : `CHAINE.testsParalleles` = 3 passages en même temps (lancements de moins de `CHAINE.dureeTestMs` = 75 min sans résultat,
+  et passages en file ou en cours sur GitHub d’après le titre du run « tester-modele <modèle> v<n> ») ; jamais une version déjà
+  testée ou en cours ; un lancement refusé par GitHub est noté (`echec`) et refait ; après `CHAINE.essaisTest` = 2 lancements sans
+  résultat : « vérification bloquée », relance à la main (« Lancer le test » de la fiche, Paul) ;
+- verrou : table `modeles_tests_lances` (migration 0064, clé unique modèle × version × essai écrite AVANT le lancement : deux pages
+  ouvertes en même temps ne lancent jamais deux fois) ; sans 0064, lancements gardés en mémoire de l’instance (+ runs GitHub).
+- banc mobile : `CHAINE_TESTEUR_SIMULE=1` (sans jeton GitHub seulement) simule le lancement, aucun appel externe.
+
+Transitions ajoutées (0064, `avancer_modele`) : `check-agent → retouche` (corrections techniques), `check-agent → ecarte` (rouge sans
+défaut corrigeable), `recheck-agent → avis-humain` (corrections techniques vérifiées), `recheck-agent → ecarte` (rouge persistant après
+correction ; la base vérifie que le test de la version courante est rouge). La relecture finale refuse une version au rouge.
+
 ## Étapes (statuts de la fiche modèle versionnée)
 
 | # | Statut | Qui a la main | Ce qui se passe | « Fini » quand |
@@ -24,7 +63,12 @@ export `scripts/exporter-retours.mjs`. Tests : `packages/core/src/chaine-modeles
 | 7 | `revalidation` | humain | Seulement ce qui a changé, avant / après ; « Tout revalider » en 1 clic, ou cocher « Pas encore corrigé » pour rouvrir un ticket | Revalidée (1 clic) et testeur au vert → `pret-validation` ; ticket rouvert → `retouche` |
 | 8 | `pret-validation` → `publie` | Paul | Verrous automatiques au vert, tags pré-remplis vérifiés, « Publier pour les praticiens » (publication par profil existante : recette créée ou mise à jour + `recettes_publications`) | Publié. Ensuite, signaler une zone rouvre une retouche SANS dépublier : la nouvelle version n'est publiée qu'après revalidation et nouvelle validation de Paul |
 
-## Chaîne guidée : une seule prochaine étape (demande de Paul du 2026-10-10)
+## Chaîne guidée : une seule prochaine étape (demande de Paul du 2026-10-10, en 3 étapes depuis le 2026-10-11)
+
+Depuis le 2026-10-11 : fil de 3 étapes (Choisir · Vérification · Relecture finale) puis le catalogue ; priorité : ajouter au
+catalogue > revoir les pages modifiées > envoyer les remarques à Claude > relire > envoyer les corrections techniques > relancer une
+vérification bloquée > choisir (tant que moins de 5 gardés attendent) > attente expliquée. Le tournoi n’est plus prescrit. Le texte
+ci-dessous décrit la version du 2026-10-10 (6 étapes), gardée pour l’historique.
 
 « La partie de présélection tournoi etc paraît bloquée […] que ce soit vraiment prescriptif pour qu'on arrive à des modèles valides à
 pousser aux clients finaux. » Code : `packages/core/src/chaine-guidage.ts` (`prochaineActionChaine`, pur, testé dans
@@ -213,6 +257,9 @@ enregistrée. Le validateur et le service gardent la main (publication, repêcha
 
 ## Ce qui est automatique
 
+Depuis le 2026-10-11 : entrée en vérification (5 à la fois, file par signaux), LANCEMENT DU TESTEUR (3 en parallèle), corrections
+techniques regroupées, écart des designs toujours rouges après correction. Le tournoi ne décide plus rien. Avant :
+
 Génération des candidats, filtre léger, appariements, arrêt du tournoi, sélection des finalistes, entrée dans la boucle (10 au
 plus), passages d'étape, tickets techniques (résultats du testeur), fermeture des tickets techniques repassés au vert,
 priorisation des retouches (export), création des versions depuis les retouches de Claude, pré-remplissage des tags. L'automate
@@ -232,6 +279,10 @@ L'humain ne fait que choisir (présélection), voter (tournoi), commenter (avis,
 
 ## Tableau de bord
 
+Depuis le 2026-10-11 : quatre colonnes visibles (Choisir · Vérification · Relecture finale · Catalogue), une pastille par modèle ; les
+écartés avec leur raison ; « Vue détaillée » repliée : profession, tournoi, ce qui attend un humain, ce qui tourne tout seul, statuts
+internes. Avant :
+
 Une colonne par étape avec compteur et « qui a la main » (Humain, Agent, Claude, Paul), filtres profession / profil, colonne
 Ingrédients (Arrivages). « Ce qui attend un humain » par personne (le validateur voit toute l'équipe) ; « Ce qui tourne tout
 seul » (testeur attendu, retouches de Claude, file des finalistes).
@@ -244,6 +295,7 @@ seul » (testeur attendu, retouches de Claude, file des finalistes).
 
 ## Migration
 
+`supabase/migrations/0064_chaine_trois_etapes.sql` (2026-10-11 : lancements du testeur, nouvelles transitions d’`avancer_modele`) ;
 `supabase/migrations/0050_chaine_modeles.sql` (après 0049) puis `0052_tournoi_grilles.sql` (après 0051 : grilles du tournoi, J'aime,
 profil facultatif des fiches, des duels et des grilles), rejouables, non exécutées par les agents. Sans 0050, `/chaine` affiche
 « Migration 0050 à exécuter » ; sans 0052, le tournoi affiche « Migration 0052 à exécuter ».

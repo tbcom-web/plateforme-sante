@@ -30,14 +30,14 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
   const cand = chaine.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === groupe);
   const t = tournoiDuProfil(chaine, cand.map((f) => f.id));
   const nom = (g: string) => { const p = g.split('|')[1]; return p === '*' ? 'Designs de la profession' : `${profils.find((x) => x.id === p)?.nom ?? p} (ancien tournoi par profil)`; };
-  // Chaîne guidée : la prochaine étape (tournoi des designs déjà calculé ; pas d'import ici, la présélection et le tableau s'en chargent)
-  const { action } = await guidageChaine({ moi, profession: profession.id, chaine, tournoi: demande ? undefined : t, autoImport: false });
+  // Chaîne guidée : la prochaine étape (le tournoi n'en est plus une : vue détaillée, il ne décide rien)
+  const { action } = await guidageChaine({ moi, profession: profession.id, chaine });
   const versions = Object.fromEntries(cand.map((f) => [f.id, { nom: f.nom, design: versionDe(chaine, f.id, f.versionCourante)?.composition ?? {} }]));
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
-        <h1 className="text-2xl font-bold">Tournoi</h1>
-        <p className="mt-1 max-w-3xl text-sm text-neutral-600">Touchez vos 2 préférés parmi 6 (et, si vous voulez, celui qui ne va pas). On ne cherche que les {TOURNOI_GRILLES.top} meilleurs : le tournoi s’arrête tout seul quand ils sont sûrs à {Math.round(TOURNOI_GRILLES.certitude * 100)} %.</p>
+        <h1 className="text-2xl font-bold">Tournoi <span className="text-base font-semibold text-neutral-600">· vue détaillée</span></h1>
+        <p className="mt-1 max-w-3xl text-sm text-neutral-600">Facultatif : comparer les designs gardés en file (2 préférés parmi 6). Le tournoi ne décide plus rien : chaque design gardé part seul en vérification, les plus aimés d’abord.</p>
       </div>
       <ProchaineEtape action={action} compact ici="/chaine/tournoi" />
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
@@ -49,9 +49,9 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
         </nav>
       )}
       {!t.ouvert ? (
-        <p id="etape-travail" className="rounded-2xl border border-black/10 bg-white p-5 text-sm">Pas encore de tournoi : {t.texte}. Il s’ouvre seul dès {CHAINE.ouvertureTournoi} candidats. <Link href="/chaine/preselection" className="font-semibold text-teal-900 underline">Présélectionner</Link></p>
+        <p id="etape-travail" className="rounded-2xl border border-black/10 bg-white p-5 text-sm">Pas assez de designs gardés en file pour comparer ({t.texte}). <Link href="/chaine/preselection" className="font-semibold text-teal-900 underline">Choisir des designs</Link></p>
       ) : t.arrete ? (
-        <p id="etape-travail" className="rounded-2xl border border-black/10 bg-white p-5 text-sm" data-etat-tournoi="arrete">{t.texte} : le tournoi est terminé. <Link href="/chaine" className="font-semibold text-teal-900 underline">Voir les finalistes et la suite</Link></p>
+        <p id="etape-travail" className="rounded-2xl border border-black/10 bg-white p-5 text-sm" data-etat-tournoi="arrete">{t.texte} : comparaison terminée (classement ci-dessous, à titre indicatif). <Link href="/chaine" className="font-semibold text-teal-900 underline">Voir le tableau</Link></p>
       ) : (
         <div id="etape-travail"><Tournoi profil={demande} versions={versions} profils={profils} rendu={rendu} poids={gen.poids} photos={gen.photos} budget={TOURNOI_GRILLES.budget} ouverture={CHAINE.ouvertureTournoi} /></div>
       )}

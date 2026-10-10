@@ -8,13 +8,15 @@
 //   - aperçus (iframes) : taille du texte rendu à l'écran, piège de double défilement (iframe défilante qui occupe presque l'écran) ;
 //   - actions réservées au survol (classes hover:/group-hover: sans équivalent) ;
 //   - temps de réponse d'un geste (du toucher à la première mise à jour de l'écran).
-// Scénario (donnees.mjs + retouches) : candidats, tournoi bien avancé, finaliste testé vert, modèle en relecture (avis humain),
-// modèle en revalidation, modèle en retouche (demande à Claude), modèle prêt à publier ; « À valider » d'après les exports du dépôt.
+// Scénario (donnees.mjs + retouches) — chaîne en 3 étapes (2026-10-11) : designs gardés en file, modèle en vérification (test lancé,
+// en cours), modèle en corrections techniques (demande à Claude), modèle en relecture finale, pages modifiées (avant / après), remarques
+// chez Claude, modèle prêt pour le catalogue, modèle au catalogue ; « À valider » d'après les exports du dépôt. Lancement du testeur
+// SIMULÉ (CHAINE_TESTEUR_SIMULE=1 : aucun appel à GitHub, lancement noté dans le faux Supabase).
 // Sorties : captures de chaque étape et rapport.json dans --sortie (défaut : dossier temporaire), tableau des défauts à l'écran.
 // Options : --sortie=<dossier> --appareils=android,iphone --garder --reutiliser=<dossier gardé> --reconstruire (avec --reutiliser :
 //   recopie les sources et reconstruit) --etapes=admin,sujets,… --latence=15 --dossier=<parent du dossier du banc>
 // Aucune écriture hors du dossier temporaire et de --sortie ; « Lancer le test » et « Publier » ne touchent que le faux Supabase
-// (aucun jeton GitHub dans l'environnement du serveur : le lancement du test répond « non configuré »).
+// (aucun jeton GitHub dans l'environnement du serveur : lancement automatique simulé, lancement à la main « non configuré »).
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync, existsSync, createWriteStream } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -78,6 +80,8 @@ if (!REUTIL || opt.reconstruire) copier();
 // Environnement du serveur : liste blanche (aucun jeton, aucune clé : GITHUB_TOKEN, SUPABASE_SECRET_KEY… absents)
 const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => /^(PATH|Path|PATHEXT|SystemRoot|SYSTEMROOT|windir|TEMP|TMP|USERPROFILE|HOME|APPDATA|LOCALAPPDATA|ComSpec|PROGRAMFILES|ProgramFiles|NUMBER_OF_PROCESSORS|OS)$/.test(k)));
 Object.assign(env, { NODE_PATH: MODULES, NEXT_TELEMETRY_DISABLED: '1', PORT: '' });
+// Vérification automatique SIMULÉE (lib/tests-auto.ts) : sans jeton GitHub, aucun appel externe, lancement noté dans le faux Supabase
+Object.assign(env, { CHAINE_TESTEUR_SIMULE: '1' });
 // Le serveur Next lit .env.local (adresse du faux Supabase) : NEXT_PUBLIC_* aussi passés pour la construction
 Object.assign(env, { NEXT_PUBLIC_SUPABASE_URL: SUPA, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'cle-publique-factice' });
 const next = join(MODULES, 'next', 'dist', 'bin', 'next');
@@ -93,6 +97,27 @@ if (!existsSync(donnees)) spawnSync(process.execPath, [join(RACINE, 'scripts', '
   const NOMS = { 'avis-humain': 'Relecture Azur', revalidation: 'Revalidation Sable', 'pret-validation': 'Prêt Lagune', retouche: 'Retouche Corail', finaliste: 'Finaliste Menthe', 'check-agent': 'Test Brume', publie: 'Publié Ivoire' };
   const vus = new Set();
   for (const f of d.modeles_fiches) if (NOMS[f.statut] && !vus.has(f.statut)) { vus.add(f.statut); f.nom = NOMS[f.statut]; }
+  // Chaîne en 3 étapes : la 2e fiche en retouche devient des CORRECTIONS TECHNIQUES (relecture pas commencée : aucun avis ni remarque
+  // humaine, défauts du testeur ouverts) ; « Test Brume » attend son test (lancé il y a 2 min : vérification en cours)
+  const tech = d.modeles_fiches.filter((f) => f.statut === 'retouche')[1];
+  if (tech) {
+    tech.nom = 'Corrections Sauge';
+    d.modeles_revues = d.modeles_revues.filter((r) => r.modele !== tech.id);
+    d.modeles_tickets = d.modeles_tickets.filter((t) => t.modele !== tech.id || t.origine === 'testeur');
+    const tt = d.modeles_tickets.filter((t) => t.modele === tech.id);
+    for (const t of tt) { t.statut = 'ouvert'; t.etiquette = 'technique:debordement'; t.commentaire = 'Texte qui déborde de sa colonne sur téléphone.'; }
+    if (!tt.length) d.modeles_tickets.push({ id: `00000000-0000-4000-8000-${'7'.repeat(12)}`, modele: tech.id, numero: 1, page: 'accueil', appareil: 'mobile', zone: null, element: null, etiquette: 'technique:debordement', commentaire: 'Texte qui déborde de sa colonne sur téléphone.', origine: 'testeur', gravite: 'majeur', controle: 'debordement', statut: 'ouvert', version_ouverture: tech.version_courante, version_correction: null, auteur: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+    tech.version_retouche = tech.version_courante;
+    // Sans résultat sur la version courante (sinon l’automate refermerait ces défauts, absents du résultat factice du banc)
+    for (const v of d.modeles_versions) if (v.modele === tech.id && v.version === tech.version_courante) v.test = null;
+  }
+  const brume = d.modeles_fiches.find((f) => f.nom === 'Test Brume');
+  if (brume) {
+    for (const v of d.modeles_versions) if (v.modele === brume.id && v.version === brume.version_courante) v.test = null;
+    d.modeles_revues = d.modeles_revues.filter((r) => r.modele !== brume.id);
+    d.modeles_tickets = d.modeles_tickets.filter((t) => t.modele !== brume.id);
+    d.modeles_tests_lances = [{ id: `00000000-0000-4000-8000-${'8'.repeat(12)}`, modele: brume.id, version: brume.version_courante, essai: 1, mode: 'check', echec: null, lance_par: null, created_at: new Date(Date.now() - 120_000).toISOString() }];
+  }
   const relu = d.modeles_fiches.find((f) => f.nom === 'Relecture Azur');
   d.modeles_revues = d.modeles_revues.filter((r) => r.modele !== relu?.id);
   d.modeles_tickets = d.modeles_tickets.filter((t) => t.modele !== relu?.id);
@@ -106,7 +131,7 @@ if (!existsSync(donnees)) spawnSync(process.execPath, [join(RACINE, 'scripts', '
   const rev = d.modeles_fiches.find((f) => f.nom === 'Revalidation Sable');
   for (const t of d.modeles_tickets) if (t.modele === rev?.id) { t.statut = 'corrige'; t.version_correction = rev.version_courante; }
   writeFileSync(scenario, JSON.stringify(d));
-  writeFileSync(join(SORTIE, 'scenario-ids.json'), JSON.stringify(Object.fromEntries(d.modeles_fiches.filter((f) => Object.values(NOMS).includes(f.nom)).map((f) => [f.nom, { id: f.id, statut: f.statut }])), null, 2));
+  writeFileSync(join(SORTIE, 'scenario-ids.json'), JSON.stringify(Object.fromEntries(d.modeles_fiches.filter((f) => [...Object.values(NOMS), 'Corrections Sauge'].includes(f.nom)).map((f) => [f.nom, { id: f.id, statut: f.statut }])), null, 2));
 }
 const ids = JSON.parse(readFileSync(join(SORTIE, 'scenario-ids.json'), 'utf8'));
 
@@ -417,15 +442,24 @@ try {
       await mesurer(e, 'chaine', ['[data-prochaine-action]@haut']);
       e.captures.push(await capture('chaine-pleine', true));
     });
-    // 6. Fiche d'un finaliste : « Lancer le test »
-    await etape('fiche', async (e) => {
-      const id = (ids['Finaliste Menthe'] ?? ids['Test Brume'])?.id;
-      await aller(`/chaine/modele/${id}`);
-      await mesurer(e, 'fiche-finaliste', ['[data-action="tester-modele"]']);
-      const bt = page.locator('[data-action="tester-modele"]').first();
-      if (await bt.count()) { await toucher(e, 'Lancer le test', bt); await page.waitForTimeout(2500); e.notes.push((await page.locator('[role=status]').first().textContent().catch(() => '')) ?? ''); }
-      else e.notes.push('pas de bouton « Lancer le test » sur cette fiche');
-      e.captures.push(await capture('fiche-apres-test'));
+    // 6. Vérification automatique : la fiche ne montre qu'une pastille (test lancé seul) ; « Lancer le test » seulement si bloqué
+    await etape('verification', async (e) => {
+      await aller(`/chaine/modele/${ids['Test Brume'].id}`);
+      await mesurer(e, 'verification-fiche', ['[data-verification]@haut']);
+      e.notes.push(`pastille : ${(await page.locator('[data-verification]').first().textContent().catch(() => '')) ?? ''}`);
+      if (await page.locator('[data-action="tester-modele"]').first().isVisible().catch(() => false)) e.notes.push('bouton « Lancer le test » visible (vérification bloquée ou non configurée)');
+      await aller(`/chaine/revision/${ids['Test Brume'].id}`);
+      await page.locator('[data-ecran]').first().waitFor({ timeout: 60000 }).catch(() => null);
+      await mesurer(e, 'verification-en-cours');
+    });
+    // 6 bis. Corrections techniques : une seule demande « Envoyer à Claude » (Paul)
+    await etape('corrections', async (e) => {
+      const id = ids['Corrections Sauge']?.id;
+      if (!id) { e.notes.push('pas de fiche « Corrections Sauge » dans le scénario'); return; }
+      await aller(`/chaine/revision/${id}`);
+      await page.locator('[data-ecran]').first().waitFor({ timeout: 60000 }).catch(() => null);
+      await mesurer(e, 'corrections-techniques', ['[data-action="partager-claude"]']);
+      e.notes.push(`écran : ${await page.locator('[data-attente]').first().getAttribute('data-attente').catch(() => '?')}`);
     });
     // 7. Relecture guidée : ✓ / ✎, zone au doigt, images ‹ ›, récapitulatif, demande à Claude (copier, partager)
     await etape('relecture', async (e) => {
@@ -497,10 +531,10 @@ try {
       }
       const env2 = page.locator('[data-action="envoyer-claude"]');
       if (await env2.count()) {
-        await toucher(e, 'Envoyer les corrections à Claude', env2);
+        await toucher(e, 'Envoyer les remarques à Claude', env2);
         await page.waitForTimeout(2000);
         await mesurer(e, 'relecture-demande-claude');
-      } else e.notes.push('pas de bouton « Envoyer les corrections à Claude »');
+      } else e.notes.push('pas de bouton « Envoyer les remarques à Claude »');
       const copier = page.locator('[data-action="copier-claude"]').first();
       if (await copier.count()) {
         await toucher(e, 'Copier', copier);
@@ -535,7 +569,7 @@ try {
       const env3 = page.locator('[data-action="partager-claude"]').first();
       if (await env3.count()) { await toucher(e, 'Envoyer à Claude', env3); await page.waitForTimeout(500); const p3 = await page.evaluate(() => window.__partages); e.notes.push(`partage : ${p3.length ? p3.at(-1).title : 'rien'}`); e.captures.push(await capture('retouche-envoyee')); }
     });
-    // 10. Écran de publication (profils cochés)
+    // 10. Écran « Ajouter au catalogue » (profils cochés)
     await etape('publication', async (e) => {
       await aller(`/chaine/revision/${ids['Prêt Lagune'].id}`);
       await page.locator('[data-ecran]').first().waitFor({ timeout: 60000 }).catch(() => null);
@@ -545,8 +579,18 @@ try {
       const cases = page.locator('[data-ecran="publication"] input[type=checkbox]');
       if (await cases.count()) await toucher(e, 'cocher un profil', cases.nth(0).locator('xpath=..'));
       const pub = page.locator('[data-action="publier"]');
-      if (await pub.count() && await pub.isEnabled()) { await toucher(e, 'Publier', pub); await page.waitForTimeout(400); await mesurer(e, 'publication-confirmer', ['[data-action="confirmer-publication"]']); }
-      else e.notes.push((await page.locator('[data-ecran="publication"] .text-red-800').first().textContent().catch(() => '')) || 'bouton Publier absent ou désactivé');
+      if (await pub.count() && await pub.isEnabled()) { await toucher(e, 'Ajouter au catalogue', pub); await page.waitForTimeout(400); await mesurer(e, 'publication-confirmer', ['[data-action="confirmer-publication"]']); }
+      else e.notes.push((await page.locator('[data-ecran="publication"] .text-red-800').first().textContent().catch(() => '')) || 'bouton « Ajouter au catalogue » absent ou désactivé');
+    });
+    // 11. Catalogue : un modèle publié (et la colonne Catalogue du tableau)
+    await etape('catalogue', async (e) => {
+      await aller(`/chaine/revision/${ids['Publié Ivoire'].id}`);
+      await page.locator('[data-ecran]').first().waitFor({ timeout: 60000 }).catch(() => null);
+      await mesurer(e, 'catalogue-modele');
+      await aller('/chaine');
+      await page.locator('[data-colonne="catalogue"]').first().scrollIntoViewIfNeeded().catch(() => null);
+      await page.waitForTimeout(400);
+      e.captures.push(await capture('catalogue-colonne'));
     });
     res.erreursJs = erreurs;
     await navigateur.close();

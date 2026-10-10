@@ -5,8 +5,8 @@ import { envoyerRetoursAClaude } from '../admin/retours/actions';
 import BoutonImporterClaude from './BoutonImporterClaude';
 
 // Bandeau « Prochaine étape » (chaîne guidée, packages/core/src/chaine-guidage.ts) : en tête du tableau et de chaque étape, UNE action,
-// son pourquoi, un gros bouton qui y mène, le fil des 6 étapes jusqu'au modèle prêt pour les clients. Mobile d'abord (Paul pilote
-// souvent depuis son téléphone) : bouton pleine largeur, fil en 6 pastilles numérotées.
+// son pourquoi, un gros bouton qui y mène, le fil des 3 étapes (Choisir · Vérification · Relecture finale) jusqu'au catalogue. Mobile
+// d'abord (Paul pilote souvent depuis son téléphone) : bouton pleine largeur, fil en 3 pastilles numérotées.
 const QUI: Record<ProchaineAction['qui'], string> = { vous: 'À vous', paul: 'Paul', claude: 'Claude', agent: 'Automatique' };
 
 function Bouton({ b, principal }: { b: BoutonGuide; principal: boolean }) {
@@ -27,7 +27,7 @@ export default function ProchaineEtape({ action, importes = 0, compact = false, 
   if (compact || surPlace) {
     return (
       <section aria-label="Prochaine étape" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-teal-700 bg-teal-50/70 px-3 py-2 text-sm" data-prochaine-action={action.id}>
-        <span className="text-xs font-semibold uppercase tracking-wide text-teal-900">Prochaine étape {courante.n} / 6</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-teal-900">Prochaine étape {courante.n} / {action.fil.length}</span>
         <span className="min-w-0 flex-1 basis-56 font-semibold text-neutral-950 [overflow-wrap:anywhere]">{surPlace ? `Vous y êtes : ${action.titre}` : action.titre}</span>
         {surPlace && <a href="#etape-travail" className="inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 font-semibold text-white" data-action-guidee="">{action.bouton && 'libelle' in action.bouton ? action.bouton.libelle : 'Y aller'} ↓</a>}
         {surPlace && <span className="basis-full text-xs text-neutral-700">{action.pourquoi}</span>}
@@ -43,7 +43,7 @@ export default function ProchaineEtape({ action, importes = 0, compact = false, 
       <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-teal-900">
         <span>Prochaine étape</span>
         <span className="hidden sm:inline" aria-hidden="true">·</span>
-        <span className="hidden sm:inline">Étape {courante.n} / 6 · {courante.libelle}</span>
+        <span className="hidden sm:inline">Étape {courante.n} / {action.fil.length} · {courante.libelle}</span>
         <span className="ml-auto rounded-full bg-white px-2 py-0.5 normal-case tracking-normal text-teal-900 ring-1 ring-teal-200">{QUI[action.qui]}</span>
       </div>
       <h2 id="prochaine-etape" className="text-xl font-bold leading-snug text-neutral-950 [overflow-wrap:anywhere] sm:text-2xl">{action.titre}</h2>
@@ -57,7 +57,7 @@ export default function ProchaineEtape({ action, importes = 0, compact = false, 
       )}
       {/* « Faire corriger par Claude » : la demande autonome s'envoie d'ici (partage du téléphone vers l'app Claude, ou copie) */}
       {action.demande && <DemandeClaude texte={action.demande.texte} titre={action.demande.titre} avantEnvoi={envoyerRetoursAClaude} />}
-      <ol className="grid grid-cols-6 gap-1 pt-1" aria-label="Étapes jusqu’au modèle prêt pour les clients">
+      <ol className="grid grid-cols-3 gap-1 pt-1" aria-label="Étapes jusqu’au catalogue">
         {action.fil.map((x) => (
           <li key={x.n} className="grid min-w-0 justify-items-center gap-1 text-center" aria-current={x.ici ? 'step' : undefined} data-etape={x.etat}>
             <span className={`grid size-8 place-items-center rounded-full text-sm font-bold ${x.etat === 'fait' ? 'bg-teal-700 text-white' : x.etat === 'courante' ? 'bg-white text-teal-900 ring-2 ring-teal-700' : 'bg-white text-neutral-500 ring-1 ring-neutral-300'} ${x.ici ? 'outline outline-2 outline-offset-2 outline-amber-500' : ''}`}>

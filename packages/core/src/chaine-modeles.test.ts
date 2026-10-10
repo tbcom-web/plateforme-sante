@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import {
   appliquerResultatTest, attentesHumain, avisFaits, CHAINE, CELLULES_REVISION, choixDePreselection, classementTournoi, demandeCorrectionsModele, etatRevision, etatTournoi, exportTicketsModeles, fairetournerChaine,
   filtreLeger, ligneCorrection, lireRetouches, markdownTicketsModeles, modelesATester, nomTeinte, nouvelleVersion, pagesChangees, peut, peutPublier, poidsVote, prochainDuel,
-  retouchesAAppliquer, roleEffectif, tagsAutomatiques, transitionPermise, verrousValidation,
-  type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele,
+  retouchesAAppliquer, roleEffectif, tagsAutomatiques, transitionPermise, verrousValidation, etapeVisible, pastilleVerification, raisonEcart, suiviTests, testsALancer,
+  type EtatChaine, type TestLance, type FicheModele, type RevueModele, type VersionModele, type VoteModele,
 } from './chaine-modeles';
 import { normaliserResultatTest, normaliserTicket, verdictGlobal, type ResultatTestModele, type TicketModele } from './chaine-modeles-format';
 import { validerChoixGrille } from './degustation';
@@ -172,98 +172,170 @@ test('avis humain : 16 cellules ; ticket ou « Rien à signaler » ; revalidatio
   assert.equal(h.faites, 14);
 });
 
-test('parcours complet par l’automate : candidat → finaliste → check agent → avis → retouche → re-check → revalidation → prêt → publié → ticket rouvre sans dépublier', () => {
-  const { ids, votes } = tournoiSimule(22, 220, { graine: 11 });
-  let e: EtatChaine = { fiches: ids.map((id) => fiche(id)), versions: ids.map((id) => version(id, 1)), tickets: [], votes, revues: [] };
-  let r = fairetournerChaine(e);
-  e = r.etat;
-  const statuts = (s: string) => e.fiches.filter((f) => f.statut === s).map((f) => f.id);
-  assert.equal(statuts('check-agent').length, CHAINE.finalistes, 'les 10 finalistes entrent dans la boucle (10 places)');
-  assert.equal(statuts('ecarte').length, 12);
-  const m = statuts('check-agent').sort((a, b) => (e.fiches.find((f) => f.id === a)!.rang ?? 0) - (e.fiches.find((f) => f.id === b)!.rang ?? 0))[0];
-  assert.equal(e.fiches.find((f) => f.id === m)!.rang, 1);
-  // 3. Le testeur passe : un ticket technique
-  const rt: ResultatTestModele = { ...testVert(m, 1), verdict: 'orange', controles: [{ id: 'mots-coupes', libelle: 'Mots coupés', verdict: 'orange', page: 'cabinet', appareil: 'mobile' }], tickets: [ticket(m, 0, { origine: 'testeur', controle: 'mots-coupes', etiquette: 'technique:mot-coupe', page: 'cabinet' })] };
-  const a = appliquerResultatTest([], rt);
-  e = { ...e, versions: e.versions.map((v) => (v.modele === m && v.version === 1 ? { ...v, test: rt } : v)), tickets: a.nouveaux };
-  e = fairetournerChaine(e).etat;
-  assert.equal(e.fiches.find((f) => f.id === m)!.statut, 'avis-humain');
-  // 4. Un humain : un ticket de goût + « Rien à signaler » ailleurs
-  e = { ...e, tickets: [...e.tickets, ticket(m, 2)], revues: rienPartout(m, 1).filter((x) => !(x.page === 'acces' && x.appareil === 'mobile')) };
-  e = fairetournerChaine(e).etat;
-  assert.equal(e.fiches.find((f) => f.id === m)!.statut, 'retouche');
-  const exp = exportTicketsModeles(e.fiches, e.versions, e.tickets);
-  assert.equal(exp[0].modele, m, 'le modèle en retouche passe en premier');
-  assert.equal(exp[0].tickets.length, 2);
-  assert.ok(!('auteur' in exp[0].tickets[0]), 'jamais d’auteur dans l’export public');
-  assert.match(markdownTicketsModeles(exp), /#2 \[humain\] Contact et accès \(mobile\)/);
-  // Demande autonome à Claude (partage depuis le téléphone) : modèle, version, tickets, livraison attendue par l'automate
-  const dem = demandeCorrectionsModele(e.fiches.find((x) => x.id === m)!, e.tickets.filter((t) => t.modele === m));
-  assert.match(dem, new RegExp(`modele ${m}, version de base v1`));
-  assert.match(dem, /Tickets ouverts \(2\)/);
-  assert.match(dem, /#2 \[humain\] page Contact et accès \(téléphone\)/);
-  assert.match(dem, /retours\/retouches-modeles\.json/);
-  assert.ok(!dem.includes('auteur'), 'jamais d’auteur dans la demande');
-  // 5. Claude retouche
+/** Applique un résultat du testeur à la version d'un modèle (tickets techniques créés comme le fait l'admin) */
+function resultat(e: EtatChaine, r: ResultatTestModele): EtatChaine {
+  const a = appliquerResultatTest(e.tickets.filter((t) => t.modele === r.modele), r);
+  return { ...e, versions: e.versions.map((v) => (v.modele === r.modele && v.version === r.version ? { ...v, test: r } : v)), tickets: [...e.tickets, ...a.nouveaux] };
+}
+/** Nouvelle version (retouche de Claude) appliquée à l'état, comme l'automate de l'admin */
+function retouche(e: EtatChaine, m: string, corrections: number[], auteur: 'claude' | 'testeur', composition: Record<string, unknown> = COMPO): EtatChaine {
   const f = e.fiches.find((x) => x.id === m)!;
-  const nv = nouvelleVersion({ fiche: f, composition: { ...COMPO, couleur: '#115e59' }, cle: 'compo:v2', tickets: e.tickets, corrections: [{ ticket: 1 }, { ticket: 2 }], auteur: 'claude', type: 'correction' });
-  e = { ...e, fiches: e.fiches.map((x) => (x.id === m ? { ...x, versionCourante: 2 } : x)), versions: [...e.versions, nv.version], tickets: e.tickets.map((t) => nv.corriges.find((c) => c.numero === t.numero && t.modele === m) ?? t) };
+  const nv = nouvelleVersion({ fiche: f, composition, cle: `compo:${m}-v${f.versionCourante + 1}`, tickets: e.tickets.filter((t) => t.modele === m), corrections: corrections.map((ticket) => ({ ticket })), auteur, type: auteur === 'testeur' ? 'technique' : 'correction' });
+  return { ...e, fiches: e.fiches.map((x) => (x.id === m ? { ...x, versionCourante: nv.version.version } : x)), versions: [...e.versions, nv.version], tickets: e.tickets.map((t) => (t.modele === m ? nv.corriges.find((c) => c.numero === t.numero) ?? t : t)) };
+}
+const statutDe = (e: EtatChaine, id: string) => e.fiches.find((f) => f.id === id)!.statut;
+
+test('chemin complet en 3 étapes : gardé → vérification automatique → corrections techniques → relecture finale → remarques → pages modifiées → catalogue', () => {
+  const ids = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7'];
+  // 1. CHOISIR : 7 designs gardés (candidats, sans profil) ; m a le plus de J'aime
+  let e: EtatChaine = { fiches: ids.map((id) => fiche(id, { profil: null })), versions: ids.map((id) => version(id, 1)), tickets: [], votes: [], revues: [], signaux: { g4: { jaime: 3 } } };
   e = fairetournerChaine(e).etat;
-  assert.equal(e.fiches.find((x) => x.id === m)!.statut, 'recheck-agent');
-  assert.equal(modelesATester(e.fiches, e.versions).filter((x) => x.modele === m)[0].version, 2);
-  // 6. Re-check au vert → 7. revalidation humaine (correction de goût) → 8. prêt
-  e = { ...e, versions: e.versions.map((v) => (v.modele === m && v.version === 2 ? { ...v, test: testVert(m, 2) } : v)) };
+  assert.equal(e.fiches.filter((f) => f.statut === 'check-agent').length, CHAINE.maxVerification, '5 en vérification à la fois');
+  assert.equal(e.fiches.filter((f) => f.statut === 'candidat').length, 2, 'les autres attendent en file');
+  assert.equal(statutDe(e, 'g4'), 'check-agent', 'le plus aimé passe d’abord');
+  const m = 'g4';
+  // 2. VÉRIFICATION : tests lancés automatiquement, 3 au plus, jamais deux fois
+  const t0 = Date.parse('2026-10-11T10:00:00Z');
+  const lots = testsALancer(e, [], t0);
+  assert.equal(lots.length, CHAINE.testsParalleles);
+  assert.ok(lots.every((x) => x.mode === 'check' && x.essai === 1));
+  const lances: TestLance[] = lots.map((x) => ({ modele: x.modele, version: x.version, essai: x.essai, le: new Date(t0).toISOString() }));
+  assert.deepEqual(testsALancer(e, lances, t0 + 60_000), [], 'pas de redéclenchement : 3 en cours');
+  assert.equal(lots[0].modele, m, 'tests lancés dans l’ordre de la file (meilleurs signaux d’abord)');
+  // Résultat orange avec un défaut technique → corrections techniques (étape Vérification), une demande « corrections techniques »
+  e = resultat(e, { ...testVert(m, 1), verdict: 'orange', controles: [{ id: 'mots-coupes', libelle: 'Mots coupés', verdict: 'orange', page: 'cabinet', appareil: 'mobile' }], tickets: [ticket(m, 0, { origine: 'testeur', controle: 'mots-coupes', etiquette: 'technique:mot-coupe', page: 'cabinet' })] });
   e = fairetournerChaine(e).etat;
-  assert.equal(e.fiches.find((x) => x.id === m)!.statut, 'revalidation');
-  e = { ...e, revues: [...e.revues, { modele: m, version: 2, page: null, appareil: null, auteur: 'u2', verdict: 'revalide', le: '' }], tickets: e.tickets.map((t) => (t.modele === m && t.statut === 'corrige' ? { ...t, statut: 'ferme' as const } : t)) };
+  assert.equal(statutDe(e, m), 'retouche');
+  assert.equal(etapeVisible(e, e.fiches.find((f) => f.id === m)!), 'verification', 'corrections techniques : encore la vérification pour Paul');
+  assert.equal(pastilleVerification(e, e.fiches.find((f) => f.id === m)!).etat, 'corrections');
+  assert.match(demandeCorrectionsModele(e.fiches.find((f) => f.id === m)!, e.tickets.filter((t) => t.modele === m)), /^Corrections techniques du modèle/);
+  // Une place libérée ? Non : la retouche technique reste en vérification (5 au plus)
+  assert.equal(e.fiches.filter((f) => f.statut === 'candidat').length, 2);
+  // Claude corrige (auteur testeur), la v2 est revérifiée (re-check lancé seul) puis part en relecture finale
+  e = fairetournerChaine(retouche(e, m, [1], 'testeur')).etat;
+  assert.equal(statutDe(e, m), 'recheck-agent');
+  // Le résultat de la v1 libère sa place : le re-check de la v2 est lancé seul (plus près du catalogue : en premier)
+  assert.deepEqual(testsALancer(e, lances, t0 + 120_000).map((x) => [x.modele, x.version, x.mode, x.essai])[0], [m, 2, 'recheck', 1]);
+  const plusTard = t0 + CHAINE.dureeTestMs + 60_000;
+  e = fairetournerChaine(resultat(e, testVert(m, 2))).etat;
+  assert.equal(statutDe(e, m), 'avis-humain');
+  assert.equal(e.tickets.find((t) => t.modele === m && t.numero === 1)!.statut, 'ferme', 'défaut technique refermé par le re-check');
+  assert.equal(etapeVisible(e, e.fiches.find((f) => f.id === m)!), 'relecture');
+  assert.equal(pastilleVerification(e, e.fiches.find((f) => f.id === m)!).etat, 'ok');
+  // 3. RELECTURE FINALE : une remarque, le reste OK → remarques chez Claude (relecture finale)
+  e = { ...e, tickets: [...e.tickets, ticket(m, 2, { versionOuverture: 2 })], revues: rienPartout(m, 2).filter((x) => !(x.page === 'acces' && x.appareil === 'mobile')) };
   e = fairetournerChaine(e).etat;
-  assert.equal(e.fiches.find((x) => x.id === m)!.statut, 'pret-validation');
-  // Validation : verrous
-  const fm = e.fiches.find((x) => x.id === m)!;
-  const avis = avisFaits(2, e.versions.filter((v) => v.modele === m), e.revues.filter((r) => r.modele === m), e.tickets.filter((t) => t.modele === m));
-  assert.deepEqual([avis.ok, avis.base], [true, 1], 'avis complet sur la v1 puis revalidé sur la v2 (depuis modeles_revues)');
-  assert.equal(avisFaits(2, e.versions.filter((v) => v.modele === m), e.revues.filter((r) => r.modele === m && r.verdict !== 'revalide'), e.tickets.filter((t) => t.modele === m)).ok, false, 'sans revalidation : verrou au rouge, quel que soit le statut');
-  assert.equal(avisFaits(1, e.versions.filter((v) => v.modele === m), [], []).ok, false, 'aucun avis : rouge');
-  const ver = (over: Partial<Parameters<typeof verrousValidation>[0]> = {}) => verrousValidation({ fiche: fm, version: e.versions.find((v) => v.modele === m && v.version === 2)!, tickets: e.tickets.filter((t) => t.modele === m), jauge: { part: 1, total: 9 }, elements: { ok: true, bloquants: 0 }, avis, ...over });
-  assert.equal(peutPublier(ver()), false, 'tags pré-remplis mais pas encore vérifiés');
-  assert.equal(peutPublier(ver({ fiche: { ...fm, tagsValides: true } })), true);
-  assert.equal(peutPublier(ver({ fiche: { ...fm, tagsValides: true }, jauge: { part: 0.9, total: 10 } })), false, 'jauge < 100 %');
-  assert.equal(peutPublier(ver({ fiche: { ...fm, tagsValides: true }, elements: { ok: false, bloquants: 1 } })), false);
-  // Publication (Paul), puis une zone signalée rouvre une retouche sans dépublier
-  e = { ...e, fiches: e.fiches.map((x) => (x.id === m ? { ...x, statut: 'publie' as const, versionPubliee: 2 } : x)) };
-  assert.equal(fairetournerChaine(e).actions.filter((x) => x.modele === m).length, 0, 'publié et rien d’ouvert : stable');
-  e = { ...e, tickets: [...e.tickets, ticket(m, 3, { versionOuverture: 2, page: 'questions' })] };
+  assert.equal(statutDe(e, m), 'retouche');
+  assert.equal(etapeVisible(e, e.fiches.find((f) => f.id === m)!), 'relecture', 'remarques de Paul : relecture finale');
+  assert.match(demandeCorrectionsModele(e.fiches.find((f) => f.id === m)!, e.tickets.filter((t) => t.modele === m)), /pages modifiées seulement/);
+  e = fairetournerChaine(retouche(e, m, [2], 'claude', { ...COMPO, couleur: '#115e59' })).etat;
+  assert.equal(statutDe(e, m), 'recheck-agent');
+  assert.equal(testsALancer(e, [], plusTard).find((x) => x.modele === m)?.mode, 'recheck');
+  e = fairetournerChaine(resultat(e, testVert(m, 3))).etat;
+  assert.equal(statutDe(e, m), 'revalidation', 'pages modifiées en avant / après, dans la relecture finale');
+  e = { ...e, revues: [...e.revues, { modele: m, version: 3, page: null, appareil: null, auteur: 'paul', verdict: 'revalide', le: '' }], tickets: e.tickets.map((t) => (t.modele === m && t.statut === 'corrige' ? { ...t, statut: 'ferme' as const } : t)) };
   e = fairetournerChaine(e).etat;
-  const apres = e.fiches.find((x) => x.id === m)!;
-  assert.equal(apres.statut, 'retouche');
-  assert.equal(apres.versionPubliee, 2, 'reste en ligne');
+  assert.equal(statutDe(e, m), 'pret-validation');
+  const avisM = avisFaits(3, e.versions.filter((v) => v.modele === m), e.revues.filter((r) => r.modele === m), e.tickets.filter((t) => t.modele === m));
+  assert.deepEqual([avisM.ok, avisM.base], [true, 2], 'relecture complète sur la v2, pages modifiées revues sur la v3');
+  // Catalogue : geste de Paul seulement (l'automate ne publie jamais)
+  assert.ok(!fairetournerChaine(e).actions.some((a) => a.kind === 'statut' && a.vers === 'publie'));
+  e = { ...e, fiches: e.fiches.map((x) => (x.id === m ? { ...x, statut: 'publie' as const, versionPubliee: 3 } : x)) };
+  assert.equal(etapeVisible(e, e.fiches.find((f) => f.id === m)!), 'catalogue');
+  // Une place s'est libérée : le gardé suivant entre en vérification
+  assert.equal(e.fiches.filter((f) => f.statut === 'candidat').length, 1);
+  // Publié : une zone signalée rouvre une retouche sans dépublier
+  e = fairetournerChaine({ ...e, tickets: [...e.tickets, ticket(m, 3, { versionOuverture: 3, page: 'questions' })] }).etat;
+  assert.equal(statutDe(e, m), 'retouche');
+  assert.equal(e.fiches.find((x) => x.id === m)!.versionPubliee, 3, 'reste en ligne');
 });
 
-test('boucle limitée à 10 ; corrections purement techniques au vert : prêt sans humain', () => {
+test('vérification : rouge persistant après correction → écarté, avec le message ; rouge sans défaut corrigeable → écarté', () => {
+  let e: EtatChaine = { fiches: [fiche('r', { statut: 'check-agent', profil: null })], versions: [version('r', 1)], tickets: [], votes: [], revues: [] };
+  const rouge = (v: number, avecTicket: boolean): ResultatTestModele => ({ ...testVert('r', v), verdict: 'rouge', controles: [{ id: 'construction', libelle: 'Construction', verdict: 'rouge', page: 'accueil', appareil: 'mobile' }], tickets: avecTicket ? [ticket('r', 0, { origine: 'testeur', controle: 'construction', etiquette: 'technique:construction', page: 'accueil', gravite: 'bloquant' })] : [] });
+  e = fairetournerChaine(resultat(e, rouge(1, true))).etat;
+  assert.equal(statutDe(e, 'r'), 'retouche', 'premier rouge : une correction est demandée');
+  e = fairetournerChaine(retouche(e, 'r', [1], 'testeur')).etat;
+  assert.equal(statutDe(e, 'r'), 'recheck-agent');
+  const fin = fairetournerChaine(resultat(e, rouge(2, true)));
+  assert.equal(statutDe(fin.etat, 'r'), 'ecarte');
+  assert.match(fin.actions.find((a) => a.kind === 'statut' && a.vers === 'ecarte')!.raison, /toujours au rouge après correction/);
+  assert.equal(raisonEcart(fin.etat, fin.etat.fiches[0]), 'Écarté : vérification toujours au rouge après correction');
+  // Rouge sans aucun défaut à corriger (rien à envoyer à Claude) : écarté aussi, jamais bloqué
+  const sans = fairetournerChaine(resultat({ fiches: [fiche('s', { statut: 'check-agent', profil: null })], versions: [version('s', 1)], tickets: [], votes: [], revues: [] }, { ...rouge(1, false), modele: 's' }));
+  assert.equal(statutDe(sans.etat, 's'), 'ecarte');
+  // Une place libérée en vérification profite au gardé suivant
+  const avecFile = fairetournerChaine(resultat({ fiches: [fiche('s', { statut: 'check-agent', profil: null }), ...['a', 'b', 'c', 'd'].map((id) => fiche(id, { statut: 'check-agent', profil: null })), fiche('z', { profil: null })], versions: ['s', 'a', 'b', 'c', 'd', 'z'].map((id) => version(id, 1)), tickets: [], votes: [], revues: [] }, { ...rouge(1, false), modele: 's' }));
+  assert.equal(statutDe(avecFile.etat, 'z'), 'check-agent');
+});
+
+test('tests automatiques : 3 en parallèle, jamais deux fois la même version, bloqué après 2 lancements, passages GitHub comptés', () => {
+  const fs = ['a', 'b', 'c', 'd'].map((id) => fiche(id, { statut: 'check-agent', profil: null }));
+  const e: EtatChaine = { fiches: [...fs, fiche('t', { statut: 'avis-humain', profil: null })], versions: [...fs.map((f) => version(f.id, 1)), version('t', 1, { test: testVert('t', 1) })], tickets: [], votes: [], revues: [] };
+  const t0 = Date.parse('2026-10-11T10:00:00Z');
+  const l1 = testsALancer(e, [], t0);
+  assert.equal(l1.length, 3, 'limite de parallélisme');
+  assert.ok(!l1.some((x) => x.modele === 't'), 'version déjà testée : jamais relancée');
+  const lances: TestLance[] = l1.map((x) => ({ modele: x.modele, version: 1, essai: 1, le: new Date(t0).toISOString() }));
+  assert.deepEqual(testsALancer(e, lances, t0 + 5 * 60_000), [], 'aucune place : rien de plus');
+  // Un passage de plus en cours sur GitHub (lancé à la main) compte aussi
+  const reste = fs.find((f) => !l1.some((x) => x.modele === f.id))!.id;
+  assert.deepEqual(testsALancer(e, lances.slice(0, 1), t0, [{ modele: lances[1].modele, version: 1 }, { modele: 'autre', version: 1 }]).map((x) => x.modele), [], '1 lancement + 2 passages GitHub = 3');
+  // Lancement en échec (workflow pas démarré) : ne compte pas, la version peut être relancée (essai 2)
+  const echec: TestLance[] = [{ modele: reste, version: 1, essai: 1, le: new Date(t0).toISOString(), echec: 'GitHub 500' }];
+  assert.equal(suiviTests(e, echec, t0 + 1000).find((x) => x.modele === reste)!.etat, 'a-lancer');
+  assert.deepEqual(testsALancer({ ...e, fiches: e.fiches.filter((f) => f.id === reste) }, echec, t0 + 1000).map((x) => x.essai), [2]);
+  // Deux lancements sans résultat : bloqué (relance à la main depuis la fiche), jamais un troisième automatique
+  const deux: TestLance[] = [1, 2].map((essai) => ({ modele: reste, version: 1, essai, le: new Date(t0).toISOString() }));
+  const tard = t0 + CHAINE.dureeTestMs + 1;
+  assert.ok(!testsALancer(e, deux, tard).some((x) => x.modele === reste));
+  assert.equal(suiviTests(e, deux, tard).find((x) => x.modele === reste)!.etat, 'bloque');
+  assert.equal(pastilleVerification(e, fs.find((f) => f.id === reste)!, suiviTests(e, deux, tard)).etat, 'bloque');
+  assert.equal(pastilleVerification(e, fs.find((f) => f.id === reste)!, suiviTests(e, deux, t0 + 1000)).texte, 'Vérification en cours');
+  // Jeux de démonstration du design (profils compatibles) passés au workflow
+  assert.ok(l1.every((x) => Array.isArray(x.jeux) && x.jeux.length > 0));
+});
+
+test('vérification : 5 designs à la fois au plus (boucle de 10 au plus) ; corrections purement techniques au vert après la relecture : prêt sans humain', () => {
   const fiches = Array.from({ length: 12 }, (_, i) => fiche(`f${i}`, { statut: 'finaliste', rang: i + 1 }));
   const { etat } = fairetournerChaine({ fiches, versions: fiches.map((f) => version(f.id, 1)), tickets: [], votes: [], revues: [] });
-  assert.equal(etat.fiches.filter((f) => f.statut === 'check-agent').length, 10);
-  assert.deepEqual(etat.fiches.filter((f) => f.statut === 'finaliste').map((f) => f.rang), [11, 12]);
-  // Technique seul : retouche par l'agent, re-check vert → prêt pour validation directement
+  assert.equal(etat.fiches.filter((f) => f.statut === 'check-agent').length, CHAINE.maxVerification);
+  assert.deepEqual(etat.fiches.filter((f) => f.statut === 'finaliste').map((f) => f.rang), [6, 7, 8, 9, 10, 11, 12], 'gardés pour vérification d’abord, meilleur rang');
+  // Boucle pleine (10 en relecture) : plus personne n'entre en vérification
+  const pleins = Array.from({ length: 10 }, (_, i) => fiche(`r${i}`, { statut: 'avis-humain' }));
+  const b = fairetournerChaine({ fiches: [...pleins, fiche('x', { profil: null })], versions: [...pleins.map((f) => version(f.id, 1, { test: testVert(f.id, 1) })), version('x', 1)], tickets: [], votes: [], revues: [] });
+  assert.equal(b.etat.fiches.find((f) => f.id === 'x')!.statut, 'candidat');
+  // Technique seul après une relecture complète : retouche par l'agent, re-check vert → prêt pour validation directement
   const t = ticket('t', 1, { origine: 'testeur', controle: 'poids', etiquette: 'technique:poids' });
   const nv = nouvelleVersion({ fiche: { id: 't', versionCourante: 1 }, composition: COMPO, cle: 'k', tickets: [t], corrections: [{ ticket: 1 }], auteur: 'testeur', type: 'technique' });
-  const e2 = fairetournerChaine({ fiches: [fiche('t', { statut: 'retouche', versionCourante: 2, versionRetouche: 1 })], versions: [version('t', 1), { ...nv.version, test: testVert('t', 2) }], tickets: nv.corriges, votes: [], revues: [] });
+  const e2 = fairetournerChaine({ fiches: [fiche('t', { statut: 'retouche', versionCourante: 2, versionRetouche: 1 })], versions: [version('t', 1), { ...nv.version, test: testVert('t', 2) }], tickets: nv.corriges, votes: [], revues: rienPartout('t', 1) });
   assert.equal(e2.etat.fiches[0].statut, 'pret-validation');
   assert.equal(e2.etat.tickets[0].statut, 'ferme');
+  // Candidat sans sa version : jamais envoyé en vérification (réparé ou écarté par l'admin)
+  const sansVersion = fairetournerChaine({ fiches: [fiche('v', { profil: null })], versions: [], tickets: [], votes: [], revues: [] });
+  assert.equal(sansVersion.etat.fiches[0].statut, 'candidat');
 });
 
 test('tableau : ce qui attend chaque personne ; tags pré-remplis', () => {
   const e: EtatChaine = { fiches: [fiche('a', { statut: 'avis-humain' }), fiche('b', { statut: 'pret-validation' })], versions: [], tickets: [], votes: [], revues: rienPartout('a', 1, 'moi').slice(0, 3) };
   const p = [{ id: 'sport', nom: 'Sport', profession: 'podologue' }];
   const contrib = attentesHumain(e, { id: 'moi', role: 'contributeur' }, p);
-  assert.ok(contrib.some((x) => x.texte.startsWith('Présélection : 0 / 12 candidats pour ouvrir le tournoi') && x.nom === 'Tous profils'), 'présélection par profession, sans thème');
-  assert.ok(contrib.some((x) => x.modele === 'a' && /3 \/ 16 pages vues \(dont 3 par vous\)/.test(x.texte)));
-  assert.ok(!contrib.some((x) => x.modele === 'b'), 'la validation finale n’attend que Paul');
-  assert.ok(attentesHumain(e, { id: 'paul', role: 'validateur' }, p).some((x) => x.modele === 'b'));
+  assert.ok(contrib.some((x) => x.texte.startsWith('Choisir des designs : 0 gardé en file') && x.nom === 'Tous profils'), 'présélection par profession, sans thème');
+  assert.ok(contrib.some((x) => x.modele === 'a' && /Relecture finale : 3 \/ 16 pages vues \(dont 3 par vous\)/.test(x.texte)));
+  assert.ok(!contrib.some((x) => x.modele === 'b'), 'l’ajout au catalogue n’attend que Paul');
+  assert.ok(!contrib.some((x) => /tournoi/i.test(x.texte)), 'le tournoi n’attend plus personne');
+  assert.ok(attentesHumain(e, { id: 'paul', role: 'validateur' }, p).some((x) => x.modele === 'b' && x.texte === 'Ajouter au catalogue'));
   assert.deepEqual(tagsAutomatiques(COMPO, { profession: 'podologue', profil: 'sport', profilsCibles: ['sport', 'course'] }), { profession: 'podologue', profils: ['sport', 'course'], couleurs: ['gamme:canard', 'canard'] });
   assert.equal(nomTeinte('#c2410c'), 'orange');
   assert.equal(nomTeinte('#1d4ed8'), 'bleu');
   assert.equal(nomTeinte('#f5f5f5'), 'blanc');
+});
+
+test('transitions de la chaîne en 3 étapes : permises à l’automate seulement (migration 0064)', () => {
+  for (const [de, vers] of [['check-agent', 'retouche'], ['check-agent', 'ecarte'], ['recheck-agent', 'avis-humain'], ['recheck-agent', 'ecarte']] as const) {
+    assert.equal(transitionPermise(de, vers, 'auto'), true, `${de} → ${vers}`);
+    assert.equal(transitionPermise(de, vers, 'contributeur'), false);
+  }
 });
 
 test('test orange : le modèle va jusqu’à la validation (justification de Paul) ; rouge : jamais', () => {

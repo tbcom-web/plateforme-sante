@@ -12,9 +12,22 @@ import { lancerWorkflow } from '@/lib/publication';
 type Resultat = { ok: boolean; message: string };
 const ID_MODELE = /^[A-Za-z0-9_-]{1,80}$/;
 
-/** Lance le testeur sur une version de modèle (équipe de la chaîne seulement) */
+/** Lance le testeur sur une version de modèle (équipe de la chaîne seulement) ; noté comme un essai (l'automate ne le refait pas) */
 export async function declencherTestModele(modele: string, version: number, mode: ModeTest = 'check', jeux: readonly string[] = []): Promise<Resultat> {
   await exigerContributeur();
+  const r = await dispatcherTestModele(modele, version, mode, jeux);
+  if (r.ok) {
+    const { noterLancementManuel } = await import('@/lib/tests-auto');
+    await noterLancementManuel(modele, version, mode);
+  }
+  return r;
+}
+
+/**
+ * Lancement du workflow tester-modele (workflow_dispatch) SANS contrôle de rôle : réservé à declencherTestModele (geste de la fiche)
+ * et au lancement automatique de la chaîne (lib/tests-auto.ts, appelé seulement pour un membre de l'équipe). Rien n'est publié.
+ */
+export async function dispatcherTestModele(modele: string, version: number, mode: ModeTest = 'check', jeux: readonly string[] = []): Promise<Resultat> {
   if (!ID_MODELE.test(modele)) return { ok: false, message: 'Modèle invalide.' };
   if (!Number.isInteger(version) || version < 1 || version > 9999) return { ok: false, message: 'Version invalide.' };
   if (!(MODES_TEST as readonly string[]).includes(mode)) return { ok: false, message: 'Mode invalide.' };

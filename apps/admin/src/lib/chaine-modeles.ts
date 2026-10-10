@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { redirect } from 'next/navigation';
 import {
   appliquerResultatTest, fairetournerChaine, lireResultatsTests, lireRetouches, nouvelleVersion, normaliserResultatTest, normaliserTicket, retouchesAAppliquer, roleEffectif,
-  estStatutModele, fichesSansVersion, versionDe, STATUTS_BOUCLE, elementsComposition, modeleIntegre, normaliserComposition, qualiteComposition, type ActionAuto, type GrilleTournoi, type SignauxCandidat, type EtatChaine, type FicheModele, type RevueModele, type RoleEquipe, type TicketModele, type VersionModele, type VoteModele,
+  estStatutModele, fichesSansVersion, versionDe, STATUTS_BOUCLE, type SuiviTest, type TestLance, elementsComposition, modeleIntegre, normaliserComposition, qualiteComposition, type ActionAuto, type GrilleTournoi, type SignauxCandidat, type EtatChaine, type FicheModele, type RevueModele, type RoleEquipe, type TicketModele, type VersionModele, type VoteModele,
 } from '@plateforme/core';
 import { createClient, getUser } from '@/lib/supabase/server';
 import { getRoles } from '@/lib/admin';
@@ -22,8 +22,9 @@ import { signatureSources } from '@/lib/apprentissage-instantane';
 //   de test, tickets techniques, fermeture au vert) : la base ne les accepte que du validateur ou du service (0050) ; ouvert par
 //   un contributeur, ces écritures échouent sans bruit et attendent le passage du validateur ou l'écriture directe de la CI. Résultats du testeur
 //   (retours/tests-modeles.json du dépôt ou colonne modeles_versions.test) → tickets techniques ; retouches de Claude
-//   (retours/retouches-modeles.json) → nouvelles versions ; puis l'automate (fin des tournois, entrée dans la boucle, passages
-//   d'étape). Aucune publication ici : publier reste un geste du validateur.
+//   (retours/retouches-modeles.json) → nouvelles versions ; puis l'automate (entrée en vérification, passages d'étape) et la
+//   vérification automatique (lib/tests-auto.ts : lancement du workflow tester-modele, qui ne publie rien ; chaîne en 3 étapes du
+//   2026-10-11). Aucune publication ici : publier (« Ajouter au catalogue ») reste un geste du validateur.
 
 export const MIGRATION_CHAINE = 'Migration 0050 à exécuter (supabase/migrations/0050_chaine_modeles.sql) : la chaîne des modèles n’enregistre rien pour l’instant.';
 /** Lecture impossible (délai de 20 s dépassé, réseau, droits) : PAS une migration manquante (2026-10-10) */
@@ -146,6 +147,8 @@ export type Chaine = EtatChaine & {
   erreurLecture: boolean;
   /** Signature des tables de la chaîne au moment de la lecture (compteurs de 0059/0062), null si inconnue */
   signature?: string | null;
+  /** Vérification automatique (lib/tests-auto.ts, 0064) : lancements du testeur, suivi par version, GitHub configuré */
+  lancements?: { lances: TestLance[]; suivi: SuiviTest[]; configure: boolean; migration: boolean };
 };
 
 /** Max rows de Supabase (lignes par requête au plus, réglage du projet) */
@@ -456,6 +459,8 @@ export async function listerDossierRetours(dossier: string): Promise<Set<string>
 
 export type BilanAutomate = {
   tests: number; retouches: number; tickets: number; actions: ActionAuto[];
+  /** Tests du testeur lancés automatiquement à ce chargement (chaîne en 3 étapes, 2026-10-11) */
+  testsLances?: number;
   /** Passages d'étape refusés ou pas faits faute de temps (repris au prochain chargement) : la page l'explique, sans planter */
   echecs: number;
   /** Étape de l'automate en erreur (exception attrapée) : la page affiche la chaîne lue et un message */
@@ -548,11 +553,12 @@ async function tourAutomate(profession: string | null, opts: { versions?: 'utile
     // Entre deux tours complets : seulement les transitions (fin du tournoi juste après la dernière grille, entrée dans la boucle)
     chaine = { ...chaine, signaux: await signauxCandidats(chaine) };
     const { actions } = fairetournerChaine(chaine);
-    if (!actions.length) return { ...bilan, chaine };
-    const r = await appliquerTransitions(supabase, actions);
-    bilan.actions.push(...r.faites); bilan.echecs += r.echecs;
-    if (r.faites.length) chaine = { ...(await lireChaine(profession, { ...opts, frais: true })), signaux: chaine.signaux };
-    return { ...bilan, chaine };
+    if (actions.length) {
+      const r = await appliquerTransitions(supabase, actions);
+      bilan.actions.push(...r.faites); bilan.echecs += r.echecs;
+      if (r.faites.length) chaine = { ...(await lireChaine(profession, { ...opts, frais: true })), signaux: chaine.signaux };
+    }
+    return { ...bilan, chaine: await verifierAutomatiquement(chaine, bilan) };
   }
   dernierTour.set(k, Date.now());
   const [testsBruts, retouchesBrutes] = await Promise.all([lireFichierRetours('tests-modeles.json'), lireFichierRetours('retouches-modeles.json')]);
@@ -612,7 +618,25 @@ async function tourAutomate(profession: string | null, opts: { versions?: 'utile
   const r = await appliquerTransitions(supabase, actions);
   bilan.actions.push(...r.faites); bilan.echecs += r.echecs;
   if (bilan.actions.length) chaine = { ...(await lireChaine(profession, { ...opts, frais: true })), signaux: chaine.signaux };
-  return { ...bilan, chaine };
+  return { ...bilan, chaine: await verifierAutomatiquement(chaine, bilan) };
+}
+
+/**
+ * Vérification automatique (chaîne en 3 étapes, décision de Paul du 2026-10-11) : lance le testeur sur les versions en vérification
+ * sans résultat (lib/tests-auto.ts : 3 en parallèle, jamais deux fois la même version, workflow tester-modele seulement) et joint le
+ * suivi des lancements à la chaîne (pastilles « vérification en cours / bloquée »). Jamais d'exception.
+ */
+async function verifierAutomatiquement(chaine: Chaine, bilan: BilanAutomate): Promise<Chaine> {
+  if (chaine.erreurLecture || chaine.migrationManquante) return chaine;
+  try {
+    const { lancerTestsAutomatiques } = await import('@/lib/tests-auto');
+    const r = await lancerTestsAutomatiques(chaine);
+    bilan.testsLances = (bilan.testsLances ?? 0) + r.nouveaux;
+    return { ...chaine, lancements: { lances: r.lances, suivi: r.suivi, configure: r.configure, migration: r.migration } };
+  } catch (e) {
+    console.warn(`[chaine] vérification automatique en erreur : ${(e as Error)?.message ?? e}`);
+    return chaine;
+  }
 }
 
 /**

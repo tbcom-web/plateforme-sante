@@ -1,13 +1,14 @@
 'use server';
 
 import { revalidatePath, updateTag } from 'next/cache';
+import { after } from 'next/server';
 import { TAGS_DONNEES } from '@/lib/cache-donnees';
 import {
   cleComposition, choixDePreselection, designDe, estAppareilModele, estEtiquetteTicket, estPageModele, estRoleEquipe, groupeTournoi, nomRecette, nouvelleVersion, peut, peutPublier,
   prochainEcran, profilDemo, profilsCompatibles, profilsDePratique, serialiserComposition, serialiserRecetteAvecScenario, statutModele, tagsAutomatiques, tournoiDuProfil, validerChoixGrille, type TagsModele,
 } from '@plateforme/core';
 import { verifierNouvelleVersion } from '@plateforme/core/chaine-images';
-import { enregistrerVersionInitiale, exigerContributeur, exigerValidateur, LECTURE_CHAINE, VERSION_NON_ENREGISTREE, lireChaine, MIGRATION_CHAINE, oublierAutomate, signauxCandidats } from '@/lib/chaine-modeles';
+import { enregistrerVersionInitiale, exigerContributeur, exigerValidateur, faireTournerChaine, LECTURE_CHAINE, VERSION_NON_ENREGISTREE, lireChaine, MIGRATION_CHAINE, oublierAutomate, signauxCandidats } from '@/lib/chaine-modeles';
 import { getRecettes } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
 import { compositionDe, verrousDeLaFiche } from './validation';
@@ -37,8 +38,9 @@ function compatibles(design: Record<string, unknown>, profils: { id: string; suj
 }
 
 /**
- * Designs touchés d'une page de 6 → candidats (fiche SANS profil + version 1 = design sans images) ; points versés au journal de la
- * Dégustation ; un « J'aime » par votant et par design (signal a priori du tournoi). Profils compatibles pré-calculés dans les tags.
+ * Designs touchés d'une page de 6 → gardés (fiche candidate SANS profil + version 1 = design sans images), qui partent seuls en
+ * vérification ; points versés au journal de la Dégustation ; un « J'aime » par votant et par design (signal de la file d'attente de
+ * la vérification). Profils compatibles pré-calculés dans les tags.
  */
 export async function garderPreselection(p: { propositions: PropositionPreselection[]; selection: number[]; appareil: 'ordinateur' | 'mobile'; dureeMs?: number }): Promise<Retour & { ajoutes?: number }> {
   const moi = await exigerContributeur();
@@ -81,7 +83,11 @@ export async function garderPreselection(p: { propositions: PropositionPreselect
     if (id) await supabase.from('modeles_jaime').insert({ modele: id, votant: moi.id });
   }
   rafraichir('/chaine/preselection');
-  const msg = ajoutes ? `${ajoutes} candidat${ajoutes > 1 ? 's' : ''} ajouté${ajoutes > 1 ? 's' : ''}.` : 'J’aime enregistré (déjà candidats).';
+  // Chaîne en 3 étapes (décision de Paul du 2026-10-11) : garder = partir en vérification. Après la réponse (le geste reste
+  // instantané) : l'automate fait entrer les gardés en vérification (5 à la fois) et lance le testeur (workflow tester-modele, qui ne
+  // publie rien ; 3 en parallèle au plus, jamais deux fois la même version : lib/tests-auto.ts).
+  if (ajoutes) after(() => faireTournerChaine(profession.id, { versions: 'utiles' }).then(() => undefined, () => undefined));
+  const msg = ajoutes ? `${ajoutes} design${ajoutes > 1 ? 's' : ''} gardé${ajoutes > 1 ? 's' : ''} : vérification automatique.` : 'J’aime enregistré (déjà gardés).';
   if (versionsPerdues) return { ok: ajoutes > 0, message: `${ajoutes ? `${msg} ` : ''}${VERSION_NON_ENREGISTREE}`, ajoutes };
   return { ok: true, message: msg, ajoutes };
 }
@@ -316,7 +322,7 @@ export async function publierModele(modele: string): Promise<Retour> {
   if (chaine.erreurLecture) return { ok: false, message: LECTURE_CHAINE };
   const f = chaine.fiches.find((x) => x.id === modele);
   if (!f) return { ok: false, message: 'Modèle introuvable.' };
-  if (f.statut !== 'pret-validation') return { ok: false, message: `Étape actuelle : ${statutModele(f.statut).libelle}. La publication vient après la revalidation.` };
+  if (f.statut !== 'pret-validation') return { ok: false, message: `Étape actuelle : ${statutModele(f.statut).libelle}. L’ajout au catalogue vient après la relecture finale.` };
   const { verrous } = await verrousDeLaFiche(f, chaine);
   if (!peutPublier(verrous)) return { ok: false, message: `Verrous au rouge : ${verrous.filter((v) => !v.ok).map((v) => v.libelle).join(', ')}.` };
   const v = chaine.versions.find((x) => x.modele === f.id && x.version === f.versionCourante)!;
@@ -341,7 +347,7 @@ export async function publierModele(modele: string): Promise<Retour> {
   const { error: e3 } = await supabase.from('modeles_fiches').update({ statut: 'publie', version_publiee: f.versionCourante, recette }).eq('id', f.id);
   if (e3) return echec(e3);
   rafraichir(`/chaine/modele/${modele}`, '/admin/profils');
-  return { ok: true, message: `Publié pour les praticiens (v${f.versionCourante}).` };
+  return { ok: true, message: `Ajouté au catalogue (v${f.versionCourante}) : proposé aux praticiens des profils cochés.` };
 }
 
 /** Repêcher un modèle écarté (validateur) */

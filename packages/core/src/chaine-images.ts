@@ -51,9 +51,12 @@ export function verifierNouvelleVersion(p: { statut: string; base: Record<string
   return { ok: false, raison: 'Structure figée depuis la sélection des finalistes : seules les images se choisissent (dans l’aperçu), la structure change seulement par la retouche de Claude (tickets).' };
 }
 
-/** Aucune transition ne ramène un modèle figé vers un statut où la structure se relance (candidat, présélection) */
+/**
+ * Aucune transition ne ramène un modèle figé vers un statut où la structure se relance (candidat, présélection). « Écarté » (sortie de
+ * la chaîne : rouge persistant après correction, 2026-10-11) est permis : seul un repêchage explicite de Paul en ressort.
+ */
 export function transitionsRespectentStructure(transitions: TransitionsLike): boolean {
-  return transitions.every((t) => !structureFigee(t.de) || structureFigee(t.vers));
+  return transitions.every((t) => !structureFigee(t.de) || structureFigee(t.vers) || t.vers === 'ecarte');
 }
 
 // ---------------------------------------------------------------------------------------------------------------

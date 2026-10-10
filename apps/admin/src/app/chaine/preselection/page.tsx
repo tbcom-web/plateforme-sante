@@ -28,7 +28,7 @@ export default async function PagePreselection({ searchParams }: PageProps<'/cha
   ]);
   const cible = typeof sp.profil === 'string' ? tous.find((p) => p.id === sp.profil) ?? null : null;
   const profils = cible ? [cible] : tous;
-  // Chaîne guidée : prochaine étape ; s'il manque des candidats, les designs de Claude entrent seuls (chaîne relue)
+  // Chaîne guidée : prochaine étape (les designs de Claude ne sont importés que par le bouton : un design importé est gardé)
   const { action, chaine, importes } = await guidageChaine({ moi, profession: profession.id, chaine: lue });
   // Politique d'évaluation unique : compositions montrées récemment (toutes surfaces) pas reproposées pendant le délai de retour ;
   // éléments vus sans être choisis exclus par les tranches (gen.tranches)
@@ -37,8 +37,8 @@ export default async function PagePreselection({ searchParams }: PageProps<'/cha
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
-        <h1 className="text-2xl font-bold">Présélection</h1>
-        <p className="mt-1 max-w-3xl text-sm text-neutral-600">Des designs de site à l’infini, six par page, montrés chaque fois avec un cabinet différent (et ses images). Touchez ceux qui vous plaisent, puis « Garder ». Le tournoi s’ouvre dès {CHAINE.ouvertureTournoi} candidats.</p>
+        <h1 className="text-2xl font-bold">Choisir</h1>
+        <p className="mt-1 max-w-3xl text-sm text-neutral-600">Des designs de site à l’infini, six par page, montrés chaque fois avec un cabinet différent (et ses images). Touchez ceux qui vous plaisent, puis « Garder » : chaque design gardé part seul en vérification ({CHAINE.maxVerification} à la fois, les plus aimés d’abord).</p>
       </div>
       <ProchaineEtape action={action} importes={importes} compact ici="/chaine/preselection" />
       {cible && <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-950 ring-1 ring-teal-200">Designs montrés avec le profil <strong>{cible.nom}</strong> et ses images (depuis « À valider »). <a className="underline" href="/chaine/preselection">Tous les profils</a></p>}
@@ -46,7 +46,7 @@ export default async function PagePreselection({ searchParams }: PageProps<'/cha
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
       {!profils.length ? <p className="text-sm">Aucun profil de démonstration pour cette profession.</p> : (
         <div id="etape-travail" className="grid gap-3"><Preselection profils={profils} candidats={candidats} dejaVues={[...chaine.fiches.map((f) => f.cle), ...recentes]} rendu={rendu} poids={gen.poids} photos={gen.photos} tranches={gen.tranches} politique={politique} />
-        <details className="text-sm text-neutral-700"><summary className="min-h-11 cursor-pointer">Autres sources de candidats</summary><div className="mt-2"><BoutonImporterClaude /></div></details></div>
+        <details className="text-sm text-neutral-700"><summary className="min-h-11 cursor-pointer">Autres sources de designs</summary><div className="mt-2"><BoutonImporterClaude /></div></details></div>
       )}
     </div>
   );
