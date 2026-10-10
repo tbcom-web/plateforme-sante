@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : analyse de la foulée (à valider, mêmes clés) : jambes reprises après le retour de Paul (« un peu anorexique ») — volumes d'un coureur en bonne santé (cuisse qui s'élargit vers le bassin, genou et cheville naturels, mollet galbé), contour doux ; tracés et données inchangés.
 - 2026-10-10 : Bibliothèque, atelier, Dégustation et Frigo photos plus rapides : résumés gardés tant que rien ne change, listes de photos chargées par pages.
 - 2026-10-10 : course à pied (à valider, lot « Analyse de la foulée ») : le coureur à rotules (animation:coureur, « fait robot ») est retiré des tirages par défaut du héros sport — gardé dans l'inventaire et les duels ; à sa place l'analyse de la foulée : jambes en aplat, chaussures de course, tracés techniques et données classiques (valeurs génériques illustratives) en héros illustré (heros:sport:releve, dessin:analyse-course:*), visuel animé (entete-anim:pi-analyse-course) et photo + données (trace-photo:analyse, analyse-anime).
 - 2026-10-10 : Après un vote, l'apprentissage se recalcule à part (route dédiée, un seul calcul à la fois) : les pages ne ralentissent plus pendant le calcul (migration 0060 à exécuter).

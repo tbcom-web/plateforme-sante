@@ -28,9 +28,9 @@ test('animations du pied : < 5 Ko, transform / opacity / stroke-dashoffset seule
     assert.ok((ANIMATIONS_ENTETE as readonly string[]).includes(a), a);
     assert.ok(ANIMATIONS_HEROS.includes(a), a);
     const html = htmlPied(a), css = cssPied(a);
-    // Analyse de la foulée : jambes, tracés et données (HTML lisible) ; < 7 Ko feuille commune comprise
+    // Analyse de la foulée : jambes, tracés et données (HTML lisible) ; < 7,5 Ko feuille commune comprise (≈ 2,6 Ko compressé)
     const analyse = a === 'pi-analyse-course';
-    assert.ok(Buffer.byteLength(html + css) < (analyse ? 7168 : 5120), `${a} : ${Buffer.byteLength(html + css)} octets`);
+    assert.ok(Buffer.byteLength(html + css) < (analyse ? 7680 : 5120), `${a} : ${Buffer.byteLength(html + css)} octets`);
     for (const k of css.match(/@keyframes [\w-]+\{.*?\}\}/g) ?? []) for (const p of k.replace(/@keyframes [\w-]+\{/, '').matchAll(/([a-z-]+):/g)) assert.ok(['transform', 'opacity', 'stroke-dashoffset'].includes(p[1]), `${a} anime ${p[1]}`);
     for (const m of css.matchAll(/([^{}]*)\{[^{}]*animation:ea-/g)) assert.match(m[1], /\.ea-joue/, a);
     assert.match(css, /prefers-reduced-motion:reduce/);

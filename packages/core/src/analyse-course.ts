@@ -80,8 +80,18 @@ const mi = (a: P, b: P, t: number): P => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1]
  */
 export const PHASE_ANALYSE = 0.985;
 
-/** Demi-largeurs des tubes de jambe (fractions de L), devant / derrière : celles du héros sport (heros-scenes.ts) */
-const AVANT = [0.07, 0.058, 0.04, 0.036, 0.028, 0.022], ARRIERE = [0.075, 0.06, 0.042, 0.062, 0.04, 0.024];
+/**
+ * Profil de la jambe d'un coureur loisir / marathonien en bonne santé (retour de Paul du 2026-10-10 : « les jambes font un peu
+ * anorexique »), vue de profil, en fractions de la longueur de jambe L (hanche → cheville), d'après les épaisseurs d'un adulte
+ * sportif (cuisse ≈ 17-19 cm, genou ≈ 11 cm, mollet ≈ 12 cm, cheville ≈ 6-7 cm pour L ≈ 85 cm) : cuisse ≈ 0,22 L en haut (elle
+ * s'élargit vers le bassin), ≈ 0,19 L à mi-cuisse, genou ≈ 0,12 L (rotule devant, creux poplité derrière), mollet galbé ≈ 0,14 L
+ * au tiers haut de la jambe (le galbe est DERRIÈRE, le tibia reste presque droit devant), tendon d'Achille et cheville ≈ 0,07 L.
+ * Chaque point : [segment (0 cuisse, 1 jambe), position le long du segment, demi-largeur devant, demi-largeur derrière].
+ */
+const PROFIL_JAMBE: [0 | 1, number, number, number][] = [
+  [0, -0.02, 0.108, 0.114], [0, 0.5, 0.094, 0.096], [0, 0.78, 0.078, 0.074], [0, 0.97, 0.064, 0.06],
+  [1, 0.1, 0.056, 0.07], [1, 0.3, 0.052, 0.088], [1, 0.5, 0.046, 0.074], [1, 0.75, 0.039, 0.047], [1, 1, 0.034, 0.036],
+];
 
 /** Géométrie de la scène dans un repère donné : jambes, chaussures, sol, tracés de l'analyse */
 function geometrie(L: number, x0: number, sol: number) {
@@ -89,14 +99,18 @@ function geometrie(L: number, x0: number, sol: number) {
   const X = (q: Pt): P => [x0 + q.x, sol + q.y];
   const jambe = (j: (typeof pose)['droite']) => {
     const H = X(j.hanche), K = X(j.genou), A = X(j.cheville);
-    // Cuisse jusqu'à la hanche (le haut se fond dans la page : masque de corpsAnalyseCourse)
-    const H2 = mi(K, H, 1.02);
-    const axe: P[] = [H2, mi(H, K, 0.5), K, mi(K, A, 0.3), mi(K, A, 0.62), A];
+    // Axe : cuisse (hanche → genou) puis jambe (genou → cheville) ; le haut de la cuisse se fond dans la page (masque)
+    const axe: P[] = PROFIL_JAMBE.map(([s, t]) => (s === 0 ? mi(H, K, t) : mi(K, A, t)));
+    // Normale de chaque point : celle de son segment, moyennée au genou (contour continu, sans pli artificiel)
+    const dir = (u: P, v: P): P => { const l = Math.hypot(v[0] - u[0], v[1] - u[1]) || 1; return [(v[0] - u[0]) / l, (v[1] - u[1]) / l]; };
+    const dc = dir(H, K), dj = dir(K, A);
     const g: P[] = [], d: P[] = [];
-    axe.forEach((q, i) => {
-      const a = axe[Math.max(0, i - 1)], b = axe[Math.min(axe.length - 1, i + 1)];
-      const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty) || 1, nx = -ty / l, ny = tx / l;
-      g.push([q[0] + nx * ARRIERE[i] * L, q[1] + ny * ARRIERE[i] * L]); d.push([q[0] - nx * AVANT[i] * L, q[1] - ny * AVANT[i] * L]);
+    PROFIL_JAMBE.forEach(([s, t, av, ar], i) => {
+      const q = axe[i];
+      const w = s === 0 ? Math.max(0, (t - 0.75) / 0.5) : Math.max(0, (0.25 - t) / 0.5);
+      const tx = (s === 0 ? dc[0] * (1 - w) + dj[0] * w : dj[0] * (1 - w) + dc[0] * w), ty = (s === 0 ? dc[1] * (1 - w) + dj[1] * w : dj[1] * (1 - w) + dc[1] * w);
+      const l = Math.hypot(tx, ty) || 1, nx = -ty / l, ny = tx / l;
+      g.push([q[0] + nx * ar * L, q[1] + ny * ar * L]); d.push([q[0] - nx * av * L, q[1] - ny * av * L]);
     });
     const ch = j.chaussure.map(X);
     // Semelle intermédiaire : bande du talon à la pointe, au-dessus du contour bas de la chaussure (drop : plus épaisse au talon)
@@ -156,10 +170,10 @@ export function corpsAnalyseCourse(format: FormatAnalyse, o: { anime?: boolean }
   const v = 0.05 * m.L, w = 0.022 * m.L;
   const viseur = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => `M${r(tx + sx * v)} ${r(ty + sy * v - sy * w)}v${r(sy * w)}h${r(-sx * w)}`).join('');
   // Fondu du haut des cuisses (du bassin vers le milieu de la cuisse)
-  const id = `ac-${format[0]}`, y0 = r(G.hautBassin + 0.04 * m.L), y1 = r(G.hautBassin + 0.34 * m.L);
+  const id = `ac-${format}`, y0 = r(G.hautBassin + 0.01 * m.L), y1 = r(G.hautBassin + 0.17 * m.L);
   const masque = `<defs><linearGradient id="${id}g" gradientUnits="userSpaceOnUse" x1="0" y1="${y0}" x2="0" y2="${y1}"><stop offset="0" stop-color="#fff" stop-opacity="0"></stop><stop offset="1" stop-color="#fff"></stop></linearGradient><mask id="${id}m" maskUnits="userSpaceOnUse" x="0" y="0" width="${R.l}" height="${R.h}"><rect width="${R.l}" height="${R.h}" fill="url(#${id}g)"></rect></mask></defs>`;
   const lignes = `<path class="ac-g" d="M${x1} ${m.sol}H${x2}${ticks}"${pl}/><path class="ac-p" d="${aplomb}"/><path class="ac-b" d="${courbe(G.boucle)}"/>`;
-  const jambes = `<g class="ac-j" mask="url(#${id}m)"><path d="${G.arriere.jambe}" class="ac-jl"/><path d="${G.arriere.chaussure}" class="ac-c ac-jl"/><path d="${G.avant.jambe}"/><path d="${G.avant.chaussure}" class="ac-c"/><path d="${G.avant.semelle}" class="ac-s"/></g>`;
+  const jambes = `<g class="ac-j" mask="url(#${id}m)"><g class="ac-jl"><path d="${G.arriere.jambe}"/><path d="${G.arriere.chaussure}" class="ac-c"/></g><path d="${G.avant.jambe}"/><path d="${G.avant.chaussure}" class="ac-c"/><path d="${G.avant.semelle}" class="ac-s"/></g>`;
   const mesure = `<g class="ac-m"><path class="ac-h" d="${horizontale}"/><path class="ac-h" d="${semelleProlongee}"/><path class="ac-a" d="${arc}"${pl}/><path class="ac-v" d="${viseur}"/></g>`;
   // Étiquette de l'angle, au bout de l'arc
   const am = a / 2, ex = tx + Math.cos(am) * (ra + 0.05 * m.L), ey = ty - Math.sin(am) * (ra + 0.05 * m.L);
@@ -212,7 +226,7 @@ export function htmlDonneesCourse(anime: boolean, classe: string): string {
   }).join('')}</dl>`;
 }
 /** Feuille commune des lignes de données (couleurs par l'hôte : color, --ac-a) */
-const CSS_DONNEES = (c: string) => `.${c}{margin:0;font:500 12.5px/1.2 var(--police-mono,monospace);letter-spacing:.02em}.${c} .ac-r{padding:0 0 7px 10px;border-left:2px solid var(--ac-a);margin:0 0 9px}.${c} .ac-r:last-child{margin:0}
+const CSS_DONNEES = (c: string) => `.${c}{margin:0;font:500 12.5px/1.2 var(--police-mono,monospace)}.${c} .ac-r{padding:0 0 7px 10px;border-left:2px solid var(--ac-a);margin:0 0 9px}.${c} .ac-r:last-child{margin:0}
 .${c} dt{text-transform:uppercase;letter-spacing:.08em;font-size:11.5px;opacity:.88}.${c} dd{margin:3px 0 0;font-variant-numeric:tabular-nums}.${c} b{position:relative;display:inline-block;font-size:21px;font-weight:600}.${c} i{position:absolute;left:0;top:0;font-style:normal;opacity:0}`;
 /** Lecture des compteurs : chaque ligne entre (décalée de `pas`), son compteur défile (3 étapes de 120 ms, chacune visible le temps de
  * son animation seulement, sans remplissage) puis se fige */
@@ -235,7 +249,7 @@ export const cssAnalyseCourseScene = (R: string) => `.ea--pi-analyse-course{--ac
 svg.ac-sc{inset:6% auto 6% 2%;width:60%;height:88%;stroke:none}.ac-dl{position:absolute;right:6%;top:50%;transform:translateY(-50%);width:34%}
 @container (max-width:440px){.ac-dl .ac-r4,.ac-dl .ac-r5{display:none}.ac-dl{width:38%}.ac-dl b{font-size:19px}}
 ${CSS_TRACES}${CSS_DONNEES('ac-dl')}
-${R} .ac-j{animation:ea-ac-o .6s ease-out both}${R} .ac-g,${R} .ac-a{stroke-dasharray:1;animation:ea-ac-t 1s cubic-bezier(.5,0,.3,1) both;animation-delay:.3s}${R} .ac-a{animation-delay:1.3s}
+${R} .ac-j{animation:ea-ac-o .6s ease-out both}${R} .ac-g,${R} .ac-a{stroke-dasharray:1;animation:ea-ac-t 1s ease-in-out both;animation-delay:.3s}${R} .ac-a{animation-delay:1.3s}
 ${R} .ac-p{animation:ea-ac-o .5s ease-out both;animation-delay:.7s}${R} .ac-b{animation:ea-ac-o 1s ease-out both;animation-delay:.9s}${R} .ac-h,${R} .ac-v,${R} .ac-e{animation:ea-ac-o .5s ease-out both;animation-delay:1.4s}
 @keyframes ea-ac-t{0%{stroke-dashoffset:1}100%{stroke-dashoffset:0}}
 ${LECTURE_DONNEES(R, 'ac-dl', 1.6, 420, 'ea-ac')}`;

@@ -155,7 +155,7 @@ test('animations d’en-tête : < 3 Ko (empreintes : < 5 Ko), transform et opaci
     const em = a.startsWith('em-') || a.startsWith('pi-');
     const html = htmlAnimationEntete(a, mots), css = cssAnimationEntete(a);
     assert.ok(html.length > 20, a);
-    assert.ok(Buffer.byteLength(html + css) < (a === 'pi-analyse-course' ? 7168 : em ? 5120 : 3072), `${a} : ${Buffer.byteLength(html + css)} octets`);
+    assert.ok(Buffer.byteLength(html + css) < (a === 'pi-analyse-course' ? 7680 : em ? 5120 : 3072), `${a} : ${Buffer.byteLength(html + css)} octets`);
     // Images clés : transform et opacity seulement (compositeur)
     for (const k of css.match(/@keyframes [\w-]+\{.*?\}\}/g) ?? []) for (const p of k.replace(/@keyframes [\w-]+\{/, '').matchAll(/([a-z-]+):/g)) assert.ok(['transform', 'opacity', ...(em ? ['stroke-dashoffset'] : [])].includes(p[1]), `${a} anime ${p[1]}`);
     // Aucune lecture sans la classe posée par le script (image fixe par défaut) ; réduction des animations respectée
