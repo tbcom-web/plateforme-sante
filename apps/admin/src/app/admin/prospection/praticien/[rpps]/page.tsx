@@ -21,7 +21,9 @@ function Situation({ s }: { s: LigneProspection }) {
   const tel = s.telephone ? telephoneLisible(s.telephone) : '';
   return (
     <li className={`grid gap-1 rounded-2xl border bg-white p-4 text-sm ${s.disparu_le ? 'border-dashed border-neutral-300 opacity-80' : 'border-black/5'}`}>
-      <p className="font-semibold">{casseNom(s.enseigne || s.raison_sociale || s.entreprise_nom || 'Cabinet')}</p>
+      {s.structure_cle
+        ? <Link href={`/admin/prospection/cabinet/${s.structure_cle}`} className="w-fit font-semibold text-teal-900 underline">{casseNom(s.enseigne || s.raison_sociale || s.entreprise_nom || 'Cabinet')}</Link>
+        : <p className="font-semibold">{casseNom(s.enseigne || s.raison_sociale || s.entreprise_nom || 'Cabinet')}</p>}
       <p className="text-neutral-700">{lieuDe(s)}</p>
       <p className="text-xs text-neutral-600">{[s.role, s.secteur, s.mode_exercice].filter(Boolean).join(' · ')} — {periode(s)}</p>
       {(tel || s.email) && (
@@ -46,7 +48,7 @@ function Reseau({ liens, situations }: { liens: Lien[]; situations: LigneProspec
     <div className="grid gap-4">
       {situations.filter((s) => liens.some((l) => l.depuis === s.cle)).map((s) => (
         <section key={s.cle} className="rounded-2xl border border-black/5 bg-white p-4 text-sm">
-          <h3 className="font-semibold">{casseNom(s.enseigne || s.raison_sociale || 'Cabinet')} <span className="font-normal text-neutral-600">· {lieuDe(s)}</span></h3>
+          <h3 className="font-semibold">{s.structure_cle ? <Link href={`/admin/prospection/cabinet/${s.structure_cle}`} className="underline">{casseNom(s.enseigne || s.raison_sociale || 'Cabinet')}</Link> : casseNom(s.enseigne || s.raison_sociale || 'Cabinet')} <span className="font-normal text-neutral-600">· {lieuDe(s)}</span></h3>
           <ul className="mt-2 divide-y divide-neutral-100">
             {liens.filter((l) => l.depuis === s.cle).sort((a, b) => Number(Boolean(a.ligne.disparu_le)) - Number(Boolean(b.ligne.disparu_le))).map(({ ligne: l, via }) => (
               <li key={l.cle} className="flex flex-wrap items-baseline justify-between gap-2 py-2">

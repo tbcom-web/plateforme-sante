@@ -9,6 +9,8 @@
 // 4. Liens et scores (migration 0057) : rôle, secteur, clés de structure et d'adresse, autres professions à la même adresse,
 //    diplômes complémentaires (fichier PS_LibreAcces_Dipl_AutExerc) et spécialités ; puis scores d'installation et de prospection
 //    (packages/core/src/prospection-score.ts, importé tel quel : Node efface les types).
+// 5. Actualités des cabinets (migration 0058) : arrivées, départs, nouveaux cabinets, reprises, déménagements, constatés d'une nuit
+//    à l'autre (packages/core/src/prospection-evenements.ts) ; les reprises (collaborateur devenu titulaire) entrent dans le score.
 // Les adresses MSSanté ne sont jamais gardées (messagerie réservée aux échanges de santé, pas à la prospection).
 //
 // Certificat : le serveur de l'ANS présente l'autorité racine IGC-Santé, absente des magasins usuels → la lancer avec
@@ -27,6 +29,7 @@ import { Readable } from 'node:stream';
 import { createInterface } from 'node:readline';
 import zlib from 'node:zlib';
 import { scorerProspection, specialitesDepuisDiplomes } from '../packages/core/src/prospection-score.ts';
+import { evenementsDuJour } from '../packages/core/src/prospection-evenements.ts';
 
 const URL_EXTRACTION = 'https://service.annuaire.sante.fr/annuaire-sante-webservices/V300/services/extraction/PS_LibreAcces';
 const JEU_DATA_GOUV = 'annuaire-sante-extractions-des-donnees-en-libre-acces-des-professionnels-intervenant-dans-le-systeme-de-sante-rpps';
@@ -501,15 +504,17 @@ async function synchroAns() {
 // 6. Scores d'installation et de prospection (migration 0057, packages/core/src/prospection-score.ts)
 // ---------------------------------------------------------------------------------------------------------------------
 
-async function calculerScores() {
-  const champs = 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,commune,telephone,email,specialites';
+async function calculerScores(v0058) {
+  const champs = 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,structure_cle,commune,telephone,email,specialites';
   const toutes = await lireTout(`prospection_liste?select=${champs}`);
+  const ilYa2ans = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 10);
+  const evenements = v0058 ? await sb(`prospection_evenements?select=type,cle,le,details&type=eq.role&le=gte.${ilYa2ans}&limit=1000`) : [];
   const parProfession = new Map();
   for (const l of toutes) parProfession.set(l.profession_code, [...(parProfession.get(l.profession_code) ?? []), l]);
   const aEcrire = [];
   for (const groupe of parProfession.values()) {
     const rppsDe = new Map(groupe.map((l) => [l.cle, l.rpps]));
-    for (const [cle, s] of scorerProspection(groupe, aujourdhui)) {
+    for (const [cle, s] of scorerProspection(groupe, aujourdhui, evenements)) {
       aEcrire.push({ cle, rpps: rppsDe.get(cle), score_installation: s.installation, score_prospect: s.prospect, raisons: s.raisons, score_le: aujourdhui });
     }
   }
@@ -587,8 +592,10 @@ try {
 async function enregistrer(listeComplete, praticiens, fichier) {
   const v0057 = await avec0057();
   if (!v0057) console.log('Migration 0057 absente : rôles, liens, diplômes et scores non écrits');
+  const v0058 = v0057 && (await sb('prospection_evenements?select=id&limit=1').then(() => true, () => false));
+  if (v0057 && !v0058) console.log('Migration 0058 absente : actualités des cabinets non calculées');
   const liste = v0057 ? listeComplete : listeComplete.map(sans0057);
-  const existants = await lireTout(`prospection_praticiens?select=cle,apparu_le,disparu_le,profession_code`);
+  const existants = await lireTout(`prospection_praticiens?select=cle,apparu_le,disparu_le,profession_code${v0057 ? ',rpps,structure_cle,role,nom,prenom,commune,departement,enseigne,raison_sociale' : ''}`);
   const deja = new Map(existants.map((e) => [e.cle, e]));
   const importInitial = existants.length === 0;
   let nouveaux = 0;
@@ -605,10 +612,22 @@ async function enregistrer(listeComplete, praticiens, fichier) {
   }
   console.log(`${importInitial ? 'Import initial' : `${nouveaux} nouvelle(s) situation(s)`}, ${disparus.length} disparue(s)`);
 
+  // Actualités : seulement si la veille connaissait déjà les structures (pas au premier passage après 0057)
+  if (v0058 && !importInitial && existants.some((e) => e.structure_cle)) {
+    const etat = (p) => ({ cle: p.cle, rpps: p.rpps, structure_cle: p.structure_cle, role: p.role, nom: p.nom, prenom: p.prenom, commune: p.commune, departement: p.departement, cabinet: p.enseigne || p.raison_sociale || null });
+    const avant = existants.filter((e) => !e.disparu_le && PROFESSIONS.has(String(e.profession_code))).map(etat);
+    const evenements = evenementsDuJour(avant, listeComplete.map(etat), aujourdhui);
+    for (let i = 0; i < evenements.length; i += 500) {
+      await sb('prospection_evenements?on_conflict=le,type,cle', { method: 'POST', body: evenements.slice(i, i + 500), prefer: 'resolution=ignore-duplicates,return=minimal' });
+    }
+    const parType = evenements.reduce((o, e) => ({ ...o, [e.type]: (o[e.type] ?? 0) + 1 }), {});
+    console.log(`Actualités : ${evenements.length} événement(s)`, parType);
+  }
+
   // Étape facultative : sans clé ou sans la migration 0056, la synchro continue
   try { await synchroAns(); } catch (e) { console.log(`API ANS : ${e.message.slice(0, 200)} (étape sautée)`); }
   const verifies = args['sans-verif'] ? 0 : await verifierInstallations();
-  if (v0057) await calculerScores();
+  if (v0057) await calculerScores(v0058);
   await sb('prospection_synchros', {
     method: 'POST', prefer: 'return=minimal',
     body: { fichier, lignes: liste.length, nouveaux, disparus: disparus.length, verifies, message: importInitial ? 'import initial' : null },

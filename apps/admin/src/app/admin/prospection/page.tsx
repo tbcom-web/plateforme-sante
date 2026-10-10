@@ -4,7 +4,7 @@ import { casseNom, telephoneLisible } from '@plateforme/core/annuaire-sante';
 import { exigerAdmin } from '@/lib/admin';
 import { dateCourte } from '@/lib/libelles';
 import { derniereSynchro, lireProspection, PAR_PAGE, type LigneProspection } from '@/lib/prospection';
-import { autresProfessions, jour, Scores, Specialites } from './Elements';
+import { autresProfessions, jour, Onglets, Scores, Specialites } from './Elements';
 import Suivi from './Suivi';
 
 export const metadata = { title: 'Super admin · Prospection' };
@@ -31,7 +31,9 @@ function Fiche({ p }: { p: LigneProspection }) {
           {p.disparu_le && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Absent du RPPS depuis le {jour(p.disparu_le)}</span>}
           {p.siret_ferme && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Établissement fermé</span>}
         </div>
-        {cabinet && <p className="text-neutral-700">{casseNom(cabinet)}</p>}
+        {cabinet && (p.structure_cle
+          ? <Link href={`/admin/prospection/cabinet/${p.structure_cle}`} className="w-fit text-neutral-700 underline decoration-neutral-300 hover:text-teal-900">{casseNom(cabinet)}</Link>
+          : <p className="text-neutral-700">{casseNom(cabinet)}</p>)}
         <p className="text-neutral-700">{[p.adresse, [p.code_postal, p.commune && casseNom(p.commune)].filter(Boolean).join(' ')].filter(Boolean).join(', ') || '—'}</p>
         <p className="flex flex-wrap gap-x-3 text-neutral-700">
           {tel ? <a className="font-semibold text-teal-800 underline" href={`tel:${p.telephone!.replace(/[^\d+]/g, '')}`}>{tel}</a> : <span className="text-neutral-500">Pas de téléphone au RPPS</span>}
@@ -67,6 +69,7 @@ export default async function Prospection({ searchParams }: PageProps<'/admin/pr
 
   return (
     <div className="grid grid-cols-1 gap-6">
+      <Onglets actif="praticiens" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Prospection <span className="text-base font-semibold text-neutral-600">· RPPS</span></h1>

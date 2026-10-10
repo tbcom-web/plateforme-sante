@@ -46,6 +46,15 @@ Autres professions : lancer le workflow à la main avec `professions` = `80,70`,
 - Tables : `prospection_praticiens` (écrite par le script seulement), `prospection_suivi` (statut, note, relance par RPPS, auteur et date posés par la base), `prospection_synchros` (journal). La vue `prospection_liste` réunit les deux premières. Les règles RLS réservent tout à l'admin.
 - Code pur et tests : `packages/core/src/prospection.ts`. Lecture : `apps/admin/src/lib/prospection.ts`. Page et export CSV : `apps/admin/src/app/admin/prospection/`.
 
+## Scores, cabinets et actualités (0057, 0058)
+
+- **Score d'installation (0-100 %)** : confiance qu'une situation d'exercice correspond à une installation récente à une nouvelle adresse. Somme de signaux pondérés par leur ancienneté (3 mois : plein ; 6 mois : 85 % ; 1 an : 65 % ; 2 ans : 35 %) : nouvelle situation au RPPS (45), SIRET créé (40, ou 25 trouvé par nom), reprise du cabinet (35), modification ANS (15), adresse nouvelle (10), départ d'un autre lieu (10), numéro RPPS parmi les 5 % les plus récents (10), titulaire (5).
+- **Score de prospection (0-100)** : 55 % du score d'installation + rôle (titulaire 15, associé 10, collaborateur 3) + vie du cabinet pour les décideurs (arrivée d'un collaborateur 10, départ d'un confrère 6) + téléphone 8 + e-mail 4 + spécialités (4 chacune, 2 au plus) + cabinet individuel 5. Nul si le praticien n'exerce plus là ou pas en libéral. Le détail est affiché (« Pourquoi ? »). Calcul : `packages/core/src/prospection-score.ts`.
+- **Praticien et cabinet** : le cabinet est la structure RPPS (`structure_cle` : identifiant technique de la structure, sinon SIRET, sinon adresse). Onglet **Cabinets** : une ligne par cabinet libéral, triée par le meilleur score de ses décideurs (titulaires, associés). **Fiche cabinet** : décideurs à contacter d'abord, collaborateurs, anciens membres, actualités.
+- **Actualités** (`prospection_evenements`) : chaque nuit, comparaison avec la veille (`packages/core/src/prospection-evenements.ts`) : nouveau cabinet, arrivée dans un cabinet existant, départ, cabinet vidé, changement de rôle (collaborateur devenu titulaire = reprise), déménagement. Rien avant le premier import (2026-10-09) ; la première nuit après 0057 ne produit pas d'actualités (structures pas encore connues la veille).
+- **Diplômes et spécialités** : fichier `Dipl_AutExerc` (DU, DIU, autorisations, diplômes européens ; jamais le DE de la profession). Spécialités repérées : sport, pied diabétique, posturologie, ostéopathie, orthèses, enfant, gériatrie.
+- **Autres professions à l'adresse** : comptées sur toute l'extraction (kinés, sages-femmes, médecins…) : maisons de santé et cabinets mixtes.
+
 ## Pistes
 
 - Repérer aussi les établissements NAF 86.90E créés récemment qui ne sont pas encore au RPPS : ce sont les installations les plus fraîches.

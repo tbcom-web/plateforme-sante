@@ -6,6 +6,9 @@
 //    2 ans : 35 %, au-delà : rien), plus des indices sans date. Plusieurs signaux concordants → score élevé.
 // 2. Score de PROSPECTION (0-100) : intérêt commercial = installation récente + rôle (le titulaire décide) + joignabilité +
 //    spécialités valorisables + cabinet individuel. Nul si le praticien n'exerce plus là ou pas en libéral.
+// 3. CABINET : le site se vend au cabinet et le TITULAIRE décide. Le titulaire (ou l'associé) hérite de la vie de sa structure :
+//    arrivée d'un collaborateur (le cabinet grandit), départ d'un confrère (à remplacer), reprise (collaborateur devenu
+//    titulaire, événement « role » de prospection-evenements.ts). Un collaborateur ne décide pas seul : moins de points.
 // Chaque point est expliqué (raisons), pour que la commerciale sache quoi vérifier au téléphone.
 
 export const SPECIALITES_DIPLOMES = [
@@ -39,6 +42,7 @@ export type LigneScore = {
   secteur?: string | null;
   mode_exercice?: string | null;
   adresse_cle?: string | null;
+  structure_cle?: string | null;
   commune?: string | null;
   telephone?: string | null;
   email?: string | null;
@@ -47,6 +51,8 @@ export type LigneScore = {
 /** t : « i » (installation) ou « p » (prospection) ; l : libellé ; p : points */
 export type Raison = { t: 'i' | 'p'; l: string; p: number };
 export type ScoreProspection = { installation: number; prospect: number; raisons: Raison[] };
+/** Événements utiles au score (prospection_evenements, 0058) : changements de rôle surtout */
+export type EvenementScore = { type: string; cle: string; le: string; details?: Record<string, unknown> | null };
 
 const JOUR_MS = 86_400_000;
 const jourFr = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
@@ -66,13 +72,17 @@ const estLiberal = (l: LigneScore) => /^lib/i.test(l.mode_exercice ?? '');
 const ecartJours = (a: string, b: string) => Math.abs(Date.parse(a.slice(0, 10)) - Date.parse(b.slice(0, 10))) / JOUR_MS;
 
 /** Scores de toutes les situations d'une profession (les liens entre lignes servent : adresse partagée, départ d'un autre lieu) */
-export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: string): Map<string, ScoreProspection> {
+export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: string, evenements: readonly EvenementScore[] = []): Map<string, ScoreProspection> {
   const parAdresse = new Map<string, LigneScore[]>();
   const parRpps = new Map<string, LigneScore[]>();
+  const parStructure = new Map<string, LigneScore[]>();
   for (const l of lignes) {
     if (l.adresse_cle) parAdresse.set(l.adresse_cle, [...(parAdresse.get(l.adresse_cle) ?? []), l]);
+    if (l.structure_cle) parStructure.set(l.structure_cle, [...(parStructure.get(l.structure_cle) ?? []), l]);
     parRpps.set(l.rpps, [...(parRpps.get(l.rpps) ?? []), l]);
   }
+  const reprises = new Map<string, string>(); // cle → date où la situation est passée à « titulaire »
+  for (const e of evenements) if (e.type === 'role' && /titulaire/i.test(String(e.details?.apres ?? '')) && (!reprises.has(e.cle) || e.le > reprises.get(e.cle)!)) reprises.set(e.cle, e.le);
   // Numéros RPPS attribués dans l'ordre : les 5 % les plus élevés de la profession = inscriptions les plus récentes
   const numeros = [...parRpps.keys()].sort();
   const seuilRecent = numeros[Math.floor(numeros.length * 0.95)] ?? null;
@@ -89,6 +99,9 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
     if (aRpps) ajouter('i', `Nouvelle situation au RPPS le ${jourFr(l.apparu_le!)}`, 45 * aRpps);
     if (aSiret) ajouter('i', l.siret_source === 'nom' ? `Établissement à son nom créé le ${jourFr(l.siret_cree_le!)} (trouvé par nom)` : `SIRET du cabinet créé le ${jourFr(l.siret_cree_le!)}`, (l.siret_source === 'nom' ? 25 : 40) * aSiret);
     if (aAns) ajouter('i', `Situation modifiée au RPPS le ${jourFr(l.situation_maj_le!)}`, 15 * aAns);
+    const reprise = reprises.get(l.cle);
+    const aReprise = attenuation(reprise, aujourdhui);
+    if (aReprise) ajouter('i', `Devenu titulaire le ${jourFr(reprise!)} (reprise ou création de cabinet)`, 35 * aReprise);
 
     const voisins = (l.adresse_cle ? parAdresse.get(l.adresse_cle) ?? [] : []).filter((v) => v.rpps !== l.rpps);
     if (l.apparu_le && l.adresse_cle) {
@@ -101,7 +114,7 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
     const depart = repere && (parRpps.get(l.rpps) ?? []).find((a) => a.cle !== l.cle && a.disparu_le && ecartJours(a.disparu_le, repere) <= 120);
     if (depart) ajouter('i', `A quitté un autre lieu${depart.commune ? ` (${depart.commune})` : ''} le ${jourFr(depart.disparu_le!)}`, 10);
     if (seuilRecent && l.rpps >= seuilRecent) ajouter('i', 'Numéro RPPS parmi les plus récents (inscription récente)', 10);
-    const date = Math.max(aRpps, aSiret, aAns);
+    const date = Math.max(aRpps, aSiret, aAns, aReprise);
     if (date && /titulaire/i.test(l.role ?? '')) ajouter('i', 'Titulaire du cabinet', 5);
     const installation = Math.min(100, raisons.filter((r) => r.t === 'i').reduce((s, r) => s + r.p, 0));
 
@@ -111,9 +124,21 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
     else if (!estLiberal(l)) raisons.push({ t: 'p', l: 'Exercice non libéral', p: 0 });
     else {
       ajouter('p', `Installation (${installation} %)`, installation * 0.55);
+      const decideur = /titulaire|associ/i.test(l.role ?? '');
       if (/titulaire/i.test(l.role ?? '')) ajouter('p', 'Titulaire : décide pour le cabinet', 15);
-      else if (/associ/i.test(l.role ?? '')) ajouter('p', 'Associé', 10);
-      else if (/collaborat/i.test(l.role ?? '')) ajouter('p', 'Collaborateur', 5);
+      else if (/associ/i.test(l.role ?? '')) ajouter('p', 'Associé : décide avec ses associés', 10);
+      else if (/collaborat/i.test(l.role ?? '')) {
+        ajouter('p', 'Collaborateur', 3);
+        raisons.push({ t: 'p', l: 'Le site du cabinet se décide avec le titulaire : voir la fiche du cabinet', p: 0 });
+      }
+      // Vie du cabinet, au bénéfice de ceux qui décident
+      const confreres = decideur && l.structure_cle ? (parStructure.get(l.structure_cle) ?? []).filter((m) => m.rpps !== l.rpps) : [];
+      const arrivee = confreres.filter((m) => m.apparu_le && attenuation(m.apparu_le, aujourdhui)).sort((a, b) => b.apparu_le!.localeCompare(a.apparu_le!))[0];
+      if (arrivee) ajouter('p', `Un ${/collaborat/i.test(arrivee.role ?? '') ? 'collaborateur' : 'confrère'} a rejoint son cabinet le ${jourFr(arrivee.apparu_le!)} : le cabinet grandit`, 10 * attenuation(arrivee.apparu_le, aujourdhui));
+      const depart = confreres.filter((m) => m.disparu_le && attenuation(m.disparu_le, aujourdhui)).sort((a, b) => b.disparu_le!.localeCompare(a.disparu_le!))[0];
+      if (depart) ajouter('p', `Départ d’un confrère le ${jourFr(depart.disparu_le!)} : remplacement à prévoir`, 6 * attenuation(depart.disparu_le, aujourdhui));
+      const presents = confreres.filter((m) => !m.disparu_le).length;
+      if (presents) raisons.push({ t: 'p', l: `Cabinet de ${presents + 1} podologues`, p: 0 });
       if (l.telephone) ajouter('p', 'Téléphone au RPPS', 8);
       if (l.email) ajouter('p', 'E-mail au RPPS', 4);
       const specs = (l.specialites ?? []).filter((s) => s !== 'eee');

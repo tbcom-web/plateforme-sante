@@ -120,3 +120,61 @@ export async function derniereSynchro(): Promise<Synchro | null> {
   const { data } = await (await createClient()).from('prospection_synchros').select('le,lignes,nouveaux,disparus,verifies').order('le', { ascending: false }).limit(1).maybeSingle();
   return (data as Synchro | null) ?? null;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Cabinets et actualités (migration 0058)
+// ---------------------------------------------------------------------------------------------------------------------
+
+export type Cabinet = {
+  structure_cle: string; nom: string | null; adresse: string | null; code_postal: string | null; commune: string | null; departement: string | null;
+  secteur: string | null; liberal: boolean | null; presents: number; titulaires: number; associes: number; collaborateurs: number; partis: number;
+  decideurs: string | null; score: number | null; dernier_mouvement: string | null; telephone: string | null;
+};
+export type EvenementProspection = {
+  id: string; le: string; type: string; cle: string; rpps: string; structure_cle: string | null; departement: string | null; commune: string | null;
+  praticien: string | null; cabinet: string | null; details: Record<string, string | number | null>;
+};
+export type FiltresCabinets = { departement: string; q: string; taille: '' | 'groupe' | 'seul'; mouvement: boolean; page: number };
+
+/** Cabinets triés par meilleur score de décideur ; null si la migration 0058 n'est pas passée */
+export async function lireCabinets(f: FiltresCabinets): Promise<{ cabinets: Cabinet[]; total: number } | null> {
+  const supabase = await createClient();
+  let req = supabase.from('prospection_cabinets').select('*', { count: 'exact' }).gt('presents', 0).eq('liberal', true);
+  if (f.departement) req = req.eq('departement', f.departement);
+  if (f.taille === 'groupe') req = req.gt('presents', 1);
+  if (f.taille === 'seul') req = req.eq('presents', 1);
+  if (f.mouvement) req = req.not('dernier_mouvement', 'is', null);
+  if (f.q) {
+    const motif = `"*${f.q.replace(/["*,()]/g, ' ')}*"`;
+    req = req.or(['nom', 'commune', 'code_postal', 'decideurs'].map((c) => `${c}.ilike.${motif}`).join(','));
+  }
+  const debut = (f.page - 1) * PAR_PAGE;
+  const { data, count, error } = await req.order('score', { ascending: false, nullsFirst: false }).order('presents', { ascending: false }).range(debut, debut + PAR_PAGE - 1);
+  if (error) return null;
+  return { cabinets: (data ?? []) as Cabinet[], total: count ?? 0 };
+}
+
+/** Un cabinet : ses membres présents et passés, ses actualités */
+export async function lireCabinet(structure: string): Promise<{ cabinet: Cabinet | null; membres: LigneProspection[]; evenements: EvenementProspection[] } | null> {
+  if (!/^[A-Za-z0-9]{1,160}$/.test(structure)) return null;
+  const supabase = await createClient();
+  const [cab, membres, ev] = await Promise.all([
+    supabase.from('prospection_cabinets').select('*').eq('structure_cle', structure).maybeSingle(),
+    supabase.from('prospection_liste').select(NIVEAUX[0].colonnes).eq('structure_cle', structure).order('disparu_le', { ascending: false, nullsFirst: true }).order('score_prospect', { ascending: false, nullsFirst: false }),
+    supabase.from('prospection_evenements').select('*').eq('structure_cle', structure).order('le', { ascending: false }).limit(100),
+  ]);
+  if (membres.error || !membres.data?.length) return null;
+  return { cabinet: (cab.data as Cabinet | null) ?? null, membres: membres.data as unknown as LigneProspection[], evenements: (ev.data ?? []) as EvenementProspection[] };
+}
+
+/** Fil d'actualités ; null si la migration 0058 n'est pas passée */
+export async function lireActualites(f: { departement: string; type: string; page: number }): Promise<{ evenements: EvenementProspection[]; total: number } | null> {
+  const supabase = await createClient();
+  let req = supabase.from('prospection_evenements').select('*', { count: 'exact' });
+  if (f.departement) req = req.eq('departement', f.departement);
+  if (f.type) req = req.eq('type', f.type);
+  const debut = (f.page - 1) * 100;
+  const { data, count, error } = await req.order('le', { ascending: false }).order('type').range(debut, debut + 99);
+  if (error) return null;
+  return { evenements: (data ?? []) as EvenementProspection[], total: count ?? 0 };
+}

@@ -129,3 +129,4 @@ export * from './photos-sous-licence';
 export * from './images-fixes-pied';
 export * from './chaine-guidage';
 export * from './prospection-score';
+export * from './prospection-evenements';

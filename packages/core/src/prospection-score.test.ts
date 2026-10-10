@@ -48,3 +48,22 @@ test('prospection : non libéral à zéro, spécialités comptées sans le dipl�
   assert.ok(l.raisons.some((r) => r.l === 'Spécialité à mettre en avant : Sport' && r.p === 4));
   assert.equal(l.prospect, 4 + 5 + 6); // spécialité + cabinet individuel + installation 10 (numéro RPPS le plus élevé) × 0,55
 });
+
+test('cabinet : le titulaire hérite des arrivées et départs ; reprise de cabinet ; collaborateur moins noté', () => {
+  const lignes = [
+    base({ cle: 't|A', rpps: '10000000010', structure_cle: 'A', role: 'Titulaire de cabinet' }),
+    base({ cle: 'c|A', rpps: '10000000011', structure_cle: 'A', role: 'Collaborateur', apparu_le: '2026-09-20' }),
+    base({ cle: 'd|A', rpps: '10000000012', structure_cle: 'A', role: 'Collaborateur', disparu_le: '2026-09-01' }),
+    base({ cle: 'r|B', rpps: '10000000013', structure_cle: 'B', role: 'Titulaire de cabinet' }),
+  ];
+  const s = scorerProspection(lignes, J, [{ type: 'role', cle: 'r|B', le: '2026-10-01', details: { avant: 'Collaborateur', apres: 'Titulaire de cabinet' } }]);
+  const t = s.get('t|A')!;
+  assert.ok(t.raisons.some((r) => r.l.startsWith('Un collaborateur a rejoint son cabinet le 20/09/2026') && r.p === 10));
+  assert.ok(t.raisons.some((r) => r.l.startsWith('Départ d’un confrère le 01/09/2026') && r.p === 6));
+  assert.ok(t.raisons.some((r) => r.l === 'Cabinet de 2 podologues'));
+  const c = s.get('c|A')!;
+  assert.ok(!c.raisons.some((r) => r.l.startsWith('Un collaborateur a rejoint')));
+  assert.ok(c.raisons.some((r) => r.l.startsWith('Le site du cabinet se décide avec le titulaire')));
+  const r = s.get('r|B')!;
+  assert.ok(r.raisons.some((x) => x.l.startsWith('Devenu titulaire le 01/10/2026') && x.p === 35));
+});
