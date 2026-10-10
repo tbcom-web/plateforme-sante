@@ -26,6 +26,10 @@ export const TOURNOI_GRILLES = {
   eliminationApparitions: 3,
   /** Plafond de grilles par profil (arrêt forcé) */
   budget: 40,
+  /** Départages au plus (2026-10-10 : des duels répétés sans fin bloquaient le tournoi ; au-delà, grilles, plus riches) */
+  duelsMax: 8,
+  /** Écrans au plus, grilles ET duels (arrêt forcé : le tournoi finit toujours) */
+  ecransMax: 48,
   /** Tirages de l'a posteriori pour la certitude */
   tirages: 300,
   /** Écart-type a priori des forces */
@@ -165,7 +169,7 @@ export function etatTournoiGrilles(candidats: readonly string[], grilles: readon
   if (candidats.length <= top) return { ...base, ouvert: true, arrete: true, raison: 'peu-de-candidats', restantes: 0, texte: 'Tous finalistes' };
   const pct = Math.round(certitude * 100);
   if (certitude >= TOURNOI_GRILLES.certitude && vusTous) return { ...base, ouvert: true, arrete: true, raison: 'sur', restantes: 0, texte: `Top 10 sûr à ${pct} %` };
-  if (gs.length >= TOURNOI_GRILLES.budget) return { ...base, ouvert: true, arrete: true, raison: 'budget', restantes: 0, texte: `Arrêté au budget (${TOURNOI_GRILLES.budget} grilles) · top 10 sûr à ${pct} %` };
+  if (gs.length >= TOURNOI_GRILLES.budget || gs.length + ds.length >= TOURNOI_GRILLES.ecransMax) return { ...base, ouvert: true, arrete: true, raison: 'budget', restantes: 0, texte: `Arrêté au budget (${TOURNOI_GRILLES.budget} grilles) · top 10 sûr à ${pct} %` };
   return { ...base, ouvert: true, arrete: false, raison: 'en-cours', restantes, texte: `Top 10 sûr à ${pct} % · ~${restantes} grille${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}` };
 }
 
@@ -183,7 +187,7 @@ export function prochainEcran(e: EtatTournoiGrilles, opts: { reserves?: Readonly
   const libres = vivants.filter((l) => !opts.reserves?.has(l.id));
   const pool = libres.length >= TOURNOI_GRILLES.taille ? libres : vivants;
   const jamaisVus = pool.some((l) => l.apparitions === 0);
-  if (!jamaisVus && e.incertains.length >= 2 && e.incertains.length <= 4 && e.certitude >= 0.75) {
+  if (!jamaisVus && e.duels < TOURNOI_GRILLES.duelsMax && e.incertains.length >= 2 && e.incertains.length <= 4 && e.certitude >= 0.75) {
     const inc = e.classement.filter((l) => e.incertains.includes(l.id)).sort((a, b) => a.rang - b.rang);
     const dedans = inc.filter((l) => l.rang <= TOURNOI_GRILLES.top), dehors = inc.filter((l) => l.rang > TOURNOI_GRILLES.top);
     const a = dedans.at(-1) ?? inc[0], b = dehors[0] ?? inc[inc.length - 1];

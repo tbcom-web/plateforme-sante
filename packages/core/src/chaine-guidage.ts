@@ -64,7 +64,7 @@ export type EntreeGuidage = {
   etat: EtatChaine;
   migrationManquante?: boolean;
   /** Tournoi des designs de la profession, déjà calculé par la page (tournoiDuProfil) ; null : pas encore de candidats */
-  tournoi?: Pick<EtatTournoiGrilles, 'ouvert' | 'arrete' | 'grilles' | 'restantes' | 'certitude' | 'texte'> | null;
+  tournoi?: Pick<EtatTournoiGrilles, 'ouvert' | 'arrete' | 'grilles' | 'restantes' | 'certitude' | 'texte'> & { duels?: number } | null;
   /** Designs proposés par Claude (ids canon-*) pas encore candidats */
   propositionsClaude?: number;
 };
@@ -201,7 +201,7 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
 
   // 2. Tournoi ouvert
   if (t?.ouvert && !t.arrete) {
-    const k = t.grilles + 1, total = t.grilles + Math.max(1, t.restantes);
+    const faits = t.grilles + (t.duels ?? 0), k = faits + 1, total = faits + Math.max(1, t.restantes);
     return fin({
       id: 'tournoi', etape: 2, qui: 'vous', secondaire: null,
       titre: `Jouer la grille ${k} / ~${total} du tournoi`,
