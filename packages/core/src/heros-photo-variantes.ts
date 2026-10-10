@@ -140,6 +140,8 @@ export const ANIMATIONS_ENTETE = [
   // Animations du pied (entete-pied.ts, demande de Paul du 2026-10-09) : carte de pression, isothermes, semelle en couches, petits
   // pas en rond, famille, talon douloureux, chevrons de vitesse, chronomètre, montagne — géométries validées, rien d'inventé
   'pi-pression', 'pi-isothermes', 'pi-isothermes-froid', 'pi-couches', 'pi-ronde', 'pi-famille', 'pi-talon', 'pi-chevrons', 'pi-chrono', 'pi-trail-montagne',
+  // Analyse de la foulée (analyse-course.ts, retours de Paul du 2026-10-10) : jambes en aplat, tracés et données d'une analyse de course
+  'pi-analyse-course',
 ] as const;
 export type AnimationEntete = (typeof ANIMATIONS_ENTETE)[number];
 export const estAnimationEntete = (v: unknown): v is AnimationEntete => (ANIMATIONS_ENTETE as readonly unknown[]).includes(v);
@@ -178,6 +180,7 @@ export const LIBELLES_ANIMATIONS_ENTETE: Record<AnimationEntete, string> = {
   'pi-chevrons': 'Chevrons de vitesse en cascade (à valider)',
   'pi-chrono': 'Chronomètre dont l’aiguille s’emballe puis s’arrête (à valider)',
   'pi-trail-montagne': 'Montagne : sentier en lacets et lignes de niveau (à valider)',
+  'pi-analyse-course': 'Analyse de la foulée : tracés et données qui apparaissent (à valider)',
 };
 /**
  * Emplacement : bande au-dessus du titre, emblème à côté du titre, fond du premier écran ; « scene » (empreintes) : en grand dans
@@ -189,7 +192,7 @@ export const PLACEMENT_ANIMATIONS_ENTETE: Record<Exclude<AnimationEntete, 'aucun
   'em-respire': 'scene', 'em-trace': 'scene', 'em-deroule': 'scene', 'em-marche': 'scene', 'em-petits-pas': 'scene', 'em-sensibilite': 'scene',
   'em-particules': 'scene', 'em-topographie': 'scene', 'em-defilement': 'scene', 'em-encre': 'scene',
   'il-semelle': 'scene', 'il-trajectoire': 'scene', 'il-premiers-pas': 'scene',
-  'pi-pression': 'scene', 'pi-isothermes': 'scene', 'pi-isothermes-froid': 'scene', 'pi-couches': 'scene', 'pi-ronde': 'scene', 'pi-famille': 'scene', 'pi-talon': 'scene', 'pi-chevrons': 'scene', 'pi-chrono': 'scene', 'pi-trail-montagne': 'scene',
+  'pi-pression': 'scene', 'pi-isothermes': 'scene', 'pi-isothermes-froid': 'scene', 'pi-couches': 'scene', 'pi-ronde': 'scene', 'pi-famille': 'scene', 'pi-talon': 'scene', 'pi-chevrons': 'scene', 'pi-chrono': 'scene', 'pi-trail-montagne': 'scene', 'pi-analyse-course': 'scene',
 };
 /** Premiers écrans qui posent une animation « scène » en grand (carte visuelle) ; ailleurs elle passe en emblème */
 export const HOTES_SCENE_ENTETE: readonly string[] = ['bento'];
@@ -229,6 +232,7 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
   'pi-chevrons': { famille: 'vitesse', energie: 0.85, rondeur: 0.1, expressif: true },
   'pi-chrono': { famille: 'vitesse', energie: 0.75, rondeur: 0.6, expressif: true },
   'pi-trail-montagne': { famille: 'organique', energie: 0.45, rondeur: 0.7, expressif: true },
+  'pi-analyse-course': { famille: 'vitesse', energie: 0.6, rondeur: 0.4, expressif: true },
 };
 
 /**
@@ -311,7 +315,9 @@ export const FOND_HEROS_SUR: Exclude<FondHeros, 'aucun'> = 'trame';
 // déjà chargée (diaporama, bandes, taches, aplats) ; « aucun » par défaut ; tout « à valider ».
 // ---------------------------------------------------------------------------------------------------------------
 
-export const TRACES_PHOTO = ['aucun', 'topographie', 'lacets', 'chevrons', 'empreintes', 'chrono', 'lacets-anime', 'topographie-anime'] as const;
+// « analyse » (2026-10-10, analyse-course.ts) : viseur et plaque des données classiques d'une analyse de course (seul tracé chiffré :
+// exception accordée par Paul, valeurs génériques illustratives) ; « analyse-anime » : données une à une, compteurs qui se figent
+export const TRACES_PHOTO = ['aucun', 'topographie', 'lacets', 'chevrons', 'empreintes', 'chrono', 'lacets-anime', 'topographie-anime', 'analyse', 'analyse-anime'] as const;
 export type TracePhoto = (typeof TRACES_PHOTO)[number];
 export const estTracePhoto = (v: unknown): v is TracePhoto => (TRACES_PHOTO as readonly unknown[]).includes(v);
 export const LIBELLES_TRACES_PHOTO: Record<TracePhoto, string> = {
@@ -323,6 +329,8 @@ export const LIBELLES_TRACES_PHOTO: Record<TracePhoto, string> = {
   chrono: 'Photo + cadran de chronomètre au trait (à valider)',
   'lacets-anime': 'Photo + sentier en lacets qui se dessine (à valider)',
   'topographie-anime': 'Photo + lignes de niveau qui montent (à valider)',
+  analyse: 'Photo + analyse de course : viseur et données de la foulée (à valider)',
+  'analyse-anime': 'Photo + analyse de course : données qui apparaissent, compteurs (à valider)',
 };
 /**
  * Premiers écrans qui reçoivent un tracé : la photo est posée À CÔTÉ du texte (le texte n'est jamais sur la photo : aucun
@@ -336,6 +344,7 @@ export const LIBELLES_TRACES_PHOTO: Record<TracePhoto, string> = {
 export const PHOTOS_DEMO_TRACES: Record<Exclude<TracePhoto, 'aucun'>, string> = {
   topographie: '/photos/sport-trail.webp', 'topographie-anime': '/photos/sport-trail.webp', lacets: '/photos/sport-trail.webp', 'lacets-anime': '/photos/sport-trail.webp',
   chevrons: '/photos/sport-course.webp', chrono: '/photos/sport-course.webp', empreintes: '/photos/sport-foulee-herbe.webp',
+  analyse: '/photos/sport-course.webp', 'analyse-anime': '/photos/sport-course.webp',
 };
 export const HOTES_TRACE_PHOTO: readonly string[] = ['scinde-photo', 'fondu', 'fondu-double', 'organique-fondu', 'arche-photo'];
 

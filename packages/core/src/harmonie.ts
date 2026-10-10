@@ -515,6 +515,9 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.trace-photo:chevrons': E('Photo + chevrons de vitesse', { e: 0.8, c: 0.6 }, { pref: [F.po, F.ma, F.te], jamais: [F.ed, F.dx, F.cl], fort: 0.5 }),
   'v.trace-photo:chrono': E('Photo + cadran de chrono', { e: 0.6, c: 0.4 }, { pref: [F.te, F.ma, F.po], jamais: [F.dx], fort: 0.45 }),
   'v.trace-photo:empreintes': E('Photo + empreintes en filigrane', { f: 0.5, c: 0.3 }, { pref: [F.ed, F.cl, F.te, F.mi], jamais: [F.po], fort: 0.4 }),
+  // Analyse de course sur la photo (2026-10-10, analyse-course.ts) : registre technique, précis ; jamais doux ni pop
+  'v.trace-photo:analyse': E('Photo + analyse de course (données)', { c: 0.8, e: 0.35, r: -0.4 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx, F.na], fort: 0.6 }),
+  'v.trace-photo:analyse-anime': E('Photo + analyse de course animée', { c: 0.8, e: 0.55, r: -0.4 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx, F.na], fort: 0.65 }),
   // Animations du pied (entete-pied.ts, 2026-10-09, à valider) : en grand, l'élément expressif de l'écran ; tempo calme pour le
   // diabète et les seniors (vives : petits pas en rond, chevrons, chronomètre)
   'v.entete-anim:pi-pression': E('Pied : carte de pression', { e: 0.45, c: 0.5, d: 0.2 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx], fort: 0.8 }),
@@ -527,6 +530,7 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.entete-anim:pi-chevrons': E('Chevrons de vitesse', { e: 0.9, r: -0.6, c: 0.7 }, { pref: [F.te, F.po, F.ma], jamais: [F.dx, F.na, F.cl, F.ed, F.mi], fort: 0.8 }),
   'v.entete-anim:pi-chrono': E('Chronomètre', { e: 0.75, c: 0.5 }, { pref: [F.te, F.ma, F.po], jamais: [F.dx], fort: 0.8 }),
   'v.entete-anim:pi-trail-montagne': E('Montagne : sentier et lignes de niveau', { e: 0.45, r: 0.6, t: 0.3 }, { pref: [F.na, F.te, F.po], jamais: [F.ed], fort: 0.8 }),
+  'v.entete-anim:pi-analyse-course': E('Analyse de la foulée (tracés et données)', { e: 0.55, c: 0.8, r: -0.3 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx, F.na], fort: 0.8 }),
   'v.entete-anim:em-encre': E('Empreintes à l’encre, fond clair', { e: 0.3, f: 0.4, t: 0.2, c: -0.2 }, { pref: [F.ed, F.cl, F.na, F.mi], jamais: [F.po], fort: 0.7 }),
   'v.transition:fondu': E('Fondu enchaîné', {}),
   'v.transition:ken-burns': E('Ken Burns', { e: 0.4, f: 0.2 }, { pref: [F.ed, F.na] }),

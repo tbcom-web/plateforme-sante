@@ -17,8 +17,9 @@
 
 import { GEO_PIED as G } from './entete-pied-geo';
 import { PRESSION } from './univers';
+import { svgAnalyseCourseScene, cssAnalyseCourseScene } from './analyse-course';
 
-export const ANIMATIONS_PIED = ['pi-pression', 'pi-isothermes', 'pi-isothermes-froid', 'pi-couches', 'pi-ronde', 'pi-famille', 'pi-talon', 'pi-chevrons', 'pi-chrono', 'pi-trail-montagne'] as const;
+export const ANIMATIONS_PIED = ['pi-pression', 'pi-isothermes', 'pi-isothermes-froid', 'pi-couches', 'pi-ronde', 'pi-famille', 'pi-talon', 'pi-chevrons', 'pi-chrono', 'pi-trail-montagne', 'pi-analyse-course'] as const;
 export type AnimationPied = (typeof ANIMATIONS_PIED)[number];
 export const estAnimationPied = (a: unknown): a is AnimationPied => (ANIMATIONS_PIED as readonly unknown[]).includes(a);
 /**
@@ -30,6 +31,8 @@ export const SUJETS_ANIMATIONS_PIED: Readonly<Record<AnimationPied, readonly str
   'pi-pression': ['semelles', 'sport', 'posture'], 'pi-isothermes': ['semelles', 'sport', 'posture', 'general'], 'pi-isothermes-froid': ['diabete', 'senior'],
   'pi-couches': ['semelles'], 'pi-ronde': ['enfant'], 'pi-famille': ['general', 'enfant'], 'pi-talon': ['semelles', 'sport', 'senior', 'pedicurie', 'general'],
   'pi-chevrons': ['sport'], 'pi-chrono': ['sport'], 'pi-trail-montagne': ['sport'],
+  // Analyse de la foulée (analyse-course.ts, 2026-10-10) : jambes en aplat, tracés et données classiques d'une analyse de course
+  'pi-analyse-course': ['sport'],
 };
 /** Animations vives (énergie forte) : jamais pour le diabète ni les seniors */
 export const ANIMATIONS_PIED_VIVES: readonly AnimationPied[] = ['pi-ronde', 'pi-chevrons', 'pi-chrono'];
@@ -132,6 +135,7 @@ export function corpsPied(a: AnimationPied): string {
     case 'pi-chevrons': return corpsChevrons();
     case 'pi-chrono': return corpsChrono();
     case 'pi-trail-montagne': return corpsMontagne();
+    case 'pi-analyse-course': return svgAnalyseCourseScene();
   }
 }
 
@@ -160,6 +164,10 @@ ${KF('tr', '0%{stroke-dashoffset:1}100%{stroke-dashoffset:0}')}${KF('in', '0%{op
 
 /** Feuille propre : état fixe (la dernière image) puis lecture sous .ea-joue */
 const CSS_PI: Record<AnimationPied, string> = {
+  // Analyse de la foulée (analyse-course.ts) : SEULE animation du pied avec des chiffres (exception accordée par Paul le 2026-10-10 :
+  // données classiques d'une analyse de course, valeurs génériques illustratives)
+  'pi-analyse-course': cssAnalyseCourseScene(J), // classes ac-* propres à cette animation : sélecteur de lecture court
+
   // Zones talon → têtes métatarsiennes → hallux (ordre du déroulé) : anneaux d'égale pression qui montent du bord vers le pic,
   // s'élargissent un peu puis se posent ; aplats superposés : le pic est le plus dense
   'pi-pression': `.ea--pi-pression .ep__n{stroke-width:7;stroke:${degrade('var(--k)', 3)};fill:${degrade('var(--k)', 3)};fill-opacity:.24}.ea--pi-pression .ep__p,.ea--pi-isothermes .ep__p{filter:drop-shadow(0 0 10px color-mix(in srgb,var(--hp-vif) 60%,transparent))}.ea--clair .ep__p{filter:none!important}

@@ -21,7 +21,9 @@ test('héros : deux formats, trois registres, deux familles de gammes, sans vale
     assert.match(s, new RegExp(`viewBox="0 0 ${FORMATS_HEROS[f].largeur} ${FORMATS_HEROS[f].hauteur}"`));
     assert.ok(!/NaN|undefined|Infinity/.test(s), `${t} ${f} ${r}`);
     assert.ok(s.includes('aria-hidden="true"'));
-    assert.equal((s.match(/<text\b/g) ?? []).length, 0, `${t} ${f} ${r}`);
+    // Aucun texte, SAUF l'analyse de la foulée du sport en relevé (exception de Paul du 2026-10-10 : données d'une analyse de course)
+    if (t === 'sport' && r === 'releve') assert.ok(s.includes('dessin--analyse-course') && !s.includes('grille-labo'), `${f} : analyse de la foulée, plus le coureur à rotules`);
+    else assert.equal((s.match(/<text\b/g) ?? []).length, 0, `${t} ${f} ${r}`);
     assert.ok(gzipSync(s).length < 25 * 1024, `${t} ${f} ${r} : ${gzipSync(s).length} o gzip`);
   }
 });

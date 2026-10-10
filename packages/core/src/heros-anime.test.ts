@@ -47,7 +47,8 @@ test('image fixe : sans lecture ; animation d’illustration = mêmes tracés qu
     for (const m of css.matchAll(/([^{}]*)\{[^{}]*animation:(?:ea|al)-/g)) assert.match(m[1], /\.ea-joue/, a);
     assert.doesNotMatch(css, /infinite/, `${a} : lecture infinie`);
     assert.match(css, /prefers-reduced-motion:reduce/, a);
-    assert.doesNotMatch(htmlVisuelAnime(a), /<text|<img|<script/, a);
+    // Seul texte permis : l'analyse de la foulée (données d'une analyse de course, exception de Paul du 2026-10-10)
+    assert.doesNotMatch(htmlVisuelAnime(a), a === 'pi-analyse-course' ? /<img|<script/ : /<text|<img|<script/, a);
   }
   // Semelle : les courbes de relief de l'animation sont exactement celles de l'illustration du héros « semelles » (relevé)
   const traces = (h: string) => new Set([...h.matchAll(/ d="([^"]+)"/g)].map((m) => m[1]));

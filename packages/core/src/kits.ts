@@ -12,6 +12,7 @@ import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, cleStyleExperimental, hashtagsStyl
 import { HASHTAGS_UNIVERS } from './dessins-univers';
 import { HASHTAGS_UNIVERS_DIABETE } from './univers-diabete';
 import { HASHTAGS_IMAGES_FIXES } from './images-fixes-pied';
+import { HASHTAGS_ANALYSE_COURSE } from './analyse-course';
 
 export type StatutKit = 'brouillon' | 'valide' | 'retire';
 
@@ -84,4 +85,6 @@ export const HASHTAGS_PAR_DEFAUT: Readonly<Record<string, readonly string[]>> = 
   // Images fixes des animations du pied (2026-10-10, images-fixes-pied.ts) : #trail #randonnee (kit « Sport · trail / randonnée »),
   // #douleur-talon (fiche du soin), #sport
   ...Object.entries(HASHTAGS_IMAGES_FIXES),
+  // Analyse de la foulée (2026-10-10, analyse-course.ts) : #sport #course #running #marathon (kit « Sport · course »)
+  ...Object.entries(HASHTAGS_ANALYSE_COURSE),
 ]);

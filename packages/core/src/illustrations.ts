@@ -21,6 +21,7 @@ import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
 import { clesSport, sujetsDesKits } from './kits';
 import { DESSINS_UNIVERS, FICHES_DESSINS_UNIVERS, svgDessinUnivers, sujetsUnivers } from './dessins-univers';
 import { IMAGES_FIXES_PIED, FICHES_IMAGES_FIXES, svgImageFixe } from './images-fixes-pied';
+import { REGISTRES_ANALYSE_COURSE, FICHE_ANALYSE_COURSE, svgAnalyseCourse } from './analyse-course';
 import { DESSINS_DIABETE, HEROS_DIABETE, FICHES_UNIVERS_DIABETE, REGISTRES_DIABETE, svgDessinDiabete, herosDiabete } from './univers-diabete';
 import { DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, LIBELLES_ECHANTILLON, cleDirection, cleStyleIcones, svgTuileDirection, svgPlancheDirection } from './pictos-directions';
 import { ICONES_ILLUSTREES_IDS, FICHES_ICONES_ILLUSTREES, FICHE_DIRECTION_D, SOURCE_ICONES_ILLUSTREES, CLE_STYLE_ICONES_D, cleIconeIllustree, svgTuileIllustree, svgPlancheIllustree } from './icones-illustrees';
@@ -168,6 +169,15 @@ export function inventaireIllustrations(): Illustration[] {
         svg: () => svgImageFixe(nom, { registre, id: `rv-if-${nom}-${registre}` }),
       });
     }
+  }
+  // Analyse de la foulée (2026-10-10, brouillon « À revoir », analyse-course.ts) : remplace le coureur à rotules dans le héros sport ;
+  // seule illustration chiffrée (exception de Paul : données classiques, valeurs génériques) ; vue agrandie = portrait (téléphone)
+  for (const registre of REGISTRES_ANALYSE_COURSE) {
+    l.push({
+      cle: `dessin:analyse-course:${registre}`, type: 'dessin', registre, titre: FICHE_ANALYSE_COURSE.libelle, detail: `${LIBELLES_REGISTRES[registre]} · ${FICHE_ANALYSE_COURSE.regard}`,
+      source: 'packages/core/src/analyse-course.ts — svgAnalyseCourse()', soins: [...FICHE_ANALYSE_COURSE.sujets], statutParDefaut: 'a_revoir', fond: registre === 'releve' ? 'grille' : 'doux',
+      svg: () => svgAnalyseCourse('paysage'), svgVariante: () => svgAnalyseCourse('portrait'),
+    });
   }
   // Registres expérimentaux (2026-10-07, brouillons à noter) : 5 sujets × 4 styles, clé dessin:<sujet>:<style>, hashtag #style-<style>
   // (HASHTAGS_PAR_DEFAUT, kits.ts) ; vue agrandie = format portrait (premier écran téléphone)

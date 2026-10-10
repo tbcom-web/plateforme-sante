@@ -28,12 +28,15 @@ test('animations du pied : < 5 Ko, transform / opacity / stroke-dashoffset seule
     assert.ok((ANIMATIONS_ENTETE as readonly string[]).includes(a), a);
     assert.ok(ANIMATIONS_HEROS.includes(a), a);
     const html = htmlPied(a), css = cssPied(a);
-    assert.ok(Buffer.byteLength(html + css) < 5120, `${a} : ${Buffer.byteLength(html + css)} octets`);
+    // Analyse de la foulée : jambes, tracés et données (HTML lisible) ; < 7 Ko feuille commune comprise
+    const analyse = a === 'pi-analyse-course';
+    assert.ok(Buffer.byteLength(html + css) < (analyse ? 7168 : 5120), `${a} : ${Buffer.byteLength(html + css)} octets`);
     for (const k of css.match(/@keyframes [\w-]+\{.*?\}\}/g) ?? []) for (const p of k.replace(/@keyframes [\w-]+\{/, '').matchAll(/([a-z-]+):/g)) assert.ok(['transform', 'opacity', 'stroke-dashoffset'].includes(p[1]), `${a} anime ${p[1]}`);
     for (const m of css.matchAll(/([^{}]*)\{[^{}]*animation:ea-/g)) assert.match(m[1], /\.ea-joue/, a);
     assert.match(css, /prefers-reduced-motion:reduce/);
-    assert.doesNotMatch(html, /<text|<img|<script|onclick/);
-    assert.equal(html.replace(/<[^>]*>/g, ''), '', `${a} : texte visible`);
+    assert.doesNotMatch(html, analyse ? /<img|<script|onclick/ : /<text|<img|<script|onclick/);
+    // Aucun texte ni chiffre, SAUF l'analyse de la foulée (exception de Paul du 2026-10-10 : données classiques d'une analyse de course)
+    if (!analyse) assert.equal(html.replace(/<[^>]*>/g, ''), '', `${a} : texte visible`);
     assert.match(html, /aria-hidden="true"/);
     // Un élément animé ne porte jamais d'attribut transform (sinon transform-origin le déplace) : il est dans un groupe posé
     for (const m of html.matchAll(/<(?:use|path|circle|g)[^>]*class="(ep__(?:n|l|pp|h|v|vl|sm|mn)\b)[^"]*"[^>]*>/g)) assert.doesNotMatch(m[0], / transform=/, `${a} : ${m[1]}`);
@@ -47,7 +50,7 @@ test('animations du pied : < 5 Ko, transform / opacity / stroke-dashoffset seule
     assert.equal(cssAnimationEntete(a), css);
     assert.match(htmlVisuelAnime(a, { ton: 'clair', nu: true }), /class="ea ea--clair ea--nu ea--pi/);
     assert.ok(cssVisuelAnime(a).startsWith(css));
-    assert.equal(familleNouveaute(`composant:entete-anim:${a}`).id, 'animations-pied');
+    assert.equal(familleNouveaute(`composant:entete-anim:${a}`).id, analyse ? 'analyse-course' : 'animations-pied');
     assert.equal(familleDeCle(`composant:entete-anim:${a}`), 'animation');
     assert.equal(visuelValide(`composant:entete-anim:${a}`, { visuels: [] }), false);
   }

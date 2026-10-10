@@ -19,6 +19,7 @@ import { luminance } from './couleurs';
 import { GEO_PIED as P } from './entete-pied-geo';
 import { GEO_EMPREINTES as E } from './entete-empreintes-geo';
 import { HOTES_TRACE_PHOTO, estTracePhoto, type TracePhoto } from './heros-photo-variantes';
+import { htmlAnalysePhoto, cssAnalysePhoto } from './analyse-course';
 
 type Trace = Exclude<TracePhoto, 'aucun'>;
 const r1 = (v: number) => Math.round(v * 10) / 10;
@@ -38,11 +39,13 @@ export const ACTIVITES_TRACES: Readonly<Record<Trace, readonly string[] | null>>
   empreintes: null,
   chevrons: ['course', 'trail', 'football', 'rugby', 'basket', 'tennis', 'handball', 'cyclisme', 'ski'],
   chrono: ['course', 'trail', 'cyclisme', 'natation', 'ski'],
+  // Analyse de course (analyse-course.ts) : course sur route et trail seulement
+  analyse: ['course', 'trail'], 'analyse-anime': ['course', 'trail'],
 };
 /** Tracés vifs (énergie forte) : jamais pour le diabète ni les seniors */
-export const TRACES_VIFS: readonly Trace[] = ['chevrons', 'chrono', 'lacets-anime'];
+export const TRACES_VIFS: readonly Trace[] = ['chevrons', 'chrono', 'lacets-anime', 'analyse-anime'];
 /** Tracés qui se dessinent au chargement (une seule fois, image fixe finale) */
-export const TRACES_ANIMES: readonly Trace[] = ['lacets-anime', 'topographie-anime'];
+export const TRACES_ANIMES: readonly Trace[] = ['lacets-anime', 'topographie-anime', 'analyse-anime'];
 /** Sujets calmes (il faut rassurer) */
 const CALMES = ['diabete', 'senior'];
 
@@ -111,6 +114,9 @@ const CORPS: Record<Trace, () => string> = {
   // Chevrons de vitesse : une rangée qui file vers l'avant, du plus pâle au plus franc
   chevrons: () => coin('0 0 190 70', `<defs><path id="tp-v" d="M-13-28 13 0-13 28"/></defs>${Array.from({ length: 5 }, (_, i) => `<use href="#tp-v" x="${22 + i * 36}" y="35" style="--i:${i}"/>`).join('')}`),
   // Cadran de chrono au trait (graduations sans chiffre, aiguille posée) et traits de vitesse
+  // Analyse de course : viseur aux quatre coins et plaque des données (seul tracé chiffré, analyse-course.ts)
+  analyse: () => htmlAnalysePhoto(false),
+  'analyse-anime': () => htmlAnalysePhoto(true),
   chrono: () => coin('0 28 240 186', `<path class="tp-vl" d="M24 104h46M10 128h60M32 152h38"/><path d="M148 34h20a5 5 0 0 1 0 10h-20a5 5 0 0 1 0-10zM152 44h12v10h-12z"/><circle cx="158" cy="130" r="76"/><circle cx="158" cy="130" r="60" pathLength="60" class="tp-g"/><path d="M158 130 192 88"/><circle cx="158" cy="130" r="4" class="tp-ax"/>`),
 };
 
@@ -151,6 +157,8 @@ const CSS: Record<Trace, string> = {
   empreintes: `.hp__tp--empreintes svg{inset:6% 4% 6% auto;width:auto;height:88%;aspect-ratio:4/5;stroke-width:1.5px}@media (max-width:899px){.hp__tp--empreintes svg{inset:5% 3% auto auto;height:70%}}`,
   chevrons: `.hp__tp--chevrons{--tp-l:clamp(130px,32%,250px)}.hp__tp--chevrons use{stroke-width:4px;opacity:calc(.35 + var(--i) * .16)}`,
   chrono: `.hp__tp--chrono{--tp-l:clamp(120px,26%,210px)}.tp-g{stroke-dasharray:.08 .92;stroke-width:3px}.tp-vl{opacity:.75}.tp-ax{fill:currentColor}`,
+  analyse: cssAnalysePhoto('analyse', false),
+  'analyse-anime': cssAnalysePhoto('analyse-anime', true),
 };
 
 /** Feuille du tracé (commune + propre ; vide sans tracé) */

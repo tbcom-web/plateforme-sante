@@ -32,7 +32,9 @@ export type TonVisuelAnime = 'sombre' | 'clair';
 const PAR_SUJET: Record<string, AnimationEntete[]> = {
   // Animations du pied (2026-10-09, à valider) en fin de liste : jamais par défaut avant les validées
   semelles: ['il-semelle', 'em-respire', 'pi-couches', 'pi-pression'],
-  sport: ['em-marche', 'em-deroule', 'pi-pression', 'pi-trail-montagne'],
+  // Sport : l'analyse de la foulée d'abord (retour de Paul du 2026-10-10 : le coureur à rotules « fait robot ») ; à valider, donc jamais
+  // chez un praticien avant validation (animationDuHeros)
+  sport: ['pi-analyse-course', 'em-marche', 'em-deroule', 'pi-pression', 'pi-trail-montagne'],
   diabete: ['em-sensibilite', 'em-trace', 'pi-isothermes-froid'],
   enfant: ['il-premiers-pas', 'em-petits-pas', 'pi-ronde', 'pi-famille'],
   senior: ['em-marche', 'em-trace', 'pi-isothermes-froid'],

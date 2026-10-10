@@ -9,7 +9,8 @@
 //
 // Garde-fous (pieges-illustration.md) : AUCUN texte visible dans un héros (consigne de Paul du 2026-10-06 : ni légende, ni lecture,
 // ni mention « schéma illustratif » ; les <text>, étiquettes et renvois des pièces sont retirés ; le sujet reste dans le <title>,
-// lu par les outils et les agents, pas affiché), diabète sans rouge « pic » ni pied nu qui marche (examen au monofilament,
+// lu par les outils et les agents, pas affiché) — SAUF l'analyse de la foulée du sport en relevé (exception de Paul du 2026-10-10 :
+// données classiques d'une analyse de course, valeurs génériques illustratives, analyse-course.ts), diabète sans rouge « pic » ni pied nu qui marche (examen au monofilament,
 // inspection des pieds), enfant sans courbes de données (premiers pas), pédicurie sans main ni visage.
 //
 // Exceptions (retours de Paul du 2026-10-06, heros-scenes.ts) : ENFANT, SENIOR et DIABÈTE ne sont plus des assemblages de deux pièces
@@ -25,6 +26,7 @@
 // gamme) fixe les couleurs du dessin en variables sur la racine ; sans gamme, le héros suit les variables de la page.
 import { svgDessin, svgAnimationFixe, svgEquipement, svgLigne, sansTextes, type Registre } from './dessins';
 import { sceneHeros, type SceneHeros } from './heros-scenes';
+import { corpsHerosAnalyse } from './analyse-course';
 import { themeParId } from './themes';
 import { gamme as gammeParId, variantesGamme, assombrirJusqua, type Gamme } from './gammes';
 import { NEUTRES, PLAN } from './charte';
@@ -54,7 +56,9 @@ type Piece =
   | { type: 'dessin'; nom: NomDessin }
   | { type: 'animation'; nom: Animation }
   | { type: 'ligne'; nom: NomLigne }
-  | { type: 'materiel'; id: string };
+  | { type: 'materiel'; id: string }
+  /** Analyse de la foulée (analyse-course.ts) : jambes en aplat, tracés et données classiques — seul héros chiffré */
+  | { type: 'analyse'; nom: 'analyse-course' };
 
 /**
  * UN SEUL sujet par thème et par registre (retours de Paul du 2026-10-07, règle générale : « une seule grande illustration par
@@ -64,7 +68,9 @@ type Piece =
  * semelle (animation des courbes de relief, paire de semelles, semelle au trait) ; pédicurie : les pieds soignés, SANS instrument.
  */
 const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, Piece>> = {
-  sport: { releve: { type: 'animation', nom: 'coureur' }, pedagogique: { type: 'scene', nom: 'sport' }, ligne: { type: 'scene', nom: 'sport' } },
+  // Sport en relevé (retour de Paul du 2026-10-10 : « le coureur, on dirait plus un robot ») : l'analyse de la foulée remplace le
+  // squelette à rotules (animation:coureur, toujours dans l'inventaire et les duels) ; à valider
+  sport: { releve: { type: 'analyse', nom: 'analyse-course' }, pedagogique: { type: 'scene', nom: 'sport' }, ligne: { type: 'scene', nom: 'sport' } },
   diabete: { releve: { type: 'scene', nom: 'diabete' }, pedagogique: { type: 'scene', nom: 'diabete' }, ligne: { type: 'scene', nom: 'diabete' } },
   ongles: { releve: { type: 'scene', nom: 'ongles' }, pedagogique: { type: 'scene', nom: 'ongles' }, ligne: { type: 'ligne', nom: 'ongle' } },
   enfant: { releve: { type: 'scene', nom: 'enfant' }, pedagogique: { type: 'scene', nom: 'enfant' }, ligne: { type: 'scene', nom: 'enfant' } },
@@ -76,13 +82,13 @@ const COMPOSITIONS: Record<ThemeIllustre, Record<Registre, Piece>> = {
 /** Source d'une composition (inventaire, revue) : « scene:sport », « animation:coureur », « ligne:ongle », « materiel:podoscope » */
 export function sourcesTheme(id: ThemeIllustre, registre: Registre): string[] {
   const p = COMPOSITIONS[id][registre];
-  return [p.type === 'materiel' ? `materiel:${p.id}` : `${p.type}:${p.nom}`];
+  return [p.type === 'materiel' ? `materiel:${p.id}` : p.type === 'analyse' ? `dessin:${p.nom}` : `${p.type}:${p.nom}`];
 }
 
 const r1 = (v: number) => +v.toFixed(1);
 
 /** SVG d'un dessin existant dans le registre du héros, sans aucune lecture (textes, étiquettes et leurs renvois, légende graduée) */
-function svgPiece(p: Exclude<Piece, { type: 'scene' }>, registre: Registre, id: string): string {
+function svgPiece(p: Exclude<Piece, { type: 'scene' } | { type: 'analyse' }>, registre: Registre, id: string): string {
   const ligne = { couleur: 'trait' as const, epaisseur: registre === 'ligne' ? ('fine' as const) : ('moyenne' as const) };
   switch (p.type) {
     case 'dessin': return sansTextes(svgDessin(p.nom, { registre, id, ligne }));
@@ -287,7 +293,8 @@ export function illustrationTheme(
   const piece = COMPOSITIONS[themeId][registre];
   // Sujet dans le <title> (jamais affiché) : thème et pièces, pour l'accessibilité des outils et les agents
   const titre = `<title>${titreTheme(themeId)} — ${sourcesTheme(themeId, registre).join(', ')}</title>`;
-  const corps = piece.type === 'scene' ? sceneHeros(piece.nom, { format, registre }) : poser(svgPiece(piece, registre, `${id}-a`), ...CADRES[format]);
+  // Analyse de la foulée : dessinée directement au format du héros (données lisibles sur téléphone : trois en portrait)
+  const corps = piece.type === 'scene' ? sceneHeros(piece.nom, { format, registre }) : piece.type === 'analyse' ? corpsHerosAnalyse(format) : poser(svgPiece(piece, registre, `${id}-a`), ...CADRES[format]);
   // Fond : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne) ; aucun non plus sansFond
   return assembler({ g, registre, L, H, id, sansFond: o.sansFond ?? null, titre, corps, classes: [`heros-theme--${themeId}`, `heros-theme--${format}`, o.classe] });
 }

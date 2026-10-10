@@ -92,7 +92,10 @@ test('sans fond : sans effet hors du registre relevé ; sans option, héros enca
     assert.equal(illustrationTheme('sport', { registre: r, gamme: 'canard', sansFond: 'clair' }), illustrationTheme('sport', { registre: r, gamme: 'canard' }));
   }
   const cadre = illustrationTheme('sport', { registre: 'releve', gamme: 'canard' });
-  assert.ok(cadre.includes('fill="var(--plan') && cadre.includes('grille-labo') && !cadre.includes('sans-fond'));
+  assert.ok(cadre.includes('fill="var(--plan') && !cadre.includes('sans-fond'));
+  // Ancien coureur (grille du laboratoire) : retiré des tirages du héros sport (2026-10-10), le détourage la retire toujours
+  const senior = illustrationTheme('senior', { registre: 'releve', gamme: 'canard' });
+  assert.ok(senior.includes('fill="var(--plan') && !senior.includes('sans-fond'));
 });
 
 test('adaptation à la page claire : blanc → encre (transparence gardée), teinte gardée, var() intouché', () => {

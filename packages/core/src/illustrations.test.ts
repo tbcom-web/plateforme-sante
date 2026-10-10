@@ -17,7 +17,7 @@ test('clés uniques et rendus non vides', () => {
   for (const i of l) assert.match(i.svg(), /^<svg/, i.cle);
   assert.equal(l.filter((i) => i.type === 'picto').length, PICTOS.length + 3 * 12 + 3 + 10 + 1); // + directions de style à l'essai (pictos-directions.ts) + direction D (icones-illustrees.ts)
   assert.ok(l.some((i) => i.cle === 'dessin:orthonyxie:releve') && l.some((i) => i.cle === 'picto:orthonyxie'));
-  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne' && !i.style).length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length + DESSINS_UNIVERS.length + DESSINS_DIABETE.length * 2 + CLES_IMAGES_FIXES.length);
+  assert.equal(l.filter((i) => i.type === 'dessin' && i.registre !== 'ligne' && !i.style).length, DESSINS_PODOLOGIE.length * 2 + SPORTS.length + DESSINS_UNIVERS.length + DESSINS_DIABETE.length * 2 + CLES_IMAGES_FIXES.length + 2); // + analyse de la foulée (relevé, pédagogique)
 });
 
 test('registres expérimentaux : 5 sujets × 4 styles, clés stables, sans texte ni couleur littérale', () => {
