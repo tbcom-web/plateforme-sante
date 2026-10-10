@@ -34,8 +34,11 @@ function Situation({ s }: { s: LigneProspection }) {
         </p>
       )}
       {autresProfessions(s.autres_professions) && <p className="text-xs text-neutral-600">À la même adresse : {autresProfessions(s.autres_professions)}</p>}
+      {s.ancien_cabinet?.ferme && (
+        <p className="text-xs text-fuchsia-900">Ancien cabinet : {casseNom([s.ancien_cabinet.adresse, s.ancien_cabinet.commune].filter(Boolean).join(', ') || '—')} · {jour(s.ancien_cabinet.ouvert)} → {jour(s.ancien_cabinet.ferme)} (INSEE)</p>
+      )}
       <p className="text-xs text-neutral-500">
-        {[s.siret && `SIRET ${s.siret}`, s.siret_cree_le && `créé le ${jour(s.siret_cree_le)}${s.siret_source === 'nom' ? ' (trouvé par nom)' : ''}`, s.situation_maj_le && `modifiée au RPPS le ${jour(s.situation_maj_le)}`].filter(Boolean).join(' · ')}
+        {[s.siret && `SIRET ${s.siret}`, s.siret_cree_le && `cabinet ouvert le ${jour(s.siret_cree_le)}${s.siret_source === 'nom' ? ' (trouvé par nom)' : ''}`, s.siren_cree_le && `libéral depuis le ${jour(s.siren_cree_le)} (SIREN)`, s.situation_maj_le && `modifiée au RPPS le ${jour(s.situation_maj_le)}`].filter(Boolean).join(' · ')}
       </p>
       <Scores prospect={s.score_prospect} installation={s.score_installation} raisons={s.raisons} />
     </li>

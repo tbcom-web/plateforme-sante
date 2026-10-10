@@ -10,7 +10,9 @@ export type LigneProspection = {
   cle: string; rpps: string; civilite: string | null; nom: string | null; prenom: string | null; profession: string | null; mode_exercice: string | null;
   raison_sociale: string | null; enseigne: string | null; adresse: string | null; code_postal: string | null; commune: string | null; departement: string | null;
   telephone: string | null; email: string | null; siret: string | null; apparu_le: string | null; disparu_le: string | null;
-  siret_cree_le: string | null; siret_source: string | null; siret_ferme: boolean | null; entreprise_nom: string | null;
+  siret_cree_le: string | null; siren_cree_le?: string | null; siret_source: string | null;
+  ancien_cabinet?: { adresse?: string | null; code_postal?: string | null; commune?: string | null; ouvert?: string | null; ferme?: string | null } | null;
+  etablissements_ouverts?: number | null; siret_ferme: boolean | null; entreprise_nom: string | null;
   statut: string | null; note: string | null; relance_le: string | null; situation_maj_le?: string | null;
   // 0057
   role?: string | null; secteur?: string | null; structure_cle?: string | null; adresse_cle?: string | null;
@@ -21,8 +23,10 @@ export type Synchro = { le: string; lignes: number | null; nouveaux: number | nu
 
 const BASE = 'cle,rpps,civilite,nom,prenom,profession,mode_exercice,raison_sociale,enseigne,adresse,code_postal,commune,departement,telephone,email,siret,'
   + 'apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,entreprise_nom,statut,note,relance_le';
+const COLONNES_57 = `${BASE},situation_maj_le,role,secteur,structure_cle,adresse_cle,autres_professions,diplomes,specialites,score_installation,score_prospect,raisons`;
 const NIVEAUX = [
-  { niveau: 57, colonnes: `${BASE},situation_maj_le,role,secteur,structure_cle,adresse_cle,autres_professions,diplomes,specialites,score_installation,score_prospect,raisons` },
+  { niveau: 59, colonnes: `${COLONNES_57},siren_cree_le,ancien_cabinet,etablissements_ouverts` },
+  { niveau: 57, colonnes: COLONNES_57 },
   { niveau: 56, colonnes: `${BASE},situation_maj_le` },
   { niveau: 55, colonnes: BASE },
 ] as const;
@@ -50,6 +54,7 @@ async function lireAvec(f: FiltresProspection, { tout = false } = {}, niveau: Ni
   if (niveau >= 57 && role) req = req.ilike('role', role.motif);
   // jsonb : passer le JSON en texte (un tableau serait mis en syntaxe de tableau Postgres « {…} » par supabase-js)
   if (niveau >= 57 && f.lienClient) req = req.contains('raisons', JSON.stringify([{ k: 'client' }]));
+  if (niveau >= 57 && f.demenagement) req = req.contains('raisons', JSON.stringify([{ k: 'demenagement' }]));
   // Conditions « l'une ou l'autre », réunies en un seul filtre or=(and(or(…),or(…)))
   const ou: string[] = [];
   const mois = PERIODES_INSTALLATION.find((p) => p.id === f.periode)?.mois ?? null;
@@ -102,7 +107,12 @@ export type FichePraticien = { situations: LigneProspection[]; liens: Lien[] };
 export async function lireFiche(rpps: string): Promise<FichePraticien | null> {
   if (!/^\d{11}$/.test(rpps)) return null;
   const supabase = await createClient();
-  const { data, error } = await supabase.from('prospection_liste').select(NIVEAUX[0].colonnes).eq('rpps', rpps).order('disparu_le', { ascending: false, nullsFirst: true });
+  let colonnes: string = NIVEAUX[0].colonnes;
+  let { data, error } = await supabase.from('prospection_liste').select(colonnes).eq('rpps', rpps).order('disparu_le', { ascending: false, nullsFirst: true });
+  if (error) {
+    colonnes = NIVEAUX[1].colonnes; // migration 0059 pas encore passée
+    ({ data, error } = await supabase.from('prospection_liste').select(colonnes).eq('rpps', rpps).order('disparu_le', { ascending: false, nullsFirst: true }));
+  }
   if (error || !data?.length) return null;
   const situations = data as unknown as LigneProspection[];
   const structures = [...new Set(situations.map((s) => s.structure_cle).filter((x): x is string => Boolean(x)))];
@@ -110,7 +120,7 @@ export async function lireFiche(rpps: string): Promise<FichePraticien | null> {
   if (!structures.length && !adresses.length) return { situations, liens: [] };
   const liste = (cles: string[]) => cles.map((c) => `"${c.replace(/"/g, '')}"`).join(',');
   const conditions = [structures.length ? `structure_cle.in.(${liste(structures)})` : '', adresses.length ? `adresse_cle.in.(${liste(adresses)})` : ''].filter(Boolean).join(',');
-  const { data: autres } = await supabase.from('prospection_liste').select(NIVEAUX[0].colonnes).neq('rpps', rpps).or(conditions).limit(200);
+  const { data: autres } = await supabase.from('prospection_liste').select(colonnes).neq('rpps', rpps).or(conditions).limit(200);
   const liens: Lien[] = ((autres ?? []) as unknown as LigneProspection[]).map((l) => {
     const s = situations.find((x) => (x.structure_cle && x.structure_cle === l.structure_cle) || (x.adresse_cle && x.adresse_cle === l.adresse_cle))!;
     return { ligne: l, via: s.structure_cle && s.structure_cle === l.structure_cle ? 'structure' : 'adresse', depuis: s.cle };
@@ -162,7 +172,7 @@ export async function lireCabinet(structure: string): Promise<{ cabinet: Cabinet
   const supabase = await createClient();
   const [cab, membres, ev] = await Promise.all([
     supabase.from('prospection_cabinets').select('*').eq('structure_cle', structure).maybeSingle(),
-    supabase.from('prospection_liste').select(NIVEAUX[0].colonnes).eq('structure_cle', structure).order('disparu_le', { ascending: false, nullsFirst: true }).order('score_prospect', { ascending: false, nullsFirst: false }),
+    supabase.from('prospection_liste').select(NIVEAUX[1].colonnes).eq('structure_cle', structure).order('disparu_le', { ascending: false, nullsFirst: true }).order('score_prospect', { ascending: false, nullsFirst: false }),
     supabase.from('prospection_evenements').select('*').eq('structure_cle', structure).order('le', { ascending: false }).limit(100),
   ]);
   if (membres.error || !membres.data?.length) return null;

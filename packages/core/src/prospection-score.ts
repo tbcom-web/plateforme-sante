@@ -9,6 +9,9 @@
 // 3. CABINET : le site se vend au cabinet et le TITULAIRE décide. Le titulaire (ou l'associé) hérite de la vie de sa structure :
 //    arrivée d'un collaborateur (le cabinet grandit), départ d'un confrère (à remplacer), reprise (collaborateur devenu
 //    titulaire, événement « role » de prospection-evenements.ts). Un collaborateur ne décide pas seul : moins de points.
+// 3 bis. DÉMÉNAGEMENTS (« la clé ») : ancien cabinet fermé à l'INSEE, SIREN ancien et SIRET récent, départ d'un autre lieu au
+//    RPPS, nouvel établissement ouvert alors que l'ancien l'est encore (en cours), collaborateur depuis plusieurs années (installation
+//    à son compte probable). Raisons marquées k = 'demenagement' (filtre « Déménagements » de la page).
 // 4. CLIENTS (statut « gagne » du suivi, 0055) : un client n'est plus un prospect ; ceux qui travaillent ou ont travaillé avec un
 //    client (même structure ou même adresse) sont des recommandations possibles ; et chaque prospect reçoit des points de
 //    RESSEMBLANCE avec les clients : rapport de vraisemblance (bayésien naïf, lissé) de ses traits chez les clients et chez
@@ -45,8 +48,14 @@ export type LigneScore = {
   apparu_le?: string | null;
   disparu_le?: string | null;
   siret_cree_le?: string | null;
+  /** Création de l'entreprise (SIREN) : début de l'activité libérale (0059) */
+  siren_cree_le?: string | null;
   siret_source?: string | null;
   siret_ferme?: boolean | null;
+  /** Dernier établissement fermé de la même entreprise (INSEE, 0059) */
+  ancien_cabinet?: { adresse?: string | null; code_postal?: string | null; commune?: string | null; ouvert?: string | null; ferme?: string | null } | null;
+  /** Établissements ouverts de l'entreprise (INSEE, 0059) */
+  etablissements_ouverts?: number | null;
   situation_maj_le?: string | null;
   role?: string | null;
   secteur?: string | null;
@@ -116,6 +125,12 @@ function traitsDe(situations: readonly LigneScore[], tailleStructure: (l: LigneS
       : sansAccent(v.nom).slice(0, 5) && sansAccent(`${v.enseigne ?? ''}${v.raison_sociale ?? ''}`).includes(sansAccent(v.nom).slice(0, 5)) ? 'cabinet à son nom' : 'cabinet sous un nom de marque',
     mail: !lib.some((s) => s.email) ? 'pas d’e-mail au RPPS' : lib.some((s) => FAI.test(s.email ?? '')) ? 'e-mail d’un ancien fournisseur d’accès'
       : lib.some((s) => MESSAGERIES.test(s.email ?? '')) ? 'e-mail Gmail, Outlook…' : 'e-mail à son nom de domaine',
+    liberalDepuis: (() => {
+      const d = lib.map((s) => s.siren_cree_le).filter((x): x is string => Boolean(x)).sort()[0];
+      if (!d) return 'début d’activité libérale inconnu';
+      const ans = (Date.parse(aujourdhui) - Date.parse(d)) / 31_557_600_000;
+      return ans < 3 ? 'libéral depuis moins de 3 ans' : ans < 10 ? 'libéral depuis 3 à 9 ans' : ans < 20 ? 'libéral depuis 10 à 19 ans' : 'libéral depuis 20 ans ou plus';
+    })(),
     cabinetInsee: (() => {
       const d = lib.map((s) => s.siret_cree_le).filter((x): x is string => Boolean(x)).sort().pop();
       if (!d) return 'cabinet introuvable à l’INSEE';
@@ -130,7 +145,7 @@ function traitsDe(situations: readonly LigneScore[], tailleStructure: (l: LigneS
 }
 const LIBELLE_TRAIT: Record<string, (v: string) => string> = {
   role: (v) => v, secteur: (v) => v, taille: (v) => v, mixte: (v) => v, lieux: (v) => v, anciennete: (v) => v,
-  nomCabinet: (v) => v, mail: (v) => v, cabinetInsee: (v) => v, concurrence: (v) => v,
+  nomCabinet: (v) => v, mail: (v) => v, cabinetInsee: (v) => v, concurrence: (v) => v, liberalDepuis: (v) => v,
   departement: (v) => `département ${v}`,
 };
 
@@ -197,6 +212,17 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
     // L'INSEE fait foi pour la date d'ouverture (déclaration à l'installation) ; le RPPS, mis à jour par l'Ordre, peut avoir du retard
     if (aSiret) ajouter('i', l.siret_source === 'nom' ? `Établissement à son nom ouvert le ${jourFr(l.siret_cree_le!)} (INSEE, trouvé par nom)` : `Cabinet ouvert le ${jourFr(l.siret_cree_le!)} (INSEE)`, (l.siret_source === 'nom' ? 35 : 45) * aSiret);
     if (aRpps) ajouter('i', `Nouvelle situation au RPPS le ${jourFr(l.apparu_le!)}`, 35 * aRpps);
+    // --- Déménagements
+    const ferme = l.ancien_cabinet?.ferme ?? null;
+    const aFerme = attenuation(ferme, aujourdhui);
+    const ancienLieu = [l.ancien_cabinet?.commune && casse(l.ancien_cabinet.commune), l.ancien_cabinet?.adresse && casse(l.ancien_cabinet.adresse)].filter(Boolean)[0];
+    if (aFerme) raisons.push({ t: 'i', l: `Déménagement : ancien cabinet${ancienLieu ? ` (${ancienLieu})` : ''} fermé le ${jourFr(ferme!)} (INSEE)`, p: Math.round(15 * aFerme), k: 'demenagement' });
+    // SIREN (entreprise) et SIRET (cabinet) : première installation, ou nouveau cabinet d'un libéral installé (déménagement probable)
+    const ecartAns = aSiret && l.siren_cree_le ? (Date.parse(l.siret_cree_le!) - Date.parse(l.siren_cree_le)) / 31_557_600_000 : null;
+    if (ecartAns !== null && ecartAns < 0.5) ajouter('i', `Première installation en libéral (entreprise créée le ${jourFr(l.siren_cree_le!)})`, 5);
+    else if (ecartAns !== null && ecartAns >= 2 && !aFerme) raisons.push({ t: 'i', l: `Nouveau cabinet d’un libéral installé depuis ${l.siren_cree_le!.slice(0, 4)} : déménagement probable`, p: Math.round(10 * aSiret), k: 'demenagement' });
+    // En cours : un établissement récent ouvert alors qu'un autre l'est encore
+    if ((l.etablissements_ouverts ?? 0) >= 2 && aSiret) raisons.push({ t: 'i', l: `${l.etablissements_ouverts} établissements ouverts dont un récent : nouveau cabinet en cours d’ouverture ou second lieu`, p: Math.round(8 * aSiret), k: 'demenagement' });
     if (aAns) ajouter('i', `Situation modifiée au RPPS le ${jourFr(l.situation_maj_le!)}`, 15 * aAns);
     const reprise = reprises.get(l.cle);
     const aReprise = attenuation(reprise, aujourdhui);
@@ -211,7 +237,7 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
     }
     const repere = l.apparu_le ?? l.siret_cree_le ?? null;
     const depart = repere && (parRpps.get(l.rpps) ?? []).find((a) => a.cle !== l.cle && a.disparu_le && ecartJours(a.disparu_le, repere) <= 120);
-    if (depart) ajouter('i', `A quitté un autre lieu${depart.commune ? ` (${depart.commune})` : ''} le ${jourFr(depart.disparu_le!)}`, 10);
+    if (depart) raisons.push({ t: 'i', l: `Déménagement : a quitté un autre lieu${depart.commune ? ` (${casse(depart.commune)})` : ''} le ${jourFr(depart.disparu_le!)} (RPPS)`, p: 10, k: 'demenagement' });
     if (seuilRecent && l.rpps >= seuilRecent) ajouter('i', 'Numéro RPPS parmi les plus récents (inscription récente)', 10);
     const date = Math.max(aRpps, aSiret, aAns, aReprise);
     if (date && /titulaire/i.test(l.role ?? '')) ajouter('i', 'Titulaire du cabinet', 5);
@@ -229,8 +255,14 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
       else if (/associ/i.test(l.role ?? '')) ajouter('p', 'Associé : décide avec ses associés', 10);
       else if (/collaborat/i.test(l.role ?? '')) {
         ajouter('p', 'Collaborateur', 3);
+        // Collaborateur depuis 2 à 6 ans dans le même cabinet (son entreprise individuelle à cette adresse) : installation à son compte probable
+        const depuis = l.siret_cree_le ?? l.apparu_le;
+        const ans = depuis ? (Date.parse(aujourdhui) - Date.parse(depuis)) / 31_557_600_000 : 0;
+        if (ans >= 2 && ans <= 6) raisons.push({ t: 'p', l: `Collaborateur depuis ${Math.floor(ans)} ans : installation à son compte probable`, p: 8, k: 'demenagement' });
         raisons.push({ t: 'p', l: 'Le site du cabinet se décide avec le titulaire : voir la fiche du cabinet', p: 0 });
       }
+      const dem = raisons.filter((r) => r.t === 'i' && r.k === 'demenagement' && r.p > 0).sort((a, b) => b.p - a.p)[0];
+      if (dem) raisons.push({ t: 'p', l: 'Déménagement : nouvelle adresse à faire connaître (site, fiche Google)', p: Math.max(6, Math.min(15, dem.p)), k: 'demenagement' });
       // Vie du cabinet, au bénéfice de ceux qui décident
       const confreres = decideur && l.structure_cle ? (parStructure.get(l.structure_cle) ?? []).filter((m) => m.rpps !== l.rpps) : [];
       const arrivee = confreres.filter((m) => m.apparu_le && attenuation(m.apparu_le, aujourdhui)).sort((a, b) => b.apparu_le!.localeCompare(a.apparu_le!))[0];

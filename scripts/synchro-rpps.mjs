@@ -338,8 +338,11 @@ async function entreprises(params) {
   return null;
 }
 
-const versResultat = (e, source, nomEntreprise) => ({
+// Date du SIREN (création de l'entreprise : début de l'activité libérale) écrite si la migration 0059 est passée
+let AVEC_SIREN = false;
+const versResultat = (e, source, nomEntreprise, dateEntreprise) => ({
   siret_cree_le: e.date_creation || null,
+  ...(AVEC_SIREN ? { siren_cree_le: dateEntreprise || null, ancien_cabinet: null, etablissements_ouverts: null } : {}),
   siret_source: source,
   siret_ferme: e.etat_administratif ? e.etat_administratif !== 'A' : null,
   entreprise_nom: nomEntreprise || null,
@@ -352,7 +355,50 @@ async function parSiret(siret) {
   const r = d?.results?.[0];
   if (!r) return null;
   const e = (r.matching_etablissements ?? []).find((x) => x.siret === siret) ?? (r.siege?.siret === siret ? r.siege : null);
-  return e ? versResultat(e, 'siret', r.nom_complet) : null;
+  return e ? versResultat(e, 'siret', r.nom_complet, r.date_creation) : null;
+}
+
+/** Établissement d'ancrage (SIRET du RPPS, sinon établissement actif au code postal du RPPS) et historique de son entreprise */
+function historiqueEntreprise(resultats, p) {
+  const nom = normal(p.nom), prenom = normal(String(p.prenom ?? '').split(/[\s-]/)[0]);
+  // Entreprises de la personne : nom et prénom (dirigeant ou nom de l'entreprise individuelle), ou SIRET du RPPS
+  const siennes = [];
+  for (const r of resultats ?? []) {
+    const n = normal(`${r.nom_complet} ${(r.dirigeants ?? []).map((x) => `${x.nom ?? ''} ${x.prenoms ?? ''}`).join(' ')}`);
+    const etabs = [...new Map([...(r.matching_etablissements ?? []), r.siege].filter(Boolean).map((e) => [e.siret, e])).values()];
+    const parSiret = p.siret ? etabs.find((e) => e.siret === p.siret) : null;
+    if (parSiret || (n.includes(nom) && (!prenom || n.includes(prenom)))) siennes.push({ r, etabs, parSiret });
+  }
+  // Ancrage : SIRET du RPPS, sinon l'établissement actif le plus récent au code postal du RPPS
+  let ancre = null;
+  for (const x of siennes) {
+    const ici = x.parSiret ?? x.etabs.filter((e) => e.code_postal === p.code_postal && e.etat_administratif === 'A').sort((a, b) => String(b.date_creation).localeCompare(String(a.date_creation)))[0];
+    if (ici && (!ancre || (x.parSiret && !ancre.parSiret) || String(ici.date_creation) > String(ancre.e.date_creation))) ancre = { e: ici, r: x.r, parSiret: Boolean(x.parSiret) };
+  }
+  if (!ancre) return null;
+  // Même personne : entreprises ayant un établissement dans le même département que l'ancrage (homonymes d'autres régions écartés)
+  const dep = (cp) => String(cp ?? '').slice(0, String(cp ?? '').startsWith('97') ? 3 : 2);
+  const memePersonne = siennes.filter((x) => x.r === ancre.r || x.etabs.some((e) => dep(e.code_postal) === dep(ancre.e.code_postal)));
+  const tous = memePersonne.flatMap((x) => x.etabs);
+  const debut = memePersonne.map((x) => x.r.date_creation).filter(Boolean).sort()[0] ?? ancre.r.date_creation;
+  const fermes = tous.filter((e) => e.etat_administratif !== 'A' && e.date_fermeture && e.siret !== ancre.e.siret).sort((a, b) => String(b.date_fermeture).localeCompare(String(a.date_fermeture)));
+  const ancien = fermes[0];
+  return {
+    ...versResultat(ancre.e, ancre.parSiret ? 'siret' : 'nom', ancre.r.nom_complet, debut),
+    ...(AVEC_SIREN ? {
+      ancien_cabinet: ancien ? { adresse: ancien.adresse ?? null, code_postal: ancien.code_postal ?? null, commune: ancien.libelle_commune ?? null, ouvert: ancien.date_creation ?? null, ferme: ancien.date_fermeture } : null,
+      etablissements_ouverts: new Set(tous.filter((e) => e.etat_administratif === 'A').map((e) => e.siret)).size || null,
+    } : {}),
+  };
+}
+
+/** Recherche par nom SANS filtre de ville : rend aussi les anciens cabinets fermés ailleurs (déménagements) */
+async function parNomLarge(p) {
+  if (!p.nom) return null;
+  const params = { q: `${p.prenom ?? ''} ${p.nom}`.trim(), per_page: '10' };
+  const naf = NAF_PAR_PROFESSION[p.profession_code];
+  if (naf) params.activite_principale = naf;
+  return historiqueEntreprise((await entreprises(params))?.results, p);
 }
 
 async function parNom(p) {
@@ -368,23 +414,26 @@ async function parNom(p) {
   for (const r of d?.results ?? []) {
     const n = normal(`${r.nom_complet} ${(r.dirigeants ?? []).map((x) => `${x.nom ?? ''} ${x.prenoms ?? ''}`).join(' ')}`);
     if (!n.includes(nom) || (prenom && !n.includes(prenom))) continue;
-    for (const e of [...(r.matching_etablissements ?? []), r.siege]) if (e && e.code_postal === p.code_postal) candidats.push({ e, nom: r.nom_complet });
+    for (const e of [...(r.matching_etablissements ?? []), r.siege]) if (e && e.code_postal === p.code_postal) candidats.push({ e, nom: r.nom_complet, date: r.date_creation });
   }
   const actif = (x) => (x.e.etat_administratif === 'A' ? 0 : 1);
   const c = candidats.sort((a, b) => actif(a) - actif(b) || String(b.e.date_creation).localeCompare(String(a.e.date_creation)))[0];
-  return c ? versResultat(c.e, 'nom', c.nom) : null;
+  return c ? versResultat(c.e, 'nom', c.nom, c.date) : null;
 }
 
 async function verifierInstallations() {
   // Supabase renvoie 1 000 lignes au plus par requête (réglage « Max rows ») : on relit la file par paquets. Une fiche traitée en
   // sort d'elle-même (verifie_le posé à maintenant), la boucle s'arrête donc quand la file est vide ou VERIF_MAX atteint.
   const ilYa30j = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const debutVerif = new Date().toISOString(); // une fiche re-vérifiée pendant ce passage ne revient pas dans la file
   const memo = new Map();
   let faites = 0, trouves = 0;
   while (faites < VERIF_MAX) {
+    // File : jamais vérifiées, non datées depuis 30 jours, et (0059) datées avant la reprise de la date du SIREN
+    const rattrapage = AVEC_SIREN ? ',and(siret_cree_le.not.is.null,siren_cree_le.is.null,verifie_le.lt.' + debutVerif + ')' : '';
     const paquet = await sb(
       `prospection_praticiens?select=cle,rpps,nom,prenom,siret,code_postal,profession_code&disparu_le=is.null`
-      + `&or=(verifie_le.is.null,and(siret_cree_le.is.null,verifie_le.lt.${ilYa30j}))&order=apparu_le.desc.nullslast,cle&limit=${Math.min(1000, VERIF_MAX - faites)}`,
+      + `&or=(verifie_le.is.null,and(siret_cree_le.is.null,verifie_le.lt.${ilYa30j})${rattrapage})&order=apparu_le.desc.nullslast,cle&limit=${Math.min(1000, VERIF_MAX - faites)}`,
     );
     if (!paquet.length) break;
     trouves += await verifierPaquet(paquet, memo, faites);
@@ -400,15 +449,17 @@ async function verifierPaquet(aVerifier, memo, dejaFaites) {
   for (const [i, p] of aVerifier.entries()) {
     let res = null;
     try {
-      if (p.siret) {
+      // D'abord par nom sans ville (historique et déménagements), puis par SIRET ou par nom au code postal (homonymes nombreux)
+      res = await parNomLarge(p);
+      if (!res && p.siret) {
         if (!memo.has(p.siret)) memo.set(p.siret, await parSiret(p.siret));
         res = memo.get(p.siret);
-      } else res = await parNom(p);
+      } else if (!res) res = await parNom(p);
     } catch (e) {
       console.log(`  vérification ${dejaFaites + i + 1} : ${e.message}`); // jamais de nom ni de RPPS dans les journaux (dépôt public)
     }
     if (res) trouves++;
-    lot.push({ cle: p.cle, rpps: p.rpps, ...(res ?? { siret_cree_le: null, siret_source: null, siret_ferme: null, entreprise_nom: null, latitude: null, longitude: null }), verifie_le: new Date().toISOString() });
+    lot.push({ cle: p.cle, rpps: p.rpps, ...(res ?? { siret_cree_le: null, ...(AVEC_SIREN ? { siren_cree_le: null, ancien_cabinet: null, etablissements_ouverts: null } : {}), siret_source: null, siret_ferme: null, entreprise_nom: null, latitude: null, longitude: null }), verifie_le: new Date().toISOString() });
     if (lot.length >= 200 || i === aVerifier.length - 1) {
       await ecrireParLots(lot, 200);
       lot = [];
@@ -505,7 +556,7 @@ async function synchroAns() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 async function calculerScores(v0058) {
-  const champs = 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,structure_cle,raison_sociale,enseigne,commune,code_commune,departement,nom,prenom,autres_professions,statut,telephone,email,specialites';
+  const champs = (AVEC_SIREN ? 'siren_cree_le,ancien_cabinet,etablissements_ouverts,' : '') + 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,structure_cle,raison_sociale,enseigne,commune,code_commune,departement,nom,prenom,autres_professions,statut,telephone,email,specialites';
   const toutes = await lireTout(`prospection_liste?select=${champs}`);
   const ilYa2ans = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 10);
   const evenements = v0058 ? await sb(`prospection_evenements?select=type,cle,le,details&type=eq.role&le=gte.${ilYa2ans}&limit=1000`) : [];
@@ -596,6 +647,8 @@ async function enregistrer(listeComplete, praticiens, fichier) {
   const v0057 = await avec0057();
   if (!v0057) console.log('Migration 0057 absente : rôles, liens, diplômes et scores non écrits');
   const v0058 = v0057 && (await sb('prospection_evenements?select=id&limit=1').then(() => true, () => false));
+  AVEC_SIREN = v0057 && (await sb('prospection_praticiens?select=siren_cree_le&limit=1').then(() => true, () => false));
+  if (v0057 && !AVEC_SIREN) console.log('Migration 0059 absente : date du SIREN non relevée');
   if (v0057 && !v0058) console.log('Migration 0058 absente : actualités des cabinets non calculées');
   const liste = v0057 ? listeComplete : listeComplete.map(sans0057);
   const existants = await lireTout(`prospection_praticiens?select=cle,apparu_le,disparu_le,profession_code${v0057 ? ',rpps,structure_cle,role,nom,prenom,commune,departement,enseigne,raison_sociale' : ''}`);

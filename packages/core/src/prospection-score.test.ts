@@ -30,7 +30,7 @@ test('installation : signaux concordants, adresse nouvelle, départ d’un autre
   const s = scorerProspection(lignes, J);
   const a = s.get('a|1')!;
   assert.equal(a.installation, 100); // 45 + 40 + 10 (adresse nouvelle) + 10 (départ) + 5 (titulaire), plafonné
-  assert.ok(a.raisons.some((r) => r.l.startsWith('A quitté un autre lieu (Vienne)')));
+  assert.ok(a.raisons.some((r) => r.l.startsWith('Déménagement : a quitté un autre lieu (Vienne)') && r.k === 'demenagement'));
   assert.ok(a.prospect >= 70);
   const b = s.get('b|1')!;
   assert.ok(b.raisons.some((r) => r.l.startsWith('Rejoint un cabinet existant (1 confrère')));
@@ -113,4 +113,28 @@ test('ressemblance : nom du cabinet, type d’e-mail, ancienneté INSEE et concu
   const r = scorerProspection(lignes, J).get('m|M')!.raisons.find((x) => x.k === 'ressemblance')!;
   assert.ok(r.l.includes('cabinet à son nom') || r.l.includes('cabinet créé il y a 3 à 9 ans') || r.l.includes('e-mail Gmail'), r.l);
   assert.ok(r.p >= 12, String(r.p));
+});
+
+test('SIREN et SIRET : première installation ou déménagement d’un libéral installé', () => {
+  const s = scorerProspection([
+    base({ cle: 'n|1', rpps: '10000000080', siret_cree_le: '2026-08-01', siren_cree_le: '2026-07-20', siret_source: 'siret' }),
+    base({ cle: 'd|1', rpps: '10000000081', siret_cree_le: '2026-08-01', siren_cree_le: '2005-07-18', siret_source: 'siret' }),
+  ], J);
+  assert.ok(s.get('n|1')!.raisons.some((r) => r.l.startsWith('Première installation en libéral (entreprise créée le 20/07/2026)') && r.p === 5));
+  assert.ok(s.get('d|1')!.raisons.some((r) => r.l.startsWith('Nouveau cabinet d’un libéral installé depuis 2005') && r.k === 'demenagement'));
+});
+
+test('déménagements : ancien cabinet fermé, établissements ouverts, collaborateur de longue date', () => {
+  const s = scorerProspection([
+    base({ cle: 'f|1', rpps: '10000000090', role: 'Titulaire de cabinet', siret_cree_le: '2026-06-01', siren_cree_le: '2012-03-01', siret_source: 'siret',
+      ancien_cabinet: { commune: 'VIENNE', adresse: '3 RUE DU PONT', ouvert: '2012-03-01', ferme: '2026-05-31' } }),
+    base({ cle: 'o|1', rpps: '10000000091', role: 'Titulaire de cabinet', siret_cree_le: '2026-09-01', siren_cree_le: '2026-09-01', siret_source: 'siret', etablissements_ouverts: 2 }),
+    base({ cle: 'c|1', rpps: '10000000092', role: 'Collaborateur', siret_cree_le: '2022-05-01', siret_source: 'nom' }),
+  ], J);
+  const f = s.get('f|1')!;
+  assert.ok(f.raisons.some((r) => r.l === 'Déménagement : ancien cabinet (Vienne) fermé le 31/05/2026 (INSEE)' && r.p === 13 && r.k === 'demenagement'));
+  assert.ok(f.raisons.some((r) => r.t === 'p' && r.k === 'demenagement' && r.p === 13));
+  assert.ok(!f.raisons.some((r) => r.l.startsWith('Nouveau cabinet d’un libéral'))); // fermeture constatée : pas de doublon « probable »
+  assert.ok(s.get('o|1')!.raisons.some((r) => r.l.startsWith('2 établissements ouverts dont un récent') && r.k === 'demenagement'));
+  assert.ok(s.get('c|1')!.raisons.some((r) => r.l === 'Collaborateur depuis 4 ans : installation à son compte probable' && r.p === 8));
 });

@@ -3,7 +3,7 @@ name: synchro-rpps
 # Prospection (docs/prospection-rpps.md) : chaque nuit, extraction publique du RPPS (ANS) → table prospection_praticiens, puis
 # dates d'installation (API Recherche d'entreprises). Aussi à la main : Actions → synchro-rpps → Run workflow.
 # Le dépôt est public, donc les journaux aussi : le script n'y écrit que des comptes, jamais de nom.
-# Le premier passage (environ 15 000 vérifications SIRET) dure environ une heure ; les suivants, quelques minutes.
+# Le premier passage, et celui qui suit la migration 0059 (historique INSEE de toutes les fiches), durent une à trois heures ; les suivants, quelques minutes.
 on:
   schedule:
     - cron: '43 5 * * *'
@@ -23,7 +23,7 @@ permissions:
 jobs:
   synchro:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 300
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
