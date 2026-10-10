@@ -482,15 +482,31 @@ export const CSS_HEROS = `
 }
 /* Voile dégradé de la couleur du cabinet sur la photo (opacité calculée : AA sur n'importe quel pixel) */
 .hp.hp--voile-degrade{color:var(--hp-plein-texte)}
-.hp.hp--voile-degrade .hp__texte::before{background:var(--hp-voile-plein);box-shadow:0 0 96px 56px var(--hp-voile-plein)}
-.hp.hp--voile-degrade .hp__voile{background:linear-gradient(0deg,var(--hp-voile-plein) 0%,transparent 70%)}
 .hp.hp--voile-degrade .hp__bouton--plein,.hp.hp--voile-degrade .hp__bouton--plein:hover{background:var(--hp-plein-texte);color:var(--hp-plein);box-shadow:none}
 .hp.hp--voile-degrade .hp__bouton:not(.hp__bouton--plein),.hp.hp--voile-degrade .hp__bouton:not(.hp__bouton--plein):hover{color:var(--hp-plein-texte);box-shadow:inset 0 0 0 2px var(--hp-plein-texte)}
 @media (min-width:900px){
   .hp.hp--voile-degrade .hp__cadre{padding-block:clamp(96px,19svh,210px) 112px}
-  .hp.hp--voile-degrade .hp__texte{max-width:min(40rem,44%)}
-  .hp.hp--voile-degrade .hp__texte::before{display:none}
-  .hp.hp--voile-degrade .hp__voile{background:linear-gradient(90deg,var(--hp-voile-plein) 0%,var(--hp-voile-plein) 52%,transparent 88%)}
+  .hp.hp--voile-degrade .hp__texte{max-width:min(32rem,36%)}
+  .hp.hp--voile-degrade .hp__voile{background:linear-gradient(90deg,color-mix(in srgb,var(--hp-plein) 22%,transparent),transparent 72%)}
+}
+/* Voile ancré au texte (retour de Paul du 2026-10-10 : « on voit pas assez l'image ») : opacité calculée (AA sur n'importe quel
+   pixel) seulement sous la colonne du texte, fondu court au-delà ; ailleurs la photo reste nette.
+   Ordinateur : bande pleine du bord gauche jusqu'à 16 px après la colonne du texte, fondu sur 112 px ; voile-degrade : léger
+   lavis de la couleur du cabinet ensuite. Téléphone : photo nette en haut (≥ 45 % de l'écran), texte en bas sur la bande
+   (pleine 16 px au-dessus du texte, fondu de 56 px au-dessus) ; commandes du diaporama en haut, sur la photo. */
+@media (min-width:900px){
+  .hp:is(.hp--photo-gauche,.hp--diaporama) .hp__texte{max-width:min(38rem,46%)}
+  .hp:is(.hp--photo-gauche,.hp--diaporama,.hp--voile-degrade) .hp__texte::before{display:block;inset:-100vh -128px -100vh -100vw;border-radius:0;box-shadow:none;background:linear-gradient(90deg,var(--hp-voile-c) calc(100% - 112px),transparent)}
+  .hp.hp--voile-degrade .hp__texte::before{background:linear-gradient(90deg,var(--hp-voile-plein) calc(100% - 112px),transparent)}
+  .hp:is(.hp--photo-gauche,.hp--diaporama) .hp__voile{background:linear-gradient(180deg,color-mix(in srgb,var(--hp-sombre) 30%,transparent) 0%,transparent 26%)}
+}
+@media (max-width:899px){
+  .hp:is(.hp--photo-gauche,.hp--diaporama,.hp--photo-bas,.hp--voile-degrade) .hp__cadre{align-self:end;padding-block:max(50svh,260px) 32px}
+  .hp:is(.hp--photo-gauche,.hp--diaporama,.hp--photo-bas,.hp--voile-degrade) .hp__texte::before{inset:-72px -100vw -100vh;border-radius:0;box-shadow:none;background:linear-gradient(180deg,transparent 0,var(--hp-voile-c) 56px)}
+  .hp.hp--voile-degrade .hp__texte::before{background:linear-gradient(180deg,transparent 0,var(--hp-voile-plein) 56px)}
+  .hp:is(.hp--photo-gauche,.hp--diaporama,.hp--photo-bas) .hp__voile{background:linear-gradient(180deg,color-mix(in srgb,var(--hp-sombre) 30%,transparent) 0%,transparent 26%)}
+  .hp.hp--voile-degrade .hp__voile{background:none}
+  .hp:is(.hp--photo-gauche,.hp--diaporama,.hp--photo-bas,.hp--voile-degrade) .hp__commandes{top:16px;bottom:auto}
 }
 /* Vitesse : découpe oblique, bandes qui filent, lignes de vitesse */
 .hp__vitesse{position:absolute;left:0;top:calc(min(54svh,460px) + 10px);width:min(70%,520px);height:110px;fill:none;stroke:var(--hp-accent-texte);stroke-width:1.5;opacity:.28}

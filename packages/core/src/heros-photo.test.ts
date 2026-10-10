@@ -2,7 +2,7 @@
 // studio (variantes à photos seulement en style « Photos », transition seulement si les photos défilent), transitions de sections.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { METADONNEES_PREMIERS_ECRANS, alphaVoile, htmlHeros, keyframesHeros, styleCouleursHeros, cssTransitionsSections, PREMIERS_ECRANS_NOUVEAUX, TRANSITIONS_DIAPORAMA, TRANSITIONS_SECTIONS, type DonneesHeros } from './heros-photo';
+import { CSS_HEROS, METADONNEES_PREMIERS_ECRANS, alphaVoile, htmlHeros, keyframesHeros, styleCouleursHeros, cssTransitionsSections, PREMIERS_ECRANS_NOUVEAUX, TRANSITIONS_DIAPORAMA, TRANSITIONS_SECTIONS, type DonneesHeros } from './heros-photo';
 import { contraste, melanger } from './couleurs';
 import { NEUTRES } from './charte';
 import { GAMMES } from './gammes';
@@ -28,6 +28,17 @@ test('voile : texte AA sur un pixel blanc, pour toutes les gammes et tous les ga
     for (const px of [NEUTRES.blanc, '#000000']) assert.ok(contraste(v('plein-texte'), melanger(px, plein, ap)) >= 4.5, `${g.id} / ${id} / plein`);
   }
   assert.equal(alphaVoile('#000000', ['#ffffff']) < 0.6, true);
+});
+
+test('voile ancré au texte : opacité AA pleine sous toute la colonne du texte, photo nette ailleurs (retour du 2026-10-10)', () => {
+  // Ordinateur : bande pleine jusqu'à 16 px après la colonne (inset droit -128 px, fondu sur les 112 derniers px)
+  assert.match(CSS_HEROS, /\.hp__texte::before\{display:block;inset:-100vh -128px -100vh -100vw;[^}]*var\(--hp-voile-c\) calc\(100% - 112px\),transparent\)/);
+  assert.match(CSS_HEROS, /\.hp\.hp--voile-degrade \.hp__texte::before\{background:linear-gradient\(90deg,var\(--hp-voile-plein\) calc\(100% - 112px\),transparent\)\}/);
+  // Téléphone : bande pleine 16 px au-dessus du texte (inset haut -72 px, fondu sur 56 px) jusqu'en bas, photo nette au-dessus
+  assert.match(CSS_HEROS, /\.hp__texte::before\{inset:-72px -100vw -100vh;[^}]*transparent 0,var\(--hp-voile-c\) 56px\)\}/);
+  assert.match(CSS_HEROS, /\.hp\.hp--voile-degrade \.hp__texte::before\{background:linear-gradient\(180deg,transparent 0,var\(--hp-voile-plein\) 56px\)\}/);
+  // Plus d'aplat sur toute la largeur ni de halo flou débordant sur la photo pour le voile dégradé
+  assert.doesNotMatch(CSS_HEROS, /voile-plein\) 52%|0 0 96px 56px var\(--hp-voile-plein\)/);
 });
 
 test('balisage : la première photo est l’élément LCP, les suivantes attendent le script', () => {
