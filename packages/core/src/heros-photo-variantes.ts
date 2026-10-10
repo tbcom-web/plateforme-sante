@@ -142,6 +142,9 @@ export const ANIMATIONS_ENTETE = [
   'pi-pression', 'pi-isothermes', 'pi-isothermes-froid', 'pi-couches', 'pi-ronde', 'pi-famille', 'pi-talon', 'pi-chevrons', 'pi-chrono', 'pi-trail-montagne',
   // Analyse de la foulée (analyse-course.ts, retours de Paul du 2026-10-10) : jambes en aplat, tracés et données d'une analyse de course
   'pi-analyse-course',
+  // Univers minimal (univers-minimal.ts, demande de Paul du 2026-10-10) : basket, tennis, golf, cyclisme, diabète — deux visuels par
+  // univers, minimalisme stylé (aplats, traits fins, lignes de niveau, trajectoires), à valider
+  'un-basket-arc', 'un-basket-terrain', 'un-tennis-rebond', 'un-tennis-court', 'un-golf-green', 'un-golf-alveoles', 'un-cyclisme-roue', 'un-cyclisme-profil', 'un-diabete-sensibilite', 'un-diabete-miroir',
 ] as const;
 export type AnimationEntete = (typeof ANIMATIONS_ENTETE)[number];
 export const estAnimationEntete = (v: unknown): v is AnimationEntete => (ANIMATIONS_ENTETE as readonly unknown[]).includes(v);
@@ -181,6 +184,16 @@ export const LIBELLES_ANIMATIONS_ENTETE: Record<AnimationEntete, string> = {
   'pi-chrono': 'Chronomètre dont l’aiguille s’emballe puis s’arrête (à valider)',
   'pi-trail-montagne': 'Montagne : sentier en lacets et lignes de niveau (à valider)',
   'pi-analyse-course': 'Analyse de la foulée : tracés et données qui apparaissent (à valider)',
+  'un-basket-arc': 'Basket : arc de tir en pointillé vers le cercle (à valider)',
+  'un-basket-terrain': 'Basket : terrain en lignes de niveau (à valider)',
+  'un-tennis-rebond': 'Tennis : la balle et son rebond (à valider)',
+  'un-tennis-court': 'Tennis : court en perspective douce, balle dans le carré (à valider)',
+  'un-golf-green': 'Golf : green en lignes de niveau, drapeau, trajectoire (à valider)',
+  'un-golf-alveoles': 'Golf : balle alvéolée posée sur son tee (à valider)',
+  'un-cyclisme-roue': 'Cyclisme : roue et rayons qui font un tour (à valider)',
+  'un-cyclisme-profil': 'Cyclisme : profil d’étape en lignes de niveau (à valider)',
+  'un-diabete-sensibilite': 'Diabète : plante et points de sensibilité, bleus doux (à valider)',
+  'un-diabete-miroir': 'Diabète : inspection au miroir, bleus doux (à valider)',
 };
 /**
  * Emplacement : bande au-dessus du titre, emblème à côté du titre, fond du premier écran ; « scene » (empreintes) : en grand dans
@@ -193,6 +206,7 @@ export const PLACEMENT_ANIMATIONS_ENTETE: Record<Exclude<AnimationEntete, 'aucun
   'em-particules': 'scene', 'em-topographie': 'scene', 'em-defilement': 'scene', 'em-encre': 'scene',
   'il-semelle': 'scene', 'il-trajectoire': 'scene', 'il-premiers-pas': 'scene',
   'pi-pression': 'scene', 'pi-isothermes': 'scene', 'pi-isothermes-froid': 'scene', 'pi-couches': 'scene', 'pi-ronde': 'scene', 'pi-famille': 'scene', 'pi-talon': 'scene', 'pi-chevrons': 'scene', 'pi-chrono': 'scene', 'pi-trail-montagne': 'scene', 'pi-analyse-course': 'scene',
+  'un-basket-arc': 'scene', 'un-basket-terrain': 'scene', 'un-tennis-rebond': 'scene', 'un-tennis-court': 'scene', 'un-golf-green': 'scene', 'un-golf-alveoles': 'scene', 'un-cyclisme-roue': 'scene', 'un-cyclisme-profil': 'scene', 'un-diabete-sensibilite': 'scene', 'un-diabete-miroir': 'scene',
 };
 /** Premiers écrans qui posent une animation « scène » en grand (carte visuelle) ; ailleurs elle passe en emblème */
 export const HOTES_SCENE_ENTETE: readonly string[] = ['bento'];
@@ -233,6 +247,16 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
   'pi-chrono': { famille: 'vitesse', energie: 0.75, rondeur: 0.6, expressif: true },
   'pi-trail-montagne': { famille: 'organique', energie: 0.45, rondeur: 0.7, expressif: true },
   'pi-analyse-course': { famille: 'vitesse', energie: 0.6, rondeur: 0.4, expressif: true },
+  'un-basket-arc': { famille: 'vitesse', energie: 0.7, rondeur: 0.6, expressif: true },
+  'un-basket-terrain': { famille: 'sobre', energie: 0.5, rondeur: 0.7, expressif: true },
+  'un-tennis-rebond': { famille: 'vitesse', energie: 0.7, rondeur: 0.6, expressif: true },
+  'un-tennis-court': { famille: 'sobre', energie: 0.55, rondeur: 0.3, expressif: true },
+  'un-golf-green': { famille: 'organique', energie: 0.4, rondeur: 0.85, expressif: true },
+  'un-golf-alveoles': { famille: 'sobre', energie: 0.35, rondeur: 0.9, expressif: true },
+  'un-cyclisme-roue': { famille: 'vitesse', energie: 0.55, rondeur: 0.9, expressif: true },
+  'un-cyclisme-profil': { famille: 'organique', energie: 0.4, rondeur: 0.6, expressif: true },
+  'un-diabete-sensibilite': { famille: 'sobre', energie: 0.2, rondeur: 0.8, expressif: true },
+  'un-diabete-miroir': { famille: 'sobre', energie: 0.2, rondeur: 0.8, expressif: true },
 };
 
 /**
@@ -240,7 +264,7 @@ export const METADONNEES_ANIMATIONS_ENTETE: Record<AnimationEntete, { famille: F
  * empreintes en lignes de niveau, formes abstraites qui s'adaptent à leur cadre (taches, onde, formes géométriques) et animations
  * d'illustrations existantes (il-*). Les autres (bandes, emblèmes, lueur) restent des animations d'en-tête.
  */
-export const ANIMATIONS_HEROS: readonly AnimationEntete[] = ANIMATIONS_ENTETE.filter((a) => a.startsWith('em-') || a.startsWith('il-') || a.startsWith('pi-') || a === 'taches' || a === 'onde' || a === 'geometrie');
+export const ANIMATIONS_HEROS: readonly AnimationEntete[] = ANIMATIONS_ENTETE.filter((a) => a.startsWith('em-') || a.startsWith('il-') || a.startsWith('pi-') || a.startsWith('un-') || a === 'taches' || a === 'onde' || a === 'geometrie');
 export const estAnimationHeros = (a: unknown): a is AnimationEntete => (ANIMATIONS_HEROS as readonly unknown[]).includes(a);
 /**
  * Registre des animations d'illustrations PRÊTES (images de base validées) : posé par l'admin à partir des statuts de la

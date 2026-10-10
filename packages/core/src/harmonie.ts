@@ -530,6 +530,18 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.entete-anim:pi-chevrons': E('Chevrons de vitesse', { e: 0.9, r: -0.6, c: 0.7 }, { pref: [F.te, F.po, F.ma], jamais: [F.dx, F.na, F.cl, F.ed, F.mi], fort: 0.8 }),
   'v.entete-anim:pi-chrono': E('Chronomètre', { e: 0.75, c: 0.5 }, { pref: [F.te, F.ma, F.po], jamais: [F.dx], fort: 0.8 }),
   'v.entete-anim:pi-trail-montagne': E('Montagne : sentier et lignes de niveau', { e: 0.45, r: 0.6, t: 0.3 }, { pref: [F.na, F.te, F.po], jamais: [F.ed], fort: 0.8 }),
+  // Univers minimal (univers-minimal.ts, 2026-10-10, à valider) : basket et tennis vifs (jamais diabète ni seniors), golf et cyclisme
+  // posés, diabète doux (bleus froids)
+  'v.entete-anim:un-basket-arc': E('Basket : arc de tir', { e: 0.7, c: 0.4, r: 0.3 }, { pref: [F.po, F.te, F.ma], jamais: [F.ed, F.cl], fort: 0.8 }),
+  'v.entete-anim:un-basket-terrain': E('Basket : terrain en lignes de niveau', { e: 0.5, c: 0.5, r: 0.5 }, { pref: [F.te, F.mi, F.po, F.ma], jamais: [F.dx], fort: 0.8 }),
+  'v.entete-anim:un-tennis-rebond': E('Tennis : balle et rebond', { e: 0.7, c: 0.3, r: 0.3 }, { pref: [F.po, F.te, F.mi], jamais: [F.ed, F.cl], fort: 0.8 }),
+  'v.entete-anim:un-tennis-court': E('Tennis : court en perspective', { e: 0.55, c: 0.6, r: -0.2 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx], fort: 0.8 }),
+  'v.entete-anim:un-golf-green': E('Golf : green en lignes de niveau', { e: 0.4, r: 0.8, t: 0.3 }, { pref: [F.na, F.te, F.cl, F.mi], fort: 0.8 }),
+  'v.entete-anim:un-golf-alveoles': E('Golf : balle alvéolée sur son tee', { e: 0.35, r: 0.8, c: 0.3 }, { pref: [F.mi, F.te, F.cl, F.ma], fort: 0.7 }),
+  'v.entete-anim:un-cyclisme-roue': E('Cyclisme : roue et rayons', { e: 0.55, r: 0.6, c: 0.4 }, { pref: [F.te, F.mi, F.po, F.ma], jamais: [F.dx], fort: 0.8 }),
+  'v.entete-anim:un-cyclisme-profil': E('Cyclisme : profil d’étape', { e: 0.4, r: 0.4, c: 0.4 }, { pref: [F.te, F.na, F.mi], fort: 0.8 }),
+  'v.entete-anim:un-diabete-sensibilite': E('Diabète : plante et sensibilité (bleus doux)', { e: 0.2, r: 0.7, f: 0.3, d: -0.2 }, { pref: [F.mi, F.cl, F.te, F.ed], jamais: [F.po], fort: 0.7 }),
+  'v.entete-anim:un-diabete-miroir': E('Diabète : inspection au miroir (bleus doux)', { e: 0.2, r: 0.8, f: 0.3, d: -0.2 }, { pref: [F.mi, F.cl, F.ed, F.dx], jamais: [F.po], fort: 0.7 }),
   'v.entete-anim:pi-analyse-course': E('Analyse de la foulée (tracés et données)', { e: 0.55, c: 0.8, r: -0.3 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx, F.na], fort: 0.8 }),
   'v.entete-anim:em-encre': E('Empreintes à l’encre, fond clair', { e: 0.3, f: 0.4, t: 0.2, c: -0.2 }, { pref: [F.ed, F.cl, F.na, F.mi], jamais: [F.po], fort: 0.7 }),
   'v.transition:fondu': E('Fondu enchaîné', {}),
@@ -731,7 +743,7 @@ const RONDS: [DimensionHarmonie, string][] = [
   ['v.accueil', 'maille-anime'], ['v.accueil', 'bandes-ondulantes'], ['v.fond-heros', 'formes'], ['v.entete-anim', 'taches'], ['v.entete-anim', 'onde'], ['v.entete-anim', 'rubans'], ['v.entete-anim', 'em-petits-pas'], ['v.entete-anim', 'pi-ronde'],
 ];
 /** Animations d'en-tête trop vives pour le diabète et les seniors (énergie ≥ 0,7 : il faut rassurer) */
-const ANIMATIONS_VIVES = ['foulee', 'mots', 'empreintes', 'rubans', 'em-petits-pas', 'em-particules', 'pi-ronde', 'pi-chevrons', 'pi-chrono'];
+const ANIMATIONS_VIVES = ['foulee', 'mots', 'empreintes', 'rubans', 'em-petits-pas', 'em-particules', 'pi-ronde', 'pi-chevrons', 'pi-chrono', 'un-basket-arc', 'un-tennis-rebond'];
 /** Animations qui pulsent : jamais avec les illustrations douces (registre pédagogique : « rien qui pulse », charte) */
 const ANIMATIONS_PULSEES = ['points-pression', 'onde', 'em-respire', 'em-marche'];
 

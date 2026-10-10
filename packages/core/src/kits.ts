@@ -13,6 +13,7 @@ import { HASHTAGS_UNIVERS } from './dessins-univers';
 import { HASHTAGS_UNIVERS_DIABETE } from './univers-diabete';
 import { HASHTAGS_IMAGES_FIXES } from './images-fixes-pied';
 import { HASHTAGS_ANALYSE_COURSE } from './analyse-course';
+import { HASHTAGS_UNIVERS_MINIMAUX } from './univers-minimal';
 
 export type StatutKit = 'brouillon' | 'valide' | 'retire';
 
@@ -87,4 +88,7 @@ export const HASHTAGS_PAR_DEFAUT: Readonly<Record<string, readonly string[]>> = 
   ...Object.entries(HASHTAGS_IMAGES_FIXES),
   // Analyse de la foulée (2026-10-10, analyse-course.ts) : #sport #course #running #marathon (kit « Sport · course »)
   ...Object.entries(HASHTAGS_ANALYSE_COURSE),
+  // Univers minimal (2026-10-10, univers-minimal.ts) : #sport + #basket / #tennis / #golf / #cyclisme (kits « Sport · <activité> »),
+  // #diabete (kit Diabète) ; visuel animé et illustration fixe
+  ...Object.entries(HASHTAGS_UNIVERS_MINIMAUX),
 ]);

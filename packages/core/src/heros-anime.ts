@@ -17,6 +17,7 @@ import { animationsPretesDefinies, ANIMATIONS_HEROS, LIBELLES_ANIMATIONS_ENTETE,
 import { cssEmpreintes, estAnimationEmpreintes, htmlEmpreintes } from './entete-empreintes';
 import { ANIMATIONS_PIED, ANIMATIONS_PIED_VIVES, SUJETS_ANIMATIONS_PIED, cssPied, estAnimationPied, htmlPied } from './entete-pied';
 import { cssAnimationEntete, htmlAnimationEntete } from './entete-anim';
+import { UNIVERS_MINIMAUX, UNIVERS_MINIMAUX_VIFS, SUJETS_UNIVERS_MINIMAUX, cssUniversMinimal, estUniversMinimal, htmlUniversMinimal } from './univers-minimal';
 import { cssLectureAnimations, svgAnimationLecture } from './animations-lecture';
 import { etatAnimation } from './animations-sources';
 
@@ -43,8 +44,10 @@ const PAR_SUJET: Record<string, AnimationEntete[]> = {
   posture: ['il-trajectoire', 'em-deroule'],
 };
 /** Animations qui ont du sens pour un sujet (les vives jamais pour le diabète ni les seniors) */
-const VIVES: string[] = ['em-petits-pas', 'em-particules', 'taches', ...ANIMATIONS_PIED_VIVES];
-const PROPRES: Partial<Record<AnimationEntete, string[]>> = { 'em-petits-pas': ['enfant'], 'em-sensibilite': ['diabete', 'senior', 'pedicurie'], 'il-premiers-pas': ['enfant'], 'il-semelle': ['semelles'], 'il-trajectoire': ['posture', 'semelles', 'senior', 'sport'], ...Object.fromEntries(ANIMATIONS_PIED.map((a) => [a, [...SUJETS_ANIMATIONS_PIED[a]]])) };
+const VIVES: string[] = ['em-petits-pas', 'em-particules', 'taches', ...ANIMATIONS_PIED_VIVES, ...UNIVERS_MINIMAUX_VIFS];
+const PROPRES: Partial<Record<AnimationEntete, string[]>> = { 'em-petits-pas': ['enfant'], 'em-sensibilite': ['diabete', 'senior', 'pedicurie'], 'il-premiers-pas': ['enfant'], 'il-semelle': ['semelles'], 'il-trajectoire': ['posture', 'semelles', 'senior', 'sport'], ...Object.fromEntries(ANIMATIONS_PIED.map((a) => [a, [...SUJETS_ANIMATIONS_PIED[a]]])),
+  // Univers minimal (2026-10-10) : sport (activité choisie par le kit du profil, hashtags #basket…), golf aussi pour les seniors, diabète
+  ...Object.fromEntries(UNIVERS_MINIMAUX.map((a) => [a, [...SUJETS_UNIVERS_MINIMAUX[a]]])) };
 const pourSujet = (a: AnimationEntete, sujet: string) => (!PROPRES[a] || PROPRES[a]!.includes(sujet)) && !(VIVES.includes(a) && (sujet === 'diabete' || sujet === 'senior'));
 
 const rang = (sujet: string, a: AnimationEntete) => { const i = (PAR_SUJET[sujet] ?? []).indexOf(a); return i < 0 ? 99 : i; };
@@ -102,6 +105,7 @@ export function htmlVisuelAnime(a: AnimationEntete, o: { ton?: TonVisuelAnime; v
   const clair = o.ton === 'clair';
   if (estAnimationEmpreintes(a)) return htmlEmpreintes(a, { placement: 'scene', vif: o.vif }).replace('class="ea ea--em', `class="ea${clair ? ' ea--clair' : ''}${o.nu ? ' ea--nu' : ''} ea--em`);
   if (estAnimationPied(a)) return htmlPied(a, { placement: 'scene' }).replace('class="ea ea--pi', `class="ea${clair ? ' ea--clair' : ''}${o.nu ? ' ea--nu' : ''} ea--pi`);
+  if (estUniversMinimal(a)) return htmlUniversMinimal(a, { placement: 'scene' }).replace('class="ea ea--un', `class="ea${clair ? ' ea--clair' : ''}${o.nu ? ' ea--nu' : ''} ea--un`);
   const source = SOURCE_ANIMATION_HEROS[a];
   if (source) return `<span class="ea ea--grand ea--il${o.nu ? ' ea--nu' : ''}" aria-hidden="true">${svgAnimationLecture(source, `ha-${ID(a)}`) ?? ''}</span>`;
   return htmlAnimationEntete(a).replace(/class="ea ea--\w+ /, `class="ea ea--grand${clair ? ' ea--clair' : ''}${o.nu ? ' ea--nu' : ''} `);
@@ -112,6 +116,7 @@ export function cssVisuelAnime(a: AnimationEntete): string {
   const nu = '.ea--nu{background:none!important}';
   if (estAnimationEmpreintes(a)) return cssEmpreintes(a) + nu;
   if (estAnimationPied(a)) return cssPied(a) + nu;
+  if (estUniversMinimal(a)) return cssUniversMinimal(a) + nu;
   const source = SOURCE_ANIMATION_HEROS[a];
   if (source) {
     // Mêmes images clés que l'admin et le site (animations-lecture.ts), jouées UNE fois sous .ea-joue, cycle resserré (≤ ~6 s)

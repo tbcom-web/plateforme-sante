@@ -22,6 +22,7 @@ import { clesSport, sujetsDesKits } from './kits';
 import { DESSINS_UNIVERS, FICHES_DESSINS_UNIVERS, svgDessinUnivers, sujetsUnivers } from './dessins-univers';
 import { IMAGES_FIXES_PIED, FICHES_IMAGES_FIXES, svgImageFixe } from './images-fixes-pied';
 import { REGISTRES_ANALYSE_COURSE, FICHE_ANALYSE_COURSE, svgAnalyseCourse } from './analyse-course';
+import { UNIVERS_MINIMAUX, FICHES_UNIVERS_MINIMAUX, svgUniversMinimal } from './univers-minimal';
 import { DESSINS_DIABETE, HEROS_DIABETE, FICHES_UNIVERS_DIABETE, REGISTRES_DIABETE, svgDessinDiabete, herosDiabete } from './univers-diabete';
 import { DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, LIBELLES_ECHANTILLON, cleDirection, cleStyleIcones, svgTuileDirection, svgPlancheDirection } from './pictos-directions';
 import { ICONES_ILLUSTREES_IDS, FICHES_ICONES_ILLUSTREES, FICHE_DIRECTION_D, SOURCE_ICONES_ILLUSTREES, CLE_STYLE_ICONES_D, cleIconeIllustree, svgTuileIllustree, svgPlancheIllustree } from './icones-illustrees';
@@ -169,6 +170,16 @@ export function inventaireIllustrations(): Illustration[] {
         svg: () => svgImageFixe(nom, { registre, id: `rv-if-${nom}-${registre}` }),
       });
     }
+  }
+  // Univers minimal (2026-10-10, brouillons « À revoir », univers-minimal.ts) : image fixe des visuels animés basket, tennis, golf,
+  // cyclisme, diabète, registre pédagogique (classes de dessins.css) ; sujets et hashtags de leur fiche
+  for (const nom of UNIVERS_MINIMAUX) {
+    const f = FICHES_UNIVERS_MINIMAUX[nom];
+    l.push({
+      cle: `dessin:${nom}:pedagogique`, type: 'dessin', registre: 'pedagogique', titre: f.libelle, detail: `${LIBELLES_REGISTRES.pedagogique} · image fixe du visuel animé ${nom} · ${f.regard}`,
+      source: `packages/core/src/univers-minimal.ts — svgUniversMinimal('${nom}')`, soins: [...f.sujets], statutParDefaut: 'a_revoir', fond: 'doux',
+      svg: () => svgUniversMinimal(nom, { id: `rv-${nom}` }),
+    });
   }
   // Analyse de la foulée (2026-10-10, brouillon « À revoir », analyse-course.ts) : remplace le coureur à rotules dans le héros sport ;
   // seule illustration chiffrée (exception de Paul : données classiques, valeurs génériques) ; vue agrandie = portrait (téléphone)
