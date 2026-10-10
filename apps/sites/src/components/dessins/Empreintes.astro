@@ -17,13 +17,15 @@ interface Props {
   /** Ligne de scan animée */
   scan?: boolean;
   class?: string;
+  /** Dans une case (Planche) : schéma des appuis (registres pédagogique, ligne) centré sur son tracé réel (Dessin cadre) */
+  cadre?: boolean;
 }
-const { appui = 'normal', legende = false, scan = true, class: classe } = Astro.props;
+const { appui = 'normal', legende = false, scan = true, class: classe, cadre = false } = Astro.props;
 const id = `e-${Math.random().toString(36).slice(2, 8)}`;
 const largeur = legende ? 236 : 210;
 // Registres pédagogique et ligne (modèle) : pas de relevé de pression ; le schéma des appuis au trait le remplace.
 ---
-{registre !== 'releve' ? <Dessin nom="appuis" class={['empreintes', classe].filter(Boolean).join(' ')} /> : (
+{registre !== 'releve' ? <Dessin nom="appuis" class={['empreintes', classe].filter(Boolean).join(' ')} cadre={cadre} /> : (
 <svg class:list={['empreintes', classe, { 'empreintes--scan': scan }]} viewBox={`0 0 ${largeur} 236`} aria-hidden="true" fill="none" stroke-linecap="round">
   <defs>
     <linearGradient id={`${id}-g`} x1="0" y1="1" x2="0" y2="0">

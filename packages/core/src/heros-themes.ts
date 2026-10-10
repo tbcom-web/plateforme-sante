@@ -24,7 +24,7 @@
 // Usage : illustrationTheme('sport', { format: 'portrait', registre: 'ligne', gamme: 'mangue' }). Les classes viennent de
 // dessins.css (feuille du site) ; les variables de la charte (--trait-*, --pression-*) de feuilleCharte(). `gamme` (identifiant ou
 // gamme) fixe les couleurs du dessin en variables sur la racine ; sans gamme, le héros suit les variables de la page.
-import { svgDessin, svgAnimationFixe, svgEquipement, svgLigne, sansTextes, type Registre } from './dessins';
+import { svgDessin, svgAnimationFixe, svgEquipement, svgLigne, sansTextes, cadrageDessin, recadrerSvg, cleCadrage, type Registre } from './dessins';
 import { sceneHeros, type SceneHeros } from './heros-scenes';
 import { corpsHerosAnalyse } from './analyse-course';
 import { themeParId } from './themes';
@@ -100,12 +100,29 @@ function svgPiece(p: Exclude<Piece, { type: 'scene' } | { type: 'analyse' }>, re
 }
 
 /** Pose un <svg> complet dans un cadre (x, y, l, h) : SVG imbriqué sans classe (le style de .dessin ne s'applique qu'au groupe) */
-function poser(svg: string, x: number, y: number, l: number, h: number): string {
+function poser(svg: string, x: number, y: number, l: number, h: number, ajustement = 'xMidYMid meet'): string {
   const ouverture = svg.slice(0, svg.indexOf('>'));
   const vue = ouverture.match(/viewBox="([^"]+)"/)?.[1] ?? '0 0 240 180';
   const classe = ouverture.match(/\sclass="([^"]*)"/)?.[1] ?? '';
   const interieur = svg.slice(svg.indexOf('>') + 1, svg.lastIndexOf('</svg>'));
-  return `<svg x="${r1(x)}" y="${r1(y)}" width="${r1(l)}" height="${r1(h)}" viewBox="${vue}" preserveAspectRatio="xMidYMid meet" overflow="hidden"><g class="${classe}" fill="none" stroke-linecap="round" stroke-linejoin="round">${interieur}</g></svg>`;
+  return `<svg x="${r1(x)}" y="${r1(y)}" width="${r1(l)}" height="${r1(h)}" viewBox="${vue}" preserveAspectRatio="${ajustement}" overflow="hidden"><g class="${classe}" fill="none" stroke-linecap="round" stroke-linejoin="round">${interieur}</g></svg>`;
+}
+
+/**
+ * Pièce unique (dessin, trait continu) CADRÉE sur son tracé réel (cadrages-dessins.ts ; retour de Paul du 2026-10-10 : dessins
+ * coupés au milieu de leur case) : centrée dans le cadre du format, et un côté en fond perdu (orteil coupé net, jambe qui entre par
+ * le haut) prolongé jusqu'au bord du héros, pour que le dessin sorte par le bord au lieu de s'arrêter au milieu du fond.
+ */
+function poserPiece(p: Exclude<Piece, { type: 'scene' } | { type: 'analyse' }>, svg: string, registre: Registre, format: FormatHeros): string {
+  const c = p.type === 'ligne' ? cadrageDessin(`ligne:${p.nom}`) : p.type === 'dessin' ? cadrageDessin(cleCadrage(p.nom, registre)) : null;
+  if (!c) return poser(svg, ...CADRES[format]);
+  const { largeur: L, hauteur: H } = FORMATS_HEROS[format];
+  let [x, y, l, h] = CADRES[format];
+  if (c.fondPerdu.gauche) { l += x; x = 0; }
+  if (c.fondPerdu.droite) l = L - x;
+  if (c.fondPerdu.haut) { h += y; y = 0; }
+  if (c.fondPerdu.bas) h = H - y;
+  return poser(recadrerSvg(svg, c), x, y, l, h, c.preserveAspectRatio);
 }
 
 /** Cadre du sujet unique (rapport 4:3 des dessins), centré et aussi grand que le format le permet */
@@ -294,7 +311,7 @@ export function illustrationTheme(
   // Sujet dans le <title> (jamais affiché) : thème et pièces, pour l'accessibilité des outils et les agents
   const titre = `<title>${titreTheme(themeId)} — ${sourcesTheme(themeId, registre).join(', ')}</title>`;
   // Analyse de la foulée : dessinée directement au format du héros (données lisibles sur téléphone : trois en portrait)
-  const corps = piece.type === 'scene' ? sceneHeros(piece.nom, { format, registre }) : piece.type === 'analyse' ? corpsHerosAnalyse(format) : poser(svgPiece(piece, registre, `${id}-a`), ...CADRES[format]);
+  const corps = piece.type === 'scene' ? sceneHeros(piece.nom, { format, registre }) : piece.type === 'analyse' ? corpsHerosAnalyse(format) : poserPiece(piece, svgPiece(piece, registre, `${id}-a`), registre, format);
   // Fond : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne) ; aucun non plus sansFond
   return assembler({ g, registre, L, H, id, sansFond: o.sansFond ?? null, titre, corps, classes: [`heros-theme--${themeId}`, `heros-theme--${format}`, o.classe] });
 }

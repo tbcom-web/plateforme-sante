@@ -73,7 +73,7 @@ const plan = !nouveauGabarit && registre === 'releve' && site.modele.jetons.moti
   .sujet__visuel { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: var(--rayon-carte, var(--rayon, 16px)); overflow: hidden; }
   .sujet__visuel:not(.surface-plan) { background: var(--s-fond-visuel); color: var(--s-trait); --dessin-trait: var(--s-trait); --dessin-ligne: var(--s-trait); --dessin-accent: var(--s-accent); }
   .sujet__visuel :global(.vt) { position: absolute; inset: 0; }
-  .sujet__visuel :global(.vt--dessin) { padding: 8% 10%; }
+  /* Dessin cadré (VisuelTheme : Dessin cadre) : il remplit la case, sa marge est dans son viewBox (retour de Paul du 2026-10-10) */
   .sujet__visuel :global(.vt img) { transition: transform var(--duree-moyen, 0.4s) var(--courbe-sortie, ease-out); }
   .sujet__lien:hover .sujet__visuel :global(.vt img) { transform: scale(1.03); }
   .sujet__texte { display: grid; gap: 8px; align-content: start; justify-items: start; }

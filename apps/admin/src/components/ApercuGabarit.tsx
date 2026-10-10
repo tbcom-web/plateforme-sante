@@ -13,7 +13,7 @@
 // « pédicurie-podologie » insécable, titre ajusté à sa colonne.
 import { useMetierApercu } from './ApercuMetier';
 import type { CSSProperties, ReactNode } from 'react';
-import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, REPLIS, titreSoins, actionsRapides, appelDansBarre, appelMasqueApercu, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
+import { avecVille, construireNavigation, variantesModele, type VuePage, illustrationTheme, themeIllustre, horairesRenseignes, gabaritModele, pictoSoin, svgDessin, svgPicto, svgLigne, LIGNE_DESSIN, cadrageDessin, recadrerSvg, REPLIS, titreSoins, actionsRapides, appelDansBarre, appelMasqueApercu, type ActionsRapides, type IconeAction, type ModeleManifeste, type NomDessin, type Registre, type ReplisApercu, type SiteDraft } from '@plateforme/core';
 import { facteurChasse, facteurTitres, menuABouton, normaliserHabillage } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
 import ApercuHerosPhoto, { herosPhotoActif } from './ApercuHerosPhoto';
@@ -188,7 +188,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   // Menu et bouton sur une ligne : un nom de cabinet long se réduit, jamais « Rendez-/vous » sur deux lignes
   const nomEntete: CSSProperties = { minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.2, fontSize: nomCabinet.length > 40 ? 16 : 18 };
   // Revue : dessin au trait continu du soin principal, légendé (sans animation)
-  const figure = (slug: string, taille: CSSProperties) => <div className="ap-svg" style={{ ...taille, '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)', color: 'var(--g-figure)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgLigne(LIGNE_DESSIN[dessinSoin(slug)] ?? 'pied-dessous') }} />;
+  const figure = (slug: string, taille: CSSProperties) => <div className="ap-svg" style={{ ...taille, '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)', color: 'var(--g-figure)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: (() => { const n = LIGNE_DESSIN[dessinSoin(slug)] ?? 'pied-dessous'; return recadrerSvg(svgLigne(n), cadrageDessin(`ligne:${n}`)); })() }} />;
 
   const entete = revue ? (
     <header className="mn-entete" style={{ borderBottom: '3px double var(--g-encre)' }}>
@@ -237,7 +237,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       <div style={{ gridColumn: mobile ? undefined : 1, margin: mobile ? 0 : '18px 0 26px' }}>{titreH1}</div>
       {(heros || soins[0]) && (
         <figure style={{ margin: mobile ? '0 0 10px' : 0, ...(mobile ? {} : { gridColumn: 2, gridRow: '1 / span 4', alignSelf: 'center' }), color: 'var(--g-figure)', '--dessin-trait': 'var(--g-figure)', '--dessin-ligne': 'var(--g-figure)', '--dessin-accent': 'var(--g-figure)' } as CSSProperties}>
-          <div style={{ aspectRatio: '4 / 3', background: 'var(--g-aplat)', borderBlock: 'var(--filet) solid var(--g-figure)', padding: heros?.type === 'photo' ? 0 : '7% 9%', overflow: 'hidden' }}>
+          <div style={{ aspectRatio: '4 / 3', background: 'var(--g-aplat)', borderBlock: 'var(--filet) solid var(--g-figure)', padding: 0, overflow: 'hidden' }}>
             {heros ? <HerosVue h={heros} /> : figure(soins[0].slug, { width: '100%', height: '100%' })}
           </div>
         </figure>
@@ -258,7 +258,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       <div style={{ display: 'grid', gap: 18 }}>
       <span className="td-sur" style={{ display: 'inline-flex', alignItems: 'center', gap: 12, fontSize: 15, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}><span style={{ width: 28, height: 2, background: 'currentColor' }} />{surTitre}</span>
       {titreH1}
-      {heros && mobile && <div style={{ aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: '6%' }}><HerosVue h={heros} /></div>}
+      {heros && mobile && <div style={{ aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: heros.type === 'svg' ? 0 : '6%' }}><HerosVue h={heros} /></div>}
       <div style={{ display: 'grid', gap: 8 }}>
         <span style={ligne}>{pid('rendez-vous')}{noms.length ? `${noms.join(' et ')}, ${titre.toLowerCase()}` : nomCabinet}</span>
         <span style={ligne}>{pid('itineraire')}{adresse}</span>
@@ -269,7 +269,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
         {enLigne && r.aTelephone && !appelMasque && <span style={{ display: 'grid', placeItems: 'center', minHeight: 64, borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 2px var(--g-encre)', fontWeight: 700 }}>Appeler le {tel}</span>}
       </div>}
       </div>
-      {heros && !mobile && <div style={{ aspectRatio: '3 / 4', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: '6%' }}><HerosVue h={heros} /></div>}
+      {heros && !mobile && <div style={{ aspectRatio: '3 / 4', borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: '10px 10px 0 var(--g-vif)', margin: '0 10px 10px 0', padding: heros.type === 'svg' ? 0 : '6%' }}><HerosVue h={heros} /></div>}
     </div></section>
   ) : (
     <section data-zone="premier-ecran" style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1.45fr 1fr', gap: mobile ? 20 : 64, paddingTop: 14, alignItems: 'center' }}>
@@ -288,7 +288,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           <div style={{ position: 'absolute', inset: heros.type === 'photo' ? 0 : '14%', borderRadius: heros.type === 'photo' ? '50%' : 0, display: 'grid', placeItems: 'center' }}><HerosVue h={heros} /></div>
         </div>
       ) : !mobile && soins[0] && (
-        <div style={{ borderRadius: 'var(--rayon)', background: 'var(--g-vif)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-vif-texte)', '--dessin-accent': 'var(--g-vif-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '72%', height: '80%' }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: 'ligne' }) }} /></div>
+        <div style={{ position: 'relative', overflow: 'hidden', minHeight: 260, borderRadius: 'var(--rayon)', background: 'var(--g-vif)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-vif-texte)', '--dessin-accent': 'var(--g-vif-texte)' } as CSSProperties}><div className="ap-svg" style={{ position: 'absolute', inset: 0 }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: 'ligne', cadre: true }) }} /></div>
       )}
     </section>
   );
@@ -329,20 +329,22 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 28px' }}>{items.map((i) => <span key={i} style={lien}>{i} <span style={{ color: 'var(--g-accent-texte)' }}>→</span></span>)}</div>
     </div>
   );
-  const illustrationSoin = (slug: string) => <div className="ap-svg" style={{ width: village ? '92%' : '80%', height: village ? '92%' : '88%', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)', color: 'var(--g-encre)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(slug), { registre, id: `ap-soin-${slug}` }) }} />;
+  // Dessin CADRÉ (retour de Paul du 2026-10-10 : « les images ne sont pas centrées dans leurs cases ») : il remplit la case, viewBox
+  // centré sur son tracé réel avec une marge régulière (core : cadrages-dessins.ts), comme les cartes du site (VignetteSoin)
+  const illustrationSoin = (slug: string) => <div className="ap-svg" style={{ position: 'absolute', inset: 0, '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)', color: 'var(--g-encre)' } as CSSProperties} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(slug), { registre, id: `ap-soin-${slug}`, cadre: true }) }} />;
   const soinsEditorial = (
     <div style={{ display: 'grid', gap: 32 }}>
       {v.soins === 'grille' ? (
         <div style={{ borderTop: '2px solid var(--g-encre)' }}>{soins.map((s) => (
           <div key={s.slug} style={{ display: 'grid', gridTemplateColumns: `${mobile ? 104 : 168}px 1fr`, gap: mobile ? 16 : 28, alignItems: 'center', padding: '18px 0', borderBottom: '1px solid var(--g-ligne)' }}>
-            <div style={{ aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
+            <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '1 / 1', borderRadius: 'var(--rayon)', background: 'var(--g-doux)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
             <div style={{ display: 'grid', gap: 6 }}><strong style={{ fontFamily: 'var(--police-titres)', fontSize: mobile ? 23 : 28, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{s.titre_court}</strong>{<span style={{ color: 'var(--g-encre-douce)', fontSize: mobile ? 16 : 18, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: mobile ? 3 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.resume}</span>}</div>
           </div>
         ))}</div>
       ) : (
         <div className="forme-grille eff-grille" style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : 'repeat(3, 1fr)', gap: 16 }}>{soins.slice(0, mobile ? 3 : 6).map((s) => (
           <div key={s.slug} className="eff-carte forme-carte" style={{ borderRadius: 'var(--rayon)', overflow: 'hidden', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>
-            <div className="eff-visuel forme-visuel" style={{ aspectRatio: '16 / 10', background: 'var(--g-bulle)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
+            <div className="eff-visuel forme-visuel" style={{ position: 'relative', overflow: 'hidden', aspectRatio: '16 / 10', background: 'var(--g-bulle)', display: 'grid', placeItems: 'center' }}>{illustrationSoin(s.slug)}</div>
             <div style={{ display: 'grid', gap: 8, padding: '18px 20px 20px' }}><strong className="forme-texte eff-titre" style={{ fontFamily: 'var(--police-titres)', fontSize: 23, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{s.titre_court}</strong><span className="forme-texte" style={{ color: 'var(--g-encre-douce)', fontSize: 15, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{s.resume}</span><span style={{ color: 'var(--g-accent-texte)', fontWeight: 700, fontSize: 19 }}>→</span></div>
           </div>
         ))}</div>
@@ -395,8 +397,8 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
           const ligneVisuel = v.sujets === 'liste' || (!mobile && (v.sujets === 'rangees' || une));
           return (
             <li key={t.theme.id} className="eff-carte forme-carte" style={{ gridColumn: une && !mobile ? '1 / -1' : undefined, display: 'grid', gridTemplateColumns: ligneVisuel ? (v.sujets === 'liste' ? `${mobile ? 96 : 150}px 1fr` : '1fr 1fr') : '1fr', gap: v.sujets === 'liste' ? 18 : 20, alignItems: 'center', padding: v.sujets === 'liste' ? '16px 0' : 0, borderBottom: v.sujets === 'liste' ? '1px solid var(--g-ligne)' : undefined }}>
-              <div className="eff-visuel forme-visuel" style={{ order: v.sujets === 'rangees' && i % 2 && !mobile ? 2 : 0, aspectRatio: v.sujets === 'liste' ? '1 / 1' : '16 / 10', borderRadius: 'var(--rayon)', background: 'var(--g-aplat)', overflow: 'hidden', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}>
-                <div className="ap-svg" style={{ width: '86%', height: '86%' }} dangerouslySetInnerHTML={{ __html: themeIllustre(t.theme.id) ? illustrationTheme(t.theme.id, { format: 'paysage', registre, gamme: d.theme.gamme || null, id: `ap-suj-${t.theme.id}`, sansFond: 'clair' }) : '' }} />
+              <div className="eff-visuel forme-visuel" style={{ order: v.sujets === 'rangees' && i % 2 && !mobile ? 2 : 0, aspectRatio: v.sujets === 'liste' ? '1 / 1' : '16 / 10', borderRadius: 'var(--rayon)', background: 'var(--g-aplat)', overflow: 'hidden', position: 'relative', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}>
+                <div className="ap-svg" style={{ position: 'absolute', inset: 0 }} dangerouslySetInnerHTML={{ __html: themeIllustre(t.theme.id) ? illustrationTheme(t.theme.id, { format: 'paysage', registre, gamme: d.theme.gamme || null, id: `ap-suj-${t.theme.id}`, sansFond: 'clair' }) : '' }} />
               </div>
               <div style={{ display: 'grid', gap: 6 }}>
                 <strong className="eff-titre forme-texte" style={{ fontFamily: 'var(--police-titres)', fontWeight: 'var(--graisse-titres)' as unknown as number, fontSize: une ? (mobile ? 30 : 44) : v.sujets === 'liste' ? 22 : 26, lineHeight: 1.1, letterSpacing: '-0.03em', justifySelf: 'start' }}>{t.theme.libelle}</strong>
@@ -457,7 +459,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   const montrer = (b: string) => !seul || seul.includes(b);
   // Conseils et actualités (Actus.astro) : liste de titres datés, cartes illustrées, ou le dernier à la une
   const articlesDemo = [{ t: 'Bien choisir ses chaussures de course', s: 'sport', d: '2 octobre 2026', r: 'Amorti, maintien du talon, pointure : les repères avant l’achat.' }, { t: 'Ongle incarné chez l’enfant : les bons gestes', s: 'enfant', d: '18 septembre 2026', r: 'Coupe droite, chaussures à la bonne taille et quand consulter.' }];
-  const visuelArticle = (s: string) => <div className="eff-visuel" style={{ aspectRatio: '16 / 9', borderRadius: 'calc(var(--rayon) * 0.65)', background: 'var(--g-doux)', display: 'grid', placeItems: 'center', overflow: 'hidden', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '70%', height: '90%' }} dangerouslySetInnerHTML={{ __html: themeIllustre(s) ? illustrationTheme(s, { format: 'paysage', registre, gamme: d.theme.gamme || null, id: `ap-art-${s}`, sansFond: 'clair' }) : '' }} /></div>;
+  const visuelArticle = (s: string) => <div className="eff-visuel" style={{ position: 'relative', aspectRatio: '16 / 9', borderRadius: 'calc(var(--rayon) * 0.65)', background: 'var(--g-doux)', display: 'grid', placeItems: 'center', overflow: 'hidden', '--dessin-trait': 'var(--g-encre)', '--dessin-ligne': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ position: 'absolute', inset: 0 }} dangerouslySetInnerHTML={{ __html: themeIllustre(s) ? illustrationTheme(s, { format: 'paysage', registre, gamme: d.theme.gamme || null, id: `ap-art-${s}`, sansFond: 'clair' }) : '' }} /></div>;
   const actualitesSection = section('Conseils et actualités.', v.actualites === 'cartes' ? (
     <div style={{ display: 'grid', gap: 14, gridTemplateColumns: mobile ? '1fr' : '1fr 1fr' }}>{articlesDemo.map((a) => <div key={a.t} className="eff-carte" style={{ display: 'grid', gap: 8, padding: '14px 14px 22px', borderRadius: 'var(--rayon)', background: 'var(--g-carte)', boxShadow: 'inset 0 0 0 1px var(--g-ligne)' }}>{visuelArticle(a.s)}<span style={{ fontSize: 14, fontWeight: 600, color: 'var(--g-accent-texte)' }}>{a.d}</span><strong className="eff-titre" style={{ fontFamily: 'var(--police-titres)', fontSize: 20, lineHeight: 1.25, justifySelf: 'start' }}>{a.t}</strong><span style={{ color: 'var(--g-encre-douce)', fontSize: 16 }}>{a.r}</span></div>)}</div>
   ) : (
@@ -494,7 +496,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
             <p style={{ color: 'var(--g-encre-douce)', margin: 0 }}>{avecVille(soins[0].resume, ville)}</p>
             <span className="td-bouton" style={{ ...bouton(true), justifySelf: 'start' }}>{libelleRdv}</span>
           </div>
-          <div style={{ aspectRatio: '4 / 3', borderRadius: 16, background: 'var(--g-doux)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: village ? 'pedagogique' : 'ligne' }) }} /></div>
+          <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '4 / 3', borderRadius: 16, background: 'var(--g-doux)', display: 'grid', placeItems: 'center', '--dessin-trait': 'var(--g-encre)', '--dessin-accent': 'var(--g-accent-texte)' } as CSSProperties}><div className="ap-svg" style={{ position: 'absolute', inset: 0 }} dangerouslySetInnerHTML={{ __html: svgDessin(dessinSoin(soins[0].slug), { registre: village ? 'pedagogique' : 'ligne', cadre: true }) }} /></div>
         </div>
       </section>
       <section style={{ ...cadre, display: 'grid', gridTemplateColumns: mobile || v.fiche !== 'encadre' ? '1fr' : '1fr 300px', gap: 18, paddingTop: 18, maxWidth: v.fiche !== 'encadre' && !mobile ? 832 : undefined }}>

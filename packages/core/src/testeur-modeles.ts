@@ -59,6 +59,20 @@ export const SEUILS_TEST_MODELE = {
   dureeMaxMs: 10 * 60 * 1000,
   /** Re-test des modèles publiés */
   retestJours: 7,
+  /** Cadrage d'un visuel dans sa case (retour de Paul du 2026-10-10 : dessins coupés, collés au bas de leur case) : part de la
+   *  case dont le tracé dépasse de ce qui se voit (coupé : majeur au-delà de 4 %, bloquant au-delà de 15 %) ; écart entre les
+   *  marges opposées (décentré : majeur au-delà de 18 % de la taille de la case) */
+  cadrageCoupe: 0.04,
+  cadrageCoupeBloquant: 0.15,
+  cadrageDecentre: 0.18,
+  /** Image étirée (object-fit: fill) : écart de rapport largeur / hauteur */
+  imageEtiree: 0.03,
+  /** Image agrandie (floue) : affichée plus grande que le fichier servi (× pixels de l'écran) ; mineur au-delà de ×1,25 */
+  imageAgrandieMajeur: 1.6,
+  /** Cartes sœurs d'une même rangée : écart de hauteur (mineur), de taille du visuel, de position du visuel (majeur) */
+  soeursHauteur: 0.1,
+  soeursVisuel: 0.08,
+  soeursDecalagePx: 4,
 } as const;
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -92,6 +106,8 @@ export const CONTROLES_TESTEUR = [
   { id: 'animations', libelle: 'Animations : mouvement réduit respecté, image fixe correcte', etiquette: 'technique:rendu', categorie: 'technique' },
   { id: 'tiers', libelle: 'Aucune requête vers un service tiers', etiquette: 'technique:rendu', categorie: 'technique' },
   { id: 'activites', libelle: 'Aucun visuel d’une autre activité (jeux d’activité)', etiquette: 'technique:image', categorie: 'technique' },
+  { id: 'cadrage', libelle: 'Cadrage des visuels dans leurs cases (ni coupés ni décentrés)', etiquette: 'technique:image', categorie: 'technique' },
+  { id: 'coherence', libelle: 'Cartes sœurs cohérentes, images non étirées', etiquette: 'technique:rendu', categorie: 'technique' },
   // Vérification visuelle (agent Claude testeur-modeles)
   { id: 'visuel', libelle: 'Vérification visuelle (grille du goût de Paul)', etiquette: 'a-revoir', categorie: 'gout' },
 ] as const satisfies readonly { id: string; libelle: string; etiquette: string; categorie: CategorieTicket }[];
@@ -787,4 +803,106 @@ export function photosDuKitProfil(banque: readonly PhotoBanque[], p: Pick<Profil
 /** Verdict par jeu (le pire de ses tickets) et verdict agrégé : le pire l'emporte */
 export function verdictsParJeu(tickets: readonly Pick<TicketTesteur, 'jeu' | 'gravite'>[], jeux: readonly string[]): Record<string, VerdictTest> {
   return Object.fromEntries(jeux.map((j) => [j, verdictControle(tickets.filter((t) => t.jeu === j))]));
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Cadrage des visuels dans leurs cases, cartes sœurs, images étirées (retour de Paul du 2026-10-10 : « Tu as mis vert alors que
+// les images ne sont pas centrées dans leurs cases… ») — mesures prises dans la page (apps/sites/scripts/testeur-modeles/
+// mesures-visuels.mjs), jugement ici.
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Boîte en pixels de page : bords gauche (x), haut (y), droit (d), bas (b) */
+export type BoiteBords = { x: number; y: number; d: number; b: number };
+export type MesureCadrage = {
+  /** Case du visuel (élément au bord visible qui ne contient que le visuel) */
+  cadre: BoiteBords;
+  /** Boîte CSS du <svg> */
+  svg: BoiteBords;
+  /** Tout le tracé (géométrie, même hors de la case) */
+  tout: BoiteBords;
+  /** Ce qui se voit du tracé dans la case */
+  visible: BoiteBords;
+};
+export type Cote = 'gauche' | 'droite' | 'haut' | 'bas';
+export type DefautCadrage = {
+  gravite: GraviteTicket;
+  /** Part de la case (dans l'axe) dont le tracé dépasse, par côté coupé */
+  coupes: Partial<Record<Cote, number>>;
+  /** Écart des marges opposées / taille de la case (null : axe en fond perdu, non jugé) */
+  ecartH: number | null;
+  ecartV: number | null;
+  /** Côtés où le dessin sort volontairement de la case (fond perdu : il touche le bord de la case, son propre cadre y est aligné) */
+  fondPerdu: Cote[];
+  texte: string;
+};
+
+/**
+ * Cadrage d'un visuel dans sa case. Coupé : le tracé dépasse de ce qui se voit de plus de 4 % de la case (15 % : bloquant), SAUF
+ * fond perdu (le bord visible du dessin est le bord de la case et le <svg> ne déborde pas de la case : le dessin a été conçu pour
+ * sortir du cadre, comme une jambe qui entre par le haut). Un dessin coupé AU MILIEU de la case (fenêtre du <svg> plus petite que la
+ * case : cas de Paul, svg à 88 % de la hauteur) n'est jamais un fond perdu. Décentré : marges opposées (boîte visible du tracé ↔
+ * case) qui diffèrent de plus de 18 % de la case, sur un axe sans fond perdu. Null si le cadrage est bon.
+ */
+export function defautCadrage(m: MesureCadrage, S: { cadrageCoupe: number; cadrageCoupeBloquant: number; cadrageDecentre: number } = SEUILS_TEST_MODELE): DefautCadrage | null {
+  const L = m.cadre.d - m.cadre.x, H = m.cadre.b - m.cadre.y;
+  if (L < 8 || H < 8) return null;
+  const tol = (dim: number) => Math.max(2, dim * 0.01);
+  // contreSvg : le tracé s'arrête net contre le bord du <svg> (dessin conçu pour sortir du cadre : jambe tracée depuis le bord)
+  const cotes: { c: Cote; depasse: number; dim: number; auBord: boolean; svgDedans: boolean; contreSvg: boolean; marge: number }[] = [
+    { c: 'gauche', depasse: m.visible.x - m.tout.x, dim: L, auBord: m.visible.x - m.cadre.x <= tol(L), svgDedans: m.svg.x >= m.cadre.x - 2, contreSvg: Math.abs(m.visible.x - m.svg.x) <= 1, marge: m.visible.x - m.cadre.x },
+    { c: 'droite', depasse: m.tout.d - m.visible.d, dim: L, auBord: m.cadre.d - m.visible.d <= tol(L), svgDedans: m.svg.d <= m.cadre.d + 2, contreSvg: Math.abs(m.svg.d - m.visible.d) <= 1, marge: m.cadre.d - m.visible.d },
+    { c: 'haut', depasse: m.visible.y - m.tout.y, dim: H, auBord: m.visible.y - m.cadre.y <= tol(H), svgDedans: m.svg.y >= m.cadre.y - 2, contreSvg: Math.abs(m.visible.y - m.svg.y) <= 1, marge: m.visible.y - m.cadre.y },
+    { c: 'bas', depasse: m.tout.b - m.visible.b, dim: H, auBord: m.cadre.b - m.visible.b <= tol(H), svgDedans: m.svg.b <= m.cadre.b + 2, contreSvg: Math.abs(m.svg.b - m.visible.b) <= 1, marge: m.cadre.b - m.visible.b },
+  ];
+  const fondPerdu: Cote[] = [];
+  const coupes: Partial<Record<Cote, number>> = {};
+  for (const k of cotes) {
+    if (k.auBord && k.svgDedans && (k.depasse > 0.5 || k.contreSvg)) { fondPerdu.push(k.c); continue; }
+    if (k.depasse <= 0.5) continue;
+    const part = k.depasse / k.dim;
+    if (part > S.cadrageCoupe) coupes[k.c] = Math.round(part * 1000) / 1000;
+  }
+  const ecart = (a: (typeof cotes)[number], b: (typeof cotes)[number]) => (fondPerdu.includes(a.c) || fondPerdu.includes(b.c) ? null : Math.round((Math.abs(a.marge - b.marge) / a.dim) * 1000) / 1000);
+  const ecartH = ecart(cotes[0], cotes[1]), ecartV = ecart(cotes[2], cotes[3]);
+  const maxCoupe = Math.max(0, ...Object.values(coupes).map(Number));
+  const decentre = (ecartH ?? 0) > S.cadrageDecentre || (ecartV ?? 0) > S.cadrageDecentre;
+  if (!maxCoupe && !decentre) return null;
+  const pc = (v: number) => `${Math.round(v * 100)} %`;
+  const morceaux = [
+    ...Object.entries(coupes).map(([c, v]) => `coupé ${c === 'haut' ? 'en haut' : c === 'bas' ? 'en bas' : `à ${c}`} (${pc(Number(v))} de la case)`),
+    ...((ecartV ?? 0) > S.cadrageDecentre ? [`décentré en hauteur (marges ${Math.round(cotes[2].marge)} / ${Math.round(cotes[3].marge)} px, écart ${pc(ecartV ?? 0)})`] : []),
+    ...((ecartH ?? 0) > S.cadrageDecentre ? [`décentré en largeur (marges ${Math.round(cotes[0].marge)} / ${Math.round(cotes[1].marge)} px, écart ${pc(ecartH ?? 0)})`] : []),
+  ];
+  return { gravite: maxCoupe > S.cadrageCoupeBloquant ? 'bloquant' : 'majeur', coupes, ecartH, ecartV, fondPerdu, texte: morceaux.join(', ') };
+}
+
+/** Image étirée : rendue avec object-fit: fill à un autre rapport largeur / hauteur que le fichier (écart > 3 %) */
+export const imageEtiree = (ecart: number) => ecart > SEUILS_TEST_MODELE.imageEtiree;
+
+export type CarteSoeur = { h: number; l: number; visuel: { l: number; h: number; dy: number; dx: number; balise: string } | null; aligne: string | null; texte?: string };
+export type DefautSoeurs = { gravite: GraviteTicket; type: 'hauteur' | 'visuel-taille' | 'visuel-position' | 'alignement'; texte: string };
+/**
+ * Cartes sœurs d'une même rangée (même balise, mêmes classes, même haut) : visuels de tailles différentes (> 8 %) ou décalés
+ * (> 4 px) d'une carte à l'autre, textes alignés différemment (majeurs : « évident à l'œil ») ; hauteurs inégales (> 10 %, mineur :
+ * une grille peut le vouloir, l'œil le remarque moins). Visuels absents d'une partie des cartes : non comparés.
+ */
+export function defautsCartesSoeurs(cartes: readonly CarteSoeur[], S: { soeursHauteur: number; soeursVisuel: number; soeursDecalagePx: number } = SEUILS_TEST_MODELE): DefautSoeurs[] {
+  if (cartes.length < 2) return [];
+  const r: DefautSoeurs[] = [];
+  const hs = cartes.map((c) => c.h);
+  const ecartH = (Math.max(...hs) - Math.min(...hs)) / Math.max(...hs);
+  if (ecartH > S.soeursHauteur) r.push({ gravite: 'mineur', type: 'hauteur', texte: `hauteurs inégales (${Math.round(Math.min(...hs))} à ${Math.round(Math.max(...hs))} px)` });
+  const vs = cartes.map((c) => c.visuel);
+  if (vs.every((v) => v !== null) && new Set(vs.map((v) => v?.balise)).size === 1) {
+    const ecart = (k: 'l' | 'h') => { const t = vs.map((v) => v?.[k] ?? 0); return (Math.max(...t) - Math.min(...t)) / Math.max(...t); };
+    if (Math.max(ecart('l'), ecart('h')) > S.soeursVisuel) r.push({ gravite: 'majeur', type: 'visuel-taille', texte: `visuels de tailles différentes (${vs.map((v) => `${Math.round(v?.l ?? 0)}×${Math.round(v?.h ?? 0)}`).join(', ')} px)` });
+    else {
+      const dy = vs.map((v) => v?.dy ?? 0), dx = vs.map((v) => v?.dx ?? 0);
+      const d = Math.max(Math.max(...dy) - Math.min(...dy), Math.max(...dx) - Math.min(...dx));
+      if (d > S.soeursDecalagePx) r.push({ gravite: 'majeur', type: 'visuel-position', texte: `visuels décalés d’une carte à l’autre (${Math.round(d)} px)` });
+    }
+  }
+  const al = cartes.map((c) => c.aligne).filter((a): a is string => !!a);
+  if (al.length === cartes.length && new Set(al).size > 1) r.push({ gravite: 'majeur', type: 'alignement', texte: `textes alignés différemment (${[...new Set(al)].join(', ')})` });
+  return r;
 }

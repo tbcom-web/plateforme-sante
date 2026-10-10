@@ -28,7 +28,7 @@ const photo = enPhotos && !dessinSeul ? photoDessin(nom) : null;
 </span>
 ) : (
 <span class:list={['couverture', 'surface-plan', classe]} aria-hidden="true">
-  <span class="couverture__dessin"><Dessin nom={nom} /></span>
+  <span class="couverture__dessin"><Dessin nom={nom} cadre /></span>
 </span>
 )}
 
@@ -41,6 +41,7 @@ const photo = enPhotos && !dessinSeul ? photoDessin(nom) : null;
   .couverture__haut span:first-child { color: var(--signal); }
   .couverture__bas { padding-top: 8px; border-top: var(--filet) solid var(--sur-sombre-filet); text-transform: none; letter-spacing: 0.02em; color: var(--sur-sombre-pale); }
   .couverture__dessin { display: grid; place-items: center; min-height: 0; padding: 6px 0; }
-  .couverture__dessin :global(.dessin) { height: 100%; width: auto; max-width: 100%; transition: transform var(--duree-moyen) var(--courbe-sortie); }
+  /* Dessin cadré (retour de Paul du 2026-10-10) : il remplit la couverture, centré sur son tracé réel ; un fond perdu sort par le bord */
+  .couverture__dessin :global(.dessin) { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform var(--duree-moyen) var(--courbe-sortie); }
   :global(a:hover) > .couverture .couverture__dessin :global(.dessin), :global(a:hover) .couverture .couverture__dessin :global(.dessin) { transform: scale(1.05); }
 </style>

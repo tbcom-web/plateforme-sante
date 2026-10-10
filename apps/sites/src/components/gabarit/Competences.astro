@@ -40,7 +40,7 @@ const visuels = soins.map((s) => {
         <span class="tuile__num mono" aria-hidden="true">{num(i)} / {String(n).padStart(2, '0')}</span>
         <span class:list={['tuile__visuel', 'forme-visuel', { 'surface-grille': !visuels[i].avecPhoto, 'tuile__visuel--photo': visuels[i].avecPhoto }]} aria-hidden="true">
           {visuels[i].avecPhoto && <img class="tuile__photo" src={visuels[i].photo} {...photoResponsive(visuels[i].photo, '(min-width: 1000px) 30vw, (min-width: 640px) 50vw, 100vw')} alt="" width="800" height="500" loading="lazy" decoding="async" style={`object-position:${visuels[i].cadrage}`} />}
-          {!visuels[i].avecPhoto && <Dessin nom={visuels[i].dessin} />}
+          {!visuels[i].avecPhoto && <Dessin nom={visuels[i].dessin} cadre />}
         </span>
         <span class="tuile__corps">
           <span class="tuile__titre forme-texte">{s.titreCourt}</span>
@@ -62,7 +62,8 @@ const visuels = soins.map((s) => {
 
   .tuile__visuel { position: relative; display: grid; place-items: center; padding: 18px 22px; aspect-ratio: 16 / 10; border-radius: var(--rayon); overflow: hidden; box-shadow: inset 0 0 0 var(--filet) var(--ligne); transition: box-shadow var(--duree-court); }
   a:hover .tuile__visuel { box-shadow: inset 0 0 0 var(--filet) var(--accent-ligne); }
-  .tuile__visuel :global(.dessin) { width: min(100%, 360px); transition: transform var(--duree-moyen) var(--courbe-sortie); }
+  /* Dessin cadré : il remplit la tuile, centré sur son tracé réel, marge dans son viewBox (core : cadrages-dessins.ts) */
+  .tuile__visuel :global(.dessin) { position: absolute; inset: 0; width: 100%; height: 100%; transition: transform var(--duree-moyen) var(--courbe-sortie); }
   .tuile:hover .tuile__visuel :global(.dessin) { transform: scale(1.035); }
   /* Photo du soin (style « Photos ») : pleine tuile, fond d'attente doux, traitement de teinte du modèle (Gabarit) */
   .tuile__visuel--photo { background: var(--doux); }
@@ -88,7 +89,6 @@ const visuels = soins.map((s) => {
     .tuile--vedette { grid-column: span 2; grid-row: span 2; }
     .tuile--vedette a { grid-template-rows: auto 1fr auto; }
     .tuile--vedette .tuile__visuel { aspect-ratio: auto; min-height: 320px; padding: 36px; }
-    .tuile--vedette .tuile__visuel :global(.dessin) { width: min(100%, 470px); }
     .tuile--vedette .tuile__titre { font-size: clamp(1.8rem, 2.6vw, 2.5rem); line-height: 1; letter-spacing: -0.04em; }
     .tuile--vedette .tuile__texte { font-size: 1.02rem; max-width: 46ch; }
     .tuile--moyen, .tuile--large { grid-column: span 2; }

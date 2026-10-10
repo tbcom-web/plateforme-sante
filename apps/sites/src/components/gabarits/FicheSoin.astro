@@ -58,7 +58,7 @@ const enPratique = [
     <Fragment slot="visuel">
       {v.type === 'photo'
         ? <img src={v.src} {...photoResponsive(v.src, '(min-width: 900px) 460px, 100vw')} alt={v.praticien ? `${soin.titreCourt} au cabinet${suffixeVille}` : ''} width="1200" height="900" fetchpriority="high" decoding="async" style={`object-position:${v.cadrage}`} />
-        : svgAct ? <Fragment set:html={svgAct} /> : <Dessin nom={v.dessin} trace={!revue} />}
+        : svgAct ? <Fragment set:html={svgAct} /> : <Dessin nom={v.dessin} trace={!revue} cadre />}
     </Fragment>
   </TetePage>
 

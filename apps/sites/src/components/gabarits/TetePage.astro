@@ -39,14 +39,18 @@ const visuel = htmlVisuel.length > 0;
   .tete__texte :global(.breadcrumb a) { display: inline-flex; align-items: center; min-height: var(--cible-tactile); color: var(--g-encre-douce); text-decoration: underline; text-decoration-thickness: var(--filet); }
   .tete__texte :global(.breadcrumb ol) { align-items: center; row-gap: 0; }
   .tete__visuel { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; border-radius: calc(var(--rayon-carte) * 0.7); background: var(--g-doux); overflow: hidden; color: var(--g-encre); --dessin-trait: var(--g-encre); --dessin-accent: var(--g-accent-texte); }
-  /* Dessin toujours entier et centré, quel que soit le ratio du cadre (viewBox mis à l'échelle « meet ») */
-  .tete__visuel :global(svg) { position: absolute; inset: 6%; width: 88%; height: 88%; }
+  /* Le visuel REMPLIT sa case (viewBox mis à l'échelle « meet ») : la marge intérieure est dans le dessin (dessin cadré, core :
+     cadrages-dessins.ts ; illustrations du sujet composées avec leurs marges). Avant (svg réduit à 88 %, retour de Paul du
+     2026-10-10) : un dessin qui sort de son repère (jambe qui entre par le haut) s'arrêtait net à 6 % du bord de la case. */
+  .tete__visuel :global(svg:not(svg svg)) { position: absolute; inset: 0; width: 100%; height: 100%; }
+  /* Illustration du sujet (héros 16:9, composée pour sortir du cadre par le bas : orteils, jambes) : case au même rapport, sinon le
+     bas du héros tombe au milieu de la case 4:3 et le dessin y est coupé net (contrôle « cadrage » du testeur, /themes/ongles) */
+  :global(.tete__visuel:has(.vt--heros)) { aspect-ratio: 16 / 9; }
   /* Village : le dessin entier dans le cadre bas et large (jamais rogné), centré */
   /* Revue : pas de carte ; visuel en figure large (2:1) sous le texte, sans arrondi, légende en italique */
   :global(.coquille--revue) .tete__carte { padding: clamp(36px, 6vw, 72px) 0 0; background: none; box-shadow: none; border-radius: 0; grid-template-columns: minmax(0, 1fr); }
   :global(.coquille--revue) .tete__visuel { aspect-ratio: 3 / 1; border-radius: 0; background: var(--g-doux); color: var(--g-figure); --dessin-trait: var(--g-figure); --dessin-ligne: var(--g-figure); --dessin-accent: var(--g-figure); }
-  :global(.coquille--revue) .tete__visuel :global(svg) { inset: 9% 6%; width: 88%; height: 82%; }
   :global(.coquille--revue) .tete__texte :global(h1) { max-width: 22ch; }
-  @media (max-width: 559px) { :global(.coquille--revue) .tete__visuel { aspect-ratio: 4 / 3; } :global(.coquille--revue) .tete__visuel :global(svg) { inset: 8%; width: 84%; height: 84%; } }
+  @media (max-width: 559px) { :global(.coquille--revue) .tete__visuel { aspect-ratio: 4 / 3; } }
   .tete__visuel :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 </style>

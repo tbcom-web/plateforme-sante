@@ -21,7 +21,7 @@ const Titre = titres === 'h2' ? 'h2' : 'span';
           <span class="actu__visuel" aria-hidden="true">
             {a.image
               ? <img src={a.image} {...photoResponsive(a.image, '(min-width: 900px) 380px, 100vw')} alt="" width="1600" height="900" loading="lazy" decoding="async" />
-              : <Dessin nom={dessinArticle(a.theme, a.titre)} />}
+              : <Dessin nom={dessinArticle(a.theme, a.titre)} cadre />}
           </span>
         )}
         <span class="actu__meta">{variante === 'cartes' && <>{a.theme} · </>}<time datetime={a.date}>{dateFr(a.date)}</time></span>
@@ -40,7 +40,8 @@ const Titre = titres === 'h2' ? 'h2' : 'span';
   .actus--cartes .actu { padding: 14px 14px 22px; border-radius: var(--rayon-carte); background: var(--g-carte); box-shadow: inset 0 0 0 var(--filet) var(--g-ligne); }
   .actus--cartes .actu:hover { box-shadow: inset 0 0 0 var(--filet-fort) var(--g-plein-bord); }
   .actu__visuel { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; margin-bottom: 8px; border-radius: calc(var(--rayon-carte) * 0.65); background: var(--g-doux); overflow: hidden; color: var(--g-encre); --dessin-trait: var(--g-encre); --dessin-accent: var(--g-accent-texte); }
-  .actu__visuel :global(svg) { width: 70%; height: 100%; }
+  /* Dessin cadré : il remplit la case, centré sur son tracé réel (core : cadrages-dessins.ts) */
+  .actu__visuel :global(svg.dessin--cadre) { position: absolute; inset: 0; width: 100%; height: 100%; }
   .actu__visuel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .actus--cartes :is(.actu__meta, .actu__titre, .actu__resume) { padding-inline: 8px; }
   .actu__meta { font-size: 0.9rem; font-weight: 600; color: var(--g-accent-texte); }

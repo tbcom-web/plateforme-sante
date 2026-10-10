@@ -93,6 +93,8 @@ requêtes tierces bloquées (et notées).
 | Console | erreurs `console.error`, exceptions | exception : bloquant ; erreur : majeur |
 | Animations | sans mouvement réduit : animations repérées ; avec : aucune ne tourne, chaque élément animé (sélecteur exact `:nth-of-type`, retrouvé sous mouvement réduit) reste visible (image fixe ; un tracé droit d'une seule dimension nulle est visible), capture `accueil--image-fixe.png` | majeur |
 | Tiers | toute requête hors du site | majeur |
+| Cadrage des visuels (toutes largeurs) | dessin SVG posé dans une case (élément au bord visible qui ne contient que lui) : boîte de TOUT le tracé (géométrie de chaque path / use…, clip-path compris) et de ce qui SE VOIT (fenêtres des <svg>, ancêtres qui masquent leur débordement) ; `defautCadrage` | coupé (le tracé dépasse de ce qui se voit) > 4 % de la case : majeur, > 15 % : bloquant ; décentré (marges opposées) > 18 % : majeur. Fond perdu toléré : le dessin sort par le BORD de la case, son <svg> calé dessus |
+| Cohérence | images étirées (object-fit: fill, rapport faussé > 3 %), images agrandies (floues : fichier servi plus petit que sa place, > ×1,25 mineur, > ×1,6 majeur) ; cartes sœurs d'une même rangée (même balise, mêmes classes, même haut) : visuels de tailles différentes (> 8 %), décalés (> 4 px), textes alignés différemment ; `defautsCartesSoeurs` | majeur ; hauteurs inégales (> 10 %) : mineur |
 
 Contraste (2026-10-09) : les lettres sont reconnues à leur couleur PEINTE (texte rgba mélangé au fond le plus fréquent) et les
 pixels d'anticrénelage (voisins d'une lettre, de couleur entre le texte et le fond dominant) sont écartés du 10e centile ; sans cela,
@@ -100,6 +102,40 @@ les polices fines (Bodoni, mono, condensée) et le texte blanc à 80 % sur fond 
 très fins (mono 13 px, aucun pixel à la couleur du texte) : un pixel à mi-chemin texte → fond, avec du fond dominant à 2 px au plus,
 compte comme cœur de lettre et ses voisins intermédiaires comme anticrénelage (« 22 SEPTEMBRE 2026 » mesuré 3,69:1 → 5,9:1, réel 6,3:1) ;
 une plage claire de photo derrière un texte blanc n'est pas un trait fin et reste comptée.
+
+## Cadrage des visuels dans leurs cases (retour de Paul du 2026-10-10)
+
+« Tu as mis vert alors que les images ne sont pas centrées dans leurs cases… » (finaliste 3a2bad2a v1 : cartes « Podologie du
+sport », « Semelles orthopédiques », « Douleur au talon », dessins coupés en haut, collés au bas de leur case). Cause : les dessins
+de la marque sont tracés dans un repère 240 × 180 sans y être centrés (chaussure posée bas, jambe qui entre par le haut et sort du
+repère, orteils coupés à droite) et les cases les posaient par ce repère, réduit (svg à 80 % × 88 %) : dessin bas, jambe arrêtée
+net à 6 % sous le haut de la case. Aucun contrôle ne mesurait le cadrage.
+
+- **Correction** (`packages/core/src/cadrages-dessins.ts`) : dans une case, le <svg> remplit la case et son viewBox est recadré sur
+  la boîte du tracé visible (`cadrageDessin`, marge 10 % du plus grand côté) ; un côté où le dessin sort de son repère, ou y est
+  coupé net (fond perdu), n'a pas de marge et est calé sur le bord de la case (`preserveAspectRatio`). Sites : `<Dessin cadre>`
+  (VignetteSoin : cartes de soins, Expertises, « Autres compétences » ; Competences, Actus, Couverture, VisuelTheme, VisuelEntete,
+  Planche et Empreintes, en-tête des fiches) ; admin : `svgDessin(…, { cadre: true })` (ApercuGabarit, cases du gabarit classique
+  d'ApercuTheme ; `.ap-svg > svg` : un <svg> imbriqué n'est plus étiré) ; pièce de la bibliothèque sans panneau (ongles épais) :
+  fenêtre ouverte (`DESSINS_FENETRE_OUVERTE`), la case la coupe ; héros des thèmes au trait continu (`illustrationTheme`, pièce cadrée prolongée
+  jusqu'au bord du héros). TetePage : le visuel remplit sa case (plus de svg à 88 %).
+- **Boîtes mesurées** (`cadrages-dessins-donnees.ts`, fichier généré) : `node apps/sites/scripts/mesurer-cadrages-dessins.mjs`
+  (Chromium, même géométrie que le testeur, `--verifier` : code 1 si périmé). À relancer après avoir retouché un dessin.
+- **Contrôle** « cadrage » (ci-dessus) et « coherence » : mesures dans la page `apps/sites/scripts/testeur-modeles/mesures-visuels.mjs`,
+  jugement pur dans le core (`defautCadrage`, `defautsCartesSoeurs`, `imageEtiree`). Vignettes : capture de l'élément fautif, barre
+  d'actions et en-tête collants masqués.
+- **Démonstration** (2026-10-10, recette « Sport · Clair et pratique · Lavande & citron » : mêmes cartes et mêmes soins que le cas
+  de Paul) : avant la correction, le testeur passait de vert à **rouge** sur le cadrage (sites : 86 visuels mal cadrés sur 134,
+  semelle coupée en haut à 87 %, talon, ongles épais, cors, diabète, chaussure décentrée de 24 %) ; aperçu de l'admin (ApercuModele,
+  rendu hors ligne, script de la planche) : semelle et talon bloquants, chaussure majeure. Après : 0 défaut de cadrage sur l'aperçu
+  (gabarits tableau, village, revue, classique ; ordinateur et téléphone) ; sites (6 recettes, jeu sport-basket) : plus aucun dessin
+  de soin ni de sujet mal cadré ; seul reste signalé (majeur) le héros composé « ongles » (scène, `heros-scenes.ts` : 3e orteil
+  coupé net à droite), à retoucher.
+
+Limites : seuls les dessins SVG sont mesurés (une photo ou une illustration en <img> n'a pas de « tracé » : son cadrage reste à
+l'agent visuel) ; une case doit avoir un bord visible (fond, ombre, bordure) et ne contenir que le visuel ; une case ronde est
+jugée sur son rectangle (un fond perdu y est rogné par l'arrondi) ; la géométrie ignore l'épaisseur des traits et les masques ;
+les scènes composées des héros (`sceneHeros`) gardent leur propre cadrage (mesurées, pas recadrées).
 
 ## Rendus hors ligne : exclusions et photos validées (M15, 2026-10-09)
 

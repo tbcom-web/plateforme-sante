@@ -79,9 +79,9 @@ const heros = univers
   ) : heros ? (
     <Fragment set:html={heros} />
   ) : registre === 'ligne' ? (
-    <Dessin ligne={visuel.ligne} />
+    <Dessin ligne={visuel.ligne} cadre />
   ) : (
-    <Dessin nom={visuel.dessin} registre={registre} />
+    <Dessin nom={visuel.dessin} registre={registre} cadre />
   )}
 </div>
 )}

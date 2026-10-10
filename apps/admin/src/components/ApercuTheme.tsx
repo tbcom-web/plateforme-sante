@@ -111,15 +111,18 @@ function Visuel({ rendu, filtre, hauteur, rayon = 0, sombre = false, registre = 
     return <div className={classe} style={cadre}><img src={rendu.src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: rendu.cadrage, filter: filtre }} /></div>;
   }
   const anim = useContext(ContexteAnimations);
-  const svg = rendu.type === 'animation' ? htmlAnimationApercu(rendu.animation, registre, anim) : svgDessin(rendu.dessin, { registre });
+  // Dessin CADRÉ (retour de Paul du 2026-10-10) : il remplit la case, centré sur son tracé réel (core : cadrages-dessins.ts) ;
+  // l'image fixe d'une animation garde sa place réduite
+  const svg = rendu.type === 'animation' ? htmlAnimationApercu(rendu.animation, registre, anim) : svgDessin(rendu.dessin, { registre, cadre: true });
+  const place: CSSProperties = rendu.type === 'animation' ? { width: '78%', height: '86%' } : { position: 'absolute', inset: 0 };
   // Registre pédagogique : schéma calme sur fond doux, jamais de plan sombre ni d'indication « animé »
   if (registre === 'pedagogique') {
-    return <div className={classe} style={{ ...cadre, display: 'grid', placeItems: 'center', background: 'var(--doux)' }}><div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svg }} /></div>;
+    return <div className={classe} style={{ ...cadre, display: 'grid', placeItems: 'center', background: 'var(--doux)' }}><div className="ap-svg" style={place} dangerouslySetInnerHTML={{ __html: svg }} /></div>;
   }
   const plan = sombre || rendu.type === 'animation';
   return (
     <div className={`${plan ? 'surface-plan' : 'surface-grille'}${classe ? ` ${classe}` : ''}`} style={{ ...cadre, display: 'grid', placeItems: 'center' }}>
-      <div className="ap-svg" style={{ width: '78%', height: '86%' }} dangerouslySetInnerHTML={{ __html: svg }} />
+      <div className="ap-svg" style={place} dangerouslySetInnerHTML={{ __html: svg }} />
       {rendu.type === 'animation' && <span className="ap-mono" style={{ position: 'absolute', left: 14, bottom: 10, color: 'var(--signal)', fontSize: 11 }}>● animé</span>}
     </div>
   );
@@ -726,7 +729,8 @@ const CSS = `
 .ap-tiroir__lien[aria-current] { color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); padding-left: 14px; }
 .ap-menu > i::after { top: 5px; width: 10px; }
 @media (max-width: 479px) { .ap-menu { justify-content: center; min-width: 44px; padding: 0; } .ap-menu > b { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
-.ap-svg svg { width: 100%; height: 100%; }
+/* Le <svg> du dessin seulement : un <svg> imbriqué (bibliothèque, ongles épais) garde sa fenêtre (sinon il s'étire et déborde) */
+.ap-svg > svg { width: 100%; height: 100%; }
 .ap-mot { white-space: nowrap; }
 /* Trame de points des relevés : respiration douce niveau par niveau (comme le site, Gabarit.astro) */
 @media (prefers-reduced-motion: no-preference) {

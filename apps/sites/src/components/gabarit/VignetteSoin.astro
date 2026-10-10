@@ -2,6 +2,8 @@
 // Vignette d'un soin dans les listes (compétences en liste, « Autres compétences »), selon le style visuel :
 // illustrations et mélange → dessin (les listes restent illustrées) ; photos → photo du soin.
 // À poser dans une boîte en position relative et overflow hidden (fournie par le parent). Décorative.
+// Dessin CADRÉ (retour de Paul du 2026-10-10 : dessins coupés, collés au bas de leur case) : il remplit la case, centré sur son
+// tracé réel avec une marge régulière (Dessin cadre) ; la case ne réduit plus le <svg> (pas de width 80 % / height 88 %).
 import Dessin from '../dessins/Dessin.astro';
 import { visuelSoin } from '../../lib/visuels-soins';
 import { modeVisuel, photoResponsive } from '../../lib/visuels';
@@ -15,10 +17,11 @@ const rendu = rendreCase(v, modeVisuel, 'liste');
 const dessin = rendu.type !== 'photo';
 const photo = rendu.type === 'photo';
 ---
-{dessin && <Dessin nom={v.dessin} />}
+{dessin && <Dessin nom={v.dessin} cadre />}
 {photo && <img class:list={['vs__photo', { 'vs__photo--survol': dessin }]} src={v.photo} {...photoResponsive(v.photo, '148px')} alt="" width="320" height="240" loading="lazy" decoding="async" style={`object-position:${v.cadrage}`} />}
 
 <style>
+  :global(svg.dessin--cadre) { position: absolute; inset: 0; width: 100%; height: 100%; }
   .vs__photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .vs__photo--survol { opacity: 0; transition: opacity var(--duree-moyen) var(--courbe-sortie); }
   :global(a:hover) .vs__photo--survol, :global(a:focus-visible) .vs__photo--survol { opacity: 1; }

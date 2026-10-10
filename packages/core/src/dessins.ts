@@ -28,6 +28,8 @@ import { svgMeulage } from './meulage';
 import { sceneDessin } from './heros-scenes';
 import { svgLigne, contenuLigne, contenuLigneAuto, contenuLigneGroupes, ORDRE_MATERIEL, brancherEquipements, LIGNE_DESSIN, LIGNE_EQUIPEMENT, LIGNE_ANIMATION, PODOSCOPE, type OptionsLigne } from './ligne';
 export * from './ligne';
+export * from './cadrages-dessins';
+import { cadrageDessin, recadrerSvg } from './cadrages-dessins';
 
 /** Registre graphique d'un dessin : relevé de podoscope (données), schéma pédagogique (trait et aplat) ou trait continu (ligne.ts) */
 export type Registre = 'releve' | 'pedagogique' | 'ligne';
@@ -850,7 +852,9 @@ const ZOOM: Record<string, { x: number; y: number; r: number }> = { verrue: { x:
 // svgDessin est une fonction pure de ses arguments (géométrie du code seulement) ; même texte rendu, calculé une fois
 const memoDessins = new Map<string, string>();
 const sansFonction = (o: unknown): boolean => !o || typeof o !== 'object' || Object.values(o as Record<string, unknown>).every((v) => typeof v !== 'function' && sansFonction(v));
-export function svgDessin(nom: NomDessin, opts: { id?: string; classe?: string; registre?: Registre; variante?: VarianteDessin; ligne?: OptionsLigne } = {}): string {
+export function svgDessin(nom: NomDessin, opts: { id?: string; classe?: string; registre?: Registre; variante?: VarianteDessin; ligne?: OptionsLigne; cadre?: boolean } = {}): string {
+  // Dans une case (carte de soin, sujet, aperçu) : viewBox recadré sur le tracé réel (cadrages-dessins.ts)
+  if (opts.cadre) return recadrerSvg(svgDessin(nom, { ...opts, cadre: false }), cadrageDessin(cleCadrage(nom, opts.registre ?? 'releve')));
   if (!sansFonction(opts)) return svgDessinCalcule(nom, opts);
   const cle = JSON.stringify([nom, opts]);
   let r = memoDessins.get(cle);
@@ -861,6 +865,8 @@ export function svgDessin(nom: NomDessin, opts: { id?: string; classe?: string; 
   }
   return r;
 }
+/** Clé du cadrage d'un dessin (cadrages-dessins-donnees.ts) : registre et nom, ou trait continu correspondant */
+export const cleCadrage = (nom: NomDessin, registre: Registre) => (registre === 'ligne' ? `ligne:${LIGNE_DESSIN[nom] ?? 'pied-dessous'}` : `${registre}:${nom}`);
 function svgDessinCalcule(nom: NomDessin, opts: { id?: string; classe?: string; registre?: Registre; variante?: VarianteDessin; ligne?: OptionsLigne }): string {
   const id = opts.id ?? `d-${nom}`;
   const registre = opts.registre ?? 'releve';

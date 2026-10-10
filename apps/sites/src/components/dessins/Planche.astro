@@ -19,7 +19,7 @@ interface Props {
 const { nom, legende = '', repere = '', fond = 'grille', class: classe } = Astro.props;
 ---
 <figure class:list={['planche', `planche--${fond}`, fond === 'plan' ? 'surface-plan' : 'surface-grille', classe]} aria-hidden="true">
-  <span class="planche__dessin">{nom ? <Dessin nom={nom} /> : <slot />}</span>
+  <span class="planche__dessin">{nom ? <Dessin nom={nom} cadre /> : <slot />}</span>
 </figure>
 
 <style>
@@ -35,4 +35,6 @@ const { nom, legende = '', repere = '', fond = 'grille', class: classe } = Astro
   .planche--plan .planche__dessin { color: var(--sur-sombre-doux); }
   .planche__dessin :global(.dessin) { width: min(100%, 440px); }
   .planche__dessin :global(.empreintes) { width: min(100%, 300px); }
+  /* Dessin cadré (centré sur son tracé réel, retour de Paul du 2026-10-10) : même place qu'avant, rapport 4:3 du repère */
+  .planche__dessin :global(svg.dessin--cadre) { height: auto; aspect-ratio: 4 / 3; }
 </style>

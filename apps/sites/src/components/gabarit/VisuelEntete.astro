@@ -49,7 +49,7 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
 
 {rendu === 'illustrations' && (
   <figure class:list={['ve', 've--plan', 'surface-plan', { 've--anime': anime }]} aria-hidden="true">
-    <span class="ve__scene">{anime ? <Animation nom={anime} fond="sombre" /> : svgActivite ? <Fragment set:html={svgActivite} /> : <Dessin nom={dessin} />}</span>
+    <span class="ve__scene">{anime ? <Animation nom={anime} fond="sombre" /> : svgActivite ? <Fragment set:html={svgActivite} /> : <Dessin nom={dessin} cadre />}</span>
   </figure>
 )}
 
@@ -75,6 +75,8 @@ const alt = photoPraticien && image.src === photoPraticien ? altPraticien : '';
   .ve--plan { display: grid; grid-template-rows: auto; padding: 14px 16px; border-radius: var(--rayon-grand); overflow: hidden; box-shadow: var(--ombre); }
   .ve__scene { display: grid; place-items: center; aspect-ratio: 16 / 9; min-height: 0; padding: clamp(10px, 2vw, 22px); color: var(--sur-sombre-doux); }
   .ve__scene :global(.dessin) { height: 100%; width: auto; max-width: 100%; }
+  /* Dessin cadré : il remplit le cartouche, centré sur son tracé réel (fond perdu par le bord ; retour de Paul du 2026-10-10) */
+  .ve__scene :global(svg.dessin--cadre) { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
   .ve--anime .ve__scene { padding: 0; }
   .ve--anime .ve__scene :global(canvas), .ve--anime .ve__scene :global(svg) { width: 100%; height: 100%; background: none !important; }
 

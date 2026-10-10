@@ -48,6 +48,7 @@ mentions légales, 404. Liste de contrôle :
 | Cohérence de style | deux styles d'illustration ou de photos qui se battent ; icônes de familles différentes |
 | Texte sur image | texte posé sur une zone chargée de la photo, sans voile ; lisible seulement en plissant les yeux |
 | Cadrage photo / visages | visage coupé au front ou au menton, pied coupé aux orteils, sujet décentré par le recadrage mobile |
+| Visuels dans leurs cases | dessin coupé net au milieu de sa case, collé à un bord, décentré (le script mesure les dessins SVG : contrôle « cadrage » ; regarde surtout les PHOTOS et les illustrations en <img>, qu'il ne juge pas) |
 | Alignements | colonnes qui ne tombent pas juste, boutons de hauteurs différentes côte à côte, icônes mal centrées |
 | Rythme vertical | trous blancs, sections collées, rythme qui change sans raison d'une page à l'autre |
 | Cohérence entre pages | en-tête, boutons, titres, couleurs qui changent d'une page à l'autre |
@@ -55,7 +56,8 @@ mentions légales, 404. Liste de contrôle :
 | Vocabulaire et ton | slogans, promesses (« soigner définitivement »), mots métier faux (voir la mémoire « Vocabulaire des sites praticiens ») |
 | Goût de Paul | tout ce que juge-gout-paul prédirait ≤ 3 ★ : dis pourquoi en une phrase |
 
-Ne refais pas le travail du script (débordement, contrastes, liens, tailles tactiles…) : il les mesure. Si tu vois un défaut
+Ne refais pas le travail du script (débordement, contrastes, liens, tailles tactiles, cadrage des dessins dans leurs cases, cartes sœurs
+incohérentes, images étirées…) : il les mesure. Si tu vois un défaut
 technique qu'il a manqué, fais-en un ticket `categorie: "technique"` et dis-le dans ton rapport (le script devra l'apprendre).
 
 ## Format de sortie (identique au script)

@@ -30,6 +30,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import { DEPOT, resoudre, sortieAutorisee, sousDossier } from '../../../packages/core/scripts/chemins.mjs';
+import { mesurerVisuels } from './testeur-modeles/mesures-visuels.mjs';
 
 const debut = Date.now();
 const racineSites = fileURLToPath(new URL('..', import.meta.url));
@@ -574,6 +575,73 @@ const avecDelai = (p, ms, siDepasse) => {
 };
 const capturesFaites = [];
 const fichiersCaptures = new Map();
+/** Captures d'éléments fautifs (cadrage, cohérence) à une largeur sans capture pleine page : empreinte → { f, zone } */
+const capturesElements = new Map();
+async function captureElement(page, controle, cle, zone, largeur) {
+  const emp = core.empreinte(cle);
+  if (capturesElements.has(emp) || capturesElements.size >= 80) return;
+  const m = 24, x = Math.max(0, zone.x - m), y = Math.max(0, zone.y - m);
+  const clip = { x, y, width: Math.min(zone.l + 2 * m, largeur - x), height: Math.min(zone.h + 2 * m, 900) };
+  if (clip.width < 4 || clip.height < 4) return;
+  const f = join(sortie, 'elements', `${controle}-${emp}.png`);
+  mkdirSync(dirname(f), { recursive: true });
+  capturesElements.set(emp, null);
+  // Éléments fixes (barre d'actions mobile, en-tête collant) masqués le temps de la capture : ils recouvriraient la case
+  const masquer = (oui) => page.evaluate((o) => {
+    if (!o) { document.querySelectorAll('[data-masque-capture]').forEach((e) => { e.style.visibility = e.dataset.masqueCapture; delete e.dataset.masqueCapture; }); return; }
+    for (const e of document.querySelectorAll('body *')) { const p = getComputedStyle(e).position; if ((p === 'fixed' || p === 'sticky') && !e.closest('[data-masque-capture]')) { e.dataset.masqueCapture = e.style.visibility; e.style.visibility = 'hidden'; } }
+  }, oui);
+  try {
+    await masquer(true);
+    await page.screenshot({ path: f, fullPage: true, clip, animations: 'disabled' });
+    capturesElements.set(emp, { f, zone: { x: zone.x - x, y: zone.y - y, l: zone.l, h: Math.min(zone.h, 900) } });
+  } catch { capturesElements.delete(emp); } finally { await masquer(false).catch(() => {}); }
+}
+/** Visuels mal cadrés, images étirées, cartes sœurs incohérentes (mesures-visuels.mjs, jugement du core) */
+async function controlesVisuels(page, lieu, largeur) {
+  const v = await page.evaluate(mesurerVisuels, { mode: 'page' });
+  const appareil = largeur <= 600 ? 'mobile' : 'ordinateur';
+  const zoneDe = (b) => ({ x: b.x, y: b.y, l: b.d - b.x, h: b.b - b.y });
+  for (const c of v.cadrages) {
+    compter('cadrage', 'visuels');
+    const d = core.defautCadrage(c);
+    if (!d) continue;
+    compter('cadrage', 'defauts');
+    const cle = `cadrage|${c.dessin}|${c.selecteur.replace(/^\S+ (?=\S)/, '')}|${appareil}`;
+    const zone = zoneDe(c.cadre);
+    const pire = Math.max(0, ...Object.values(d.coupes));
+    ajouter('cadrage', {
+      ...lieu, gravite: d.gravite, element: c.selecteur, zonePx: zone, cle,
+      mesure: [pire ? `coupé ${Math.round(pire * 100)} %` : '', d.ecartV !== null && d.ecartV > S.cadrageDecentre ? `écart vertical ${Math.round(d.ecartV * 100)} %` : '', d.ecartH !== null && d.ecartH > S.cadrageDecentre ? `écart horizontal ${Math.round(d.ecartH * 100)} %` : ''].filter(Boolean).join(' · '),
+      seuil: `coupé ≤ ${S.cadrageCoupe * 100} % (> ${S.cadrageCoupeBloquant * 100} % bloquant), écart des marges ≤ ${S.cadrageDecentre * 100} %`,
+      commentaire: `Visuel mal cadré dans sa case à ${largeur} px : dessin « ${c.dessin} » (${c.selecteur}) ${d.texte}`,
+      suggestion: 'Centrer le dessin sur la boîte de son tracé (cadrage du core : svgDessin(…, { cadre: true }), <Dessin cadre>), le <svg> remplissant sa case ; un dessin qui sort volontairement du cadre doit toucher le bord de la case.',
+    });
+    await captureElement(page, 'cadrage', cle, zone, largeur);
+  }
+  for (const i of v.etirees) {
+    if (i.type === 'agrandie') {
+      compter('coherence', 'agrandies');
+      const cle = `agrandie|${i.src}|${appareil}`;
+      ajouter('coherence', { ...lieu, gravite: i.ecart > core.SEUILS_TEST_MODELE.imageAgrandieMajeur ? 'majeur' : 'mineur', element: i.selecteur, zonePx: zoneDe(i.boite), cle, mesure: `agrandie ×${String(i.ecart).replace('.', ',')}`, seuil: `≤ ×${String(core.SEUILS_TEST_MODELE.imageAgrandieMajeur).replace('.', ',')} (mineur au-delà de ×1,25)`, commentaire: `Image floue à ${largeur} px : ${i.src} affichée ${String(i.ecart).replace('.', ',')} fois plus grande que le fichier servi (${i.selecteur})`, suggestion: 'Servir une variante plus grande (srcset, sizes juste) ou réduire la place de l’image.' });
+      continue;
+    }
+    compter('coherence', 'images');
+    if (!core.imageEtiree(i.ecart)) continue;
+    const cle = `etiree|${i.src}|${i.selecteur}|${appareil}`;
+    ajouter('coherence', { ...lieu, gravite: 'majeur', element: i.selecteur, zonePx: zoneDe(i.boite), cle, mesure: `rapport déformé de ${Math.round(i.ecart * 100)} %`, seuil: `≤ ${S.imageEtiree * 100} %`, commentaire: `Image étirée à ${largeur} px : ${i.src} (${i.selecteur})`, suggestion: 'object-fit: cover (ou contain) et dimensions au rapport de l’image.' });
+    await captureElement(page, 'coherence', cle, zoneDe(i.boite), largeur);
+  }
+  for (const g of v.soeurs) {
+    compter('coherence', 'rangees');
+    for (const d of core.defautsCartesSoeurs(g.cartes)) {
+      const b = g.cartes.map((c) => c.boite).reduce((a, x) => ({ x: Math.min(a.x, x.x), y: Math.min(a.y, x.y), d: Math.max(a.d, x.d), b: Math.max(a.b, x.b) }));
+      const cle = `soeurs|${d.type}|${g.selecteur.replace(/^\S+ (?=\S)/, '')}|${appareil}`;
+      ajouter('coherence', { ...lieu, gravite: d.gravite, element: g.selecteur, zonePx: zoneDe(b), cle, mesure: d.texte, seuil: `taille des visuels ±${S.soeursVisuel * 100} %, décalage ≤ ${S.soeursDecalagePx} px, même alignement, hauteur ±${S.soeursHauteur * 100} % (mineur)`, commentaire: `Cartes sœurs incohérentes à ${largeur} px (${g.selecteur}) : ${d.texte}`, suggestion: 'Même gabarit pour toutes les cartes de la rangée : visuel de taille fixe (aspect-ratio), même alignement du texte, grille aux rangées égales.' });
+      if (d.gravite !== 'mineur') await captureElement(page, 'coherence', cle, zoneDe(b), largeur);
+    }
+  }
+}
 const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 
 async function controlerPage(ctx, jeu, url, chemin, largeur) {
@@ -596,6 +664,7 @@ async function controlerPage(ctx, jeu, url, chemin, largeur) {
     const r = await page.evaluate(analyserPage, { contraste: avecCapture, cibles: mobile, images: avecCapture });
     const lieu = { chemin, jeu: jeu.id, largeur, surface: r.surface };
     compter('debordement', 'pages-largeurs');
+    await controlesVisuels(page, lieu, largeur);
     if (r.deborde) {
       const f = r.fautifs[0];
       ajouter('debordement', { ...lieu, gravite: 'bloquant', element: f?.selecteur, zonePx: f?.boite, mesure: `${r.surface.l} px de large`, seuil: `${largeur} px`, cle: `debordement|${chemin}|${f?.selecteur}|${largeur}`, commentaire: `La page déborde horizontalement à ${largeur} px${f ? ` : ${f.selecteur} « ${f.texte} » va jusqu’à ${f.droite} px` : ''}`, suggestion: 'Autoriser le retour à la ligne (min-width: 0, flex-wrap), réduire la taille ou rendre le mot insécable plus court.' });
@@ -1003,8 +1072,11 @@ let nV = 0;
 for (const t of tries) {
   if (nV >= 60 || !t.zonePx) continue;
   const c = captureProche(t);
-  if (!c?.exacte) continue;
-  t.vignette = await vignette(c.f, t.zonePx, `t-${String(++nV).padStart(4, '0')}.jpg`).catch(() => null);
+  // Cadrage, cohérence : capture de l'élément fautif (sans barre fixe par-dessus), sinon la capture pleine page
+  const e = capturesElements.get(t.empreinte);
+  if (!c?.exacte && !e) continue;
+  const nom = `t-${String(++nV).padStart(4, '0')}.jpg`;
+  t.vignette = (e ? await vignette(e.f, e.zone, nom).catch(() => null) : null) ?? (c?.exacte ? await vignette(c.f, t.zonePx, nom).catch(() => null) : null);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1033,6 +1105,8 @@ const resumes = {
   console: () => `${f((mesures.console?.console ?? 0) + (mesures.console?.exception ?? 0))} erreur(s)`,
   animations: () => `${f(mesures.animations?.animees ?? 0)} animation(s) repérée(s) à l’accueil`,
   tiers: () => 'requêtes réseau de toutes les pages',
+  cadrage: () => `${f(mesures.cadrage?.visuels ?? 0)} visuels en case mesurés (toutes largeurs), ${f(mesures.cadrage?.defauts ?? 0)} mal cadré(s)`,
+  coherence: () => `${f(mesures.coherence?.rangees ?? 0)} rangées de cartes sœurs, ${f(mesures.coherence?.images ?? 0)} image(s) déformée(s), ${f(mesures.coherence?.agrandies ?? 0)} agrandie(s) (floues)`,
   activites: () => (JEUX.some((j) => j.activites?.length) ? `${f(mesures.activites?.visuels ?? 0)} visuels vérifiés dans les jeux d’activité` : 'aucun jeu d’activité'),
 };
 const SEUILS_LISIBLES = {
@@ -1041,6 +1115,8 @@ const SEUILS_LISIBLES = {
   'barre-actions': 'appel, itinéraire, RDV, ≥ 44 px', formulaires: 'étiquettes et envoi', images: `chargées, alt, dimensions, ≤ ${Math.round(S.poidsImage / 1024)} Ko, ni démo ni refusée`, polices: 'chargées, auto-hébergées',
   accessibilite: 'aucune violation axe WCAG 2.2 AA (critique = bloquant)', seo: 'title, description, canonical, 1 H1, JSON-LD valide', agents: `score ≥ ${S.scoreAgents}/100`, charte: 'controle:charte sans écart', webkit: '≤ 4 % de pixels par zone',
   performance: `LCP ≤ ${S.lcpMs / 1000} s, CLS ≤ ${S.cls}, TBT ≤ ${S.tbtMs} ms, ≤ ${Math.round(S.poidsPage / 1024)} Ko`, console: 'aucune erreur', animations: 'reduced-motion respecté, image fixe visible', tiers: 'aucune requête tierce', activites: 'aucun visuel d’une autre activité (bloquant)',
+  cadrage: `coupé ≤ ${S.cadrageCoupe * 100} % de la case (> ${S.cadrageCoupeBloquant * 100} % bloquant), marges opposées ±${S.cadrageDecentre * 100} %`,
+  coherence: `images non étirées (±${S.imageEtiree * 100} %) ni agrandies (≤ ×${String(S.imageAgrandieMajeur).replace('.', ',')}), cartes sœurs : visuels ±${S.soeursVisuel * 100} %, décalage ≤ ${S.soeursDecalagePx} px, même alignement`,
 };
 const controles = core.CONTROLES_TESTEUR.filter((c) => c.id !== 'visuel').map((c) =>
   core.bilanControle(c.id, tries, { mesure: resumes[c.id]?.() ?? '', seuil: SEUILS_LISIBLES[c.id] ?? '', nonMesure: nonMesures.has(c.id), dureeMs: durees[c.id] }),

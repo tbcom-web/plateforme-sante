@@ -10,7 +10,7 @@
 // le tracé se dessine à l'apparition (ChargeurDessins, data-trace ; trait complet si le visiteur réduit les mouvements). La
 // prop `ligne` pose directement un dessin du registre ligne par son nom (DESSINS_LIGNE). Décoratif : aria-hidden.
 import '@plateforme/core/dessins.css';
-import type { NomDessin, NomLigne, Registre } from '@plateforme/core';
+import { cadrageDessin, cleCadrage, type NomDessin, type NomLigne, type Registre } from '@plateforme/core';
 import { urlDessin, suffixeRegistre } from '../../lib/fichiers-dessins';
 import ChargeurDessins from './ChargeurDessins.astro';
 import { registre as registreSite } from '../../lib/visuels';
@@ -25,13 +25,25 @@ interface Props {
   registre?: Registre;
   /** Registre ligne : le trait se dessine à l'apparition (par défaut : oui) */
   trace?: boolean;
+  /**
+   * Dessin posé dans une CASE (carte de soin, vignette) : viewBox recadré sur le tracé réel, centré, marge régulière, fond perdu
+   * calé au bord (core : cadrages-dessins.ts ; retour de Paul du 2026-10-10). Le <svg> doit alors remplir la case.
+   */
+  cadre?: boolean;
 }
 
-const { nom = 'appuis', ligne, class: classe, registre: registreProp = registreSite, trace = true } = Astro.props;
+const { nom = 'appuis', ligne, class: classe, registre: registreProp = registreSite, trace = true, cadre = false } = Astro.props;
 const registre: Registre = ligne ? 'ligne' : registreProp;
 const fichier = urlDessin(ligne ? `ligne-${ligne}` : `${nom}${suffixeRegistre(registre)}`);
 const anime = registre === 'ligne' && trace ? '' : undefined;
+const cadrage = cadre ? cadrageDessin(ligne ? `ligne:${ligne}` : cleCadrage(nom, registre)) : null;
+const viewBox = cadrage?.viewBox ?? '0 0 240 180';
+const preserveAspectRatio = cadrage?.preserveAspectRatio;
 ---
-<svg class:list={['dessin', `dessin--${ligne ?? nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true" data-trace={anime}><use data-dessin={fichier} width="240" height="180" /></svg>
-<noscript><svg class:list={['dessin', `dessin--${ligne ?? nom}`, `dessin--${registre}`, classe]} viewBox="0 0 240 180" aria-hidden="true"><use href={fichier} width="240" height="180" /></svg><style>svg:has(> use[data-dessin]){display:none}</style></noscript>
+<svg class:list={['dessin', `dessin--${ligne ?? nom}`, `dessin--${registre}`, { 'dessin--cadre': cadrage, 'dessin--ouvert': cadrage?.ouvert }, classe]} viewBox={viewBox} preserveAspectRatio={preserveAspectRatio} aria-hidden="true" data-trace={anime}><use data-dessin={fichier} width="240" height="180" /></svg>
+<noscript><svg class:list={['dessin', `dessin--${ligne ?? nom}`, `dessin--${registre}`, { 'dessin--cadre': cadrage, 'dessin--ouvert': cadrage?.ouvert }, classe]} viewBox={viewBox} preserveAspectRatio={preserveAspectRatio} aria-hidden="true"><use href={fichier} width="240" height="180" /></svg><style>svg:has(> use[data-dessin]){display:none}</style></noscript>
 <ChargeurDessins />
+<style is:global>
+  /* Fenêtre ouverte (core : DESSINS_FENETRE_OUVERTE) : la pièce de la bibliothèque continue jusqu'au bord de la case */
+  svg.dessin--ouvert svg { overflow: visible; }
+</style>
