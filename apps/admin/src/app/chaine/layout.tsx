@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
+import TempsServeur from '@/components/TempsServeur';
+import { getRole } from '@/lib/admin';
 import Shell from '@/components/Shell';
 import PrechauffageOuvriers from '@/components/PrechauffageOuvriers';
 import { exigerContributeur } from '@/lib/chaine-modeles';
@@ -14,6 +17,7 @@ const ONGLETS = [
 
 export default async function LayoutChaine({ children }: { children: React.ReactNode }) {
   const moi = await exigerContributeur();
+  const admin = (await getRole()) === 'admin';
   return (
     <Shell email={moi.email}>
       <nav aria-label="Chaîne des modèles" className="-mt-2 mb-5 flex flex-wrap items-center gap-2 text-sm">
@@ -24,6 +28,8 @@ export default async function LayoutChaine({ children }: { children: React.React
       </nav>
       <PrechauffageOuvriers />
       {children}
+      {/* Mesure continue : « page servie en x ms » (admins seulement) */}
+      {admin && <Suspense fallback={null}><TempsServeur /></Suspense>}
     </Shell>
   );
 }

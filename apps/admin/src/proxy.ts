@@ -10,6 +10,7 @@ const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher', '/essai', '/api/st
 
 // Rafraîchit la session Supabase à chaque navigation et protège les pages privées.
 export async function proxy(request: NextRequest) {
+  const debut = performance.now();
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -39,6 +40,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Mesure continue (2026-10-10) : durée de la vérification de session, lisible dans l'onglet Réseau et la pastille des admins
+  response.headers.set('Server-Timing', `session;desc="Session";dur=${(performance.now() - debut).toFixed(1)}`);
   return response;
 }
 

@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import Shell from '@/components/Shell';
+import TempsServeur from '@/components/TempsServeur';
 import ContexteImages from '@/components/ContexteImages';
 import PrechauffageOuvriers from '@/components/PrechauffageOuvriers';
 import NavAdmin from '@/components/NavAdmin';
@@ -35,6 +37,8 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
       {/* Workers de la Dégustation et de la Présélection réchauffés au repos (pool-workers.ts) */}
       <PrechauffageOuvriers />
       {children}
+      {/* Mesure continue : « page servie en x ms » (admins seulement, mesurée par le navigateur) */}
+      <Suspense fallback={null}><TempsServeur /></Suspense>
     </Shell>
   );
 }
