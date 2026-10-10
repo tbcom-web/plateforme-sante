@@ -51,7 +51,11 @@ test('arrivages : types d’ingrédients', () => {
 });
 
 test('espaces de l’admin : menu, fil d’Ariane, redirections', () => {
-  assert.deepEqual(ESPACES.map((e) => e.libelle), ['Arrivages', 'Frigo', 'Dégustation', 'Cuisine', 'Clients']);
+  assert.deepEqual(ESPACES.map((e) => e.libelle), ['🎯 À valider', 'Arrivages', 'Frigo', 'Dégustation', 'Cuisine', 'Clients']);
+  // Point d'entrée unique en tête, avec la pastille de ce qui attend (une seule pastille « arrivages » dans le menu)
+  assert.equal(ESPACES[0].href, '/admin/sujets');
+  assert.deepEqual(ESPACES.flatMap((e) => e.entrees.filter((x) => x.compteur === 'arrivages').map((x) => x.href)), ['/admin/sujets']);
+  assert.deepEqual(filAriane('/admin/sujets/sport-golf').map((m) => m.libelle), ['Super admin', '🎯 À valider', 'Sujet']);
   // Aucune adresse en double dans le menu
   const hrefs = ESPACES.flatMap((e) => e.entrees.map((x) => x.href));
   assert.equal(new Set(hrefs).size, hrefs.length);

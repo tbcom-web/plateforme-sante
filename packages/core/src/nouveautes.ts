@@ -137,8 +137,11 @@ export function lotsDuParametre(lots: readonly LotNouveautes[], parametre: strin
   return lots.filter((l) => l.id === p || l.famille === p);
 }
 
-/** Lien direct vers un lot (à envoyer à Paul après une livraison) */
-export const lienNouveautes = (lot: string) => `/admin/retours?nouveautes=${encodeURIComponent(lot)}`;
+/**
+ * Lien direct vers un lot (à envoyer à Paul après une livraison) : le point d'entrée unique « À valider » (sujets-validation.ts,
+ * 2026-10-10), qui ouvre le sujet contenant le plus d'éléments du lot. L'ancienne adresse /admin/retours?nouveautes= marche toujours.
+ */
+export const lienNouveautes = (lot: string) => `/admin/sujets?nouveautes=${encodeURIComponent(lot)}`;
 
 /** Libellé d'un lot : « Animations d'en-tête empreintes · 10 · 08/10 » */
 export const libelleLot = (l: Pick<LotNouveautes, 'libelle' | 'cles' | 'date'>) => `${l.libelle} · ${l.cles.length} · ${dateCourte(l.date)}`;

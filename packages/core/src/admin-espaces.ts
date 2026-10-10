@@ -7,7 +7,7 @@
 
 import redirectionsJson from './admin-redirections.json';
 
-export type IdEspace = 'arrivages' | 'frigo' | 'degustation' | 'cuisine' | 'clients';
+export type IdEspace = 'a-valider' | 'arrivages' | 'frigo' | 'degustation' | 'cuisine' | 'clients';
 
 export type EntreeMenu = {
   href: string;
@@ -21,10 +21,17 @@ export type EntreeMenu = {
 export type Espace = { id: IdEspace; libelle: string; href: string; description: string; entrees: readonly EntreeMenu[] };
 
 export const ESPACES: readonly Espace[] = [
+  // POINT D'ENTRÉE UNIQUE (demande de Paul du 2026-10-10, sujets-validation.ts) : en tête du menu, avec la pastille de ce qui attend ;
+  // les Arrivages, la Dégustation et les tuiles restent accessibles (« vue détaillée ») mais ne sont plus le chemin principal
+  {
+    id: 'a-valider', libelle: '🎯 À valider', href: '/admin/sujets',
+    description: 'Un seul endroit : chaque sujet (golf, diabète, enfant…), une carte à la fois, OK ou pas OK.',
+    entrees: [{ href: '/admin/sujets', libelle: 'Sujets', compteur: 'arrivages' }],
+  },
   {
     id: 'arrivages', libelle: 'Arrivages', href: '/admin/arrivages',
-    description: 'Tout ce qui est nouveau, au même endroit : accepter (entre au frigo) ou refuser.',
-    entrees: [{ href: '/admin/arrivages', libelle: 'À trier', compteur: 'arrivages' }],
+    description: 'Vue détaillée de tout ce qui est nouveau : accepter (entre au frigo) ou refuser, par lot.',
+    entrees: [{ href: '/admin/arrivages', libelle: 'À trier' }],
   },
   {
     id: 'frigo', libelle: 'Frigo', href: '/admin/frigo',
@@ -82,6 +89,7 @@ export const ESPACES: readonly Espace[] = [
 
 /** Sous-pages (adresse plus longue qu'une entrée du menu) : libellé du dernier maillon du fil d'Ariane */
 const SOUS_PAGES: readonly { prefixe: string; libelle: string }[] = [
+  { prefixe: '/admin/sujets/', libelle: 'Sujet' },
   { prefixe: '/admin/sites/', libelle: 'Photos du site' },
   { prefixe: '/admin/leads/', libelle: 'Fiche essai' },
   { prefixe: '/admin/prospection/praticien/', libelle: 'Fiche praticien' },

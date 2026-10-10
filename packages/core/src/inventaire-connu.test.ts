@@ -55,7 +55,7 @@ test('lots : une nouveauté notée (ou dont l’illustration de base est notée)
   assert.deepEqual(lotsDuParametre(lots, 'entete-empreintes@2026-10-08').length, 1);
   assert.deepEqual(lotsDuParametre(lots, 'tout').length, 1);
   assert.deepEqual(lotsDuParametre(lots, 'inconnu'), []);
-  assert.equal(lienNouveautes('pictos-directions@2026-10-08'), '/admin/retours?nouveautes=pictos-directions%402026-10-08');
+  assert.equal(lienNouveautes('pictos-directions@2026-10-08'), '/admin/sujets?nouveautes=pictos-directions%402026-10-08');
 });
 
 test('familles des nouveautés et dates', () => {

@@ -31,6 +31,7 @@
     "./professions": "./src/professions.ts",
     "./arrivages": "./src/arrivages.ts",
     "./admin-espaces": "./src/admin-espaces.ts",
+    "./sujets-validation": "./src/sujets-validation.ts",
     "./annuaire-sante": "./src/annuaire-sante.ts",
     "./onboarding": "./src/onboarding.ts",
     "./onboarding-professions": "./src/onboarding-professions.ts"
