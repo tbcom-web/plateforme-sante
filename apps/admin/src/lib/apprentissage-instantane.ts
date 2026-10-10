@@ -1,6 +1,7 @@
 import 'server-only';
 import { cache } from 'react';
 import { after } from 'next/server';
+import { headers } from 'next/headers';
 import { createClient, nombreEchecsSupabase } from '@/lib/supabase/server';
 import { getRole } from '@/lib/admin';
 
@@ -62,29 +63,119 @@ type Memoire = { signature: string; texte: string; le: number };
 const memoire = new Map<string, Memoire>();
 const enCours = new Map<string, Promise<unknown>>();
 
+/** Définition d'un instantané : clé (sans la portée), calcul complet, tables sources, forme JSON */
+export type DefinitionInstantane<T, J = T> = {
+  cle: string; calculer: () => Promise<T>;
+  /** Tables dont dépend le résultat (par défaut : SOURCES_APPRENTISSAGE) */
+  tables?: readonly string[];
+  serialiser?: (v: T) => J; deserialiser?: (j: J) => T;
+};
+
+const signatureDe = (tables: readonly string[] | undefined, s: Sources) => `${FORMAT}|${DEPLOIEMENT}|${(tables ?? SOURCES_APPRENTISSAGE).map((t) => `${t}:${s.get(t) ?? '-'}`).join(',')}`;
+
+/**
+ * Calcul complet puis enregistrement (mémoire de l'instance et base) ; un seul calcul à la fois par instance et par clé. Utilisé
+ * par les pages (premier calcul, instantané de plus de 24 h, exigerFrais) et par la route de recalcul (api/apprentissage/recalcul).
+ */
+export function calculerEtGarder<T, J = T>(o: DefinitionInstantane<T, J>, portee: 'admin' | 'equipe', signatureConnue?: string): Promise<T> {
+  const cle = `${o.cle}|${portee}`;
+  const deja = enCours.get(cle) as Promise<T> | undefined;
+  if (deja) return deja;
+  const enJson = o.serialiser ?? ((v: T) => v as unknown as J);
+  const debut = performance.now();
+  const echecsAvant = nombreEchecsSupabase();
+  // Signature relue JUSTE AVANT le calcul (pas celle du début de la requête) : une écriture faite entre-temps par la même page
+  // (automate de la chaîne) ne laisse pas un instantané calculé après elle sous une signature d'avant (recalcul inutile ensuite)
+  let signatureCalcul = signatureConnue ?? null;
+  const p = lireSources().then((f) => { if (f) signatureCalcul = signatureDe(o.tables, f); }).then(() => o.calculer()).then(async (v) => {
+    const texte = JSON.stringify(enJson(v));
+    // Mesure continue : calcul d'apprentissage de plus d'une seconde écrit dans le journal du serveur (durée, taille ; aucune donnée)
+    const ms = performance.now() - debut;
+    if (ms >= 1000) console.warn(`[apprentissage] calcul ${cle} ${Math.round(ms)} ms, ${Math.round(texte.length / 1024)} Ko`);
+    // Une lecture a échoué pendant le calcul (repli vide possible) : résultat servi à cette requête seulement, rien n'est gardé
+    if (nombreEchecsSupabase() !== echecsAvant) { console.warn(`[apprentissage] ${cle} : lecture en échec pendant le calcul, résultat non gardé`); return v; }
+    if (!signatureCalcul) return v;
+    memoire.set(cle, { signature: signatureCalcul, texte, le: Date.now() });
+    if (memoire.size > 40) memoire.delete(memoire.keys().next().value!);
+    try {
+      const supabase = await createClient();
+      await supabase.from('apprentissage_instantane').upsert({ cle, portee, signature: signatureCalcul, valeur: texte, octets: texte.length, calcule_le: new Date().toISOString() }, { onConflict: 'cle' });
+    } catch { /* écriture refusée : le résultat reste valable pour cette requête */ }
+    return v;
+  }).finally(() => enCours.delete(cle));
+  enCours.set(cle, p);
+  return p;
+}
+
+// RECALCUL HORS DES PAGES (perf vague 2, 2026-10-10) : au volume ×10, recalculer les poids appris et la politique après un vote
+// prenait ~18 s de processeur APRÈS la réponse (after), sur l'instance qui sert les pages : les pages suivantes ralentissaient (jusqu'à
+// 15-30 s mesurés sur le banc) et chaque instance qui voyait l'instantané périmé refaisait le même calcul. Maintenant la page sert
+// toujours l'instantané précédent et demande le recalcul à une route dédiée (api/apprentissage/recalcul : fonction Vercel à part,
+// maxDuration propre) qui prend un VERROU en base (0060 : un seul recalcul à la fois par clé, toutes instances confondues, libéré à la
+// fin ou au bout de 150 s) puis calcule après sa réponse. Une instance ne redemande pas le même recalcul (mêmes sources) avant 60 s.
+// Sans la route (hors requête, appel refusé) : calcul d'avant sur l'instance (after). Sans la migration 0060 : la route calcule sans
+// verrou partagé (un seul calcul par instance, comme avant).
+const DELAI_REDEMANDE_MS = 60_000;
+const demandes = new Map<string, number>();
+let routeRefuseeLe = 0;
+type Demande = { url: string; cookie: string };
+async function preparerDemande(): Promise<Demande | null> {
+  if (Date.now() - routeRefuseeLe < 10 * 60_000) return null;
+  try {
+    const h = await headers();
+    const hote = h.get('x-forwarded-host') ?? h.get('host');
+    if (!hote) return null;
+    const proto = h.get('x-forwarded-proto') ?? (hote.startsWith('localhost') || hote.startsWith('127.0.0.1') ? 'http' : 'https');
+    // Banc de mesure (scripts/perf-admin) : route servie par une seconde instance, comme une fonction Vercel à part
+    const url = process.env.APPRENTISSAGE_RECALCUL_URL ?? `${proto}://${hote}/api/apprentissage/recalcul`;
+    return { url, cookie: h.get('cookie') ?? '' };
+  } catch {
+    return null;
+  }
+}
+function demanderRecalcul(d: Demande, cle: string, portee: string, signature: string) {
+  // Même instantané ET mêmes sources : pas de nouvelle demande avant 60 s (un vote de plus : nouvelle demande)
+  const k = `${cle}|${portee}|${signature}`;
+  const deja = demandes.get(k);
+  if (deja && Date.now() - deja < DELAI_REDEMANDE_MS) return;
+  demandes.set(k, Date.now());
+  if (demandes.size > 100) demandes.delete(demandes.keys().next().value!);
+  const envoyer = async () => {
+    try {
+      const r = await fetch(d.url, {
+        method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(10_000),
+        // En-tête propre : jamais envoyé par un formulaire d'un autre site (la route le vérifie)
+        headers: { cookie: d.cookie, 'content-type': 'application/json', 'x-apprentissage': '1' },
+        body: JSON.stringify({ cle, portee, signature }),
+      });
+      if (r.status >= 400 && r.status !== 409) { routeRefuseeLe = Date.now(); demandes.delete(k); console.warn(`[apprentissage] route de recalcul refusée (${r.status}) : calcul sur l'instance pendant 10 min`); }
+    } catch {
+      demandes.delete(k);
+    }
+  };
+  try { after(envoyer); } catch { void envoyer(); }
+}
+
 /**
  * Résultat de `calculer()` gardé en base pour (`cle`, `portee`). `serialiser` / `deserialiser` : forme JSON (Set, Map → listes) ;
  * le résultat relu doit être identique au résultat calculé (vérifié sur le banc avec APPRENTISSAGE_VERIFIER=1).
  * `portee` null (compte hors équipe) ou instantanés indisponibles (0059 absente, lecture refusée) : `repli` (calcul d'avant, avec sa
  * mémoire de l'instance), sinon `calculer`. `calculer` doit TOUJOURS recalculer (jamais une mémoire : elle serait gardée en base).
  */
-export async function instantane<T, J = T>(o: {
-  cle: string; portee: 'admin' | 'equipe' | null; calculer: () => Promise<T>; repli?: () => Promise<T>;
-  /** Tables dont dépend le résultat (par défaut : SOURCES_APPRENTISSAGE) */
-  tables?: readonly string[];
+export async function instantane<T, J = T>(o: DefinitionInstantane<T, J> & {
+  portee: 'admin' | 'equipe' | null; repli?: () => Promise<T>;
   /** Jamais un instantané périmé (calcul d'un autre instantané qui en dépend : il serait gardé avec une donnée d'avant) */
   exigerFrais?: boolean;
-  serialiser?: (v: T) => J; deserialiser?: (j: J) => T;
 }): Promise<T> {
   const enJson = o.serialiser ?? ((v: T) => v as unknown as J);
   const depuisJson = o.deserialiser ?? ((j: J) => j as unknown as T);
   const repli = o.repli ?? o.calculer;
   if (!o.portee) return repli();
+  const portee = o.portee;
   const sources = await getSourcesApprentissage();
   if (!sources) return repli();
-  const cle = `${o.cle}|${o.portee}`;
-  const signatureDe = (s: Sources) => `${FORMAT}|${DEPLOIEMENT}|${(o.tables ?? SOURCES_APPRENTISSAGE).map((t) => `${t}:${s.get(t) ?? '-'}`).join(',')}`;
-  const signature = signatureDe(sources);
+  const cle = `${o.cle}|${portee}`;
+  const signature = signatureDe(o.tables, sources);
   const lire = (texte: string) => depuisJson(JSON.parse(texte) as J);
   const verifier = (texte: string, origine: string) => {
     if (process.env.APPRENTISSAGE_VERIFIER !== '1') return;
@@ -118,41 +209,19 @@ export async function instantane<T, J = T>(o: {
     const changees = (o.tables ?? SOURCES_APPRENTISSAGE).filter((t) => avant.get(t) !== (sources.get(t) ?? '-'));
     console.info(`[apprentissage] ${cle} à recalculer : ${ligne.signature.split('|').slice(0, 2).join('|') !== `${FORMAT}|${DEPLOIEMENT}` ? 'nouveau déploiement' : changees.length ? `${changees.join(', ')} changé(s)` : `plus d'une heure`}`);
   }
-  // 3. Recalcul (un seul à la fois par instance), enregistré pour les requêtes et instances suivantes
-  const recalculer = (): Promise<T> => {
-    const deja = enCours.get(cle) as Promise<T> | undefined;
-    if (deja) return deja;
-    const debut = performance.now();
-    const echecsAvant = nombreEchecsSupabase();
-    // Signature relue JUSTE AVANT le calcul (pas celle du début de la requête) : une écriture faite entre-temps par la même page
-    // (automate de la chaîne) ne laisse pas un instantané calculé après elle sous une signature d'avant (recalcul inutile ensuite)
-    let signatureCalcul = signature;
-    const p = lireSources().then((f) => { if (f) signatureCalcul = signatureDe(f); }).then(() => o.calculer()).then(async (v) => {
-      const texte = JSON.stringify(enJson(v));
-      // Mesure continue : calcul d'apprentissage de plus d'une seconde écrit dans le journal du serveur (durée, taille ; aucune donnée)
-      const ms = performance.now() - debut;
-      if (ms >= 1000) console.warn(`[apprentissage] calcul ${cle} ${Math.round(ms)} ms, ${Math.round(texte.length / 1024)} Ko`);
-      // Une lecture a échoué pendant le calcul (repli vide possible) : résultat servi à cette requête seulement, rien n'est gardé
-      if (nombreEchecsSupabase() !== echecsAvant) { console.warn(`[apprentissage] ${cle} : lecture en échec pendant le calcul, résultat non gardé`); return v; }
-      memoire.set(cle, { signature: signatureCalcul, texte, le: Date.now() });
-      if (memoire.size > 40) memoire.delete(memoire.keys().next().value!);
-      try {
-        const supabase = await createClient();
-        await supabase.from('apprentissage_instantane').upsert({ cle, portee: o.portee, signature: signatureCalcul, valeur: texte, octets: texte.length, calcule_le: new Date().toISOString() }, { onConflict: 'cle' });
-      } catch { /* écriture refusée : le résultat reste valable pour cette requête */ }
-      return v;
-    }).finally(() => enCours.delete(cle));
-    enCours.set(cle, p);
-    return p;
-  };
   if (ligne && age < PERIME_SERVI_MS && !o.exigerFrais) {
-    // Sources changées ou instantané de plus d'une heure (fenêtres de dates de la politique) : servi aussitôt, recalculé après la
-    // réponse (un seul calcul à la fois par instance)
-    const p = recalculer().catch(() => null);
-    try { after(() => p); } catch { /* hors requête */ }
+    // Sources changées ou instantané de plus d'une heure (fenêtres de dates de la politique) : servi aussitôt ; recalcul demandé à
+    // la route dédiée (hors des pages), sinon calculé ici après la réponse (un seul calcul à la fois par instance)
+    const d = enCours.has(cle) ? null : await preparerDemande();
+    if (d) demanderRecalcul(d, o.cle, portee, signature);
+    else {
+      const p = calculerEtGarder(o, portee, signature).catch(() => null);
+      try { after(() => p); } catch { /* hors requête */ }
+    }
     return lire(ligne.valeur);
   }
-  return recalculer();
+  // 3. Premier calcul (ou instantané de plus de 24 h, ou exigerFrais) : tout de suite, enregistré pour les requêtes suivantes
+  return calculerEtGarder(o, portee, signature);
 }
 
 /** Portée des instantanés pour le compte connecté : admin, équipe de la chaîne, sinon aucune (calcul direct) */

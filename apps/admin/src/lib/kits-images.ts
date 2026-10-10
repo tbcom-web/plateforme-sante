@@ -59,6 +59,11 @@ export const getContexteImages = cache(async (praticien = false): Promise<Contex
   const portee = !praticien && (await getRole().catch(() => null)) === 'admin' ? 'admin' as const : null;
   return instantane({ cle: 'contexte-images', portee, tables: SOURCES_CONTEXTE_IMAGES, calculer: () => calculerContexteImages(praticien, true), repli: () => calculerContexteImages(praticien, false) });
 });
+/** Instantané du contexte d'images de l'admin (route de recalcul, apprentissage-calculs.ts) : même calcul que getContexteImages() */
+export async function definitionContexteImages() {
+  const portee = (await getRole().catch(() => null)) === 'admin' ? 'admin' as const : null;
+  return { cle: 'contexte-images', portee, tables: SOURCES_CONTEXTE_IMAGES, calculer: () => calculerContexteImages(false, true) };
+}
 
 /** `lancer` : une erreur est remontée (jamais un contexte vide gardé en base) au lieu du repli vide */
 async function calculerContexteImages(praticien: boolean, lancer: boolean): Promise<ContexteImagesCompact> {

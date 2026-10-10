@@ -13,6 +13,10 @@
 //   absentes, ex. la migration 0059 pas encore exécutée> --pages=/admin,/chaine (liste) --dossier=<dossier temporaire parent>
 //   --froid : chaque page mesurée d'abord sur un serveur NEUF (instance Vercel froide : aucune mémoire entre requêtes), puis à chaud.
 //   Sortie par page : temps du premier passage (froid si --froid) et médiane des passages suivants, requêtes, Ko lus.
+//   --instance-recalcul : route de recalcul de l'apprentissage servie par une SECONDE instance (comme la fonction Vercel à part :
+//   APPRENTISSAGE_RECALCUL_URL) ; sans elle, la route tourne dans l'instance des pages.
+//   --apres-vote=/admin,/admin/retours : après les mesures, 3 votes simulés (compteur « duels » augmenté, instantanés périmés) suivis
+//   chacun de 6 pages enchaînées (300 ms d'écart) : temps des pages servies PENDANT le recalcul de l'apprentissage.
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -99,10 +103,18 @@ try {
   const { readdirSync, statSync } = await import('node:fs');
   resultats.bundles = Object.fromEntries(readdirSync(dossier, { recursive: true }).map(String).filter((f) => f.endsWith('.js')).map((f) => [f.replaceAll('\\', '/'), Math.round(gzipSync(readFileSync(join(dossier, f))).length / 1024)]).sort((a, c) => c[1] - a[1]).slice(0, 8));
   // Serveur Next (relancé avant chaque page avec --froid : instance neuve, sans mémoire entre requêtes)
-  let serveur = null;
+  let serveur = null, recalcul = null;
+  const PORT_RECALCUL = PORT_APP + 1;
   const demarrer = async () => {
     if (serveur) { serveur.kill(); await new Promise((r) => serveur.once('exit', r)); }
-    serveur = lancer([next, 'start', '-p', String(PORT_APP)], { cwd: app, env: { ...env, ...(opt.verifier ? { APPRENTISSAGE_VERIFIER: '1' } : {}) } });
+    if (opt['instance-recalcul'] && !recalcul) {
+      recalcul = lancer([next, 'start', '-p', String(PORT_RECALCUL)], { cwd: app, env: { ...env, ...(opt.verifier ? { APPRENTISSAGE_VERIFIER: '1' } : {}) } });
+      const { createWriteStream } = await import('node:fs');
+      const j = createWriteStream(join(tmp, 'recalcul.log'), { flags: 'a' });
+      recalcul.stdout.pipe(j); recalcul.stderr.pipe(j);
+      await attendre(`http://localhost:${PORT_RECALCUL}/connexion`, 120000);
+    }
+    serveur = lancer([next, 'start', '-p', String(PORT_APP)], { cwd: app, env: { ...env, ...(opt.verifier ? { APPRENTISSAGE_VERIFIER: '1' } : {}), ...(opt['instance-recalcul'] ? { APPRENTISSAGE_RECALCUL_URL: `http://localhost:${PORT_RECALCUL}/api/apprentissage/recalcul` } : {}) } });
     // Journal du serveur (Server-Timing, requêtes lentes, égalité des instantanés) : <dossier>/serveur.log
     const { createWriteStream } = await import('node:fs');
     const journal = createWriteStream(join(tmp, 'serveur.log'), { flags: 'a' });
@@ -151,6 +163,29 @@ try {
     const d = m.at(-1);
     resultats.serveur[p] = { statut: d.statut, premierMs: Math.round(premier.total), premierRequetes: premier.st.total, premierKo: Math.round(premier.st.octets / 1024), ms: Math.round(med(m.map((x) => x.total))), htmlKo: Math.round(d.html / 1024), requetes: d.st.total, supabaseKo: Math.round(d.st.octets / 1024), parRequete: Object.fromEntries(Object.entries(d.st.par).map(([k, v]) => [k, v.n])), premierParRequete: Object.fromEntries(Object.entries(premier.st.par).sort((x, y) => y[1].octets - x[1].octets).map(([k, v]) => [k, { n: v.n, ko: Math.round(v.octets / 1024), ms: Math.round(v.ms) }])) };
     console.log(`  ${p.padEnd(32)} ${opt.froid ? 'froid' : '1er'} ${String(Math.round(premier.total)).padStart(6)} ms ${String(premier.st.total).padStart(3)} req ${String(Math.round(premier.st.octets / 1024)).padStart(6)} Ko │ chaud ${String(resultats.serveur[p].ms).padStart(5)} ms  ${String(d.st.total).padStart(3)} requêtes  ${String(Math.round(d.st.octets / 1024)).padStart(5)} Ko Supabase  HTML ${Math.round(d.html / 1024)} Ko`);
+  }
+
+  // ---- Pages servies pendant le recalcul de l'apprentissage (après un vote) ----
+  if (opt['apres-vote']) {
+    const pages = String(opt['apres-vote']).split(',');
+    const temps = [];
+    console.log(`▶ Après un vote (3 votes, 6 pages chacun : ${pages.join(', ')})`);
+    for (let v = 0; v < 3; v++) {
+      await fetch(SUPA + '/__toucher?table=duels');
+      const l = [];
+      for (let i = 0; i < 6; i++) {
+        const p = pages[i % pages.length];
+        const t0 = performance.now();
+        try { const r = await fetch(BASE + p, { headers: { cookie }, redirect: 'manual', signal: AbortSignal.timeout(Number(opt.delai ?? 120000)) }); await r.text(); } catch { /* délai */ }
+        l.push(Math.round(performance.now() - t0));
+        await new Promise((ok) => setTimeout(ok, 300));
+      }
+      temps.push(...l);
+      console.log(`  vote ${v + 1} : ${l.join(' · ')} ms`);
+      await new Promise((ok) => setTimeout(ok, Number(opt['attente-vote'] ?? 30000)));
+    }
+    resultats.apresVote = { pages, temps, mediane: med(temps), max: Math.max(...temps) };
+    console.log(`  médiane ${med(temps)} ms, max ${Math.max(...temps)} ms`);
   }
 
   // ---- Navigateur ----

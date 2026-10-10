@@ -42,6 +42,13 @@ export async function profilsChaine() {
  * `photos` null : profil sans pratique (scénario type) → photos de ses sujets.
  */
 export async function profilsDemo() {
+  const { profession, def, repli } = await definitionProfilsDemoComplete();
+  return { profession, profils: await instantane({ ...def, repli }) };
+}
+export type ProfilDemoChaine = Awaited<ReturnType<typeof profilsDemo>>['profils'][number];
+/** Instantané des photos des profils de démonstration (pages et route de recalcul, apprentissage-calculs.ts) */
+export const definitionProfilsDemo = async () => (await definitionProfilsDemoComplete()).def;
+async function definitionProfilsDemoComplete() {
   const { profession, profils } = await profilsChaine();
   // Photos autorisées de chaque profil gardées en base (apprentissage-instantane.ts, 0059, 2026-10-10) tant que photos, jeux, notes
   // et revues n'ont pas changé : la banque de photos et tout le journal des notes étaient relus à chaque page de la chaîne.
@@ -53,11 +60,9 @@ export async function profilsDemo() {
       return { ...p, photos };
     });
   const portee = await porteeInstantane();
-  const avecPhotos = await instantane({
-    cle: `profils-demo|${profession.id}`, portee, tables: SOURCES_CONTEXTE_IMAGES,
-    calculer: async () => photosDe(await getDonneesKits()),
+  return {
+    profession,
+    def: { cle: `profils-demo|${profession.id}`, portee, tables: SOURCES_CONTEXTE_IMAGES, calculer: async () => photosDe(await getDonneesKits()) },
     repli: async () => photosDe(await sur(getDonneesKits(), null)),
-  });
-  return { profession, profils: avecPhotos };
+  };
 }
-export type ProfilDemoChaine = Awaited<ReturnType<typeof profilsDemo>>['profils'][number];

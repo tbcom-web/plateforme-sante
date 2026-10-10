@@ -72,14 +72,16 @@ async function getTranchesSansMemo(): Promise<{ tranches: Tranches; details: Det
 type TranchesJson = { tranches: { refuses: string[]; favoris: string[]; notes: string[] }; details: DetailTranche[] };
 // Gardées en base (apprentissage-instantane.ts, 0059, 2026-10-10) tant que les journaux n'ont pas changé ; sans la migration : calcul
 // à chaque requête, comme avant
-export const getTranches = cache(async (): Promise<{ tranches: Tranches; details: DetailTranche[] }> => {
+export const getTranches = cache(async (): Promise<{ tranches: Tranches; details: DetailTranche[] }> => instantane(await definitionTranches()));
+/** Instantané des éléments tranchés (pages et route de recalcul, apprentissage-calculs.ts) : admin seulement (sinon calcul direct) */
+export async function definitionTranches() {
   const portee = (await getRole().catch(() => null)) === 'admin' ? 'admin' as const : null;
-  return instantane<{ tranches: Tranches; details: DetailTranche[] }, TranchesJson>({
+  return {
     cle: 'tranches', portee, calculer: getTranchesSansMemo,
-    serialiser: (v) => ({ tranches: tranchesEnListes(v.tranches), details: v.details }),
-    deserialiser: (j) => ({ tranches: { refuses: new Set(j.tranches.refuses), favoris: new Set(j.tranches.favoris), notes: new Set(j.tranches.notes) }, details: j.details }),
-  });
-});
+    serialiser: (v: { tranches: Tranches; details: DetailTranche[] }): TranchesJson => ({ tranches: tranchesEnListes(v.tranches), details: v.details }),
+    deserialiser: (j: TranchesJson) => ({ tranches: { refuses: new Set(j.tranches.refuses), favoris: new Set(j.tranches.favoris), notes: new Set(j.tranches.notes) }, details: j.details }),
+  };
+}
 
 /** Forme sérialisable pour les composants clients */
 export const tranchesEnListes = (t: Tranches) => ({ refuses: [...t.refuses], favoris: [...t.favoris], notes: [...t.notes] });

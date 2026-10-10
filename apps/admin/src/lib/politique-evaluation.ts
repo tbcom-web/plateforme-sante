@@ -214,17 +214,18 @@ async function resumer(p: Politique | null, predictions: Promise<{ cle: string; 
 export const getResumePolitique = cache(async (): Promise<ResumePolitique | null> => {
   if ((await getRole()) !== 'admin') return null;
   return instantane<ResumePolitique | null>({
-    cle: 'politique', portee: 'admin',
-    calculer: async () => resumer(await getPolitiqueSansMemo(), getPredictions()),
+    ...DEFINITION_POLITIQUE,
     repli: async () => resumer(await getPolitiqueBornee(), avecDelai(getPredictions(), DELAIS.compteurs, [])),
   });
 });
+/** Instantané du résumé de la politique (pages et route de recalcul, apprentissage-calculs.ts) : admin seulement */
+const DEFINITION_POLITIQUE = { cle: 'politique', portee: 'admin' as const, calculer: async () => resumer(await getPolitiqueSansMemo(), getPredictions()) };
+export const definitionPolitique = async () => ((await getRole()) === 'admin' ? DEFINITION_POLITIQUE : null);
 /** Résumé À JOUR (jamais un instantané périmé) : pour les calculs gardés eux-mêmes en base (poids appris, éléments tranchés) */
 export const getResumePolitiqueFrais = cache(async (): Promise<ResumePolitique | null> => {
   if ((await getRole()) !== 'admin') return null;
   return instantane<ResumePolitique | null>({
-    cle: 'politique', portee: 'admin', exigerFrais: true,
-    calculer: async () => resumer(await getPolitiqueSansMemo(), getPredictions()),
+    ...DEFINITION_POLITIQUE, exigerFrais: true,
     repli: async () => resumer(await getPolitiqueBornee(), avecDelai(getPredictions(), DELAIS.compteurs, [])),
   });
 });

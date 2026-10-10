@@ -97,10 +97,15 @@ async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
 // sources n'ont pas changé : une instance froide relit l'instantané (2 petites requêtes) au lieu de relire tous les journaux.
 // Sans la migration (ou hors équipe) : mémoire de quelques minutes de l'instance, comme avant.
 export const getPoidsAtelier = cache(async (): Promise<PoidsAtelier | null> => {
-  const [user, p, portee] = await Promise.all([getUser().catch(() => null), professionDegustation(), porteeInstantane()]);
+  const [user, p, def] = await Promise.all([getUser().catch(() => null), professionDegustation(), definitionPoids()]);
   if (!user) return getPoidsAtelierSansMemo();
-  return instantane({ cle: `poids|${p.id}`, portee, calculer: getPoidsAtelierSansMemo, repli: () => memoRecent(`poids|${user.id}|${p.id}`, getPoidsAtelierSansMemo) });
+  return instantane({ ...def, repli: () => memoRecent(`poids|${user.id}|${p.id}`, getPoidsAtelierSansMemo) });
 });
+/** Instantané des poids appris (pages et route de recalcul, apprentissage-calculs.ts) : profession de la Dégustation, portée du compte */
+export async function definitionPoids() {
+  const [p, portee] = await Promise.all([professionDegustation(), porteeInstantane()]);
+  return { cle: `poids|${p.id}`, portee, calculer: getPoidsAtelierSansMemo };
+}
 
 type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null; appareil?: string | null };
 

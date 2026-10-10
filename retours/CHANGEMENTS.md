@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : Après un vote, l'apprentissage se recalcule à part (route dédiée, un seul calcul à la fois) : les pages ne ralentissent plus pendant le calcul (migration 0060 à exécuter).
 - 2026-10-10 : héros en relevé posés SANS fond carré dans les pages (premier écran, sujets, articles) : plus de rectangle plan quadrillé, trait à l'encre de la gamme et accents ≥ 3:1 sur page claire, bords fondus ; même dessin, mêmes clés (animation:coureur, scènes des thèmes, héros diabète) — apparence changée des ingrédients déjà notés en relevé.
 - 2026-10-10 : Donner mon avis plus rapide : notes résumées par clé (mêmes compteurs et mêmes tirages), synthèse « Copier mes retours » préparée au clic.
 - 2026-10-10 : Admin plus rapide : la chaîne, la Dégustation, le Frigo et le menu ne lisent plus que ce qu'ils affichent ; listes de photos et bibliothèque affichées par pages (« Afficher plus »).

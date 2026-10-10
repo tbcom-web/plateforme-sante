@@ -151,6 +151,7 @@ function rest(req, res, url, corps) {
 }
 const sansComposition = (i) => { if (!i || typeof i !== 'object') return i; const { composition, ...r } = i; return r; };
 const recents = (l) => [...l].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+const VERROUS = new Map();
 function rpc(nom, args) {
   switch (nom) {
     case 'recettes_lecture': return T.recettes.filter((r) => r.statut === 'active' && r.note && r.note >= (args.p_note_min ?? 4)).map(({ id, nom: n, sujets, couleurs_preferees, composition, note, etiquettes, statut }) => ({ id, nom: n, sujets, couleurs_preferees, composition, note, etiquettes, statut }));
@@ -176,6 +177,9 @@ function rpc(nom, args) {
       for (const j of T.modeles_jaime ?? []) if (ids.has(j.modele)) jaime[j.modele] = (jaime[j.modele] ?? 0) + 1;
       return Object.entries(jaime).map(([modele, n]) => ({ modele, jaime: n }));
     }
+    // Verrous du recalcul de l'apprentissage (0060) : un seul recalcul à la fois par clé
+    case 'prendre_verrou_apprentissage': { const v = VERROUS.get(args.p_cle); if (v && v > Date.now()) return false; VERROUS.set(args.p_cle, Date.now() + 1000 * (args.p_secondes ?? 150)); return true; }
+    case 'rendre_verrou_apprentissage': VERROUS.delete(args.p_cle); return null;
     case 'apprentissage_signatures': return (args.p_tables ?? []).map((t) => { const l = T[t] ?? []; let d = ''; for (const x of l) { const v = x.created_at ?? x.maj_le ?? ''; if (v > d) d = v; } return { nom: t, lignes: l.length, derniere: d || null }; });
     default: return undefined;
   }
@@ -187,6 +191,8 @@ function traiter(req, res, url, corps) {
   if (req.method === 'OPTIONS') { res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' }); return res.end(); }
   try {
     if (url.pathname === '/__reset') { STATS.length = 0; return json(res, 200, { ok: true }); }
+    // Un vote simulé (banc --apres-vote) : le compteur de la table augmente, comme le déclencheur de 0059
+    if (url.pathname === '/__toucher') { compter(url.searchParams.get('table') ?? 'duels'); return json(res, 200, { ok: true }); }
     if (url.pathname === '/__vider') { T.apprentissage_instantane = []; return json(res, 200, { ok: true }); }
     if (url.pathname === '/__stats') {
       const par = {};
