@@ -325,10 +325,14 @@ async function etape(nom, f) {
   }
 }
 
-async function lireTout(chemin) {
+/** Sérialisation stable (clés triées) pour comparer une valeur calculée à celle lue en base (jsonb réordonne les clés) */
+const stable = (v) => JSON.stringify(v ?? null, (_, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a.localeCompare(b))) : x));
+const differe = (calcule, enBase, champs) => champs.some((k) => stable(calcule[k] ?? null) !== stable(enBase?.[k] ?? null));
+
+async function lireTout(chemin, ordre = 'cle') {
   const tout = [];
   for (let offset = 0; ; offset += 1000) {
-    const page = await sb(`${chemin}&order=cle&limit=1000&offset=${offset}`);
+    const page = await sb(`${chemin}${chemin.includes('?') ? '&' : '?'}order=${ordre}&limit=1000&offset=${offset}`);
     tout.push(...page);
     if (page.length < 1000) return tout;
   }
@@ -448,15 +452,17 @@ async function verifierInstallations() {
   const ilYa30j = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const debutVerif = new Date().toISOString(); // une fiche re-vérifiée pendant ce passage ne revient pas dans la file
   const memo = new Map();
+  // File lue UNE fois (requête simple, par pages) puis filtrée ici : jamais vérifiées, non datées depuis 30 jours, et (0059) datées
+  // avant la reprise de la date du SIREN. Les plus récemment apparues d'abord.
+  const candidates = await lireTout(`prospection_praticiens?select=cle,rpps,nom,prenom,siret,code_postal,profession_code,apparu_le,verifie_le,siret_cree_le${AVEC_SIREN ? ',siren_cree_le' : ''}&disparu_le=is.null`);
+  const file = candidates
+    .filter((c) => !c.verifie_le || (!c.siret_cree_le && c.verifie_le < ilYa30j) || (AVEC_SIREN && c.siret_cree_le && !c.siren_cree_le && c.verifie_le < debutVerif))
+    .sort((a, b) => String(b.apparu_le ?? '').localeCompare(String(a.apparu_le ?? '')) || a.cle.localeCompare(b.cle))
+    .slice(0, VERIF_MAX);
+  console.log(`Dates d'installation : ${file.length} fiche(s) à vérifier`);
   let faites = 0, trouves = 0;
-  while (faites < VERIF_MAX) {
-    // File : jamais vérifiées, non datées depuis 30 jours, et (0059) datées avant la reprise de la date du SIREN
-    const rattrapage = AVEC_SIREN ? ',and(siret_cree_le.not.is.null,siren_cree_le.is.null,verifie_le.lt.' + debutVerif + ')' : '';
-    const paquet = await sb(
-      `prospection_praticiens?select=cle,rpps,nom,prenom,siret,code_postal,profession_code&disparu_le=is.null`
-      + `&or=(verifie_le.is.null,and(siret_cree_le.is.null,verifie_le.lt.${ilYa30j})${rattrapage})&order=apparu_le.desc.nullslast,cle&limit=${Math.min(1000, VERIF_MAX - faites)}`,
-    );
-    if (!paquet.length) break;
+  for (let i = 0; i < file.length; i += 1000) {
+    const paquet = file.slice(i, i + 1000);
     trouves += await verifierPaquet(paquet, memo, faites);
     faites += paquet.length;
     console.log(`  ${faites} vérifiées, ${trouves} datées`);
@@ -566,8 +572,11 @@ async function synchroAns() {
     console.log('  Jours de modification les plus récents (jour : praticiens) :', recents.map(([j, n]) => `${j}:${n}`).join(' '));
     return parRpps.size;
   }
-  for (let i = 0; i < lignesAns.length; i += 1000) {
-    await sb('prospection_ans?on_conflict=rpps', { method: 'POST', body: lignesAns.slice(i, i + 1000), prefer: 'resolution=merge-duplicates,return=minimal' });
+  const enBase = new Map((await lireTout('prospection_ans?select=rpps,situation_maj_le,praticien_maj_le,situations', 'rpps')).map((x) => [x.rpps, x]));
+  const changees = lignesAns.filter((l) => differe(l, enBase.get(l.rpps), ['situation_maj_le', 'praticien_maj_le', 'situations']));
+  console.log(`  API ANS : ${changees.length} fiche(s) modifiée(s) écrite(s)`);
+  for (let i = 0; i < changees.length; i += 1000) {
+    await sb('prospection_ans?on_conflict=rpps', { method: 'POST', body: changees.slice(i, i + 1000), prefer: 'resolution=merge-duplicates,return=minimal' });
   }
   return parRpps.size;
 }
@@ -597,7 +606,7 @@ async function lireCommunes() {
 }
 
 async function calculerScores(v0058) {
-  const champs = (AVEC_SIREN ? 'siren_cree_le,ancien_cabinet,etablissements_ouverts,' : '') + 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,code_postal,structure_cle,raison_sociale,enseigne,commune,code_commune,departement,nom,prenom,autres_professions,statut,telephone,email,specialites';
+  const champs = 'score_installation,score_prospect,raisons,' + (AVEC_SIREN ? 'siren_cree_le,ancien_cabinet,etablissements_ouverts,' : '') + 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,code_postal,structure_cle,raison_sociale,enseigne,commune,code_commune,departement,nom,prenom,autres_professions,statut,telephone,email,specialites';
   const toutes = await lireTout(`prospection_liste?select=${champs}`);
   const ilYa2ans = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 10);
   const evenements = v0058 ? await sb(`prospection_evenements?select=type,cle,le,details&type=eq.role&le=gte.${ilYa2ans}&limit=1000`) : [];
@@ -608,12 +617,14 @@ async function calculerScores(v0058) {
   for (const groupe of parProfession.values()) {
     const rppsDe = new Map(groupe.map((l) => [l.cle, l.rpps]));
     const zones = communes.size ? calculerZones(groupe, communes, aujourdhui) : undefined;
+    const ligneDe = new Map(groupe.map((l) => [l.cle, l]));
     for (const [cle, s] of scorerProspection(groupe, aujourdhui, evenements, zones)) {
-      aEcrire.push({ cle, rpps: rppsDe.get(cle), score_installation: s.installation, score_prospect: s.prospect, raisons: s.raisons, score_le: aujourdhui });
+      const calcule = { cle, rpps: rppsDe.get(cle), score_installation: s.installation, score_prospect: s.prospect, raisons: s.raisons, score_le: aujourdhui };
+      if (differe(calcule, ligneDe.get(cle), ['score_installation', 'score_prospect', 'raisons'])) aEcrire.push(calcule);
     }
   }
   await ecrireParLots(aEcrire);
-  console.log(`Scores : ${aEcrire.length} situations, ${aEcrire.filter((x) => x.score_installation >= 50).length} avec une installation probable (score ≥ 50)`);
+  console.log(`Scores : ${aEcrire.length} situation(s) modifiée(s) écrite(s) sur ${toutes.length}`);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -694,15 +705,21 @@ async function enregistrer(listeComplete, praticiens, fichier) {
   if (v0057 && !AVEC_SIREN) console.log('Migration 0059 absente : date du SIREN non relevée');
   if (v0057 && !v0058) console.log('Migration 0058 absente : actualités des cabinets non calculées');
   const liste = v0057 ? listeComplete : listeComplete.map(sans0057);
-  const existants = await lireTout(`prospection_praticiens?select=cle,apparu_le,disparu_le,profession_code${v0057 ? ',rpps,structure_cle,role,nom,prenom,commune,departement,enseigne,raison_sociale' : ''}`);
+  // N'écrire que ce qui change (nouvelles situations, réapparues, champs modifiés) : réécrire 18 000 lignes chaque nuit épuise le
+  // budget disque de Supabase et fait tomber les lectures suivantes en « statement timeout »
+  const champsRpps = Object.keys(liste[0] ?? {}).filter((k) => k !== 'cle');
+  const existants = await lireTout(`prospection_praticiens?select=cle,apparu_le,disparu_le,profession_code,${[...new Set([...champsRpps, ...(v0057 ? ['rpps', 'structure_cle', 'role', 'nom', 'prenom', 'commune', 'departement', 'enseigne', 'raison_sociale'] : [])])].join(',')}`);
   const deja = new Map(existants.map((e) => [e.cle, e]));
   const importInitial = existants.length === 0;
   let nouveaux = 0;
-  const aEcrire = liste.map((p) => {
+  const aEcrire = [];
+  for (const p of liste) {
     const e = deja.get(p.cle);
     if (!e && !importInitial) nouveaux++;
-    return { ...p, apparu_le: e ? e.apparu_le : importInitial ? null : aujourdhui, vu_le: aujourdhui, disparu_le: null };
-  });
+    if (e && !e.disparu_le && !differe(p, e, champsRpps)) continue;
+    aEcrire.push({ ...p, apparu_le: e ? e.apparu_le : importInitial ? null : aujourdhui, vu_le: aujourdhui, disparu_le: null });
+  }
+  console.log(`Situations écrites : ${aEcrire.length} (nouvelles, réapparues ou modifiées) sur ${liste.length}`);
   await ecrireParLots(aEcrire);
   const disparus = existants.filter((e) => !praticiens.has(e.cle) && !e.disparu_le && PROFESSIONS.has(String(e.profession_code))).map((e) => e.cle);
   for (let i = 0; i < disparus.length; i += 100) {
