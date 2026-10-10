@@ -37,10 +37,22 @@ export default function Tournoi(p: Props) {
   const [enCours, demarrer] = useTransition();
   useEffect(() => { if (window.innerWidth >= 1024) setAppareil('ordinateur'); }, []);
   const [panne, setPanne] = useState('');
+  // Appel serveur qui échoue (base lente, ou page ouverte avant une mise en ligne : l'action n'existe plus) : un nouvel essai
+  // automatique, puis la page se recharge seule (la grille en cours est resservie au même votant, rien n'est perdu)
+  const essayer = async <T,>(f: () => Promise<T>, quoi: string): Promise<T | null> => {
+    try { return await f(); } catch { /* nouvel essai */ }
+    await new Promise((r) => setTimeout(r, 1200));
+    try { return await f(); } catch {
+      setMessage(`${quoi} : la page se recharge…`);
+      setTimeout(() => window.location.reload(), 1500);
+      return null;
+    }
+  };
   // Écran suivant : une erreur du serveur (base lente, délai de 20 s) est AFFICHÉE avec « Réessayer », jamais avalée en silence
   const ecranSuivant = async () => {
-    try { setPanne(''); setEcran(await servirEcran(p.profil)); }
-    catch { setPanne('La grille n’a pas pu être préparée (la base répond lentement).'); }
+    setPanne('');
+    const e = await essayer(() => servirEcran(p.profil), 'Grille non préparée');
+    if (e) setEcran(e); else setPanne('La grille n’a pas pu être préparée : la page se recharge…');
   };
   const charger = useCallback(() => demarrer(async () => { setMeilleures([]); setPire(null); setModePire(false); setIdentiques([]); await ecranSuivant(); }), [p.profil]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { charger(); }, [charger]);
@@ -72,13 +84,15 @@ export default function Tournoi(p: Props) {
   };
   const valider = () => demarrer(async () => {
     if (ecran?.kind !== 'grille') return;
-    let r; try { r = await repondreGrille(ecran.id, meilleures, pire, appareil); } catch { setMessage('Choix non enregistré (base lente) : touchez Valider à nouveau.'); return; }
+    const r = await essayer(() => repondreGrille(ecran.id, meilleures, pire, appareil), 'Choix non enregistré');
+    if (!r) return;
     setMessage(r.message);
     if (r.ok) { setFaits((n) => n + 1); setMeilleures([]); setPire(null); setModePire(false); setIdentiques([]); await ecranSuivant(); }
   });
   const duel = (resultat: 'a' | 'b' | 'egalite') => demarrer(async () => {
     if (ecran?.kind !== 'duel') return;
-    let r; try { r = await voter({ profil: p.profil, a: ecran.a, b: ecran.b, resultat, appareil }); } catch { setMessage('Vote non enregistré (base lente) : réessayez.'); return; }
+    const r = await essayer(() => voter({ profil: p.profil, a: ecran.a, b: ecran.b, resultat, appareil }), 'Vote non enregistré');
+    if (!r) return;
     setMessage(r.message);
     if (r.ok) { setFaits((n) => n + 1); await ecranSuivant(); }
   });
