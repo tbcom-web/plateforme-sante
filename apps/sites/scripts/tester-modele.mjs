@@ -104,8 +104,11 @@ async function resoudreModele() {
   if (SUPABASE_URL && SUPABASE_SECRET_KEY && /^[0-9a-f-]{36}$/.test(id)) {
     // Fiche de la chaîne des modèles (0050) : composition de la version demandée, sujets du scénario de la fiche
     const lire = async (chemin) => {
-      const r = await fetch(`${SUPABASE_URL}/rest/v1/${chemin}`, { headers: { apikey: SUPABASE_SECRET_KEY, Authorization: `Bearer ${SUPABASE_SECRET_KEY}` } });
-      return r.ok ? r.json() : [];
+      // Clé secrète dans l'en-tête apikey SEULEMENT (comme publication.mjs) : ce n'est pas un jeton JWT, un « Authorization: Bearer »
+      // la ferait refuser ; une erreur de lecture est affichée (statut), jamais prise pour « modèle introuvable »
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/${chemin}`, { headers: { apikey: SUPABASE_SECRET_KEY } });
+      if (!r.ok) throw new Error(`Lecture Supabase impossible (${chemin.split('?')[0]} : statut ${r.status}).`);
+      return r.json();
     };
     const [fiche] = await lire(`modeles_fiches?id=eq.${id}&select=nom,profession,scenario,version_courante`);
     if (fiche) {
@@ -115,7 +118,7 @@ async function resoudreModele() {
       const sc = fiche.scenario ?? {};
       return { id, nom: fiche.nom, type: 'recette', composition: ligne.composition, sujets: [...(sc.principaux ?? []), ...(sc.secondaires ?? [])], version: v };
     }
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/recettes?id=eq.${id}&select=id,nom,sujets,composition`, { headers: { apikey: SUPABASE_SECRET_KEY, Authorization: `Bearer ${SUPABASE_SECRET_KEY}` } });
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/recettes?id=eq.${id}&select=id,nom,sujets,composition`, { headers: { apikey: SUPABASE_SECRET_KEY } });
     if (!r.ok) throw new Error(`Lecture de la recette impossible (Supabase ${r.status}).`);
     const [l] = await r.json();
     if (l) return { id, nom: l.nom, type: 'recette', composition: l.composition, sujets: l.sujets, version };
