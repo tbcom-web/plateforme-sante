@@ -515,10 +515,26 @@ export type EtatChaine = {
 /** Groupe de tournoi d'une fiche : la profession (designs) ou la profession et le profil (anciens modèles) */
 export const groupeTournoi = (f: Pick<FicheModele, 'profession' | 'profil'>) => `${f.profession}|${f.profil ?? '*'}`;
 
+/** Délai avant de réparer une fiche candidate sans version (sa version peut être en train de s'écrire) */
+export const DELAI_FICHE_SANS_VERSION_MS = 10 * 60_000;
+
+/**
+ * Fiches candidates sans leur version courante (version jamais enregistrée : 2026-10-10, bug « grille 49 », design vide dans une
+ * grille), créées depuis plus de `delaiMs`. L'automate réécrit la version si le design est connu, sinon écarte la fiche.
+ */
+export function fichesSansVersion(e: Pick<EtatChaine, 'fiches' | 'versions'>, maintenant: number, delaiMs = DELAI_FICHE_SANS_VERSION_MS): FicheModele[] {
+  const avec = new Set(e.versions.map((v) => `${v.modele}#${v.version}`));
+  return e.fiches.filter((f) => {
+    if (f.statut !== 'candidat' || avec.has(`${f.id}#${f.versionCourante}`)) return false;
+    const cree = Date.parse(f.creeLe);
+    return Number.isFinite(cree) ? maintenant - cree >= delaiMs : true;
+  });
+}
+
 /** Tournoi d'un groupe (grilles + duels de départage + a priori) : tournoi-grilles.ts */
 export function tournoiDuProfil(e: Pick<EtatChaine, 'votes' | 'grilles' | 'signaux'>, candidats: readonly string[]): EtatTournoiGrilles {
   const set = new Set(candidats);
-  return etatTournoiGrilles(candidats, (e.grilles ?? []).filter((g) => g.propositions.every((p) => set.has(p))), e.votes.filter((v) => set.has(v.a) && set.has(v.b)), e.signaux ?? {}, { ouverture: CHAINE.ouvertureTournoi });
+  return etatTournoiGrilles(candidats, (e.grilles ?? []).filter((g) => g.propositions.filter((p) => set.has(p)).length >= 2), e.votes.filter((v) => set.has(v.a) && set.has(v.b)), e.signaux ?? {}, { ouverture: CHAINE.ouvertureTournoi });
 }
 
 export type ActionAuto =

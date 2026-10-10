@@ -1,10 +1,11 @@
 import 'server-only';
 import {
-  CHAINE, cleComposition, designDe, prochaineActionChaine, profilsCompatibles, tagsAutomatiques, tournoiDuProfil, type EtatTournoiGrilles, type ProchaineAction,
+  CHAINE, cleComposition, designDe, prochaineActionChaine, serialiserComposition, profilsCompatibles, tagsAutomatiques, tournoiDuProfil, type EtatTournoiGrilles, type ProchaineAction,
 } from '@plateforme/core';
 import { PROFESSION_PAR_DEFAUT } from '@plateforme/core/professions';
-import { lireChaine, type Chaine, type Equipier } from '@/lib/chaine-modeles';
+import { enregistrerVersionInitiale, lireChaine, VERSION_NON_ENREGISTREE, type Chaine, type Equipier } from '@/lib/chaine-modeles';
 import { getPropositionsClaude, getPropositionsClaudeFraiches } from '@/lib/directeur';
+import { getRecettes } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
 import { compositionDe } from '@/app/chaine/validation';
 import { profilsChaine } from '@/app/chaine/donnees';
@@ -29,6 +30,25 @@ async function designsClaude(frais = false): Promise<DesignsClaude> {
   return r;
 }
 
+/**
+ * Designs connus par clé de composition pour réparer des fiches sans version (automate, lib/chaine-modeles.ts) : propositions de
+ * Claude (ids canon-*, même clé que la fiche importée), recettes liées (fiche.recette). Le design d'une présélection n'est pas gardé
+ * ailleurs : inconnu (la fiche est alors écartée).
+ */
+export async function designsConnusParCle(fiches: readonly { cle: string; recette: string | null }[]): Promise<Map<string, Record<string, unknown>>> {
+  const r = new Map<string, Record<string, unknown>>();
+  const { designs } = await designsClaude().catch(() => ({ le: null, designs: [] as DesignsClaude['designs'] }));
+  for (const d of designs) r.set(d.cle, d.design);
+  if (fiches.some((f) => f.recette)) {
+    const { recettes } = await getRecettes().catch(() => ({ recettes: [] as Awaited<ReturnType<typeof getRecettes>>['recettes'] }));
+    for (const x of recettes) {
+      if (!fiches.some((f) => f.recette === x.id)) continue;
+      try { const design = designDe(JSON.parse(serialiserComposition(x.composition))); r.set(cleComposition(design), design); } catch { /* recette illisible */ }
+    }
+  }
+  return new Map([...r].filter(([cle]) => fiches.some((f) => f.cle === cle)));
+}
+
 /** À appeler au début de la page (sans attendre) : la lecture des propositions de Claude part en même temps que celles de la page */
 export function prechargerGuidage() { void designsClaude().catch(() => null); }
 
@@ -43,7 +63,7 @@ export async function importerDesignsClaude(moi: Equipier, opts: { frais?: boole
   const nouveaux = designs.filter((d) => !opts.dejaLa?.has(d.cle));
   if (!nouveaux.length) return { ok: true, ajoutes: 0, message: designs.length ? 'Propositions de Claude déjà candidates.' : 'Aucune proposition de design de Claude à importer.' };
   const supabase = await createClient();
-  let n = 0;
+  let n = 0, echecs = 0;
   for (const { p, design, cle } of nouveaux) {
     const demo = profils.find((x) => x.sujets[0] === p.scenario.principaux[0]) ?? profils[0];
     const x = demo ? compositionDe({ scenario: demo.scenario }, design) : null;
@@ -55,10 +75,11 @@ export async function importerDesignsClaude(moi: Equipier, opts: { frais?: boole
     }).select('id').maybeSingle();
     if (error?.code === '42P01' || error?.code === 'PGRST205') return { ok: false, ajoutes: n, message: 'Migration 0050 à exécuter (supabase/migrations/0050_chaine_modeles.sql) : la chaîne des modèles n’enregistre rien pour l’instant.' };
     if (error || !data) continue; // déjà candidat (23505) ou refus : suivant
-    await supabase.from('modeles_versions').insert({ modele: data.id, version: 1, composition: design, cle, journal: [{ type: 'creation', texte: `proposition de Claude « ${p.nom} » (${p.id}, ${le ?? 'sans date'})` }], auteur: moi.id });
+    if (!(await enregistrerVersionInitiale(supabase, { modele: data.id, composition: design, cle, journal: [{ type: 'creation', texte: `proposition de Claude « ${p.nom} » (${p.id}, ${le ?? 'sans date'})` }], auteur: moi.id }))) { echecs++; continue; }
     n++;
   }
-  return { ok: true, ajoutes: n, message: n ? `${n} design${n > 1 ? 's' : ''} de Claude ajouté${n > 1 ? 's' : ''} aux candidats.` : 'Propositions de Claude déjà candidates.' };
+  const msg = n ? `${n} design${n > 1 ? 's' : ''} de Claude ajouté${n > 1 ? 's' : ''} aux candidats.` : 'Propositions de Claude déjà candidates.';
+  return { ok: !echecs || n > 0, ajoutes: n, message: echecs ? `${n ? `${msg} ` : ''}${VERSION_NON_ENREGISTREE}` : msg };
 }
 
 // Import automatique au plus une fois toutes les 10 min par profession et par instance (un refus ne se rejoue pas à chaque page)

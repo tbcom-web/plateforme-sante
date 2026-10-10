@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { redirect } from 'next/navigation';
 import {
   appliquerResultatTest, fairetournerChaine, lireResultatsTests, lireRetouches, nouvelleVersion, normaliserResultatTest, normaliserTicket, retouchesAAppliquer, roleEffectif,
-  estStatutModele, STATUTS_BOUCLE, elementsComposition, modeleIntegre, normaliserComposition, qualiteComposition, type ActionAuto, type GrilleTournoi, type SignauxCandidat, type EtatChaine, type FicheModele, type RevueModele, type RoleEquipe, type TicketModele, type VersionModele, type VoteModele,
+  estStatutModele, fichesSansVersion, STATUTS_BOUCLE, elementsComposition, modeleIntegre, normaliserComposition, qualiteComposition, type ActionAuto, type GrilleTournoi, type SignauxCandidat, type EtatChaine, type FicheModele, type RevueModele, type RoleEquipe, type TicketModele, type VersionModele, type VoteModele,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { lireEnCache, TAGS_DONNEES } from '@/lib/cache-donnees';
@@ -225,6 +225,70 @@ export async function lireChaine(profession: string | null, opts: { versions?: '
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Version initiale d'une fiche (2026-10-10, suite du bug « grille 49 ») : jamais une fiche candidate sans version
+// ---------------------------------------------------------------------------------------------------------------
+
+type ClientSupabase = Awaited<ReturnType<typeof createClient>>;
+export type LigneVersionInitiale = { modele: string; composition: Record<string, unknown>; cle: string; journal: VersionModele['journal']; auteur: string };
+/** Message quand une fiche a dû être écartée faute de version */
+export const VERSION_NON_ENREGISTREE = 'Un design n’a pas pu être enregistré complètement (version non enregistrée) : il a été écarté. Réessayez dans un instant.';
+
+/**
+ * Écrit la version 1 d'une fiche qui vient d'être créée ; une version déjà là (23505) compte comme écrite. Échec : un nouvel essai,
+ * puis (si `ecarterSiEchec`) la fiche est écartée par la base (avancer_modele candidat → écarté, permis à l'équipe) pour qu'elle
+ * n'arrive jamais vide dans une grille. Renvoie true si la fiche a sa version. Jamais d'exception.
+ */
+export async function enregistrerVersionInitiale(supabase: ClientSupabase, v: LigneVersionInitiale, opts: { ecarterSiEchec?: boolean } = {}): Promise<boolean> {
+  for (let essai = 0; essai < 2; essai++) {
+    try {
+      const { error } = await supabase.from('modeles_versions').insert({ modele: v.modele, version: 1, composition: v.composition, cle: v.cle, journal: v.journal, auteur: v.auteur });
+      if (!error || error.code === '23505') return true;
+      console.warn(`[chaine] version initiale de ${v.modele} refusée (essai ${essai + 1}) : ${error.message ?? error.code}`);
+    } catch (e) {
+      console.warn(`[chaine] version initiale de ${v.modele} en erreur (essai ${essai + 1}) : ${(e as Error)?.message ?? e}`);
+    }
+    if (!essai) await new Promise((r) => setTimeout(r, 400));
+  }
+  if (opts.ecarterSiEchec !== false) {
+    try {
+      const { error } = await supabase.rpc('avancer_modele', { p_id: v.modele, p_vers: 'ecarte', p_rang: null });
+      console.warn(`[chaine] fiche ${v.modele} écartée : version non enregistrée${error ? ` (écart refusé : ${error.message ?? error.code})` : ''}`);
+    } catch { /* l'automate la répare ou l'écarte plus tard (reparerFichesSansVersion) */ }
+  }
+  return false;
+}
+
+/**
+ * Réparation (automate) : fiches candidates sans version courante depuis plus de 10 min (fichesSansVersion, core). Design connu
+ * (proposition de Claude de même clé, recette liée) → version réécrite ; sinon fiche écartée. Renvoie le nombre de fiches traitées.
+ */
+async function reparerFichesSansVersion(supabase: ClientSupabase, chaine: Chaine): Promise<number> {
+  const orphelines = fichesSansVersion(chaine, Date.now());
+  if (!orphelines.length) return 0;
+  const designs = new Map<string, Record<string, unknown>>();
+  try {
+    const { designsConnusParCle } = await import('@/lib/chaine-guidage');
+    for (const [cle, d] of await designsConnusParCle(orphelines)) designs.set(cle, d);
+  } catch { /* designs inconnus : fiches écartées */ }
+  let n = 0;
+  for (const f of orphelines) {
+    // Seule la version 1 se réécrit (design d'origine) ; une version courante plus récente perdue : fiche écartée
+    const design = f.versionCourante === 1 ? designs.get(f.cle) : undefined;
+    const ok = design
+      ? await enregistrerVersionInitiale(supabase, { modele: f.id, composition: design, cle: f.cle, journal: [{ type: 'creation', texte: 'version réécrite par l’automate (version initiale non enregistrée)' }], auteur: 'automate' }, { ecarterSiEchec: false })
+      : false;
+    if (!ok) {
+      try {
+        const { error } = await supabase.rpc('avancer_modele', { p_id: f.id, p_vers: 'ecarte', p_rang: null });
+        if (!error) console.warn(`[chaine] fiche ${f.id} « ${f.nom} » écartée : design non enregistré (version absente, design introuvable)`);
+      } catch { /* prochain tour */ }
+    }
+    n++;
+  }
+  return n;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Fichiers du dépôt écrits par les agents (testeur, Claude) : API GitHub, sinon dossier local
 // ---------------------------------------------------------------------------------------------------------------
 
@@ -415,6 +479,9 @@ async function tourAutomate(profession: string | null, opts: { versions?: 'utile
     bilan.retouches++; change = true;
   }
   if (change) chaine = await lireChaine(profession, opts);
+  if (chaine.erreurLecture) return { ...bilan, chaine };
+  // 3 bis. Fiches candidates sans version depuis plus de 10 min : version réécrite si le design est connu, sinon écartée
+  if (await reparerFichesSansVersion(supabase, chaine).catch(() => 0)) chaine = await lireChaine(profession, opts);
   if (chaine.erreurLecture) return { ...bilan, chaine };
   // 4. Automate : transitions jusqu'au point fixe (a priori du tournoi : J'aime, juge, jauge)
   chaine = { ...chaine, signaux: await signauxCandidats(chaine) };

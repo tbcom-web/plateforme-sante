@@ -135,11 +135,13 @@ export type EtatTournoiGrilles = {
 export function etatTournoiGrilles(candidats: readonly string[], grilles: readonly GrilleTournoi[], duels: readonly DuelTournoi[] = [], signaux: Readonly<Record<string, SignauxCandidat>> = {}, opts: { ouverture?: number; graine?: number } = {}): EtatTournoiGrilles {
   const top = TOURNOI_GRILLES.top;
   const set = new Set(candidats);
-  const gs = grilles.filter((g) => g.propositions.every((p) => set.has(p)));
+  // Grilles du tournoi : au moins 2 candidats encore en lice (un candidat retiré en cours de route, fiche sans version écartée,
+  // ne fait pas perdre les grilles où il figurait : ses comparaisons seules sont ignorées ; 2026-10-10)
+  const gs = grilles.filter((g) => g.propositions.filter((p) => set.has(p)).length >= 2);
   const ds = duels.filter((d) => set.has(d.a) && set.has(d.b));
   const forces = ajusterAvecApriori(candidats, matchsTournoi(gs, ds), (i) => aPriori(signaux[i]));
   const app = new Map<string, number>(), cho = new Map<string, number>();
-  for (const g of gs) { g.propositions.forEach((p) => app.set(p, (app.get(p) ?? 0) + 1)); g.meilleures.forEach((i) => cho.set(g.propositions[i], (cho.get(g.propositions[i]) ?? 0) + 1)); }
+  for (const g of gs) { g.propositions.forEach((p) => { if (set.has(p)) app.set(p, (app.get(p) ?? 0) + 1); }); g.meilleures.forEach((i) => { const p = g.propositions[i]; if (p !== undefined && set.has(p)) cho.set(p, (cho.get(p) ?? 0) + 1); }); }
   const tri = [...candidats].sort((a, b) => forces.get(b)!.theta - forces.get(a)!.theta || (a < b ? -1 : 1));
   const rang = new Map(tri.map((id, i) => [id, i + 1]));
   const b = tri.length > top ? (forces.get(tri[top - 1])!.theta + forces.get(tri[top])!.theta) / 2 : -Infinity;

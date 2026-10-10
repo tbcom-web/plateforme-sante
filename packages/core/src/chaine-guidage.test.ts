@@ -2,7 +2,7 @@
 // action ni explication, gestes du validateur jamais prescrits à un contributeur, fil des 6 étapes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appliquerActions, CHAINE, CELLULES_REVISION, fairetournerChaine, tournoiDuProfil, type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele } from './chaine-modeles';
+import { appliquerActions, CHAINE, CELLULES_REVISION, DELAI_FICHE_SANS_VERSION_MS, fairetournerChaine, fichesSansVersion, tournoiDuProfil, type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele } from './chaine-modeles';
 import { TOURNOI_GRILLES, prochainEcran, type GrilleTournoi } from './tournoi-grilles';
 import { appliquerRecette, normaliserComposition, type CompositionRecette } from './recettes';
 import { draftVide } from './draft';
@@ -229,4 +229,26 @@ test('grille 49 : un design vide ou incomplet ne lève jamais d’exception au r
   assert.doesNotThrow(() => normaliserComposition({}, ctx));
   // Poids partiels (instantané désérialisé incomplet) : le contexte se construit sans exception
   assert.doesNotThrow(() => contexteScenario({ principaux: ['sport'], secondaires: [], couleurs: [], soins: [] }, { poids: {} as PoidsAtelier, photos: [], modele: modeleIntegre }));
+});
+
+test('fiches sans version : candidates sans version courante depuis plus de 10 min seulement', () => {
+  const t0 = Date.parse('2026-10-10T12:00:00Z');
+  const vieille = fiche('a', { creeLe: '2026-10-10T11:00:00Z' });
+  const recente = fiche('b', { creeLe: '2026-10-10T11:55:00Z' });
+  const complete = fiche('c', { creeLe: '2026-10-10T10:00:00Z' });
+  const ecartee = fiche('d', { creeLe: '2026-10-10T10:00:00Z', statut: 'ecarte' });
+  const v2 = fiche('e', { creeLe: '2026-10-10T10:00:00Z', versionCourante: 2 });
+  const e: EtatChaine = { ...etat([vieille, recente, complete, ecartee, v2]), versions: [version('c'), version('e', 1)] };
+  assert.deepEqual(fichesSansVersion(e, t0).map((f) => f.id), ['a', 'e']);
+  assert.deepEqual(fichesSansVersion(e, t0, 0).map((f) => f.id), ['a', 'b', 'e']);
+  assert.equal(DELAI_FICHE_SANS_VERSION_MS, 10 * 60_000);
+});
+
+test('candidat retiré en cours de tournoi : les grilles où il figurait comptent toujours (comparaisons des autres gardées)', () => {
+  const e = tournoiJoue(30, 0);
+  const ids = idsDe(e);
+  const avant = tournoiDuProfil(e, ids);
+  const sans = tournoiDuProfil(e, ids.filter((id) => id !== ids[3]));
+  assert.equal(sans.grilles, avant.grilles);
+  assert.equal(sans.classement.some((l) => l.id === ids[3]), false);
 });

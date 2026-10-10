@@ -8,6 +8,9 @@ import { guidageChaine, prechargerGuidage } from '@/lib/chaine-guidage';
 import ProchaineEtape from '../ProchaineEtape';
 
 export const metadata = { title: 'Chaîne · Présélection' };
+// « Garder » (garderPreselection) écrit fiche puis version pour chaque design : délai large, pour qu'une base lente n'interrompe
+// jamais l'action entre les deux (2026-10-10 : deux fiches restées sans version, design vide dans le tournoi)
+export const maxDuration = 300;
 
 // 1. PRÉSÉLECTION INFINIE, SANS THÈME (décision de Paul du 2026-10-09) : un modèle est un DESIGN ; chaque page de 6 est rendue avec un
 // profil de démonstration tiré parmi ceux de la profession (et SES images : kit du profil, jamais une autre activité), en variant
