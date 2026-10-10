@@ -26,8 +26,10 @@
 import { svgDessin, svgAnimationFixe, svgEquipement, svgLigne, sansTextes, type Registre } from './dessins';
 import { sceneHeros, type SceneHeros } from './heros-scenes';
 import { themeParId } from './themes';
-import { gamme as gammeParId, variantesGamme, type Gamme } from './gammes';
+import { gamme as gammeParId, variantesGamme, assombrirJusqua, type Gamme } from './gammes';
 import { NEUTRES, PLAN } from './charte';
+import { contraste, melanger, rvb, hex } from './couleurs';
+import { PRESSION } from './univers';
 import type { NomDessin } from './univers';
 import type { NomLigne } from './ligne';
 import type { Animation } from './packs';
@@ -116,6 +118,114 @@ function couleurs(g: Gamme | undefined, registre: Registre): string {
   return `--doux:${g.fondDoux};--aplat:${v.aplat};--dessin-trait:${v.encre};--dessin-ligne:${v.encre};--dessin-accent:${accent};--accent:${accent};--dessin-fond:${g.fond}`;
 }
 
+/**
+ * Héros posé SANS fond (retour de Paul du 2026-10-10 sur la foulée en relevé : « pour ces illustrations je pense qu'on peut
+ * supprimer le background carré ») : ni rectangle « plan », ni quadrillage, ni filets de cadre ; le dessin est détouré, MÊME
+ * géométrie. `clair` : posé sur une page claire (fond, fond doux ou aplat de la gamme) : trait à l'encre de la gamme au lieu du
+ * papier, accent de la gamme assombri (même teinte), couleurs littérales (palette de pression, traces, marqueurs) assombries
+ * jusqu'à 3:1 sur ces fonds ; `sombre` : posé sur une surface déjà sombre (premier écran plein, tuile plan) : couleurs du relevé
+ * inchangées. Sans effet hors du registre relevé (pédagogique : aplat doux clair ; ligne : déjà sans fond).
+ */
+export type SansFond = 'clair' | 'sombre';
+
+/** Fonds clairs sur lesquels un héros sans fond peut être posé (page, sections douces, aplat de la planche) */
+export const fondsClairsGamme = (g: Gamme | undefined): string[] => (g ? [g.fond, g.fondDoux, variantesGamme(g).aplat] : [NEUTRES.blanc, NEUTRES.douxDefaut]);
+
+/** Teinte (degrés) d'une couleur #rrggbb */
+function teinte(c: string): number {
+  const [r, v, b] = rvb(c).map((x) => x / 255);
+  const max = Math.max(r, v, b), d = max - Math.min(r, v, b);
+  if (d === 0) return 0;
+  const t = max === r ? ((v - b) / d) % 6 : max === v ? (b - r) / d + 2 : (r - v) / d + 4;
+  return (t * 60 + 360) % 360;
+}
+/** Un jaune ou un vert-jaune clair assombri vire à l'olive : on lui préfère l'autre couleur de la gamme */
+const viraOlive = (c: string, fonds: string[]) => { const t = teinte(c); return t >= 40 && t <= 100 && Math.min(...fonds.map((f) => contraste(c, f))) < 3; };
+
+/** Couleurs du relevé posé sur une page claire : encre de la gamme, accent (signal des vitaminées, accent des sobres) à 3:1 */
+export function teintesRelevesClair(g: Gamme | undefined): { encre: string; accent: string; pression: string[]; fonds: string[] } {
+  const fonds = fondsClairsGamme(g);
+  const encre = g ? assombrirJusqua(variantesGamme(g).encre, fonds, 7) : NEUTRES.encre;
+  // Accent : le signal du relevé sombre (même teinte, assombrie), sauf s'il virerait à l'olive : vif, duo puis accent de la gamme
+  const candidats = g ? (g.famille === 'vitaminee' ? [g.signal, g.vif, g.duo, g.accent] : [g.accent]).filter((c): c is string => Boolean(c)) : [PLAN.fond];
+  const accent = assombrirJusqua(candidats.find((c) => !viraOlive(c, fonds)) ?? candidats[candidats.length - 1], fonds, 3);
+  return { encre, accent, pression: PRESSION.map((c) => assombrirJusqua(c, fonds, 3)), fonds };
+}
+
+/** Variables de couleur d'un héros relevé posé sur une page claire (sans gamme : celles de la page, --g-* puis la charte) */
+function couleursClair(g: Gamme | undefined): string {
+  const t = teintesRelevesClair(g);
+  // Sans gamme : jamais une variable redéfinie à partir d'elle-même (cycle CSS → valeur invalide → signal menthe de repli)
+  const encre = g ? t.encre : 'var(--g-encre, var(--encre))', accent = g ? t.accent : 'var(--g-accent-texte, var(--accent))';
+  return [
+    `--dessin-trait:${encre}`, `--dessin-ligne:${encre}`, `--anim-trait:${encre}`, `--papier:${encre}`,
+    `--dessin-accent:${accent}`, `--accent-pale:${accent}`, `--signal:${accent}`, ...(g ? [`--accent:${accent}`] : []),
+    `--dessin-os:${accent}`, '--dessin-os-opacite:0.4', '--dessin-os-aplat:0', '--dessin-os-secondaires:none',
+    // Caches (peau-seule) : la couleur de la page qui porte le héros
+    `--dessin-fond:var(--hp-page, var(--g-page, ${g ? g.fond : 'var(--fond)'}))`,
+    ...t.pression.map((c, k) => `--pression-${k + 1}:${c}`),
+  ].join(';');
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+/** Couleur littérale (#rrggbb ou « rgb(r g b / a) ») → [hex, alpha] ; null pour var(), none, currentColor… */
+function lireCouleur(c: string): [string, number] | null {
+  if (HEX.test(c)) return [c.toLowerCase(), 1];
+  const m = c.match(/^rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)$/);
+  return m ? [hex([+m[1], +m[2], +m[3]]), +m[4]] : null;
+}
+const ecrireCouleur = (h: string, a: number) => (a >= 1 ? h : `rgb(${rvb(h).join(' ')} / ${a})`);
+
+/**
+ * Couleurs littérales d'un relevé (dessiné pour le fond sombre) adaptées à une page claire, élément par élément : le blanc et le
+ * papier deviennent l'encre (même transparence) ; les autres couleurs gardent leur teinte, assombries jusqu'à 3:1 sur chacun des
+ * `fonds` — compte tenu de l'opacité de l'élément quand il est franc (≥ 0,5 : trait significatif), à pleine opacité sinon (voiles,
+ * volumes pâles : même teinte que le trait). Les couleurs en var() suivent les variables posées sur la racine.
+ */
+export function adapterRelevePageClaire(svg: string, encre: string, fonds: string[]): string {
+  const memo = new Map<string, string>();
+  const adapter = (h: string, opacite: number) => {
+    const o = opacite >= 0.5 ? opacite : 1;
+    const cle = `${h}|${o}`;
+    const deja = memo.get(cle);
+    if (deja) return deja;
+    let x = h;
+    if (h === '#ffffff' || h === NEUTRES.papier.toLowerCase()) x = encre;
+    else {
+      const pire = (c: string) => Math.min(...fonds.map((f) => contraste(melanger(f, c, o), f)));
+      for (let k = 3; pire(x) < 3 && k <= 21; k += 0.5) x = assombrirJusqua(h, fonds, k);
+    }
+    memo.set(cle, x);
+    return x;
+  };
+  return svg.replace(/<(path|line|circle|ellipse|rect|polygon|polyline|stop)\b[^>]*>/g, (balise) => {
+    const attr = (n: string) => balise.match(new RegExp(`\\s${n}="([^"]*)"`))?.[1];
+    const general = +(attr('opacity') ?? 1);
+    let b = balise;
+    for (const [nom, op] of [['stroke', 'stroke-opacity'], ['fill', 'fill-opacity'], ['stop-color', 'stop-opacity']] as const) {
+      const v = attr(nom);
+      const c = v ? lireCouleur(v) : null;
+      if (!v || !c) continue;
+      const o = c[1] * +(attr(op) ?? 1) * general;
+      b = b.replace(` ${nom}="${v}"`, ` ${nom}="${ecrireCouleur(adapter(c[0], o), c[1])}"`);
+    }
+    return b;
+  });
+}
+
+/** Retire la grille du laboratoire (coureur) : un héros sans fond n'a ni quadrillage ni cadre */
+const sansGrille = (svg: string) => svg.replace(/<path class="grille-labo"[^>]*><\/path>/g, '');
+
+/**
+ * Bords fondus d'un héros sans fond : un sujet coupé par le cadre (jambes, bras, sol) se dissout dans la page sur 4 % de chaque
+ * côté au lieu d'être tranché net (le cadre « plan » justifiait la coupe). Masques SVG natifs (aucun mask-image CSS : WebKit).
+ */
+function fondu(corps: string, id: string, L: number, H: number): string {
+  const grad = (n: string, x2: number, y2: number) => `<linearGradient id="${id}-g${n}" x1="0" y1="0" x2="${x2}" y2="${y2}"><stop offset="0" stop-color="#fff" stop-opacity="0"></stop><stop offset="0.04" stop-color="#fff"></stop><stop offset="0.96" stop-color="#fff"></stop><stop offset="1" stop-color="#fff" stop-opacity="0"></stop></linearGradient>`;
+  const masque = (n: string) => `<mask id="${id}-m${n}" maskUnits="userSpaceOnUse" x="0" y="0" width="${L}" height="${H}"><rect width="${L}" height="${H}" fill="url(#${id}-g${n})"></rect></mask>`;
+  return `<defs>${grad('x', 1, 0)}${grad('y', 0, 1)}${masque('x')}${masque('y')}</defs><g mask="url(#${id}-mx)"><g mask="url(#${id}-my)">${corps}</g></g>`;
+}
+
 /** Fond du héros : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne) */
 function fondHeros(registre: Registre, L: number, H: number): string {
   if (registre === 'releve') {
@@ -136,14 +246,27 @@ function fondHeros(registre: Registre, L: number, H: number): string {
  * ou portrait, fond du registre, couleurs de la gamme, sujet dans le <title> (jamais affiché). Sert aux héros d'un univers
  * (univers-diabete.ts) qui ne sont pas des thèmes.
  */
-export function habillerHeros(svg: string, o: { format?: FormatHeros; registre?: Registre; gamme?: string | Gamme | null; titre?: string; classe?: string } = {}): string {
+export function habillerHeros(svg: string, o: { format?: FormatHeros; registre?: Registre; gamme?: string | Gamme | null; titre?: string; classe?: string; sansFond?: SansFond | null; id?: string } = {}): string {
   const format = o.format ?? 'paysage', registre = o.registre ?? 'releve';
   const g = typeof o.gamme === 'string' ? gammeParId(o.gamme) : (o.gamme ?? undefined);
   const { largeur: L, hauteur: H } = FORMATS_HEROS[format];
-  const style = couleurs(g, registre);
-  const classes = ['heros-theme', `heros-theme--${format}`, `heros-theme--${registre}`, o.classe].filter(Boolean).join(' ');
   const titre = o.titre ? `<title>${o.titre.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</title>` : '';
-  return `<svg class="${classes}" viewBox="0 0 ${L} ${H}" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" fill="none"${style ? ` style="${style}"` : ''}>${titre}${fondHeros(registre, L, H)}${poser(svg, ...CADRES[format])}</svg>`;
+  const id = o.id ?? `hh-${format[0]}-${(o.classe ?? '').replace(/[^a-z0-9-]/gi, '')}`;
+  return assembler({ g, registre, L, H, id, sansFond: o.sansFond ?? null, titre, corps: poser(svg, ...CADRES[format]), classes: [`heros-theme--${format}`, o.classe] });
+}
+
+/** Racine <svg> d'un héros : fond du registre (ou aucun : sansFond), couleurs, classes ; corps adapté à la page claire */
+function assembler(a: { g: Gamme | undefined; registre: Registre; L: number; H: number; id: string; sansFond: SansFond | null; titre: string; corps: string; classes: (string | undefined)[] }): string {
+  const sf = a.registre === 'releve' ? a.sansFond : null;
+  const clair = sf === 'clair' ? teintesRelevesClair(a.g) : null;
+  const detoure = clair ? adapterRelevePageClaire(sansGrille(a.corps), clair.encre, clair.fonds) : sf ? sansGrille(a.corps) : a.corps;
+  const corps = sf ? fondu(detoure, `${a.id}-sf`, a.L, a.H) : detoure;
+  const style = clair ? couleursClair(a.g) : couleurs(a.g, a.registre);
+  // Relevé sur page claire : jamais la classe heros-theme--releve (elle prend l'échelle de pression des fonds sombres, gammes.ts)
+  const registreClasse = clair ? 'heros-theme--releve-clair' : `heros-theme--${a.registre}`;
+  const [premiere, ...autres] = a.classes;
+  const classes = ['heros-theme', premiere, registreClasse, sf && 'heros-theme--sans-fond', ...autres].filter(Boolean).join(' ');
+  return `<svg class="${classes}" viewBox="0 0 ${a.L} ${a.H}" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" fill="none"${style ? ` style="${style}"` : ''}>${a.titre}${sf ? '' : fondHeros(a.registre, a.L, a.H)}${corps}</svg>`;
 }
 
 /**
@@ -154,7 +277,7 @@ export function habillerHeros(svg: string, o: { format?: FormatHeros; registre?:
  */
 export function illustrationTheme(
   themeId: string,
-  o: { format?: FormatHeros; registre?: Registre; gamme?: string | Gamme | null; id?: string; classe?: string } = {},
+  o: { format?: FormatHeros; registre?: Registre; gamme?: string | Gamme | null; id?: string; classe?: string; sansFond?: SansFond | null } = {},
 ): string {
   if (!themeIllustre(themeId)) return '';
   const format = o.format ?? 'paysage', registre = o.registre ?? 'releve';
@@ -162,12 +285,9 @@ export function illustrationTheme(
   const { largeur: L, hauteur: H } = FORMATS_HEROS[format];
   const id = o.id ?? `h-${themeId}-${format[0]}-${registre[0]}`;
   const piece = COMPOSITIONS[themeId][registre];
-  // Fond : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne)
-  const fond = fondHeros(registre, L, H);
   // Sujet dans le <title> (jamais affiché) : thème et pièces, pour l'accessibilité des outils et les agents
   const titre = `<title>${titreTheme(themeId)} — ${sourcesTheme(themeId, registre).join(', ')}</title>`;
   const corps = piece.type === 'scene' ? sceneHeros(piece.nom, { format, registre }) : poser(svgPiece(piece, registre, `${id}-a`), ...CADRES[format]);
-  const style = couleurs(g, registre);
-  const classes = ['heros-theme', `heros-theme--${themeId}`, `heros-theme--${format}`, `heros-theme--${registre}`, o.classe].filter(Boolean).join(' ');
-  return `<svg class="${classes}" viewBox="0 0 ${L} ${H}" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet" fill="none"${style ? ` style="${style}"` : ''}>${titre}${fond}${corps}</svg>`;
+  // Fond : surface « plan » quadrillée (relevé), aplat doux arrondi centré (pédagogique), aucun (ligne) ; aucun non plus sansFond
+  return assembler({ g, registre, L, H, id, sansFond: o.sansFond ?? null, titre, corps, classes: [`heros-theme--${themeId}`, `heros-theme--${format}`, o.classe] });
 }

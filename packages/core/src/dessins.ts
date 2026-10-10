@@ -1004,7 +1004,8 @@ function coureurFixe(): string {
   const arc = `<path d="M${r1(d.g.x + ra * Math.cos(a1))} ${r1(d.g.y + ra * Math.sin(a1))} A${r1(ra)} ${r1(ra)} 0 0 ${ecart < 0 ? 0 : 1} ${r1(d.g.x + ra * Math.cos(a1 + ecart))} ${r1(d.g.y + ra * Math.sin(a1 + ecart))}" stroke="${COULEURS.genou}" stroke-width="${TRAIT.normal}"></path>`;
   // Aucune lecture (angle du genou, « ANALYSE DE LA FOULÉE », cadence) : règle « aucun texte » (Paul, 2026-10-06)
   return (
-    `<path d="${grille.join('')}" stroke="${trait(0.06)}" stroke-width="${TRAIT.fin}"></path>` +
+    // Grille du laboratoire marquée (classe grille-labo) : retirée quand le héros est posé sans fond (heros-themes.ts, sansFond)
+    `<path class="grille-labo" d="${grille.join('')}" stroke="${trait(0.06)}" stroke-width="${TRAIT.fin}"></path>` +
     `<line x1="0" y1="${r1(sol + 2)}" x2="${l}" y2="${r1(sol + 2)}" stroke="${trait(0.35)}" stroke-width="${TRAIT.fort}" stroke-dasharray="0 ${POINTILLE.contour.ecart * 2.5}"></line>` +
     traces.join('') +
     // Côté gauche en retrait (volumes pâles), puis tronc, tête et côté droit (accent), squelette fin par-dessus

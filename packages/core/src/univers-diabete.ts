@@ -24,7 +24,7 @@ import { CONTOUR_PIED, SEMELLE, SEMELLE_POINTS, chaikin, echantillonner, deforme
 import { courbesRelief, SITES_MONOFILAMENT } from './dessins';
 import { FORMES } from './bibliotheque/formes';
 import { cheminLisse } from './sports';
-import { habillerHeros, type FormatHeros } from './heros-themes';
+import { habillerHeros, type FormatHeros, type SansFond } from './heros-themes';
 import type { Registre } from './dessins';
 
 // ———————————————————————————————————————————————————— Fiches (sujets, hashtags)
@@ -409,11 +409,11 @@ export function svgDessinHerosDiabete(nom: HerosDiabete, opts: { registre?: Regi
  * Héros du premier écran (<svg> au format paysage 640 × 360 ou portrait 360 × 480), habillé comme les héros des thèmes : fond plan
  * quadrillé en relevé, aplat doux en pédagogique, couleurs de la gamme. Sujet dans le <title> (jamais affiché).
  */
-export function herosDiabete(nom: HerosDiabete, o: { format?: FormatHeros; registre?: Registre; gamme?: string | null; id?: string; classe?: string } = {}): string {
+export function herosDiabete(nom: HerosDiabete, o: { format?: FormatHeros; registre?: Registre; gamme?: string | null; id?: string; classe?: string; sansFond?: SansFond | null } = {}): string {
   const registre = o.registre === 'pedagogique' ? 'pedagogique' : 'releve';
   const format = o.format ?? 'paysage';
   const id = o.id ?? `hd-${nom}-${format[0]}-${registre[0]}`;
-  return habillerHeros(svgDessinHerosDiabete(nom, { registre, id: `${id}-d` }), { format, registre, gamme: o.gamme, titre: FICHES_UNIVERS_DIABETE[nom].libelle, classe: ['heros-theme--diabete', `heros-theme--${nom}`, o.classe].filter(Boolean).join(' ') });
+  return habillerHeros(svgDessinHerosDiabete(nom, { registre, id: `${id}-d` }), { format, registre, gamme: o.gamme, titre: FICHES_UNIVERS_DIABETE[nom].libelle, classe: ['heros-theme--diabete', `heros-theme--${nom}`, o.classe].filter(Boolean).join(' '), sansFond: o.sansFond ?? null, id });
 }
 
 /** Clé d'inventaire d'un héros diabète → (nom, registre) ; null pour une autre clé */

@@ -275,7 +275,7 @@ function eclaircirJusqua(c: string, fonds: string[], min: number): string {
   return x;
 }
 /** Assombrit `c` (luminosité seule, même teinte) jusqu'à `min` contre chacun des `fonds`. */
-function assombrirJusqua(c: string, fonds: string[], min: number): string {
+export function assombrirJusqua(c: string, fonds: string[], min: number): string {
   const pire = (x: string) => Math.min(...fonds.map((f) => contraste(x, f)));
   const [t, s, l0] = tsl(c);
   let x = c;

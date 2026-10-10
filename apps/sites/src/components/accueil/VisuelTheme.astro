@@ -34,8 +34,16 @@ interface Props {
    */
   animationHeros?: AnimationEntete | null;
   nu?: boolean;
+  /**
+   * Ce qui porte l'illustration héros en relevé (retour de Paul du 2026-10-10 : « on peut supprimer le background carré ») :
+   * `clair` (défaut) : page, carte ou aplat clairs — dessin détouré, sans rectangle plan ni quadrillage, trait à l'encre de la
+   * gamme ; `sombre` : surface déjà sombre (premier écran plein, tuile plan) — détouré, couleurs du relevé ; `cadre` : l'ancien
+   * rectangle plan quadrillé (vignettes où le cadre a un sens).
+   */
+  surface?: 'clair' | 'sombre' | 'cadre';
 }
-const { visuel, prioritaire = false, animer = false, registre = registreSite, format = 'portrait', sizes = '100vw', class: classe, seul = false, animationHeros = null, nu = false } = Astro.props;
+const { visuel, prioritaire = false, animer = false, registre = registreSite, format = 'portrait', sizes = '100vw', class: classe, seul = false, animationHeros = null, nu = false, surface = 'clair' } = Astro.props;
+const sansFond = surface === 'cadre' ? null : surface;
 // Visuel animé : panneau sombre de la gamme en relevé, clair « encre » sinon ; couleurs --hp-* du premier écran (heros-photo.ts)
 const anime = animationHeros ? htmlVisuelAnime(animationHeros, { ton: registre === 'releve' ? 'sombre' : 'clair', nu }) : '';
 const styleAnime = animationHeros ? styleCouleursHeros(site.modele, site.theme) : '';
@@ -43,16 +51,17 @@ const animation = visuel.type === 'dessin' && animer && registre === 'releve' ? 
 // Illustration héros du thème : gamme du site (sans gamme, couleur libre : les variables de la page s'appliquent). Modèle à
 // teinte « gamme » en relevé : toujours les variables de la page (plan, signal et pression dérivés de la gamme, teinteSombre),
 // jamais le signal fixe de la fiche de la gamme (menthe sur cobalt : « du bleu et du vert mélangés »).
-const gammeHeros = site.modele.jetons.teinte === 'gamme' && registre === 'releve' ? null : site.theme.gamme || null;
+// Sur page claire, toujours la gamme du site : l'encre et l'accent sont calculés pour ses fonds clairs (heros-themes.ts).
+const gammeHeros = site.modele.jetons.teinte === 'gamme' && registre === 'releve' && sansFond !== 'clair' ? null : site.theme.gamme || null;
 // Illustration validée de l'activité du praticien (lib/vitrine.ts) : à la place du dessin du thème (jamais d'une animation) ;
 // sur un fond sombre (registre relevé), trait clair
 const svgActivite = visuel.type === 'dessin' && visuel.svg && !animation ? visuel.svg : '';
 // Héros d'un univers (diabète) validé par Paul et retenu par le kit illustré du site : son propre registre, même habillage
 const univers = visuel.type === 'dessin' && !animation && !seul ? lireCleHerosDiabete(visuel.herosUnivers) : null;
 const heros = univers
-  ? herosDiabete(univers.nom, { format, registre: univers.registre, gamme: univers.registre === 'releve' && site.modele.jetons.teinte === 'gamme' ? null : site.theme.gamme || null, id: `hu-${univers.nom}-${format[0]}` })
+  ? herosDiabete(univers.nom, { format, registre: univers.registre, gamme: univers.registre === 'releve' && site.modele.jetons.teinte === 'gamme' && sansFond !== 'clair' ? null : site.theme.gamme || null, id: `hu-${univers.nom}-${format[0]}`, sansFond })
   : visuel.type === 'dessin' && visuel.heros && !animation && !seul
-  ? illustrationTheme(visuel.heros, { format, registre, gamme: gammeHeros, id: `h-${visuel.heros}-${format[0]}-${registre[0]}` })
+  ? illustrationTheme(visuel.heros, { format, registre, gamme: gammeHeros, id: `h-${visuel.heros}-${format[0]}-${registre[0]}`, sansFond })
   : '';
 ---
 {anime ? (

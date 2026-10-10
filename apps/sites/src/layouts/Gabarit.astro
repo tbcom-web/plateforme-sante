@@ -487,7 +487,7 @@ const appelBarre = attributAppelBarre(appelDansBarre({ gabarit, contact: variant
       // Animations continues (lignes de scan, trame de points des relevés) : actives seulement quand le bloc est à l'écran.
       if ('IntersectionObserver' in window) {
         const vue = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('en-vue', e.isIntersecting)));
-        document.querySelectorAll('.anime-visible, svg.dessin--releve, svg.heros-theme--releve').forEach((el) => vue.observe(el));
+        document.querySelectorAll('.anime-visible, svg.dessin--releve, svg.heros-theme--releve, svg.heros-theme--releve-clair').forEach((el) => vue.observe(el));
       }
     </script>
   </body>

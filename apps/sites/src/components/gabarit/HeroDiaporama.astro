@@ -24,10 +24,10 @@ const rdvAccueil = site.praticiens.length > 1 && rdvEnLigne ? '#praticiens' : li
 ---
 <section class:list={['hero', `hero--${choix}`, { 'hero--anime': anime }]} style={choix === 'animation' ? `background:${fondAnime}` : undefined}>
   {choix === 'photo' ? (
-    <div class="hero__diapos" {...zonePhoto('photos.accueil')}><VisuelTheme visuel={visuel} prioritaire sizes="100vw" /></div>
+    <div class="hero__diapos" {...zonePhoto('photos.accueil')}><VisuelTheme visuel={visuel} prioritaire sizes="100vw" surface="sombre" /></div>
   ) : (
     <div class:list={['hero__illus', { 'surface-plan': choix === 'illustration' }]} aria-hidden="true" {...zonePhoto('photos.accueil')}>
-      <span class="hero__dessin"><VisuelTheme visuel={visuel} animer={choix === 'animation'} /></span>
+      <span class="hero__dessin"><VisuelTheme visuel={visuel} animer={choix === 'animation'} surface="sombre" /></span>
     </div>
   )}
   <div class="cadre hero__contenu">

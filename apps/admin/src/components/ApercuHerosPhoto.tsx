@@ -120,10 +120,9 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     trace,
     tempo: tempoApercu(construireNavigation(d, soins).principaux.map((x) => x.theme.id as string)),
   });
-  // Illustration de l'emplacement : celle du site (VisuelTheme : illustration composée du sujet du héros, gamme du site sauf
-  // modèle à teinte « gamme » en relevé)
-  const gamme = m.jetons.teinte === 'gamme' && registre === 'releve' ? null : d.theme.gamme || null;
-  const svg = fente && sujet && themeIllustre(sujet) ? illustrationTheme(sujet, { format: v === 'bento' || fond === 'illustration' ? 'paysage' : 'portrait', registre, gamme, id: `hp-${sujet}` }) : illustration;
+  // Illustration de l'emplacement : celle du site (VisuelTheme : illustration composée du sujet du héros, gamme du site), posée
+  // SANS fond sur la page, la carte ou l'aplat clairs du premier écran (retour de Paul du 2026-10-10 : plus de rectangle plan)
+  const svg = fente && sujet && themeIllustre(sujet) ? illustrationTheme(sujet, { format: v === 'bento' || fond === 'illustration' ? 'paysage' : 'portrait', registre, gamme: d.theme.gamme || null, id: `hp-${sujet}`, sansFond: 'clair' }) : illustration;
   return (
     <div ref={boite} onClick={(e) => { if ((e.target as Element).closest?.('.hp__pause')) setPause((p) => !p); }}>
       <style dangerouslySetInnerHTML={{ __html: CSS_HEROS + css }} />

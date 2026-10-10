@@ -30,7 +30,7 @@ const plan = !nouveauGabarit && registre === 'releve' && site.modele.jetons.moti
           {principaux.map((t, i) => (
             <li class:list={['sujet', { 'sujet--une': i === 0 }]} style={`--i:${i}`}>
               <a class="sujet__lien" href={t.href}>
-                <span class:list={['sujet__visuel', { 'surface-plan': plan && visuelsSujets[i]?.type === 'dessin' }]}><VisuelTheme visuel={visuelsSujets[i]} format="paysage" sizes={i === 0 ? '(min-width: 900px) 60vw, 100vw' : '(min-width: 900px) 40vw, 100vw'} /></span>
+                <span class:list={['sujet__visuel', { 'surface-plan': plan && visuelsSujets[i]?.type === 'dessin' }]}><VisuelTheme visuel={visuelsSujets[i]} format="paysage" surface={plan && visuelsSujets[i]?.type === 'dessin' ? 'sombre' : 'clair'} sizes={i === 0 ? '(min-width: 900px) 60vw, 100vw' : '(min-width: 900px) 40vw, 100vw'} /></span>
                 <span class="sujet__texte">
                   <span class="sujet__titre">{t.theme.libelle}</span>
                   <span class="sujet__ligne">{t.theme.description}</span>

@@ -248,7 +248,9 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
   const herosAnime = (r: Registre, nu = false): HerosApercu | null => (animHeros
     ? { type: 'svg', sombre: r === 'releve', html: `<div class="ha ea-joue" data-ea style="position:relative;width:100%;height:100%;${styleCouleursHeros(m, d.theme)}"><style>${cssVisuelAnime(animHeros)}</style>${htmlVisuelAnime(animHeros, { ton: r === 'releve' ? 'sombre' : 'clair', nu })}</div>` }
     : null);
-  const herosApercu = (format: FormatHeros, registreForce?: Registre, animer = false, premierEcran = true): HerosApercu | null => {
+  // Illustration héros SANS fond (retour de Paul du 2026-10-10) : sur page, carte ou aplat clairs (défaut), ou sur le premier écran
+  // plein déjà sombre ; comme le site (VisuelTheme, surface)
+  const herosApercu = (format: FormatHeros, registreForce?: Registre, animer = false, premierEcran = true, surface: 'clair' | 'sombre' = 'clair'): HerosApercu | null => {
     const ha = premierEcran ? herosAnime(registreForce ?? registre) : null;
     if (ha) return ha;
     if (mode === 'photos') {
@@ -262,8 +264,8 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
       return { type: 'svg', html: htmlAnimationApercu(a, 'releve', reglageAnim, `ap-anim-${a}`), sombre: true };
     }
     if (!themeUn || !themeIllustre(themeUn)) return null;
-    const gammeHeros = j.teinte === 'gamme' && r === 'releve' ? null : d.theme.gamme || null;
-    return { type: 'svg', html: illustrationTheme(themeUn, { format, registre: r, gamme: gammeHeros, id: `ap-h-${themeUn}-${format[0]}-${r[0]}` }), sombre: r === 'releve' };
+    const gammeHeros = j.teinte === 'gamme' && r === 'releve' && surface !== 'clair' ? null : d.theme.gamme || null;
+    return { type: 'svg', html: illustrationTheme(themeUn, { format, registre: r, gamme: gammeHeros, id: `ap-h-${themeUn}-${format[0]}-${r[0]}`, sansFond: surface }), sombre: r === 'releve' && surface === 'sombre' };
   };
   // Tableau : une seule grande illustration dans le disque (le dessin principal du sujet), jamais l'assemblage de deux pièces
   const herosSeul = (registreForce?: Registre): HerosApercu | null => {
@@ -286,7 +288,7 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
   );
 
   // Accueil « diaporama » (modèle Technique) : le héros du sujet n° 1 ; en style « photos », la photo du sujet plein cadre
-  const herosDiaporama = m.accueil.hero === 'diaporama' && mode !== 'photos' ? herosApercu(mobile ? 'portrait' : 'paysage', undefined, true) : null;
+  const herosDiaporama = m.accueil.hero === 'diaporama' && mode !== 'photos' ? herosApercu(mobile ? 'portrait' : 'paysage', undefined, true, true, 'sombre') : null;
   const photoDiaporama = m.accueil.hero === 'diaporama' && mode === 'photos' ? herosApercu('paysage') : null;
   const renduPlein: Rendu = photoDiaporama?.type === 'photo' ? { type: 'photo', src: photoDiaporama.src, cadrage: '50% 50%' } : accueil;
   // Mot métier insécable (comme le site, lib/typo.mjs) : « pédicurie-podologie » ne passe jamais à la ligne sur son trait d'union
