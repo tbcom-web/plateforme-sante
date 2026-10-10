@@ -125,13 +125,19 @@ export async function servirEcran(profil: string | null): Promise<Ecran> {
   if (chaine.erreurLecture) return { kind: 'fini', texte: LECTURE_CHAINE, certitude: 0 };
   const groupe = `${profession.id}|${profil ?? '*'}`;
   const cand = chaine.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === groupe).map((f) => f.id);
-  const signaux = await signauxCandidats(chaine);
+  const signaux = await signauxCandidats(chaine).catch(() => ({}));
   const t = tournoiDuProfil({ ...chaine, signaux }, cand);
   const base = { texte: t.texte, certitude: t.certitude };
+  // Tournoi arrêté (certitude, budget, plafond de 48 écrans) : plus aucun écran, même une grille servie et pas répondue (sinon une
+  // 49e grille, au-delà du plafond : bug du 2026-10-10)
+  if (!t.ouvert || t.arrete) return { kind: 'fini', ...base };
   const demoDe = (seed: string) => { const l = profils.filter((p) => !profil || p.id === profil); return profilDemo(l, [...seed].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7))?.id ?? profils[0]?.id ?? ''; };
   const mienne = chaine.grillesEnCours.find((g) => g.votant === moi.id && g.propositions.every((x) => cand.includes(x)));
   if (mienne) return { kind: 'grille', id: mienne.id, propositions: mienne.propositions, profilDemo: demoDe(mienne.id), ...base };
   const reserves = new Set(chaine.grillesEnCours.filter((g) => g.votant !== moi.id).flatMap((g) => g.propositions));
+  // Candidat sans version courante lisible (version jamais enregistrée) : pas montré tant qu'il reste assez d'autres candidats
+  // (2026-10-10, bug « grille 49 » : son design vide faisait tomber la page ; l'aperçu affiche désormais « indisponible »)
+  for (const f of chaine.fiches) if (cand.includes(f.id) && !chaine.versions.some((v) => v.modele === f.id && v.version === f.versionCourante)) reserves.add(f.id);
   const e = prochainEcran(t, { reserves, graine: chaine.grilles?.length ?? 0 });
   if (!e) return { kind: 'fini', ...base };
   if (e.kind === 'duel') return { kind: 'duel', a: e.a, b: e.b, profilDemo: demoDe(`${e.a}${e.b}`), ...base };

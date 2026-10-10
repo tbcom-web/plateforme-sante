@@ -27,6 +27,9 @@ export const MIGRATION_CHAINE = 'Migration 0050 à exécuter (supabase/migration
 /** Lecture impossible (délai de 20 s dépassé, réseau, droits) : PAS une migration manquante (2026-10-10) */
 export const LECTURE_CHAINE = 'La base répond trop lentement : la chaîne n’a pas pu être lue. Rien n’est perdu ; rechargez la page dans un instant.';
 
+/** Passages d'étape pas tous faits (refus de la base, délai) : repris seuls au prochain chargement (2026-10-10) */
+export const AUTOMATE_INCOMPLET = 'Certains passages d’étape automatiques n’ont pas pu être faits (base lente ou refus) : rien n’est perdu, ils sont repris au prochain chargement.';
+
 /** Table absente (migration pas encore exécutée) : 42P01 (Postgres) ou PGRST205 (cache du schéma) */
 const tableAbsente = (e: { code?: string; message?: string } | null | undefined) =>
   Boolean(e && (e.code === '42P01' || e.code === 'PGRST205' || /relation .* does not exist|Could not find the table/i.test(e.message ?? '')));
@@ -141,6 +144,22 @@ export type Chaine = EtatChaine & {
   erreurLecture: boolean;
 };
 
+/** Max rows de Supabase (lignes par requête au plus, réglage du projet) */
+const MAX_LIGNES = 1000;
+type Paquet<T> = { data: T[] | null; error: { code?: string; message?: string } | null };
+/** Toutes les lignes d'une lecture triée, par paquets de MAX_LIGNES (jusqu'à `plafond`) ; erreur d'un paquet : erreur de la lecture */
+export async function toutesLesLignes<T = Record<string, unknown>>(faire: (de: number, a: number) => PromiseLike<{ data: unknown; error: unknown }>, plafond: number): Promise<Paquet<T>> {
+  let lignes: T[] = [];
+  for (let de = 0; de < plafond; de += MAX_LIGNES) {
+    const r = await faire(de, de + MAX_LIGNES - 1);
+    if (r.error) return { data: de ? lignes : null, error: r.error as Paquet<T>['error'] };
+    const l = (Array.isArray(r.data) ? r.data : []) as T[];
+    lignes = de ? lignes.concat(l) : l;
+    if (l.length < MAX_LIGNES) break;
+  }
+  return { data: lignes, error: null };
+}
+
 // Colonnes lues (2026-10-10, « optimiser les requêtes ») : celles des objets du core, jamais select('*')
 const COLONNES_FICHE = 'id, nom, profession, profil, statut, version_courante, version_publiee, version_retouche, justification_test, justification_version, tags, tags_valides, recette, origine, cle, rang, scenario, created_at';
 const COLONNES_VERSION = 'modele, version, composition, cle, journal, auteur, test, created_at';
@@ -157,33 +176,34 @@ export async function lireChaine(profession: string | null, opts: { versions?: '
   // Signal propre à chaque lecture : pas de mémorisation des fetch GET identiques pendant le rendu (relecture après écriture)
   const s = new AbortController().signal;
   const utiles = opts.versions === 'utiles';
-  let qf = supabase.from('modeles_fiches').select(COLONNES_FICHE).order('created_at', { ascending: true }).limit(3000).abortSignal(s);
-  if (profession) qf = qf.eq('profession', profession);
+  // Supabase renvoie 1 000 lignes AU PLUS par requête (« Max rows », quel que soit .limit) : 2026-10-10, bug « grille 49 » — au-delà
+  // de 1 000 versions, celles de candidats manquaient, leur design arrivait vide dans la grille et son rendu plantait la page. Lecture
+  // par paquets de 1 000 (tri total : clé unique en dernier), jusqu'au plafond de chaque table.
+  const fiches0 = () => { let q = supabase.from('modeles_fiches').select(COLONNES_FICHE); if (profession) q = q.eq('profession', profession); return q.order('created_at', { ascending: true }).order('id', { ascending: true }); };
   const lireVersions = async () => {
     if (utiles) {
-      let q = supabase.from('modeles_versions_utiles').select(COLONNES_VERSION).order('version', { ascending: true }).limit(10000).abortSignal(s);
-      if (profession) q = q.eq('profession', profession);
-      const r = await q;
-      if (!tableAbsente(r.error)) return r;
+      const r = await toutesLesLignes((de, a) => { let q = supabase.from('modeles_versions_utiles').select(COLONNES_VERSION); if (profession) q = q.eq('profession', profession); return q.order('version', { ascending: true }).order('modele', { ascending: true }).range(de, a).abortSignal(s); }, 20000);
+      // Vue de 0059 absente OU en erreur (cache du schéma, droits, délai) : lecture complète d'avant, jamais une chaîne « illisible »
+      if (!r.error) return r;
     }
-    return supabase.from('modeles_versions').select(COLONNES_VERSION).order('version', { ascending: true }).limit(10000).abortSignal(s);
+    return toutesLesLignes((de, a) => supabase.from('modeles_versions').select(COLONNES_VERSION).order('version', { ascending: true }).order('modele', { ascending: true }).range(de, a).abortSignal(s), 50000);
   };
   const lireJaime = async (): Promise<{ data: { modele: string; n: number }[] | null; error: unknown }> => {
     if (utiles) {
-      const r = await supabase.from('modeles_jaime_compteurs').select('modele, n').limit(50000).abortSignal(s);
-      if (!tableAbsente(r.error)) return { data: (r.data ?? []) as { modele: string; n: number }[], error: r.error };
+      const r = await toutesLesLignes<{ modele: string; n: number }>((de, a) => supabase.from('modeles_jaime_compteurs').select('modele, n').order('modele', { ascending: true }).range(de, a).abortSignal(s), 50000);
+      if (!r.error) return { data: r.data ?? [], error: null };
     }
-    const r = await supabase.from('modeles_jaime').select('modele').limit(50000).abortSignal(s);
-    return { data: ((r.data ?? []) as { modele: string }[]).map((l) => ({ modele: l.modele, n: 1 })), error: r.error };
+    const r = await toutesLesLignes<{ modele: string }>((de, a) => supabase.from('modeles_jaime').select('modele').order('modele', { ascending: true }).order('votant', { ascending: true }).range(de, a).abortSignal(s), 50000);
+    return { data: (r.data ?? []).map((l) => ({ modele: l.modele, n: 1 })), error: r.error };
   };
   // Fiches lues EN MÊME TEMPS que le reste (une attente de moins) ; le reste est filtré ensuite sur leurs identifiants
   const [{ data: fl, error }, vl, tl, vol, rl, gl, jl] = await Promise.all([
-    qf,
+    toutesLesLignes((de, a) => fiches0().range(de, a).abortSignal(s), 5000),
     lireVersions(),
-    supabase.from('modeles_tickets').select(COLONNES_TICKET).order('numero', { ascending: true }).limit(10000).abortSignal(s),
-    supabase.from('modeles_votes').select('profil, a, b, resultat, votant, poids, created_at').order('created_at', { ascending: true }).limit(20000).abortSignal(s),
-    supabase.from('modeles_revues').select('modele, version, page, appareil, auteur, verdict, created_at').limit(20000).abortSignal(s),
-    supabase.from('modeles_grilles').select('id, profil, propositions, votant, servie_le, meilleures, pire, poids, repondue_le').order('servie_le', { ascending: true }).limit(20000).abortSignal(s),
+    toutesLesLignes((de, a) => supabase.from('modeles_tickets').select(COLONNES_TICKET).order('numero', { ascending: true }).order('id', { ascending: true }).range(de, a).abortSignal(s), 20000),
+    toutesLesLignes((de, a) => supabase.from('modeles_votes').select('profil, a, b, resultat, votant, poids, created_at').order('created_at', { ascending: true }).order('id', { ascending: true }).range(de, a).abortSignal(s), 20000),
+    toutesLesLignes((de, a) => supabase.from('modeles_revues').select('modele, version, page, appareil, auteur, verdict, created_at').order('created_at', { ascending: true }).order('id', { ascending: true }).range(de, a).abortSignal(s), 20000),
+    toutesLesLignes((de, a) => supabase.from('modeles_grilles').select('id, profil, propositions, votant, servie_le, meilleures, pire, poids, repondue_le').order('servie_le', { ascending: true }).order('id', { ascending: true }).range(de, a).abortSignal(s), 20000),
     lireJaime(),
   ]);
   if (error) return { fiches: [], versions: [], tickets: [], votes: [], revues: [], grilles: [], grillesEnCours: [], jaime: {}, migrationManquante: tableAbsente(error), migrationGrilles: true, erreurLecture: !tableAbsente(error) };
@@ -251,24 +271,107 @@ export async function listerDossierRetours(dossier: string): Promise<Set<string>
 // Ce qui tourne tout seul
 // ---------------------------------------------------------------------------------------------------------------
 
-export type BilanAutomate = { tests: number; retouches: number; tickets: number; actions: ActionAuto[] };
+export type BilanAutomate = {
+  tests: number; retouches: number; tickets: number; actions: ActionAuto[];
+  /** Passages d'étape refusés ou pas faits faute de temps (repris au prochain chargement) : la page l'explique, sans planter */
+  echecs: number;
+  /** Étape de l'automate en erreur (exception attrapée) : la page affiche la chaîne lue et un message */
+  erreur?: string;
+};
 
-// Automate au plus une fois toutes les AUTOMATE_MS par profession sur une instance (2026-10-09, « la chaîne met super longtemps à
-// charger ») : entre deux tours, la page relit la chaîne (toujours fraîche) sans refaire les lectures GitHub ni les écritures.
-// Après chaque geste humain (actions.ts, rafraichir), oublierAutomate() : le tour suivant est immédiat (résultats identiques).
+// Lectures GitHub (résultats du testeur, retouches de Claude) au plus une fois toutes les AUTOMATE_MS par profession sur une instance
+// (2026-10-09, « la chaîne met super longtemps à charger »). Les TRANSITIONS (fin du tournoi, entrée dans la boucle…), elles, sont
+// recalculées à chaque chargement sur la chaîne fraîche (calcul pur, quelques ms ; aucune écriture s'il n'y a rien à faire) :
+// 2026-10-10, bug « grille 49 » : oublierAutomate() appelé dans une action serveur ne vidait pas toujours la mémoire vue par la page
+// (module chargé séparément) ; la fin du tournoi attendait alors 30 s et le guidage proposait autre chose que les finalistes.
 const AUTOMATE_MS = 30_000;
 const dernierTour = new Map<string, number>();
 export function oublierAutomate() { dernierTour.clear(); }
+/** Temps au plus pour les passages d'étape d'un chargement (le reste est fait au chargement suivant : la page ne dépasse jamais) */
+const TRANSITIONS_MS = 8_000;
 
-/** Applique tests du dépôt, retouches de Claude et transitions automatiques ; renvoie ce qui a été fait */
+/**
+ * Passages d'étape par la base (avancer_modele, 0050), en parallèle par fiche (2026-10-10 : fin d'un tournoi de 30 candidats = 40
+ * appels qui se suivaient, plusieurs secondes de plus sur la page) : les étapes d'une même fiche restent dans l'ordre ; les entrées
+ * dans la boucle de révision (plafond de 10 vérifié en base) passent après, une à une. Jamais d'exception : un refus est compté.
+ */
+async function appliquerTransitions(supabase: Awaited<ReturnType<typeof createClient>>, actions: readonly ActionAuto[]): Promise<{ faites: ActionAuto[]; echecs: number }> {
+  const faites: ActionAuto[] = [];
+  let echecs = 0;
+  const fin = Date.now() + TRANSITIONS_MS;
+  const une = async (a: ActionAuto): Promise<boolean> => {
+    if (Date.now() > fin) { echecs++; return false; }
+    try {
+      const { error } = a.kind === 'statut'
+        ? await supabase.rpc('avancer_modele', { p_id: a.modele, p_vers: a.vers, p_rang: a.rang ?? null })
+        : await supabase.from('modeles_tickets').update({ statut: 'ferme', version_correction: a.version }).eq('modele', a.modele).eq('numero', a.numero).neq('statut', 'ferme');
+      if (error) { echecs++; console.warn(`[chaine] passage refusé ${a.modele} → ${a.kind === 'statut' ? a.vers : `ticket ${a.numero}`} : ${error.message ?? error.code}`); return false; }
+      faites.push(a);
+      return true;
+    } catch (e) {
+      echecs++;
+      console.warn(`[chaine] passage en erreur ${a.modele} : ${(e as Error)?.message ?? e}`);
+      return false;
+    }
+  };
+  const boucle = actions.filter((a) => a.kind === 'statut' && a.vers === 'check-agent');
+  const autres = actions.filter((a) => !boucle.includes(a));
+  const parFiche = new Map<string, ActionAuto[]>();
+  for (const a of autres) parFiche.set(a.modele, [...(parFiche.get(a.modele) ?? []), a]);
+  const files = [...parFiche.values()];
+  // 8 fiches à la fois au plus ; une étape refusée arrête la suite de SA fiche seulement
+  for (let i = 0; i < files.length; i += 8) {
+    await Promise.all(files.slice(i, i + 8).map(async (l) => { for (const a of l) if (!(await une(a))) break; }));
+  }
+  for (const a of boucle) {
+    // Pas d'entrée dans la boucle pour une fiche dont le passage précédent (finaliste) a été refusé
+    if (autres.some((x) => x.modele === a.modele && !faites.includes(x))) { echecs++; continue; }
+    await une(a);
+  }
+  return { faites, echecs };
+}
+
+/**
+ * Applique tests du dépôt, retouches de Claude et transitions automatiques ; renvoie ce qui a été fait. Ne lève JAMAIS d'exception
+ * (2026-10-10, bug « grille 49 ») : une étape en erreur laisse la chaîne lue telle quelle, avec `erreur` pour le message de la page.
+ */
 export async function faireTournerChaine(profession: string | null, opts: { versions?: 'utiles' | 'toutes' } = {}): Promise<BilanAutomate & { chaine: Chaine }> {
-  let chaine = await lireChaine(profession, opts);
-  const bilan: BilanAutomate = { tests: 0, retouches: 0, tickets: 0, actions: [] };
+  let chaine: Chaine;
+  try {
+    chaine = await lireChaine(profession, opts);
+  } catch (e) {
+    console.warn(`[chaine] lecture en erreur : ${(e as Error)?.message ?? e}`);
+    return { tests: 0, retouches: 0, tickets: 0, actions: [], echecs: 0, chaine: chaineVide(), erreur: 'lecture' };
+  }
+  const bilan: BilanAutomate = { tests: 0, retouches: 0, tickets: 0, actions: [], echecs: 0 };
   if (chaine.migrationManquante || chaine.erreurLecture || !chaine.fiches.length) return { ...bilan, chaine };
+  try {
+    return await tourAutomate(profession, opts, chaine, bilan);
+  } catch (e) {
+    console.warn(`[chaine] automate en erreur : ${(e as Error)?.message ?? e}`);
+    const relue = await lireChaine(profession, opts).catch(() => chaine);
+    return { ...bilan, erreur: 'automate', chaine: { ...relue, signaux: await signauxCandidats(relue).catch(() => ({})) } };
+  }
+}
+
+/** Chaîne vide marquée « lecture impossible » (la page affiche LECTURE_CHAINE) */
+export const chaineVide = (): Chaine => ({ fiches: [], versions: [], tickets: [], votes: [], revues: [], grilles: [], grillesEnCours: [], jaime: {}, migrationManquante: false, migrationGrilles: false, erreurLecture: true });
+
+async function tourAutomate(profession: string | null, opts: { versions?: 'utiles' | 'toutes' }, chaine0: Chaine, bilan: BilanAutomate): Promise<BilanAutomate & { chaine: Chaine }> {
+  let chaine = chaine0;
   const k = profession ?? '*';
-  if (Date.now() - (dernierTour.get(k) ?? 0) < AUTOMATE_MS) return { ...bilan, chaine: { ...chaine, signaux: await signauxCandidats(chaine) } };
-  dernierTour.set(k, Date.now());
   const supabase = await createClient();
+  if (Date.now() - (dernierTour.get(k) ?? 0) < AUTOMATE_MS) {
+    // Entre deux tours complets : seulement les transitions (fin du tournoi juste après la dernière grille, entrée dans la boucle)
+    chaine = { ...chaine, signaux: await signauxCandidats(chaine) };
+    const { actions } = fairetournerChaine(chaine);
+    if (!actions.length) return { ...bilan, chaine };
+    const r = await appliquerTransitions(supabase, actions);
+    bilan.actions.push(...r.faites); bilan.echecs += r.echecs;
+    if (r.faites.length) chaine = { ...(await lireChaine(profession, opts)), signaux: chaine.signaux };
+    return { ...bilan, chaine };
+  }
+  dernierTour.set(k, Date.now());
   const [testsBruts, retouchesBrutes] = await Promise.all([lireFichierRetours('tests-modeles.json'), lireFichierRetours('retouches-modeles.json')]);
   let change = false;
   // 1. Résultats du testeur (fichiers du dépôt) : liste commune `tests-modeles.json`, et un fichier par version écrit par l'agent
@@ -315,17 +418,10 @@ export async function faireTournerChaine(profession: string | null, opts: { vers
   if (chaine.erreurLecture) return { ...bilan, chaine };
   // 4. Automate : transitions jusqu'au point fixe (a priori du tournoi : J'aime, juge, jauge)
   chaine = { ...chaine, signaux: await signauxCandidats(chaine) };
+  // Passage d'étape par la base (avancer_modele, 0050) : transition autorisée, rôle et conditions revérifiés côté serveur
   const { actions } = fairetournerChaine(chaine);
-  for (const a of actions) {
-    if (a.kind === 'statut') {
-      // Passage d'étape par la base (avancer_modele, 0050) : transition autorisée, rôle et conditions revérifiés côté serveur
-      const { error } = await supabase.rpc('avancer_modele', { p_id: a.modele, p_vers: a.vers, p_rang: a.rang ?? null });
-      if (!error) bilan.actions.push(a);
-    } else {
-      const { error } = await supabase.from('modeles_tickets').update({ statut: 'ferme', version_correction: a.version }).eq('modele', a.modele).eq('numero', a.numero).neq('statut', 'ferme');
-      if (!error) bilan.actions.push(a);
-    }
-  }
+  const r = await appliquerTransitions(supabase, actions);
+  bilan.actions.push(...r.faites); bilan.echecs += r.echecs;
   if (bilan.actions.length) chaine = { ...(await lireChaine(profession, opts)), signaux: chaine.signaux };
   return { ...bilan, chaine };
 }

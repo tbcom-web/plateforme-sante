@@ -9,7 +9,7 @@
 // Docs : docs/chaine-modeles.md (« Chaîne guidée »). Module pur.
 
 import { CHAINE, etatRevision, pagesChangees, ticketsOuverts, versionDe, type EtatChaine, type FicheModele, type RoleEquipe, type StatutModele } from './chaine-modeles';
-import type { EtatTournoiGrilles } from './tournoi-grilles';
+import { TOURNOI_GRILLES, type EtatTournoiGrilles } from './tournoi-grilles';
 
 /** Les 6 étapes montrées à l'équipe (les statuts internes de la fiche y sont regroupés) */
 export const ETAPES_GUIDEES = [
@@ -200,13 +200,27 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
   }
 
   // 2. Tournoi ouvert
-  if (t?.ouvert && !t.arrete) {
-    const faits = t.grilles + (t.duels ?? 0), k = faits + 1, total = faits + Math.max(1, t.restantes);
+  // Arrêt forcé au plafond d'écrans (tournoi-grilles.ts) : jamais « Jouer la grille 49 » (bug du 2026-10-10)
+  const faitsTournoi = t ? t.grilles + (t.duels ?? 0) : 0;
+  const tournoiEnCours = Boolean(t?.ouvert && !t.arrete && faitsTournoi < TOURNOI_GRILLES.ecransMax);
+  if (t && tournoiEnCours) {
+    const faits = faitsTournoi, k = faits + 1, total = Math.min(TOURNOI_GRILLES.ecransMax, faits + Math.max(1, t.restantes));
     return fin({
       id: 'tournoi', etape: 2, qui: 'vous', secondaire: null,
       titre: `Jouer la grille ${k} / ~${total} du tournoi`,
       pourquoi: `Touchez vos 2 designs préférés parmi 6. Le tournoi s’arrête seul quand le top ${CHAINE.finalistes} est sûr (${Math.round((t.certitude ?? 0) * 100)} % pour l’instant) ; les finalistes passent alors au test automatique.`,
       bouton: { libelle: `Jouer la grille ${k}`, href: '/chaine/tournoi' },
+    });
+  }
+
+  // 2. Tournoi terminé, candidats pas encore passés finalistes (l'automate le fait au chargement suivant, ou un passage a été
+  //    refusé) : on l'explique, jamais une autre étape qui laisserait croire que les votes sont perdus
+  if (t?.ouvert && !tournoiEnCours && candidats > CHAINE.finalistes) {
+    return fin({
+      id: 'attendre', etape: 2, qui: 'agent', secondaire: null,
+      titre: `Tournoi terminé (${pluriel(faitsTournoi, 'écran')}) : passage des finalistes`,
+      pourquoi: `Le top ${CHAINE.finalistes} est retenu ; les finalistes passent au test automatique et les autres sont écartés. Rechargez le tableau dans un instant pour voir la suite.`,
+      bouton: { libelle: 'Voir les finalistes', href: '/chaine' },
     });
   }
 

@@ -1153,6 +1153,9 @@ export function appliquerRecette(
   opts: { id?: string | null; proposes?: readonly Univers[]; modeles?: readonly ModeleManifeste[]; soinsConnus?: readonly string[]; themesActives?: readonly string[]; photosNonImportees?: boolean } = {},
 ): { draft: SiteDraft; modele: ModeleManifeste } | null {
   const modele = (id: string) => opts.modeles?.find((m) => m.id === id) ?? modeleIntegre(id);
+  // Composition incomplète (design vide d'un candidat dont la version n'a pas été lue, format inconnu) : pas d'aperçu, jamais une
+  // exception (2026-10-10, bug « grille 49 » : « Cannot read properties of undefined (reading 'style') » faisait tomber la page)
+  if (!brut || typeof brut !== 'object' || !brut.visuels || typeof brut.visuels !== 'object') return null;
   const c: ContexteRecette = { sujets: [...(d.priorites?.principaux ?? []), ...(d.priorites?.secondaires ?? [])], principaux: d.priorites?.principaux.length ?? 0, couleursPreferees: d.couleursPreferees, modele };
   const x = reparerComposition(brut, c);
   const u = opts.proposes?.find((v) => v.id === x.structure) ?? universCatalogue(x.structure);

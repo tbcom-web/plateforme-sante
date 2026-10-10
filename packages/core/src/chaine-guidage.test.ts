@@ -2,7 +2,13 @@
 // action ni explication, gestes du validateur jamais prescrits à un contributeur, fil des 6 étapes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CHAINE, CELLULES_REVISION, type EtatChaine, type FicheModele, type RevueModele, type VersionModele } from './chaine-modeles';
+import { appliquerActions, CHAINE, CELLULES_REVISION, fairetournerChaine, tournoiDuProfil, type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele } from './chaine-modeles';
+import { TOURNOI_GRILLES, prochainEcran, type GrilleTournoi } from './tournoi-grilles';
+import { appliquerRecette, normaliserComposition, type CompositionRecette } from './recettes';
+import { draftVide } from './draft';
+import { contexteScenario } from './notation-recettes';
+import { modeleIntegre } from './modeles';
+import type { PoidsAtelier } from './atelier-poids';
 import { etapeDuStatut, prochaineActionChaine, type EntreeGuidage } from './chaine-guidage';
 import type { ResultatTestModele, TicketModele } from './chaine-modeles-format';
 
@@ -121,4 +127,106 @@ test('guidage : fil des étapes et reste jusqu’aux clients', () => {
   assert.match(c.restant, /1 modèle prêt pour les clients/);
   assert.equal(etapeDuStatut('ecarte'), null);
   assert.equal(etapeDuStatut('revalidation'), 5);
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Bug « grille 49 » (2026-10-10) : arrêt au plafond d'écrans, comptage identique pour le guidage, la page et l'automate
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Tournoi de 30 candidats joué « à contre-courant » (choix contradictoires : jamais sûr) : `g` grilles puis `d` départages */
+function tournoiJoue(g: number, d: number): EtatChaine {
+  const cs = candidats(30);
+  const ids = cs.map((f) => f.id);
+  const grilles: GrilleTournoi[] = [];
+  const votes: VoteModele[] = [];
+  let e = etat(cs);
+  for (let k = 0; k < g; k++) {
+    const t = tournoiDuProfil(e, ids);
+    const props = Array.from({ length: 6 }, (_, i) => ids[(k * 7 + i * 5) % 30]);
+    // Les 2 moins bien classés de la grille gagnent : le classement ne se stabilise jamais
+    const rang = (id: string) => t.classement.find((l) => l.id === id)!.rang;
+    const ord = props.map((id, i) => [rang(id), i] as const).sort((a, b) => b[0] - a[0]);
+    grilles.push({ profil: null, propositions: props, meilleures: [ord[0][1], ord[1][1]], pire: null, votant: 'paul', poids: 2, le: String(k).padStart(4, '0') });
+    e = { ...e, grilles: [...grilles] };
+  }
+  for (let k = 0; k < d; k++) {
+    const t = tournoiDuProfil(e, ids);
+    votes.push({ profil: null, a: t.classement[9].id, b: t.classement[10].id, resultat: k % 2 ? 'a' : 'b', votant: 'paul', poids: 2, le: `d${k}` });
+    e = { ...e, votes: [...votes] };
+  }
+  return e;
+}
+const idsDe = (e: EtatChaine) => e.fiches.filter((f) => f.statut === 'candidat' && f.profil === null).map((f) => f.id);
+
+test('grille 49 : 47 écrans → « Jouer la grille 48 / ~48 » au plus ; 48 écrans → tournoi arrêté, plus aucun écran', () => {
+  const e47 = tournoiJoue(39, 8);
+  const t47 = tournoiDuProfil(e47, idsDe(e47));
+  assert.equal(t47.grilles + t47.duels, 47);
+  assert.equal(t47.arrete, false);
+  const a = guide(e47, { tournoi: t47 });
+  assert.equal(a.id, 'tournoi');
+  assert.match(a.titre, /^Jouer la grille 48 \/ ~48 du tournoi$/);
+  assert.equal(a.bouton && 'libelle' in a.bouton ? a.bouton.libelle : '', 'Jouer la grille 48');
+  const e48 = tournoiJoue(40, 8);
+  const t48 = tournoiDuProfil(e48, idsDe(e48));
+  assert.equal(t48.arrete, true);
+  assert.equal(t48.raison === 'budget' || t48.raison === 'sur', true);
+  assert.equal(prochainEcran(t48), null, 'aucun écran une fois arrêté');
+  // Plafond d'écrans atteint par des départages (39 grilles + 9 duels = 48) : arrêté aussi
+  const e48d = tournoiJoue(39, 9);
+  const t48d = tournoiDuProfil(e48d, idsDe(e48d));
+  assert.equal(t48d.grilles + t48d.duels, TOURNOI_GRILLES.ecransMax);
+  assert.equal(t48d.arrete, true);
+  assert.match(t48d.texte, /48 écrans|sûr/);
+});
+
+test('grille 49 : jamais « Jouer la grille » au-delà du plafond, même avec un état incohérent', () => {
+  for (const [grilles, duels] of [[40, 8], [41, 8], [48, 0], [45, 10]]) {
+    const a = guide(etat(candidats(30)), { tournoi: { ouvert: true, arrete: false, grilles, duels, restantes: 3, certitude: 0.8, texte: '' } });
+    assert.notEqual(a.id, 'tournoi');
+    assert.doesNotMatch(a.titre, /Jouer la grille/);
+  }
+});
+
+test('grille 49 : fin du tournoi → automate (top 10 finalistes, autres écartés), même comptage que la page et le guidage', () => {
+  const e = tournoiJoue(40, 8);
+  const ids = idsDe(e);
+  const t = tournoiDuProfil(e, ids);
+  assert.equal(t.arrete, true);
+  // Guidage AVANT les passages (automate pas encore passé, ou passage refusé par la base) : explication, lien vers le tableau
+  const avant = guide(e, { tournoi: t });
+  assert.equal(avant.id, 'attendre');
+  assert.equal(avant.etape, 2);
+  assert.match(avant.titre, /Tournoi terminé \(48 écrans\)/);
+  assert.deepEqual(avant.bouton, { libelle: 'Voir les finalistes', href: '/chaine' });
+  // L'automate voit le même tournoi : 10 finalistes (rangs 1-10), 20 écartés, puis 10 au plus entrent dans la boucle
+  const { actions, etat: apres } = fairetournerChaine(e);
+  const vers = (v: string) => actions.filter((a) => a.kind === 'statut' && a.vers === v).map((a) => a.modele);
+  assert.deepEqual(new Set(vers('finaliste')), new Set(t.top));
+  assert.equal(vers('ecarte').length, 20);
+  assert.ok(vers('check-agent').length <= CHAINE.maxRevision);
+  assert.equal(apres.fiches.filter((f) => f.statut === 'candidat').length, 0);
+  // Après les passages : jamais « Jouer la grille », la suite est le test automatique (validateur)
+  const g = guide(apres, { tournoi: null });
+  assert.notEqual(g.id, 'tournoi');
+  assert.equal(g.id, 'tester');
+  // Passages appliqués en partie (base lente) : l'état reste cohérent, rien n'est rejoué deux fois
+  const partiel = appliquerActions(e, actions.slice(0, 7));
+  const suite = fairetournerChaine(partiel).actions;
+  assert.ok(suite.every((a) => !actions.slice(0, 7).some((x) => x.kind === 'statut' && a.kind === 'statut' && x.modele === a.modele && x.vers === a.vers)));
+});
+
+test('grille 49 : un design vide ou incomplet ne lève jamais d’exception au rendu (aperçu indisponible)', () => {
+  // Erreur réelle du 2026-10-10 : « Cannot read properties of undefined (reading 'style') » (version absente → design {})
+  const d = draftVide();
+  d.priorites = { principaux: ['sport'], secondaires: [] };
+  for (const brut of [{}, { structure: 'cocon' }, { visuels: null }, null] as unknown[]) {
+    assert.doesNotThrow(() => appliquerRecette(d, brut as CompositionRecette));
+    assert.equal(appliquerRecette(d, brut as CompositionRecette), null);
+  }
+  // Rendu pour un profil (Tournoi, présélection) : un design vide reste vide, sans exception
+  const ctx = contexteScenario({ principaux: ['sport'], secondaires: [], couleurs: [], soins: [] }, { poids: null, photos: [], modele: modeleIntegre });
+  assert.doesNotThrow(() => normaliserComposition({}, ctx));
+  // Poids partiels (instantané désérialisé incomplet) : le contexte se construit sans exception
+  assert.doesNotThrow(() => contexteScenario({ principaux: ['sport'], secondaires: [], couleurs: [], soins: [] }, { poids: {} as PoidsAtelier, photos: [], modele: modeleIntegre }));
 });

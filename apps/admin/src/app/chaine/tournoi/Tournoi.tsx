@@ -6,6 +6,7 @@
 // l'œil : le doublon est signalé (même contrôle que la Dégustation).
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { PhotoBanque, PoidsAtelier } from '@plateforme/core';
 import { empreinteIframe } from '../../admin/degustation/Vignettes';
 import ApercuModele, { type RenduChaine } from '../ApercuModele';
@@ -35,6 +36,7 @@ export default function Tournoi(p: Props) {
   const [faits, setFaits] = useState(0);
   const [identiques, setIdentiques] = useState<number[]>([]);
   const [enCours, demarrer] = useTransition();
+  const router = useRouter();
   useEffect(() => { if (window.innerWidth >= 1024) setAppareil('ordinateur'); }, []);
   const [panne, setPanne] = useState('');
   // Appel serveur qui échoue (base lente, ou page ouverte avant une mise en ligne : l'action n'existe plus) : un nouvel essai
@@ -52,7 +54,7 @@ export default function Tournoi(p: Props) {
   const ecranSuivant = async () => {
     setPanne('');
     const e = await essayer(() => servirEcran(p.profil), 'Grille non préparée');
-    if (e) setEcran(e); else setPanne('La grille n’a pas pu être préparée : la page se recharge…');
+    if (e) { setEcran(e); if (e.kind === 'fini') router.refresh(); } else setPanne('La grille n’a pas pu être préparée : la page se recharge…');
   };
   const charger = useCallback(() => demarrer(async () => { setMeilleures([]); setPire(null); setModePire(false); setIdentiques([]); await ecranSuivant(); }), [p.profil]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { charger(); }, [charger]);
@@ -61,8 +63,10 @@ export default function Tournoi(p: Props) {
   const ids = ecran?.kind === 'grille' ? ecran.propositions : ecran?.kind === 'duel' ? [ecran.a, ecran.b] : [];
   const rendus = useMemo(() => {
     if (!profil) return [];
-    const ctx = contexteDuProfil(profil, { poids: p.poids, photos: p.photos, modeles: p.rendu.modeles });
-    return ids.map((id, i) => rendreDesign(p.versions[id]?.design ?? {}, profil, ctx, i + 1));
+    let ctx: ReturnType<typeof contexteDuProfil>;
+    try { ctx = contexteDuProfil(profil, { poids: p.poids, photos: p.photos, modeles: p.rendu.modeles }); } catch { return ids.map(() => ({})); }
+    // Un design illisible (version absente, composition d'un autre format) ne fait jamais planter la grille : aperçu vide
+    return ids.map((id, i) => { try { return rendreDesign(p.versions[id]?.design ?? {}, profil, ctx, i + 1); } catch { return {}; } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids.join(','), profil]);
   const scenario = profil ? { principaux: profil.scenario.principaux, secondaires: profil.scenario.secondaires, couleurs: profil.scenario.couleurs } : { principaux: [], secondaires: [], couleurs: [] };

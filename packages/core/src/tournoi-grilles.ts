@@ -169,7 +169,7 @@ export function etatTournoiGrilles(candidats: readonly string[], grilles: readon
   if (candidats.length <= top) return { ...base, ouvert: true, arrete: true, raison: 'peu-de-candidats', restantes: 0, texte: 'Tous finalistes' };
   const pct = Math.round(certitude * 100);
   if (certitude >= TOURNOI_GRILLES.certitude && vusTous) return { ...base, ouvert: true, arrete: true, raison: 'sur', restantes: 0, texte: `Top 10 sûr à ${pct} %` };
-  if (gs.length >= TOURNOI_GRILLES.budget || gs.length + ds.length >= TOURNOI_GRILLES.ecransMax) return { ...base, ouvert: true, arrete: true, raison: 'budget', restantes: 0, texte: `Arrêté au budget (${TOURNOI_GRILLES.budget} grilles) · top 10 sûr à ${pct} %` };
+  if (gs.length >= TOURNOI_GRILLES.budget || gs.length + ds.length >= TOURNOI_GRILLES.ecransMax) return { ...base, ouvert: true, arrete: true, raison: 'budget', restantes: 0, texte: `Arrêté au budget (${gs.length >= TOURNOI_GRILLES.budget ? `${TOURNOI_GRILLES.budget} grilles` : `${TOURNOI_GRILLES.ecransMax} écrans`}) · top 10 sûr à ${pct} %` };
   return { ...base, ouvert: true, arrete: false, raison: 'en-cours', restantes, texte: `Top 10 sûr à ${pct} % · ~${restantes} grille${restantes > 1 ? 's' : ''} restante${restantes > 1 ? 's' : ''}` };
 }
 

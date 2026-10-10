@@ -1,12 +1,14 @@
 import Link from 'next/link';
 import { CHAINE, groupeTournoi, TOURNOI_GRILLES, tournoiDuProfil } from '@plateforme/core';
-import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
+import { AUTOMATE_INCOMPLET, exigerContributeur, faireTournerChaine, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
 import Tournoi from './Tournoi';
 import ProchaineEtape from '../ProchaineEtape';
 import { guidageChaine } from '@/lib/chaine-guidage';
 
 export const metadata = { title: 'Chaîne · Tournoi' };
+// Fin d'un tournoi (passages d'étape) et actions du tournoi (servirEcran, repondreGrille) : délai large (bug « grille 49 »)
+export const maxDuration = 300;
 
 // 2. TOURNOI EN GRILLES (retour de Paul du 2026-10-09 : « 160 batailles, c'est énorme ») : « tes 2 préférées parmi 6 » entre les
 // designs candidats de la PROFESSION (anciens modèles : par profil), les 6 rendus avec le MÊME profil de démonstration ; a priori
@@ -16,7 +18,8 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
   const moi = await exigerContributeur();
   const sp = await searchParams;
   const { profession, profils } = await profilsDemo();
-  const [{ chaine }, rendu, gen] = await Promise.all([faireTournerChaine(profession.id, { versions: 'utiles' }), donneesRendu(), donneesGeneration()]);
+  const [bilan, rendu, gen] = await Promise.all([faireTournerChaine(profession.id, { versions: 'utiles' }), donneesRendu(), donneesGeneration()]);
+  const { chaine } = bilan;
   const demande = (Array.isArray(sp.profil) ? sp.profil[0] : sp.profil) || null;
   const groupes = [...new Set([`${profession.id}|*`, ...chaine.fiches.filter((f) => f.statut === 'candidat').map(groupeTournoi)])];
   const groupe = `${profession.id}|${demande ?? '*'}`;
@@ -34,6 +37,7 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
       </div>
       <ProchaineEtape action={action} ici="/chaine/tournoi" />
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
+      {(bilan.erreur === 'automate' || bilan.echecs > 0) && <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-automate-incomplet="">{AUTOMATE_INCOMPLET} <Link href="/chaine" className="font-semibold underline">Voir le tableau</Link></p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
       {groupes.length > 1 && (
         <nav className="flex flex-wrap gap-2" aria-label="Tournois">

@@ -3,7 +3,7 @@ import {
   attentesHumain, attentesMachines, CHAINE, compteursChaine, reserveCandidats, tournoiDuProfil, STATUTS_MODELE, statutModele, ticketsOuverts, type Main, type StatutModele,
 } from '@plateforme/core';
 import { professionDe, professionsAdmin } from '@plateforme/core/professions';
-import { exigerContributeur, faireTournerChaine, getEquipe, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
+import { AUTOMATE_INCOMPLET, exigerContributeur, faireTournerChaine, getEquipe, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { getNombreArrivages } from '@/lib/arrivages';
 import { profilsDegustation } from '@/lib/degustation';
 import { getProfession } from '@/lib/profession';
@@ -11,6 +11,8 @@ import { guidageChaine, prechargerGuidage } from '@/lib/chaine-guidage';
 import ProchaineEtape from './ProchaineEtape';
 
 export const metadata = { title: 'Chaîne des modèles' };
+// Fin d'un tournoi : passages d'étape de tous les candidats au même chargement (2026-10-10, bug « grille 49 ») ; délai large
+export const maxDuration = 300;
 
 // Tableau de la chaîne : une colonne par étape avec compteur, qui a la main (agent, humain, Claude, Paul), filtres profession / profil,
 // « Ce qui attend un humain » (par personne) et « Ce qui tourne tout seul ». L'ouverture de la page fait tourner l'automate.
@@ -32,7 +34,7 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
   const profession = un(sp.profession) ? professionDe(un(sp.profession)) : await getProfession();
   const pd = { id: profession.id, libelle: profession.court || profession.libelle, parDefaut: profession.id, specialites: profession.specialites };
   const [profils, bilan, equipe, arrivages] = await Promise.all([
-    profilsDegustation(pd), faireTournerChaine(profession.id, { versions: 'utiles' }), getEquipe(), getNombreArrivages(profession).catch(() => null),
+    profilsDegustation(pd).catch(() => []), faireTournerChaine(profession.id, { versions: 'utiles' }), getEquipe().catch(() => []), getNombreArrivages(profession).catch(() => null),
   ]);
   // Chaîne guidée : LA prochaine étape (tournoi calculé une fois, réutilisé par la colonne « Candidat ») ; import automatique des
   // designs de Claude s'il manque des candidats pour ouvrir le tournoi (la chaîne est alors relue)
@@ -63,6 +65,7 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
       </div>
       <ProchaineEtape action={guide.action} importes={guide.importes} ici="/chaine" />
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
+      {(bilan.erreur === 'automate' || bilan.echecs > 0) && <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-automate-incomplet="">{AUTOMATE_INCOMPLET} <Link href="/chaine" className="font-semibold underline">Recharger</Link></p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
 
       <form className="flex flex-wrap items-end gap-3 text-sm" action="/chaine">

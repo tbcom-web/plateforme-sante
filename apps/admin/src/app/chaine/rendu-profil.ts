@@ -10,13 +10,25 @@ export function contexteDuProfil(p: ProfilRendu, o: { poids: PoidsAtelier | null
   const modele = (id: string) => o.modeles.find((m) => m.id === id)?.manifeste ?? modeleIntegre(id);
   const autorisees = p.photos ? new Set(p.photos) : null;
   // Photos du kit du profil ; profil sans kit : photos de ses sujets seulement
-  const photos = o.photos.filter((x) => (autorisees ? autorisees.has(x.url) : x.sujets.some((s) => p.sujets.includes(s))));
-  return contexteScenario(p.scenario, { poids: o.poids, photos, modele, modeTirage: 'favoris' });
+  const photos = (o.photos ?? []).filter((x) => (autorisees ? autorisees.has(x.url) : (x.sujets ?? []).some((s) => p.sujets.includes(s))));
+  try {
+    return contexteScenario(p.scenario, { poids: o.poids, photos, modele, modeTirage: 'favoris' });
+  } catch (e) {
+    // Poids illisibles (instantané partiel) : contexte sans poids plutôt qu'une page qui tombe
+    console.error('Contexte du profil sans poids', e);
+    return contexteScenario(p.scenario, { poids: null, photos, modele, modeTirage: 'favoris' });
+  }
 }
 
 /** Composition prête à rendre : le design habillé des images du profil */
 export function rendreDesign(design: Record<string, unknown>, p: ProfilRendu, ctx: ContexteRecette, graine = 1): Record<string, unknown> {
-  const x = normaliserComposition(design, ctx);
-  if (!x) return design;
-  return JSON.parse(serialiserComposition(habillerPourProfil(x as CompositionRecette, ctx, graine)));
+  // Jamais d'exception (rendu dans un useMemo : une exception fait tomber la page, bug « grille 49 » du 2026-10-10) : design tel quel
+  try {
+    const x = normaliserComposition(design, ctx);
+    if (!x) return design;
+    return JSON.parse(serialiserComposition(habillerPourProfil(x as CompositionRecette, ctx, graine)));
+  } catch (e) {
+    console.error('Habillage du design impossible', e);
+    return design;
+  }
 }
