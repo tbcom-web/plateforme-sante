@@ -48,6 +48,7 @@ async function lireAvec(f: FiltresProspection, { tout = false } = {}, niveau: Ni
   if (niveau >= 57 && f.specialite) req = req.contains('specialites', [f.specialite]);
   const role = ROLES_PROSPECTION.find((r) => r.id === f.role);
   if (niveau >= 57 && role) req = req.ilike('role', role.motif);
+  if (niveau >= 57 && f.lienClient) req = req.contains('raisons', [{ k: 'client' }]);
   // Conditions « l'une ou l'autre », réunies en un seul filtre or=(and(or(…),or(…)))
   const ou: string[] = [];
   const mois = PERIODES_INSTALLATION.find((p) => p.id === f.periode)?.mois ?? null;

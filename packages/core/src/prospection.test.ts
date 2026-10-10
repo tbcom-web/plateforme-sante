@@ -20,7 +20,8 @@ test('installation : signal le plus récent, source lisible', () => {
 
 test('filtres : valeurs par défaut et saisies refusées', () => {
   const f = lireFiltresProspection({});
-  assert.deepEqual(f, { departement: '', q: '', periode: '12', statut: '', liberal: true, actifs: true, specialite: '', role: '', tri: 'score', page: 1 });
+  assert.deepEqual(f, { departement: '', q: '', periode: '12', statut: '', liberal: true, actifs: true, specialite: '', role: '', lienClient: false, tri: 'score', page: 1 });
+  assert.equal(lireFiltresProspection({ lien: 'client' }).periode, 'tous');
   assert.equal(lireFiltresProspection({ specialite: 'sport', role: 'titulaire', tri: 'recent' }).role, 'titulaire');
   assert.equal(lireFiltresProspection({ specialite: 'x;drop' }).specialite, '');
   assert.equal(lireFiltresProspection({ specialite: 'sport' }).periode, 'tous');

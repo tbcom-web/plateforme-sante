@@ -69,6 +69,8 @@ export type FiltresProspection = {
   /** Spécialité repérée dans les diplômes (prospection-score.ts) */
   specialite: string;
   role: RoleProspection | '';
+  /** Seulement les prospects qui travaillent ou ont travaillé avec un client (recommandation possible) */
+  lienClient: boolean;
   /** score : intérêt commercial (0057) ; recent : signal d'installation le plus récent */
   tri: 'score' | 'recent';
   page: number;
@@ -89,7 +91,7 @@ export const departementSaisi = (s: string) => {
 
 export function lireFiltresProspection(sp: Record<string, string | string[] | undefined>): FiltresProspection {
   // Une spécialité concerne peu de praticiens : sans période choisie, on ne la croise pas avec « Depuis 1 an »
-  const periode = premier(sp.periode) || (premier(sp.specialite) ? 'tous' : '');
+  const periode = premier(sp.periode) || (premier(sp.specialite) || premier(sp.lien) ? 'tous' : '');
   const statut = premier(sp.statut);
   const page = Number.parseInt(premier(sp.page), 10);
   return {
@@ -101,6 +103,7 @@ export function lireFiltresProspection(sp: Record<string, string | string[] | un
     actifs: premier(sp.actifs) !== 'non',
     specialite: /^[a-z]{2,12}$/.test(premier(sp.specialite)) ? premier(sp.specialite) : '',
     role: ROLES_PROSPECTION.some((r) => r.id === premier(sp.role)) ? (premier(sp.role) as RoleProspection) : '',
+    lienClient: premier(sp.lien) === 'client',
     tri: premier(sp.tri) === 'recent' ? 'recent' : 'score',
     page: Number.isFinite(page) && page > 0 ? Math.min(page, 1000) : 1,
   };
@@ -117,6 +120,7 @@ export function parametresProspection(f: FiltresProspection, page = f.page): str
   if (!f.actifs) p.set('actifs', 'non');
   if (f.specialite) p.set('specialite', f.specialite);
   if (f.role) p.set('role', f.role);
+  if (f.lienClient) p.set('lien', 'client');
   if (f.tri !== 'score') p.set('tri', f.tri);
   if (page > 1) p.set('page', String(page));
   return p.toString();

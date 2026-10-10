@@ -9,6 +9,10 @@
 // 3. CABINET : le site se vend au cabinet et le TITULAIRE décide. Le titulaire (ou l'associé) hérite de la vie de sa structure :
 //    arrivée d'un collaborateur (le cabinet grandit), départ d'un confrère (à remplacer), reprise (collaborateur devenu
 //    titulaire, événement « role » de prospection-evenements.ts). Un collaborateur ne décide pas seul : moins de points.
+// 4. CLIENTS (statut « gagne » du suivi, 0055) : un client n'est plus un prospect ; ceux qui travaillent ou ont travaillé avec un
+//    client (même structure ou même adresse) sont des recommandations possibles ; et chaque prospect reçoit des points de
+//    RESSEMBLANCE avec les clients : rapport de vraisemblance (bayésien naïf, lissé) de ses traits chez les clients et chez
+//    l'ensemble des podologues libéraux (rôle, type de cabinet, taille, maison de santé, multi-sites, ancienneté RPPS, département).
 // Chaque point est expliqué (raisons), pour que la commerciale sache quoi vérifier au téléphone.
 
 export const SPECIALITES_DIPLOMES = [
@@ -49,12 +53,18 @@ export type LigneScore = {
   structure_cle?: string | null;
   raison_sociale?: string | null;
   commune?: string | null;
+  departement?: string | null;
+  nom?: string | null;
+  prenom?: string | null;
+  autres_professions?: Record<string, number> | null;
+  /** Statut du suivi de la commerciale : « gagne » = client */
+  statut?: string | null;
   telephone?: string | null;
   email?: string | null;
   specialites?: readonly string[] | null;
 };
-/** t : « i » (installation) ou « p » (prospection) ; l : libellé ; p : points */
-export type Raison = { t: 'i' | 'p'; l: string; p: number };
+/** t : « i » (installation) ou « p » (prospection) ; l : libellé ; p : points ; k : clé de filtre (« client » : lien avec un client) */
+export type Raison = { t: 'i' | 'p'; l: string; p: number; k?: string };
 export type ScoreProspection = { installation: number; prospect: number; raisons: Raison[] };
 /** Événements utiles au score (prospection_evenements, 0058) : changements de rôle surtout */
 export type EvenementScore = { type: string; cle: string; le: string; details?: Record<string, unknown> | null };
@@ -76,7 +86,37 @@ export function attenuation(date: string | null | undefined, aujourdhui: string)
 const estLiberal = (l: LigneScore) => /^lib/i.test(l.mode_exercice ?? '');
 const ecartJours = (a: string, b: string) => Math.abs(Date.parse(a.slice(0, 10)) - Date.parse(b.slice(0, 10))) / JOUR_MS;
 
+const casse = (s: string | null | undefined) => String(s ?? '').toLowerCase().replace(/(^|[\s'-])\p{L}/gu, (m) => m.toUpperCase());
+const estClient = (l: LigneScore) => l.statut === 'gagne';
+
+/** Traits d'un praticien pour la ressemblance (une valeur par trait), calculés sur ses situations libérales actives */
+function traitsDe(situations: readonly LigneScore[], tailleStructure: (l: LigneScore) => number, recent: boolean): Record<string, string> {
+  const lib = situations.filter((s) => estLiberal(s) && !s.disparu_le);
+  const v = lib[0] ?? situations[0];
+  const roles = lib.map((s) => s.role ?? '').join(' ');
+  const taille = Math.max(1, ...lib.map(tailleStructure));
+  return {
+    role: /titulaire/i.test(roles) ? 'titulaire' : /associ/i.test(roles) ? 'associé' : /collaborat/i.test(roles) ? 'collaborateur' : 'autre',
+    secteur: /individuel/i.test(v.secteur ?? '') ? 'cabinet individuel' : /groupe/i.test(v.secteur ?? '') ? 'cabinet de groupe' : /soci/i.test(v.secteur ?? '') ? 'exercice en société' : 'autre',
+    taille: taille === 1 ? 'seul au cabinet' : taille <= 3 ? 'cabinet de 2 ou 3 podologues' : 'cabinet de 4 podologues ou plus',
+    mixte: lib.some((s) => s.autres_professions && Object.keys(s.autres_professions).length) ? 'adresse partagée avec d’autres soignants' : 'sans autre soignant à l’adresse',
+    lieux: lib.length > 1 ? 'plusieurs lieux d’exercice' : 'un seul lieu d’exercice',
+    anciennete: recent ? 'inscrit récemment au RPPS' : 'installé de longue date',
+    departement: v.departement ?? '?',
+  };
+}
+const LIBELLE_TRAIT: Record<string, (v: string) => string> = {
+  role: (v) => v, secteur: (v) => v, taille: (v) => v, mixte: (v) => v, lieux: (v) => v, anciennete: (v) => v,
+  departement: (v) => `département ${v}`,
+};
+
 /** Scores de toutes les situations d'une profession (les liens entre lignes servent : adresse partagée, départ d'un autre lieu) */
+/** Numéros RPPS attribués dans l'ordre : les 5 % les plus élevés de la profession = inscriptions les plus récentes */
+function seuilRecentDe(parRpps: Map<string, LigneScore[]>): string | null {
+  const numeros = [...parRpps.keys()].sort();
+  return numeros[Math.floor(numeros.length * 0.95)] ?? null;
+}
+
 export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: string, evenements: readonly EvenementScore[] = []): Map<string, ScoreProspection> {
   const parAdresse = new Map<string, LigneScore[]>();
   const parRpps = new Map<string, LigneScore[]>();
@@ -86,11 +126,36 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
     if (l.structure_cle) parStructure.set(l.structure_cle, [...(parStructure.get(l.structure_cle) ?? []), l]);
     parRpps.set(l.rpps, [...(parRpps.get(l.rpps) ?? []), l]);
   }
+  // Clients et ressemblance (statistiques par praticien : une voix par RPPS)
+  const tailleStructure = (l: LigneScore) => (l.structure_cle ? (parStructure.get(l.structure_cle) ?? []).filter((m) => !m.disparu_le).length : 1);
+  const traits = new Map<string, Record<string, string>>();
+  const seuil = seuilRecentDe(parRpps);
+  for (const [rpps, sit] of parRpps) traits.set(rpps, traitsDe(sit, tailleStructure, seuil !== null && rpps >= seuil));
+  const clients = new Set([...parRpps].filter(([, sit]) => sit.some(estClient)).map(([rpps]) => rpps));
+  const liberaux = [...parRpps].filter(([, sit]) => sit.some((s) => estLiberal(s) && !s.disparu_le)).map(([rpps]) => rpps);
+  const frequences = (groupe: string[]) => {
+    const f = new Map<string, number>();
+    for (const r of groupe) for (const [k, v] of Object.entries(traits.get(r) ?? {})) f.set(`${k}:${v}`, (f.get(`${k}:${v}`) ?? 0) + 1);
+    return f;
+  };
+  const freqClients = frequences([...clients]);
+  const freqTous = frequences(liberaux);
+  const nClients = clients.size, nTous = liberaux.length;
+  /**
+   * Rapport de vraisemblance d'un trait, (part chez les clients) / (part chez tous), lissé vers 1 (m-estimation, poids 10) : un
+   * trait porté par 2 ou 3 clients seulement (un département peu prospecté) ne pèse presque rien.
+   */
+  const rapport = (cle: string) => {
+    const pTous = ((freqTous.get(cle) ?? 0) + 1) / (nTous + 2);
+    return ((freqClients.get(cle) ?? 0) + 10 * pTous) / (nClients + 10) / pTous;
+  };
+  const logRapport = (rpps: string) => Object.entries(traits.get(rpps) ?? {}).reduce((s, [k, v]) => s + Math.log(rapport(`${k}:${v}`)), 0);
+  // Points selon le RANG parmi les podologues libéraux (non clients) : 15 × rang³ → la moitié la moins ressemblante n'a presque rien
+  const ordre = liberaux.filter((r) => !clients.has(r)).map((r) => ({ r, v: logRapport(r) })).sort((a, b) => a.v - b.v);
+  const rangRessemblance = new Map(ordre.map((x, i) => [x.r, ordre.length > 1 ? i / (ordre.length - 1) : 0]));
   const reprises = new Map<string, string>(); // cle → date où la situation est passée à « titulaire »
   for (const e of evenements) if (e.type === 'role' && /titulaire/i.test(String(e.details?.apres ?? '')) && (!reprises.has(e.cle) || e.le > reprises.get(e.cle)!)) reprises.set(e.cle, e.le);
-  // Numéros RPPS attribués dans l'ordre : les 5 % les plus élevés de la profession = inscriptions les plus récentes
-  const numeros = [...parRpps.keys()].sort();
-  const seuilRecent = numeros[Math.floor(numeros.length * 0.95)] ?? null;
+  const seuilRecent = seuilRecentDe(parRpps);
 
   const scores = new Map<string, ScoreProspection>();
   for (const l of lignes) {
@@ -125,7 +190,8 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
 
     // --- Prospection
     let prospect = 0;
-    if (l.disparu_le || l.siret_ferme) raisons.push({ t: 'p', l: l.disparu_le ? 'N’exerce plus à cette adresse' : 'Établissement fermé', p: 0 });
+    if (clients.has(l.rpps)) raisons.push({ t: 'p', l: 'Déjà client', p: 0, k: 'deja_client' });
+    else if (l.disparu_le || l.siret_ferme) raisons.push({ t: 'p', l: l.disparu_le ? 'N’exerce plus à cette adresse' : 'Établissement fermé', p: 0 });
     else if (!estLiberal(l)) raisons.push({ t: 'p', l: 'Exercice non libéral', p: 0 });
     else {
       ajouter('p', `Installation (${installation} %)`, installation * 0.55);
@@ -152,6 +218,29 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
       const specs = (l.specialites ?? []).filter((s) => s !== 'eee' && s !== 'enseignant');
       if (specs.length) ajouter('p', `Spécialité à mettre en avant : ${specs.map(libelleSpecialite).join(', ')}`, Math.min(2, specs.length) * 4);
       if (/individuel/i.test(l.secteur ?? '')) ajouter('p', 'Cabinet individuel', 5);
+      // Lien avec un client : même structure ou même adresse, aujourd'hui ou par le passé (recommandation possible)
+      const liens = [
+        ...(l.structure_cle ? parStructure.get(l.structure_cle) ?? [] : []),
+        ...(l.adresse_cle ? parAdresse.get(l.adresse_cle) ?? [] : []),
+      ].filter((m) => m.rpps !== l.rpps && clients.has(m.rpps));
+      if (liens.length) {
+        const c = liens.find((m) => !m.disparu_le) ?? liens[0];
+        const qui = [casse(c.prenom), casse(c.nom)].filter(Boolean).join(' ') || 'un client';
+        raisons.push({ t: 'p', l: `${c.disparu_le || l.disparu_le ? 'A travaillé' : 'Travaille'} avec votre client ${qui} (même cabinet) : recommandation possible`, p: 12, k: 'client' });
+      }
+      // Ressemblance avec les clients (5 clients au moins pour que ce soit parlant), 15 points au plus
+      if (nClients >= 5) {
+        const t = traits.get(l.rpps) ?? {};
+        const rang = rangRessemblance.get(l.rpps) ?? 0;
+        const points = Math.round(15 * rang ** 3);
+        // Traits explicatifs : nettement plus fréquents chez les clients, et portés par 5 clients au moins
+        const forts = Object.entries(t).map(([k, v]) => ({ k, v, r: rapport(`${k}:${v}`), n: freqClients.get(`${k}:${v}`) ?? 0 }))
+          .filter((f) => f.r >= 1.2 && f.n >= 5).sort((a, b) => b.r - a.r).slice(0, 3);
+        if (points > 0) {
+          const pourquoi = forts.map((f) => `${LIBELLE_TRAIT[f.k](f.v)} (${Math.round((f.n / nClients) * 100)} % de vos clients)`).join(', ');
+          raisons.push({ t: 'p', l: `Plus proche de vos clients que ${Math.round(rang * 100)} % des podologues${pourquoi ? ` : ${pourquoi}` : ''}`, p: points, k: 'ressemblance' });
+        }
+      }
       prospect = Math.min(100, raisons.filter((r) => r.t === 'p').reduce((s, r) => s + r.p, 0));
     }
     scores.set(l.cle, { installation, prospect, raisons });

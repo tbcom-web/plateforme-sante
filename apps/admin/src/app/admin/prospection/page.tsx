@@ -27,6 +27,8 @@ function Fiche({ p }: { p: LigneProspection }) {
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <Link href={`/admin/prospection/praticien/${p.rpps}`} className="font-semibold text-teal-900 underline decoration-teal-800/30 hover:decoration-teal-800">{nom || '—'}</Link>
           {p.role && <span className="text-xs text-neutral-600">{p.role}</span>}
+          {p.statut === 'gagne' && <span className="rounded-full bg-teal-800 px-2 py-0.5 text-xs font-semibold text-white">Client</span>}
+          {p.raisons?.some((r) => r.k === 'client') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">Lien avec un client</span>}
           {inst && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${couleurSignal[inst.source]}`}>{inst.libelle} le {jour(inst.date)}</span>}
           {p.disparu_le && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Absent du RPPS depuis le {jour(p.disparu_le)}</span>}
           {p.siret_ferme && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Établissement fermé</span>}
@@ -135,6 +137,12 @@ export default async function Prospection({ searchParams }: PageProps<'/admin/pr
               </select>
             </label>
           </>
+        )}
+        {niveau >= 57 && (
+          <label className="flex min-h-10 items-center gap-2">
+            <input type="checkbox" name="lien" value="client" defaultChecked={f.lienClient} />
+            <span>Liés à un client</span>
+          </label>
         )}
         <label className="flex min-h-10 items-center gap-2">
           <input type="checkbox" name="actifs" value="non" defaultChecked={!f.actifs} />

@@ -78,3 +78,24 @@ test('enseignant : points pour la situation libérale, badge posé par la synchr
   assert.ok(!l.raisons.some((r) => r.l.startsWith('Spécialité à mettre en avant')));
   assert.equal(s.get('e|1')!.prospect, 0); // la situation d'enseignement elle-même n'est pas libérale
 });
+
+test('clients : déjà client à zéro, confrère d’un client signalé, ressemblance expliquée', () => {
+  const clients = ['10000000031', '10000000032', '10000000033', '10000000034', '10000000035'].map((rpps, i) =>
+    base({ cle: `c${i}|S${i}`, rpps, structure_cle: `S${i}`, role: 'Titulaire de cabinet', secteur: 'Cabinet individuel', departement: '33', statut: 'gagne', nom: `CLIENT${i}`, prenom: 'ANNE' }));
+  const lignes = [
+    ...clients,
+    base({ cle: 'p|S0', rpps: '10000000040', structure_cle: 'S0', role: 'Collaborateur', departement: '33' }),
+    base({ cle: 'q|T', rpps: '10000000041', structure_cle: 'T', role: 'Titulaire de cabinet', secteur: 'Cabinet individuel', departement: '33' }),
+    ...Array.from({ length: 20 }, (_, i) => base({ cle: `x${i}|U${i}`, rpps: `100000001${String(i).padStart(2, '0')}`, structure_cle: `U${i}`, role: 'Collaborateur', departement: '75' })),
+  ];
+  const s = scorerProspection(lignes, J);
+  assert.equal(s.get('c0|S0')!.prospect, 0);
+  assert.ok(s.get('c0|S0')!.raisons.some((r) => r.k === 'deja_client'));
+  const p = s.get('p|S0')!;
+  assert.ok(p.raisons.some((r) => r.k === 'client' && r.l.startsWith('Travaille avec votre client Anne Client0') && r.p === 12));
+  const q = s.get('q|T')!.raisons.find((r) => r.k === 'ressemblance')!;
+  assert.ok(q.p >= 10 && q.l.includes('titulaire (100 % de vos clients)'), q.l);
+  assert.ok(q.l.startsWith('Plus proche de vos clients que'), q.l);
+  const x = s.get('x0|U0')!.raisons.find((r) => r.k === 'ressemblance');
+  assert.ok(!x || x.p < q.p);
+});
