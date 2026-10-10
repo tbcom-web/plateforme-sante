@@ -36,7 +36,13 @@ export default function Tournoi(p: Props) {
   const [identiques, setIdentiques] = useState<number[]>([]);
   const [enCours, demarrer] = useTransition();
   useEffect(() => { if (window.innerWidth >= 1024) setAppareil('ordinateur'); }, []);
-  const charger = useCallback(() => demarrer(async () => { setMeilleures([]); setPire(null); setModePire(false); setIdentiques([]); setEcran(await servirEcran(p.profil)); }), [p.profil]);
+  const [panne, setPanne] = useState('');
+  // Écran suivant : une erreur du serveur (base lente, délai de 20 s) est AFFICHÉE avec « Réessayer », jamais avalée en silence
+  const ecranSuivant = async () => {
+    try { setPanne(''); setEcran(await servirEcran(p.profil)); }
+    catch { setPanne('La grille n’a pas pu être préparée (la base répond lentement).'); }
+  };
+  const charger = useCallback(() => demarrer(async () => { setMeilleures([]); setPire(null); setModePire(false); setIdentiques([]); await ecranSuivant(); }), [p.profil]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { charger(); }, [charger]);
 
   const profil = useMemo(() => (ecran && ecran.kind !== 'fini' ? p.profils.find((x) => x.id === ecran.profilDemo) ?? p.profils[0] : p.profils[0]), [ecran, p.profils]);
@@ -66,15 +72,15 @@ export default function Tournoi(p: Props) {
   };
   const valider = () => demarrer(async () => {
     if (ecran?.kind !== 'grille') return;
-    const r = await repondreGrille(ecran.id, meilleures, pire, appareil);
+    let r; try { r = await repondreGrille(ecran.id, meilleures, pire, appareil); } catch { setMessage('Choix non enregistré (base lente) : touchez Valider à nouveau.'); return; }
     setMessage(r.message);
-    if (r.ok) { setFaits((n) => n + 1); setMeilleures([]); setPire(null); setModePire(false); setIdentiques([]); setEcran(await servirEcran(p.profil)); }
+    if (r.ok) { setFaits((n) => n + 1); setMeilleures([]); setPire(null); setModePire(false); setIdentiques([]); await ecranSuivant(); }
   });
   const duel = (resultat: 'a' | 'b' | 'egalite') => demarrer(async () => {
     if (ecran?.kind !== 'duel') return;
-    const r = await voter({ profil: p.profil, a: ecran.a, b: ecran.b, resultat, appareil });
+    let r; try { r = await voter({ profil: p.profil, a: ecran.a, b: ecran.b, resultat, appareil }); } catch { setMessage('Vote non enregistré (base lente) : réessayez.'); return; }
     setMessage(r.message);
-    if (r.ok) { setFaits((n) => n + 1); setEcran(await servirEcran(p.profil)); }
+    if (r.ok) { setFaits((n) => n + 1); await ecranSuivant(); }
   });
 
   const certitude = ecran ? Math.round(ecran.certitude * 100) : 0;
@@ -89,6 +95,17 @@ export default function Tournoi(p: Props) {
         </div>
         <span className="h-2 overflow-hidden rounded-full bg-neutral-200" aria-hidden="true"><span className="block h-full bg-teal-700 transition-[width]" style={{ width: `${certitude}%` }} /></span>
       </div>
+      {!ecran && !panne && (
+        <p role="status" className="flex items-center gap-3 rounded-2xl border border-black/10 bg-white p-5 text-sm font-semibold text-teal-900">
+          <span className="size-5 animate-spin rounded-full border-2 border-teal-700 border-t-transparent" aria-hidden="true" />Préparation de la grille…
+        </p>
+      )}
+      {panne && (
+        <div role="alert" className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <span className="flex-1 basis-56">{panne}</span>
+          <button type="button" onClick={charger} disabled={enCours} className={`min-h-12 rounded-xl bg-teal-800 px-5 font-semibold text-white disabled:opacity-50 ${focus}`}>{enCours ? 'Chargement…' : 'Réessayer'}</button>
+        </div>
+      )}
       {profil && ecran?.kind !== 'fini' && <p className="text-xs text-neutral-600">Tous montrés avec le cabinet « {profil.nom} » (mêmes images) : seul le design change.</p>}
       {ecran?.kind === 'fini' && (
         <div className="grid gap-3 rounded-2xl border border-black/10 bg-white p-5 text-sm" data-etat-tournoi="fini">

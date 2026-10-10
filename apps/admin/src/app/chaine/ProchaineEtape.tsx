@@ -27,6 +27,7 @@ export default function ProchaineEtape({ action, importes = 0, compact = false, 
       <section aria-label="Prochaine étape" className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-teal-700 bg-teal-50/70 px-3 py-2 text-sm" data-prochaine-action={action.id}>
         <span className="text-xs font-semibold uppercase tracking-wide text-teal-900">Prochaine étape {courante.n} / 6</span>
         <span className="min-w-0 flex-1 basis-56 font-semibold text-neutral-950 [overflow-wrap:anywhere]">{surPlace ? `Vous y êtes : ${action.titre}` : action.titre}</span>
+        {surPlace && <a href="#etape-travail" className="inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 font-semibold text-white" data-action-guidee="">{action.bouton && 'libelle' in action.bouton ? action.bouton.libelle : 'Y aller'} ↓</a>}
         {surPlace && <span className="basis-full text-xs text-neutral-700">{action.pourquoi}</span>}
         {!surPlace && action.bouton && ('action' in action.bouton
           ? <BoutonImporterClaude libelle={action.bouton.libelle} />
