@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {
-  attentesHumain, attentesMachines, CHAINE, compteursChaine, reserveCandidats, tournoiDuProfil, STATUTS_MODELE, statutModele, ticketsOuverts, type Main, type StatutModele,
+  attentesHumain, attentesMachines, CHAINE, comparerProximite, compteursChaine, reserveCandidats, tournoiDuProfil, STATUTS_MODELE, statutModele, ticketsOuverts, type Main, type StatutModele,
 } from '@plateforme/core';
 import { professionDe, professionsAdmin } from '@plateforme/core/professions';
 import { AUTOMATE_INCOMPLET, exigerContributeur, faireTournerChaine, getEquipe, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
@@ -52,6 +52,7 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
   const personnes = moi.role === 'validateur' && equipe.length ? equipe : [{ id: moi.id, email: moi.email, role: moi.role }];
   const profilsVus = profils.filter((p) => !filtre || p.id === filtre).map((p) => ({ id: p.id, nom: p.nom, profession: profession.id }));
   const machines = attentesMachines(etat);
+  const proximite = comparerProximite(chaine);
   const enBoucle = fiches.filter((f) => ['check-agent', 'avis-humain', 'retouche', 'recheck-agent', 'revalidation'].includes(f.statut)).length;
   const lien = (o: Record<string, string>) => `/chaine?${new URLSearchParams({ ...(un(sp.profession) ? { profession: profession.id } : {}), ...(filtre ? { profil: filtre } : {}), ...o }).toString()}`;
 
@@ -125,7 +126,8 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
             </li>
             {COLONNES.map((s) => {
               const st = statutModele(s);
-              const l = fiches.filter((f) => f.statut === s);
+              // Du plus proche de la publication au plus loin (relecture entamée, moins de pages et de tickets restants, rang)
+              const l = fiches.filter((f) => f.statut === s).sort(proximite);
               return (
                 <li key={s} className="w-64 shrink-0 rounded-2xl border border-black/10 bg-white p-3" data-colonne={s}>
                   <div className="flex items-center justify-between gap-2">

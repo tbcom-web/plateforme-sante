@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : Chaîne des modèles : /chaine, présélection et tournoi en 0,25-0,4 s à chaud au volume ×10 (au lieu de 0,8-1 s) : état de la chaîne en une requête (migration 0062 chaine_etat), gardé en mémoire tant que ses tables n'ont pas changé, tournoi calculé une fois ; priorité au modèle presque fini (publier > revalider > relire l'entamé > tester > tournoi) et carte « Presque fini » en tête de /admin et À valider.
 - 2026-10-10 : Sourcing photos — séries d'activité (basket, tennis, golf, cyclisme, rattrapage course et trail / randonnée) : requêtes pied / chaussure / appui puis ambiance, exclusions (marques, enfants, foule, texte), tags #sport #<activité> #profession ; bouton « Sourcer les séries photos » et raccourci « Sourcer des photos » (< 6 photos) dans À valider, séries rangées dans le sujet du profil.
 - 2026-10-10 : « 🎯 À valider » (/admin/sujets) : un seul point d'entrée par sujet (golf, cyclisme, diabète…), une carte à la fois en situation ; OK = 4 ★, J'adore = 5 ★, Pas OK = 2 ★ (1 ★ au second Pas OK), commentaire → positif / négatif ; « Créer des modèles <sujet> » dès 6 OK
 - 2026-10-10 : liants entre sections (sections qui se recouvrent, vague, chevrons, filets/points du jeu de détails) : toujours leur propre bande d'air, jamais sur une légende ni par-dessus une carte (retour de Paul : « Pieds de l'enfant » collée contre l'ombre) ; aperçu : air sous les légendes des sujets comme le site.

@@ -4,6 +4,7 @@ import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
 import Preselection from './Preselection';
 import BoutonImporterClaude from '../BoutonImporterClaude';
 import { getEtatPolitique } from '@/lib/politique-evaluation';
+import { professionDegustation } from '@/lib/degustation';
 import { guidageChaine, prechargerGuidage } from '@/lib/chaine-guidage';
 import ProchaineEtape from '../ProchaineEtape';
 
@@ -19,11 +20,14 @@ export const maxDuration = 300;
 export default async function PagePreselection({ searchParams }: PageProps<'/chaine/preselection'>) {
   const moi = await exigerContributeur();
   prechargerGuidage();
-  const sp = await searchParams;
-  const { profession, profils: tous } = await profilsDemo();
+  // Toutes les lectures partent ENSEMBLE (2026-10-10, perf de la chaîne) : la chaîne n'attend plus les profils de démonstration
+  // (profession lue dans le cookie du sélecteur, la même que celle des profils)
+  const profession0 = await professionDegustation();
+  const [sp, { profession, profils: tous }, rendu, gen, lue, politique] = await Promise.all([
+    searchParams, profilsDemo(), donneesRendu(), donneesGeneration(), lireChaine(profession0.id, { versions: 'utiles' }), getEtatPolitique(),
+  ]);
   const cible = typeof sp.profil === 'string' ? tous.find((p) => p.id === sp.profil) ?? null : null;
   const profils = cible ? [cible] : tous;
-  const [rendu, gen, lue, politique] = await Promise.all([donneesRendu(), donneesGeneration(), lireChaine(profession.id, { versions: 'utiles' }), getEtatPolitique()]);
   // Chaîne guidée : prochaine étape ; s'il manque des candidats, les designs de Claude entrent seuls (chaîne relue)
   const { action, chaine, importes } = await guidageChaine({ moi, profession: profession.id, chaine: lue });
   // Politique d'évaluation unique : compositions montrées récemment (toutes surfaces) pas reproposées pendant le délai de retour ;

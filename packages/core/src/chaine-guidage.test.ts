@@ -2,8 +2,8 @@
 // action ni explication, gestes du validateur jamais prescrits à un contributeur, fil des 6 étapes.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appliquerActions, CHAINE, CELLULES_REVISION, DELAI_FICHE_SANS_VERSION_MS, fairetournerChaine, fichesSansVersion, tournoiDuProfil, type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele } from './chaine-modeles';
-import { TOURNOI_GRILLES, prochainEcran, type GrilleTournoi } from './tournoi-grilles';
+import { appliquerActions, attentesHumain, CHAINE, CELLULES_REVISION, comparerProximite, modelesATester, DELAI_FICHE_SANS_VERSION_MS, fairetournerChaine, fichesSansVersion, tournoiDuProfil, type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele } from './chaine-modeles';
+import { TOURNOI_GRILLES, etatTournoiGrilles, prochainEcran, type GrilleTournoi } from './tournoi-grilles';
 import { appliquerRecette, normaliserComposition, type CompositionRecette } from './recettes';
 import { draftVide } from './draft';
 import { contexteScenario } from './notation-recettes';
@@ -251,4 +251,71 @@ test('candidat retiré en cours de tournoi : les grilles où il figurait compten
   const sans = tournoiDuProfil(e, ids.filter((id) => id !== ids[3]));
   assert.equal(sans.grilles, avant.grilles);
   assert.equal(sans.classement.some((l) => l.id === ids[3]), false);
+});
+
+test('tournoi mémorisé par contenu : même résultat que le calcul direct ; une grille, un duel ou un signal de plus le recalcule', () => {
+  const e = tournoiJoue(20, 2);
+  const ids = idsDe(e);
+  const direct = (x: EtatChaine) => etatTournoiGrilles(ids, (x.grilles ?? []).filter((g) => g.propositions.filter((p) => ids.includes(p)).length >= 2), x.votes.filter((v) => ids.includes(v.a) && ids.includes(v.b)), x.signaux ?? {}, { ouverture: CHAINE.ouvertureTournoi });
+  const t1 = tournoiDuProfil(e, ids);
+  // Objets différents, même contenu (copies servies par la mémoire de la chaîne) : résultat identique au calcul direct
+  const copie: EtatChaine = { ...e, grilles: (e.grilles ?? []).map((g) => ({ ...g, propositions: [...g.propositions], meilleures: [...g.meilleures] })), votes: e.votes.map((v) => ({ ...v })) };
+  assert.deepEqual(tournoiDuProfil(copie, ids), t1);
+  assert.deepEqual(t1, direct(e));
+  // Une grille de plus : nouveau calcul
+  const plus: EtatChaine = { ...e, grilles: [...(e.grilles ?? []), { profil: null, propositions: ids.slice(0, 6), meilleures: [5, 4], pire: 0, votant: 'paul', poids: 2, le: '9999' }] };
+  assert.deepEqual(tournoiDuProfil(plus, ids), direct(plus));
+  assert.equal(tournoiDuProfil(plus, ids).grilles, t1.grilles + 1);
+  // Un duel de plus, un a priori différent : nouveaux calculs, égaux au calcul direct
+  const duel: EtatChaine = { ...e, votes: [...e.votes, { profil: null, a: ids[0], b: ids[1], resultat: 'b', votant: 'paul', poids: 2, le: 'zz' }] };
+  assert.deepEqual(tournoiDuProfil(duel, ids), direct(duel));
+  const signaux: EtatChaine = { ...e, signaux: { [ids[7]]: { jaime: 5, juge: 4.8, jauge: 0.9 } } };
+  assert.deepEqual(tournoiDuProfil(signaux, ids), direct(signaux));
+  assert.notDeepEqual(tournoiDuProfil(signaux, ids).classement, t1.classement);
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Proximité de la publication (décision de Paul du 2026-10-10 : « on priorise un modèle quasi fini à un autre modèle en cours »)
+// ---------------------------------------------------------------------------------------------------------------
+
+/** Avis « rien à signaler » sur les `n` premières cellules de la version courante d'une fiche */
+const avis = (modele: string, n: number, version = 1): RevueModele[] => CELLULES_REVISION.slice(0, n).map(({ page, appareil }) => ({ modele, version, page, appareil, auteur: 'u', verdict: 'rien', le: '2026-10-10' }));
+
+test('proximité : publier > revalider > retouche > retest > relire > tester un finaliste > file > tournoi', () => {
+  const fs = [
+    fiche('c1'), fiche('fi', { statut: 'finaliste', rang: 1 }), fiche('ck', { statut: 'check-agent', rang: 1 }), fiche('av', { statut: 'avis-humain', rang: 1 }),
+    fiche('rc', { statut: 'recheck-agent' }), fiche('rt', { statut: 'retouche' }), fiche('rv', { statut: 'revalidation' }), fiche('pv', { statut: 'pret-validation', rang: 9 }),
+  ];
+  const e = etat(fs);
+  assert.deepEqual([...fs].sort(comparerProximite(e)).map((f) => f.id), ['pv', 'rv', 'rt', 'rc', 'av', 'ck', 'fi', 'c1']);
+  // Tests à lancer : version retouchée avant un finaliste
+  assert.deepEqual(modelesATester([fiche('ck', { statut: 'check-agent' }), fiche('rc', { statut: 'recheck-agent' })], [version('ck'), version('rc')]).map((m) => m.modele), ['rc', 'ck']);
+});
+
+test('proximité : relecture entamée d’abord, puis moins de pages restantes, puis meilleur rang — jamais une 2e relecture en parallèle', () => {
+  const fs = [fiche('neuf', { statut: 'avis-humain', rang: 1 }), fiche('peu', { statut: 'avis-humain', rang: 5 }), fiche('bcp', { statut: 'avis-humain', rang: 2 })];
+  const e = etat(fs, { revues: [...avis('peu', 3), ...avis('bcp', 12)] });
+  // « bcp » : 12 pages vues, il en reste le moins → d'abord ; « peu » ensuite ; le meilleur rang mais pas entamé en dernier
+  assert.deepEqual([...fs].sort(comparerProximite(e)).map((f) => f.id), ['bcp', 'peu', 'neuf']);
+  const a = guide(e);
+  assert.equal(a.id, 'relire');
+  assert.match(a.titre, /Design bcp/);
+  // Ce qui attend un humain : relectures entamées seulement (jamais « neuf » tant qu'un modèle entamé peut être terminé)
+  const l = attentesHumain(e, { id: 'u', role: 'contributeur' }, []).filter((x) => x.statut === 'avis-humain').map((x) => x.modele);
+  assert.deepEqual(l, ['bcp', 'peu']);
+  // Aucune relecture entamée : la meilleure du tournoi d'abord
+  const e2 = etat(fs);
+  assert.match(guide(e2).titre, /Design neuf/);
+  assert.deepEqual(attentesHumain(e2, { id: 'u', role: 'contributeur' }, []).filter((x) => x.statut === 'avis-humain').map((x) => x.modele), ['neuf', 'bcp', 'peu']);
+});
+
+test('proximité : à étape égale, moins de tickets ouverts puis meilleur rang ; validateur : publier avant tout le reste', () => {
+  const t = (modele: string, numero: number): TicketModele => ({ numero, modele, page: 'accueil', appareil: 'mobile', zone: null, element: null, etiquette: 'contraste', commentaire: '', origine: 'humain', auteur: 'u', statut: 'ouvert', versionOuverture: 1, versionCorrection: null });
+  const fs = [fiche('a', { statut: 'retouche', rang: 1 }), fiche('b', { statut: 'retouche', rang: 4 }), fiche('c', { statut: 'retouche', rang: 2 })];
+  const e = etat(fs, { tickets: [t('a', 1), t('a', 2), t('a', 3), t('b', 1), t('c', 1)] });
+  assert.deepEqual([...fs].sort(comparerProximite(e)).map((f) => f.id), ['c', 'b', 'a']);
+  const avecPret = etat([...fs, fiche('p', { statut: 'pret-validation' }), fiche('rv', { statut: 'revalidation' })], { tickets: e.tickets });
+  assert.equal(guide(avecPret).id, 'valider');
+  assert.equal(attentesHumain(avecPret, { id: 'u', role: 'validateur' }, [])[0]?.modele, 'p');
+  assert.equal(prochaineActionChaine({ role: 'contributeur', etat: avecPret }).id, 'revalider');
 });

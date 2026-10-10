@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { after } from 'next/server';
 import { headers } from 'next/headers';
 import { createClient, nombreEchecsSupabase } from '@/lib/supabase/server';
-import { getRole } from '@/lib/admin';
+import { getRoles } from '@/lib/admin';
 
 // APPRENTISSAGE CALCULÉ UNE FOIS (migration 0059, demande de Paul du 2026-10-10 « optimiser les requêtes, la base ») : les poids
 // appris, le résumé de la politique d'évaluation et les éléments tranchés relisaient des tables entières (duels, notes, grilles,
@@ -59,7 +59,9 @@ export async function signatureSources(tables: readonly string[]): Promise<strin
   return tables.map((t) => `${t}:${s.get(t)}`).join(',');
 }
 
-type Memoire = { signature: string; texte: string; le: number };
+/** `valeur` : résultat déjà relu (JSON.parse + désérialisation faits une fois par instantané et par instance, 2026-10-10, perf de la
+ * chaîne : ~25 ms par page) ; partagé entre requêtes comme l'était la mémoire d'avant (memoRecent) : à lire, jamais à modifier */
+type Memoire = { signature: string; texte: string; le: number; valeur?: { v: unknown } };
 const memoire = new Map<string, Memoire>();
 const enCours = new Map<string, Promise<unknown>>();
 
@@ -186,7 +188,11 @@ export async function instantane<T, J = T>(o: DefinitionInstantane<T, J> & {
   };
   // 1. Mémoire de l'instance (même signature)
   const m = memoire.get(cle);
-  if (m && m.signature === signature && Date.now() - m.le < FRAIS_MS) { verifier(m.texte, 'mémoire'); return lire(m.texte); }
+  if (m && m.signature === signature && Date.now() - m.le < FRAIS_MS) {
+    verifier(m.texte, 'mémoire');
+    m.valeur ??= { v: lire(m.texte) };
+    return m.valeur.v as T;
+  }
   // 2. Instantané en base
   let ligne = null as { signature: string; valeur: string; calcule_le: string } | null;
   try {
@@ -199,9 +205,10 @@ export async function instantane<T, J = T>(o: DefinitionInstantane<T, J> & {
   }
   const age = ligne ? Date.now() - Date.parse(ligne.calcule_le) : Infinity;
   if (ligne && ligne.signature === signature && age < FRAIS_MS) {
-    memoire.set(cle, { signature, texte: ligne.valeur, le: Date.parse(ligne.calcule_le) });
+    const valeur = { v: lire(ligne.valeur) };
+    memoire.set(cle, { signature, texte: ligne.valeur, le: Date.parse(ligne.calcule_le), valeur });
     verifier(ligne.valeur, 'base');
-    return lire(ligne.valeur);
+    return valeur.v as T;
   }
   // Journal : pourquoi l'instantané est recalculé (tables changées, nouveau déploiement, âge)
   if (ligne) {
@@ -227,14 +234,11 @@ export async function instantane<T, J = T>(o: DefinitionInstantane<T, J> & {
 /** Portée des instantanés pour le compte connecté : admin, équipe de la chaîne, sinon aucune (calcul direct) */
 export const porteeInstantane = cache(async (): Promise<'admin' | 'equipe' | null> => {
   try {
-    const role = await getRole();
-    if (role === 'admin') return 'admin';
-    if (role === null) return null;
-    const supabase = await createClient();
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth.user) return null;
-    const { data } = await supabase.from('profiles').select('role_equipe').eq('id', auth.user.id).maybeSingle();
-    const r = (data as { role_equipe?: string } | null)?.role_equipe;
+    // Session et profil lus une fois par requête (getRoles)
+    const roles = await getRoles();
+    if (!roles) return null;
+    if (roles.role === 'admin') return 'admin';
+    const r = roles.roleEquipe;
     return r === 'contributeur' || r === 'validateur' ? 'equipe' : null;
   } catch {
     return null;

@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getIndicateursPolitique } from '@/lib/politique-evaluation';
 import { avecDelai, DELAIS } from '@/lib/delai';
 import IndicateursEvaluation from './IndicateursEvaluation';
+import CartePresqueFini from '@/components/CartePresqueFini';
 
 export const metadata = { title: 'Super admin · Tableau de bord' };
 
@@ -93,6 +94,8 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
         <h1 className="text-2xl font-bold">Tableau de bord</h1>
         <p className="mt-1 text-sm text-neutral-600">{profession.pluriel}</p>
       </div>
+      {/* « Presque fini » : action de la chaîne des modèles la plus proche de la publication (différée, ne retarde pas la page) */}
+      <Suspense fallback={null}><CartePresqueFini profession={profession.id} /></Suspense>
       {/* POINT D'ENTRÉE UNIQUE (demande de Paul du 2026-10-10) : un geste mène aux sujets à valider (app/admin/sujets) */}
       <Link href="/admin/sujets" className="flex min-h-16 items-center justify-between gap-3 rounded-2xl bg-teal-800 px-5 py-4 text-white shadow-sm hover:bg-teal-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
         <span className="grid">

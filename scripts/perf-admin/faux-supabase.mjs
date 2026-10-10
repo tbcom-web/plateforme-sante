@@ -6,6 +6,7 @@
 // Coût simulé d'une requête (2026-10-10, « base lente ») : LATENCE_MS (aller-retour) + taille de la réponse / DEBIT_KO_MS
 // (sérialisation jsonb + transfert) + lignes parcourues × LIGNE_US (lecture sans index adapté : la table entière est parcourue).
 // SANS=<liste> : tables ou fonctions absentes (ex. SANS=apprentissage_instantane,chaine_compteurs → repli du code sans la migration).
+// SANS=0062 : migration 0062 pas exécutée (ni chaine_etat, ni compteurs des fiches, versions, duels, avis et « J'aime »).
 // Usage : PORT=54490 LATENCE_MS=15 DEBIT_KO_MS=20 LIGNE_US=0.5 DONNEES=<donnees.json> node faux-supabase.mjs
 import { createServer } from 'node:http';
 import { appendFileSync, readFileSync } from 'node:fs';
@@ -30,6 +31,8 @@ const T = {
 };
 // Migration 0059 : compteurs des sources de l'apprentissage (fixes : les écritures du banc sont ignorées) et vues
 for (const t of ['atelier_notes', 'assets_notes', 'illustrations_statuts', 'assets_sujets', 'assets_hashtags', 'assets_professions', 'recettes', 'recettes_notes', 'recettes_notation', 'duels', 'degustation_choix', 'kits_images_notes', 'expositions', 'regles_apprises_reglages', 'elements_reevalues', 'modeles_grilles', 'modeles_tickets', 'photos_libres', 'jeux_photos', 'illustrations_revues', 'soins_catalogue']) (T.apprentissage_sources ??= []).push({ nom: t, n: (T[t] ?? []).length, maj_le: maintenant() });
+// Migration 0062 : compteurs des autres tables de la chaîne (mémoire de la chaîne par signature) ; SANS=0062 → absents
+if (!SANS.has('0062')) for (const t of ['modeles_fiches', 'modeles_versions', 'modeles_votes', 'modeles_revues', 'modeles_jaime']) T.apprentissage_sources.push({ nom: t, n: (T[t] ?? []).length, maj_le: maintenant() });
 const VUES = {
   modeles_versions_utiles: () => { const f = new Map((T.modeles_fiches ?? []).map((x) => [x.id, x])); return (T.modeles_versions ?? []).flatMap((v) => { const x = f.get(v.modele); return x && (v.version === x.version_courante || v.version === x.version_courante - 1) ? [{ modele: v.modele, version: v.version, composition: v.composition, cle: v.cle, journal: v.journal, auteur: v.auteur, created_at: v.created_at, profession: x.profession, test: v.version === x.version_courante ? v.test : null }] : []; }); },
   modeles_jaime_compteurs: () => { const n = {}; for (const j of T.modeles_jaime ?? []) n[j.modele] = (n[j.modele] ?? 0) + 1; return Object.entries(n).map(([modele, k]) => ({ modele, n: k })); },
@@ -39,6 +42,8 @@ const VUES = {
 // Tables dont les écritures sont gardées (instantanés d'apprentissage : relus par les requêtes suivantes, comme en base)
 // + chaîne des modèles : l'automate écrit tickets, résultats de test et statuts une fois (comme en base), sans les rejouer à chaque page
 const MEMOIRE = new Set(['apprentissage_instantane', 'modeles_fiches', 'modeles_versions', 'modeles_tickets', 'modeles_grilles', 'modeles_votes', 'modeles_jaime', 'modeles_revues']);
+// Valeurs par défaut des colonnes (0050) : une fiche ajoutée sans statut est « candidat », comme en base
+const DEFAUTS = { modeles_fiches: () => ({ statut: 'candidat', version_courante: 1, version_publiee: null, version_retouche: null, tags: {}, tags_valides: false, origine: 'preselection', rang: null, scenario: {}, recette: null }) };
 const nouvelId = () => `${Date.now().toString(16).padStart(8, '0').slice(-8)}-0000-4000-8000-${Math.random().toString(16).slice(2, 14).padEnd(12, '0')}`;
 const compter = (table) => { const x = (T.apprentissage_sources ?? []).find((l) => l.nom === table); if (x) { x.n++; x.maj_le = maintenant(); } };
 const STATS = [];
@@ -109,7 +114,7 @@ function ecrire(req, res, url, table, corps) {
   if (req.method === 'POST') {
     for (const l of lignes) {
       const i = conflit.length ? t.findIndex((x) => conflit.every((c) => texte(x[c]) === texte(l[c]))) : -1;
-      const n = { ...(i >= 0 ? t[i] : { id: nouvelId(), created_at: maintenant() }), ...l, ...(table === 'apprentissage_instantane' ? { maj_le: l.maj_le ?? maintenant() } : {}) };
+      const n = { ...(i >= 0 ? t[i] : { id: nouvelId(), created_at: maintenant(), ...(DEFAUTS[table]?.() ?? {}) }), ...l, ...(table === 'apprentissage_instantane' ? { maj_le: l.maj_le ?? maintenant() } : {}) };
       if (i >= 0) t[i] = n; else t.push(n);
       ecrites.push(n);
     }
@@ -177,6 +182,28 @@ function rpc(nom, args) {
       for (const j of T.modeles_jaime ?? []) if (ids.has(j.modele)) jaime[j.modele] = (jaime[j.modele] ?? 0) + 1;
       return Object.entries(jaime).map(([modele, n]) => ({ modele, jaime: n }));
     }
+    // État de la chaîne en une requête (0062) : fiches, versions utiles ou toutes, tickets, duels, avis, grilles, J'aime comptés
+    case 'chaine_etat': {
+      if (SANS.has('0062')) return undefined;
+      const cmp = (...k) => comparer(k.join(','));
+      const fiches = (T.modeles_fiches ?? []).filter((f) => !args.p_profession || f.profession === args.p_profession).sort(cmp('created_at', 'id'));
+      const parId = new Map(fiches.map((f) => [f.id, f]));
+      const garder = (o, cols) => Object.fromEntries(cols.map((c) => [c, o[c] ?? null]));
+      const CV = ['modele', 'version', 'composition', 'cle', 'journal', 'auteur', 'test', 'created_at'];
+      const versions = (T.modeles_versions ?? []).flatMap((v) => { const f = parId.get(v.modele); if (!f) return []; if (args.p_versions !== 'toutes') { if (v.version !== f.version_courante && v.version !== f.version_courante - 1) return []; return [{ ...garder(v, CV), test: v.version === f.version_courante ? v.test ?? null : null }]; } return [garder(v, CV)]; }).sort(cmp('version', 'modele'));
+      const grilles = (T.modeles_grilles ?? []).filter((g) => (g.propositions ?? []).every((p) => parId.has(p)) && (g.repondue_le || Date.parse(g.servie_le) >= Date.now() - 15 * 60_000)).sort(cmp('servie_le', 'id'));
+      const jaime = {};
+      for (const j of T.modeles_jaime ?? []) if (parId.has(j.modele)) jaime[j.modele] = (jaime[j.modele] ?? 0) + 1;
+      return {
+        fiches: fiches.map((f) => garder(f, ['id', 'nom', 'profession', 'profil', 'statut', 'version_courante', 'version_publiee', 'version_retouche', 'justification_test', 'justification_version', 'tags', 'tags_valides', 'recette', 'origine', 'cle', 'rang', 'scenario', 'created_at'])),
+        versions,
+        tickets: (T.modeles_tickets ?? []).filter((x) => parId.has(x.modele)).sort(cmp('numero', 'id')).map((x) => garder(x, ['id', 'numero', 'modele', 'page', 'appareil', 'zone', 'element', 'etiquette', 'commentaire', 'origine', 'gravite', 'auteur', 'statut', 'version_ouverture', 'version_correction', 'controle', 'created_at'])),
+        votes: (T.modeles_votes ?? []).filter((x) => parId.has(x.a) && parId.has(x.b)).sort(cmp('created_at', 'id')).map((x) => garder(x, ['profil', 'a', 'b', 'resultat', 'votant', 'poids', 'created_at'])),
+        revues: (T.modeles_revues ?? []).filter((x) => parId.has(x.modele)).sort(cmp('created_at', 'id')).map((x) => garder(x, ['modele', 'version', 'page', 'appareil', 'auteur', 'verdict', 'created_at'])),
+        grilles: grilles.map((x) => garder(x, ['id', 'profil', 'propositions', 'votant', 'servie_le', 'meilleures', 'pire', 'poids', 'repondue_le'])),
+        jaime: Object.entries(jaime).sort(([a], [b]) => (a < b ? -1 : 1)).map(([modele, n]) => ({ modele, n })),
+      };
+    }
     // Verrous du recalcul de l'apprentissage (0060) : un seul recalcul à la fois par clé
     case 'prendre_verrou_apprentissage': { const v = VERROUS.get(args.p_cle); if (v && v > Date.now()) return false; VERROUS.set(args.p_cle, Date.now() + 1000 * (args.p_secondes ?? 150)); return true; }
     case 'rendre_verrou_apprentissage': VERROUS.delete(args.p_cle); return null;
@@ -207,6 +234,7 @@ function traiter(req, res, url, corps) {
       if (SANS.has(nom)) return absente(res, nom, true);
       const args = corps ? JSON.parse(corps) : {};
       const r = rpc(nom, args);
+      if (nom === 'chaine_etat') res.__lignes = ['modeles_fiches', 'modeles_versions', 'modeles_tickets', 'modeles_votes', 'modeles_revues', 'modeles_grilles', 'modeles_jaime'].reduce((s, k) => s + (T[k] ?? []).length, 0);
       return r === undefined ? absente(res, nom, true) : json(res, 200, r);
     }
     if (url.pathname.startsWith('/rest/v1/')) return rest(req, res, url, corps);

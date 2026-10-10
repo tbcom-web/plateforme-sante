@@ -12,6 +12,8 @@ import { sourcesConfigurees } from '@/lib/photos-libres';
 import SourcerSeriesActivites from './SourcerSeriesActivites';
 import { visuelCarte } from './actions';
 import BandeauJour from './BandeauJour';
+import { Suspense } from 'react';
+import CartePresqueFini from '@/components/CartePresqueFini';
 import TuilesSujets from './TuilesSujets';
 import type { VisuelArrivage } from '../arrivages/Arrivages';
 
@@ -73,6 +75,8 @@ export default async function PageSujets({ searchParams }: PageProps<'/admin/suj
           {enAttente > 0 ? <> <strong className="text-neutral-900">{enAttente} nouveauté{enAttente > 1 ? 's' : ''}</strong> t’attend{enAttente > 1 ? 'ent' : ''}.</> : ' Rien de nouveau : les sujets ci-dessous peuvent encore être affinés.'}
         </p>
       </div>
+      {/* « Presque fini » : action de la chaîne des modèles la plus proche de la publication (différée, ne retarde pas la page) */}
+      <Suspense fallback={null}><CartePresqueFini profession={profession.id} /></Suspense>
       <BandeauJour jours={jours.jours} aujourdhui={jours.aujourdhui} />
       <SourcerSeriesActivites profils={aSourcer} pret={pret} />
       <TuilesSujets sujets={sujets} cartes={Object.fromEntries(sujets.flatMap((s) => s.apercu.slice(0, 3)).map((id) => [id, carteDe(id)]))} apercus={Object.fromEntries(apercus)} sourcer={sourcer} pret={pret} seuil={SEUIL_PHOTOS_SUJET} />

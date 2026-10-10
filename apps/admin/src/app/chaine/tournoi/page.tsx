@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { CHAINE, groupeTournoi, TOURNOI_GRILLES, tournoiDuProfil } from '@plateforme/core';
+import { CHAINE, groupeTournoi, TOURNOI_GRILLES, tournoiDuProfil, versionDe } from '@plateforme/core';
 import { AUTOMATE_INCOMPLET, exigerContributeur, faireTournerChaine, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
 import Tournoi from './Tournoi';
 import ProchaineEtape from '../ProchaineEtape';
 import { guidageChaine } from '@/lib/chaine-guidage';
+import { professionDegustation } from '@/lib/degustation';
 
 export const metadata = { title: 'Chaîne · Tournoi' };
 // Fin d'un tournoi (passages d'étape) et actions du tournoi (servirEcran, repondreGrille) : délai large (bug « grille 49 »)
@@ -16,9 +17,12 @@ export const maxDuration = 300;
 // Plusieurs contributeurs en parallèle : chaque grille est réservée à un votant.
 export default async function PageTournoi({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const moi = await exigerContributeur();
-  const sp = await searchParams;
-  const { profession, profils } = await profilsDemo();
-  const [bilan, rendu, gen] = await Promise.all([faireTournerChaine(profession.id, { versions: 'utiles' }), donneesRendu(), donneesGeneration()]);
+  // Toutes les lectures partent ENSEMBLE (2026-10-10, perf de la chaîne) : la chaîne n'attend plus les profils de démonstration
+  // (profession lue dans le cookie du sélecteur, la même que celle des profils)
+  const profession0 = await professionDegustation();
+  const [sp, { profession, profils }, bilan, rendu, gen] = await Promise.all([
+    searchParams, profilsDemo(), faireTournerChaine(profession0.id, { versions: 'utiles' }), donneesRendu(), donneesGeneration(),
+  ]);
   const { chaine } = bilan;
   const demande = (Array.isArray(sp.profil) ? sp.profil[0] : sp.profil) || null;
   const groupes = [...new Set([`${profession.id}|*`, ...chaine.fiches.filter((f) => f.statut === 'candidat').map(groupeTournoi)])];
@@ -28,7 +32,7 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
   const nom = (g: string) => { const p = g.split('|')[1]; return p === '*' ? 'Designs de la profession' : `${profils.find((x) => x.id === p)?.nom ?? p} (ancien tournoi par profil)`; };
   // Chaîne guidée : la prochaine étape (tournoi des designs déjà calculé ; pas d'import ici, la présélection et le tableau s'en chargent)
   const { action } = await guidageChaine({ moi, profession: profession.id, chaine, tournoi: demande ? undefined : t, autoImport: false });
-  const versions = Object.fromEntries(cand.map((f) => [f.id, { nom: f.nom, design: chaine.versions.find((v) => v.modele === f.id && v.version === f.versionCourante)?.composition ?? {} }]));
+  const versions = Object.fromEntries(cand.map((f) => [f.id, { nom: f.nom, design: versionDe(chaine, f.id, f.versionCourante)?.composition ?? {} }]));
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>

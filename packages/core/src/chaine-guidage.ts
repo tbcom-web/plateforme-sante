@@ -3,12 +3,14 @@
 // finaux »). À chaque instant UNE seule prochaine action, calculée ici (fonction pure, testée) et affichée en tête de /chaine et de
 // chaque étape : titre, pourquoi, gros bouton qui y mène, fil des 6 étapes jusqu'à « modèle prêt pour les clients ».
 //
-// Règle de priorité : ce qui rapproche le plus vite un modèle des clients d'abord (validation, revalidation, retouche, relecture,
-// test), puis le tournoi, puis la présélection. Les gestes réservés au validateur (publier, lancer le testeur, demander la retouche
+// Règle de priorité STRICTE (décision de Paul du 2026-10-10 : « on priorise un modèle quasi fini à un autre modèle en cours ») : ce qui
+// rapproche le plus vite un modèle des clients d'abord — publier > revalider > retouche > test de la version retouchée > relire (une
+// relecture déjà entamée avant toute autre) > tester un finaliste > tournoi > présélection ; à étape égale, le modèle le plus avancé
+// (moins de pages et de tickets restants, meilleur rang : comparerProximite de chaine-modeles.ts). Les gestes réservés au validateur (publier, lancer le testeur, demander la retouche
 // à Claude) ne sont jamais prescrits à un contributeur ; il reçoit alors sa propre prochaine action ou une attente expliquée.
 // Docs : docs/chaine-modeles.md (« Chaîne guidée »). Module pur.
 
-import { CHAINE, etatRevision, pagesChangees, ticketsOuverts, versionDe, type EtatChaine, type FicheModele, type RoleEquipe, type StatutModele } from './chaine-modeles';
+import { CHAINE, comparerProximite, revisionDeFiche, ticketsOuverts, versionDe, type EtatChaine, type FicheModele, type RoleEquipe, type StatutModele } from './chaine-modeles';
 import { TOURNOI_GRILLES, type EtatTournoiGrilles } from './tournoi-grilles';
 
 /** Les 6 étapes montrées à l'équipe (les statuts internes de la fiche y sont regroupés) */
@@ -99,12 +101,7 @@ function filEtapes(e: EtatChaine, tournoi: EntreeGuidage['tournoi'], etapeAction
 }
 
 /** Avis page par page d'une fiche en relecture (cellules vues / total) */
-function revisionDe(e: EtatChaine, f: FicheModele) {
-  const v = versionDe(e, f.id, f.versionCourante), prec = versionDe(e, f.id, f.versionCourante - 1);
-  return etatRevision(f.versionCourante, e.revues.filter((r) => r.modele === f.id), e.tickets.filter((t) => t.modele === f.id), prec ? { precedente: prec.version, changees: pagesChangees(prec.composition, v?.composition) } : undefined);
-}
-
-const meilleurRang = (a: FicheModele, b: FicheModele) => (a.rang ?? 99) - (b.rang ?? 99) || (a.creeLe < b.creeLe ? -1 : 1);
+const revisionDe = (e: EtatChaine, f: FicheModele) => revisionDeFiche(e, f);
 
 /**
  * LA prochaine action de la chaîne pour une personne (contributeur ou validateur), avec le fil des 6 étapes. Ordre : plus près des
@@ -113,7 +110,9 @@ const meilleurRang = (a: FicheModele, b: FicheModele) => (a.rang ?? 99) - (b.ran
 export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
   const e = p.etat;
   const validateur = p.role === 'validateur';
-  const de = (s: StatutModele) => e.fiches.filter((f) => f.statut === s).sort(meilleurRang);
+  // À étape égale : le modèle le plus avancé d'abord (relecture entamée, moins de pages et de tickets restants, meilleur rang)
+  const proximite = comparerProximite(e);
+  const de = (s: StatutModele) => e.fiches.filter((f) => f.statut === s).sort(proximite);
   const candidats = e.fiches.filter((f) => f.statut === 'candidat' && f.profil === null).length;
   const manque = Math.max(0, CHAINE.ouvertureTournoi - candidats);
   const t = p.tournoi ?? null;
@@ -188,7 +187,8 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
   }
 
   // 3. Test automatique (le validateur le lance : workflow GitHub, rien n'est publié)
-  const aTester = [...de('check-agent'), ...de('recheck-agent')].filter((f) => !versionDe(e, f.id, f.versionCourante)?.test);
+  // Version retouchée (étape 5) avant un finaliste (étape 3) : plus près de la publication
+  const aTester = [...de('recheck-agent'), ...de('check-agent')].filter((f) => !versionDe(e, f.id, f.versionCourante)?.test);
   if (validateur && aTester.length) {
     const f = aTester[0];
     return fin({

@@ -3,7 +3,7 @@ import {
   CHAINE, cleComposition, designDe, prochaineActionChaine, serialiserComposition, profilsCompatibles, tagsAutomatiques, tournoiDuProfil, type EtatTournoiGrilles, type ProchaineAction,
 } from '@plateforme/core';
 import { PROFESSION_PAR_DEFAUT } from '@plateforme/core/professions';
-import { enregistrerVersionInitiale, lireChaine, VERSION_NON_ENREGISTREE, type Chaine, type Equipier } from '@/lib/chaine-modeles';
+import { enregistrerVersionInitiale, getEquipier, lireChaine, VERSION_NON_ENREGISTREE, type Chaine, type Equipier } from '@/lib/chaine-modeles';
 import { getPropositionsClaude, getPropositionsClaudeFraiches } from '@/lib/directeur';
 import { getRecettes } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
@@ -126,7 +126,7 @@ async function guidageSansGarde(p: { moi: Equipier; profession: string; chaine: 
       const r = await importerDesignsClaude(p.moi, { dejaLa: cles }).catch(() => null);
       if (r?.ajoutes) {
         importes = r.ajoutes;
-        const relue = await lireChaine(p.profession, { versions: 'utiles' }).catch(() => null);
+        const relue = await lireChaine(p.profession, { versions: 'utiles', frais: true }).catch(() => null);
         if (relue && !relue.erreurLecture) chaine = { ...relue, signaux: chaine.signaux };
         const apres = new Set(chaine.fiches.map((f) => f.cle));
         claude = designs.filter((d) => !apres.has(d.cle)).length;
@@ -139,4 +139,32 @@ async function guidageSansGarde(p: { moi: Equipier; profession: string; chaine: 
   const tournoi = importes || p.tournoi === undefined ? (cand.length ? tournoiDuProfil(etat, cand) : null) : p.tournoi;
   const action = prochaineActionChaine({ role: p.moi.role, etat, migrationManquante: chaine.migrationManquante, tournoi, propositionsClaude: claude });
   return { action, chaine, importes };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// « Presque fini » (décision de Paul du 2026-10-10 : « tout doit être fait pour accélérer la création de modèles ; on priorise un
+// modèle quasi fini ») : carte en tête de /admin et de « À valider » (/admin/sujets) quand une action proche de la publication attend
+// la personne connectée. Léger : chaîne mémorisée par signature (lireChaine), sans automate ni tournoi (inutiles à ces étapes).
+// ---------------------------------------------------------------------------------------------------------------
+
+export type ActionPrioritaire = { modele: string; nom: string; action: string; titre: string; href: string; etape: number };
+/** Actions « proches de la publication » : valider, revalider, retouche, relecture, test (étapes 3 à 6) */
+const ACTIONS_PROCHES = new Set<ProchaineAction['id']>(['valider', 'revalider', 'retouche', 'relire', 'tester']);
+
+/** Action de chaîne la plus proche de la publication qui attend la personne connectée (null : rien de proche, hors équipe, erreur) */
+export async function actionChainePrioritaire(profession: string): Promise<ActionPrioritaire | null> {
+  try {
+    const moi = await getEquipier();
+    if (!moi) return null;
+    const chaine = await lireChaine(profession, { versions: 'utiles' });
+    if (chaine.erreurLecture || chaine.migrationManquante) return null;
+    const fiches = chaine.fiches.filter((f) => f.profession === profession);
+    const a = prochaineActionChaine({ role: moi.role, etat: { ...chaine, fiches }, tournoi: null });
+    if (!ACTIONS_PROCHES.has(a.id) || !a.bouton || !('href' in a.bouton)) return null;
+    const id = a.bouton.href.split('#')[0].split('/').pop() ?? '';
+    const f = fiches.find((x) => x.id === id);
+    return f ? { modele: f.id, nom: f.nom, action: a.bouton.libelle, titre: a.titre, href: a.bouton.href, etape: a.etape } : null;
+  } catch {
+    return null;
+  }
 }

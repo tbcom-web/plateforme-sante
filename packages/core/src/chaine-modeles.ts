@@ -531,17 +531,67 @@ export function fichesSansVersion(e: Pick<EtatChaine, 'fiches' | 'versions'>, ma
   });
 }
 
+// Tournois déjà calculés (2026-10-10, perf de la chaîne : l'ajustement des forces sur toutes les grilles coûtait ~100-200 ms au volume
+// ×10 du banc, refait par l'automate, la page, le guidage et « ce qui attend un humain » à CHAQUE chargement). Calcul pur et
+// déterministe : résultat gardé par EMPREINTE DU CONTENU (candidats, grilles, duels, a priori des candidats) ; une grille, un duel
+// ou un signal de plus change l'empreinte. L'empreinte d'une liste (grilles, duels : listes en lecture seule) est calculée une fois
+// par liste (mémoire de la chaîne de l'admin : mêmes listes d'une requête à l'autre). Résultat partagé : à lire, jamais à modifier.
+const memoTournois = new Map<string, EtatTournoiGrilles>();
+const empreintesListes = new WeakMap<object, string>();
+const empreinteListe = <T,>(l: readonly T[], texte: (x: T) => string): string => {
+  let e = empreintesListes.get(l);
+  if (e === undefined) { e = `${l.length}:${empreinte(l.map(texte).join('|'))}`; empreintesListes.set(l, e); }
+  return e;
+};
+/** Empreinte 53 bits d'un texte (cyrb53) */
+function empreinte(s: string): string {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return `${(h2 >>> 0).toString(36)}${(h1 >>> 0).toString(36)}`;
+}
+
 /** Tournoi d'un groupe (grilles + duels de départage + a priori) : tournoi-grilles.ts */
 export function tournoiDuProfil(e: Pick<EtatChaine, 'votes' | 'grilles' | 'signaux'>, candidats: readonly string[]): EtatTournoiGrilles {
+  const signaux = e.signaux ?? {};
+  // Toutes les grilles et tous les duels (avant filtre sur les candidats) : même empreinte → mêmes grilles et duels retenus
+  const toutes = e.grilles ?? [];
+  const cand = candidats.join(',');
+  const sig = JSON.stringify(candidats.map((id) => signaux[id] ?? null));
+  const cle = [
+    `${candidats.length}:${cand.length}:${empreinte(cand)}`,
+    empreinteListe(toutes, (g) => `${g.profil ?? ''};${g.propositions.join(',')};${g.meilleures.join(',')};${g.pire ?? ''};${g.votant};${g.poids};${g.le}`),
+    empreinteListe(e.votes, (v) => `${v.profil ?? ''};${v.a};${v.b};${v.resultat};${v.votant};${v.poids};${v.le}`),
+    `${sig.length}:${empreinte(sig)}`,
+  ].join('§');
+  const deja = memoTournois.get(cle);
+  if (deja) return deja;
   const set = new Set(candidats);
-  return etatTournoiGrilles(candidats, (e.grilles ?? []).filter((g) => g.propositions.filter((p) => set.has(p)).length >= 2), e.votes.filter((v) => set.has(v.a) && set.has(v.b)), e.signaux ?? {}, { ouverture: CHAINE.ouvertureTournoi });
+  const grilles = toutes.filter((g) => g.propositions.filter((p) => set.has(p)).length >= 2);
+  const votes = e.votes.filter((v) => set.has(v.a) && set.has(v.b));
+  const t = etatTournoiGrilles(candidats, grilles, votes, signaux, { ouverture: CHAINE.ouvertureTournoi });
+  memoTournois.set(cle, t);
+  if (memoTournois.size > 32) memoTournois.delete(memoTournois.keys().next().value!);
+  return t;
 }
 
 export type ActionAuto =
   | { kind: 'statut'; modele: string; de: StatutModele; vers: StatutModele; raison: string; rang?: number | null; versionRetouche?: number }
   | { kind: 'fermer-ticket'; modele: string; numero: number; version: number; raison: string };
 
-export const versionDe = (e: Pick<EtatChaine, 'versions'>, modele: string, version: number) => e.versions.find((v) => v.modele === modele && v.version === version) ?? null;
+// Index des versions par liste (lecture seule) : une recherche par fiche dans l'automate et le guidage, au lieu d'un parcours de
+// toutes les versions à chaque fois (2026-10-10, perf de la chaîne). Première version trouvée, comme find.
+const indexVersions = new WeakMap<readonly VersionModele[], Map<string, VersionModele>>();
+export const versionDe = (e: Pick<EtatChaine, 'versions'>, modele: string, version: number): VersionModele | null => {
+  let ix = indexVersions.get(e.versions);
+  if (!ix) {
+    ix = new Map();
+    for (const v of e.versions) { const k = `${v.modele}#${v.version}`; if (!ix.has(k)) ix.set(k, v); }
+    indexVersions.set(e.versions, ix);
+  }
+  return ix.get(`${modele}#${version}`) ?? null;
+};
 
 /**
  * Transitions automatiques à appliquer (une passe ; à rappeler jusqu'à ce qu'il n'y en ait plus) : fin de tournoi, entrée dans la
@@ -730,6 +780,48 @@ export function tagsAutomatiques(composition: Record<string, unknown>, p: { prof
 
 export type Attente = { modele: string | null; nom: string; statut: StatutModele | null; texte: string; href: string };
 
+/** Relecture d'une fiche (avis de la version précédente hérités pour les pages qu'une relance n'a pas changées) */
+export function revisionDeFiche(e: Pick<EtatChaine, 'versions' | 'revues' | 'tickets'>, f: Pick<FicheModele, 'id' | 'versionCourante'>): EtatRevision {
+  const v = versionDe(e, f.id, f.versionCourante), prec = versionDe(e, f.id, f.versionCourante - 1);
+  return etatRevision(f.versionCourante, e.revues.filter((r) => r.modele === f.id), e.tickets.filter((t) => t.modele === f.id), prec ? { precedente: prec.version, changees: pagesChangees(prec.composition, v?.composition) } : undefined);
+}
+
+/**
+ * PROXIMITÉ DE LA PUBLICATION (décision de Paul du 2026-10-10 : « tout doit être fait pour accélérer la création de modèles ; on
+ * priorise un modèle quasi fini à un autre modèle en cours »). Rang de chaque statut, du plus proche des clients au plus loin :
+ * publier > revalider > faire retoucher > tester la version retouchée > relire > tester un finaliste > file des finalistes > tournoi.
+ */
+export const PROXIMITE_PUBLICATION: Readonly<Record<StatutModele, number>> = {
+  'pret-validation': 0, revalidation: 1, retouche: 2, 'recheck-agent': 3, 'avis-humain': 4, 'check-agent': 5, finaliste: 6, candidat: 7, publie: 8, ecarte: 9,
+};
+
+/**
+ * Ordre STRICT par proximité de la publication : étape la plus proche d'abord ; à étape égale, relecture déjà entamée d'abord (jamais
+ * deux modèles entamés en parallèle quand un seul peut être terminé), puis moins de pages restantes, moins de tickets ouverts,
+ * meilleur rang du tournoi, puis le plus ancien. Comparateur pour Array.sort (mémorise ses calculs par fiche).
+ */
+export function comparerProximite(e: Pick<EtatChaine, 'versions' | 'revues' | 'tickets'>): (a: FicheModele, b: FicheModele) => number {
+  const cles = new Map<string, number[]>();
+  const cle = (f: FicheModele) => {
+    let k = cles.get(f.id);
+    if (!k) {
+      const r = f.statut === 'avis-humain' ? revisionDeFiche(e, f) : null;
+      k = [PROXIMITE_PUBLICATION[f.statut] ?? 99, r && r.faites > 0 && !r.terminee ? 0 : 1, r ? r.total - r.faites : 0, ticketsOuverts(e.tickets.filter((t) => t.modele === f.id)).length, f.rang ?? 999];
+      cles.set(f.id, k);
+    }
+    return k;
+  };
+  return (a, b) => {
+    const x = cle(a), y = cle(b);
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] - y[i];
+    return a.creeLe < b.creeLe ? -1 : a.creeLe > b.creeLe ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  };
+}
+
+/** Relectures entamées (au moins une page vue, pas terminées) : tant qu'il y en a, aucune nouvelle relecture n'est proposée */
+export const relecturesEntamees = (e: Pick<EtatChaine, 'fiches' | 'versions' | 'revues' | 'tickets'>) =>
+  e.fiches.filter((f) => f.statut === 'avis-humain').filter((f) => { const r = revisionDeFiche(e, f); return r.faites > 0 && !r.terminee; });
+
 /**
  * Ce qui attend un humain, pour UNE personne : avis de page (cellules pas encore vues), revalidations, pour le validateur les
  * modèles prêts pour validation ; puis votes des tournois ouverts ; puis la présélection des 3 profils les moins remplis.
@@ -748,9 +840,12 @@ export function attentesHumain(e: EtatChaine, personne: { id: string; role: Role
     const t = tournoiDuProfil(e, cand.map((f) => f.id));
     if (t.ouvert && !t.arrete) tournois.push({ modele: null, nom, statut: 'candidat', texte: `Tournoi : ${t.texte}`, href: `/chaine/tournoi${profil === '*' ? '' : `?profil=${encodeURIComponent(profil)}`}` });
   }
-  for (const f of e.fiches) {
+  // Modèles du plus proche de la publication au plus loin ; une relecture entamée passe avant toute nouvelle relecture (2026-10-10)
+  const entamees = new Set(relecturesEntamees(e).map((f) => f.id));
+  for (const f of [...e.fiches].sort(comparerProximite(e))) {
     if (f.statut === 'avis-humain') {
-      const r = etatRevision(f.versionCourante, e.revues.filter((x) => x.modele === f.id), e.tickets.filter((x) => x.modele === f.id));
+      if (entamees.size && !entamees.has(f.id)) continue;
+      const r = revisionDeFiche(e, f);
       const miennes = e.revues.filter((x) => x.modele === f.id && x.version === f.versionCourante && x.auteur === personne.id).length;
       if (!r.terminee) l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: `Avis : ${r.faites} / ${r.total} pages vues${miennes ? ` (dont ${miennes} par vous)` : ''}`, href: `/chaine/revision/${f.id}` });
     } else if (f.statut === 'revalidation') {
@@ -759,13 +854,14 @@ export function attentesHumain(e: EtatChaine, personne: { id: string; role: Role
       l.push({ modele: f.id, nom: f.nom, statut: f.statut, texte: 'Validation finale et publication', href: `/chaine/modele/${f.id}` });
     }
   }
-  // Ordre : modèles (avis, revalidations, validation), puis tournois ouverts, puis la présélection
+  // Ordre : modèles (validation, revalidations, avis : du plus proche de la publication au plus loin), puis tournois ouverts, puis la
+  // présélection
   return [...l, ...tournois, ...reserves.sort((a, b) => a.n - b.n).slice(0, 3).map(({ n: _n, ...x }) => x)];
 }
 
 /** Ce qui tourne tout seul : agent, Claude, automate (avec un mot de ce qui est attendu) */
 export function attentesMachines(e: EtatChaine): Attente[] {
-  return e.fiches.flatMap((f): Attente[] => {
+  return [...e.fiches].sort(comparerProximite(e)).flatMap((f): Attente[] => {
     if (f.statut === 'check-agent' || f.statut === 'recheck-agent') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: `Testeur : passage de la v${f.versionCourante} attendu`, href: `/chaine/modele/${f.id}` }];
     if (f.statut === 'retouche') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: `Claude : ${ticketsOuverts(e.tickets.filter((t) => t.modele === f.id)).length} ticket(s) à corriger (retours/tickets-modeles.json)`, href: `/chaine/modele/${f.id}` }];
     if (f.statut === 'finaliste') return [{ modele: f.id, nom: f.nom, statut: f.statut, texte: 'En file : entre dans la boucle dès qu’une place se libère', href: `/chaine/modele/${f.id}` }];
@@ -819,7 +915,8 @@ export function markdownTicketsModeles(l: ReturnType<typeof exportTicketsModeles
 
 /** Versions à faire passer au testeur (retours/modeles-a-tester.json) */
 export function modelesATester(fiches: readonly FicheModele[], versions: readonly VersionModele[]) {
-  return fiches.filter((f) => STATUTS_BOUCLE.includes(f.statut) || f.statut === 'pret-validation' || f.statut === 'publie').flatMap((f) => {
+  // Du plus proche de la publication au plus loin (version retouchée avant un finaliste, meilleur rang d'abord)
+  return [...fiches].sort(comparerProximite({ versions, revues: [], tickets: [] })).filter((f) => STATUTS_BOUCLE.includes(f.statut) || f.statut === 'pret-validation' || f.statut === 'publie').flatMap((f) => {
     const v = versions.find((x) => x.modele === f.id && x.version === f.versionCourante);
     // Design : un jeu de démonstration par famille de thèmes compatibles (chaine-design.ts, jeuxDuModele)
     return v && !v.test ? [{ modele: f.id, version: v.version, profession: f.profession, profil: f.profil, scenario: f.scenario, composition: v.composition, jeux: f.profil ? [f.profil] : jeuxDuModele(f.profession, f.tags.profils) }] : [];
