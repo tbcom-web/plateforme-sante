@@ -5,6 +5,7 @@
 // n° 2) ; « Celui qui ne va pas » facultatif ; Valider. Barre « Top 10 sûr à 72 % · ~6 grilles restantes ». Rendus identiques à
 // l'œil : le doublon est signalé (même contrôle que la Dégustation).
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import Link from 'next/link';
 import type { PhotoBanque, PoidsAtelier } from '@plateforme/core';
 import { empreinteIframe } from '../../admin/degustation/Vignettes';
 import ApercuModele, { type RenduChaine } from '../ApercuModele';
@@ -89,7 +90,13 @@ export default function Tournoi(p: Props) {
         <span className="h-2 overflow-hidden rounded-full bg-neutral-200" aria-hidden="true"><span className="block h-full bg-teal-700 transition-[width]" style={{ width: `${certitude}%` }} /></span>
       </div>
       {profil && ecran?.kind !== 'fini' && <p className="text-xs text-neutral-600">Tous montrés avec le cabinet « {profil.nom} » (mêmes images) : seul le design change.</p>}
-      {ecran?.kind === 'fini' && <p className="rounded-2xl border border-black/10 bg-white p-5 text-sm" data-etat-tournoi="fini">{ecran.texte}. Merci : les finalistes passent au check de l’agent.</p>}
+      {ecran?.kind === 'fini' && (
+        <div className="grid gap-3 rounded-2xl border border-black/10 bg-white p-5 text-sm" data-etat-tournoi="fini">
+          <p>{ecran.texte}. Merci : les finalistes passent au test automatique.</p>
+          {/* Le tableau fait tourner l'automate : finalistes, puis entrée dans la boucle de relecture */}
+          <Link href="/chaine" className="flex min-h-12 items-center justify-center rounded-xl bg-teal-800 px-5 font-semibold text-white sm:justify-self-start">Voir les finalistes et la prochaine étape</Link>
+        </div>
+      )}
 
       {ecran?.kind === 'grille' && (
         <>

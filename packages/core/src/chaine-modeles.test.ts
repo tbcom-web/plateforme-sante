@@ -249,7 +249,7 @@ test('tableau : ce qui attend chaque personne ; tags pré-remplis', () => {
   const e: EtatChaine = { fiches: [fiche('a', { statut: 'avis-humain' }), fiche('b', { statut: 'pret-validation' })], versions: [], tickets: [], votes: [], revues: rienPartout('a', 1, 'moi').slice(0, 3) };
   const p = [{ id: 'sport', nom: 'Sport', profession: 'podologue' }];
   const contrib = attentesHumain(e, { id: 'moi', role: 'contributeur' }, p);
-  assert.ok(contrib.some((x) => x.texte.startsWith('Présélection : 0 / 30') && x.nom === 'Tous profils'), 'présélection par profession, sans thème');
+  assert.ok(contrib.some((x) => x.texte.startsWith('Présélection : 0 / 12 candidats pour ouvrir le tournoi') && x.nom === 'Tous profils'), 'présélection par profession, sans thème');
   assert.ok(contrib.some((x) => x.modele === 'a' && /3 \/ 16 pages vues \(dont 3 par vous\)/.test(x.texte)));
   assert.ok(!contrib.some((x) => x.modele === 'b'), 'la validation finale n’attend que Paul');
   assert.ok(attentesHumain(e, { id: 'paul', role: 'validateur' }, p).some((x) => x.modele === 'b'));

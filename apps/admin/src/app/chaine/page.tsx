@@ -7,6 +7,8 @@ import { exigerContributeur, faireTournerChaine, getEquipe, LECTURE_CHAINE, MIGR
 import { getNombreArrivages } from '@/lib/arrivages';
 import { profilsDegustation } from '@/lib/degustation';
 import { getProfession } from '@/lib/profession';
+import { guidageChaine, prechargerGuidage } from '@/lib/chaine-guidage';
+import ProchaineEtape from './ProchaineEtape';
 
 export const metadata = { title: 'Chaîne des modèles' };
 
@@ -24,6 +26,7 @@ const COLONNES: StatutModele[] = ['candidat', 'finaliste', 'check-agent', 'avis-
 
 export default async function TableauChaine({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const moi = await exigerContributeur();
+  prechargerGuidage();
   const sp = await searchParams;
   const un = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
   const profession = un(sp.profession) ? professionDe(un(sp.profession)) : await getProfession();
@@ -31,7 +34,13 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
   const [profils, bilan, equipe, arrivages] = await Promise.all([
     profilsDegustation(pd), faireTournerChaine(profession.id), getEquipe(), getNombreArrivages(profession).catch(() => null),
   ]);
-  const { chaine } = bilan;
+  // Chaîne guidée : LA prochaine étape (tournoi calculé une fois, réutilisé par la colonne « Candidat ») ; import automatique des
+  // designs de Claude s'il manque des candidats pour ouvrir le tournoi (la chaîne est alors relue)
+  const candDesigns = (c: typeof bilan.chaine) => c.fiches.filter((f) => f.profil === null && f.statut === 'candidat').map((f) => f.id);
+  const t0 = candDesigns(bilan.chaine).length ? tournoiDuProfil(bilan.chaine, candDesigns(bilan.chaine)) : null;
+  const guide = await guidageChaine({ moi, profession: profession.id, chaine: bilan.chaine, tournoi: t0 });
+  const chaine = guide.chaine;
+  const tournoi = guide.importes ? (candDesigns(chaine).length ? tournoiDuProfil(chaine, candDesigns(chaine)) : null) : t0;
   const filtre = un(sp.profil);
   const fiches = chaine.fiches.filter((f) => !filtre || f.profil === filtre);
   const comptes = compteursChaine(fiches);
@@ -49,9 +58,10 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
       <div>
         <h1 className="text-2xl font-bold">Chaîne de production des modèles</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">
-          Tout avance seul dès que la condition d’une étape est remplie. L’équipe ne fait que choisir, voter et donner son avis ; Paul valide à la fin.
+          Suivez la prochaine étape : tout le reste avance seul. L’équipe choisit, vote et relit ; Paul valide à la fin.
         </p>
       </div>
+      <ProchaineEtape action={guide.action} importes={guide.importes} ici="/chaine" />
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
 
@@ -122,8 +132,7 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
                   <p className="mt-1 text-2xl font-bold" data-compteur={s}>{comptes[s]}</p>
                   {s === 'candidat' && (() => {
                     const r = reserveCandidats(chaine.fiches.filter((f) => f.profession === profession.id), null);
-                    const t = tournoiDuProfil(chaine, chaine.fiches.filter((f) => f.profil === null && f.statut === 'candidat').map((f) => f.id));
-                    return <p className="text-xs text-neutral-600" data-tournoi={t.certitude}>{r.texte}{t.ouvert ? ` · ${t.texte}` : ''}</p>;
+                    return <p className="text-xs text-neutral-600" data-tournoi={tournoi?.certitude ?? 0}>{tournoi?.ouvert ? `${r.texte} · ${tournoi.texte}` : `${r.n} / ${CHAINE.ouvertureTournoi} pour ouvrir le tournoi`}</p>;
                   })()}
                   {s === 'check-agent' && <p className="text-xs text-neutral-600">Boucle : {enBoucle} / {CHAINE.maxRevision}</p>}
                   <ul className="mt-2 grid max-h-80 gap-1.5 overflow-y-auto">

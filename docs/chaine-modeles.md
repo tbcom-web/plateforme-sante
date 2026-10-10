@@ -14,7 +14,7 @@ export `scripts/exporter-retours.mjs`. Tests : `packages/core/src/chaine-modeles
 | # | Statut | Qui a la main | Ce qui se passe | « Fini » quand |
 |---|---|---|---|---|
 | 0 | Ingrédients | humain (Arrivages) | Rien de nouveau : lien et compteur des Arrivages sur le tableau | — |
-| 1 | `candidat` (présélection) | humain | Présélection INFINIE SANS THÈME : pages de 6 DESIGNS (grilles « Directions » : favoris 4-5 ★, harmonie, diversité garantie), chaque page rendue avec un profil de démonstration différent et SES images ; « Voir avec un autre thème » sur chaque carte. On touche ceux qui plaisent → candidats (designs) + points dans la Dégustation + « J'aime » | Objectif ≈ 30 candidats par profession (compteur, réglable : `CHAINE.objectifCandidats`) ; le tournoi s'ouvre dès 20 |
+| 1 | `candidat` (présélection) | humain | Présélection INFINIE SANS THÈME : pages de 6 DESIGNS (grilles « Directions » : favoris 4-5 ★, harmonie, diversité garantie), chaque page rendue avec un profil de démonstration différent et SES images ; « Voir avec un autre thème » sur chaque carte. On touche ceux qui plaisent → candidats (designs) + points dans la Dégustation + « J'aime » | Objectif ≈ 30 candidats par profession (compteur, réglable : `CHAINE.objectifCandidats`) ; le tournoi s'ouvre dès 12 (`CHAINE.ouvertureTournoi`, 20 → 12 le 2026-10-10) |
 | 2 | `candidat` (tournoi) | humain | Tournoi EN GRILLES par profession : « tes 2 préférés parmi 6 » (+ celui qui ne va pas), les 6 rendus avec le même profil ; a priori, top 10 seulement, quelques duels de départage ; multi-votants en parallèle | Top 10 sûr à 90 % (voir « Tournoi en grilles ») : les 10 premiers deviennent `finaliste`, les autres `ecarte` |
 | — | `finaliste` | automatique | File d'attente : 10 modèles au plus dans la boucle de révision, meilleur rang d'abord | Une place se libère |
 | 3 | `check-agent` | agent | Le testeur automatique (et la vérification visuelle de Claude) passe la version : verdict, contrôles, tickets techniques créés seuls, corrections techniques automatiques si possible | Un résultat de test existe pour la version courante |
@@ -23,6 +23,41 @@ export `scripts/exporter-retours.mjs`. Tests : `packages/core/src/chaine-modeles
 | 6 | `recheck-agent` | agent | Nouveau passage du testeur sur la nouvelle version ; les tickets techniques dont le contrôle repasse au vert se ferment seuls | Résultat de test de la nouvelle version : correction de goût → `revalidation` ; purement technique et vert → `pret-validation` sans humain ; encore des tickets → `retouche` |
 | 7 | `revalidation` | humain | Seulement ce qui a changé, avant / après ; « Tout revalider » en 1 clic, ou cocher « Pas encore corrigé » pour rouvrir un ticket | Revalidée (1 clic) et testeur au vert → `pret-validation` ; ticket rouvert → `retouche` |
 | 8 | `pret-validation` → `publie` | Paul | Verrous automatiques au vert, tags pré-remplis vérifiés, « Publier pour les praticiens » (publication par profil existante : recette créée ou mise à jour + `recettes_publications`) | Publié. Ensuite, signaler une zone rouvre une retouche SANS dépublier : la nouvelle version n'est publiée qu'après revalidation et nouvelle validation de Paul |
+
+## Chaîne guidée : une seule prochaine étape (demande de Paul du 2026-10-10)
+
+« La partie de présélection tournoi etc paraît bloquée […] que ce soit vraiment prescriptif pour qu'on arrive à des modèles valides à
+pousser aux clients finaux. » Code : `packages/core/src/chaine-guidage.ts` (`prochaineActionChaine`, pur, testé dans
+`chaine-guidage.test.ts`), `apps/admin/src/lib/chaine-guidage.ts` (calcul sur la chaîne déjà lue par la page, import automatique),
+bandeau `apps/admin/src/app/chaine/ProchaineEtape.tsx`.
+
+En tête de `/chaine` et de chaque étape (présélection, tournoi, fiche, relecture) : **Prochaine étape** = un titre (« Garder encore
+4 candidats pour ouvrir le tournoi (8 / 12) », « Jouer la grille 3 / ~8 du tournoi », « Relire « X » page par page (5 / 16) »,
+« Lancer le test automatique de « X » », « Valider et publier « X » »…), le pourquoi, un gros bouton qui y mène, qui agit (À vous,
+Paul, Claude, Automatique), le fil des 6 étapes montrées à l'équipe et ce qui reste avant le premier modèle prêt pour les clients.
+
+| # | Étape montrée | Statuts de la fiche |
+|---|---|---|
+| 1 | Présélection | `candidat` (tournoi pas encore ouvert) |
+| 2 | Tournoi | `candidat` (tournoi ouvert), `finaliste` |
+| 3 | Test automatique | `check-agent` |
+| 4 | Relecture page par page | `avis-humain` |
+| 5 | Retouches et revalidation | `retouche`, `recheck-agent`, `revalidation` |
+| 6 | Validation et publication | `pret-validation`, `publie` |
+
+Priorité (plus près des clients d'abord) : valider et publier (validateur) → revalider → faire corriger par Claude (validateur) →
+relire → lancer le test (validateur) → jouer le tournoi → importer les designs de Claude → présélectionner. Un contributeur ne reçoit
+jamais un geste du validateur ; sans rien à faire, il reçoit une attente expliquée (qui agit, quand) et « Présélectionner des
+designs » pour le lot suivant. Jamais un écran sans action ni explication (test sur tous les statuts et les deux rôles).
+
+Automatique (rien de goût) : sans assez de candidats pour ouvrir le tournoi, les designs de Claude pas encore dans la chaîne sont
+importés seuls à l'ouverture de `/chaine` ou de la présélection (profession par défaut, une tentative au plus toutes les 10 min par
+instance) ; une réponse de grille ou un duel relance l'automate au chargement suivant (fin du tournoi → finalistes → test) ; le
+tournoi terminé renvoie au tableau, où l'automate fait passer les finalistes (`avancer_modele`).
+
+Gestes qui restent humains hors goût, dits dans le bandeau : **lancer le test** (bouton « Lancer le test » de la fiche, workflow
+`tester-modele`, Paul) et **demander la retouche à Claude** (Claude Code : « Corrige les tickets de la chaîne des modèles
+(retours/tickets-modeles.json) »).
 
 **Propositions de Claude** (2026-10-09) : les designs « canons » de `retours/recettes-proposees.json` (ids `canon-*`, design sans
 images) entrent dans la chaîne par le bouton « Importer les propositions de Claude comme candidats » de la présélection

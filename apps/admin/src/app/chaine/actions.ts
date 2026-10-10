@@ -154,6 +154,7 @@ export async function repondreGrille(id: string, meilleures: number[], pire: num
   const { data, error } = await supabase.from('modeles_grilles').update({ meilleures: m, pire: pi, appareil: estAppareilModele(appareil) ? appareil : null }).eq('id', id).select('id');
   if (error) return { ok: false, message: error.message?.includes('déjà') ? 'Grille déjà répondue.' : `${MIGRATION_GRILLES} (détail : ${error.message})` };
   if (!data?.length) return { ok: false, message: 'Grille introuvable ou déjà répondue.' };
+  oublierAutomate(); // fin du tournoi possible : finalistes au prochain chargement (sans attendre 30 s)
   return { ok: true, message: 'Choix enregistré.' };
 }
 
@@ -165,6 +166,7 @@ export async function voter(p: { profil: string | null; a: string; b: string; re
   const supabase = await createClient();
   const { error } = await supabase.from('modeles_votes').insert({ profession: profession.id, profil: p.profil, a: p.a, b: p.b, resultat: p.resultat, appareil: estAppareilModele(p.appareil) ? p.appareil : null, votant: moi.id });
   if (error) return echec(error);
+  oublierAutomate();
   return { ok: true, message: 'Vote enregistré.' };
 }
 

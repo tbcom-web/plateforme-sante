@@ -3,6 +3,8 @@ import { CHAINE, groupeTournoi, TOURNOI_GRILLES, tournoiDuProfil } from '@platef
 import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
 import Tournoi from './Tournoi';
+import ProchaineEtape from '../ProchaineEtape';
+import { guidageChaine } from '@/lib/chaine-guidage';
 
 export const metadata = { title: 'Chaîne · Tournoi' };
 
@@ -11,7 +13,7 @@ export const metadata = { title: 'Chaîne · Tournoi' };
 // (J'aime, juge, jauge), seul le top 10 est recherché, arrêt quand il est sûr à 90 % (tournoi-grilles.ts, docs/chaine-modeles.md).
 // Plusieurs contributeurs en parallèle : chaque grille est réservée à un votant.
 export default async function PageTournoi({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  await exigerContributeur();
+  const moi = await exigerContributeur();
   const sp = await searchParams;
   const { profession, profils } = await profilsDemo();
   const [{ chaine }, rendu, gen] = await Promise.all([faireTournerChaine(profession.id), donneesRendu(), donneesGeneration()]);
@@ -21,6 +23,8 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
   const cand = chaine.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === groupe);
   const t = tournoiDuProfil(chaine, cand.map((f) => f.id));
   const nom = (g: string) => { const p = g.split('|')[1]; return p === '*' ? 'Designs de la profession' : `${profils.find((x) => x.id === p)?.nom ?? p} (ancien tournoi par profil)`; };
+  // Chaîne guidée : la prochaine étape (tournoi des designs déjà calculé ; pas d'import ici, la présélection et le tableau s'en chargent)
+  const { action } = await guidageChaine({ moi, profession: profession.id, chaine, tournoi: demande ? undefined : t, autoImport: false });
   const versions = Object.fromEntries(cand.map((f) => [f.id, { nom: f.nom, design: chaine.versions.find((v) => v.modele === f.id && v.version === f.versionCourante)?.composition ?? {} }]));
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
@@ -28,6 +32,7 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
         <h1 className="text-2xl font-bold">Tournoi</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">Touchez vos 2 préférés parmi 6 (et, si vous voulez, celui qui ne va pas). On ne cherche que les {TOURNOI_GRILLES.top} meilleurs : le tournoi s’arrête tout seul quand ils sont sûrs à {Math.round(TOURNOI_GRILLES.certitude * 100)} %.</p>
       </div>
+      <ProchaineEtape action={action} ici="/chaine/tournoi" />
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
       {groupes.length > 1 && (
@@ -36,11 +41,11 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
         </nav>
       )}
       {!t.ouvert ? (
-        <p className="rounded-2xl border border-black/10 bg-white p-5 text-sm">{t.texte}. <Link href="/chaine/preselection" className="font-semibold text-teal-900 underline">Présélectionner</Link></p>
+        <p id="etape-travail" className="rounded-2xl border border-black/10 bg-white p-5 text-sm">Pas encore de tournoi : {t.texte}. Il s’ouvre seul dès {CHAINE.ouvertureTournoi} candidats. <Link href="/chaine/preselection" className="font-semibold text-teal-900 underline">Présélectionner</Link></p>
       ) : t.arrete ? (
-        <p className="rounded-2xl border border-black/10 bg-white p-5 text-sm" data-etat-tournoi="arrete">{t.texte} : les finalistes sont dans le tableau.</p>
+        <p id="etape-travail" className="rounded-2xl border border-black/10 bg-white p-5 text-sm" data-etat-tournoi="arrete">{t.texte} : le tournoi est terminé. <Link href="/chaine" className="font-semibold text-teal-900 underline">Voir les finalistes et la suite</Link></p>
       ) : (
-        <Tournoi profil={demande} versions={versions} profils={profils} rendu={rendu} poids={gen.poids} photos={gen.photos} budget={TOURNOI_GRILLES.budget} ouverture={CHAINE.ouvertureTournoi} />
+        <div id="etape-travail"><Tournoi profil={demande} versions={versions} profils={profils} rendu={rendu} poids={gen.poids} photos={gen.photos} budget={TOURNOI_GRILLES.budget} ouverture={CHAINE.ouvertureTournoi} /></div>
       )}
       {t.classement.length > 0 && (
         <details className="rounded-2xl border border-black/10 bg-white p-3 text-sm">

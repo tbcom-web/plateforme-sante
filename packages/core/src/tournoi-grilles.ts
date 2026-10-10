@@ -160,7 +160,7 @@ export function etatTournoiGrilles(candidats: readonly string[], grilles: readon
   const vusTous = candidats.every((id) => (app.get(id) ?? 0) > 0 || ds.some((d) => d.a === id || d.b === id));
   const restantes = Math.max(certitude >= TOURNOI_GRILLES.certitude && vusTous ? 0 : 1, Math.ceil((2 * incertains.length) / TOURNOI_GRILLES.taille), vusTous ? 0 : Math.ceil(candidats.filter((id) => !app.get(id)).length / TOURNOI_GRILLES.taille));
   const base = { grilles: gs.length, duels: ds.length, classement, top: tri.slice(0, top), incertains, certitude: Math.round(certitude * 1000) / 1000 };
-  const ouverture = opts.ouverture ?? 20;
+  const ouverture = opts.ouverture ?? 12;
   if (candidats.length < ouverture) return { ...base, ouvert: false, arrete: false, raison: 'pas-assez-de-candidats', restantes: 0, texte: `${candidats.length} / ${ouverture} candidats pour ouvrir le tournoi` };
   if (candidats.length <= top) return { ...base, ouvert: true, arrete: true, raison: 'peu-de-candidats', restantes: 0, texte: 'Tous finalistes' };
   const pct = Math.round(certitude * 100);

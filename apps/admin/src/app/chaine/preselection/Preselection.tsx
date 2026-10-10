@@ -6,6 +6,7 @@
 // (exclus, déjà vus, rendus identiques à l'œil). Multi-sélection, « Garder » : candidats (designs) + points dans la Dégustation +
 // « J'aime ». « Voir avec un autre thème » : la même carte rendue avec un autre profil.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   CHAINE, designDe, elementsComposition, filtreLeger, grilleDirectionsDegustation, profilDemo, serialiserComposition, type PhotoBanque, type PoidsAtelier,
   lireRegistresTirage, type GrilleDegustation,
@@ -40,6 +41,7 @@ export default function Preselection(props: Props) {
   const [appareil, setAppareil] = useState<'ordinateur' | 'mobile'>('mobile');
   useEffect(() => { if (window.innerWidth >= 1024) setAppareil('ordinateur'); }, []);
   const [pages, setPages] = useState<Page[]>([]);
+  const [premiere, setPremiere] = useState<'attente' | 'prete' | 'vide'>('attente');
   const [compte, setCompte] = useState(props.candidats);
   const vues = useRef(new Set(props.dejaVues));
   const graine = useRef(1);
@@ -123,7 +125,7 @@ export default function Preselection(props: Props) {
     }
   }, [props.profils, ctxDe, tranches, grille, preparerSuivante]);
 
-  useEffect(() => { void generer().then((p) => setPages(p ? [p] : [])); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  useEffect(() => { void generer().then((p) => { setPages(p ? [p] : []); setPremiere(p ? 'prete' : 'vide'); }); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const garder = useCallback(async (id: number) => {
     const p = pages.find((x) => x.id === id);
@@ -148,7 +150,7 @@ export default function Preselection(props: Props) {
     // Pages encore ouvertes sans choix : passées tout de suite (comme avant), la nouvelle page arrive quand ses grilles sont prêtes
     setPages((l) => l.map((p) => (p.etat === 'ouverte' && !p.selection.length ? { ...p, etat: 'passee' as const } : p)));
     const n = await generer();
-    if (n) setPages((l) => [...l, n].slice(-6));
+    if (n) { setPages((l) => [...l, n].slice(-6)); setPremiere('prete'); }
   }, [pages, garder, generer, journaliserSansChoix]);
   useEffect(() => {
     const el = fin.current;
@@ -187,8 +189,9 @@ export default function Preselection(props: Props) {
   return (
     <div className="grid gap-4">
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-3 rounded-xl bg-white/95 p-2 text-sm shadow-sm ring-1 ring-black/5 sm:top-16">
-        <span className="font-semibold" data-compteur-candidats={compte}>{compte} / {CHAINE.objectifCandidats} candidats</span>
-        <span className="h-2 w-24 overflow-hidden rounded-full bg-neutral-200" aria-hidden="true"><span className="block h-full bg-teal-700" style={{ width: `${Math.min(100, (compte / CHAINE.objectifCandidats) * 100)}%` }} /></span>
+        <span className="font-semibold" data-compteur-candidats={compte}>{compte < CHAINE.ouvertureTournoi ? `${compte} / ${CHAINE.ouvertureTournoi} candidats pour ouvrir le tournoi` : `${compte} candidats · tournoi ouvert`}</span>
+        <span className="h-2 w-24 overflow-hidden rounded-full bg-neutral-200" aria-hidden="true"><span className="block h-full bg-teal-700" style={{ width: `${Math.min(100, (compte / CHAINE.ouvertureTournoi) * 100)}%` }} /></span>
+        {compte >= CHAINE.ouvertureTournoi && <Link href="/chaine/tournoi" className={`inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 font-semibold text-white ${focus}`} data-action="aller-tournoi">Jouer le tournoi</Link>}
         <button type="button" onClick={() => setAppareil(appareil === 'mobile' ? 'ordinateur' : 'mobile')} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 ${focus}`}>{appareil === 'mobile' ? 'Voir sur ordinateur' : 'Voir sur téléphone'}</button>
       </div>
 
@@ -225,6 +228,11 @@ export default function Preselection(props: Props) {
           </div>
         </section>
       ))}
+      {!pages.length && (
+        <p role="status" className="rounded-2xl border border-black/10 bg-white p-5 text-sm text-neutral-700" data-preselection-vide={premiere}>
+          {premiere === 'attente' ? 'Préparation des 6 premiers designs…' : 'Aucun nouveau design pour ce cabinet de démonstration : touchez « Page suivante » pour en essayer un autre.'}
+        </p>
+      )}
       <div ref={fin} className="grid place-items-center py-6">
         <button type="button" onClick={suivante} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-4 ${focus}`}>Page suivante</button>
       </div>

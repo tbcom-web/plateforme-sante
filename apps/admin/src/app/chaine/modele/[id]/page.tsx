@@ -5,6 +5,8 @@ import BoutonTesterModele from '@/components/BoutonTesterModele';
 import RapportTestModele from '@/components/RapportTestModele';
 import { lireResultatTestModele } from '@/lib/tests-modeles';
 import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE } from '@/lib/chaine-modeles';
+import { guidageChaine } from '@/lib/chaine-guidage';
+import ProchaineEtape from '../../ProchaineEtape';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../../donnees';
 import ApercuDesign from '../../ApercuDesign';
 import { verrousDeLaFiche } from '../../validation';
@@ -24,6 +26,8 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   // Lecture en échec (délai) : message et lien, pas une page « introuvable »
   if (!f && chaine.erreurLecture) return <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE} <Link href={`/chaine`} className="font-semibold underline">Tableau de la chaîne</Link></p>;
   if (!f) notFound();
+  // Chaîne guidée : prochaine étape de la profession du modèle (bandeau compact : on travaille déjà ici)
+  const { action } = await guidageChaine({ moi, profession: f.profession, chaine, autoImport: false });
   const [rendu, { verrous, jauge, bloquants }, rapport, gen, demo] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), donneesGeneration(), profilsDemo()]);
   // Design (profil nul) : rendu avec le kit de chaque profil compatible (tags pré-calculés, confirmés par Paul)
   const compatibles = demo.profils.filter((p) => f.tags.profils.includes(p.id));
@@ -36,7 +40,8 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
-        <p className="text-sm"><Link href="/chaine" className="font-semibold text-teal-900 underline">← Tableau</Link></p>
+        <ProchaineEtape action={action} compact ici={`/chaine/modele/${f.id}`} />
+        <p className="mt-3 text-sm"><Link href="/chaine" className="font-semibold text-teal-900 underline">← Tableau</Link></p>
         <h1 className="mt-1 text-2xl font-bold">{f.nom}</h1>
         <p className="mt-1 text-sm text-neutral-700" data-statut={f.statut}>Étape {st.etape} · {st.libelle} · v{f.versionCourante}{f.versionPubliee ? ` · en ligne : v${f.versionPubliee}` : ''}{f.rang ? ` · rang ${f.rang} au tournoi` : ''} · {ticketsOuverts(tickets).length} ticket(s) ouvert(s)</p>
         <p className="text-sm text-neutral-600">Fini quand : {st.fini}</p>

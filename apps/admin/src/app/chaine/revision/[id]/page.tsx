@@ -5,6 +5,8 @@ import BoutonTesterModele from '@/components/BoutonTesterModele';
 import RapportTestModele from '@/components/RapportTestModele';
 import { lireResultatTestModele } from '@/lib/tests-modeles';
 import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE } from '@/lib/chaine-modeles';
+import { guidageChaine } from '@/lib/chaine-guidage';
+import ProchaineEtape from '../../ProchaineEtape';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../../donnees';
 import Revision from './Revision';
 
@@ -21,6 +23,8 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
   // Lecture en échec (délai) : message et lien, pas une page « introuvable »
   if (!f && chaine.erreurLecture) return <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE} <Link href={`/chaine`} className="font-semibold underline">Tableau de la chaîne</Link></p>;
   if (!f) notFound();
+  // Chaîne guidée : prochaine étape de la profession du modèle (bandeau compact : on travaille déjà ici)
+  const { action } = await guidageChaine({ moi, profession: f.profession, chaine, autoImport: false });
   const [rendu, gen, rapport, demo] = await Promise.all([donneesRendu(), donneesGeneration(), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), profilsDemo()]);
   const compatibles = demo.profils.filter((p) => f.tags.profils.includes(p.id));
   const modeTest = modeTestPourEtape(f.statut);
@@ -32,7 +36,8 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
-        <p className="text-sm"><Link href="/chaine" className="font-semibold text-teal-900 underline">← Tableau</Link> · <Link href={`/chaine/modele/${f.id}`} className="underline">Fiche du modèle</Link></p>
+        <ProchaineEtape action={action} compact ici={`/chaine/revision/${f.id}`} />
+        <p className="mt-3 text-sm"><Link href="/chaine" className="font-semibold text-teal-900 underline">← Tableau</Link> · <Link href={`/chaine/modele/${f.id}`} className="underline">Fiche du modèle</Link></p>
         <h1 className="mt-1 text-2xl font-bold">{f.nom} <span className="text-base font-semibold text-neutral-600">· v{f.versionCourante} · {st.libelle}</span></h1>
       </div>
       {!v ? <p className="text-sm">Version introuvable.</p> : (

@@ -27,8 +27,9 @@ import {
 export const CHAINE = {
   /** Objectif de candidats par profession (modèles = designs sans profil ; 30 depuis le tournoi en grilles, retour de Paul du 2026-10-09) */
   objectifCandidats: 30,
-  /** Le tournoi d'un profil s'ouvre à partir de ce nombre de candidats */
-  ouvertureTournoi: 20,
+  /** Le tournoi s'ouvre à partir de ce nombre de candidats (20 → 12 le 2026-10-10, accord de Paul : chaîne guidée, chaine-guidage.ts ;
+   *  le top 10 reste recherché, un candidat ajouté pendant le tournoi y entre) */
+  ouvertureTournoi: 12,
   /** Nombre de finalistes par profil */
   finalistes: 10,
   /** Modèles simultanément dans la boucle de révision (check agent → revalidation) */
@@ -727,7 +728,7 @@ export function attentesHumain(e: EtatChaine, personne: { id: string; role: Role
     const profil = g.split('|')[1];
     const nom = profil === '*' ? 'Tous profils' : profils.find((p) => p.id === profil)?.nom ?? profil;
     const cand = e.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === g);
-    if (profil === '*' && cand.length < CHAINE.objectifCandidats) reserves.push({ modele: null, nom, statut: null, texte: `Présélection : ${cand.length} / ${CHAINE.objectifCandidats} candidats`, href: '/chaine/preselection', n: cand.length });
+    if (profil === '*' && cand.length < CHAINE.objectifCandidats) reserves.push({ modele: null, nom, statut: null, texte: cand.length < CHAINE.ouvertureTournoi ? `Présélection : ${cand.length} / ${CHAINE.ouvertureTournoi} candidats pour ouvrir le tournoi` : `Présélection : ${cand.length} / ${CHAINE.objectifCandidats} candidats`, href: '/chaine/preselection', n: cand.length });
     const t = tournoiDuProfil(e, cand.map((f) => f.id));
     if (t.ouvert && !t.arrete) tournois.push({ modele: null, nom, statut: 'candidat', texte: `Tournoi : ${t.texte}`, href: `/chaine/tournoi${profil === '*' ? '' : `?profil=${encodeURIComponent(profil)}`}` });
   }

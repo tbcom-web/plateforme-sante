@@ -127,3 +127,4 @@ export * from './prospection';
 export * from './entete-pied';
 export * from './photos-sous-licence';
 export * from './images-fixes-pied';
+export * from './chaine-guidage';
