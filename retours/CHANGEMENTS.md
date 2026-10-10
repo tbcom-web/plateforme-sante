@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : Chaîne des modèles : la page ne reste plus jamais en chargement sans fin quand la base est lente (délai de 20 s sur toutes ses lectures, message « rechargez » au lieu de « Migration 0050 »).
 - 2026-10-10 : Images fixes des animations du pied « WOW » (à valider) : montagne trail / randonnée en courbes de niveau (dessin:trail-montagne, #trail #randonnee, profil « Sport · trail / randonnée »), chronomètre sans chiffre en dessin de matériel (dessin:chronometre, #sport), douleur au talon en aplat doux et halo abricot unique (dessin:talon-douloureux, #douleur-talon)
 - 2026-10-09 : Photos sous licence (banques payantes) et option « Photos premium » : import tracé par Paul (banque, référence, type, titulaire, restrictions), aperçu « comp » jamais publié, photo achetée publiable seulement sur les sites rattachés, badge « Photo premium » dans les aperçus, demande d'option côté praticien (sans paiement ni e-mail), contrôle bloquant à la publication, alertes et export CSV (/admin/photos-sous-licence, migration 0057 à exécuter, docs/photos-sous-licence.md)
 - 2026-10-09 : Fond du premier écran (fond-heros, à valider sauf la trame) : un premier écran sans visuel n'est plus jamais vide — empreintes en filigrane, lignes de niveau, formes de la gamme, trame, héros illustré net devant les aplats, trajectoires ; AA calculé, < 4 Ko, statique ; règle dure fond-vide, seuil de masse 4 %, règle apprise « trop vide ».

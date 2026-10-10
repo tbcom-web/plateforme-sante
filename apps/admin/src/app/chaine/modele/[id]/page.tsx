@@ -4,7 +4,7 @@ import { libellePageModele, modeTestPourEtape, statutModele, ticketsOuverts } fr
 import BoutonTesterModele from '@/components/BoutonTesterModele';
 import RapportTestModele from '@/components/RapportTestModele';
 import { lireResultatTestModele } from '@/lib/tests-modeles';
-import { exigerContributeur, faireTournerChaine } from '@/lib/chaine-modeles';
+import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../../donnees';
 import ApercuDesign from '../../ApercuDesign';
 import { verrousDeLaFiche } from '../../validation';
@@ -21,6 +21,8 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const { chaine } = await faireTournerChaine(null);
   const f = chaine.fiches.find((x) => x.id === id);
+  // Lecture en échec (délai) : message et lien, pas une page « introuvable »
+  if (!f && chaine.erreurLecture) return <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE} <Link href={`/chaine`} className="font-semibold underline">Tableau de la chaîne</Link></p>;
   if (!f) notFound();
   const [rendu, { verrous, jauge, bloquants }, rapport, gen, demo] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), donneesGeneration(), profilsDemo()]);
   // Design (profil nul) : rendu avec le kit de chaque profil compatible (tags pré-calculés, confirmés par Paul)

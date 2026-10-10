@@ -23,6 +23,12 @@ import { getPredictions } from '@/lib/predictions';
 //   d'étape). Aucune publication ici : publier reste un geste du validateur.
 
 export const MIGRATION_CHAINE = 'Migration 0050 à exécuter (supabase/migrations/0050_chaine_modeles.sql) : la chaîne des modèles n’enregistre rien pour l’instant.';
+/** Lecture impossible (délai de 20 s dépassé, réseau, droits) : PAS une migration manquante (2026-10-10) */
+export const LECTURE_CHAINE = 'La base répond trop lentement : la chaîne n’a pas pu être lue. Rien n’est perdu ; rechargez la page dans un instant.';
+
+/** Table absente (migration pas encore exécutée) : 42P01 (Postgres) ou PGRST205 (cache du schéma) */
+const tableAbsente = (e: { code?: string; message?: string } | null | undefined) =>
+  Boolean(e && (e.code === '42P01' || e.code === 'PGRST205' || /relation .* does not exist|Could not find the table/i.test(e.message ?? '')));
 
 export type Equipier = { id: string; email: string; role: RoleEquipe };
 
@@ -130,6 +136,8 @@ export type Chaine = EtatChaine & {
   /** « J'aime » de la présélection par modèle (0052) */
   jaime: Record<string, number>;
   migrationGrilles: boolean;
+  /** Lecture en échec (délai, réseau) : chaîne incomplète, l'automate n'écrit rien (LECTURE_CHAINE) */
+  erreurLecture: boolean;
 };
 
 /** Toute la chaîne d'une profession (null = toutes) */
@@ -140,7 +148,7 @@ export async function lireChaine(profession: string | null): Promise<Chaine> {
   let qf = supabase.from('modeles_fiches').select('*').order('created_at', { ascending: true }).limit(3000).abortSignal(s);
   if (profession) qf = qf.eq('profession', profession);
   const { data: fl, error } = await qf;
-  if (error) return { fiches: [], versions: [], tickets: [], votes: [], revues: [], grilles: [], grillesEnCours: [], jaime: {}, migrationManquante: true, migrationGrilles: true };
+  if (error) return { fiches: [], versions: [], tickets: [], votes: [], revues: [], grilles: [], grillesEnCours: [], jaime: {}, migrationManquante: tableAbsente(error), migrationGrilles: true, erreurLecture: !tableAbsente(error) };
   const fiches = ((fl ?? []) as Record<string, unknown>[]).map(ficheDepuisLigne).filter((f): f is FicheModele => f !== null);
   const ids = new Set(fiches.map((f) => f.id));
   const [vl, tl, vol, rl, gl, jl] = await Promise.all([
@@ -159,8 +167,10 @@ export async function lireChaine(profession: string | null): Promise<Chaine> {
     revues: ((rl.data ?? []) as Record<string, unknown>[]).map(revueDepuisLigne).filter((r) => ids.has(r.modele)),
     ...grillesDepuisLignes((gl.data ?? []) as Record<string, unknown>[], ids),
     jaime: ((jl.data ?? []) as { modele: string }[]).reduce<Record<string, number>>((m, l) => { m[l.modele] = (m[l.modele] ?? 0) + 1; return m; }, {}),
-    migrationGrilles: Boolean(gl.error),
+    migrationGrilles: tableAbsente(gl.error),
     migrationManquante: false,
+    // Versions, tickets, duels ou avis illisibles (délai) : l'automate ne doit rien décider sur une chaîne incomplète
+    erreurLecture: [vl, tl, vol, rl].some((r) => r.error) || Boolean(gl.error && !tableAbsente(gl.error)),
   };
 }
 
@@ -201,7 +211,7 @@ export function oublierAutomate() { dernierTour.clear(); }
 export async function faireTournerChaine(profession: string | null): Promise<BilanAutomate & { chaine: Chaine }> {
   let chaine = await lireChaine(profession);
   const bilan: BilanAutomate = { tests: 0, retouches: 0, tickets: 0, actions: [] };
-  if (chaine.migrationManquante || !chaine.fiches.length) return { ...bilan, chaine };
+  if (chaine.migrationManquante || chaine.erreurLecture || !chaine.fiches.length) return { ...bilan, chaine };
   const k = profession ?? '*';
   if (Date.now() - (dernierTour.get(k) ?? 0) < AUTOMATE_MS) return { ...bilan, chaine: { ...chaine, signaux: await signauxCandidats(chaine) } };
   dernierTour.set(k, Date.now());
@@ -221,6 +231,7 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
     if (!error) { bilan.tests++; change = true; }
   }
   if (change) chaine = await lireChaine(profession);
+  if (chaine.erreurLecture) return { ...bilan, chaine };
   // 2. Tickets techniques des résultats enregistrés (version courante), dédoublonnés
   change = false;
   for (const f of chaine.fiches) {
@@ -245,6 +256,7 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
     bilan.retouches++; change = true;
   }
   if (change) chaine = await lireChaine(profession);
+  if (chaine.erreurLecture) return { ...bilan, chaine };
   // 4. Automate : transitions jusqu'au point fixe (a priori du tournoi : J'aime, juge, jauge)
   chaine = { ...chaine, signaux: await signauxCandidats(chaine) };
   const { actions } = fairetournerChaine(chaine);

@@ -5,7 +5,7 @@ import {
   cleComposition, choixDePreselection, designDe, estAppareilModele, estEtiquetteTicket, estPageModele, estRoleEquipe, groupeTournoi, nomRecette, nouvelleVersion, peut, peutPublier,
   prochainEcran, profilDemo, profilsCompatibles, profilsDePratique, serialiserComposition, serialiserRecetteAvecScenario, statutModele, tagsAutomatiques, tournoiDuProfil, validerChoixGrille, type TagsModele,
 } from '@plateforme/core';
-import { exigerContributeur, exigerValidateur, lireChaine, MIGRATION_CHAINE, oublierAutomate, signauxCandidats } from '@/lib/chaine-modeles';
+import { exigerContributeur, exigerValidateur, LECTURE_CHAINE, lireChaine, MIGRATION_CHAINE, oublierAutomate, signauxCandidats } from '@/lib/chaine-modeles';
 import { getRecettes } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
 import { compositionDe, verrousDeLaFiche } from './validation';
@@ -121,6 +121,7 @@ export async function servirEcran(profil: string | null): Promise<Ecran> {
   const moi = await exigerContributeur();
   const { profession, profils } = await profilsChaine();
   const chaine = await lireChaine(profession.id);
+  if (chaine.erreurLecture) return { kind: 'fini', texte: LECTURE_CHAINE, certitude: 0 };
   const groupe = `${profession.id}|${profil ?? '*'}`;
   const cand = chaine.fiches.filter((f) => f.statut === 'candidat' && groupeTournoi(f) === groupe).map((f) => f.id);
   const signaux = await signauxCandidats(chaine);
@@ -239,6 +240,7 @@ export async function garderRelance(modele: string, composition: Record<string, 
   const moi = await exigerContributeur();
   if (!peut(moi.role, 'relancer') || !UUID.test(modele)) return { ok: false, message: 'Action impossible.' };
   const chaine = await lireChaine(null);
+  if (chaine.erreurLecture) return { ok: false, message: LECTURE_CHAINE };
   const f = chaine.fiches.find((x) => x.id === modele);
   if (!f) return { ok: false, message: 'Modèle introuvable.' };
   const x = compositionDe(f, composition);
@@ -278,6 +280,7 @@ export async function justifierTest(modele: string, texte: string): Promise<Reto
   const j = String(texte ?? '').trim().slice(0, 1000);
   if (j.length < 15) return { ok: false, message: 'Justification trop courte (15 caractères au moins).' };
   const chaine = await lireChaine(null);
+  if (chaine.erreurLecture) return { ok: false, message: LECTURE_CHAINE };
   const f = chaine.fiches.find((x) => x.id === modele);
   if (!f) return { ok: false, message: 'Modèle introuvable.' };
   const supabase = await createClient();
@@ -292,6 +295,7 @@ export async function publierModele(modele: string): Promise<Retour> {
   await exigerValidateur();
   if (!UUID.test(modele)) return { ok: false, message: 'Modèle inconnu.' };
   const chaine = await lireChaine(null);
+  if (chaine.erreurLecture) return { ok: false, message: LECTURE_CHAINE };
   const f = chaine.fiches.find((x) => x.id === modele);
   if (!f) return { ok: false, message: 'Modèle introuvable.' };
   if (f.statut !== 'pret-validation') return { ok: false, message: `Étape actuelle : ${statutModele(f.statut).libelle}. La publication vient après la revalidation.` };

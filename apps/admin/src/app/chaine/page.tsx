@@ -3,7 +3,7 @@ import {
   attentesHumain, attentesMachines, CHAINE, compteursChaine, reserveCandidats, tournoiDuProfil, STATUTS_MODELE, statutModele, ticketsOuverts, type Main, type StatutModele,
 } from '@plateforme/core';
 import { professionDe, professionsAdmin } from '@plateforme/core/professions';
-import { exigerContributeur, faireTournerChaine, getEquipe, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
+import { exigerContributeur, faireTournerChaine, getEquipe, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { getNombreArrivages } from '@/lib/arrivages';
 import { profilsDegustation } from '@/lib/degustation';
 import { getProfession } from '@/lib/profession';
@@ -53,6 +53,7 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
         </p>
       </div>
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
+      {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
 
       <form className="flex flex-wrap items-end gap-3 text-sm" action="/chaine">
         <label className="grid gap-1">Profession

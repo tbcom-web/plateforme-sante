@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CHAINE, groupeTournoi, TOURNOI_GRILLES, tournoiDuProfil } from '@plateforme/core';
-import { exigerContributeur, faireTournerChaine, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
+import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
 import Tournoi from './Tournoi';
 
@@ -29,6 +29,7 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">Touchez vos 2 préférés parmi 6 (et, si vous voulez, celui qui ne va pas). On ne cherche que les {TOURNOI_GRILLES.top} meilleurs : le tournoi s’arrête tout seul quand ils sont sûrs à {Math.round(TOURNOI_GRILLES.certitude * 100)} %.</p>
       </div>
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
+      {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
       {groupes.length > 1 && (
         <nav className="flex flex-wrap gap-2" aria-label="Tournois">
           {groupes.map((g) => { const p = g.split('|')[1]; return <Link key={g} href={p === '*' ? '/chaine/tournoi' : `/chaine/tournoi?profil=${encodeURIComponent(p)}`} aria-current={g === groupe ? 'page' : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-3 text-sm ${g === groupe ? 'border-teal-800 bg-teal-800 font-semibold text-white' : 'border-neutral-300 bg-white'}`}>{nom(g)}</Link>; })}
