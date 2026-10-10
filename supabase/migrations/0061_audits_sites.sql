@@ -32,6 +32,10 @@ create index if not exists audits_cree_le on public.audits (cree_le desc);
 
 alter table public.audits enable row level security;
 
+-- Droits explicites (le projet n'accorde rien par défaut aux nouvelles tables) : admins via la RLS, workflow via la clé secrète
+grant select, insert, update, delete on public.audits to authenticated;
+grant select, insert, update, delete on public.audits to service_role;
+
 drop policy if exists "audits : admin" on public.audits;
 create policy "audits : admin" on public.audits
   for all to authenticated
