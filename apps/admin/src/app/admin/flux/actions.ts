@@ -6,6 +6,7 @@ import { normaliserDraft, THEMES_FLUX, verifierTexte } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { declencherPublication } from '@/lib/publication';
 import { createClient } from '@/lib/supabase/server';
+import { articlesDesPacks } from '@/lib/packs-contenus';
 
 export type ChampsArticle = { titre: string; resume: string; corps: string; theme: string; date_publication: string; image: string; image_alt: string };
 export type Resultat = { ok: boolean; message: string; alertes?: string[] } | null;
@@ -103,4 +104,24 @@ export async function diffuserArticle(id: string): Promise<Resultat> {
     ok: true,
     message: `Diffusé à ${nouveaux.length} site(s) : ${auto} publication(s) automatique(s), ${nouveaux.length - auto} proposition(s) en attente.`,
   };
+}
+
+/**
+ * Article pré-écrit d'un pack de contenus (packages/contenus/professions/<profession>/articles.ts) → brouillon du flux, une fois
+ * ACCEPTÉ par Paul dans les Arrivages pour son texte actuel. Même slug que dans le pack (jamais importé deux fois), même contrôle
+ * lexical que la saisie. L'image et la diffusion restent à faire par Paul sur la fiche de l'article.
+ */
+export async function importerArticlePack(cle: string): Promise<void> {
+  await exigerAdmin();
+  const a = (await articlesDesPacks()).find((x) => x.cle === cle);
+  if (!a || a.etat !== 'accepte') redirect('/admin/flux?import=refuse');
+  const v = nettoyer({ titre: a.titre, resume: a.resume, corps: a.corps, theme: a.theme, date_publication: '', image: '', image_alt: '' });
+  if (controler(v).length) redirect('/admin/flux?import=lexique');
+  const supabase = await createClient();
+  const { data: deja } = await supabase.from('articles_flux').select('id').eq('slug', a.slug).maybeSingle();
+  if (deja) redirect(`/admin/flux/${deja.id}`);
+  const { data, error } = await supabase.from('articles_flux').insert({ ...v, slug: a.slug, profession_slug: a.profession }).select('id').single();
+  if (error || !data) redirect('/admin/flux?import=echec');
+  revalidatePath('/admin/flux');
+  redirect(`/admin/flux/${data.id}`);
 }

@@ -4,11 +4,12 @@
 import { construireNavigation, themeParId, type ThemeDuSite } from '@plateforme/core';
 import { site } from './site';
 import { noms, titreMetierAffiche, lieuExercice, suffixeVille } from './textes';
+import { conseils } from './conseils';
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
 export const themesActives = (env('THEMES_ACTIVES') ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 
-export const navigation = construireNavigation(site, site.soins, { actualites: site.articles.length > 0, themesActives });
+export const navigation = construireNavigation(site, site.soins, { actualites: site.articles.length > 0, conseils: conseils.length > 0, themesActives });
 
 /** Thèmes qui ont une page (principaux puis secondaires), avec leur rang */
 export const themesDuSite: (ThemeDuSite & { principal: boolean })[] = [

@@ -395,7 +395,7 @@ export function appliquerPriorites<D extends { priorites?: Priorites; theme: { s
 
 // ---- Navigation calculée (tous les gabarits) ----
 
-export type CleNavigation = 'accueil' | 'theme' | 'soins' | 'cabinet' | 'infos' | 'actualites';
+export type CleNavigation = 'accueil' | 'theme' | 'soins' | 'cabinet' | 'infos' | 'actualites' | 'conseils';
 export type LienNavigation = { cle: CleNavigation; href: string; libelle: string; theme?: string };
 export type ThemeDuSite = { theme: Theme; href: string; soins: string[] };
 export type GroupeSoins = { titre: string; href?: string; theme?: string; soins: string[] };
@@ -409,7 +409,7 @@ export type Navigation = {
   menu: LienNavigation[];
   /** Menu sur téléphone : 3 entrées au plus (+ Accueil par le logo + « Rendez-vous » en bouton = 5 au plus) */
   menuMobile: LienNavigation[];
-  /** Pied de page : Accueil, toutes les entrées du menu, Actualités */
+  /** Pied de page : Accueil, toutes les entrées du menu, Actualités, Fiches conseils */
   pied: LienNavigation[];
   /** Page « Soins » : chaque soin du site une seule fois, groupé par thème principal, secondaire, puis « Autres soins » */
   groupesSoins: GroupeSoins[];
@@ -431,12 +431,12 @@ export const MENU_MOBILE_MAX = 3;
  *    « Le cabinet » passe au pied de page (et reste sur l'accueil). Sans thème : Soins, Le cabinet, Infos pratiques.
  * 4. Page « Soins » : chaque soin une seule fois, dans le premier groupe qui le contient (thèmes principaux, puis
  *    secondaires, puis « Autres soins ») ; un groupe vide n'est pas montré.
- * 5. Pied de page : Accueil + menu complet + Actualités (s'il y a des articles).
+ * 5. Pied de page : Accueil + menu complet + Actualités (s'il y a des articles) + Fiches conseils (s'il y en a).
  */
 export function construireNavigation(
   entree: { priorites?: Priorites | null },
   soinsDuSite: readonly { slug: string }[],
-  opts: { actualites?: boolean; themesActives?: readonly string[] } = {},
+  opts: { actualites?: boolean; conseils?: boolean; themesActives?: readonly string[] } = {},
 ): Navigation {
   const slugs = soinsDuSite.map((s) => s.slug);
   const p = prioritesSelectionnables(entree.priorites ?? prioritesVides(), opts.themesActives);
@@ -455,7 +455,7 @@ export function construireNavigation(
 
   const menu = [...principaux.map(lienTheme), soins, cabinet, infos];
   const menuMobile = (principaux.length ? [lienTheme(principaux[0]), soins, infos] : [soins, cabinet, infos]).slice(0, MENU_MOBILE_MAX);
-  const pied = [{ cle: 'accueil' as const, href: '/', libelle: 'Accueil' }, ...menu, ...(opts.actualites ? [{ cle: 'actualites' as const, href: '/actualites', libelle: 'Actualités' }] : [])];
+  const pied = [{ cle: 'accueil' as const, href: '/', libelle: 'Accueil' }, ...menu, ...(opts.actualites ? [{ cle: 'actualites' as const, href: '/actualites', libelle: 'Actualités' }] : []), ...(opts.conseils ? [{ cle: 'conseils' as const, href: '/conseils', libelle: 'Fiches conseils' }] : [])];
 
   const vus = new Set<string>();
   const prendre = (l: readonly string[]) => l.filter((s) => !vus.has(s) && (vus.add(s), true));

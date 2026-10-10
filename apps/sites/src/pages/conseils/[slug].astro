@@ -1,0 +1,127 @@
+---
+// Fiche conseil (/conseils/<slug>) : un écran de repères pratiques (gestes utiles, à ne pas faire soi-même, quand consulter),
+// les soins du cabinet liés, le rendez-vous et les autres fiches. Mise en page éditoriale commune à tous les gabarits (comme les
+// articles) ; mobile d'abord, sans image ni JavaScript. Données structurées : MedicalWebPage (audience patient) + fil d'Ariane.
+import Gabarit from '../../layouts/Gabarit.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import Icone from '../../components/Icone.astro';
+import { site } from '../../lib/site';
+import { breadcrumbSchema, conseilSchema } from '../../lib/schema';
+import { titreCabinet, lienRdv, libelleRdv, lieu } from '../../lib/textes';
+import { conseils, soinsDuConseil } from '../../lib/conseils';
+import { espacesFines, type ConseilPatient } from '@plateforme/core';
+
+export function getStaticPaths() {
+  return conseils.map((c) => ({ params: { slug: c.slug }, props: { c } }));
+}
+
+const { c } = Astro.props as { c: ConseilPatient };
+const path = `/conseils/${c.slug}`;
+const crumbs = [
+  { name: 'Accueil', path: '/' },
+  { name: 'Fiches conseils', path: '/conseils' },
+  { name: c.titre, path },
+];
+const soins = soinsDuConseil(c);
+const autres = conseils.filter((x) => x.slug !== c.slug && x.soins.some((s) => c.soins.includes(s))).slice(0, 3);
+---
+<Gabarit title={`${c.titre} | ${site.cabinet.nom}`} description={c.resume} path={path} schemas={[conseilSchema(c, soins.map((s) => `/soins/${s.slug}`)), breadcrumbSchema(crumbs)]}>
+  <article class="section fiche-c">
+    <header class="cadre fiche-c__tete">
+      <Breadcrumb items={crumbs} />
+      <p class="sur fiche-c__sur"><span class="fiche-c__picto" aria-hidden="true"><Icone nom={`picto:${c.picto ?? 'conseil-faq'}`} secours="picto:conseil-faq" taille={24} /></span>Fiche conseil</p>
+      <h1>{espacesFines(c.titre)}</h1>
+      <p class="chapo">{c.resume}</p>
+    </header>
+
+    <div class="cadre fiche-c__corps">
+      <section class="fiche-c__bloc" aria-labelledby="gestes">
+        <h2 id="gestes">Les gestes utiles</h2>
+        <ul class="fiche-c__liste fiche-c__liste--oui">{c.points.map((p) => <li>{p}</li>)}</ul>
+      </section>
+
+      {c.aEviter && c.aEviter.length > 0 && (
+        <section class="fiche-c__bloc" aria-labelledby="a-eviter">
+          <h2 id="a-eviter">À ne pas faire soi-même</h2>
+          <ul class="fiche-c__liste fiche-c__liste--non">{c.aEviter.map((p) => <li>{p}</li>)}</ul>
+        </section>
+      )}
+
+      <section class="fiche-c__bloc fiche-c__bloc--consulter" aria-labelledby="consulter">
+        <h2 id="consulter">Quand consulter</h2>
+        <ul class="fiche-c__liste">{c.quandConsulter.map((p) => <li>{p}</li>)}</ul>
+        <p class="fiche-c__note">Ces repères généraux ne remplacent pas un examen : chaque situation est différente.</p>
+      </section>
+
+      {soins.length > 0 && (
+        <nav class="fiche-c__soins" aria-labelledby="soins-lies">
+          <h2 id="soins-lies">Au cabinet</h2>
+          <ul>{soins.map((s) => <li><a href={`/soins/${s.slug}`}>{s.titreCourt}</a></li>)}</ul>
+        </nav>
+      )}
+
+      <aside class="fiche-c__rdv" aria-label="Rendez-vous">
+        <p><strong>{titreCabinet}</strong><span>{lieu.nom ? `${lieu.nom}, ` : ''}{lieu.adresse}</span></p>
+        <a class="bouton bouton--plein" href={lienRdv(`conseil-${c.slug}`)}>{libelleRdv}</a>
+      </aside>
+    </div>
+
+    {autres.length > 0 && (
+      <nav class="cadre fiche-c__autres" aria-label="Autres fiches conseils">
+        <p class="sur">Autres fiches conseils</p>
+        <ul>{autres.map((a) => <li><a href={`/conseils/${a.slug}`}>{espacesFines(a.titre)}</a></li>)}</ul>
+        <a class="fiche-c__toutes" href="/conseils">Toutes les fiches conseils</a>
+      </nav>
+    )}
+  </article>
+</Gabarit>
+
+<style>
+  .fiche-c {
+    --c-encre: var(--g-encre, var(--encre));
+    --c-douce: var(--g-encre-douce, var(--encre-douce));
+    --c-ligne: var(--g-ligne, var(--ligne));
+    --c-accent: var(--g-accent-texte, var(--accent-vif));
+    --c-doux: var(--g-doux, var(--doux));
+  }
+  .fiche-c__tete, .fiche-c__corps, .fiche-c__autres { max-width: 820px; }
+  .fiche-c__tete h1 { font-size: clamp(1.9rem, 4.4vw, 3.2rem); margin: 4px 0 18px; text-wrap: balance; }
+  .fiche-c__tete .chapo { font-size: clamp(1.08rem, 1.6vw, 1.25rem); }
+  .fiche-c__sur { display: inline-flex; align-items: center; gap: 10px; }
+  .fiche-c__picto { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--c-doux); color: var(--c-accent); }
+
+  .fiche-c__corps { display: grid; gap: clamp(22px, 3vw, 32px); margin-top: clamp(24px, 4vw, 40px); }
+  .fiche-c__bloc h2, .fiche-c__soins h2 { font-size: clamp(1.25rem, 2.2vw, 1.55rem); margin: 0 0 10px; }
+  .fiche-c__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: var(--filet, 1px) solid var(--c-ligne); }
+  .fiche-c__liste li { position: relative; padding: 12px 0 12px 30px; border-bottom: var(--filet, 1px) solid var(--c-ligne); line-height: 1.55; max-width: 68ch; }
+  .fiche-c__liste li::before { content: ''; position: absolute; left: 4px; top: 1.2em; width: 9px; height: 9px; border-radius: 50%; background: var(--c-accent); }
+  .fiche-c__liste--oui li::before { width: 12px; height: 7px; border-radius: 0; background: none; border-left: 2.5px solid var(--c-accent); border-bottom: 2.5px solid var(--c-accent); transform: rotate(-45deg); top: 1.05em; }
+  .fiche-c__liste--non li::before { width: 12px; height: 2.5px; border-radius: 2px; background: var(--c-douce); top: 1.3em; }
+  .fiche-c__bloc--consulter { padding: clamp(18px, 3vw, 26px); border-radius: var(--rayon); background: var(--c-doux); border: var(--filet, 1px) solid var(--c-ligne); }
+  .fiche-c__bloc--consulter .fiche-c__liste { border-top: 0; }
+  .fiche-c__bloc--consulter .fiche-c__liste li:last-child { border-bottom: 0; }
+  .fiche-c__note { margin: 12px 0 0; color: var(--c-douce); font-size: 0.95rem; }
+
+  .fiche-c__soins ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .fiche-c__soins a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: var(--filet, 1px) solid var(--c-ligne); color: var(--c-encre); font-weight: 600; text-decoration: none; }
+  .fiche-c__soins a:hover { border-color: var(--c-accent); color: var(--c-accent); }
+
+  .fiche-c__rdv { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; padding: 24px 26px; border-radius: var(--rayon); border: var(--filet, 1px) solid var(--c-ligne); }
+  .fiche-c__rdv p { margin: 0; display: grid; gap: 4px; }
+  .fiche-c__rdv span { color: var(--c-douce); font-size: 0.95rem; }
+
+  .fiche-c__autres { margin-top: clamp(40px, 6vw, 72px); }
+  .fiche-c__autres ul { list-style: none; padding: 0; margin: 0; border-top: var(--filet, 1px) solid var(--c-ligne); }
+  .fiche-c__autres li { border-bottom: var(--filet, 1px) solid var(--c-ligne); }
+  .fiche-c__autres li a { display: flex; align-items: center; min-height: 52px; padding: 10px 0; color: var(--c-encre); font-weight: 600; text-decoration: none; }
+  .fiche-c__autres li a:hover { color: var(--c-accent); }
+  .fiche-c__toutes { display: inline-flex; align-items: center; min-height: 44px; margin-top: 8px; font-weight: 600; color: var(--c-accent); }
+
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .fiche-c__liste li { font-size: var(--taille-texte-telephone, 1rem); }
+    .fiche-c__rdv { padding: 22px 18px; }
+    .fiche-c__rdv span, .fiche-c__note { font-size: var(--taille-texte-telephone, 1rem); }
+    .fiche-c__rdv :global(.bouton) { width: 100%; }
+  }
+</style>

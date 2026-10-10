@@ -1,0 +1,413 @@
+// FICHES CONSEILS « PÉDICURE-PODOLOGUE » (premier lot, 2026-10-10) : une fiche = un écran (gestes utiles, ce qu'il vaut mieux ne
+// pas faire soi-même, quand consulter), liée aux soins du catalogue qu'elle accompagne (`soins`). Format : ConseilPatient du core
+// (conseils-patients.ts). Identifiants = cases de l'étape « Contenus » de l'éditeur (SUJETS_FICHES_CONSEILS, catalogue-univers.ts).
+// Ton : sobre, factuel, sans promesse de résultat, sans diagnostic à distance ; chaque fiche renvoie à la consultation. Aucun sujet à
+// faible niveau de preuve (posturologie, réflexologie). Chaque fiche est relue par Paul dans les Arrivages avant d'être servie.
+// Sources : sources.ts (vérifiées le 2026-10-10).
+//
+// Sujets du catalogue sans fiche dans ce lot (rien n'est affiché s'ils sont cochés) : « enfant-marche », « course-reprise »,
+// « senior-chutes » (formulation à valider : prévention des chutes).
+
+import type { ConseilPatient } from '@plateforme/core';
+import type { IdSourcePodo } from './sources';
+
+export type ConseilPodo = ConseilPatient & { sources: readonly IdSourcePodo[] };
+
+export const CONSEILS_PODOLOGUE: readonly ConseilPodo[] = [
+  {
+    slug: 'premier-rendez-vous',
+    titre: 'Le premier rendez-vous : ce qu’il faut apporter',
+    resume: 'Ce qui est utile le jour du premier rendez-vous chez le pédicure-podologue : documents, chaussures, semelles.',
+    picto: 'rendez-vous',
+    points: [
+      'L’ordonnance, si un médecin vous en a remis une, et votre carte Vitale.',
+      'Les chaussures que vous portez le plus : celles du travail, du sport, de tous les jours.',
+      'Vos semelles orthopédiques actuelles, même anciennes.',
+      'Les comptes rendus d’examens en rapport avec vos pieds (radiographies, échographies) et la liste de vos traitements.',
+      'Pour un enfant : son carnet de santé et ses chaussures habituelles.',
+      'Un pantalon facile à remonter jusqu’au genou : l’examen se fait pieds nus.',
+    ],
+    quandConsulter: [
+      'Signalez-le dès la prise de rendez-vous si vous avez du diabète et une plaie au pied : le délai peut être adapté.',
+      'Une douleur qui dure ou qui revient à la marche mérite un bilan, sans attendre qu’elle s’installe.',
+    ],
+    soins: ['bilan-podologique', 'semelles-orthopediques', 'soins-de-pedicurie', 'pied-diabetique', 'podologie-enfant', 'podologie-du-sport'],
+    sources: ['ameli-soin-pieds'],
+  },
+  {
+    slug: 'coupe-ongles',
+    titre: 'Couper ses ongles sans favoriser l’ongle incarné',
+    resume: 'La bonne façon de couper les ongles des orteils, et les signes qui doivent faire consulter.',
+    picto: 'ongle-incarne',
+    points: [
+      'Couper droit, sans arrondir les coins, en laissant dépasser l’ongle de 2 à 3 mm.',
+      'Limer ensuite les angles pour qu’ils ne restent pas coupants.',
+      'Utiliser un coupe-ongles ou des ciseaux propres, réservés à cet usage.',
+      'Couper après la toilette : l’ongle est plus souple.',
+      'Porter des chaussures assez longues et larges à l’avant pour que l’ongle ne soit pas comprimé.',
+    ],
+    aEviter: [
+      'Couper l’ongle en arrondi ou très court dans les coins.',
+      'Arracher un bout d’ongle avec les doigts.',
+      'Creuser sous l’ongle ou sur ses bords avec un instrument pointu.',
+    ],
+    quandConsulter: [
+      'Rougeur, gonflement ou douleur sur le bord de l’ongle, surtout s’il y a un écoulement.',
+      'Ongle épais, déformé ou difficile à couper.',
+      'Diabète, troubles de la circulation ou difficulté à atteindre ses pieds : confier la coupe à un pédicure-podologue.',
+    ],
+    soins: ['ongle-incarne', 'orthonyxie', 'soins-de-pedicurie', 'ongles-epais'],
+    sources: ['ameli-soin-pieds'],
+  },
+  {
+    slug: 'cors-durillons',
+    titre: 'Cors et durillons : ce qu’il vaut mieux ne pas faire soi-même',
+    resume: 'Entretenir une peau épaissie sans se blesser, et repérer ce qui provoque le frottement.',
+    picto: 'cor-durillon',
+    points: [
+      'Poncer doucement la peau épaissie avec une pierre ponce ou une lime, après la toilette.',
+      'Hydrater ensuite la peau, sans mettre de crème entre les orteils.',
+      'Repérer la chaussure ou la couture qui frotte : un cor se forme là où la pression se répète.',
+      'Choisir des chaussures assez larges et hautes à l’avant, sans couture épaisse sur la zone sensible.',
+    ],
+    aEviter: [
+      'Couper un cor ou un durillon avec une lame, des ciseaux ou un rasoir.',
+      'Appliquer un coricide sur la peau saine autour du cor, ou sans suivre sa notice.',
+      'Arracher la peau épaissie.',
+    ],
+    quandConsulter: [
+      'Douleur à la marche ou cor qui revient malgré des chaussures adaptées.',
+      'Rougeur, chaleur ou écoulement autour du cor.',
+      'Diabète ou troubles de la circulation : ne rien couper, ne rien appliquer soi-même, montrer la zone au pédicure-podologue.',
+    ],
+    soins: ['cors-durillons', 'orthoplastie', 'soins-de-pedicurie', 'semelles-orthopediques'],
+    sources: ['ameli-soin-pieds', 'ameli-cors'],
+  },
+  {
+    slug: 'hydratation-pieds',
+    titre: 'Hydrater la peau des pieds, sans crème entre les orteils',
+    resume: 'Laver, sécher et hydrater la peau des pieds au quotidien, et savoir quand une peau sèche doit être montrée.',
+    picto: 'creme-hydratation',
+    points: [
+      'Laver les pieds chaque jour à l’eau tiède (37 °C au plus) avec un savon doux.',
+      'Éviter les bains de pieds trop longs : une dizaine de minutes suffit.',
+      'Sécher soigneusement, en particulier entre les orteils.',
+      'Appliquer une crème hydratante sur le talon, la plante et le dessus du pied.',
+    ],
+    aEviter: [
+      'Mettre de la crème entre les orteils : la peau y reste humide.',
+      'Râper fortement les talons secs.',
+    ],
+    quandConsulter: [
+      'Crevasses douloureuses ou qui saignent au talon.',
+      'Peau qui pèle, démange ou blanchit entre les orteils.',
+      'Diabète : toute fissure de la peau est à montrer au médecin ou au pédicure-podologue.',
+    ],
+    soins: ['soins-de-pedicurie', 'cors-durillons', 'pied-diabetique', 'podologie-du-senior'],
+    sources: ['ameli-soin-pieds'],
+  },
+  {
+    slug: 'semelles-entretien',
+    titre: 'Semelles orthopédiques : entretien et renouvellement',
+    resume: 'Entretenir ses semelles orthopédiques, les changer de chaussures et savoir quand les faire contrôler.',
+    picto: 'semelle-orthopedique',
+    points: [
+      'Les porter progressivement les premiers jours, en suivant les indications reçues au cabinet.',
+      'Les retirer le soir pour les laisser sécher à l’air.',
+      'Nettoyer la surface avec un chiffon humide et un savon doux, puis laisser sécher.',
+      'Les glisser dans des chaussures fermées, à semelle intérieure amovible, dans lesquelles elles tiennent sans plier.',
+      'Prévoir un contrôle quand vous changez de chaussures ou d’activité (travail, sport).',
+      'Pour un adulte, l’Assurance Maladie prend en charge une paire par an ; pour un enfant, deux paires par an.',
+    ],
+    aEviter: [
+      'Les passer en machine ou les faire sécher sur un radiateur.',
+      'Les découper ou les poncer soi-même.',
+      'Les prêter : elles sont faites pour vos pieds.',
+    ],
+    quandConsulter: [
+      'Douleur nouvelle depuis le port des semelles.',
+      'Semelle fendue, affaissée ou déformée.',
+      'Enfant qui a changé de pointure.',
+    ],
+    soins: ['semelles-orthopediques', 'bilan-podologique', 'podologie-enfant', 'podologie-du-sport'],
+    sources: ['ameli-ortheses'],
+  },
+  {
+    slug: 'diabete-examen-quotidien',
+    titre: 'Pied diabétique : examiner ses pieds chaque jour, et ce qu’on y cherche',
+    resume: 'Un examen de quelques minutes, chaque jour, pour repérer tôt une petite blessure qui passerait inaperçue.',
+    picto: 'auto-examen',
+    points: [
+      'Regarder chaque jour le dessus, le dessous des pieds et entre les orteils, avec un miroir si besoin.',
+      'Chercher une plaie, une ampoule, une rougeur, une crevasse, un durillon, un changement de couleur ou de chaleur.',
+      'Demander l’aide d’un proche si la vue ou la souplesse rendent l’examen difficile.',
+      'Vérifier la température de l’eau avec la main ou le coude avant la toilette.',
+      'Faire examiner ses pieds par un professionnel au moins une fois par an.',
+    ],
+    aEviter: [
+      'Marcher pieds nus, même à la maison.',
+      'Utiliser un instrument tranchant ou un produit corrosif sur la peau ou les ongles.',
+      'Approcher les pieds d’une source de chaleur (bouillotte, radiateur).',
+    ],
+    quandConsulter: [
+      'Toute plaie, même petite, ou toute anomalie qui n’était pas là la veille : en parler rapidement à son médecin ou à son pédicure-podologue.',
+    ],
+    soins: ['pied-diabetique', 'soins-de-pedicurie'],
+    sources: ['ameli-diabete-pieds', 'ameli-soin-pieds'],
+  },
+  {
+    slug: 'diabete-chaussage',
+    titre: 'Pied diabétique : chaussures et chaussettes',
+    resume: 'Choisir et porter des chaussures et des chaussettes qui ne blessent pas des pieds moins sensibles.',
+    picto: 'chaussure-confort',
+    points: [
+      'Essayer les chaussures en fin de journée, quand les pieds sont un peu gonflés.',
+      'Choisir des chaussures larges, fermées à l’arrière, à lacets ou à attache réglable, sans couture saillante à l’intérieur.',
+      'Passer la main dans la chaussure avant de la mettre : un petit caillou peut ne pas être senti.',
+      'Porter une chaussure neuve quelques heures seulement les premiers jours, puis regarder ses pieds.',
+      'Changer de chaussettes chaque jour ; préférer des chaussettes sans coutures épaisses et sans élastique serré.',
+    ],
+    aEviter: [
+      'Tongs, mules et chaussures trop serrées.',
+      'Marcher pieds nus ou en chaussettes à l’extérieur.',
+    ],
+    quandConsulter: [
+      'Rougeur ou frottement après le port d’une chaussure.',
+      'Pied déformé dans lequel les chaussures du commerce blessent : le médecin peut prescrire des semelles ou des chaussures adaptées.',
+    ],
+    soins: ['pied-diabetique', 'semelles-orthopediques'],
+    sources: ['ameli-diabete-pieds', 'ameli-soin-pieds'],
+  },
+  {
+    slug: 'diabete-signes-alerte',
+    titre: 'Pied diabétique : les signes qui font consulter sans attendre',
+    resume: 'Les signes à montrer rapidement à un professionnel de santé, même s’ils ne font pas mal.',
+    picto: 'pied-diabetique',
+    points: [
+      'Une plaie, même petite, qui ne cicatrise pas ou qui suinte.',
+      'Une ampoule, une crevasse, un durillon qui change d’aspect.',
+      'Une rougeur, un gonflement, un pied plus chaud ou de couleur inhabituelle.',
+      'Un ongle incarné, un ongle trop long ou coupé trop court.',
+      'Des douleurs ou des crampes dans les jambes à la marche.',
+    ],
+    quandConsulter: [
+      'Dès l’apparition d’un de ces signes, sans attendre qu’il fasse mal : le diabète peut diminuer la sensibilité des pieds.',
+      'Contactez votre médecin traitant ; votre pédicure-podologue peut aussi vous orienter.',
+    ],
+    soins: ['pied-diabetique'],
+    sources: ['ameli-diabete-pieds'],
+  },
+  {
+    slug: 'diabete-prise-en-charge',
+    titre: 'Pied diabétique : grade de risque et prise en charge des séances',
+    resume: 'Le grade de risque podologique et les séances de prévention prises en charge par l’Assurance Maladie.',
+    picto: 'carte-vitale',
+    points: [
+      'Le grade de risque (0 à 3) est évalué lors d’un bilan : il tient compte de la sensibilité des pieds, de la circulation, des déformations et des plaies passées.',
+      'Grades 0 et 1 : un bilan de gradation par an est pris en charge.',
+      'Grade 2 : un forfait annuel de 5 séances de prévention chez le pédicure-podologue.',
+      'Grade 3 : un forfait annuel de 6 séances, ou de 8 séances avec une plaie en cours de cicatrisation.',
+      'Les conditions détaillées sont publiées sur ameli.fr ; le cabinet vous les précise lors du bilan.',
+    ],
+    quandConsulter: [
+      'Au moins une fois par an pour l’examen des pieds, même sans gêne.',
+      'Sans attendre en cas de plaie ou de changement d’aspect d’un pied.',
+    ],
+    soins: ['pied-diabetique'],
+    sources: ['ameli-podo-diabete', 'ameli-diabete-pieds'],
+  },
+  {
+    slug: 'enfant-chaussage',
+    titre: 'Chausser son enfant : pointure, maintien, premières chaussures',
+    resume: 'Vérifier la pointure, choisir le maintien et la souplesse adaptés à l’âge de l’enfant.',
+    picto: 'chaussure-enfant',
+    points: [
+      'Vérifier la pointure régulièrement : le pied grandit vite et l’enfant ne dit pas toujours qu’il est serré.',
+      'Essayer debout, avec les chaussettes habituelles, en laissant un espace devant le plus long orteil.',
+      'Choisir un contrefort qui tient le talon et une semelle souple à l’avant, qui plie avec le pied.',
+      'Préférer une fermeture réglable (lacets, scratch) qui maintient le pied dans la chaussure.',
+      'À la maison, sur un sol sans danger, marcher pieds nus ou en chaussons souples est habituel.',
+    ],
+    aEviter: [
+      'Des chaussures déjà déformées par un autre enfant.',
+      'Acheter trop grand « pour l’année » : le pied glisse dans la chaussure.',
+    ],
+    quandConsulter: [
+      'Douleur au pied ou à la cheville, ou enfant qui refuse de marcher.',
+      'Usure très différente d’une chaussure à l’autre, ou chutes qui vous inquiètent.',
+      'Une façon de marcher qui vous interroge : le bilan permet d’en parler et d’examiner l’enfant.',
+    ],
+    soins: ['podologie-enfant', 'bilan-podologique'],
+    sources: ['ameli-soin-pieds'],
+  },
+  {
+    slug: 'verrues-plantaires',
+    titre: 'Verrues plantaires : contagion, piscine, quand consulter',
+    resume: 'Limiter la transmission des verrues plantaires et savoir quand les faire examiner.',
+    picto: 'verrue-plantaire',
+    points: [
+      'Porter des sandales dans les piscines, les douches collectives et les vestiaires.',
+      'Garder sa serviette et ses chaussons pour soi.',
+      'Sécher soigneusement les pieds après la douche.',
+      'Changer de chaussettes chaque jour.',
+    ],
+    aEviter: [
+      'Gratter, couper ou arracher une verrue.',
+      'Appliquer longtemps un produit sans avis, surtout en cas de diabète ou de peau fragile.',
+    ],
+    quandConsulter: [
+      'Verrue douloureuse à la marche, qui s’étend ou se multiplie.',
+      'Doute entre une verrue et un cor.',
+      'Diabète ou troubles de la circulation : ne rien appliquer soi-même.',
+    ],
+    soins: ['verrues-plantaires', 'podologie-enfant', 'soins-de-pedicurie'],
+    sources: ['ameli-soin-pieds'],
+  },
+  {
+    slug: 'course-chaussures',
+    titre: 'Chaussures de course : choisir et renouveler',
+    resume: 'Choisir ses chaussures de course selon sa pratique, et repérer le moment de les changer.',
+    picto: 'chaussure-course',
+    points: [
+      'Choisir selon le terrain (route, chemins), la distance et le nombre de sorties par semaine.',
+      'Essayer en fin de journée, avec les chaussettes de course, en laissant un espace devant les orteils.',
+      'Courir quelques sorties courtes avec une paire neuve avant de l’emporter sur une longue distance.',
+      'Changer de paire quand la semelle est usée de façon visible, s’affaisse ou se déforme.',
+      'Apporter ses chaussures de course au bilan : leur usure renseigne sur la foulée.',
+    ],
+    aEviter: [
+      'Changer de modèle juste avant une course importante.',
+      'Courir avec des chaussures trop courtes : les ongles butent en descente.',
+    ],
+    quandConsulter: [
+      'Douleur qui revient à chaque sortie, au pied, à la cheville ou au genou.',
+      'Douleur sous le talon au lever ou au début de la course.',
+      'Ampoules ou ongles noirs à répétition.',
+    ],
+    soins: ['podologie-du-sport', 'semelles-orthopediques', 'douleur-talon', 'bilan-podologique'],
+    sources: ['ameli-soin-pieds'],
+  },
+  {
+    slug: 'course-preparer-pieds',
+    titre: 'Préparer ses pieds avant une course longue',
+    resume: 'Les gestes utiles dans les jours qui précèdent une course longue : ongles, chaussures, chaussettes, frottements.',
+    picto: 'sport-course',
+    points: [
+      'Courir avec des chaussures et des chaussettes déjà portées à l’entraînement.',
+      'Couper les ongles droits quelques jours avant, pas la veille.',
+      'Protéger les zones qui frottent avec un pansement « seconde peau » avant le départ.',
+      'Hydrater la peau des pieds les jours précédents, sans crème entre les orteils.',
+      'Après la course, regarder ses pieds : ampoules, ongles, rougeurs.',
+    ],
+    aEviter: [
+      'Étrenner une paire de chaussures le jour de la course.',
+      'Arracher la peau d’une ampoule après l’arrivée.',
+    ],
+    quandConsulter: [
+      'Ongle noir douloureux ou qui se décolle.',
+      'Ampoule qui tarde à cicatriser ou change d’aspect.',
+      'Douleur qui persiste plusieurs jours après la course.',
+    ],
+    soins: ['podologie-du-sport', 'soins-de-pedicurie'],
+    sources: ['ameli-ampoules', 'ameli-soin-pieds'],
+  },
+  {
+    slug: 'chaussures-securite',
+    titre: 'Chaussures de sécurité : les porter au quotidien',
+    resume: 'Bien choisir, porter et entretenir ses chaussures de sécurité quand on travaille debout toute la journée.',
+    picto: 'chaussure-confort',
+    points: [
+      'Essayer plusieurs pointures et largeurs, avec les chaussettes de travail : un embout trop étroit se règle souvent par une autre taille ou un autre modèle.',
+      'Lacer la chaussure entièrement pour que le pied ne glisse pas vers l’embout.',
+      'Changer de chaussettes chaque jour, et de chaussures si elles sont trempées.',
+      'Faire sécher les chaussures à l’air, loin d’un radiateur ou d’un four.',
+      'Contrôler l’état des chaussures avant de les mettre : semelle usée, embout déformé, tige décousue.',
+      'Semelles orthopédiques : vérifier dans la notice ou auprès du fabricant que le modèle est prévu pour les recevoir.',
+    ],
+    aEviter: [
+      'Découper ou modifier la chaussure (embout, tige, semelle).',
+      'Remplacer la semelle d’origine sans avoir vérifié la notice du fabricant.',
+      'Continuer à porter une paire abîmée : elle est à remplacer.',
+    ],
+    quandConsulter: [
+      'Douleurs aux pieds en fin de poste, ampoules, cors ou mycoses qui reviennent.',
+      'Besoin de semelles orthopédiques compatibles avec les chaussures de travail.',
+      'Le médecin du travail peut aussi être sollicité pour rechercher une solution adaptée au poste.',
+    ],
+    soins: ['semelles-orthopediques', 'bilan-podologique', 'cors-durillons', 'douleur-talon'],
+    sources: ['inrs-ed6509', 'legifrance-l4624-3'],
+  },
+  {
+    slug: 'talons',
+    titre: 'Chaussures à talons : bien les choisir',
+    resume: 'Des repères pour choisir et porter des chaussures à talons en ménageant l’avant-pied.',
+    picto: 'chaussure-ville',
+    points: [
+      'Au quotidien, préférer un talon bas, de 3 à 4 cm au plus, large et stable.',
+      'Choisir un avant-pied assez large, à bout rond, pour que les orteils ne soient pas serrés.',
+      'Préférer un modèle qui tient le pied (bride, lacet) : le pied glisse moins vers l’avant.',
+      'Garder les talons hauts pour des moments courts, et prévoir une paire plate pour les trajets.',
+      'Essayer en fin de journée, quand le pied est un peu gonflé.',
+    ],
+    aEviter: [
+      'Porter toute la journée des talons hauts à bout pointu.',
+      'Porter une paire neuve plusieurs heures d’affilée dès le premier jour.',
+    ],
+    quandConsulter: [
+      'Douleur sous l’avant-pied, qui revient à chaque port.',
+      'Bosse douloureuse à la base du gros orteil, cors ou durillons qui reviennent.',
+      'Entorses de cheville à répétition.',
+    ],
+    soins: ['cors-durillons', 'orthoplastie', 'semelles-orthopediques', 'bilan-podologique'],
+    sources: ['ameli-hallux-valgus', 'ameli-soin-pieds'],
+  },
+  {
+    slug: 'chaussettes-hygiene',
+    titre: 'Chaussettes et hygiène des pieds au quotidien',
+    resume: 'Les gestes d’hygiène simples qui limitent l’humidité, les odeurs et la transmission des mycoses.',
+    picto: 'pied-dessus',
+    points: [
+      'Laver les pieds chaque jour et les sécher avec soin, surtout entre les orteils.',
+      'Changer de chaussettes chaque jour ; préférer des fibres qui laissent respirer la peau.',
+      'Choisir des chaussettes sans coutures épaisses si les pieds sont fragiles.',
+      'Alterner deux paires de chaussures si les pieds transpirent beaucoup, et les aérer.',
+      'Porter des sandales dans les douches collectives et à la piscine.',
+    ],
+    aEviter: [
+      'Garder des chaussettes ou des chaussures humides toute la journée.',
+      'Partager serviettes, chaussons ou coupe-ongles.',
+    ],
+    quandConsulter: [
+      'Démangeaisons, peau qui pèle ou se fissure entre les orteils.',
+      'Ongle qui jaunit, s’épaissit ou s’effrite.',
+      'Odeur qui persiste malgré une hygiène régulière.',
+    ],
+    soins: ['mycose-ongles', 'soins-de-pedicurie', 'verrues-plantaires', 'pied-diabetique'],
+    sources: ['ameli-soin-pieds', 'inrs-ed6509'],
+  },
+  {
+    slug: 'ampoules-randonnee',
+    titre: 'Randonnée : ampoules, frottements et premiers soins',
+    resume: 'Limiter les frottements en randonnée et protéger une ampoule sans l’aggraver.',
+    picto: 'chaussure-course',
+    points: [
+      'Partir avec des chaussures déjà portées et des chaussettes sans plis, à la bonne taille.',
+      'Ajuster le laçage : plus serré sur le cou-de-pied en descente pour que les orteils ne butent pas.',
+      'Poser un pansement « seconde peau » dès qu’une zone chauffe, avant que l’ampoule n’apparaisse.',
+      'Petite ampoule fermée : ne pas la percer, la protéger par un pansement sans serrer.',
+      'Garder la peau qui recouvre l’ampoule : elle protège la zone.',
+    ],
+    aEviter: [
+      'Arracher la peau d’une ampoule.',
+      'Continuer à marcher sans protéger une zone qui frotte.',
+      'Percer une ampoule en cas de diabète : la montrer à un professionnel.',
+    ],
+    quandConsulter: [
+      'Ampoules nombreuses ou à des endroits inhabituels.',
+      'Ampoule qui tarde à cicatriser ou change d’aspect.',
+      'Ampoules qui reviennent toujours au même endroit : le chaussage ou l’appui peut être en cause.',
+    ],
+    soins: ['podologie-du-sport', 'soins-de-pedicurie', 'orthoplastie', 'pied-diabetique'],
+    sources: ['ameli-ampoules'],
+  },
+];

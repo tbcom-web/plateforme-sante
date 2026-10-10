@@ -1,0 +1,69 @@
+---
+// Bloc « Fiches conseils » d'une page de soin, commun à tous les gabarits (classique, tableau, village, revue) : 1 à 3 fiches
+// pratiques liées au soin (core/conseils-patients.ts), seulement celles servies au site (acceptées par Paul, choisies par le
+// praticien). Picto, titre, résumé d'une ligne, lien vers la fiche ; lien vers toutes les fiches. Sans JavaScript ; rien n'est
+// affiché s'il n'y a aucune fiche pour ce soin.
+import Icone from './Icone.astro';
+import { conseils, conseilsDuSoin } from '../lib/conseils';
+import { nouveauGabarit } from '../lib/gabarits';
+import { espacesFines, type Soin } from '@plateforme/core';
+
+interface Props { soin: Soin }
+const { soin } = Astro.props;
+const fiches = conseilsDuSoin(soin.slug);
+const id = `fiches-conseils-${soin.slug}`;
+---
+{fiches.length > 0 && (
+  <section class:list={['fc', nouveauGabarit ? 'g-section g-bloc' : 'section']} aria-labelledby={id}>
+    <div class:list={[nouveauGabarit ? 'g-cadre' : 'cadre', 'fc__dedans']}>
+      <div class="fc__tete">
+        <h2 id={id} class="fc__titre">Fiches conseils</h2>
+        {conseils.length > fiches.length && <a class="fc__toutes" href="/conseils">Toutes les fiches</a>}
+      </div>
+      <ul class="fc__liste">
+        {fiches.map((c) => (
+          <li>
+            <a href={`/conseils/${c.slug}`}>
+              <span class="fc__picto" aria-hidden="true"><Icone nom={`picto:${c.picto ?? 'conseil-faq'}`} secours="picto:conseil-faq" taille={28} /></span>
+              <span class="fc__texte">
+                <span class="fc__nom">{espacesFines(c.titre)}</span>
+                <span class="fc__resume">{c.resume}</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}
+
+<style>
+  /* Jetons du gabarit classique (--encre…) ou des gabarits tableau, village, revue (--g-encre…). */
+  .fc {
+    --fc-encre: var(--g-encre, var(--encre));
+    --fc-douce: var(--g-encre-douce, var(--encre-douce));
+    --fc-ligne: var(--g-ligne, var(--ligne));
+    --fc-accent: var(--g-accent-texte, var(--accent-vif));
+    --fc-doux: var(--g-doux, var(--doux));
+  }
+  .fc__tete { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin: 0 0 12px; }
+  .fc__titre { margin: 0; font-size: clamp(1.25rem, 2.4vw, 1.6rem); }
+  .fc__toutes { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--fc-accent); }
+  .fc__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  @media (min-width: 760px) { .fc__liste { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); } }
+  .fc__liste a { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; min-height: 48px; height: 100%; padding: 16px; border-radius: var(--rayon); border: var(--filet, 1px) solid var(--fc-ligne); background: var(--fc-doux); color: var(--fc-encre); text-decoration: none; }
+  .fc__liste a:hover { border-color: var(--fc-accent); }
+  .fc__liste a:focus-visible { outline: 2px solid var(--fc-accent); outline-offset: 2px; }
+  .fc__picto { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--g-carte, var(--fond)); color: var(--fc-accent); }
+  .fc__texte { display: grid; gap: 4px; }
+  .fc__nom { font-weight: 700; line-height: 1.3; color: var(--fc-encre); text-wrap: balance; }
+  .fc__resume { color: var(--fc-douce); font-size: 0.95rem; line-height: 1.45; }
+  /* Revue : même colonne de lecture que la fiche */
+  :global(.coquille--revue) .fc__dedans { width: min(760px, 100% - var(--gouttiere)); }
+  :global(.coquille--revue) .fc__titre { font-weight: 500; }
+  /* Téléphone (≤ 759 px, TELEPHONE de la charte) */
+  @media (max-width: 759px) {
+    .fc__liste a { padding: 14px; gap: 12px; }
+    .fc__resume { font-size: var(--taille-texte-telephone, 1rem); }
+  }
+</style>

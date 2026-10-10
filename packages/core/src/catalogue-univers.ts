@@ -39,7 +39,11 @@ export const LIBELLES_STATUTS_UNIVERS: Record<StatutUnivers, string> = {
 
 export type ThemeFlux = (typeof THEMES_FLUX)[number];
 
-/** Sujets de fiches conseils pour les patients (contenus rédigés plus tard, relus comme les fiches de soins) */
+/**
+ * Sujets de fiches conseils pour les patients (cases de l'étape « Contenus » de l'éditeur). Textes : packs de contenus
+ * (packages/contenus/professions/podologue/conseils.ts, conseils-patients.ts), relus dans les Arrivages ; un sujet sans texte
+ * n'affiche rien. Libellés identiques aux titres des fiches.
+ */
 export const SUJETS_FICHES_CONSEILS = [
   { id: 'premier-rendez-vous', titre: 'Le premier rendez-vous : ce qu’il faut apporter' },
   { id: 'coupe-ongles', titre: 'Couper ses ongles sans favoriser l’ongle incarné' },
@@ -57,6 +61,11 @@ export const SUJETS_FICHES_CONSEILS = [
   { id: 'course-reprise', titre: 'Reprendre la course progressivement' },
   { id: 'course-preparer-pieds', titre: 'Préparer ses pieds avant une course longue' },
   { id: 'senior-chutes', titre: 'Pieds, chaussage et prévention des chutes après 65 ans' },
+  // Ajouts du 2026-10-10 (demande de Paul : métiers debout, talons, hygiène, randonnée)
+  { id: 'chaussures-securite', titre: 'Chaussures de sécurité : les porter au quotidien' },
+  { id: 'talons', titre: 'Chaussures à talons : bien les choisir' },
+  { id: 'chaussettes-hygiene', titre: 'Chaussettes et hygiène des pieds au quotidien' },
+  { id: 'ampoules-randonnee', titre: 'Randonnée : ampoules, frottements et premiers soins' },
 ] as const;
 export type SujetFicheConseil = (typeof SUJETS_FICHES_CONSEILS)[number]['id'];
 

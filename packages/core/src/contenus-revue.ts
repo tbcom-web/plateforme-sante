@@ -25,11 +25,16 @@ export type PackContenus = {
   priseEnCharge?: Readonly<Record<string, string>>;
   texteContratPco?: Readonly<Record<string, string>>;
   sources?: readonly { id: string; organisme: string; titre: string; url: string; verifie: boolean }[];
+  /** Articles pré-écrits (importés ensuite dans le flux /admin/flux) : contenus complémentaires, non obligatoires */
+  articles?: readonly { slug: string; titre: string; resume: string; theme: string; corps: string; sources: readonly string[] }[];
+  /** Fiches conseils pour les patients (conseils-patients.ts) : contenus complémentaires, non obligatoires */
+  conseils?: readonly { slug: string; titre: string; resume: string; points: readonly string[]; aEviter?: readonly string[]; quandConsulter: readonly string[]; soins: readonly string[]; sources: readonly string[] }[];
 };
 
-export type NatureContenu = 'page' | 'fiche' | 'faq' | 'mentions' | 'prise-en-charge' | 'onboarding';
+export type NatureContenu = 'page' | 'fiche' | 'faq' | 'mentions' | 'prise-en-charge' | 'onboarding' | 'article' | 'conseil';
 export const LIBELLES_NATURES: Readonly<Record<NatureContenu, string>> = {
   page: 'Page', fiche: 'Fiche', faq: 'Question de la FAQ', mentions: 'Mentions', 'prise-en-charge': 'Prise en charge', onboarding: 'Questions d’onboarding',
+  article: 'Article pré-écrit', conseil: 'Fiche conseil',
 };
 
 export type BlocContenu = { titre?: string; corps: string; sources: string[]; condition?: string };
@@ -62,7 +67,7 @@ export function empreinteTexte(t: string): string {
 export const slugContenu = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50).replace(/-+$/, '') || 'x';
 
 export const cleContenu = (profession: string, nature: NatureContenu, id: string) => `contenu:${profession}:${nature}:${id}`;
-export const estCleContenu = (cle: unknown): cle is string => typeof cle === 'string' && /^contenu:[a-z0-9-]{2,40}:(page|fiche|faq|mentions|prise-en-charge|onboarding):[a-z0-9-]{1,60}$/.test(cle);
+export const estCleContenu = (cle: unknown): cle is string => typeof cle === 'string' && /^contenu:[a-z0-9-]{2,40}:(page|fiche|faq|mentions|prise-en-charge|onboarding|article|conseil):[a-z0-9-]{1,60}$/.test(cle);
 
 const uniques = (l: readonly (readonly string[] | undefined)[]) => [...new Set(l.flatMap((x) => x ?? []))];
 
@@ -127,6 +132,28 @@ export function contenusDuPack(p: PackContenus): ContenuRevue[] {
       prefixesControle: ['onboarding '],
     }));
   }
+  // Contenus complémentaires (pack « complement » ou pack métier) : jamais obligatoires pour ouvrir la profession, mais chacun
+  // n'est servi aux sites publiés qu'une fois accepté pour son texte actuel (conseils-patients.ts, slugsAcceptes)
+  for (const a of p.articles ?? []) {
+    l.push(finir({
+      cle: cleContenu(prof, 'article', a.slug), profession: prof, nature: 'article', id: a.slug, titre: a.titre, chapo: a.resume, obligatoire: false,
+      blocs: [{ titre: `Thème : ${a.theme}`, corps: a.corps, sources: [...a.sources] }],
+      prefixesControle: [`article ${a.slug} `, `article ${a.slug}:`],
+    }));
+  }
+  for (const c of p.conseils ?? []) {
+    const liste = (x: readonly string[]) => x.map((t) => `- ${t}`).join('\n');
+    l.push(finir({
+      cle: cleContenu(prof, 'conseil', c.slug), profession: prof, nature: 'conseil', id: c.slug, titre: c.titre, chapo: c.resume, obligatoire: false,
+      blocs: [
+        { titre: 'Les gestes utiles', corps: liste(c.points), sources: [...c.sources] },
+        ...(c.aEviter?.length ? [{ titre: 'À ne pas faire soi-même', corps: liste(c.aEviter), sources: [...c.sources] }] : []),
+        { titre: 'Quand consulter', corps: liste(c.quandConsulter), sources: [...c.sources] },
+        { titre: 'Affichée sur les pages des soins', corps: liste(c.soins), sources: [] },
+      ],
+      prefixesControle: [`conseil ${c.slug} `, `conseil ${c.slug}:`],
+    }));
+  }
   return l;
 }
 
@@ -157,7 +184,10 @@ export type ProgressionPack = { profession: string; acceptes: number; total: num
  * client) seulement si tous le sont, que le contrôle des packs n'a aucune erreur et que le pack n'est pas « en préparation ».
  */
 export function progressionPack(contenus: readonly ContenuRevue[], revues: Readonly<Record<string, RevueContenu | undefined>>, opts: { erreursControle?: number; statutPack?: string } = {}): ProgressionPack {
-  const ob = contenus.filter((c) => c.obligatoire);
+  // Pack « complement » (contenus ajoutés à une profession déjà ouverte : articles, fiches conseils) : la progression compte tous
+  // ses contenus, et il ne ferme jamais la profession (chaque contenu attend seulement sa propre acceptation)
+  const complement = opts.statutPack === 'complement';
+  const ob = contenus.filter((c) => c.obligatoire || complement);
   const etats = ob.map((c) => etatContenu(c, revues[c.cle]));
   const acceptes = etats.filter((e) => e === 'accepte').length;
   return {
@@ -166,7 +196,7 @@ export function progressionPack(contenus: readonly ContenuRevue[], revues: Reado
     aRetravailler: etats.filter((e) => e === 'a_retravailler').length,
     refuses: etats.filter((e) => e === 'refuse').length,
     enAttente: etats.filter((e) => e === 'en_attente').length,
-    publiable: ob.length > 0 && acceptes === ob.length && !(opts.erreursControle ?? 0) && opts.statutPack !== 'en-preparation',
+    publiable: complement || (ob.length > 0 && acceptes === ob.length && !(opts.erreursControle ?? 0) && opts.statutPack !== 'en-preparation'),
   };
 }
 

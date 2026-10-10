@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server';
 // Packs de contenus des professions (packages/contenus/professions/<id>/index.ts) : importés depuis le dépôt (transpilePackages
 // active la compilation des dossiers externes). Ajouter un pack : une ligne dans PACKS.
 import { controlerPackPsychomot, PACK_PSYCHOMOTRICIEN } from '../../../../packages/contenus/professions/psychomotricien';
+// Pack complémentaire podologue (articles pré-écrits, fiches conseils patients) : statut « complement », ne ferme jamais la profession
+import { controlerPackPodologue, PACK_PODOLOGUE } from '../../../../packages/contenus/professions/podologue';
 
 // Contenus dans les Arrivages (contenus-revue.ts, docs/espaces-admin.md) : cartes de revue des textes des packs, contrôle des
 // packs (mêmes erreurs et avertissements que `npm run controle:packs`), revues enregistrées dans illustrations_revues (0021) sous
@@ -14,6 +16,7 @@ type EntreePack = { pack: PackContenus; controler: (p: { statut: string }) => { 
 
 const PACKS: readonly EntreePack[] = [
   { pack: PACK_PSYCHOMOTRICIEN as unknown as PackContenus, controler: controlerPackPsychomot },
+  { pack: PACK_PODOLOGUE as unknown as PackContenus, controler: controlerPackPodologue },
 ];
 
 export type SourceAffichee = { id: string; organisme: string; titre: string; url: string; verifie: boolean };
@@ -67,7 +70,8 @@ export async function contenuActuel(cle: string): Promise<ContenuArrivage | null
  * À lire par le parcours (/essai) avant d'ouvrir une profession.
  */
 export async function packPubliable(profession: string): Promise<boolean> {
-  const p = (await getPacksRevue(profession))[0];
+  // Un pack « complement » (contenus ajoutés à une profession ouverte) ne décide jamais de l'ouverture
+  const p = (await getPacksRevue(profession)).find((x) => x.statutPack !== 'complement');
   return p ? p.progression.publiable : true;
 }
 
@@ -80,4 +84,18 @@ export function catalogueDuPack(profession: string): { slug: string; titre_court
   const e = PACKS.find((x) => x.pack.profession === profession);
   if (!e?.pack.fiches?.length) return null;
   return e.pack.fiches.map((f) => ({ slug: f.slug, titre_court: f.titreCourt, titre: f.titre, resume: f.resume, corps: f.corps }));
+}
+
+/** Articles pré-écrits des packs (nature « article ») et leur état de revue : à importer en brouillon dans le flux une fois acceptés */
+export type ArticlePack = { cle: string; profession: string; slug: string; titre: string; resume: string; theme: string; corps: string; etat: ReturnType<typeof etatContenu> };
+export async function articlesDesPacks(): Promise<ArticlePack[]> {
+  const out: ArticlePack[] = [];
+  for (const p of await getPacksRevue()) {
+    const entree = PACKS.find((e) => e.pack.profession === p.profession);
+    for (const a of entree?.pack.articles ?? []) {
+      const c = p.contenus.find((x) => x.nature === 'article' && x.id === a.slug);
+      if (c) out.push({ cle: c.cle, profession: p.profession, slug: a.slug, titre: a.titre, resume: a.resume, theme: a.theme, corps: a.corps, etat: etatContenu(c, p.revues[c.cle]) });
+    }
+  }
+  return out;
 }

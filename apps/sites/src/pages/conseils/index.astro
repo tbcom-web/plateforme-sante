@@ -1,0 +1,96 @@
+---
+// Page « Fiches conseils » : toutes les fiches pratiques servies au site (core/conseils-patients.ts ; site publié : acceptées par
+// Paul et choisies par le praticien), regroupées par soin du cabinet dans l'ordre des soins, puis « Autres conseils ». Sans fiche :
+// page non indexée, absente du plan du site et du pied de page (comme /actualites sans article). Même balisage pour tous les gabarits ; titres H1 / H2.
+import Gabarit from '../../layouts/Gabarit.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import TetePage from '../../components/gabarits/TetePage.astro';
+import Icone from '../../components/Icone.astro';
+import { site, nomPraticien } from '../../lib/site';
+import { breadcrumbSchema, conseilsSchema } from '../../lib/schema';
+import { conseils } from '../../lib/conseils';
+import { nouveauGabarit } from '../../lib/gabarits';
+import { espacesFines, type ConseilPatient } from '@plateforme/core';
+
+const crumbs = [{ name: 'Accueil', path: '/' }, { name: 'Fiches conseils', path: '/conseils' }];
+const description = `Fiches pratiques pour le quotidien et repères pour savoir quand consulter, par ${nomPraticien}${site.cabinet.ville ? ` à ${site.cabinet.ville}` : ''}.`;
+const chapo = conseils.length ? 'Des repères pratiques, à lire avant ou après le rendez-vous. Ils ne remplacent pas un examen au cabinet.' : 'Les premières fiches arrivent bientôt.';
+// Groupes : chaque fiche une seule fois, sous son soin principal (premier de ses soins proposé par le cabinet), groupes dans
+// l'ordre des soins du site
+const principal = (c: ConseilPatient) => c.soins.find((x) => site.soins.some((s) => s.slug === x));
+const groupes = site.soins
+  .map((s) => ({ titre: s.titreCourt, href: `/soins/${s.slug}`, fiches: conseils.filter((c) => principal(c) === s.slug) }))
+  .filter((g) => g.fiches.length > 0);
+const autres: ConseilPatient[] = conseils.filter((c) => !principal(c));
+if (autres.length) groupes.push({ titre: 'Autres conseils', href: '', fiches: autres });
+---
+<Gabarit title={`Fiches conseils | ${nomPraticien}`} description={description} path="/conseils" schemas={[conseilsSchema(conseils, description), breadcrumbSchema(crumbs)]} noindex={conseils.length === 0}>
+  {nouveauGabarit ? (
+    <TetePage crumbs={crumbs} sur={site.cabinet.ville || 'Conseils'} chapo={chapo}>
+      <h1 slot="titre">Fiches conseils</h1>
+    </TetePage>
+  ) : (
+    <section class="cadre tete-page">
+      <Breadcrumb items={crumbs} />
+      <div class="tete-page__grille tete-page__grille--simple">
+        <div>
+          <p class="sur sur--index"><b aria-hidden="true">{String(conseils.length).padStart(2, '0')} —</b> {site.cabinet.ville || 'Conseils'}</p>
+          <h1>Fiches conseils</h1>
+        </div>
+        <p class="chapo">{chapo}</p>
+      </div>
+    </section>
+  )}
+  <div class:list={['conseils', nouveauGabarit ? 'g-section g-bloc' : 'section section--serree']}>
+    <div class:list={[nouveauGabarit ? 'g-cadre' : 'cadre', 'conseils__dedans']}>
+      {groupes.map((g) => (
+        <section class="conseils__groupe" aria-labelledby={`g-${g.href ? g.href.split('/').pop() : 'autres'}`}>
+          <h2 id={`g-${g.href ? g.href.split('/').pop() : 'autres'}`} class="conseils__soin">
+            {g.href ? <a href={g.href}>{g.titre}</a> : g.titre}
+          </h2>
+          <ul class="conseils__liste">
+            {g.fiches.map((c) => (
+              <li>
+                <a href={`/conseils/${c.slug}`}>
+                  <span class="conseils__picto" aria-hidden="true"><Icone nom={`picto:${c.picto ?? 'conseil-faq'}`} secours="picto:conseil-faq" taille={28} /></span>
+                  <span class="conseils__texte">
+                    <span class="conseils__nom">{espacesFines(c.titre)}</span>
+                    <span class="conseils__resume">{c.resume}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  </div>
+</Gabarit>
+
+<style>
+  .conseils {
+    --c-encre: var(--g-encre, var(--encre));
+    --c-douce: var(--g-encre-douce, var(--encre-douce));
+    --c-ligne: var(--g-ligne, var(--ligne));
+    --c-accent: var(--g-accent-texte, var(--accent-vif));
+    --c-doux: var(--g-doux, var(--doux));
+  }
+  .section--serree { padding-top: 0; }
+  .conseils__dedans { display: grid; gap: clamp(28px, 4vw, 48px); }
+  .conseils__soin { margin: 0 0 12px; font-size: clamp(1.2rem, 2.2vw, 1.5rem); padding-bottom: 10px; border-bottom: var(--filet-fort, 2px) solid var(--c-encre); }
+  .conseils__soin a { color: var(--c-encre); text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; }
+  .conseils__soin a:hover { color: var(--c-accent); text-decoration: underline; }
+  .conseils__liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  @media (min-width: 760px) { .conseils__liste { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); } }
+  .conseils__liste a { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; height: 100%; min-height: 48px; padding: 16px; border-radius: var(--rayon); border: var(--filet, 1px) solid var(--c-ligne); background: var(--c-doux); color: var(--c-encre); text-decoration: none; }
+  .conseils__liste a:hover { border-color: var(--c-accent); }
+  .conseils__liste a:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+  .conseils__picto { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--g-carte, var(--fond)); color: var(--c-accent); }
+  .conseils__texte { display: grid; gap: 4px; }
+  .conseils__nom { font-weight: 700; line-height: 1.3; text-wrap: balance; }
+  .conseils__resume { color: var(--c-douce); font-size: 0.95rem; line-height: 1.45; }
+  @media (max-width: 759px) {
+    .conseils__liste a { padding: 14px; gap: 12px; }
+    .conseils__resume { font-size: var(--taille-texte-telephone, 1rem); }
+  }
+</style>

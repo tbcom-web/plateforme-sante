@@ -125,7 +125,7 @@ function nettoyer(brut: unknown, modeles: string[], edition: boolean, marquesImp
     },
     flux: { mode: parmi(d.flux.mode, ['manuel', 'auto'] as const, 'manuel'), themes: liste(d.flux.themes, 10, 40) },
     photos: { accueil: photo(d.photos.accueil), panorama: photo(d.photos.panorama), cabinet: d.photos.cabinet.map(photo).filter(Boolean).slice(0, 6) },
-    ...(Array.isArray(d.fichesConseils) ? { fichesConseils: d.fichesConseils.filter((f) => SUJETS_FICHES_CONSEILS.some((x) => x.id === f)).slice(0, 12) } : {}),
+    ...(Array.isArray(d.fichesConseils) ? { fichesConseils: d.fichesConseils.filter((f) => SUJETS_FICHES_CONSEILS.some((x) => x.id === f)).slice(0, SUJETS_FICHES_CONSEILS.length) } : {}),
     // Couleurs aimées (étape « Vos couleurs ») : identifiants connus, 3 au plus ; absentes = étape pas encore vue.
     ...(d.couleursPreferees !== undefined ? { couleursPreferees: normaliserCouleursPreferees(d.couleursPreferees) ?? [] } : {}),
     // Choix de l'onboarding client (onboarding.ts) : relus et bornés, jamais des données de l'annuaire.

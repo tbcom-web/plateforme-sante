@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { site, absUrl } from '../lib/site';
 import { dateMaj } from '../lib/agents';
 import { navigation } from '../lib/navigation';
+import { conseils } from '../lib/conseils';
 
 export const GET: APIRoute = () => {
   const derniere = [...site.articles].map((a) => a.date).sort().at(-1);
@@ -16,6 +17,7 @@ export const GET: APIRoute = () => {
     { path: '/acces', lastmod: dateMaj },
     ...(site.articles.length > 0 ? [{ path: '/actualites', lastmod: derniere }] : []),
     ...site.articles.map((a) => ({ path: `/actualites/${a.slug}`, lastmod: a.date })),
+    ...(conseils.length > 0 ? [{ path: '/conseils', lastmod: dateMaj }, ...conseils.map((c) => ({ path: `/conseils/${c.slug}`, lastmod: dateMaj }))] : []),
     { path: '/mentions-legales', lastmod: dateMaj },
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

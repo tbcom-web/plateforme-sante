@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { activitesReconnues, contexteImages, definirContexteImages, lireCleHerosDiabete, normaliserActivites, pratiqueDe, soinsEnAvantActivites, tableVisuelsActivites, visuelsPourPraticien } from '@plateforme/core';
 import { estPresentationPortraits, libellesComposition, lotsPropositions, PORTRAITS_DEMO, PRATICIENS_DEMO, modeleIntegre, modeleDuSite, normaliserComposition, ordonnerSoins, packVisuel, photosImportees, reglageStyle, sectionsSelonOrdre, themeParId, universCatalogue, type SiteConfig, type StyleIllustration, type Structure } from '@plateforme/core';
 import { contexteRetoursHorsLigne } from '../../lib/retours-hors-ligne';
+// Articles pré-écrits du pack podologue (à valider par Paul) : montrés sur la démo seulement (jamais publiée)
+import { ARTICLES_PODOLOGUE } from '../../../../../packages/contenus/professions/podologue';
 
 // Rendu hors ligne (M15, 2026-10-09) : la démo n'a pas Supabase ; les exclusions de Paul (≤ 2 ★, dernière note ≤ 2 ★, retirées, à
 // retravailler, à revoir) et le vivier des photos 4-5 ★ (photos validées du manifeste retours/photos-validees.json + photos intégrées
@@ -429,6 +431,7 @@ Une tache, une bande foncée ou un saignement sous l’ongle apparus sans choc, 
     },
   ],
   articles: [
+    ...ARTICLES_PODOLOGUE.map((a) => ({ slug: a.slug, titre: a.titre, resume: a.resume, date: '2026-10-10', theme: a.theme, corps: a.corps })),
     {
       slug: 'preparer-ses-pieds-course-a-pied',
       titre: 'Préparer ses pieds avant une course à pied',

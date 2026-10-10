@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : Fiches conseils patients (17 fiches podologue liées aux soins : bloc sur chaque page de soin, page /conseils) et 2 articles pré-écrits (chaussures de sécurité et métiers debout ; chaussures à talons), à valider dans les Arrivages ; articles importables ensuite dans /admin/flux.
 - 2026-10-10 : univers minimal (à valider, lot « Univers minimal ») : deux visuels stylés par univers — basket (arc de tir, terrain en lignes de niveau), tennis (rebond, court en perspective), golf (green et drapeau, balle alvéolée), cyclisme (roue, profil d'étape), diabète (points de sensibilité, inspection au miroir, bleus doux) ; visuel animé du premier écran et illustration fixe ; profils Sport · golf et Sport · cyclisme ajoutés.
 - 2026-10-10 : analyse de la foulée (à valider, mêmes clés) : jambes reprises après le retour de Paul (« un peu anorexique ») — volumes d'un coureur en bonne santé (cuisse qui s'élargit vers le bassin, genou et cheville naturels, mollet galbé), contour doux ; tracés et données inchangés.
 - 2026-10-10 : Bibliothèque, atelier, Dégustation et Frigo photos plus rapides : résumés gardés tant que rien ne change, listes de photos chargées par pages.

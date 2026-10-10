@@ -10,7 +10,8 @@ import {
 import { REPLIS } from '@plateforme/core';
 /** « pédicure-podologue à Lyon » ; sans ville : le métier seul (replis.ts). */
 const lieuDit = lieuExercice ? ` ${lieuExercice}` : '';
-import { soinsLies, type Faq } from '@plateforme/core';
+import { soinsLies, markdownConseil, type Faq } from '@plateforme/core';
+import { conseils, soinsDuConseil, conseilsDuSoin as conseilsDuSoinMd } from './conseils';
 import { navigation, themesDuSite, pageTheme } from './navigation';
 import { descriptionTheme, descriptionSoin } from './vitrine';
 
@@ -149,6 +150,8 @@ export const pagesMarkdown = (): PageMd[] => [
       ...(s.faq.length ? ['', '## Questions fréquentes', '', faqMd(s.faq)] : []),
       // Même bloc « À lire aussi » que la page HTML (soins proches proposés par le cabinet)
       ...(soinsLies(s.slug, site.soins).length ? ['', '## À lire aussi', '', liste(soinsLies(s.slug, site.soins).map(lienSoin))] : []),
+      // Même bloc « Fiches conseils » que la page HTML
+      ...(conseilsDuSoinMd(s.slug).length ? ['', '## Fiches conseils', '', liste(conseilsDuSoinMd(s.slug).map((c) => `[${c.titre}](${absUrl(`/conseils/${c.slug}.md`)}): ${c.resume}`))] : []),
       '',
       '## Rendez-vous',
       '',
@@ -184,6 +187,26 @@ export const pagesMarkdown = (): PageMd[] => [
           titre: a.titre,
           resume: a.resume,
           corps: [`Publié le ${dateFr(a.date)}, par ${noms}.`, '', decaler(a.corps)].join('\n'),
+        })),
+      ]
+    : []),
+  // Fiches conseils (lib/conseils.ts) : même contenu que les pages HTML (gestes, à ne pas faire, quand consulter, soins liés)
+  ...(conseils.length
+    ? [
+        {
+          path: '/conseils',
+          titre: `Fiches conseils, ${site.cabinet.nom}`,
+          resume: `Fiches pratiques proposées par ${noms}.`,
+          corps: liste(conseils.map((c) => `[${c.titre}](${absUrl(`/conseils/${c.slug}.md`)}): ${c.resume}`)),
+        },
+        ...conseils.map((c) => ({
+          path: `/conseils/${c.slug}`,
+          titre: c.titre,
+          resume: c.resume,
+          corps: [
+            markdownConseil(c),
+            ...(soinsDuConseil(c).length ? ['', '## Au cabinet', '', liste(soinsDuConseil(c).map(lienSoin))] : []),
+          ].join('\n'),
         })),
       ]
     : []),
@@ -234,10 +257,11 @@ export const planDuSite = () => {
     '',
     `> Pages du site ${absUrl('/')}, mises à jour le ${dateMaj}.`,
     '',
-    ...rubrique('Le cabinet', (p) => !p.path.startsWith('/soins') && !p.path.startsWith('/actualites') && !p.path.startsWith('/themes/')),
+    ...rubrique('Le cabinet', (p) => !p.path.startsWith('/soins') && !p.path.startsWith('/actualites') && !p.path.startsWith('/themes/') && !p.path.startsWith('/conseils')),
     ...rubrique('Sujets du cabinet', (p) => p.path.startsWith('/themes/')),
     ...rubrique('Soins', (p) => p.path.startsWith('/soins')),
     ...rubrique('Actualités', (p) => p.path.startsWith('/actualites')),
+    ...rubrique('Fiches conseils', (p) => p.path.startsWith('/conseils')),
     '## Autres ressources',
     '',
     `- [Résumé pour les assistants IA](${absUrl('/llms.txt')})`,

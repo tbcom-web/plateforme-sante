@@ -77,7 +77,11 @@ import {
   type SiteConfig,
   type SiteDraft,
   type Soin,
+  conseilsDuSite,
+  slugsAcceptes,
+  type PackContenus,
 } from '@plateforme/core';
+import { conseilsDeProfession, packConseils } from './conseils-packs';
 import { defautsProfession, titreMetierProfession } from './defaults';
 import { rendusPortrait } from '@plateforme/core/portrait';
 
@@ -132,6 +136,16 @@ async function lireExclusionsSite(): Promise<Set<string>> {
     jour: jourParis(new Date()),
     urlsAValider: aValider.map((x) => x.url ?? '').filter(Boolean),
   });
+}
+
+/** Slugs des fiches conseils du pack de la profession acceptées pour leur texte actuel (statut « valide », même empreinte) */
+async function lireConseilsAcceptes(profession: string): Promise<Set<string>> {
+  const pack = packConseils(profession);
+  if (!pack) return new Set();
+  const lignes = await lire<{ cle: string; statut: string; empreinte: string | null }[]>(
+    `illustrations_statuts?cle=like.${encodeURIComponent(`contenu:${profession}:conseil:`)}*&select=cle,statut,empreinte`,
+  );
+  return slugsAcceptes(pack as unknown as PackContenus, 'conseil', lignes);
 }
 
 const env = (nom: string) => (import.meta.env[nom] as string | undefined) ?? process.env[nom];
@@ -198,6 +212,10 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
   ).catch(() => []);
 
   // Site public : version publiée (repli sur le brouillon si elle n'existe pas encore) ; aperçu (APERCU=1) : brouillon.
+  // Fiches conseils ACCEPTÉES par Paul dans les Arrivages pour leur texte actuel (conseils-patients.ts) : seules servies au site
+  // publié. Table absente ou erreur : aucune fiche (jamais un texte non relu en ligne).
+  const conseilsAcceptes = await lireConseilsAcceptes(s.profession_slug).catch(() => new Set<string>());
+
   // Personnalisations du praticien (personnalisations-site.ts) : couche appliquée EN DERNIER (recette → pack → profil/kit → praticien) ;
   // images « Démo » jamais posées sur un site construit.
   const d00 = appliquerPersonnalisations(normaliserDraft(process.env.APERCU === '1' ? s.config : (s.config_publiee ?? s.config)), { publication: true });
@@ -284,6 +302,7 @@ export async function chargerDepuisSupabase(siteId: string): Promise<SiteConfig>
     // Pages de contenus personnalisées (blocs du praticien ; blocs réglementaires du pack toujours présents)
     catalogue: pagesPersonnalisees(catalogue, reglagesDuDraft(d), s.profession_slug),
     articles: publies.map((p) => p.article).filter((a): a is LigneArticle => Boolean(a)),
+    conseilsAcceptes,
     modele,
     pack,
     visuelsSpecialite,
@@ -316,6 +335,8 @@ export type EntreeAssemblage = {
   prof: LigneProfession;
   catalogue: LigneSoin[];
   articles: LigneArticle[];
+  /** Fiches conseils acceptées par Paul (slugs) ; absent : aucune fiche */
+  conseilsAcceptes?: ReadonlySet<string> | null;
   modele: SiteConfig['modele'];
   pack: Specialite;
   visuelsSpecialite: Specialite;
@@ -471,6 +492,8 @@ export function assemblerSite(e: EntreeAssemblage): SiteConfig {
     faqGenerale: defauts.faq({ pmr: d.acces.pmr, plateforme: d.rdv.outil, enLigne: Boolean(rdvCabinet), telephone: Boolean(telephone), email }),
     articles: e.articles
       .map((a) => ({ slug: a.slug, titre: perso(a.titre), resume: perso(a.resume), corps: perso(a.corps), theme: a.theme, date: a.date_publication, image: a.image || undefined, imageAlt: a.image_alt || undefined })),
+    // Fiches conseils : acceptées par Paul ET cochées par le praticien (sans choix enregistré : celles liées à ses soins)
+    conseils: conseilsDuSite({ conseils: conseilsDeProfession(prof.slug), soinsDuSite: soins.map((x) => x.slug), choix: d.fichesConseils ?? null, acceptees: e.conseilsAcceptes ?? new Set<string>() }),
     tracking: {},
     mentions: {
       editeur: noms ? `${noms}, ${metier}` : nomCabinet,

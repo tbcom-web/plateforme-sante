@@ -9,6 +9,7 @@
 import TetePage from './TetePage.astro';
 import Faq from './Faq.astro';
 import SoinsLies from '../SoinsLies.astro';
+import FichesConseilsSoin from '../FichesConseilsSoin.astro';
 import Icone from '../Icone.astro';
 import Dessin from '../dessins/Dessin.astro';
 import { site, md } from '../../lib/site';
@@ -98,6 +99,8 @@ const enPratique = [
     </section>
   )}
 </article>
+
+<FichesConseilsSoin soin={soin} />
 
 <SoinsLies soin={soin} />
 

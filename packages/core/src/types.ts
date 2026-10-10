@@ -1,3 +1,5 @@
+import type { ConseilPatient } from './conseils-patients';
+
 export type Faq = { q: string; r: string };
 
 export type Soin = {
@@ -109,6 +111,12 @@ export type SiteConfig = {
   soins: Soin[];
   faqGenerale: Faq[];
   articles: Article[];
+  /**
+   * Fiches conseils pour les patients (conseils-patients.ts) : bloc « Fiches conseils » des pages de soin et page /conseils.
+   * Site publié : seulement les fiches acceptées par Paul et choisies par le praticien ; absent (démos locales) : celles du pack
+   * de la profession liées aux soins du site.
+   */
+  conseils?: ConseilPatient[];
   tracking: { ga4?: string; clarity?: string };
   /** creditPhotos : mention des photos sous licence (ex. « Photos : Adobe Stock »), sans nom de fichier */
   mentions: { hebergeur: string; editeur: string; mediateur?: string; creditPhotos?: string };

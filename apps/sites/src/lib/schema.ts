@@ -224,3 +224,40 @@ export const themeSchema = (t: { nom: string; description: string; path: string;
     itemListElement: t.soins.map((s, i) => ({ '@type': 'ListItem', position: i + 1, name: s.titre, url: absUrl(`/soins/${s.slug}`) })),
   },
 });
+
+/**
+ * Fiche conseil (/conseils/<slug>) : page médicale destinée aux patients, rattachée au site et au cabinet ; `soins` : pages de soin
+ * liées existantes (relatedLink). Aucune donnée ajoutée hors du contenu affiché.
+ */
+export const conseilSchema = (c: { titre: string; resume: string; slug: string }, soins: string[] = []) => ({
+  '@context': 'https://schema.org',
+  '@type': 'MedicalWebPage',
+  '@id': `${absUrl(`/conseils/${c.slug}`)}#page`,
+  name: c.titre,
+  description: c.resume,
+  url: absUrl(`/conseils/${c.slug}`),
+  inLanguage: 'fr-FR',
+  isPartOf: { '@id': siteId },
+  about: { '@id': businessId },
+  audience: { '@type': 'Patient' },
+  dateModified: dateMaj,
+  ...(soins.length ? { relatedLink: soins.map((p) => absUrl(p)) } : {}),
+});
+
+/** Page « Fiches conseils » (/conseils) : WebPage avec la liste des fiches (ItemList d'adresses existantes) */
+export const conseilsSchema = (fiches: { titre: string; slug: string }[], description: string) => ({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': `${absUrl('/conseils')}#page`,
+  name: 'Fiches conseils',
+  description,
+  url: absUrl('/conseils'),
+  inLanguage: 'fr-FR',
+  isPartOf: { '@id': siteId },
+  about: { '@id': businessId },
+  dateModified: dateMaj,
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: fiches.map((f, i) => ({ '@type': 'ListItem', position: i + 1, name: f.titre, url: absUrl(`/conseils/${f.slug}`) })),
+  },
+});

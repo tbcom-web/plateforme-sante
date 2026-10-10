@@ -6,6 +6,7 @@ import Gabarit from '../../layouts/Gabarit.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import FaqList from '../../components/FaqList.astro';
 import SoinsLies from '../../components/SoinsLies.astro';
+import FichesConseilsSoin from '../../components/FichesConseilsSoin.astro';
 import VisuelEntete from '../../components/gabarit/VisuelEntete.astro';
 import VignetteSoin from '../../components/gabarit/VignetteSoin.astro';
 import { site, md } from '../../lib/site';
@@ -94,6 +95,8 @@ const materiel = equipementsDuSoin(soin.slug, site.equipements ?? []);
       </section>
     )}
   </article>
+
+  <FichesConseilsSoin soin={soin} />
 
   <SoinsLies soin={soin} />
 
