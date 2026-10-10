@@ -5,9 +5,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 // /essai : page d'essai gratuit, inscription et textes juridiques (publiques ; la page d'accueil de l'essai est statique et
 // exclue du proxy, voir config.matcher). /api/stripe/webhook : appelé par Stripe, sans session (signature vérifiée).
 // /api/essai/* : capture du prospect et compteur de visites de la page d'essai (sans session, hors proxy aussi).
+// /audit-gratuit et /api/audit-gratuit/* : page de campagne « audit gratuit » et ses routes (test immédiat, demande).
 // /audit/<jeton> : rapport d'audit de site remis au prospect (lien à capacité, app/audit/[jeton]/route.ts).
 // /api/sourcing-photos : appelé par le workflow sourcer-photos, sans session (jeton partagé vérifié par la route, docs/sourcing-photos.md).
-const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher', '/essai', '/api/stripe/webhook', '/api/essai/', '/api/sourcing-photos', '/audit/'];
+const PAGES_PUBLIQUES = ['/connexion', '/auth', '/rattacher', '/essai', '/api/stripe/webhook', '/api/essai/', '/api/sourcing-photos', '/audit/', '/audit-gratuit', '/api/audit-gratuit/'];
 
 // Rafraîchit la session Supabase à chaque navigation et protège les pages privées.
 export async function proxy(request: NextRequest) {
@@ -49,5 +50,5 @@ export async function proxy(request: NextRequest) {
 export const config = {
   // /essai (page statique servie telle quelle, sans appel à Supabase), ses textes juridiques, ses images et ses routes
   // de capture et de mesure (sans session) : hors proxy.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|essai$|essai/cgu|essai/confidentialite|api/essai/|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|essai$|essai/cgu|essai/confidentialite|api/essai/|audit-gratuit$|api/audit-gratuit/|.*\\.(?:svg|png|jpg|jpeg|webp|ico)$).*)'],
 };

@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import { universCatalogue } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
 import { dateCourte } from '@/lib/libelles';
-import { Actualiser, BoutonRelancer, Copier, FormulaireAudit } from './Elements';
+import { Actualiser, BoutonRelancer, BoutonTraiter, Copier, FormulaireAudit } from './Elements';
 
 export const metadata = { title: 'Super admin · Audits de sites' };
 
@@ -11,13 +11,15 @@ export const metadata = { title: 'Super admin · Audits de sites' };
 // auditer-site audite les deux sites et produit le rapport web + PDF. Lien du rapport : /audit/<jeton> (sans connexion).
 
 type Audit = {
-  id: string; jeton: string; domaine: string; statut: 'en_attente' | 'en_cours' | 'pret' | 'echec'; site_id: string | null; univers: string | null;
+  id: string; jeton: string; domaine: string; statut: 'demande' | 'en_attente' | 'en_cours' | 'pret' | 'echec'; origine?: string;
+  contact?: { prenom?: string; nom?: string; email?: string; telephone?: string } | null; express?: { scoreIA?: number; totalIA?: number; aAmeliorer?: number; ville?: string } | null; site_id: string | null; univers: string | null;
   identite: { nomCabinet?: string; ville?: string; prenom?: string; nom?: string; rpps?: string; principaux?: string[] } | null;
   note_actuelle: number | null; note_proposee: number | null; marquants: string[] | null; run_url: string | null; erreur: string | null;
   cree_le: string; fini_le: string | null; site: { slug: string | null } | null;
 };
 
 const STATUTS = {
+  demande: ['Demande à traiter', 'bg-violet-100 text-violet-900'],
   en_attente: ['En file d’attente', 'bg-neutral-100 text-neutral-700'],
   en_cours: ['En préparation', 'bg-amber-100 text-amber-900'],
   pret: ['Prêt', 'bg-teal-100 text-teal-900'],
@@ -28,9 +30,11 @@ const couleurNote = (n: number) => (n >= 85 ? 'text-teal-800' : n >= 70 ? 'text-
 export default async function PageAudits() {
   const supabase = await createClient();
   const { data, error } = await supabase.from('audits')
-    .select('id, jeton, domaine, statut, site_id, univers, identite, note_actuelle, note_proposee, marquants, run_url, erreur, cree_le, fini_le, site:sites(slug)')
+    .select('id, jeton, domaine, statut, origine, contact, express, site_id, univers, identite, note_actuelle, note_proposee, marquants, run_url, erreur, cree_le, fini_le, site:sites(slug)')
     .order('cree_le', { ascending: false }).limit(100);
-  const audits = (data ?? []) as unknown as Audit[];
+  const tous = (data ?? []) as unknown as Audit[];
+  const demandes = tous.filter((a) => a.statut === 'demande');
+  const audits = tous.filter((a) => a.statut !== 'demande');
   const h = await headers();
   const origine = `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('host') ?? 'admin.webpodologue.fr'}`;
   const enCours = audits.some((a) => a.statut === 'en_attente' || a.statut === 'en_cours');
@@ -44,6 +48,26 @@ export default async function PageAudits() {
           puis les deux sites passent les mêmes 46 contrôles. Vous obtenez un rapport à envoyer, en lien web et en PDF.
         </p>
       </header>
+
+      {demandes.length > 0 && (
+        <section aria-labelledby="titre-demandes" className="rounded-2xl border border-violet-200 bg-violet-50 p-5">
+          <h2 id="titre-demandes" className="font-semibold">Demandes reçues depuis la page « Audit gratuit » ({demandes.length})</h2>
+          <p className="mt-1 text-sm text-neutral-600">Le praticien a testé son site et demandé l’audit complet. « Préparer et auditer » crée son site préparé et lance l’audit, signé de votre nom ; rappelez-le ensuite (promis sous 24 h ouvrées).</p>
+          <ul className="mt-3 space-y-2">
+            {demandes.map((d) => (
+              <li key={d.id} className="rounded-xl bg-white p-3 text-sm">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <a href={`https://${d.domaine}`} target="_blank" rel="noreferrer" className="font-semibold hover:underline">{d.domaine}</a>
+                  {d.express?.scoreIA != null && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">ChatGPT : {d.express.scoreIA}/{d.express.totalIA}</span>}
+                  <span className="ml-auto text-xs text-neutral-500">{dateCourte(d.cree_le)}</span>
+                </div>
+                <p className="mt-1 text-neutral-700">{[d.contact?.prenom, d.contact?.nom].filter(Boolean).join(' ')} · <a className="underline" href={`tel:${(d.contact?.telephone ?? '').replace(/s/g, '')}`}>{d.contact?.telephone}</a> · <a className="underline" href={`mailto:${d.contact?.email}`}>{d.contact?.email}</a>{d.express?.ville ? ` · ${d.express.ville}` : ''}</p>
+                <div className="mt-2"><BoutonTraiter id={d.id} /></div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <FormulaireAudit />
       <Actualiser actif={enCours} />
@@ -71,6 +95,7 @@ export default async function PageAudits() {
               </div>
 
               <p className="mt-1 text-sm text-neutral-600">
+                {a.origine === 'page' && a.contact ? <>Demande de <b>{[a.contact.prenom, a.contact.nom].filter(Boolean).join(' ')}</b> ({a.contact.telephone}, {a.contact.email}) · </> : null}
                 {nomPraticien ? <>Praticien reconnu : <b>{nomPraticien}</b>{a.identite?.rpps ? ` (RPPS ${a.identite.rpps})` : ''}</> : a.site_id ? 'Praticien non reconnu : nom à compléter dans le site préparé' : 'Audit seul'}
                 {a.identite?.ville ? ` · ${a.identite.ville}` : ''}
                 {a.univers ? ` · Style : ${universCatalogue(a.univers)?.nom ?? a.univers}` : ''}

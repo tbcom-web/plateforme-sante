@@ -36,7 +36,8 @@
     "./onboarding": "./src/onboarding.ts",
     "./onboarding-professions": "./src/onboarding-professions.ts",
     "./audit-prospect": "./src/audit-prospect.ts",
-    "./chaine-images": "./src/chaine-images.ts"
+    "./chaine-images": "./src/chaine-images.ts",
+    "./audit-express": "./src/audit-express.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

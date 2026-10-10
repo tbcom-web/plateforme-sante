@@ -72,7 +72,7 @@ export async function lancerAudit(_: ResultatAudit, formData: FormData): Promise
   const commercialTel = String(formData.get('commercial_tel') ?? '').trim().slice(0, 30) || null;
   const preparer = formData.get('preparer') !== 'non';
 
-  const page = (await lire(`https://${domaine}/`)) ?? (domaine.startsWith('www.') ? null : await lire(`https://www.${domaine}/`));
+  const page = await lirePageAccueil(domaine);
   if (!page) return { ok: false, message: `Le site ${domaine} ne répond pas (adresse, ou certificat HTTPS ?).` };
 
   const supabase = await createClient();
@@ -81,7 +81,19 @@ export async function lancerAudit(_: ResultatAudit, formData: FormData): Promise
     .insert({ domaine, commercial_nom: commercialNom, commercial_tel: commercialTel })
     .select('id').single();
   if (error || !audit) return { ok: false, message: 'Audit non enregistré : exécutez la migration 0061_audits_sites.sql dans Supabase.' };
+  return executerAudit(supabase, audit.id, domaine, page, preparer);
+}
 
+const lirePageAccueil = async (domaine: string) => (await lire(`https://${domaine}/`)) ?? (domaine.startsWith('www.') ? null : await lire(`https://www.${domaine}/`));
+
+/**
+ * Prépare le site (si demandé) et lance le workflow d'un audit déjà enregistré : saisi dans /admin/audits ou demandé
+ * depuis la page publique /audit-gratuit (statut « demande »).
+ */
+async function executerAudit(
+  supabase: Awaited<ReturnType<typeof createClient>>, auditId: string, domaine: string, page: { html: string; url: string }, preparer: boolean,
+): Promise<ResultatAudit> {
+  const audit = { id: auditId };
   let siteId: string | null = null;
   let universId: string | null = null;
   let identite: Record<string, unknown> = {};
@@ -157,4 +169,19 @@ export async function relancerAudit(auditId: string): Promise<ResultatAudit> {
   const echec = await lancerWorkflow('auditer-site.yml', { audit_id: data.id, site_id: data.site_id ?? '' });
   revalidatePath('/admin/audits');
   return echec ?? { ok: true, message: 'Audit relancé.' };
+}
+
+/** Demande reçue depuis /audit-gratuit : prépare le site à son nom et lance l'audit (la commerciale signe le rapport) */
+export async function traiterDemande(auditId: string, commercial: { nom?: string; tel?: string }): Promise<ResultatAudit> {
+  await exigerAdmin();
+  if (!/^[0-9a-f-]{36}$/.test(auditId)) return { ok: false, message: 'Demande invalide.' };
+  const supabase = await createClient();
+  const { data } = await supabase.from('audits').select('id, domaine, statut').eq('id', auditId).maybeSingle();
+  if (!data || data.statut !== 'demande') return { ok: false, message: 'Demande introuvable ou déjà traitée.' };
+  const page = await lirePageAccueil(data.domaine);
+  if (!page) return { ok: false, message: `Le site ${data.domaine} ne répond pas (adresse, ou certificat HTTPS ?).` };
+  await supabase.from('audits').update({
+    statut: 'en_attente', commercial_nom: commercial.nom?.trim().slice(0, 80) || null, commercial_tel: commercial.tel?.trim().slice(0, 30) || null,
+  }).eq('id', auditId);
+  return executerAudit(supabase, auditId, data.domaine, page, true);
 }

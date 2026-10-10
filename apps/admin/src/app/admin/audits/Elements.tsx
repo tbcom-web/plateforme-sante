@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { lancerAudit, relancerAudit, type ResultatAudit } from './actions';
+import { lancerAudit, relancerAudit, traiterDemande, type ResultatAudit } from './actions';
 
 const CLE_COMMERCIAL = 'audit-commercial';
 
@@ -70,4 +70,23 @@ export function Actualiser({ actif }: { actif: boolean }) {
     return () => clearInterval(t);
   }, [actif, router]);
   return null;
+}
+
+/** Demande de la page /audit-gratuit : prépare le site et lance l'audit, signé du nom et du téléphone retenus sur ce navigateur */
+export function BoutonTraiter({ id }: { id: string }) {
+  const [enCours, demarrer] = useTransition();
+  const [msg, setMsg] = useState('');
+  const traiter = () => demarrer(async () => {
+    let c: { nom?: string; tel?: string } = {};
+    try { c = JSON.parse(localStorage.getItem(CLE_COMMERCIAL) ?? '{}'); } catch { /* stockage indisponible */ }
+    setMsg((await traiterDemande(id, c))?.message ?? '');
+  });
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <button type="button" disabled={enCours} onClick={traiter} className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60">
+        {enCours ? 'Préparation…' : 'Préparer et auditer'}
+      </button>
+      {msg && <span className="text-xs text-neutral-600">{msg}</span>}
+    </span>
+  );
 }
