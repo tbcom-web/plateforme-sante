@@ -22,8 +22,8 @@ async function deposer(chemin, corps, type) {
   if (!r.ok) throw new Error(`Stockage ${r.status} : ${(await r.text()).slice(0, 200)}`);
 }
 
-/** Attend que l'aperçu réponde (le déploiement Cloudflare met parfois une minute à se propager) */
-async function attendre(url, maxMs = 180000) {
+/** Attend que l'aperçu réponde : pour un projet Cloudflare Pages tout neuf, le certificat HTTPS de apercu.<slug>.pages.dev met plusieurs minutes à être émis (ERR_SSL_VERSION_OR_CIPHER_MISMATCH en attendant) */
+async function attendre(url, maxMs = 720000) {
   const fin = Date.now() + maxMs;
   while (Date.now() < fin) {
     try { const r = await fetch(url, { redirect: 'follow' }); if (r.ok) return true; } catch {}

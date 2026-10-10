@@ -39,7 +39,7 @@ jobs:
     # L'audit a lieu même si l'aperçu échoue ou n'existe pas (rapport sans comparaison, signalé dans le back-office).
     if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
