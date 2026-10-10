@@ -152,7 +152,7 @@ export default async function Prospection({ searchParams }: PageProps<'/admin/pr
       </form>
 
       <p className="text-xs text-neutral-500">
-        Signaux : <span className="rounded-full bg-teal-100 px-1.5 text-teal-900">SIRET créé</span> date de création du cabinet à l’INSEE ·{' '}
+        Signaux : <span className="rounded-full bg-teal-100 px-1.5 text-teal-900">Cabinet ouvert (INSEE)</span> date d’ouverture déclarée à l’INSEE, la plus fiable ·{' '}
         <span className="rounded-full bg-violet-100 px-1.5 text-violet-900">Nouveau au RPPS</span> apparu dans l’annuaire depuis le premier import (arrivée dans un cabinet existant, nouveau diplômé) ·{' '}
         <span className="rounded-full bg-amber-100 px-1.5 text-amber-900">Trouvé par nom</span> sans SIRET au RPPS, à confirmer ·{' '}
         <span className="rounded-full bg-sky-100 px-1.5 text-sky-900">Situation modifiée au RPPS</span> dernière modification du cabinet dans l’annuaire de l’ANS (changement de lieu ou de rôle, parfois simple correction).

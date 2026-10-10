@@ -45,15 +45,21 @@ export function moisAvant(aujourdhui: string, mois: number): string {
 export type SourceInstallation = 'siret' | 'nom' | 'rpps' | 'ans';
 export type Installation = { date: string; source: SourceInstallation; libelle: string } | null;
 
-/** Signal d'installation le plus récent d'une ligne de prospection_praticiens */
+const ecartMois = (a: string, b: string) => Math.abs(Date.parse(a.slice(0, 10)) - Date.parse(b.slice(0, 10))) / 2_629_800_000;
+
+/**
+ * Date d'installation d'une ligne de prospection_praticiens. L'INSEE (création de l'établissement, déclarée au guichet des
+ * formalités à l'ouverture) fait foi : le RPPS dépend des conseils de l'Ordre et peut être en retard de plusieurs mois. Exception :
+ * apparition au RPPS à plus de 6 mois de la date INSEE → le praticien a rejoint un cabinet existant (SIRET du titulaire, ancien) :
+ * c'est alors la date d'arrivée au RPPS qui compte. Dernier recours : modification de la situation dans l'API ANS.
+ */
 export function installation(p: { siret_cree_le?: string | null; siret_source?: string | null; apparu_le?: string | null; situation_maj_le?: string | null }): Installation {
-  const candidats: { date: string; source: SourceInstallation }[] = [];
-  if (p.siret_cree_le) candidats.push({ date: p.siret_cree_le.slice(0, 10), source: p.siret_source === 'nom' ? 'nom' : 'siret' });
-  if (p.apparu_le) candidats.push({ date: p.apparu_le.slice(0, 10), source: 'rpps' });
-  if (p.situation_maj_le) candidats.push({ date: p.situation_maj_le.slice(0, 10), source: 'ans' });
-  const c = candidats.sort((a, b) => b.date.localeCompare(a.date))[0];
+  const insee = p.siret_cree_le ? { date: p.siret_cree_le.slice(0, 10), source: (p.siret_source === 'nom' ? 'nom' : 'siret') as SourceInstallation } : null;
+  const rpps = p.apparu_le ? { date: p.apparu_le.slice(0, 10), source: 'rpps' as SourceInstallation } : null;
+  const ans = p.situation_maj_le ? { date: p.situation_maj_le.slice(0, 10), source: 'ans' as SourceInstallation } : null;
+  const c = insee && rpps ? (rpps.date > insee.date && ecartMois(rpps.date, insee.date) > 6 ? rpps : insee) : insee ?? rpps ?? ans;
   if (!c) return null;
-  const libelle = { siret: 'SIRET créé', nom: 'Établissement trouvé par nom (à confirmer)', rpps: 'Nouveau au RPPS', ans: 'Situation modifiée au RPPS' }[c.source];
+  const libelle = { siret: 'Cabinet ouvert (INSEE)', nom: 'Ouvert à son nom (INSEE, à confirmer)', rpps: 'Nouveau au RPPS', ans: 'Situation modifiée au RPPS' }[c.source];
   return { ...c, libelle };
 }
 

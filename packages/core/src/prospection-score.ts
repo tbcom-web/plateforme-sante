@@ -194,8 +194,9 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
     const aRpps = attenuation(l.apparu_le, aujourdhui);
     const aSiret = attenuation(l.siret_cree_le, aujourdhui);
     const aAns = attenuation(l.situation_maj_le, aujourdhui);
-    if (aRpps) ajouter('i', `Nouvelle situation au RPPS le ${jourFr(l.apparu_le!)}`, 45 * aRpps);
-    if (aSiret) ajouter('i', l.siret_source === 'nom' ? `Établissement à son nom créé le ${jourFr(l.siret_cree_le!)} (trouvé par nom)` : `SIRET du cabinet créé le ${jourFr(l.siret_cree_le!)}`, (l.siret_source === 'nom' ? 25 : 40) * aSiret);
+    // L'INSEE fait foi pour la date d'ouverture (déclaration à l'installation) ; le RPPS, mis à jour par l'Ordre, peut avoir du retard
+    if (aSiret) ajouter('i', l.siret_source === 'nom' ? `Établissement à son nom ouvert le ${jourFr(l.siret_cree_le!)} (INSEE, trouvé par nom)` : `Cabinet ouvert le ${jourFr(l.siret_cree_le!)} (INSEE)`, (l.siret_source === 'nom' ? 35 : 45) * aSiret);
+    if (aRpps) ajouter('i', `Nouvelle situation au RPPS le ${jourFr(l.apparu_le!)}`, 35 * aRpps);
     if (aAns) ajouter('i', `Situation modifiée au RPPS le ${jourFr(l.situation_maj_le!)}`, 15 * aAns);
     const reprise = reprises.get(l.cle);
     const aReprise = attenuation(reprise, aujourdhui);
