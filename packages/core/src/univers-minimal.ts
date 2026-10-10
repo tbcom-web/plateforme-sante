@@ -39,10 +39,10 @@ export const UNIVERS_MINIMAUX = [
 export type UniversMinimal = (typeof UNIVERS_MINIMAUX)[number];
 export const estUniversMinimal = (a: unknown): a is UniversMinimal => (UNIVERS_MINIMAUX as readonly unknown[]).includes(a);
 
-export type Univers = 'basket' | 'tennis' | 'golf' | 'cyclisme' | 'diabete';
+export type DomaineUniversMinimal = 'basket' | 'tennis' | 'golf' | 'cyclisme' | 'diabete';
 
 export interface FicheUniversMinimal {
-  univers: Univers;
+  univers: DomaineUniversMinimal;
   libelle: string;
   /** Ce que montre le visuel (le regard du pédicure-podologue) */
   regard: string;
