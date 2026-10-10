@@ -37,6 +37,7 @@
     "./onboarding-professions": "./src/onboarding-professions.ts",
     "./audit-prospect": "./src/audit-prospect.ts",
     "./chaine-images": "./src/chaine-images.ts",
+    "./composeur": "./src/composeur.ts",
     "./audit-express": "./src/audit-express.ts"
   },
   "dependencies": {

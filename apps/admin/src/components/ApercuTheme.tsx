@@ -74,6 +74,8 @@ type Props = {
   /** Studio : animations JOUÉES (sinon image figée) ; animationsEnAttente : badge « en attente de validation » */
   animer?: boolean;
   animationsEnAttente?: readonly string[];
+  /** Vignette montée tout de suite, même hors de l'écran (composeur : aperçus préchargés) ; défaut : montée à l'écran seulement */
+  paresseux?: boolean;
   /**
    * Kit DÉMO (kit-demo.ts : cabinet et praticiens FICTIFS, images « Démo uniquement » acceptées et notées) posé AU RENDU à la place
    * des galeries vides et des silhouettes ; jamais écrit dans le brouillon. Vrai par défaut (Studio, atelier, recettes, dégustation,
@@ -138,7 +140,7 @@ const DESSIN_SUJET: Record<string, { dessin: NomDessin; ligne: NomLigne }> = {
   pedicurie: { dessin: 'soin', ligne: 'pieds-dessus' },
 };
 
-export default function ApercuTheme({ profession = null, draft: d0, exemples = true, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [] }: Props) {
+export default function ApercuTheme({ profession = null, draft: d0, exemples = true, modele: m, catalogue, marquesImportees, jeuPhotos, appareil: appareilInitial = 'bureau', vignette, plein = false, technique = false, survol = false, seul, vueInitiale = 'accueil', sansCommandes = false, hauteurCadre, animer = false, animationsEnAttente = [], paresseux }: Props) {
   // Kit démo : photos d'exemple (cabinet et praticiens fictifs) seulement dans l'aperçu, le brouillon reste intact
   // Mots composés insécables À L'AFFICHAGE (comme les sites, lib/typo.mjs) : noms, cabinet, villes (« Saint-Rémy-de-Provence ») avec
   // un trait d'union insécable ; le brouillon enregistré garde le vrai trait d'union. Tous les aperçus passent par ici.
@@ -600,7 +602,7 @@ export default function ApercuTheme({ profession = null, draft: d0, exemples = t
       {/* Iframe de la largeur réelle de l'appareil (CadreApercu) : media queries, position fixe et défilement comme sur l'appareil */}
       <div className={vignette ? 'relative overflow-hidden bg-neutral-100' : 'relative bg-neutral-100'}>
         {avecPremium && <span className="pointer-events-none absolute right-2 top-2 z-10 rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-neutral-900 shadow-sm ring-1 ring-black/10" title="Cette photo nécessite l’option Photos premium pour être publiée">{LIBELLE_PHOTO_PREMIUM}</span>}
-        <CadreApercu appareil={appareil} vignette={vignette} plein={plein} hauteur={hauteurCadre} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>
+        <CadreApercu appareil={appareil} vignette={vignette} plein={plein} hauteur={hauteurCadre} paresseux={paresseux} titre={`Aperçu ${mobile ? 'téléphone' : 'ordinateur'} du site`}>
           <ContexteAnimations.Provider value={reglageAnim}>
           <ContexteMetierApercu.Provider value={metierPack}>
           <div

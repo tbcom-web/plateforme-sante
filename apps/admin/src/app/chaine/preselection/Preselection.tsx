@@ -19,11 +19,12 @@ import { apercusMontes } from '@/components/CadreApercu';
 import { demander as demanderOuvrier, diffuser, nbOuvriers } from '@/components/pool-workers';
 import { garderPreselection, type PropositionPreselection } from '../actions';
 import { contexteDuProfil, rendreDesign, type ProfilRendu } from '../rendu-profil';
+import { cartesComposeur, type CarteComposeur } from '../composer/actions';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
 type Carte = PropositionPreselection & { legende: string; rendue: Record<string, unknown>; vu: string };
-type Page = { id: number; profil: string; propositions: Carte[]; selection: number[]; etat: 'ouverte' | 'gardee' | 'passee'; message?: string; masquees: number[]; debut: number };
+type Page = { id: number; profil: string; propositions: Carte[]; selection: number[]; etat: 'ouverte' | 'gardee' | 'passee'; message?: string; masquees: number[]; debut: number; /** Page du composeur (composeur d'abord) */ composee?: boolean };
 
 type Props = {
   profils: ProfilRendu[];
@@ -91,6 +92,9 @@ export default function Preselection(props: Props) {
 
   /** Une page de 6 designs, rendue avec un profil de démonstration différent de la page précédente */
   const enCours = useRef(false);
+  // COMPOSEUR D'ABORD (2026-10-11) : la première page montre les plus beaux modèles composés pour son profil de démonstration (calcul
+  // serveur gardé en base) ; au-delà de 4 s ou sans proposition nouvelle, tirages au hasard comme avant
+  const composeurFait = useRef(false);
   const generer = useCallback(async (): Promise<Page | null> => {
     enCours.current = true;
     try {
@@ -98,6 +102,16 @@ export default function Preselection(props: Props) {
       const profil = profilDemo(props.profils, g0 * 2654435761, dernierProfil.current);
       if (!profil) return null;
       dernierProfil.current = profil.id;
+      if (!composeurFait.current) {
+        composeurFait.current = true;
+        const cartes = await Promise.race([cartesComposeur(profil.id).catch(() => [] as CarteComposeur[]), new Promise<CarteComposeur[]>((ok) => setTimeout(() => ok([]), 4000))]);
+        const neuves = cartes.filter((c) => !vues.current.has(c.cle) && !tranches.refuses.has(c.cle)).slice(0, CHAINE.tailleGrille);
+        if (neuves.length >= 2) {
+          graine.current++;
+          for (const c of neuves) vues.current.add(c.cle);
+          return { id: g0, profil: profil.id, propositions: neuves.map((c) => ({ ...c, vu: profil.id })), selection: [], etat: 'ouverte', masquees: [], debut: Date.now(), composee: true };
+        }
+      }
       const ctx = ctxDe(profil);
       const retenues: Carte[] = [];
       const bloquees: Carte[] = [];
@@ -199,7 +213,7 @@ export default function Preselection(props: Props) {
 
       {pages.map((p) => (
         <section key={p.id} aria-label={`Page de ${p.propositions.length} designs`} className={`grid gap-2 rounded-2xl border p-2 sm:p-3 ${p.etat === 'ouverte' ? 'border-black/10 bg-white' : 'border-black/5 bg-neutral-50 opacity-80'}`} data-page-preselection={p.etat} data-profil-demo={p.profil}>
-          <p className="text-xs text-neutral-600">Montrés avec le cabinet de démonstration « {profilDe(p.profil).nom} » (ses images)</p>
+          <p className="text-xs text-neutral-600">{p.composee ? <>Les plus beaux modèles <strong>composés</strong> pour « {profilDe(p.profil).nom} » (ses images)</> : <>Montrés avec le cabinet de démonstration « {profilDe(p.profil).nom} » (ses images)</>}</p>
           <ul ref={(el) => { if (el && !el.dataset.verifie) { el.dataset.verifie = '1'; verifierRendus(p.id, el); } }} className={`grid gap-2 ${appareil === 'mobile' ? 'grid-cols-2 lg:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
             {p.propositions.map((x, i) => {
               if (p.masquees.includes(i)) return null;

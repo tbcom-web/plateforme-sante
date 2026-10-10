@@ -27,7 +27,11 @@ const rafraichir = (...chemins: string[]) => { oublierAutomate(); for (const c o
 // 1. Présélection
 // ---------------------------------------------------------------------------------------------------------------
 
-export type PropositionPreselection = { cle: string; nom: string; design: Record<string, unknown>; ingredients: Record<string, unknown>; profilDemo: string };
+export type PropositionPreselection = {
+  cle: string; nom: string; design: Record<string, unknown>; ingredients: Record<string, unknown>; profilDemo: string;
+  /** Composeur (2026-10-11) : profil réel pour lequel le design a été composé (« Sport + Diabète ») : scénario et nom gardés sur la fiche */
+  composePour?: { nom: string; principaux: string[]; secondaires: string[] };
+};
 
 /** Profils compatibles d'un design (harmonie, chaine-design.ts), calculés côté serveur à partir des profils de la profession */
 function compatibles(design: Record<string, unknown>, profils: { id: string; sujets: string[]; scenario: { principaux: string[]; secondaires: string[]; couleurs: string[] } }[]): string[] {
@@ -64,14 +68,15 @@ export async function garderPreselection(p: { propositions: PropositionPreselect
     if (!x || !x.design || typeof x.design !== 'object') continue;
     const design = designDe(x.design);
     const cle = cleComposition(design);
-    const scenarioDemo = profils.find((q) => q.id === x.profilDemo)?.scenario ?? demo.scenario;
+    const cp = x.composePour && Array.isArray(x.composePour.principaux) && x.composePour.principaux.every((s) => typeof s === 'string') && Array.isArray(x.composePour.secondaires) ? x.composePour : null;
+    const scenarioDemo = cp ? { principaux: cp.principaux.slice(0, 3), secondaires: cp.secondaires.slice(0, 3), couleurs: [] as string[] } : profils.find((q) => q.id === x.profilDemo)?.scenario ?? demo.scenario;
     const { data, error } = await supabase.from('modeles_fiches').insert({
       nom: String(x.nom || 'Design').slice(0, 120), profession: profession.id, profil: null, cle, origine: 'preselection',
       scenario: { principaux: scenarioDemo.principaux, secondaires: scenarioDemo.secondaires, couleurs: scenarioDemo.couleurs },
       tags: tagsAutomatiques(design, { profession: profession.id, profilsCibles: compatibles(design, profils) }),
     }).select('id').maybeSingle();
     let id = data?.id as string | undefined;
-    const journal = [{ type: 'creation' as const, texte: `présélection par ${moi.email || 'l’équipe'} (vu avec « ${demo.nom} »)` }];
+    const journal = [{ type: 'creation' as const, texte: cp ? `composé pour « ${String(cp.nom).slice(0, 80)} », gardé par ${moi.email || 'l’équipe'}` : `présélection par ${moi.email || 'l’équipe'} (vu avec « ${demo.nom} »)` }];
     if (error?.code === '23505') {
       // Déjà candidat : seulement un « J'aime » de plus (et sa version si elle manquait : le design est connu ici)
       const { data: d2 } = await supabase.from('modeles_fiches').select('id, version_courante').eq('profession', profession.id).eq('cle', cle).is('profil', null).maybeSingle();

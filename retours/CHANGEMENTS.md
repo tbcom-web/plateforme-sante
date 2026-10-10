@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-11 : Composeur (/chaine/composer, étape « Choisir ») : pour un profil (ex. Sport + Diabète), l'agent assemble seul ses ~8 plus beaux modèles avec les éléments 4-5 ★ / validés et les images validées du profil, tous différents, avec « pourquoi ce choix » et la liste des manques ; la présélection montre d'abord ces modèles.
 - 2026-10-11 : Chaîne des modèles en 3 étapes (Choisir · Vérification automatique · Relecture finale, puis Catalogue) : testeur lancé seul (3 en parallèle, jamais deux fois), corrections techniques en une demande à Claude, tournoi facultatif ; migration 0064.
 - 2026-10-11 : Modèle « Magazine affirmé :835 » : titles ≤ 65 / descriptions ≤ 165 caractères (titres-seo.ts), cibles tactiles 44 px (logo, pied, menu, fil d'Ariane), fiches conseils dans _routes.json ; retouche « version-base » dans la chaîne.
 - 2026-10-10 : Chaîne des modèles faisable au téléphone seul (audit tactile npm run audit:mobile ; « Envoyer à Claude » par le partage du téléphone avec une demande autonome, tickets en clair).

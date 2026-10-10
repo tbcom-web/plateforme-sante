@@ -27,9 +27,11 @@ type Props = {
   hauteur: number;
   /** Vignette (rendu réduit, sans défilement) plutôt que cadre défilable */
   vignette?: boolean;
+  /** Vignette préchargée (montée avant d'arriver à l'écran : composeur) */
+  precharger?: boolean;
 };
 
-export default memo(function ApercuModele({ composition, scenario, rendu, page = 'accueil', appareil, hauteur, vignette }: Props) {
+export default memo(function ApercuModele({ composition, scenario, rendu, page = 'accueil', appareil, hauteur, vignette, precharger }: Props) {
   // Design vide ou illisible (2026-10-10, bug « grille 49 » : version absente de la lecture → design {} → exception dans
   // appliquerRecette, toute la page tombait) : « Aperçu indisponible » sur la carte, jamais une exception
   const apercu = useMemo(() => {
@@ -47,7 +49,7 @@ export default memo(function ApercuModele({ composition, scenario, rendu, page =
   return (
     <GardeApercu>
     <ApercuTheme key={`${page}-${appareil}`} sansCommandes {...(vignette ? { vignette: hauteur } : { hauteurCadre: hauteur })} vueInitiale={vueDePage(page)} appareil={appareil === 'mobile' ? 'mobile' : 'bureau'}
-      draft={apercu.draft} modele={apercu.modele} catalogue={rendu.catalogue} marquesImportees={rendu.marquesImportees} jeuPhotos={null} />
+      draft={apercu.draft} modele={apercu.modele} catalogue={rendu.catalogue} marquesImportees={rendu.marquesImportees} jeuPhotos={null} {...(precharger ? { paresseux: false } : {})} />
     </GardeApercu>
   );
 });

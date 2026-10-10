@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { CHAINE } from '@plateforme/core';
 import { exigerContributeur, lireChaine, LECTURE_CHAINE, MIGRATION_CHAINE } from '@/lib/chaine-modeles';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../donnees';
@@ -41,6 +42,11 @@ export default async function PagePreselection({ searchParams }: PageProps<'/cha
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">Des designs de site à l’infini, six par page, montrés chaque fois avec un cabinet différent (et ses images). Touchez ceux qui vous plaisent, puis « Garder » : chaque design gardé part seul en vérification ({CHAINE.maxVerification} à la fois, les plus aimés d’abord).</p>
       </div>
       <ProchaineEtape action={action} importes={importes} compact ici="/chaine/preselection" />
+      {/* Composeur (2026-10-11) : les plus beaux modèles assemblés seuls pour un profil de cabinet (ex. Sport + Diabète) */}
+      <Link href={cible ? `/chaine/composer?profil=${encodeURIComponent(cible.id)}` : '/chaine/composer'} className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-800/30 bg-teal-50 p-3 text-sm text-teal-950 hover:bg-teal-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700" data-action="composer-profil">
+        <span><strong>Proposer des modèles pour un profil</strong> · le composeur assemble seul ses plus beaux modèles{cible ? ` pour « ${cible.nom} »` : ' (ex. Sport + Diabète)'}</span>
+        <span aria-hidden="true">→</span>
+      </Link>
       {cible && <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-950 ring-1 ring-teal-200">Designs montrés avec le profil <strong>{cible.nom}</strong> et ses images (depuis « À valider »). <a className="underline" href="/chaine/preselection">Tous les profils</a></p>}
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}

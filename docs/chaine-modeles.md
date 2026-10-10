@@ -48,6 +48,28 @@ Transitions ajoutées (0064, `avancer_modele`) : `check-agent → retouche` (cor
 défaut corrigeable), `recheck-agent → avis-humain` (corrections techniques vérifiées), `recheck-agent → ecarte` (rouge persistant après
 correction ; la base vérifie que le test de la version courante est rouge). La relecture finale refuse une version au rouge.
 
+## Composeur : « Proposer des modèles pour un profil » (demande de Paul du 2026-10-11)
+
+Dans l’étape 1 « Choisir » (`/chaine/composer`, lien en tête de la présélection et sur le tableau) : on choisit un cabinet type
+(profil de pratique) ou on compose un profil (« Sport + Diabète », activités comprises) ; le composeur (`core/composeur.ts`,
+`lib/composeur.ts`) montre ses ~8 plus beaux modèles en grand, en situation (téléphone d’abord), avec « pourquoi ce choix » et ce qui
+manque. « Garder » = la même action que la présélection (fiche candidate, vérification automatique) ; la fiche garde le profil réel.
+
+- Ambiance unique pour tout le site : familles de style pondérées par TOUS les thèmes (moyenne géométrique, n° 1 : 60 %) et par les
+  préférences apprises (duels, Dégustation) ; règles dures et garde-fous appliqués au profil entier (diabète : ni rouge vif, ni relevé,
+  ni Technique, ni effets « Vivant », ni animation vive). Chaque page de thème garde ses images validées et son ton (énergie du sport,
+  calme du diabète : jamais d’animation).
+- 240 candidats harmonieux, puis SÉLECTION des éléments : chaque élément refusé ou « à compléter » est remplacé par un élément 4-5 ★,
+  favori ou validé de la même dimension, compatible avec la famille, sans nouvelle règle dure ; sinon c’est un repli, listé comme manque
+  (futur Atelier des manques). Photos : kit du profil seulement, jamais une photo refusée.
+- Score : juge (notes de Paul, sinon note prédite) 25 % · jauge 4-5 ★ 20 % · harmonie 25 % · préférences apprises 10 % · accord avec
+  le profil (famille, structure, style et palette conseillés par chaque thème) 20 % ; −3 par repli.
+- Sélection DIVERSE : jamais deux modèles quasi identiques (au moins 2 dimensions visibles différentes), d’abord nettement distincts
+  (4 dimensions, structure / premier écran / palette), deux par famille et une palette au plus, puis paliers relâchés ; jamais plus de
+  22 points sous le meilleur.
+- Calcul gardé en base par profession et profil (instantané, signature des notes, duels, photos et revues) ; la présélection montre
+  d’abord, en première page, les modèles composés pour son profil de démonstration (« composeur d’abord », 4 s au plus).
+
 ## Étapes (statuts de la fiche modèle versionnée)
 
 | # | Statut | Qui a la main | Ce qui se passe | « Fini » quand |

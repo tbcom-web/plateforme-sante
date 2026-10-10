@@ -96,6 +96,7 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
             <p className="mt-1 text-2xl font-bold" data-compteur="choisir">{gardes.length}</p>
             <p className="text-sm text-neutral-600">gardé{gardes.length > 1 ? 's' : ''} en file · {CHAINE.maxVerification} vérifiés à la fois, les plus aimés d’abord</p>
             <Link href="/chaine/preselection" className="mt-2 flex min-h-11 items-center justify-center rounded-lg bg-teal-800 px-4 text-sm font-semibold text-white" data-action="choisir">Choisir des designs</Link>
+            <Link href="/chaine/composer" className="mt-2 flex min-h-11 items-center justify-center rounded-lg border border-teal-800 px-4 text-sm font-semibold text-teal-900" data-action="composer-profil">Proposer pour un profil</Link>
             <ul className="mt-2 grid max-h-72 gap-1.5 overflow-y-auto">
               {gardes.slice(0, 12).map((f, k) => carte(f, `${k + 1}${k ? 'e' : 'er'} de la file`, PASTILLE.file, `/chaine/modele/${f.id}`))}
             </ul>
