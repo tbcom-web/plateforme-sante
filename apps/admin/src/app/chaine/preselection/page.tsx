@@ -16,7 +16,7 @@ export default async function PagePreselection() {
   const moi = await exigerContributeur();
   prechargerGuidage();
   const { profession, profils } = await profilsDemo();
-  const [rendu, gen, lue, politique] = await Promise.all([donneesRendu(), donneesGeneration(), lireChaine(profession.id), getEtatPolitique()]);
+  const [rendu, gen, lue, politique] = await Promise.all([donneesRendu(), donneesGeneration(), lireChaine(profession.id, { versions: 'utiles' }), getEtatPolitique()]);
   // Chaîne guidée : prochaine étape ; s'il manque des candidats, les designs de Claude entrent seuls (chaîne relue)
   const { action, chaine, importes } = await guidageChaine({ moi, profession: profession.id, chaine: lue });
   // Politique d'évaluation unique : compositions montrées récemment (toutes surfaces) pas reproposées pendant le délai de retour ;

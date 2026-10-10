@@ -4,6 +4,8 @@ import { baseDeCle, clesRecentes, clesUnitairesInventaire, jourParis, SUJETS_VIS
 import { clesExcluesArrivages, etatPhotoLibre, nouveautesEnAttente } from '@plateforme/core/arrivages';
 import { estDeLaProfession, sujetDeLaProfession, type Profession } from '@plateforme/core/professions';
 import { lireAssetsNotesApprentissage } from '@/lib/assets-notes';
+import { getRole } from '@/lib/admin';
+import { createClient } from '@/lib/supabase/server';
 import { contenusEnAttente, getPacksRevue } from '@/lib/packs-contenus';
 import { getPhotosLibres, type PhotoLibre } from '@/lib/photos-libres';
 import { getSeriesEnAttente } from '@/lib/sourcing-photos';
@@ -27,9 +29,37 @@ export type EtatsNouveautes = {
  * notes les plus récentes d'abord puis statuts courants) : ouverte aux comptes des praticiens et de l'essai, pour qui l'exclusion
  * vaut aussi (/creer, /edition, /mon-site). Erreur : rien en attente, rien d'exclu.
  */
+/**
+ * Super admin (lecture directe des tables, 2026-10-10 « optimiser les requêtes ») : notes des SEULES nouveautés récentes et de leur
+ * illustration de base, et statuts « à retravailler » / « retiré », au lieu de tout le journal d'apprentissage (20 000 lignes) relu
+ * sur chaque page par le menu. Même calcul (dernière note par clé, statuts) ; null en cas d'erreur (lecture d'avant).
+ */
+async function etatsDirects(recentes: CleRecente[]): Promise<Omit<EtatsNouveautes, 'recentes'> | null> {
+  try {
+    const supabase = await createClient();
+    const cles = [...new Set(recentes.flatMap((r) => [r.cle, baseDeCle(r.cle)].filter((k): k is string => Boolean(k))))];
+    const paquets: string[][] = [];
+    for (let i = 0; i < cles.length; i += 80) paquets.push(cles.slice(i, i + 80));
+    const [notes, st] = await Promise.all([
+      Promise.all(paquets.map((p) => supabase.from('assets_notes').select('cle_asset, note, created_at').in('cle_asset', p).order('created_at', { ascending: false }).limit(20000))),
+      supabase.from('illustrations_statuts').select('cle, statut').in('statut', ['a_retravailler', 'retire']),
+    ]);
+    if (st.error || notes.some((n) => n.error)) return null;
+    const lignes = notes.flatMap((n) => (n.data ?? []) as { cle_asset: string; note: number | null; created_at: string }[]).sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
+    const dernieresNotes: Record<string, number> = {};
+    for (const l of lignes) if (typeof l.note === 'number' && !(l.cle_asset in dernieresNotes)) dernieresNotes[l.cle_asset] = l.note;
+    const statuts: Record<string, string> = {};
+    for (const l of (st.data ?? []) as { cle: string; statut: string }[]) statuts[l.cle] = l.statut;
+    return { statuts, dernieresNotes };
+  } catch {
+    return null;
+  }
+}
+
 export const getEtatsNouveautes = cache(async (): Promise<EtatsNouveautes> => {
   const recentes = clesRecentes(jourParis(new Date())).filter((r) => clesConnues().has(r.cle));
   if (!recentes.length) return { recentes, statuts: {}, dernieresNotes: {} };
+  if ((await getRole().catch(() => null)) === 'admin') { const d = await etatsDirects(recentes); if (d) return { recentes, ...d }; }
   try {
     const { data, error } = await lireAssetsNotesApprentissage();
     if (error || !Array.isArray(data)) return { recentes: [], statuts: {}, dernieresNotes: {} };
@@ -66,10 +96,28 @@ export const getArrivagesEnAttente = cache(async (profession: Profession): Promi
 });
 
 /** Compteur du menu : nouveautés, photos, séries de l'agent (0053) et contenus des packs en attente */
+/**
+ * Photos en attente (compteur du menu, 2026-10-10) : parmi les 2 000 photos les plus récentes (même fenêtre que getPhotosLibres),
+ * celles ni validées ni retirées et de la profession ; lecture de deux colonnes au lieu de toute la banque. null : lecture en échec.
+ */
+async function nombrePhotosEnAttente(profession: Profession): Promise<number | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('photos_libres').select('sujet, statut').order('created_at', { ascending: false }).limit(2000);
+    if (error || !Array.isArray(data)) return null;
+    return (data as { sujet: string; statut: string }[]).filter((p) => etatPhotoLibre(p.statut) === 'en_attente' && photoDeLaProfession(p, profession)).length;
+  } catch {
+    return null;
+  }
+}
+
 export const getNombreArrivages = cache(async (profession: Profession): Promise<number> => {
   try {
-    const [a, packs, series] = await Promise.all([getArrivagesEnAttente(profession), getPacksRevue(profession.id), getSeriesEnAttente(profession.id)]);
-    return a.nouveautes.length + a.photos.length + series.series.length + packs.reduce((s, p) => s + contenusEnAttente(p).length, 0);
+    const [etats, photos, packs, series] = await Promise.all([getEtatsNouveautes(), nombrePhotosEnAttente(profession), getPacksRevue(profession.id), getSeriesEnAttente(profession.id)]);
+    // Lecture légère en échec : calcul d'avant (banque complète)
+    const nPhotos = photos ?? (await getArrivagesEnAttente(profession)).photos.length;
+    const nouveautes = estDeLaProfession({}, profession.id) ? nouveautesEnAttente(etats.recentes, etats) : [];
+    return nouveautes.length + nPhotos + series.series.length + packs.reduce((s, p) => s + contenusEnAttente(p).length, 0);
   } catch {
     return 0;
   }

@@ -76,6 +76,30 @@ async function getDuelsAllegesSansMemo(): Promise<{ duels: DuelAdmin[]; migratio
 // Mémorisé entre requêtes tant que la table `duels` ne change pas (memo-journal.ts, 2026-10-09)
 export const getDuelsAlleges = cache(async () => memoParSignature('duels-alleges', (await getUser().catch(() => null))?.id, ['duels'], getDuelsAllegesSansMemo));
 
+/**
+ * Duels pour les CLASSEMENTS de la Dégustation (2026-10-10, « optimiser les requêtes ») : les 5 000 plus récents comme le journal
+ * allégé, mais seulement ce que lisent classementsParContexte et les jours actifs (type, scénario, clés, élément de chaque côté,
+ * dimension, résultat, appareil, date) : quelques centaines de Ko au lieu de ≈ 30 Mo au volume ×10. null : lecture en échec.
+ */
+async function getDuelsClassementSansMemo(): Promise<Duel[] | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('duels').select('type, scenario, a_cle, b_cle, a_element:a_ingredients->element, b_element:b_ingredients->element, dimension_differente, resultat, etiquettes, appareil, prediction, created_at')
+      .order('created_at', { ascending: false }).limit(5000);
+    if (error || !Array.isArray(data)) return null;
+    return (data as unknown as Record<string, unknown>[]).map((l) => {
+      const { a_element, b_element, ...x } = l;
+      return duelDepuisLigne({ ...x, a_ingredients: a_element == null ? {} : { element: a_element }, b_ingredients: b_element == null ? {} : { element: b_element } });
+    }).filter((d): d is Duel => d !== null);
+  } catch {
+    return null;
+  }
+}
+export const getDuelsClassement = cache(async (): Promise<Duel[]> => {
+  const l = await memoParSignature('duels-classement', (await getUser().catch(() => null))?.id, ['duels'], async () => { const r = await getDuelsClassementSansMemo(); if (!r) throw new Error('lecture'); return r; }).catch(() => null);
+  return l ?? (await getDuelsAlleges()).duels;
+});
+
 async function getDuelsApprentissageSansMemo(): Promise<Duel[]> {
   try {
     const supabase = await createClient();

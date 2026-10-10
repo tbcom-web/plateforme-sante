@@ -8,6 +8,7 @@ import {
   estStatutModele, STATUTS_BOUCLE, elementsComposition, modeleIntegre, normaliserComposition, qualiteComposition, type ActionAuto, type GrilleTournoi, type SignauxCandidat, type EtatChaine, type FicheModele, type RevueModele, type RoleEquipe, type TicketModele, type VersionModele, type VoteModele,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { lireEnCache, TAGS_DONNEES } from '@/lib/cache-donnees';
 import { predictionsParCle } from '@plateforme/core/juge';
 import { getPoidsAtelier } from '@/lib/atelier';
 import { getPredictions } from '@/lib/predictions';
@@ -140,33 +141,62 @@ export type Chaine = EtatChaine & {
   erreurLecture: boolean;
 };
 
-/** Toute la chaîne d'une profession (null = toutes) */
-export async function lireChaine(profession: string | null): Promise<Chaine> {
+// Colonnes lues (2026-10-10, « optimiser les requêtes ») : celles des objets du core, jamais select('*')
+const COLONNES_FICHE = 'id, nom, profession, profil, statut, version_courante, version_publiee, version_retouche, justification_test, justification_version, tags, tags_valides, recette, origine, cle, rang, scenario, created_at';
+const COLONNES_VERSION = 'modele, version, composition, cle, journal, auteur, test, created_at';
+const COLONNES_TICKET = 'id, numero, modele, page, appareil, zone, element, etiquette, commentaire, origine, gravite, auteur, statut, version_ouverture, version_correction, controle, created_at';
+
+/**
+ * Toute la chaîne d'une profession (null = toutes). `versions: 'utiles'` (tableau, présélection, tournoi : 2026-10-10) : versions
+ * courante et précédente de chaque fiche seulement (vue modeles_versions_utiles de 0059, résultat du testeur sur la courante ;
+ * c'est tout ce que lisent l'automate, le guidage et le tournoi), « J'aime » comptés par la base (modeles_jaime_compteurs) ;
+ * sans la migration, lecture complète d'avant. Par défaut (fiche, révision, actions) : tout l'historique.
+ */
+export async function lireChaine(profession: string | null, opts: { versions?: 'utiles' | 'toutes' } = {}): Promise<Chaine> {
   const supabase = await createClient();
   // Signal propre à chaque lecture : pas de mémorisation des fetch GET identiques pendant le rendu (relecture après écriture)
   const s = new AbortController().signal;
-  let qf = supabase.from('modeles_fiches').select('*').order('created_at', { ascending: true }).limit(3000).abortSignal(s);
+  const utiles = opts.versions === 'utiles';
+  let qf = supabase.from('modeles_fiches').select(COLONNES_FICHE).order('created_at', { ascending: true }).limit(3000).abortSignal(s);
   if (profession) qf = qf.eq('profession', profession);
-  const { data: fl, error } = await qf;
-  if (error) return { fiches: [], versions: [], tickets: [], votes: [], revues: [], grilles: [], grillesEnCours: [], jaime: {}, migrationManquante: tableAbsente(error), migrationGrilles: true, erreurLecture: !tableAbsente(error) };
-  const fiches = ((fl ?? []) as Record<string, unknown>[]).map(ficheDepuisLigne).filter((f): f is FicheModele => f !== null);
-  const ids = new Set(fiches.map((f) => f.id));
-  const [vl, tl, vol, rl, gl, jl] = await Promise.all([
-    supabase.from('modeles_versions').select('*').order('version', { ascending: true }).limit(10000).abortSignal(s),
-    supabase.from('modeles_tickets').select('*').order('numero', { ascending: true }).limit(10000).abortSignal(s),
+  const lireVersions = async () => {
+    if (utiles) {
+      let q = supabase.from('modeles_versions_utiles').select(COLONNES_VERSION).order('version', { ascending: true }).limit(10000).abortSignal(s);
+      if (profession) q = q.eq('profession', profession);
+      const r = await q;
+      if (!tableAbsente(r.error)) return r;
+    }
+    return supabase.from('modeles_versions').select(COLONNES_VERSION).order('version', { ascending: true }).limit(10000).abortSignal(s);
+  };
+  const lireJaime = async (): Promise<{ data: { modele: string; n: number }[] | null; error: unknown }> => {
+    if (utiles) {
+      const r = await supabase.from('modeles_jaime_compteurs').select('modele, n').limit(50000).abortSignal(s);
+      if (!tableAbsente(r.error)) return { data: (r.data ?? []) as { modele: string; n: number }[], error: r.error };
+    }
+    const r = await supabase.from('modeles_jaime').select('modele').limit(50000).abortSignal(s);
+    return { data: ((r.data ?? []) as { modele: string }[]).map((l) => ({ modele: l.modele, n: 1 })), error: r.error };
+  };
+  // Fiches lues EN MÊME TEMPS que le reste (une attente de moins) ; le reste est filtré ensuite sur leurs identifiants
+  const [{ data: fl, error }, vl, tl, vol, rl, gl, jl] = await Promise.all([
+    qf,
+    lireVersions(),
+    supabase.from('modeles_tickets').select(COLONNES_TICKET).order('numero', { ascending: true }).limit(10000).abortSignal(s),
     supabase.from('modeles_votes').select('profil, a, b, resultat, votant, poids, created_at').order('created_at', { ascending: true }).limit(20000).abortSignal(s),
     supabase.from('modeles_revues').select('modele, version, page, appareil, auteur, verdict, created_at').limit(20000).abortSignal(s),
     supabase.from('modeles_grilles').select('id, profil, propositions, votant, servie_le, meilleures, pire, poids, repondue_le').order('servie_le', { ascending: true }).limit(20000).abortSignal(s),
-    supabase.from('modeles_jaime').select('modele, votant').limit(50000).abortSignal(s),
+    lireJaime(),
   ]);
+  if (error) return { fiches: [], versions: [], tickets: [], votes: [], revues: [], grilles: [], grillesEnCours: [], jaime: {}, migrationManquante: tableAbsente(error), migrationGrilles: true, erreurLecture: !tableAbsente(error) };
+  const fiches = ((fl ?? []) as unknown as Record<string, unknown>[]).map(ficheDepuisLigne).filter((f): f is FicheModele => f !== null);
+  const ids = new Set(fiches.map((f) => f.id));
   return {
     fiches,
-    versions: ((vl.data ?? []) as Record<string, unknown>[]).map(versionDepuisLigne).filter((v) => ids.has(v.modele)),
-    tickets: ((tl.data ?? []) as Record<string, unknown>[]).map(ticketDepuisLigne).filter((t): t is TicketModele & { id: string } => t !== null && ids.has(t.modele)),
+    versions: ((vl.data ?? []) as unknown as Record<string, unknown>[]).map(versionDepuisLigne).filter((v) => ids.has(v.modele)),
+    tickets: ((tl.data ?? []) as unknown as Record<string, unknown>[]).map(ticketDepuisLigne).filter((t): t is TicketModele & { id: string } => t !== null && ids.has(t.modele)),
     votes: ((vol.data ?? []) as Record<string, unknown>[]).map(voteDepuisLigne).filter((v) => ids.has(v.a) && ids.has(v.b)),
     revues: ((rl.data ?? []) as Record<string, unknown>[]).map(revueDepuisLigne).filter((r) => ids.has(r.modele)),
     ...grillesDepuisLignes((gl.data ?? []) as Record<string, unknown>[], ids),
-    jaime: ((jl.data ?? []) as { modele: string }[]).reduce<Record<string, number>>((m, l) => { m[l.modele] = (m[l.modele] ?? 0) + 1; return m; }, {}),
+    jaime: (jl.data ?? []).reduce<Record<string, number>>((m, l) => { m[l.modele] = (m[l.modele] ?? 0) + (Number(l.n) || 0); return m; }, {}),
     migrationGrilles: tableAbsente(gl.error),
     migrationManquante: false,
     // Versions, tickets, duels ou avis illisibles (délai) : l'automate ne doit rien décider sur une chaîne incomplète
@@ -194,6 +224,29 @@ export async function lireFichierRetours(nom: string): Promise<unknown> {
   return null;
 }
 
+/**
+ * Noms des fichiers d'un dossier de retours/ (API GitHub, sinon dossier local), ou null si la liste est illisible. Sert à ne demander
+ * que les résultats de test qui EXISTENT (2026-10-10 : un appel à l'API GitHub par fiche en révision auparavant, presque tous en 404).
+ */
+export async function listerDossierRetours(dossier: string): Promise<Set<string> | null> {
+  const token = process.env.GITHUB_TOKEN, repo = process.env.GITHUB_REPO;
+  if (token && repo) {
+    try {
+      const r = await fetch(`https://api.github.com/repos/${repo}/contents/retours/${dossier}?ref=main`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, next: { revalidate: 120 }, signal: AbortSignal.timeout(5000),
+      });
+      if (r.status === 404) return new Set();
+      if (r.ok) { const l = (await r.json()) as { name?: string }[]; if (Array.isArray(l)) return new Set(l.map((x) => String(x.name ?? ''))); }
+    } catch { /* repli local */ }
+    return null;
+  }
+  const { readdir } = await import('node:fs/promises');
+  for (const racine of [process.env.RETOURS_DIR ?? '', process.cwd(), join(process.cwd(), '..', '..')].filter(Boolean)) {
+    try { return new Set(await readdir(join(racine, racine === process.env.RETOURS_DIR ? '' : 'retours', dossier))); } catch { /* suivant */ }
+  }
+  return new Set();
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Ce qui tourne tout seul
 // ---------------------------------------------------------------------------------------------------------------
@@ -208,8 +261,8 @@ const dernierTour = new Map<string, number>();
 export function oublierAutomate() { dernierTour.clear(); }
 
 /** Applique tests du dépôt, retouches de Claude et transitions automatiques ; renvoie ce qui a été fait */
-export async function faireTournerChaine(profession: string | null): Promise<BilanAutomate & { chaine: Chaine }> {
-  let chaine = await lireChaine(profession);
+export async function faireTournerChaine(profession: string | null, opts: { versions?: 'utiles' | 'toutes' } = {}): Promise<BilanAutomate & { chaine: Chaine }> {
+  let chaine = await lireChaine(profession, opts);
   const bilan: BilanAutomate = { tests: 0, retouches: 0, tickets: 0, actions: [] };
   if (chaine.migrationManquante || chaine.erreurLecture || !chaine.fiches.length) return { ...bilan, chaine };
   const k = profession ?? '*';
@@ -223,14 +276,17 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
   //    enregistrés sur la version testée s'ils sont plus récents que celui déjà en base
   const sansTest = chaine.fiches.filter((f) => STATUTS_BOUCLE.includes(f.statut) || f.statut === 'pret-validation' || f.statut === 'publie')
     .filter((f) => !chaine.versions.find((v) => v.modele === f.id && v.version === f.versionCourante)?.test);
-  const parVersion = await Promise.all(sansTest.map((f) => lireFichierRetours(`tests-modeles/${f.id.toLowerCase()}-v${f.versionCourante}.json`).then(normaliserResultatTest).catch(() => null)));
+  // Seulement les fichiers présents dans le dossier (liste illisible : chaque fichier demandé, comme avant)
+  const presents = await listerDossierRetours('tests-modeles').catch(() => null);
+  const nomTest = (f: FicheModele) => `${f.id.toLowerCase()}-v${f.versionCourante}.json`;
+  const parVersion = await Promise.all(sansTest.filter((f) => !presents || presents.has(nomTest(f))).map((f) => lireFichierRetours(`tests-modeles/${nomTest(f)}`).then(normaliserResultatTest).catch(() => null)));
   for (const r of [...lireResultatsTests(testsBruts), ...parVersion.filter((x): x is NonNullable<typeof x> => x !== null)]) {
     const v = chaine.versions.find((x) => x.modele === r.modele && x.version === r.version);
     if (!v || (v.test && v.test.le >= r.le)) continue;
     const { error } = await supabase.from('modeles_versions').update({ test: r }).eq('modele', r.modele).eq('version', r.version);
     if (!error) { bilan.tests++; change = true; }
   }
-  if (change) chaine = await lireChaine(profession);
+  if (change) chaine = await lireChaine(profession, opts);
   if (chaine.erreurLecture) return { ...bilan, chaine };
   // 2. Tickets techniques des résultats enregistrés (version courante), dédoublonnés
   change = false;
@@ -255,7 +311,7 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
     for (const t of nv.corriges) await supabase.from('modeles_tickets').update({ statut: 'corrige', version_correction: t.versionCorrection }).eq('modele', f.id).eq('numero', t.numero);
     bilan.retouches++; change = true;
   }
-  if (change) chaine = await lireChaine(profession);
+  if (change) chaine = await lireChaine(profession, opts);
   if (chaine.erreurLecture) return { ...bilan, chaine };
   // 4. Automate : transitions jusqu'au point fixe (a priori du tournoi : J'aime, juge, jauge)
   chaine = { ...chaine, signaux: await signauxCandidats(chaine) };
@@ -270,7 +326,7 @@ export async function faireTournerChaine(profession: string | null): Promise<Bil
       if (!error) bilan.actions.push(a);
     }
   }
-  if (bilan.actions.length) chaine = { ...(await lireChaine(profession)), signaux: chaine.signaux };
+  if (bilan.actions.length) chaine = { ...(await lireChaine(profession, opts)), signaux: chaine.signaux };
   return { ...bilan, chaine };
 }
 
@@ -301,9 +357,12 @@ export async function signauxCandidats(chaine: Pick<Chaine, 'fiches' | 'versions
 
 /** Équipe (tableau « par personne ») : fonction equipe_chaine() de 0050 */
 export async function getEquipe(): Promise<{ id: string; email: string; role: RoleEquipe }[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc('equipe_chaine');
-  if (error || !Array.isArray(data)) return [];
+  // Gardée dans le cache de données (cache-donnees.ts, invalidée au changement de rôle : app/chaine/actions.ts)
+  const data = await lireEnCache<unknown[]>('equipe', TAGS_DONNEES.equipe, [], async (supabase) => {
+    const { data, error } = await supabase.rpc('equipe_chaine');
+    return error || !Array.isArray(data) ? { ok: false, repli: [] } : { ok: true, valeur: data as unknown[] };
+  });
+  if (!data.length) return [];
   return (data as { id: string; email: string; role_equipe: string }[]).flatMap((l) => (l.role_equipe === 'contributeur' || l.role_equipe === 'validateur' ? [{ id: l.id, email: l.email, role: l.role_equipe }] : []));
 }
 

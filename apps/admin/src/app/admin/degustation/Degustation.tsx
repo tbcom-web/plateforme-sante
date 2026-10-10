@@ -33,6 +33,14 @@ const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 
 type Profil = { id: string; nom: string; sujets: string[]; scenario: ScenarioRecette };
 type ChoixLeger = Omit<ChoixGrille, 'propositions'> & { propositions: { cle: string; ingredients: { element?: string | null; assets?: string[]; atelier?: string[] } }[] };
+/**
+ * Choix déjà en base, résumés (2026-10-10, « optimiser ») : seulement ce que lit cette page (nombre, XP par session, pari de Claude :
+ * date, pari, préférées, nombre de propositions) ; 5 000 choix complets envoyés au navigateur auparavant (plusieurs Mo).
+ */
+type ChoixResume = { le: string | null; pari: number | null; meilleures: number[]; n: number; session: string | null };
+const resumeDuChoix = (c: ChoixLeger): ChoixResume => ({ le: c.le ?? null, pari: c.pari, meilleures: c.meilleures, n: c.propositions.length, session: c.session ?? null });
+// Forme lue par parisDesChoix (pari, préférées, nombre de propositions, date) : rien d'autre n'en est lu
+const pourParis = (c: ChoixResume) => ({ le: c.le, pari: c.pari, meilleures: c.meilleures, propositions: { length: c.n } }) as unknown as ChoixGrille;
 
 type Props = ContexteRendu & {
   profession: { id: string; parDefaut: string; libelle: string };
@@ -40,7 +48,7 @@ type Props = ContexteRendu & {
   etat: EtatApprentissage & { pret: Record<string, number>; couvertes: Record<string, string[]> };
   elements: ElementInventaire[];
   formats: FormatGrille[];
-  choix: ChoixLeger[];
+  choix: ChoixResume[];
   parisSemaine: ScoreBatsClaude;
   joursActifs: string[];
   defi: DefiDuJour;
@@ -231,7 +239,7 @@ export default function Degustation(props: Props) {
   }, [construire]);
 
   // ---- Jeu : XP, série, médailles ----
-  const choixTous = useMemo(() => [...props.choix, ...choixLocaux], [props.choix, choixLocaux]);
+  const choixTous = useMemo(() => [...props.choix, ...choixLocaux.map(resumeDuChoix)], [props.choix, choixLocaux]);
   const jours = useMemo(() => [...props.joursActifs, ...journal.map((j) => j.le.slice(0, 10))], [props.joursActifs, journal]);
   const serie = serieDegustation(jours);
   const sessionsLocales = useMemo(() => new Set(journal.map((j) => j.session)), [journal]);
@@ -244,7 +252,7 @@ export default function Degustation(props: Props) {
     const j = journal.filter((x) => x.kind === 'grille' && x.profil === p.id && !x.enBase).length;
     return missionProfil(p, { grilles: f.grilles + Math.max(j, loc.filter((c) => c.format !== 'kits').length), kits: f.kits + loc.filter((c) => c.format === 'kits').length, recettesGardees: f.recettesGardees });
   }), [props.profils, props.faits, choixLocaux, journal]);
-  const parisTous = useMemo(() => parisDesChoix(choixTous as ChoixGrille[]), [choixTous]);
+  const parisTous = useMemo(() => parisDesChoix(choixTous.map(pourParis)), [choixTous]);
   const score = scoreBatsClaude(parisTous, new Date().toISOString());
   const etatMedailles = useCallback((pret: Record<string, number>, grillesEnPlus: number): Medaille[] => medailles({
     grilles: choixTous.length + grillesEnPlus, serie,

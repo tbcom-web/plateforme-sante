@@ -63,6 +63,25 @@ export const getChoixGrille = cache(async (): Promise<{ choix: ChoixGrille[]; mi
   }
 });
 
+const COLONNES_CHOIX = 'format, type, dimension, scenario, propositions, meilleures, pire, pari, appareil, session, duree_ms, profession, profil, created_at';
+
+/**
+ * Choix SANS les ingrédients des propositions (2026-10-10, « optimiser les requêtes ») : page de la Dégustation (compteurs, missions,
+ * « Bats Claude », jours actifs, familles préférées), qui n'en lit que les clés et l'élément classé (famille:… des « directions »).
+ * Vue degustation_choix_legers (0059) ; sans elle, journal complet. Mêmes choix, mêmes validations (les ingrédients n'entrent pas
+ * dans la validation) ; ingrédients réduits à l'élément.
+ */
+export const getChoixGrilleLeger = cache(async (): Promise<{ choix: ChoixGrille[]; migrationManquante: boolean; erreur?: string }> => {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.from('degustation_choix_legers').select(COLONNES_CHOIX).order('created_at', { ascending: false }).limit(5000);
+    if (error) return getChoixGrille();
+    return { choix: ((data ?? []) as unknown as Record<string, unknown>[]).map(choixDepuisLigne).filter((c): c is ChoixGrille => c !== null), migrationManquante: false };
+  } catch {
+    return getChoixGrille();
+  }
+});
+
 /** Duels équivalents des grilles, pour le moteur des poids (même plafond, mêmes clés que les duels A/B) ; [] sans la migration */
 export const getDuelsDegustation = cache(async (): Promise<Duel[]> => {
   try {

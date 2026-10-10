@@ -32,7 +32,7 @@ export default async function TableauChaine({ searchParams }: { searchParams: Pr
   const profession = un(sp.profession) ? professionDe(un(sp.profession)) : await getProfession();
   const pd = { id: profession.id, libelle: profession.court || profession.libelle, parDefaut: profession.id, specialites: profession.specialites };
   const [profils, bilan, equipe, arrivages] = await Promise.all([
-    profilsDegustation(pd), faireTournerChaine(profession.id), getEquipe(), getNombreArrivages(profession).catch(() => null),
+    profilsDegustation(pd), faireTournerChaine(profession.id, { versions: 'utiles' }), getEquipe(), getNombreArrivages(profession).catch(() => null),
   ]);
   // Chaîne guidée : LA prochaine étape (tournoi calculé une fois, réutilisé par la colonne « Candidat ») ; import automatique des
   // designs de Claude s'il manque des candidats pour ouvrir le tournoi (la chaîne est alors relue)

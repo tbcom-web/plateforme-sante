@@ -34,6 +34,9 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   const lectureHashtags = getHashtagsAssets();
   // Retours « Rendu mobile » (0034) : liste « Rendu mobile à revoir » et état mobile des cartes
   const lectureMobile = getRetoursMobile();
+  // Réévaluations et politique d'évaluation lues en même temps que le reste (attendues seulement au rendu, 2026-10-10)
+  const lectureReevaluations = getReevaluations();
+  const lecturePolitique = getEtatPolitique();
   const [assets, atelier, revues, photosJeux, poids, changementsClaude, catalogue, modeles, marquesImportees, { univers }, inspirations, motsCles, surchargesSujets, recettes] = await Promise.all([
     getNotesAssets(), getNotesAtelier(), getRevuesIllustrations(), getPhotosDesJeux(), getPoidsAtelier(), getChangementsClaude(),
     getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getInspirations(), getMotsClesEnBase(), getSurchargesSujets(),
@@ -88,7 +91,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         </p>
       )}
       <Retours
-        reevaluations={(await getReevaluations()).reevaluations}
+        reevaluations={(await lectureReevaluations).reevaluations}
         notesAssets={assets.notes.map((n) => ({ cle: n.cle, note: n.note, empreinte: n.empreinte, le: n.le }))}
         datesAtelier={atelier.notes.map((n) => n.le ?? '').filter(Boolean)}
         dejaNotees={dejaNotees}
@@ -128,7 +131,7 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
         nouveautesRecentes={clesRecentes(jourParis(new Date()))}
         nouveautesInitiales={typeof sp.nouveautes === 'string' ? sp.nouveautes : null}
         // Politique d'évaluation unique (politique-evaluation.ts) : mémoire commune, implicites, règles apprises, fort potentiel
-        politique={await getEtatPolitique()}
+        politique={await lecturePolitique}
       />
     </div>
   );

@@ -32,6 +32,14 @@ async function SectionEvaluation() {
   return <IndicateursEvaluation ind={await getIndicateursPolitique().catch(() => null)} />;
 }
 
+/** Clés d'assets ayant au moins une note (vue de 0059), sinon depuis la lecture d'apprentissage (comportement d'avant) */
+async function clesNotees(supabase: Awaited<ReturnType<typeof createClient>>): Promise<Set<string>> {
+  const { data, error } = await supabase.from('assets_cles_notees').select('cle_asset').limit(100000);
+  if (!error && Array.isArray(data)) return new Set((data as { cle_asset: string }[]).map((l) => l.cle_asset));
+  const { data: lignes } = await lireAssetsNotesApprentissage();
+  return new Set(((Array.isArray(lignes) ? lignes : []) as { cle_asset: string; note: number | null }[]).filter((l) => typeof l.note === 'number').map((l) => l.cle_asset));
+}
+
 export default async function TableauDeBord({ searchParams }: PageProps<'/admin'>) {
   await exigerAdmin();
   const sp = await searchParams;
@@ -49,7 +57,8 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
   const [arrivages, nouveautes, notes, modifs, brouillons, echecs, publications] = await Promise.all([
     avecDelai(getArrivagesEnAttente(profession), D, { nouveautes: [], photos: [], statuts: {}, migrationPhotos: false }),
     avecDelai(getEtatsNouveautes(), D, { recentes: [], statuts: {}, dernieresNotes: {} }),
-    avecDelai(Promise.resolve(lireAssetsNotesApprentissage()), D, { data: null, error: null } as unknown as Awaited<ReturnType<typeof lireAssetsNotesApprentissage>>),
+    // Clés notées : vue assets_cles_notees (0059, quelques Ko) ; sans elle, tout le journal d'apprentissage (≈ 20 000 lignes)
+    avecDelai(clesNotees(supabase), D, null),
     compter((r) => r.eq('modifs_non_publiees', true).not('publiee_le', 'is', null).eq('test', false)),
     compter((r) => r.eq('statut', 'brouillon').eq('test', false)),
     compter((r) => r.eq('publication_etat', 'echec')),
@@ -58,7 +67,7 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
 
   // À déguster : ingrédients unitaires jamais notés (ni eux ni leur illustration de base), hors arrivages en attente
   unitaires ??= clesUnitairesInventaire();
-  const notees = new Set(((Array.isArray(notes.data) ? notes.data : []) as { cle_asset: string; note: number | null }[]).filter((l) => typeof l.note === 'number').map((l) => l.cle_asset));
+  const notees = notes ?? new Set<string>();
   const enAttente = new Set(arrivages.nouveautes.map((n) => n.cle));
   const aDeguster = deLaProfession ? unitaires.filter((k) => !enAttente.has(k) && !notees.has(k) && !notees.has(baseDeCle(k) ?? k)).length : 0;
 

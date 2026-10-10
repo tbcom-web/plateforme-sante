@@ -12,22 +12,48 @@ import SourcesLicences from './SourcesLicences';
 
 export const metadata = { title: 'Super admin · Jeux de photos' };
 
+/**
+ * Brouillon partiel de chaque site (version, thème, profil, cabinet, praticiens) : même résultat de normaliserDraft pour le jeu de
+ * photos et le nom du site ; un brouillon d'un ancien format (version ≠ 2, converti par normaliserDraft) est relu en entier.
+ */
+async function lireSitesPourJeux(supabase: Awaited<ReturnType<typeof createClient>>): Promise<{ data: { id: string; config: unknown }[] | null }> {
+  const { data, error } = await supabase.from('sites').select('id, version:config->version, theme:config->theme, profil:config->profil, cabinet:config->cabinet, praticiens:config->praticiens');
+  if (error || !data) return supabase.from('sites').select('id, config') as unknown as Promise<{ data: { id: string; config: unknown }[] | null }>;
+  const lignes = data as unknown as { id: string; version: unknown; theme: unknown; profil: unknown; cabinet: unknown; praticiens: unknown }[];
+  const anciens = lignes.filter((l) => l.version !== 2).map((l) => l.id);
+  const complets = new Map<string, unknown>();
+  for (let i = 0; i < anciens.length; i += 100) {
+    const { data: c } = await supabase.from('sites').select('id, config').in('id', anciens.slice(i, i + 100));
+    for (const l of (c ?? []) as { id: string; config: unknown }[]) complets.set(l.id, l.config);
+  }
+  return { data: lignes.map((l) => ({ id: l.id, config: l.version === 2 ? { version: 2, theme: l.theme ?? undefined, profil: l.profil ?? undefined, cabinet: l.cabinet ?? undefined, praticiens: l.praticiens ?? undefined } : complets.get(l.id) ?? null })) };
+}
+
 export default async function JeuxPhotos() {
   const supabase = await createClient();
   const [{ data, error }, { data: sites }, catalogue, libres, hashtags, recap] = await Promise.all([
     supabase.from('jeux_photos').select(COLONNES_JEU).order('created_at'),
-    supabase.from('sites').select('id, config'),
+    // Seulement les parties du brouillon utiles ici (jeu de photos, nom du cabinet, praticiens) : jamais tout config (2026-10-10)
+    lireSitesPourJeux(supabase),
     getCatalogue(),
     getPhotosLibres(),
     getHashtagsAssets(),
     getRecapSources(),
   ]);
   // Photos libres de droits validées, proposées dans le choix des jeux partagés (les sujets de la spécialité d'abord)
+  // Seules les photos IMPORTÉES (fichiers hébergés chez nous) entrent dans un jeu. Éléments construits UNE fois et partagés par tous
+  // les éditeurs (2026-10-10) : la page les envoie une seule fois au navigateur (objets identiques référencés) au lieu d'une copie par
+  // éditeur ; listes par spécialité mémorisées (même ordre qu'avant : sujets de la spécialité d'abord)
+  const validees = libres.photos.filter(estPhotoImportee).map((p) => ({ sujet: p.sujet, item: { url: p.url!, legende: `${libelleSujet(p.sujet)} · ${p.auteur} (${p.source === 'ia' ? 'Image générée' : p.source === 'pexels' ? 'Pexels' : 'Pixabay'})` } }));
+  const parSpecialite = new Map<string, { url: string; legende: string }[]>();
   const libresDe = (spec: string) => {
-    // Seules les photos IMPORTÉES (fichiers hébergés chez nous) entrent dans un jeu
-    const validees = libres.photos.filter(estPhotoImportee).map((p) => ({ ...p, url: p.url! }));
-    const duSujet = (p: (typeof validees)[number]) => SUJETS_VISUELS.find((x) => x.id === p.sujet)?.specialite === spec;
-    return [...validees.filter(duSujet), ...validees.filter((p) => !duSujet(p))].map((p) => ({ url: p.url, legende: `${libelleSujet(p.sujet)} · ${p.auteur} (${p.source === 'ia' ? 'Image générée' : p.source === 'pexels' ? 'Pexels' : 'Pixabay'})` }));
+    let l = parSpecialite.get(spec);
+    if (!l) {
+      const duSujet = (p: (typeof validees)[number]) => SUJETS_VISUELS.find((x) => x.id === p.sujet)?.specialite === spec;
+      l = [...validees.filter(duSujet), ...validees.filter((p) => !duSujet(p))].map((p) => p.item);
+      parSpecialite.set(spec, l);
+    }
+    return l;
   };
   const jeux = (data ?? []).map(jeuPhotosDepuisLigne);
   const soins = catalogue.map((s) => ({ slug: s.slug, titre: s.titre_court }));

@@ -8,6 +8,8 @@
 import '@plateforme/core/dessins.css';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState, useTransition, type CSSProperties } from 'react';
+
+const PAR_PAGE = 120;
 import {
   animationDeCle, empreinteAsset, empreinteSvg, etatAnimation, GAMMES, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, type SurchargesSujets, gamme as gammeParId, inventaireAssets, LIBELLES_REGISTRES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, markdownRetours,
   pastilleGamme, STATUTS_ILLUSTRATION, SURFACES_CSS, variablesCharte, variablesGamme,
@@ -179,6 +181,9 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
   const [filtreRegistre, setFiltreRegistre] = useState<'tous' | Registre>('tous');
   const [filtreSoin, setFiltreSoin] = useState('tous');
   const [recherche, setRecherche] = useState('');
+  // Pagination (2026-10-10, « optimiser ») : 120 cartes rendues, « Afficher plus » ; filtres, compteurs et navigation ← → de la vue
+  // agrandie portent sur toutes (≈ 1 800 cartes rendues d'un coup auparavant : 14 Mo de page, ≈ 2 s de rendu serveur)
+  const [nbAffichees, setNbAffichees] = useState(PAR_PAGE);
   const soins = useMemo(() => [...new Set(lignes.flatMap((l) => l.soins))].sort(), [lignes]);
 
   const visibles = useMemo(() => {
@@ -329,7 +334,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
       )}
 
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4" style={style}>
-        {visibles.map((l) => {
+        {visibles.slice(0, nbAffichees).map((l) => {
           const s = statutDe(l);
           const derniere = (parCle.get(l.cle) ?? []).find((r) => r.commentaire);
           const msg = messages[l.cle];
@@ -363,6 +368,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
           );
         })}
       </ul>
+      {visibles.length > nbAffichees && <button type="button" onClick={() => setNbAffichees((n) => n + PAR_PAGE)} className="min-h-11 justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold">Afficher {Math.min(PAR_PAGE, visibles.length - nbAffichees)} de plus ({visibles.length - nbAffichees} restantes)</button>}
       {!visibles.length && <p className="text-sm text-neutral-500">Aucune illustration pour ces filtres.</p>}
 
       {ligneOuverte && (

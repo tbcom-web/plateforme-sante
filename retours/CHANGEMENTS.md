@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : Admin plus rapide : la chaîne, la Dégustation, le Frigo et le menu ne lisent plus que ce qu'ils affichent ; listes de photos et bibliothèque affichées par pages (« Afficher plus »).
 - 2026-10-10 : Admin plus rapide : l'apprentissage (poids, politique, éléments tranchés, contexte d'images) est calculé une fois et gardé en base, recalculé seulement quand vos notes ou duels changent (migration 0059).
 - 2026-10-10 : Apprentissage plus rapide : Bradley-Terry des duels ≈ 3 fois plus rapide (résultat identique au bit près, testé).
 - 2026-10-10 : Photo + tracé (à valider) : sur la photo du premier écran, une illustration minimaliste au trait qui dialogue avec elle — lignes de niveau de la montagne et sentier en lacets (trail, randonnée), chevrons de vitesse et cadran de chrono (course…), empreintes en lignes de niveau en filigrane ; deux versions qui se dessinent au chargement (sentier, lignes de niveau). Toujours de l'activité de la photo (jamais une montagne sur une route), seulement quand la photo est posée à côté du texte, jamais avec une animation d'en-tête, rien de vif pour le diabète et les seniors. Dé et verrou au Studio, duels, Donner mon avis ; aucun praticien ne le voit avant votre validation. Écartés sur planche : trajectoire du pas, médaillon de pression (trace-photo:*)

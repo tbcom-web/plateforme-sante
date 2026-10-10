@@ -7,8 +7,8 @@ import { predictionsParCle } from '@plateforme/core/juge';
 import { exigerAdmin } from '@/lib/admin';
 import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getPoidsAtelier } from '@/lib/atelier';
-import { getChoixGrille, MIGRATION_DEGUSTATION, professionDegustation, profilsDegustation } from '@/lib/degustation';
-import { getDuelsAlleges } from '@/lib/duels';
+import { getChoixGrilleLeger, MIGRATION_DEGUSTATION, professionDegustation, profilsDegustation } from '@/lib/degustation';
+import { getDuelsClassement } from '@/lib/duels';
 import { getMarquesImportees } from '@/lib/marques';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getNotationsAdmin } from '@/lib/notation-recettes';
@@ -31,8 +31,9 @@ export const metadata = { title: 'Super admin · Dégustation' };
 export default async function PageDegustation() {
   await exigerAdmin();
   const profession = await professionDegustation();
+  const lecturePolitique = getEtatPolitique();
   const [profils, { choix, migrationManquante, erreur: erreurChoix }, { duels }, modeles, catalogue, marquesImportees, { univers }, poids, photos, photosJeux, surcharges, predictions, tranches, { notations }] = await Promise.all([
-    profilsDegustation(profession), getChoixGrille(), getDuelsAlleges(), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(),
+    profilsDegustation(profession), getChoixGrilleLeger(), getDuelsClassement().then((duels) => ({ duels })), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(),
     getPhotosDesJeux(), getSurchargesSujets(), getPredictions(), getTranches(), getNotationsAdmin(),
   ]);
   const mesChoix = choixDeLaProfession(choix, profession.id, profession.parDefaut);
@@ -84,7 +85,7 @@ export default async function PageDegustation() {
           etat={etat}
           elements={elements}
           formats={formats}
-          choix={mesChoix.map((c) => ({ ...c, propositions: c.propositions.map((p) => ({ cle: p.cle, ingredients: { element: p.ingredients.element ?? null, assets: p.ingredients.assets, atelier: p.ingredients.atelier } })) }))}
+          choix={mesChoix.map((c) => ({ le: c.le ?? null, pari: c.pari, meilleures: c.meilleures, n: c.propositions.length, session: c.session ?? null }))}
           parisSemaine={scoreBatsClaude(parisDesChoix(mesChoix.filter((c) => (c.le ?? '') >= new Date(Date.now() - 7 * 86400000).toISOString())), jour)}
           joursActifs={[...new Set([...mesChoix.map((c) => (c.le ?? '').slice(0, 10)), ...mesDuels.map((d) => (d.le ?? '').slice(0, 10))].filter(Boolean))]}
           defi={defiDuJour(jour, nomsProfils)}
@@ -101,7 +102,7 @@ export default async function PageDegustation() {
           themesActives={themesActives()}
           poids={poids}
           photos={photos}
-          politique={await getEtatPolitique()}
+          politique={await lecturePolitique}
         />
       )}
     </div>

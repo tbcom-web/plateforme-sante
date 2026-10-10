@@ -4,6 +4,8 @@
 // 0031) avec « Valider et importer » / « Retirer », puis photos importées (fichiers WebP chez nous) avec leur statut.
 // Thèmes et HASHTAGS (0029) : filtre « #… », recherche (auteur, thème, mot-clé, hashtag), ajout / retrait sur chaque photo.
 import { useMemo, useState, useTransition } from 'react';
+
+const PAR_PAGE = 60;
 import { useRouter } from 'next/navigation';
 import { cleCandidatePhoto, clePhoto, correspondHashtag, etiquetteKit, hashtagsDe, LIBELLE_IMAGE_GENEREE, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
@@ -46,6 +48,9 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
   const [hashtags, setHashtags] = useState(initiaux);
   const [filtre, setFiltre] = useState('');
   const [recherche, setRecherche] = useState('');
+  // Pagination (2026-10-10, « optimiser ») : 60 photos affichées, « Afficher 60 de plus » ; filtres et recherche portent sur toutes
+  // (2 000 cartes rendues d'un coup auparavant : 6 Mo de page et plus d'une seconde de rendu serveur)
+  const [nbAffichees, setNbAffichees] = useState(PAR_PAGE);
   const [resultat, setResultat] = useState<{ ok: boolean; texte: string } | null>(null);
   // Clé d'asset : photo importée → clé de l'inventaire ; candidate → photo:libre:<source>-<id> (reportée à l'import)
   const lignes = useMemo(() => photos.map((p) => ({ p, cle: p.url ? clePhoto(p.url) : p.source === 'ia' ? null : cleCandidatePhoto(p.source, p.idSource) })), [photos]);
@@ -71,7 +76,7 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
       {resultat && <p role="status" className={`rounded-lg p-3 text-sm ring-1 ${resultat.ok ? 'bg-teal-50 text-teal-950 ring-teal-200' : 'bg-red-50 text-red-900 ring-red-200'}`}>{resultat.texte}</p>}
       <p className="text-xs text-neutral-500">{visibles.length} photo{visibles.length > 1 ? 's' : ''} sur {photos.length}{aImporter ? ` · ${aImporter} à valider et importer` : ''}</p>
       <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {visibles.map(({ p, cle }) => {
+        {visibles.slice(0, nbAffichees).map(({ p, cle }) => {
           const importee = Boolean(p.url);
           const src = p.url ?? p.apercuUrl;
           return (
@@ -118,6 +123,7 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
           );
         })}
       </ul>
+      {visibles.length > nbAffichees && <button type="button" onClick={() => setNbAffichees((n) => n + PAR_PAGE)} className="min-h-11 justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold">Afficher {Math.min(PAR_PAGE, visibles.length - nbAffichees)} de plus ({visibles.length - nbAffichees} restantes)</button>}
       {!visibles.length && <p className="text-sm text-neutral-500">Aucune photo pour ces filtres.</p>}
     </div>
   );

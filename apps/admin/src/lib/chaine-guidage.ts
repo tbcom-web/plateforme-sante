@@ -86,7 +86,7 @@ export async function guidageChaine(p: { moi: Equipier; profession: string; chai
       const r = await importerDesignsClaude(p.moi, { dejaLa: cles }).catch(() => null);
       if (r?.ajoutes) {
         importes = r.ajoutes;
-        chaine = { ...(await lireChaine(p.profession)), signaux: chaine.signaux };
+        chaine = { ...(await lireChaine(p.profession, { versions: 'utiles' })), signaux: chaine.signaux };
         const apres = new Set(chaine.fiches.map((f) => f.cle));
         claude = designs.filter((d) => !apres.has(d.cle)).length;
       }

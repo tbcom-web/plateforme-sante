@@ -16,7 +16,7 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
   const moi = await exigerContributeur();
   const sp = await searchParams;
   const { profession, profils } = await profilsDemo();
-  const [{ chaine }, rendu, gen] = await Promise.all([faireTournerChaine(profession.id), donneesRendu(), donneesGeneration()]);
+  const [{ chaine }, rendu, gen] = await Promise.all([faireTournerChaine(profession.id, { versions: 'utiles' }), donneesRendu(), donneesGeneration()]);
   const demande = (Array.isArray(sp.profil) ? sp.profil[0] : sp.profil) || null;
   const groupes = [...new Set([`${profession.id}|*`, ...chaine.fiches.filter((f) => f.statut === 'candidat').map(groupeTournoi)])];
   const groupe = `${profession.id}|${demande ?? '*'}`;
