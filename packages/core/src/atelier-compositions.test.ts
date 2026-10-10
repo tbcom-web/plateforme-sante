@@ -55,7 +55,9 @@ test('atelier : toute dimension du registre peut apparaître dans une combinaiso
   assert.ok(vues((x) => JSON.stringify(x.menu)).size >= 2, 'menu');
   // Familles d'éléments : chacune présente dans au moins une combinaison dont le gabarit la rend variable
   const familles = new Set(l.flatMap(({ x }) => Object.keys(x.sections.variantes)));
-  const absentes = FAMILLES_COMPOSANTS.filter((f) => !familles.has(f) && !['fiche'].includes(f));
+  // Photo + tracé (photo-trace.ts) : seulement sur un premier écran hôte à photo (sinon retiré par reparerComposition) ; vérifié à part
+  // dans photo-trace.test.ts (tuiles, réparation)
+  const absentes = FAMILLES_COMPOSANTS.filter((f) => !familles.has(f) && !['fiche', 'trace-photo'].includes(f));
   assert.deepEqual(absentes, [], `familles jamais tirées : ${absentes.join(', ')}`);
   assert.ok(vues((x) => (x.sections.variantes as Record<string, string>).accueil ?? '').size >= 4, 'premiers écrans variés');
   // Ingrédients « à valider » : tirés pour Paul (badge), jamais refusés par l'atelier

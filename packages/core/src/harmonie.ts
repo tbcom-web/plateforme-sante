@@ -27,7 +27,8 @@ import { PAIRES_POLICES, VARIANTES_SECTIONS } from './modeles';
 import { JEUX_EFFETS } from './effets';
 import { FORMES_CARTES } from './formes';
 import { PRESENTATIONS_PORTRAITS } from './portraits-variantes';
-import { ANIMATIONS_HEROS, FOND_HEROS_PAR_FAMILLE, FONDS_HEROS, HOTES_VISUEL_ANIME, estPremierEcranSansVisuel } from './heros-photo-variantes';
+import { ANIMATIONS_HEROS, FOND_HEROS_PAR_FAMILLE, FONDS_HEROS, HOTES_TRACE_PHOTO, HOTES_VISUEL_ANIME, estPremierEcranSansVisuel } from './heros-photo-variantes';
+import { TRACES_VIFS } from './photo-trace';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Profils et familles
@@ -163,7 +164,7 @@ export const NOMS_DIMENSIONS_HARMONIE: Record<string, string> = {
   'typo.alignement': 'Alignement', 'typo.surtitre': 'Surtitres', 'details.jeu': 'Jeu de détails', 'details.coins': 'Coins', 'details.ombres': 'Ombres',
   'details.separateur': 'Séparateurs', 'details.souligne': 'Soulignés', 'details.fond': 'Motif de fond', 'details.boutons': 'Boutons', 'details.densite': 'Densité',
   'details.cadre': 'Cadres d’images', 'details.citation': 'Encadrés', 'details.badge': 'Étiquettes', 'menu.ordinateur': 'Menu (ordinateur)', 'menu.mobile': 'Menu (téléphone)',
-  'menu.rdv': 'Bouton de rendez-vous', 'v.accueil': 'Premier écran', 'v.transition': 'Transition du diaporama', 'v.entete-anim': 'Animation d’en-tête', 'v.visuel-heros': 'Visuel du premier écran', 'v.fond-heros': 'Fond du premier écran', 'v.sections': 'Transitions entre sections',
+  'menu.rdv': 'Bouton de rendez-vous', 'v.accueil': 'Premier écran', 'v.transition': 'Transition du diaporama', 'v.entete-anim': 'Animation d’en-tête', 'v.visuel-heros': 'Visuel du premier écran', 'v.fond-heros': 'Fond du premier écran', 'v.trace-photo': 'Photo + tracé', 'v.sections': 'Transitions entre sections',
   'v.soins-forme': 'Forme des cartes', 'v.sujets': 'Sujets', 'v.soins': 'Soins', 'v.praticiens': 'Équipe', 'v.portraits': 'Présentation des praticiens', 'v.infos': 'Plan d’accès', 'v.faq': 'Questions',
   'v.galerie': 'Galerie', 'v.horaires': 'Horaires', 'v.contact': 'Contact', 'v.pied': 'Pied de page', 'v.fiche': 'Fiche d’un soin', 'v.actualites': 'Actualités',
   'v.theme': 'Page sujet', 'v.article': 'Article',
@@ -230,7 +231,7 @@ export function verrousDimension(dim: DimensionHarmonie): string[] {
 }
 /** Pages du studio et leurs sections (PAGES_STRUCTURE de recettes.ts) */
 const PAGES_H: Record<string, readonly string[]> = {
-  accueil: ['accueil', 'sujets', 'entete-anim', 'visuel-heros', 'fond-heros'], soins: ['soins', 'soins-forme'], acces: ['infos', 'horaires', 'contact'], cabinet: ['praticiens', 'galerie'],
+  accueil: ['accueil', 'sujets', 'entete-anim', 'visuel-heros', 'fond-heros', 'trace-photo'], soins: ['soins', 'soins-forme'], acces: ['infos', 'horaires', 'contact'], cabinet: ['praticiens', 'galerie'],
   questions: ['faq'], fiche: ['fiche'], actualites: ['actualites'], theme: ['theme'], article: ['article'],
 };
 export const estVerrouilleeHarmonie = (dim: DimensionHarmonie, verrous: readonly string[]) => verrousDimension(dim).some((v) => verrous.includes(v));
@@ -504,6 +505,16 @@ export const ETIQUETTES_HARMONIE: Record<string, EtiquetteHarmonie> = {
   'v.fond-heros:trame': E('Trame de points de pression', { d: 0.3, t: -0.3, c: 0.3 }, { pref: [F.te, F.ma, F.mi, F.cl], fort: 0.3 }),
   'v.fond-heros:illustration': E('Illustration estompée en fond', { t: 0.2, f: 0.2 }, { pref: [F.cl, F.na, F.dx, F.ed], fort: 0.4 }),
   'v.fond-heros:trajectoires': E('Trajectoires du pas', { e: 0.3, f: 0.3 }, { pref: [F.mi, F.te, F.cl, F.ed], jamais: [F.dx], fort: 0.3 }),
+  // Photo + tracé (photo-trace.ts, 2026-10-10, à valider) : un trait fin sur la photo, l'élément qui signe l'écran sans le charger ;
+  // lignes de niveau et sentier : nature, technique ; chevrons et chrono : vitesse (pop, magazine, technique) ; empreintes : filigrane
+  'v.trace-photo:aucun': E('Photo seule', {}, {}),
+  'v.trace-photo:topographie': E('Photo + lignes de niveau', { c: 0.3, r: 0.3, e: 0.2 }, { pref: [F.na, F.te, F.ma], jamais: [F.dx], fort: 0.5 }),
+  'v.trace-photo:topographie-anime': E('Photo + lignes de niveau qui montent', { c: 0.3, r: 0.3, e: 0.35 }, { pref: [F.na, F.te, F.ma], jamais: [F.dx], fort: 0.55 }),
+  'v.trace-photo:lacets': E('Photo + sentier en lacets', { e: 0.35, r: 0.2 }, { pref: [F.na, F.ma, F.te], jamais: [F.ed], fort: 0.5 }),
+  'v.trace-photo:lacets-anime': E('Photo + sentier qui se dessine', { e: 0.5, r: 0.2 }, { pref: [F.na, F.ma, F.te], jamais: [F.ed], fort: 0.55 }),
+  'v.trace-photo:chevrons': E('Photo + chevrons de vitesse', { e: 0.8, c: 0.6 }, { pref: [F.po, F.ma, F.te], jamais: [F.ed, F.dx, F.cl], fort: 0.5 }),
+  'v.trace-photo:chrono': E('Photo + cadran de chrono', { e: 0.6, c: 0.4 }, { pref: [F.te, F.ma, F.po], jamais: [F.dx], fort: 0.45 }),
+  'v.trace-photo:empreintes': E('Photo + empreintes en filigrane', { f: 0.5, c: 0.3 }, { pref: [F.ed, F.cl, F.te, F.mi], jamais: [F.po], fort: 0.4 }),
   // Animations du pied (entete-pied.ts, 2026-10-09, à valider) : en grand, l'élément expressif de l'écran ; tempo calme pour le
   // diabète et les seniors (vives : petits pas en rond, chevrons, chronomètre)
   'v.entete-anim:pi-pression': E('Pied : carte de pression', { e: 0.45, c: 0.5, d: 0.2 }, { pref: [F.te, F.mi, F.ma], jamais: [F.dx], fort: 0.8 }),
@@ -723,7 +734,7 @@ const ANIMATIONS_PULSEES = ['points-pression', 'onde', 'em-respire', 'em-marche'
 /** Valeur neutre (sans règle) d'une dimension, utilisée pour corriger */
 const NEUTRES: Record<string, string> = {
   'details.coins': 'gabarit', 'v.soins-forme': 'gabarit', 'details.cadre': 'aucun', 'details.fond': 'aucun', 'details.separateur': 'filet', 'details.souligne': 'aucun',
-  'v.sections': 'aucune', 'v.entete-anim': 'aucune', 'v.visuel-heros': 'auto', 'v.fond-heros': 'trame', 'v.portraits': 'sobre', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
+  'v.sections': 'aucune', 'v.entete-anim': 'aucune', 'v.visuel-heros': 'auto', 'v.fond-heros': 'trame', 'v.trace-photo': 'aucun', 'v.portraits': 'sobre', 'details.boutons': 'gabarit', 'details.ombres': 'aucune', 'typo.echelle': 'affirmee', 'typo.casse': 'normale', 'typo.interlettrage': 'normal',
   'details.densite': 'aeree', effets: 'sobre', 'v.accueil': 'carte', 'details.badge': 'gabarit', 'menu.ordinateur': 'gabarit', 'typo.surtitre': 'simple',
 };
 /** Classe de rayon (0 carré, 1 arrondi, 2 très arrondi) des éléments qui portent des angles */
@@ -800,6 +811,22 @@ export function violationsDures(x: CompositionHarmonie, c?: ContexteHarmonie | n
   // Liant « chevrons de vitesse » entre les sections : même règle (énergie forte)
   if (val(x, 'v.sections') === 'chevrons' && calmes.length) {
     v.push({ code: 'animation-calme', message: `Chevrons de vitesse entre les sections pour ${calmes.map((s) => (s === 'diabete' ? 'le diabète' : 'les seniors')).join(' et ')} : trop vif, il faut rassurer.`, dims: ['v.sections'], corrections: [{ dim: 'v.sections', valeur: 'aucune' }] });
+  }
+  // 6 ter bis. Photo + tracé (photo-trace.ts) : jamais un tracé vif pour le diabète ni les seniors ; jamais deux tracés à la fois
+  // (animation d'en-tête ou visuel animé) ; jamais sur une photo déjà chargée (premiers écrans non hôtes : bandes, taches, aplats,
+  // diaporama, courbe de la voûte)
+  const tracePh = val(x, 'v.trace-photo');
+  if (tracePh && tracePh !== 'aucun') {
+    if ((TRACES_VIFS as readonly string[]).includes(tracePh) && calmes.length) {
+      v.push({ code: 'trace-calme', message: `« ${nomValeurHarmonie('v.trace-photo', tracePh)} » pour ${calmes.map((s) => (s === 'diabete' ? 'le diabète' : 'les seniors')).join(' et ')} : trop vif, il faut rassurer.`, dims: ['v.trace-photo'], corrections: [{ dim: 'v.trace-photo', valeur: 'empreintes' }, { dim: 'v.trace-photo', valeur: 'aucun' }] });
+    }
+    if ((anim && anim !== 'aucune') || val(x, 'v.visuel-heros') === 'animation') {
+      v.push({ code: 'trace-double', message: `« ${nomValeurHarmonie('v.trace-photo', tracePh)} » avec une animation dans le premier écran : jamais deux tracés à la fois.`, dims: ['v.trace-photo', 'v.entete-anim'], corrections: [{ dim: 'v.trace-photo', valeur: 'aucun' }, { dim: 'v.entete-anim', valeur: 'aucune' }] });
+    }
+    const accT = val(x, 'v.accueil');
+    if (accT && !HOTES_TRACE_PHOTO.includes(accT)) {
+      v.push({ code: 'trace-hote', message: `« ${nomValeurHarmonie('v.trace-photo', tracePh)} » sur « ${nomValeurHarmonie('v.accueil', accT)} » : la photo est déjà chargée (ou le texte est posé dessus).`, dims: ['v.trace-photo'], corrections: [{ dim: 'v.trace-photo', valeur: 'aucun' }] });
+    }
   }
   if (anim && ANIMATIONS_PULSEES.includes(anim) && x.visuels.style === 'pedagogique') {
     v.push({ code: 'pulse-pedagogique', message: `« ${nomValeurHarmonie('v.entete-anim', anim)} » avec les illustrations douces : en registre pédagogique, rien ne pulse.`, dims: ['v.entete-anim'], corrections: [{ dim: 'v.entete-anim', valeur: 'voute-trace' }, { dim: 'v.entete-anim', valeur: 'aucune' }] });

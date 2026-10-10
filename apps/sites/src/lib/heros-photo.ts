@@ -1,7 +1,7 @@
 // Données des nouveaux premiers écrans (packages/core/src/heros-photo.ts) pour le site publié : variante choisie par la recette
 // (variantes.accueil, tous gabarits), photos (style « Photos » : photo d'accueil du praticien, photos de la recette, jeu de la
 // spécialité ; sinon photos importées par le praticien), textes et liens identiques au premier écran des gabarits.
-import { estAnimationEntete, familleDePolice, fondHerosEffectif, FOND_HEROS_SUR, paireDuModele, gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcranNouveau, herosRenduPossible, photosMontrees, styleCouleursHeros, motLongTitre, type DonneesHeros, type PhotoHeros, type TransitionDiaporama, TRANSITIONS_DIAPORAMA } from '@plateforme/core';
+import { estAnimationEntete, estAValider, tracePhotoEffectif, familleDePolice, fondHerosEffectif, FOND_HEROS_SUR, paireDuModele, gabaritModele, VARIANTES_PAR_DEFAUT, estPremierEcranNouveau, herosRenduPossible, photosMontrees, styleCouleursHeros, motLongTitre, type DonneesHeros, type PhotoHeros, type TransitionDiaporama, TRANSITIONS_DIAPORAMA } from '@plateforme/core';
 import { site } from './site';
 import { discipline } from './pack';
 import { jeu } from './visuels-soins';
@@ -51,6 +51,13 @@ const fond = fondHerosEffectif(brute, fondChoisi, {
   style: vitrinePhoto ? 'photos' : registre,
 });
 
+// Photo + tracé (photo-trace.ts) : seulement sur la démo tant que Paul n'a pas validé (« à valider » : jamais chez un praticien),
+// premier écran hôte, sans animation, activité de la photo et du praticien couverte par le tracé, jamais vif pour diabète / seniors
+const traceChoisi = site.modele.variantes?.['trace-photo'];
+const trace = (site.demo || !estAValider(`composant:trace-photo:${traceChoisi}`)) ? tracePhotoEffectif(traceChoisi, {
+  accueil: brute, photo: photos[0]?.src ?? null, activites: site.activites?.ids ?? [], sujets: sujetsSite, animation: animation ?? (animationPremierEcran ? 'visuel' : null),
+}) : null;
+
 const specialite = discipline;
 const plusieurs = site.praticiens.length > 1 && rdvEnLigne;
 const rdv = rdvEnLigne ? (plusieurs ? '#praticiens' : lienRdv('accueil')) : aTelephone ? telLien : lienContact;
@@ -83,6 +90,7 @@ export const donneesHeros: DonneesHeros | null = varianteHeros ? {
   // Visuel animé du premier écran (heros-anime.ts) : à la place de la photo ou de l'illustration, même cadre
   visuelAnime: animationPremierEcran,
   fond,
+  trace,
 } : null;
 
 /** Variante du premier écran des gabarits tableau, village, revue quand le nouveau premier écran n'est pas rendu (pas de photo) */

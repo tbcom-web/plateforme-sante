@@ -239,6 +239,7 @@ const SOURCES_FAMILLES: Record<string, string> = {
   'entete-anim': 'packages/core/src/entete-anim.ts',
   'visuel-heros': 'packages/core/src/heros-anime.ts (visuel animé du premier écran) ; heros-photo.ts ; apps/sites/src/components/accueil/VisuelTheme.astro',
   'fond-heros': 'packages/core/src/fonds-heros.ts (fond du premier écran sans visuel) ; heros-photo.ts',
+  'trace-photo': 'packages/core/src/photo-trace.ts (photo + tracé au trait) ; heros-photo.ts',
   accueil: 'apps/sites/src/components/gabarits/PremierEcran.astro',
   theme: 'apps/sites/src/pages/themes/[theme].astro (page-theme--<variante>) ; apps/admin/src/components/ApercuPages.tsx',
   article: 'apps/sites/src/pages/actualites/[slug].astro (article--<variante>) ; apps/admin/src/components/ApercuPages.tsx',
@@ -272,6 +273,7 @@ export function inventaireStudio(): Asset[] {
     for (const v of VARIANTES_SECTIONS[f] as readonly string[]) {
       if (f === 'soins-forme' && v === 'gabarit') continue; // « celle du modèle » : pas une forme à juger seule
       if (f === 'entete-anim' && v === 'aucune') continue; // pas d'animation : rien à juger seul
+      if (f === 'trace-photo' && v === 'aucun') continue; // photo seule : rien à juger seul
       if (f === 'fond-heros' && v === 'aucun') continue; // fond uni : jamais proposé (règle « jamais un premier écran vide »)
       // Animations d'illustrations (il-*) : notables, mais leur tuile ne les joue qu'une fois leurs images de base validées
       // (heros-anime.ts : sinon l'animation du sujet par défaut ; animationsHerosDuSujet donne le statut aux tuiles et aux duels)

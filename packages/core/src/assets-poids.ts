@@ -60,7 +60,7 @@ export function estCleNeutre(cle: string): boolean {
   if (t === 'typo') return a === 'graisse' && v === 'paire';
   if (t === 'details') return a === 'jeu' ? v === 'gabarit' : ['aucun', 'aucune', 'gabarit'].includes(v);
   if (t === 'menu') return v === 'gabarit' && a !== 'ordinateur';
-  if (t === 'composant') return (a === 'soins-forme' && v === 'gabarit') || (a === 'entete-anim' && v === 'aucune');
+  if (t === 'composant') return (a === 'soins-forme' && v === 'gabarit') || (a === 'entete-anim' && v === 'aucune') || (a === 'trace-photo' && v === 'aucun');
   return false;
 }
 

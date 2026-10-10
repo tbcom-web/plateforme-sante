@@ -70,6 +70,7 @@ const FAMILLES: Record<string, { nom: string; zones: string[]; page?: boolean }>
   'entete-anim': { nom: 'l’animation d’en-tête', zones: ['premier-ecran'] },
   'visuel-heros': { nom: 'le visuel du premier écran', zones: ['premier-ecran'] },
   'fond-heros': { nom: 'le fond du premier écran', zones: ['premier-ecran'] },
+  'trace-photo': { nom: 'le tracé posé sur la photo', zones: ['premier-ecran'] },
   sections: { nom: 'les transitions entre sections', zones: ['sections'] },
   soins: { nom: 'la présentation des soins', zones: ['bloc:competences'] },
   'soins-forme': { nom: 'la forme des cartes de soins', zones: ['cartes-soins'] },

@@ -24,11 +24,12 @@ import { contraste, hex, rvb } from './couleurs';
 import { NEUTRES } from './charte';
 import { themeParId } from './themes';
 import { themeIllustre } from './heros-themes';
-import { animationsPretesDefinies, estPremierEcranSansVisuel, LIBELLES_FONDS_HEROS, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, LIBELLES_VISUELS_HEROS, PLACEMENT_ANIMATIONS_ENTETE, estAnimationHeros, type AnimationEntete, estAValider, estPremierEcranAnime, estPremierEcranNouveau, estPremierEcranPhoto, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_ANIMATIONS_ENTETE, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
+import { animationsPretesDefinies, estPremierEcranSansVisuel, HOTES_TRACE_PHOTO, LIBELLES_TRACES_PHOTO, PHOTOS_DEMO_TRACES, type TracePhoto, LIBELLES_FONDS_HEROS, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, LIBELLES_VISUELS_HEROS, PLACEMENT_ANIMATIONS_ENTETE, estAnimationHeros, type AnimationEntete, estAValider, estPremierEcranAnime, estPremierEcranNouveau, estPremierEcranPhoto, INGREDIENTS_A_VALIDER, PREMIERS_ECRANS_NOUVEAUX, LIBELLES_ANIMATIONS_ENTETE, LIBELLES_PREMIERS_ECRANS, LIBELLES_TRANSITIONS_DIAPORAMA, LIBELLES_TRANSITIONS_SECTIONS, PHOTOS_DEMO_HEROS } from './heros-photo-variantes';
 import { JEUX_EFFETS, jeuEffets, type IdJeuEffets } from './effets';
 import { LIBELLES_PRESENTATIONS_PORTRAITS } from './portraits-variantes';
 import { familleDominante, tirerDimensionHarmonieuse, toutChangerHarmonieux, type OutilsTirage, type PoidsHarmonie } from './harmonie';
 import { fondHerosEffectif } from './fonds-heros';
+import { tracePhotoPermis } from './photo-trace';
 import { FORMES_CARTES } from './formes';
 import { PHOTOS_INTEGREES } from './jeux-photos';
 import { versQuatreCinq } from './qualite';
@@ -104,7 +105,7 @@ export function sectionsSelonOrdre(base: readonly SectionAccueil[], ordre: Ordre
 
 /** Sections dont le studio tire la variante, selon le gabarit (classique : la présentation des sujets seulement) */
 export const sectionsVariables = (g: Gabarit): (keyof Variantes)[] =>
-  g === 'classique' ? ['accueil', 'transition', 'entete-anim', 'visuel-heros', 'fond-heros', 'sujets', 'soins-forme', 'theme', 'article', 'sections', 'portraits'] : ['accueil', 'transition', 'entete-anim', 'visuel-heros', 'fond-heros', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'portraits', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article', 'sections'];
+  g === 'classique' ? ['accueil', 'transition', 'entete-anim', 'visuel-heros', 'fond-heros', 'trace-photo', 'sujets', 'soins-forme', 'theme', 'article', 'sections', 'portraits'] : ['accueil', 'transition', 'entete-anim', 'visuel-heros', 'fond-heros', 'trace-photo', 'soins', 'soins-forme', 'sujets', 'horaires', 'praticiens', 'portraits', 'infos', 'faq', 'galerie', 'contact', 'fiche', 'actualites', 'pied', 'theme', 'article', 'sections'];
 
 /**
  * Valeurs qu'un dé peut tirer pour une section (premier écran : les variantes à photos seulement avec des photos, style
@@ -162,7 +163,7 @@ export const ONGLETS_PAGES: readonly { page: PageStructure; nom: string; vue: Vu
 export const vueDePage = (p: PageStructure): VuePage => ONGLETS_PAGES.find((o) => o.page === p)?.vue ?? 'accueil';
 
 /** Familles d'éléments notables (composants) : présentation de chaque élément, clé `composant:<famille>:<variante>` */
-export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'portraits', 'faq', 'soins', 'sujets', 'accueil', 'transition', 'entete-anim', 'visuel-heros', 'fond-heros', 'sections', 'pied', 'actualites', 'theme', 'article'];
+export const FAMILLES_COMPOSANTS: (keyof Variantes)[] = ['horaires', 'infos', 'galerie', 'contact', 'soins-forme', 'praticiens', 'portraits', 'faq', 'soins', 'sujets', 'accueil', 'transition', 'entete-anim', 'visuel-heros', 'fond-heros', 'trace-photo', 'sections', 'pied', 'actualites', 'theme', 'article'];
 
 /** Libellés des variantes (studio) */
 export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
@@ -171,6 +172,7 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   'entete-anim': { ...LIBELLES_ANIMATIONS_ENTETE },
   'visuel-heros': { ...LIBELLES_VISUELS_HEROS },
   'fond-heros': { ...LIBELLES_FONDS_HEROS },
+  'trace-photo': { ...LIBELLES_TRACES_PHOTO },
   sections: { ...LIBELLES_TRANSITIONS_SECTIONS },
   soins: { bulles: 'Cartes illustrées', grille: 'Rangées larges', filets: 'Bulles à filet' },
   sujets: { une: 'Le premier à la une', rangees: 'Grandes rangées illustrées', cartes: 'Cartes égales', liste: 'Liste éditoriale', colonnes: 'Deux colonnes' },
@@ -189,7 +191,7 @@ export const LIBELLES_VARIANTES: Record<string, Record<string, string>> = {
   'soins-forme': Object.fromEntries(FORMES_CARTES.map((f) => [f.id, f.nom])),
 };
 export const NOMS_SECTIONS_VARIABLES: Record<string, string> = {
-  accueil: 'Premier écran', transition: 'Transition du diaporama', 'entete-anim': 'Animation d’en-tête', 'visuel-heros': 'Visuel du premier écran', 'fond-heros': 'Fond du premier écran', sections: 'Transitions entre sections', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', portraits: 'Présentation des praticiens', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
+  accueil: 'Premier écran', transition: 'Transition du diaporama', 'entete-anim': 'Animation d’en-tête', 'visuel-heros': 'Visuel du premier écran', 'fond-heros': 'Fond du premier écran', 'trace-photo': 'Photo + tracé', sections: 'Transitions entre sections', soins: 'Soins', sujets: 'Sujets', horaires: 'Horaires', praticiens: 'Équipe', portraits: 'Présentation des praticiens', infos: 'Plan d’accès', faq: 'Questions', galerie: 'Galerie du cabinet', contact: 'Rendez-vous et contact', pied: 'Pied de page', fiche: 'Fiche d’un soin', actualites: 'Actualités', 'soins-forme': 'Forme des cartes', theme: 'Page sujet', article: 'Article de blog',
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -703,12 +705,18 @@ export function reparerComposition(x: CompositionRecette, c: ContexteRecette): C
   if (!estPremierEcranAnime(variantes.accueil)) delete variantes.transition;
   else if (!variantes.transition) variantes.transition = 'fondu';
   // Animation d'en-tête : seulement dans les nouveaux premiers écrans (heros-photo.ts) ; praticien : ingrédients validés seulement
-  if (c.praticien) for (const k of ['accueil', 'entete-anim', 'visuel-heros', 'fond-heros', 'portraits'] as const) if (variantes[k] && estAValider(`composant:${k}:${variantes[k]}`, c.valides)) delete variantes[k];
+  if (c.praticien) for (const k of ['accueil', 'entete-anim', 'visuel-heros', 'fond-heros', 'trace-photo', 'portraits'] as const) if (variantes[k] && estAValider(`composant:${k}:${variantes[k]}`, c.valides)) delete variantes[k];
   // Visuel animé du premier écran (heros-anime.ts) : seulement dans un premier écran à visuel principal (HOTES_VISUEL_ANIME)
   const accueilEffectif = variantes.accueil ?? (g === 'classique' ? '' : VARIANTES_PAR_DEFAUT[g].accueil);
   if (variantes['visuel-heros'] === 'animation' && !HOTES_VISUEL_ANIME.includes(accueilEffectif)) delete variantes['visuel-heros'];
   // Animation d'en-tête : dans les nouveaux premiers écrans ; ailleurs seulement comme visuel animé (celle qui tient en grand)
   if (!estPremierEcranNouveau(variantes.accueil) && !(variantes['visuel-heros'] === 'animation' && estAnimationHeros(variantes['entete-anim']))) delete variantes['entete-anim'];
+  // Photo + tracé (photo-trace.ts) : premier écran hôte avec photo, jamais avec une animation d'en-tête ni un visuel animé (jamais
+  // deux tracés à la fois), jamais un tracé vif pour le diabète ni les seniors ; l'activité de la photo est vérifiée au rendu
+  // (premier écran sans photo ou non hôte : la valeur est retirée ; hôte, mais tracé non permis : « aucun », photo seule)
+  if (variantes['trace-photo'] && (style !== 'photos' || !HOTES_TRACE_PHOTO.includes(accueilEffectif))) delete variantes['trace-photo'];
+  else if (variantes['trace-photo'] && variantes['trace-photo'] !== 'aucun'
+    && !tracePhotoPermis(variantes['trace-photo'], { accueil: accueilEffectif, sujets: c.sujets, animation: variantes['visuel-heros'] === 'animation' ? 'visuel' : variantes['entete-anim'] ?? null, sansActivite: true })) variantes['trace-photo'] = 'aucun';
   const herosSujet = x.visuels.herosSujet && heros.includes(x.visuels.herosSujet) ? x.visuels.herosSujet : heros[0] ?? null;
   const y: CompositionRecette = {
     structure,
@@ -859,8 +867,13 @@ export function compositionPourCle(x: CompositionRecette, cle: string): Composit
       // Animation d'en-tête : jouée dans le premier écran fondu (le plus aimé du lot 1) si la recette n'a pas de nouveau premier écran
       : a === 'entete-anim' && !estPremierEcranNouveau(x.sections.variantes.accueil) ? { accueil: 'fondu' as const }
       // Fond du premier écran : montré sur un premier écran sans visuel (celui de la recette, sinon le typographique)
-      : a === 'fond-heros' && !estPremierEcranSansVisuel(x.sections.variantes.accueil) ? { accueil: 'typographique' as const } : {};
+      : a === 'fond-heros' && !estPremierEcranSansVisuel(x.sections.variantes.accueil) ? { accueil: 'typographique' as const }
+      // Photo + tracé : montré sur le premier écran de la recette s'il est hôte, sinon la photo d'un côté et le texte de l'autre ;
+      // sans animation d'en-tête (jamais deux tracés à la fois)
+      : a === 'trace-photo' ? { ...(HOTES_TRACE_PHOTO.includes(x.sections.variantes.accueil as string) ? {} : { accueil: 'scinde-photo' as const }), 'entete-anim': 'aucune' as const, 'visuel-heros': 'auto' as const } : {};
     const y = { ...x, sections: { ...x.sections, variantes: { ...x.sections.variantes, ...accueil, [a]: b } } };
+    // Photo + tracé : la photo de démonstration de l'activité du tracé (jamais une montagne sur une photo de route)
+    if (a === 'trace-photo' && b !== 'aucun') return { ...y, visuels: { ...y.visuels, style: 'photos', animation: null }, photos: [PHOTOS_DEMO_TRACES[b as Exclude<TracePhoto, 'aucun'>]] };
     return estPremierEcranPhoto(y.sections.variantes.accueil) ? avecPhotosDemo(y) : y;
   }
   const s = lireCleStructure(cle);
@@ -886,7 +899,7 @@ export function blocsPourCle(cle: string): string[] | undefined {
   const [type, a] = cle.split(':');
   if (type === 'composant') {
     const blocs: Record<string, string[]> = {
-      accueil: ['premier'], transition: ['premier'], 'entete-anim': ['premier'], 'visuel-heros': ['premier'], 'fond-heros': ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
+      accueil: ['premier'], transition: ['premier'], 'entete-anim': ['premier'], 'visuel-heros': ['premier'], 'fond-heros': ['premier'], 'trace-photo': ['premier'], sujets: ['sujets'], soins: ['competences'], 'soins-forme': ['competences', 'sujets'], horaires: ['acces'], infos: ['acces'],
       galerie: ['galerie'], contact: ['contact'], praticiens: ['praticiens'], portraits: ['praticiens'], faq: ['faq'], pied: ['pied'], actualites: ['actualites'],
     };
     // Page sujet, article, fiche : la page entière (vuePourCle)

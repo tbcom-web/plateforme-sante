@@ -43,7 +43,7 @@ import { ETIQUETTES_HARMONIE } from './harmonie';
 const inventaire = () => new Set([...inventaireAssets(), ...inventaireStudio()].map((a) => a.cle));
 
 /** Valeurs « neutres » qui ne sont pas des ingrédients à juger seuls (celle du modèle, aucune animation) */
-const NEUTRES: Readonly<Record<string, readonly string[]>> = { 'soins-forme': ['gabarit'], 'entete-anim': ['aucune'], 'fond-heros': ['aucun'] };
+const NEUTRES: Readonly<Record<string, readonly string[]>> = { 'soins-forme': ['gabarit'], 'entete-anim': ['aucune'], 'fond-heros': ['aucun'], 'trace-photo': ['aucun'] };
 
 /** Clé notable d'une valeur de section : l'élément (`composant:<famille>:<v>`), sinon la structure de sa page (page à une section) */
 function cleSection(s: string, v: string): string | null {

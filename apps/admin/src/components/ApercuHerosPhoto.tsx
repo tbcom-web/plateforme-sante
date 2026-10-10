@@ -8,7 +8,7 @@ import { useMetierApercu } from './ApercuMetier';
 import { CLASSE_PAUSE } from './AnimationsBudget';
 import { useEffect, useRef, useState } from 'react';
 import {
-  animationDuHeros, familleDePolice, fondHerosEffectif, paireDuModele, CORPS_PARTICULES, CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
+  animationDuHeros, familleDePolice, fondHerosEffectif, tracePhotoEffectif, paireDuModele, CORPS_PARTICULES, CSS_HEROS, DUREE_ENTETE, estAnimationEntete, construireNavigation, estPremierEcranNouveau, herosRenduPossible, htmlHeros, motLongTitre, photosMontrees, styleCouleursHeros,
   TRANSITIONS_DIAPORAMA, illustrationTheme, themeIllustre, type Registre, type ModeleManifeste, type ReplisApercu, type SiteDraft, type TransitionDiaporama,
 } from '@plateforme/core';
 import type { SoinCatalogue } from '@/lib/sites';
@@ -88,6 +88,11 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
   const nav = construireNavigation(d, soins).principaux.map((x) => x.theme.id);
   const sujet = d.theme.herosSujet && nav.includes(d.theme.herosSujet) ? d.theme.herosSujet : nav[0];
   const fond = fondHerosEffectif(v, (m.variantes as Record<string, string> | undefined)?.['fond-heros'], { famille: familleDePolice(paireDuModele(m)?.id), illustration: Boolean(sujet && themeIllustre(sujet)), style: registre });
+  // Photo + tracé (photo-trace.ts) : celui de la recette s'il convient (hôte, activité de la photo et du praticien, sujets calmes)
+  const photosVues = photosMontrees(v, photos);
+  const trace = tracePhotoEffectif((m.variantes as Record<string, string> | undefined)?.['trace-photo'], {
+    accueil: v, photo: photosVues[0]?.src ?? null, activites: d.activites ?? [], sujets: nav, animation: animationBrute ?? (visuelAnime ? 'visuel' : null),
+  });
   const { avant, apres, fente, css } = htmlHeros({
     variante: v,
     transition,
@@ -112,6 +117,7 @@ export default function ApercuHerosPhoto({ draft: d, modele: m, soins, replis: r
     animation: animationBrute,
     visuelAnime,
     fond,
+    trace,
     tempo: tempoApercu(construireNavigation(d, soins).principaux.map((x) => x.theme.id as string)),
   });
   // Illustration de l'emplacement : celle du site (VisuelTheme : illustration composée du sujet du héros, gamme du site sauf

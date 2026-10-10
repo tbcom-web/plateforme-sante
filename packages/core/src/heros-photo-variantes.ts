@@ -302,6 +302,43 @@ export const FOND_HEROS_PAR_FAMILLE: Record<string, Exclude<FondHeros, 'aucun'>>
 /** Fond toujours permis (signature de la marque, déjà présente sur le typographique) : repli pour un praticien */
 export const FOND_HEROS_SUR: Exclude<FondHeros, 'aucun'> = 'trame';
 
+// ---------------------------------------------------------------------------------------------------------------
+// Photo + tracé (idée de Paul du 2026-10-10 : « superposer des images "sport" trail etc avec des illustrations minimalistes ») :
+// sur la photo du premier écran (photo du kit du profil : trail, course…), une illustration minimaliste AU TRAIT qui dialogue avec
+// elle (photo-trace.ts) : lignes de niveau, sentier en lacets, chevrons, empreintes en filigrane, cadran de chrono (planche du
+// 2026-10-10 : trajectoire du pas et médaillon de pression écartés, illisibles sur photo). Géométries validées seulement ; statique (deux variantes « qui se dessinent »). Premiers écrans
+// à photo « posée » seulement (HOTES_TRACE_PHOTO : texte hors de la photo, contraste du texte inchangé) ; jamais sur une photo
+// déjà chargée (diaporama, bandes, taches, aplats) ; « aucun » par défaut ; tout « à valider ».
+// ---------------------------------------------------------------------------------------------------------------
+
+export const TRACES_PHOTO = ['aucun', 'topographie', 'lacets', 'chevrons', 'empreintes', 'chrono', 'lacets-anime', 'topographie-anime'] as const;
+export type TracePhoto = (typeof TRACES_PHOTO)[number];
+export const estTracePhoto = (v: unknown): v is TracePhoto => (TRACES_PHOTO as readonly unknown[]).includes(v);
+export const LIBELLES_TRACES_PHOTO: Record<TracePhoto, string> = {
+  aucun: 'Aucun (photo seule)',
+  topographie: 'Photo + lignes de niveau de la montagne (à valider)',
+  lacets: 'Photo + sentier en lacets en pointillé (à valider)',
+  chevrons: 'Photo + chevrons de vitesse (à valider)',
+  empreintes: 'Photo + empreintes en lignes de niveau, en filigrane (à valider)',
+  chrono: 'Photo + cadran de chronomètre au trait (à valider)',
+  'lacets-anime': 'Photo + sentier en lacets qui se dessine (à valider)',
+  'topographie-anime': 'Photo + lignes de niveau qui montent (à valider)',
+};
+/**
+ * Premiers écrans qui reçoivent un tracé : la photo est posée À CÔTÉ du texte (le texte n'est jamais sur la photo : aucun
+ * contraste à recalculer) et n'est pas déjà chargée de décors (bandes et lignes de vitesse, taches, aplats découpés, diaporama ; courbe de
+ * la voûte : déjà un tracé).
+ */
+/**
+ * Photo de démonstration de chaque tracé (tuiles de notation, duels) : une photo de la banque intégrée DE L'ACTIVITÉ du tracé
+ * (montagne et sentier : trail ; chevrons et chrono : course sur route ; empreintes : foulée sur l'herbe, photo sombre).
+ */
+export const PHOTOS_DEMO_TRACES: Record<Exclude<TracePhoto, 'aucun'>, string> = {
+  topographie: '/photos/sport-trail.webp', 'topographie-anime': '/photos/sport-trail.webp', lacets: '/photos/sport-trail.webp', 'lacets-anime': '/photos/sport-trail.webp',
+  chevrons: '/photos/sport-course.webp', chrono: '/photos/sport-course.webp', empreintes: '/photos/sport-foulee-herbe.webp',
+};
+export const HOTES_TRACE_PHOTO: readonly string[] = ['scinde-photo', 'fondu', 'fondu-double', 'organique-fondu', 'arche-photo'];
+
 /**
  * Ingrédients « à valider » (lot 2 des premiers écrans, animations d'en-tête) : disponibles dans le Studio (libellé « à
  * valider »), dans « Donner mon avis » et les duels ; jamais tirés ni proposés à un praticien tant que Paul ne les a pas validés
@@ -318,6 +355,8 @@ export const INGREDIENTS_A_VALIDER: ReadonlySet<string> = new Set([
   'composant:sections:chevrons',
   // Fonds du premier écran (2026-10-09) : nouveaux, sauf la trame (signature déjà en place sur le typographique)
   ...FONDS_HEROS.filter((f) => f !== 'aucun' && f !== FOND_HEROS_SUR).map((f) => `composant:fond-heros:${f}`),
+  // Photo + tracé (2026-10-10) : tous
+  ...TRACES_PHOTO.filter((t) => t !== 'aucun').map((t) => `composant:trace-photo:${t}`),
 ]);
 export const estAValider = (cle: string, valides?: ReadonlySet<string> | null) => INGREDIENTS_A_VALIDER.has(cle) && !valides?.has(cle);
 

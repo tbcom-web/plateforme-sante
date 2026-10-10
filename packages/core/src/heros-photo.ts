@@ -20,17 +20,19 @@ import { contraste, melanger, rvb } from './couleurs';
 import { CYCLES, COURBES, DUREES, NEUTRES } from './charte';
 import { couleursGabarit, type CouleursGabarit } from './gabarits';
 import type { ModeleManifeste } from './modeles';
-import { estPremierEcranAnime, estPremierEcranPhoto, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, estPremierEcranSansVisuel, type AnimationEntete, type FondHeros, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
+import { estPremierEcranAnime, estPremierEcranPhoto, HOTES_SCENE_ENTETE, HOTES_VISUEL_ANIME, PLACEMENT_ANIMATIONS_ENTETE, PREMIERS_ECRANS_LOT2, PREMIERS_ECRANS_LOT2_LIBRES, estPremierEcranSansVisuel, type AnimationEntete, type FondHeros, type TracePhoto, type PremierEcranNouveau, type TransitionDiaporama, type TransitionSections } from './heros-photo-variantes';
 import { AVEC_COMPOSITION, cssLot2, FONDS_LOT2, FORMES_LOT2, teintesSousTexte } from './heros-organiques';
 import { cssAnimationEntete, htmlAnimationEntete, motsDesSoins } from './entete-anim';
 import { cssVisuelAnime, htmlVisuelAnime } from './heros-anime';
 import { alphaFondHeros, cssFondHeros, htmlFondHeros, PLAFONDS_FONDS_HEROS } from './fonds-heros';
+import { cssTracePhoto, htmlTracePhoto, tracePhotoPermis, traitBlanc } from './photo-trace';
 
 export * from './heros-photo-variantes';
 export { teintesSousTexte, cssLot2 } from './heros-organiques';
 export { cssAnimationEntete, htmlAnimationEntete, motsDesSoins, SCRIPT_ENTETE, DUREE_ENTETE } from './entete-anim';
 export { animationDuHeros, animationsHerosDuSujet, animationsPretesDepuisStatuts, cssVisuelAnime, htmlVisuelAnime, statutAnimationHeros, SCRIPT_VISUEL_ANIME, type StatutAnimationHeros, type TonVisuelAnime } from './heros-anime';
 export * from './fonds-heros';
+export * from './photo-trace';
 export { ANIMATIONS_EMPREINTES, CORPS_PARTICULES, SCRIPT_PARTICULES, estAnimationEmpreintes, type AnimationEmpreintes } from './entete-empreintes';
 
 /** Photos montrées au plus par le diaporama (3 à 5 demandées) */
@@ -126,6 +128,11 @@ export type DonneesHeros = {
    * fente. Absent ou « aucun » : rendu d'avant (fond uni).
    */
   fond?: FondHeros | null;
+  /**
+   * Photo + tracé (photo-trace.ts, tracePhotoEffectif) : illustration au trait posée sur la photo des premiers écrans hôtes
+   * (HOTES_TRACE_PHOTO) ; ignoré ailleurs, avec une animation d'en-tête ou un visuel animé. Absent ou « aucun » : photo seule.
+   */
+  trace?: TracePhoto | null;
 };
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -151,7 +158,7 @@ function img(p: PhotoHeros, i: number, d: DonneesHeros, sizes: string): string {
 }
 
 /** Cadre des photos (aria-hidden) et commandes du diaporama (points décoratifs, bouton pause accessible) */
-function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: boolean, formes = '', animHtml = ''): string {
+function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: boolean, formes = '', animHtml = '', trace = ''): string {
   // Visuel animé : une seule « diapositive », l'animation (masques et cadrages de la variante appliqués à l'identique)
   const diapos = animHtml ? `<div class="hp__diapo hp__diapo--anime">${animHtml}</div>` : photos.map((p, i) => `<div class="hp__diapo" style="--hp-i:${i};--hp-kx:${i % 2 ? -1 : 1}">${img(p, i, d, sizes)}</div>`).join('');
   const anime = photos.length > 1;
@@ -161,7 +168,7 @@ function media(d: DonneesHeros, photos: PhotoHeros[], sizes: string, voile: bool
       + '<svg class="hp__arret" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z"/></svg>'
       + '<svg class="hp__lecture" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg></button></div>'
     : '';
-  return `<div class="hp__media">${formes ? `<span aria-hidden="true">${formes}</span>` : ''}<div class="hp__fond" aria-hidden="true">${diapos}${voile ? '<span class="hp__voile"></span>' : ''}</div>${commandes}</div>`;
+  return `<div class="hp__media">${formes ? `<span aria-hidden="true">${formes}</span>` : ''}<div class="hp__fond" aria-hidden="true">${diapos}${voile ? '<span class="hp__voile"></span>' : ''}</div>${trace}${commandes}</div>`;
 }
 
 /** L'animation d'en-tête se pose-t-elle en grand dans la carte visuelle (« scène » dans un premier écran hôte) ? */
@@ -226,7 +233,11 @@ export function htmlHeros(d0: DonneesHeros): { avant: string; apres: string; fen
   // prend une opacité franche (≥ 0,55 : aucun texte dessous), masquée sous la colonne du texte
   const zone = fond && v !== 'typographique' ? { alpha: Math.max(0.55, PLAFONDS_FONDS_HEROS[fond as Exclude<FondHeros, 'aucun'>]), mobile: HAUT_COMPO_TEL[v] ?? null } : null;
   const fh = fond ? htmlFondHeros(fond, alphaFondHeros(fond, v, d.couleurs), zone) : { avant: '', apres: '' };
-  const css = keyframesHeros(anime ? d.transition : null, photos.length) + cssLot2(v) + cssAnimationEntete(animation) + (va ? cssVisuelAnime(va) : '') + cssFondHeros(fond);
+  // Photo + tracé (photo-trace.ts) : premier écran hôte avec sa photo, jamais avec une animation d'en-tête ni un visuel animé
+  // (jamais deux tracés à la fois) ; le texte n'est jamais sur la photo des hôtes (contraste inchangé)
+  const tp = !va && !animation && photos.length && tracePhotoPermis(d.trace, { accueil: v, photo: photos[0]?.src }) ? d.trace as Exclude<TracePhoto, 'aucun'> : null;
+  const tpHtml = tp ? htmlTracePhoto(tp, { blanc: traitBlanc(d.couleurs) }) : '';
+  const css = keyframesHeros(anime ? d.transition : null, photos.length) + cssLot2(v) + cssAnimationEntete(animation) + (va ? cssVisuelAnime(va) : '') + cssFondHeros(fond) + cssTracePhoto(tp);
   const texte = (cl = '') => `<div class="hp__texte${cl}">${titre(d)}</div>`;
   // Couche du fond juste après l'ouverture (sous tout le reste) ; « illustration » : fente remplie par l'appelant
   const avecFond = (reste: string) => (fh.apres
@@ -243,12 +254,12 @@ export function htmlHeros(d0: DonneesHeros): { avant: string; apres: string; fen
     }
     const visuel = libre
       ? (AVEC_COMPOSITION.includes(v) ? `<div class="hp__media hp__compo" aria-hidden="true">${FORMES_LOT2[v]}</div>` : '')
-      : media(d, photos, TAILLES[v] ?? '100vw', false, FORMES_LOT2[v] ?? '', vaHtml);
+      : media(d, photos, TAILLES[v] ?? '100vw', false, FORMES_LOT2[v] ?? '', vaHtml, tpHtml);
     return avecFond(`${DECORS[v] ?? FONDS_LOT2[v] ?? ''}${visuel}<div class="hp__cadre">${texte()}</div></section>`);
   }
   if (surPhoto || v === 'scinde-photo') {
     const sizes = v === 'scinde-photo' ? '(min-width: 900px) 50vw, 100vw' : '100vw';
-    return { avant: `${ouverture}${media(d, photos, sizes, surPhoto, '', v === 'scinde-photo' ? vaHtml : '')}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
+    return { avant: `${ouverture}${media(d, photos, sizes, surPhoto, '', v === 'scinde-photo' ? vaHtml : '', tpHtml)}<div class="hp__cadre">${texte()}</div></section>`, apres: '', fente: false, css };
   }
   if (v === 'typographique') {
     // Sans fond choisi : la trame discrète d'avant ; avec un fond, la couche du fond la remplace
