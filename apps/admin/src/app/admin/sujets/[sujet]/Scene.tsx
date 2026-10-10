@@ -124,7 +124,9 @@ export default function Scene({ visuel: v, scene, studio, seul, titre, photosSer
   if (v.kind === 'contenu') return <TexteContenu c={v.contenu} />;
   if (v.kind === 'studio') {
     if (!studio) return <p className="rounded-2xl bg-neutral-50 p-6 text-sm text-neutral-600">Aperçu du site indisponible.</p>;
-    return <div className="overflow-hidden rounded-2xl ring-1 ring-black/10"><Suspense fallback={<div className="grid aspect-[4/3] w-full animate-pulse place-items-center bg-neutral-100 text-sm text-neutral-500">Aperçu du site…</div>}><ApercuStudio cle={v.cle} {...studio} mobile={mobile} /></Suspense></div>;
+    // Écran tactile ou étroit (2026-10-10, « mobile seul ») : l'aperçu est une illustration de la carte, pas une page à parcourir ; sans
+    // pointeur dans l'iframe, le doigt fait défiler la page et le glisser OK / Pas OK part de toute la carte (l'iframe avalait le geste)
+    return <div className={`overflow-hidden rounded-2xl ring-1 ring-black/10 pointer-coarse:[&_iframe]:pointer-events-none ${mobile ? '[&_iframe]:pointer-events-none' : ''}`}><Suspense fallback={<div className="grid aspect-[4/3] w-full animate-pulse place-items-center bg-neutral-100 text-sm text-neutral-500">Aperçu du site…</div>}><ApercuStudio cle={v.cle} {...studio} mobile={mobile} /></Suspense></div>;
   }
   if (v.kind === 'image') {
     // eslint-disable-next-line @next/next/no-img-element

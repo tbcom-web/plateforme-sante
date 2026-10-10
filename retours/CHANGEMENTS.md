@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : Chaîne des modèles faisable au téléphone seul (audit tactile npm run audit:mobile ; « Envoyer à Claude » par le partage du téléphone avec une demande autonome, tickets en clair).
 - 2026-10-10 : cadrage des dessins dans leurs cases (cartes de soins, sujets, fiches, aperçu admin) : centrés sur leur tracé réel, fond perdu calé au bord ; testeur : contrôles « cadrage » et « coherence » (retour de Paul : « Tu as mis vert alors que les images ne sont pas centrées »)
 - 2026-10-10 : Chaîne des modèles — relecture guidée pas à pas (une page à la fois, ✓ Page OK / ✎ à corriger, récapitulatif, corrections à Claude, revalidation des pages modifiées, écran de publication) ; structure figée dès les finalistes ; photos et illustration du haut choisies en situation (survol / toucher + roulette), préférence de rendu par profil (migration 0063).
 - 2026-10-10 : Chaîne des modèles : /chaine, présélection et tournoi en 0,25-0,4 s à chaud au volume ×10 (au lieu de 0,8-1 s) : état de la chaîne en une requête (migration 0062 chaine_etat), gardé en mémoire tant que ses tables n'ont pas changé, tournoi calculé une fois ; priorité au modèle presque fini (publier > revalider > relire l'entamé > tester > tournoi) et carte « Presque fini » en tête de /admin et À valider.

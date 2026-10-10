@@ -913,6 +913,30 @@ export function markdownTicketsModeles(l: ReturnType<typeof exportTicketsModeles
   return lignes.join('\n').replace(/\n+$/, '');
 }
 
+/**
+ * Demande AUTONOME à Claude pour la retouche d'un modèle (décision de Paul du 2026-10-10, « mobile seul » : envoyée depuis le
+ * téléphone par la feuille de partage vers l'app Claude, session Code). Elle se suffit : modèle, version de base, tickets ouverts
+ * (page, appareil, zone, élément, commentaire) et la livraison attendue par l'automate (retours/retouches-modeles.json).
+ * Jamais d'auteur (dépôt public) : origine seulement.
+ */
+export function demandeCorrectionsModele(
+  f: Pick<FicheModele, 'id' | 'nom' | 'versionCourante' | 'profession' | 'profil'>,
+  tickets: readonly Pick<TicketModele, 'numero' | 'page' | 'appareil' | 'zone' | 'element' | 'etiquette' | 'commentaire' | 'origine' | 'gravite' | 'statut'>[],
+): string {
+  const ouverts = ticketsOuverts(tickets).sort((a, b) => a.numero - b.numero);
+  const l = [
+    `Corrige le modèle « ${f.nom} » de la chaîne des modèles (dépôt plateforme-sante) : modele ${f.id}, version de base v${f.versionCourante}, profession ${f.profession}${f.profil ? `, profil ${f.profil}` : ' (design, tous profils compatibles)'}.`,
+    '',
+    `Tickets ouverts (${ouverts.length}) :`,
+    ...ouverts.map((t) => `- #${t.numero} [${t.origine}${t.gravite ? `, ${t.gravite}` : ''}] page ${libellePageModele(t.page)} (${t.appareil === 'mobile' ? 'téléphone' : 'ordinateur'})${t.zone ? ` · zone (${pct(t.zone.x)}, ${pct(t.zone.y)}, ${pct(t.zone.l)} × ${pct(t.zone.h)})` : ' · page entière'}${t.element ? ` · élément ${t.element}` : ''} · ${t.etiquette}${t.commentaire ? ` : ${t.commentaire}` : ''}`),
+    ...(ouverts.length ? [] : ['- (aucun ticket ouvert : voir retours/tickets-modeles.json)']),
+    '',
+    `Composition de départ : retours/tickets-modeles.json (export de la chaîne, modele ${f.id}).`,
+    `Livraison : écrire la correction dans retours/retouches-modeles.json ({ modele: "${f.id}", versionBase: ${f.versionCourante}, composition, corrections: [{ ticket, texte }] }), un texte par ticket, puis pousser sur main. La chaîne crée la v${f.versionCourante + 1}, qui repasse au testeur puis revient en revalidation.`,
+  ];
+  return l.join('\n');
+}
+
 /** Versions à faire passer au testeur (retours/modeles-a-tester.json) */
 export function modelesATester(fiches: readonly FicheModele[], versions: readonly VersionModele[]) {
   // Du plus proche de la publication au plus loin (version retouchée avant un finaliste, meilleur rang d'abord)

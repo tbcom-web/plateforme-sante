@@ -58,6 +58,7 @@ export default function ChoixImagesSituation({ emplacements, onApercu, onChoisir
   refs.current = { emplacements, actif, index, desactive };
   const cacher = useRef<number | null>(null);
   const surControle = useRef(false);
+  const glisse = useRef<number | null>(null);
 
   const iframe = () => racine.current?.querySelector('iframe') ?? null;
 
@@ -269,12 +270,15 @@ export default function ChoixImagesSituation({ emplacements, onApercu, onChoisir
             data-controle-image={m.id}
             onPointerEnter={() => { surControle.current = true; if (cacher.current) { window.clearTimeout(cacher.current); cacher.current = null; } }}
             onPointerLeave={() => { surControle.current = false; }}
-            onPointerDown={() => { if (!actif.epingle) setActif({ ...actif, epingle: true }); }}
-            className="absolute z-20 grid gap-1 rounded-xl bg-white/95 p-1.5 text-xs text-neutral-900 shadow-lg ring-1 ring-black/10 backdrop-blur"
+            onPointerDown={(e) => { if (!actif.epingle) setActif({ ...actif, epingle: true }); if (e.pointerType !== 'mouse' && !(e.target as HTMLElement).closest('button')) glisse.current = e.clientX; }}
+            /* Au doigt : glisser sur le contrôle fait défiler les candidates (comme ‹ ›) */
+            onPointerUp={(e) => { const x0 = glisse.current; glisse.current = null; if (x0 !== null && Math.abs(e.clientX - x0) > 36) pas(e.clientX < x0 ? 1 : -1); }}
+            onPointerCancel={() => { glisse.current = null; }}
+            className="absolute z-20 grid touch-pan-y gap-1 rounded-xl bg-white/95 p-1.5 text-xs text-neutral-900 shadow-lg ring-1 ring-black/10 backdrop-blur"
             style={{ left: Math.max(4, Math.min(pos.x + 8, limite - largeur - 4)), top: Math.max(4, pos.y + 8), width: largeur }}
           >
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => pas(-1)} aria-label="Image précédente" className={`grid size-10 shrink-0 place-items-center rounded-lg border border-neutral-300 bg-white text-lg ${focus}`}>‹</button>
+              <button type="button" onClick={() => pas(-1)} aria-label="Image précédente" className={`grid size-11 shrink-0 place-items-center rounded-lg border border-neutral-300 bg-white text-lg ${focus}`}>‹</button>
               <span className="flex min-w-0 flex-1 items-center gap-1.5" aria-live="polite">
                 {m.type === 'photo'
                   // eslint-disable-next-line @next/next/no-img-element
@@ -285,13 +289,13 @@ export default function ChoixImagesSituation({ emplacements, onApercu, onChoisir
                   <span className="block truncate text-neutral-600" data-position={`${i + 1}/${m.candidates.length}`}>{i + 1} / {m.candidates.length}{c.libelle ? ` · ${c.libelle}` : ''}{c.valide === false ? ' · à valider' : c.note ? ` · ${'★'.repeat(Math.round(c.note))}` : ''}</span>
                 </span>
               </span>
-              <button type="button" onClick={() => pas(1)} aria-label="Image suivante" className={`grid size-10 shrink-0 place-items-center rounded-lg border border-neutral-300 bg-white text-lg ${focus}`}>›</button>
+              <button type="button" onClick={() => pas(1)} aria-label="Image suivante" className={`grid size-11 shrink-0 place-items-center rounded-lg border border-neutral-300 bg-white text-lg ${focus}`}>›</button>
             </div>
             <div className="flex items-center gap-1">
-              <button type="button" disabled={enCours} onClick={choisir} className={`min-h-10 flex-1 rounded-lg bg-teal-800 px-2 font-semibold text-white disabled:opacity-60 ${focus}`} data-action="choisir-image">{garder ? 'Garder' : 'Choisir'}</button>
-              <button type="button" onClick={fermer} aria-label="Fermer" className={`grid size-10 place-items-center rounded-lg border border-neutral-300 bg-white ${focus}`}>✕</button>
+              <button type="button" disabled={enCours} onClick={choisir} className={`min-h-11 flex-1 rounded-lg bg-teal-800 px-2 font-semibold text-white disabled:opacity-60 ${focus}`} data-action="choisir-image">{garder ? 'Garder' : 'Choisir'}</button>
+              <button type="button" onClick={fermer} aria-label="Fermer" className={`grid size-11 place-items-center rounded-lg border border-neutral-300 bg-white ${focus}`}>✕</button>
             </div>
-            <p className="px-0.5 text-[11px] text-neutral-600">{m.candidates.length > 1 ? 'Molette ou ← → pour défiler' : 'Seule image possible pour ce profil'}</p>
+            <p className="px-0.5 text-[11px] text-neutral-600">{m.candidates.length > 1 ? 'Glisser ici, molette ou ← → pour défiler' : 'Seule image possible pour ce profil'}</p>
             {message && <p role="status" className="px-0.5 text-[11px] font-medium text-teal-900">{message}</p>}
             {contraste && <p role="status" className={`px-0.5 text-[11px] ${contraste.ok === false ? 'font-semibold text-orange-800' : 'text-neutral-700'}`} data-contraste={contraste.ok === null ? 'inconnu' : contraste.ok ? 'ok' : 'faible'}>{contraste.texte}</p>}
           </div>

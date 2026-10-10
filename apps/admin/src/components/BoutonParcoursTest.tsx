@@ -14,7 +14,7 @@ export default function BoutonParcoursTest({ compact = false }: { compact?: bool
   };
   if (compact) {
     return (
-      <a href={lien('vierge')} target="_blank" rel="noopener" className="shrink-0 whitespace-nowrap rounded-full bg-amber-100 px-3 py-1.5 font-semibold text-amber-950 ring-1 ring-amber-300 hover:bg-amber-200">
+      <a href={lien('vierge')} target="_blank" rel="noopener" className="inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full bg-amber-100 px-3 font-semibold text-amber-950 ring-1 ring-amber-300 hover:bg-amber-200">
         Tester le parcours client
       </a>
     );
@@ -40,8 +40,8 @@ export default function BoutonParcoursTest({ compact = false }: { compact?: bool
         </li>
       </ul>
       <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <button type="button" onClick={effacer} className="rounded px-1 font-semibold underline underline-offset-2">Effacer mes sessions test</button>
-        <a href="/admin/choix-clients" className="rounded px-1 font-semibold underline underline-offset-2">Voir les choix des clients</a>
+        <button type="button" onClick={effacer} className="inline-flex min-h-11 items-center rounded px-1 font-semibold underline underline-offset-2">Effacer mes sessions test</button>
+        <a href="/admin/choix-clients" className="inline-flex min-h-11 items-center rounded px-1 font-semibold underline underline-offset-2">Voir les choix des clients</a>
       </p>
     </section>
   );

@@ -147,7 +147,7 @@ export default function NavAdmin({ compteurs: compteursRecus, professions, profe
             {fil.map((m, i) => (
               <li key={`${m.href}-${i}`} className="flex items-center gap-1.5">
                 {i > 0 && <span aria-hidden="true" className="text-neutral-400">›</span>}
-                {i === fil.length - 1 ? <span aria-current="page" className="font-semibold text-neutral-900">{m.libelle}</span> : <Link href={m.href} className="underline-offset-2 hover:underline">{m.libelle}</Link>}
+                {i === fil.length - 1 ? <span aria-current="page" className="font-semibold text-neutral-900">{m.libelle}</span> : <Link href={m.href} className="inline-flex min-h-11 items-center underline-offset-2 hover:underline md:min-h-0">{m.libelle}</Link>}
               </li>
             ))}
           </ol>

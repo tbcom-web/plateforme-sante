@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  appliquerResultatTest, attentesHumain, avisFaits, CHAINE, CELLULES_REVISION, choixDePreselection, classementTournoi, etatRevision, etatTournoi, exportTicketsModeles, fairetournerChaine,
+  appliquerResultatTest, attentesHumain, avisFaits, CHAINE, CELLULES_REVISION, choixDePreselection, classementTournoi, demandeCorrectionsModele, etatRevision, etatTournoi, exportTicketsModeles, fairetournerChaine,
   filtreLeger, ligneCorrection, lireRetouches, markdownTicketsModeles, modelesATester, nomTeinte, nouvelleVersion, pagesChangees, peut, peutPublier, poidsVote, prochainDuel,
   retouchesAAppliquer, roleEffectif, tagsAutomatiques, transitionPermise, verrousValidation,
   type EtatChaine, type FicheModele, type RevueModele, type VersionModele, type VoteModele,
@@ -197,6 +197,13 @@ test('parcours complet par l’automate : candidat → finaliste → check agent
   assert.equal(exp[0].tickets.length, 2);
   assert.ok(!('auteur' in exp[0].tickets[0]), 'jamais d’auteur dans l’export public');
   assert.match(markdownTicketsModeles(exp), /#2 \[humain\] Contact et accès \(mobile\)/);
+  // Demande autonome à Claude (partage depuis le téléphone) : modèle, version, tickets, livraison attendue par l'automate
+  const dem = demandeCorrectionsModele(e.fiches.find((x) => x.id === m)!, e.tickets.filter((t) => t.modele === m));
+  assert.match(dem, new RegExp(`modele ${m}, version de base v1`));
+  assert.match(dem, /Tickets ouverts \(2\)/);
+  assert.match(dem, /#2 \[humain\] page Contact et accès \(téléphone\)/);
+  assert.match(dem, /retours\/retouches-modeles\.json/);
+  assert.ok(!dem.includes('auteur'), 'jamais d’auteur dans la demande');
   // 5. Claude retouche
   const f = e.fiches.find((x) => x.id === m)!;
   const nv = nouvelleVersion({ fiche: f, composition: { ...COMPO, couleur: '#115e59' }, cle: 'compo:v2', tickets: e.tickets, corrections: [{ ticket: 1 }, { ticket: 2 }], auteur: 'claude', type: 'correction' });

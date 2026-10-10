@@ -40,7 +40,7 @@ export default async function PagePreselection({ searchParams }: PageProps<'/cha
         <h1 className="text-2xl font-bold">Présélection</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">Des designs de site à l’infini, six par page, montrés chaque fois avec un cabinet différent (et ses images). Touchez ceux qui vous plaisent, puis « Garder ». Le tournoi s’ouvre dès {CHAINE.ouvertureTournoi} candidats.</p>
       </div>
-      <ProchaineEtape action={action} importes={importes} ici="/chaine/preselection" />
+      <ProchaineEtape action={action} importes={importes} compact ici="/chaine/preselection" />
       {cible && <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-950 ring-1 ring-teal-200">Designs montrés avec le profil <strong>{cible.nom}</strong> et ses images (depuis « À valider »). <a className="underline" href="/chaine/preselection">Tous les profils</a></p>}
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}

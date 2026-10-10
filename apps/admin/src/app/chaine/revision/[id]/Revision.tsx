@@ -4,7 +4,7 @@
 // j'indique ce qui manque éventuellement avec des notes […] on me guide pas à pas jusqu'à la publication du modèle »). Mobile d'abord.
 // Une page à la fois (téléphone puis ordinateur), en grand, deux gestes : ✓ « Page OK » ou ✎ « Il manque / à corriger » (note,
 // zone entourée, étiquettes rapides repliées). Barre « Page 3 / 16 », précédente / suivante, reprise à la première page pas vue.
-// Fin : récapitulatif → « Envoyer les corrections à Claude » (demande à copier dans Claude Code) ; au retour de la nouvelle version,
+// Fin : récapitulatif → « Envoyer les corrections à Claude » (demande autonome, tickets en clair : « Envoyer à Claude » par le partage du téléphone, ou copie) ; au retour de la nouvelle version,
 // seules les pages modifiées sont reproposées (revalidation) ; tout au vert → écran « Publier ce modèle pour les praticiens » (Paul).
 // STRUCTURE FIGÉE (décision de Paul du 2026-10-10) : plus de 🔒 / 🎲 ici ; seules les IMAGES se choisissent, en situation, sur la
 // page (ChoixImagesSituation : photos et illustration du haut, candidates du kit du profil) — préférence de rendu, jamais une version.
@@ -17,15 +17,17 @@ import {
 import { structureFigee, type CandidateImage, type ChoixImage } from '@plateforme/core/chaine-images';
 import AnnotateurZones from '@/components/AnnotateurZones';
 import ChoixImagesSituation from '@/components/ChoixImagesSituation';
+import DemandeClaude from '@/components/DemandeClaude';
+import { useHauteurApercu } from '@/components/useHauteurApercu';
 import ApercuModele, { type RenduChaine, type ScenarioChaine } from '../../ApercuModele';
 import type { ProfilRendu } from '../../rendu-profil';
 import { creerTickets, revalider, rienASignaler } from '../../actions';
 import { envoyerCorrections, publierDepuisParcours } from '../../images-actions';
+import { envoyerRetoursAClaude } from '../../../admin/retours/actions';
 import { useImagesSituation } from '../../images-situation';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 const bouton = `min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-sm ${focus}`;
-export const PHRASE_CLAUDE = 'Corrige les tickets de la chaîne des modèles (retours/tickets-modeles.json)';
 
 type Props = {
   moi: string;
@@ -49,6 +51,8 @@ type Props = {
   migrationImages: boolean;
   /** Écran de publication (prêt pour validation) */
   publication: { verrous: VerrouValidation[]; profils: { id: string; nom: string; coche: boolean }[]; publies: string[] } | null;
+  /** Demande autonome à Claude pour la retouche (demandeCorrectionsModele : tickets en clair, livraison attendue) */
+  demande: { titre: string; texte: string };
 };
 
 type Etape = { page: PageModele; appareil: AppareilModele };
@@ -133,7 +137,9 @@ export default function Revision(p: Props) {
   const ticketsVersion = p.tickets.filter((t) => t.origine === 'humain' && t.statut === 'ouvert');
   const corriges = p.tickets.filter((t) => t.statut === 'corrige' && t.versionCorrection === p.fiche.version);
   const ticketsEtape = (e: Etape) => p.tickets.filter((t) => t.page === e.page && t.appareil === e.appareil && (t.statut === 'ouvert' || t.statut === 'corrige'));
-  const h = etape?.appareil === 'ordinateur' ? 620 : 680;
+  // Téléphone : aperçu borné à ~62 % de l'écran (sinon le doigt reste piégé dans l'aperçu qui défile)
+  const hTel = useHauteurApercu(680), hOrdi = useHauteurApercu(620);
+  const h = etape?.appareil === 'ordinateur' ? hOrdi : hTel;
 
   // ---- Écrans hors pages ----
   if (mode === 'publication' && p.publication) return <Publication {...p} publication={p.publication} onSignaler={() => setSignaler(true)} />;
@@ -146,7 +152,7 @@ export default function Revision(p: Props) {
       </section>
     );
   }
-  if (mode === 'attente') return <Attente statut={s} tickets={p.tickets.filter((t) => t.statut === 'ouvert')} validateur={p.validateur} />;
+  if (mode === 'attente') return <Attente statut={s} tickets={p.tickets.filter((t) => t.statut === 'ouvert')} validateur={p.validateur} demande={p.demande} />;
 
   const n = etapes.length;
   const faites = etapes.filter((e) => etatEtape(e) !== 'a-voir').length;
@@ -184,7 +190,7 @@ export default function Revision(p: Props) {
               <figure className={`min-w-0 gap-1 ${avant ? 'grid' : 'hidden lg:grid'}`}>
                 <figcaption className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Avant (v{p.fiche.version - 1})</figcaption>
                 <div className={etape.appareil === 'mobile' ? 'mx-auto w-full max-w-[400px]' : ''}>
-                  <ApercuModele composition={precedenteVue ?? p.precedente} scenario={scenarioVu} rendu={p.rendu} page={etape.page} appareil={etape.appareil} hauteur={h} />
+                  <ApercuModele key={h} composition={precedenteVue ?? p.precedente} scenario={scenarioVu} rendu={p.rendu} page={etape.page} appareil={etape.appareil} hauteur={h} />
                 </div>
               </figure>
             )}
@@ -194,9 +200,9 @@ export default function Revision(p: Props) {
                 <ChoixImagesSituation emplacements={emplacements} desactive={remarque && modeZone} onApercu={im.onApercu} onChoisir={im.onChoisir}>
                   {remarque ? (
                     <AnnotateurZones zones={zones} onChange={setZones} appareil={etape.appareil} mode={modeZone} onMode={setModeZone} libelle={`Page ${libellePageModele(etape.page)}`}>
-                      <ApercuModele composition={affichee} scenario={scenarioVu} rendu={p.rendu} page={etape.page} appareil={etape.appareil} hauteur={h} />
+                      <ApercuModele key={h} composition={affichee} scenario={scenarioVu} rendu={p.rendu} page={etape.page} appareil={etape.appareil} hauteur={h} />
                     </AnnotateurZones>
-                  ) : <ApercuModele composition={affichee} scenario={scenarioVu} rendu={p.rendu} page={etape.page} appareil={etape.appareil} hauteur={h} />}
+                  ) : <ApercuModele key={h} composition={affichee} scenario={scenarioVu} rendu={p.rendu} page={etape.page} appareil={etape.appareil} hauteur={h} />}
                 </ChoixImagesSituation>
               </div>
               {design && emplacements.length > 0 && <p className="text-xs text-neutral-600" data-aide-images="">Images : survolez ou touchez une photo{emplacements.some((e) => e.id === 'heros') ? ' ou l’illustration du haut' : ''} pour en choisir une autre (‹ ›, molette). La structure du modèle est figée{structureFigee(s) ? '' : ' à partir des finalistes'}.</p>}
@@ -210,21 +216,22 @@ export default function Revision(p: Props) {
               <button type="button" onClick={() => { setRemarque(true); setModeZone(false); }} className={`min-h-14 rounded-xl border-2 border-orange-700 bg-white px-5 text-base font-semibold text-orange-800 ${focus}`} data-action="remarque">✎ {mode === 'revalidation' ? 'Encore à corriger' : 'Il manque / à corriger'}</button>
             </div>
           ) : (
-            <section ref={(el) => { if (el && !el.dataset.vu) { el.dataset.vu = '1'; el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }} aria-label="Remarque" className="grid gap-2 rounded-2xl border border-orange-200 bg-orange-50/60 p-3" data-remarque="">
+            <section ref={(el) => { if (el && !el.dataset.vu) { el.dataset.vu = '1'; el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } }} aria-label="Remarque" className="grid gap-2 rounded-2xl border border-orange-200 bg-orange-50/60 p-3 pb-20 lg:pb-3" data-remarque="">
               <label className="grid gap-1 text-sm font-semibold">Ce qui manque ou est à corriger
                 <textarea value={note} onChange={(e) => setNote(e.target.value.slice(0, 500))} rows={3} placeholder="Ex. : le titre est coupé sur téléphone, il manque les horaires…" className="rounded-lg border border-neutral-300 bg-white p-2 text-base font-normal md:text-sm" />
               </label>
               <p className="text-xs text-neutral-700">Facultatif : « Signaler une zone » au-dessus de l’aperçu pour entourer l’endroit ({zones.length} zone{zones.length > 1 ? 's' : ''}).</p>
               <details className="text-sm">
-                <summary className="min-h-11 cursor-pointer content-center">Étiquette rapide : {ETIQUETTES_ZONE.find((e) => e.id === etiquette)?.libelle}</summary>
+                <summary className="flex min-h-11 cursor-pointer items-center">Étiquette rapide : {ETIQUETTES_ZONE.find((e) => e.id === etiquette)?.libelle}</summary>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {ETIQUETTES_ZONE.map((e) => <button key={e.id} type="button" aria-pressed={etiquette === e.id} onClick={() => setEtiquette(e.id)} className={`min-h-9 rounded-full border px-2.5 text-xs ${focus} ${etiquette === e.id ? 'border-orange-700 bg-orange-700 text-white' : 'border-neutral-300 bg-white'}`}>{e.libelle}</button>)}
+                  {ETIQUETTES_ZONE.map((e) => <button key={e.id} type="button" aria-pressed={etiquette === e.id} onClick={() => setEtiquette(e.id)} className={`min-h-11 rounded-full border px-3 text-xs ${focus} ${etiquette === e.id ? 'border-orange-700 bg-orange-700 text-white' : 'border-neutral-300 bg-white'}`}>{e.libelle}</button>)}
                 </div>
               </details>
               {mode === 'revalidation' && ticketsEtape(etape).filter((t) => t.statut === 'corrige').map((t) => (
                 <label key={t.numero} className="flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" className="size-5" checked={rouvrir.includes(t.numero)} onChange={(e) => setRouvrir((l) => (e.target.checked ? [...l, t.numero] : l.filter((x) => x !== t.numero)))} /> #{t.numero} pas encore corrigé : {t.commentaire || t.etiquette}</label>
               ))}
-              <div className="flex flex-wrap gap-2">
+              {/* Téléphone : « Enregistrer » fixé en bas de l'écran tant que la remarque est ouverte (zone tracée en haut de l'aperçu, note plus bas) */}
+              <div className="fixed inset-x-2 bottom-2 z-30 flex flex-wrap gap-2 rounded-xl bg-orange-50/95 p-1.5 shadow-lg ring-1 ring-orange-200 backdrop-blur lg:static lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0">
                 <button type="button" disabled={enCours || (!peutEnvoyer && !(mode === 'revalidation' && rouvrir.length))} onClick={() => (peutEnvoyer ? envoyerRemarque() : (setFaitsLocaux((l) => ({ ...l, [cleE(etape)]: 'remarque' })), suivante()))} className={`min-h-12 rounded-xl bg-orange-700 px-4 font-semibold text-white disabled:opacity-50 ${focus}`} data-action="enregistrer-remarque">Enregistrer et page suivante</button>
                 <button type="button" onClick={() => { setRemarque(false); setZones([]); setModeZone(false); }} className={bouton}>Annuler</button>
               </div>
@@ -245,26 +252,22 @@ export default function Revision(p: Props) {
           onEnvoyer={() => agir(() => envoyerCorrections(p.fiche.id))}
           onRevalider={() => agir(() => revalider(p.fiche.id, rouvrir), () => setRouvrir([]))}
           onContinuer={() => router.refresh()}
+          demande={p.demande} validateur={p.validateur}
         />
       )}
     </div>
   );
 }
 
-function CopierPhrase() {
-  const [copie, setCopie] = useState(false);
-  return (
-    <div className="grid gap-2 rounded-xl bg-neutral-900 p-3 text-white" data-phrase-claude="">
-      <p className="text-xs uppercase tracking-wide text-neutral-300">À coller dans Claude Code</p>
-      <p className="font-mono text-sm">{PHRASE_CLAUDE}</p>
-      <button type="button" onClick={() => { void navigator.clipboard?.writeText(PHRASE_CLAUDE).then(() => setCopie(true), () => null); }} className={`min-h-11 justify-self-start rounded-lg bg-white px-3 text-sm font-semibold text-neutral-900 ${focus}`}>{copie ? 'Copié ✓' : 'Copier la demande'}</button>
-    </div>
-  );
+/** Demande autonome à Claude (tickets en clair) ; « Envoyer à Claude » lance aussi l'export des retours (Paul seulement) */
+function CopierPhrase({ demande, validateur }: { demande: Props['demande']; validateur: boolean }) {
+  return <DemandeClaude texte={demande.texte} titre={demande.titre} avantEnvoi={validateur ? envoyerRetoursAClaude : undefined} />;
 }
 
 function Recapitulatif(r: {
   mode: string; etapes: Etape[]; etat: (e: Etape) => 'a-voir' | 'ok' | 'remarque'; aller: (n: number) => void; enCours: boolean; message: string;
   tickets: TicketModele[]; corriges: TicketModele[]; rouvrir: number[]; test: Props['test']; onEnvoyer: () => void; onRevalider: () => void; onContinuer: () => void;
+  demande: Props['demande']; validateur: boolean;
 }) {
   const [envoye, setEnvoye] = useState(false);
   const restantes = r.etapes.map((e, k) => ({ e, k })).filter((x) => r.etat(x.e) === 'a-voir');
@@ -294,7 +297,7 @@ function Recapitulatif(r: {
           <ul className="grid gap-1 text-sm">{r.tickets.slice(0, 12).map((t) => <li key={t.numero} className="rounded-lg bg-orange-50 px-3 py-2">#{t.numero} · {libellePageModele(t.page)} ({libelleAppareil(t.appareil)}) · {t.commentaire || t.etiquette}</li>)}</ul>
           {!envoye
             ? <button type="button" disabled={r.enCours} onClick={() => { setEnvoye(true); r.onEnvoyer(); }} className={`min-h-12 justify-self-start rounded-xl bg-orange-700 px-5 font-semibold text-white ${focus}`} data-action="envoyer-claude">Envoyer les corrections à Claude</button>
-            : <><p className="text-sm font-semibold">Dernier geste : demandez la correction à Claude. La nouvelle version revient seule ; vous ne reverrez que les pages modifiées.</p><CopierPhrase /></>}
+            : <><p className="text-sm font-semibold">Dernier geste : demandez la correction à Claude. La nouvelle version revient seule ; vous ne reverrez que les pages modifiées.</p><CopierPhrase demande={r.demande} validateur={r.validateur} /></>}
         </div>
       ) : (
         <div className="grid gap-2">
@@ -307,14 +310,14 @@ function Recapitulatif(r: {
   );
 }
 
-function Attente({ statut, tickets, validateur }: { statut: StatutModele; tickets: TicketModele[]; validateur: boolean }) {
+function Attente({ statut, tickets, validateur, demande }: { statut: StatutModele; tickets: TicketModele[]; validateur: boolean; demande: Props['demande'] }) {
   return (
     <section className="grid gap-3 rounded-2xl border border-violet-200 bg-violet-50/60 p-4" data-ecran="attente">
       <h2 className="text-xl font-bold">{statut === 'retouche' ? `Claude corrige ${tickets.length} remarque${tickets.length > 1 ? 's' : ''}` : 'Le testeur repasse sur la nouvelle version'}</h2>
+      {statut === 'retouche' && <CopierPhrase demande={demande} validateur={validateur} />}
       <p className="text-sm text-neutral-700">{statut === 'retouche'
-        ? `${validateur ? 'Dans Claude Code, collez la demande ci-dessous.' : 'Paul (ou quiconque a Claude Code) colle la demande ci-dessous.'} La nouvelle version arrive seule ; la relecture ne vous reproposera que les pages modifiées.`
+        ? `${validateur ? '« Envoyer à Claude » : la demande complète part vers l’app Claude (session Code).' : 'Paul envoie la demande ci-dessus à Claude (session Code).'} La nouvelle version arrive seule ; la relecture ne vous reproposera que les pages modifiées.`
         : 'Rien à faire : dès que le test est passé, les pages modifiées vous sont proposées à revalider.'}</p>
-      {statut === 'retouche' && <CopierPhrase />}
       {tickets.length > 0 && <ul className="grid gap-1 text-sm">{tickets.slice(0, 12).map((t) => <li key={t.numero} className="rounded-lg bg-white px-3 py-2 ring-1 ring-black/5">#{t.numero} · {libellePageModele(t.page)} ({libelleAppareil(t.appareil)}) · {t.commentaire || t.etiquette}</li>)}</ul>}
     </section>
   );

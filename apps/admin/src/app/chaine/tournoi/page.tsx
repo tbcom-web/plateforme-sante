@@ -39,7 +39,7 @@ export default async function PageTournoi({ searchParams }: { searchParams: Prom
         <h1 className="text-2xl font-bold">Tournoi</h1>
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">Touchez vos 2 préférés parmi 6 (et, si vous voulez, celui qui ne va pas). On ne cherche que les {TOURNOI_GRILLES.top} meilleurs : le tournoi s’arrête tout seul quand ils sont sûrs à {Math.round(TOURNOI_GRILLES.certitude * 100)} %.</p>
       </div>
-      <ProchaineEtape action={action} ici="/chaine/tournoi" />
+      <ProchaineEtape action={action} compact ici="/chaine/tournoi" />
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {(bilan.erreur === 'automate' || bilan.echecs > 0) && <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-automate-incomplet="">{AUTOMATE_INCOMPLET} <Link href="/chaine" className="font-semibold underline">Voir le tableau</Link></p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}

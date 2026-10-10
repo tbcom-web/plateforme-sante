@@ -41,7 +41,7 @@ export default function IndicateursEvaluation({ ind }: { ind: (IndicateursPoliti
     <section aria-labelledby="tb-evaluation" className="grid gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="tb-evaluation" className="text-lg font-semibold">Évaluation</h2>
-        <Link href="/admin/retours/compris" className="text-sm font-semibold text-teal-800 underline">Ce que j’ai compris de tes retours</Link>
+        <Link href="/admin/retours/compris" className="inline-flex min-h-11 items-center text-sm font-semibold text-teal-800 underline">Ce que j’ai compris de tes retours</Link>
       </div>
       {ind.migrationManquante && <p className="rounded-lg bg-amber-50 p-2 text-xs text-amber-900 ring-1 ring-amber-200">Migration 0054 à exécuter : les écrans passés sans réponse ne sont comptés que dans ce navigateur.</p>}
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">

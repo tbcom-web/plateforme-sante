@@ -69,7 +69,8 @@ export default function Tournoi(p: Props) {
     return ids.map((id, i) => { try { return rendreDesign(p.versions[id]?.design ?? {}, profil, ctx, i + 1); } catch { return {}; } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids.join(','), profil]);
-  const scenario = profil ? { principaux: profil.scenario.principaux, secondaires: profil.scenario.secondaires, couleurs: profil.scenario.couleurs } : { principaux: [], secondaires: [], couleurs: [] };
+  // Objet stable (memo d'ApercuModele) : toucher une carte ne re-rend plus les 6 aperçus
+  const scenario = useMemo(() => (profil ? { principaux: profil.scenario.principaux, secondaires: profil.scenario.secondaires, couleurs: profil.scenario.couleurs } : { principaux: [], secondaires: [], couleurs: [] }), [profil]);
 
   // Contrôle « rendu identique » : deux cartes identiques à l'œil sont signalées (le choix reste libre)
   useEffect(() => {

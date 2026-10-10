@@ -24,13 +24,21 @@ export default function TempsServeur() {
   const chemin = usePathname();
   const params = useSearchParams();
   const [m, setM] = useState<Mesure | null>(null);
+  // Téléphone (2026-10-10, « mobile seul ») : la pastille recouvrait les barres d'action collées en bas ; elle s'efface après 4 s
+  const [efface, setEfface] = useState(false);
+  useEffect(() => {
+    setEfface(false);
+    if (!window.matchMedia?.('(max-width: 640px)').matches) return;
+    const t = setTimeout(() => setEfface(true), 4000);
+    return () => clearTimeout(t);
+  }, [chemin, params]);
   useEffect(() => {
     // Après la fin du flux (fin de réponse) : relevé différé, puis quelques relevés pour la navigation en cours
     let n = 0;
     const id = setInterval(() => { const x = derniereMesure(); if (x) setM(x); if (++n >= 6) clearInterval(id); }, 500);
     return () => clearInterval(id);
   }, [chemin, params]);
-  if (!m) return null;
+  if (!m || efface) return null;
   const couleur = m.ms < 500 ? 'bg-emerald-50 text-emerald-900 ring-emerald-200' : m.ms < 1500 ? 'bg-amber-50 text-amber-900 ring-amber-200' : 'bg-red-50 text-red-900 ring-red-200';
   return (
     <p className={`pointer-events-none fixed bottom-2 left-2 z-50 rounded-full px-2 py-0.5 text-xs tabular-nums ring-1 ${couleur}`} title={m.detail} data-temps-serveur={m.ms}>

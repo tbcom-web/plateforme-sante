@@ -10,6 +10,7 @@ import {
   type CandidateImage, type ChoixImage, type EmplacementImage,
 } from '@plateforme/core/chaine-images';
 import ChoixImagesSituation, { type EmplacementSituation } from '@/components/ChoixImagesSituation';
+import { useHauteurApercu } from '@/components/useHauteurApercu';
 import ApercuModele, { type RenduChaine, type ScenarioChaine } from './ApercuModele';
 import { useRenduProfil } from './ApercuDesign';
 import type { ProfilRendu } from './rendu-profil';
@@ -62,6 +63,9 @@ export function useImagesSituation(o: { modele: string; design: Record<string, u
 /** Fiche du modèle : aperçu du design avec le contrôle d'images sur la page (téléphone ou ordinateur) */
 export default function ApercuDesignImages(p: { modele: string; design: Record<string, unknown>; profils: ProfilRendu[]; poids: PoidsAtelier | null; photos: PhotoBanque[]; rendu: RenduChaine; scenarioDefaut: ScenarioChaine; hauteur: number; page?: PageStructure } & DonneesImages) {
   const [appareil, setAppareil] = useState<'mobile' | 'ordinateur'>('ordinateur');
+  // Téléphone : rendu téléphone d'emblée (le rendu ordinateur réduit y est illisible), hauteur sans piège de défilement
+  useEffect(() => { if (window.innerWidth < 640) setAppareil('mobile'); }, []);
+  const hMobile = useHauteurApercu(640);
   const im = useImagesSituation(p);
   return (
     <div className="grid min-w-0 gap-2">
@@ -71,7 +75,7 @@ export default function ApercuDesignImages(p: { modele: string; design: Record<s
       </div>
       <div className={appareil === 'mobile' ? 'mx-auto w-full max-w-[400px]' : ''}>
         <ChoixImagesSituation emplacements={im.emplacements} onApercu={im.onApercu} onChoisir={im.onChoisir}>
-          <ApercuModele composition={im.affichee} scenario={im.scenario ?? p.scenarioDefaut} rendu={p.rendu} page={p.page} appareil={appareil} hauteur={appareil === 'mobile' ? 640 : p.hauteur} />
+          <ApercuModele key={appareil === 'mobile' ? hMobile : p.hauteur} composition={im.affichee} scenario={im.scenario ?? p.scenarioDefaut} rendu={p.rendu} page={p.page} appareil={appareil} hauteur={appareil === 'mobile' ? hMobile : p.hauteur} />
         </ChoixImagesSituation>
       </div>
       {im.emplacements.length > 0 && <p className="text-xs text-neutral-600">Survolez ou touchez une photo ou l’illustration du haut pour en choisir une autre (‹ ›, molette) : le choix vaut pour ce profil, le design ne change pas.</p>}

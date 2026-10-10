@@ -20,11 +20,12 @@ export default async function LayoutChaine({ children }: { children: React.React
   const admin = (await getRole()) === 'admin';
   return (
     <Shell email={moi.email}>
-      <nav aria-label="Chaîne des modèles" className="-mt-2 mb-5 flex flex-wrap items-center gap-2 text-sm">
-        <span className="mr-1 font-bold text-teal-900">Chaîne des modèles</span>
-        {ONGLETS.map((o) => <Link key={o.href} href={o.href} className="inline-flex min-h-11 items-center rounded-full border border-neutral-300 bg-white px-3 hover:bg-teal-50">{o.libelle}</Link>)}
+      {/* Téléphone : une seule rangée qui défile (deux rangées repoussaient le travail sous la ligne de flottaison) */}
+      <nav aria-label="Chaîne des modèles" className="-mx-4 -mt-2 mb-4 flex items-center gap-2 overflow-x-auto whitespace-nowrap px-4 text-sm [scrollbar-width:none] sm:mx-0 sm:mb-5 sm:flex-wrap sm:overflow-visible sm:px-0">
+        <span className="mr-1 font-bold text-teal-900"><span className="sm:hidden">Chaîne</span><span className="hidden sm:inline">Chaîne des modèles</span></span>
+        {ONGLETS.map((o) => <Link key={o.href} href={o.href} className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-neutral-300 bg-white px-3 hover:bg-teal-50">{o.libelle}</Link>)}
         {moi.role === 'validateur' && <Link href="/chaine/equipe" className="inline-flex min-h-11 items-center rounded-full border border-neutral-300 bg-white px-3 hover:bg-teal-50">Équipe</Link>}
-        <span className="ml-auto rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-700" data-role={moi.role}>{LIBELLES_ROLES[moi.role]}</span>
+        <span className="ml-auto shrink-0 rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-700" data-role={moi.role}>{LIBELLES_ROLES[moi.role]}</span>
       </nav>
       <PrechauffageOuvriers />
       {children}

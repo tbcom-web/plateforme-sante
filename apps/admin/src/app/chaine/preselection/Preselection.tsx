@@ -49,7 +49,10 @@ export default function Preselection(props: Props) {
   const tranches = useMemo(() => ({ refuses: new Set(props.tranches.refuses), favoris: new Set(props.tranches.favoris) }), [props.tranches]);
   const profilDe = useCallback((id: string) => props.profils.find((p) => p.id === id) ?? props.profils[0], [props.profils]);
   const ctxDe = useCallback((p: ProfilRendu) => contexteDuProfil(p, { poids: props.poids, photos: props.photos, modeles: props.rendu.modeles }), [props.poids, props.photos, props.rendu.modeles]);
-  const scenario = (p: ProfilRendu) => ({ principaux: p.scenario.principaux, secondaires: p.scenario.secondaires, couleurs: p.scenario.couleurs });
+  // Scénario STABLE par profil (2026-10-10, « mobile seul ») : un objet neuf à chaque rendu défaisait le memo d'ApercuModele, et
+  // toucher une carte re-rendait les 6 aperçus (jusqu'à 3 s sur iPhone avant que la coche apparaisse)
+  const scenarios = useMemo(() => new Map(props.profils.map((p) => [p.id, { principaux: p.scenario.principaux, secondaires: p.scenario.secondaires, couleurs: p.scenario.couleurs }])), [props.profils]);
+  const scenario = (p: ProfilRendu) => scenarios.get(p.id) ?? { principaux: p.scenario.principaux, secondaires: p.scenario.secondaires, couleurs: p.scenario.couleurs };
 
   // ---- Grilles « Directions » dans des Web Workers (perf, 2026-10-09 : 0,2 à 2 s par grille, jusqu'à 6 par page, sur le fil
   // principal auparavant) : grille demandée = (profil, graine), même calcul (grilles.worker.ts) ; la page suivante est préparée
@@ -213,15 +216,16 @@ export default function Preselection(props: Props) {
                     {choisi && <span className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-teal-700 text-sm font-bold text-white shadow" aria-hidden="true">{p.selection.indexOf(i) + 1}</span>}
                     <span className="block truncate px-2 py-1 text-xs text-neutral-700">{x.legende}</span>
                   </button>
-                  <button type="button" onClick={() => autreTheme(p.id, i)} className={`min-h-9 rounded-lg px-2 text-left text-xs text-teal-900 underline ${focus}`} data-action="autre-theme">Voir avec un autre thème ({pr.nom})</button>
+                  <button type="button" onClick={() => autreTheme(p.id, i)} className={`min-h-11 rounded-lg px-2 text-left text-xs text-teal-900 underline ${focus}`} data-action="autre-theme">Voir avec un autre thème ({pr.nom})</button>
                 </li>
               );
             })}
           </ul>
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Page ouverte : « Garder » collé en bas de l'écran du téléphone (les 6 cartes font ~3 écrans) */}
+          <div className={`flex flex-wrap items-center gap-2 ${p.etat === 'ouverte' ? 'sticky bottom-2 z-10 rounded-xl bg-white/95 p-1.5 shadow-lg ring-1 ring-black/10 backdrop-blur lg:static lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0' : ''}`}>
             {p.etat === 'ouverte' ? (
               <>
-                <button type="button" onClick={() => void garder(p.id)} disabled={!p.selection.length} className={`min-h-11 rounded-lg bg-teal-800 px-4 font-semibold text-white disabled:opacity-50 ${focus}`}>Garder ({p.selection.length})</button>
+                <button type="button" onClick={() => void garder(p.id)} disabled={!p.selection.length} className={`min-h-11 rounded-lg bg-teal-800 px-4 font-semibold text-white disabled:opacity-50 ${focus}`} data-action="garder">Garder ({p.selection.length})</button>
                 <button type="button" onClick={() => { journaliserSansChoix(p); setPages((l) => l.map((x) => (x.id === p.id ? { ...x, etat: 'passee', message: 'Passée' } : x))); }} className={`min-h-11 rounded-lg border border-neutral-300 bg-white px-3 ${focus}`}>Aucun ne me plaît</button>
               </>
             ) : <span role="status" className="text-sm text-neutral-700">{p.message}</span>}

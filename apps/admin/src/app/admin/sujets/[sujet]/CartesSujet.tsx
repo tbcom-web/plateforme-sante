@@ -99,9 +99,19 @@ export default function CartesSujet(props: Props) {
   const attente = useRef<{ d: Decision; t: ReturnType<typeof setTimeout> } | null>(null);
   const enVol = useRef(new Set<string>());
   const depart = useRef<{ x: number; y: number; id: number } | null>(null);
+  // Appui long (≈ 0,5 s sans bouger) sur la carte : ouvre le commentaire (mobile seul, 2026-10-10)
+  const appui = useRef<number | null>(null);
+  const finAppui = () => { if (appui.current) { window.clearTimeout(appui.current); appui.current = null; } };
   const zoneCarte = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setReglages(lireReglages()); setMobile(window.matchMedia('(max-width: 640px)').matches); }, []);
+  // Téléphone (2026-10-10, « mobile seul ») : la carte arrive en haut de l'écran (l'en-tête, la progression et l'objectif du jour
+  // la poussaient sous la barre des gestes : on décidait sans la voir) ; on remonte pour les revoir
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 640px)').matches) return;
+    const t = window.setTimeout(() => { const el = zoneCarte.current; if (el && window.scrollY < 40) window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 8), behavior: 'smooth' }); }, 250);
+    return () => window.clearTimeout(t);
+  }, []);
   const changerReglages = (r: Partial<Reglages>) => setReglages((x) => { const n = { ...x, ...r }; try { localStorage.setItem(CLE_REGLAGES, JSON.stringify(n)); } catch { /* ignoré */ } return n; });
 
   // File des cartes (politique d'évaluation, sans répétition) ; une carte annulée revient en tête
@@ -229,14 +239,24 @@ export default function CartesSujet(props: Props) {
   const surDebut = (e: PE<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button,a,input,textarea,select,summary,label')) return;
     depart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    finAppui();
+    if (e.pointerType !== 'mouse') appui.current = window.setTimeout(() => {
+      appui.current = null;
+      depart.current = null;
+      setDrag(null);
+      setCommentaireOuvert(true);
+      try { navigator.vibrate?.(10); } catch { /* ignoré */ }
+    }, 520);
   };
   const surMouvement = (e: PE<HTMLDivElement>) => {
     const d = depart.current;
     if (!d || d.id !== e.pointerId) return;
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) finAppui();
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) setDrag({ dx, dy: e.pointerType === 'mouse' ? dy : 0 });
   };
   const surFin = (e: PE<HTMLDivElement>) => {
+    finAppui();
     const d = depart.current;
     depart.current = null;
     if (!d || d.id !== e.pointerId) return;
@@ -325,7 +345,7 @@ export default function CartesSujet(props: Props) {
               <Scene visuel={visuelDe(suivante)} scene={scene} studio={studio} seul={seul} titre={suivante.titre} photosSerie={suivante.photosSerie} mobile={mobile} />
             </div>
           )}
-          <article key={courante.id} aria-label={`Carte : ${courante.titre}`} onPointerDown={surDebut} onPointerMove={surMouvement} onPointerUp={surFin} onPointerCancel={() => { depart.current = null; setDrag(null); }}
+          <article key={courante.id} aria-label={`Carte : ${courante.titre}`} onPointerDown={surDebut} onPointerMove={surMouvement} onPointerUp={surFin} onPointerCancel={() => { finAppui(); depart.current = null; setDrag(null); }} onContextMenu={(e) => { if (!(e.target as HTMLElement).closest('a,img')) e.preventDefault(); }}
             className="relative grid touch-pan-y select-none gap-2 rounded-3xl border border-black/5 bg-white p-3 shadow-sm sm:p-4"
             style={{ transform: transformation, transition: drag ? 'none' : 'transform .18s ease-out' }}>
             {indice && (
@@ -335,7 +355,7 @@ export default function CartesSujet(props: Props) {
             )}
             <div className="flex flex-wrap items-start justify-between gap-2">
               {entete(courante)}
-              <button type="button" onClick={() => setSeul((x) => !x)} className={`min-h-9 shrink-0 rounded-full px-3 text-xs font-semibold text-neutral-700 ring-1 ring-black/10 hover:bg-neutral-50 ${focus}`} aria-pressed={seul} title="Touche S">
+              <button type="button" onClick={() => setSeul((x) => !x)} className={`min-h-11 shrink-0 rounded-full px-3 text-xs font-semibold text-neutral-700 ring-1 ring-black/10 hover:bg-neutral-50 ${focus}`} aria-pressed={seul} title="Touche S">
                 {seul ? 'En situation' : 'Voir seul'}
               </button>
             </div>
@@ -374,18 +394,18 @@ export default function CartesSujet(props: Props) {
               </label>
               {etiquettesCarte.length > 0 && (
                 <details className="text-sm">
-                  <summary className="min-h-9 cursor-pointer text-neutral-700">Étiquettes rapides{etiquettes.length ? ` (${etiquettes.length})` : ''}</summary>
+                  <summary className="min-h-11 cursor-pointer content-center text-neutral-700">Étiquettes rapides{etiquettes.length ? ` (${etiquettes.length})` : ''}</summary>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {etiquettesCarte.map((e) => {
                       const on = etiquettes.includes(e.id);
                       return <button key={e.id} type="button" aria-pressed={on} onClick={() => setEtiquettes((l) => (on ? l.filter((x) => x !== e.id) : [...l, e.id]))}
-                        className={`min-h-9 rounded-full px-3 text-xs ring-1 ${focus} ${on ? (e.positive ? 'bg-teal-700 text-white ring-teal-700' : 'bg-red-600 text-white ring-red-600') : e.positive ? 'text-teal-900 ring-teal-200' : 'text-red-800 ring-red-200'}`}>{e.libelle}</button>;
+                        className={`min-h-11 rounded-full px-3 text-xs ring-1 ${focus} ${on ? (e.positive ? 'bg-teal-700 text-white ring-teal-700' : 'bg-red-600 text-white ring-red-600') : e.positive ? 'text-teal-900 ring-teal-200' : 'text-red-800 ring-red-200'}`}>{e.libelle}</button>;
                     })}
                   </div>
                 </details>
               )}
               {courante.kind !== 'contenu' && courante.kind !== 'serie' && (
-                <label className="flex min-h-9 items-center gap-2 text-sm text-neutral-700">
+                <label className="flex min-h-11 items-center gap-2 text-sm text-neutral-700">
                   <input type="checkbox" checked={jamais} onChange={(e) => setJamais(e.target.checked)} className="size-4" />
                   Avec « Pas OK » : ne plus jamais le montrer
                 </label>
@@ -398,20 +418,20 @@ export default function CartesSujet(props: Props) {
             <button type="button" onClick={() => decider('ok')} title="→ ou O" className={`min-h-14 rounded-2xl bg-teal-700 text-lg font-bold text-white active:scale-95 ${focus}`}>✓ <span className="text-base">OK</span></button>
           </div>
           <div className="flex items-center justify-between gap-2 text-sm">
-            <button type="button" onClick={() => setCommentaireOuvert((x) => !x)} aria-expanded={commentaireOuvert} title="C" className={`min-h-10 rounded-full px-3 font-semibold text-neutral-700 ring-1 ring-black/10 ${focus} ${commentaire ? 'bg-amber-50' : ''}`}>💬 Commenter</button>
-            <button type="button" onClick={() => decider('plus-tard')} title="↓ ou P" className={`min-h-10 rounded-full px-3 text-neutral-700 ring-1 ring-black/10 ${focus}`}>Plus tard</button>
-            <button type="button" onClick={() => void annuler()} disabled={!decisions.length} title="Z" className={`min-h-10 rounded-full px-3 text-neutral-700 ring-1 ring-black/10 disabled:opacity-40 ${focus}`}>↶ Annuler</button>
+            <button type="button" onClick={() => setCommentaireOuvert((x) => !x)} aria-expanded={commentaireOuvert} title="C" className={`min-h-11 rounded-full px-3 font-semibold text-neutral-700 ring-1 ring-black/10 ${focus} ${commentaire ? 'bg-amber-50' : ''}`}>💬 Commenter</button>
+            <button type="button" onClick={() => decider('plus-tard')} title="↓ ou P" className={`min-h-11 rounded-full px-3 text-neutral-700 ring-1 ring-black/10 ${focus}`}>Plus tard</button>
+            <button type="button" onClick={() => void annuler()} disabled={!decisions.length} title="Z" className={`min-h-11 rounded-full px-3 text-neutral-700 ring-1 ring-black/10 disabled:opacity-40 ${focus}`}>↶ Annuler</button>
           </div>
         </div>
       )}
 
       <details className="text-xs text-neutral-600">
-        <summary className="min-h-9 cursor-pointer">Réglages et raccourcis</summary>
+        <summary className="min-h-11 cursor-pointer content-center">Réglages et raccourcis</summary>
         <div className="mt-1 grid gap-1.5">
-          <p>→ / O : OK · ← / N : Pas OK · ↑ / L : J’adore · ↓ / P : Plus tard · C : commenter · Z : annuler · S : voir seul. Au doigt : glisser à droite (OK) ou à gauche (Pas OK).</p>
+          <p>→ / O : OK · ← / N : Pas OK · ↑ / L : J’adore · ↓ / P : Plus tard · C : commenter · Z : annuler · S : voir seul. Au doigt : glisser à droite (OK) ou à gauche (Pas OK), appui long pour commenter.</p>
           <p>OK = 4 ★, J’adore = 5 ★, Pas OK = 2 ★ (1 ★ seulement au second « Pas OK » sur le même élément, ou si tu coches « ne plus jamais le montrer »). Rien n’est « Validé » pour les sites sans ton bouton en fin de sujet.</p>
-          <label className="flex min-h-9 items-center gap-2"><input type="checkbox" checked={reglages.vibrer} onChange={(e) => changerReglages({ vibrer: e.target.checked })} className="size-4" />Vibration à chaque décision (si l’appareil le permet)</label>
-          <label className="flex min-h-9 items-center gap-2"><input type="checkbox" checked={reglages.son} onChange={(e) => changerReglages({ son: e.target.checked })} className="size-4" />Petit son à chaque décision</label>
+          <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={reglages.vibrer} onChange={(e) => changerReglages({ vibrer: e.target.checked })} className="size-4" />Vibration à chaque décision (si l’appareil le permet)</label>
+          <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={reglages.son} onChange={(e) => changerReglages({ son: e.target.checked })} className="size-4" />Petit son à chaque décision</label>
         </div>
       </details>
     </div>

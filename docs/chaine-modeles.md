@@ -56,8 +56,11 @@ instance) ; une réponse de grille ou un duel relance l'automate au chargement s
 tournoi terminé renvoie au tableau, où l'automate fait passer les finalistes (`avancer_modele`).
 
 Gestes qui restent humains hors goût, dits dans le bandeau : **lancer le test** (bouton « Lancer le test » de la fiche, workflow
-`tester-modele`, Paul) et **demander la retouche à Claude** (Claude Code : « Corrige les tickets de la chaîne des modèles
-(retours/tickets-modeles.json) »).
+`tester-modele`, Paul) et **demander la retouche à Claude** : bouton « Envoyer à Claude » (bandeau, écran de retouche,
+récapitulatif de la relecture) qui partage depuis le téléphone (navigator.share, app Claude, session Code) une demande AUTONOME
+(`demandeCorrectionsModele` : modèle, version de base, tickets en clair avec page, appareil, zone, élément, commentaire, et la
+livraison attendue dans `retours/retouches-modeles.json`) et lance l’export des retours ; repli : copie + « ouvrez l’app Claude,
+session Code, et collez ». Parcours entier faisable au téléphone seul : `npm run audit:mobile` (scripts/perf-admin/mobile.mjs).
 
 **Propositions de Claude** (2026-10-09) : les designs « canons » de `retours/recettes-proposees.json` (ids `canon-*`, design sans
 images) entrent dans la chaîne par le bouton « Importer les propositions de Claude comme candidats » de la présélection

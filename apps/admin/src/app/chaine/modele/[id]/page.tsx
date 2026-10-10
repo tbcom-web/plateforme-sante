@@ -43,10 +43,12 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
         <ProchaineEtape action={action} compact ici={`/chaine/modele/${f.id}`} />
-        <p className="mt-3 text-sm"><Link href="/chaine" className="font-semibold text-teal-900 underline">← Tableau</Link></p>
+        <p className="mt-2 text-sm"><Link href="/chaine" className="inline-flex min-h-11 items-center font-semibold text-teal-900 underline">← Tableau</Link></p>
         <h1 className="mt-1 text-2xl font-bold">{f.nom}</h1>
         <p className="mt-1 text-sm text-neutral-700" data-statut={f.statut}>Étape {st.etape} · {st.libelle} · v{f.versionCourante}{f.versionPubliee ? ` · en ligne : v${f.versionPubliee}` : ''}{f.rang ? ` · rang ${f.rang} au tournoi` : ''} · {ticketsOuverts(tickets).length} ticket(s) ouvert(s)</p>
         <p className="text-sm text-neutral-600">Fini quand : {st.fini}</p>
+        {/* Geste de l'étape au premier écran (téléphone : l'aperçu et la validation font plusieurs écrans) */}
+        {modeTest && <div className="mt-2"><BoutonTesterModele modele={f.id} version={f.versionCourante} mode={modeTest} /></div>}
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="grid min-w-0 content-start gap-2">
@@ -71,7 +73,6 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
       </div>
       <section aria-labelledby="fi-test" className="grid gap-2">
         <h2 id="fi-test" className="font-semibold">Testeur de modèles · v{f.versionCourante}</h2>
-        {modeTest && <BoutonTesterModele modele={f.id} version={f.versionCourante} mode={modeTest} />}
         <RapportTestModele resultat={rapport} />
       </section>
       <section aria-labelledby="fi-versions" className="grid gap-2">

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { etatRevision, modeTestPourEtape, pagesChangees, statutModele } from '@plateforme/core';
+import { demandeCorrectionsModele, etatRevision, modeTestPourEtape, pagesChangees, statutModele } from '@plateforme/core';
 import BoutonTesterModele from '@/components/BoutonTesterModele';
 import RapportTestModele from '@/components/RapportTestModele';
 import { lireResultatTestModele } from '@/lib/tests-modeles';
@@ -41,9 +41,9 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
     <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <div>
         <ProchaineEtape action={action} compact ici={`/chaine/revision/${f.id}`} />
-        <p className="mt-3 text-sm"><Link href="/chaine" className="font-semibold text-teal-900 underline">← Tableau</Link> · <Link href={`/chaine/modele/${f.id}`} className="underline">Fiche du modèle</Link></p>
+        <p className="mt-2 flex flex-wrap items-center gap-x-3 text-sm"><Link href="/chaine" className="inline-flex min-h-11 items-center font-semibold text-teal-900 underline">← Tableau</Link><Link href={`/chaine/modele/${f.id}`} className="inline-flex min-h-11 items-center underline">Fiche du modèle</Link></p>
         <h1 className="mt-1 text-2xl font-bold">{f.nom} <span className="text-base font-semibold text-neutral-600">· v{f.versionCourante} · {st.libelle}</span></h1>
-        <p className="mt-1 text-sm text-neutral-600">Relecture guidée : une page à la fois, jusqu’à la publication.</p>
+        <p className="mt-1 hidden text-sm text-neutral-600 sm:block">Relecture guidée : une page à la fois, jusqu’à la publication.</p>
       </div>
       {!v ? <p className="text-sm">Version introuvable.</p> : (
         <Revision
@@ -63,6 +63,7 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
           candidates={candidates}
           choix={choix.lignes.filter((l) => l.modele === f.id)}
           migrationImages={choix.migrationManquante}
+          demande={{ titre: `Corrections du modèle ${f.nom}`, texte: demandeCorrectionsModele(f, tickets) }}
           publication={publication ? {
             verrous: publication,
             profils: demo.profils.map((x) => ({ id: x.id, nom: x.nom, coche: f.tags.profils.length ? f.tags.profils.includes(x.id) : compatibles.some((c) => c.id === x.id) })),

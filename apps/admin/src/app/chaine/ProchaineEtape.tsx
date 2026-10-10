@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import type { BoutonGuide, ProchaineAction } from '@plateforme/core';
+import DemandeClaude from '@/components/DemandeClaude';
+import { envoyerRetoursAClaude } from '../admin/retours/actions';
 import BoutonImporterClaude from './BoutonImporterClaude';
 
 // Bandeau « Prochaine étape » (chaîne guidée, packages/core/src/chaine-guidage.ts) : en tête du tableau et de chaque étape, UNE action,
@@ -29,6 +31,7 @@ export default function ProchaineEtape({ action, importes = 0, compact = false, 
         <span className="min-w-0 flex-1 basis-56 font-semibold text-neutral-950 [overflow-wrap:anywhere]">{surPlace ? `Vous y êtes : ${action.titre}` : action.titre}</span>
         {surPlace && <a href="#etape-travail" className="inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 font-semibold text-white" data-action-guidee="">{action.bouton && 'libelle' in action.bouton ? action.bouton.libelle : 'Y aller'} ↓</a>}
         {surPlace && <span className="basis-full text-xs text-neutral-700">{action.pourquoi}</span>}
+        {action.demande && !surPlace && <div className="basis-full"><DemandeClaude texte={action.demande.texte} titre={action.demande.titre} avantEnvoi={envoyerRetoursAClaude} /></div>}
         {!surPlace && action.bouton && ('action' in action.bouton
           ? <BoutonImporterClaude libelle={action.bouton.libelle} />
           : <Link href={action.bouton.href} className="inline-flex min-h-11 items-center rounded-lg bg-teal-800 px-4 font-semibold text-white" data-action-guidee="">{action.bouton.libelle}</Link>)}
@@ -52,6 +55,8 @@ export default function ProchaineEtape({ action, importes = 0, compact = false, 
           {action.secondaire && <span className="text-sm text-neutral-700">En attendant : <Bouton b={action.secondaire} principal={false} /></span>}
         </div>
       )}
+      {/* « Faire corriger par Claude » : la demande autonome s'envoie d'ici (partage du téléphone vers l'app Claude, ou copie) */}
+      {action.demande && <DemandeClaude texte={action.demande.texte} titre={action.demande.titre} avantEnvoi={envoyerRetoursAClaude} />}
       <ol className="grid grid-cols-6 gap-1 pt-1" aria-label="Étapes jusqu’au modèle prêt pour les clients">
         {action.fil.map((x) => (
           <li key={x.n} className="grid min-w-0 justify-items-center gap-1 text-center" aria-current={x.ici ? 'step' : undefined} data-etape={x.etat}>

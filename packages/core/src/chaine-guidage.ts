@@ -10,7 +10,7 @@
 // à Claude) ne sont jamais prescrits à un contributeur ; il reçoit alors sa propre prochaine action ou une attente expliquée.
 // Docs : docs/chaine-modeles.md (« Chaîne guidée »). Module pur.
 
-import { CHAINE, comparerProximite, revisionDeFiche, ticketsOuverts, versionDe, type EtatChaine, type FicheModele, type RoleEquipe, type StatutModele } from './chaine-modeles';
+import { CHAINE, comparerProximite, demandeCorrectionsModele, revisionDeFiche, ticketsOuverts, versionDe, type EtatChaine, type FicheModele, type RoleEquipe, type StatutModele } from './chaine-modeles';
 import { TOURNOI_GRILLES, type EtatTournoiGrilles } from './tournoi-grilles';
 
 /** Les 6 étapes montrées à l'équipe (les statuts internes de la fiche y sont regroupés) */
@@ -58,6 +58,8 @@ export type ProchaineAction = {
   restant: string;
   /** 0 à 1 : avancement du modèle le plus avancé */
   progression: number;
+  /** « Faire corriger par Claude » : demande autonome à envoyer (partage depuis le téléphone, copie) */
+  demande?: { titre: string; texte: string };
 };
 
 export type EntreeGuidage = {
@@ -169,8 +171,9 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
     return fin({
       id: 'retouche', etape: 5, qui: 'claude', secondaire: presel,
       titre: `Faire corriger ${guillemets(f.nom)} par Claude (${pluriel(n, 'ticket')})`,
-      pourquoi: 'Les tickets de la relecture sont prêts. Dans Claude Code, demandez : « Corrige les tickets de la chaîne des modèles (retours/tickets-modeles.json) ». La nouvelle version arrive seule dans la chaîne, puis repasse au testeur.',
+      pourquoi: 'Les tickets de la relecture sont prêts. « Envoyer à Claude » partage la demande complète (tickets en clair, livraison dans retours/retouches-modeles.json) vers l’app Claude, session Code, et lance l’export des retours. La nouvelle version arrive seule dans la chaîne, puis repasse au testeur.',
       bouton: { libelle: 'Voir la demande à Claude', href: `/chaine/revision/${f.id}` },
+      demande: { titre: `Corrections du modèle ${f.nom}`, texte: demandeCorrectionsModele(f, e.tickets.filter((x) => x.modele === f.id)) },
     });
   }
 
