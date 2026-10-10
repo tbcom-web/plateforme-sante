@@ -1,62 +1,62 @@
 # Retours de Paul — synthèse
 
-Export automatique (scripts/exporter-retours.mjs). Données jusqu’au 2026-10-08 : 1499 avis sur les assets, 453 sur les thèmes complets, 155 changements de statut.
+Export automatique (scripts/exporter-retours.mjs). Données jusqu’au 2026-10-09 : 1564 avis sur les assets, 463 sur les thèmes complets, 255 changements de statut.
 Lire ensuite les JSON du dossier pour le détail ; noter chaque correction faite dans retours/CHANGEMENTS.md (docs/retours.md).
 
 ## Assets (icônes, illustrations, photos, gammes, structures)
 
-1499 notes, moyenne 3,78 ★ — répartition : 1★ 70, 2★ 106, 3★ 370, 4★ 494, 5★ 459.
+1564 notes, moyenne 3,80 ★ — répartition : 1★ 70, 2★ 107, 3★ 379, 4★ 516, 5★ 492.
 
 ### Par type d’asset
 
 | Type | Assets notés | Notes | Moyenne |
 |---|---:|---:|---:|
 | Structures de pages | 266 | 267 | 3,89 ★ |
-| Éléments (présentation) | 160 | 212 | 4,00 ★ |
-| Photos | 112 | 163 | 3,17 ★ |
+| Éléments (présentation) | 178 | 230 | 4,05 ★ |
+| Photos | 114 | 167 | 3,19 ★ |
+| Typographies | 149 | 149 | 3,70 ★ |
 | Bibliothèque | 39 | 148 | 4,35 ★ |
-| Typographies | 142 | 142 | 3,68 ★ |
-| Dessins | 96 | 119 | 3,91 ★ |
-| Pictos et icônes | 89 | 91 | 3,03 ★ |
+| Dessins | 111 | 134 | 3,94 ★ |
+| Pictos et icônes | 101 | 103 | 3,19 ★ |
 | Matériel | 59 | 79 | 4,34 ★ |
 | Gammes de couleurs | 17 | 65 | 3,77 ★ |
 | Traits continus | 39 | 55 | 3,53 ★ |
 | Détails | 38 | 47 | 3,13 ★ |
 | Jeux d’effets | 40 | 44 | 3,73 ★ |
-| Héros de thème | 23 | 33 | 3,91 ★ |
+| Héros de thème | 29 | 39 | 3,92 ★ |
 | Animations | 6 | 15 | 4,27 ★ |
+| Menus | 11 | 11 | 3,64 ★ |
 | Modèles de structure | 4 | 11 | 3,64 ★ |
-| Menus | 8 | 8 | 3,38 ★ |
 
 ### Les mieux notés
 
 | Asset | Clé | Notes | Moyenne | Lissée | Étiquettes |
 |---|---|---:|---:|---:|---|
-| Semelle orthopédique en couleur (dessus, dessous, profil) (EZ-HTML/semelle-ortho) | `biblio:EZ-HTML/semelle-ortho:dessous:neuve` | 10 | 5,00 ★ | 4,65 ★ | — |
-| Semelle orthopédique en couleur (dessus, dessous, profil) (EZ-HTML/semelle-ortho) | `biblio:EZ-HTML/semelle-ortho` | 8 | 5,00 ★ | 4,59 ★ | — |
+| Semelle orthopédique en couleur (dessus, dessous, profil) (EZ-HTML/semelle-ortho) | `biblio:EZ-HTML/semelle-ortho:dessous:neuve` | 10 | 5,00 ★ | 4,66 ★ | — |
+| Semelle orthopédique en couleur (dessus, dessous, profil) (EZ-HTML/semelle-ortho) | `biblio:EZ-HTML/semelle-ortho` | 8 | 5,00 ★ | 4,60 ★ | — |
 | Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) | `biblio:EZ-HTML/chaussure-running:trois-quarts:neuve` | 9 | 4,89 ★ | 4,55 ★ | — |
-| Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) | `biblio:EZ-HTML/chaussure-running` | 8 | 4,88 ★ | 4,51 ★ | Anatomie juste (1), Clair (1), Élégant (1) |
+| Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) | `biblio:EZ-HTML/chaussure-running` | 8 | 4,88 ★ | 4,52 ★ | Anatomie juste (1), Clair (1), Élégant (1) |
 | Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) | `biblio:POD-AT-0009` | 8 | 4,75 ★ | 4,43 ★ | — |
-| Anatomie du pied de profil : os, tendon calcanéen, aponévrose plantaire (POD-AT-0008) | `biblio:POD-AT-0008:profil-medial:epine` | 6 | 4,83 ★ | 4,41 ★ | — |
-| Corail & bleu nuit (corail-nuit) | `gamme:corail-nuit` | 4 | 5,00 ★ | 4,39 ★ | — |
-| Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) | `biblio:POD-AT-0009:dorsale-gros-plan:mycose` | 6 | 4,67 ★ | 4,31 ★ | — |
-| podoscope (empreintes de podoscope en points de pression) | `animation:podoscope` | 3 | 5,00 ★ | 4,30 ★ | Waouh (1) |
-| Cobalt & abricot (cobalt-abricot) | `gamme:cobalt-abricot` | 3 | 5,00 ★ | 4,30 ★ | — |
+| Anatomie du pied de profil : os, tendon calcanéen, aponévrose plantaire (POD-AT-0008) | `biblio:POD-AT-0008:profil-medial:epine` | 6 | 4,83 ★ | 4,42 ★ | — |
+| Corail & bleu nuit (corail-nuit) | `gamme:corail-nuit` | 4 | 5,00 ★ | 4,40 ★ | — |
+| Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) | `biblio:POD-AT-0009:dorsale-gros-plan:mycose` | 6 | 4,67 ★ | 4,32 ★ | — |
+| podoscope (empreintes de podoscope en points de pression) | `animation:podoscope` | 3 | 5,00 ★ | 4,31 ★ | Waouh (1) |
+| Cobalt & abricot (cobalt-abricot) | `gamme:cobalt-abricot` | 3 | 5,00 ★ | 4,31 ★ | — |
 
 ### Les moins bien notés
 
 | Asset | Clé | Notes | Moyenne | Lissée | Étiquettes |
 |---|---|---:|---:|---:|---|
-| posture-marche-sable | `photo:posture-marche-sable` | 3 | 1,00 ★ | 2,59 ★ | — |
-| cabinet-lumiere | `photo:cabinet-lumiere` | 3 | 1,00 ★ | 2,59 ★ | — |
-| enfant-baskets | `photo:enfant-baskets` | 3 | 1,33 ★ | 2,73 ★ | — |
-| Chaussure de ville (chaussure-ville) | `picto:chaussure-ville` | 2 | 1,00 ★ | 2,85 ★ | — |
-| sport-trail | `photo:sport-trail` | 2 | 1,00 ★ | 2,85 ★ | Hors sujet (1) |
-| sport-foulee-herbe | `photo:sport-foulee-herbe` | 2 | 1,00 ★ | 2,85 ★ | — |
-| soins-pied-tenu | `photo:soins-pied-tenu` | 2 | 1,00 ★ | 2,85 ★ | — |
-| soins-bandages | `photo:soins-bandages` | 2 | 1,00 ★ | 2,85 ★ | — |
-| posture-escalier | `photo:posture-escalier` | 2 | 1,00 ★ | 2,85 ★ | — |
-| generale-pied-sol | `photo:generale-pied-sol` | 2 | 1,00 ★ | 2,85 ★ | — |
+| posture-marche-sable | `photo:posture-marche-sable` | 3 | 1,00 ★ | 2,60 ★ | — |
+| cabinet-lumiere | `photo:cabinet-lumiere` | 3 | 1,00 ★ | 2,60 ★ | — |
+| enfant-baskets | `photo:enfant-baskets` | 3 | 1,33 ★ | 2,74 ★ | — |
+| Chaussure de ville (chaussure-ville) | `picto:chaussure-ville` | 2 | 1,00 ★ | 2,87 ★ | — |
+| sport-trail | `photo:sport-trail` | 2 | 1,00 ★ | 2,87 ★ | Hors sujet (1) |
+| sport-foulee-herbe | `photo:sport-foulee-herbe` | 2 | 1,00 ★ | 2,87 ★ | — |
+| soins-pied-tenu | `photo:soins-pied-tenu` | 2 | 1,00 ★ | 2,87 ★ | — |
+| soins-bandages | `photo:soins-bandages` | 2 | 1,00 ★ | 2,87 ★ | — |
+| posture-escalier | `photo:posture-escalier` | 2 | 1,00 ★ | 2,87 ★ | — |
+| generale-pied-sol | `photo:generale-pied-sol` | 2 | 1,00 ★ | 2,87 ★ | — |
 
 ### Étiquettes les plus fréquentes
 
@@ -83,9 +83,9 @@ Lire ensuite les JSON du dossier pour le détail ; noter chaque correction faite
 
 - `biblio:EZ-HTML/chaussure-running:trois-quarts:neuve` — Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) : (sans commentaire)
 
-### Retirés (12)
+### Retirés (13)
 
-`biblio:SITES/orteil-griffe`, `biblio:SITES/orteil-griffe:coupe-sagittale:orthoplastie`, `photo:cabinet-lumiere`, `photo:sport-trail`, `picto:chaussettes`, `picto:laser`, `picto:pied-diabetique@direction-d`, `picto:style-icones-a`, `picto:style-icones-b`, `picto:style-icones-c`, `picto:style-icones-d`, `typo:interlettrage:large`
+`biblio:SITES/orteil-griffe`, `biblio:SITES/orteil-griffe:coupe-sagittale:orthoplastie`, `menu:ordinateur:centre`, `photo:cabinet-lumiere`, `photo:sport-trail`, `picto:chaussettes`, `picto:chaussure-confort`, `picto:laser`, `picto:pied-diabetique@direction-d`, `picto:style-icones-a`, `picto:style-icones-b`, `picto:style-icones-c`, `picto:style-icones-d`
 
 ### Remarques récentes (ce qui va bien / ce qui ne va pas / commentaire)
 
@@ -134,84 +134,84 @@ Formule : moyenne lissée = (somme + 4 × moyenne générale) / (n + 4) ; « Ret
 
 ## Retours de l’atelier des propositions
 
-453 notes, moyenne 3,76 ★ — répartition : 1★ 2, 2★ 28, 3★ 129, 4★ 212, 5★ 82.
+463 notes, moyenne 3,77 ★ — répartition : 1★ 2, 2★ 28, 3★ 132, 4★ 215, 5★ 86.
 
 ### Ingrédients les mieux notés
 
 | Élément | Notes | Moyenne | Lissée | Effet | Étiquettes |
 |---|---:|---:|---:|---:|---|
 | Animation : meulage d’un ongle | 11 | 4,64 ★ | 4,22 ★ | +0,46 | — |
-| typo : graisse:paire | 7 | 4,86 ★ | 4,21 ★ | +0,45 | — |
-| typo : accent:aucun | 10 | 4,60 ★ | 4,18 ★ | +0,42 | — |
-| typo : alignement:gauche | 10 | 4,60 ★ | 4,18 ★ | +0,42 | — |
-| traitement : modele | 6 | 4,83 ★ | 4,16 ★ | +0,40 | — |
-| typo : interlettrage:serre | 8 | 4,63 ★ | 4,14 ★ | +0,39 | — |
-| variante : sujets:liste | 12 | 4,42 ★ | 4,12 ★ | +0,36 | — |
-| Animation : semelles tracées en | 23 | 4,26 ★ | 4,11 ★ | +0,35 | — |
+| typo : accent:aucun | 11 | 4,64 ★ | 4,22 ★ | +0,46 | — |
+| typo : interlettrage:serre | 9 | 4,67 ★ | 4,19 ★ | +0,43 | — |
+| typo : graisse:paire | 11 | 4,55 ★ | 4,17 ★ | +0,41 | — |
+| variante : horaires:bandeau | 25 | 4,32 ★ | 4,16 ★ | +0,40 | — |
+| typo : alignement:gauche | 14 | 4,43 ★ | 4,15 ★ | +0,39 | — |
+| variante : sujets:liste | 17 | 4,35 ★ | 4,14 ★ | +0,37 | — |
+| Animation : semelles tracées en | 23 | 4,26 ★ | 4,11 ★ | +0,34 | — |
 
 ### Ingrédients les moins bien notés
 
 | Élément | Notes | Moyenne | Lissée | Effet | Étiquettes |
 |---|---:|---:|---:|---:|---|
 | Gamme : Corail | 20 | 3,25 ★ | 3,42 ★ | -0,34 | — |
-| Structure : Clair et pratique | 118 | 3,49 ★ | 3,51 ★ | -0,25 | Bien dans le sujet (1), Harmonieux (1), Fait pro (1) |
-| traitement : voile+grain | 4 | 3,00 ★ | 3,54 ★ | -0,22 | — |
-| Gamme : Sauge | 15 | 3,40 ★ | 3,54 ★ | -0,22 | — |
-| traitement : duotone | 11 | 3,36 ★ | 3,55 ★ | -0,21 | — |
-| variante : accueil:carte | 26 | 3,50 ★ | 3,57 ★ | -0,19 | — |
-| details : souligne:vague | 17 | 3,47 ★ | 3,58 ★ | -0,18 | — |
-| details : separateur:ondulation | 17 | 3,47 ★ | 3,58 ★ | -0,18 | — |
+| variante : accueil:carte | 30 | 3,47 ★ | 3,54 ★ | -0,23 | — |
+| Structure : Clair et pratique | 121 | 3,52 ★ | 3,54 ★ | -0,23 | Bien dans le sujet (1), Harmonieux (1), Fait pro (1) |
+| traitement : voile+grain | 4 | 3,00 ★ | 3,55 ★ | -0,22 | — |
+| Gamme : Sauge | 15 | 3,40 ★ | 3,55 ★ | -0,22 | — |
+| traitement : duotone | 11 | 3,36 ★ | 3,56 ★ | -0,21 | — |
+| details : souligne:vague | 17 | 3,47 ★ | 3,58 ★ | -0,19 | — |
+| details : separateur:ondulation | 17 | 3,47 ★ | 3,58 ★ | -0,19 | — |
 
 ### Associations à garder (paires)
 
 | Élément | Notes | Moyenne | Lissée | Effet | Étiquettes |
 |---|---:|---:|---:|---:|---|
 | Structure × Animation : Technique et précis × meulage d’un ongle | 11 | 4,64 ★ | 4,18 ★ | +0,42 | — |
-| Structure × Gamme : Technique et précis × Cobalt | 13 | 4,54 ★ | 4,16 ★ | +0,41 | — |
+| Structure × Gamme : Technique et précis × Cobalt | 13 | 4,54 ★ | 4,17 ★ | +0,40 | — |
+| Sujet n° 1 × Structure : Enfants × Simple et proche | 10 | 4,60 ★ | 4,15 ★ | +0,38 | — |
+| Sujet n° 1 × Style : Ongles × Relevé | 10 | 4,60 ★ | 4,15 ★ | +0,38 | — |
 | Sujet n° 1 × Gamme : Enfants × Lavande & citron | 9 | 4,67 ★ | 4,15 ★ | +0,39 | — |
-| Sujet n° 1 × Structure : Enfants × Simple et proche | 10 | 4,60 ★ | 4,14 ★ | +0,38 | — |
-| Sujet n° 1 × Style : Ongles × Relevé | 10 | 4,60 ★ | 4,14 ★ | +0,38 | — |
-| Structure × Style : Technique et précis × Relevé | 41 | 4,24 ★ | 4,13 ★ | +0,38 | — |
+| Structure × Style : Technique et précis × Relevé | 41 | 4,24 ★ | 4,14 ★ | +0,37 | — |
 | Sujet n° 1 × Structure : Ongles × Technique et précis | 14 | 4,43 ★ | 4,12 ★ | +0,36 | — |
-| Structure × Animation : Technique et précis × semelles tracées en | 23 | 4,26 ★ | 4,09 ★ | +0,33 | — |
+| Sujet n° 1 × Structure : Sport × Technique et précis | 17 | 4,35 ★ | 4,11 ★ | +0,34 | — |
 
 ### Associations à revoir (paires)
 
 | Élément | Notes | Moyenne | Lissée | Effet | Étiquettes |
 |---|---:|---:|---:|---:|---|
 | Sujet n° 1 × Style : Semelles × Trait fin | 34 | 3,21 ★ | 3,35 ★ | -0,41 | Harmonieux (1), Lisible (1) |
-| Sujet n° 1 × Style : Diabète × Photos | 12 | 3,08 ★ | 3,42 ★ | -0,34 | — |
-| Sujet n° 1 × Structure : Ongles × Clair et pratique | 7 | 2,86 ★ | 3,43 ★ | -0,33 | — |
-| Sujet n° 1 × Structure : Diabète × Clair et pratique | 16 | 3,19 ★ | 3,43 ★ | -0,33 | — |
+| Sujet n° 1 × Structure : Ongles × Clair et pratique | 7 | 2,86 ★ | 3,43 ★ | -0,34 | — |
+| Sujet n° 1 × Style : Diabète × Photos | 12 | 3,08 ★ | 3,43 ★ | -0,34 | — |
+| Sujet n° 1 × Structure : Diabète × Clair et pratique | 16 | 3,19 ★ | 3,44 ★ | -0,33 | — |
 | Sujet n° 1 × Gamme : Semelles × Sable | 7 | 3,00 ★ | 3,48 ★ | -0,28 | — |
-| Sujet n° 1 × Structure : Semelles × Simple et proche | 30 | 3,37 ★ | 3,48 ★ | -0,28 | — |
-| Sujet n° 1 × Style : Ongles × Illustrations douces | 15 | 3,27 ★ | 3,49 ★ | -0,27 | — |
-| Structure × Style : Clair et pratique × Photos | 35 | 3,40 ★ | 3,49 ★ | -0,27 | — |
+| Sujet n° 1 × Structure : Semelles × Simple et proche | 30 | 3,37 ★ | 3,48 ★ | -0,29 | — |
+| Sujet n° 1 × Style : Ongles × Illustrations douces | 15 | 3,27 ★ | 3,49 ★ | -0,28 | — |
+| Structure × Gamme : Clair et pratique × Corail | 6 | 3,00 ★ | 3,51 ★ | -0,26 | — |
 
 ### Combinaisons préférées
 
 | Élément | Notes | Moyenne | Lissée | Effet | Étiquettes |
 |---|---:|---:|---:|---:|---|
-| Enfants · Simple et proche · Lavande & citron · Illustrations douces | 4 | 5,00 ★ | 4,26 ★ | +0,50 | — |
-| Ongles · Technique et précis · Cobalt · Relevé · meulage d’un ongle | 5 | 4,60 ★ | 4,14 ★ | +0,38 | — |
-| Ongles · Technique et précis · Cobalt & abricot · Relevé · meulage d’un ongle | 2 | 5,00 ★ | 4,07 ★ | +0,31 | — |
-| Semelles · Élégant et sobre · Cobalt & abricot · Illustrations douces | 2 | 5,00 ★ | 4,07 ★ | +0,31 | — |
-| Semelles · Élégant et sobre · Menthe glacée & prune · Illustrations douces | 4 | 4,50 ★ | 4,06 ★ | +0,30 | — |
-| Semelles · Technique et précis · Cobalt · Relevé · semelles tracées en | 4 | 4,50 ★ | 4,06 ★ | +0,30 | — |
-| Sport · Technique et précis · Cobalt & abricot · Photos | 4 | 4,50 ★ | 4,06 ★ | +0,30 | — |
-| Semelles · Technique et précis · Mangue & encre · Relevé · semelles tracées en | 4 | 4,25 ★ | 3,96 ★ | +0,20 | — |
+| Enfants · Simple et proche · Lavande & citron · Illustrations douces | 4 | 5,00 ★ | 4,26 ★ | +0,49 | — |
+| Ongles · Technique et précis · Cobalt · Relevé · meulage d’un ongle | 5 | 4,60 ★ | 4,15 ★ | +0,38 | — |
+| Ongles · Technique et précis · Cobalt & abricot · Relevé · meulage d’un ongle | 2 | 5,00 ★ | 4,08 ★ | +0,31 | — |
+| Semelles · Élégant et sobre · Cobalt & abricot · Illustrations douces | 2 | 5,00 ★ | 4,08 ★ | +0,31 | — |
+| Semelles · Élégant et sobre · Menthe glacée & prune · Illustrations douces | 4 | 4,50 ★ | 4,06 ★ | +0,29 | — |
+| Semelles · Technique et précis · Cobalt · Relevé · semelles tracées en | 4 | 4,50 ★ | 4,06 ★ | +0,29 | — |
+| Sport · Technique et précis · Cobalt & abricot · Photos | 4 | 4,50 ★ | 4,06 ★ | +0,29 | — |
+| Sport · Technique et précis · Prune · Photos | 4 | 4,50 ★ | 4,06 ★ | +0,29 | — |
 
 ### Combinaisons ratées
 
 | Élément | Notes | Moyenne | Lissée | Effet | Étiquettes |
 |---|---:|---:|---:|---:|---|
-| Semelles · Simple et proche · Menthe glacée & prune · Trait fin | 1 | 1,00 ★ | 3,37 ★ | -0,39 | — |
-| Diabète · Clair et pratique · Ardoise · Photos | 1 | 1,00 ★ | 3,37 ★ | -0,39 | — |
-| Semelles · Technique et précis · Mangue & encre · Photos | 3 | 2,67 ★ | 3,40 ★ | -0,36 | — |
-| Seniors · Simple et proche · Tournesol & ardoise · Trait fin | 2 | 2,50 ★ | 3,44 ★ | -0,32 | — |
-| Semelles · Technique et précis · Menthe glacée & prune · Photos | 2 | 2,50 ★ | 3,44 ★ | -0,32 | — |
-| Semelles · Clair et pratique · Cobalt · Trait fin | 2 | 2,50 ★ | 3,44 ★ | -0,32 | — |
-| Ongles · Clair et pratique · Lavande & citron · Illustrations douces | 2 | 2,50 ★ | 3,44 ★ | -0,32 | — |
+| Semelles · Simple et proche · Menthe glacée & prune · Trait fin | 1 | 1,00 ★ | 3,37 ★ | -0,40 | — |
+| Diabète · Clair et pratique · Ardoise · Photos | 1 | 1,00 ★ | 3,37 ★ | -0,40 | — |
+| Semelles · Technique et précis · Mangue & encre · Photos | 3 | 2,67 ★ | 3,40 ★ | -0,37 | — |
+| Seniors · Simple et proche · Tournesol & ardoise · Trait fin | 2 | 2,50 ★ | 3,45 ★ | -0,32 | — |
+| Semelles · Technique et précis · Menthe glacée & prune · Photos | 2 | 2,50 ★ | 3,45 ★ | -0,32 | — |
+| Semelles · Clair et pratique · Cobalt · Trait fin | 2 | 2,50 ★ | 3,45 ★ | -0,32 | — |
+| Ongles · Clair et pratique · Lavande & citron · Illustrations douces | 2 | 2,50 ★ | 3,45 ★ | -0,32 | — |
 | Sport · Élégant et sobre · Corail · Photos | 1 | 2,00 ★ | 3,51 ★ | -0,25 | — |
 
 ### Étiquettes les plus fréquentes
@@ -249,28 +249,36 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 
 ## Hashtags des visuels
 
-47 hashtags sur 80 visuels.
+54 hashtags sur 100 visuels.
 
+- #accueil (17) : `photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp`, `photo:banque/libres/ongles/pexels-13667247-1920.webp`, `photo:banque/libres/pedicurie/pixabay-6648076-1280.webp`, `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:banque/libres/senior/pexels-13641693-1920.webp`, `photo:banque/libres/senior/pexels-18326821-1920.webp`, `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:banque/libres/senior/pexels-4436289-1920.webp`, `photo:banque/libres/senior/pexels-5705065-1920.webp`, `photo:banque/libres/senior/pexels-8795587-1920.webp`, `photo:libre:pexels-13667247`, `photo:libre:pexels-4436289`, `photo:libre:pexels-5705065`, `photo:libre:pexels-8795587`, `photo:libre:pixabay-3084870`, `photo:libre:pixabay-6648076`, `photo:libre:pixabay-6762801`
 - #tennis (17) : `photo:banque/libres/sport/pexels-13124397-1920.webp`, `photo:banque/libres/sport/pexels-20186409-1920.webp`, `photo:banque/libres/sport/pexels-23379595-1920.webp`, `photo:banque/libres/sport/pexels-32289808-1920.webp`, `photo:banque/libres/sport/pexels-5067813-1920.webp`, `photo:banque/libres/sport/pexels-8224721-1920.webp`, `photo:banque/libres/sport/pexels-8542685-1920.webp`, `photo:libre:pexels-21050394`, `photo:libre:pexels-32289808`, `photo:libre:pexels-32289819`, `photo:libre:pexels-38503110`, `photo:libre:pexels-38503137`, `photo:libre:pexels-5067813`, `photo:libre:pexels-5739111`, `photo:libre:pexels-8223918`, `photo:libre:pexels-8224483`, `photo:libre:pexels-8224655`
-- #accueil (12) : `photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp`, `photo:banque/libres/pedicurie/pixabay-6648076-1280.webp`, `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:banque/libres/senior/pexels-13641693-1920.webp`, `photo:banque/libres/senior/pexels-18326821-1920.webp`, `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:libre:pexels-13667247`, `photo:libre:pexels-4436289`, `photo:libre:pexels-8795587`, `photo:libre:pixabay-3084870`, `photo:libre:pixabay-6648076`, `photo:libre:pixabay-6762801`
+- #kit-senior (16) : `photo:banque/libres/senior/pexels-4436289-1920.webp`, `photo:banque/libres/senior/pexels-5619453-1920.webp`, `photo:banque/libres/senior/pexels-5705065-1920.webp`, `photo:banque/libres/senior/pexels-6128921-1920.webp`, `photo:banque/libres/senior/pexels-6787786-1920.webp`, `photo:banque/libres/senior/pexels-8795587-1920.webp`, `photo:banque/libres/senior/pexels-8899946-1920.webp`, `photo:banque/libres/senior/pexels-8972269-1920.webp`, `photo:libre:pexels-4436289`, `photo:libre:pexels-5619453`, `photo:libre:pexels-5705065`, `photo:libre:pexels-6128921`, `photo:libre:pexels-6787786`, `photo:libre:pexels-8795587`, `photo:libre:pexels-8899946`, `photo:libre:pexels-8972269`
+- #serie-a91f6f13 (12) : `photo:banque/libres/senior/pexels-5619453-1920.webp`, `photo:banque/libres/senior/pexels-5705065-1920.webp`, `photo:banque/libres/senior/pexels-6128921-1920.webp`, `photo:banque/libres/senior/pexels-6787786-1920.webp`, `photo:banque/libres/senior/pexels-8899946-1920.webp`, `photo:banque/libres/senior/pexels-8972269-1920.webp`, `photo:libre:pexels-5619453`, `photo:libre:pexels-5705065`, `photo:libre:pexels-6128921`, `photo:libre:pexels-6787786`, `photo:libre:pexels-8899946`, `photo:libre:pexels-8972269`
 - #golf (7) : `photo:banque/libres/sport/pexels-1325681-1920.webp`, `photo:banque/libres/sport/pexels-15376335-1920.webp`, `photo:banque/libres/sport/pexels-29732064-1920.webp`, `photo:banque/libres/sport/pexels-5644641-1920.webp`, `photo:banque/libres/sport/pexels-5644647-1920.webp`, `photo:banque/libres/sport/pexels-5885314-1920.webp`, `photo:libre:pexels-6542395`
+- #kit-enfant (6) : `photo:banque/libres/enfant/pexels-17895637-1920.webp`, `photo:banque/libres/enfant/pexels-8457630-1920.webp`, `photo:banque/libres/enfant/pexels-8654776-1920.webp`, `photo:libre:pexels-17895637`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`
+- #podologie-enfant (6) : `photo:banque/libres/enfant/pexels-17895637-1920.webp`, `photo:banque/libres/enfant/pexels-8457630-1920.webp`, `photo:banque/libres/enfant/pexels-8654776-1920.webp`, `photo:libre:pexels-17895637`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`
+- #basketball (5) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-11831855`, `photo:libre:pexels-7406289`, `photo:libre:pexels-8693990`, `photo:libre:pixabay-858206`
 - #kit-pedicurie (5) : `photo:banque/libres/pedicurie/pixabay-6648076-1280.webp`, `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:libre:pixabay-3084870`, `photo:libre:pixabay-6648076`, `photo:libre:pixabay-6762801`
+- #page-sujet (5) : `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:banque/libres/senior/pexels-6128921-1920.webp`, `photo:banque/libres/sport/pexels-5067774-1920.webp`, `photo:banque/libres/sport/pexels-5067813-1920.webp`, `photo:libre:pexels-6128921`
 - #podologie-du-sport (5) : `photo:banque/libres/sport/pexels-13124397-1920.webp`, `photo:banque/libres/sport/pexels-30307746-1920.webp`, `photo:banque/libres/sport/pexels-32289808-1920.webp`, `photo:banque/libres/sport/pexels-5067702-1920.webp`, `photo:banque/libres/sport/pexels-8693984-1920.webp`
 - #soccer (4) : `photo:libre:pexels-14353976`, `photo:libre:pexels-32941076`, `photo:libre:pexels-9367717`, `photo:libre:pexels-9405210`
-- #basketball (3) : `photo:libre:pexels-11831855`, `photo:libre:pexels-7406289`, `photo:libre:pixabay-858206`
 - #child (3) : `photo:banque/libres/sport/pexels-11156954-1920.webp`, `photo:libre:pexels-11156954`, `photo:libre:pexels-12955703`
-- #kit-enfant (3) : `photo:libre:pexels-17895637`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`
-- #page-sujet (3) : `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:banque/libres/sport/pexels-5067774-1920.webp`, `photo:banque/libres/sport/pexels-5067813-1920.webp`
-- #podologie-enfant (3) : `photo:libre:pexels-17895637`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`
 - #runner (3) : `photo:banque/libres/sport/pexels-33974329-1920.webp`, `photo:libre:pexels-33874841`, `photo:libre:pexels-5310739`
 - #ballet (2) : `photo:libre:pixabay-5548985`, `photo:libre:pixabay-6668583`
+- #basket (2) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-8693990`
+- #cors-durillons (2) : `photo:banque/libres/senior/pexels-8899946-1920.webp`, `photo:libre:pexels-8899946`
 - #cyclists (2) : `photo:libre:pexels-5840717`, `photo:libre:pexels-5840726`
 - #handball (2) : `photo:libre:pixabay-1977372`, `photo:libre:pixabay-6143052`
-- #kit-senior (2) : `photo:libre:pexels-4436289`, `photo:libre:pexels-8795587`
+- #kit-ongles (2) : `photo:banque/libres/ongles/pexels-13667247-1920.webp`, `photo:libre:pexels-13667247`
+- #kit-sport (2) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-8693990`
 - #laser (2) : `dessin:laser:pedagogique` laser (Pédagogique), `dessin:laser:releve` laser (Relevé)
+- #ongles-epais (2) : `photo:banque/libres/senior/pexels-8972269-1920.webp`, `photo:libre:pexels-8972269`
 - #orthonyxie (2) : `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:libre:pixabay-6762801`
+- #podologie-du-senior (2) : `photo:banque/libres/senior/pexels-6787786-1920.webp`, `photo:libre:pexels-6787786`
 - #racetrack (2) : `photo:banque/libres/sport/pexels-5067702-1920.webp`, `photo:libre:pexels-5067702`
 - #runner-feet (2) : `photo:libre:pexels-4920429`, `photo:libre:pexels-5310739`
+- #serie-10642d08 (2) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-8693990`
 - #skiing (2) : `photo:banque/libres/sport/pexels-11156954-1920.webp`, `photo:libre:pexels-11156954`
 - #trail (2) : `photo:banque/libres/sport/pexels-33974329-1920.webp`, `photo:libre:pexels-33874841`
 - #badminton (1) : `photo:libre:pixabay-2647068`
@@ -286,7 +294,6 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - #enfant (1) : `photo:libre:pixabay-5593945`
 - #hiking (1) : `photo:libre:pexels-7787409`
 - #image-generee (1) : `photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp`
-- #kit-ongles (1) : `photo:libre:pexels-13667247`
 - #mountain (1) : `photo:libre:pexels-6013849`
 - #nature (1) : `photo:libre:pexels-33874841`
 - #nordic (1) : `photo:banque/libres/senior/pexels-8795584-1920.webp`
@@ -383,6 +390,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/diabete/pexels-8965129-1920.webp` : ajouté à Diabète
 - `photo:banque/libres/diabete/pexels-8965131-1920.webp` : ajouté à Diabète
 - `photo:banque/libres/diabete/pexels-8965149-1920.webp` : ajouté à Diabète
+- `photo:banque/libres/enfant/pexels-17895637-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-31663897-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-31663899-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-34391279-1920.webp` : ajouté à Enfants
@@ -394,6 +402,9 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/enfant/pexels-7491088-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-7491099-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-7946980-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-8457630-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-8654776-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/ongles/pexels-13667247-1920.webp` : ajouté à Ongles
 - `photo:banque/libres/ongles/pexels-13707062-1920.webp` : ajouté à Ongles
 - `photo:banque/libres/ongles/pexels-5619466-1920.webp` : ajouté à Ongles
 - `photo:banque/libres/ongles/pexels-5841840-1920.webp` : ajouté à Ongles
@@ -407,11 +418,19 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/senior/pexels-16901400-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-18326821-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-38030071-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-4436289-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-5619453-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-5705065-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-6128921-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-6787441-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-6787786-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-7938830-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8795391-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8795584-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-8795587-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8795589-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-8899946-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-8972269-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/sport/pexels-11156954-1920.webp` : ajouté à Sport, Enfants
 - `photo:banque/libres/sport/pexels-12918252-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-13124397-1920.webp` : ajouté à Sport
@@ -441,6 +460,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/sport/pexels-8224721-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-8542685-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-8693984-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8693990-1920.webp` : ajouté à Sport
 - `photo:enfant-bebe` enfant-bebe : ajouté à Enfants
 - `photo:enfant-chaussures` enfant-chaussures : ajouté à Enfants
 - `photo:enfant-herbe` enfant-herbe : ajouté à Enfants
@@ -531,8 +551,12 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-5278784` : ajouté à Enfants
 - `photo:libre:pexels-5310739` : ajouté à Sport
 - `photo:libre:pexels-5310888` : ajouté à Sport
+- `photo:libre:pexels-5619452` : ajouté à Ongles
+- `photo:libre:pexels-5619453` : ajouté à Seniors
+- `photo:libre:pexels-5619459` : ajouté à Ongles
 - `photo:libre:pexels-5687405` : ajouté à Sport
 - `photo:libre:pexels-5687456` : ajouté à Sport
+- `photo:libre:pexels-5705065` : ajouté à Seniors
 - `photo:libre:pexels-5735756` : ajouté à Sport
 - `photo:libre:pexels-5739111` : ajouté à Sport
 - `photo:libre:pexels-5739115` : ajouté à Sport
@@ -541,11 +565,13 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-601177` : ajouté à Sport
 - `photo:libre:pexels-6013849` : ajouté à Sport
 - `photo:libre:pexels-6076409` : ajouté à Sport
+- `photo:libre:pexels-6128921` : ajouté à Seniors
 - `photo:libre:pexels-6255515` : ajouté à Sport
 - `photo:libre:pexels-6256758` : ajouté à Sport
 - `photo:libre:pexels-6542395` : ajouté à Sport
 - `photo:libre:pexels-6542429` : ajouté à Sport
 - `photo:libre:pexels-6716655` : ajouté à Sport, Enfants
+- `photo:libre:pexels-6787786` : ajouté à Seniors
 - `photo:libre:pexels-7188865` : ajouté à Seniors
 - `photo:libre:pexels-7235235` : ajouté à Sport
 - `photo:libre:pexels-7265109` : ajouté à Seniors
@@ -571,11 +597,14 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-8680763` : ajouté à Sport
 - `photo:libre:pexels-8692281` : ajouté à Sport
 - `photo:libre:pexels-8693984` : ajouté à Sport
+- `photo:libre:pexels-8693990` : ajouté à Sport
 - `photo:libre:pexels-8795587` : ajouté à Seniors
 - `photo:libre:pexels-8795603` : ajouté à Seniors
 - `photo:libre:pexels-8796067` : ajouté à Seniors
 - `photo:libre:pexels-880497` : ajouté à Sport
+- `photo:libre:pexels-8899946` : ajouté à Seniors
 - `photo:libre:pexels-8939885` : ajouté à Seniors
+- `photo:libre:pexels-8972269` : ajouté à Seniors
 - `photo:libre:pexels-9207649` : ajouté à Sport
 - `photo:libre:pexels-9207753` : ajouté à Sport
 - `photo:libre:pexels-9207754` : ajouté à Sport
@@ -840,7 +869,7 @@ Sujets : Sport
 - Polices : Douce arrondie (Manrope seule : arrondie, apaisante)
 - Visuels : Relevé · héros Sport
 - Photos : aucune
-- Sections : Soins puis horaires · Questions : Accordéon · Pied de page : Nom du cabinet en grand · Fiche d’un soin : Texte et encadré « En pratique » à côté · Plan d’accès : Notice et plan · Soins : Cartes illustrées · Page sujet : Deux colonnes, conseils à côté · Sujets : Grandes rangées illustrées · Premier écran : Typographique, couleur forte · Article de blog : Titre, image puis texte · Rendez-vous et contact : Bandeau « Écrire au cabinet » · Galerie du cabinet : Bande de quatre photos · Horaires : Bandeau · Transitions entre sections : Révélation au défilement · Actualités : Liste de titres datés · Équipe : Fiches · Forme des cartes : Bulles rondes
+- Sections : Soins puis horaires · Questions : Accordéon · Pied de page : Nom du cabinet en grand · Fiche d’un soin : Texte et encadré « En pratique » à côté · Plan d’accès : Notice et plan · Soins : Cartes illustrées · Page sujet : Deux colonnes, conseils à côté · Sujets : Grandes rangées illustrées · Premier écran : Typographique, couleur forte · Article de blog : Titre, image puis texte · Rendez-vous et contact : Bandeau « Écrire au cabinet » · Galerie du cabinet : Bande de quatre photos · Horaires : Bandeau · Transitions entre sections : Révélation au défilement · Actualités : Liste de titres datés · Équipe : Fiches · Forme des cartes : Bulles rondes · Fond du premier écran : Formes franches de la gamme (à valider)
 - Effets : Vivant
 - Traitement des photos : Duotone
 - Typographie : Affirmée (1,333) · Casse normale · Celle de la paire · Normal · Un mot en couleur · À gauche · En pastille
@@ -897,7 +926,7 @@ Renforts des ingrédients (recettes notées) :
 
 ## Retours mobile
 
-Notes de choix : 0 données sur le rendu mobile, 6 sur l'ordinateur, 1493 sur les deux (ou antérieures). Une note mobile pèse 1.25 dans l'apprentissage (mobile d'abord).
+Notes de choix : 0 données sur le rendu mobile, 9 sur l'ordinateur, 1555 sur les deux (ou antérieures). Une note mobile pèse 1.25 dans l'apprentissage (mobile d'abord).
 
 ### Rendu mobile à revoir
 
@@ -973,12 +1002,13 @@ Aucune suggestion refusée pour l’instant.
 
 ## Duels : classements par sujet
 
-1152 duel(s) : 1121 à une seule dimension, 31 libre(s) ; A 364, B 411, égalité 332, les deux mauvais 45.
+1189 duel(s) : 1158 à une seule dimension, 31 libre(s) ; A 376, B 422, égalité 345, les deux mauvais 46.
 Juge : d’accord avec Paul sur 7/22 duels (32 %) — Thèmes complets 1/10, Illustrations et héros 5/9, Photos 1/3.
 Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture : packages/core/src/duels.ts.
 
-### Meilleures paires de polices — Diabète — 33 duel(s)
+### Meilleures paires de polices — Diabète — 38 duel(s)
 
+- Polices : Didone élégante (Typographie) (`typo:police:didone`) : 1582 ± 85 (n 16 : 12 V, 4 D, 0 N)
 - `police=affiche` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - `police=didone` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - `police=douce` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
@@ -986,24 +1016,45 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `police=gazette` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - `police=grotesque` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - `police=humaniste` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
-- `police=mono` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
 
-### Meilleures paires de polices — Pédicurie — 23 duel(s)
+### Meilleures paires de polices — Pédicurie — 25 duel(s)
 
-- `police=ronde` : 1585 ± 148 (n 2 : 2 V, 0 D, 0 N)
-- `police=affiche` : 1568 ± 154 (n 1 : 1 V, 0 D, 0 N)
-- `police=pop` : 1568 ± 154 (n 1 : 1 V, 0 D, 0 N)
-- `police=condensee` : 1542 ± 159 (n 1 : 1 V, 0 D, 0 N)
-- `police=editoriale` : 1542 ± 159 (n 1 : 1 V, 0 D, 0 N)
-- `police=gazette` : 1542 ± 159 (n 1 : 1 V, 0 D, 0 N)
-- `police=grotesque-douce` : 1542 ± 159 (n 1 : 1 V, 0 D, 0 N)
-- `police=humaniste` : 1542 ± 159 (n 1 : 1 V, 0 D, 0 N)
+- `police=ronde` : 1591 ± 148 (n 2 : 2 V, 0 D, 0 N)
+- `police=affiche` : 1575 ± 153 (n 1 : 1 V, 0 D, 0 N)
+- `police=pop` : 1575 ± 153 (n 1 : 1 V, 0 D, 0 N)
+- `police=condensee` : 1543 ± 159 (n 1 : 1 V, 0 D, 0 N)
+- `police=editoriale` : 1543 ± 159 (n 1 : 1 V, 0 D, 0 N)
+- `police=gazette` : 1543 ± 159 (n 1 : 1 V, 0 D, 0 N)
+- `police=grotesque-douce` : 1543 ± 159 (n 1 : 1 V, 0 D, 0 N)
+- `police=humaniste` : 1543 ± 159 (n 1 : 1 V, 0 D, 0 N)
 
-### Meilleures typographies — Pédicurie — 22 duel(s)
+### Meilleures typographies — Pédicurie — 24 duel(s)
 
-- `typo=accent:couleur` : 1577 ± 83 (n 14 : 10 V, 4 D, 0 N)
-- `typo=accent:italique` : 1507 ± 97 (n 8 : 5 V, 3 D, 0 N)
-- `typo=accent:aucun` : 1416 ± 68 (n 22 : 7 V, 15 D, 0 N)
+- `typo=accent:couleur` : 1593 ± 81 (n 16 : 12 V, 4 D, 0 N)
+- `typo=accent:italique` : 1500 ± 97 (n 8 : 5 V, 3 D, 0 N)
+- `typo=accent:aucun` : 1407 ± 67 (n 24 : 7 V, 17 D, 0 N)
+
+### Meilleures paires de polices — Enfants — 23 duel(s)
+
+- `police=editoriale` : 1671 ± 87 (n 13 : 10 V, 2 D, 1 N)
+- `police=mono` : 1623 ± 152 (n 1 : 1 V, 0 D, 0 N)
+- `police=clinique` : 1566 ± 155 (n 1 : 1 V, 0 D, 0 N)
+- `police=gazette` : 1541 ± 133 (n 3 : 1 V, 1 D, 1 N)
+- `police=ronde` : 1540 ± 131 (n 3 : 1 V, 0 D, 2 N)
+- `police=affiche` : 1535 ± 142 (n 2 : 1 V, 1 D, 0 N)
+- `police=douce` : 1516 ± 140 (n 2 : 1 V, 1 D, 0 N)
+- `police=vintage` : 1508 ± 156 (n 1 : 0 V, 0 D, 1 N)
+
+### Meilleures paires de polices — Sport — 23 duel(s)
+
+- `police=ronde` : 1671 ± 118 (n 5 : 4 V, 0 D, 1 N)
+- `police=mono` : 1598 ± 147 (n 2 : 2 V, 0 D, 0 N)
+- `police=jakarta` : 1574 ± 143 (n 2 : 1 V, 0 D, 1 N)
+- `police=affiche` : 1565 ± 132 (n 3 : 2 V, 0 D, 1 N)
+- `police=editoriale` : 1560 ± 155 (n 1 : 1 V, 0 D, 0 N)
+- `police=gazette` : 1531 ± 143 (n 2 : 1 V, 0 D, 1 N)
+- `police=grotesque-douce` : 1511 ± 140 (n 2 : 1 V, 1 D, 0 N)
+- `police=douce` : 1489 ± 136 (n 2 : 1 V, 1 D, 0 N)
 
 ### Meilleures typographies — Semelles — 22 duel(s)
 
@@ -1025,27 +1076,24 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - orthoplastie (Relevé) (`dessin:orthoplastie:releve`) : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
 - soin (Relevé) (`dessin:soin:releve`) : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
 
-### Meilleures paires de polices — Enfants — 21 duel(s)
+### Meilleures paires de polices — Semelles — 21 duel(s)
 
-- `police=editoriale` : 1712 ± 94 (n 12 : 10 V, 1 D, 1 N)
-- `police=clinique` : 1567 ± 154 (n 1 : 1 V, 0 D, 0 N)
-- `police=gazette` : 1553 ± 134 (n 3 : 1 V, 1 D, 1 N)
-- `police=affiche` : 1543 ± 143 (n 2 : 1 V, 1 D, 0 N)
-- `police=ronde` : 1541 ± 131 (n 3 : 1 V, 0 D, 2 N)
-- `police=douce` : 1524 ± 141 (n 2 : 1 V, 1 D, 0 N)
-- `police=vintage` : 1508 ± 156 (n 1 : 0 V, 0 D, 1 N)
-- `police=luxe` : 1466 ± 161 (n 1 : 0 V, 1 D, 0 N)
+- `police=jakarta` : 1582 ± 149 (n 2 : 2 V, 0 D, 0 N)
+- `police=gazette` : 1557 ± 156 (n 1 : 1 V, 0 D, 0 N)
+- `police=geometrique` : 1557 ± 156 (n 1 : 1 V, 0 D, 0 N)
+- `police=humaniste` : 1557 ± 156 (n 1 : 1 V, 0 D, 0 N)
+- `police=mono` : 1557 ± 156 (n 1 : 1 V, 0 D, 0 N)
+- `police=revue` : 1557 ± 156 (n 1 : 1 V, 0 D, 0 N)
+- `police=spatiale` : 1557 ± 156 (n 1 : 1 V, 0 D, 0 N)
+- `police=didone` : 1520 ± 146 (n 2 : 1 V, 0 D, 1 N)
 
-### Meilleures paires de polices — Sport — 21 duel(s)
+### Meilleures typographies — Sport — 21 duel(s)
 
-- `police=ronde` : 1671 ± 118 (n 5 : 4 V, 0 D, 1 N)
-- `police=mono` : 1598 ± 147 (n 2 : 2 V, 0 D, 0 N)
-- `police=jakarta` : 1575 ± 143 (n 2 : 1 V, 0 D, 1 N)
-- `police=editoriale` : 1561 ± 155 (n 1 : 1 V, 0 D, 0 N)
-- `police=affiche` : 1557 ± 156 (n 1 : 1 V, 0 D, 0 N)
-- `police=gazette` : 1531 ± 143 (n 2 : 1 V, 0 D, 1 N)
-- `police=grotesque-douce` : 1512 ± 140 (n 2 : 1 V, 1 D, 0 N)
-- `police=douce` : 1489 ± 136 (n 2 : 1 V, 1 D, 0 N)
+- `typo=accent:couleur` : 1607 ± 85 (n 16 : 12 V, 2 D, 2 N)
+- `typo=casse:petites-capitales` : 1552 ± 141 (n 2 : 1 V, 0 D, 1 N)
+- `typo=accent:italique` : 1504 ± 128 (n 3 : 2 V, 1 D, 0 N)
+- `typo=casse:normale` : 1448 ± 141 (n 2 : 0 V, 1 D, 1 N)
+- `typo=accent:aucun` : 1389 ± 77 (n 19 : 3 V, 14 D, 2 N)
 
 ### Meilleures illustrations et héros — Seniors — 20 duel(s)
 
@@ -1069,17 +1117,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - Pieds de l’enfant (Pédagogique) (`heros:enfant:pedagogique`) : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - Semelles orthopédiques (Relevé) (`heros:semelles:releve`) : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
 
-### Meilleures paires de polices — Semelles — 20 duel(s)
-
-- `police=jakarta` : 1585 ± 149 (n 2 : 2 V, 0 D, 0 N)
-- `police=gazette` : 1559 ± 156 (n 1 : 1 V, 0 D, 0 N)
-- `police=geometrique` : 1559 ± 156 (n 1 : 1 V, 0 D, 0 N)
-- `police=humaniste` : 1559 ± 156 (n 1 : 1 V, 0 D, 0 N)
-- `police=mono` : 1559 ± 156 (n 1 : 1 V, 0 D, 0 N)
-- `police=revue` : 1559 ± 156 (n 1 : 1 V, 0 D, 0 N)
-- `police=spatiale` : 1559 ± 156 (n 1 : 1 V, 0 D, 0 N)
-- `police=grotesque-douce` : 1517 ± 142 (n 2 : 1 V, 0 D, 1 N)
-
 ### Meilleures traitements photo — Seniors — 20 duel(s)
 
 - Traitement des photos « Duotone » (Traitement des photos) (`effets:photos-duotone`) : 1571 ± 156 (n 1 : 1 V, 0 D, 0 N)
@@ -1091,13 +1128,17 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - Traitement des photos « Voile de couleur » (Traitement des photos) (`effets:photos-voile`) : 1483 ± 121 (n 6 : 4 V, 1 D, 1 N)
 - Traitement des photos « Traitement du modèle + grain » (Traitement des photos) (`effets:photos-modele-grain`) : 1472 ± 167 (n 1 : 0 V, 0 D, 0 N, 1 « mauvais »)
 
-### Meilleures typographies — Sport — 20 duel(s)
+### Meilleures typographies — Diabète — 20 duel(s)
 
-- `typo=accent:couleur` : 1599 ± 86 (n 15 : 11 V, 2 D, 2 N)
-- `typo=casse:petites-capitales` : 1552 ± 141 (n 2 : 1 V, 0 D, 1 N)
-- `typo=accent:italique` : 1507 ± 128 (n 3 : 2 V, 1 D, 0 N)
-- `typo=casse:normale` : 1448 ± 141 (n 2 : 0 V, 1 D, 1 N)
-- `typo=accent:aucun` : 1394 ± 78 (n 18 : 3 V, 13 D, 2 N)
+- `typo=accent:aucun` : 1560 ± 70 (n 19 : 10 V, 5 D, 4 N)
+- `typo=accent:italique` : 1480 ± 91 (n 10 : 3 V, 5 D, 2 N)
+- `typo=accent:couleur` : 1460 ± 88 (n 11 : 3 V, 6 D, 2 N)
+
+### Meilleures typographies — Enfants — 20 duel(s)
+
+- `typo=accent:couleur` : 1571 ± 77 (n 16 : 11 V, 5 D, 0 N)
+- `typo=accent:italique` : 1481 ± 118 (n 4 : 2 V, 2 D, 0 N)
+- `typo=accent:aucun` : 1447 ± 69 (n 20 : 7 V, 13 D, 0 N)
 
 ### Meilleures illustrations et héros — Enfants — 19 duel(s)
 
@@ -1110,6 +1151,17 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - Instruments en sachets stériles individuels (sachets-individuels) (`materiel:sachets-individuels:releve`) : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - Scanner 3D du pied (scanner-3d) (`materiel:scanner-3d:releve`) : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
 
+### Meilleures paires de polices — Seniors — 19 duel(s)
+
+- `police=ronde` : 1600 ± 145 (n 2 : 2 V, 0 D, 0 N)
+- `police=gazette` : 1593 ± 146 (n 2 : 2 V, 0 D, 0 N)
+- `police=jakarta` : 1593 ± 146 (n 2 : 2 V, 0 D, 0 N)
+- `police=condensee` : 1560 ± 155 (n 1 : 1 V, 0 D, 0 N)
+- `police=didone` : 1560 ± 155 (n 1 : 1 V, 0 D, 0 N)
+- `police=humaniste` : 1560 ± 155 (n 1 : 1 V, 0 D, 0 N)
+- `police=revue` : 1560 ± 155 (n 1 : 1 V, 0 D, 0 N)
+- `police=vintage` : 1560 ± 155 (n 1 : 1 V, 0 D, 0 N)
+
 ### Meilleures traitements photo — Sport — 19 duel(s)
 
 - Traitement des photos « Traitement du modèle + grain » (Traitement des photos) (`effets:photos-modele-grain`) : 1566 ± 156 (n 1 : 1 V, 0 D, 0 N)
@@ -1120,18 +1172,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - Traitement des photos « Traitement du modèle » (Traitement des photos) (`effets:photos-modele`) : 1482 ± 74 (n 19 : 9 V, 9 D, 0 N, 1 « mauvais »)
 - Traitement des photos « Voile de couleur » (Traitement des photos) (`effets:photos-voile`) : 1472 ± 167 (n 1 : 0 V, 0 D, 0 N, 1 « mauvais »)
 - Traitement des photos « Noir et blanc + accent » (Traitement des photos) (`effets:photos-nb-accent`) : 1403 ± 124 (n 4 : 1 V, 3 D, 0 N)
-
-### Meilleures typographies — Diabète — 19 duel(s)
-
-- `typo=accent:aucun` : 1561 ± 70 (n 19 : 10 V, 5 D, 4 N)
-- `typo=accent:couleur` : 1483 ± 90 (n 10 : 3 V, 5 D, 2 N)
-- `typo=accent:italique` : 1456 ± 95 (n 9 : 2 V, 5 D, 2 N)
-
-### Meilleures typographies — Enfants — 19 duel(s)
-
-- `typo=accent:couleur` : 1564 ± 78 (n 15 : 10 V, 5 D, 0 N)
-- `typo=accent:italique` : 1484 ± 118 (n 4 : 2 V, 2 D, 0 N)
-- `typo=accent:aucun` : 1452 ± 70 (n 19 : 7 V, 12 D, 0 N)
 
 ### Meilleures illustrations et héros — Ongles — 18 duel(s)
 
@@ -1154,17 +1194,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `police=jakarta` : 1530 ± 157 (n 1 : 0 V, 0 D, 1 N)
 - `police=clinique` : 1458 ± 160 (n 1 : 0 V, 1 D, 0 N)
 - `police=douce` : 1449 ± 157 (n 1 : 0 V, 1 D, 0 N)
-
-### Meilleures paires de polices — Seniors — 18 duel(s)
-
-- `police=gazette` : 1596 ± 146 (n 2 : 2 V, 0 D, 0 N)
-- `police=jakarta` : 1596 ± 146 (n 2 : 2 V, 0 D, 0 N)
-- `police=condensee` : 1561 ± 155 (n 1 : 1 V, 0 D, 0 N)
-- `police=didone` : 1561 ± 155 (n 1 : 1 V, 0 D, 0 N)
-- `police=humaniste` : 1561 ± 155 (n 1 : 1 V, 0 D, 0 N)
-- `police=revue` : 1561 ± 155 (n 1 : 1 V, 0 D, 0 N)
-- `police=ronde` : 1561 ± 155 (n 1 : 1 V, 0 D, 0 N)
-- `police=vintage` : 1561 ± 155 (n 1 : 1 V, 0 D, 0 N)
 
 ### Meilleures traitements photo — Pédicurie — 18 duel(s)
 
@@ -1195,6 +1224,12 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `typo=alignement:gauche` : 1500 ± 105 (n 6 : 3 V, 3 D, 0 N)
 - `typo=accent:italique` : 1414 ± 93 (n 11 : 2 V, 8 D, 1 N)
 
+### Meilleures typographies — Seniors — 17 duel(s)
+
+- `typo=accent:italique` : 1605 ± 115 (n 5 : 3 V, 0 D, 2 N)
+- `typo=accent:aucun` : 1465 ± 72 (n 17 : 7 V, 8 D, 2 N)
+- `typo=accent:couleur` : 1430 ± 82 (n 12 : 5 V, 7 D, 0 N)
+
 ### Meilleures illustrations et héros — Général — 16 duel(s)
 
 - analyse (Relevé) (`dessin:analyse:releve`) : 1652 ± 137 (n 3 : 3 V, 0 D, 0 N)
@@ -1215,12 +1250,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - Traitement des photos « Traitement du modèle » (Traitement des photos) (`effets:photos-modele`) : 1444 ± 83 (n 16 : 6 V, 7 D, 0 N, 3 « mauvais »)
 - Traitement des photos « Mat éditorial » (Traitement des photos) (`effets:photos-mat`) : 1426 ± 131 (n 3 : 1 V, 2 D, 0 N)
 - Traitement des photos « Chaud doux + grain » (Traitement des photos) (`effets:photos-chaud-doux-grain`) : 1353 ± 140 (n 3 : 0 V, 2 D, 0 N, 1 « mauvais »)
-
-### Meilleures typographies — Seniors — 16 duel(s)
-
-- `typo=accent:italique` : 1610 ± 115 (n 5 : 3 V, 0 D, 2 N)
-- `typo=accent:aucun` : 1475 ± 74 (n 16 : 7 V, 7 D, 2 N)
-- `typo=accent:couleur` : 1415 ± 85 (n 11 : 4 V, 7 D, 0 N)
 
 ### Meilleures illustrations et héros — Semelles — 15 duel(s)
 
@@ -1435,6 +1464,15 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `details=cadre:aucun` : 1441 ± 157 (n 1 : 0 V, 1 D, 0 N)
 - `details=badge:contour` : 1414 ± 147 (n 2 : 0 V, 2 D, 0 N)
 
+### Meilleures menus — Pédicurie — 7 duel(s)
+
+- `menu=mobile:gabarit` : 1543 ± 122 (n 4 : 1 V, 0 D, 3 N)
+- `menu=mobile:onglets` : 1534 ± 123 (n 4 : 1 V, 0 D, 3 N)
+- `menu=mobile:panneau` : 1509 ± 156 (n 1 : 0 V, 0 D, 1 N)
+- `menu=ordinateur:collante` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
+- `menu=ordinateur:pastilles` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
+- `menu=mobile:tiroir` : 1415 ± 135 (n 3 : 0 V, 2 D, 1 N)
+
 ### Meilleures menus — Semelles — 7 duel(s)
 
 - `menu=mobile:gabarit` : 1500 ± 102 (n 7 : 0 V, 0 D, 7 N)
@@ -1499,6 +1537,21 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `typo=interlettrage:large` : 1510 ± 127 (n 3 : 0 V, 0 D, 3 N)
 - `typo=interlettrage:serre` : 1470 ± 120 (n 4 : 0 V, 1 D, 3 N)
 
+### Meilleures détails — Enfants — 6 duel(s)
+
+- `details=badge:gabarit` : 1559 ± 114 (n 5 : 2 V, 0 D, 3 N)
+- `details=cadre:aucun` : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
+- `details=badge:contour` : 1521 ± 139 (n 2 : 0 V, 0 D, 2 N)
+- `details=cadre:arrondi` : 1441 ± 157 (n 1 : 0 V, 1 D, 0 N)
+- `details=badge:plein` : 1420 ± 131 (n 3 : 0 V, 2 D, 1 N)
+
+### Meilleures menus — Enfants — 6 duel(s)
+
+- `menu=mobile:gabarit` : 1500 ± 107 (n 6 : 0 V, 0 D, 6 N)
+- `menu=mobile:onglets` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
+- `menu=mobile:panneau` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
+- `menu=mobile:tiroir` : 1500 ± 119 (n 4 : 0 V, 0 D, 4 N)
+
 ### Meilleures combinaisons police × palette — Pédicurie — 6 duel(s)
 
 - `police=jakarta` : 1551 ± 158 (n 1 : 1 V, 0 D, 0 N)
@@ -1531,14 +1584,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `typo=graisse:normale` : 1441 ± 157 (n 1 : 0 V, 1 D, 0 N)
 - `typo=graisse:fine` : 1383 ± 142 (n 2 : 0 V, 2 D, 0 N)
 
-### Meilleures détails — Enfants — 5 duel(s)
-
-- `details=badge:gabarit` : 1576 ± 123 (n 4 : 2 V, 0 D, 2 N)
-- `details=cadre:aucun` : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
-- `details=badge:contour` : 1527 ± 139 (n 2 : 0 V, 0 D, 2 N)
-- `details=cadre:arrondi` : 1441 ± 157 (n 1 : 0 V, 1 D, 0 N)
-- `details=badge:plein` : 1397 ± 145 (n 2 : 0 V, 2 D, 0 N)
-
 ### Meilleures détails — Ongles — 5 duel(s)
 
 - `details=badge:gabarit` : 1576 ± 133 (n 3 : 2 V, 0 D, 1 N)
@@ -1547,17 +1592,35 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `details=citation:gabarit` : 1500 ± 142 (n 2 : 0 V, 0 D, 2 N)
 - `details=badge:plein` : 1405 ± 147 (n 2 : 0 V, 2 D, 0 N)
 
+### Meilleures détails — Sport — 5 duel(s)
+
+- `details=densite:aeree` : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
+- `details=badge:gabarit` : 1550 ± 143 (n 2 : 1 V, 0 D, 1 N)
+- `details=citation:filet` : 1544 ± 143 (n 2 : 1 V, 0 D, 1 N)
+- `details=badge:contour` : 1510 ± 156 (n 1 : 0 V, 0 D, 1 N)
+- `details=citation:gabarit` : 1456 ± 143 (n 2 : 0 V, 1 D, 1 N)
+- `details=densite:compacte` : 1441 ± 157 (n 1 : 0 V, 1 D, 0 N)
+- `details=badge:plein` : 1440 ± 157 (n 1 : 0 V, 1 D, 0 N)
+
+### Meilleures effets — Enfants — 5 duel(s)
+
+- `effets=sobre` : 1516 ± 121 (n 5 : 2 V, 1 D, 1 N, 1 « mauvais »)
+- `effets=doux` : 1503 ± 155 (n 1 : 0 V, 0 D, 1 N)
+- `effets=editorial` : 1486 ± 138 (n 3 : 1 V, 1 D, 0 N, 1 « mauvais »)
+- `effets=vivant` : 1433 ± 156 (n 1 : 0 V, 1 D, 0 N)
+
+### Meilleures effets — Pédicurie — 5 duel(s)
+
+- `effets=doux` : 1500 ± 131 (n 3 : 0 V, 0 D, 3 N)
+- `effets=editorial` : 1500 ± 142 (n 2 : 1 V, 1 D, 0 N)
+- `effets=sobre` : 1500 ± 123 (n 4 : 1 V, 1 D, 2 N)
+- `effets=vivant` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
+
 ### Meilleures effets — Sport — 5 duel(s)
 
 - `effets=editorial` : 1531 ± 124 (n 4 : 1 V, 0 D, 3 N)
 - `effets=vivant` : 1495 ± 155 (n 1 : 0 V, 0 D, 1 N)
 - `effets=sobre` : 1474 ± 117 (n 5 : 0 V, 1 D, 4 N)
-
-### Meilleures menus — Enfants — 5 duel(s)
-
-- `menu=mobile:gabarit` : 1500 ± 113 (n 5 : 0 V, 0 D, 5 N)
-- `menu=mobile:onglets` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
-- `menu=mobile:tiroir` : 1500 ± 119 (n 4 : 0 V, 0 D, 4 N)
 
 ### Meilleures menus — Ongles — 5 duel(s)
 
@@ -1567,6 +1630,13 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `menu=ordinateur:souligne` : 1500 ± 152 (n 1 : 0 V, 0 D, 1 N)
 - `menu=mobile:panneau` : 1493 ± 155 (n 1 : 0 V, 0 D, 1 N)
 - `menu=mobile:gabarit` : 1464 ± 130 (n 3 : 0 V, 1 D, 2 N)
+
+### Meilleures menus — Sport — 5 duel(s)
+
+- `menu=mobile:onglets` : 1582 ± 142 (n 2 : 1 V, 0 D, 1 N)
+- `menu=mobile:gabarit` : 1571 ± 119 (n 5 : 3 V, 1 D, 1 N)
+- `menu=mobile:tiroir` : 1444 ± 157 (n 1 : 0 V, 1 D, 0 N)
+- `menu=mobile:panneau` : 1404 ± 147 (n 2 : 0 V, 2 D, 0 N)
 
 ### Meilleures photos — Général — 5 duel(s)
 
@@ -1608,6 +1678,13 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - Surfaces « Fond teinté doux » (page teintée, cartes blanches) (`effets:surfaces-teinte`) : 1491 ± 156 (n 1 : 0 V, 0 D, 1 N)
 - Surfaces « Cartes teintées » (cartes et bulles teintées sur fond clair) (`effets:surfaces-cartes-teintees`) : 1455 ± 132 (n 3 : 0 V, 1 D, 2 N)
 
+### Meilleures styles d’illustration — Enfants — 5 duel(s)
+
+- `style=photos` : 1578 ± 135 (n 3 : 2 V, 0 D, 1 N)
+- `style=ligne` : 1489 ± 156 (n 1 : 0 V, 0 D, 1 N)
+- `style=pedagogique` : 1489 ± 156 (n 1 : 0 V, 0 D, 1 N)
+- `style=releve` : 1444 ± 119 (n 5 : 0 V, 2 D, 3 N)
+
 ### Meilleures styles d’illustration — Pédicurie — 5 duel(s)
 
 - `style=ligne` : 1551 ± 143 (n 2 : 1 V, 0 D, 1 N)
@@ -1621,6 +1698,13 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `style=ligne` : 1458 ± 160 (n 1 : 0 V, 1 D, 0 N)
 - `style=releve` : 1383 ± 139 (n 4 : 0 V, 4 D, 0 N)
 
+### Meilleures détails — Diabète — 4 duel(s)
+
+- `details=cadre:aucun` : 1572 ± 136 (n 3 : 2 V, 0 D, 1 N)
+- `details=badge:contour` : 1500 ± 152 (n 1 : 0 V, 0 D, 1 N)
+- `details=badge:gabarit` : 1500 ± 152 (n 1 : 0 V, 0 D, 1 N)
+- `details=cadre:arrondi` : 1428 ± 136 (n 3 : 0 V, 2 D, 1 N)
+
 ### Meilleures détails — Pédicurie — 4 duel(s)
 
 - `details=cadre:aucun` : 1591 ± 148 (n 2 : 2 V, 0 D, 0 N)
@@ -1629,21 +1713,10 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `details=badge:plein` : 1440 ± 157 (n 1 : 0 V, 1 D, 0 N)
 - `details=cadre:arrondi` : 1409 ± 148 (n 2 : 0 V, 2 D, 0 N)
 
-### Meilleures détails — Sport — 4 duel(s)
+### Meilleures effets — Semelles — 4 duel(s)
 
-- `details=densite:aeree` : 1559 ± 157 (n 1 : 1 V, 0 D, 0 N)
-- `details=badge:gabarit` : 1550 ± 143 (n 2 : 1 V, 0 D, 1 N)
-- `details=badge:contour` : 1510 ± 156 (n 1 : 0 V, 0 D, 1 N)
-- `details=citation:filet` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
-- `details=citation:gabarit` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
-- `details=densite:compacte` : 1441 ± 157 (n 1 : 0 V, 1 D, 0 N)
-- `details=badge:plein` : 1440 ± 157 (n 1 : 0 V, 1 D, 0 N)
-
-### Meilleures effets — Pédicurie — 4 duel(s)
-
-- `effets=doux` : 1500 ± 142 (n 2 : 0 V, 0 D, 2 N)
-- `effets=editorial` : 1500 ± 142 (n 2 : 1 V, 1 D, 0 N)
-- `effets=sobre` : 1500 ± 131 (n 3 : 1 V, 1 D, 1 N)
+- `effets=editorial` : 1500 ± 131 (n 3 : 0 V, 0 D, 3 N)
+- `effets=sobre` : 1500 ± 123 (n 4 : 0 V, 0 D, 4 N)
 - `effets=vivant` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
 
 ### Meilleures menus — Diabète — 4 duel(s)
@@ -1652,19 +1725,11 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `menu=mobile:tiroir` : 1484 ± 131 (n 3 : 0 V, 1 D, 2 N)
 - `menu=mobile:onglets` : 1444 ± 157 (n 1 : 0 V, 1 D, 0 N)
 
-### Meilleures menus — Pédicurie — 4 duel(s)
+### Meilleures menus — Seniors — 4 duel(s)
 
-- `menu=mobile:gabarit` : 1544 ± 132 (n 3 : 1 V, 0 D, 2 N)
-- `menu=mobile:panneau` : 1509 ± 156 (n 1 : 0 V, 0 D, 1 N)
-- `menu=mobile:onglets` : 1499 ± 142 (n 2 : 0 V, 0 D, 2 N)
-- `menu=mobile:tiroir` : 1449 ± 143 (n 2 : 0 V, 1 D, 1 N)
-
-### Meilleures menus — Sport — 4 duel(s)
-
-- `menu=mobile:onglets` : 1574 ± 142 (n 2 : 1 V, 0 D, 1 N)
-- `menu=mobile:gabarit` : 1548 ± 124 (n 4 : 2 V, 1 D, 1 N)
-- `menu=mobile:panneau` : 1439 ± 157 (n 1 : 0 V, 1 D, 0 N)
-- `menu=mobile:tiroir` : 1439 ± 157 (n 1 : 0 V, 1 D, 0 N)
+- `menu=mobile:defilant` : 1500 ± 152 (n 1 : 0 V, 0 D, 1 N)
+- `menu=mobile:gabarit` : 1500 ± 119 (n 4 : 0 V, 0 D, 4 N)
+- `menu=mobile:onglets` : 1500 ± 129 (n 3 : 0 V, 0 D, 3 N)
 
 ### Meilleures combinaisons « style × structure » — Diabète — 4 duel(s)
 
@@ -1707,12 +1772,11 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `typo=interlettrage:serre` : 1470 ± 141 (n 2 : 0 V, 1 D, 1 N)
 - `typo=interlettrage:large` : 1456 ± 142 (n 2 : 0 V, 1 D, 1 N)
 
-### Meilleures styles d’illustration — Enfants — 4 duel(s)
+### Meilleures styles d’illustration — Diabète — 4 duel(s)
 
-- `style=photos` : 1547 ± 143 (n 2 : 1 V, 0 D, 1 N)
-- `style=ligne` : 1493 ± 155 (n 1 : 0 V, 0 D, 1 N)
-- `style=pedagogique` : 1493 ± 155 (n 1 : 0 V, 0 D, 1 N)
-- `style=releve` : 1466 ± 124 (n 4 : 0 V, 1 D, 3 N)
+- `style=ligne` : 1617 ± 141 (n 3 : 3 V, 0 D, 0 N)
+- `style=photos` : 1481 ± 156 (n 1 : 0 V, 0 D, 1 N)
+- `style=pedagogique` : 1402 ± 131 (n 4 : 0 V, 3 D, 1 N)
 
 ### Meilleures styles d’illustration — Seniors — 4 duel(s)
 
@@ -1730,13 +1794,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `variante=article:chapo` : 1472 ± 167 (n 1 : 0 V, 0 D, 0 N, 1 « mauvais »)
 - `variante=article:standard` : 1432 ± 140 (n 3 : 0 V, 1 D, 1 N, 1 « mauvais »)
 
-### Meilleures détails — Diabète — 3 duel(s)
-
-- `details=cadre:aucun` : 1544 ± 143 (n 2 : 1 V, 0 D, 1 N)
-- `details=badge:contour` : 1500 ± 152 (n 1 : 0 V, 0 D, 1 N)
-- `details=badge:gabarit` : 1500 ± 152 (n 1 : 0 V, 0 D, 1 N)
-- `details=cadre:arrondi` : 1456 ± 143 (n 2 : 0 V, 1 D, 1 N)
-
 ### Meilleures détails — Seniors — 3 duel(s)
 
 - `details=cadre:aucun` : 1591 ± 148 (n 2 : 2 V, 0 D, 0 N)
@@ -1750,11 +1807,11 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `effets=editorial` : 1531 ± 144 (n 2 : 1 V, 0 D, 1 N)
 - `effets=sobre` : 1415 ± 135 (n 3 : 0 V, 2 D, 1 N)
 
-### Meilleures effets — Enfants — 3 duel(s)
+### Meilleures effets — Ongles — 3 duel(s)
 
-- `effets=doux` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
-- `effets=editorial` : 1500 ± 142 (n 2 : 1 V, 1 D, 0 N)
-- `effets=sobre` : 1500 ± 131 (n 3 : 1 V, 1 D, 1 N)
+- `effets=doux` : 1561 ± 157 (n 1 : 1 V, 0 D, 0 N)
+- `effets=editorial` : 1485 ± 142 (n 2 : 0 V, 0 D, 2 N)
+- `effets=sobre` : 1454 ± 132 (n 3 : 0 V, 1 D, 2 N)
 
 ### Meilleures effets — Seniors — 3 duel(s)
 
@@ -1950,12 +2007,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `typo=graisse:normale` : 1438 ± 157 (n 1 : 0 V, 1 D, 0 N)
 - `typo=graisse:fine` : 1426 ± 154 (n 1 : 0 V, 1 D, 0 N)
 
-### Meilleures styles d’illustration — Diabète — 3 duel(s)
-
-- `style=ligne` : 1594 ± 147 (n 2 : 2 V, 0 D, 0 N)
-- `style=photos` : 1484 ± 156 (n 1 : 0 V, 0 D, 1 N)
-- `style=pedagogique` : 1422 ± 136 (n 3 : 0 V, 2 D, 1 N)
-
 ### Meilleures styles d’illustration — Ongles — 3 duel(s)
 
 - `style=photos` : 1594 ± 147 (n 2 : 2 V, 0 D, 0 N)
@@ -1972,18 +2023,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `variante=theme:colonnes` : 1560 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - `variante=theme:heros` : 1490 ± 156 (n 1 : 0 V, 0 D, 1 N)
 - `variante=theme:liste` : 1450 ± 143 (n 2 : 0 V, 1 D, 1 N)
-
-### Meilleures effets — Ongles — 2 duel(s)
-
-- `effets=doux` : 1560 ± 157 (n 1 : 1 V, 0 D, 0 N)
-- `effets=editorial` : 1490 ± 156 (n 1 : 0 V, 0 D, 1 N)
-- `effets=sobre` : 1450 ± 143 (n 2 : 0 V, 1 D, 1 N)
-
-### Meilleures effets — Semelles — 2 duel(s)
-
-- `effets=editorial` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
-- `effets=sobre` : 1500 ± 142 (n 2 : 0 V, 0 D, 2 N)
-- `effets=vivant` : 1500 ± 155 (n 1 : 0 V, 0 D, 1 N)
 
 ### Meilleures images × fonds — Diabète — 2 duel(s)
 
@@ -2005,11 +2044,6 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `image:dessin:analyse&traitement:nb` : 1472 ± 167 (n 1 : 0 V, 0 D, 0 N, 1 « mauvais »)
 - `image:photo:generale-parquet&traitement:aucun` : 1472 ± 167 (n 1 : 0 V, 0 D, 0 N, 1 « mauvais »)
 - `image:photo:generale-parquet&traitement:nb` : 1472 ± 167 (n 1 : 0 V, 0 D, 0 N, 1 « mauvais »)
-
-### Meilleures menus — Seniors — 2 duel(s)
-
-- `menu=mobile:gabarit` : 1500 ± 139 (n 2 : 0 V, 0 D, 2 N)
-- `menu=mobile:onglets` : 1500 ± 139 (n 2 : 0 V, 0 D, 2 N)
 
 ### Meilleures structures de la page « Le cabinet » — Ongles — 2 duel(s)
 
@@ -2528,22 +2562,22 @@ Effet sur le générateur (renfortsDuels, ±0,5 ★ au plus, cumulé aux notes d
 - `gamme:sable` -0,5 ★
 - `photo:soins-pied-tenu` -0,5 ★
 - `police=luxe` -0,5 ★
+- `police=mono` +0,5 ★
 - `police=ronde` +0,5 ★
 - `police=serif-fine` -0,5 ★
 - `structure:accueil:equipe-haut-rangees` -0,5 ★
+- `typo:police:mono` +0,5 ★
 - `typo:police:publique` -0,5 ★
-- `typo:police:ronde` +0,5 ★
-- `typo:police:serif-fine` -0,5 ★
 
 ## Couverture par sujet
 
 | Sujet | Héros | Illustr. relevé | Illustr. illustrations douces | Illustr. trait fin | Icônes | Photos importées | Photos intégrées | Animations validées |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Sport | 9 | 13 | 25 | 25 | 16 | 49 | 4 | 0/2 |
-| Diabète | 12 | 7 | 10 | 7 | 7 | 12 | 0 | 0/2 |
-| Ongles | 9 | 6 | 6 | 6 | 5 | 5 | 2 | 0/1 |
-| Enfants | 12 | 13 | 12 | 12 | 3 | 14 | 6 | 0/3 |
-| Seniors | 12 | 7 | 9 | 7 | 6 | 13 | 2 | 0/1 |
+| Sport | 9 | 13 | 25 | 25 | 16 | 50 | 4 | 0/2 |
+| Diabète | 18 | 15 | 18 | 7 | 6 | 12 | 0 | 0/2 |
+| Ongles | 9 | 6 | 6 | 6 | 5 | 6 | 2 | 0/1 |
+| Enfants | 12 | 13 | 12 | 12 | 3 | 17 | 6 | 0/3 |
+| Seniors | 12 | 7 | 9 | 7 | 5 | 21 | 2 | 0/1 |
 | Semelles | 9 | 12 | 12 | 11 | 3 | 0 | 4 | 0/2 |
 | Pédicurie | 12 | 8 | 9 | 8 | 5 | 2 | 2 | 0/1 |
 | Général | 0 | 1 | 2 | 2 | 3 | 0 | 5 | 0/1 |
@@ -2558,3 +2592,7 @@ Manques (tri : /admin/retours/tri?sujet=<sujet>&famille=<famille>) :
 - Seniors : aucune animation validée (1 en attente) — tri : `?sujet=senior&famille=animations`
 - Semelles : aucune animation validée (2 en attente) — tri : `?sujet=semelles&famille=animations`
 - Pédicurie : aucune animation validée (1 en attente) — tri : `?sujet=pedicurie&famille=animations`
+
+## Chaîne des modèles : tickets à corriger (priorité)
+
+Aucun ticket ouvert.

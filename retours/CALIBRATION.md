@@ -56,7 +56,7 @@ La justesse de v1 se mesure sur les prochaines notes de Paul (80 prédictions su
 <!-- mesure-auto -->
 ## Mesure automatique (export quotidien)
 
-Notes comparables jusqu’au 2026-10-08 : 106.
+Notes comparables jusqu’au 2026-10-09 : 106.
 
 | Profil | Notes | Exactes | À ±1 | Écart moyen | Biais | Corrélation | Accord éliminatoires |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -79,22 +79,22 @@ Plus gros écarts récents :
 <!-- propositions-claude-tags -->
 ## Propositions de tags de Claude : note prédite vs note de Paul
 
-Fichier retours/propositions-claude-tags.json (profil 2026-10-07.v2, 2026-10-08) : 460 visuels tagués, 93 notes prédites (éléments jamais notés). Notes de Paul données le jour de la proposition ou après, jusqu’au 2026-10-08 : 67.
+Fichier retours/propositions-claude-tags.json (profil 2026-10-07.v2, 2026-10-08) : 460 visuels tagués, 93 notes prédites (éléments jamais notés). Notes de Paul données le jour de la proposition ou après, jusqu’au 2026-10-09 : 79.
 
 | Échantillon | Notes | Exactes | À ±1 | Écart moyen | Biais |
 |---|---:|---:|---:|---:|---:|
-| Toutes | 67 | 12 (18 %) | 39 (58 %) | 1,48 | -1,24 |
-| Confiance moyenne | 22 | 7 (32 %) | 10 (45 %) | 1,86 | -1,59 |
-| Confiance faible | 45 | 5 (11 %) | 29 (64 %) | 1,29 | -1,07 |
+| Toutes | 79 | 13 (16 %) | 44 (56 %) | 1,48 | -1,28 |
+| Confiance moyenne | 25 | 7 (28 %) | 10 (40 %) | 1,88 | -1,64 |
+| Confiance faible | 54 | 6 (11 %) | 34 (63 %) | 1,30 | -1,11 |
 
 Plus gros écarts :
 
-- `picto:hygiene-autoclave@direction-a` : prédit 3 ★, Paul 5 ★ (2026-10-08, confiance faible)
-- `picto:hygiene-autoclave@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance faible)
-- `picto:hygiene-autoclave@direction-c` : prédit 2 ★, Paul 5 ★ (2026-10-08, confiance faible)
-- `picto:monofilament@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance faible)
-- `picto:semelle-orthopedique@direction-c` : prédit 3 ★, Paul 5 ★ (2026-10-08, confiance faible)
-- `picto:sport-course@direction-a` : prédit 3 ★, Paul 5 ★ (2026-10-08, confiance faible)
-- `picto:sport-course@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance faible)
 - `picto:verrue-plantaire@direction-c` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance moyenne)
+- `picto:creme-hydratation` : prédit 2 ★, Paul 4 ★ (2026-10-09, confiance moyenne)
+- `picto:hygiene-mains` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance moyenne)
+- `picto:ongle-incarne@direction-b` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
+- `picto:premiers-pas@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-09, confiance moyenne)
+- `picto:prevention-chutes@direction-d` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
+- `picto:senior-canne@direction-b` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
+- `picto:stationnement@direction-b` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
 <!-- /propositions-claude-tags -->

@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "note": "Photos libres validées, hébergées et notées 4-5 ★ par Paul (moyenne), jamais exclues : rendus hors ligne seulement (démo, testeur de modèles). Aucune donnée personnelle.",
+  "photos": [
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-31588232-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-31588232-1920.webp",
+      "sujets": [
+        "sport"
+      ],
+      "note": 5,
+      "notes": 2,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/ia/diabete/ia-1eef7239f1881f85-1280.webp",
+      "cle": "photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp",
+      "sujets": [
+        "diabete"
+      ],
+      "note": 5,
+      "notes": 1,
+      "source": "ia"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-13124397-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-13124397-1920.webp",
+      "sujets": [
+        "sport"
+      ],
+      "note": 5,
+      "notes": 1,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-30307746-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-30307746-1920.webp",
+      "sujets": [
+        "sport"
+      ],
+      "note": 5,
+      "notes": 1,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-32289808-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-32289808-1920.webp",
+      "sujets": [
+        "sport"
+      ],
+      "note": 5,
+      "notes": 1,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-8693984-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-8693984-1920.webp",
+      "sujets": [
+        "sport"
+      ],
+      "note": 5,
+      "notes": 1,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/pedicurie/pixabay-6648076-1280.webp",
+      "cle": "photo:banque/libres/pedicurie/pixabay-6648076-1280.webp",
+      "sujets": [
+        "enfant",
+        "pedicurie"
+      ],
+      "note": 4,
+      "notes": 1,
+      "source": "pixabay"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/pedicurie/pixabay-6762801-1280.webp",
+      "cle": "photo:banque/libres/pedicurie/pixabay-6762801-1280.webp",
+      "sujets": [
+        "pedicurie"
+      ],
+      "note": 4,
+      "notes": 1,
+      "source": "pixabay"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/senior/pexels-18326821-1920.webp",
+      "cle": "photo:banque/libres/senior/pexels-18326821-1920.webp",
+      "sujets": [
+        "senior"
+      ],
+      "note": 4,
+      "notes": 1,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-11156954-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-11156954-1920.webp",
+      "sujets": [
+        "sport",
+        "enfant"
+      ],
+      "note": 4,
+      "notes": 1,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-5067702-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-5067702-1920.webp",
+      "sujets": [
+        "sport"
+      ],
+      "note": 4,
+      "notes": 1,
+      "source": "pexels"
+    },
+    {
+      "url": "https://gpgrtpqnazglowhzsllw.supabase.co/storage/v1/object/public/photos/banque/libres/sport/pexels-7880214-1920.webp",
+      "cle": "photo:banque/libres/sport/pexels-7880214-1920.webp",
+      "sujets": [
+        "sport"
+      ],
+      "note": 4,
+      "notes": 1,
+      "source": "pexels"
+    }
+  ]
+}

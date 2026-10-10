@@ -1083,5 +1083,705 @@
     "commentaire": "Accepté (Arrivages)",
     "empreinte": null,
     "jour": "2026-10-08"
+  },
+  {
+    "cle": "menu:mobile:defilant",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "menu:ordinateur:centre",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "menu:ordinateur:pastilles",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:auto-examen",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:chaussettes",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:chaussure-confort",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:chaussettes",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:chaussure-confort",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:creme-hydratation",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:laser",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:pied-diabetique@direction-d",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:podoscope@direction-a",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:premiers-pas@direction-b",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:semelle-orthopedique@direction-a",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-a",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-b",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-c",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-d",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:transports",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:verrue-plantaire@direction-b",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:accent:couleur",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:accent:italique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:echelle:affirmee",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:interlettrage:large",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:interlettrage:normal",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:interlettrage:serre",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:podoscope@direction-a",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:semelle-orthopedique@direction-a",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-chevrons",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-chrono",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-couches",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-famille",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-isothermes",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-isothermes-froid",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-pression",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-ronde",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-talon",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-trail-montagne",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:empreintes",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:formes",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:formes-franches",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:illustration",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:topographie",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:trajectoires",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:trame",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:sections:chevrons",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-bilan:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-chaussettes:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-bilan:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-chaussettes:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-chaussons:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-chaussure:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-chaussons:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-chaussure:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-creme:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-ongles:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-creme:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-ongles:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-sensibilite-test:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-toilette:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-sensibilite-test:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "dessin:diabete-toilette:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "heros:diabete-miroir:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "heros:diabete-nature-morte:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "heros:diabete-miroir:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "heros:diabete-nature-morte:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "heros:diabete-sensibilite:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "menu:mobile:defilant",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "heros:diabete-sensibilite:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "menu:ordinateur:centre",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "menu:ordinateur:pastilles",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:chaussettes",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:chaussure-confort",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:creme-hydratation",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:laser",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:pied-diabetique@direction-d",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:premiers-pas@direction-b",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-a",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-b",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-c",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:style-icones-d",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:transports",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:fond-heros:empreintes",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "menu:mobile:defilant",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "menu:ordinateur:centre",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:accent:italique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:echelle:affirmee",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:interlettrage:large",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:interlettrage:normal",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "typo:interlettrage:serre",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-chevrons",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-chrono",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-couches",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-famille",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-isothermes",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-isothermes-froid",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-pression",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-ronde",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-talon",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
+  },
+  {
+    "cle": "composant:entete-anim:pi-trail-montagne",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-09"
   }
 ]

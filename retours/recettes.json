@@ -782,7 +782,8 @@
           "sections": "revelation",
           "actualites": "liste",
           "praticiens": "fiches",
-          "soins-forme": "bulles"
+          "soins-forme": "bulles",
+          "fond-heros": "formes-franches"
         }
       },
       "effets": "vivant",

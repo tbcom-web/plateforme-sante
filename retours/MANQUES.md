@@ -210,11 +210,11 @@ meilleurs designs plafonnent à **72-80 % d'éléments 4-5 ★** : les manques c
 
 | Sujet | Héros | Illustr. relevé | Illustr. illustrations douces | Illustr. trait fin | Icônes | Photos importées | Photos intégrées | Animations validées |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Sport | 9 | 13 | 25 | 25 | 16 | 49 | 4 | 0/2 |
-| Diabète | 12 | 7 | 10 | 7 | 7 | 12 | 0 | 0/2 |
-| Ongles | 9 | 6 | 6 | 6 | 5 | 5 | 2 | 0/1 |
-| Enfants | 12 | 13 | 12 | 12 | 3 | 14 | 6 | 0/3 |
-| Seniors | 12 | 7 | 9 | 7 | 6 | 13 | 2 | 0/1 |
+| Sport | 9 | 13 | 25 | 25 | 16 | 50 | 4 | 0/2 |
+| Diabète | 18 | 15 | 18 | 7 | 6 | 12 | 0 | 0/2 |
+| Ongles | 9 | 6 | 6 | 6 | 5 | 6 | 2 | 0/1 |
+| Enfants | 12 | 13 | 12 | 12 | 3 | 17 | 6 | 0/3 |
+| Seniors | 12 | 7 | 9 | 7 | 5 | 21 | 2 | 0/1 |
 | Semelles | 9 | 12 | 12 | 11 | 3 | 0 | 4 | 0/2 |
 | Pédicurie | 12 | 8 | 9 | 8 | 5 | 2 | 2 | 0/1 |
 | Général | 0 | 1 | 2 | 2 | 3 | 0 | 5 | 0/1 |

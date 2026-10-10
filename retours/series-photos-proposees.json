@@ -1,0 +1,2355 @@
+{
+  "version": 1,
+  "note": "Séries proposées par l’agent de sourcing, pas encore revues par Claude (agent sourceur-photos). Aperçus publics des sources seulement ; rien n’est importé avant l’acceptation de Paul. Aucune donnée personnelle.",
+  "series": [
+    {
+      "id": "0bcc6a33-4f65-4879-8346-9f85e58e203f",
+      "empreinte": "0c5e4bd1",
+      "titre": "Sélection de l’agent — Kit Enfants · série tamisée chaude (7 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:enfant",
+      "profil": null,
+      "sujet": "enfant",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches vertes",
+      "coherence": 79,
+      "score": 86,
+      "gamme": "sable",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:4964506",
+          "apercu": "https://images.pexels.com/photos/4964506/pexels-photo-4964506.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/photo-of-foot-stepping-on-a-ball-4964506/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.346
+        },
+        {
+          "cle": "pexels:4964518",
+          "apercu": "https://images.pexels.com/photos/4964518/pexels-photo-4964518.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/photo-of-foot-stepping-on-a-red-ball-4964518/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.131
+        },
+        {
+          "cle": "pixabay:3459001",
+          "apercu": "https://pixabay.com/get/g873c0845ae58c191d61eb41a03e564b0af76ebcc56549b4d8527c03ffab7b8845cc1e40f48d07581739e45e99ffc94e0_640.jpg",
+          "page": "https://pixabay.com/photos/lake-fun-toes-baby-feet-water-3459001/",
+          "emplacement": "soin:podologie-enfant",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.103
+        },
+        {
+          "cle": "pexels:8944025",
+          "apercu": "https://images.pexels.com/photos/8944025/pexels-photo-8944025.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-photo-of-feet-8944025/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.143
+        },
+        {
+          "cle": "pixabay:8563301",
+          "apercu": "https://pixabay.com/get/g9fe9655789c144814842d33a931cca9cda9a327cd5fd81ec46d0d760aa5362065a5c0b5c9d25a8ef11ceb828a16d3ba6_640.jpg",
+          "page": "https://pixabay.com/photos/small-child-child-barefoot-grandson-8563301/",
+          "emplacement": "soin:verrues-plantaires",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.443
+        },
+        {
+          "cle": "pexels:8813534",
+          "apercu": "https://images.pexels.com/photos/8813534/pexels-photo-8813534.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-boy-tying-his-shoelaces-while-sitting-on-the-grass-8813534/",
+          "emplacement": "reserve",
+          "qualite": 0.99,
+          "pertinence": 0.7,
+          "ecart": 0.22
+        },
+        {
+          "cle": "pixabay:6376162",
+          "apercu": "https://pixabay.com/get/g3a3dada3d0075a5b0a43242252b364c9a87eac3ff01e5db68ad9e30ce9e3ffb330535814490078664c69352c9373da58_640.jpg",
+          "page": "https://pixabay.com/photos/flower-daisy-legs-baby-kid-6376162/",
+          "emplacement": "reserve",
+          "qualite": 0.967,
+          "pertinence": 0.7,
+          "ecart": 0.169
+        }
+      ]
+    },
+    {
+      "id": "3ca08a1e-b923-4727-ade6-387cbb5f5c88",
+      "empreinte": "97457774",
+      "titre": "Sélection de l’agent — Kit Ongles · série lumineuse chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:ongles",
+      "profil": null,
+      "sujet": "ongles",
+      "activite": null,
+      "signature": "lumineuse · chaude · douce · touches orangées",
+      "coherence": 73,
+      "score": 85,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:7071843",
+          "apercu": "https://images.pexels.com/photos/7071843/pexels-photo-7071843.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-photo-of-a-person-s-feet-with-brown-sand-7071843/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.62
+        },
+        {
+          "cle": "pexels:8092763",
+          "apercu": "https://images.pexels.com/photos/8092763/pexels-photo-8092763.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-person-with-barefeet-up-on-a-pipe-near-window-8092763/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.608
+        },
+        {
+          "cle": "pixabay:5893683",
+          "apercu": "https://pixabay.com/get/g21b44e3a59e177f4946278d9a2e0d028ca8cfe50b473ce92d9ce571ab66af2f30009410d77396faaf635fc80942c1d56_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-pedicure-nails-toenails-5893683/",
+          "emplacement": "soin:ongle-incarne",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.104
+        },
+        {
+          "cle": "pixabay:5893684",
+          "apercu": "https://pixabay.com/get/gd4e9c222c3e1e19ff35cbe9d585989170c69fedacd285f447e5a7489840d511c30e67aeff70b8ffb628ff94b32aa5e75_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-pedicure-nails-toenails-5893684/",
+          "emplacement": "soin:mycose-ongles",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.095
+        },
+        {
+          "cle": "pixabay:5893686",
+          "apercu": "https://pixabay.com/get/gcab3e1241cb87f01b3fc727b69b9861a056adf63c58d713fefc10c7c1a46b8a6a9ceb3a07eff77d92fa8ebc46cd4e02c_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-pedicure-nails-toenails-5893686/",
+          "emplacement": "soin:ongles-epais",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.079
+        },
+        {
+          "cle": "pixabay:5893695",
+          "apercu": "https://pixabay.com/get/gf8c6edbe263041061d72dce6c4d675f7abf0979eab1f9fe57923aadbcfb8b77dc462dc8d31faeb0121f90a8e430ace64_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-sandal-footwear-fashion-5893695/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.494
+        },
+        {
+          "cle": "pixabay:594140",
+          "apercu": "https://pixabay.com/get/g4c08507b4c783aa70b288dea45323b9d91c790cea7e13a6d3cef661b5310b705d1c997bf846e73dd3c1c235def6308ad_640.jpg",
+          "page": "https://pixabay.com/photos/foot-barefoot-sandy-beach-vacations-594140/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 1.667
+        },
+        {
+          "cle": "pixabay:2091484",
+          "apercu": "https://pixabay.com/get/gbfff03ac92b63b2cd8be4ba9b8fe4f1e0581076d18a2dbceb776cfda857596f4d4c5b18ab484ef70d42fe0f110d8fd5b_640.jpg",
+          "page": "https://pixabay.com/photos/nail-clipper-health-nail-cosmetic-2091484/",
+          "emplacement": "reserve",
+          "qualite": 0.913,
+          "pertinence": 0.7,
+          "ecart": 0.695
+        }
+      ]
+    },
+    {
+      "id": "6ccc09e1-0037-4b93-83a1-a5a3ff7c444b",
+      "empreinte": "a94f652a",
+      "titre": "Sélection de l’agent — Kit Enfants · série tamisée chaude (7 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:enfant",
+      "profil": null,
+      "sujet": "enfant",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches orangées",
+      "coherence": 74,
+      "score": 88,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:2271261",
+          "apercu": "https://images.pexels.com/photos/2271261/pexels-photo-2271261.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/shallow-focus-photo-of-brown-work-boots-on-grass-2271261/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.088
+        },
+        {
+          "cle": "pexels:4964518",
+          "apercu": "https://images.pexels.com/photos/4964518/pexels-photo-4964518.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/photo-of-foot-stepping-on-a-red-ball-4964518/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.427
+        },
+        {
+          "cle": "pixabay:836867",
+          "apercu": "https://pixabay.com/get/g307976c9398474a8b5e9e552e4d0a68c6a5b9856a62039a7c3aa0af4186440d0607800b2123a65c6a9bf02389408ec68_640.jpg",
+          "page": "https://pixabay.com/photos/baby-feet-toes-infant-feet-newborn-836867/",
+          "emplacement": "soin:podologie-enfant",
+          "qualite": 0.965,
+          "pertinence": 1,
+          "ecart": 0.185
+        },
+        {
+          "cle": "pixabay:3459001",
+          "apercu": "https://pixabay.com/get/g873c0845ae58c191d61eb41a03e564b0af76ebcc56549b4d8527c03ffab7b8845cc1e40f48d07581739e45e99ffc94e0_640.jpg",
+          "page": "https://pixabay.com/photos/lake-fun-toes-baby-feet-water-3459001/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.263
+        },
+        {
+          "cle": "pixabay:1850866",
+          "apercu": "https://pixabay.com/get/g2b2b760163e0e964ef0c9baa9392aa228c22fdf06e26594521fc294c43590d94386a7d6762f30e6a7865bde5ec6f5340_640.jpg",
+          "page": "https://pixabay.com/photos/baby-baby-feet-child-fingers-hands-1850866/",
+          "emplacement": "soin:verrues-plantaires",
+          "qualite": 0.998,
+          "pertinence": 0.85,
+          "ecart": 0.491
+        },
+        {
+          "cle": "pixabay:2208928",
+          "apercu": "https://pixabay.com/get/g3471af90788abc1f921159d2b93aa6d5ea5008d10027ea9999c05c24f2ccd224c68b8afc14649e8a74984a001674a4a1_640.jpg",
+          "page": "https://pixabay.com/photos/mom-baby-feet-hands-legs-child-2208928/",
+          "emplacement": "reserve",
+          "qualite": 0.987,
+          "pertinence": 0.85,
+          "ecart": 0.689
+        },
+        {
+          "cle": "pixabay:847821",
+          "apercu": "https://pixabay.com/get/g70314218b5da77ee58c4dcc791f8099eafb6f90686268ab21a43ff5a476992ff8025187dc00417f826fb83f41de2f1c5_640.jpg",
+          "page": "https://pixabay.com/photos/baby-feet-newborn-leg-baby-child-847821/",
+          "emplacement": "reserve",
+          "qualite": 0.975,
+          "pertinence": 0.85,
+          "ecart": 0.648
+        }
+      ]
+    },
+    {
+      "id": "b2953319-d6dd-4e9a-9f1d-94bf7b735cc9",
+      "empreinte": "ce609431",
+      "titre": "Sélection de l’agent — Kit Ongles · série lumineuse chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:ongles",
+      "profil": null,
+      "sujet": "ongles",
+      "activite": null,
+      "signature": "lumineuse · chaude · naturelle · touches orangées",
+      "coherence": 62,
+      "score": 82,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:3760273",
+          "apercu": "https://images.pexels.com/photos/3760273/pexels-photo-3760273.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/crop-girlfriends-chilling-on-sandy-shore-in-summertime-3760273/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.528
+        },
+        {
+          "cle": "pixabay:4863628",
+          "apercu": "https://pixabay.com/get/gf8b5fe6b0cf253d67910847d1d44099a7b4d85568c62d67e1c641a7ddf892a519b23361e0c073ab98ccf269b2f040052_640.jpg",
+          "page": "https://pixabay.com/photos/hands-gloves-manicure-nails-4863628/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.278
+        },
+        {
+          "cle": "pixabay:423092",
+          "apercu": "https://pixabay.com/get/g2b0244de691fe6b82f598ca3b5274791cba729f4420f8f72e496bd0912de0ab03820318ec5acb94602069ec27c1f929f_640.jpg",
+          "page": "https://pixabay.com/photos/feet-water-cold-cool-toes-423092/",
+          "emplacement": "soin:ongle-incarne",
+          "qualite": 0.986,
+          "pertinence": 1,
+          "ecart": 0.842
+        },
+        {
+          "cle": "pixabay:5893684",
+          "apercu": "https://pixabay.com/get/gd4e9c222c3e1e19ff35cbe9d585989170c69fedacd285f447e5a7489840d511c30e67aeff70b8ffb628ff94b32aa5e75_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-pedicure-nails-toenails-5893684/",
+          "emplacement": "soin:mycose-ongles",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 1.333
+        },
+        {
+          "cle": "pixabay:5893695",
+          "apercu": "https://pixabay.com/get/gf8c6edbe263041061d72dce6c4d675f7abf0979eab1f9fe57923aadbcfb8b77dc462dc8d31faeb0121f90a8e430ace64_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-sandal-footwear-fashion-5893695/",
+          "emplacement": "soin:ongles-epais",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.689
+        },
+        {
+          "cle": "pixabay:5893706",
+          "apercu": "https://pixabay.com/get/ge891f349cd02701fd4accfb8690256d216ac28e808ac11e49107de506c37cea1cfa061370e586ac313bcb9fcf02c86f3_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-sandal-footwear-fashion-5893706/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.286
+        },
+        {
+          "cle": "pixabay:3557130",
+          "apercu": "https://pixabay.com/get/g8492412eef9fb2a742816bd37e0227e810020bfb7c970d12b7ca5f7c4f0f938701c9136dd7c4cf11ba7f264d5ef0b742_640.jpg",
+          "page": "https://pixabay.com/photos/foot-care-podiatry-feet-treatment-3557130/",
+          "emplacement": "reserve",
+          "qualite": 0.974,
+          "pertinence": 0.85,
+          "ecart": 1.293
+        },
+        {
+          "cle": "pexels:5619459",
+          "apercu": "https://images.pexels.com/photos/5619459/pexels-photo-5619459.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/focused-woman-doing-procedure-on-foot-of-client-5619459/",
+          "emplacement": "reserve",
+          "qualite": 0.988,
+          "pertinence": 0.55,
+          "ecart": 0.106
+        }
+      ]
+    },
+    {
+      "id": "c7db1e0f-bce4-4205-af62-5eb31b9e7bc8",
+      "empreinte": "065c847c",
+      "titre": "Sélection de l’agent — Kit Ongles · série lumineuse chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:ongles",
+      "profil": null,
+      "sujet": "ongles",
+      "activite": null,
+      "signature": "lumineuse · chaude · douce",
+      "coherence": 66,
+      "score": 80,
+      "gamme": "corail",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:5619452",
+          "apercu": "https://images.pexels.com/photos/5619452/pexels-photo-5619452.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/professional-master-in-beauty-salon-doing-foot-procedure-5619452/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 1.027
+        },
+        {
+          "cle": "pixabay:2244797",
+          "apercu": "https://pixabay.com/get/g37fe10b1463c45da9603b3bc44025b3a0ba83fc17b25a5ac24ba39130d1a915dc45613fb914a677076f525cb8ab5d62f_640.jpg",
+          "page": "https://pixabay.com/photos/pedicure-ocean-beach-foot-friend-2244797/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.657
+        },
+        {
+          "cle": "pixabay:5893686",
+          "apercu": "https://pixabay.com/get/gcab3e1241cb87f01b3fc727b69b9861a056adf63c58d713fefc10c7c1a46b8a6a9ceb3a07eff77d92fa8ebc46cd4e02c_640.jpg",
+          "page": "https://pixabay.com/photos/feet-toes-pedicure-nails-toenails-5893686/",
+          "emplacement": "soin:ongle-incarne",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 1.824
+        },
+        {
+          "cle": "pixabay:594140",
+          "apercu": "https://pixabay.com/get/g4c08507b4c783aa70b288dea45323b9d91c790cea7e13a6d3cef661b5310b705d1c997bf846e73dd3c1c235def6308ad_640.jpg",
+          "page": "https://pixabay.com/photos/foot-barefoot-sandy-beach-vacations-594140/",
+          "emplacement": "soin:mycose-ongles",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.383
+        },
+        {
+          "cle": "pixabay:88015",
+          "apercu": "https://pixabay.com/get/g1f8d5f8e109d736779f49de5c905d091b6e211205325e6e6ecb73a85a581d3fc89f39680447373b737c6f78ad817ae15_640.jpg",
+          "page": "https://pixabay.com/photos/beauty-clipping-delijia-kit-88015/",
+          "emplacement": "soin:ongles-epais",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.6
+        },
+        {
+          "cle": "pixabay:2253781",
+          "apercu": "https://pixabay.com/get/g26e72898a6aa8608d692b02c1fe274cc0e0df91ce02a5272b32c08b3b8f921376d3f807d53272b46a3a2085e08ca3089_640.jpg",
+          "page": "https://pixabay.com/photos/gel-manicure-brush-template-2253781/",
+          "emplacement": "cabinet",
+          "qualite": 0.82,
+          "pertinence": 0.7,
+          "ecart": 0.364
+        },
+        {
+          "cle": "pexels:6627668",
+          "apercu": "https://images.pexels.com/photos/6627668/pexels-photo-6627668.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-close-up-shot-of-dental-equipment-6627668/",
+          "emplacement": "reserve",
+          "qualite": 0.995,
+          "pertinence": 0.4,
+          "ecart": 0.411
+        },
+        {
+          "cle": "pexels:3881402",
+          "apercu": "https://images.pexels.com/photos/3881402/pexels-photo-3881402.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/unrecognizable-crop-dentist-taking-detail-with-forceps-in-modern-clinic-3881402/",
+          "emplacement": "reserve",
+          "qualite": 0.967,
+          "pertinence": 0.4,
+          "ecart": 0.611
+        }
+      ]
+    },
+    {
+      "id": "c94c0b9d-4014-4787-9c10-b7a63d378b2e",
+      "empreinte": "10217d3f",
+      "titre": "Sélection de l’agent — Kit Diabète · série lumineuse neutre (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:diabete",
+      "profil": null,
+      "sujet": "diabete",
+      "activite": null,
+      "signature": "lumineuse · neutre · douce",
+      "coherence": 72,
+      "score": 82,
+      "gamme": "prune",
+      "traitement": "modele",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:5619458",
+          "apercu": "https://images.pexels.com/photos/5619458/pexels-photo-5619458.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/focused-female-doing-treatment-procedure-on-client-foot-5619458/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.4,
+          "ecart": 0.157
+        },
+        {
+          "cle": "pexels:5731832",
+          "apercu": "https://images.pexels.com/photos/5731832/pexels-photo-5731832.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/woman-in-active-wear-walking-with-shiba-inu-outdoors-5731832/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.865
+        },
+        {
+          "cle": "pixabay:6762754",
+          "apercu": "https://pixabay.com/get/g417d70b370cafce644fc71832870ccf10e887b13939abb3580d50b1dcdc96d8a6f28a70cdbc80785e12c6be61cbbe1ef_640.jpg",
+          "page": "https://pixabay.com/photos/feet-foot-care-podiatry-clinic-6762754/",
+          "emplacement": "soin:pied-diabetique",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.674
+        },
+        {
+          "cle": "pixabay:6762750",
+          "apercu": "https://pixabay.com/get/g6386069c71fbf8a975c6f61d6cca44d5258447fe1b5c9e9c9ef71cae99f75c2c78ecb5a6c6a4e04620d6ff7f615aa21f_640.jpg",
+          "page": "https://pixabay.com/photos/foot-care-podiatry-feet-massage-6762750/",
+          "emplacement": "soin:cors-durillons",
+          "qualite": 0.878,
+          "pertinence": 0.85,
+          "ecart": 0.362
+        },
+        {
+          "cle": "pixabay:2584260",
+          "apercu": "https://pixabay.com/get/g6ce7114798098da87809a49ecd4f0b1cdbe6846fc33293016e5362573f0d1f35f157e56c0ec370389b3becb6f4cadb93_640.jpg",
+          "page": "https://pixabay.com/photos/chair-dentist-dental-clinic-teeth-2584260/",
+          "emplacement": "soin:ongles-epais",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.848
+        },
+        {
+          "cle": "pixabay:2589770",
+          "apercu": "https://pixabay.com/get/g07cfe2952077b0ab917bd2adad9b9ca94afe7830c02de0af04f4365de528430dded1dd0418438682506c7b8ad92dcb2f_640.jpg",
+          "page": "https://pixabay.com/photos/chair-dentist-dental-clinic-teeth-2589770/",
+          "emplacement": "cabinet",
+          "qualite": 0.93,
+          "pertinence": 0.7,
+          "ecart": 0.89
+        },
+        {
+          "cle": "pexels:13185360",
+          "apercu": "https://images.pexels.com/photos/13185360/pexels-photo-13185360.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/plaster-with-wires-on-foot-of-person-lying-down-on-bed-in-hospital-13185360/",
+          "emplacement": "reserve",
+          "qualite": 0.98,
+          "pertinence": 0.55,
+          "ecart": 0.277
+        },
+        {
+          "cle": "pixabay:4099431",
+          "apercu": "https://pixabay.com/get/gf88026b5167e732ecf1c85f890e7d14ff0e309f5fe6ed528414c8c4a3b7cd7a749ea8285c95f621f5d4fc96c11569d0c_640.jpg",
+          "page": "https://pixabay.com/photos/medical-equipment-medicine-4099431/",
+          "emplacement": "reserve",
+          "qualite": 0.909,
+          "pertinence": 0.55,
+          "ecart": 0.105
+        }
+      ]
+    },
+    {
+      "id": "cb82d1bf-52ab-44b8-ae24-38f8b676d815",
+      "empreinte": "1563a14a",
+      "titre": "Sélection de l’agent — Kit Enfants · série tamisée chaude (7 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:enfant",
+      "profil": null,
+      "sujet": "enfant",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches rouges",
+      "coherence": 69,
+      "score": 86,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pixabay:3459001",
+          "apercu": "https://pixabay.com/get/g873c0845ae58c191d61eb41a03e564b0af76ebcc56549b4d8527c03ffab7b8845cc1e40f48d07581739e45e99ffc94e0_640.jpg",
+          "page": "https://pixabay.com/photos/lake-fun-toes-baby-feet-water-3459001/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.413
+        },
+        {
+          "cle": "pixabay:619399",
+          "apercu": "https://pixabay.com/get/g2c432cde8e032f4372f1eba33435cbb89f240a88107946a43efc019d7919ce353c4c298b3c4626f52e679f383cfadbbc_640.jpg",
+          "page": "https://pixabay.com/photos/feet-childrens-feet-baby-barefoot-619399/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 1,
+          "ecart": 0.962
+        },
+        {
+          "cle": "pixabay:1636304",
+          "apercu": "https://pixabay.com/get/gfdc17f9d732e44b06cd846fb36fb775eda9d8eb952f296f1b3067dacfa3d1b0da2f26e5fcbcfae694aa2aa0e2a197c59_640.jpg",
+          "page": "https://pixabay.com/photos/people-baby-kid-kids-boy-joy-1636304/",
+          "emplacement": "soin:podologie-enfant",
+          "qualite": 0.927,
+          "pertinence": 1,
+          "ecart": 0.983
+        },
+        {
+          "cle": "pixabay:1850866",
+          "apercu": "https://pixabay.com/get/g2b2b760163e0e964ef0c9baa9392aa228c22fdf06e26594521fc294c43590d94386a7d6762f30e6a7865bde5ec6f5340_640.jpg",
+          "page": "https://pixabay.com/photos/baby-baby-feet-child-fingers-hands-1850866/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 0.998,
+          "pertinence": 0.85,
+          "ecart": 0.593
+        },
+        {
+          "cle": "pixabay:847825",
+          "apercu": "https://pixabay.com/get/gb77993abe5ed127a44cac6ef278dc070d4d0bf5dec7e1a604178748ff03178b7e8e2ff95705d193447bf243f8fd14641_640.jpg",
+          "page": "https://pixabay.com/photos/baby-foot-infant-leg-child-baby-847825/",
+          "emplacement": "soin:verrues-plantaires",
+          "qualite": 0.94,
+          "pertinence": 0.85,
+          "ecart": 0.012
+        },
+        {
+          "cle": "pixabay:821627",
+          "apercu": "https://pixabay.com/get/g63e51523ac512fc043314e2b3f194389bbb59a0aed0df371375aec0551876738d24cc3a2a02bc08324139ca1aaa52f27_640.jpg",
+          "page": "https://pixabay.com/photos/infant-feet-baby-child-family-821627/",
+          "emplacement": "reserve",
+          "qualite": 0.935,
+          "pertinence": 0.85,
+          "ecart": 0.214
+        },
+        {
+          "cle": "pixabay:847826",
+          "apercu": "https://pixabay.com/get/g42d40df8734fb57fbdb00593767e411116784ade5404f371c2383681dd34a3a822af1a1b219238a5fbc9e75c417a36d1_640.jpg",
+          "page": "https://pixabay.com/photos/baby-foot-infant-leg-child-baby-847826/",
+          "emplacement": "reserve",
+          "qualite": 0.927,
+          "pertinence": 0.85,
+          "ecart": 0.22
+        }
+      ]
+    },
+    {
+      "id": "e139d2ab-eab8-49cb-b529-c69cbbb4c147",
+      "empreinte": "255c9642",
+      "titre": "Sélection de l’agent — Kit Diabète · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:diabete",
+      "profil": null,
+      "sujet": "diabete",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches bleues",
+      "coherence": 80,
+      "score": 84,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:14587197",
+          "apercu": "https://images.pexels.com/photos/14587197/pexels-photo-14587197.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-person-holding-a-baby-s-feet-14587197/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.296
+        },
+        {
+          "cle": "pexels:8497716",
+          "apercu": "https://images.pexels.com/photos/8497716/pexels-photo-8497716.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/mother-and-son-waking-down-the-stairsw-8497716/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.043
+        },
+        {
+          "cle": "pixabay:6762751",
+          "apercu": "https://pixabay.com/get/gc06c681265794cf7340a8f2bf92ac1bb7b1aeed6f307f4c452d1ca00f89c809fca7d25f9589a60edeaae44cf302f2284_640.jpg",
+          "page": "https://pixabay.com/photos/feet-foot-care-podiatry-clinic-6762751/",
+          "emplacement": "soin:pied-diabetique",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.346
+        },
+        {
+          "cle": "pixabay:6762754",
+          "apercu": "https://pixabay.com/get/g417d70b370cafce644fc71832870ccf10e887b13939abb3580d50b1dcdc96d8a6f28a70cdbc80785e12c6be61cbbe1ef_640.jpg",
+          "page": "https://pixabay.com/photos/feet-foot-care-podiatry-clinic-6762754/",
+          "emplacement": "soin:cors-durillons",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.448
+        },
+        {
+          "cle": "pixabay:4941738",
+          "apercu": "https://pixabay.com/get/gd04b942eab798ba0dbd7945df2cc80413a7a6c21757743092a36265f5151ddaa474fba2c62ea547b702b48cc22aca16e_640.jpg",
+          "page": "https://pixabay.com/photos/ballet-foot-feet-dance-wait-4941738/",
+          "emplacement": "soin:ongles-epais",
+          "qualite": 0.883,
+          "pertinence": 0.7,
+          "ecart": 0.437
+        },
+        {
+          "cle": "pexels:8498114",
+          "apercu": "https://images.pexels.com/photos/8498114/pexels-photo-8498114.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/man-in-black-jacket-walking-beside-elderly-woman-in-yellow-t-shirt-8498114/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.071
+        },
+        {
+          "cle": "pexels:20854817",
+          "apercu": "https://images.pexels.com/photos/20854817/pexels-photo-20854817.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/women-and-men-hiking-in-forest-20854817/",
+          "emplacement": "reserve",
+          "qualite": 0.991,
+          "pertinence": 0.55,
+          "ecart": 0.168
+        },
+        {
+          "cle": "pixabay:3061123",
+          "apercu": "https://pixabay.com/get/g3c480cb4875c44fde02e413bb200f73d956498799d0e826bedc2f014fa04ce42a6621c8bf54d6b9c515b22d00c2854e6_640.jpg",
+          "page": "https://pixabay.com/photos/woman-foot-relaxation-treatment-3061123/",
+          "emplacement": "reserve",
+          "qualite": 0.987,
+          "pertinence": 0.55,
+          "ecart": 0.232
+        }
+      ]
+    },
+    {
+      "id": "345469b6-9eab-42aa-9bfb-5e264f939241",
+      "empreinte": "fa51918f",
+      "titre": "Sélection de l’agent — Sport · basket · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:sport-basket",
+      "profil": "sport-basket",
+      "sujet": "sport",
+      "activite": "basket",
+      "signature": "tamisée · chaude · naturelle · touches orangées",
+      "coherence": 68,
+      "score": 84,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:33024698",
+          "apercu": "https://images.pexels.com/photos/33024698/pexels-photo-33024698.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/solitary-runner-on-a-sandy-beach-with-pilings-33024698/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.307
+        },
+        {
+          "cle": "pexels:36527911",
+          "apercu": "https://images.pexels.com/photos/36527911/pexels-photo-36527911.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/group-of-friends-enjoying-a-beach-day-36527911/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 1.326
+        },
+        {
+          "cle": "pixabay:2635038",
+          "apercu": "https://pixabay.com/get/g98de1f53fed7b28db9070b599d2328af8b09cfa15441900cc65691f73a7b32e4f0e261d3a7547bbbf98bf94dfe14cc80_640.jpg",
+          "page": "https://pixabay.com/photos/legs-shoes-walking-walk-path-2635038/",
+          "emplacement": "activite:basket",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.429
+        },
+        {
+          "cle": "pixabay:7056590",
+          "apercu": "https://pixabay.com/get/g905773157eacef6e8b7155ad4019bb92afef309237505bbbdad535480fe96eaa979d4ac627f2df08ec5cc9ad7932579e_640.jpg",
+          "page": "https://pixabay.com/photos/running-woman-track-exercise-7056590/",
+          "emplacement": "activite:basket",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 1.522
+        },
+        {
+          "cle": "pexels:8436486",
+          "apercu": "https://images.pexels.com/photos/8436486/pexels-photo-8436486.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/barefooted-woman-wearing-gray-leggings-8436486/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.1
+        },
+        {
+          "cle": "pexels:8939850",
+          "apercu": "https://images.pexels.com/photos/8939850/pexels-photo-8939850.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/rolled-black-yoga-mat-on-floor-8939850/",
+          "emplacement": "soin:k-taping",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.142
+        },
+        {
+          "cle": "pexels:8939851",
+          "apercu": "https://images.pexels.com/photos/8939851/pexels-photo-8939851.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-person-holding-a-rolled-yoga-mat-8939851/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.113
+        },
+        {
+          "cle": "pixabay:1881618",
+          "apercu": "https://pixabay.com/get/gdaf451c7624c50e4076288a214e0c332cab5fed0f54822e39331e2fe1df14347684f946299d21db02be99bee6de72135_640.jpg",
+          "page": "https://pixabay.com/photos/shoes-running-sport-nature-1881618/",
+          "emplacement": "reserve",
+          "qualite": 0.996,
+          "pertinence": 0.7,
+          "ecart": 0.664
+        }
+      ]
+    },
+    {
+      "id": "b3cc3313-708a-4124-8318-b671676191b5",
+      "empreinte": "d95374be",
+      "titre": "Sélection de l’agent — Sport · basket · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:sport-basket",
+      "profil": "sport-basket",
+      "sujet": "sport",
+      "activite": "basket",
+      "signature": "tamisée · chaude · vive · touches rouges",
+      "coherence": 65,
+      "score": 82,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:8436486",
+          "apercu": "https://images.pexels.com/photos/8436486/pexels-photo-8436486.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/barefooted-woman-wearing-gray-leggings-8436486/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.627
+        },
+        {
+          "cle": "pexels:8980996",
+          "apercu": "https://images.pexels.com/photos/8980996/pexels-photo-8980996.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/person-standing-on-wooden-log-8980996/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.315
+        },
+        {
+          "cle": "pixabay:595995",
+          "apercu": "https://pixabay.com/get/g9e6291e0cf163b7f672b06d0eea37e1108e640b97da6048695830650181b1dbf0d4bf109ce8a4e36e9557a0e19531b2c_640.jpg",
+          "page": "https://pixabay.com/photos/jog-running-shoes-sneakers-595995/",
+          "emplacement": "activite:basket",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 1.123
+        },
+        {
+          "cle": "pixabay:7056590",
+          "apercu": "https://pixabay.com/get/g905773157eacef6e8b7155ad4019bb92afef309237505bbbdad535480fe96eaa979d4ac627f2df08ec5cc9ad7932579e_640.jpg",
+          "page": "https://pixabay.com/photos/running-woman-track-exercise-7056590/",
+          "emplacement": "activite:basket",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.367
+        },
+        {
+          "cle": "pixabay:7577525",
+          "apercu": "https://pixabay.com/get/g3191ae29d629699a47f7810766ff5d86166afe1d7ecbde5d38d36d617df80d1d91aa446e3e4c2fcf6ea3468530b8eb7c_640.jpg",
+          "page": "https://pixabay.com/photos/track-race-perspective-running-7577525/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.628
+        },
+        {
+          "cle": "pixabay:1840437",
+          "apercu": "https://pixabay.com/get/ge0e2027992fb3f0b89f1a90388f947aa68baf2c54f2008770d716b44438f861185b69a35402d7d3cf750514cacf0fb22_640.jpg",
+          "page": "https://pixabay.com/photos/athlete-runner-sprint-fast-black-1840437/",
+          "emplacement": "soin:k-taping",
+          "qualite": 0.885,
+          "pertinence": 0.7,
+          "ecart": 0.251
+        },
+        {
+          "cle": "pixabay:4782721",
+          "apercu": "https://pixabay.com/get/gd77531595b7495a55fdd2a5af7d417a2edb014e50073ba65f5e1d3f162881ab910acc2832fe850a958ffe373ac07533b_640.jpg",
+          "page": "https://pixabay.com/photos/running-sport-race-athlete-hall-4782721/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.5
+        },
+        {
+          "cle": "pixabay:5630669",
+          "apercu": "https://pixabay.com/get/gd4a284b7c2da15f6e2541457c062bf2fc4ffcffd435f845e7d60f4ab5c42e96da2321ffcddd5a257c44d279e378de05c_640.jpg",
+          "page": "https://pixabay.com/photos/boys-children-path-trail-park-5630669/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.077
+        }
+      ]
+    },
+    {
+      "id": "327ceb69-6619-4127-aa30-b873360f1b62",
+      "empreinte": "6795558b",
+      "titre": "Sélection de l’agent — Kit Pédicurie · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:pedicurie",
+      "profil": null,
+      "sujet": "pedicurie",
+      "activite": null,
+      "signature": "tamisée · chaude · vive · touches orangées",
+      "coherence": 76,
+      "score": 84,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:5240641",
+          "apercu": "https://images.pexels.com/photos/5240641/pexels-photo-5240641.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/focused-crop-woman-massaging-foot-of-patient-5240641/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.339
+        },
+        {
+          "cle": "pexels:6629561",
+          "apercu": "https://images.pexels.com/photos/6629561/pexels-photo-6629561.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-person-having-a-massage-6629561/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.512
+        },
+        {
+          "cle": "pixabay:3557103",
+          "apercu": "https://pixabay.com/get/g3c80c868ee00a724c0e86f4b1a88e8766accd96f12c90e4551e544245b020d389f99745e05db26d98d29e8014bc9914a_640.jpg",
+          "page": "https://pixabay.com/photos/foot-care-podiatry-treatment-feet-3557103/",
+          "emplacement": "soin:soins-de-pedicurie",
+          "qualite": 0.953,
+          "pertinence": 0.85,
+          "ecart": 0.252
+        },
+        {
+          "cle": "pexels:5240677",
+          "apercu": "https://images.pexels.com/photos/5240677/pexels-photo-5240677.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/crop-therapist-massaging-foot-of-client-5240677/",
+          "emplacement": "soin:cors-durillons",
+          "qualite": 0.962,
+          "pertinence": 0.7,
+          "ecart": 0.11
+        },
+        {
+          "cle": "pexels:5793892",
+          "apercu": "https://images.pexels.com/photos/5793892/pexels-photo-5793892.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-view-of-feet-massaging-5793892/",
+          "emplacement": "soin:verrues-plantaires",
+          "qualite": 0.935,
+          "pertinence": 0.7,
+          "ecart": 0.155
+        },
+        {
+          "cle": "pixabay:2586702",
+          "apercu": "https://pixabay.com/get/geeeb0c6522434fee99492bcbf58149b7c368e2ed6eff89338cf09ba4df517a225e75fd698f4dd209492376429f0a4c98_640.jpg",
+          "page": "https://pixabay.com/photos/beautiful-foot-boletus-mushroom-2586702/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.962
+        },
+        {
+          "cle": "pixabay:3186483",
+          "apercu": "https://pixabay.com/get/g0fceae88e536596b8efeee3ffe5273b602f5b17d4ba0e18d7d602068463a489baaa9b12b96a740a77b097a3afa5cd1e7_640.jpg",
+          "page": "https://pixabay.com/photos/fantasy-surreal-god-foot-power-3186483/",
+          "emplacement": "reserve",
+          "qualite": 0.967,
+          "pertinence": 0.55,
+          "ecart": 0.358
+        },
+        {
+          "cle": "pexels:5793928",
+          "apercu": "https://images.pexels.com/photos/5793928/pexels-photo-5793928.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/woman-in-white-long-sleeve-shirt-massaging-the-feet-of-another-person-5793928/",
+          "emplacement": "reserve",
+          "qualite": 0.965,
+          "pertinence": 0.55,
+          "ecart": 0.341
+        }
+      ]
+    },
+    {
+      "id": "3d19f06d-061f-4ffa-9717-12bc6c6d1d9c",
+      "empreinte": "aa0fc4f3",
+      "titre": "Sélection de l’agent — Kit Semelles · série tamisée neutre (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:semelles",
+      "profil": null,
+      "sujet": "semelles",
+      "activite": null,
+      "signature": "tamisée · neutre · douce",
+      "coherence": 70,
+      "score": 82,
+      "gamme": "prune",
+      "traitement": "modele",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:9991101",
+          "apercu": "https://images.pexels.com/photos/9991101/pexels-photo-9991101.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/person-in-white-pants-sitting-on-concrete-wall-9991101/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.47
+        },
+        {
+          "cle": "pixabay:2547351",
+          "apercu": "https://pixabay.com/get/gace240436e0d67dba45b515cfaed2b3d963c5e20214bd461e48ee882edb313c7c562efe45047bb89da31eee197cb83a2_640.jpg",
+          "page": "https://pixabay.com/photos/sand-footprint-footstep-footprints-2547351/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.477
+        },
+        {
+          "cle": "pixabay:6402846",
+          "apercu": "https://pixabay.com/get/g6c838a6d19f0f9e6e89a2b7f7f0f4ea4a838b8765555ea49654f171b70edda9b42e7d11f05e61cfafa20fc3b9da26311_640.jpg",
+          "page": "https://pixabay.com/photos/feet-sand-beach-footprint-barefoot-6402846/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.302
+        },
+        {
+          "cle": "pixabay:3286620",
+          "apercu": "https://pixabay.com/get/gdd3406e3dbd673d37b9d87574ce4aac0bea477e2c9dc793b986160b056d8b5987d0d4afb9f9c32c8fa9414a6fe6cd946_640.jpg",
+          "page": "https://pixabay.com/photos/sand-beach-footprint-seashore-3286620/",
+          "emplacement": "soin:bilan-podologique",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.454
+        },
+        {
+          "cle": "pixabay:5221914",
+          "apercu": "https://pixabay.com/get/gc32767640f4ad367d2f559bc5192737691df71af737d8d8ea6391113b9f07d2c2beea008655baeee3eb1d9e6e84a8836_640.jpg",
+          "page": "https://pixabay.com/photos/skateboard-feet-shoes-guy-skating-5221914/",
+          "emplacement": "soin:douleur-talon",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 1.788
+        },
+        {
+          "cle": "pixabay:6254616",
+          "apercu": "https://pixabay.com/get/gc59ad7d13f9717c145973a6feeabc2e29f1f95c8485331a65f596b57db037552c959cf79e71d3c392bddb919a5029e67_640.jpg",
+          "page": "https://pixabay.com/photos/ballet-ballet-slippers-6254616/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.934
+        },
+        {
+          "cle": "pixabay:3614862",
+          "apercu": "https://pixabay.com/get/g96798ac1d8a53b33bef2f48f2481cd117674329e3d420ee1f1173940f000c646359a13ef7ca8a4d5b69c85dd61eee088_640.jpg",
+          "page": "https://pixabay.com/photos/feet-flip-flops-sandals-foot-shoe-3614862/",
+          "emplacement": "reserve",
+          "qualite": 0.99,
+          "pertinence": 0.7,
+          "ecart": 0.73
+        },
+        {
+          "cle": "pixabay:7860622",
+          "apercu": "https://pixabay.com/get/gc6be14d835fbef8f8f2007ea59ca020624a7e4025eea3655ca91d76f179b05a60318207b78c8d4bc822e015a7423712d_640.jpg",
+          "page": "https://pixabay.com/photos/path-blurred-human-gait-disturbance-7860622/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.073
+        }
+      ]
+    },
+    {
+      "id": "54e8f304-ebf4-41af-b9a8-1118ae6032f0",
+      "empreinte": "0a4f5ead",
+      "titre": "Sélection de l’agent — Kit Pédicurie · série lumineuse neutre (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:pedicurie",
+      "profil": null,
+      "sujet": "pedicurie",
+      "activite": null,
+      "signature": "lumineuse · neutre · douce",
+      "coherence": 70,
+      "score": 81,
+      "gamme": "encre",
+      "traitement": "modele",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:5355920",
+          "apercu": "https://images.pexels.com/photos/5355920/pexels-photo-5355920.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-clinic-with-dental-equipment-5355920/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.469
+        },
+        {
+          "cle": "pexels:6502543",
+          "apercu": "https://images.pexels.com/photos/6502543/pexels-photo-6502543.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-shot-of-a-dental-handpieces-6502543/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.415
+        },
+        {
+          "cle": "pexels:5619463",
+          "apercu": "https://images.pexels.com/photos/5619463/pexels-photo-5619463.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/tools-in-modern-doctor-office-with-couch-for-massage-5619463/",
+          "emplacement": "soin:soins-de-pedicurie",
+          "qualite": 0.993,
+          "pertinence": 0.7,
+          "ecart": 0.475
+        },
+        {
+          "cle": "pixabay:4297183",
+          "apercu": "https://pixabay.com/get/ge54fa9355df7fd2766c3ed1851ad20b4f6b8b02adff174d0bbcfa5bebd3654fe8060e9b301de3be87facc5aba80b5981_640.jpg",
+          "page": "https://pixabay.com/photos/babies-foot-baby-foot-feet-skin-4297183/",
+          "emplacement": "soin:cors-durillons",
+          "qualite": 0.963,
+          "pertinence": 0.7,
+          "ecart": 0.706
+        },
+        {
+          "cle": "pixabay:3094833",
+          "apercu": "https://pixabay.com/get/g8c4413f7c05914d7c332b9dac8acfeb04deab33ca64b2018adb08f93ca2b9a576eb10e64db39e5a7984351cb5fddd759_640.jpg",
+          "page": "https://pixabay.com/photos/foot-care-pumice-sponge-pumice-stone-3094833/",
+          "emplacement": "soin:verrues-plantaires",
+          "qualite": 0.759,
+          "pertinence": 0.7,
+          "ecart": 0.679
+        },
+        {
+          "cle": "pixabay:3094836",
+          "apercu": "https://pixabay.com/get/g646f05df94a6c788e7c812e92710a6c2bf2c0c15befef54f7dbd500182254db5bf15aa277e6057686f3334d0ed407ced_640.jpg",
+          "page": "https://pixabay.com/photos/sponge-pumice-pumice-sponge-3094836/",
+          "emplacement": "cabinet",
+          "qualite": 0.738,
+          "pertinence": 0.7,
+          "ecart": 0.259
+        },
+        {
+          "cle": "pexels:7755662",
+          "apercu": "https://images.pexels.com/photos/7755662/pexels-photo-7755662.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/person-in-white-dress-shirt-and-blue-denim-jeans-wearing-white-face-mask-sitting-on-white-7755662/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 1.298
+        },
+        {
+          "cle": "pixabay:2589771",
+          "apercu": "https://pixabay.com/get/gd99f23f38086db40238be6438fe3845ff3fcbf00588df28a02c99e739d847855e602727c98fe0704f027112b291054b8_640.jpg",
+          "page": "https://pixabay.com/photos/dentist-dental-chair-clinic-medical-2589771/",
+          "emplacement": "reserve",
+          "qualite": 0.788,
+          "pertinence": 0.55,
+          "ecart": 0.317
+        }
+      ]
+    },
+    {
+      "id": "84b779e7-45cc-47ea-ae7f-a3facba585ec",
+      "empreinte": "c0f66d58",
+      "titre": "Sélection de l’agent — Kit Semelles · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:semelles",
+      "profil": null,
+      "sujet": "semelles",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches orangées",
+      "coherence": 75,
+      "score": 81,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:9366482",
+          "apercu": "https://images.pexels.com/photos/9366482/pexels-photo-9366482.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/high-angle-shot-of-a-person-holding-a-golf-club-9366482/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.15
+        },
+        {
+          "cle": "pixabay:1036547",
+          "apercu": "https://pixabay.com/get/g888efa9a6d13c0576e3ed8741b8a89d2e91f14b9dd4f90af257bd21be7f0f5a5bd30cd1b2e19c32767ee2bd156663169_640.jpg",
+          "page": "https://pixabay.com/photos/sand-beach-track-tracks-in-the-sand-1036547/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.294
+        },
+        {
+          "cle": "pixabay:2353510",
+          "apercu": "https://pixabay.com/get/gbb6a3fe4a25c8679b91ba46f300c77a3b9d1e463259522f0b0e896cc050a5830565175f065dfb401b0196ca73c2d7ee4_640.jpg",
+          "page": "https://pixabay.com/photos/footprint-footstep-imprint-barefoot-2353510/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.733
+        },
+        {
+          "cle": "pixabay:6819486",
+          "apercu": "https://pixabay.com/get/gcde9bc284a8de61a529eebf9bfa21cc4428f7681de22229b8a03a2b73890c89864a2395defa0e436b4b75dd8d7fca2eb_640.jpg",
+          "page": "https://pixabay.com/photos/footprint-shoe-imprint-sand-6819486/",
+          "emplacement": "soin:bilan-podologique",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.309
+        },
+        {
+          "cle": "pixabay:1867379",
+          "apercu": "https://pixabay.com/get/g15ed8d618f98adbdfdceb09787fe2bb2d62f1a592ab34b0ef660dfe363c0a851f0ec3b398140076b22cf2e41b3293aa8_640.jpg",
+          "page": "https://pixabay.com/photos/boots-girl-hiking-leather-boots-1867379/",
+          "emplacement": "soin:douleur-talon",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.414
+        },
+        {
+          "cle": "pixabay:1868670",
+          "apercu": "https://pixabay.com/get/gd48eed7f14da901c2259b22482f8ff1866db55b2b39d9bce8f68a18bc1e8f0dfb55c1927e460589353e379317c3b6ac8_640.jpg",
+          "page": "https://pixabay.com/photos/feet-footwear-laundry-funny-legs-1868670/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.495
+        },
+        {
+          "cle": "pixabay:1869914",
+          "apercu": "https://pixabay.com/get/g9729950d33f5ffd5fde1a91ed4730e0deb8a0d46b0ec1110edd6339dbc224b020c7f4099e144779478400e7b093b52b7_640.jpg",
+          "page": "https://pixabay.com/photos/alone-feet-shoes-laces-sneakers-1869914/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.645
+        },
+        {
+          "cle": "pixabay:6157258",
+          "apercu": "https://pixabay.com/get/g0686e1a270a564fede6ffb8a68bf7262b10ac6978f2411a1df6043ca0021e8ddcec1ca79327372f69bf3faca8595d0c3_640.jpg",
+          "page": "https://pixabay.com/photos/balance-bar-shoes-feet-person-6157258/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.089
+        }
+      ]
+    },
+    {
+      "id": "b9f6b8ae-6aad-4015-ae4b-02c6a7e9ab0f",
+      "empreinte": "f9896e70",
+      "titre": "Sélection de l’agent — Kit Pédicurie · série lumineuse chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:pedicurie",
+      "profil": null,
+      "sujet": "pedicurie",
+      "activite": null,
+      "signature": "lumineuse · chaude · douce",
+      "coherence": 72,
+      "score": 82,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:4562895",
+          "apercu": "https://images.pexels.com/photos/4562895/pexels-photo-4562895.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-dental-engine-in-a-clinic-4562895/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.08
+        },
+        {
+          "cle": "pexels:5889961",
+          "apercu": "https://images.pexels.com/photos/5889961/pexels-photo-5889961.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/baby-getting-a-massage-5889961/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.403
+        },
+        {
+          "cle": "pexels:6628806",
+          "apercu": "https://images.pexels.com/photos/6628806/pexels-photo-6628806.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-woman-massaging-a-person-s-foot-6628806/",
+          "emplacement": "soin:soins-de-pedicurie",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 1.346
+        },
+        {
+          "cle": "pexels:5619463",
+          "apercu": "https://images.pexels.com/photos/5619463/pexels-photo-5619463.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/tools-in-modern-doctor-office-with-couch-for-massage-5619463/",
+          "emplacement": "soin:cors-durillons",
+          "qualite": 0.993,
+          "pertinence": 0.7,
+          "ecart": 0.175
+        },
+        {
+          "cle": "pixabay:4297183",
+          "apercu": "https://pixabay.com/get/ge54fa9355df7fd2766c3ed1851ad20b4f6b8b02adff174d0bbcfa5bebd3654fe8060e9b301de3be87facc5aba80b5981_640.jpg",
+          "page": "https://pixabay.com/photos/babies-foot-baby-foot-feet-skin-4297183/",
+          "emplacement": "soin:verrues-plantaires",
+          "qualite": 0.963,
+          "pertinence": 0.7,
+          "ecart": 0.899
+        },
+        {
+          "cle": "pexels:7755558",
+          "apercu": "https://images.pexels.com/photos/7755558/pexels-photo-7755558.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/woman-in-white-coat-holding-blue-can-7755558/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.412
+        },
+        {
+          "cle": "pexels:10521230",
+          "apercu": "https://images.pexels.com/photos/10521230/pexels-photo-10521230.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/interior-of-an-aesthetic-clinic-10521230/",
+          "emplacement": "reserve",
+          "qualite": 0.984,
+          "pertinence": 0.55,
+          "ecart": 0.159
+        },
+        {
+          "cle": "pixabay:5112724",
+          "apercu": "https://pixabay.com/get/gb49556d18b76d3478fd6dcccbcd6dbb1b4601dfb6968368ccd56d797b9bcb47a59a041bb6c8785464a0213549d1108a8_640.jpg",
+          "page": "https://pixabay.com/photos/therapy-center-physical-therapy-5112724/",
+          "emplacement": "reserve",
+          "qualite": 0.948,
+          "pertinence": 0.55,
+          "ecart": 0.588
+        }
+      ]
+    },
+    {
+      "id": "f4fd16ef-1101-4ba6-9fea-cc6b1924ea95",
+      "empreinte": "822d5b77",
+      "titre": "Sélection de l’agent — Kit Semelles · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:semelles",
+      "profil": null,
+      "sujet": "semelles",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches orangées",
+      "coherence": 69,
+      "score": 83,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:16936079",
+          "apercu": "https://images.pexels.com/photos/16936079/pexels-photo-16936079.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/top-view-of-wedding-shoes-16936079/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.716
+        },
+        {
+          "cle": "pexels:5894283",
+          "apercu": "https://images.pexels.com/photos/5894283/pexels-photo-5894283.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-man-lacing-the-leather-shoes-5894283/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.738
+        },
+        {
+          "cle": "pixabay:2616055",
+          "apercu": "https://pixabay.com/get/gcb30da7f936cabb9d4f3feec1c1f6654132f622a6883626891dfc7fabaff9d3c80b0348d2e1ddd45ae1a6162cd8981f7_640.jpg",
+          "page": "https://pixabay.com/photos/sand-sense-beach-footprint-2616055/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.152
+        },
+        {
+          "cle": "pixabay:6819486",
+          "apercu": "https://pixabay.com/get/gcde9bc284a8de61a529eebf9bfa21cc4428f7681de22229b8a03a2b73890c89864a2395defa0e436b4b75dd8d7fca2eb_640.jpg",
+          "page": "https://pixabay.com/photos/footprint-shoe-imprint-sand-6819486/",
+          "emplacement": "soin:bilan-podologique",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.192
+        },
+        {
+          "cle": "pixabay:1868670",
+          "apercu": "https://pixabay.com/get/gd48eed7f14da901c2259b22482f8ff1866db55b2b39d9bce8f68a18bc1e8f0dfb55c1927e460589353e379317c3b6ac8_640.jpg",
+          "page": "https://pixabay.com/photos/feet-footwear-laundry-funny-legs-1868670/",
+          "emplacement": "soin:douleur-talon",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.188
+        },
+        {
+          "cle": "pixabay:2426630",
+          "apercu": "https://pixabay.com/get/gef1387b6aa3485bc3cacc9268d9ec5482aa3ef22f0bd7993e9e8d3e954c12ce66f9893712f159217159bbac03825eed5_640.jpg",
+          "page": "https://pixabay.com/photos/footprint-sand-summer-2426630/",
+          "emplacement": "cabinet",
+          "qualite": 0.978,
+          "pertinence": 0.7,
+          "ecart": 0.825
+        },
+        {
+          "cle": "pixabay:1779064",
+          "apercu": "https://pixabay.com/get/gbcb84dcab038577359ebb59fcd0c7ec727a37c1ea96ce5a7dfb93d2c07ce3ebd23aac3840e1d450c7b71dd265d47663d_640.jpg",
+          "page": "https://pixabay.com/photos/feet-young-happy-marriage-retro-1779064/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.589
+        },
+        {
+          "cle": "pixabay:5116436",
+          "apercu": "https://pixabay.com/get/g6c30ecc3ac835cf11bd469fcbb7e1a3ccfa62e16858562bbf50487dae0796f192a055eba15329715f6ef89fa95b3daea_640.jpg",
+          "page": "https://pixabay.com/photos/castle-neuschwanstein-bavaria-5116436/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.815
+        }
+      ]
+    },
+    {
+      "id": "2f6e9670-de60-4416-aed8-7e67dfcd4ae8",
+      "empreinte": "5263c49b",
+      "titre": "Sélection de l’agent — Kit Seniors · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:senior",
+      "profil": null,
+      "sujet": "senior",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · contrastée",
+      "coherence": 75,
+      "score": 82,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:1124466",
+          "apercu": "https://images.pexels.com/photos/1124466/pexels-photo-1124466.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/macro-photography-of-pair-of-black-and-white-nike-running-shoes-1124466/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.4,
+          "ecart": 0.13
+        },
+        {
+          "cle": "pexels:4965374",
+          "apercu": "https://images.pexels.com/photos/4965374/pexels-photo-4965374.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-of-mans-and-womans-dirty-feet-covered-in-mud-4965374/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 1.111
+        },
+        {
+          "cle": "pixabay:1157058",
+          "apercu": "https://pixabay.com/get/gafc8577ce0e341168effaed9c28639b0716a29f1ac4c9461f114a2bc0430db2766c58b1461c9c2f25ede0d92f11129f1_640.jpg",
+          "page": "https://pixabay.com/photos/africa-wild-nature-safari-wildlife-1157058/",
+          "emplacement": "soin:podologie-du-senior",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.201
+        },
+        {
+          "cle": "pixabay:7181596",
+          "apercu": "https://pixabay.com/get/g79b850295afadba84840d09d7cf2eee29a65b1eb52069d1a3e91f4e46006eb578e6240c9497c896dae499f231d5410f4_640.jpg",
+          "page": "https://pixabay.com/photos/feet-sneakers-shoes-pedestrians-7181596/",
+          "emplacement": "soin:ongles-epais",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.628
+        },
+        {
+          "cle": "pexels:5705507",
+          "apercu": "https://images.pexels.com/photos/5705507/pexels-photo-5705507.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/2-women-sitting-on-bed-5705507/",
+          "emplacement": "soin:cors-durillons",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.254
+        },
+        {
+          "cle": "pixabay:3183112",
+          "apercu": "https://pixabay.com/get/g8bc625b2c94e54ab343d813e798bf9b2db3fc61d8b20b21241ad94354e1a131de7a24d7338b9a2163da50f89d61fe472_640.jpg",
+          "page": "https://pixabay.com/photos/bride-and-groom-bridal-shoes-chucks-3183112/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.438
+        },
+        {
+          "cle": "pixabay:4949569",
+          "apercu": "https://pixabay.com/get/g6c9ed569af08a0ec73d363a0b70239ac424f83be9626feacf7d5a721979f446d7e64ee1d0e4b0e5a3327de948f5340b7_640.jpg",
+          "page": "https://pixabay.com/photos/walking-man-ladder-man-people-dark-4949569/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.228
+        },
+        {
+          "cle": "pexels:8926230",
+          "apercu": "https://images.pexels.com/photos/8926230/pexels-photo-8926230.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/person-massaging-a-feet-while-sitting-on-a-bathtub-wearing-a-printed-robe-8926230/",
+          "emplacement": "reserve",
+          "qualite": 0.953,
+          "pertinence": 0.55,
+          "ecart": 0.502
+        }
+      ]
+    },
+    {
+      "id": "b8d1b29a-0a96-4008-9acd-67a556625d91",
+      "empreinte": "bc8f6773",
+      "titre": "Sélection de l’agent — Kit Seniors · série tamisée neutre (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:senior",
+      "profil": null,
+      "sujet": "senior",
+      "activite": null,
+      "signature": "tamisée · neutre · naturelle",
+      "coherence": 68,
+      "score": 81,
+      "gamme": "prune",
+      "traitement": "modele",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:33023120",
+          "apercu": "https://images.pexels.com/photos/33023120/pexels-photo-33023120.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/white-sneakers-on-textured-pavement-in-istanbul-33023120/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.4,
+          "ecart": 0.351
+        },
+        {
+          "cle": "pixabay:102454",
+          "apercu": "https://pixabay.com/get/g569c2d3d7cf808e39d50b1b7b8101cdcc1572c5027a52a111bdb9245b404a5e38fc11169406e36b1596b465cdbbbe223_640.jpg",
+          "page": "https://pixabay.com/photos/feet-elderly-woman-old-age-age-102454/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.143
+        },
+        {
+          "cle": "pexels:9710828",
+          "apercu": "https://images.pexels.com/photos/9710828/pexels-photo-9710828.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/senior-couple-walking-in-park-in-summer-sunny-day-9710828/",
+          "emplacement": "soin:podologie-du-senior",
+          "qualite": 0.962,
+          "pertinence": 0.85,
+          "ecart": 1.47
+        },
+        {
+          "cle": "pixabay:2144512",
+          "apercu": "https://pixabay.com/get/gab87ab21fb70b2889eeec320b9228a94c546f8f90ae1031676b41958c12724fadc6ecbdda729f5d852f77c787ec339f5_640.jpg",
+          "page": "https://pixabay.com/photos/shoes-worn-shoes-feet-worker-2144512/",
+          "emplacement": "soin:ongles-epais",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.15
+        },
+        {
+          "cle": "pixabay:2590993",
+          "apercu": "https://pixabay.com/get/g140efd21cb10e9f4ea89e7e47aa500b6370afc574546d3e2189701c6b0d4e874085e307143563073fa77e7e2d8ab26ef_640.jpg",
+          "page": "https://pixabay.com/photos/couch-feet-shoes-wooden-floor-dog-2590993/",
+          "emplacement": "soin:cors-durillons",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.819
+        },
+        {
+          "cle": "pixabay:3574361",
+          "apercu": "https://pixabay.com/get/gf0626b2464bf0215663e756eadf23ac7972a01db26e94203214b90e3afbe978271cb5f108125c42b5c6d56a7632c98f7_640.jpg",
+          "page": "https://pixabay.com/photos/feet-walking-sand-footprints-water-3574361/",
+          "emplacement": "cabinet",
+          "qualite": 0.92,
+          "pertinence": 0.7,
+          "ecart": 0.883
+        },
+        {
+          "cle": "pixabay:173701",
+          "apercu": "https://pixabay.com/get/g57d7518b7113ad6c79069cbdd7cb1f6c226676c325df6e0ed9141585138420d9b374bcdfe22571cb834336a73b47397b_640.jpg",
+          "page": "https://pixabay.com/photos/foot-foot-care-water-reflections-173701/",
+          "emplacement": "reserve",
+          "qualite": 0.872,
+          "pertinence": 0.7,
+          "ecart": 1.24
+        },
+        {
+          "cle": "pixabay:3528319",
+          "apercu": "https://pixabay.com/get/gd3498aa18830401f3e2efb10d0e2766c59e034c39b20237755a0a68fc489ef684f8b51681ef75cd1f4342216b6bbcfd6_640.jpg",
+          "page": "https://pixabay.com/photos/edge-height-depth-shoes-browns-3528319/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.094
+        }
+      ]
+    },
+    {
+      "id": "0ec5ea69-5d25-4e2d-809b-70170e6174f8",
+      "empreinte": "5a8edd7e",
+      "titre": "Sélection de l’agent — Enfant · danse · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:enfant-danse",
+      "profil": "enfant-danse",
+      "sujet": "enfant",
+      "activite": "danse",
+      "signature": "tamisée · chaude · douce · contrastée",
+      "coherence": 70,
+      "score": 82,
+      "gamme": "sable",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:5255115",
+          "apercu": "https://images.pexels.com/photos/5255115/pexels-photo-5255115.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-person-holding-a-pointe-shoes-5255115/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.156
+        },
+        {
+          "cle": "pixabay:1896069",
+          "apercu": "https://pixabay.com/get/g74ab28ddc03a669ac002c416aa54a35c5637a5eca99ee5f4034b34fca9f8a5f402bc8d3df234ea2bbd1ea38a505cfbfb_640.jpg",
+          "page": "https://pixabay.com/photos/shoe-star-studio-photo-child-1896069/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.044
+        },
+        {
+          "cle": "pixabay:960899",
+          "apercu": "https://pixabay.com/get/gde64345f59d8711345e304f4813b5621a778d3ce2b186669b42bbf1f08c8b2eb657cab48165cb9b71c7cf53e98f7d9f3_640.jpg",
+          "page": "https://pixabay.com/photos/shoes-boys-shoes-feet-little-feet-960899/",
+          "emplacement": "activite:danse",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 1.719
+        },
+        {
+          "cle": "pexels:16475069",
+          "apercu": "https://images.pexels.com/photos/16475069/pexels-photo-16475069.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/barefoot-child-kneeling-16475069/",
+          "emplacement": "activite:danse",
+          "qualite": 0.98,
+          "pertinence": 0.85,
+          "ecart": 0.732
+        },
+        {
+          "cle": "pixabay:6831052",
+          "apercu": "https://pixabay.com/get/gc341516a99522e3e5f2e8737e247a036c72459d0f0ad1de6c643427a9b344eacbb5016fcc6c6bdb9741bb17fa7d29227_640.jpg",
+          "page": "https://pixabay.com/photos/family-parents-children-walking-6831052/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.526
+        },
+        {
+          "cle": "pixabay:7149544",
+          "apercu": "https://pixabay.com/get/gbf73e0b15ccd94639e7a48748806ec63eeb5233d06a12ff9946f5e43b8c138fa40e75ea86e9db70cd3855815335fe804_640.jpg",
+          "page": "https://pixabay.com/photos/hike-father-and-son-walk-parents-7149544/",
+          "emplacement": "soin:k-taping",
+          "qualite": 0.953,
+          "pertinence": 0.7,
+          "ecart": 0.412
+        },
+        {
+          "cle": "pexels:5154374",
+          "apercu": "https://images.pexels.com/photos/5154374/pexels-photo-5154374.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/ballerina-tying-ribbons-on-pointe-shoes-5154374/",
+          "emplacement": "reserve",
+          "qualite": 0.942,
+          "pertinence": 0.7,
+          "ecart": 0.431
+        },
+        {
+          "cle": "pexels:5154031",
+          "apercu": "https://images.pexels.com/photos/5154031/pexels-photo-5154031.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/crop-unrecognizable-ballerina-lacing-pointe-shoes-5154031/",
+          "emplacement": "reserve",
+          "qualite": 0.911,
+          "pertinence": 0.7,
+          "ecart": 0.142
+        }
+      ]
+    },
+    {
+      "id": "0ecebef8-f519-4740-8d05-6de5010a0efb",
+      "empreinte": "3aa9678a",
+      "titre": "Sélection de l’agent — Semelles · série sombre chaude (6 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:semelles",
+      "profil": "semelles",
+      "sujet": "semelles",
+      "activite": null,
+      "signature": "sombre · chaude · douce",
+      "coherence": 73,
+      "score": 82,
+      "gamme": "sauge",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:20552883",
+          "apercu": "https://images.pexels.com/photos/20552883/pexels-photo-20552883.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/legs-and-shoes-of-person-sitting-on-wooden-wall-20552883/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.4,
+          "ecart": 0.487
+        },
+        {
+          "cle": "pexels:5384164",
+          "apercu": "https://images.pexels.com/photos/5384164/pexels-photo-5384164.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/crop-climber-putting-on-sneakers-5384164/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.778
+        },
+        {
+          "cle": "pixabay:946189",
+          "apercu": "https://pixabay.com/get/g9cb46930f044970ee41d73073f9abd98d6909d1c9b266f7461ee3046c04f78db5e0ee8326c15cf2d992e3bcca136993f_640.jpg",
+          "page": "https://pixabay.com/photos/footprint-beach-dog-946189/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.355
+        },
+        {
+          "cle": "pixabay:908273",
+          "apercu": "https://pixabay.com/get/g3054c4dc1885d5dec38f490d3da5f291fa83316c5dff326739fccaf4f7448aec1e5b227b771d1341c398daa6947f039f_640.jpg",
+          "page": "https://pixabay.com/photos/footprint-footprint-in-the-sand-908273/",
+          "emplacement": "soin:bilan-podologique",
+          "qualite": 0.932,
+          "pertinence": 0.7,
+          "ecart": 0.541
+        },
+        {
+          "cle": "pexels:8007589",
+          "apercu": "https://images.pexels.com/photos/8007589/pexels-photo-8007589.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/woman-tying-her-shoes-8007589/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.726
+        },
+        {
+          "cle": "pexels:6186748",
+          "apercu": "https://images.pexels.com/photos/6186748/pexels-photo-6186748.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-grayscale-of-a-person-massaging-another-person-s-foot-6186748/",
+          "emplacement": "reserve",
+          "qualite": 0.944,
+          "pertinence": 0.55,
+          "ecart": 0.621
+        }
+      ]
+    },
+    {
+      "id": "41bf0cea-6778-44e0-9899-78c87feef961",
+      "empreinte": "75f531ce",
+      "titre": "Sélection de l’agent — Kit Sport · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:sport",
+      "profil": null,
+      "sujet": "sport",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches terre",
+      "coherence": 70,
+      "score": 85,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:20523370",
+          "apercu": "https://images.pexels.com/photos/20523370/pexels-photo-20523370.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/man-and-woman-running-outside-while-wearing-athletic-performance-analyzer-masks-20523370/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.119
+        },
+        {
+          "cle": "pexels:32898955",
+          "apercu": "https://images.pexels.com/photos/32898955/pexels-photo-32898955.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/waterproof-hiking-shoes-on-wet-log-by-the-river-32898955/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.284
+        },
+        {
+          "cle": "pixabay:5370071",
+          "apercu": "https://pixabay.com/get/g5f48efd7e59ceaadaf6385a202f6ecb61c6bdea3ffffaab7a61639a8355f167e39418459754ca93fd4cf7918a0644465_640.jpg",
+          "page": "https://pixabay.com/photos/running-shoes-jog-fitness-5370071/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 1,
+          "pertinence": 1,
+          "ecart": 2.097
+        },
+        {
+          "cle": "pixabay:3886732",
+          "apercu": "https://pixabay.com/get/g67f35e072f92d1624f5f3f0d361483885a04f894bd0dff98ea0f56ad260d3bf6669f08b1cbcfb80bc6cebd6a99478f57_640.jpg",
+          "page": "https://pixabay.com/photos/runner-running-fitness-athlete-3886732/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 0.983,
+          "pertinence": 1,
+          "ecart": 0.218
+        },
+        {
+          "cle": "pixabay:317904",
+          "apercu": "https://pixabay.com/get/ga89b041cb284bef211d8c06637eec893bd3bdcecfe63a1c7a3ecb8f9836535454133b9a1551ae5c30239195be2bcf250_640.jpg",
+          "page": "https://pixabay.com/photos/feet-walking-boots-shoes-317904/",
+          "emplacement": "soin:douleur-talon",
+          "qualite": 0.925,
+          "pertinence": 0.85,
+          "ecart": 0.537
+        },
+        {
+          "cle": "pixabay:75610",
+          "apercu": "https://pixabay.com/get/g564bd084262aae8761c98ec9b36b67920c77e528c4274a6cfc972846c6aafcefe2a1993c6a527fd32d0f7f205c636209_640.jpg",
+          "page": "https://pixabay.com/photos/hike-mountain-hiking-mountains-75610/",
+          "emplacement": "cabinet",
+          "qualite": 0.874,
+          "pertinence": 0.85,
+          "ecart": 0.539
+        },
+        {
+          "cle": "pixabay:2079964",
+          "apercu": "https://pixabay.com/get/g468e5022c3cfe31af1136ab02095c7609c6464240f19ce07e41f9a820517c4917021d94e8e5851aa709ebb100ec1d1a3_640.jpg",
+          "page": "https://pixabay.com/photos/argentinian-tango-feet-dancers-2079964/",
+          "emplacement": "reserve",
+          "qualite": 0.864,
+          "pertinence": 0.85,
+          "ecart": 0.238
+        },
+        {
+          "cle": "pixabay:1283125",
+          "apercu": "https://pixabay.com/get/g292a6ea9e06c7ffc349d4854ca91347bb4b5b9f25dcfbe522f880d386994eb6b39ea98a33b2563081173e70e39a51db1_640.jpg",
+          "page": "https://pixabay.com/photos/walking-hiking-rain-boots-1283125/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.052
+        }
+      ]
+    },
+    {
+      "id": "73a148ab-7725-4e50-87d4-35a0b097e3a4",
+      "empreinte": "da4a7bf9",
+      "titre": "Sélection de l’agent — Enfant · danse · série lumineuse chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:enfant-danse",
+      "profil": "enfant-danse",
+      "sujet": "enfant",
+      "activite": "danse",
+      "signature": "lumineuse · chaude · douce",
+      "coherence": 64,
+      "score": 81,
+      "gamme": "sauge",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:5153995",
+          "apercu": "https://images.pexels.com/photos/5153995/pexels-photo-5153995.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/crop-ballet-teacher-with-girl-exercising-on-floor-5153995/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.381
+        },
+        {
+          "cle": "pixabay:2485714",
+          "apercu": "https://pixabay.com/get/gf2ffd3b4e829e9b274f705b7caeb573e4b01f93b2d50cca9392b86223c2d4653e8a1d2ee847d6488c68848c86fbeea03_640.jpg",
+          "page": "https://pixabay.com/photos/family-walking-countryside-sunset-2485714/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.974
+        },
+        {
+          "cle": "pixabay:4052817",
+          "apercu": "https://pixabay.com/get/g8d3a9b1e4bb92efd764d767bdfc12815d92ba4ba66042ceaf5ae4b5211a2d324bce48e782b658ca1356503dc6ccc5d51_640.jpg",
+          "page": "https://pixabay.com/photos/ballet-do-gymnastics-child-4052817/",
+          "emplacement": "activite:danse",
+          "qualite": 0.845,
+          "pertinence": 0.85,
+          "ecart": 0.726
+        },
+        {
+          "cle": "pixabay:4716675",
+          "apercu": "https://pixabay.com/get/g5c98d34545ce0a34e2934a891d2e0628d058f320a0538bb8879247ee523c7e4ffa619c02f9b5c4ecaa8f7d29e67037a6_640.jpg",
+          "page": "https://pixabay.com/photos/feet-baby-kid-family-birth-life-4716675/",
+          "emplacement": "activite:danse",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 1.104
+        },
+        {
+          "cle": "pexels:5153999",
+          "apercu": "https://images.pexels.com/photos/5153999/pexels-photo-5153999.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/crop-ballerinas-in-ballet-slippers-sitting-on-floor-in-studio-5153999/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 0.98,
+          "pertinence": 0.7,
+          "ecart": 0.238
+        },
+        {
+          "cle": "pexels:5642132",
+          "apercu": "https://images.pexels.com/photos/5642132/pexels-photo-5642132.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-shot-of-baby-feet-5642132/",
+          "emplacement": "soin:k-taping",
+          "qualite": 0.98,
+          "pertinence": 0.7,
+          "ecart": 1.758
+        },
+        {
+          "cle": "pixabay:7149544",
+          "apercu": "https://pixabay.com/get/gbf73e0b15ccd94639e7a48748806ec63eeb5233d06a12ff9946f5e43b8c138fa40e75ea86e9db70cd3855815335fe804_640.jpg",
+          "page": "https://pixabay.com/photos/hike-father-and-son-walk-parents-7149544/",
+          "emplacement": "reserve",
+          "qualite": 0.953,
+          "pertinence": 0.7,
+          "ecart": 0.218
+        },
+        {
+          "cle": "pexels:5154374",
+          "apercu": "https://images.pexels.com/photos/5154374/pexels-photo-5154374.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/ballerina-tying-ribbons-on-pointe-shoes-5154374/",
+          "emplacement": "reserve",
+          "qualite": 0.942,
+          "pertinence": 0.7,
+          "ecart": 0.096
+        }
+      ]
+    },
+    {
+      "id": "73f00d59-08cd-4e72-83b0-ef67745c24bb",
+      "empreinte": "885d9990",
+      "titre": "Sélection de l’agent — Kit Sport · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:sport",
+      "profil": null,
+      "sujet": "sport",
+      "activite": null,
+      "signature": "tamisée · chaude · naturelle · touches orangées",
+      "coherence": 78,
+      "score": 89,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:8346655",
+          "apercu": "https://images.pexels.com/photos/8346655/pexels-photo-8346655.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-man-tying-a-shoe-8346655/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.123
+        },
+        {
+          "cle": "pixabay:1189873",
+          "apercu": "https://pixabay.com/get/ga0baae84d85d21eca6ef5f97af59938a16cd03f3445903b6057b64160514dc1eee7534482bd86e64d83ec8a8267b0e1a_640.jpg",
+          "page": "https://pixabay.com/photos/hike-walking-boots-mountain-hiking-1189873/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.127
+        },
+        {
+          "cle": "pixabay:5370071",
+          "apercu": "https://pixabay.com/get/g5f48efd7e59ceaadaf6385a202f6ecb61c6bdea3ffffaab7a61639a8355f167e39418459754ca93fd4cf7918a0644465_640.jpg",
+          "page": "https://pixabay.com/photos/running-shoes-jog-fitness-5370071/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 1,
+          "pertinence": 1,
+          "ecart": 0.294
+        },
+        {
+          "cle": "pixabay:7288665",
+          "apercu": "https://pixabay.com/get/gc33c6c7d483257134024d3e03d52afd08ad06881632544b6f243b09adab3767db67931dd196ef21644714fa1627fd68e_640.jpg",
+          "page": "https://pixabay.com/photos/boots-shoes-foot-wear-brown-shoes-7288665/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 0.947,
+          "pertinence": 1,
+          "ecart": 0.509
+        },
+        {
+          "cle": "pixabay:174216",
+          "apercu": "https://pixabay.com/get/g49ae87e7813d917720f6a81eb44dda4f22801708cf560f34a09b8f10f00628748285476ed84d014a747fd4db6a26f40e_640.jpg",
+          "page": "https://pixabay.com/photos/feet-gout-pain-foot-human-anomaly-174216/",
+          "emplacement": "soin:douleur-talon",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.142
+        },
+        {
+          "cle": "pixabay:1868027",
+          "apercu": "https://pixabay.com/get/g13fec64f6f8ce7614fe47eadc4ade231a44ceb6c18ac29f87b42ed357d7ecd2615bcad4d0bfea11b4a2175c5276da1b5_640.jpg",
+          "page": "https://pixabay.com/photos/boots-dirty-dry-leaves-feet-1868027/",
+          "emplacement": "cabinet",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.098
+        },
+        {
+          "cle": "pixabay:7288666",
+          "apercu": "https://pixabay.com/get/g738d928e1eaae6c34a865fc0ac184099623ed3a3e73c4d0b933f0f8c26a7f8018d409f43e06adf59cf38d2c7177d1ec0_640.jpg",
+          "page": "https://pixabay.com/photos/boot-shoe-foot-wear-lace-leather-7288666/",
+          "emplacement": "reserve",
+          "qualite": 0.94,
+          "pertinence": 0.85,
+          "ecart": 0.522
+        },
+        {
+          "cle": "pixabay:1332495",
+          "apercu": "https://pixabay.com/get/g2ae5a78f01aea09a04481f8f6e7a4f7b7fa13e3833bf414cd1f90559a4284dfeba2b9279365fcc89c1c21cecd0bc3268_640.jpg",
+          "page": "https://pixabay.com/photos/mud-boots-shoes-foot-hiking-land-1332495/",
+          "emplacement": "reserve",
+          "qualite": 0.856,
+          "pertinence": 0.85,
+          "ecart": 0.167
+        }
+      ]
+    },
+    {
+      "id": "8a0e4d2e-9571-4ea0-96d8-8bfab91b3028",
+      "empreinte": "5d9c8b16",
+      "titre": "Sélection de l’agent — Kit Sport · série tamisée chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "kit:podologue:sport",
+      "profil": null,
+      "sujet": "sport",
+      "activite": null,
+      "signature": "tamisée · chaude · vive · touches terre",
+      "coherence": 77,
+      "score": 87,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:8455408",
+          "apercu": "https://images.pexels.com/photos/8455408/pexels-photo-8455408.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/woman-in-blue-jacket-sitting-on-running-track-8455408/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.289
+        },
+        {
+          "cle": "pexels:8533786",
+          "apercu": "https://images.pexels.com/photos/8533786/pexels-photo-8533786.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/man-sitting-on-a-running-track-8533786/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.389
+        },
+        {
+          "cle": "pixabay:5370071",
+          "apercu": "https://pixabay.com/get/g5f48efd7e59ceaadaf6385a202f6ecb61c6bdea3ffffaab7a61639a8355f167e39418459754ca93fd4cf7918a0644465_640.jpg",
+          "page": "https://pixabay.com/photos/running-shoes-jog-fitness-5370071/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 1,
+          "pertinence": 1,
+          "ecart": 0.188
+        },
+        {
+          "cle": "pixabay:174216",
+          "apercu": "https://pixabay.com/get/g49ae87e7813d917720f6a81eb44dda4f22801708cf560f34a09b8f10f00628748285476ed84d014a747fd4db6a26f40e_640.jpg",
+          "page": "https://pixabay.com/photos/feet-gout-pain-foot-human-anomaly-174216/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 0.32
+        },
+        {
+          "cle": "pixabay:2759734",
+          "apercu": "https://pixabay.com/get/g387a48e36219b3a5a75871c7e2b1495a5c9e41a898728476b1c39bf47a7e047047d3010f875a521d3db8150ce39852bf_640.jpg",
+          "page": "https://pixabay.com/photos/mountain-hiking-hike-walker-trail-2759734/",
+          "emplacement": "soin:douleur-talon",
+          "qualite": 0.948,
+          "pertinence": 0.85,
+          "ecart": 0.482
+        },
+        {
+          "cle": "pixabay:1053157",
+          "apercu": "https://pixabay.com/get/gb3d7ed2bd96383c84aaf81eb5447ded2729a95a58dcd6cffd85f2c980de91322f380b4a54c3a2fe80b7e270859419b9d_640.jpg",
+          "page": "https://pixabay.com/photos/hike-shoes-walking-boots-1053157/",
+          "emplacement": "cabinet",
+          "qualite": 0.918,
+          "pertinence": 0.85,
+          "ecart": 0.422
+        },
+        {
+          "cle": "pixabay:972715",
+          "apercu": "https://pixabay.com/get/gc60691b9986d4b3544aa57363bf871a0dd571f49bc3cf06587bf03accf15c6661ea35465cea80d87a73fdec5e9141aa7_640.jpg",
+          "page": "https://pixabay.com/photos/shoe-trekking-loosen-shoe-sole-972715/",
+          "emplacement": "reserve",
+          "qualite": 0.909,
+          "pertinence": 0.7,
+          "ecart": 0.282
+        },
+        {
+          "cle": "pexels:31721671",
+          "apercu": "https://images.pexels.com/photos/31721671/pexels-photo-31721671.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-of-hiking-shoes-on-muddy-terrain-31721671/",
+          "emplacement": "reserve",
+          "qualite": 0.9,
+          "pertinence": 0.7,
+          "ecart": 0.257
+        }
+      ]
+    },
+    {
+      "id": "b4ad280a-6449-4484-9b16-e5087329d369",
+      "empreinte": "5f5022f7",
+      "titre": "Sélection de l’agent — Enfant · danse · série lumineuse chaude (8 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:enfant-danse",
+      "profil": "enfant-danse",
+      "sujet": "enfant",
+      "activite": "danse",
+      "signature": "lumineuse · chaude · naturelle · touches orangées",
+      "coherence": 78,
+      "score": 88,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:37621032",
+          "apercu": "https://images.pexels.com/photos/37621032/pexels-photo-37621032.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/close-up-of-baby-pink-shoes-with-bows-37621032/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.19
+        },
+        {
+          "cle": "pexels:5635617",
+          "apercu": "https://images.pexels.com/photos/5635617/pexels-photo-5635617.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/woman-helping-to-put-a-girl-her-ballet-shoes-5635617/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.071
+        },
+        {
+          "cle": "pexels:11032696",
+          "apercu": "https://images.pexels.com/photos/11032696/pexels-photo-11032696.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-baby-wearing-shoes-11032696/",
+          "emplacement": "activite:danse",
+          "qualite": 0.86,
+          "pertinence": 1,
+          "ecart": 0.242
+        },
+        {
+          "cle": "pixabay:1077334",
+          "apercu": "https://pixabay.com/get/g7d7b2cd1339d9064c436df3043d9f63e601809b9a8912209fe15a3c060fbaa6c689da824823efa57fc5aa3b287e46452_640.jpg",
+          "page": "https://pixabay.com/photos/mother-child-walking-walk-1077334/",
+          "emplacement": "activite:danse",
+          "qualite": 1,
+          "pertinence": 0.85,
+          "ecart": 1.223
+        },
+        {
+          "cle": "pixabay:5571882",
+          "apercu": "https://pixabay.com/get/g053e525db161b3356c9d1a7831d39bb42aad7a4b952edae18fb223a4c49a66855a36014daba08a0eb1a595a1244be3d7_640.jpg",
+          "page": "https://pixabay.com/photos/shoes-baby-shoes-toddler-shoes-5571882/",
+          "emplacement": "soin:podologie-du-sport",
+          "qualite": 0.993,
+          "pertinence": 0.85,
+          "ecart": 0.241
+        },
+        {
+          "cle": "pexels:16475069",
+          "apercu": "https://images.pexels.com/photos/16475069/pexels-photo-16475069.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/barefoot-child-kneeling-16475069/",
+          "emplacement": "soin:k-taping",
+          "qualite": 0.98,
+          "pertinence": 0.85,
+          "ecart": 0.135
+        },
+        {
+          "cle": "pixabay:1853657",
+          "apercu": "https://pixabay.com/get/g7d9873310dd27a2546df0437ac8c45d54a32ccca807f80d8b9a050afd0683a8a01076c0a0050603c9ef495df1ed1ef43_640.jpg",
+          "page": "https://pixabay.com/photos/dad-daughter-holding-hands-parent-1853657/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.087
+        },
+        {
+          "cle": "pixabay:1896069",
+          "apercu": "https://pixabay.com/get/g74ab28ddc03a669ac002c416aa54a35c5637a5eca99ee5f4034b34fca9f8a5f402bc8d3df234ea2bbd1ea38a505cfbfb_640.jpg",
+          "page": "https://pixabay.com/photos/shoe-star-studio-photo-child-1896069/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.7,
+          "ecart": 0.764
+        }
+      ]
+    },
+    {
+      "id": "c79e343f-b5d6-41ab-92f5-9056667702e1",
+      "empreinte": "1db7b6db",
+      "titre": "Sélection de l’agent — Semelles · série lumineuse froide (6 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:semelles",
+      "profil": "semelles",
+      "sujet": "semelles",
+      "activite": null,
+      "signature": "lumineuse · froide · naturelle · contrastée",
+      "coherence": 67,
+      "score": 81,
+      "gamme": "ardoise",
+      "traitement": "modele",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:12622300",
+          "apercu": "https://images.pexels.com/photos/12622300/pexels-photo-12622300.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/drying-shoes-on-balcony-12622300/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.4,
+          "ecart": 0.504
+        },
+        {
+          "cle": "pexels:7755544",
+          "apercu": "https://images.pexels.com/photos/7755544/pexels-photo-7755544.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-person-in-blue-denim-jeans-7755544/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 1.475
+        },
+        {
+          "cle": "pixabay:1194948",
+          "apercu": "https://pixabay.com/get/g47017b4c5836dcc86315ccd70ca54cbee14d225fa48f8d6af23db22cc79523fabbff03e34a0141ea6bfc1c0cbd162510_640.jpg",
+          "page": "https://pixabay.com/photos/insoles-shoes-black-shoe-insoles-1194948/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 0.974,
+          "pertinence": 1,
+          "ecart": 0.669
+        },
+        {
+          "cle": "pixabay:1194947",
+          "apercu": "https://pixabay.com/get/g6a993913690970e88798971d8ad42f8996c8c902feb34021f0f0c3da672307dddbd75e7fcdbd938751f5da3236fdb576_640.jpg",
+          "page": "https://pixabay.com/photos/insoles-shoes-black-shoe-insoles-1194947/",
+          "emplacement": "soin:bilan-podologique",
+          "qualite": 0.65,
+          "pertinence": 1,
+          "ecart": 0.562
+        },
+        {
+          "cle": "pixabay:8037900",
+          "apercu": "https://pixabay.com/get/g89d89dbdc251aca981cb4b2ac64792400064c4ae20f90cd29bfd1905329535f8896263183dd870bc28ca048526308ddc_640.jpg",
+          "page": "https://pixabay.com/photos/pedestrian-feet-steps-people-road-8037900/",
+          "emplacement": "reserve",
+          "qualite": 0.998,
+          "pertinence": 0.55,
+          "ecart": 0.246
+        },
+        {
+          "cle": "pexels:8497714",
+          "apercu": "https://images.pexels.com/photos/8497714/pexels-photo-8497714.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/people-tying-shoes-sitting-on-a-stairs-8497714/",
+          "emplacement": "reserve",
+          "qualite": 1,
+          "pertinence": 0.4,
+          "ecart": 0.538
+        }
+      ]
+    },
+    {
+      "id": "d8cca664-bab8-4547-ae32-b8b578760b7f",
+      "empreinte": "cef6a879",
+      "titre": "Sélection de l’agent — Semelles · série tamisée chaude (6 photos)",
+      "profession": "podologue",
+      "cible": "profil:podologue:semelles",
+      "profil": "semelles",
+      "sujet": "semelles",
+      "activite": null,
+      "signature": "tamisée · chaude · vive · touches orangées",
+      "coherence": 71,
+      "score": 80,
+      "gamme": "terracotta",
+      "traitement": "chaud-doux",
+      "jour": "2026-10-09",
+      "photos": [
+        {
+          "cle": "pexels:9992898",
+          "apercu": "https://images.pexels.com/photos/9992898/pexels-photo-9992898.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-close-up-shot-of-a-pair-of-brown-leather-shoes-9992898/",
+          "emplacement": "accueil",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.417
+        },
+        {
+          "cle": "pixabay:1708632",
+          "apercu": "https://pixabay.com/get/gb56fadbd08c9f983416a0ed62d3df6906d4147fb57f20b553dc26e958206d22db63a5c3170e541ad38f90b360afa460e_640.jpg",
+          "page": "https://pixabay.com/photos/shoe-leather-shoe-zipper-slide-1708632/",
+          "emplacement": "page-sujet",
+          "qualite": 1,
+          "pertinence": 0.55,
+          "ecart": 0.404
+        },
+        {
+          "cle": "pixabay:1677743",
+          "apercu": "https://pixabay.com/get/g373c61cde94601b7ba6007d9f927c7bf5ebe742cd7d81cab3b2438f3a46ce1fba73ce7977cb2b32a058800b44319268d_640.jpg",
+          "page": "https://pixabay.com/photos/sand-footprint-tracks-in-the-sand-1677743/",
+          "emplacement": "soin:semelles-orthopediques",
+          "qualite": 0.907,
+          "pertinence": 0.7,
+          "ecart": 1.194
+        },
+        {
+          "cle": "pixabay:434918",
+          "apercu": "https://pixabay.com/get/gb02ee99d61b688f98ebd3ba368c10fd8643c8f9af24a700ad59ade9f2a71fbbd1e5f3b5b8980fb9e4f2ac4d044d2a34f_640.jpg",
+          "page": "https://pixabay.com/photos/shoes-legs-car-car-window-woman-434918/",
+          "emplacement": "soin:bilan-podologique",
+          "qualite": 0.842,
+          "pertinence": 0.7,
+          "ecart": 0.259
+        },
+        {
+          "cle": "pexels:5793896",
+          "apercu": "https://images.pexels.com/photos/5793896/pexels-photo-5793896.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+          "page": "https://www.pexels.com/photo/a-client-having-a-foot-massage-5793896/",
+          "emplacement": "reserve",
+          "qualite": 0.939,
+          "pertinence": 0.55,
+          "ecart": 0.446
+        },
+        {
+          "cle": "pixabay:1122958",
+          "apercu": "https://pixabay.com/get/gf1f14b3cd752af57f8e0075f2d769c0f4d991f87baafbd6c8463a6274c56df8199da153e8c831291ab181f4c2c7d7be3_640.jpg",
+          "page": "https://pixabay.com/photos/sand-foot-prints-prints-walking-1122958/",
+          "emplacement": "reserve",
+          "qualite": 0.893,
+          "pertinence": 0.55,
+          "ecart": 0.45
+        }
+      ]
+    }
+  ]
+}

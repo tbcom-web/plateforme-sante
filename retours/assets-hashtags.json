@@ -15,6 +15,22 @@
     "accueil",
     "image-generee"
   ],
+  "photo:banque/libres/enfant/pexels-17895637-1920.webp": [
+    "kit-enfant",
+    "podologie-enfant"
+  ],
+  "photo:banque/libres/enfant/pexels-8457630-1920.webp": [
+    "kit-enfant",
+    "podologie-enfant"
+  ],
+  "photo:banque/libres/enfant/pexels-8654776-1920.webp": [
+    "kit-enfant",
+    "podologie-enfant"
+  ],
+  "photo:banque/libres/ongles/pexels-13667247-1920.webp": [
+    "accueil",
+    "kit-ongles"
+  ],
   "photo:banque/libres/pedicurie/pixabay-6648076-1280.webp": [
     "accueil",
     "kit-pedicurie"
@@ -34,10 +50,47 @@
     "accueil",
     "page-sujet"
   ],
+  "photo:banque/libres/senior/pexels-4436289-1920.webp": [
+    "accueil",
+    "kit-senior"
+  ],
+  "photo:banque/libres/senior/pexels-5619453-1920.webp": [
+    "kit-senior",
+    "serie-a91f6f13"
+  ],
+  "photo:banque/libres/senior/pexels-5705065-1920.webp": [
+    "accueil",
+    "kit-senior",
+    "serie-a91f6f13"
+  ],
+  "photo:banque/libres/senior/pexels-6128921-1920.webp": [
+    "kit-senior",
+    "page-sujet",
+    "serie-a91f6f13"
+  ],
+  "photo:banque/libres/senior/pexels-6787786-1920.webp": [
+    "kit-senior",
+    "podologie-du-senior",
+    "serie-a91f6f13"
+  ],
   "photo:banque/libres/senior/pexels-8795584-1920.webp": [
     "nordic",
     "senior",
     "woman"
+  ],
+  "photo:banque/libres/senior/pexels-8795587-1920.webp": [
+    "accueil",
+    "kit-senior"
+  ],
+  "photo:banque/libres/senior/pexels-8899946-1920.webp": [
+    "cors-durillons",
+    "kit-senior",
+    "serie-a91f6f13"
+  ],
+  "photo:banque/libres/senior/pexels-8972269-1920.webp": [
+    "kit-senior",
+    "ongles-epais",
+    "serie-a91f6f13"
   ],
   "photo:banque/libres/sport/pexels-11156954-1920.webp": [
     "child",
@@ -116,6 +169,12 @@
   "photo:banque/libres/sport/pexels-8693984-1920.webp": [
     "podologie-du-sport"
   ],
+  "photo:banque/libres/sport/pexels-8693990-1920.webp": [
+    "basket",
+    "basketball",
+    "kit-sport",
+    "serie-10642d08"
+  ],
   "photo:libre:pexels-11156954": [
     "child",
     "skiing"
@@ -177,9 +236,18 @@
     "runner",
     "runner-feet"
   ],
+  "photo:libre:pexels-5619453": [
+    "kit-senior",
+    "serie-a91f6f13"
+  ],
   "photo:libre:pexels-5687405": [
     "bicycles",
     "bicyclists"
+  ],
+  "photo:libre:pexels-5705065": [
+    "accueil",
+    "kit-senior",
+    "serie-a91f6f13"
   ],
   "photo:libre:pexels-5739111": [
     "tennis"
@@ -195,11 +263,21 @@
     "bike",
     "mountain"
   ],
+  "photo:libre:pexels-6128921": [
+    "kit-senior",
+    "page-sujet",
+    "serie-a91f6f13"
+  ],
   "photo:libre:pexels-6542395": [
     "golf"
   ],
   "photo:libre:pexels-6716655": [
     "ballerinas"
+  ],
+  "photo:libre:pexels-6787786": [
+    "kit-senior",
+    "podologie-du-senior",
+    "serie-a91f6f13"
   ],
   "photo:libre:pexels-7406289": [
     "basketball"
@@ -224,9 +302,25 @@
     "kit-enfant",
     "podologie-enfant"
   ],
+  "photo:libre:pexels-8693990": [
+    "basket",
+    "basketball",
+    "kit-sport",
+    "serie-10642d08"
+  ],
   "photo:libre:pexels-8795587": [
     "accueil",
     "kit-senior"
+  ],
+  "photo:libre:pexels-8899946": [
+    "cors-durillons",
+    "kit-senior",
+    "serie-a91f6f13"
+  ],
+  "photo:libre:pexels-8972269": [
+    "kit-senior",
+    "ongles-epais",
+    "serie-a91f6f13"
   ],
   "photo:libre:pexels-9367717": [
     "soccer"
