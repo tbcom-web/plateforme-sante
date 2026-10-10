@@ -29,7 +29,6 @@ function Fiche({ p }: { p: LigneProspection }) {
           {p.role && <span className="text-xs text-neutral-600">{p.role}</span>}
           {p.statut === 'gagne' && <span className="rounded-full bg-teal-800 px-2 py-0.5 text-xs font-semibold text-white">Client</span>}
           {p.raisons?.some((r) => r.k === 'client') && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">Lien avec un client</span>}
-          {p.raisons?.some((r) => r.k === 'demenagement' && r.p > 0) && <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-xs font-semibold text-fuchsia-900">Déménagement</span>}
           {inst && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${couleurSignal[inst.source]}`}>{inst.libelle} le {jour(inst.date)}</span>}
           {p.disparu_le && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Absent du RPPS depuis le {jour(p.disparu_le)}</span>}
           {p.siret_ferme && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Établissement fermé</span>}

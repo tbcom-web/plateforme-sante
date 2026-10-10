@@ -15,15 +15,20 @@ export function Scores({ prospect, installation, raisons }: { prospect: number |
       <summary className="flex cursor-pointer list-none flex-wrap items-center gap-2">
         <span className={`rounded-full px-2 py-0.5 font-bold tabular-nums ${teinte(prospect ?? 0)}`} title="Intérêt commercial (0-100)">Score {prospect ?? 0}</span>
         <span className="rounded-full bg-neutral-100 px-2 py-0.5 tabular-nums text-neutral-700" title="Confiance d'une installation récente à une nouvelle adresse">Installation {installation ?? 0} %</span>
+        {(raisons ?? []).find((r) => r.k === 'besoin' && r.p > 0) && <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 font-semibold text-fuchsia-900">{(raisons ?? []).find((r) => r.k === 'besoin' && r.p > 0)!.l.split(' :')[0]}</span>}
         <span className="text-teal-800 underline group-open:hidden">Pourquoi ?</span>
       </summary>
-      <div className="mt-2 grid gap-2 rounded-lg bg-neutral-50 p-3 sm:grid-cols-2">
-        {(['i', 'p'] as const).map((t) => (
-          <div key={t}>
-            <p className="font-semibold">{t === 'i' ? 'Installation' : 'Intérêt commercial'}</p>
+      <div className="mt-2 grid gap-3 rounded-lg bg-neutral-50 p-3 sm:grid-cols-3">
+        {([
+          { titre: 'Pourquoi maintenant : besoin de se faire connaître', liste: (raisons ?? []).filter((r) => r.k === 'besoin') },
+          { titre: 'Profil et accès', liste: parType('p').filter((r) => r.k !== 'besoin') },
+          { titre: `Installation (${installation ?? 0} %)`, liste: parType('i') },
+        ]).map((b) => (
+          <div key={b.titre}>
+            <p className="font-semibold">{b.titre}</p>
             <ul className="mt-1 grid gap-0.5">
-              {parType(t).map((r, i) => <li key={i} className="flex justify-between gap-2"><span>{r.l}</span>{r.p > 0 && <span className="tabular-nums text-neutral-500">+{r.p}</span>}</li>)}
-              {!parType(t).length && <li className="text-neutral-500">Aucun signal</li>}
+              {b.liste.map((r, i) => <li key={i} className={`flex justify-between gap-2 ${r.p > 0 ? '' : 'text-neutral-500'}`}><span>{r.l}</span>{r.p > 0 && <span className="tabular-nums text-neutral-500">+{r.p}</span>}</li>)}
+              {!b.liste.length && <li className="text-neutral-500">Aucun signal</li>}
             </ul>
           </div>
         ))}

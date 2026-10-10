@@ -9,9 +9,12 @@
 // 3. CABINET : le site se vend au cabinet et le TITULAIRE décide. Le titulaire (ou l'associé) hérite de la vie de sa structure :
 //    arrivée d'un collaborateur (le cabinet grandit), départ d'un confrère (à remplacer), reprise (collaborateur devenu
 //    titulaire, événement « role » de prospection-evenements.ts). Un collaborateur ne décide pas seul : moins de points.
-// 3 bis. DÉMÉNAGEMENTS (« la clé ») : ancien cabinet fermé à l'INSEE, SIREN ancien et SIRET récent, départ d'un autre lieu au
-//    RPPS, nouvel établissement ouvert alors que l'ancien l'est encore (en cours), collaborateur depuis plusieurs années (installation
-//    à son compte probable). Raisons marquées k = 'demenagement' (filtre « Déménagements » de la page).
+// 3 bis. DÉMÉNAGEMENTS ET BESOIN DE SE FAIRE CONNAÎTRE (« la clé » ; « pas un poids de client potentiel mais un signal de besoin de
+//    se faire connaître dans une nouvelle zone / nouvelle installation ») : les déménagements (ancien cabinet fermé à l'INSEE, SIREN
+//    ancien et SIRET récent, départ d'un autre lieu au RPPS, 2 établissements ouverts) sont des DÉCLENCHEURS, jamais des traits de
+//    ressemblance. Côté prospection, un seul BESOIN est compté (le plus fort, k = 'besoin') : nouvelle zone (changement de commune :
+//    patientèle à reconstruire) > première installation (patientèle à construire) > second lieu > nouvelle adresse dans la même
+//    commune (patients à réorienter). Raisons de constat marquées k = 'demenagement' (filtre « Déménagements »).
 // 4. CLIENTS (statut « gagne » du suivi, 0055) : un client n'est plus un prospect ; ceux qui travaillent ou ont travaillé avec un
 //    client (même structure ou même adresse) sont des recommandations possibles ; et chaque prospect reçoit des points de
 //    RESSEMBLANCE avec les clients : rapport de vraisemblance (bayésien naïf, lissé) de ses traits chez les clients et chez
@@ -61,6 +64,7 @@ export type LigneScore = {
   secteur?: string | null;
   mode_exercice?: string | null;
   adresse_cle?: string | null;
+  code_postal?: string | null;
   structure_cle?: string | null;
   raison_sociale?: string | null;
   commune?: string | null;
@@ -261,14 +265,31 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
         if (ans >= 2 && ans <= 6) raisons.push({ t: 'p', l: `Collaborateur depuis ${Math.floor(ans)} ans : installation à son compte probable`, p: 8, k: 'demenagement' });
         raisons.push({ t: 'p', l: 'Le site du cabinet se décide avec le titulaire : voir la fiche du cabinet', p: 0 });
       }
-      const dem = raisons.filter((r) => r.t === 'i' && r.k === 'demenagement' && r.p > 0).sort((a, b) => b.p - a.p)[0];
-      if (dem) raisons.push({ t: 'p', l: 'Déménagement : nouvelle adresse à faire connaître (site, fiche Google)', p: Math.max(6, Math.min(15, dem.p)), k: 'demenagement' });
+      // Besoin de se faire connaître : un seul compté, le plus fort ; les autres restent affichés sans points
+      const memeCommune = (cp: string | null | undefined, commune: string | null | undefined) =>
+        (cp && l.code_postal ? cp === l.code_postal : false) || (commune && l.commune ? sansAccent(commune) === sansAccent(l.commune) : false);
+      const besoins: { l: string; p: number }[] = [];
+      if (aFerme) {
+        const ac = l.ancien_cabinet!;
+        besoins.push(memeCommune(ac.code_postal, ac.commune)
+          ? { l: 'Nouvelle adresse dans la même commune : patients à réorienter, site et fiches à mettre à jour', p: 8 * aFerme }
+          : { l: `Nouvelle zone : a quitté ${casse(ac.commune) || 'son ancien cabinet'} pour ${casse(l.commune) || 'un nouveau lieu'}, patientèle à reconstruire`, p: 15 * aFerme });
+      }
+      if (depart) besoins.push(memeCommune(null, depart.commune)
+        ? { l: 'Nouvelle adresse dans la même commune : patients à réorienter, site et fiches à mettre à jour', p: 8 }
+        : { l: `Nouvelle zone : a quitté ${casse(depart.commune) || 'un autre lieu'} pour ${casse(l.commune) || 'un nouveau lieu'}, patientèle à reconstruire`, p: 15 });
+      if (ecartAns !== null && ecartAns >= 2 && !aFerme && !depart) besoins.push({ l: 'Nouveau cabinet : nouvelle adresse à faire connaître', p: 10 * aSiret });
+      if (ecartAns !== null && ecartAns < 0.5) besoins.push({ l: 'Première installation : patientèle à construire', p: 12 * aSiret });
+      else if (!l.siren_cree_le && (aRpps || aSiret) && /titulaire|associ/i.test(l.role ?? '')) besoins.push({ l: 'Installation récente : se faire connaître des patients', p: 10 * Math.max(aRpps, aSiret) });
+      if ((l.etablissements_ouverts ?? 0) >= 2 && aSiret) besoins.push({ l: 'Second lieu ou nouveau cabinet en cours : faire connaître la nouvelle adresse', p: 8 * aSiret });
+      besoins.sort((a, b) => b.p - a.p);
+      besoins.forEach((b, i) => { if (b.p >= 1) raisons.push({ t: 'p', l: b.l, p: i === 0 ? Math.round(b.p) : 0, k: 'besoin' }); });
       // Vie du cabinet, au bénéfice de ceux qui décident
       const confreres = decideur && l.structure_cle ? (parStructure.get(l.structure_cle) ?? []).filter((m) => m.rpps !== l.rpps) : [];
       const arrivee = confreres.filter((m) => m.apparu_le && attenuation(m.apparu_le, aujourdhui)).sort((a, b) => b.apparu_le!.localeCompare(a.apparu_le!))[0];
       if (arrivee) ajouter('p', `Un ${/collaborat/i.test(arrivee.role ?? '') ? 'collaborateur' : 'confrère'} a rejoint son cabinet le ${jourFr(arrivee.apparu_le!)} : le cabinet grandit`, 10 * attenuation(arrivee.apparu_le, aujourdhui));
-      const depart = confreres.filter((m) => m.disparu_le && attenuation(m.disparu_le, aujourdhui)).sort((a, b) => b.disparu_le!.localeCompare(a.disparu_le!))[0];
-      if (depart) ajouter('p', `Départ d’un confrère le ${jourFr(depart.disparu_le!)} : remplacement à prévoir`, 6 * attenuation(depart.disparu_le, aujourdhui));
+      const departConfrere = confreres.filter((m) => m.disparu_le && attenuation(m.disparu_le, aujourdhui)).sort((a, b) => b.disparu_le!.localeCompare(a.disparu_le!))[0];
+      if (departConfrere) ajouter('p', `Départ d’un confrère le ${jourFr(departConfrere.disparu_le!)} : remplacement à prévoir`, 6 * attenuation(departConfrere.disparu_le, aujourdhui));
       const presents = confreres.filter((m) => !m.disparu_le).length;
       if (presents) raisons.push({ t: 'p', l: `Cabinet de ${presents + 1} podologues`, p: 0 });
       if (l.telephone) ajouter('p', 'Téléphone au RPPS', 8);

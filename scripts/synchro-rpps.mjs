@@ -556,7 +556,7 @@ async function synchroAns() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 async function calculerScores(v0058) {
-  const champs = (AVEC_SIREN ? 'siren_cree_le,ancien_cabinet,etablissements_ouverts,' : '') + 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,structure_cle,raison_sociale,enseigne,commune,code_commune,departement,nom,prenom,autres_professions,statut,telephone,email,specialites';
+  const champs = (AVEC_SIREN ? 'siren_cree_le,ancien_cabinet,etablissements_ouverts,' : '') + 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,code_postal,structure_cle,raison_sociale,enseigne,commune,code_commune,departement,nom,prenom,autres_professions,statut,telephone,email,specialites';
   const toutes = await lireTout(`prospection_liste?select=${champs}`);
   const ilYa2ans = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 10);
   const evenements = v0058 ? await sb(`prospection_evenements?select=type,cle,le,details&type=eq.role&le=gte.${ilYa2ans}&limit=1000`) : [];

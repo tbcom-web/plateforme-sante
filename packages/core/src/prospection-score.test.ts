@@ -133,8 +133,18 @@ test('déménagements : ancien cabinet fermé, établissements ouverts, collabor
   ], J);
   const f = s.get('f|1')!;
   assert.ok(f.raisons.some((r) => r.l === 'Déménagement : ancien cabinet (Vienne) fermé le 31/05/2026 (INSEE)' && r.p === 13 && r.k === 'demenagement'));
-  assert.ok(f.raisons.some((r) => r.t === 'p' && r.k === 'demenagement' && r.p === 13));
+  assert.ok(f.raisons.some((r) => r.t === 'p' && r.k === 'besoin' && r.l.startsWith('Nouvelle zone : a quitté Vienne') && r.p === 13));
   assert.ok(!f.raisons.some((r) => r.l.startsWith('Nouveau cabinet d’un libéral'))); // fermeture constatée : pas de doublon « probable »
   assert.ok(s.get('o|1')!.raisons.some((r) => r.l.startsWith('2 établissements ouverts dont un récent') && r.k === 'demenagement'));
   assert.ok(s.get('c|1')!.raisons.some((r) => r.l === 'Collaborateur depuis 4 ans : installation à son compte probable' && r.p === 8));
+});
+
+test('besoin : même commune moins fort que nouvelle zone, un seul besoin compté', () => {
+  const s = scorerProspection([
+    base({ cle: 'm|1', rpps: '10000000095', role: 'Titulaire de cabinet', code_postal: '33000', commune: 'BORDEAUX', siret_cree_le: '2026-06-01', siren_cree_le: '2010-01-01', siret_source: 'siret',
+      ancien_cabinet: { commune: 'BORDEAUX', code_postal: '33000', ferme: '2026-05-31' }, etablissements_ouverts: 2 }),
+  ], J);
+  const b = s.get('m|1')!.raisons.filter((r) => r.k === 'besoin');
+  assert.equal(b[0].l, 'Nouvelle adresse dans la même commune : patients à réorienter, site et fiches à mettre à jour');
+  assert.equal(b.filter((r) => r.p > 0).length, 1);
 });
