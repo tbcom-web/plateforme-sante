@@ -6,7 +6,7 @@ import { baseDeCle, clesUnitairesInventaire, profilsDePratique, publicationDepui
 import { ESPACES } from '@plateforme/core/admin-espaces';
 import { estDeLaProfession } from '@plateforme/core/professions';
 import { exigerAdmin } from '@/lib/admin';
-import { getArrivagesEnAttente, getEtatsNouveautes } from '@/lib/arrivages';
+import { getArrivagesEnAttente, getEtatsNouveautes, getNombreArrivages } from '@/lib/arrivages';
 import { lireAssetsNotesApprentissage } from '@/lib/assets-notes';
 import { getProfession } from '@/lib/profession';
 import { createClient } from '@/lib/supabase/server';
@@ -54,7 +54,9 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
   const base = () => supabase.from('sites').select('id', { count: 'exact', head: true });
 
   const D = DELAIS.compteurs;
-  const [arrivages, nouveautes, notes, modifs, brouillons, echecs, publications] = await Promise.all([
+  const [aValider, arrivages, nouveautes, notes, modifs, brouillons, echecs, publications] = await Promise.all([
+    // Point d'entrée unique « À valider » (2026-10-10) : même compteur que la pastille du menu (mémorisé pour la requête)
+    avecDelai(getNombreArrivages(profession), D, 0),
     avecDelai(getArrivagesEnAttente(profession), D, { nouveautes: [], photos: [], statuts: {}, migrationPhotos: false }),
     avecDelai(getEtatsNouveautes(), D, { recentes: [], statuts: {}, dernieresNotes: {} }),
     // Clés notées : vue assets_cles_notees (0059, quelques Ko) ; sans elle, tout le journal d'apprentissage (≈ 20 000 lignes)
@@ -78,7 +80,7 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
 
   const recues = deLaProfession ? nouveautes.recentes.length : 0;
   const cartes: { titre: string; valeur: string; detail: string; href: string; alerte?: boolean }[] = [
-    { titre: 'Arrivages en attente', valeur: String(arrivages.nouveautes.length + arrivages.photos.length), detail: `${arrivages.nouveautes.length} nouveauté${arrivages.nouveautes.length > 1 ? 's' : ''} · ${arrivages.photos.length} photo${arrivages.photos.length > 1 ? 's' : ''}`, href: '/admin/arrivages', alerte: arrivages.nouveautes.length + arrivages.photos.length > 0 },
+    { titre: 'Arrivages en attente', valeur: String(arrivages.nouveautes.length + arrivages.photos.length), detail: `${arrivages.nouveautes.length} nouveauté${arrivages.nouveautes.length > 1 ? 's' : ''} · ${arrivages.photos.length} photo${arrivages.photos.length > 1 ? 's' : ''}`, href: '/admin/sujets', alerte: arrivages.nouveautes.length + arrivages.photos.length > 0 },
     { titre: 'Nouveautés reçues', valeur: String(recues), detail: 'depuis 30 jours', href: '/admin/arrivages' },
     { titre: 'Dégustation du jour', valeur: String(aDeguster), detail: 'ingrédients jamais notés', href: '/admin/degustation' },
     { titre: 'Profils de pratique', valeur: `${prets} / ${profils.length}`, detail: `prêts · ${profils.length - prets} en cours`, href: '/admin/profils' },
@@ -91,6 +93,14 @@ export default async function TableauDeBord({ searchParams }: PageProps<'/admin'
         <h1 className="text-2xl font-bold">Tableau de bord</h1>
         <p className="mt-1 text-sm text-neutral-600">{profession.pluriel}</p>
       </div>
+      {/* POINT D'ENTRÉE UNIQUE (demande de Paul du 2026-10-10) : un geste mène aux sujets à valider (app/admin/sujets) */}
+      <Link href="/admin/sujets" className="flex min-h-16 items-center justify-between gap-3 rounded-2xl bg-teal-800 px-5 py-4 text-white shadow-sm hover:bg-teal-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2">
+        <span className="grid">
+          <span className="text-lg font-semibold">🎯 À valider</span>
+          <span className="text-sm text-teal-100">{aValider ? `${aValider} élément${aValider > 1 ? 's' : ''} en attente, rangés par sujet` : 'Les sujets à affiner, une carte à la fois'}</span>
+        </span>
+        <span aria-hidden="true" className="text-2xl">→</span>
+      </Link>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {cartes.map((c) => (
           <Link key={c.titre} href={c.href} className={`grid gap-0.5 rounded-xl border bg-white p-4 hover:border-teal-700/40 ${c.alerte ? 'border-amber-300' : 'border-black/5'}`}>

@@ -4,6 +4,7 @@ import { definitionPolitique } from '@/lib/politique-evaluation';
 import { definitionTranches } from '@/lib/tranches';
 import { definitionContexteImages } from '@/lib/kits-images';
 import { definitionProfilsDemo } from '@/app/chaine/donnees';
+import { definitionSujetsKits } from '@/lib/sujets-validation';
 import type { DefinitionInstantane } from '@/lib/apprentissage-instantane';
 
 // Instantanés que la route de recalcul (api/apprentissage/recalcul) sait recalculer : MÊMES définitions que les pages (même clé, même
@@ -17,6 +18,8 @@ export async function definitionRecalcul(cle: string, portee: string): Promise<D
       : nom === 'tranches' ? definitionTranches()
         : nom === 'contexte-images' ? definitionContexteImages()
           : nom === 'profils-demo' ? definitionProfilsDemo()
-            : null);
+            // Kits des profils du point d'entrée « À valider » (sujets-validation.ts)
+            : nom === 'sujets-kits' ? definitionSujetsKits(cle.split('|')[1] ?? '')
+              : null);
   return d && d.cle === cle && d.portee === portee ? (d as unknown as DefinitionRecalcul) : null;
 }

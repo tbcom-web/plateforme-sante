@@ -15,10 +15,14 @@ export const maxDuration = 300;
 // 1. PRÉSÉLECTION INFINIE, SANS THÈME (décision de Paul du 2026-10-09) : un modèle est un DESIGN ; chaque page de 6 est rendue avec un
 // profil de démonstration tiré parmi ceux de la profession (et SES images : kit du profil, jamais une autre activité), en variant
 // les profils de page en page pour juger le design. On touche ce qui plaît ; « Voir avec un autre thème » sur chaque carte.
-export default async function PagePreselection() {
+// ?profil=<id> (« Créer des modèles <sujet> » du point d'entrée « À valider », sujets-validation.ts) : designs montrés avec ce seul profil
+export default async function PagePreselection({ searchParams }: PageProps<'/chaine/preselection'>) {
   const moi = await exigerContributeur();
   prechargerGuidage();
-  const { profession, profils } = await profilsDemo();
+  const sp = await searchParams;
+  const { profession, profils: tous } = await profilsDemo();
+  const cible = typeof sp.profil === 'string' ? tous.find((p) => p.id === sp.profil) ?? null : null;
+  const profils = cible ? [cible] : tous;
   const [rendu, gen, lue, politique] = await Promise.all([donneesRendu(), donneesGeneration(), lireChaine(profession.id, { versions: 'utiles' }), getEtatPolitique()]);
   // Chaîne guidée : prochaine étape ; s'il manque des candidats, les designs de Claude entrent seuls (chaîne relue)
   const { action, chaine, importes } = await guidageChaine({ moi, profession: profession.id, chaine: lue });
@@ -33,6 +37,7 @@ export default async function PagePreselection() {
         <p className="mt-1 max-w-3xl text-sm text-neutral-600">Des designs de site à l’infini, six par page, montrés chaque fois avec un cabinet différent (et ses images). Touchez ceux qui vous plaisent, puis « Garder ». Le tournoi s’ouvre dès {CHAINE.ouvertureTournoi} candidats.</p>
       </div>
       <ProchaineEtape action={action} importes={importes} ici="/chaine/preselection" />
+      {cible && <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-950 ring-1 ring-teal-200">Designs montrés avec le profil <strong>{cible.nom}</strong> et ses images (depuis « À valider »). <a className="underline" href="/chaine/preselection">Tous les profils</a></p>}
       {chaine.migrationManquante && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">{MIGRATION_CHAINE}</p>}
       {chaine.erreurLecture && <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200" data-erreur-lecture="">{LECTURE_CHAINE}</p>}
       {!profils.length ? <p className="text-sm">Aucun profil de démonstration pour cette profession.</p> : (

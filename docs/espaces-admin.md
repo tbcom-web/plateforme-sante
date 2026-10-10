@@ -5,11 +5,16 @@ Dégustation → Cuisine → Clients** — plus un tableau de bord court. Source
 adresses : `packages/core/src/admin-espaces.ts` (+ `admin-redirections.json`, lu aussi par `apps/admin/next.config.ts`).
 Menu : `apps/admin/src/components/NavAdmin.tsx` (onglets sur grand écran, tiroir « Menu » sur téléphone, fil d'Ariane).
 
+**2026-10-10 : point d'entrée unique « 🎯 À valider »** (`/admin/sujets`, en tête du menu, pastille de ce qui attend ; grand bouton
+sur le tableau de bord) — demande de Paul : « trop d'endroits pour noter les arrivages ». Toutes les nouveautés y arrivent, rangées
+par sujet, une carte à la fois (OK · Pas OK · J'adore · commentaire). Les Arrivages restent la vue détaillée. Voir `docs/a-valider.md`.
+
 ## Plan du menu
 
 ```
 Super admin (/admin : tableau de bord)
-├─ Arrivages        /admin/arrivages                 (compteur : en attente)
+├─ 🎯 À valider     /admin/sujets                    Sujets (compteur : en attente) ; /admin/sujets/<sujet> : une carte à la fois
+├─ Arrivages        /admin/arrivages                 Vue détaillée (lots, filtres, séries)
 ├─ Frigo            /admin/frigo                     Contenu (couverture par thème, ingrédients par type)
 │                   /admin/frigo/tri                 Trier par sujet
 │                   /admin/frigo/tranches            Éléments tranchés
