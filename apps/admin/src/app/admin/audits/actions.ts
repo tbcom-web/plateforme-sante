@@ -50,6 +50,12 @@ export async function lancerAudit(_: ResultatAudit, formData: FormData): Promise
   if (!page) return { ok: false, message: `Le site ${domaine} ne répond pas (adresse, ou certificat HTTPS ?).` };
 
   const supabase = await createClient();
+  // L'audit d'abord : sans table (migration 0061 non passée), aucun site préparé orphelin n'est créé
+  const { data: audit, error } = await supabase.from('audits')
+    .insert({ domaine, commercial_nom: commercialNom, commercial_tel: commercialTel })
+    .select('id').single();
+  if (error || !audit) return { ok: false, message: 'Audit non enregistré : exécutez la migration 0061_audits_sites.sql dans Supabase.' };
+
   let siteId: string | null = null;
   let universId: string | null = null;
   let identite: Record<string, unknown> = {};
@@ -77,7 +83,10 @@ export async function lancerAudit(_: ResultatAudit, formData: FormData): Promise
     // Soins de base cochés comme dans le parcours /creer (sujets du cabinet, sinon ceux du style) : le praticien les ajuste
     const draft = { ...base, soins: soinsDeBaseParcours(base, u, catalogue.map((c) => c.slug)) };
     const r = await enregistrerSite(null, draft);
-    if (!r.ok || !r.id) return { ok: false, message: `Site préparé non créé : ${r.message}` };
+    if (!r.ok || !r.id) {
+      await supabase.from('audits').update({ statut: 'echec', erreur: `Site préparé non créé : ${r.message}` }).eq('id', audit.id);
+      return { ok: false, message: `Site préparé non créé : ${r.message}` };
+    }
     siteId = r.id;
     if (universId) {
       const a = await appliquerUniversAuSite(siteId, universId, { admin: true, parcours: true });
@@ -90,10 +99,7 @@ export async function lancerAudit(_: ResultatAudit, formData: FormData): Promise
     };
   }
 
-  const { data: audit, error } = await supabase.from('audits')
-    .insert({ domaine, site_id: siteId, univers: universId, identite, commercial_nom: commercialNom, commercial_tel: commercialTel })
-    .select('id').single();
-  if (error || !audit) return { ok: false, message: 'Audit non enregistré (la migration 0061 est-elle passée ?).' };
+  if (siteId) await supabase.from('audits').update({ site_id: siteId, univers: universId, identite }).eq('id', audit.id);
 
   const echec = await lancerWorkflow('auditer-site.yml', { audit_id: audit.id, site_id: siteId ?? '' });
   if (echec) {
