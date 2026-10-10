@@ -292,16 +292,36 @@ const sans0057 = (p) => Object.fromEntries(Object.entries(p).filter(([k]) => !CO
 // ---------------------------------------------------------------------------------------------------------------------
 
 async function sb(chemin, { method = 'GET', body, prefer } = {}) {
+  // Nouvelles tentatives sur les coupures réseau et les erreurs 5xx / 429 (attentes : 3, 6, 12, 24 s) ; une erreur 4xx est définitive
   for (let essai = 1; ; essai++) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${chemin}`, {
-      method,
-      headers: { apikey: CLE, Authorization: `Bearer ${CLE}`, 'Content-Type': 'application/json', ...(prefer ? { Prefer: prefer } : {}) },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let r;
+    try {
+      r = await fetch(`${SUPABASE_URL}/rest/v1/${chemin}`, {
+        method,
+        headers: { apikey: CLE, Authorization: `Bearer ${CLE}`, 'Content-Type': 'application/json', ...(prefer ? { Prefer: prefer } : {}) },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(120_000),
+      });
+    } catch (e) {
+      if (essai < 5) { console.log(`  Supabase : ${e.cause?.code ?? e.name ?? e.message}, nouvel essai`); await attendre(3000 * 2 ** (essai - 1)); continue; }
+      throw new Error(`Supabase ${method} ${chemin.split('?')[0]} : ${e.cause?.code ?? e.message}`);
+    }
     if (r.ok) return method === 'GET' ? r.json() : null;
     const texte = await r.text();
-    if (essai < 3 && r.status >= 500) { await attendre(3000 * essai); continue; }
+    if (essai < 5 && (r.status >= 500 || r.status === 429)) { await attendre(3000 * 2 ** (essai - 1)); continue; }
     throw new Error(`Supabase ${method} ${chemin.split('?')[0]} : HTTP ${r.status} ${texte.slice(0, 300)}`);
+  }
+}
+
+/** Étape facultative : une erreur est journalisée (sans nom ni RPPS) et la synchro continue ; le code de sortie le signale */
+let etapesEnErreur = 0;
+async function etape(nom, f) {
+  try {
+    return await f();
+  } catch (e) {
+    etapesEnErreur++;
+    console.log(`ÉCHEC de l'étape « ${nom} » : ${String(e?.message ?? e).slice(0, 400)}`);
+    return null;
   }
 }
 
@@ -692,7 +712,7 @@ async function enregistrer(listeComplete, praticiens, fichier) {
   console.log(`${importInitial ? 'Import initial' : `${nouveaux} nouvelle(s) situation(s)`}, ${disparus.length} disparue(s)`);
 
   // Actualités : seulement si la veille connaissait déjà les structures (pas au premier passage après 0057)
-  if (v0058 && !importInitial && existants.some((e) => e.structure_cle)) {
+  if (v0058 && !importInitial && existants.some((e) => e.structure_cle)) await etape('actualités', async () => {
     const etat = (p) => ({ cle: p.cle, rpps: p.rpps, structure_cle: p.structure_cle, role: p.role, nom: p.nom, prenom: p.prenom, commune: p.commune, departement: p.departement, cabinet: p.enseigne || p.raison_sociale || null });
     const avant = existants.filter((e) => !e.disparu_le && PROFESSIONS.has(String(e.profession_code))).map(etat);
     const evenements = evenementsDuJour(avant, listeComplete.map(etat), aujourdhui);
@@ -701,15 +721,18 @@ async function enregistrer(listeComplete, praticiens, fichier) {
     }
     const parType = evenements.reduce((o, e) => ({ ...o, [e.type]: (o[e.type] ?? 0) + 1 }), {});
     console.log(`Actualités : ${evenements.length} événement(s)`, parType);
-  }
+  });
 
   // Étape facultative : sans clé ou sans la migration 0056, la synchro continue
   try { await synchroAns(); } catch (e) { console.log(`API ANS : ${e.message.slice(0, 200)} (étape sautée)`); }
-  const verifies = args['sans-verif'] ? 0 : await verifierInstallations();
-  if (v0057) await calculerScores(v0058);
+  const verifies = args['sans-verif'] ? 0 : (await etape('dates d’installation (INSEE)', verifierInstallations)) ?? 0;
+  if (v0057) await etape('scores', () => calculerScores(v0058));
   await sb('prospection_synchros', {
     method: 'POST', prefer: 'return=minimal',
     body: { fichier, lignes: liste.length, nouveaux, disparus: disparus.length, verifies, message: importInitial ? 'import initial' : null },
   });
-  console.log('Terminé.');
+  if (etapesEnErreur) {
+    console.log(`Terminé avec ${etapesEnErreur} étape(s) en échec (voir ÉCHEC ci-dessus).`);
+    process.exitCode = 1;
+  } else console.log('Terminé.');
 }
