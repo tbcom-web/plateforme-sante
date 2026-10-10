@@ -215,3 +215,54 @@ test('duels : validation, lecture de la table, juge et accord, série, synthèse
   assert.match(md, /Juge : d’accord avec Paul sur 1\/1/);
   assert.match(markdownDuels([]), /Aucun duel/);
 });
+
+// Implémentation d'origine de ajusterBT (avant le 2026-10-10, Map par chaîne) : référence de l'égalité au bit près
+function ajusterBTOrigine(matchs: readonly { a: string; b: string; s: number; w: number }[], tau = 1) {
+  const sig = (x: number) => 1 / (1 + Math.exp(-x));
+  const adj = new Map<string, { o: string; s: number; w: number }[]>();
+  const stat = new Map<string, { theta: number; sigma: number; n: number; victoires: number; defaites: number; egalites: number; mauvais: number }>();
+  const ajouter = (i: string, o: string, s: number, w: number) => {
+    if (i === REFERENCE) return;
+    (adj.get(i) ?? adj.set(i, []).get(i)!).push({ o, s, w });
+    const f = stat.get(i) ?? { theta: 0, sigma: tau, n: 0, victoires: 0, defaites: 0, egalites: 0, mauvais: 0 };
+    stat.set(i, f);
+  };
+  for (const m of matchs) { if (!(m.w > 0) || m.a === m.b) continue; ajouter(m.a, m.b, m.s, m.w); ajouter(m.b, m.a, 1 - m.s, m.w); }
+  const joueurs = [...adj.keys()].sort();
+  const theta = new Map<string, number>(joueurs.map((j) => [j, 0]));
+  const t = (j: string) => (j === REFERENCE ? 0 : theta.get(j) ?? 0);
+  for (let it = 0; it < 60; it++) {
+    let delta = 0;
+    for (const i of joueurs) {
+      const ti = theta.get(i)!;
+      let g = -ti / (tau * tau), h = 1 / (tau * tau);
+      for (const { o, s, w } of adj.get(i)!) { const p = sig(ti - t(o)); g += w * (s - p); h += w * p * (1 - p); }
+      const nv = ti + g / h;
+      delta = Math.max(delta, Math.abs(nv - ti));
+      theta.set(i, nv);
+    }
+    if (delta < 1e-9) break;
+  }
+  for (const i of joueurs) {
+    const ti = theta.get(i)!;
+    let h = 1 / (tau * tau);
+    for (const { o, w } of adj.get(i)!) { const p = sig(ti - t(o)); h += w * p * (1 - p); }
+    const f = stat.get(i)!;
+    f.theta = Math.round(ti * 10000) / 10000;
+    f.sigma = Math.round((1 / Math.sqrt(h)) * 10000) / 10000;
+  }
+  return stat;
+}
+
+test('duels : ajusterBT accéléré (tableaux typés) identique au bit près à l’implémentation d’origine', () => {
+  let graine = 7;
+  const alea = () => { graine = (graine * 1103515245 + 12345) % 2147483648; return graine / 2147483648; };
+  for (const [n, joueurs] of [[0, 3], [5, 2], [400, 12], [6000, 180], [20000, 900]] as const) {
+    const noms = Array.from({ length: joueurs }, (_, i) => `k:${(i * 7919) % 1000}-${i}`);
+    const matchs = Array.from({ length: n }, () => {
+      const a = noms[Math.floor(alea() * joueurs)], b = alea() < 0.05 ? REFERENCE : noms[Math.floor(alea() * joueurs)];
+      return { a, b, s: [0, 0.5, 1][Math.floor(alea() * 3)], w: [1, 1.25, 0.5 / 3, 0, -1][Math.floor(alea() * 5)] };
+    });
+    for (const tau of [1, 0.7]) assert.deepEqual([...ajusterBT(matchs, tau).entries()], [...ajusterBTOrigine(matchs, tau).entries()], `${n} matchs, τ = ${tau}`);
+  }
+});

@@ -353,41 +353,60 @@ export const BT = { tau: 1, iterations: 60, eloEchelle: 400 / Math.LN10, eloBase
 
 const sig = (x: number) => 1 / (1 + Math.exp(-x));
 
-/** Ajustement MAP (a priori N(0, τ²)), déterministe ; la RÉFÉRENCE reste à 0 */
+/**
+ * Ajustement MAP (a priori N(0, τ²)), déterministe ; la RÉFÉRENCE reste à 0.
+ * Performances (2026-10-10, « optimiser les requêtes, la base ») : joueurs numérotés, adversaires, scores et poids dans des tableaux
+ * typés au lieu de Map par chaîne (mesuré au volume ×10, 70 000 duels : 17,7 s → voir CHANGEMENTS) ; MÊMES opérations flottantes
+ * dans le MÊME ordre (adjacence dans l'ordre d'arrivée des matchs, joueurs triés, Gauss-Seidel) : résultat identique au bit près
+ * (duels.test.ts compare à l'implémentation d'origine).
+ */
 export function ajusterBT(matchs: readonly MatchBT[], tau: number = BT.tau): Map<string, ForceBT> {
-  const adj = new Map<string, { o: string; s: number; w: number }[]>();
   const stat = new Map<string, ForceBT>();
-  const ajouter = (i: string, o: string, s: number, w: number) => {
-    if (i === REFERENCE) return;
-    (adj.get(i) ?? adj.set(i, []).get(i)!).push({ o, s, w });
-    const f = stat.get(i) ?? { theta: 0, sigma: tau, n: 0, victoires: 0, defaites: 0, egalites: 0, mauvais: 0 };
-    stat.set(i, f);
+  // Numérotation dans l'ordre d'apparition (ordre d'insertion de `stat`, comme avant) ; la RÉFÉRENCE vaut -1 (θ = 0)
+  const num = new Map<string, number>();
+  const noms: string[] = [];
+  const idx = (j: string) => {
+    if (j === REFERENCE) return -1;
+    let k = num.get(j);
+    if (k === undefined) { k = noms.length; num.set(j, k); noms.push(j); stat.set(j, { theta: 0, sigma: tau, n: 0, victoires: 0, defaites: 0, egalites: 0, mauvais: 0 }); }
+    return k;
   };
+  // Entrées d'adjacence (joueur, adversaire, score, poids) dans l'ordre d'ajout ; regroupées ensuite par joueur sans changer cet ordre
+  const ei: number[] = [], eo: number[] = [], es: number[] = [], ew: number[] = [];
   for (const m of matchs) {
     if (!(m.w > 0) || m.a === m.b) continue;
-    ajouter(m.a, m.b, m.s, m.w);
-    ajouter(m.b, m.a, 1 - m.s, m.w);
+    const a = idx(m.a), b = idx(m.b);
+    if (a >= 0) { ei.push(a); eo.push(b); es.push(m.s); ew.push(m.w); }
+    if (b >= 0) { ei.push(b); eo.push(a); es.push(1 - m.s); ew.push(m.w); }
   }
-  const joueurs = [...adj.keys()].sort();
-  const theta = new Map<string, number>(joueurs.map((j) => [j, 0]));
-  const t = (j: string) => (j === REFERENCE ? 0 : theta.get(j) ?? 0);
+  const nj = noms.length;
+  const debut = new Int32Array(nj + 1);
+  for (let e = 0; e < ei.length; e++) debut[ei[e] + 1]++;
+  for (let j = 0; j < nj; j++) debut[j + 1] += debut[j];
+  const pos = debut.slice(0, nj);
+  const ao = new Int32Array(ei.length), as = new Float64Array(ei.length), aw = new Float64Array(ei.length);
+  for (let e = 0; e < ei.length; e++) { const p = pos[ei[e]]++; ao[p] = eo[e]; as[p] = es[e]; aw[p] = ew[e]; }
+  // Joueurs triés (même ordre de mise à jour qu'avant : [...adj.keys()].sort())
+  const ordre = noms.map((_, k) => k).sort((x, y) => (noms[x] < noms[y] ? -1 : noms[x] > noms[y] ? 1 : 0));
+  const theta = new Float64Array(nj);
+  const t = (o: number) => (o < 0 ? 0 : theta[o]);
   for (let it = 0; it < BT.iterations; it++) {
     let delta = 0;
-    for (const i of joueurs) {
-      const ti = theta.get(i)!;
+    for (const i of ordre) {
+      const ti = theta[i];
       let g = -ti / (tau * tau), h = 1 / (tau * tau);
-      for (const { o, s, w } of adj.get(i)!) { const p = sig(ti - t(o)); g += w * (s - p); h += w * p * (1 - p); }
+      for (let e = debut[i]; e < debut[i + 1]; e++) { const p = sig(ti - t(ao[e])); g += aw[e] * (as[e] - p); h += aw[e] * p * (1 - p); }
       const nv = ti + g / h;
       delta = Math.max(delta, Math.abs(nv - ti));
-      theta.set(i, nv);
+      theta[i] = nv;
     }
     if (delta < 1e-9) break;
   }
-  for (const i of joueurs) {
-    const ti = theta.get(i)!;
+  for (const i of ordre) {
+    const ti = theta[i];
     let h = 1 / (tau * tau);
-    for (const { o, w } of adj.get(i)!) { const p = sig(ti - t(o)); h += w * p * (1 - p); }
-    const f = stat.get(i)!;
+    for (let e = debut[i]; e < debut[i + 1]; e++) { const p = sig(ti - t(ao[e])); h += aw[e] * p * (1 - p); }
+    const f = stat.get(noms[i])!;
     f.theta = Math.round(ti * 10000) / 10000;
     f.sigma = Math.round((1 / Math.sqrt(h)) * 10000) / 10000;
   }
@@ -501,10 +520,13 @@ export function clesDifferentes(d: Pick<Duel, 'aIngredients' | 'bIngredients' | 
  */
 export function renfortsDuels(duels: readonly Duel[]): { atelier: Record<string, number>; assets: Record<string, number> } {
   const res = { atelier: {} as Record<string, number>, assets: {} as Record<string, number> };
+  // Clés différentes calculées une fois par duel pour les deux espaces (2026-10-10 : deux fois auparavant ; même résultat)
+  const diffs = duels.map((d) => clesDifferentes(d));
   for (const esp of ['atelier', 'assets'] as const) {
     const matchs: MatchBT[] = [];
-    for (const d of duels) {
-      const [A, B] = clesDifferentes(d)[esp];
+    for (let i = 0; i < duels.length; i++) {
+      const d = duels[i];
+      const [A, B] = diffs[i][esp];
       if (!A.length && !B.length) continue;
       const w0 = poidsAppareilDuel(d.appareil) * (d.dimension ? 1 : APPRENTISSAGE_DUELS.poidsLibre);
       if (d.resultat === 'mauvais') {
