@@ -91,7 +91,13 @@ jobs:
               npm run tester:modele -- --modele "$m" --version "$v" --sortie "$RUNNER_TEMP/testeur/$m-v$v" || echo "Échec du passage $m v$v"
             done
           else
-            npm run tester:modele -- --modele "$MODELE" --version "${VERSION:-1}" --mode "${MODE:-check}" "${OPT_JEUX[@]}" --sortie "$RUNNER_TEMP/testeur/$MODELE-v${VERSION:-1}"
+            # Échec : les dernières lignes deviennent une annotation (lisible sans compte GitHub, et par l'admin via l'API publique)
+            mkdir -p "$RUNNER_TEMP/testeur"
+            if ! npm run tester:modele -- --modele "$MODELE" --version "${VERSION:-1}" --mode "${MODE:-check}" "${OPT_JEUX[@]}" --sortie "$RUNNER_TEMP/testeur/$MODELE-v${VERSION:-1}" 2>&1 | tee "$RUNNER_TEMP/testeur/journal.log"; then
+              msg=$(grep -v '^\s*$' "$RUNNER_TEMP/testeur/journal.log" | grep -iv 'secret\|apikey\|bearer' | tail -n 12 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+              echo "::error title=Testeur de modèles::${msg}"
+              exit 1
+            fi
           fi
 
       - name: Captures et résultats (artefact)
