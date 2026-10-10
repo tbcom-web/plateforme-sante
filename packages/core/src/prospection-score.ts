@@ -12,7 +12,9 @@
 // 4. CLIENTS (statut « gagne » du suivi, 0055) : un client n'est plus un prospect ; ceux qui travaillent ou ont travaillé avec un
 //    client (même structure ou même adresse) sont des recommandations possibles ; et chaque prospect reçoit des points de
 //    RESSEMBLANCE avec les clients : rapport de vraisemblance (bayésien naïf, lissé) de ses traits chez les clients et chez
-//    l'ensemble des podologues libéraux (rôle, type de cabinet, taille, maison de santé, multi-sites, ancienneté RPPS, département).
+//    l'ensemble des podologues libéraux (rôle, type de cabinet, taille, maison de santé, multi-sites, ancienneté RPPS, département,
+//    nom du cabinet, type d'e-mail, ancienneté du cabinet à l'INSEE, concurrence dans la commune : analyse des clients du 2026-10-10,
+//    docs/prospection-rpps.md).
 // Chaque point est expliqué (raisons), pour que la commerciale sache quoi vérifier au téléphone.
 
 export const SPECIALITES_DIPLOMES = [
@@ -54,6 +56,8 @@ export type LigneScore = {
   raison_sociale?: string | null;
   commune?: string | null;
   departement?: string | null;
+  code_commune?: string | null;
+  enseigne?: string | null;
   nom?: string | null;
   prenom?: string | null;
   autres_professions?: Record<string, number> | null;
@@ -90,7 +94,11 @@ const casse = (s: string | null | undefined) => String(s ?? '').toLowerCase().re
 const estClient = (l: LigneScore) => l.statut === 'gagne';
 
 /** Traits d'un praticien pour la ressemblance (une valeur par trait), calculés sur ses situations libérales actives */
-function traitsDe(situations: readonly LigneScore[], tailleStructure: (l: LigneScore) => number, recent: boolean): Record<string, string> {
+const FAI = /@(orange|wanadoo|free|sfr|neuf|laposte|club-internet|aliceadsl|bbox|numericable|noos|cegetel|9online)\./i;
+const MESSAGERIES = /@(gmail|googlemail|hotmail|outlook|live|yahoo|icloud|me|msn|protonmail|gmx)\./i;
+const sansAccent = (s: string | null | undefined) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+function traitsDe(situations: readonly LigneScore[], tailleStructure: (l: LigneScore) => number, recent: boolean, concurrents: (l: LigneScore) => number, aujourdhui: string): Record<string, string> {
   const lib = situations.filter((s) => estLiberal(s) && !s.disparu_le);
   const v = lib[0] ?? situations[0];
   const roles = lib.map((s) => s.role ?? '').join(' ');
@@ -103,10 +111,26 @@ function traitsDe(situations: readonly LigneScore[], tailleStructure: (l: LigneS
     lieux: lib.length > 1 ? 'plusieurs lieux d’exercice' : 'un seul lieu d’exercice',
     anciennete: recent ? 'inscrit récemment au RPPS' : 'installé de longue date',
     departement: v.departement ?? '?',
+    // Cabinet à son propre nom (« Cabinet Dupont ») ou nom de marque (« Centre podologique du Lac »)
+    nomCabinet: !(v.enseigne || v.raison_sociale) ? 'nom de cabinet non renseigné'
+      : sansAccent(v.nom).slice(0, 5) && sansAccent(`${v.enseigne ?? ''}${v.raison_sociale ?? ''}`).includes(sansAccent(v.nom).slice(0, 5)) ? 'cabinet à son nom' : 'cabinet sous un nom de marque',
+    mail: !lib.some((s) => s.email) ? 'pas d’e-mail au RPPS' : lib.some((s) => FAI.test(s.email ?? '')) ? 'e-mail d’un ancien fournisseur d’accès'
+      : lib.some((s) => MESSAGERIES.test(s.email ?? '')) ? 'e-mail Gmail, Outlook…' : 'e-mail à son nom de domaine',
+    cabinetInsee: (() => {
+      const d = lib.map((s) => s.siret_cree_le).filter((x): x is string => Boolean(x)).sort().pop();
+      if (!d) return 'cabinet introuvable à l’INSEE';
+      const ans = (Date.parse(aujourdhui) - Date.parse(d)) / 31_557_600_000;
+      return ans < 3 ? 'cabinet créé il y a moins de 3 ans' : ans < 10 ? 'cabinet créé il y a 3 à 9 ans' : ans < 20 ? 'cabinet créé il y a 10 à 19 ans' : 'cabinet créé il y a 20 ans ou plus';
+    })(),
+    concurrence: (() => {
+      const nb = Math.max(0, ...lib.map(concurrents));
+      return nb <= 1 ? 'seul podologue de sa commune' : nb <= 3 ? '2 ou 3 podologues dans sa commune' : nb <= 9 ? '4 à 9 podologues dans sa commune' : '10 podologues ou plus dans sa commune';
+    })(),
   };
 }
 const LIBELLE_TRAIT: Record<string, (v: string) => string> = {
   role: (v) => v, secteur: (v) => v, taille: (v) => v, mixte: (v) => v, lieux: (v) => v, anciennete: (v) => v,
+  nomCabinet: (v) => v, mail: (v) => v, cabinetInsee: (v) => v, concurrence: (v) => v,
   departement: (v) => `département ${v}`,
 };
 
@@ -130,7 +154,11 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
   const tailleStructure = (l: LigneScore) => (l.structure_cle ? (parStructure.get(l.structure_cle) ?? []).filter((m) => !m.disparu_le).length : 1);
   const traits = new Map<string, Record<string, string>>();
   const seuil = seuilRecentDe(parRpps);
-  for (const [rpps, sit] of parRpps) traits.set(rpps, traitsDe(sit, tailleStructure, seuil !== null && rpps >= seuil));
+  // Concurrence : podologues libéraux distincts exerçant dans la même commune
+  const parCommune = new Map<string, Set<string>>();
+  for (const l of lignes) if (l.code_commune && estLiberal(l) && !l.disparu_le) parCommune.set(l.code_commune, (parCommune.get(l.code_commune) ?? new Set()).add(l.rpps));
+  const concurrents = (l: LigneScore) => (l.code_commune ? parCommune.get(l.code_commune)?.size ?? 1 : 1);
+  for (const [rpps, sit] of parRpps) traits.set(rpps, traitsDe(sit, tailleStructure, seuil !== null && rpps >= seuil, concurrents, aujourdhui));
   const clients = new Set([...parRpps].filter(([, sit]) => sit.some(estClient)).map(([rpps]) => rpps));
   const liberaux = [...parRpps].filter(([, sit]) => sit.some((s) => estLiberal(s) && !s.disparu_le)).map(([rpps]) => rpps);
   const frequences = (groupe: string[]) => {
@@ -235,7 +263,7 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
         const points = Math.round(15 * rang ** 3);
         // Traits explicatifs : nettement plus fréquents chez les clients, et portés par 5 clients au moins
         const forts = Object.entries(t).map(([k, v]) => ({ k, v, r: rapport(`${k}:${v}`), n: freqClients.get(`${k}:${v}`) ?? 0 }))
-          .filter((f) => f.r >= 1.2 && f.n >= 5).sort((a, b) => b.r - a.r).slice(0, 3);
+          .filter((f) => f.r >= 1.1 && f.n >= 5).sort((a, b) => b.r - a.r).slice(0, 3);
         if (points > 0) {
           const pourquoi = forts.map((f) => `${LIBELLE_TRAIT[f.k](f.v)} (${Math.round((f.n / nClients) * 100)} % de vos clients)`).join(', ');
           raisons.push({ t: 'p', l: `Plus proche de vos clients que ${Math.round(rang * 100)} % des podologues${pourquoi ? ` : ${pourquoi}` : ''}`, p: points, k: 'ressemblance' });

@@ -99,3 +99,18 @@ test('clients : déjà client à zéro, confrère d’un client signalé, ressem
   const x = s.get('x0|U0')!.raisons.find((r) => r.k === 'ressemblance');
   assert.ok(!x || x.p < q.p);
 });
+
+test('ressemblance : nom du cabinet, type d’e-mail, ancienneté INSEE et concurrence expliqués', () => {
+  const client = (i: number) => base({
+    cle: `k${i}|C${i}`, rpps: `1000000005${i}`, structure_cle: `C${i}`, code_commune: '33063', role: 'Titulaire de cabinet', nom: `NOM${i}`,
+    enseigne: `CABINET NOM${i}`, email: `nom${i}@gmail.com`, siret_cree_le: '2020-01-01', statut: 'gagne', departement: '33',
+  });
+  const lignes = [
+    ...[0, 1, 2, 3, 4, 5].map(client),
+    base({ cle: 'm|M', rpps: '10000000070', structure_cle: 'M', code_commune: '33063', role: 'Titulaire de cabinet', nom: 'MARTIN', enseigne: 'CABINET MARTIN', email: 'm@gmail.com', siret_cree_le: '2019-06-01', departement: '33' }),
+    ...Array.from({ length: 30 }, (_, i) => base({ cle: `z${i}|Z${i}`, rpps: `100000002${String(i).padStart(2, '0')}`, structure_cle: `Z${i}`, code_commune: `9${i}`, role: 'Titulaire de cabinet', nom: `AUTRE${i}`, enseigne: 'CENTRE PODOLOGIQUE DU LAC', email: `x${i}@orange.fr`, departement: '75' })),
+  ];
+  const r = scorerProspection(lignes, J).get('m|M')!.raisons.find((x) => x.k === 'ressemblance')!;
+  assert.ok(r.l.includes('cabinet à son nom') || r.l.includes('cabinet créé il y a 3 à 9 ans') || r.l.includes('e-mail Gmail'), r.l);
+  assert.ok(r.p >= 12, String(r.p));
+});
