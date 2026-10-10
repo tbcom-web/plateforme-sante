@@ -67,3 +67,14 @@ test('cabinet : le titulaire hérite des arrivées et départs ; reprise de cabi
   const r = s.get('r|B')!;
   assert.ok(r.raisons.some((x) => x.l.startsWith('Devenu titulaire le 01/10/2026') && x.p === 35));
 });
+
+test('enseignant : points pour la situation libérale, badge posé par la synchro non compté comme spécialité', () => {
+  const s = scorerProspection([
+    base({ cle: 'l|1', rpps: '10000000020', role: 'Titulaire de cabinet', specialites: ['enseignant'] }),
+    base({ cle: 'e|1', rpps: '10000000020', mode_exercice: 'Salarié', role: 'Enseignant salarié', secteur: "Etab. d'enseignement", raison_sociale: 'ECOLE ROCKEFELLER', specialites: ['enseignant'] }),
+  ], J);
+  const l = s.get('l|1')!;
+  assert.ok(l.raisons.some((r) => r.l.startsWith('Enseigne aussi (Ecole Rockefeller)') && r.p === 8));
+  assert.ok(!l.raisons.some((r) => r.l.startsWith('Spécialité à mettre en avant')));
+  assert.equal(s.get('e|1')!.prospect, 0); // la situation d'enseignement elle-même n'est pas libérale
+});

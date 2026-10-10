@@ -20,7 +20,11 @@ export const SPECIALITES_DIPLOMES = [
   { id: 'enfant', libelle: 'Enfant', motif: /p[ée]diatr|enfant|apprentissage/i },
   { id: 'geriatrie', libelle: 'Gériatrie', motif: /g[ée]riatr|g[ée]ronto/i },
   { id: 'eee', libelle: 'Diplôme européen', motif: /\bEEE\b|europ/i },
+  // Pas un diplôme : situation d'exercice « Enseignant salarié » (institut de formation, CHU), posée par la synchro
+  { id: 'enseignant', libelle: 'Enseignant', motif: /(?!)/ },
 ] as const;
+/** Situation d'enseignement (rôle « Enseignant salarié » ou établissement d'enseignement) */
+export const estEnseignement = (l: { role?: string | null; secteur?: string | null }) => /enseign/i.test(`${l.role ?? ''} ${l.secteur ?? ''}`);
 export type IdSpecialite = (typeof SPECIALITES_DIPLOMES)[number]['id'];
 export const libelleSpecialite = (id: string) => SPECIALITES_DIPLOMES.find((s) => s.id === id)?.libelle ?? id;
 
@@ -43,6 +47,7 @@ export type LigneScore = {
   mode_exercice?: string | null;
   adresse_cle?: string | null;
   structure_cle?: string | null;
+  raison_sociale?: string | null;
   commune?: string | null;
   telephone?: string | null;
   email?: string | null;
@@ -141,7 +146,10 @@ export function scorerProspection(lignes: readonly LigneScore[], aujourdhui: str
       if (presents) raisons.push({ t: 'p', l: `Cabinet de ${presents + 1} podologues`, p: 0 });
       if (l.telephone) ajouter('p', 'Téléphone au RPPS', 8);
       if (l.email) ajouter('p', 'E-mail au RPPS', 4);
-      const specs = (l.specialites ?? []).filter((s) => s !== 'eee');
+      // Enseigner (institut de formation, CHU) : habitué à transmettre et à communiquer, sensible à son image
+      const ecole = (parRpps.get(l.rpps) ?? []).find((x) => x.cle !== l.cle && estEnseignement(x));
+      if (ecole) ajouter('p', `Enseigne aussi${ecole.raison_sociale ? ` (${ecole.raison_sociale.toLowerCase().replace(/(^|\s)\p{L}/gu, (m) => m.toUpperCase())})` : ''} : habitué à transmettre et à communiquer`, 8);
+      const specs = (l.specialites ?? []).filter((s) => s !== 'eee' && s !== 'enseignant');
       if (specs.length) ajouter('p', `Spécialité à mettre en avant : ${specs.map(libelleSpecialite).join(', ')}`, Math.min(2, specs.length) * 4);
       if (/individuel/i.test(l.secteur ?? '')) ajouter('p', 'Cabinet individuel', 5);
       prospect = Math.min(100, raisons.filter((r) => r.t === 'p').reduce((s, r) => s + r.p, 0));

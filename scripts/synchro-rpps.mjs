@@ -28,7 +28,7 @@ import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { createInterface } from 'node:readline';
 import zlib from 'node:zlib';
-import { scorerProspection, specialitesDepuisDiplomes } from '../packages/core/src/prospection-score.ts';
+import { estEnseignement, scorerProspection, specialitesDepuisDiplomes } from '../packages/core/src/prospection-score.ts';
 import { evenementsDuJour } from '../packages/core/src/prospection-evenements.ts';
 
 const URL_EXTRACTION = 'https://service.annuaire.sante.fr/annuaire-sante-webservices/V300/services/extraction/PS_LibreAcces';
@@ -505,7 +505,7 @@ async function synchroAns() {
 // ---------------------------------------------------------------------------------------------------------------------
 
 async function calculerScores(v0058) {
-  const champs = 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,structure_cle,commune,telephone,email,specialites';
+  const champs = 'cle,rpps,profession_code,apparu_le,disparu_le,siret_cree_le,siret_source,siret_ferme,situation_maj_le,role,secteur,mode_exercice,adresse_cle,structure_cle,raison_sociale,commune,telephone,email,specialites';
   const toutes = await lireTout(`prospection_liste?select=${champs}`);
   const ilYa2ans = new Date(Date.now() - 730 * 86_400_000).toISOString().slice(0, 10);
   const evenements = v0058 ? await sb(`prospection_evenements?select=type,cle,le,details&type=eq.role&le=gte.${ilYa2ans}&limit=1000`) : [];
@@ -561,6 +561,9 @@ try {
     p.specialites = specialitesDepuisDiplomes((p.diplomes ?? []).filter((d) => d.t !== 'DE').map((d) => d.l));
   }
   autresParAdresse.clear();
+  // Enseignants (institut de formation, CHU) : badge « enseignant » sur toutes les situations du praticien
+  const enseignants = new Set([...praticiens.values()].filter(estEnseignement).map((p) => p.rpps));
+  for (const p of praticiens.values()) if (enseignants.has(p.rpps)) p.specialites = [...p.specialites, 'enseignant'];
   const liste = [...praticiens.values()];
   const parDep = {};
   for (const p of liste) parDep[p.departement ?? '?'] = (parDep[p.departement ?? '?'] ?? 0) + 1;
