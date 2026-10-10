@@ -385,8 +385,10 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
 
   // Sujets du cabinet (SujetsAccueil) : présentation selon la variante (une, rangées, cartes, liste, colonnes)
   const sujetsPrincipaux = navigation.principaux;
+  // Air sous les légendes des sujets, comme le site (retour de Paul du 2026-10-10 : « Pieds de l'enfant » collée contre le filet
+  // de la section suivante) : padding bas des sections du gabarit (village, revue), padding bas des tuiles du tableau
   const sujetsSection = sujetsPrincipaux.length ? (
-    <section style={{ ...cadre, paddingTop: 28 }}>
+    <section style={{ ...cadre, paddingTop: 28, paddingBottom: village ? (mobile ? 44 : 60) : revue ? (mobile ? 56 : 96) : (mobile ? 26 : 32) }}>
       <ul className="eff-grille forme-grille ap-sujets" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: v.sujets === 'liste' ? 0 : 18, gridTemplateColumns: mobile || v.sujets === 'liste' || v.sujets === 'rangees' ? '1fr' : v.sujets === 'cartes' ? `repeat(${Math.min(3, sujetsPrincipaux.length)}, 1fr)` : '1fr 1fr', borderTop: v.sujets === 'liste' ? '2px solid var(--g-encre)' : undefined }}>
         {sujetsPrincipaux.map((t, i) => {
           const une = v.sujets === 'une' && i === 0;
@@ -416,6 +418,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
     </div>
   )) : null;
   // Ordre des blocs de l'accueil (fiche + recette) : « Venir au cabinet » avant les sujets si demandé
+  // Bloc sans contenu (panorama, galerie sans photo…) : aucune enveloppe .eff-section, sinon deux liants s'empilent (2026-10-10)
   const infosEnTete = Boolean(m.accueil.infosEnTete) && m.accueil.sections.includes('acces');
   const blocs = [...(infosEnTete ? ['acces'] : []), 'sujets', ...m.accueil.sections.filter((x) => !(infosEnTete && x === 'acces'))];
   // Galerie du cabinet (photos du praticien seulement, comme le site) : mosaïque, diaporama au doigt, grande photo, bande
@@ -504,7 +507,7 @@ export default function ApercuGabarit({ draft: d, modele: m, soins, mobile, vue,
   return (
     <div style={{ background: 'var(--g-page)', color: 'var(--g-encre)', fontSize: village ? 20 : revue ? 19 : 18, lineHeight: 1.6, paddingBottom: 1 }}>
       {!seul && entete}
-      {vue === 'accueil' ? <>{montrer('premier') && (herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soins} replis={r} sur={surTitre} registre={registre} illustration={heros?.type === 'svg' ? heros.html : ''} masquerAppel={appelMasque} /> : premier)}{blocs.filter(montrer).map((b) => <div key={b} className="eff-section" data-zone={b}>{b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null}</div>)}</>
+      {vue === 'accueil' ? <>{montrer('premier') && (herosPhotoActif(d, m) ? <ApercuHerosPhoto draft={d} modele={m} soins={soins} replis={r} sur={surTitre} registre={registre} illustration={heros?.type === 'svg' ? heros.html : ''} masquerAppel={appelMasque} /> : premier)}{blocs.filter(montrer).map((b) => [b, b === 'sujets' ? sujetsSection : b === 'competences' ? soinsSection : b === 'acces' ? accesSection : b === 'faq' ? faqSection : b === 'praticiens' ? equipeSection : b === 'galerie' ? galerieSection : b === 'actualites' ? actualitesSection : null] as const).filter(([, c]) => c).map(([b, c]) => <div key={b} className="eff-section" data-zone={b}>{c}</div>)}</>
         : vue === 'soin' ? fiche
         : vue === 'theme' ? pageSujet
         : vue === 'article' ? pageArticle

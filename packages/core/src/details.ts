@@ -8,9 +8,10 @@
 // propres au gabarit et sur les styles en ligne de l'aperçu, sans toucher au balisage.
 //
 // Règles : CSS seul, aucun JS ; aucune image externe (motifs en dégradés ou SVG en ligne, ≤ 1 Ko) ; aucun changement de mise en
-// page du premier écran (élément LCP) ni décalage (séparateurs en position absolue, aucun contenu ajouté) ; contrastes AA
+// page du premier écran (élément LCP) ni décalage (séparateurs en position absolue dans leur marge, liants-sections.ts ; rien d'ajouté) ; contrastes AA
 // inchangés (motifs ≤ 8 % d'opacité, boutons « contour » jamais sur fond sombre) ; couleurs : rôles de la gamme seulement.
 // Module pur.
+import { cssBandeLiant } from './liants-sections';
 
 export const ELEMENTS_DETAILS = {
   separateur: [
@@ -104,7 +105,7 @@ const ENCRE = 'var(--g-encre,var(--encre))';
 const svg = (s: string) => `url("data:image/svg+xml,${encodeURIComponent(s)}")`;
 /** Point de la palette de pression (charte : --pression-n, bleu-vert → orange ; jamais le rouge du niveau 5) */
 const point = (n: number, x: number, rayon: number) => `radial-gradient(circle at ${x}px 50%,var(--pression-${n},${ACCENT}) ${rayon}px,transparent ${rayon + 0.6}px)`;
-/** Séparateurs : centrés sur le haut de la section (position absolue : aucun décalage), couleur de l'encre adoucie */
+/** Séparateurs : au milieu de leur bande d'air, au-dessus de la section (position absolue), couleur de l'encre adoucie */
 const SEPARATEURS: Record<Exclude<ValeursDetails['separateur'], 'aucun'>, { l: number; h: number; fond: string }> = {
   filet: { l: 120, h: 2, fond: 'background:currentColor' },
   double: { l: 160, h: 7, fond: 'border-block:1.5px solid currentColor' },
@@ -128,7 +129,8 @@ export function cssDetails(brut: unknown): string {
   const imp = (s: string) => s.replace(/\{([^{}]*)\}/g, (_, x: string) => `{${x.split(';').filter(Boolean).map((y) => (y.includes('!important') ? y : `${y}!important`)).join(';')}}`);
   if (d.separateur !== 'aucun') {
     const s = SEPARATEURS[d.separateur];
-    css.push(imp(`${r} ${SECTION}+${SECTION}{position:relative}${r} ${SECTION}+${SECTION}::before{content:'';position:absolute;z-index:1;left:50%;top:0;width:${s.l}px;height:${s.h}px;transform:translate(-50%,-50%);color:color-mix(in srgb,${ENCRE} 40%,transparent);pointer-events:none;${s.fond}}`));
+    // Bande d'air propre au séparateur (liants-sections.ts, retour de Paul du 2026-10-10) : jamais posé sur un contenu
+    css.push(imp(`${r} ${SECTION}+${SECTION}{position:relative}${r} ${SECTION}+${SECTION}::before{content:'';position:absolute;z-index:1;left:50%;width:${s.l}px;height:${s.h}px;transform:translate(-50%,-50%);color:color-mix(in srgb,${ENCRE} 40%,transparent);pointer-events:none;${s.fond}}${cssBandeLiant(s.h, `${r} `)}`));
   }
   if (d.souligne === 'trait') css.push(imp(`${r} ${H2}{text-decoration:underline;text-decoration-color:${ACCENT};text-decoration-thickness:.14em;text-underline-offset:.22em;text-decoration-skip-ink:none}`));
   if (d.souligne === 'surligneur') css.push(imp(`${r} ${H2}{text-decoration:underline;text-decoration-color:color-mix(in srgb,${ACCENT} 34%,transparent);text-decoration-thickness:.42em;text-underline-offset:-.24em;text-decoration-skip-ink:none}`));

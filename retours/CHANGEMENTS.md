@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : liants entre sections (sections qui se recouvrent, vague, chevrons, filets/points du jeu de détails) : toujours leur propre bande d'air, jamais sur une légende ni par-dessus une carte (retour de Paul : « Pieds de l'enfant » collée contre l'ombre) ; aperçu : air sous les légendes des sujets comme le site.
 - 2026-10-10 : Premier écran « photo sous un voile dégradé » (et diaporama, photo à gauche, photo en bas sur téléphone) : le voile opaque ne couvre plus que la colonne du texte (fondu court ensuite) ; sur ordinateur la photo est nette sur plus de la moitié de la largeur, sur téléphone elle occupe le haut de l'écran (~45 %) et le texte est en bas ; texte toujours AA.
 - 2026-10-10 : Fiches conseils patients (17 fiches podologue liées aux soins : bloc sur chaque page de soin, page /conseils) et 2 articles pré-écrits (chaussures de sécurité et métiers debout ; chaussures à talons), à valider dans les Arrivages ; articles importables ensuite dans /admin/flux.
 - 2026-10-10 : univers minimal (à valider, lot « Univers minimal ») : deux visuels stylés par univers — basket (arc de tir, terrain en lignes de niveau), tennis (rebond, court en perspective), golf (green et drapeau, balle alvéolée), cyclisme (roue, profil d'étape), diabète (points de sensibilité, inspection au miroir, bleus doux) ; visuel animé du premier écran et illustration fixe ; profils Sport · golf et Sport · cyclisme ajoutés.

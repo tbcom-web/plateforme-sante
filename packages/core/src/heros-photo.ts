@@ -26,6 +26,7 @@ import { cssAnimationEntete, htmlAnimationEntete, motsDesSoins } from './entete-
 import { cssVisuelAnime, htmlVisuelAnime } from './heros-anime';
 import { alphaFondHeros, cssFondHeros, htmlFondHeros, PLAFONDS_FONDS_HEROS } from './fonds-heros';
 import { cssTracePhoto, htmlTracePhoto, tracePhotoPermis, traitBlanc } from './photo-trace';
+import { AIR_LIANT, cssBandeLiant, SECTIONS_LIANTS } from './liants-sections';
 
 export * from './heros-photo-variantes';
 export { teintesSousTexte, cssLot2 } from './heros-organiques';
@@ -592,7 +593,7 @@ if(document.readyState=='complete')go();else addEventListener('load',go)})()`.re
 // Transitions entre sections (toutes pages) : mêmes sélecteurs que les effets (effets.ts) ; site et aperçu
 // ---------------------------------------------------------------------------------------------------------------
 
-const SECTIONS = ':is(.g-section,.section,.eff-section)';
+const SECTIONS = SECTIONS_LIANTS;
 // Vague : bord haut et bas ondulés (masque SVG en ligne, aucune image)
 const VAGUE_HAUT = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 48' preserveAspectRatio='none'%3E%3Cpath d='M0 48V28C150 4 300 4 450 22s300 26 450 8 225-22 300-14v24z'/%3E%3C/svg%3E\")";
 const VAGUE_BAS = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 48' preserveAspectRatio='none'%3E%3Cpath d='M0 0v20c150 24 300 24 450 6S750-0 900 18s225 22 300 14V0z'/%3E%3C/svg%3E\")";
@@ -601,11 +602,19 @@ const VAGUE_BAS = "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000
 export function cssTransitionsSections(id: TransitionSections | string | null | undefined): string {
   switch (id) {
     case 'vague': {
-      const masque = `${VAGUE_HAUT} top/100% 48px no-repeat,linear-gradient(#000,#000) 0 47px/100% calc(100% - 94px) no-repeat,${VAGUE_BAS} bottom/100% 48px no-repeat`;
-      return `${SECTIONS}:nth-child(even of ${SECTIONS}){position:relative;isolation:isolate;padding-block:56px}${SECTIONS}:nth-child(even of ${SECTIONS})::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--g-bulle,var(--accent-tres-pale,var(--doux)));-webkit-mask:${masque};mask:${masque}}`;
+      // Bande en vague : padding imposé (les vagues de 48 px ne passent jamais sous une carte ou un texte, même dans les gabarits
+      // à sections serrées), air des liants au-dessus et au-dessous ; aplat du milieu recouvrant les vagues de 2 px (sans
+      // couture visible).
+      const masque = `${VAGUE_HAUT} top/100% 48px no-repeat,linear-gradient(#000,#000) 0 46px/100% calc(100% - 92px) no-repeat,${VAGUE_BAS} bottom/100% 48px no-repeat`;
+      return `${SECTIONS}:nth-child(even of ${SECTIONS}){position:relative;isolation:isolate;padding-block:56px!important;margin-block:${AIR_LIANT}}${SECTIONS}:nth-child(even of ${SECTIONS})::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:var(--g-bulle,var(--accent-tres-pale,var(--doux)));-webkit-mask:${masque};mask:${masque}}`;
     }
-    case 'chevauchement':
-      return `${SECTIONS}+${SECTIONS}{position:relative;margin-top:-36px;padding-top:36px;border-radius:36px 36px 0 0;background:var(--g-page,var(--fond));box-shadow:0 -22px 40px -30px rgb(var(--nuit-rgb,7 18 20) / .28)}`;
+    case 'chevauchement': {
+      // La section suivante recouvre le bas de la précédente (36 px) : la précédente garde pour cela une bande VIDE (bordure
+      // transparente, son fond continue dessous) = 36 px recouverts + 12 px de portée de l'ombre + l'air des liants ; jamais
+      // une légende ou une carte sous la feuille (retour de Paul du 2026-10-10). Sans :has() : pas de recouvrement, air seul.
+      const feuille = 'position:relative;padding-top:36px;border-radius:36px 36px 0 0;background:var(--g-page,var(--fond));box-shadow:0 -22px 40px -30px rgb(var(--nuit-rgb,7 18 20) / .28)';
+      return `${SECTIONS}+${SECTIONS}{${feuille};margin-top:calc(12px + ${AIR_LIANT})}@supports selector(:has(+ *)){${SECTIONS}:has(+${SECTIONS}){border-bottom:calc(48px + ${AIR_LIANT}) solid transparent}${SECTIONS}+${SECTIONS}{margin-top:-36px}}`;
+    }
     case 'revelation':
       return `@supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){${SECTIONS}>*{animation:ts-revele linear both;animation-timeline:view();animation-range:entry 0% cover 28%}}}@keyframes ts-revele{from{opacity:0;transform:translate3d(0,48px,0) scale(.98)}}`;
     case 'empilees':
@@ -613,9 +622,10 @@ export function cssTransitionsSections(id: TransitionSections | string | null | 
     case 'chevrons': {
       // Liant « chevrons de vitesse » (2026-10-09, sport) : cinq chevrons de plus en plus nets au-dessus de chaque section, couleur
       // de l'accent ; ils filent en place quand la section entre à l'écran (transform, opacity) ; sans prise en charge ou en
-      // réduction des animations : posés, fixes. Position absolue : aucun décalage de mise en page.
+      // réduction des animations : posés, fixes. Position absolue, dans leur propre bande d'air au-dessus de la section
+      // (liants-sections.ts) : jamais sur la légende ou la carte d'à côté.
       const m = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 132 20' fill='none' stroke='%23000' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3l8 7-8 7' stroke-opacity='.2'/%3E%3Cpath d='M34 3l8 7-8 7' stroke-opacity='.4'/%3E%3Cpath d='M60 3l8 7-8 7' stroke-opacity='.6'/%3E%3Cpath d='M86 3l8 7-8 7' stroke-opacity='.8'/%3E%3Cpath d='M112 3l8 7-8 7' stroke-opacity='1'/%3E%3C/svg%3E") center/contain no-repeat`;
-      return `${SECTIONS}+${SECTIONS}{position:relative}${SECTIONS}+${SECTIONS}::before{content:'';position:absolute;top:0;left:50%;width:132px;height:20px;margin:-10px 0 0 -66px;pointer-events:none;background:var(--g-accent-texte,var(--accent,currentColor));-webkit-mask:${m};mask:${m};opacity:.6}@supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){${SECTIONS}+${SECTIONS}::before{animation:ts-chevrons linear both;animation-timeline:view();animation-range:entry 0% cover 25%}}}@keyframes ts-chevrons{from{opacity:0;transform:translate3d(-48px,0,0)}}`;
+      return `${SECTIONS}+${SECTIONS}{position:relative}${SECTIONS}+${SECTIONS}::before{content:'';position:absolute;left:50%;width:132px;height:20px;margin:-10px 0 0 -66px;pointer-events:none;background:var(--g-accent-texte,var(--accent,currentColor));-webkit-mask:${m};mask:${m};opacity:.6}${cssBandeLiant(20)}@supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){${SECTIONS}+${SECTIONS}::before{animation:ts-chevrons linear both;animation-timeline:view();animation-range:entry 0% cover 25%}}}@keyframes ts-chevrons{from{opacity:0;transform:translate3d(-48px,0,0)}}`;
     }
     default:
       return '';
