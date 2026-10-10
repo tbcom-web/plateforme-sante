@@ -21,6 +21,7 @@ import { getPredictions } from '@/lib/predictions';
 import { getPropositionsTags } from '@/lib/propositions-tags';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getEtatsNouveautes } from '@/lib/arrivages';
+import { getSourcesApprentissage, instantane } from '@/lib/apprentissage-instantane';
 
 // POLITIQUE D'ÉVALUATION UNIQUE côté serveur (packages/core/src/politique-evaluation.ts, regles-apprises.ts ; migration 0054 ;
 // docs/politique-evaluation.md) :
@@ -183,11 +184,59 @@ export const getPolitique = cache(getPolitiqueMemorisee);
 export const getPolitiqueBornee = cache((): Promise<Politique | null> => avecDelai(getPolitique(), DELAIS.politique, null));
 
 /**
+ * RÉSUMÉ de la politique (2026-10-10, « optimiser les requêtes, la base ») : tout ce que lisent les pages, le générateur et les
+ * tranches (120 derniers écrans, implicites, pénalités, écartements, notes moyennes, indicateurs du tableau de bord), sans les
+ * journaux complets. Gardé en base (apprentissage-instantane.ts, 0059) tant que les journaux n'ont pas changé ; sans la migration,
+ * calculé comme avant depuis getPolitique (mémoire de l'instance).
+ */
+export type ResumePolitique = {
+  ecrans: MemoireExpositions['ecrans'];
+  implicites: ImpliciteNegatif[];
+  penalites: Record<string, number>;
+  ecartes: string[];
+  notes: Record<string, { m: number; n: number }>;
+  indicateurs: (IndicateursPolitique & { migrationManquante: boolean }) | null;
+};
+
+async function resumer(p: Politique | null, predictions: Promise<{ cle: string; note: number }[]>): Promise<ResumePolitique | null> {
+  if (!p) return null;
+  const preds = await predictions;
+  const predite = new Map<string, number>();
+  for (const x of preds) predite.set(x.cle, x.note);
+  const ind = indicateursPolitique(p.memoire, {
+    qualite: (k) => p.notes[k]?.m ?? (baseDeCle(k) ? p.notes[baseDeCle(k)!]?.m : undefined) ?? predite.get(k) ?? null,
+    premiereNote: (k) => p.premieres[k] ?? null, regles: p.regles.filter((r) => r.active).length, maintenant: new Date().toISOString(),
+  });
+  return { ecrans: p.memoire.ecrans.slice(-120), implicites: p.implicites, penalites: p.penalites, ecartes: p.ecartes, notes: p.notes, indicateurs: { ...ind, migrationManquante: p.migrationManquante } };
+}
+
+/** Résumé de la politique (admin seulement ; null ailleurs) : instantané en base, sinon calcul d'avant */
+export const getResumePolitique = cache(async (): Promise<ResumePolitique | null> => {
+  if ((await getRole()) !== 'admin') return null;
+  return instantane<ResumePolitique | null>({
+    cle: 'politique', portee: 'admin',
+    calculer: async () => resumer(await getPolitiqueSansMemo(), getPredictions()),
+    repli: async () => resumer(await getPolitiqueBornee(), avecDelai(getPredictions(), DELAIS.compteurs, [])),
+  });
+});
+/** Résumé À JOUR (jamais un instantané périmé) : pour les calculs gardés eux-mêmes en base (poids appris, éléments tranchés) */
+export const getResumePolitiqueFrais = cache(async (): Promise<ResumePolitique | null> => {
+  if ((await getRole()) !== 'admin') return null;
+  return instantane<ResumePolitique | null>({
+    cle: 'politique', portee: 'admin', exigerFrais: true,
+    calculer: async () => resumer(await getPolitiqueSansMemo(), getPredictions()),
+    repli: async () => resumer(await getPolitiqueBornee(), avecDelai(getPredictions(), DELAIS.compteurs, [])),
+  });
+});
+/** Résumé borné (pages) : passé DELAIS.politique, null (rien d'imposé) au lieu de bloquer l'affichage */
+export const getResumeBorne = cache((): Promise<ResumePolitique | null> => avecDelai(getResumePolitique(), DELAIS.politique, null));
+
+/**
  * État compact pour les pages de notation : 120 derniers écrans, implicites, pénalités et écartements des règles, jamais-notés à
  * FORT POTENTIEL (note prédite ≥ 4 par le juge ou par Claude, illustration de base notée ≥ 4 ★, nouveauté acceptée).
  */
 export const getEtatPolitique = cache(async (): Promise<EtatPolitique> => {
-  const p = await getPolitiqueBornee();
+  const p = await getResumeBorne();
   if (!p) return { ...ETAT_POLITIQUE_VIDE, maintenant: new Date().toISOString() };
   const [preds, tags, nouv] = await Promise.all([avecDelai(getPredictions(), DELAIS.compteurs, []), avecDelai(getPropositionsTags(), DELAIS.compteurs, null), avecDelai(getEtatsNouveautes(), DELAIS.compteurs, { recentes: [], statuts: {} as Record<string, string>, dernieresNotes: {} })]);
   const notee = (k: string) => Boolean(p.notes[k]);
@@ -197,12 +246,14 @@ export const getEtatPolitique = cache(async (): Promise<EtatPolitique> => {
   inventaire ??= clesUnitairesInventaire();
   for (const k of inventaire) { const b = baseDeCle(k); if (b && !notee(k) && (p.notes[b]?.m ?? 0) >= 4) fort.add(k); }
   for (const r of nouv.recentes) if (nouv.statuts[r.cle] === 'accepte' && !notee(r.cle)) fort.add(r.cle);
-  return etatPolitique(p.memoire, { implicites: p.implicites, penalites: p.penalites, ecartes: p.ecartes, fortPotentiel: [...fort].slice(0, 3000), maintenant: new Date().toISOString() });
+  // etatPolitique ne lit que les écrans de la mémoire (120 derniers, gardés dans le résumé)
+  return etatPolitique({ ecrans: p.ecrans, parCle: new Map(), parGroupe: new Map() }, { implicites: p.implicites, penalites: p.penalites, ecartes: p.ecartes, fortPotentiel: [...fort].slice(0, 3000), maintenant: new Date().toISOString() });
 });
 
 /** Rétrogradation dans le générateur : implicites (−0,75 ★) et pénalités des règles apprises, plafonnées par fusionnerRenforts */
 export const getRenfortsPolitique = cache(async (): Promise<{ atelier: Record<string, number>; assets: Record<string, number> }> => {
-  const p = await getPolitiqueBornee();
+  // Instantanés disponibles (0059) : résumé attendu sans délai (il entre dans les poids gardés en base, jamais un repli vide)
+  const p = (await getSourcesApprentissage()) ? await getResumePolitiqueFrais() : await getResumeBorne();
   if (!p) return { atelier: {}, assets: {} };
   const assets: Record<string, number> = { ...renfortsImplicites(p.implicites.filter((x) => !x.cle.startsWith('compo:'))) };
   for (const [k, v] of Object.entries(p.penalites)) assets[k] = Math.max(-1, (assets[k] ?? 0) + v);
@@ -211,14 +262,6 @@ export const getRenfortsPolitique = cache(async (): Promise<{ atelier: Record<st
 
 /** Indicateurs du tableau de bord (taux de répétition, qualité présentée, jamais-notés, règles, tendance 30 jours) */
 export const getIndicateursPolitique = cache(async (): Promise<(IndicateursPolitique & { migrationManquante: boolean }) | null> => {
-  const p = await getPolitiqueBornee();
-  if (!p) return null;
-  const preds = await avecDelai(getPredictions(), DELAIS.compteurs, []);
-  const predite = new Map<string, number>();
-  for (const x of preds) predite.set(x.cle, x.note);
-  const ind = indicateursPolitique(p.memoire, {
-    qualite: (k) => p.notes[k]?.m ?? (baseDeCle(k) ? p.notes[baseDeCle(k)!]?.m : undefined) ?? predite.get(k) ?? null,
-    premiereNote: (k) => p.premieres[k] ?? null, regles: p.regles.filter((r) => r.active).length, maintenant: new Date().toISOString(),
-  });
-  return { ...ind, migrationManquante: p.migrationManquante };
+  const p = await getResumeBorne();
+  return p?.indicateurs ?? null;
 });

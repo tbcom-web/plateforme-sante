@@ -12,6 +12,7 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getTranches, tranchesEnListes } from '@/lib/tranches';
 import { getUnivers } from '@/lib/univers';
+import { instantane, porteeInstantane, SOURCES_CONTEXTE_IMAGES } from '@/lib/apprentissage-instantane';
 
 // Données de rendu et de génération partagées par les pages de la chaîne (mêmes sources que la Dégustation). Lues avec la session
 // de la personne : un contributeur lit ce que les règles de lecture ouvrent aux comptes connectés (repli : rendus du modèle).
@@ -42,15 +43,21 @@ export async function profilsChaine() {
  */
 export async function profilsDemo() {
   const { profession, profils } = await profilsChaine();
-  const dk = await sur(getDonneesKits(), null);
-  return {
-    profession,
-    profils: profils.map((p) => {
+  // Photos autorisées de chaque profil gardées en base (apprentissage-instantane.ts, 0059, 2026-10-10) tant que photos, jeux, notes
+  // et revues n'ont pas changé : la banque de photos et tout le journal des notes étaient relus à chaque page de la chaîne.
+  // Calcul gardé : une lecture des kits en échec remonte (jamais des profils sans photos figés en base) ; repli : calcul d'avant.
+  const photosDe = (dk: Awaited<ReturnType<typeof getDonneesKits>> | null) => profils.map((p) => {
       const pp = profilParId(p.id, profession.id);
       let photos: string[] | null = null;
       if (pp && dk) { try { photos = visuelsDeLActivite(kitDuProfil(pp, { photos: dk }), pp.activites[0] ?? null).photos; } catch { photos = null; } }
       return { ...p, photos };
-    }),
-  };
+    });
+  const portee = await porteeInstantane();
+  const avecPhotos = await instantane({
+    cle: `profils-demo|${profession.id}`, portee, tables: SOURCES_CONTEXTE_IMAGES,
+    calculer: async () => photosDe(await getDonneesKits()),
+    repli: async () => photosDe(await sur(getDonneesKits(), null)),
+  });
+  return { profession, profils: avecPhotos };
 }
 export type ProfilDemoChaine = Awaited<ReturnType<typeof profilsDemo>>['profils'][number];

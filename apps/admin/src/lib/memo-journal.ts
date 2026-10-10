@@ -1,5 +1,6 @@
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
+import { signatureSources } from '@/lib/apprentissage-instantane';
 
 // Lectures volumineuses MÉMORISÉES ENTRE REQUÊTES (2026-10-09, « la Dégustation est lente ») : le journal des duels (≈ 10 Mo en
 // production, compositions comprises) était relu à chaque page. Il est gardé en mémoire sur l'instance serveur, par compte, tant
@@ -30,7 +31,10 @@ export async function signatureTable(table: string, colonneDate = 'created_at'):
  */
 export async function memoParSignature<T>(nom: string, utilisateur: string | null | undefined, tables: readonly string[], lire: () => Promise<T>): Promise<T> {
   if (!utilisateur) return lire();
-  const sigs = await Promise.all(tables.map((t) => signatureTable(t)));
+  // Compteurs des sources (0059, une petite requête partagée par la page) ; sans la migration : nombre de lignes et dernière date
+  // (count exact : parcours de toute la table, une requête par table)
+  const compteurs = await signatureSources(tables);
+  const sigs = compteurs ? [compteurs] : await Promise.all(tables.map((t) => signatureTable(t)));
   if (sigs.some((s) => s === null)) return lire();
   const signature = sigs.join('§');
   const cle = `${nom}|${utilisateur}`;

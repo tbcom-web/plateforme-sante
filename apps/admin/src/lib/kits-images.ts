@@ -8,6 +8,8 @@ import {
 import { professionsActives } from '@plateforme/core/professions';
 import { getImagesDemo } from '@/lib/kit-demo';
 import { createClient } from '@/lib/supabase/server';
+import { getRole } from '@/lib/admin';
+import { instantane, SOURCES_CONTEXTE_IMAGES } from '@/lib/apprentissage-instantane';
 import { getPhotosDesJeux, getPoidsAssets, getSurchargesSujets } from '@/lib/assets-notes';
 import { getRevuesIllustrations } from '@/lib/illustrations';
 import { getHashtagsAssets } from '@/lib/hashtags';
@@ -48,7 +50,18 @@ export const getDonneesKits = cache(async (): Promise<DonneesKits & { exclues: S
   return { banque, assets, notes: notesPhotos(lignes), hashtags, soins, gardes: kitsGardes(notesKits), exclues: clesImagesExclues(lignes), surcharges };
 });
 
-export const getContexteImages = cache(async (praticien = false): Promise<{ exclues: string[]; kits: Record<string, KitCompact>; vivier: Record<string, string[]> }> => {
+type ContexteImagesCompact = { exclues: string[]; kits: Record<string, KitCompact>; vivier: Record<string, string[]> };
+
+// Contexte d'images de l'ADMIN (layout de chaque page) gardé en base (apprentissage-instantane.ts, 0059, 2026-10-10) tant que photos,
+// jeux, notes, revues et catalogue n'ont pas changé : il relisait la banque de photos et tout le journal des notes à chaque page.
+// Praticiens et autres comptes : calcul direct, comme avant.
+export const getContexteImages = cache(async (praticien = false): Promise<ContexteImagesCompact> => {
+  const portee = !praticien && (await getRole().catch(() => null)) === 'admin' ? 'admin' as const : null;
+  return instantane({ cle: 'contexte-images', portee, tables: SOURCES_CONTEXTE_IMAGES, calculer: () => calculerContexteImages(praticien, true), repli: () => calculerContexteImages(praticien, false) });
+});
+
+/** `lancer` : une erreur est remontée (jamais un contexte vide gardé en base) au lieu du repli vide */
+async function calculerContexteImages(praticien: boolean, lancer: boolean): Promise<ContexteImagesCompact> {
   try {
     // Lectures en parallèle (2026-10-09) : le kit démo n'attend plus les kits et les visuels
     const [d, dv, demos] = await Promise.all([getDonneesKits(), getDonneesVisuels(), getImagesDemo()]);
@@ -68,10 +81,11 @@ export const getContexteImages = cache(async (praticien = false): Promise<{ excl
       if (k) kits[cleKitDemo(p.id)] = kitDemoCompact(k);
     }
     return { exclues: [...d.exclues].sort(), kits, vivier };
-  } catch {
+  } catch (e) {
+    if (lancer) throw e;
     return { exclues: [], kits: {}, vivier: {} };
   }
-});
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Compléter un kit (suggestions-kits.ts)

@@ -7,6 +7,7 @@ import { getDuelsApprentissage } from '@/lib/duels';
 import { getNotesPagesLecture, getRecettesLecture } from '@/lib/recettes';
 import { createClient, getUser } from '@/lib/supabase/server';
 import { memoRecent } from '@/lib/memo-journal';
+import { instantane, porteeInstantane } from '@/lib/apprentissage-instantane';
 import { professionDegustation } from '@/lib/degustation';
 import { colonneAbsente } from '@/lib/erreurs-supabase';
 import { getPoidsAssets } from '@/lib/assets-notes';
@@ -81,9 +82,13 @@ async function getPoidsAtelierSansMemo(): Promise<PoidsAtelier | null> {
 }
 // Mémorisés quelques minutes par compte et profession (memo-journal.ts, 2026-10-09 : chaîne et Dégustation lentes) : le calcul relit
 // tous les journaux ; frais 1 min, puis servis aussitôt et recalculés en arrière-plan (10 min au plus)
+// Gardés en base (apprentissage-instantane.ts, 0059, 2026-10-10) par profession et portée (admin / équipe) tant que les journaux
+// sources n'ont pas changé : une instance froide relit l'instantané (2 petites requêtes) au lieu de relire tous les journaux.
+// Sans la migration (ou hors équipe) : mémoire de quelques minutes de l'instance, comme avant.
 export const getPoidsAtelier = cache(async (): Promise<PoidsAtelier | null> => {
-  const [user, p] = await Promise.all([getUser().catch(() => null), professionDegustation()]);
-  return user ? memoRecent(`poids|${user.id}|${p.id}`, getPoidsAtelierSansMemo) : getPoidsAtelierSansMemo();
+  const [user, p, portee] = await Promise.all([getUser().catch(() => null), professionDegustation(), porteeInstantane()]);
+  if (!user) return getPoidsAtelierSansMemo();
+  return instantane({ cle: `poids|${p.id}`, portee, calculer: getPoidsAtelierSansMemo, repli: () => memoRecent(`poids|${user.id}|${p.id}`, getPoidsAtelierSansMemo) });
 });
 
 type LigneApprentissage = { ingredients: Partial<IngredientsAtelier>; note: number; etiquettes: string[] | null; appareil?: string | null };

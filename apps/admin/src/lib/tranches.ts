@@ -6,7 +6,9 @@ import { getNotesAssets } from '@/lib/assets-notes';
 import { getNotesAtelier } from '@/lib/atelier';
 import { getNotationsAdmin } from '@/lib/notation-recettes';
 import { getDuelsAlleges } from '@/lib/duels';
-import { getPolitiqueBornee } from '@/lib/politique-evaluation';
+import { getResumeBorne, getResumePolitiqueFrais } from '@/lib/politique-evaluation';
+import { getSourcesApprentissage, instantane } from '@/lib/apprentissage-instantane';
+import { getRole } from '@/lib/admin';
 import { avecDelai, DELAIS } from '@/lib/delai';
 
 // Éléments tranchés (packages/core/src/tranches.ts, migration 0041) côté serveur, pour Paul :
@@ -32,10 +34,14 @@ export const getReevaluations = cache(async (): Promise<{ reevaluations: Reevalu
 
 export type DetailTranche = { cle: string; etat: 'refuse' | 'favori'; famille: 'element' | 'combinaison' | 'recette' | 'duel' | 'implicite'; note: number | null; le: string | null };
 
-export const getTranches = cache(async (): Promise<{ tranches: Tranches; details: DetailTranche[]; signaux: SignalTranche[] }> => {
+async function getTranchesSansMemo(): Promise<{ tranches: Tranches; details: DetailTranche[] }> {
   const [{ reevaluations }, assets, atelier, recettes, duels, politique] = await Promise.all([
     getReevaluations(), getNotesAssets().catch(() => ({ notes: [] })), getNotesAtelier().catch(() => ({ notes: [] })),
-    getNotationsAdmin().catch(() => ({ notations: [] })), avecDelai(getDuelsAlleges(), DELAIS.politique, { duels: [], migrationManquante: false }), getPolitiqueBornee(),
+    getNotationsAdmin().catch(() => ({ notations: [] })),
+    // Instantanés disponibles : journal attendu sans délai (un repli vide serait gardé en base)
+    getSourcesApprentissage().then((s) => (s ? getDuelsAlleges() : avecDelai(getDuelsAlleges(), DELAIS.politique, { duels: [], migrationManquante: false }))),
+    // Instantanés disponibles (0059) : résumé de la politique attendu sans délai (le résultat est gardé en base)
+    getSourcesApprentissage().then((s) => (s ? getResumePolitiqueFrais() : getResumeBorne())),
   ]);
   const sAssets: SignalTranche[] = assets.notes.map((n) => ({ cle: n.cle, note: n.note, le: n.le ?? null }));
   const sAtelier: SignalTranche[] = atelier.notes.flatMap((n) => [
@@ -61,7 +67,18 @@ export const getTranches = cache(async (): Promise<{ tranches: Tranches; details
     for (const k of t.favoris) if (!tranches.refuses.has(k) && !details.some((x) => x.cle === k)) details.push({ cle: k, etat: 'favori', famille, note: derniere.get(k)?.note ?? 5, le: derniere.get(k)?.le ?? null });
   }
   details.sort((a, b) => ((b.le ?? '') < (a.le ?? '') ? -1 : 1));
-  return { tranches, details, signaux: tous };
+  return { tranches, details };
+}
+type TranchesJson = { tranches: { refuses: string[]; favoris: string[]; notes: string[] }; details: DetailTranche[] };
+// Gardées en base (apprentissage-instantane.ts, 0059, 2026-10-10) tant que les journaux n'ont pas changé ; sans la migration : calcul
+// à chaque requête, comme avant
+export const getTranches = cache(async (): Promise<{ tranches: Tranches; details: DetailTranche[] }> => {
+  const portee = (await getRole().catch(() => null)) === 'admin' ? 'admin' as const : null;
+  return instantane<{ tranches: Tranches; details: DetailTranche[] }, TranchesJson>({
+    cle: 'tranches', portee, calculer: getTranchesSansMemo,
+    serialiser: (v) => ({ tranches: tranchesEnListes(v.tranches), details: v.details }),
+    deserialiser: (j) => ({ tranches: { refuses: new Set(j.tranches.refuses), favoris: new Set(j.tranches.favoris), notes: new Set(j.tranches.notes) }, details: j.details }),
+  });
 });
 
 /** Forme sérialisable pour les composants clients */
