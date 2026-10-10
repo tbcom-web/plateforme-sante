@@ -127,3 +127,66 @@ export async function parIdentifiant(idFhir: string, demo: boolean): Promise<Res
     return (e as Error).message === 'limite' ? { etat: 'limite' } : { etat: 'erreur' };
   }
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Prospection (/admin/prospection/praticien/[rpps]) : TOUTES les situations d'exercice d'un praticien selon l'API, actives et
+// terminées, pour vérifier ce que l'ANS garde de l'historique (docs/prospection-rpps.md). Admin seulement, rien n'est stocké.
+// ---------------------------------------------------------------------------------------------------------------------
+
+type RessourceFhir = {
+  resourceType?: string; id?: string; active?: boolean; meta?: { lastUpdated?: string };
+  period?: { start?: string; end?: string };
+  code?: { coding?: { system?: string; code?: string; display?: string }[] }[];
+  organization?: { reference?: string }; practitioner?: { reference?: string };
+  name?: string; address?: { line?: string[]; postalCode?: string; city?: string }[];
+  extension?: { url?: string; valueCoding?: { display?: string; code?: string }; valuePeriod?: { start?: string; end?: string } }[];
+};
+export type SituationAns = {
+  id: string; active: boolean | null; debut: string | null; fin: string | null; majLe: string | null;
+  codes: string[]; structure: string | null; adresse: string | null;
+};
+export type HistoriqueAns =
+  | { etat: 'ok'; situations: SituationAns[]; praticienMajLe: string | null; brut: string }
+  | { etat: 'indisponible' | 'introuvable' | 'erreur'; message?: string };
+
+export async function historiqueAnnuaire(rpps: string): Promise<HistoriqueAns> {
+  if (!annuaireConfigure()) return { etat: 'indisponible' };
+  if (!/^\d{11}$/.test(rpps)) return { etat: 'introuvable' };
+  try {
+    const p = await appeler(`/Practitioner?${q({ identifier: `${S_RPPS}|${rpps}` })}`);
+    const praticiens = (p?.entry ?? []).map((e) => e.resource as RessourceFhir).filter((r) => r?.resourceType === 'Practitioner' && r.id);
+    if (!praticiens.length) return { etat: 'introuvable' };
+    const ids = praticiens.map((r) => r.id!).join(',');
+    // Sans filtre « active » puis avec active=false : selon le serveur, la recherche par défaut peut ne rendre que les actives
+    const [tous, inactifs] = await Promise.all([
+      appeler(`/PractitionerRole?${q({ practitioner: ids, _include: 'PractitionerRole:organization', _count: '100' })}`),
+      appeler(`/PractitionerRole?${q({ practitioner: ids, active: 'false', _include: 'PractitionerRole:organization', _count: '100' })}`),
+    ]);
+    const ressources = [...(tous?.entry ?? []), ...(inactifs?.entry ?? [])].map((e) => e.resource as RessourceFhir).filter(Boolean);
+    const orgs = new Map(ressources.filter((r) => r.resourceType === 'Organization' && r.id).map((r) => [`Organization/${r.id}`, r]));
+    const vus = new Set<string>();
+    const situations: SituationAns[] = [];
+    for (const r of ressources) {
+      if (r.resourceType !== 'PractitionerRole' || !r.id || vus.has(r.id)) continue;
+      vus.add(r.id);
+      const o = orgs.get(r.organization?.reference ?? '');
+      const a = o?.address?.[0];
+      const periodeExt = r.extension?.find((x) => x.valuePeriod)?.valuePeriod;
+      situations.push({
+        id: r.id,
+        active: typeof r.active === 'boolean' ? r.active : null,
+        debut: r.period?.start ?? periodeExt?.start ?? null,
+        fin: r.period?.end ?? periodeExt?.end ?? null,
+        majLe: r.meta?.lastUpdated ?? null,
+        codes: (r.code ?? []).flatMap((c) => c.coding ?? []).map((c) => c.display || c.code || '').filter(Boolean),
+        structure: o?.name ?? null,
+        adresse: a ? [a.line?.join(' '), a.postalCode, a.city].filter(Boolean).join(' ') : null,
+      });
+    }
+    situations.sort((x, y) => String(y.debut ?? y.majLe ?? '').localeCompare(String(x.debut ?? x.majLe ?? '')));
+    const brut = JSON.stringify({ praticien: praticiens, situations: ressources.filter((r) => r.resourceType === 'PractitionerRole') }, null, 1).slice(0, 20000);
+    return { etat: 'ok', situations, praticienMajLe: praticiens[0].meta?.lastUpdated ?? null, brut };
+  } catch (e) {
+    return { etat: 'erreur', message: e instanceof Error ? e.message : 'erreur' };
+  }
+}

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { casseNom, telephoneLisible } from '@plateforme/core/annuaire-sante';
 import { exigerAdmin } from '@/lib/admin';
 import { lireFiche, type Lien, type LigneProspection } from '@/lib/prospection';
+import { historiqueAnnuaire, type HistoriqueAns } from '@/lib/annuaire-sante';
 import { autresProfessions, jour, Scores, Specialites } from '../../Elements';
 import Suivi from '../../Suivi';
 
@@ -66,10 +67,37 @@ function Reseau({ liens, situations }: { liens: Lien[]; situations: LigneProspec
   );
 }
 
+/** Situations selon l'API FHIR de l'ANS, actives ET terminées : ce que l'ANS garde de l'historique */
+function SituationsAns({ h }: { h: HistoriqueAns }) {
+  if (h.etat === 'indisponible') return <p className="text-sm text-neutral-500">Clé de l’API ANS absente sur ce serveur (variable ANNUAIRE_SANTE_API_KEY dans Vercel).</p>;
+  if (h.etat === 'introuvable') return <p className="text-sm text-neutral-500">Praticien introuvable dans l’API ANS.</p>;
+  if (h.etat !== 'ok') return <p className="text-sm text-amber-800">API ANS indisponible ({h.message}).</p>;
+  return (
+    <div className="grid gap-2">
+      <ul className="grid gap-2 rounded-2xl border border-black/5 bg-white p-4 text-sm">
+        {h.situations.map((s) => (
+          <li key={s.id} className="grid gap-0.5">
+            <span>
+              <span className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${s.active === false ? 'bg-neutral-200 text-neutral-700' : 'bg-teal-100 text-teal-900'}`}>{s.active === false ? 'Terminée' : 'Active'}</span>
+              <strong>{s.structure ? casseNom(s.structure) : 'Structure non renseignée'}</strong>{s.adresse && <span className="text-neutral-600"> · {casseNom(s.adresse)}</span>}
+            </span>
+            <span className="text-xs text-neutral-500">
+              {[s.debut && `début ${jour(s.debut)}`, s.fin && `fin ${jour(s.fin)}`, s.majLe && `modifiée le ${jour(s.majLe)}`, s.codes.join(', ')].filter(Boolean).join(' · ')}
+            </span>
+          </li>
+        ))}
+        {!h.situations.length && <li className="text-neutral-500">Aucune situation renvoyée.</li>}
+      </ul>
+      <p className="text-xs text-neutral-500">{h.situations.filter((s) => s.active === false).length} situation(s) terminée(s) gardée(s) par l’ANS · fiche praticien modifiée le {jour(h.praticienMajLe)}</p>
+      <details className="text-xs"><summary className="cursor-pointer text-teal-800 underline">Réponse brute de l’API</summary><pre className="mt-2 max-h-96 overflow-auto rounded-lg bg-neutral-50 p-3">{h.brut}</pre></details>
+    </div>
+  );
+}
+
 export default async function FichePraticien({ params }: PageProps<'/admin/prospection/praticien/[rpps]'>) {
   await exigerAdmin();
   const { rpps } = await params;
-  const fiche = await lireFiche(rpps);
+  const [fiche, ans] = await Promise.all([lireFiche(rpps), historiqueAnnuaire(rpps)]);
   if (!fiche) notFound();
   const { situations, liens } = fiche;
   const p = situations.find((s) => !s.disparu_le) ?? situations[0];
@@ -93,6 +121,14 @@ export default async function FichePraticien({ params }: PageProps<'/admin/prosp
       <section className="grid gap-3">
         <h2 className="font-semibold">Situations d’exercice</h2>
         <ul className="grid gap-3">{situations.map((s) => <Situation key={s.cle} s={s} />)}</ul>
+      </section>
+
+      <section className="grid gap-3">
+        <div>
+          <h2 className="font-semibold">Situations au RPPS selon l’API ANS</h2>
+          <p className="text-xs text-neutral-500">En direct, actives et terminées : ce que l’Annuaire Santé garde de son parcours.</p>
+        </div>
+        <SituationsAns h={ans} />
       </section>
 
       <section className="grid gap-3">
