@@ -96,12 +96,12 @@ export default async function FichePraticien({ params }: PageProps<'/admin/prosp
       </section>
 
       <section className="grid gap-3">
-        <h2 className="font-semibold">Diplômes complémentaires</h2>
+        <h2 className="font-semibold">Diplômes et titres <span className="text-xs font-normal text-neutral-500">(RPPS, comme sur annuaire.sante.fr)</span></h2>
         {diplomes.length ? (
           <ul className="grid gap-1 rounded-2xl border border-black/5 bg-white p-4 text-sm">
-            {diplomes.map((d) => <li key={d.l}>{d.l}{d.t && <span className="text-xs text-neutral-500"> · {d.t}</span>}</li>)}
+            {diplomes.map((d) => <li key={d.l} className={d.t === 'DE' ? 'text-neutral-600' : 'font-medium'}>{d.c && <span className="mr-2 font-mono text-xs text-neutral-500">{d.c}</span>}{d.l}{d.t && <span className="text-xs text-neutral-500"> · {d.t}</span>}</li>)}
           </ul>
-        ) : <p className="text-sm text-neutral-500">Aucun diplôme complémentaire déclaré au RPPS.</p>}
+        ) : <p className="text-sm text-neutral-500">Aucun diplôme ni titre transmis par le RPPS (fiche antérieure à la synchro des diplômes).</p>}
       </section>
 
       <section className="grid gap-3">

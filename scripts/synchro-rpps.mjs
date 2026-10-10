@@ -253,7 +253,7 @@ function ligneVersPraticien(v, c) {
   };
 }
 
-/** Diplômes complémentaires par RPPS (PS_LibreAcces_Dipl_AutExerc) : tout sauf le diplôme d'État (« DE ») de la profession */
+/** Diplômes et titres par RPPS (PS_LibreAcces_Dipl_AutExerc, section « Diplômes et titres » d'annuaire.sante.fr), DE compris */
 async function lireDiplomes(source, rppsVoulus) {
   const parRpps = new Map();
   let c = null;
@@ -262,7 +262,7 @@ async function lireDiplomes(source, rppsVoulus) {
     if (!c) {
       const noms = v.map(normal);
       const col = (d) => noms.findIndex((n) => n.startsWith(normal(d)));
-      c = { rpps: col('Identifiant PP'), type: col('Code type diplôme obtenu'), lib: col('Libellé diplôme obtenu'), aut: col('Libellé type autorisation'), disc: col('Libellé discipline autorisation') };
+      c = { rpps: col('Identifiant PP'), type: col('Code type diplôme obtenu'), code: col('Code diplôme obtenu'), lib: col('Libellé diplôme obtenu'), aut: col('Libellé type autorisation'), disc: col('Libellé discipline autorisation') };
       if (c.rpps < 0 || c.lib < 0) throw new Error(`Diplômes : colonnes introuvables. En-tête lu : ${l}`);
       continue;
     }
@@ -270,10 +270,10 @@ async function lireDiplomes(source, rppsVoulus) {
     if (!rppsVoulus.has(rpps)) continue;
     const type = propre(v[c.type]);
     // « Autorisation de plein exercice » : mention administrative, sans intérêt commercial
-    const libelles = [type !== 'DE' ? propre(v[c.lib]) : '', c.aut >= 0 ? propre(v[c.aut]) : '', c.disc >= 0 ? propre(v[c.disc]) : '']
+    const libelles = [propre(v[c.lib]), c.aut >= 0 ? propre(v[c.aut]) : '', c.disc >= 0 ? propre(v[c.disc]) : '']
       .filter((x) => x && !/plein exercice/i.test(x));
     const liste = parRpps.get(rpps) ?? [];
-    for (const lib of libelles) if (!liste.some((d) => d.l === lib) && liste.length < 12) liste.push({ t: type, l: lib });
+    for (const lib of libelles) if (!liste.some((d) => d.l === lib) && liste.length < 12) liste.push({ t: type, c: c.code >= 0 ? propre(v[c.code]) : '', l: lib });
     if (liste.length) parRpps.set(rpps, liste);
   }
   return parRpps;
@@ -558,7 +558,7 @@ try {
   for (const p of praticiens.values()) {
     p.autres_professions = (p.adresse_cle && autresParAdresse.get(p.adresse_cle)) || null;
     p.diplomes = diplomes.get(p.rpps) ?? null;
-    p.specialites = specialitesDepuisDiplomes((p.diplomes ?? []).map((d) => d.l));
+    p.specialites = specialitesDepuisDiplomes((p.diplomes ?? []).filter((d) => d.t !== 'DE').map((d) => d.l));
   }
   autresParAdresse.clear();
   const liste = [...praticiens.values()];
@@ -576,7 +576,7 @@ try {
       roles[p.role ?? '?'] = (roles[p.role ?? '?'] ?? 0) + 1;
       if (p.structure_cle) structures[p.structure_cle] = (structures[p.structure_cle] ?? 0) + 1;
     }
-    console.log(`Diplômes complémentaires : ${diplomes.size} praticiens ; spécialités (situations libérales) :`, parSpec);
+    console.log(`Diplômes et titres : ${diplomes.size} praticiens, dont ${[...diplomes.values()].filter((l) => l.some((d) => d.t !== 'DE')).length} avec un titre en plus du DE ; spécialités (situations libérales) :`, parSpec);
     console.log('Rôles :', roles);
     console.log(`Adresse partagée avec une autre profession : ${lib.filter((p) => p.autres_professions).length} situations libérales`);
     console.log(`Structures avec plusieurs podologues : ${Object.values(structures).filter((n) => n > 1).length}`);

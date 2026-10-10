@@ -14,7 +14,7 @@ export type LigneProspection = {
   statut: string | null; note: string | null; relance_le: string | null; situation_maj_le?: string | null;
   // 0057
   role?: string | null; secteur?: string | null; structure_cle?: string | null; adresse_cle?: string | null;
-  autres_professions?: Record<string, number> | null; diplomes?: { t: string; l: string }[] | null; specialites?: string[] | null;
+  autres_professions?: Record<string, number> | null; diplomes?: { t: string; c?: string; l: string }[] | null; specialites?: string[] | null;
   score_installation?: number | null; score_prospect?: number | null; raisons?: Raison[] | null;
 };
 export type Synchro = { le: string; lignes: number | null; nouveaux: number | null; disparus: number | null; verifies: number | null };
