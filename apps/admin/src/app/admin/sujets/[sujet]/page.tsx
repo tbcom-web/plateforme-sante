@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { pratiqueDe, profilsDePratique, universDuParcours } from '@plateforme/core';
+import { pratiqueDe, profilsDePratique, SEUIL_PHOTOS_SUJET, universDuParcours } from '@plateforme/core';
 import { ordonnerSujets, SEUIL_MODELES } from '@plateforme/core/sujets-validation';
 import { exigerAdmin } from '@/lib/admin';
 import { getProfession } from '@/lib/profession';
@@ -12,6 +12,8 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import { avecDelai, DELAIS } from '@/lib/delai';
+import { sourcesConfigurees } from '@/lib/photos-libres';
+import SourcerProfil from '../../profils/SourcerProfil';
 import { visuelCarte } from '../actions';
 import CartesSujet from './CartesSujet';
 import type { VisuelArrivage } from '../../arrivages/Arrivages';
@@ -61,6 +63,13 @@ export default async function PageSujet({ params }: PageProps<'/admin/sujets/[su
         <h1 className="text-xl font-bold sm:text-2xl"><Link href="/admin/sujets" className="text-neutral-500 hover:underline">À valider</Link> <span aria-hidden="true" className="text-neutral-400">›</span> {sujet.libelle}</h1>
         <span className="text-xs text-neutral-500">Vue détaillée : <Link className="underline" href="/admin/arrivages">Arrivages</Link>{profil ? <> · <Link className="underline" href="/admin/profils">Profil</Link></> : null}</span>
       </div>
+      {/* Moins de SEUIL_PHOTOS_SUJET photos : l'agent source une série (series-photos-activites.ts), qui arrive ici comme carte */}
+      {profil?.principal && sujet.photos < SEUIL_PHOTOS_SUJET && !sujet.serieEnAttente && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          <span>{sujet.photos} photo{sujet.photos > 1 ? 's' : ''} sur {SEUIL_PHOTOS_SUJET} attendues pour ce sujet.</span>
+          <SourcerProfil profil={profil.id} pret={Object.values(sourcesConfigurees()).some(Boolean)} lien={null} texte="Sourcer des photos" />
+        </div>
+      )}
       <CartesSujet
         sujet={{ id: sujet.id, libelle: sujet.libelle, profil: sujet.profil, okServeur: sujet.ok, total: sujet.total, aVoir: sujet.aVoir }}
         cartes={cartes}

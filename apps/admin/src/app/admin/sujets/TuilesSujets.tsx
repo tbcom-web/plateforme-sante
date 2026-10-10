@@ -1,9 +1,11 @@
 // Tuiles des sujets du point d'entrée « À valider » (présentation seule, sans lecture) : aperçu composite, nouveautés, progression
 // (vus, part OK), « Complet ✓ », modèles prêts à créer ; bouton « Reprendre » vers le premier sujet. Utilisé par page.tsx.
+// Sujet d'un profil avec moins de SEUIL_PHOTOS_SUJET photos : raccourci « Sourcer des photos » sous la tuile.
 import Link from 'next/link';
 import { lienSujet, peutCreerModeles, progressionSujet } from '@plateforme/core/sujets-validation';
 import type { CarteSujet, ResumeSujetServeur } from '@/lib/sujets-validation';
 import type { VisuelArrivage } from '../arrivages/Arrivages';
+import SourcerProfil from '../profils/SourcerProfil';
 
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700 focus-visible:ring-offset-2';
 
@@ -20,7 +22,11 @@ function Vignette({ carte, visuel }: { carte: CarteSujet; visuel: VisuelArrivage
   return <span className={`${cadre} bg-teal-50 text-lg font-semibold text-teal-900`} aria-hidden="true">{glyphe}</span>;
 }
 
-export default function TuilesSujets({ sujets, cartes, apercus }: { sujets: ResumeSujetServeur[]; cartes: Record<string, CarteSujet>; apercus: Record<string, VisuelArrivage | null> }) {
+export default function TuilesSujets({ sujets, cartes, apercus, sourcer = {}, pret = false, seuil = 6 }: {
+  sujets: ResumeSujetServeur[]; cartes: Record<string, CarteSujet>; apercus: Record<string, VisuelArrivage | null>;
+  /** Sujets à compléter en photos : profil et nombre de photos */
+  sourcer?: Record<string, { profil: string; photos: number }>; pret?: boolean; seuil?: number;
+}) {
   const carteDe = (id: string) => cartes[id];
   return (
     <>
@@ -37,7 +43,7 @@ export default function TuilesSujets({ sujets, cartes, apercus }: { sujets: Resu
         {sujets.map((s) => {
           const p = progressionSujet(s);
           return (
-            <li key={s.id}>
+            <li key={s.id} className="grid gap-1.5">
               <Link href={lienSujet(s.id)} className={`grid h-full gap-3 rounded-2xl border bg-white p-3 transition hover:border-teal-700/40 hover:shadow-sm ${s.nouveautes ? 'border-amber-300' : 'border-black/5'} ${focus}`}>
                 <span className="grid grid-cols-3 gap-1.5">
                   {s.apercu.slice(0, 3).map((id) => <Vignette key={id} carte={carteDe(id)} visuel={apercus[id] ?? null} />)}
@@ -60,6 +66,10 @@ export default function TuilesSujets({ sujets, cartes, apercus }: { sujets: Resu
                   </span>
                 </span>
               </Link>
+              {sourcer[s.id] && pret && (
+                <SourcerProfil profil={sourcer[s.id].profil} pret={pret} discret lien={{ href: lienSujet(s.id), libelle: 'Valider' }}
+                  texte={`Sourcer des photos (${sourcer[s.id].photos}/${seuil})`} />
+              )}
             </li>
           );
         })}

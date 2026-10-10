@@ -31,6 +31,10 @@ import { couvertureRequetes, requetesDuTheme, themeRecherche, themesRecherche, t
 import { idProfession, PROFESSION_PAR_DEFAUT } from './professions';
 import { hashtagsValides } from './hashtags';
 import { libelleEmplacement } from './kits-images';
+import { coherenceSerieTexte, exclusionsSerie, seriesDuProfil, tagsSerieActivite, type ExclusionsSerie } from './series-photos-activites';
+
+// Séries par activité (basket, tennis, golf, cyclisme, course, trail / randonnée) : requêtes, exclusions, tags, cohérence
+export * from './series-photos-activites';
 
 // ---------------------------------------------------------------------------------------------------------------
 // Quotas (docs/sourcing-photos.md, « Quotas ») : très en dessous des limites des API (Pexels 200 / h et 20 000 / mois,
@@ -86,6 +90,10 @@ export type CibleSourcing = {
   /** Gamme et traitement du finaliste de la chaîne des modèles (cohérence avec le modèle), sinon null */
   gamme: string | null;
   traitement: IdTraitementPhotos | null;
+  /** Série d'activité (series-photos-activites.ts) : exclusions propres, vocabulaire du terrain accepté, cohérence visée */
+  exclusions?: Required<ExclusionsSerie> | null;
+  vocabulaire?: string[];
+  coherence?: string | null;
 };
 
 const uniques = <T,>(l: readonly T[]) => [...new Set(l)];
@@ -137,11 +145,23 @@ export function cibleProfil(profession: string, profilId: string, o: { finaliste
     ...requetesDuTheme(p, theme),
   ]);
   const f = finalisteDe(o.finalistes, profil.id);
+  // Série d'activité : ambiance après les requêtes de l'activité, tags (sujet, activité, profession), exclusions, vocabulaire du terrain
+  const series = seriesDuProfil(profil.id).filter((s) => profil.activites.includes(s.activite));
+  const serie = series.find((s) => s.activite === activite?.id) ?? series[0];
+  if (serie) {
+    const autres = series.filter((s) => s !== serie);
+    const tete = [...(activite?.requetes ?? []), ...autres.flatMap((s) => activitePratique(pratique, s.activite)?.requetes.slice(0, 2) ?? [])];
+    const requetesSerie = uniques([...tete, ...series.flatMap((s) => s.ambiance), ...requetes]);
+    requetes.splice(0, requetes.length, ...requetesSerie);
+  }
+  const tagsSerie = series.flatMap((s) => tagsSerieActivite(p, s.activite));
+  const coherence = serie ? coherenceSerieTexte(serie) : null;
   return {
     id: `profil:${p}:${profil.id}`, type: 'profil', profession: p, sujet, theme, themesDecision: p === PROFESSION_PAR_DEFAUT ? [sujet] : [theme], profil: profil.id, libelle: profil.court,
-    activite: h, emplacements, hashtags: hashtagsValides([...(activite?.hashtags ?? []), ...themeHashtags]), requetes,
-    priorite: o.priorite ?? (f ? 100 : 50), raison: o.raison ?? (f ? 'Profil d’un modèle finaliste' : `Profil ${profil.court}`),
+    activite: h, emplacements, hashtags: hashtagsValides([...(activite?.hashtags ?? []), ...themeHashtags, ...tagsSerie]), requetes,
+    priorite: o.priorite ?? (f ? 100 : 50), raison: o.raison ?? `${f ? 'Profil d’un modèle finaliste' : `Profil ${profil.court}`}${coherence ? ` · série : ${coherence}` : ''}`,
     gamme: gammeValide(f?.gamme), traitement: traitementValide(f?.traitement),
+    ...(serie ? { exclusions: exclusionsSerie(serie.activite), vocabulaire: uniques(series.flatMap((s) => s.vocabulaire)), coherence } : {}),
   };
 }
 
@@ -349,10 +369,10 @@ export const orientationCandidate = (c: Pick<CandidatPhoto, 'largeur' | 'hauteur
 export const EMPLACEMENTS_PAYSAGE = ['accueil', 'page-sujet'] as const;
 export const orientationsPermises = (emplacement: string): readonly ('paysage' | 'carree')[] => ((EMPLACEMENTS_PAYSAGE as readonly string[]).includes(emplacement) ? ['paysage'] : ['paysage', 'carree']);
 
-export type RaisonEcart = 'deja-vue' | 'doublon' | 'trop-petite' | 'orientation' | 'marque' | 'texte' | 'visage' | 'sang-plaie' | 'hors-metier' | 'apercu';
+export type RaisonEcart = 'deja-vue' | 'doublon' | 'trop-petite' | 'orientation' | 'marque' | 'texte' | 'visage' | 'enfant' | 'sang-plaie' | 'hors-metier' | 'apercu';
 export const LIBELLES_ECARTS: Record<RaisonEcart, string> = {
   'deja-vue': 'déjà vue, rejetée ou proposée', doublon: 'doublon', 'trop-petite': 'trop petite', orientation: 'orientation', marque: 'marque', texte: 'texte',
-  visage: 'visage', 'sang-plaie': 'sang, plaie ou tatouage', 'hors-metier': 'hors métier', apercu: 'aperçu illisible',
+  visage: 'visage', enfant: 'enfant identifiable', 'sang-plaie': 'sang, plaie ou tatouage', 'hors-metier': 'hors métier', apercu: 'aperçu illisible',
 };
 
 export type CandidateSourcing = CandidatPhoto & { requete: string };
@@ -362,9 +382,11 @@ export type CandidateSourcing = CandidatPhoto & { requete: string };
  * trop petites, portrait (et carrée si la cible n'a que des bandeaux), mots interdits (marque, texte, visage, sang / plaie,
  * hors métier ; pour les soins, aussi « patient », « médecin »), texte de la source sans aucun mot du métier.
  */
-export function filtrerCandidatesSourcing(liste: readonly CandidateSourcing[], o: { profession: string; emplacements: readonly string[]; dejaVues?: ReadonlySet<string> }): { gardees: CandidateSourcing[]; ecartees: { cle: string; raison: RaisonEcart }[] } {
+export function filtrerCandidatesSourcing(liste: readonly CandidateSourcing[], o: { profession: string; emplacements: readonly string[]; dejaVues?: ReadonlySet<string>; exclusions?: ExclusionsSerie | null; vocabulaire?: readonly string[] }): { gardees: CandidateSourcing[]; ecartees: { cle: string; raison: RaisonEcart }[] } {
   const vues = new Set(o.dejaVues ?? []);
-  const vocab = vocabulaireMetier(o.profession);
+  const vocab = new Set([...vocabulaireMetier(o.profession), ...(o.vocabulaire ?? [])]);
+  // Exclusions d'une série d'activité (marques et compétitions, enfants identifiables, foule, dossards), après les mots interdits communs
+  const exclusions = (Object.entries(o.exclusions ?? {}) as ['marque' | 'texte' | 'visage' | 'enfant', readonly string[] | undefined][]).filter(([, l]) => l?.length);
   const soins = o.emplacements.some((e) => e.startsWith('soin:'));
   const permises = new Set(o.emplacements.flatMap((e) => orientationsPermises(e)));
   const gardees: CandidateSourcing[] = [];
@@ -382,6 +404,8 @@ export function filtrerCandidatesSourcing(liste: readonly CandidateSourcing[], o
     const mots = motsDuTexte(`${c.description} ${c.tags.join(' ')}`);
     const interdit = (Object.keys(MOTS_INTERDITS) as (keyof typeof MOTS_INTERDITS)[]).find((k) => MOTS_INTERDITS[k].some((m) => contientExpression(mots, m)));
     if (interdit) { ecarter(interdit); continue; }
+    const exclue = exclusions.find(([, l]) => l!.some((m) => contientExpression(mots, m)));
+    if (exclue) { ecarter(exclue[0]); continue; }
     if (soins && MOTS_INTERDITS_SOINS.some((m) => contientExpression(mots, m))) { ecarter('visage'); continue; }
     if (mots.length >= 2 && !mots.some((m) => vocab.has(m))) { ecarter('hors-metier'); continue; }
     gardees.push(c);

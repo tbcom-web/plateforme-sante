@@ -61,7 +61,7 @@ export function motsClesDuSujet(sujet: string, enBase: Readonly<Record<string, r
 export const MOTS_CLES_EXPLORATION: Readonly<Record<string, readonly string[]>> = {
   sport: [
     'hiking trail', 'mountain hiking boots', 'tennis court shoes', 'basketball sneakers', 'football cleats', 'rugby boots',
-    'cycling shoes', 'dance shoes', 'yoga barefoot', 'swimming pool feet', 'climbing shoes', 'track spikes', 'nordic walking',
+    'cycling shoes clipless pedal', 'golf shoes green grass', 'tennis clay court shoes', 'dance shoes', 'yoga barefoot', 'swimming pool feet', 'climbing shoes', 'track spikes', 'nordic walking',
     'gym sneakers', 'beach running', 'ski boots',
   ],
   enfant: ['kids playing barefoot', 'child sneakers', 'kids running park', 'child sport shoes', 'family walk', 'kids dance class'],

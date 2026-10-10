@@ -2,18 +2,22 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { CSSProperties } from 'react';
 import '@plateforme/core/dessins.css';
-import { clesRecentes, jourParis, SURFACES_CSS, variablesCharte, variablesGamme, gamme as gammeParId } from '@plateforme/core';
+import { clesRecentes, jourParis, profilsSeriesASourcer, SEUIL_PHOTOS_SUJET, SURFACES_CSS, variablesCharte, variablesGamme, gamme as gammeParId } from '@plateforme/core';
 import { lotDeCle } from '@plateforme/core/arrivages';
 import { lienSujet, ordonnerSujets, sujetDeCle, sujetDuLot } from '@plateforme/core/sujets-validation';
 import { exigerAdmin } from '@/lib/admin';
 import { getProfession } from '@/lib/profession';
 import { getDecisionsParJour, getDonneesSujets } from '@/lib/sujets-validation';
+import { sourcesConfigurees } from '@/lib/photos-libres';
+import SourcerSeriesActivites from './SourcerSeriesActivites';
 import { visuelCarte } from './actions';
 import BandeauJour from './BandeauJour';
 import TuilesSujets from './TuilesSujets';
 import type { VisuelArrivage } from '../arrivages/Arrivages';
 
 export const metadata = { title: 'Super admin · À valider' };
+// « Sourcer des photos » lance l'agent depuis cette page (une action serveur par profil) : délai large
+export const maxDuration = 300;
 
 // POINT D'ENTRÉE UNIQUE « À VALIDER » (demande de Paul du 2026-10-10, packages/core/src/sujets-validation.ts, docs/a-valider.md) :
 // une tuile par sujet (golf, cyclisme, diabète, enfant…) avec sa représentation graphique (aperçu composite), sa progression
@@ -49,6 +53,14 @@ export default async function PageSujets({ searchParams }: PageProps<'/admin/suj
   }));
   const carteDe = (id: string) => [...donnees.cartes.values()].flat().find((x) => x.id === id)!;
   const enAttente = sujets.reduce((n, s) => n + s.nouveautes, 0);
+  // Photos à compléter (séries d'activité, series-photos-activites.ts) : profils sous le seuil, sans série en attente
+  const pret = Object.values(sourcesConfigurees()).some(Boolean);
+  const parId = new Map(donnees.sujets.map((s) => [s.id, s]));
+  const aSourcer = profession.id === 'podologue'
+    ? profilsSeriesASourcer(Object.fromEntries(donnees.sujets.map((s) => [s.id, s.photos])), donnees.sujets.filter((s) => s.serieEnAttente).map((s) => s.id))
+      .filter((id) => parId.has(id)).map((id) => ({ id, libelle: parId.get(id)!.libelle, photos: parId.get(id)!.photos, href: lienSujet(id) }))
+    : [];
+  const sourcer = Object.fromEntries(sujets.filter((s) => s.profil && s.photos < SEUIL_PHOTOS_SUJET && !s.serieEnAttente).map((s) => [s.id, { profil: s.profil!, photos: s.photos }]));
   const style = { ...variablesCharte(), ...variablesGamme(gammeParId('canard')!) } as CSSProperties;
 
   return (
@@ -62,7 +74,8 @@ export default async function PageSujets({ searchParams }: PageProps<'/admin/suj
         </p>
       </div>
       <BandeauJour jours={jours.jours} aujourdhui={jours.aujourdhui} />
-      <TuilesSujets sujets={sujets} cartes={Object.fromEntries(sujets.flatMap((s) => s.apercu.slice(0, 3)).map((id) => [id, carteDe(id)]))} apercus={Object.fromEntries(apercus)} />
+      <SourcerSeriesActivites profils={aSourcer} pret={pret} />
+      <TuilesSujets sujets={sujets} cartes={Object.fromEntries(sujets.flatMap((s) => s.apercu.slice(0, 3)).map((id) => [id, carteDe(id)]))} apercus={Object.fromEntries(apercus)} sourcer={sourcer} pret={pret} seuil={SEUIL_PHOTOS_SUJET} />
       {vides.length > 0 && <p className="text-xs text-neutral-500">Sans élément pour l’instant : {vides.map((s) => s.libelle).join(', ')}.</p>}
       {donnees.migrationSeries && <p className="text-xs text-neutral-500">Séries de l’agent : migration 0053 à exécuter pour les voir ici.</p>}
       <p className="text-xs text-neutral-500">

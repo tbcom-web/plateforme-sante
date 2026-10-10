@@ -112,7 +112,7 @@ export async function executerSourcing(cible: CibleSourcing, ctx: ContexteExecut
     }
   }
   journal.candidates = brutes.length;
-  const { gardees, ecartees } = filtrerCandidatesSourcing(brutes, { profession: cible.profession, emplacements: cible.emplacements, dejaVues: ctx.dejaVues });
+  const { gardees, ecartees } = filtrerCandidatesSourcing(brutes, { profession: cible.profession, emplacements: cible.emplacements, dejaVues: ctx.dejaVues, exclusions: cible.exclusions, vocabulaire: cible.vocabulaire });
   for (const e of ecartees) journal.ecartees[e.raison] = (journal.ecartees[e.raison] ?? 0) + 1;
   const aAnalyser = alterner(gardees, QUOTAS_SOURCING.apercusParCible);
   const cars = await parPaquets(aAnalyser, 8, (c) => analyserApercu(c));

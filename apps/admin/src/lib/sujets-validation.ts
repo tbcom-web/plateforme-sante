@@ -61,6 +61,10 @@ export type CarteSujet = {
 
 export type ResumeSujetServeur = SujetValidation & {
   nouveautes: number; aVoir: number; ok: number; aValiderPourSites: number; total: number;
+  /** Photos du sujet (kit et photos à valider) : sous SEUIL_PHOTOS_SUJET, raccourci « Sourcer des photos » */
+  photos: number;
+  /** Une série de l'agent attend déjà la décision de Paul dans ce sujet */
+  serieEnAttente: boolean;
   /** Aperçu composite : quelques cartes (nouveautés d'abord) */
   apercu: string[];
 };
@@ -190,6 +194,7 @@ export const getDonneesSujets = cache(async (profession: Profession) => {
     return {
       ...s, total: l.length, nouveautes: l.filter((c) => c.nouveaute).length, aVoir: l.filter(carteAVoir).length, ok: ok.length,
       aValiderPourSites: ok.filter((c) => c.aValider).length,
+      photos: l.filter((c) => c.famille === 'photo').length, serieEnAttente: l.some((c) => c.kind === 'serie'),
       apercu: [...l.filter((c) => c.nouveaute && c.kind !== 'contenu'), ...l.filter((c) => !c.nouveaute)].slice(0, 4).map((c) => c.id),
     };
   });

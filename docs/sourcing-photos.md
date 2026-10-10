@@ -17,12 +17,23 @@ Code : `packages/core/src/sourcing-photos.ts` (pur, testé), `apps/admin/src/lib
 | Où | Bouton | Cible |
 |---|---|---|
 | `/admin/arrivages` → « Sélections de l'agent » | **Sourcer automatiquement** | un profil choisi, ou « Tous les trous prioritaires » (3 cibles) |
+| `/admin/sujets` (À valider), encadré « Photos à compléter » | **Sourcer les séries photos (n)** | les profils sport sous 6 photos, l’un après l’autre : basket, tennis, golf, cyclisme, puis trail / randonnée et course |
+| `/admin/sujets` (tuile) et `/admin/sujets/<profil>` | **Sourcer des photos** | le profil du sujet, quand il a moins de 6 photos et aucune série en attente |
 | `/admin/profils?profil=…` | **Sourcer pour ce profil** | le profil affiché (thème + activité) |
 | `/admin/retours/kits?sujet=…` (podologue) | **Sourcer pour ce kit** | les emplacements à compléter du kit |
 | GitHub → Actions → `sourcer-photos` | Run workflow | trous prioritaires (ou un profil) ; hebdomadaire si activé |
 
 La **profession** est toujours celle de l'en-tête (verrou) : requêtes, thèmes et hashtags de la profession
 (`recherche-photos-professions.ts`, `pratiques.ts`) ; jamais une requête de pieds pour la psychomotricité.
+
+### Séries d’activité (`series-photos-activites.ts`, 2026-10-10)
+
+Pour chaque activité (basket, tennis, golf, cyclisme, course, trail, randonnée) : requêtes de l’activité (`pratiques.ts` : pied,
+chaussure, appui, prises d’office par le plan) puis requêtes d’ambiance du terrain ; vocabulaire du terrain accepté pour cette
+cible seulement (une photo de fairway n’est pas « hors métier » pour le golf) ; exclusions propres (marques et compétitions de
+l’activité, enfants identifiables, foule, dossards, tableaux d’affichage) en plus des mots interdits communs ; cohérence visée
+(lumière, palette, cadrage) rappelée dans la raison de la cible ; tags automatiques `#sport`, `#<activité>`,
+`#profession-<profession>`. Les séries arrivent dans « À valider », sujet du profil (carte série), et dans les Arrivages.
 
 ## 1. Cibles et priorités (`ciblesPrioritaires`)
 
