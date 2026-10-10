@@ -11,6 +11,7 @@ export const THEMES = [
   { id: 'ia', nom: 'Visibilité dans ChatGPT et les IA', poids: 15, intro: 'De plus en plus de patients demandent « un podologue près de chez moi » à ChatGPT, Gemini ou Perplexity.' },
   { id: 'confiance', nom: 'Conformité et confiance', poids: 10, intro: 'Obligations légales (LCEN, RGPD) et recommandations de l’Ordre des pédicures-podologues.' },
   { id: 'contact', nom: 'Contact et prise de rendez-vous', poids: 10, intro: 'Ce dont un patient a besoin pour vous joindre en moins de dix secondes.' },
+  { id: 'technique', nom: 'Sécurité et technologie', poids: 10, intro: 'L’âge des briques techniques du site : une version qui ne reçoit plus de correctifs reste exposée aux failles connues.' },
 ];
 
 const OK = 'ok', MOY = 'attention', KO = 'echec', NM = 'non-mesure';
@@ -18,7 +19,21 @@ const VAL = { [OK]: 1, [MOY]: 0.5, [KO]: 0 };
 const sec = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
 const mo = (o) => (o >= 1e6 ? `${(o / 1e6).toFixed(1).replace('.', ',')} Mo` : `${Math.round(o / 1e3)} Ko`);
 
-const RE_TEL = /(?:\+33\s?|\b0)[1-9](?:[\s.\-]?\d{2}){4}\b/;
+/** Fin des correctifs de sécurité de PHP (php.net, « Supported Versions » et « Unsupported Branches ») */
+const FIN_PHP = {
+  '5.3': '2014-08-14', '5.4': '2015-09-03', '5.5': '2016-07-21', '5.6': '2018-12-31', '7.0': '2019-01-10', '7.1': '2019-12-01',
+  '7.2': '2020-11-30', '7.3': '2021-12-06', '7.4': '2022-11-28', '8.0': '2023-11-26', '8.1': '2025-12-31', '8.2': '2026-12-31',
+  '8.3': '2027-12-31', '8.4': '2028-12-31',
+};
+/** Année de sortie des versions de jQuery (blog.jquery.com) */
+const ANNEES_JQUERY = { '1.4': 2010, '1.5': 2011, '1.6': 2011, '1.7': 2011, '1.8': 2012, '1.9': 2013, '1.10': 2013, '1.11': 2014, '1.12': 2016, '2.0': 2013, '2.1': 2014, '2.2': 2016, '3.0': 2016, '3.1': 2016, '3.2': 2017, '3.3': 2018, '3.4': 2019, '3.5': 2020, '3.6': 2021, '3.7': 2023 };
+const anneeJquery = (ma, mi) => ANNEES_JQUERY[`${ma}.${mi}`] ?? null;
+/** Rang d'une version de WordPress (5.9 → 6.0 est une version d'écart, comme 6.7 → 6.8) */
+const indexWp = (v) => { const [a, b = 0] = String(v).split('.').map(Number); return a * 10 + b; };
+const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+const moisFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+const RE_TEL =/(?:\+33\s?|\b0)[1-9](?:[\s.\-]?\d{2}){4}\b/;
 const RE_RDV = /doctolib|maiia|keldoc|rdvmedicaux|clicrdv|mondocteur|rendezvous|prise-de-rendez-vous|prendre[\s-]rendez[\s-]vous|rdv/i;
 const RE_ADRESSE = /\b\d{1,4}(?:\s?(?:bis|ter))?,?\s+(?:rue|avenue|av\.|boulevard|bd|place|chemin|allée|allee|route|impasse|quai|cours|square|résidence|rés\.)\b/i;
 const RE_CP = /\b(?:0[1-9]|[1-8]\d|9[0-5]|2[AB])\d{3}\b\s+([A-ZÉÈÀÂÎ][\p{L}'’\- ]{2,40})/u;
@@ -158,7 +173,7 @@ export function noter(d, { preparation = false } = {}) {
   ajout('confiance', d.acces.https && (d.acces.httpVersHttps || d.acces.https) ? (d.acces.httpVersHttps ? OK : MOY) : KO, 'Redirection vers HTTPS', d.acces.httpVersHttps ? 'http:// redirige vers https://.' : 'L’adresse en http:// ne redirige pas vers la version sécurisée.', { poids: 0.5 });
   const mentionsOk = d.mentions && d.mentions.statut < 400;
   const hebergeur = mentionsOk && /h[ée]berg/i.test(d.mentions.texte);
-  ajout('confiance', mentionsOk ? (hebergeur ? OK : MOY) : KO, 'Mentions légales', mentionsOk ? (hebergeur ? 'Page présente, hébergeur indiqué.' : 'Page présente, mais l’hébergeur n’est pas indiqué (obligatoire, LCEN art. 6).') : 'Aucun lien vers des mentions légales sur la page d’accueil (obligatoires, LCEN art. 6).', { poids: 2,
+  ajout('confiance', mentionsOk ? (hebergeur ? OK : MOY) : KO, 'Mentions légales', mentionsOk ? (hebergeur ? 'Page présente, hébergeur indiqué.' : 'Page présente, mais l’hébergeur n’est pas indiqué (obligatoire, LCEN).') : 'Aucun lien vers des mentions légales sur la page d’accueil (obligatoires, LCEN : jusqu’à 75 000 € d’amende).', { poids: 2,
     phrase: !mentionsOk ? 'La page d’accueil ne donne accès à aucune page de mentions légales, pourtant obligatoires.' : null });
   const confDansMentions = mentionsOk && /donn[ée]es\s+personnelles|RGPD|confidentialit/i.test(d.mentions.texte);
   ajout('confiance', d.confidentialite || confDansMentions ? OK : MOY, 'Politique de confidentialité', d.confidentialite ? 'Présente.' : confDansMentions ? 'Intégrée aux mentions légales.' : 'Non trouvée (RGPD).');
@@ -187,6 +202,56 @@ export function noter(d, { preparation = false } = {}) {
   const plan = m.iframes.some((s) => /google\.[a-z.]+\/maps|openstreetmap|maps\.apple|mapbox/i.test(s)) || liens.some((l) => /google\.[a-z.]+\/maps|maps\.app\.goo|goo\.gl\/maps|openstreetmap|maps\.apple/i.test(l.href));
   ajout('contact', plan ? OK : MOY, 'Plan d’accès', plan ? 'Carte ou lien vers un itinéraire.' : 'Pas de carte ni de lien d’itinéraire.');
 
+  // ---------------------------------------------------------------- Sécurité et technologie (ce que le site annonce lui-même)
+  const tk = d.technologie ?? {};
+  if (tk.php) {
+    const fin = FIN_PHP[tk.php];
+    const perime = fin && new Date(fin) < new Date(d.date);
+    ajout('technique', perime ? KO : OK, `PHP ${tk.php}`, perime ? `Plus aucun correctif de sécurité depuis le ${dateFr(fin)} (php.net).` : 'Version encore maintenue.', { poids: 3,
+      phrase: perime ? `Votre site tourne sur PHP ${tk.php}, qui ne reçoit plus aucun correctif de sécurité depuis ${moisFr(fin)}.` : null });
+  }
+  if (tk.wordpress?.version && tk.wordpress.actuelle) {
+    const retard = indexWp(tk.wordpress.actuelle) - indexWp(tk.wordpress.version);
+    ajout('technique', retard <= 0 ? OK : retard <= 2 ? MOY : KO, `WordPress ${tk.wordpress.version}`, retard <= 0 ? 'À jour.' : `${retard} version(s) de retard (actuelle : ${tk.wordpress.actuelle}). Les failles corrigées depuis restent ouvertes sur le site.`, { poids: 3,
+      phrase: retard > 2 ? `Votre site tourne sur WordPress ${tk.wordpress.version}, avec ${retard} versions de retard : les failles corrigées depuis y restent ouvertes.` : null });
+  }
+  if (tk.jquery) {
+    const [ma, mi] = tk.jquery.split('.').map(Number);
+    const faille = ma < 3 || (ma === 3 && mi < 5);
+    const annee = anneeJquery(ma, mi);
+    ajout('technique', faille ? KO : OK, `jQuery ${tk.jquery}`, faille ? `Version${annee ? ` de ${annee}` : ''} touchée par des failles de sécurité connues (CVE-2020-11022 et CVE-2020-11023, corrigées en 3.5).` : 'Version sans faille connue majeure.', { poids: 2,
+      phrase: faille ? `Votre site charge jQuery ${tk.jquery}${annee ? ` (${annee})` : ''}, une version qui comporte des failles de sécurité connues.` : null });
+  }
+  if (tk.images?.total >= 3) {
+    const part = tk.images.modernes / tk.images.total;
+    ajout('technique', part >= 0.5 ? OK : part > 0 ? MOY : KO, 'Formats d’image modernes', `${Math.round(part * 100)} % des images en WebP ou AVIF (deux à trois fois plus légers que le JPEG).`);
+  }
+  const secu = tk.securite ?? {};
+  const nbSecu = [secu.hsts, secu.csp, secu.nosniff].filter(Boolean).length;
+  ajout('technique', nbSecu >= 2 ? OK : nbSecu === 1 ? MOY : KO, 'En-têtes de sécurité', `${nbSecu}/3 protections déclarées par le serveur (HSTS, CSP, nosniff) : elles bloquent l’injection de contenu et le détournement de la connexion.`);
+  ajout('technique', d.acces.https ? OK : KO, 'Chiffrement HTTPS', d.acces.https ? 'Les échanges avec le site sont chiffrés.' : 'Les échanges ne sont pas chiffrés.', { poids: 2 });
+
+  // ---------------------------------------------------------------- Ce que les IA peuvent lire (sans JavaScript)
+  const brut = d.brut.texte || '';
+  const jlb = aplatirJsonld(m.jsonld);
+  const loc = jlb.find((n) => TYPES_LOCAUX.test([].concat(n['@type']).join(' ')));
+  const lisibleIA = [
+    ['Votre profession', Boolean(loc) || prof.test(brut)],
+    ['L’adresse du cabinet', Boolean(loc?.address) || RE_ADRESSE.test(brut) || RE_CP.test(brut)],
+    ['Votre téléphone', Boolean(loc?.telephone) || RE_TEL.test(brut)],
+    ['Vos horaires', Boolean(loc?.openingHoursSpecification || loc?.openingHours) || RE_HORAIRES.test(brut)],
+    ['Les soins que vous proposez', d.brut.mots >= 250],
+    ['Comment prendre rendez-vous', d.brut.liensRdv],
+    ['Une fiche d’identité structurée', Boolean(loc)],
+  ].map(([libelle, ok]) => ({ libelle, ok }));
+
+  // ---------------------------------------------------------------- Risques (montants et sources réels)
+  const risques = [];
+  if (!mentionsOk) risques.push({ titre: 'Mentions légales introuvables', detail: 'Aucun lien n’y mène depuis la page d’accueil. Si elles manquent, la LCEN prévoit jusqu’à 1 an d’emprisonnement et 75 000 € d’amende pour l’éditeur du site.' });
+  if (d.cookiesTraceurs.length) risques.push({ titre: 'Cookies déposés sans consentement', detail: 'La CNIL contrôle et sanctionne régulièrement le dépôt de cookies publicitaires ou de mesure d’audience sans accord préalable.' });
+  if (tk.php && FIN_PHP[tk.php] && new Date(FIN_PHP[tk.php]) < new Date(d.date)) risques.push({ titre: 'Serveur sans correctifs de sécurité', detail: `PHP ${tk.php} n’est plus maintenu : une faille découverte aujourd’hui ne sera jamais corrigée. Un site piraté peut afficher des publicités ou rediriger vos patients ailleurs.` });
+  if (!d.acces.https) risques.push({ titre: 'Site non sécurisé', detail: 'Chrome et Safari affichent « Non sécurisé » : un patient qui remplit un formulaire envoie ses données en clair.' });
+
   // ---------------------------------------------------------------- Notes
   const themes = THEMES.map((t) => {
     const cs = constats.filter((c) => c.theme === t.id && c.statut !== NM && c.poids > 0);
@@ -196,9 +261,11 @@ export function noter(d, { preparation = false } = {}) {
   });
   const notees = themes.filter((t) => t.note !== null);
   const globale = Math.round(notees.reduce((s, t) => s + t.poids * t.note, 0) / notees.reduce((s, t) => s + t.poids, 0));
-  const marquants = constats.filter((c) => c.phrase && c.statut === KO).sort((a, b) => b.poids - a.poids).slice(0, 5).map((c) => c.phrase);
+  // Points marquants : les problèmes d'abord (par gravité), puis ce qui est à améliorer, 6 au plus
+  const marquants = [...constats.filter((c) => c.phrase && c.statut === KO).sort((a, b) => b.poids - a.poids), ...constats.filter((c) => c.phrase && c.statut === MOY)]
+    .slice(0, 6).map((c) => ({ phrase: c.phrase, gravite: c.statut === KO ? 'bloquant' : 'important', theme: c.theme }));
   const forts = constats.filter((c) => c.statut === OK && c.poids >= 2).slice(0, 4).map((c) => c.titre);
-  return { globale, themes, marquants, forts, compte: { ok: constats.filter((c) => c.statut === OK).length, attention: constats.filter((c) => c.statut === MOY).length, echec: constats.filter((c) => c.statut === KO).length } };
+  return { globale, themes, marquants, forts, lisibleIA, risques, ville: villeTrouvee || null, compte: { ok: constats.filter((c) => c.statut === OK).length, attention: constats.filter((c) => c.statut === MOY).length, echec: constats.filter((c) => c.statut === KO).length } };
 }
 
-export const mention = (n) => (n >= 85 ? 'Très bon' : n >= 70 ? 'Bon' : n >= 50 ? 'À améliorer' : 'Insuffisant');
+export const mention = (n) => (n >= 85 ? 'Très bon' : n >= 70 ? 'Correct' : n >= 50 ? 'En retard' : 'Insuffisant');

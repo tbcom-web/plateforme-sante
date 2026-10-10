@@ -5,7 +5,7 @@ import { collecter } from './collecter.mjs';
 import { noter } from './noter.mjs';
 import { rendreRapport } from './rapport.mjs';
 
-const sansCaptures = (x) => ({ ...x, mobile: { ...x.mobile, capture: undefined, requetes: x.mobile.requetes.length }, bureau: { ...x.bureau, capture: undefined, requetes: x.bureau.requetes.length } });
+const sansCaptures = (x) => ({ ...x, mobile: { ...x.mobile, capture: undefined, defilement: undefined, requetes: x.mobile.requetes.length }, bureau: { ...x.bureau, capture: undefined, requetes: x.bureau.requetes.length } });
 
 /**
  * @param o.cible domaine ou adresse du site audité

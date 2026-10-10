@@ -165,3 +165,51 @@ export function draftProspect(id: IdentiteProspect, priorites: Priorites, pratic
     priorites,
   };
 }
+
+/**
+ * Photo principale du site actuel (candidats dans l'ordre) : image de partage (og:image), images marquées « hero / bandeau /
+ * slider / accueil », grandes images du début de page, fonds en style inline. Logos, icônes et SVG écartés ; la taille réelle
+ * est vérifiée au téléchargement (côté serveur).
+ */
+export function imagesHeros(html: string, base: string, max = 5): string[] {
+  const vus: string[] = [];
+  const ajouter = (src: string | undefined) => {
+    if (!src || /^data:/i.test(src)) return;
+    let u: URL; try { u = new URL(src.trim().replace(/&amp;/g, '&'), base); } catch { return; }
+    if (!/^https?:$/.test(u.protocol) || /\.svg(\?|$)|logo|icon|favicon|sprite|avatar|picto|placeholder|pixel|tracking|doctolib|maiia|keldoc|button|bouton|badge|widget|gravatar|facebook|instagram|google/i.test(u.href)) return;
+    if (!vus.includes(u.href)) vus.push(u.href);
+  };
+  ajouter(html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)/i)?.[1] ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1]);
+  const debut = html.slice(0, 200000);
+  for (const m of debut.matchAll(/<img\b[^>]*>/gi)) {
+    const balise = m[0];
+    const src = balise.match(/\s(?:data-src|data-lazy-src|src)=["']([^"']+)/i)?.[1];
+    const largeur = Number(balise.match(/\swidth=["']?(\d+)/i)?.[1] ?? 0);
+    if (/hero|banner|bandeau|slide|accueil|header|cover|une\b|main/i.test(balise) || largeur >= 800) ajouter(src);
+  }
+  for (const m of debut.matchAll(/background(?:-image)?\s*:\s*url\(\s*['"]?([^'")]+)['"]?\s*\)/gi)) ajouter(m[1]);
+  // Repli : les premières photos de la page, dans l'ordre (la taille réelle trie ensuite)
+  for (const m of debut.matchAll(/<img\b[^>]*\s(?:data-src|data-lazy-src|src)=["']([^"']+\.(?:jpe?g|webp|png)(?:\?[^"']*)?)["']/gi)) ajouter(m[1]);
+  return vus.slice(0, max);
+}
+
+/** Thème du visuel animé des sites préparés : les semelles (choix de Paul, 2026-10-10 : « le visuel favori de semelles animé ») */
+export const SUJET_VITRINE = 'semelles';
+/** Animation d'en-tête retenue : la carte de pression plantaire (lot « pression » adoré, entete-pied.ts) */
+export const ANIMATION_VITRINE = 'pi-pression';
+
+/**
+ * Site préparé « qui fait envie » : premier écran animé (carte de pression des semelles) et, si on l'a, la photo du cabinet
+ * reprise de son site actuel (page « Le cabinet » et galerie). Les semelles rejoignent les sujets principaux si besoin.
+ */
+export function avecVitrine(d: SiteDraft, photo: string | null): SiteDraft {
+  const principaux = d.priorites.principaux.includes(SUJET_VITRINE) ? d.priorites.principaux
+    : [...d.priorites.principaux.slice(0, PRINCIPAUX_MAX - 1), SUJET_VITRINE];
+  const secondaires = d.priorites.secondaires.filter((s) => !principaux.includes(s));
+  return {
+    ...d,
+    priorites: { principaux, secondaires },
+    theme: { ...d.theme, herosSujet: SUJET_VITRINE, variantes: { ...(d.theme.variantes ?? {}), 'visuel-heros': 'animation', 'entete-anim': ANIMATION_VITRINE } },
+    photos: photo ? { ...d.photos, accueil: photo, cabinet: [photo, ...d.photos.cabinet.filter((x) => x !== photo)] } : d.photos,
+  };
+}

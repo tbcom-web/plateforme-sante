@@ -7,7 +7,7 @@
 import { revalidatePath } from 'next/cache';
 import { soinsDeBaseParcours, universDuParcours, universRecommande } from '@plateforme/core';
 import {
-  draftProspect, identiteDepuisPage, pagesDeSoins, praticienReconnu, prioritesDepuisSujets, sujetsDepuisTexte, texteDeHtml,
+  avecVitrine, draftProspect, identiteDepuisPage, imagesHeros, pagesDeSoins, praticienReconnu, prioritesDepuisSujets, sujetsDepuisTexte, texteDeHtml,
   type PraticienAnnuaire,
 } from '@plateforme/core/audit-prospect';
 import { exigerAdmin } from '@/lib/admin';
@@ -37,6 +37,32 @@ function domaineDe(saisie: string): string | null {
 }
 
 const sansAccents = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+/**
+ * Photo principale du site actuel, recopiée dans le stockage « photos » du site préparé (les sites n'affichent que des images
+ * hébergées chez nous : en-tête CSP). WebP de 1600 px de large au plus ; écartée si elle fait moins de 600 px de large.
+ * Elle reste dans un site non publié : le praticien la garde, la remplace ou la retire avant toute mise en ligne.
+ */
+async function recopierPhoto(supabase: Awaited<ReturnType<typeof createClient>>, siteId: string, candidats: string[]): Promise<string | null> {
+  const sharp = ((await import('sharp')) as unknown as { default: typeof import('sharp') }).default;
+  for (const url of candidats) {
+    try {
+      const r = await fetch(url, { headers: { 'user-agent': UA }, signal: AbortSignal.timeout(10000), cache: 'no-store' });
+      if (!r.ok || !/^image\//.test(r.headers.get('content-type') ?? 'image/')) continue;
+      const brut = Buffer.from(await r.arrayBuffer());
+      if (brut.length > 15_000_000) continue;
+      const image = sharp(brut, { failOn: 'none' }).rotate();
+      const { width = 0, height = 0 } = await image.metadata();
+      if (width < 600 || height < 300) continue;
+      const webp = await image.resize({ width: Math.min(width, 1600), withoutEnlargement: true }).webp({ quality: 80 }).toBuffer();
+      const chemin = `${siteId}/accueil-${Date.now()}.webp`;
+      const { error } = await supabase.storage.from('photos').upload(chemin, webp, { contentType: 'image/webp', cacheControl: '31536000' });
+      if (error) continue;
+      return supabase.storage.from('photos').getPublicUrl(chemin).data.publicUrl;
+    } catch { /* image suivante */ }
+  }
+  return null;
+}
 
 export async function lancerAudit(_: ResultatAudit, formData: FormData): Promise<ResultatAudit> {
   await exigerAdmin();
@@ -88,14 +114,24 @@ export async function lancerAudit(_: ResultatAudit, formData: FormData): Promise
       return { ok: false, message: `Site préparé non créé : ${r.message}` };
     }
     siteId = r.id;
+    let courant: { draft: typeof draft; version?: string } = { draft, version: r.version };
     if (universId) {
       const a = await appliquerUniversAuSite(siteId, universId, { admin: true, parcours: true });
-      if (!a.ok) universId = null;
+      if (a.ok && a.draft) courant = { draft: a.draft, version: a.version };
+      else universId = null;
     }
+    // Vitrine (Paul, 2026-10-10 : « le futur site doit faire plus envie ») : animation des semelles en tête, photo du cabinet
+    const photo = await recopierPhoto(supabase, siteId, imagesHeros(page.html, page.url));
+    // Écriture directe, comme appliquerUniversAuSite : le formulaire (enregistrerSite → nettoyer) ne conserve pas
+    // theme.variantes ni theme.herosSujet, qui portent l'animation du premier écran.
+    let maj = supabase.from('sites').update({ config: avecVitrine(courant.draft, photo) }).eq('id', siteId);
+    if (courant.version) maj = maj.eq('updated_at', courant.version);
+    await maj;
+    const aPhoto = Boolean(photo);
     identite = {
       nomCabinet: id.nomCabinet, ville: id.ville, telephone: id.telephone, rdv: Boolean(id.rdvUrl),
       prenom: draft.praticiens[0].prenom, nom: draft.praticiens[0].nom, rpps: draft.praticiens[0].rpps,
-      sujets: sujets.slice(0, 6).map((s) => ({ sujet: s.sujet, score: s.score })), principaux: priorites.principaux,
+      sujets: sujets.slice(0, 6).map((s) => ({ sujet: s.sujet, score: s.score })), principaux: priorites.principaux, photo: aPhoto,
     };
   }
 

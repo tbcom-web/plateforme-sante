@@ -1,7 +1,7 @@
 // Préparation d'un site à partir du site existant d'un prospect (audit-prospect.ts) : identité, sujets, praticien.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { draftProspect, identiteDepuisPage, praticienReconnu, prioritesDepuisSujets, sujetsDepuisTexte, telephoneFr } from './audit-prospect';
+import { avecVitrine, draftProspect, identiteDepuisPage, imagesHeros, praticienReconnu, prioritesDepuisSujets, sujetsDepuisTexte, telephoneFr } from './audit-prospect';
 
 const PAGE = `<html><head><title>Podologue du sport à Lyon – Cabinet des Brotteaux</title>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"MedicalBusiness","name":"Cabinet des Brotteaux",
@@ -60,4 +60,20 @@ test('brouillon préparé : identité, praticien de l’annuaire, priorités', (
   assert.equal(d.rdv.outil, 'Doctolib');
   assert.deepEqual(d.priorites.principaux, ['sport']);
   assert.equal(telephoneFr('+33 6 12 34 56 78'), '06 12 34 56 78');
+});
+
+test('photo principale : og:image puis bandeau, sans logo ni SVG', () => {
+  const html = `<meta property="og:image" content="/img/cabinet.jpg"><img src="/logo.png" class="hero"><img class="hero-bandeau" src="https://cdn.x.fr/bandeau.webp"><div style="background-image:url('/fond.svg')">`;
+  assert.deepEqual(imagesHeros(html, 'https://cabinet.fr/'), ['https://cabinet.fr/img/cabinet.jpg', 'https://cdn.x.fr/bandeau.webp']);
+});
+
+test('vitrine : semelles en sujet principal, animation de pression en tête, photo dans la galerie', () => {
+  const d = draftProspect(identiteDepuisPage(PAGE), { principaux: ['sport', 'ongles', 'enfant'], secondaires: ['semelles'] }, null);
+  const v = avecVitrine(d, 'https://x.supabase.co/storage/v1/object/public/photos/a/accueil.webp');
+  assert.deepEqual(v.priorites.principaux, ['sport', 'ongles', 'semelles']);
+  assert.ok(!v.priorites.secondaires.includes('semelles'));
+  assert.equal(v.theme.herosSujet, 'semelles');
+  assert.equal(v.theme.variantes?.['visuel-heros'], 'animation');
+  assert.equal(v.theme.variantes?.['entete-anim'], 'pi-pression');
+  assert.equal(v.photos.cabinet[0], v.photos.accueil);
 });

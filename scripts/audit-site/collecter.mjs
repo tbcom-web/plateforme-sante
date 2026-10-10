@@ -90,6 +90,38 @@ async function pagespeed(url, strategie) {
   } catch (e) { return { erreur: 'réponse illisible' }; }
 }
 
+/**
+ * Âge technique du site : outil de création, versions de PHP, WordPress et jQuery, formats d'image, en-têtes de sécurité.
+ * Uniquement ce que le site annonce lui-même (en-têtes, balise generator, adresses des fichiers) : jamais deviné.
+ */
+async function lireTechnologie(accueil, mobile) {
+  const e = accueil.entetes ?? {};
+  const html = accueil.texte ?? '';
+  const urls = mobile.requetes.map((r) => r.url);
+  const gen = mobile.mesures.generateur || '';
+  const php = (e['x-powered-by'] || '').match(/PHP\/(\d+\.\d+)(?:\.\d+)?/i)?.[1] ?? null;
+  const wpGen = gen.match(/WordPress\s+(\d+\.\d+(?:\.\d+)?)/i)?.[1];
+  const wpVer = urls.map((u) => u.match(/wp-includes\/.*[?&]ver=(\d+\.\d+(?:\.\d+)?)/)?.[1]).find(Boolean);
+  const wordpress = /wp-content|wp-includes/.test(html) || urls.some((u) => /wp-content|wp-includes/.test(u)) || /wordpress/i.test(gen);
+  const outil = wordpress ? 'WordPress' : /wix/i.test(gen + html.slice(0, 20000)) ? 'Wix' : /jimdo/i.test(gen + html.slice(0, 20000)) ? 'Jimdo'
+    : /joomla/i.test(gen) ? 'Joomla' : /squarespace/i.test(html.slice(0, 20000)) ? 'Squarespace' : /e-monsite/i.test(html.slice(0, 20000)) ? 'e-monsite'
+    : /webflow/i.test(gen + html.slice(0, 5000)) ? 'Webflow' : gen ? gen.split(/\s/)[0] : null;
+  let wpActuelle = null;
+  if (wordpress) {
+    const r = await recuperer('https://api.wordpress.org/core/version-check/1.7/', { delai: 8000 });
+    try { wpActuelle = JSON.parse(r.texte).offers?.[0]?.version ?? null; } catch {}
+  }
+  const jquery = mobile.mesures.jquery || urls.map((u) => u.match(/jquery[.-]?(\d+\.\d+(?:\.\d+)?)(?:\.min)?\.js/i)?.[1] || u.match(/jquery(?:\.min)?\.js\?ver=(\d+\.\d+(?:\.\d+)?)/i)?.[1]).find(Boolean) || null;
+  const formats = mobile.mesures.imagesChargees;
+  return {
+    outil, php, serveur: e.server || null,
+    wordpress: wordpress ? { version: wpGen || wpVer || null, actuelle: wpActuelle } : null,
+    jquery,
+    images: { total: formats.length, modernes: formats.filter((x) => x === 'webp' || x === 'avif').length },
+    securite: { hsts: Boolean(e['strict-transport-security']), csp: Boolean(e['content-security-policy']), nosniff: /nosniff/i.test(e['x-content-type-options'] || '') },
+  };
+}
+
 /** Mesures dans la page rendue (exécuté dans le navigateur) */
 function mesurerDansPage() {
   const visible = (el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && s.opacity !== '0'; };
@@ -130,6 +162,8 @@ function mesurerDansPage() {
     mots: texte.split(/\s+/).filter((m) => /\p{L}{2,}/u.test(m)).length,
     texte: texte.slice(0, 30000),
     lcp: window.__lcp ?? null, cls: window.__cls ?? null,
+    jquery: window.jQuery?.fn?.jquery ?? null,
+    imagesChargees: imgs.filter((i) => i.currentSrc).map((i) => i.currentSrc.split('?')[0].split('.').pop().toLowerCase().slice(0, 5)),
     nav: (() => { const n = performance.getEntriesByType('navigation')[0]; return n ? { dcl: n.domContentLoadedEventEnd, load: n.loadEventEnd, ttfb: n.responseStart } : null; })(),
   };
 }
@@ -177,9 +211,39 @@ async function visiter(navigateur, url, mobile, journal) {
       }));
     });
   }
+  // Repères des défauts visibles dans le premier écran du téléphone (rapport : capture annotée)
+  let reperes = [];
+  if (mobile) {
+    const cibles = (axe || []).filter((v) => ['color-contrast', 'image-alt', 'link-name', 'button-name'].includes(v.id))
+      .flatMap((v) => v.exemples.map((e) => ({ type: v.id === 'color-contrast' ? 'contraste' : v.id === 'image-alt' ? 'image' : 'lien', cible: e.cible })));
+    reperes = await page.evaluate(({ cibles, petites }) => {
+      window.scrollTo(0, 0);
+      const out = [];
+      const ajouter = (el, type) => {
+        if (!el) return; const r = el.getBoundingClientRect();
+        if (r.width < 4 || r.height < 4 || r.bottom < 0 || r.top > window.innerHeight) return;
+        out.push({ type, x: Math.max(0, r.left), y: Math.max(0, r.top), l: Math.min(r.width, window.innerWidth), h: Math.min(r.height, window.innerHeight - Math.max(0, r.top)) });
+      };
+      for (const c of cibles) { try { ajouter(document.querySelector(c.cible), c.type); } catch {} }
+      if (petites) for (const el of document.querySelectorAll('a[href],button')) {
+        const r = el.getBoundingClientRect(); const p = el.parentElement;
+        if (r.width > 0 && r.height > 0 && (r.width < 24 || r.height < 24) && !(p && p.textContent.trim().length > el.textContent.trim().length + 20)) ajouter(el, 'cible');
+      }
+      return out.slice(0, 14);
+    }, { cibles, petites: mesures.nbPetitesCibles > 0 });
+  }
+  // Long défilement du téléphone (vitrine du site proposé) : 3 écrans environ
+  let defilement = null;
+  if (mobile) {
+    try {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const h = Math.min(await page.evaluate(() => document.documentElement.scrollHeight), 2600);
+      defilement = await page.screenshot({ type: 'jpeg', quality: 70, fullPage: true, clip: { x: 0, y: 0, width: 390, height: h }, scale: 'css' });
+    } catch { /* page trop courte ou capture refusée */ }
+  }
   const cookies = await ctx.cookies();
   await ctx.close();
-  return { statut: reponse?.status() ?? 0, urlFinale: reponse?.url() ?? url, dureeChargement, capture, mesures, axe, requetes, erreursConsole, cookies: cookies.map((c) => ({ nom: c.name, domaine: c.domain })) };
+  return { statut: reponse?.status() ?? 0, urlFinale: reponse?.url() ?? url, dureeChargement, capture, defilement, reperes, mesures, axe, requetes, erreursConsole, cookies: cookies.map((c) => ({ nom: c.name, domaine: c.domain })) };
 }
 
 export async function collecter(domaineOuUrl, { journal = console.log, sansPagespeed = false } = {}) {
@@ -230,11 +294,17 @@ export async function collecter(domaineOuUrl, { journal = console.log, sansPages
 
   journal('PageSpeed Insights (Google)…');
   const pagespeedRes = await psi;
+  const technologie = await lireTechnologie(accueil, mobile);
 
   return {
     version: 1, date: new Date().toISOString(), demande: brut, hote, base, origine,
     acces: { statut: accueil.statut, erreur: accueil.erreur ?? null, https: base.startsWith('https:'), httpVersHttps, entetes: accueil.entetes ?? {} },
-    brut: { mots: accueil.ok ? motsDe(accueil.texte) : 0, taille: accueil.texte?.length ?? 0, htmlDebut: (accueil.texte || '').slice(0, 4000) },
+    brut: {
+      mots: accueil.ok ? motsDe(accueil.texte) : 0, taille: accueil.texte?.length ?? 0, htmlDebut: (accueil.texte || '').slice(0, 4000),
+      // ce qu'un robot sans JavaScript lit : texte du code reçu, liens de rendez-vous
+      texte: (accueil.texte || '').replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').slice(0, 30000),
+      liensRdv: /doctolib|maiia|keldoc|rdvmedicaux|clicrdv|mondocteur/i.test(accueil.texte || ''),
+    },
     robotChatgpt: { statut: gpt.statut },
     robots: robots ? { present: true, bloques: Object.fromEntries(ROBOTS_IA.map((b) => [b.ua, robots.bloque(b.ua)])), sitemaps: robots.sitemaps } : { present: false },
     llms: { present: llms.ok && !/<html/i.test(llms.texte) && llms.texte.trim().length > 20 },
@@ -246,5 +316,6 @@ export async function collecter(domaineOuUrl, { journal = console.log, sansPages
     traceurs: [...new Set(mobile.requetes.flatMap((r) => TRACEURS.filter(([re]) => re.test(r.url)).map(([, n]) => n)))],
     cookiesTraceurs: mobile.cookies.filter((c) => COOKIES_TRACEURS.test(c.nom)).map((c) => c.nom),
     pagespeed: pagespeedRes,
+    technologie,
   };
 }
