@@ -19,6 +19,8 @@ import { themesActives } from '@/lib/themes';
 import { getTranches, tranchesEnListes } from '@/lib/tranches';
 import { getUnivers } from '@/lib/univers';
 import Degustation from './Degustation';
+import { memoParSignature } from '@/lib/memo-journal';
+import { getUser } from '@/lib/supabase/server';
 import { getEtatPolitique } from '@/lib/politique-evaluation';
 
 export const metadata = { title: 'Super admin · Dégustation' };
@@ -32,9 +34,18 @@ export default async function PageDegustation() {
   await exigerAdmin();
   const profession = await professionDegustation();
   const lecturePolitique = getEtatPolitique();
-  const [profils, { choix, migrationManquante, erreur: erreurChoix }, { duels }, modeles, catalogue, marquesImportees, { univers }, poids, photos, photosJeux, surcharges, predictions, tranches, { notations }] = await Promise.all([
+  // Recettes gardées (missions) : sujet n° 1 de chaque notation « Garder », gardé sur l'instance tant que recettes_notation n'a pas
+  // changé (memoParSignature, perf vague 2, 2026-10-10) : le journal complet des notations (2,7 Mo au volume ×10, textes compris)
+  // était relu à chaque ouverture pour ce seul compteur. Lecture en échec : jamais gardée.
+  const sujetsGardes = async () => (await getNotationsAdmin()).notations.filter((n) => n.garder).map((n) => n.scenario.principaux[0]);
+  const lectureGardees = getUser().catch(() => null).then((user) => memoParSignature('degustation-recettes-gardees', user?.id, ['recettes_notation'], async () => {
+    const r = await getNotationsAdmin();
+    if (r.migrationManquante) throw new Error('lecture');
+    return r.notations.filter((n) => n.garder).map((n) => n.scenario.principaux[0]);
+  })).catch(sujetsGardes);
+  const [profils, { choix, migrationManquante, erreur: erreurChoix }, { duels }, modeles, catalogue, marquesImportees, { univers }, poids, photos, photosJeux, surcharges, predictions, tranches, gardees] = await Promise.all([
     profilsDegustation(profession), getChoixGrilleLeger(), getDuelsClassement().then((duels) => ({ duels })), getModelesDisponibles(), getCatalogue(), getMarquesImportees(), getUnivers(), getPoidsAtelier(), getPhotosBanque(),
-    getPhotosDesJeux(), getSurchargesSujets(), getPredictions(), getTranches(), getNotationsAdmin(),
+    getPhotosDesJeux(), getSurchargesSujets(), getPredictions(), getTranches(), lectureGardees,
   ]);
   const mesChoix = choixDeLaProfession(choix, profession.id, profession.parDefaut);
   const sujetsProfession = new Set(profils.flatMap((p) => p.sujets));
@@ -56,7 +67,7 @@ export default async function PageDegustation() {
   const faits = Object.fromEntries(profils.map((p) => {
     const s1 = p.sujets[0];
     const g = mesChoix.filter((c) => (c.profil ? c.profil === p.id : c.scenario.sujets[0] === s1));
-    return [p.id, { grilles: g.filter((c) => c.format !== 'kits').length, kits: g.filter((c) => c.format === 'kits').length, recettesGardees: notations.filter((n) => n.garder && n.scenario.principaux[0] === s1).length }];
+    return [p.id, { grilles: g.filter((c) => c.format !== 'kits').length, kits: g.filter((c) => c.format === 'kits').length, recettesGardees: gardees.filter((s) => s === s1).length }];
   }));
   // Récompense d'une mission : la publication reste celle de /admin/profils (agent Profils), la Dégustation n'y fait que mener
   const publier = '/admin/profils';

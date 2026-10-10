@@ -3,14 +3,13 @@
 // Photos libres de droits gardées : candidates NON importées (aperçu servi par Pexels / Pixabay, rien d'hébergé, migration
 // 0031) avec « Valider et importer » / « Retirer », puis photos importées (fichiers WebP chez nous) avec leur statut.
 // Thèmes et HASHTAGS (0029) : filtre « #… », recherche (auteur, thème, mot-clé, hashtag), ajout / retrait sur chaque photo.
-import { useMemo, useState, useTransition } from 'react';
-
-const PAR_PAGE = 60;
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { cleCandidatePhoto, clePhoto, correspondHashtag, etiquetteKit, hashtagsDe, LIBELLE_IMAGE_GENEREE, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
+import { correspondHashtag, hashtagsDe, LIBELLE_IMAGE_GENEREE, LICENCES_SOURCES, libelleSujet, type HashtagsAssets } from '@plateforme/core';
+import { clePhotoLibre, kitDePhoto, PAR_PAGE_PHOTOS as PAR_PAGE, trierParKit } from '@/lib/photos-libres-ordre';
 import HashtagsVisuel, { FiltreHashtag } from '@/components/HashtagsVisuel';
 import type { PhotoLibre } from '@/lib/photos-libres';
-import { changerStatutPhotoLibre, importerPhotoLibre } from './actions';
+import { changerStatutPhotoLibre, importerPhotoLibre, lirePhotosLibres } from './actions';
 import StatutPhotoLibre from './StatutPhotoLibre';
 
 const champ = 'min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-base md:text-sm';
@@ -44,7 +43,23 @@ function ActionsCandidate({ id, onResultat }: { id: string; onResultat: (r: { ok
   );
 }
 
-export default function PhotosLibresListe({ photos, hashtags: initiaux, migrationHashtags, migration0031 = false }: { photos: PhotoLibre[]; hashtags: HashtagsAssets; migrationHashtags: boolean; migration0031?: boolean }) {
+/**
+ * `premieres` : première page sans filtre (premierePagePhotosLibres, calculée par le serveur), `total` et `aImporter` de la liste
+ * complète ; la liste complète est lue après l'affichage (perf vague 2, 2026-10-10 : 1,3 Mo de photos envoyés avec la page avant,
+ * au volume ×10). Filtres et recherche portent sur toute la liste, dès qu'elle est arrivée.
+ */
+export default function PhotosLibresListe({ premieres, total, aImporter: aImporterTotal, hashtags: initiaux, migrationHashtags, migration0031 = false }: { premieres: PhotoLibre[]; total: number; aImporter: number; hashtags: HashtagsAssets; migrationHashtags: boolean; migration0031?: boolean }) {
+  const [toutes, setToutes] = useState<PhotoLibre[] | null>(null);
+  const [erreurListe, setErreurListe] = useState(false);
+  // Liste complète relue à chaque nouvelle première page (après une action : router.refresh())
+  useEffect(() => {
+    let actif = true;
+    setErreurListe(false);
+    void lirePhotosLibres().then((r) => { if (!actif) return; if (r.ok) setToutes(r.photos); else setErreurListe(true); }, () => { if (actif) setErreurListe(true); });
+    return () => { actif = false; };
+  }, [premieres]);
+  const complete = toutes !== null;
+  const photos = toutes ?? premieres;
   const [hashtags, setHashtags] = useState(initiaux);
   const [filtre, setFiltre] = useState('');
   const [recherche, setRecherche] = useState('');
@@ -53,28 +68,28 @@ export default function PhotosLibresListe({ photos, hashtags: initiaux, migratio
   const [nbAffichees, setNbAffichees] = useState(PAR_PAGE);
   const [resultat, setResultat] = useState<{ ok: boolean; texte: string } | null>(null);
   // Clé d'asset : photo importée → clé de l'inventaire ; candidate → photo:libre:<source>-<id> (reportée à l'import)
-  const lignes = useMemo(() => photos.map((p) => ({ p, cle: p.url ? clePhoto(p.url) : p.source === 'ia' ? null : cleCandidatePhoto(p.source, p.idSource) })), [photos]);
+  const lignes = useMemo(() => photos.map((p) => ({ p, cle: clePhotoLibre(p) })), [photos]);
   // Photos gardées pour un kit d'images (#kit-<sujet>, suggestions-kits.ts) et pas encore importées : en tête, étiquetées
-  const kitDe = (cle: string | null, p: PhotoLibre) => (cle && !p.url && p.statut !== 'retiree' ? etiquetteKit(hashtagsDe(hashtags, cle)) : null);
+  const kitDe = (cle: string | null, p: PhotoLibre) => kitDePhoto(hashtags, cle, p);
   const visibles = lignes.filter(({ p, cle }) => {
     if (filtre && (!cle || !correspondHashtag(hashtags, cle, filtre, true))) return false;
     const q = recherche.trim().toLowerCase().replace(/^#/, '');
     if (!q) return true;
     return [p.auteur, libelleSujet(p.sujet), p.sujet, p.source, p.idSource, ...(p.source === 'ia' ? [LIBELLE_IMAGE_GENEREE, p.iaOutil ?? ''] : []), ...p.motsCles, ...(cle ? hashtagsDe(hashtags, cle) : [])].some((t) => t.toLowerCase().includes(q));
   });
-  visibles.sort((a, b) => Number(Boolean(kitDe(b.cle, b.p))) - Number(Boolean(kitDe(a.cle, a.p))));
-  const aImporter = visibles.filter(({ p }) => !p.url && p.statut !== 'retiree').length;
+  trierParKit(visibles, hashtags);
+  const aImporter = complete ? visibles.filter(({ p }) => !p.url && p.statut !== 'retiree').length : aImporterTotal;
 
   return (
     <div className="grid gap-3">
       <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher (auteur, thème, mot-clé, #hashtag)" aria-label="Rechercher une photo" className={champ} />
-        <FiltreHashtag valeur={filtre} onChange={setFiltre} etat={hashtags} className={champ} />
+        <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} disabled={!complete} placeholder={complete ? 'Rechercher (auteur, thème, mot-clé, #hashtag)' : 'Chargement de toutes les photos…'} aria-label="Rechercher une photo" className={champ} />
+        {complete ? <FiltreHashtag valeur={filtre} onChange={setFiltre} etat={hashtags} className={champ} /> : <span className={`${champ} flex items-center text-neutral-500`}>Filtre # : chargement…</span>}
       </div>
       {migration0031 && <p className="text-sm text-amber-900">Migration 0031 à exécuter (<code>supabase/migrations/0031_photos_libres_import_differe.sql</code>) : « Garder » sans import et « Valider et importer » ne fonctionnent pas encore.</p>}
       {migrationHashtags && <p className="text-sm text-amber-900">Migration 0029 à exécuter (<code>supabase/migrations/0029_assets_hashtags.sql</code>) : hashtags non enregistrés.</p>}
       {resultat && <p role="status" className={`rounded-lg p-3 text-sm ring-1 ${resultat.ok ? 'bg-teal-50 text-teal-950 ring-teal-200' : 'bg-red-50 text-red-900 ring-red-200'}`}>{resultat.texte}</p>}
-      <p className="text-xs text-neutral-500">{visibles.length} photo{visibles.length > 1 ? 's' : ''} sur {photos.length}{aImporter ? ` · ${aImporter} à valider et importer` : ''}</p>
+      <p className="text-xs text-neutral-500">{complete ? visibles.length : total} photo{(complete ? visibles.length : total) > 1 ? 's' : ''} sur {complete ? photos.length : total}{aImporter ? ` · ${aImporter} à valider et importer` : ''}{!complete ? (erreurListe ? ' · liste complète indisponible, rechargez la page' : ' · chargement de la suite…') : ''}</p>
       <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {visibles.slice(0, nbAffichees).map(({ p, cle }) => {
           const importee = Boolean(p.url);

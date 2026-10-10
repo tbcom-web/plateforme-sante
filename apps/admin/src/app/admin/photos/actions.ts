@@ -7,7 +7,7 @@ import {
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { lireJeuPhotos, PREFIXE_STOCKAGE, tirerJeuPhotos, UUID } from '@/lib/jeux-photos';
-import { importerDepuisSource, MIGRATION_0031 } from '@/lib/photos-libres';
+import { getPhotosLibres, importerDepuisSource, MIGRATION_0031, type PhotoLibre } from '@/lib/photos-libres';
 import { createClient, getUser } from '@/lib/supabase/server';
 
 export type Resultat = { ok: boolean; message: string; id?: string } | null;
@@ -261,4 +261,11 @@ export async function enregistrerSourcePhoto(urlOuChemin: string, entree: unknow
   }
   revalidatePath('/admin/photos');
   return { ok: true, message: `Source enregistrée : ${LIBELLES_PROVENANCES[source.provenance]}.` };
+}
+
+/** Liste complète des photos libres (Frigo › Jeux de photos : chargée après l'affichage de la première page, perf vague 2) */
+export async function lirePhotosLibres(): Promise<{ ok: boolean; photos: PhotoLibre[] }> {
+  await exigerAdmin();
+  const r = await getPhotosLibres().catch(() => null);
+  return r && !r.migrationManquante ? { ok: true, photos: r.photos } : { ok: false, photos: [] };
 }

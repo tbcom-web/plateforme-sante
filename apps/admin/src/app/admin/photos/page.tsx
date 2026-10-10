@@ -8,6 +8,7 @@ import { getRecapSources } from '@/lib/sources-photos';
 import { getCatalogue } from '@/lib/sites';
 import EditeurJeu from './EditeurJeu';
 import PhotosLibresListe from './PhotosLibresListe';
+import { premierePagePhotosLibres } from '@/lib/photos-libres-ordre';
 import SourcesLicences from './SourcesLicences';
 
 export const metadata = { title: 'Super admin · Jeux de photos' };
@@ -67,6 +68,7 @@ export default async function JeuxPhotos() {
     nomsSites.set(s.id, d.cabinet.nom || [d.praticiens[0]?.prenom, d.praticiens[0]?.nom].filter(Boolean).join(' ') || s.id);
   }
   const exclusifs = jeux.filter((j) => j.siteId);
+  const premierePage = premierePagePhotosLibres(libres.photos, hashtags.hashtags);
 
   return (
     <div className="grid gap-8">
@@ -123,7 +125,8 @@ export default async function JeuxPhotos() {
         ) : libres.photos.length === 0 ? (
           <p className="text-sm text-neutral-500">Aucune photo gardée pour l’instant.</p>
         ) : (
-          <PhotosLibresListe photos={libres.photos} hashtags={hashtags.hashtags} migrationHashtags={hashtags.migrationManquante} migration0031={libres.migration0031} />
+          // Première page seulement (photos-libres-ordre.ts) : la liste complète est lue après l'affichage
+          <PhotosLibresListe premieres={premierePage.photos} total={premierePage.total} aImporter={premierePage.aImporter} hashtags={hashtags.hashtags} migrationHashtags={hashtags.migrationManquante} migration0031={libres.migration0031} />
         )}
       </section>
 

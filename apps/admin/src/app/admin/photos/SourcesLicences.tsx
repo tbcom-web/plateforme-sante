@@ -8,6 +8,7 @@ import { LIBELLES_TYPES_SOURCE, type LigneSourceImage, type TypeSourceImage } fr
 import { enregistrerSourcePhoto } from './actions';
 import FormulaireSource from './FormulaireSource';
 
+const PAR_PAGE = 60;
 const champ = 'min-h-11 rounded-lg border border-neutral-300 bg-white px-3 text-base md:text-sm';
 
 function Apercu({ url }: { url: string }) {
@@ -23,6 +24,9 @@ export default function SourcesLicences({ lignes, migration0031 }: { lignes: Lig
   const [recherche, setRecherche] = useState('');
   const [ouverte, setOuverte] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; texte: string } | null>(null);
+  // Pagination du rendu (perf vague 2, 2026-10-10) : 60 images affichées, « Afficher 60 de plus » ; filtres et recherche portent sur
+  // toutes (toutes les images rendues d'un coup auparavant : ≈ 1,3 Mo de page au volume ×10)
+  const [nbAffichees, setNbAffichees] = useState(PAR_PAGE);
   const nbARenseigner = lignes.filter((l) => l.aRenseigner).length;
   const types = useMemo(() => [...new Set(lignes.map((l) => l.type))], [lignes]);
   const visibles = lignes.filter((l) => {
@@ -49,7 +53,7 @@ export default function SourcesLicences({ lignes, migration0031 }: { lignes: Lig
       {message && <p role="status" className={`rounded-lg p-3 text-sm ring-1 ${message.ok ? 'bg-teal-50 text-teal-950 ring-teal-200' : 'bg-red-50 text-red-900 ring-red-200'}`}>{message.texte}</p>}
       <p className="text-xs text-neutral-500">{visibles.length} image{visibles.length > 1 ? 's' : ''} sur {lignes.length}</p>
       <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 lg:grid-cols-2">
-        {visibles.map((l) => (
+        {visibles.slice(0, nbAffichees).map((l) => (
           <li key={l.url} className={`grid gap-2 rounded-xl border bg-white p-3 text-sm ${l.aRenseigner ? 'border-amber-300' : 'border-black/10'}`}>
             <div className="flex min-w-0 gap-3">
               <Apercu url={l.url} />
@@ -84,6 +88,7 @@ export default function SourcesLicences({ lignes, migration0031 }: { lignes: Lig
           </li>
         ))}
       </ul>
+      {visibles.length > nbAffichees && <button type="button" onClick={() => setNbAffichees((n) => n + PAR_PAGE)} className="min-h-11 justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold">Afficher {Math.min(PAR_PAGE, visibles.length - nbAffichees)} de plus ({visibles.length - nbAffichees} restantes)</button>}
       {!visibles.length && <p className="text-sm text-neutral-500">Aucune image pour ces filtres.</p>}
     </div>
   );

@@ -134,12 +134,16 @@ export default function Atelier(props: Props) {
   const ctxRecette = useMemo<ContexteRecette>(() => ({ sujets: sujetsPris(entree), principaux: scenario.principaux.length, couleursPreferees: scenario.couleurs, poids: apprentissage ? poids : null, photos, modele }), [entree, scenario.principaux.length, scenario.couleurs, apprentissage, poids, photos, modele]);
   // Objectif 4-5 ★ (qualite.ts) : réglages relancés vers les éléments 4-5 ★, un seul élément « à juger » ; la proposition elle-même
   // (palette, visuels, photos) reste celle notée
+  // Calculée dans le navigateur seulement (après le montage) : ~0,4 s de processeur par ouverture sur le serveur au volume ×10 pour un
+  // aperçu que le navigateur recalcule de toute façon à l'hydratation (perf vague 2, 2026-10-10)
+  const [monte, setMonte] = useState(false);
+  useEffect(() => setMonte(true), []);
   const progressif = useMemo(() => {
-    if (!p) return null;
+    if (!p || !monte) return null;
     const x = compositionAtelier(p, ctxRecette, photosP, 0);
     const notes = apprentissage ? poids?.notesElements : null;
     return versQuatreCinq(x, ctxRecette, notes, { maxNouveaux: 1, essais: 4, graine: 0, verrous: ['couleurs', 'visuels', 'photos', 'structure'] });
-  }, [p, ctxRecette, photosP, apprentissage, poids]);
+  }, [p, ctxRecette, photosP, apprentissage, poids, monte]);
   const comp = progressif?.composition ?? null;
   const aValider = useMemo(() => (comp ? aValiderDansComposition(comp) : []), [comp]);
   const ingredients = useMemo(() => (p && comp ? { ...ingredientsProposition(p, entree, photosP), reglages: reglagesAtelier(comp, sujetsPris(entree)) } : null), [p, comp, entree, photosP]);
@@ -296,6 +300,7 @@ export default function Atelier(props: Props) {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm text-neutral-600" aria-live="polite">Lot {lot} · proposition {(index % 3) + 1} sur 3 · n° {index + 1}{epuise && index >= liste.length - 1 ? ' (dernière)' : ''}</p>
             </div>
+            {!monte && <p className="grid min-h-64 place-items-center rounded-xl bg-neutral-50 text-sm text-neutral-500">Préparation de l’aperçu…</p>}
             {apercu && (() => {
               const cleRendu = `${p.id}|${scenario.couleurs.join()}|${sujets.join()}|${onglet.id}`;
               const rendu = (app: 'bureau' | 'mobile', hauteur?: number) => <ApercuTheme sansCommandes hauteurCadre={hauteur} animer={animer} appareil={app} vueInitiale={vueDePage(onglet.page as PageStructure)} draft={draftPourOnglet(apercu.draft, onglet)} modele={apercu.modele} catalogue={catalogue} marquesImportees={marquesImportees} jeuPhotos={null} />;

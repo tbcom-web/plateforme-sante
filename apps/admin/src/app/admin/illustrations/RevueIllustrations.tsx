@@ -99,6 +99,21 @@ function Apercu({ html, fond, grand = false, petit = false }: { html: string; fo
 
 const registreDeCle = (cle: string): Registre | undefined => (cle.startsWith('ligne:') || cle.endsWith(':ligne') ? 'ligne' : cle.endsWith(':releve') || cle.startsWith('animation:') ? 'releve' : cle.endsWith(':pedagogique') || cle.startsWith('biblio:') ? 'pedagogique' : undefined);
 
+// Rendu de tout l'inventaire (SVG et empreinte de chaque élément) : ~0,4 s au volume ×10, refait à CHAQUE rendu serveur de la
+// page avant (perf vague 2, 2026-10-10). Gardé dans le module pour les mêmes photos des jeux (fonction pure de l'inventaire du code
+// et des photos : même résultat) ; jamais modifié en place.
+let dernieresLignes: { cle: string; lignes: Ligne[] } | null = null;
+function lignesInventaire(photosJeux: PhotoDeJeu[]): Ligne[] {
+  const cle = JSON.stringify(photosJeux);
+  if (dernieresLignes?.cle === cle) return dernieresLignes.lignes;
+  const lignes = inventaireAssets({ photosJeux }).map((a) => {
+    const s = a.rendu.kind === 'svg' ? a.rendu.svg() : '';
+    return { ...a, svgRendu: s, empreinte: s ? empreinteSvg(s) : '', fond: a.rendu.kind === 'svg' ? a.rendu.fond : 'clair', registre: registreDeCle(a.cle) };
+  });
+  dernieresLignes = { cle, lignes };
+  return lignes;
+}
+
 export default function RevueIllustrations({ statuts, revues: revuesInitiales, migrationManquante, photosJeux, moyennes: moyennesInitiales, migrationNotes, surchargesSujets, empreintesNotees, cleInitiale = null, predictions }: Props) {
   const [surcharges, setSurcharges] = useState(surchargesSujets);
   const [filtreSujet, setFiltreSujet] = useState('');
@@ -109,10 +124,7 @@ export default function RevueIllustrations({ statuts, revues: revuesInitiales, m
   useEffect(() => {
     void lireHashtagsAssets().then((r) => { setHashtags(r.hashtags); setMigrationHashtags(r.migrationManquante); }).catch(() => undefined);
   }, []);
-  const lignes = useMemo<Ligne[]>(() => inventaireAssets({ photosJeux }).map((a) => {
-    const s = a.rendu.kind === 'svg' ? a.rendu.svg() : '';
-    return { ...a, svgRendu: s, empreinte: s ? empreinteSvg(s) : '', fond: a.rendu.kind === 'svg' ? a.rendu.fond : 'clair', registre: registreDeCle(a.cle) };
-  }), [photosJeux]);
+  const lignes = useMemo<Ligne[]>(() => lignesInventaire(photosJeux), [photosJeux]);
   // Notes (0027) : moyenne par clé, mise à jour localement après une note rapide
   const [moyennes, setMoyennes] = useState(moyennesInitiales);
   const [notesMsg, setNotesMsg] = useState<Record<string, string>>({});

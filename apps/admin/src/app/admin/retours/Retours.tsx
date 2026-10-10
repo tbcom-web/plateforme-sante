@@ -318,6 +318,20 @@ function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
   );
 }
 
+// Inventaires de la page (bibliothèque, studio, images × fonds, regroupement par illustration de base) : ~0,1 s refait à CHAQUE
+// rendu serveur avant (perf vague 2, 2026-10-10). Gardés dans le module pour les mêmes photos des jeux (fonctions pures du code et
+// des photos : mêmes listes) ; jamais modifiés en place.
+let derniersInventaires: { cle: string; v: { complet: Asset[]; assetsStudio: Asset[]; parBase: ReturnType<typeof inventaireParBase> } } | null = null;
+function inventairesRetours(photosJeux: PhotoDeJeu[]) {
+  const cle = JSON.stringify(photosJeux);
+  if (derniersInventaires?.cle === cle) return derniersInventaires.v;
+  const a = inventaireAssets({ photosJeux });
+  const complet = [...a, ...inventaireStudio(), ...inventaireImagesFonds(a)];
+  const v = { complet, assetsStudio: [...inventaireAssets({ photosJeux }), ...inventaireStudio()], parBase: inventaireParBase(complet) };
+  derniersInventaires = { cle, v };
+  return v;
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Composant principal
 // ---------------------------------------------------------------------------------------------------------------
@@ -326,9 +340,10 @@ export default function Retours(props: Props) {
   const { photosJeux, changements, influents, changementsClaude, renfortsRecettes = [], migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
   // Inventaire : bibliothèque (illustrations, photos, modèles, gammes) + studio de recettes (structures de pages, éléments, effets)
   // + Images × fonds (combinaisons-elements.ts) : une image par illustration de base et quelques photos, sur chaque fond
-  const inventaireComplet = useMemo(() => { const a = inventaireAssets({ photosJeux }); return [...a, ...inventaireStudio(), ...inventaireImagesFonds(a)]; }, [photosJeux]);
+  const inventaires = useMemo(() => inventairesRetours(photosJeux), [photosJeux]);
+  const inventaireComplet = inventaires.complet;
   // File « à noter » dédoublonnée par illustration de base (une carte par dessin, ses variantes repliées)
-  const { notables, groupes: groupesBases } = useMemo(() => inventaireParBase(inventaireComplet), [inventaireComplet]);
+  const { notables, groupes: groupesBases } = inventaires.parBase;
   // Tuile « Éléments » : filtre par famille (horaires, plan d'accès, galerie, contact, forme des cartes…)
   const [famille, setFamille] = useState('');
   // Sujets des visuels (défauts du code ± surcharges de Paul) et filtre « noter les visuels du sujet … »
@@ -351,9 +366,9 @@ export default function Retours(props: Props) {
   const indexResume = useMemo(() => indexerResume(resume), [resume]);
   // Objectif « compositions 100 % 4-5 ★ » (qualite.ts) : dimensions couvertes (≥ 2 éléments 4-5 ★), priorités à noter
   const progression = useMemo(() => {
-    const a = [...inventaireAssets({ photosJeux }), ...inventaireStudio()];
+    const a = inventaires.assetsStudio;
     return tableauProgression(a.map((x) => ({ cle: x.cle, sujets: x.type === 'photo' ? sujetsDuVisuel(x, surcharges).sujets : [] })), elementsDepuisResume(resume, notes));
-  }, [photosJeux, surcharges, notes, resume]);
+  }, [inventaires, surcharges, notes, resume]);
   const [datesAtelier, setDatesAtelier] = useState<string[]>([]);
   const [dejaNotees, setDejaNotees] = useState(props.dejaNotees);
   // Notes de variantes comptées aussi pour leur base (agrégation) ; signaux : clés notées (variantes nouvelles → duel)

@@ -4,6 +4,8 @@ import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { exigerAdmin } from '@/lib/admin';
 import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getRevuesIllustrations } from '@/lib/illustrations';
+import { memoParSignature } from '@/lib/memo-journal';
+import { getUser } from '@/lib/supabase/server';
 import { getPredictions } from '@/lib/predictions';
 import { predictionsParCle } from '@plateforme/core/juge';
 import RevueIllustrations from './RevueIllustrations';
@@ -15,16 +17,25 @@ export default async function PageIllustrations({ searchParams }: { searchParams
   await exigerAdmin();
   const sp = await searchParams;
   const cle = typeof sp.cle === 'string' ? sp.cle : null;
-  const [{ statuts, revues, migrationManquante }, notes, photosJeux, surchargesSujets, predictions] = await Promise.all([getRevuesIllustrations(), getNotesAssets(), getPhotosDesJeux(), getSurchargesSujets(), getPredictions()]);
-  // Empreinte de la dernière note de chaque élément (avant / après dans la vue agrandie)
-  const empreintesNotees: Record<string, string | null> = {};
-  for (const x of notes.notes) if (!(x.cle in empreintesNotees)) empreintesNotees[x.cle] = x.empreinte;
-  const moyennes: Record<string, { n: number; somme: number }> = {};
-  for (const x of notes.notes) moyennes[x.cle] = { n: (moyennes[x.cle]?.n ?? 0) + 1, somme: (moyennes[x.cle]?.somme ?? 0) + x.note };
-  const synthese = syntheseAssets(notes.notes, {
-    statuts: statuts.map((s) => ({ cle: s.cle, statut: s.statut, commentaire: revues.find((r) => r.cle === s.cle && r.commentaire)?.commentaire ?? null, le: s.majLe })),
-    titres: titresAssets(),
-  });
+  // Notes résumées (moyennes, empreinte de la dernière note, synthèse) gardées sur l'instance tant que les notes, statuts et revues
+  // n'ont pas changé (memoParSignature : compteurs de 0059 ; perf vague 2, 2026-10-10) : le journal complet des notes, commentaires
+  // compris (4,7 Mo au volume ×10), n'est plus relu ni résumé à chaque ouverture. Lecture en échec : jamais gardée.
+  const [{ statuts, revues, migrationManquante }, photosJeux, surchargesSujets, predictions, user] = await Promise.all([getRevuesIllustrations(), getPhotosDesJeux(), getSurchargesSujets(), getPredictions(), getUser().catch(() => null)]);
+  const resumer = async () => {
+    const [notes, r] = await Promise.all([getNotesAssets(), getRevuesIllustrations()]);
+    // Empreinte de la dernière note de chaque élément (avant / après dans la vue agrandie)
+    const empreintesNotees: Record<string, string | null> = {};
+    for (const x of notes.notes) if (!(x.cle in empreintesNotees)) empreintesNotees[x.cle] = x.empreinte;
+    const moyennes: Record<string, { n: number; somme: number }> = {};
+    for (const x of notes.notes) moyennes[x.cle] = { n: (moyennes[x.cle]?.n ?? 0) + 1, somme: (moyennes[x.cle]?.somme ?? 0) + x.note };
+    const synthese = syntheseAssets(notes.notes, {
+      statuts: r.statuts.map((s) => ({ cle: s.cle, statut: s.statut, commentaire: r.revues.find((x) => x.cle === s.cle && x.commentaire)?.commentaire ?? null, le: s.majLe })),
+      titres: titresAssets(),
+    });
+    return { empreintesNotees, moyennes, synthese, migrationManquante: notes.migrationManquante, garder: !notes.migrationManquante && !r.migrationManquante };
+  };
+  const { empreintesNotees, moyennes, synthese, ...notes } = await memoParSignature('bibliotheque-notes', user?.id, ['assets_notes', 'illustrations_statuts', 'illustrations_revues'],
+    async () => { const x = await resumer(); if (!x.garder) throw x; return x; }).catch((x: unknown) => (x && typeof x === 'object' && 'garder' in x ? x as Awaited<ReturnType<typeof resumer>> : resumer()));
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
   return (
     <div className="grid gap-6">

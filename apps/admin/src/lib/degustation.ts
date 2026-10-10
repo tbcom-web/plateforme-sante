@@ -3,7 +3,8 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { choixDepuisLigne, choixPourApprentissage, duelsDesChoix, profilsDePratique, SCENARIOS_TYPES, SUJETS_VISUELS, type ChoixGrille, type Duel, type ScenarioRecette } from '@plateforme/core';
 import { COOKIE_PROFESSION, PROFESSION_PAR_DEFAUT, professionDe } from '@plateforme/core/professions';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getUser } from '@/lib/supabase/server';
+import { memoParSignature } from '@/lib/memo-journal';
 
 // 🍽 Dégustation (migration 0042, packages/core/src/degustation.ts) côté serveur :
 // - getChoixGrille : journal complet, lu par le super admin (/admin/degustation) ; [] et migrationManquante sans la migration ;
@@ -71,15 +72,23 @@ const COLONNES_CHOIX = 'format, type, dimension, scenario, propositions, meilleu
  * Vue degustation_choix_legers (0059) ; sans elle, journal complet. Mêmes choix, mêmes validations (les ingrédients n'entrent pas
  * dans la validation) ; ingrédients réduits à l'élément.
  */
-export const getChoixGrilleLeger = cache(async (): Promise<{ choix: ChoixGrille[]; migrationManquante: boolean; erreur?: string }> => {
+async function lireChoixLegers(): Promise<{ choix: ChoixGrille[]; migrationManquante: boolean; erreur?: string; repli?: boolean }> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from('degustation_choix_legers').select(COLONNES_CHOIX).order('created_at', { ascending: false }).limit(5000);
-    if (error) return getChoixGrille();
+    if (error) return { ...(await getChoixGrille()), repli: true };
     return { choix: ((data ?? []) as unknown as Record<string, unknown>[]).map(choixDepuisLigne).filter((c): c is ChoixGrille => c !== null), migrationManquante: false };
   } catch {
-    return getChoixGrille();
+    return { ...(await getChoixGrille()), repli: true };
   }
+}
+// Gardés sur l'instance tant que degustation_choix n'a pas changé (memoParSignature : compteurs de 0059 ; perf vague 2, 2026-10-10) :
+// 4 Mo relus à chaque ouverture de la Dégustation au volume ×10. Repli (vue absente, lecture en échec) : jamais gardé.
+export const getChoixGrilleLeger = cache(async (): Promise<{ choix: ChoixGrille[]; migrationManquante: boolean; erreur?: string }> => {
+  const utilisateur = (await getUser().catch(() => null))?.id;
+  const r = await memoParSignature('degustation-choix-legers', utilisateur, ['degustation_choix'], async () => { const x = await lireChoixLegers(); if (x.repli) throw x; return x; })
+    .catch((x: unknown) => (x && typeof x === 'object' && 'repli' in x ? x as Awaited<ReturnType<typeof lireChoixLegers>> : lireChoixLegers()));
+  return { choix: r.choix, migrationManquante: r.migrationManquante, ...(r.erreur !== undefined ? { erreur: r.erreur } : {}) };
 });
 
 /** Duels équivalents des grilles, pour le moteur des poids (même plafond, mêmes clés que les duels A/B) ; [] sans la migration */
