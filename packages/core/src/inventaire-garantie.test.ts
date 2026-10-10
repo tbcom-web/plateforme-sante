@@ -30,6 +30,7 @@ import { DESSINS_PODOLOGIE } from './univers';
 import { DESSINS_LIGNE } from './ligne';
 import { EQUIPEMENTS_DESSINES } from './dessins';
 import { DESSINS_UNIVERS } from './dessins-univers';
+import { CLES_IMAGES_FIXES } from './images-fixes-pied';
 import { CLES_UNIVERS_DIABETE } from './univers-diabete';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, cleStyleExperimental } from './styles-experimentaux';
 import { PHOTOS_INTEGREES } from './jeux-photos';
@@ -146,6 +147,7 @@ test('garantie : illustrations, pictos et directions, héros, matériel, kits, a
     'traits continus': DESSINS_LIGNE.map((n) => `ligne:${n}`),
     'dessins de la planche « ce qui manque »': DESSINS_UNIVERS.map((n) => `dessin:${n}:pedagogique`),
     'univers diabète (héros et cartes)': [...CLES_UNIVERS_DIABETE],
+    'images fixes des animations du pied': [...CLES_IMAGES_FIXES],
     'styles expérimentaux': STYLES_EXPERIMENTAUX.flatMap((st) => SUJETS_STYLES.map((s) => cleStyleExperimental(s, st))),
     matériel: EQUIPEMENTS_DESSINES.flatMap((id) => ['releve', 'pedagogique', 'ligne'].map((r) => `materiel:${id}:${r}`)),
     'héros des thèmes': [...new Set([...THEMES_ILLUSTRES, ...SCENES_HEROS])].flatMap((t) => ['releve', 'pedagogique', 'ligne'].map((r) => `heros:${t}:${r}`)),

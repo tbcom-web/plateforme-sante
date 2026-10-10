@@ -332,9 +332,10 @@ export function kitDuProfil(profil: ProfilPratique, d: DonneesProfil, opts: { pr
     const a = activitePratique(p, id);
     if (!a) continue;
     const familles = familleVide();
-    // Visuels de l'activité : reconnus comme ELLE, et aucune autre activité (une photo « tennis et course » n'illustre pas la course)
+    // Visuels de l'activité : reconnus comme ELLE, et aucune activité hors du profil (une photo « tennis et course » n'illustre pas
+    // un profil « course » ; la montagne #trail #randonnee illustre le profil « Sport · trail / randonnée », 2026-10-10)
     for (const f of FAMILLES_KIT) {
-      familles[f] = tri(tous.filter((t) => t.famille === f && ok(t) && t.activites.includes(id) && t.activites.every((x) => x === id))
+      familles[f] = tri(tous.filter((t) => t.famille === f && ok(t) && t.activites.includes(id) && t.activites.every((x) => profil.activites.includes(x)))
         .map((e) => ({ cle: e.cle, famille: e.famille, note: e.note, aValider: e.aValider, ...(e.url ? { url: e.url } : {}) })));
     }
     activites.push({ activite: id, hashtag: a.hashtags[0], libelle: a.libelle, familles });

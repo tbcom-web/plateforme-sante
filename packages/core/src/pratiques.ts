@@ -116,7 +116,8 @@ export const PRATIQUE_PODOLOGUE: PratiqueProfession = {
     { id: 'sport-basket', court: 'Sport · basket', principal: 'sport', secondaires: [], activites: ['basket'], publics: ['sportifs'] },
     { id: 'sport-foot', court: 'Sport · foot', principal: 'sport', secondaires: [], activites: ['football'], publics: ['sportifs'] },
     { id: 'sport-tennis', court: 'Sport · tennis', principal: 'sport', secondaires: [], activites: ['tennis'], publics: ['sportifs'] },
-    { id: 'sport-rando', court: 'Sport · rando', principal: 'sport', secondaires: [], activites: ['randonnee'], publics: ['sportifs'] },
+    // « Sport · trail / randonnée » (2026-10-10) : même identifiant (recettes déjà rattachées), le trail rejoint la randonnée
+    { id: 'sport-rando', court: 'Sport · trail / randonnée', principal: 'sport', secondaires: [], activites: ['randonnee', 'trail'], publics: ['sportifs'] },
     { id: 'diabete', court: 'Diabète', principal: 'diabete', secondaires: [], activites: [], publics: [] },
     { id: 'enfant', court: 'Enfant', principal: 'enfant', secondaires: [], activites: [], publics: ['enfants'] },
     { id: 'enfant-danse', court: 'Enfant · danse', principal: 'enfant', secondaires: [], activites: ['danse'], publics: ['enfants'] },

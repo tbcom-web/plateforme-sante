@@ -20,6 +20,7 @@ import { THEMES } from './themes';
 import { SPORTS, FICHES_SPORTS, svgSport } from './sports';
 import { clesSport, sujetsDesKits } from './kits';
 import { DESSINS_UNIVERS, FICHES_DESSINS_UNIVERS, svgDessinUnivers, sujetsUnivers } from './dessins-univers';
+import { IMAGES_FIXES_PIED, FICHES_IMAGES_FIXES, svgImageFixe } from './images-fixes-pied';
 import { DESSINS_DIABETE, HEROS_DIABETE, FICHES_UNIVERS_DIABETE, REGISTRES_DIABETE, svgDessinDiabete, herosDiabete } from './univers-diabete';
 import { DIRECTIONS_PICTOS, ECHANTILLON_DIRECTIONS, FICHES_DIRECTIONS, LIBELLES_ECHANTILLON, cleDirection, cleStyleIcones, svgTuileDirection, svgPlancheDirection } from './pictos-directions';
 import { ICONES_ILLUSTREES_IDS, FICHES_ICONES_ILLUSTREES, FICHE_DIRECTION_D, SOURCE_ICONES_ILLUSTREES, CLE_STYLE_ICONES_D, cleIconeIllustree, svgTuileIllustree, svgPlancheIllustree } from './icones-illustrees';
@@ -153,6 +154,18 @@ export function inventaireIllustrations(): Illustration[] {
         cle: `dessin:${nom}:${registre}`, type: 'dessin', registre, titre: f.libelle, detail: `${LIBELLES_REGISTRES[registre]} · univers diabète · ${f.regard}`,
         source: `packages/core/src/univers-diabete.ts — corpsDessin('${nom}')`, soins: ['diabete'], statutParDefaut: 'a_revoir', fond: registre === 'releve' ? 'grille' : 'doux',
         svg: () => svgDessinDiabete(nom, { registre, id: `rv-dd-${nom}-${registre}` }),
+      });
+    }
+  }
+  // Images FIXES des animations du pied (2026-10-10, brouillons « À revoir », images-fixes-pied.ts) : montagne trail / randonnée,
+  // chronomètre (grammaire du matériel), talon douloureux ; base `dessin:<id>`, sujets et hashtags par défaut tirés de leur fiche
+  for (const nom of IMAGES_FIXES_PIED) {
+    const f = FICHES_IMAGES_FIXES[nom];
+    for (const registre of f.registres) {
+      l.push({
+        cle: `dessin:${nom}:${registre}`, type: 'dessin', registre, titre: f.libelle, detail: `${LIBELLES_REGISTRES[registre]} · image fixe de l’animation ${f.animation} · ${f.regard}`,
+        source: `packages/core/src/images-fixes-pied.ts — svgImageFixe('${nom}')`, soins: [...f.sujets], statutParDefaut: 'a_revoir', fond: registre === 'releve' ? 'grille' : 'doux',
+        svg: () => svgImageFixe(nom, { registre, id: `rv-if-${nom}-${registre}` }),
       });
     }
   }

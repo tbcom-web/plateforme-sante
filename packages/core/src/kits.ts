@@ -11,6 +11,7 @@ import { SPORTS, FICHES_SPORTS, idPictoSport, type Sport } from './sports';
 import { STYLES_EXPERIMENTAUX, SUJETS_STYLES, cleStyleExperimental, hashtagsStyleExperimental } from './styles-experimentaux';
 import { HASHTAGS_UNIVERS } from './dessins-univers';
 import { HASHTAGS_UNIVERS_DIABETE } from './univers-diabete';
+import { HASHTAGS_IMAGES_FIXES } from './images-fixes-pied';
 
 export type StatutKit = 'brouillon' | 'valide' | 'retire';
 
@@ -80,4 +81,7 @@ export const HASHTAGS_PAR_DEFAUT: Readonly<Record<string, readonly string[]>> = 
   ...Object.entries(HASHTAGS_UNIVERS),
   // Univers diabète (2026-10-09, univers-diabete.ts) : #diabete rattache chaque élément au vivier du sujet (à valider par Paul)
   ...Object.entries(HASHTAGS_UNIVERS_DIABETE),
+  // Images fixes des animations du pied (2026-10-10, images-fixes-pied.ts) : #trail #randonnee (kit « Sport · trail / randonnée »),
+  // #douleur-talon (fiche du soin), #sport
+  ...Object.entries(HASHTAGS_IMAGES_FIXES),
 ]);
