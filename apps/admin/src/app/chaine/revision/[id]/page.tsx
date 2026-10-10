@@ -8,13 +8,15 @@ import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE } from '@/lib/ch
 import { guidageChaine } from '@/lib/chaine-guidage';
 import ProchaineEtape from '../../ProchaineEtape';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../../donnees';
+import { candidatesImagesDemo, lireChoixImages } from '../../donnees-images';
+import { verrousDeLaFiche } from '../../validation';
 import Revision from './Revision';
 
-export const metadata = { title: 'Chaîne · Avis page par page' };
+export const metadata = { title: 'Chaîne · Relecture guidée' };
 
-// 4. AVIS HUMAIN page par page (8 pages × ordinateur et téléphone, uniformes pour tous les modèles) après le check de l'agent :
-// entourer une zone ou toucher un élément + étiquette + commentaire → ticket ; 🔒 verrouiller ce qui plaît, 🎲 relancer le reste ;
-// « Rien à signaler sur cette page ». 7. REVALIDATION : seulement ce qui a changé, avant / après, en 1 clic.
+// RELECTURE GUIDÉE (demande de Paul du 2026-10-10) : 4. avis page par page (8 pages × téléphone puis ordinateur, une à la fois :
+// ✓ Page OK ou ✎ Il manque / à corriger), récapitulatif et envoi des corrections à Claude ; 7. revalidation des seules pages
+// modifiées ; 8. écran de publication (Paul). Structure figée dès « finaliste » : seules les images se choisissent, en situation.
 export default async function PageRevision({ params }: { params: Promise<{ id: string }> }) {
   const moi = await exigerContributeur();
   const { id } = await params;
@@ -25,7 +27,9 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
   if (!f) notFound();
   // Chaîne guidée : prochaine étape de la profession du modèle (bandeau compact : on travaille déjà ici)
   const { action } = await guidageChaine({ moi, profession: f.profession, chaine, autoImport: false });
-  const [rendu, gen, rapport, demo] = await Promise.all([donneesRendu(), donneesGeneration(), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), profilsDemo()]);
+  const [rendu, gen, rapport, demo, choix] = await Promise.all([donneesRendu(), donneesGeneration(), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), profilsDemo(), lireChoixImages()]);
+  const candidates = f.profil === null ? await candidatesImagesDemo(choix.lignes) : {};
+  const publication = f.statut === 'pret-validation' || f.statut === 'publie' ? await verrousDeLaFiche(f, chaine).then((x) => x.verrous).catch(() => []) : null;
   const compatibles = demo.profils.filter((p) => f.tags.profils.includes(p.id));
   const modeTest = modeTestPourEtape(f.statut);
   const v = chaine.versions.find((x) => x.modele === f.id && x.version === f.versionCourante) ?? null;
@@ -39,10 +43,12 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
         <ProchaineEtape action={action} compact ici={`/chaine/revision/${f.id}`} />
         <p className="mt-3 text-sm"><Link href="/chaine" className="font-semibold text-teal-900 underline">← Tableau</Link> · <Link href={`/chaine/modele/${f.id}`} className="underline">Fiche du modèle</Link></p>
         <h1 className="mt-1 text-2xl font-bold">{f.nom} <span className="text-base font-semibold text-neutral-600">· v{f.versionCourante} · {st.libelle}</span></h1>
+        <p className="mt-1 text-sm text-neutral-600">Relecture guidée : une page à la fois, jusqu’à la publication.</p>
       </div>
       {!v ? <p className="text-sm">Version introuvable.</p> : (
         <Revision
           moi={moi.id}
+          validateur={moi.role === 'validateur'}
           fiche={{ id: f.id, statut: f.statut, version: f.versionCourante, scenario: f.scenario, nom: f.nom }}
           composition={v.composition}
           precedente={prec?.composition ?? null}
@@ -54,6 +60,14 @@ export default async function PageRevision({ params }: { params: Promise<{ id: s
           poids={gen.poids}
           photos={gen.photos}
           profilsRendu={f.profil === null ? (compatibles.length ? compatibles : demo.profils) : []}
+          candidates={candidates}
+          choix={choix.lignes.filter((l) => l.modele === f.id)}
+          migrationImages={choix.migrationManquante}
+          publication={publication ? {
+            verrous: publication,
+            profils: demo.profils.map((x) => ({ id: x.id, nom: x.nom, coche: f.tags.profils.length ? f.tags.profils.includes(x.id) : compatibles.some((c) => c.id === x.id) })),
+            publies: demo.profils.filter((x) => f.tags.profils.includes(x.id)).map((x) => x.nom),
+          } : null}
         />
       )}
       {/* Rapport du testeur (contrôles, avant / après du re-check, tickets avec vignettes) : surtout utile en revalidation */}

@@ -3,14 +3,12 @@
 // finaux »). À chaque instant UNE seule prochaine action, calculée ici (fonction pure, testée) et affichée en tête de /chaine et de
 // chaque étape : titre, pourquoi, gros bouton qui y mène, fil des 6 étapes jusqu'à « modèle prêt pour les clients ».
 //
-// Règle de priorité STRICTE (décision de Paul du 2026-10-10 : « on priorise un modèle quasi fini à un autre modèle en cours ») : ce qui
-// rapproche le plus vite un modèle des clients d'abord — publier > revalider > retouche > test de la version retouchée > relire (une
-// relecture déjà entamée avant toute autre) > tester un finaliste > tournoi > présélection ; à étape égale, le modèle le plus avancé
-// (moins de pages et de tickets restants, meilleur rang : comparerProximite de chaine-modeles.ts). Les gestes réservés au validateur (publier, lancer le testeur, demander la retouche
+// Règle de priorité : ce qui rapproche le plus vite un modèle des clients d'abord (validation, revalidation, retouche, relecture,
+// test), puis le tournoi, puis la présélection. Les gestes réservés au validateur (publier, lancer le testeur, demander la retouche
 // à Claude) ne sont jamais prescrits à un contributeur ; il reçoit alors sa propre prochaine action ou une attente expliquée.
 // Docs : docs/chaine-modeles.md (« Chaîne guidée »). Module pur.
 
-import { CHAINE, comparerProximite, revisionDeFiche, ticketsOuverts, versionDe, type EtatChaine, type FicheModele, type RoleEquipe, type StatutModele } from './chaine-modeles';
+import { CHAINE, etatRevision, pagesChangees, ticketsOuverts, versionDe, type EtatChaine, type FicheModele, type RoleEquipe, type StatutModele } from './chaine-modeles';
 import { TOURNOI_GRILLES, type EtatTournoiGrilles } from './tournoi-grilles';
 
 /** Les 6 étapes montrées à l'équipe (les statuts internes de la fiche y sont regroupés) */
@@ -101,7 +99,12 @@ function filEtapes(e: EtatChaine, tournoi: EntreeGuidage['tournoi'], etapeAction
 }
 
 /** Avis page par page d'une fiche en relecture (cellules vues / total) */
-const revisionDe = (e: EtatChaine, f: FicheModele) => revisionDeFiche(e, f);
+function revisionDe(e: EtatChaine, f: FicheModele) {
+  const v = versionDe(e, f.id, f.versionCourante), prec = versionDe(e, f.id, f.versionCourante - 1);
+  return etatRevision(f.versionCourante, e.revues.filter((r) => r.modele === f.id), e.tickets.filter((t) => t.modele === f.id), prec ? { precedente: prec.version, changees: pagesChangees(prec.composition, v?.composition) } : undefined);
+}
+
+const meilleurRang = (a: FicheModele, b: FicheModele) => (a.rang ?? 99) - (b.rang ?? 99) || (a.creeLe < b.creeLe ? -1 : 1);
 
 /**
  * LA prochaine action de la chaîne pour une personne (contributeur ou validateur), avec le fil des 6 étapes. Ordre : plus près des
@@ -110,9 +113,7 @@ const revisionDe = (e: EtatChaine, f: FicheModele) => revisionDeFiche(e, f);
 export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
   const e = p.etat;
   const validateur = p.role === 'validateur';
-  // À étape égale : le modèle le plus avancé d'abord (relecture entamée, moins de pages et de tickets restants, meilleur rang)
-  const proximite = comparerProximite(e);
-  const de = (s: StatutModele) => e.fiches.filter((f) => f.statut === s).sort(proximite);
+  const de = (s: StatutModele) => e.fiches.filter((f) => f.statut === s).sort(meilleurRang);
   const candidats = e.fiches.filter((f) => f.statut === 'candidat' && f.profil === null).length;
   const manque = Math.max(0, CHAINE.ouvertureTournoi - candidats);
   const t = p.tournoi ?? null;
@@ -144,8 +145,8 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
     return fin({
       id: 'valider', etape: 6, qui: 'vous', secondaire: null,
       titre: `Valider et publier ${guillemets(f.nom)}`,
-      pourquoi: `Testeur, relecture et tickets sont au vert. Vérifiez les tags (profils compatibles) puis « Publier pour les praticiens » : le modèle devient disponible pour les clients.${prets.length > 1 ? ` ${prets.length - 1} autre${prets.length > 2 ? 's' : ''} ensuite.` : ''}`,
-      bouton: { libelle: 'Ouvrir la validation', href: `/chaine/modele/${f.id}` },
+      pourquoi: `Testeur, relecture et tickets sont au vert. Dernier écran de la relecture guidée : profils compatibles pré-cochés, puis « Publier ce modèle pour les praticiens » : le modèle devient disponible pour les clients.${prets.length > 1 ? ` ${prets.length - 1} autre${prets.length > 2 ? 's' : ''} ensuite.` : ''}`,
+      bouton: { libelle: 'Publier ce modèle', href: `/chaine/revision/${f.id}` },
     });
   }
 
@@ -156,7 +157,7 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
     return fin({
       id: 'revalider', etape: 5, qui: 'vous', secondaire: null,
       titre: `Revalider ${guillemets(f.nom)} (ce qui a changé seulement)`,
-      pourquoi: `Claude a corrigé la v${f.versionCourante}. Regardez l’avant / après des pages modifiées : « Tout revalider » en 1 clic, ou rouvrez un ticket s’il n’est pas corrigé.`,
+      pourquoi: `Claude a corrigé la v${f.versionCourante}. La relecture guidée ne repropose que les pages modifiées (avant / après) : « C’est bon » ou « Encore à corriger », puis « Tout revalider ».`,
       bouton: { libelle: 'Revalider ce modèle', href: `/chaine/revision/${f.id}` },
     });
   }
@@ -170,7 +171,7 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
       id: 'retouche', etape: 5, qui: 'claude', secondaire: presel,
       titre: `Faire corriger ${guillemets(f.nom)} par Claude (${pluriel(n, 'ticket')})`,
       pourquoi: 'Les tickets de la relecture sont prêts. Dans Claude Code, demandez : « Corrige les tickets de la chaîne des modèles (retours/tickets-modeles.json) ». La nouvelle version arrive seule dans la chaîne, puis repasse au testeur.',
-      bouton: { libelle: 'Voir les tickets à corriger', href: `/chaine/modele/${f.id}` },
+      bouton: { libelle: 'Voir la demande à Claude', href: `/chaine/revision/${f.id}` },
     });
   }
 
@@ -181,14 +182,13 @@ export function prochaineActionChaine(p: EntreeGuidage): ProchaineAction {
     return fin({
       id: 'relire', etape: 4, qui: 'vous', secondaire: null,
       titre: `Relire ${guillemets(f.nom)} page par page (${r.faites} / ${r.total})`,
-      pourquoi: `Le testeur a passé ce finaliste. Pour chaque page, sur téléphone puis sur ordinateur : « Rien à signaler », ou entourez ce qui ne va pas. Il reste ${pluriel(r.total - r.faites, 'page')} à voir.`,
+      pourquoi: `Le testeur a passé ce finaliste. Relecture guidée, une page à la fois (téléphone puis ordinateur) : « Page OK » ou « Il manque / à corriger » ; elle reprend là où vous vous êtes arrêté. Il reste ${pluriel(r.total - r.faites, 'page')} à voir.`,
       bouton: { libelle: 'Relire ce modèle', href: `/chaine/revision/${f.id}` },
     });
   }
 
   // 3. Test automatique (le validateur le lance : workflow GitHub, rien n'est publié)
-  // Version retouchée (étape 5) avant un finaliste (étape 3) : plus près de la publication
-  const aTester = [...de('recheck-agent'), ...de('check-agent')].filter((f) => !versionDe(e, f.id, f.versionCourante)?.test);
+  const aTester = [...de('check-agent'), ...de('recheck-agent')].filter((f) => !versionDe(e, f.id, f.versionCourante)?.test);
   if (validateur && aTester.length) {
     const f = aTester[0];
     return fin({

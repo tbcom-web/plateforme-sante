@@ -8,7 +8,8 @@ import { exigerContributeur, faireTournerChaine, LECTURE_CHAINE } from '@/lib/ch
 import { guidageChaine } from '@/lib/chaine-guidage';
 import ProchaineEtape from '../../ProchaineEtape';
 import { donneesGeneration, donneesRendu, profilsDemo } from '../../donnees';
-import ApercuDesign from '../../ApercuDesign';
+import ApercuDesignImages from '../../images-situation';
+import { candidatesImagesDemo, lireChoixImages } from '../../donnees-images';
 import { verrousDeLaFiche } from '../../validation';
 import ApercuModele from '../../ApercuModele';
 import Validation from './Validation';
@@ -28,7 +29,8 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
   if (!f) notFound();
   // Chaîne guidée : prochaine étape de la profession du modèle (bandeau compact : on travaille déjà ici)
   const { action } = await guidageChaine({ moi, profession: f.profession, chaine, autoImport: false });
-  const [rendu, { verrous, jauge, bloquants }, rapport, gen, demo] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), donneesGeneration(), profilsDemo()]);
+  const [rendu, { verrous, jauge, bloquants }, rapport, gen, demo, choix] = await Promise.all([donneesRendu(), verrousDeLaFiche(f, chaine), lireResultatTestModele(f.id, f.versionCourante).catch(() => null), donneesGeneration(), profilsDemo(), lireChoixImages()]);
+  const candidates = f.profil === null ? await candidatesImagesDemo(choix.lignes) : {};
   // Design (profil nul) : rendu avec le kit de chaque profil compatible (tags pré-calculés, confirmés par Paul)
   const compatibles = demo.profils.filter((p) => f.tags.profils.includes(p.id));
   const profilsRendu = compatibles.length ? compatibles : demo.profils;
@@ -49,10 +51,10 @@ export default async function PageFiche({ params }: { params: Promise<{ id: stri
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="grid min-w-0 content-start gap-2">
           {courante && (f.profil === null
-            ? <ApercuDesign design={courante.composition} profils={profilsRendu} poids={gen.poids} photos={gen.photos} rendu={rendu} hauteur={480} scenarioDefaut={f.scenario} />
+            ? <ApercuDesignImages modele={f.id} design={courante.composition} profils={profilsRendu} poids={gen.poids} photos={gen.photos} rendu={rendu} hauteur={480} scenarioDefaut={f.scenario} candidates={candidates} choix={choix.lignes.filter((l) => l.modele === f.id)} migrationImages={choix.migrationManquante} />
             : <ApercuModele composition={courante.composition} scenario={f.scenario} rendu={rendu} appareil="ordinateur" hauteur={480} />)}
           {f.profil === null && <p className="text-xs text-neutral-600" data-profils-compatibles={compatibles.length}>Profils compatibles (pré-calculés, à confirmer dans les tags) : {compatibles.map((p) => p.nom).join(', ') || 'aucun'}</p>}
-          <Link href={`/chaine/revision/${f.id}`} className="inline-flex min-h-11 items-center justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold" data-action="signaler">{f.statut === 'publie' ? 'Signaler une zone (rouvre une retouche, reste en ligne)' : 'Pages et avis'}</Link>
+          <Link href={`/chaine/revision/${f.id}`} className="inline-flex min-h-11 items-center justify-self-start rounded-lg border border-neutral-300 bg-white px-4 text-sm font-semibold" data-action="signaler">{f.statut === 'publie' ? 'Signaler une zone (rouvre une retouche, reste en ligne)' : f.statut === 'pret-validation' ? 'Publier (relecture guidée)' : 'Relecture guidée'}</Link>
         </div>
         <Validation
           modele={f.id}

@@ -18,7 +18,7 @@ export `scripts/exporter-retours.mjs`. Tests : `packages/core/src/chaine-modeles
 | 2 | `candidat` (tournoi) | humain | Tournoi EN GRILLES par profession : « tes 2 préférés parmi 6 » (+ celui qui ne va pas), les 6 rendus avec le même profil ; a priori, top 10 seulement, quelques duels de départage ; multi-votants en parallèle | Top 10 sûr à 90 % (voir « Tournoi en grilles ») : les 10 premiers deviennent `finaliste`, les autres `ecarte` |
 | — | `finaliste` | automatique | File d'attente : 10 modèles au plus dans la boucle de révision, meilleur rang d'abord | Une place se libère |
 | 3 | `check-agent` | agent | Le testeur automatique (et la vérification visuelle de Claude) passe la version : verdict, contrôles, tickets techniques créés seuls, corrections techniques automatiques si possible | Un résultat de test existe pour la version courante |
-| 4 | `avis-humain` | humain | Page par page (accueil, page sujet, fiche soin, cabinet, contact et accès, article, FAQ, liste des soins) × ordinateur ET téléphone, uniforme pour tous les modèles : entourer une zone ou toucher un élément + étiquette + commentaire → ticket ; 🔒 verrouiller ce qui plaît, 🎲 relancer le reste ou une dimension ; « Rien à signaler sur cette page » | Les 16 cellules ont un avis (ticket ou « Rien à signaler ») → `retouche` s'il reste un ticket ouvert, sinon `pret-validation` si le testeur est au vert |
+| 4 | `avis-humain` | humain | Page par page (accueil, page sujet, fiche soin, cabinet, contact et accès, article, FAQ, liste des soins) × ordinateur ET téléphone, uniforme pour tous les modèles : relecture guidée (une page à la fois) : ✓ « Page OK » ou ✎ « Il manque / à corriger » (note, zone) → ticket ; images choisies en situation (structure figée) | Les 16 cellules ont un avis (ticket ou « Rien à signaler ») → `retouche` s'il reste un ticket ouvert, sinon `pret-validation` si le testeur est au vert |
 | 5 | `retouche` | Claude | Tickets ouverts exportés en priorité (`retours/tickets-modeles.json` + section de `SYNTHESE.md`). Claude écrit la correction dans `retours/retouches-modeles.json` ; la chaîne crée la NOUVELLE VERSION avec le journal « corrigé : ticket #12 — zone (10 %, 40 %) page Contact et accès (mobile) » | Une version plus récente que celle de la demande de retouche existe |
 | 6 | `recheck-agent` | agent | Nouveau passage du testeur sur la nouvelle version ; les tickets techniques dont le contrôle repasse au vert se ferment seuls | Résultat de test de la nouvelle version : correction de goût → `revalidation` ; purement technique et vert → `pret-validation` sans humain ; encore des tickets → `retouche` |
 | 7 | `revalidation` | humain | Seulement ce qui a changé, avant / après ; « Tout revalider » en 1 clic, ou cocher « Pas encore corrigé » pour rouvrir un ticket | Revalidée (1 clic) et testeur au vert → `pret-validation` ; ticket rouvert → `retouche` |
@@ -70,6 +70,34 @@ d'après l'empreinte du rendu comme la Dégustation).
 
 Une relance 🎲 gardée pendant l'avis crée une nouvelle version : les avis déjà donnés valent pour les pages que la relance n'a
 pas changées (`pagesChangees`) ; le testeur repasse sur la nouvelle version.
+
+## Relecture guidée, structure figée et images en situation (décisions de Paul du 2026-10-10)
+
+« On me propose de revoir chaque page du modèle, je valide ou j'indique ce qui manque […] on me guide pas à pas jusqu'à la
+publication » et « je ne laisserais plus toucher à la structure mais juste choisir les photos en passant sur l'image du site […]
+Idem pour l'illustration du haut ». Code : `packages/core/src/chaine-images.ts` (export `@plateforme/core/chaine-images`, testé dans
+`chaine-images.test.ts`), `apps/admin/src/app/chaine/revision/[id]/Revision.tsx` (parcours), `apps/admin/src/components/ChoixImagesSituation.tsx`
+(contrôle générique sur l'image), `app/chaine/images-situation.tsx`, `donnees-images.ts`, `images-actions.ts`, migration `0063_images_situation.sql`.
+
+- **Parcours guidé** (`/chaine/revision/[id]`, où mènent les boutons « Relire », « Revalider », « Voir la demande à Claude » et
+  « Publier ce modèle » du bandeau) : une page à la fois, téléphone puis ordinateur (16 étapes), barre « Page 3 / 16 », précédente /
+  suivante, reprise à la première page pas vue ; deux gestes : ✓ « Page OK » (revue « rien ») ou ✎ « Il manque / à corriger » (note,
+  zone entourée facultative, étiquette rapide repliée → ticket). Récapitulatif → « Envoyer les corrections à Claude » (la demande à
+  coller dans Claude Code est affichée et copiable) ; retouche : écran d'attente ; revalidation : seules les pages modifiées, avant /
+  après, « C'est bon » ou « Encore à corriger », puis « Tout revalider » ; prêt pour validation : écran « Publier ce modèle pour les
+  praticiens », profils pré-cochés (tags, sinon profils compatibles), confirmation, puis tags vérifiés + publication (`publierModele`,
+  verrous recalculés). Rien n'est publié sans le clic de Paul.
+- **Structure figée** dès `finaliste` (`STATUTS_STRUCTURE_FIGEE`) : plus de 🔒 / 🎲 dans la relecture ; `garderRelance` refuse une
+  version qui change autre chose que les images (`verifierNouvelleVersion`) ; en base, le déclencheur `modeles_versions_structure_figee`
+  (0063) refuse la même chose à un compte de l'équipe ; la retouche de Claude (tickets) passe par le validateur ou le service.
+- **Images en situation** : au survol (ordinateur) ou au toucher (téléphone) d'une photo ou de l'illustration du haut dans l'aperçu
+  (relecture et fiche du modèle), un contrôle ‹ › (molette sur le contrôle, et sur l'image une fois épinglé ; ← → au clavier) fait
+  défiler les candidates DANS la page, puis « Choisir » / « Garder ». Candidates : photos du kit du profil de démonstration (son activité,
+  puis neutres du thème ; jamais une autre activité ni une image < 2 ★ ; validées 4-5 ★, validées, puis à valider ; déjà choisies
+  ailleurs d'abord) ; illustration du haut : sujets principaux illustrés du profil (le site ne dessine que ceux-là, dans le registre du
+  design). Le choix est une **préférence de rendu design × profil × emplacement** (`modeles_images_choix`, ajout seul), jamais une
+  version : le design reste réutilisable par tous les profils, test et relecture restent valables. Après un choix de photo, contrôle
+  léger du contraste du texte posé dessus (mesuré si possible, sinon signalé : le testeur le revérifie à son prochain passage).
 
 ## Modèle = design (décision de Paul du 2026-10-09)
 

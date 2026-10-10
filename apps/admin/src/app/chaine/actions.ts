@@ -6,6 +6,7 @@ import {
   cleComposition, choixDePreselection, designDe, estAppareilModele, estEtiquetteTicket, estPageModele, estRoleEquipe, groupeTournoi, nomRecette, nouvelleVersion, peut, peutPublier,
   prochainEcran, profilDemo, profilsCompatibles, profilsDePratique, serialiserComposition, serialiserRecetteAvecScenario, statutModele, tagsAutomatiques, tournoiDuProfil, validerChoixGrille, type TagsModele,
 } from '@plateforme/core';
+import { verifierNouvelleVersion } from '@plateforme/core/chaine-images';
 import { enregistrerVersionInitiale, exigerContributeur, exigerValidateur, LECTURE_CHAINE, VERSION_NON_ENREGISTREE, lireChaine, MIGRATION_CHAINE, oublierAutomate, signauxCandidats } from '@/lib/chaine-modeles';
 import { getRecettes } from '@/lib/recettes';
 import { createClient } from '@/lib/supabase/server';
@@ -247,7 +248,7 @@ export async function revalider(modele: string, rouvrir: number[] = []): Promise
   return { ok: true, message: ok.length ? `${ok.length} ticket(s) rouvert(s) ; le reste est revalidé.` : 'Revalidé.' };
 }
 
-/** 🎲 Relance gardée : nouvelle version (verrous respectés côté navigateur, composition revérifiée ici) */
+/** 🎲 Relance gardée : nouvelle version (verrous respectés côté navigateur, composition revérifiée ici) ; refusée si la structure est figée */
 export async function garderRelance(modele: string, composition: Record<string, unknown>, quoi: string): Promise<Retour> {
   const moi = await exigerContributeur();
   if (!peut(moi.role, 'relancer') || !UUID.test(modele)) return { ok: false, message: 'Action impossible.' };
@@ -259,6 +260,11 @@ export async function garderRelance(modele: string, composition: Record<string, 
   if (!x) return { ok: false, message: 'Composition invalide.' };
   // Design (profil nul) : on garde le design, sans les images du profil de démonstration
   const propre = (f.profil === null ? designDe(JSON.parse(serialiserComposition(x))) : JSON.parse(serialiserComposition(x))) as Record<string, unknown>;
+  // Structure figée dès « finaliste » (chaine-images.ts, décision de Paul du 2026-10-10) : une relance ne change plus la structure ;
+  // seules les images se choisissent (préférences de rendu) et la retouche de Claude corrige les tickets. La base le revérifie (0063).
+  const base = chaine.versions.find((v) => v.modele === modele && v.version === f.versionCourante)?.composition ?? null;
+  const fige = verifierNouvelleVersion({ statut: f.statut, base, nouvelle: propre, origine: 'relance' });
+  if (!fige.ok) return { ok: false, message: fige.raison };
   const nv = nouvelleVersion({ fiche: f, composition: propre, cle: cleComposition(propre), tickets: chaine.tickets.filter((t) => t.modele === modele), corrections: [], auteur: moi.id, type: 'relance', note: `relance 🎲 (${String(quoi).slice(0, 120)}) par ${moi.email || 'l’équipe'}` });
   const supabase = await createClient();
   const { error } = await supabase.from('modeles_versions').insert({ modele, version: nv.version.version, composition: propre, cle: nv.version.cle, journal: nv.version.journal, auteur: moi.id });
