@@ -7,10 +7,11 @@ import { mention } from './noter.mjs';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const img = (buf) => `data:image/jpeg;base64,${buf.toString('base64')}`;
-const teinte = (n) => (n >= 85 ? '#1f7a6a' : n >= 70 ? '#3f8f4f' : n >= 50 ? '#c47a12' : '#c0392b');
+// Deux couleurs seulement (Paul, 2026-10-10) : vert à partir de 90, ambre en dessous ; jamais de rouge
+const teinte = (n) => (n >= 90 ? '#1f7a6a' : '#b86e00');
 const dateFr = (iso) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 const sec = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
-const STATUTS = { ok: ['Conforme', 'ok'], attention: ['À corriger', 'moy'], echec: ['Problème', 'ko'], 'non-mesure': ['Non mesuré', 'nm'] };
+const STATUTS = { ok: ['Conforme', 'ok'], attention: ['À améliorer', 'moy'], echec: ['Prioritaire', 'ko'], 'non-mesure': ['Non mesuré', 'nm'] };
 const REPERES = {
   contraste: 'Texte trop peu contrasté, difficile à lire',
   image: 'Image sans description (invisible pour Google et les lecteurs d’écran)',
@@ -20,10 +21,9 @@ const REPERES = {
 
 /** Verdict de la couverture : ton franc, sans exagération (il découle de la note mesurée) */
 function verdict(n) {
-  if (n < 55) return ['Votre site vous fait perdre des patients.', 'rouge'];
-  if (n < 70) return ['Votre site a décroché.', 'rouge'];
-  if (n < 85) return ['Votre site a pris du retard.', 'orange'];
-  return ['Un bon site, qui peut encore gagner des patients.', 'vert'];
+  if (n < 70) return ['Votre site a pris du retard.', 'ambre'];
+  if (n < 90) return ['Votre site peut faire beaucoup mieux.', 'ambre'];
+  return ['Un bon site, qui peut encore progresser.', 'vert'];
 }
 
 function anneau(note, taille = 168, epais = 14, fond = '#ecece8') {
@@ -92,7 +92,7 @@ function blocTechnique(note, d) {
   if (!pb.length) return '';
   const outil = d.technologie?.outil;
   return `<section class="tech">
-  <h2 class="titre-s">Sous le capot, un site qui vieillit.</h2>
+  <h2 class="titre-s">Sous le capot : des briques à remettre à jour.</h2>
   <p class="lead">${outil ? `Votre site est construit avec <b>${esc(outil)}</b>. ` : ''}Ce que le serveur annonce lui-même sur ses composants :</p>
   <div class="puces-tech">${pb.map((c) => `<div class="puce ${c.statut === 'echec' ? 'ko' : 'moy'}"><b>${esc(c.titre)}</b><p>${esc(c.detail)}</p></div>`).join('')}</div>
 </section>`;
@@ -101,8 +101,8 @@ function blocTechnique(note, d) {
 function blocRisques(note) {
   if (!note.risques?.length) return '';
   return `<section class="risques">
-  <h2 class="titre-s">Les risques que vous portez aujourd’hui.</h2>
-  <div class="grille-risques">${note.risques.map((r) => `<div class="risque"><b>⚠ ${esc(r.titre)}</b><p>${esc(r.detail)}</p></div>`).join('')}</div>
+  <h2 class="titre-s">Points de vigilance.</h2>
+  <div class="grille-risques">${note.risques.map((r) => `<div class="risque"><b>${esc(r.titre)}</b><p>${esc(r.detail)}</p></div>`).join('')}</div>
 </section>`;
 }
 
@@ -141,8 +141,22 @@ function blocProposition(d, note, p, opts) {
 </section>`;
 }
 
-function blocMigration(opts) {
+/** Aujourd'hui → webpodologue, d'après les briques détectées sur le site actuel (faits du moteur : apps/sites, public/_headers) */
+function techniqueComparee(d) {
+  const tk = d.technologie ?? {};
+  const lignes = [];
+  if (tk.php || tk.wordpress) lignes.push([[tk.wordpress?.version ? `WordPress ${tk.wordpress.version}` : tk.wordpress ? 'WordPress' : '', tk.php ? `PHP ${tk.php}` : ''].filter(Boolean).join(' sur '), 'Site statique : ni serveur à mettre à jour, ni extension, ni base de données exposée']);
+  else if (tk.outil) lignes.push([tk.outil, 'Site statique : ni serveur à mettre à jour, ni extension, ni base de données exposée']);
+  if (tk.jquery) lignes.push([`jQuery ${tk.jquery}`, 'Aucune bibliothèque obsolète : le code est généré à chaque publication']);
+  const s = tk.securite ?? {};
+  if (!(s.hsts && s.csp && s.nosniff)) lignes.push([`${[s.hsts, s.csp, s.nosniff].filter(Boolean).length}/3 en-têtes de sécurité`, '3/3 en-têtes de sécurité (HSTS, CSP, nosniff), HTTPS automatique']);
+  if (tk.images?.total >= 3 && tk.images.modernes / tk.images.total < 0.5) lignes.push([`${Math.round((tk.images.modernes / tk.images.total) * 100)} % d’images au format moderne`, 'Images en WebP, redimensionnées pour chaque écran']);
+  return lignes;
+}
+
+function blocMigration(opts, d) {
   const c = opts.commercial;
+  const lignes = techniqueComparee(d);
   return `<section class="migration saut">
   <h2 class="titre-s">Changer sans risque,<br><em>et sans payer deux fois.</em></h2>
   <div class="offre-mois">
@@ -157,6 +171,17 @@ function blocMigration(opts) {
     <li><b>L’ancien contrat s’arrête à son terme</b><p>Nous vous indiquons la démarche de résiliation. D’ici là, vous ne payez qu’un seul abonnement : l’ancien.</p></li>
   </ol>
   <ul class="garanties"><li>Nom de domaine conservé</li><li>E-mails intacts</li><li>Aucune coupure</li><li>Rien de technique à faire</li></ul>
+  <div class="techno">
+    <h3>Votre futur site, côté technique</h3>
+    <div class="techno-grille">
+      <div><b>Un site statique, ultra-rapide</b><p>Les pages sont préparées à l’avance (Astro) et servies par le réseau mondial de Cloudflare, au plus près de chaque patient.</p></div>
+      <div><b>Rien à mettre à jour, peu de prise pour les pirates</b><p>Pas de WordPress, pas d’extension, pas de base de données en ligne : les failles les plus courantes des sites de cabinet n’ont pas de prise.</p></div>
+      <div><b>Lisible par Google et les IA</b><p>Fiche d’identité schema.org, fichier llms.txt pour les assistants IA, plan du site et robots réglés dès la mise en ligne.</p></div>
+      <div><b>Conforme dès le premier jour</b><p>Mentions légales, consentement aux cookies de mesure d’audience, contrastes et structure conformes au WCAG, règles de l’Ordre.</p></div>
+    </div>
+    ${lignes.length ? `<table class="avant-apres"><thead><tr><th>Aujourd’hui</th><th>Avec webpodologue</th></tr></thead><tbody>${lignes.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')}</tbody></table>` : ''}
+    <p class="simple"><b>Pourquoi la migration est simple :</b> un site statique n’a ni base de données ni extension à transférer. Nous reprenons vos contenus, vous validez, puis un seul réglage DNS fait pointer votre nom de domaine vers le nouveau site. Vos e-mails, qui passent par un autre réglage, ne bougent pas.</p>
+  </div>
   <div class="actions">
     ${opts.lienSite ? `<a class="bouton" href="${esc(opts.lienSite)}">Voir votre futur site →</a>` : ''}
     ${c?.tel || c?.email ? `<a class="bouton clair" href="${c.tel ? `tel:${esc(c.tel.replace(/\s/g, ''))}` : `mailto:${esc(c.email)}`}">${c.nom ? `${esc(c.nom)} · ` : ''}${esc(c.tel || c.email)}</a>` : ''}
@@ -179,7 +204,7 @@ export function rendreRapport(d, note, opts = {}) {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--encre:#111614;--gris:#5c6461;--trait:#e2e3df;--fond:#f4f4f1;--menthe:#cfeee3;--peche:#ffd9c2;--jaune:#fbe7a6;--lilas:#e3dcfa;--ciel:#d6e8f7;--vert:#1f7a6a;--rouge:#c0392b;--rose:#fde0dc}
+:root{--encre:#111614;--gris:#5c6461;--trait:#e2e3df;--fond:#f4f4f1;--menthe:#cfeee3;--peche:#ffd9c2;--jaune:#fbe7a6;--lilas:#e3dcfa;--ciel:#d6e8f7;--vert:#1f7a6a;--ambre:#b86e00;--ambre-fond:#fff3dc;--ambre-doux:#fde7bf}
 *{box-sizing:border-box}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{margin:0;background:#fff;color:var(--encre);font:16px/1.55 Inter,system-ui,sans-serif}
 h1,h2,h3{font-family:'Bricolage Grotesque',Inter,sans-serif;letter-spacing:-.03em;line-height:1;margin:0}
@@ -189,20 +214,20 @@ em{font-style:normal}
 .logo{font:800 22px 'Bricolage Grotesque',sans-serif;letter-spacing:-.03em}.logo span{color:var(--vert)}
 .haut small{color:var(--gris);font-size:13px;text-align:right}
 .sur{display:inline-block;background:var(--menthe);border-radius:99px;padding:5px 12px;font-size:13.5px;font-weight:600}
-.sur.rouge{background:var(--rose);color:#8f2216}.sur.sombre{background:#2a3330;color:#8fe0c9}.sur.jaune{background:var(--jaune);color:var(--encre)}
+.sur.ambre{background:var(--ambre-doux);color:#6e4100}.sur.sombre{background:#2a3330;color:#8fe0c9}.sur.jaune{background:var(--jaune);color:var(--encre)}
 .couv{padding:40px 0 32px}
 .couv h1{font-weight:800;font-size:clamp(38px,6.4vw,74px);margin:16px 0 12px;overflow-wrap:anywhere}
-.couv h1.rouge{color:var(--rouge)}.couv h1.orange{color:#b4610a}.couv h1.vert{color:var(--vert)}
+.couv h1.ambre{color:var(--ambre)}.couv h1.vert{color:var(--vert)}
 .couv .lead{font-size:18px}
 .lead{color:var(--gris);max-width:680px;margin:0}
 .chiffres{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
 .chiffres span{border-radius:12px;padding:10px 14px;font-weight:600;font-size:15px}
-.chiffres .k{background:var(--rose);color:#8f2216}.chiffres .m{background:var(--jaune);color:#6b4a00}.chiffres .o{background:var(--fond)}
+.chiffres .k{background:var(--ambre-doux);color:#6e4100}.chiffres .m{background:var(--jaune);color:#6b4a00}.chiffres .o{background:var(--fond)}
 .chiffres b{font:800 22px 'Bricolage Grotesque';margin-right:6px}
 .scores{display:grid;gap:16px;margin-top:28px;grid-template-columns:1fr}
 @media(min-width:760px){.scores.deux{grid-template-columns:1fr 1fr}}
 .carte-score{background:var(--fond);border-radius:24px;padding:24px;display:flex;gap:22px;align-items:center;color:var(--encre)}
-.carte-score.actuel{background:var(--rose)}.carte-score.prop{background:var(--menthe)}
+.carte-score.actuel{background:var(--ambre-fond)}.carte-score.prop{background:var(--menthe)}
 .carte-score h2{font-size:15px;font-family:Inter;letter-spacing:0;font-weight:600;color:var(--gris);margin-bottom:6px}
 .carte-score .mention{font:800 30px 'Bricolage Grotesque',sans-serif;letter-spacing:-.03em}
 .carte-score p{margin:6px 0 0;color:var(--gris);font-size:14px}
@@ -218,9 +243,9 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
 .titre-s{font-size:clamp(30px,4.4vw,48px);font-weight:800;margin:12px 0 16px}
 .titre-s em{color:var(--vert)}
 .alertes{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:12px}
-.alertes li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start;border-radius:18px;padding:18px 20px;font-size:17px;font-weight:500;background:var(--fond);border-left:6px solid var(--rouge)}
-.alertes li.important{border-left-color:#e0a024}
-.alertes .g{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:99px;padding:4px 10px;background:var(--rose);color:#8f2216;white-space:nowrap}
+.alertes li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start;border-radius:18px;padding:18px 20px;font-size:17px;font-weight:500;background:var(--fond);border-left:6px solid #e39a1c}
+.alertes li.important{border-left-color:#f3cd6b}
+.alertes .g{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;border-radius:99px;padding:4px 10px;background:var(--ambre-doux);color:#6e4100;white-space:nowrap}
 .alertes li.important .g{background:var(--jaune);color:#6b4a00}
 .forts{margin-top:18px;color:var(--gris);font-size:14.5px}.forts b{color:var(--encre)}
 .annotee{display:grid;gap:28px;align-items:center}@media(min-width:820px){.annotee{grid-template-columns:auto minmax(0,1fr)}}
@@ -229,11 +254,11 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
 .ecran-t{position:relative;border-radius:22px;overflow:hidden;aspect-ratio:390/844}
 .tel.grand .ecran-t{border-radius:32px}
 .ecran-t img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
-.rep{position:absolute;border:2.5px solid #e5322d;border-radius:6px;box-shadow:0 0 0 3px rgba(229,50,45,.25)}
-.rep i{position:absolute;top:-11px;left:-11px;width:22px;height:22px;border-radius:50%;background:#e5322d;color:#fff;font:700 12px/22px Inter;text-align:center;font-style:normal}
+.rep{position:absolute;border:2.5px solid #f08c00;border-radius:6px;box-shadow:0 0 0 3px rgba(240,140,0,.25)}
+.rep i{position:absolute;top:-11px;left:-11px;width:22px;height:22px;border-radius:50%;background:#f08c00;color:#fff;font:700 12px/22px Inter;text-align:center;font-style:normal}
 .legende-rep{list-style:none;padding:0;margin:0;display:grid;gap:10px}
 .legende-rep li{display:flex;gap:12px;align-items:center;background:var(--fond);border-radius:14px;padding:12px 14px;font-weight:500}
-.legende-rep i{flex:none;width:26px;height:26px;border-radius:50%;background:#e5322d;color:#fff;font:700 13px/26px Inter;text-align:center;font-style:normal}
+.legende-rep i{flex:none;width:26px;height:26px;border-radius:50%;background:#f08c00;color:#fff;font:700 13px/26px Inter;text-align:center;font-style:normal}
 .legende-rep small{margin-left:auto;color:var(--gris);white-space:nowrap}
 .ia{background:var(--encre);color:#fff;border:0;border-radius:32px;padding:36px 24px;margin:8px 0}
 @media(min-width:760px){.ia{padding:48px}}
@@ -241,17 +266,17 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
 .ia-grille{display:grid;gap:16px;margin-top:24px}@media(min-width:760px){.ia-grille.deux{grid-template-columns:1fr 1fr}}
 .ia-carte{background:#1d2422;border-radius:22px;padding:20px}.ia-carte.prop{background:#173a32}
 .ia-tete{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.ia-score{font:800 28px 'Bricolage Grotesque'}.ia-score.mauvais{color:#ff8f80}.ia-score.bon{color:#8fe0c9}
+.ia-score{font:800 28px 'Bricolage Grotesque'}.ia-score.mauvais{color:#ffc46b}.ia-score.bon{color:#8fe0c9}
 .ia-carte ul{list-style:none;margin:0;padding:0}
 .ia-carte li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #2a3330;font-size:15px}
 .ia-carte li span{flex:none;width:22px;height:22px;border-radius:50%;font:700 12px/22px Inter;text-align:center}
-.ia-carte li.oui span{background:#8fe0c9;color:var(--encre)}.ia-carte li.non span{background:#ff8f80;color:var(--encre)}
-.ia-carte li small{margin-left:auto;color:#8fa39c}.ia-carte li.non small{color:#ff8f80}
+.ia-carte li.oui span{background:#8fe0c9;color:var(--encre)}.ia-carte li.non span{background:#ffc46b;color:var(--encre)}
+.ia-carte li small{margin-left:auto;color:#8fa39c}.ia-carte li.non small{color:#ffc46b}
 .puces-tech{display:grid;gap:12px;margin-top:18px}@media(min-width:760px){.puces-tech{grid-template-columns:1fr 1fr}}
-.puce{border-radius:18px;padding:18px 20px;background:var(--rose)}.puce.moy{background:#fff4d6}
+.puce{border-radius:18px;padding:18px 20px;background:var(--ambre-fond)}.puce.moy{background:#fff8e6}
 .puce b{font:800 22px 'Bricolage Grotesque';letter-spacing:-.02em}.puce p{margin:6px 0 0;color:#3d4542;font-size:14.5px}
 .grille-risques{display:grid;gap:12px}@media(min-width:760px){.grille-risques{grid-template-columns:1fr 1fr}}
-.risque{border:2px solid var(--rouge);border-radius:18px;padding:18px 20px}.risque b{color:#8f2216;font-size:17px}.risque p{margin:6px 0 0;color:#3d4542}
+.risque{border:2px solid #f0b54a;background:#fffaf0;border-radius:18px;padding:18px 20px}.risque b{color:#6e4100;font-size:17px}.risque p{margin:6px 0 0;color:#3d4542}
 .theme{padding:30px 0}
 .theme header{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-items:start;margin-bottom:16px}
 .theme .num{font:800 15px 'Bricolage Grotesque';background:var(--encre);color:#fff;border-radius:10px;padding:6px 9px}
@@ -263,10 +288,10 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
 .vs{font-size:13px;color:var(--gris);margin-left:10px}@media(min-width:760px){.vs{margin:4px 0 0}}
 .constats{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .constats li{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;padding:14px 16px;border-radius:16px;background:var(--fond);break-inside:avoid}
-.constats li.ko{background:#fff1ef}
+.constats li.ko{background:#fff7ea}
 .constats li p{margin:2px 0 0;color:var(--gris);font-size:14.5px;overflow-wrap:anywhere}
 .statut{font-size:12.5px;font-weight:600;border-radius:99px;padding:4px 10px;text-align:center}
-.ok .statut{background:var(--menthe);color:#14594d}.moy .statut{background:var(--jaune);color:#6b4a00}.ko .statut{background:#fbcfc8;color:#8f2216}.nm .statut{background:#e9e9e6;color:var(--gris)}
+.ok .statut{background:var(--menthe);color:#14594d}.moy .statut{background:var(--jaune);color:#6b4a00}.ko .statut{background:var(--ambre-doux);color:#6e4100}.nm .statut{background:#e9e9e6;color:var(--gris)}
 @media(max-width:560px){.constats li{grid-template-columns:1fr;gap:6px}.statut{justify-self:start}}
 .conformes{margin:10px 0 0;font-size:13.5px;color:var(--gris)}.conformes b{color:#14594d}
 .contrastes{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
@@ -304,12 +329,21 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
 .garanties{list-style:none;padding:0;margin:18px 0 0;display:flex;flex-wrap:wrap;gap:8px}
 .garanties li{background:var(--menthe);border-radius:99px;padding:7px 14px;font-weight:600;font-size:14px}.garanties li:before{content:"✓ ";color:var(--vert)}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.techno{margin-top:28px;background:var(--fond);border-radius:24px;padding:24px}
+.techno h3{font-size:24px;font-weight:800;margin-bottom:14px}
+.techno-grille{display:grid;gap:12px}@media(min-width:760px){.techno-grille{grid-template-columns:1fr 1fr}}
+.techno-grille div{background:#fff;border-radius:16px;padding:16px}.techno-grille b{font-size:16px}.techno-grille p{margin:4px 0 0;color:var(--gris);font-size:14px}
+.avant-apres{width:100%;border-collapse:collapse;margin-top:16px;background:#fff;border-radius:16px;overflow:hidden;font-size:14.5px}
+.avant-apres th,.avant-apres td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--fond);vertical-align:top}
+.avant-apres th{font-size:13px;color:var(--gris);font-weight:500}.avant-apres td:first-child{color:var(--ambre);font-weight:600;width:38%}.avant-apres td:last-child{color:#14594d;font-weight:600}
+.simple{margin:16px 0 0;font-size:14.5px;color:#3d4542}
 .methode{color:var(--gris);font-size:13.5px}.methode h2{font-size:22px;color:var(--encre);margin-bottom:8px}
 .methode ul{padding-left:18px}
 @page{size:A4;margin:12mm 0}
 @media print{body{font-size:13px}.page{padding:0 14mm;max-width:none}.saut{break-before:page}section{padding:22px 0}.theme{break-inside:auto}.theme header{break-after:avoid}
 .couv{padding:24px 0 14px}.scores.deux{grid-template-columns:1fr 1fr}.anneau{width:120px;height:120px}.alertes li{font-size:14.5px}
-.annotee{grid-template-columns:auto minmax(0,1fr)}.tel.grand{width:230px}.ia,.futur,.offre-mois,.risque,.puce,.etapes li{break-inside:avoid}
+.annotee{grid-template-columns:auto minmax(0,1fr)}.tel.grand{width:230px}.ia,.futur,.offre-mois,.risque,.puce,.etapes li,.techno{break-inside:avoid}
+.techno-grille{grid-template-columns:1fr 1fr}
 .ia-grille.deux,.puces-tech,.grille-risques{grid-template-columns:1fr 1fr}.benefices{grid-template-columns:repeat(3,1fr)}.etapes{grid-template-columns:repeat(4,1fr)}
 .portable{width:500px}.vitrine .tel{width:130px;margin-left:-56px}.defile img{animation:none}}
 </style></head><body><div class="page">
@@ -317,12 +351,12 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
 <div class="haut"><div class="logo">web<span>podologue</span></div><small>Audit réalisé le ${dateFr(d.date)}${opts.commercial?.nom ? `<br>par ${esc(opts.commercial.nom)}` : ''}</small></div>
 
 <div class="couv">
-  <span class="sur ${ton === 'vert' ? '' : 'rouge'}">Audit de ${esc(domaine)}${opts.praticien ? ` · ${esc(opts.praticien)}` : ''}</span>
+  <span class="sur ${ton === 'vert' ? '' : 'ambre'}">Audit de ${esc(domaine)}${opts.praticien ? ` · ${esc(opts.praticien)}` : ''}</span>
   <h1 class="${ton}">${esc(titreVerdict)}</h1>
   <p class="lead">Nous avons passé votre site au crible, comme le font Google, ChatGPT et vos patients : ${note.compte.ok + note.compte.attention + note.compte.echec} contrôles, mesurés le ${dateFr(d.date)}.</p>
-  <div class="chiffres"><span class="k"><b>${note.compte.echec}</b>problème${note.compte.echec > 1 ? 's' : ''}</span><span class="m"><b>${note.compte.attention}</b>point${note.compte.attention > 1 ? 's' : ''} à corriger</span><span class="o"><b>${note.compte.ok}</b>conforme${note.compte.ok > 1 ? 's' : ''}</span></div>
+  <div class="chiffres"><span class="k"><b>${note.compte.echec}</b>priorité${note.compte.echec > 1 ? 's' : ''}</span><span class="m"><b>${note.compte.attention}</b>point${note.compte.attention > 1 ? 's' : ''} à améliorer</span><span class="o"><b>${note.compte.ok}</b>conforme${note.compte.ok > 1 ? 's' : ''}</span></div>
   <div class="scores${p ? ' deux' : ''}">
-    <div class="carte-score ${note.globale < 85 ? 'actuel' : ''}">${anneau(note.globale, 168, 14, '#fff')}<div><h2>Votre site aujourd’hui</h2><div class="mention" style="color:${teinte(note.globale)}">${mention(note.globale)}</div></div></div>
+    <div class="carte-score ${note.globale < 90 ? 'actuel' : ''}">${anneau(note.globale, 168, 14, '#fff')}<div><h2>Votre site aujourd’hui</h2><div class="mention" style="color:${teinte(note.globale)}">${mention(note.globale)}</div></div></div>
     ${p ? `<div class="carte-score prop">${anneau(p.note.globale, 168, 14, '#fff')}<div><h2>${esc(p.libelle || 'Votre futur site')}</h2><div class="mention" style="color:${teinte(p.note.globale)}">${mention(p.note.globale)}</div><p>Déjà prêt, mesuré avec les mêmes outils.</p></div></div>` : ''}
   </div>
   <div class="barres">${note.themes.map((t) => { const pt = p?.note.themes.find((x) => x.id === t.id); return `<div class="barre"><span>${esc(t.nom)}</span><b style="color:${teinte(t.note)}">${t.note ?? '–'}</b><div class="piste"><i style="width:${t.note ?? 0}%;background:${teinte(t.note)}"></i>${pt ? `<i class="pr" style="width:${pt.note}%"></i>` : ''}</div></div>`; }).join('')}
@@ -330,8 +364,9 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
 </div>
 
 <section class="saut">
-  <h2 class="titre-s">Ce qui vous coûte des patients.</h2>
-  ${note.marquants.length ? `<ol class="alertes">${note.marquants.map((m) => `<li class="${m.gravite}"><span class="g">${m.gravite === 'bloquant' ? 'Bloquant' : 'Important'}</span><span>${esc(m.phrase)}</span></li>`).join('')}</ol>` : '<p>Aucun problème majeur relevé : le site est en bonne santé.</p>'}
+  <h2 class="titre-s">Ce qui freine votre site aujourd’hui.</h2>
+  ${p ? '<p class="lead">Rien d’irrémédiable : chacun de ces points est déjà réglé dans le site que nous avons préparé pour vous.</p>' : ''}
+  ${note.marquants.length ? `<ol class="alertes">${note.marquants.map((m) => `<li class="${m.gravite}"><span class="g">${m.gravite === 'bloquant' ? 'Prioritaire' : 'À améliorer'}</span><span>${esc(m.phrase)}</span></li>`).join('')}</ol>` : '<p>Aucun problème majeur relevé : le site est en bonne santé.</p>'}
   ${note.forts.length ? `<p class="forts"><b>Ce qui fonctionne :</b> ${note.forts.map(esc).join(' · ')}.</p>` : ''}
 </section>
 
@@ -339,7 +374,7 @@ section{padding:44px 0;border-top:1px solid var(--trait)}
   <h2 class="titre-s">Votre site, sur le téléphone d’un patient.</h2>
   <div class="annotee">
     ${annote.html}
-    <div>${annote.types.length ? `<p class="lead" style="margin-bottom:14px">Premier écran, tel qu’il s’affiche sur un téléphone. Nous avons entouré ce qui gêne la lecture ou la navigation :</p>
+    <div>${annote.types.length ? `<p class="lead" style="margin-bottom:14px">Premier écran, tel qu’il s’affiche sur un téléphone. Nous avons repéré ce qui gêne la lecture ou la navigation :</p>
       <ul class="legende-rep">${annote.types.map((t, i) => `<li><i>${i + 1}</i>${esc(REPERES[t])}<small>${comptes[t]} repéré${comptes[t] > 1 ? 's' : ''}</small></li>`).join('')}</ul>`
       : '<p class="lead">Aucun défaut visible dans le premier écran du téléphone.</p>'}</div>
   </div>
@@ -353,7 +388,7 @@ ${blocRisques(note)}
 ${note.themes.map((t, i) => blocTheme(t, i, d, p)).join('')}
 
 ${p ? blocProposition(d, note, p, opts) : ''}
-${p ? blocMigration(opts) : ''}
+${p ? blocMigration(opts, d) : ''}
 
 <section class="methode">
   <h2>Méthode</h2>
