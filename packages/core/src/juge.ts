@@ -69,6 +69,14 @@ const ETIQUETTES_ELIMINATOIRES = new Set(['clipart', 'anatomie-fausse']);
  * `empreinteDe` (adresse de l'image dans l'inventaire), sinon sont ignorées.
  */
 export function pairesJuge(preds: readonly PredictionJuge[], notes: readonly NotePourJuge[], empreinteDe?: (cle: string) => string | null): PaireJuge[] {
+  return pairesDesDernieres(preds, dernieresNotesJuge(notes, empreinteDe));
+}
+
+/**
+ * Notes comparables au juge : la plus récente par clé et empreinte (empreinte résolue), dans l'ordre de première apparition.
+ * Ne dépend pas des prédictions : gardée tant que les notes n'ont pas changé (/admin/retours, perf vague 2, 2026-10-10).
+ */
+export function dernieresNotesJuge(notes: readonly NotePourJuge[], empreinteDe?: (cle: string) => string | null): NotePourJuge[] {
   const derniere = new Map<string, NotePourJuge>();
   for (const n of notes) {
     const e = n.empreinte ?? empreinteDe?.(n.cle) ?? null;
@@ -77,8 +85,13 @@ export function pairesJuge(preds: readonly PredictionJuge[], notes: readonly Not
     const p = derniere.get(k);
     if (!p || String(n.le ?? '') >= String(p.le ?? '')) derniere.set(k, { ...n, empreinte: e });
   }
+  return [...derniere.values()];
+}
+
+/** pairesJuge à partir de dernieresNotesJuge (même résultat) */
+export function pairesDesDernieres(preds: readonly PredictionJuge[], dernieres: readonly NotePourJuge[]): PaireJuge[] {
   const paires: PaireJuge[] = [];
-  for (const n of derniere.values()) {
+  for (const n of dernieres) {
     const p = predictionPour(preds, n.cle, n.empreinte);
     if (!p) continue;
     paires.push({

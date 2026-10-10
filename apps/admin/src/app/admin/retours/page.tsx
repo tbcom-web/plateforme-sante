@@ -1,14 +1,14 @@
 import {
-  assetsInfluents, changementsGenerateurDiffere, markdownAnimationsEnAttente, inventaireAssets, markdownAssets, markdownAtelier, markdownSujets, motsClesDuSujet, sujetsSansVisuel, SUJETS_VISUELS, syntheseAssets, syntheseAtelier, titresAssets,
-  markdownHashtags, titresBases, universDuParcours,
+  assetsInfluents, motsClesDuSujet, SUJETS_VISUELS, titresAssets, titresBases, universDuParcours,
   resumeRenforts, clesRecentes, jourParis,
 } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getRecettesLecture, getRetoursMobile } from '@/lib/recettes';
-import { getNotesAtelier, getPoidsAtelier } from '@/lib/atelier';
-import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
+import { getPoidsAtelier } from '@/lib/atelier';
+import { getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
+import { getNotesRetours } from '@/lib/notes-retours';
 import { getChangementsClaude } from '@/lib/changements';
-import { getJuge } from '@/lib/predictions';
+import { getJugeDesDernieres } from '@/lib/predictions';
 import { getHashtagsAssets } from '@/lib/hashtags';
 import { getInspirations } from '@/lib/inspirations';
 import { getMotsClesEnBase, sourcesConfigurees } from '@/lib/photos-libres';
@@ -19,6 +19,7 @@ import { getCatalogue } from '@/lib/sites';
 import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import Retours from './Retours';
+import { changementsDesPoids } from '@/lib/changements-generateur';
 import { getEtatPolitique } from '@/lib/politique-evaluation';
 import { getReevaluations } from '@/lib/tranches';
 
@@ -37,8 +38,11 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   // Réévaluations et politique d'évaluation lues en même temps que le reste (attendues seulement au rendu, 2026-10-10)
   const lectureReevaluations = getReevaluations();
   const lecturePolitique = getEtatPolitique();
-  const [assets, atelier, revues, photosJeux, poids, changementsClaude, catalogue, modeles, marquesImportees, { univers }, inspirations, motsCles, surchargesSujets, recettes] = await Promise.all([
-    getNotesAssets(), getNotesAtelier(), getRevuesIllustrations(), getPhotosDesJeux(), getPoidsAtelier(), getChangementsClaude(),
+  // Notes : résumé, notes comparables au juge et compteurs (lib/notes-retours.ts : gardés sur l'instance tant que rien n'a changé)
+  const lecturePhotosJeux = getPhotosDesJeux();
+  const lectureNotes = getNotesRetours(lectureReevaluations, lecturePhotosJeux);
+  const [notes, revues, photosJeux, poids, changementsClaude, catalogue, modeles, marquesImportees, { univers }, inspirations, motsCles, surchargesSujets, recettes] = await Promise.all([
+    lectureNotes, getRevuesIllustrations(), lecturePhotosJeux, getPoidsAtelier(), getChangementsClaude(),
     getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getInspirations(), getMotsClesEnBase(), getSurchargesSujets(),
     // Recettes du studio notées (0032) : « Recette X validée : renforce gamme Y, police Z, photo W »
     getRecettesLecture(1),
@@ -48,24 +52,13 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
   const hashtags = await lectureHashtags;
   const mobile = await lectureMobile;
   // Juge du goût de Paul : prédictions (retours/predictions.json) et justesse contre les notes en base
-  const juge = await getJuge(assets.notes.map((n) => ({ cle: n.cle, note: n.note, empreinte: n.empreinte, le: n.le, etiquettes: n.etiquettes })), photosJeux);
-  // Statut courant + dernier commentaire de revue (synthèse « à retravailler »)
-  const statuts = revues.statuts.map((s) => {
-    const r = revues.revues.find((x) => x.cle === s.cle && x.commentaire);
-    return { cle: s.cle, statut: s.statut, commentaire: r?.commentaire ?? null, le: s.majLe };
-  });
-  const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
-  const markdown = [
-    markdownAssets(syntheseAssets(assets.notes, { statuts, titres }), { date, titre: '# Retours sur les assets' }),
-    '',
-    markdownAtelier(syntheseAtelier(atelier.notes), { date }),
-    '',
-    markdownSujets(surchargesSujets, { titres, sansVisuel: sujetsSansVisuel(inventaireAssets({ photosJeux }), surchargesSujets) }),
-    '',
-    markdownAnimationsEnAttente(Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut]))),
-  ].join('\n');
-  const dejaNotees: Record<string, number> = {};
-  for (const x of atelier.notes) dejaNotees[x.cle] = (dejaNotees[x.cle] ?? 0) + 1;
+  const juge = await getJugeDesDernieres(notes.dernieresJuge);
+  // Synthèse Markdown « Copier mes retours » : préparée à la demande (actions-synthese.ts, perf vague 2, 2026-10-10).
+  // Notes envoyées au navigateur sous forme de RÉSUMÉ par clé (retours-resume.ts : mêmes états, compteurs et série qu'avec la
+  // liste complète ; ≈ 2 Mo de notes envoyés à chaque ouverture avant, au volume ×10)
+  const reevaluations = (await lectureReevaluations).reevaluations;
+  const joursAvis = { ...notes.resume.jours };
+  for (const [j, n] of Object.entries(notes.atelier.jours)) joursAvis[j] = (joursAvis[j] ?? 0) + n;
   const type = typeof sp.type === 'string' ? sp.type : null;
   // Photos à découvrir ouvert depuis un kit (« Trouver des photos », suggestions-kits.ts) : sujet, emplacement, retour au kit
   const cibleDecouverte = type === 'decouvrir' && typeof sp.sujet === 'string' && typeof sp.emplacement === 'string'
@@ -84,27 +77,26 @@ export default async function PageRetours({ searchParams }: { searchParams: Prom
           Chaque avis réordonne les propositions du générateur et part chaque nuit à Claude, qui corrige d’après vos retours.
         </p>
       </div>
-      {(assets.migrationManquante || atelier.migrationManquante) && (
+      {(notes.migrationAssets || notes.migrationAtelier) && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
-          {assets.migrationManquante && <>Migration 0027 à exécuter (<code>supabase/migrations/0027_assets_notes.sql</code>) : les avis sur les éléments ne peuvent pas encore être enregistrés. </>}
-          {atelier.migrationManquante && <>Migration 0026 à exécuter (<code>supabase/migrations/0026_atelier_notes.sql</code>) : les avis sur les thèmes complets ne peuvent pas encore être enregistrés.</>}
+          {notes.migrationAssets && <>Migration 0027 à exécuter (<code>supabase/migrations/0027_assets_notes.sql</code>) : les avis sur les éléments ne peuvent pas encore être enregistrés. </>}
+          {notes.migrationAtelier && <>Migration 0026 à exécuter (<code>supabase/migrations/0026_atelier_notes.sql</code>) : les avis sur les thèmes complets ne peuvent pas encore être enregistrés.</>}
         </p>
       )}
       <Retours
-        reevaluations={(await lectureReevaluations).reevaluations}
-        notesAssets={assets.notes.map((n) => ({ cle: n.cle, note: n.note, empreinte: n.empreinte, le: n.le }))}
-        datesAtelier={atelier.notes.map((n) => n.le ?? '').filter(Boolean)}
-        dejaNotees={dejaNotees}
+        reevaluations={reevaluations}
+        resumeNotes={{ ...notes.resume, jours: joursAvis }}
+        nombreAvisAtelier={notes.atelier.n}
+        dejaNotees={notes.atelier.dejaNotees}
         statuts={Object.fromEntries(revues.statuts.map((s) => [s.cle, s.statut]))}
         photosJeux={photosJeux}
-        markdown={`${markdown}\n\n${markdownHashtags(hashtags.hashtags, { titres })}`}
         // Calcul lourd (~0,5 s) fait sujet par sujet après l'envoi de la page : la section suit dans le flux (perf, 2026-10-08)
-        changements={changementsGenerateurDiffere(poids)}
+        changements={changementsDesPoids(poids)}
         influents={assetsInfluents(poids, titres)}
         changementsClaude={changementsClaude}
         renfortsRecettes={resumeRenforts(recettes, 6)}
-        migrationAssets={assets.migrationManquante}
-        migrationAtelier={atelier.migrationManquante}
+        migrationAssets={notes.migrationAssets}
+        migrationAtelier={notes.migrationAtelier}
         poids={poids}
         proposes={universDuParcours(univers)}
         modeles={modeles}

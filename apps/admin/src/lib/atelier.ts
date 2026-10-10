@@ -41,6 +41,17 @@ async function getNotesAtelierSansMemo(): Promise<{ notes: NoteAtelierAdmin[]; m
 export const getNotesAtelier = cache(getNotesAtelierSansMemo);
 
 /**
+ * Clés et dates seulement (perf vague 2, 2026-10-10 : /admin/retours ne lit que les compteurs ; 3,8 Mo d'ingrédients au volume ×10).
+ * Mêmes lignes que getNotesAtelier : la base garantit des ingrédients objet (0026 : check jsonb_typeof = 'object').
+ */
+export const getNotesAtelierLegeres = cache(async (): Promise<{ notes: { cle: string; le: string }[]; migrationManquante: boolean }> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('atelier_notes').select('cle_combinaison, created_at').order('created_at', { ascending: false }).limit(5000);
+  if (error) return { notes: [], migrationManquante: true };
+  return { notes: ((data ?? []) as { cle_combinaison: string; created_at: string }[]).map((l) => ({ cle: l.cle_combinaison, le: l.created_at })), migrationManquante: false };
+});
+
+/**
  * Poids appris pour le générateur de propositions (notes de l'atelier + notes et statuts des assets, 0027) ; null sans
  * aucune note ni statut, ou si les migrations manquent (aucune erreur).
  */

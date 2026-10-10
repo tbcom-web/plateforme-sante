@@ -3,7 +3,7 @@ import { cache } from 'react';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { inventaireAssets, type PhotoDeJeu } from '@plateforme/core';
-import { empreinteImage, ligneJuge, lirePredictions, pairesJuge, predictionsParCle, type NotePourJuge, type PredictionJuge } from '@plateforme/core/juge';
+import { dernieresNotesJuge, empreinteImage, ligneJuge, lirePredictions, pairesDesDernieres, pairesJuge, predictionsParCle, type NotePourJuge, type PredictionJuge } from '@plateforme/core/juge';
 
 // Prédictions du juge du goût de Paul (retours/predictions.json du dépôt, .claude/agents/juge-gout-paul.md) : lues par l'API
 // GitHub (même jeton que la publication et que CHANGEMENTS.md), sinon dans le dossier local (développement). Affichées après la
@@ -35,4 +35,16 @@ export async function getJuge(notes: readonly NotePourJuge[], photosJeux: readon
   const images = new Map(inventaireAssets({ photosJeux }).flatMap((a) => (a.rendu.kind === 'image' ? [[a.cle, empreinteImage(a.rendu.src)] as const] : [])));
   const paires = pairesJuge(predictions, notes, (cle) => images.get(cle) ?? null);
   return { predictions: predictionsParCle(predictions), ligne: ligneJuge(paires) };
+}
+
+/** Notes comparables au juge (dernieresNotesJuge) : empreinte des images d'après l'inventaire des photos */
+export function dernieresPourJuge(notes: readonly NotePourJuge[], photosJeux: readonly PhotoDeJeu[] = []): NotePourJuge[] {
+  const images = new Map(inventaireAssets({ photosJeux }).flatMap((a) => (a.rendu.kind === 'image' ? [[a.cle, empreinteImage(a.rendu.src)] as const] : [])));
+  return dernieresNotesJuge(notes, (cle) => images.get(cle) ?? null);
+}
+/** getJuge à partir des notes comparables déjà réduites (même résultat ; /admin/retours, notes gardées sur l'instance) */
+export async function getJugeDesDernieres(dernieres: readonly NotePourJuge[]) {
+  const predictions = await getPredictions();
+  if (!predictions.length) return { predictions: {} as Record<string, PredictionJuge[]>, ligne: null as string | null };
+  return { predictions: predictionsParCle(predictions), ligne: ligneJuge(pairesDesDernieres(predictions, dernieres)) };
 }

@@ -130,3 +130,4 @@ export * from './images-fixes-pied';
 export * from './chaine-guidage';
 export * from './prospection-score';
 export * from './prospection-evenements';
+export * from './retours-resume';

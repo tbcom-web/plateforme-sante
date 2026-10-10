@@ -30,6 +30,21 @@ async function getNotesAssetsSansMemo(): Promise<{ notes: NoteAssetAdmin[]; migr
 }
 export const getNotesAssets = cache(getNotesAssetsSansMemo);
 
+/**
+ * Journal LÉGER (perf vague 2, 2026-10-10) : clé, note, étiquettes, empreinte, date — sans commentaires ni remarques, lus seulement
+ * pour la synthèse à copier (/admin/retours, à la demande). Mêmes lignes et même ordre que getNotesAssets.
+ */
+export type NoteAssetLegere = { cle: string; note: number; etiquettes: string[]; empreinte: string | null; le: string };
+export const getNotesAssetsLegeres = cache(async (): Promise<{ notes: NoteAssetLegere[]; migrationManquante: boolean }> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from('assets_notes').select('cle_asset, note, etiquettes, empreinte, created_at').order('created_at', { ascending: false }).limit(20000);
+  if (error) return { notes: [], migrationManquante: true };
+  return {
+    notes: ((data ?? []) as unknown as Ligne[]).map((l) => ({ cle: l.cle_asset, note: l.note, etiquettes: l.etiquettes ?? [], empreinte: l.empreinte, le: l.created_at })),
+    migrationManquante: false,
+  };
+});
+
 /** Surcharges de sujets des visuels (assets_sujets_effectifs, 0028) ; {} si la migration manque */
 async function getSurchargesSujetsSansMemo(): Promise<SurchargesSujets> {
   try {

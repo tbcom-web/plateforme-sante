@@ -34,8 +34,11 @@ export function notesElements(lignes: readonly { cle: string; note?: number | nu
     a.s += l.note as number; a.n++;
     acc.set(l.cle, a);
   }
-  return Object.fromEntries([...acc.entries()].sort().map(([k, a]) => [k, { m: Math.round((a.s / a.n) * 100) / 100, n: a.n }]));
+  return finaliserNotesElements(acc);
 }
+/** Moyenne arrondie et nombre par clé, clés triées (notesElements ; résumé des notes de /admin/retours : retours-resume.ts) */
+export const finaliserNotesElements = (acc: ReadonlyMap<string, { s: number; n: number }>): NotesElements =>
+  Object.fromEntries([...acc.entries()].sort().map(([k, a]) => [k, { m: Math.round((a.s / a.n) * 100) / 100, n: a.n }]));
 
 /** Note d'un élément : la sienne, sinon celle de sa base (variante) ; null si jamais noté */
 export function noteElement(cle: string, notes?: NotesElements | null): number | null {

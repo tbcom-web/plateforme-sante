@@ -139,9 +139,15 @@ export function etatsNotes(notes: readonly { cle: string; note: number; empreint
 
 /** Avis donnés aujourd'hui et série de jours consécutifs avec au moins un avis (aujourd'hui, ou hier si rien encore aujourd'hui) */
 export function serieAvis(dates: readonly string[], maintenant: Date = new Date()): { aujourdhui: number; serie: number; jours: number } {
-  const jours = new Set(dates.filter(Boolean).map(jourParis));
+  const parJour: Record<string, number> = {};
+  for (const d of dates) if (d) { const j = jourParis(d); parJour[j] = (parJour[j] ?? 0) + 1; }
+  return serieAvisJours(parJour, maintenant);
+}
+/** Même calcul à partir du nombre d'avis par jour (heure de Paris) : résumé des notes de /admin/retours (retours-resume.ts) */
+export function serieAvisJours(parJour: Readonly<Record<string, number>>, maintenant: Date = new Date()): { aujourdhui: number; serie: number; jours: number } {
+  const jours = new Set(Object.keys(parJour).filter((j) => parJour[j] > 0));
   const auj = jourParis(maintenant);
-  const aujourdhui = dates.filter((d) => d && jourParis(d) === auj).length;
+  const aujourdhui = parJour[auj] ?? 0;
   const veille = (j: string) => { const d = new Date(`${j}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); };
   let j = jours.has(auj) ? auj : veille(auj);
   let serie = 0;

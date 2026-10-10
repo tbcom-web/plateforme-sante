@@ -23,9 +23,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, use, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
-  avecReevaluations, animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etatsNotes, etiquettesDuType, GAMMES, gamme as gammeParId,
+  animationDeCle, CATEGORIES_RETOURS, categorieDeCle, empreinteSvg, etatAnimation, prochaineCarteAvecAttente, cleCombinaison, empreinteAsset, ETIQUETTES_ATELIER, instantaneAsset, SUJETS_VISUELS, sujetsDuVisuel, etiquettesDuType, GAMMES, gamme as gammeParId,
   ingredientsProposition, inventaireAssets, inventaireStudio, FAMILLES_COMPOSANTS, repereCle, repereTheme, visuelsHerosAnimes, blocFocal, lireCleSurfaces, inventaireImagesFonds, lireCleImageFond, NOMS_SECTIONS_VARIABLES, LIBELLES_STATUTS_ILLUSTRATION, LIBELLES_TYPES_ASSET, lotsPropositions, palierAvis,
-  serieAvis, SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
+  SURFACES_CSS, variablesCharte, variablesGamme, variantesGamme,
   type Asset, type CategorieRetours, type ChangementGenerateur, type IngredientsAtelier, type MarqueImportee, type ModeleManifeste, type PhotoDeJeu,
   type PoidsAtelier, type Proposition, type StatutIllustration, type Univers,
 } from '@plateforme/core';
@@ -57,12 +57,13 @@ import { auHasard, draftDemo, type Scenario } from '../atelier/Atelier';
 import { ajouterNoteAtelier } from '../atelier/actions';
 import { ajouterRevue } from '../illustrations/actions';
 import { ajouterNoteAsset } from './actions';
+import { preparerSyntheseRetours } from './actions-synthese';
 import Inspirations from './Inspirations';
 import VariantesRepliees, { inventaireParBase } from './VariantesBase';
-import { clesAvecSignal, notesAvecBases, statutEffectif } from '@plateforme/core';
+import { statutEffectif } from '@plateforme/core';
 import PhotosADecouvrir from './PhotosADecouvrir';
 import ProgressionQualite from './ProgressionQualite';
-import { notesElements, tableauProgression } from '@plateforme/core';
+import { tableauProgression, clesDepuisResume, compterJours, elementsDepuisResume, etatsDepuisResume, serieAvisJours, indexerResume, versionNotee, type ResumeNotesAssets } from '@plateforme/core';
 import { dateCourte, estAValider, lotsDuParametre, lotsNouveautes, type CleRecente, type LotNouveautes } from '@plateforme/core';
 import NouveautesANoter from './NouveautesANoter';
 import { choisirEcran, ecranBloque, etatNotesTranche, fileEvaluation, type EtatPolitique } from '@plateforme/core';
@@ -72,14 +73,15 @@ const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:rin
 
 type NoteLegere = { cle: string; note: number; empreinte: string | null; le: string };
 type Props = {
-  notesAssets: NoteLegere[];
+  /** Notes des assets RÉSUMÉES par clé (retours-resume.ts, perf vague 2) ; `jours` compte aussi les avis sur les thèmes complets */
+  resumeNotes: ResumeNotesAssets;
   /** « Réévaluer » (page Éléments tranchés, migration 0041) : notes antérieures ignorées par la règle des tranchés */
   reevaluations?: { cle: string; le: string }[];
-  datesAtelier: string[];
+  /** Nombre d'avis sur les thèmes complets (atelier_notes) */
+  nombreAvisAtelier: number;
   dejaNotees: Record<string, number>;
   statuts: Record<string, StatutIllustration>;
   photosJeux: PhotoDeJeu[];
-  markdown: string;
   /** Calculés après l'affichage (perf, 2026-10-08) : promesse résolue par le serveur dans le flux de la page */
   changements: Promise<ChangementsGenerateur>;
   influents: { favorises: { cle: string; titre: string; score: number }[]; evites: { cle: string; titre: string; score: number }[] };
@@ -321,7 +323,7 @@ function ApercuAsset({ c }: { c: Extract<Carte, { kind: 'asset' }> }) {
 // ---------------------------------------------------------------------------------------------------------------
 
 export default function Retours(props: Props) {
-  const { photosJeux, markdown, changements, influents, changementsClaude, renfortsRecettes = [], migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
+  const { photosJeux, changements, influents, changementsClaude, renfortsRecettes = [], migrationAssets, migrationAtelier, poids, proposes, modeles, catalogue, marquesImportees, themesActives } = props;
   // Inventaire : bibliothèque (illustrations, photos, modèles, gammes) + studio de recettes (structures de pages, éléments, effets)
   // + Images × fonds (combinaisons-elements.ts) : une image par illustration de base et quelques photos, sur chaque fond
   const inventaireComplet = useMemo(() => { const a = inventaireAssets({ photosJeux }); return [...a, ...inventaireStudio(), ...inventaireImagesFonds(a)]; }, [photosJeux]);
@@ -342,18 +344,22 @@ export default function Retours(props: Props) {
     }),
     [notables, groupesBases, filtreSujet, surcharges, hashtags, filtreHashtag],
   );
-  const [notes, setNotes] = useState<NoteLegere[]>(props.notesAssets);
+  // Notes du serveur RÉSUMÉES par clé (retours-resume.ts) + notes données depuis l'ouverture (plus récentes d'abord) : mêmes
+  // états, compteurs et série qu'avec la liste complète (perf vague 2, 2026-10-10 ; ≈ 2 Mo de notes envoyés avant au volume ×10)
+  const resume = props.resumeNotes;
+  const [notes, setNotes] = useState<NoteLegere[]>([]);
+  const indexResume = useMemo(() => indexerResume(resume), [resume]);
   // Objectif « compositions 100 % 4-5 ★ » (qualite.ts) : dimensions couvertes (≥ 2 éléments 4-5 ★), priorités à noter
   const progression = useMemo(() => {
     const a = [...inventaireAssets({ photosJeux }), ...inventaireStudio()];
-    return tableauProgression(a.map((x) => ({ cle: x.cle, sujets: x.type === 'photo' ? sujetsDuVisuel(x, surcharges).sujets : [] })), notesElements(notes));
-  }, [photosJeux, surcharges, notes]);
-  const [datesAtelier, setDatesAtelier] = useState<string[]>(props.datesAtelier);
+    return tableauProgression(a.map((x) => ({ cle: x.cle, sujets: x.type === 'photo' ? sujetsDuVisuel(x, surcharges).sujets : [] })), elementsDepuisResume(resume, notes));
+  }, [photosJeux, surcharges, notes, resume]);
+  const [datesAtelier, setDatesAtelier] = useState<string[]>([]);
   const [dejaNotees, setDejaNotees] = useState(props.dejaNotees);
   // Notes de variantes comptées aussi pour leur base (agrégation) ; signaux : clés notées (variantes nouvelles → duel)
   // Tranchés (tranches.ts) : 1 ★ et 5 ★ ne sont plus proposés (prochaineCarte) ; « Réévaluer » efface les notes antérieures pour la règle
-  const etats = useMemo(() => etatsNotes(notesAvecBases(avecReevaluations(notes, props.reevaluations ?? []))), [notes, props.reevaluations]);
-  const signaux = useMemo(() => clesAvecSignal(notes), [notes]);
+  const etats = useMemo(() => etatsDepuisResume(resume, notes, props.reevaluations ?? []), [resume, notes, props.reevaluations]);
+  const signaux = useMemo(() => clesDepuisResume(resume, notes), [resume, notes]);
   // Nouveautés à noter (nouveautes.ts) : récentes, jamais notées (ni leur illustration de base), hors « Retiré » ; notée → sort du lot
   const clesInventaire = useMemo(() => new Set(inventaireComplet.map((a) => a.cle)), [inventaireComplet]);
   const recentes = useMemo(() => new Map((props.nouveautesRecentes ?? []).map((r) => [r.cle, r.date])), [props.nouveautesRecentes]);
@@ -374,8 +380,8 @@ export default function Retours(props: Props) {
   const [espace, setEspace] = useState<Espace | null>(props.typeInitial === 'inspirations' || props.typeInitial === 'decouvrir' ? props.typeInitial : null);
 
   // ---- Compteurs ----
-  const serie = useMemo(() => serieAvis([...notes.map((n) => n.le), ...datesAtelier]), [notes, datesAtelier]);
-  const totalAvis = notes.length + datesAtelier.length;
+  const serie = useMemo(() => serieAvisJours(compterJours([...notes.map((n) => n.le), ...datesAtelier], { ...resume.jours })), [notes, datesAtelier, resume]);
+  const totalAvis = resume.total + props.nombreAvisAtelier + notes.length + datesAtelier.length;
   const palier = palierAvis(totalAvis);
   const parCategorie = useMemo(() => {
     const m = new Map<CategorieRetours, { total: number; notes: number }>();
@@ -595,8 +601,21 @@ export default function Retours(props: Props) {
 
   const g = gammeParId(gammeApercu) ?? GAMMES[0];
   const style = useMemo(() => ({ ...variablesCharte(), ...variablesGamme(g) }) as CSSProperties, [g]);
-  const [copie, setCopie] = useState<'' | 'ok' | 'manuel'>('');
-  const copier = async () => { try { await navigator.clipboard.writeText(markdown); setCopie('ok'); } catch { setCopie('manuel'); } };
+  // « Copier mes retours » : synthèse préparée par le serveur au clic seulement (actions-synthese.ts, perf vague 2) ; le texte
+  // promis est remis au presse-papiers dans le geste de l'utilisateur (ClipboardItem), sinon copié à l'arrivée, sinon affiché
+  const [copie, setCopie] = useState<'' | 'ok' | 'manuel' | 'prepare' | 'erreur'>('');
+  const [markdown, setMarkdown] = useState('');
+  const copier = async () => {
+    setCopie('prepare');
+    const texte = preparerSyntheseRetours().then((r) => { if (!r.ok) throw new Error('synthèse'); setMarkdown(r.markdown); return r.markdown; });
+    try {
+      if (typeof ClipboardItem === 'undefined') throw new Error('ClipboardItem');
+      await navigator.clipboard.write([new ClipboardItem({ 'text/plain': texte.then((t) => new Blob([t], { type: 'text/plain' })) })]);
+      setCopie('ok');
+    } catch {
+      try { await navigator.clipboard.writeText(await texte); setCopie('ok'); } catch { setCopie(await texte.then(() => 'manuel' as const, () => 'erreur' as const)); }
+    }
+  };
 
   const bandeau = (
     <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-700" aria-live="polite">
@@ -763,10 +782,10 @@ export default function Retours(props: Props) {
         </section>
 
         <section className="flex flex-wrap items-start gap-3">
-          <button type="button" onClick={copier} disabled={!totalAvis} className={`min-h-11 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>Copier mes retours</button>
+          <button type="button" onClick={copier} disabled={!totalAvis || copie === 'prepare'} className={`min-h-11 rounded-xl bg-teal-800 px-4 text-sm font-semibold text-white hover:bg-teal-900 disabled:opacity-50 ${focus}`}>{copie === 'prepare' ? 'Préparation…' : 'Copier mes retours'}</button>
           <EnvoyerRetours compact />
           <a href="/admin/illustrations" className={`flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-teal-900 underline-offset-4 hover:underline ${focus}`}>Bibliothèque complète et statuts →</a>
-          <p role="status" className="basis-full text-sm text-neutral-600">{copie === 'ok' ? 'Retours copiés (Markdown) : collez-les à Claude.' : copie === 'manuel' ? 'Copie automatique impossible : sélectionnez le texte ci-dessous.' : ''}</p>
+          <p role="status" className="basis-full text-sm text-neutral-600">{copie === 'ok' ? 'Retours copiés (Markdown) : collez-les à Claude.' : copie === 'manuel' ? 'Copie automatique impossible : sélectionnez le texte ci-dessous.' : copie === 'erreur' ? 'Synthèse impossible à préparer pour le moment : réessayez.' : ''}</p>
           {copie === 'manuel' && <textarea readOnly value={markdown} rows={10} className="w-full rounded-lg border border-neutral-300 p-2 font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />}
         </section>
       </div>
@@ -811,7 +830,7 @@ export default function Retours(props: Props) {
   const modifieDepuis = Boolean(carte.kind === 'asset' && etat && carte.empreinte && etat.empreinte && etat.empreinte !== carte.empreinte);
   // Juge : Paul a-t-il noté CETTE version (même empreinte ; photos : la clé suffit) ?
   const empreinteJuge = carte.kind === 'asset' ? empreintePourJuge(carte.empreinte, carte.asset.rendu.kind === 'image' ? carte.asset.rendu.src : null) : null;
-  const noteeCetteVersion = carte.kind === 'asset' && notes.some((n) => n.cle === carte.asset.cle && (n.empreinte ?? null) === (carte.empreinte ?? null));
+  const noteeCetteVersion = carte.kind === 'asset' && versionNotee(indexResume, notes, carte.asset.cle, carte.empreinte);
   const positives = etiquettesCarte.filter((e) => e.positive);
   const negatives = etiquettesCarte.filter((e) => !e.positive);
   const puce = (e: { id: string; libelle: string; positive: boolean }) => {

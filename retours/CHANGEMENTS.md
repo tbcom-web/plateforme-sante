@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-10 : Donner mon avis plus rapide : notes résumées par clé (mêmes compteurs et mêmes tirages), synthèse « Copier mes retours » préparée au clic.
 - 2026-10-10 : Admin plus rapide : la chaîne, la Dégustation, le Frigo et le menu ne lisent plus que ce qu'ils affichent ; listes de photos et bibliothèque affichées par pages (« Afficher plus »).
 - 2026-10-10 : Admin plus rapide : l'apprentissage (poids, politique, éléments tranchés, contexte d'images) est calculé une fois et gardé en base, recalculé seulement quand vos notes ou duels changent (migration 0059).
 - 2026-10-10 : Apprentissage plus rapide : Bradley-Terry des duels ≈ 3 fois plus rapide (résultat identique au bit près, testé).
