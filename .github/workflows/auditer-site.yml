@@ -1,0 +1,62 @@
+name: auditer-site
+# Titre du run avec l'identifiant de l'audit (suivi depuis /admin/audits).
+run-name: auditer-site ${{ inputs.audit_id }}
+
+# Déclenché par le bouton « Auditer » de /admin/audits (API GitHub workflow_dispatch). Le back-office a déjà créé la ligne
+# de la table audits et, s'il a pu, un site préparé (non publié) : ce workflow déploie son aperçu (publier-site, mode
+# apercu), puis audite les deux sites et dépose le rapport web + PDF (scripts/audit-site/workflow.mjs).
+on:
+  workflow_dispatch:
+    inputs:
+      audit_id:
+        description: Identifiant de l'audit dans Supabase (uuid)
+        required: true
+        type: string
+      site_id:
+        description: Site préparé à déployer en aperçu (uuid), vide sans site préparé
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: auditer-${{ inputs.audit_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  apercu:
+    if: inputs.site_id != ''
+    uses: ./.github/workflows/publier-site.yml
+    with:
+      site_id: ${{ inputs.site_id }}
+      mode: apercu
+    secrets: inherit
+
+  audit:
+    needs: apercu
+    # L'audit a lieu même si l'aperçu échoue ou n'existe pas (rapport sans comparaison, signalé dans le back-office).
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      PAGESPEED_KEY: ${{ secrets.PAGESPEED_KEY }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Navigateur (Chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: Auditer et déposer le rapport
+        run: node scripts/audit-site/workflow.mjs "${{ inputs.audit_id }}"

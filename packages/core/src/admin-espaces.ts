@@ -77,11 +77,12 @@ export const ESPACES: readonly Espace[] = [
   },
   {
     id: 'clients', libelle: 'Clients', href: '/admin/clients',
-    description: 'Sites des praticiens, publication, essais, prospection RPPS.',
+    description: 'Sites des praticiens, publication, essais, prospection RPPS, audits de sites.',
     entrees: [
       { href: '/admin/sites', libelle: 'Sites' },
       { href: '/admin/leads', libelle: 'Essais' },
       { href: '/admin/prospection', libelle: 'Prospection' },
+      { href: '/admin/audits', libelle: 'Audits de sites' },
       { href: '/admin/maintenance', libelle: 'Maintenance' },
     ],
   },

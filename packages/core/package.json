@@ -34,7 +34,8 @@
     "./sujets-validation": "./src/sujets-validation.ts",
     "./annuaire-sante": "./src/annuaire-sante.ts",
     "./onboarding": "./src/onboarding.ts",
-    "./onboarding-professions": "./src/onboarding-professions.ts"
+    "./onboarding-professions": "./src/onboarding-professions.ts",
+    "./audit-prospect": "./src/audit-prospect.ts"
   },
   "dependencies": {
     "@iconify-json/healthicons": "^1.2.13",

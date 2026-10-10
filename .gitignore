@@ -7,3 +7,6 @@ dist/
 !.env.example
 .DS_Store
 .vercel
+
+# audits de sites (captures de sites tiers)
+/audits/
