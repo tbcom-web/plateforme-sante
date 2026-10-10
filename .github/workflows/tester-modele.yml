@@ -74,6 +74,9 @@ jobs:
 
       - name: Tester le modèle
         shell: bash
+        # Captures et journaux écrits dans le dossier temporaire du runner : autorisé explicitement (garde-fou de chemins.mjs)
+        env:
+          SORTIES_AUTORISEES: ${{ runner.temp }}
         run: |
           set -euo pipefail
           # Entrées contrôlées (jamais interpolées telles quelles dans le shell)
