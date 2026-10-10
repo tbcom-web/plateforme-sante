@@ -9,6 +9,10 @@
 //    « Tout changer » (Studio), duel suivant.
 // Aucun secret lu (.env ignoré : variables factices), aucun appel au vrai Supabase, aucune écriture hors du dossier temporaire.
 // Options : --tours=5 (serveur) --tours-client=2 --latence=25 --sans-client --garder (garde le dossier temporaire) --json=<fichier>
+//   --volume=10 (données ×10, donnees.mjs) --debit=20 (Ko/ms simulés) --ligne-us=0.5 (coût par ligne parcourue) --sans=<tables/fonctions
+//   absentes, ex. la migration 0059 pas encore exécutée> --pages=/admin,/chaine (liste) --dossier=<dossier temporaire parent>
+//   --froid : chaque page mesurée d'abord sur un serveur NEUF (instance Vercel froide : aucune mémoire entre requêtes), puis à chaud.
+//   Sortie par page : temps du premier passage (froid si --froid) et médiane des passages suivants, requêtes, Ko lus.
 import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,21 +24,28 @@ const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const MODULES = join(RACINE, 'node_modules').replaceAll('\\', '/');
 const opt = Object.fromEntries(process.argv.slice(2).map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? true]));
 const TOURS = Number(opt.tours ?? 5), TOURS_CLIENT = Number(opt['tours-client'] ?? 2), LATENCE = Number(opt.latence ?? 25);
-const PORT_SUPA = 54490 + Math.floor(Math.random() * 300), PORT_APP = 3390 + Math.floor(Math.random() * 300);
+const VOLUME = Number(opt.volume ?? 1), DEBIT = Number(opt.debit ?? 0), LIGNE_US = Number(opt['ligne-us'] ?? 0);
+// --source=<dossier> : sources de l'admin, du core et des retours lues ailleurs (ex. extraction de la version d'avant, pour comparer)
+const SRC = opt.source ? String(opt.source) : RACINE;
+const REUTIL = opt.reutiliser ? String(opt.reutiliser) : null;
+const PORT_SUPA = REUTIL ? Number(readFileSync(join(REUTIL, 'port.txt'), 'utf8')) : 54490 + Math.floor(Math.random() * 300), PORT_APP = 3390 + Math.floor(Math.random() * 300);
 const SUPA = `http://127.0.0.1:${PORT_SUPA}`, BASE = `http://localhost:${PORT_APP}`;
-const PAGES = ['/admin/atelier/studio', '/admin/atelier', '/admin/retours', '/admin/retours/duel?type=theme', '/admin/retours/recettes', '/admin/retours/kits', '/admin/retours/tri', '/admin/photos', '/admin/degustation', '/chaine/preselection'];
+const PAGES = opt.pages ? String(opt.pages).split(',') : ['/admin/atelier/studio', '/admin/atelier', '/admin/retours', '/admin/retours/duel?type=theme', '/admin/retours/recettes', '/admin/retours/kits', '/admin/retours/tri', '/admin/photos', '/admin/degustation', '/chaine/preselection'];
 
 // ---- Copie ----
-const tmp = mkdtempSync(join(tmpdir(), 'perf-admin-'));
+// --reutiliser=<dossier d'une mesure gardée (--garder)> : ni copie, ni données (si présentes), ni construction
+const tmp = REUTIL ?? mkdtempSync(join(opt.dossier ? String(opt.dossier) : tmpdir(), 'perf-admin-'));
 const app = join(tmp, 'apps', 'admin');
-console.log(`▶ Copie dans ${tmp}`);
-for (const f of ['src', 'public', 'package.json', 'tsconfig.json', 'postcss.config.mjs']) cpSync(join(RACINE, 'apps', 'admin', f), join(app, f), { recursive: true });
-cpSync(join(RACINE, 'packages', 'core'), join(tmp, 'node_modules', '@plateforme', 'core'), { recursive: true, filter: (s) => !s.includes('node_modules') });
-cpSync(join(RACINE, 'retours'), join(tmp, 'retours'), { recursive: true });
+console.log(`▶ ${REUTIL ? 'Réutilisation de' : 'Copie dans'} ${tmp}`);
+if (!REUTIL) {
+writeFileSync(join(tmp, 'port.txt'), String(PORT_SUPA));
+for (const f of ['src', 'public', 'package.json', 'tsconfig.json', 'postcss.config.mjs']) cpSync(join(SRC, 'apps', 'admin', f), join(app, f), { recursive: true });
+cpSync(join(SRC, 'packages', 'core'), join(tmp, 'node_modules', '@plateforme', 'core'), { recursive: true, filter: (s) => !s.includes('node_modules') });
+cpSync(join(SRC, 'retours'), join(tmp, 'retours'), { recursive: true });
 // Contenus (packs par profession) : importés par chemin relatif depuis l'admin
-cpSync(join(RACINE, 'packages', 'contenus'), join(tmp, 'packages', 'contenus'), { recursive: true, filter: (x) => !x.includes('node_modules') });
+cpSync(join(SRC, 'packages', 'contenus'), join(tmp, 'packages', 'contenus'), { recursive: true, filter: (x) => !x.includes('node_modules') });
 mkdirSync(join(app, 'public', 'photos'), { recursive: true });
-cpSync(join(RACINE, 'apps', 'sites', 'public', 'photos'), join(app, 'public', 'photos'), { recursive: true, filter: (f) => !f.endsWith('.md') });
+cpSync(join(SRC, 'apps', 'sites', 'public', 'photos'), join(app, 'public', 'photos'), { recursive: true, filter: (f) => !f.endsWith('.md') });
 writeFileSync(join(tmp, 'package.json'), JSON.stringify({ name: 'perf-admin', private: true, workspaces: ['apps/*'] }));
 const pkg = JSON.parse(readFileSync(join(app, 'package.json'), 'utf8'));
 delete pkg.scripts.prebuild; delete pkg.scripts.predev;
@@ -57,34 +68,49 @@ const nextConfig: NextConfig = {
 };
 export default nextConfig;
 `);
+}
 const env = { ...process.env, NODE_PATH: MODULES, NEXT_TELEMETRY_DISABLED: '1' };
 delete env.GITHUB_TOKEN; delete env.SUPABASE_SECRET_KEY;
 const next = join(MODULES, 'next', 'dist', 'bin', 'next');
 
 // ---- Données, faux Supabase, construction, serveur ----
 const donnees = join(tmp, 'donnees.json');
-spawnSync(process.execPath, [join(RACINE, 'scripts', 'perf-admin', 'donnees.mjs'), donnees, SUPA], { stdio: 'ignore' });
+const { existsSync } = await import('node:fs');
+if (!existsSync(donnees)) spawnSync(process.execPath, [join(RACINE, 'scripts', 'perf-admin', 'donnees.mjs'), donnees, SUPA, String(VOLUME)], { stdio: 'ignore' });
 const enfants = [];
 const lancer = (args, opts) => { const c = spawn(process.execPath, args, { ...opts, stdio: ['ignore', 'pipe', 'pipe'] }); enfants.push(c); return c; };
 const finir = () => { for (const c of enfants) if (c.exitCode === null) c.kill(); };
 process.on('exit', finir);
 const attendre = async (url, ms = 60000) => { const t = Date.now(); for (;;) { try { await fetch(url); return; } catch { if (Date.now() - t > ms) throw new Error(`${url} injoignable`); await new Promise((r) => setTimeout(r, 300)); } } };
 const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
-const resultats = { date: new Date().toISOString(), latenceMs: LATENCE, serveur: {}, client: {}, bundles: {} };
+const resultats = { date: new Date().toISOString(), latenceMs: LATENCE, volume: VOLUME, debitKoMs: DEBIT, ligneUs: LIGNE_US, sans: opt.sans ?? null, serveur: {}, client: {}, bundles: {} };
 try {
-  lancer([join(RACINE, 'scripts', 'perf-admin', 'faux-supabase.mjs')], { env: { ...env, PORT: String(PORT_SUPA), LATENCE_MS: String(LATENCE), DONNEES: donnees } });
+  lancer(['--max-old-space-size=8192', join(RACINE, 'scripts', 'perf-admin', 'faux-supabase.mjs')], { env: { ...env, PORT: String(PORT_SUPA), LATENCE_MS: String(LATENCE), DEBIT_KO_MS: String(DEBIT), LIGNE_US: String(LIGNE_US), SANS: String(opt.sans ?? ''), DONNEES: donnees, JOURNAL_ECRITURES: join(tmp, 'ecritures.log') } });
+  if (!REUTIL) {
   console.log('▶ Construction (next build --webpack)…');
   const t = Date.now();
   const b = spawnSync(process.execPath, [next, 'build', '--webpack'], { cwd: app, env, encoding: 'utf8' });
   if (b.status !== 0) { console.error(b.stdout.slice(-3000), b.stderr.slice(-3000)); throw new Error('construction en échec'); }
   console.log(`  construite en ${((Date.now() - t) / 1000).toFixed(0)} s`);
+  }
   // Taille des morceaux JS (gzip) : le plus gros est le core, chargé par toutes les pages
   const { gzipSync } = await import('node:zlib');
   const dossier = join(app, '.next', 'static', 'chunks');
   const { readdirSync, statSync } = await import('node:fs');
   resultats.bundles = Object.fromEntries(readdirSync(dossier, { recursive: true }).map(String).filter((f) => f.endsWith('.js')).map((f) => [f.replaceAll('\\', '/'), Math.round(gzipSync(readFileSync(join(dossier, f))).length / 1024)]).sort((a, c) => c[1] - a[1]).slice(0, 8));
-  lancer([next, 'start', '-p', String(PORT_APP)], { cwd: app, env });
-  await attendre(SUPA + '/__stats'); await attendre(BASE + '/connexion');
+  // Serveur Next (relancé avant chaque page avec --froid : instance neuve, sans mémoire entre requêtes)
+  let serveur = null;
+  const demarrer = async () => {
+    if (serveur) { serveur.kill(); await new Promise((r) => serveur.once('exit', r)); }
+    serveur = lancer([next, 'start', '-p', String(PORT_APP)], { cwd: app, env: { ...env, ...(opt.verifier ? { APPRENTISSAGE_VERIFIER: '1' } : {}) } });
+    // Journal du serveur (Server-Timing, requêtes lentes, égalité des instantanés) : <dossier>/serveur.log
+    const { createWriteStream } = await import('node:fs');
+    const journal = createWriteStream(join(tmp, 'serveur.log'), { flags: 'a' });
+    serveur.stdout.pipe(journal); serveur.stderr.pipe(journal);
+    await attendre(BASE + '/connexion', 120000);
+    // Instance neuve : la mémoire de l'instance est perdue ; les instantanés en base (0059) restent, comme sur Vercel
+  };
+  await attendre(SUPA + '/__stats', 300000); await demarrer();
 
   // ---- Session factice de l'admin (jeton lu par le faux Supabase seulement) ----
   const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -95,22 +121,36 @@ try {
   const valeurCookie = `base64-${Buffer.from(JSON.stringify(session)).toString('base64url')}`;
   const cookie = `sb-127-auth-token=${valeurCookie}`;
 
+  // ---- Préchauffage (--prechauffer=/admin,/chaine) : premier calcul des instantanés d'apprentissage (0059), mesuré à part ----
+  if (opt.prechauffer) {
+    for (const p of String(opt.prechauffer).split(',')) {
+      const t0 = performance.now();
+      try { const r = await fetch(BASE + p, { headers: { cookie }, redirect: 'manual', signal: AbortSignal.timeout(Number(opt.delai ?? 120000)) }); await r.text(); } catch { /* délai */ }
+      console.log(`  préchauffage ${p} : ${Math.round(performance.now() - t0)} ms (premier calcul)`);
+      await new Promise((ok) => setTimeout(ok, Number(opt['attente-apres'] ?? 3000)));
+    }
+  }
   // ---- Serveur ----
   console.log(`▶ Serveur (${TOURS} tours par page, latence ${LATENCE} ms)`);
   for (const p of PAGES) {
     const m = [];
+    if (opt.froid) await demarrer();
+    let premier = null;
     for (let i = 0; i <= TOURS; i++) {
       await fetch(SUPA + '/__reset');
       const t0 = performance.now();
-      const r = await fetch(BASE + p, { headers: { cookie }, redirect: 'manual' });
-      const html = await r.text();
+      let r, html;
+      try { r = await fetch(BASE + p, { headers: { cookie }, redirect: 'manual', signal: AbortSignal.timeout(Number(opt.delai ?? 120000)) }); html = await r.text(); }
+      catch { r = { status: 'délai' }; html = ''; }
       const total = performance.now() - t0;
       const st = await (await fetch(SUPA + '/__stats')).json();
-      if (i) m.push({ statut: r.status, total, html: html.length, st });
+      if (i) m.push({ statut: r.status, total, html: html.length, st }); else premier = { total, st };
+      // Calculs lancés en arrière-plan par la requête (rafraîchissements de mémoire) : laissés finir avant la mesure suivante
+      await new Promise((ok) => setTimeout(ok, 300));
     }
     const d = m.at(-1);
-    resultats.serveur[p] = { statut: d.statut, ms: Math.round(med(m.map((x) => x.total))), htmlKo: Math.round(d.html / 1024), requetes: d.st.total, supabaseKo: Math.round(d.st.octets / 1024), parRequete: Object.fromEntries(Object.entries(d.st.par).map(([k, v]) => [k, v.n])) };
-    console.log(`  ${p.padEnd(32)} ${String(resultats.serveur[p].ms).padStart(5)} ms  ${String(d.st.total).padStart(3)} requêtes  ${String(Math.round(d.st.octets / 1024)).padStart(5)} Ko Supabase  HTML ${Math.round(d.html / 1024)} Ko`);
+    resultats.serveur[p] = { statut: d.statut, premierMs: Math.round(premier.total), premierRequetes: premier.st.total, premierKo: Math.round(premier.st.octets / 1024), ms: Math.round(med(m.map((x) => x.total))), htmlKo: Math.round(d.html / 1024), requetes: d.st.total, supabaseKo: Math.round(d.st.octets / 1024), parRequete: Object.fromEntries(Object.entries(d.st.par).map(([k, v]) => [k, v.n])), premierParRequete: Object.fromEntries(Object.entries(premier.st.par).sort((x, y) => y[1].octets - x[1].octets).map(([k, v]) => [k, { n: v.n, ko: Math.round(v.octets / 1024), ms: Math.round(v.ms) }])) };
+    console.log(`  ${p.padEnd(32)} ${opt.froid ? 'froid' : '1er'} ${String(Math.round(premier.total)).padStart(6)} ms ${String(premier.st.total).padStart(3)} req ${String(Math.round(premier.st.octets / 1024)).padStart(6)} Ko │ chaud ${String(resultats.serveur[p].ms).padStart(5)} ms  ${String(d.st.total).padStart(3)} requêtes  ${String(Math.round(d.st.octets / 1024)).padStart(5)} Ko Supabase  HTML ${Math.round(d.html / 1024)} Ko`);
   }
 
   // ---- Navigateur ----
@@ -188,5 +228,5 @@ try {
   console.log(`▶ Plus gros morceaux JS (gzip, Ko) : ${Object.entries(resultats.bundles).map(([k, v]) => `${k.split('/').pop()} ${v}`).join(' · ')}`);
 } finally {
   finir();
-  if (!opt.garder) { await new Promise((r) => setTimeout(r, 1500)); rmSync(tmp, { recursive: true, force: true, maxRetries: 5 }); }
+  if (!opt.garder && !REUTIL) { await new Promise((r) => setTimeout(r, 1500)); rmSync(tmp, { recursive: true, force: true, maxRetries: 5 }); }
 }
