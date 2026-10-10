@@ -17,6 +17,7 @@ import {
   universApplicableAuParcours,
 } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { lireEnCache, TAGS_DONNEES } from '@/lib/cache-donnees';
 import { getModelesDisponibles } from '@/lib/modeles';
 import { getCatalogue } from '@/lib/sites';
 import { jeuPhotosAEnregistrer } from '@/lib/jeux-photos';
@@ -31,8 +32,13 @@ type Client = Awaited<ReturnType<typeof createClient>>;
 
 /** Catalogue avec les statuts posés par l'admin ; erreur : migration 0018 pas encore installée */
 async function getUniversSansMemo(supabase?: Client): Promise<{ univers: Univers[]; erreur: boolean }> {
-  const client = supabase ?? (await createClient());
-  const { data, error } = await client.from('univers_statuts').select('id, statut, valide_par, valide_le');
+  // Sans client fourni : statuts gardés dans le cache de données (cache-donnees.ts, invalidé par app/admin/univers/actions.ts)
+  const lireStatuts = async (client: Client) => {
+    const { data, error } = await client.from('univers_statuts').select('id, statut, valide_par, valide_le');
+    return { data: (data ?? []) as LigneStatutUnivers[], error: Boolean(error) };
+  };
+  const { data, error } = supabase ? await lireStatuts(supabase)
+    : await lireEnCache('univers', TAGS_DONNEES.univers, [], async (c) => { const r = await lireStatuts(c); return r.error ? { ok: false, repli: r } : { ok: true, valeur: r }; });
   const lignes = new Map(((data ?? []) as LigneStatutUnivers[]).map((l) => [l.id, l]));
   return { univers: CATALOGUE_UNIVERS.map((u) => avecStatut(u, lignes.get(u.id))), erreur: Boolean(error) };
 }

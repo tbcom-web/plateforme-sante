@@ -2,6 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import { controlerPublication, draftVide, normaliserDraft, type ResultatControle, type SiteDraft } from '@plateforme/core';
 import { createClient } from '@/lib/supabase/server';
+import { lireEnCache, TAGS_DONNEES } from '@/lib/cache-donnees';
 
 export type SoinCatalogue = { slug: string; titre_court: string; resume: string; icone?: string | null; titre?: string; corps?: string };
 
@@ -105,14 +106,16 @@ export async function getMonSite(): Promise<MonSite> {
   return versSite(data);
 }
 
+// Gardé dans le cache de données (cache-donnees.ts, invalidé par la modification d'un soin : app/admin/actions.ts)
 async function getCatalogueSansMemo(profession = 'podologue'): Promise<SoinCatalogue[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from('soins_catalogue')
-    .select('*')
-    .eq('profession_slug', profession)
-    .order('position');
-  return data ?? [];
+  return lireEnCache('catalogue', TAGS_DONNEES.catalogue, [profession], async (supabase) => {
+    const { data, error } = await supabase
+      .from('soins_catalogue')
+      .select('*')
+      .eq('profession_slug', profession)
+      .order('position');
+    return error ? { ok: false, repli: (data ?? []) as SoinCatalogue[] } : { ok: true, valeur: (data ?? []) as SoinCatalogue[] };
+  });
 }
 export const getCatalogue = cache(getCatalogueSansMemo);
 

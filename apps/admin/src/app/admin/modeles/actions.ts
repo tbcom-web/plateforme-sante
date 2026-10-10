@@ -1,6 +1,7 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+import { TAGS_DONNEES } from '@/lib/cache-donnees';
 import { MODELES_INTEGRES, validerManifeste } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { declencherPublications, sitesConcernes } from '@/lib/publication';
@@ -36,6 +37,7 @@ export async function importerModele(_: ResultatImport, form: FormData): Promise
   });
   if (error) return { ok: false, message: 'Import impossible. La migration 0010 a-t-elle été exécutée ?' };
   revalidatePath('/admin/modeles');
+  updateTag(TAGS_DONNEES.modeles);
   return { ok: true, message: `Modèle « ${modele.nom} » (v${modele.version}) importé. Activez-le pour le proposer aux praticiens.` };
 }
 
@@ -44,6 +46,7 @@ export async function basculerModele(id: string, actif: boolean) {
   const supabase = await createClient();
   await supabase.from('modeles').update({ actif, updated_at: new Date().toISOString() }).eq('id', id);
   revalidatePath('/admin/modeles');
+  updateTag(TAGS_DONNEES.modeles);
 }
 
 export async function supprimerModele(id: string) {
@@ -51,6 +54,7 @@ export async function supprimerModele(id: string) {
   const supabase = await createClient();
   await supabase.from('modeles').delete().eq('id', id);
   revalidatePath('/admin/modeles');
+  updateTag(TAGS_DONNEES.modeles);
 }
 
 /**
@@ -80,6 +84,7 @@ export async function enregistrerModele(brut: unknown, nouvelId?: string, appliq
   });
   if (error) return { ok: false, message: 'Enregistrement impossible. La migration 0010 a-t-elle été exécutée ?' };
   revalidatePath('/admin/modeles');
+  updateTag(TAGS_DONNEES.modeles);
   revalidatePath(`/admin/modeles/${modele.id}`);
   if (appliquer) {
     const sites = await sitesConcernes({ modele: modele.id });

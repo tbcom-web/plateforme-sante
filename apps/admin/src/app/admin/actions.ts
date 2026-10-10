@@ -1,6 +1,7 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+import { TAGS_DONNEES } from '@/lib/cache-donnees';
 import { headers } from 'next/headers';
 import { draftVide, PROFILS } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
@@ -166,6 +167,7 @@ export async function enregistrerSoin(id: string, champs: ChampsSoin): Promise<R
   const supabase = await createClient();
   const { error } = await supabase.from('soins_catalogue').update(valeurs).eq('id', id);
   revalidatePath('/admin/catalogue');
+  updateTag(TAGS_DONNEES.catalogue);
   return error
     ? { ok: false, message: 'Enregistrement impossible.' }
     : { ok: true, message: 'Enregistré. Les sites concernés prendront ce texte à leur prochaine publication.' };

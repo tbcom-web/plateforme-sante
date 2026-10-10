@@ -1,6 +1,7 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+import { TAGS_DONNEES } from '@/lib/cache-donnees';
 import { universCatalogue, validerUnivers, type StatutUnivers } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { getModelesDisponibles } from '@/lib/modeles';
@@ -36,5 +37,6 @@ export async function changerStatutUnivers(id: string, statut: Exclude<StatutUni
   });
   if (error) return { ok: false, message: 'Enregistrement impossible : la base de données est-elle à jour (mise à jour 0018, univers) ?' };
   revalidatePath('/admin/univers');
+  updateTag(TAGS_DONNEES.univers);
   return { ok: true, message: statut === 'valide' ? `« ${u.nom} » est proposé aux praticiens.` : `« ${u.nom} » : ${statut === 'retire' ? 'retiré du catalogue' : 'repassé en brouillon'}.` };
 }

@@ -1,6 +1,7 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+import { TAGS_DONNEES } from '@/lib/cache-donnees';
 import {
   cleComposition, choixDePreselection, designDe, estAppareilModele, estEtiquetteTicket, estPageModele, estRoleEquipe, groupeTournoi, nomRecette, nouvelleVersion, peut, peutPublier,
   prochainEcran, profilDemo, profilsCompatibles, profilsDePratique, serialiserComposition, serialiserRecetteAvecScenario, statutModele, tagsAutomatiques, tournoiDuProfil, validerChoixGrille, type TagsModele,
@@ -352,5 +353,6 @@ export async function definirRole(compte: string, role: string | null): Promise<
   if (error) return echec(error);
   if (!data?.length) return { ok: false, message: 'Aucun compte modifié (droits du super admin requis).' };
   rafraichir('/chaine/equipe');
+  updateTag(TAGS_DONNEES.equipe);
   return { ok: true, message: role ? 'Rôle attribué.' : 'Rôle retiré.' };
 }

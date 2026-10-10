@@ -1,6 +1,7 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
+import { TAGS_DONNEES } from '@/lib/cache-donnees';
 import { importerMarqueSvg, marquesLogo } from '@plateforme/core';
 import { exigerAdmin } from '@/lib/admin';
 import { createClient } from '@/lib/supabase/server';
@@ -26,6 +27,7 @@ export async function importerMarque(_: ResultatMarque, form: FormData): Promise
   });
   if (error) return { ok: false, message: 'Enregistrement impossible : la base de données est-elle à jour (mise à jour 0013, logos) ?' };
   revalidatePath('/admin/logos');
+  updateTag(TAGS_DONNEES.marques);
   return { ok: true, message: `Marque « ${marque.nom} » importée (inactive). Vérifiez l’aperçu puis activez-la.` };
 }
 
@@ -34,6 +36,7 @@ export async function basculerMarque(id: string, actif: boolean) {
   const supabase = await createClient();
   await supabase.from('marques_logo').update({ actif, updated_at: new Date().toISOString() }).eq('id', id);
   revalidatePath('/admin/logos');
+  updateTag(TAGS_DONNEES.marques);
 }
 
 export async function supprimerMarque(id: string) {
@@ -41,4 +44,5 @@ export async function supprimerMarque(id: string) {
   const supabase = await createClient();
   await supabase.from('marques_logo').delete().eq('id', id).eq('actif', false);
   revalidatePath('/admin/logos');
+  updateTag(TAGS_DONNEES.marques);
 }

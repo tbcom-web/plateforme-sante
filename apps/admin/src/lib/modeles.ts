@@ -1,16 +1,19 @@
 import 'server-only';
 import { cache } from 'react';
 import { MODELES_INTEGRES, validerManifeste, type ModeleManifeste } from '@plateforme/core';
-import { createClient } from '@/lib/supabase/server';
+import { lireEnCache, TAGS_DONNEES } from '@/lib/cache-donnees';
 
 export type ModeleDisponible = { id: string; nom: string; description: string; couleurConseillee?: string; source: 'integre' | 'importe'; manifeste: ModeleManifeste };
 export type LigneModele = { id: string; nom: string; manifeste: unknown; version: number; actif: boolean; updated_at: string };
 
 /** Toutes les fiches importées (admin), ou seulement les actives (praticiens, via RLS). */
+// Gardé dans le cache de données (cache-donnees.ts, invalidé par app/admin/modeles/actions.ts)
 async function getModelesImportesSansMemo(): Promise<{ lignes: LigneModele[]; erreur: boolean }> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.from('modeles').select('id, nom, manifeste, version, actif, updated_at').order('nom');
-  return { lignes: (data ?? []) as LigneModele[], erreur: Boolean(error) };
+  return lireEnCache('modeles', TAGS_DONNEES.modeles, [], async (supabase) => {
+    const { data, error } = await supabase.from('modeles').select('id, nom, manifeste, version, actif, updated_at').order('nom');
+    const r = { lignes: (data ?? []) as LigneModele[], erreur: Boolean(error) };
+    return error ? { ok: false, repli: r } : { ok: true, valeur: r };
+  });
 }
 export const getModelesImportes = cache(getModelesImportesSansMemo);
 
