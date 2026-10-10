@@ -88,7 +88,8 @@ export const departementSaisi = (s: string) => {
 };
 
 export function lireFiltresProspection(sp: Record<string, string | string[] | undefined>): FiltresProspection {
-  const periode = premier(sp.periode);
+  // Une spécialité concerne peu de praticiens : sans période choisie, on ne la croise pas avec « Depuis 1 an »
+  const periode = premier(sp.periode) || (premier(sp.specialite) ? 'tous' : '');
   const statut = premier(sp.statut);
   const page = Number.parseInt(premier(sp.page), 10);
   return {

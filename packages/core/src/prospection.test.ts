@@ -23,6 +23,8 @@ test('filtres : valeurs par défaut et saisies refusées', () => {
   assert.deepEqual(f, { departement: '', q: '', periode: '12', statut: '', liberal: true, actifs: true, specialite: '', role: '', tri: 'score', page: 1 });
   assert.equal(lireFiltresProspection({ specialite: 'sport', role: 'titulaire', tri: 'recent' }).role, 'titulaire');
   assert.equal(lireFiltresProspection({ specialite: 'x;drop' }).specialite, '');
+  assert.equal(lireFiltresProspection({ specialite: 'sport' }).periode, 'tous');
+  assert.equal(lireFiltresProspection({ specialite: 'sport', periode: '6' }).periode, '6');
   const g = lireFiltresProspection({ dep: '2a', q: 'Dupont<script>', periode: '3', statut: 'rappeler', liberal: 'non', page: '4' });
   assert.equal(g.departement, '2A');
   assert.equal(g.q, 'Dupont script');
