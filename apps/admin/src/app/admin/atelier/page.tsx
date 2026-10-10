@@ -13,8 +13,8 @@ import { themesActives } from '@/lib/themes';
 import { getUnivers } from '@/lib/univers';
 import { getPhotosBanque } from '@/lib/recettes';
 import Atelier from './Atelier';
-import { memoParSignature } from '@/lib/memo-journal';
-import { getUser, nombreEchecsSupabase } from '@/lib/supabase/server';
+import { instantane } from '@/lib/apprentissage-instantane';
+import { nombreEchecsSupabase } from '@/lib/supabase/server';
 import Synthese from './Synthese';
 
 export const metadata = { title: 'Super admin · Atelier des propositions' };
@@ -23,13 +23,13 @@ export const metadata = { title: 'Super admin · Atelier des propositions' };
 // fonctions), les note, et le générateur apprend de ses notes (packages/core/src/atelier-poids.ts).
 export default async function PageAtelier() {
   await exigerAdmin();
-  const [catalogue, modeles, marquesImportees, { univers }, photos, user] = await Promise.all([
-    getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getPhotosBanque(), getUser().catch(() => null),
+  const [catalogue, modeles, marquesImportees, { univers }, photos] = await Promise.all([
+    getCatalogue(), getModelesDisponibles(), getMarquesImportees(), getUnivers(), getPhotosBanque(),
   ]);
-  // Synthèse, poids et combinaisons déjà notées gardés sur l'instance tant que les notes de l'atelier et des assets, les statuts et
-  // les sujets n'ont pas changé (memoParSignature : compteurs de 0059 ; perf vague 2, 2026-10-10) : le journal complet de l'atelier
-  // (3,8 Mo d'ingrédients au volume ×10) et celui des assets ne sont plus relus ni recalculés à chaque ouverture. Calcul pendant
-  // lequel une lecture a échoué : jamais gardé.
+  // Synthèse, poids et combinaisons déjà notées gardés en base et sur l'instance tant que les notes de l'atelier et des assets, les
+  // statuts et les sujets n'ont pas changé (instantané d'apprentissage jamais périmé : compteurs de 0059 ; perf vague 2, 2026-10-10) :
+  // le journal complet de l'atelier (3,8 Mo d'ingrédients au volume ×10) et celui des assets ne sont plus relus ni recalculés à
+  // chaque ouverture, même sur une instance neuve. Calcul pendant lequel une lecture a échoué : jamais gardé ; sans 0059 : calcul.
   const resumer = async () => {
     const echecs = nombreEchecsSupabase();
     const [{ notes, migrationManquante }, assets, lignes] = await Promise.all([getNotesAtelier(), getPoidsAssets(), getLignesAssetsApprentissage()]);
@@ -46,8 +46,10 @@ export default async function PageAtelier() {
     }
     return { synthese, poids, dejaNotees, migrationManquante, garder: !migrationManquante && nombreEchecsSupabase() === echecs };
   };
-  const { synthese, poids, dejaNotees, migrationManquante } = await memoParSignature('atelier-notes', user?.id, ['atelier_notes', 'assets_notes', 'illustrations_statuts', 'assets_sujets'],
-    async () => { const x = await resumer(); if (!x.garder) throw x; return x; }).catch((x: unknown) => (x && typeof x === 'object' && 'garder' in x ? x as Awaited<ReturnType<typeof resumer>> : resumer()));
+  const { synthese, poids, dejaNotees, migrationManquante } = await instantane({
+    cle: 'atelier-notes', portee: 'admin', exigerFrais: true, tables: ['atelier_notes', 'assets_notes', 'illustrations_statuts', 'assets_sujets'],
+    calculer: async () => { const x = await resumer(); if (!x.garder) throw x; return x; },
+  }).catch((x: unknown) => (x && typeof x === 'object' && 'garder' in x ? x as Awaited<ReturnType<typeof resumer>> : resumer()));
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
 
   return (

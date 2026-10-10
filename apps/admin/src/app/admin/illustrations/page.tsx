@@ -4,8 +4,7 @@ import EnvoyerRetours from '@/components/EnvoyerRetours';
 import { exigerAdmin } from '@/lib/admin';
 import { getNotesAssets, getPhotosDesJeux, getSurchargesSujets } from '@/lib/assets-notes';
 import { getRevuesIllustrations } from '@/lib/illustrations';
-import { memoParSignature } from '@/lib/memo-journal';
-import { getUser } from '@/lib/supabase/server';
+import { instantane } from '@/lib/apprentissage-instantane';
 import { getPredictions } from '@/lib/predictions';
 import { predictionsParCle } from '@plateforme/core/juge';
 import RevueIllustrations from './RevueIllustrations';
@@ -17,10 +16,11 @@ export default async function PageIllustrations({ searchParams }: { searchParams
   await exigerAdmin();
   const sp = await searchParams;
   const cle = typeof sp.cle === 'string' ? sp.cle : null;
-  // Notes résumées (moyennes, empreinte de la dernière note, synthèse) gardées sur l'instance tant que les notes, statuts et revues
-  // n'ont pas changé (memoParSignature : compteurs de 0059 ; perf vague 2, 2026-10-10) : le journal complet des notes, commentaires
-  // compris (4,7 Mo au volume ×10), n'est plus relu ni résumé à chaque ouverture. Lecture en échec : jamais gardée.
-  const [{ statuts, revues, migrationManquante }, photosJeux, surchargesSujets, predictions, user] = await Promise.all([getRevuesIllustrations(), getPhotosDesJeux(), getSurchargesSujets(), getPredictions(), getUser().catch(() => null)]);
+  // Notes résumées (moyennes, empreinte de la dernière note, synthèse) gardées en base et sur l'instance tant que les notes, statuts
+  // et revues n'ont pas changé (instantané d'apprentissage jamais périmé : compteurs de 0059 ; perf vague 2, 2026-10-10) : le journal
+  // complet des notes, commentaires compris (4,7 Mo au volume ×10), n'est plus relu ni résumé à chaque ouverture, même sur une
+  // instance neuve. Lecture en échec : jamais gardée ; sans 0059 : calcul à chaque ouverture.
+  const [{ statuts, revues, migrationManquante }, photosJeux, surchargesSujets, predictions] = await Promise.all([getRevuesIllustrations(), getPhotosDesJeux(), getSurchargesSujets(), getPredictions()]);
   const resumer = async () => {
     const [notes, r] = await Promise.all([getNotesAssets(), getRevuesIllustrations()]);
     // Empreinte de la dernière note de chaque élément (avant / après dans la vue agrandie)
@@ -34,8 +34,10 @@ export default async function PageIllustrations({ searchParams }: { searchParams
     });
     return { empreintesNotees, moyennes, synthese, migrationManquante: notes.migrationManquante, garder: !notes.migrationManquante && !r.migrationManquante };
   };
-  const { empreintesNotees, moyennes, synthese, ...notes } = await memoParSignature('bibliotheque-notes', user?.id, ['assets_notes', 'illustrations_statuts', 'illustrations_revues'],
-    async () => { const x = await resumer(); if (!x.garder) throw x; return x; }).catch((x: unknown) => (x && typeof x === 'object' && 'garder' in x ? x as Awaited<ReturnType<typeof resumer>> : resumer()));
+  const { empreintesNotees, moyennes, synthese, ...notes } = await instantane({
+    cle: 'bibliotheque-notes', portee: 'admin', exigerFrais: true, tables: ['assets_notes', 'illustrations_statuts', 'illustrations_revues'],
+    calculer: async () => { const x = await resumer(); if (!x.garder) throw x; return x; },
+  }).catch((x: unknown) => (x && typeof x === 'object' && 'garder' in x ? x as Awaited<ReturnType<typeof resumer>> : resumer()));
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' });
   return (
     <div className="grid gap-6">
