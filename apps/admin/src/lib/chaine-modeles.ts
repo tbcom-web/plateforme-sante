@@ -587,8 +587,11 @@ async function tourAutomate(profession: string | null, opts: { versions?: 'utile
   // 3. Retouches de Claude (nouvelle version à partir de la version courante)
   for (const r of retouchesAAppliquer(lireRetouches(retouchesBrutes), chaine.fiches)) {
     const f = chaine.fiches.find((x) => x.id === r.modele)!;
+    // « version-base » : correction faite dans le code commun des sites, même design (nouvelle version pour repasser le testeur)
+    const composition = r.composition ?? (chaine.versions.find((v) => v.modele === f.id && v.version === r.versionBase)?.composition as Record<string, unknown> | undefined) ?? null;
+    if (!composition) continue;
     const nv = nouvelleVersion({
-      fiche: f, composition: r.composition, cle: `compo:${r.modele.slice(0, 8)}-v${f.versionCourante + 1}`, tickets: chaine.tickets.filter((t) => t.modele === f.id), corrections: r.corrections,
+      fiche: f, composition, cle: `compo:${r.modele.slice(0, 8)}-v${f.versionCourante + 1}`, tickets: chaine.tickets.filter((t) => t.modele === f.id), corrections: r.corrections,
       auteur: r.auteur ?? 'claude', type: r.auteur === 'testeur' ? 'technique' : 'correction', note: r.note,
     });
     const { error } = await supabase.from('modeles_versions').insert({ modele: f.id, version: nv.version.version, composition: nv.version.composition, cle: nv.version.cle, journal: nv.version.journal, auteur: nv.version.auteur });

@@ -14,6 +14,9 @@
     "/actualites",
     "/actualites.md",
     "/actualites/*",
+    "/conseils",
+    "/conseils.md",
+    "/conseils/*",
     "/rdv"
   ],
   "exclude": []

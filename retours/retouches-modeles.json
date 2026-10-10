@@ -1,0 +1,22 @@
+[
+  {
+    "modele": "3a2bad2a-51ae-4735-a407-66b229c63719",
+    "versionBase": 2,
+    "composition": "version-base",
+    "auteur": "claude",
+    "note": "Magazine affirmé :835 — les 11 tickets du testeur relevaient du code commun des sites (pas du design) : corrigés dans le code, même composition, la v3 repasse le testeur.",
+    "corrections": [
+      { "ticket": 1, "texte": "Agents IA (H2) : les fiches conseils (/conseils, /conseils.md, /conseils/*) ajoutées à _routes.json, la négociation Accept: text/markdown couvre toutes les pages de contenu." },
+      { "ticket": 2, "texte": "Liens du pied de page : largeur minimale de 44 px (cible tactile), règle commune à tous les gabarits." },
+      { "ticket": 3, "texte": "Logo de l'en-tête (lien) : hauteur minimale de 44 px sur toutes les pages." },
+      { "ticket": 4, "texte": "Liens du menu et du fil d'Ariane : largeur minimale de 44 px." },
+      { "ticket": 5, "texte": "Title de l'accueil raccourci à 65 caractères au plus, sans mot coupé (titres-seo.ts, appliqué par la mise en page commune)." },
+      { "ticket": 6, "texte": "Title des articles raccourci à 65 caractères au plus (titre de l'article gardé, nom du cabinet ajouté s'il tient)." },
+      { "ticket": 7, "texte": "Title de la page Cabinet raccourci à 65 caractères au plus (noms des praticiens sans le métier et la ville si trop long)." },
+      { "ticket": 8, "texte": "Méta description de la liste des soins ramenée à 165 caractères au plus, en phrases entières." },
+      { "ticket": 9, "texte": "Title des fiches soin raccourci à 65 caractères au plus (nom du soin gardé)." },
+      { "ticket": 10, "texte": "Title des pages sujet raccourci à 65 caractères au plus." },
+      { "ticket": 11, "texte": "Title de Contact et accès raccourci à 65 caractères au plus." }
+    ]
+  }
+]

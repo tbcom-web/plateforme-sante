@@ -10,6 +10,7 @@ Les éléments écartés ou remontés automatiquement par l'apprentissage ne son
 
 ## Corrections
 
+- 2026-10-11 : Modèle « Magazine affirmé :835 » : titles ≤ 65 / descriptions ≤ 165 caractères (titres-seo.ts), cibles tactiles 44 px (logo, pied, menu, fil d'Ariane), fiches conseils dans _routes.json ; retouche « version-base » dans la chaîne.
 - 2026-10-10 : Chaîne des modèles faisable au téléphone seul (audit tactile npm run audit:mobile ; « Envoyer à Claude » par le partage du téléphone avec une demande autonome, tickets en clair).
 - 2026-10-10 : cadrage des dessins dans leurs cases (cartes de soins, sujets, fiches, aperçu admin) : centrés sur leur tracé réel, fond perdu calé au bord ; testeur : contrôles « cadrage » et « coherence » (retour de Paul : « Tu as mis vert alors que les images ne sont pas centrées »)
 - 2026-10-10 : Chaîne des modèles — relecture guidée pas à pas (une page à la fois, ✓ Page OK / ✎ à corriger, récapitulatif, corrections à Claude, revalidation des pages modifiées, écran de publication) ; structure figée dès les finalistes ; photos et illustration du haut choisies en situation (survol / toucher + roulette), préférence de rendu par profil (migration 0063).

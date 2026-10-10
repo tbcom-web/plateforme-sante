@@ -371,7 +371,8 @@ export type RetoucheModele = {
   modele: string;
   /** Version corrigée (la nouvelle version vaut versionBase + 1) */
   versionBase: number;
-  composition: Record<string, unknown>;
+  /** null : MÊME composition que la version de base (correction faite dans le code commun des sites, 'version-base' dans le fichier) */
+  composition: Record<string, unknown> | null;
   corrections: { ticket: number; texte?: string }[];
   /** Corrections purement techniques (testeur) : pas de revalidation humaine si le testeur repasse au vert */
   auteur?: 'claude' | 'testeur';
@@ -383,12 +384,13 @@ export function lireRetouches(brut: unknown): RetoucheModele[] {
   const l = Array.isArray(brut) ? brut : brut && typeof brut === 'object' && Array.isArray((brut as { retouches?: unknown }).retouches) ? (brut as { retouches: unknown[] }).retouches : [];
   return l.flatMap((x) => {
     const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
-    if (typeof o.modele !== 'string' || !Number.isInteger(o.versionBase) || !o.composition || typeof o.composition !== 'object') return [];
+    const memeComposition = o.composition === 'version-base';
+    if (typeof o.modele !== 'string' || !Number.isInteger(o.versionBase) || (!memeComposition && (!o.composition || typeof o.composition !== 'object'))) return [];
     const corrections = (Array.isArray(o.corrections) ? o.corrections : []).flatMap((c) => {
       const t = Number((c as { ticket?: unknown })?.ticket);
       return Number.isInteger(t) && t > 0 ? [{ ticket: t, texte: typeof (c as { texte?: unknown }).texte === 'string' ? String((c as { texte: string }).texte).slice(0, 300) : undefined }] : [];
     });
-    return [{ modele: o.modele, versionBase: o.versionBase as number, composition: o.composition as Record<string, unknown>, corrections, auteur: o.auteur === 'testeur' ? 'testeur' as const : 'claude' as const, note: typeof o.note === 'string' ? o.note.slice(0, 500) : undefined }];
+    return [{ modele: o.modele, versionBase: o.versionBase as number, composition: memeComposition ? null : o.composition as Record<string, unknown>, corrections, auteur: o.auteur === 'testeur' ? 'testeur' as const : 'claude' as const, note: typeof o.note === 'string' ? o.note.slice(0, 500) : undefined }];
   });
 }
 

@@ -135,3 +135,4 @@ export * from './analyse-course';
 export * from './univers-minimal';
 export * from './conseils-patients';
 export * from './prospection-zone';
+export * from './titres-seo';

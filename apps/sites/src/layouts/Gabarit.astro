@@ -2,6 +2,7 @@
 // Gabarit commun à toutes les pages d'un site praticien.
 // La présentation suit la fiche du modèle (site.modele) ; tout ce qui sert le SEO est produit ici, quel que soit le modèle.
 import { cssTransitionsSections } from '@plateforme/core';
+import { descriptionSeo, titreSeo } from '@plateforme/core';
 import { attributTaille, cssTaillesTexte, variablesSecondaire } from '@plateforme/core';
 import { cssEffets, cssFormes, formeDesCartes, jeuEffets, couleursTraitement, cssTraitementPhotos, normaliserTraitementPhotos, svgTraitementPhotos, traitementNeutre, voileTraitement } from '@plateforme/core';
 import '@fontsource-variable/inter';
@@ -117,7 +118,10 @@ interface Props {
   article?: { date: string; theme: string };
 }
 
-const { title, description, path, schemas = [], noindex = false, immersif = false, image, article } = Astro.props;
+const { title: titreComplet, description: descriptionComplete, path, schemas = [], noindex = false, immersif = false, image, article } = Astro.props;
+// Title ≤ 65 et description ≤ 165 caractères, sans mot coupé (titres-seo.ts ; tickets du testeur du 2026-10-11)
+const title = titreSeo(titreComplet);
+const description = descriptionSeo(descriptionComplete);
 const partage = image ?? { src: photoAccueil };
 const canonical = absUrl(path);
 const m = site.modele;
@@ -494,6 +498,10 @@ const appelBarre = attributAppelBarre(appelDansBarre({ gabarit, contact: variant
 </html>
 
 <style is:global>
+  /* Cibles tactiles minimales de tous les gabarits (tickets du testeur du 2026-10-11 : logo de l'en-tête 28 px de haut, liens du
+     pied et du fil d'Ariane de 40 px de large) : 44 px dans les deux sens, sans changer la mise en page */
+  :where(header) a:where(.logo) { display: inline-flex; align-items: center; min-height: var(--cible-tactile, 44px); }
+  :where(footer, nav) a:where(:not(.logo)) { min-width: var(--cible-tactile, 44px); }
   /* Valeurs par défaut des jetons du modèle ; tout le reste (encre, ombres, mono…) vient de la charte. */
   :root {
     --fond: var(--blanc);
