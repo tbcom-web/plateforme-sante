@@ -64,7 +64,8 @@ export default async function PageComposer({ searchParams }: PageProps<'/chaine/
           {r.manques.length > 0 && (
             <details className="rounded-xl border border-black/10 bg-white p-3 text-sm" data-manques={r.manques.length}>
               <summary className="min-h-11 cursor-pointer font-semibold">Ce qui manque pour ce profil ({r.manques.length})</summary>
-              <p className="mt-1 text-neutral-600">Le composeur a dû se replier sur ces emplacements : à créer ou à noter (futur Atelier des manques).</p>
+              <p className="mt-1 text-neutral-600">Le composeur a dû se replier sur ces emplacements : à créer ou à noter.</p>
+              <Link href={`/admin/manques?profil=${encodeURIComponent(r.param)}`} className="mt-2 inline-flex min-h-11 items-center rounded-xl bg-violet-50 px-3 font-semibold text-violet-950 ring-1 ring-violet-300" data-action="atelier-manques">🧩 Prompts et dépôt dans l’Atelier des manques →</Link>
               <ul className="mt-2 grid gap-1.5">
                 {r.manques.map((m) => <li key={m.id} className="rounded-lg bg-neutral-50 px-2 py-1.5" data-manque={m.id}>{m.texte}{m.frequence > 1 ? ` · ${m.frequence} modèles` : ''}</li>)}
               </ul>

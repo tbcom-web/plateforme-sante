@@ -33,7 +33,8 @@ async function reencoder(f: Blob): Promise<Blob> {
   throw new Error('trop lourd');
 }
 
-export type ValeursImport = { sujet: string; hashtags: string[]; prompt: string; trou?: string | null; emplacement?: string; usage?: UsageImageGeneree; profession?: string };
+/** `outil`, `conditions`, `conditionsUrl` : préremplis par l'Atelier des manques (outil du prompt copié, rappel de ses conditions) */
+export type ValeursImport = { sujet: string; hashtags: string[]; prompt: string; trou?: string | null; emplacement?: string; usage?: UsageImageGeneree; profession?: string; outil?: string; conditions?: string; conditionsUrl?: string };
 
 type Choisi = { id: string; fichier: File; apercu: string; l: number; h: number; etat: 'pret' | 'envoi' | 'ok' | 'erreur'; message?: string };
 
@@ -63,12 +64,12 @@ export default function ImportImageGeneree({ initial, migrationManquante, migrat
   const [emplacement, setEmplacement] = useState(initial.emplacement ?? 'illustration');
   const [usage, setUsage] = useState<UsageImageGeneree>(initial.usage ?? usageParDefaut(initial.emplacement ?? 'illustration'));
   const [generiqueConfirme, setGeneriqueConfirme] = useState(false);
-  const [outil, setOutil] = useState('chatgpt');
+  const [outil, setOutil] = useState(initial.outil ?? 'chatgpt');
   const [outilAutre, setOutilAutre] = useState('');
   const [genereLe, setGenereLe] = useState(aujourdhui());
   const [prompt, setPrompt] = useState(initial.prompt);
-  const [conditions, setConditions] = useState('');
-  const [conditionsUrl, setConditionsUrl] = useState('');
+  const [conditions, setConditions] = useState(initial.conditions ?? '');
+  const [conditionsUrl, setConditionsUrl] = useState(initial.conditionsUrl ?? '');
   const [conditionsVerifiees, setConditionsVerifiees] = useState(false);
   const [imageVerifiee, setImageVerifiee] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; texte: string } | null>(null);

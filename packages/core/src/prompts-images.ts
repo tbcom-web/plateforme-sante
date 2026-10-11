@@ -349,6 +349,8 @@ export type DemandePrompt = {
   variante?: number;
   /** Précision libre de Paul (200 caractères au plus), contrôlée comme le reste */
   precision?: string | null;
+  /** Scène imposée (Atelier des manques : activité précise, manques.ts), à la place de celle du sujet ; contrôlée comme le reste */
+  scene?: Texte | null;
 };
 
 export type PromptConstruit = {
@@ -391,8 +393,9 @@ export function construirePrompt(dem: DemandePrompt): PromptConstruit | PromptRe
   if (sujetExclu(dem.sujet, dem.emplacement)) refus.push('Pas de posturologie ni de réflexologie : aucune image avant validation déontologique.');
   const format = formatImage(dem.format);
   if (!format) refus.push('Format inconnu.');
-  const scene = sceneDe(dem.sujet, dem.emplacement, dem.format);
+  const scene = dem.scene ?? sceneDe(dem.sujet, dem.emplacement, dem.format);
   if (!scene) refus.push('Sujet ou soin sans scène décrite.');
+  if (dem.scene) refus.push(...motifsRefus(`${dem.scene.fr} ${dem.scene.en}`));
   const precision = String(dem.precision ?? '').replace(/\s+/g, ' ').trim();
   if (precision.length > PRECISION_MAX) refus.push(`Précision trop longue (${PRECISION_MAX} caractères au plus).`);
   refus.push(...motifsRefus(precision));

@@ -75,6 +75,9 @@ export default async function PageSujets({ searchParams }: PageProps<'/admin/suj
           {enAttente > 0 ? <> <strong className="text-neutral-900">{enAttente} nouveauté{enAttente > 1 ? 's' : ''}</strong> t’attend{enAttente > 1 ? 'ent' : ''}.</> : ' Rien de nouveau : les sujets ci-dessous peuvent encore être affinés.'}
         </p>
       </div>
+      <Link href="/admin/manques" className="inline-flex min-h-11 items-center justify-self-start rounded-xl bg-violet-50 px-3 text-sm font-semibold text-violet-950 ring-1 ring-violet-300" data-action="atelier-manques">
+        🧩 Manques : ce qui manque aux modèles, prompts à générer, dépôt d’images →
+      </Link>
       {/* « Presque fini » : action de la chaîne des modèles la plus proche de la publication (différée, ne retarde pas la page) */}
       <Suspense fallback={null}><CartePresqueFini profession={profession.id} /></Suspense>
       <BandeauJour jours={jours.jours} aujourdhui={jours.aujourdhui} />

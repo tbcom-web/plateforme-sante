@@ -38,6 +38,7 @@
     "./audit-prospect": "./src/audit-prospect.ts",
     "./chaine-images": "./src/chaine-images.ts",
     "./composeur": "./src/composeur.ts",
+    "./manques": "./src/manques.ts",
     "./audit-express": "./src/audit-express.ts"
   },
   "dependencies": {

@@ -26,7 +26,7 @@ export const ESPACES: readonly Espace[] = [
   {
     id: 'a-valider', libelle: '🎯 À valider', href: '/admin/sujets',
     description: 'Un seul endroit : chaque sujet (golf, diabète, enfant…), une carte à la fois, OK ou pas OK.',
-    entrees: [{ href: '/admin/sujets', libelle: 'Sujets', compteur: 'arrivages' }],
+    entrees: [{ href: '/admin/sujets', libelle: 'Sujets', compteur: 'arrivages' }, { href: '/admin/manques', libelle: '🧩 Manques' }],
   },
   {
     id: 'arrivages', libelle: 'Arrivages', href: '/admin/arrivages',
