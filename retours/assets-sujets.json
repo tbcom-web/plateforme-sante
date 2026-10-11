@@ -119,6 +119,54 @@
     ],
     "retraits": []
   },
+  "composant:entete-anim:un-basket-arc": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "composant:entete-anim:un-cyclisme-profil": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "composant:entete-anim:un-diabete-miroir": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "composant:entete-anim:un-golf-alveoles": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "composant:entete-anim:un-golf-green": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "composant:entete-anim:un-tennis-court": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "composant:entete-anim:un-tennis-rebond": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:analyse-course:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "dessin:analyse:pedagogique": {
     "ajouts": [
       "sport",
@@ -157,6 +205,12 @@
   "dessin:cors-durillons:releve": {
     "ajouts": [
       "pedicurie"
+    ],
+    "retraits": []
+  },
+  "dessin:diabete-chaussettes:releve": {
+    "ajouts": [
+      "diabete"
     ],
     "retraits": []
   },
@@ -209,6 +263,54 @@
     "retraits": []
   },
   "dessin:sport:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:un-basket-arc:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:un-cyclisme-profil:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:un-diabete-miroir:pedagogique": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "dessin:un-diabete-sensibilite:pedagogique": {
+    "ajouts": [
+      "diabete"
+    ],
+    "retraits": []
+  },
+  "dessin:un-golf-alveoles:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:un-golf-green:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:un-tennis-court:pedagogique": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "dessin:un-tennis-rebond:pedagogique": {
     "ajouts": [
       "sport"
     ],
@@ -498,6 +600,12 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/enfant/pexels-132699-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/enfant/pexels-17895637-1920.webp": {
     "ajouts": [
       "enfant"
@@ -540,7 +648,31 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/enfant/pexels-37290957-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/enfant/pexels-4964358-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pexels-4964506-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pexels-4964518-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pexels-5278784-1920.webp": {
     "ajouts": [
       "enfant"
     ],
@@ -577,6 +709,36 @@
     "retraits": []
   },
   "photo:banque/libres/enfant/pexels-8654776-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pexels-8813534-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pexels-8944025-1920.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pixabay-3459001-1280.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pixabay-6376162-1280.webp": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/enfant/pixabay-8563301-1280.webp": {
     "ajouts": [
       "enfant"
     ],
@@ -632,6 +794,18 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/semelles/pexels-8007589-1920.webp": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/semelles/pixabay-434918-1280.webp": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/senior/pexels-13641693-1920.webp": {
     "ajouts": [
       "senior"
@@ -657,6 +831,12 @@
     "retraits": []
   },
   "photo:banque/libres/senior/pexels-18326821-1920.webp": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/senior/pexels-38029990-1920.webp": {
     "ajouts": [
       "senior"
     ],
@@ -704,6 +884,12 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/senior/pexels-7265307-1920.webp": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/senior/pexels-7938830-1920.webp": {
     "ajouts": [
       "senior"
@@ -734,6 +920,12 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/senior/pexels-8796067-1920.webp": {
+    "ajouts": [
+      "senior"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/senior/pexels-8899946-1920.webp": {
     "ajouts": [
       "senior"
@@ -746,10 +938,34 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-10433251-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-11156954-1920.webp": {
     "ajouts": [
       "sport",
       "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-11789585-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-11831855-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-12593197-1920.webp": {
+    "ajouts": [
+      "sport"
     ],
     "retraits": []
   },
@@ -760,6 +976,12 @@
     "retraits": []
   },
   "photo:banque/libres/sport/pexels-13124397-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-1325662-1920.webp": {
     "ajouts": [
       "sport"
     ],
@@ -783,7 +1005,43 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-15754795-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-1750045-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-18052798-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-20034412-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-20186409-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-21050394-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-23340244-1920.webp": {
     "ajouts": [
       "sport"
     ],
@@ -801,6 +1059,24 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-26726127-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-29505010-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-29596317-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-29732064-1920.webp": {
     "ajouts": [
       "sport"
@@ -813,7 +1089,37 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-30476468-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-31588232-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-31650329-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-31721671-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-31954808-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-32189248-1920.webp": {
     "ajouts": [
       "sport"
     ],
@@ -825,13 +1131,61 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-32832523-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-33874841-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-33974329-1920.webp": {
     "ajouts": [
       "sport"
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-33995258-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-34197288-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-34688570-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-35464439-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-3601094-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-3601098-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-3756165-1920.webp": {
     "ajouts": [
       "sport"
     ],
@@ -844,6 +1198,54 @@
     "retraits": []
   },
   "photo:banque/libres/sport/pexels-39703728-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-4314202-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-4379226-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-4379287-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-4379291-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-4498570-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-4920429-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5005974-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5036845-1920.webp": {
     "ajouts": [
       "sport"
     ],
@@ -866,6 +1268,32 @@
     "ajouts": [
       "sport",
       "senior"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5150461-1920.webp": {
+    "ajouts": [
+      "sport",
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5154335-1920.webp": {
+    "ajouts": [
+      "sport",
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5310739-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5310888-1920.webp": {
+    "ajouts": [
+      "sport"
     ],
     "retraits": []
   },
@@ -893,7 +1321,49 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-5739111-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5739115-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5836914-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-5876412-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-5885314-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-601177-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-6076409-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-7406289-1920.webp": {
     "ajouts": [
       "sport"
     ],
@@ -905,13 +1375,76 @@
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-8032734-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8223918-1920.webp": {
+    "ajouts": [
+      "sport",
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8224483-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8224655-1920.webp": {
+    "ajouts": [
+      "sport",
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-8224721-1920.webp": {
     "ajouts": [
       "sport"
     ],
     "retraits": []
   },
+  "photo:banque/libres/sport/pexels-8346655-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8455408-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8462911-1920.webp": {
+    "ajouts": [
+      "sport",
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8533786-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8542681-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:banque/libres/sport/pexels-8542685-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8692281-1920.webp": {
     "ajouts": [
       "sport"
     ],
@@ -924,6 +1457,84 @@
     "retraits": []
   },
   "photo:banque/libres/sport/pexels-8693990-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-8729056-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-9207649-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pexels-9207754-1920.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-1189873-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-1260814-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-2465478-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-2567727-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-2759734-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-5370071-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-5507225-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-7036709-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-7288666-1280.webp": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:banque/libres/sport/pixabay-972715-1280.webp": {
     "ajouts": [
       "sport"
     ],
@@ -985,6 +1596,12 @@
     "retraits": []
   },
   "photo:libre:pexels-11831855": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-12593197": {
     "ajouts": [
       "sport"
     ],
@@ -1123,6 +1740,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-26726127": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-27509165": {
     "ajouts": [
       "sport"
@@ -1172,6 +1795,12 @@
     "retraits": []
   },
   "photo:libre:pexels-31588232": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-31721671": {
     "ajouts": [
       "sport"
     ],
@@ -1394,6 +2023,18 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-4964506": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-4964518": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-4966368": {
     "ajouts": [
       "sport"
@@ -1440,7 +2081,8 @@
   },
   "photo:libre:pexels-5150461": {
     "ajouts": [
-      "sport"
+      "sport",
+      "enfant"
     ],
     "retraits": []
   },
@@ -1524,6 +2166,12 @@
     "retraits": []
   },
   "photo:libre:pexels-5739115": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-5836914": {
     "ajouts": [
       "sport"
     ],
@@ -1651,6 +2299,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-8007589": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-8032734": {
     "ajouts": [
       "sport"
@@ -1695,6 +2349,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-8346655": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-8404156": {
     "ajouts": [
       "sport"
@@ -1702,6 +2362,12 @@
     "retraits": []
   },
   "photo:libre:pexels-8454950": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-8455408": {
     "ajouts": [
       "sport"
     ],
@@ -1720,6 +2386,13 @@
     "retraits": []
   },
   "photo:libre:pexels-8462911": {
+    "ajouts": [
+      "sport",
+      "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-8533786": {
     "ajouts": [
       "sport"
     ],
@@ -1785,6 +2458,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pexels-8813534": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:libre:pexels-8899946": {
     "ajouts": [
       "senior"
@@ -1794,6 +2473,12 @@
   "photo:libre:pexels-8939885": {
     "ajouts": [
       "senior"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pexels-8944025": {
+    "ajouts": [
+      "enfant"
     ],
     "retraits": []
   },
@@ -1846,10 +2531,34 @@
     ],
     "retraits": []
   },
+  "photo:libre:pixabay-1189873": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-1260814": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:libre:pixabay-1977372": {
     "ajouts": [
       "sport",
       "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-2465478": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-2567727": {
+    "ajouts": [
+      "sport"
     ],
     "retraits": []
   },
@@ -1883,6 +2592,12 @@
     ],
     "retraits": []
   },
+  "photo:libre:pixabay-2759734": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:libre:pixabay-3084870": {
     "ajouts": [
       "pedicurie"
@@ -1898,6 +2613,12 @@
   "photo:libre:pixabay-3445281": {
     "ajouts": [
       "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-3459001": {
+    "ajouts": [
+      "enfant"
     ],
     "retraits": []
   },
@@ -1931,9 +2652,27 @@
     ],
     "retraits": []
   },
+  "photo:libre:pixabay-434918": {
+    "ajouts": [
+      "semelles"
+    ],
+    "retraits": []
+  },
   "photo:libre:pixabay-5357721": {
     "ajouts": [
       "senior"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-5370071": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-5507225": {
+    "ajouts": [
+      "sport"
     ],
     "retraits": []
   },
@@ -1953,6 +2692,12 @@
   "photo:libre:pixabay-6143052": {
     "ajouts": [
       "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-6376162": {
+    "ajouts": [
+      "enfant"
     ],
     "retraits": []
   },
@@ -1981,7 +2726,19 @@
     ],
     "retraits": []
   },
+  "photo:libre:pixabay-7036709": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
   "photo:libre:pixabay-7208989": {
+    "ajouts": [
+      "sport"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-7288666": {
     "ajouts": [
       "sport"
     ],
@@ -1993,10 +2750,22 @@
     ],
     "retraits": []
   },
+  "photo:libre:pixabay-8563301": {
+    "ajouts": [
+      "enfant"
+    ],
+    "retraits": []
+  },
   "photo:libre:pixabay-858206": {
     "ajouts": [
       "sport",
       "enfant"
+    ],
+    "retraits": []
+  },
+  "photo:libre:pixabay-972715": {
+    "ajouts": [
+      "sport"
     ],
     "retraits": []
   },

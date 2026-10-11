@@ -1,31 +1,31 @@
 # Retours de Paul — synthèse
 
-Export automatique (scripts/exporter-retours.mjs). Données jusqu’au 2026-10-09 : 1564 avis sur les assets, 463 sur les thèmes complets, 255 changements de statut.
+Export automatique (scripts/exporter-retours.mjs). Données jusqu’au 2026-10-10 : 2056 avis sur les assets, 463 sur les thèmes complets, 287 changements de statut.
 Lire ensuite les JSON du dossier pour le détail ; noter chaque correction faite dans retours/CHANGEMENTS.md (docs/retours.md).
 
 ## Assets (icônes, illustrations, photos, gammes, structures)
 
-1564 notes, moyenne 3,80 ★ — répartition : 1★ 70, 2★ 107, 3★ 379, 4★ 516, 5★ 492.
+2056 notes, moyenne 3,81 ★ — répartition : 1★ 109, 2★ 144, 3★ 420, 4★ 728, 5★ 655.
 
 ### Par type d’asset
 
 | Type | Assets notés | Notes | Moyenne |
 |---|---:|---:|---:|
-| Structures de pages | 266 | 267 | 3,89 ★ |
-| Éléments (présentation) | 178 | 230 | 4,05 ★ |
-| Photos | 114 | 167 | 3,19 ★ |
-| Typographies | 149 | 149 | 3,70 ★ |
-| Bibliothèque | 39 | 148 | 4,35 ★ |
-| Dessins | 111 | 134 | 3,94 ★ |
-| Pictos et icônes | 101 | 103 | 3,19 ★ |
-| Matériel | 59 | 79 | 4,34 ★ |
+| Éléments (présentation) | 198 | 307 | 4,06 ★ |
+| Photos | 176 | 304 | 3,62 ★ |
+| Structures de pages | 272 | 281 | 3,91 ★ |
+| Pictos et icônes | 112 | 202 | 3,31 ★ |
+| Dessins | 156 | 197 | 3,78 ★ |
+| Typographies | 151 | 180 | 3,64 ★ |
+| Bibliothèque | 39 | 162 | 4,32 ★ |
+| Matériel | 76 | 97 | 4,37 ★ |
+| Détails | 38 | 66 | 3,34 ★ |
 | Gammes de couleurs | 17 | 65 | 3,77 ★ |
-| Traits continus | 39 | 55 | 3,53 ★ |
-| Détails | 38 | 47 | 3,13 ★ |
-| Jeux d’effets | 40 | 44 | 3,73 ★ |
-| Héros de thème | 29 | 39 | 3,92 ★ |
+| Traits continus | 39 | 57 | 3,58 ★ |
+| Jeux d’effets | 45 | 49 | 3,71 ★ |
+| Héros de thème | 34 | 45 | 4,05 ★ |
+| Menus | 12 | 18 | 4,05 ★ |
 | Animations | 6 | 15 | 4,27 ★ |
-| Menus | 11 | 11 | 3,64 ★ |
 | Modèles de structure | 4 | 11 | 3,64 ★ |
 
 ### Les mieux notés
@@ -34,36 +34,36 @@ Lire ensuite les JSON du dossier pour le détail ; noter chaque correction faite
 |---|---|---:|---:|---:|---|
 | Semelle orthopédique en couleur (dessus, dessous, profil) (EZ-HTML/semelle-ortho) | `biblio:EZ-HTML/semelle-ortho:dessous:neuve` | 10 | 5,00 ★ | 4,66 ★ | — |
 | Semelle orthopédique en couleur (dessus, dessous, profil) (EZ-HTML/semelle-ortho) | `biblio:EZ-HTML/semelle-ortho` | 8 | 5,00 ★ | 4,60 ★ | — |
-| Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) | `biblio:EZ-HTML/chaussure-running:trois-quarts:neuve` | 9 | 4,89 ★ | 4,55 ★ | — |
+| Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) | `biblio:EZ-HTML/chaussure-running:trois-quarts:neuve` | 9 | 4,89 ★ | 4,56 ★ | — |
 | Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) | `biblio:EZ-HTML/chaussure-running` | 8 | 4,88 ★ | 4,52 ★ | Anatomie juste (1), Clair (1), Élégant (1) |
-| Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) | `biblio:POD-AT-0009` | 8 | 4,75 ★ | 4,43 ★ | — |
-| Anatomie du pied de profil : os, tendon calcanéen, aponévrose plantaire (POD-AT-0008) | `biblio:POD-AT-0008:profil-medial:epine` | 6 | 4,83 ★ | 4,42 ★ | — |
-| Corail & bleu nuit (corail-nuit) | `gamme:corail-nuit` | 4 | 5,00 ★ | 4,40 ★ | — |
-| Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) | `biblio:POD-AT-0009:dorsale-gros-plan:mycose` | 6 | 4,67 ★ | 4,32 ★ | — |
-| podoscope (empreintes de podoscope en points de pression) | `animation:podoscope` | 3 | 5,00 ★ | 4,31 ★ | Waouh (1) |
-| Cobalt & abricot (cobalt-abricot) | `gamme:cobalt-abricot` | 3 | 5,00 ★ | 4,31 ★ | — |
+| Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) | `biblio:POD-AT-0009` | 8 | 4,75 ★ | 4,44 ★ | — |
+| Anatomie du pied de profil : os, tendon calcanéen, aponévrose plantaire (POD-AT-0008) | `biblio:POD-AT-0008:profil-medial:epine` | 6 | 4,83 ★ | 4,43 ★ | — |
+| Corail & bleu nuit (corail-nuit) | `gamme:corail-nuit` | 4 | 5,00 ★ | 4,41 ★ | — |
+| Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) | `biblio:POD-AT-0009:dorsale-gros-plan:mycose` | 6 | 4,67 ★ | 4,33 ★ | — |
+| podoscope (empreintes de podoscope en points de pression) | `animation:podoscope` | 3 | 5,00 ★ | 4,32 ★ | Waouh (1) |
+| Ongle du gros orteil en coupe transversale (POD-AT-0010) | `biblio:POD-AT-0010:coupe-transversale:incarne` | 3 | 5,00 ★ | 4,32 ★ | — |
 
 ### Les moins bien notés
 
 | Asset | Clé | Notes | Moyenne | Lissée | Étiquettes |
 |---|---|---:|---:|---:|---|
-| posture-marche-sable | `photo:posture-marche-sable` | 3 | 1,00 ★ | 2,60 ★ | — |
-| cabinet-lumiere | `photo:cabinet-lumiere` | 3 | 1,00 ★ | 2,60 ★ | — |
-| enfant-baskets | `photo:enfant-baskets` | 3 | 1,33 ★ | 2,74 ★ | — |
-| Chaussure de ville (chaussure-ville) | `picto:chaussure-ville` | 2 | 1,00 ★ | 2,87 ★ | — |
-| sport-trail | `photo:sport-trail` | 2 | 1,00 ★ | 2,87 ★ | Hors sujet (1) |
-| sport-foulee-herbe | `photo:sport-foulee-herbe` | 2 | 1,00 ★ | 2,87 ★ | — |
-| soins-pied-tenu | `photo:soins-pied-tenu` | 2 | 1,00 ★ | 2,87 ★ | — |
-| soins-bandages | `photo:soins-bandages` | 2 | 1,00 ★ | 2,87 ★ | — |
-| posture-escalier | `photo:posture-escalier` | 2 | 1,00 ★ | 2,87 ★ | — |
-| generale-pied-sol | `photo:generale-pied-sol` | 2 | 1,00 ★ | 2,87 ★ | — |
+| posture-marche-sable | `photo:posture-marche-sable` | 3 | 1,00 ★ | 2,61 ★ | — |
+| cabinet-lumiere | `photo:cabinet-lumiere` | 3 | 1,00 ★ | 2,61 ★ | — |
+| Orteil en griffe, coupe sagittale du 2e rayon (SITES/orteil-griffe) | `biblio:SITES/orteil-griffe:coupe-sagittale:orthoplastie` | 3 | 1,00 ★ | 2,61 ★ | — |
+| enfant-baskets | `photo:enfant-baskets` | 3 | 1,33 ★ | 2,75 ★ | — |
+| Football (sport-football) | `picto:sport-football` | 2 | 1,00 ★ | 2,80 ★ | — |
+| Pied plat (pied-plat) | `picto:pied-plat` | 2 | 1,00 ★ | 2,80 ★ | — |
+| Honoraires et règlement (honoraires) | `picto:honoraires` | 2 | 1,00 ★ | 2,80 ★ | — |
+| Fauteuil de soins (fauteuil-soins) | `picto:fauteuil-soins` | 2 | 1,00 ★ | 2,80 ★ | Sens pas clair (1) |
+| Cadres d’images : Cadre décalé (Détails) | `details:cadre:decale` | 3 | 1,69 ★ | 2,86 ★ | — |
+| Ski (sport-ski) | `picto:sport-ski` | 2 | 1,00 ★ | 2,88 ★ | — |
 
 ### Étiquettes les plus fréquentes
 
 - **Trait trop épais** (14) : Accès personnes à mobilité réduite (accessibilite) (1) ; Chaussure de course (chaussure-course) (1) ; Cor et durillon (cor-durillon) (1) ; Cyclisme (sport-cyclisme) (1) ; Douleur au talon (talon-douloureux) (1)
 - **Waouh** (9) : Pieds de l’enfant (Trait continu) (1) ; Premier écran : Découpe oblique et bandes qui filent (vitesse) (Élément) (1) ; Transition du diaporama : Fondu enchaîné (Élément) (1) ; Transition du diaporama : Fondu flou (Élément) (1) ; Transition du diaporama : Rideau (Élément) (1)
+- **Anatomie fausse** (6) : Analyse de la foulée (course à pied) (Relevé) (1) ; Danse (kit Sports) (Trait continu) (1) ; Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) (1) ; Orteil en griffe, coupe sagittale du 2e rayon (SITES/orteil-griffe) (1) ; Podoscope (podoscope) (1)
 - **Sens pas clair** (6) : Course à pied (sport-course-a-pied) (1) ; Cyclisme (sport-cyclisme) (1) ; Fauteuil de soins (fauteuil-soins) (1) ; K-taping (k-taping) (1) ; Orthoplastie (orthoplastie) (1)
-- **Anatomie fausse** (5) : Danse (kit Sports) (Trait continu) (1) ; Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) (1) ; Orteil en griffe, coupe sagittale du 2e rayon (SITES/orteil-griffe) (1) ; Podoscope (podoscope) (1) ; empreintes (Trait continu) (1)
 - **Clipart** (5) : Pied diabétique (Pédagogique) (1) ; Podoscope (podoscope) (1) ; appuis (Pédagogique) (1) ; coureur (coureur en pleine foulée) (1) ; empreintes (Trait continu) (1)
 - **Illisible en petit** (4) : Cor et durillon (cor-durillon) (1) ; Cyclisme (sport-cyclisme) (1) ; Paire d'empreintes (empreintes) (1) ; Verrue plantaire (verrue-plantaire) (1)
 - **Clair** (2) : Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) (1) ; enfant (Pédagogique) (1)
@@ -79,8 +79,12 @@ Lire ensuite les JSON du dossier pour le détail ; noter chaque correction faite
 - **Trop chargé** (1) : Ongles incarnés, épais ou abîmés (Relevé) (1)
 - **Trop « stock »** (1) : photo:banque/libres/diabete/pexels-8965131-1920.webp (1)
 
-### À retravailler (1)
+### À retravailler (5)
 
+- `composant:entete-anim:un-basket-terrain` — Animation d’en-tête : Basket : terrain en lignes de niveau (à valider) (Élément) : Pas OK (À valider)
+- `composant:entete-anim:un-cyclisme-roue` — Animation d’en-tête : Cyclisme : roue et rayons qui font un tour (à valider) (Élément) : Pas OK (À valider)
+- `composant:entete-anim:un-diabete-sensibilite` — Animation d’en-tête : Diabète : plante et points de sensibilité, bleus doux (à valider) (Élément) : la forme du pied n'est pas harmonieuse...
+- `dessin:un-cyclisme-roue:pedagogique` — Cyclisme : la roue et ses rayons (Pédagogique) : Pas OK (À valider)
 - `biblio:EZ-HTML/chaussure-running:trois-quarts:neuve` — Chaussure de running (profil, 3/4, dessous) (EZ-HTML/chaussure-running) : (sans commentaire)
 
 ### Retirés (13)
@@ -89,6 +93,11 @@ Lire ensuite les JSON du dossier pour le détail ; noter chaque correction faite
 
 ### Remarques récentes (ce qui va bien / ce qui ne va pas / commentaire)
 
+- 2★ `composant:entete-anim:un-diabete-sensibilite` Animation d’en-tête : Diabète : plante et points de sensibilité, bleus doux (à valider) (Élément) : Ce qui ne va pas : la forme du pied n'est pas harmonieuse...
+- 4★ `composant:entete-anim:un-tennis-court` Animation d’en-tête : Tennis : court en perspective douce, balle dans le carré (à valider) (Élément) : Ce qui va bien : Pas mal mais la balle de tennis n'est pas tres belle...
+- 4★ `composant:entete-anim:un-tennis-rebond` Animation d’en-tête : Tennis : la balle et son rebond (à valider) (Élément) : Ce qui va bien : bof
+- 3★ `dessin:analyse-course:releve` Analyse de la foulée (course à pied) (Relevé) [Anatomie fausse] : Ce qui ne va pas : Pas mal mais les jambes sont trop maigres
+- 2★ `dessin:senior:pedagogique` senior (Pédagogique) : Ce qui ne va pas : il faut une canne plus grosse on dirait une canne pour aveugle
 - 4★ `dessin:auto-examen` dessin:auto-examen : Ce qui ne va pas : bien mais il faudrait qu'il soit penché
 - 4★ `details:cadre:organique` Cadres d’images : Découpe organique (Détails) : Ce qui ne va pas : fond blanc derriere la forme organique il faut supprimer le fond blanc
 - 4★ `structure:accueil:equipe-haut-arche-photo-cartes` Accueil : Équipe en premier · Premier écran photo dans une arche, disque de couleur (à valider) · Sujets cartes égales (Structure de page) : Ce qui ne va pas : sur vue bureau on dirait que la photo sort du cadre
@@ -124,11 +133,6 @@ Lire ensuite les JSON du dossier pour le détail ; noter chaque correction faite
 - 3★ `heros:diabete:pedagogique` Pied diabétique (Pédagogique) [Clipart] : Commentaire : image de droite pas lisible et main trop bizarre anatomiquement
 - 5★ `heros:enfant:ligne` Pieds de l’enfant (Trait continu) [Waouh] : Commentaire : J'adore
 - 4★ `heros:enfant:releve` Pieds de l’enfant (Relevé) : Commentaire : bien mais on comprend pas pkoi les empreintes de l'enfant sont posees a cote
-- 3★ `heros:ongles:ligne` Ongles incarnés, épais ou abîmés (Trait continu) : Commentaire : pas mettre les deux images a cote on comprend pas
-- 3★ `heros:ongles:releve` Ongles incarnés, épais ou abîmés (Relevé) [Trop chargé] : Commentaire : trop d'illustrations cote a cote
-- 3★ `heros:pedicurie:releve` Soins des pieds (pédicurie) (Relevé) : Commentaire : Un peu trop de contenus, on comprend pas bien
-- 3★ `heros:semelles:ligne` Semelles orthopédiques (Trait continu) : Commentaire : les deux illustrations ensemble n'ont pas trop de sens
-- 4★ `heros:semelles:releve` Semelles orthopédiques (Relevé) : Commentaire : la taille des pieds a droite est pas comprehensible et on comprend pas pkoi les deux sont cote a cote
 
 Formule : moyenne lissée = (somme + 4 × moyenne générale) / (n + 4) ; « Retiré » et « À retravailler » pénalisent l’asset dans les propositions.
 
@@ -249,38 +253,58 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 
 ## Hashtags des visuels
 
-54 hashtags sur 100 visuels.
+73 hashtags sur 256 visuels.
 
-- #accueil (17) : `photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp`, `photo:banque/libres/ongles/pexels-13667247-1920.webp`, `photo:banque/libres/pedicurie/pixabay-6648076-1280.webp`, `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:banque/libres/senior/pexels-13641693-1920.webp`, `photo:banque/libres/senior/pexels-18326821-1920.webp`, `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:banque/libres/senior/pexels-4436289-1920.webp`, `photo:banque/libres/senior/pexels-5705065-1920.webp`, `photo:banque/libres/senior/pexels-8795587-1920.webp`, `photo:libre:pexels-13667247`, `photo:libre:pexels-4436289`, `photo:libre:pexels-5705065`, `photo:libre:pexels-8795587`, `photo:libre:pixabay-3084870`, `photo:libre:pixabay-6648076`, `photo:libre:pixabay-6762801`
-- #tennis (17) : `photo:banque/libres/sport/pexels-13124397-1920.webp`, `photo:banque/libres/sport/pexels-20186409-1920.webp`, `photo:banque/libres/sport/pexels-23379595-1920.webp`, `photo:banque/libres/sport/pexels-32289808-1920.webp`, `photo:banque/libres/sport/pexels-5067813-1920.webp`, `photo:banque/libres/sport/pexels-8224721-1920.webp`, `photo:banque/libres/sport/pexels-8542685-1920.webp`, `photo:libre:pexels-21050394`, `photo:libre:pexels-32289808`, `photo:libre:pexels-32289819`, `photo:libre:pexels-38503110`, `photo:libre:pexels-38503137`, `photo:libre:pexels-5067813`, `photo:libre:pexels-5739111`, `photo:libre:pexels-8223918`, `photo:libre:pexels-8224483`, `photo:libre:pexels-8224655`
+- #course-a-pied (39) : `dessin:analyse-course:pedagogique` Analyse de la foulée (course à pied) (Pédagogique), `photo:banque/libres/sport/pexels-12918252-1920.webp`, `photo:banque/libres/sport/pexels-1750045-1920.webp`, `photo:banque/libres/sport/pexels-29596317-1920.webp`, `photo:banque/libres/sport/pexels-30476468-1920.webp`, `photo:banque/libres/sport/pexels-33874841-1920.webp`, `photo:banque/libres/sport/pexels-33974329-1920.webp`, `photo:banque/libres/sport/pexels-33995258-1920.webp`, `photo:banque/libres/sport/pexels-3601094-1920.webp`, `photo:banque/libres/sport/pexels-3601098-1920.webp`, `photo:banque/libres/sport/pexels-3756165-1920.webp`, `photo:banque/libres/sport/pexels-4379226-1920.webp`, `photo:banque/libres/sport/pexels-4379287-1920.webp`, `photo:banque/libres/sport/pexels-4379291-1920.webp`, `photo:banque/libres/sport/pexels-4498570-1920.webp`, `photo:banque/libres/sport/pexels-4920429-1920.webp`, `photo:banque/libres/sport/pexels-5036845-1920.webp`, `photo:banque/libres/sport/pexels-5310739-1920.webp`, `photo:banque/libres/sport/pexels-5310888-1920.webp`, `photo:banque/libres/sport/pexels-8032734-1920.webp`, `photo:banque/libres/sport/pexels-8692281-1920.webp`, `photo:libre:pexels-1750045`, `photo:libre:pexels-29596317`, `photo:libre:pexels-30476468`, `photo:libre:pexels-33874841`, `photo:libre:pexels-33995258`, `photo:libre:pexels-3601094`, `photo:libre:pexels-3601098`, `photo:libre:pexels-3756165`, `photo:libre:pexels-4379226`, `photo:libre:pexels-4379287`, `photo:libre:pexels-4379291`, `photo:libre:pexels-4498570`, `photo:libre:pexels-4920429`, `photo:libre:pexels-5036845`, `photo:libre:pexels-5310739`, `photo:libre:pexels-5310888`, `photo:libre:pexels-8032734`, `photo:libre:pexels-8692281`
+- #kit-sport (36) : `photo:banque/libres/sport/pexels-12593197-1920.webp`, `photo:banque/libres/sport/pexels-26726127-1920.webp`, `photo:banque/libres/sport/pexels-31721671-1920.webp`, `photo:banque/libres/sport/pexels-5836914-1920.webp`, `photo:banque/libres/sport/pexels-8346655-1920.webp`, `photo:banque/libres/sport/pexels-8455408-1920.webp`, `photo:banque/libres/sport/pexels-8533786-1920.webp`, `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:banque/libres/sport/pixabay-1189873-1280.webp`, `photo:banque/libres/sport/pixabay-1260814-1280.webp`, `photo:banque/libres/sport/pixabay-2465478-1280.webp`, `photo:banque/libres/sport/pixabay-2567727-1280.webp`, `photo:banque/libres/sport/pixabay-2759734-1280.webp`, `photo:banque/libres/sport/pixabay-5370071-1280.webp`, `photo:banque/libres/sport/pixabay-5507225-1280.webp`, `photo:banque/libres/sport/pixabay-7036709-1280.webp`, `photo:banque/libres/sport/pixabay-7288666-1280.webp`, `photo:banque/libres/sport/pixabay-972715-1280.webp`, `photo:libre:pexels-12593197`, `photo:libre:pexels-26726127`, `photo:libre:pexels-31721671`, `photo:libre:pexels-5836914`, `photo:libre:pexels-8346655`, `photo:libre:pexels-8455408`, `photo:libre:pexels-8533786`, `photo:libre:pexels-8693990`, `photo:libre:pixabay-1189873`, `photo:libre:pixabay-1260814`, `photo:libre:pixabay-2465478`, `photo:libre:pixabay-2567727`, `photo:libre:pixabay-2759734`, `photo:libre:pixabay-5370071`, `photo:libre:pixabay-5507225`, `photo:libre:pixabay-7036709`, `photo:libre:pixabay-7288666`, `photo:libre:pixabay-972715`
+- #tennis (35) : `composant:entete-anim:un-tennis-court` Animation d’en-tête : Tennis : court en perspective douce, balle dans le carré (à valider) (Élément), `composant:entete-anim:un-tennis-rebond` Animation d’en-tête : Tennis : la balle et son rebond (à valider) (Élément), `dessin:un-tennis-court:pedagogique` Tennis : le court en perspective douce (Pédagogique), `dessin:un-tennis-rebond:pedagogique` Tennis : la balle et son rebond (Pédagogique), `photo:banque/libres/sport/pexels-13124397-1920.webp`, `photo:banque/libres/sport/pexels-20186409-1920.webp`, `photo:banque/libres/sport/pexels-21050394-1920.webp`, `photo:banque/libres/sport/pexels-23340244-1920.webp`, `photo:banque/libres/sport/pexels-23379595-1920.webp`, `photo:banque/libres/sport/pexels-32289808-1920.webp`, `photo:banque/libres/sport/pexels-32832523-1920.webp`, `photo:banque/libres/sport/pexels-5067813-1920.webp`, `photo:banque/libres/sport/pexels-5739111-1920.webp`, `photo:banque/libres/sport/pexels-5739115-1920.webp`, `photo:banque/libres/sport/pexels-8223918-1920.webp`, `photo:banque/libres/sport/pexels-8224483-1920.webp`, `photo:banque/libres/sport/pexels-8224655-1920.webp`, `photo:banque/libres/sport/pexels-8224721-1920.webp`, `photo:banque/libres/sport/pexels-8542681-1920.webp`, `photo:banque/libres/sport/pexels-8542685-1920.webp`, `photo:libre:pexels-21050394`, `photo:libre:pexels-23340244`, `photo:libre:pexels-32289808`, `photo:libre:pexels-32289819`, `photo:libre:pexels-32832523`, `photo:libre:pexels-38503110`, `photo:libre:pexels-38503137`, `photo:libre:pexels-38503139`, `photo:libre:pexels-5067813`, `photo:libre:pexels-5739111`, `photo:libre:pexels-5739115`, `photo:libre:pexels-8223918`, `photo:libre:pexels-8224483`, `photo:libre:pexels-8224655`, `photo:libre:pexels-8542681`
+- #accueil (25) : `photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp`, `photo:banque/libres/enfant/pexels-4964506-1920.webp`, `photo:banque/libres/ongles/pexels-13667247-1920.webp`, `photo:banque/libres/pedicurie/pixabay-6648076-1280.webp`, `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:banque/libres/senior/pexels-13641693-1920.webp`, `photo:banque/libres/senior/pexels-18326821-1920.webp`, `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:banque/libres/senior/pexels-4436289-1920.webp`, `photo:banque/libres/senior/pexels-5705065-1920.webp`, `photo:banque/libres/senior/pexels-8795587-1920.webp`, `photo:banque/libres/sport/pexels-26726127-1920.webp`, `photo:banque/libres/sport/pexels-8346655-1920.webp`, `photo:banque/libres/sport/pexels-8455408-1920.webp`, `photo:libre:pexels-13667247`, `photo:libre:pexels-26726127`, `photo:libre:pexels-4436289`, `photo:libre:pexels-4964506`, `photo:libre:pexels-5705065`, `photo:libre:pexels-8346655`, `photo:libre:pexels-8455408`, `photo:libre:pexels-8795587`, `photo:libre:pixabay-3084870`, `photo:libre:pixabay-6648076`, `photo:libre:pixabay-6762801`
+- #golf (21) : `composant:entete-anim:un-golf-alveoles` Animation d’en-tête : Golf : balle alvéolée posée sur son tee (à valider) (Élément), `composant:entete-anim:un-golf-green` Animation d’en-tête : Golf : green en lignes de niveau, drapeau, trajectoire (à valider) (Élément), `dessin:un-golf-alveoles:pedagogique` Golf : la balle alvéolée sur son tee (Pédagogique), `dessin:un-golf-green:pedagogique` Golf : green en lignes de niveau (Pédagogique), `photo:banque/libres/sport/pexels-11789585-1920.webp`, `photo:banque/libres/sport/pexels-1325662-1920.webp`, `photo:banque/libres/sport/pexels-1325681-1920.webp`, `photo:banque/libres/sport/pexels-15376335-1920.webp`, `photo:banque/libres/sport/pexels-29732064-1920.webp`, `photo:banque/libres/sport/pexels-5005974-1920.webp`, `photo:banque/libres/sport/pexels-5644641-1920.webp`, `photo:banque/libres/sport/pexels-5644647-1920.webp`, `photo:banque/libres/sport/pexels-5885314-1920.webp`, `photo:banque/libres/sport/pexels-9207649-1920.webp`, `photo:banque/libres/sport/pexels-9207754-1920.webp`, `photo:libre:pexels-11789585`, `photo:libre:pexels-1325662`, `photo:libre:pexels-5005974`, `photo:libre:pexels-6542395`, `photo:libre:pexels-9207649`, `photo:libre:pexels-9207754`
+- #kit-enfant (20) : `photo:banque/libres/enfant/pexels-17895637-1920.webp`, `photo:banque/libres/enfant/pexels-4964506-1920.webp`, `photo:banque/libres/enfant/pexels-4964518-1920.webp`, `photo:banque/libres/enfant/pexels-8457630-1920.webp`, `photo:banque/libres/enfant/pexels-8654776-1920.webp`, `photo:banque/libres/enfant/pexels-8813534-1920.webp`, `photo:banque/libres/enfant/pexels-8944025-1920.webp`, `photo:banque/libres/enfant/pixabay-3459001-1280.webp`, `photo:banque/libres/enfant/pixabay-6376162-1280.webp`, `photo:banque/libres/enfant/pixabay-8563301-1280.webp`, `photo:libre:pexels-17895637`, `photo:libre:pexels-4964506`, `photo:libre:pexels-4964518`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`, `photo:libre:pexels-8813534`, `photo:libre:pexels-8944025`, `photo:libre:pixabay-3459001`, `photo:libre:pixabay-6376162`, `photo:libre:pixabay-8563301`
+- #basket (18) : `composant:entete-anim:un-basket-arc` Animation d’en-tête : Basket : arc de tir en pointillé vers le cercle (à valider) (Élément), `dessin:un-basket-arc:pedagogique` Basket : arc de tir vers le cercle (Pédagogique), `photo:banque/libres/sport/pexels-11831855-1920.webp`, `photo:banque/libres/sport/pexels-15754795-1920.webp`, `photo:banque/libres/sport/pexels-18052798-1920.webp`, `photo:banque/libres/sport/pexels-34197288-1920.webp`, `photo:banque/libres/sport/pexels-34688570-1920.webp`, `photo:banque/libres/sport/pexels-6076409-1920.webp`, `photo:banque/libres/sport/pexels-7406289-1920.webp`, `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-11831855`, `photo:libre:pexels-15754795`, `photo:libre:pexels-18052798`, `photo:libre:pexels-34197288`, `photo:libre:pexels-34688570`, `photo:libre:pexels-6076409`, `photo:libre:pexels-7406289`, `photo:libre:pexels-8693990`
+- #cyclisme (18) : `composant:entete-anim:un-cyclisme-profil` Animation d’en-tête : Cyclisme : profil d’étape en lignes de niveau (à valider) (Élément), `dessin:un-cyclisme-profil:pedagogique` Cyclisme : profil d’étape en lignes de niveau (Pédagogique), `photo:banque/libres/sport/pexels-12593197-1920.webp`, `photo:banque/libres/sport/pexels-26726127-1920.webp`, `photo:banque/libres/sport/pexels-5836914-1920.webp`, `photo:banque/libres/sport/pixabay-1260814-1280.webp`, `photo:banque/libres/sport/pixabay-2465478-1280.webp`, `photo:banque/libres/sport/pixabay-2567727-1280.webp`, `photo:banque/libres/sport/pixabay-5507225-1280.webp`, `photo:banque/libres/sport/pixabay-7036709-1280.webp`, `photo:libre:pexels-12593197`, `photo:libre:pexels-26726127`, `photo:libre:pexels-5836914`, `photo:libre:pixabay-1260814`, `photo:libre:pixabay-2465478`, `photo:libre:pixabay-2567727`, `photo:libre:pixabay-5507225`, `photo:libre:pixabay-7036709`
 - #kit-senior (16) : `photo:banque/libres/senior/pexels-4436289-1920.webp`, `photo:banque/libres/senior/pexels-5619453-1920.webp`, `photo:banque/libres/senior/pexels-5705065-1920.webp`, `photo:banque/libres/senior/pexels-6128921-1920.webp`, `photo:banque/libres/senior/pexels-6787786-1920.webp`, `photo:banque/libres/senior/pexels-8795587-1920.webp`, `photo:banque/libres/senior/pexels-8899946-1920.webp`, `photo:banque/libres/senior/pexels-8972269-1920.webp`, `photo:libre:pexels-4436289`, `photo:libre:pexels-5619453`, `photo:libre:pexels-5705065`, `photo:libre:pexels-6128921`, `photo:libre:pexels-6787786`, `photo:libre:pexels-8795587`, `photo:libre:pexels-8899946`, `photo:libre:pexels-8972269`
+- #profession-podologue (16) : `photo:banque/libres/sport/pexels-12593197-1920.webp`, `photo:banque/libres/sport/pexels-26726127-1920.webp`, `photo:banque/libres/sport/pexels-5836914-1920.webp`, `photo:banque/libres/sport/pixabay-1260814-1280.webp`, `photo:banque/libres/sport/pixabay-2465478-1280.webp`, `photo:banque/libres/sport/pixabay-2567727-1280.webp`, `photo:banque/libres/sport/pixabay-5507225-1280.webp`, `photo:banque/libres/sport/pixabay-7036709-1280.webp`, `photo:libre:pexels-12593197`, `photo:libre:pexels-26726127`, `photo:libre:pexels-5836914`, `photo:libre:pixabay-1260814`, `photo:libre:pixabay-2465478`, `photo:libre:pixabay-2567727`, `photo:libre:pixabay-5507225`, `photo:libre:pixabay-7036709`
+- #serie-2d324616 (16) : `photo:banque/libres/sport/pexels-12593197-1920.webp`, `photo:banque/libres/sport/pexels-26726127-1920.webp`, `photo:banque/libres/sport/pexels-5836914-1920.webp`, `photo:banque/libres/sport/pixabay-1260814-1280.webp`, `photo:banque/libres/sport/pixabay-2465478-1280.webp`, `photo:banque/libres/sport/pixabay-2567727-1280.webp`, `photo:banque/libres/sport/pixabay-5507225-1280.webp`, `photo:banque/libres/sport/pixabay-7036709-1280.webp`, `photo:libre:pexels-12593197`, `photo:libre:pexels-26726127`, `photo:libre:pexels-5836914`, `photo:libre:pixabay-1260814`, `photo:libre:pixabay-2465478`, `photo:libre:pixabay-2567727`, `photo:libre:pixabay-5507225`, `photo:libre:pixabay-7036709`
+- #sport (16) : `photo:banque/libres/sport/pexels-12593197-1920.webp`, `photo:banque/libres/sport/pexels-26726127-1920.webp`, `photo:banque/libres/sport/pexels-5836914-1920.webp`, `photo:banque/libres/sport/pixabay-1260814-1280.webp`, `photo:banque/libres/sport/pixabay-2465478-1280.webp`, `photo:banque/libres/sport/pixabay-2567727-1280.webp`, `photo:banque/libres/sport/pixabay-5507225-1280.webp`, `photo:banque/libres/sport/pixabay-7036709-1280.webp`, `photo:libre:pexels-12593197`, `photo:libre:pexels-26726127`, `photo:libre:pexels-5836914`, `photo:libre:pixabay-1260814`, `photo:libre:pixabay-2465478`, `photo:libre:pixabay-2567727`, `photo:libre:pixabay-5507225`, `photo:libre:pixabay-7036709`
+- #velo (16) : `photo:banque/libres/sport/pexels-12593197-1920.webp`, `photo:banque/libres/sport/pexels-26726127-1920.webp`, `photo:banque/libres/sport/pexels-5836914-1920.webp`, `photo:banque/libres/sport/pixabay-1260814-1280.webp`, `photo:banque/libres/sport/pixabay-2465478-1280.webp`, `photo:banque/libres/sport/pixabay-2567727-1280.webp`, `photo:banque/libres/sport/pixabay-5507225-1280.webp`, `photo:banque/libres/sport/pixabay-7036709-1280.webp`, `photo:libre:pexels-12593197`, `photo:libre:pexels-26726127`, `photo:libre:pexels-5836914`, `photo:libre:pixabay-1260814`, `photo:libre:pixabay-2465478`, `photo:libre:pixabay-2567727`, `photo:libre:pixabay-5507225`, `photo:libre:pixabay-7036709`
+- #randonnee (14) : `photo:banque/libres/sport/pexels-10433251-1920.webp`, `photo:banque/libres/sport/pexels-14433788-1920.webp`, `photo:banque/libres/sport/pexels-1662163-1920.webp`, `photo:banque/libres/sport/pexels-20034412-1920.webp`, `photo:banque/libres/sport/pexels-29505010-1920.webp`, `photo:banque/libres/sport/pexels-31650329-1920.webp`, `photo:banque/libres/sport/pexels-31954808-1920.webp`, `photo:banque/libres/sport/pexels-32189248-1920.webp`, `photo:banque/libres/sport/pexels-37437282-1920.webp`, `photo:banque/libres/sport/pexels-4314202-1920.webp`, `photo:banque/libres/sport/pexels-4905055-1920.webp`, `photo:banque/libres/sport/pexels-5876412-1920.webp`, `photo:banque/libres/sport/pexels-8729056-1920.webp`, `photo:banque/libres/sport/pexels-8876565-1920.webp`
+- #serie-0c5e4bd1 (14) : `photo:banque/libres/enfant/pexels-4964506-1920.webp`, `photo:banque/libres/enfant/pexels-4964518-1920.webp`, `photo:banque/libres/enfant/pexels-8813534-1920.webp`, `photo:banque/libres/enfant/pexels-8944025-1920.webp`, `photo:banque/libres/enfant/pixabay-3459001-1280.webp`, `photo:banque/libres/enfant/pixabay-6376162-1280.webp`, `photo:banque/libres/enfant/pixabay-8563301-1280.webp`, `photo:libre:pexels-4964506`, `photo:libre:pexels-4964518`, `photo:libre:pexels-8813534`, `photo:libre:pexels-8944025`, `photo:libre:pixabay-3459001`, `photo:libre:pixabay-6376162`, `photo:libre:pixabay-8563301`
+- #page-sujet (13) : `photo:banque/libres/enfant/pexels-4964518-1920.webp`, `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:banque/libres/senior/pexels-6128921-1920.webp`, `photo:banque/libres/sport/pexels-5067774-1920.webp`, `photo:banque/libres/sport/pexels-5067813-1920.webp`, `photo:banque/libres/sport/pexels-5836914-1920.webp`, `photo:banque/libres/sport/pexels-8533786-1920.webp`, `photo:banque/libres/sport/pixabay-1189873-1280.webp`, `photo:libre:pexels-4964518`, `photo:libre:pexels-5836914`, `photo:libre:pexels-6128921`, `photo:libre:pexels-8533786`, `photo:libre:pixabay-1189873`
+- #serie-5d9c8b16 (12) : `photo:banque/libres/sport/pexels-31721671-1920.webp`, `photo:banque/libres/sport/pexels-8455408-1920.webp`, `photo:banque/libres/sport/pexels-8533786-1920.webp`, `photo:banque/libres/sport/pixabay-2759734-1280.webp`, `photo:banque/libres/sport/pixabay-5370071-1280.webp`, `photo:banque/libres/sport/pixabay-972715-1280.webp`, `photo:libre:pexels-31721671`, `photo:libre:pexels-8455408`, `photo:libre:pexels-8533786`, `photo:libre:pixabay-2759734`, `photo:libre:pixabay-5370071`, `photo:libre:pixabay-972715`
 - #serie-a91f6f13 (12) : `photo:banque/libres/senior/pexels-5619453-1920.webp`, `photo:banque/libres/senior/pexels-5705065-1920.webp`, `photo:banque/libres/senior/pexels-6128921-1920.webp`, `photo:banque/libres/senior/pexels-6787786-1920.webp`, `photo:banque/libres/senior/pexels-8899946-1920.webp`, `photo:banque/libres/senior/pexels-8972269-1920.webp`, `photo:libre:pexels-5619453`, `photo:libre:pexels-5705065`, `photo:libre:pexels-6128921`, `photo:libre:pexels-6787786`, `photo:libre:pexels-8899946`, `photo:libre:pexels-8972269`
-- #golf (7) : `photo:banque/libres/sport/pexels-1325681-1920.webp`, `photo:banque/libres/sport/pexels-15376335-1920.webp`, `photo:banque/libres/sport/pexels-29732064-1920.webp`, `photo:banque/libres/sport/pexels-5644641-1920.webp`, `photo:banque/libres/sport/pexels-5644647-1920.webp`, `photo:banque/libres/sport/pexels-5885314-1920.webp`, `photo:libre:pexels-6542395`
-- #kit-enfant (6) : `photo:banque/libres/enfant/pexels-17895637-1920.webp`, `photo:banque/libres/enfant/pexels-8457630-1920.webp`, `photo:banque/libres/enfant/pexels-8654776-1920.webp`, `photo:libre:pexels-17895637`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`
-- #podologie-enfant (6) : `photo:banque/libres/enfant/pexels-17895637-1920.webp`, `photo:banque/libres/enfant/pexels-8457630-1920.webp`, `photo:banque/libres/enfant/pexels-8654776-1920.webp`, `photo:libre:pexels-17895637`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`
-- #basketball (5) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-11831855`, `photo:libre:pexels-7406289`, `photo:libre:pexels-8693990`, `photo:libre:pixabay-858206`
+- #trail (12) : `photo:banque/libres/sport/pexels-10433251-1920.webp`, `photo:banque/libres/sport/pexels-20034412-1920.webp`, `photo:banque/libres/sport/pexels-29505010-1920.webp`, `photo:banque/libres/sport/pexels-31650329-1920.webp`, `photo:banque/libres/sport/pexels-31954808-1920.webp`, `photo:banque/libres/sport/pexels-32189248-1920.webp`, `photo:banque/libres/sport/pexels-33874841-1920.webp`, `photo:banque/libres/sport/pexels-33974329-1920.webp`, `photo:banque/libres/sport/pexels-4314202-1920.webp`, `photo:banque/libres/sport/pexels-5876412-1920.webp`, `photo:banque/libres/sport/pexels-8729056-1920.webp`, `photo:libre:pexels-33874841`
+- #podologie-du-sport (9) : `photo:banque/libres/sport/pexels-13124397-1920.webp`, `photo:banque/libres/sport/pexels-30307746-1920.webp`, `photo:banque/libres/sport/pexels-32289808-1920.webp`, `photo:banque/libres/sport/pexels-5067702-1920.webp`, `photo:banque/libres/sport/pexels-8693984-1920.webp`, `photo:banque/libres/sport/pixabay-5370071-1280.webp`, `photo:banque/libres/sport/pixabay-5507225-1280.webp`, `photo:libre:pixabay-5370071`, `photo:libre:pixabay-5507225`
+- #podologie-enfant (8) : `photo:banque/libres/enfant/pexels-17895637-1920.webp`, `photo:banque/libres/enfant/pexels-8457630-1920.webp`, `photo:banque/libres/enfant/pexels-8654776-1920.webp`, `photo:banque/libres/enfant/pixabay-3459001-1280.webp`, `photo:libre:pexels-17895637`, `photo:libre:pexels-8457630`, `photo:libre:pexels-8654776`, `photo:libre:pixabay-3459001`
+- #serie-885d9990 (8) : `photo:banque/libres/sport/pexels-8346655-1920.webp`, `photo:banque/libres/sport/pixabay-1189873-1280.webp`, `photo:banque/libres/sport/pixabay-5370071-1280.webp`, `photo:banque/libres/sport/pixabay-7288666-1280.webp`, `photo:libre:pexels-8346655`, `photo:libre:pixabay-1189873`, `photo:libre:pixabay-5370071`, `photo:libre:pixabay-7288666`
+- #basketball (7) : `photo:banque/libres/sport/pexels-11831855-1920.webp`, `photo:banque/libres/sport/pexels-7406289-1920.webp`, `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-11831855`, `photo:libre:pexels-7406289`, `photo:libre:pexels-8693990`, `photo:libre:pixabay-858206`
+- #danse (6) : `photo:banque/libres/sport/pexels-5150461-1920.webp`, `photo:banque/libres/sport/pexels-5154335-1920.webp`, `photo:banque/libres/sport/pexels-8462911-1920.webp`, `photo:libre:pexels-5150461`, `photo:libre:pexels-5154335`, `photo:libre:pexels-8462911`
 - #kit-pedicurie (5) : `photo:banque/libres/pedicurie/pixabay-6648076-1280.webp`, `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:libre:pixabay-3084870`, `photo:libre:pixabay-6648076`, `photo:libre:pixabay-6762801`
-- #page-sujet (5) : `photo:banque/libres/senior/pexels-38030071-1920.webp`, `photo:banque/libres/senior/pexels-6128921-1920.webp`, `photo:banque/libres/sport/pexels-5067774-1920.webp`, `photo:banque/libres/sport/pexels-5067813-1920.webp`, `photo:libre:pexels-6128921`
-- #podologie-du-sport (5) : `photo:banque/libres/sport/pexels-13124397-1920.webp`, `photo:banque/libres/sport/pexels-30307746-1920.webp`, `photo:banque/libres/sport/pexels-32289808-1920.webp`, `photo:banque/libres/sport/pexels-5067702-1920.webp`, `photo:banque/libres/sport/pexels-8693984-1920.webp`
+- #runner (5) : `photo:banque/libres/sport/pexels-33874841-1920.webp`, `photo:banque/libres/sport/pexels-33974329-1920.webp`, `photo:banque/libres/sport/pexels-5310739-1920.webp`, `photo:libre:pexels-33874841`, `photo:libre:pexels-5310739`
+- #kit-semelles (4) : `photo:banque/libres/semelles/pexels-8007589-1920.webp`, `photo:banque/libres/semelles/pixabay-434918-1280.webp`, `photo:libre:pexels-8007589`, `photo:libre:pixabay-434918`
+- #runner-feet (4) : `photo:banque/libres/sport/pexels-4920429-1920.webp`, `photo:banque/libres/sport/pexels-5310739-1920.webp`, `photo:libre:pexels-4920429`, `photo:libre:pexels-5310739`
+- #semelles-orthopediques (4) : `photo:banque/libres/enfant/pexels-8944025-1920.webp`, `photo:banque/libres/sport/pixabay-2465478-1280.webp`, `photo:libre:pexels-8944025`, `photo:libre:pixabay-2465478`
 - #soccer (4) : `photo:libre:pexels-14353976`, `photo:libre:pexels-32941076`, `photo:libre:pexels-9367717`, `photo:libre:pexels-9405210`
 - #child (3) : `photo:banque/libres/sport/pexels-11156954-1920.webp`, `photo:libre:pexels-11156954`, `photo:libre:pexels-12955703`
-- #runner (3) : `photo:banque/libres/sport/pexels-33974329-1920.webp`, `photo:libre:pexels-33874841`, `photo:libre:pexels-5310739`
 - #ballet (2) : `photo:libre:pixabay-5548985`, `photo:libre:pixabay-6668583`
-- #basket (2) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-8693990`
+- #bilan-podologique (2) : `photo:banque/libres/semelles/pixabay-434918-1280.webp`, `photo:libre:pixabay-434918`
 - #cors-durillons (2) : `photo:banque/libres/senior/pexels-8899946-1920.webp`, `photo:libre:pexels-8899946`
 - #cyclists (2) : `photo:libre:pexels-5840717`, `photo:libre:pexels-5840726`
+- #douleur-talon (2) : `photo:banque/libres/sport/pixabay-2759734-1280.webp`, `photo:libre:pixabay-2759734`
 - #handball (2) : `photo:libre:pixabay-1977372`, `photo:libre:pixabay-6143052`
 - #kit-ongles (2) : `photo:banque/libres/ongles/pexels-13667247-1920.webp`, `photo:libre:pexels-13667247`
-- #kit-sport (2) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-8693990`
 - #laser (2) : `dessin:laser:pedagogique` laser (Pédagogique), `dessin:laser:releve` laser (Relevé)
+- #nature (2) : `photo:banque/libres/sport/pexels-33874841-1920.webp`, `photo:libre:pexels-33874841`
 - #ongles-epais (2) : `photo:banque/libres/senior/pexels-8972269-1920.webp`, `photo:libre:pexels-8972269`
 - #orthonyxie (2) : `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp`, `photo:libre:pixabay-6762801`
 - #podologie-du-senior (2) : `photo:banque/libres/senior/pexels-6787786-1920.webp`, `photo:libre:pexels-6787786`
 - #racetrack (2) : `photo:banque/libres/sport/pexels-5067702-1920.webp`, `photo:libre:pexels-5067702`
-- #runner-feet (2) : `photo:libre:pexels-4920429`, `photo:libre:pexels-5310739`
 - #serie-10642d08 (2) : `photo:banque/libres/sport/pexels-8693990-1920.webp`, `photo:libre:pexels-8693990`
+- #serie-3aa9678a (2) : `photo:banque/libres/semelles/pexels-8007589-1920.webp`, `photo:libre:pexels-8007589`
+- #serie-cef6a879 (2) : `photo:banque/libres/semelles/pixabay-434918-1280.webp`, `photo:libre:pixabay-434918`
 - #skiing (2) : `photo:banque/libres/sport/pexels-11156954-1920.webp`, `photo:libre:pexels-11156954`
-- #trail (2) : `photo:banque/libres/sport/pexels-33974329-1920.webp`, `photo:libre:pexels-33874841`
+- #sprint (2) : `photo:banque/libres/sport/pexels-23371782-1920.webp`, `photo:banque/libres/sport/pexels-3763867-1920.webp`
+- #verrues-plantaires (2) : `photo:banque/libres/enfant/pixabay-8563301-1280.webp`, `photo:libre:pixabay-8563301`
 - #badminton (1) : `photo:libre:pixabay-2647068`
 - #ballerinas (1) : `photo:libre:pexels-6716655`
 - #bicycle (1) : `photo:banque/libres/sport/pexels-5687398-1920.webp`
@@ -295,7 +319,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - #hiking (1) : `photo:libre:pexels-7787409`
 - #image-generee (1) : `photo:banque/ia/diabete/ia-1eef7239f1881f85-1280.webp`
 - #mountain (1) : `photo:libre:pexels-6013849`
-- #nature (1) : `photo:libre:pexels-33874841`
+- #neige (1) : `photo:banque/libres/sport/pexels-20034412-1920.webp`
 - #nordic (1) : `photo:banque/libres/senior/pexels-8795584-1920.webp`
 - #orthoplastie (1) : `dessin:orthoplastie:releve` orthoplastie (Relevé)
 - #outdoor (1) : `photo:libre:pexels-5840726`
@@ -303,7 +327,6 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - #racing (1) : `photo:banque/libres/sport/pexels-35464439-1920.webp`
 - #rugby (1) : `photo:banque/libres/sport/pexels-39703728-1920.webp`
 - #senior (1) : `photo:banque/libres/senior/pexels-8795584-1920.webp`
-- #sprint (1) : `photo:banque/libres/sport/pexels-23371782-1920.webp`
 - #woman (1) : `photo:banque/libres/senior/pexels-8795584-1920.webp`
 
 ## Sujets modifiés par Paul
@@ -328,12 +351,21 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `biblio:POD-AT-0009:dorsale:incarne-sites` Gros orteil vu de dessus (ongle détaillé) (POD-AT-0009) : ajouté à Ongles
 - `biblio:POD-AT-0010` Ongle du gros orteil en coupe transversale (POD-AT-0010) : ajouté à Ongles
 - `biblio:POD-AT-0010:coupe-transversale:incarne` Ongle du gros orteil en coupe transversale (POD-AT-0010) : ajouté à Ongles
+- `composant:entete-anim:un-basket-arc` Animation d’en-tête : Basket : arc de tir en pointillé vers le cercle (à valider) (Élément) : ajouté à Sport
+- `composant:entete-anim:un-cyclisme-profil` Animation d’en-tête : Cyclisme : profil d’étape en lignes de niveau (à valider) (Élément) : ajouté à Sport
+- `composant:entete-anim:un-diabete-miroir` Animation d’en-tête : Diabète : inspection au miroir, bleus doux (à valider) (Élément) : ajouté à Diabète
+- `composant:entete-anim:un-golf-alveoles` Animation d’en-tête : Golf : balle alvéolée posée sur son tee (à valider) (Élément) : ajouté à Sport
+- `composant:entete-anim:un-golf-green` Animation d’en-tête : Golf : green en lignes de niveau, drapeau, trajectoire (à valider) (Élément) : ajouté à Sport
+- `composant:entete-anim:un-tennis-court` Animation d’en-tête : Tennis : court en perspective douce, balle dans le carré (à valider) (Élément) : ajouté à Sport
+- `composant:entete-anim:un-tennis-rebond` Animation d’en-tête : Tennis : la balle et son rebond (à valider) (Élément) : ajouté à Sport
+- `dessin:analyse-course:pedagogique` Analyse de la foulée (course à pied) (Pédagogique) : ajouté à Sport
 - `dessin:analyse:pedagogique` analyse (Pédagogique) : ajouté à Sport, Semelles, Général
 - `dessin:analyse:releve` analyse (Relevé) : ajouté à Sport, Semelles, Pédicurie, Général
 - `dessin:appuis:pedagogique` appuis (Pédagogique) : ajouté à Général
 - `dessin:appuis:releve` appuis (Relevé) : ajouté à Semelles
 - `dessin:arriere-pied:releve` arriere-pied (Relevé) : ajouté à Enfants
 - `dessin:cors-durillons:releve` cors-durillons (Relevé) : ajouté à Pédicurie
+- `dessin:diabete-chaussettes:releve` Chaussettes adaptées (Relevé) : ajouté à Diabète
 - `dessin:diabete:pedagogique` diabete (Pédagogique) : ajouté à Diabète
 - `dessin:equilibre:pedagogique` equilibre (Pédagogique) : ajouté à Seniors
 - `dessin:equilibre:releve` equilibre (Relevé) : ajouté à Seniors
@@ -343,6 +375,14 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `dessin:orthoplastie:releve` orthoplastie (Relevé) : ajouté à Pédicurie
 - `dessin:senior:pedagogique` senior (Pédagogique) : ajouté à Seniors
 - `dessin:sport:pedagogique` sport (Pédagogique) : ajouté à Sport
+- `dessin:un-basket-arc:pedagogique` Basket : arc de tir vers le cercle (Pédagogique) : ajouté à Sport
+- `dessin:un-cyclisme-profil:pedagogique` Cyclisme : profil d’étape en lignes de niveau (Pédagogique) : ajouté à Sport
+- `dessin:un-diabete-miroir:pedagogique` Diabète : inspection au miroir (Pédagogique) : ajouté à Diabète
+- `dessin:un-diabete-sensibilite:pedagogique` Diabète : la plante et ses points de sensibilité (Pédagogique) : ajouté à Diabète
+- `dessin:un-golf-alveoles:pedagogique` Golf : la balle alvéolée sur son tee (Pédagogique) : ajouté à Sport
+- `dessin:un-golf-green:pedagogique` Golf : green en lignes de niveau (Pédagogique) : ajouté à Sport
+- `dessin:un-tennis-court:pedagogique` Tennis : le court en perspective douce (Pédagogique) : ajouté à Sport
+- `dessin:un-tennis-rebond:pedagogique` Tennis : la balle et son rebond (Pédagogique) : ajouté à Sport
 - `dessin:voutes:pedagogique` voutes (Pédagogique) : ajouté à Semelles
 - `dessin:voutes:releve` voutes (Relevé) : ajouté à Semelles
 - `heros:diabete:releve` Pied diabétique (Relevé) : ajouté à Diabète
@@ -390,6 +430,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/diabete/pexels-8965129-1920.webp` : ajouté à Diabète
 - `photo:banque/libres/diabete/pexels-8965131-1920.webp` : ajouté à Diabète
 - `photo:banque/libres/diabete/pexels-8965149-1920.webp` : ajouté à Diabète
+- `photo:banque/libres/enfant/pexels-132699-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-17895637-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-31663897-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-31663899-1920.webp` : ajouté à Enfants
@@ -397,13 +438,22 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/enfant/pexels-35831748-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-36738012-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-37244956-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-37290957-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-4964358-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-4964506-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-4964518-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-5278784-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-5445464-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-7491088-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-7491099-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-7946980-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-8457630-1920.webp` : ajouté à Enfants
 - `photo:banque/libres/enfant/pexels-8654776-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-8813534-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pexels-8944025-1920.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pixabay-3459001-1280.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pixabay-6376162-1280.webp` : ajouté à Enfants
+- `photo:banque/libres/enfant/pixabay-8563301-1280.webp` : ajouté à Enfants
 - `photo:banque/libres/ongles/pexels-13667247-1920.webp` : ajouté à Ongles
 - `photo:banque/libres/ongles/pexels-13707062-1920.webp` : ajouté à Ongles
 - `photo:banque/libres/ongles/pexels-5619466-1920.webp` : ajouté à Ongles
@@ -412,11 +462,14 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/ongles/pexels-9486635-1920.webp` : ajouté à Ongles
 - `photo:banque/libres/pedicurie/pixabay-6648076-1280.webp` : ajouté à Enfants, Pédicurie
 - `photo:banque/libres/pedicurie/pixabay-6762801-1280.webp` : ajouté à Pédicurie
+- `photo:banque/libres/semelles/pexels-8007589-1920.webp` : ajouté à Semelles
+- `photo:banque/libres/semelles/pixabay-434918-1280.webp` : ajouté à Semelles
 - `photo:banque/libres/senior/pexels-13641693-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-14177316-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-16148890-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-16901400-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-18326821-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-38029990-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-38030071-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-4436289-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-5619453-1920.webp` : ajouté à Seniors
@@ -424,43 +477,114 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:banque/libres/senior/pexels-6128921-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-6787441-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-6787786-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-7265307-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-7938830-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8795391-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8795584-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8795587-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8795589-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/senior/pexels-8796067-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8899946-1920.webp` : ajouté à Seniors
 - `photo:banque/libres/senior/pexels-8972269-1920.webp` : ajouté à Seniors
+- `photo:banque/libres/sport/pexels-10433251-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-11156954-1920.webp` : ajouté à Sport, Enfants
+- `photo:banque/libres/sport/pexels-11789585-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-11831855-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-12593197-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-12918252-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-13124397-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-1325662-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-1325681-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-15326698-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-15376335-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-15754795-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-1750045-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-18052798-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-20034412-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-20186409-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-21050394-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-23340244-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-23371782-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-23379595-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-26726127-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-29505010-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-29596317-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-29732064-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-30307746-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-30476468-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-31588232-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-31650329-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-31721671-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-31954808-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-32189248-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-32289808-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-32832523-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-33874841-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-33974329-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-33995258-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-34197288-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-34688570-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-35464439-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-3601094-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-3601098-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-3756165-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-3763867-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-39703728-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-4314202-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-4379226-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-4379287-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-4379291-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-4498570-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-4920429-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-5005974-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-5036845-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-5067702-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-5067774-1920.webp` : ajouté à Sport, Seniors
 - `photo:banque/libres/sport/pexels-5067813-1920.webp` : ajouté à Sport, Seniors
+- `photo:banque/libres/sport/pexels-5150461-1920.webp` : ajouté à Sport, Enfants
+- `photo:banque/libres/sport/pexels-5154335-1920.webp` : ajouté à Sport, Enfants
+- `photo:banque/libres/sport/pexels-5310739-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-5310888-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-5644641-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-5644647-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-5687398-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-5687491-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-5739111-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-5739115-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-5836914-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-5876412-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-5885314-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-601177-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-6076409-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-7406289-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-7880214-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8032734-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8223918-1920.webp` : ajouté à Sport, Enfants
+- `photo:banque/libres/sport/pexels-8224483-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8224655-1920.webp` : ajouté à Sport, Enfants
 - `photo:banque/libres/sport/pexels-8224721-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8346655-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8455408-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8462911-1920.webp` : ajouté à Sport, Enfants
+- `photo:banque/libres/sport/pexels-8533786-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8542681-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-8542685-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8692281-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-8693984-1920.webp` : ajouté à Sport
 - `photo:banque/libres/sport/pexels-8693990-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-8729056-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-9207649-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pexels-9207754-1920.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-1189873-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-1260814-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-2465478-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-2567727-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-2759734-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-5370071-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-5507225-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-7036709-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-7288666-1280.webp` : ajouté à Sport
+- `photo:banque/libres/sport/pixabay-972715-1280.webp` : ajouté à Sport
 - `photo:enfant-bebe` enfant-bebe : ajouté à Enfants
 - `photo:enfant-chaussures` enfant-chaussures : ajouté à Enfants
 - `photo:enfant-herbe` enfant-herbe : ajouté à Enfants
@@ -471,6 +595,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-11370607` : ajouté à Sport
 - `photo:libre:pexels-11789585` : ajouté à Sport
 - `photo:libre:pexels-11831855` : ajouté à Sport
+- `photo:libre:pexels-12593197` : ajouté à Sport
 - `photo:libre:pexels-12955703` : ajouté à Enfants, Général
 - `photo:libre:pexels-13124397` : ajouté à Sport
 - `photo:libre:pexels-1325662` : ajouté à Sport
@@ -493,6 +618,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-21050394` : ajouté à Sport
 - `photo:libre:pexels-23340244` : ajouté à Sport
 - `photo:libre:pexels-25048028` : ajouté à Sport
+- `photo:libre:pexels-26726127` : ajouté à Sport
 - `photo:libre:pexels-27509165` : ajouté à Sport
 - `photo:libre:pexels-27587778` : ajouté à Enfants
 - `photo:libre:pexels-28271639` : ajouté à Sport
@@ -502,6 +628,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-30736657` : ajouté à Sport
 - `photo:libre:pexels-31348067` : ajouté à Sport
 - `photo:libre:pexels-31588232` : ajouté à Sport
+- `photo:libre:pexels-31721671` : ajouté à Sport
 - `photo:libre:pexels-32289808` : ajouté à Sport
 - `photo:libre:pexels-32289819` : ajouté à Sport
 - `photo:libre:pexels-32832523` : ajouté à Sport
@@ -538,6 +665,8 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-4498570` : ajouté à Sport
 - `photo:libre:pexels-4775192` : ajouté à Sport
 - `photo:libre:pexels-4920429` : ajouté à Sport
+- `photo:libre:pexels-4964506` : ajouté à Enfants
+- `photo:libre:pexels-4964518` : ajouté à Enfants
 - `photo:libre:pexels-4966368` : ajouté à Sport
 - `photo:libre:pexels-5005974` : ajouté à Sport
 - `photo:libre:pexels-5036845` : ajouté à Sport
@@ -545,7 +674,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-5067774` : ajouté à Sport, Seniors
 - `photo:libre:pexels-5067813` : ajouté à Sport, Seniors
 - `photo:libre:pexels-5150456` : ajouté à Sport
-- `photo:libre:pexels-5150461` : ajouté à Sport
+- `photo:libre:pexels-5150461` : ajouté à Sport, Enfants
 - `photo:libre:pexels-5150481` : ajouté à Sport
 - `photo:libre:pexels-5154335` : ajouté à Sport, Enfants
 - `photo:libre:pexels-5278784` : ajouté à Enfants
@@ -560,6 +689,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-5735756` : ajouté à Sport
 - `photo:libre:pexels-5739111` : ajouté à Sport
 - `photo:libre:pexels-5739115` : ajouté à Sport
+- `photo:libre:pexels-5836914` : ajouté à Sport
 - `photo:libre:pexels-5840717` : ajouté à Sport
 - `photo:libre:pexels-5840726` : ajouté à Sport
 - `photo:libre:pexels-601177` : ajouté à Sport
@@ -580,6 +710,7 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-7438732` : ajouté à Sport
 - `photo:libre:pexels-7787409` : ajouté à Sport, Seniors
 - `photo:libre:pexels-7880214` : ajouté à Sport
+- `photo:libre:pexels-8007589` : ajouté à Semelles
 - `photo:libre:pexels-8032734` : ajouté à Sport
 - `photo:libre:pexels-8128016` : ajouté à Seniors
 - `photo:libre:pexels-8223918` : ajouté à Sport, Enfants
@@ -587,11 +718,14 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-8224655` : ajouté à Sport, Enfants
 - `photo:libre:pexels-8327662` : ajouté à Seniors
 - `photo:libre:pexels-8337517` : ajouté à Sport
+- `photo:libre:pexels-8346655` : ajouté à Sport
 - `photo:libre:pexels-8404156` : ajouté à Sport
 - `photo:libre:pexels-8454950` : ajouté à Sport
+- `photo:libre:pexels-8455408` : ajouté à Sport
 - `photo:libre:pexels-8457630` : ajouté à Enfants
 - `photo:libre:pexels-8462769` : ajouté à Sport
-- `photo:libre:pexels-8462911` : ajouté à Sport
+- `photo:libre:pexels-8462911` : ajouté à Sport, Enfants
+- `photo:libre:pexels-8533786` : ajouté à Sport
 - `photo:libre:pexels-8542681` : ajouté à Sport
 - `photo:libre:pexels-8654776` : ajouté à Enfants
 - `photo:libre:pexels-8680763` : ajouté à Sport
@@ -602,8 +736,10 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-8795603` : ajouté à Seniors
 - `photo:libre:pexels-8796067` : ajouté à Seniors
 - `photo:libre:pexels-880497` : ajouté à Sport
+- `photo:libre:pexels-8813534` : ajouté à Enfants
 - `photo:libre:pexels-8899946` : ajouté à Seniors
 - `photo:libre:pexels-8939885` : ajouté à Seniors
+- `photo:libre:pexels-8944025` : ajouté à Enfants
 - `photo:libre:pexels-8972269` : ajouté à Seniors
 - `photo:libre:pexels-9207649` : ajouté à Sport
 - `photo:libre:pexels-9207753` : ajouté à Sport
@@ -612,31 +748,45 @@ Formule : moyenne lissée = (somme + K × moyenne générale) / (n + K), K = 10 
 - `photo:libre:pexels-9367717` : ajouté à Sport
 - `photo:libre:pexels-9405210` : ajouté à Sport
 - `photo:libre:pexels-9648681` : ajouté à Sport, Enfants
+- `photo:libre:pixabay-1189873` : ajouté à Sport
+- `photo:libre:pixabay-1260814` : ajouté à Sport
 - `photo:libre:pixabay-1977372` : ajouté à Sport, Enfants
+- `photo:libre:pixabay-2465478` : ajouté à Sport
+- `photo:libre:pixabay-2567727` : ajouté à Sport
 - `photo:libre:pixabay-256857` : ajouté à Enfants
 - `photo:libre:pixabay-2579144` : ajouté à Enfants
 - `photo:libre:pixabay-2647068` : ajouté à Sport
 - `photo:libre:pixabay-2717347` : ajouté à Enfants
 - `photo:libre:pixabay-2745973` : ajouté à Sport
+- `photo:libre:pixabay-2759734` : ajouté à Sport
 - `photo:libre:pixabay-3084870` : ajouté à Pédicurie
 - `photo:libre:pixabay-3437942` : ajouté à Sport
 - `photo:libre:pixabay-3445281` : ajouté à Sport
+- `photo:libre:pixabay-3459001` : ajouté à Enfants
 - `photo:libre:pixabay-3634302` : ajouté à Sport
 - `photo:libre:pixabay-3640769` : ajouté à Sport
 - `photo:libre:pixabay-4077353` : ajouté à Enfants
 - `photo:libre:pixabay-4346329` : ajouté à Seniors
 - `photo:libre:pixabay-4346330` : ajouté à Seniors
+- `photo:libre:pixabay-434918` : ajouté à Semelles
 - `photo:libre:pixabay-5357721` : ajouté à Seniors
+- `photo:libre:pixabay-5370071` : ajouté à Sport
+- `photo:libre:pixabay-5507225` : ajouté à Sport
 - `photo:libre:pixabay-5548985` : ajouté à Sport
 - `photo:libre:pixabay-5593945` : ajouté à Sport, Enfants
 - `photo:libre:pixabay-6143052` : ajouté à Sport
+- `photo:libre:pixabay-6376162` : ajouté à Enfants
 - `photo:libre:pixabay-6648076` : ajouté à Enfants, Pédicurie
 - `photo:libre:pixabay-6668583` : ajouté à Sport
 - `photo:libre:pixabay-6762801` : ajouté à Pédicurie
 - `photo:libre:pixabay-6823431` : ajouté à Enfants
+- `photo:libre:pixabay-7036709` : ajouté à Sport
 - `photo:libre:pixabay-7208989` : ajouté à Sport
+- `photo:libre:pixabay-7288666` : ajouté à Sport
 - `photo:libre:pixabay-8269274` : ajouté à Seniors
+- `photo:libre:pixabay-8563301` : ajouté à Enfants
 - `photo:libre:pixabay-858206` : ajouté à Sport, Enfants
+- `photo:libre:pixabay-972715` : ajouté à Sport
 - `photo:sport-chaussure` sport-chaussure : ajouté à Sport
 - `photo:sport-course` sport-course : ajouté à Sport
 - `picto:hallux-ongle` Gros orteil et ongle (hallux-ongle) : ajouté à Pédicurie
@@ -926,7 +1076,7 @@ Renforts des ingrédients (recettes notées) :
 
 ## Retours mobile
 
-Notes de choix : 0 données sur le rendu mobile, 9 sur l'ordinateur, 1555 sur les deux (ou antérieures). Une note mobile pèse 1.25 dans l'apprentissage (mobile d'abord).
+Notes de choix : 187 données sur le rendu mobile, 12 sur l'ordinateur, 1857 sur les deux (ou antérieures). Une note mobile pèse 1.25 dans l'apprentissage (mobile d'abord).
 
 ### Rendu mobile à revoir
 
@@ -984,6 +1134,8 @@ Corriger chaque zone et la mentionner dans retours/CHANGEMENTS.md (PNG avec les 
   - zone 1 en bas : à revoir — « supprimer l'encadré autour de ces images. Faire des formes plus organiques »
 - Accès, stationnement (Éditorial) (Direction C — Éditorial) (`picto:stationnement@direction-c`) — 2026-10-08 · 2★ · les-deux · empreinte 62abe6a6
   - zone 1 à droite : à revoir — « on voit rien »
+- Jeu de détails : Classique sobre (Détails) (`details:jeu:classique-sobre`) — 2026-10-10 · 2★ · mobile · empreinte 67bf7e9f
+  - zone 1 au centre (mobile) : à revoir — « Ça colle pas… »
 - Thème complet `f9170983d8c87e66` — 2026-10-07 · 3★ · les-deux
   - zone 1 à droite : à revoir — « on ne sais pas si ce titre correspond a l'image de gauche »
   - zone 2 en bas (mobile) : à revoir — « Boutons pas positionnes en bas de page »
@@ -1002,13 +1154,13 @@ Aucune suggestion refusée pour l’instant.
 
 ## Duels : classements par sujet
 
-1189 duel(s) : 1158 à une seule dimension, 31 libre(s) ; A 376, B 422, égalité 345, les deux mauvais 46.
+1203 duel(s) : 1172 à une seule dimension, 31 libre(s) ; A 381, B 431, égalité 345, les deux mauvais 46.
 Juge : d’accord avec Paul sur 7/22 duels (32 %) — Thèmes complets 1/10, Illustrations et héros 5/9, Photos 1/3.
 Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture : packages/core/src/duels.ts.
 
-### Meilleures paires de polices — Diabète — 38 duel(s)
+### Meilleures paires de polices — Diabète — 43 duel(s)
 
-- Polices : Didone élégante (Typographie) (`typo:police:didone`) : 1582 ± 85 (n 16 : 12 V, 4 D, 0 N)
+- Polices : Didone élégante (Typographie) (`typo:police:didone`) : 1610 ± 81 (n 21 : 17 V, 4 D, 0 N)
 - `police=affiche` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - `police=didone` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
 - `police=douce` : 1551 ± 157 (n 1 : 1 V, 0 D, 0 N)
@@ -1421,6 +1573,12 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - Traitement des photos « Traitement du modèle » (Traitement des photos) (`effets:photos-modele`) : 1440 ± 103 (n 9 : 3 V, 5 D, 0 N, 1 « mauvais »)
 - Traitement des photos « Noir et blanc + accent + grain » (Traitement des photos) (`effets:photos-nb-accent-grain`) : 1418 ± 155 (n 1 : 0 V, 1 D, 0 N)
 - Traitement des photos « Mat éditorial + grain » (Traitement des photos) (`effets:photos-mat-grain`) : 1364 ± 143 (n 2 : 0 V, 2 D, 0 N)
+
+### Meilleures contrastes d’illustration — Enfants — 9 duel(s)
+
+- `dessin:verrue:pedagogique@contraste=fort` : 1681 ± 130 (n 5 : 5 V, 0 D, 0 N)
+- `dessin:verrue:pedagogique@contraste=normal` : 1515 ± 114 (n 7 : 4 V, 3 D, 0 N)
+- `dessin:verrue:pedagogique@contraste=doux` : 1305 ± 126 (n 6 : 0 V, 6 D, 0 N)
 
 ### Meilleures photos — Seniors — 8 duel(s)
 
@@ -2556,6 +2714,8 @@ Classement Bradley-Terry (Elo ± incertitude) ; « n » = duels joués. Lecture 
 - `typo=echelle:modeste` : 1432 ± 154 (n 1 : 0 V, 1 D, 0 N)
 
 Effet sur le générateur (renfortsDuels, ±0,5 ★ au plus, cumulé aux notes dans la limite de ±1 ★) :
+- `dessin:verrue:pedagogique@contraste=doux` -0,5 ★
+- `dessin:verrue:pedagogique@contraste=fort` +0,5 ★
 - `effets:photos-nb-accent-grain` -0,5 ★
 - `gamme:ardoise` -0,5 ★
 - `gamme:prune` -0,5 ★
@@ -2566,24 +2726,21 @@ Effet sur le générateur (renfortsDuels, ±0,5 ★ au plus, cumulé aux notes d
 - `police=ronde` +0,5 ★
 - `police=serif-fine` -0,5 ★
 - `structure:accueil:equipe-haut-rangees` -0,5 ★
-- `typo:police:mono` +0,5 ★
-- `typo:police:publique` -0,5 ★
 
 ## Couverture par sujet
 
 | Sujet | Héros | Illustr. relevé | Illustr. illustrations douces | Illustr. trait fin | Icônes | Photos importées | Photos intégrées | Animations validées |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Sport | 9 | 13 | 25 | 25 | 16 | 50 | 4 | 0/2 |
-| Diabète | 18 | 15 | 18 | 7 | 6 | 12 | 0 | 0/2 |
+| Sport | 9 | 16 | 37 | 25 | 16 | 100 | 4 | 0/2 |
+| Diabète | 18 | 15 | 20 | 7 | 6 | 12 | 0 | 0/2 |
 | Ongles | 9 | 6 | 6 | 6 | 5 | 6 | 2 | 0/1 |
-| Enfants | 12 | 13 | 12 | 12 | 3 | 17 | 6 | 0/3 |
-| Seniors | 12 | 7 | 9 | 7 | 5 | 21 | 2 | 0/1 |
-| Semelles | 9 | 12 | 12 | 11 | 3 | 0 | 4 | 0/2 |
+| Enfants | 12 | 13 | 12 | 12 | 3 | 27 | 6 | 0/3 |
+| Seniors | 12 | 7 | 12 | 7 | 5 | 20 | 2 | 0/1 |
+| Semelles | 9 | 12 | 13 | 11 | 3 | 2 | 4 | 0/2 |
 | Pédicurie | 12 | 8 | 9 | 8 | 5 | 2 | 2 | 0/1 |
 | Général | 0 | 1 | 2 | 2 | 3 | 0 | 5 | 0/1 |
 
 Manques (tri : /admin/retours/tri?sujet=<sujet>&famille=<famille>) :
-- **Semelles : 0 photo importée** — tri : `?sujet=semelles&famille=photos`
 - **Général : 0 photo importée** — tri : `?sujet=general&famille=photos`
 - Sport : aucune animation validée (2 en attente) — tri : `?sujet=sport&famille=animations`
 - Diabète : aucune animation validée (2 en attente) — tri : `?sujet=diabete&famille=animations`

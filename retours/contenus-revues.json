@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "cle": "contenu:podologue:article:chaussures-securite-metiers-debout",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "e4fc1faa",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:article:chaussures-a-talons-conseils",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "7dfe540a",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:premier-rendez-vous",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "8a171d17",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:coupe-ongles",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "4de55f0f",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:cors-durillons",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "469b1721",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:hydratation-pieds",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "98df9c0d",
+    "jour": "2026-10-10"
+  }
+]

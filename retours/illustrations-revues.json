@@ -1783,5 +1783,229 @@
     "commentaire": "Accepté (Arrivages)",
     "empreinte": null,
     "jour": "2026-10-09"
+  },
+  {
+    "cle": "picto:chaussettes",
+    "statut": "retire",
+    "commentaire": "Refusé (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-golf-alveoles",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-golf-green",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-golf-alveoles:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-golf-green:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-tennis-court",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-tennis-rebond",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-tennis-court:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-tennis-rebond:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:analyse-course:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:sport-randonnee:pedagogique",
+    "statut": "valide",
+    "commentaire": "Validé pour les sites (À valider, geste de Paul)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:trail-montagne:pedagogique",
+    "statut": "valide",
+    "commentaire": "Validé pour les sites (À valider, geste de Paul)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:trail-montagne:releve",
+    "statut": "valide",
+    "commentaire": "Validé pour les sites (À valider, geste de Paul)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "picto:sport-randonnee",
+    "statut": "valide",
+    "commentaire": "Validé pour les sites (À valider, geste de Paul)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-diabete-miroir",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-diabete-sensibilite",
+    "statut": "a_retravailler",
+    "commentaire": "la forme du pied n'est pas harmonieuse...",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-diabete-miroir:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-diabete-sensibilite:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:diabete-chaussettes:releve",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-cyclisme-profil",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-cyclisme-roue",
+    "statut": "a_retravailler",
+    "commentaire": "Pas OK (À valider)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-cyclisme-profil:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-cyclisme-roue:pedagogique",
+    "statut": "a_retravailler",
+    "commentaire": "Pas OK (À valider)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-basket-arc",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-basket-terrain",
+    "statut": "a_retravailler",
+    "commentaire": "Pas OK (À valider)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-basket-arc:pedagogique",
+    "statut": "accepte",
+    "commentaire": "Accepté (Arrivages)",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:article:chaussures-securite-metiers-debout",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "e4fc1faa",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:article:chaussures-a-talons-conseils",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "7dfe540a",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:premier-rendez-vous",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "8a171d17",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:coupe-ongles",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "4de55f0f",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:cors-durillons",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "469b1721",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:hydratation-pieds",
+    "statut": "valide",
+    "commentaire": "Accepté : bon pour publication (Arrivages)",
+    "empreinte": "98df9c0d",
+    "jour": "2026-10-10"
   }
 ]

@@ -120,6 +120,66 @@
     "jour": "2026-10-09"
   },
   {
+    "cle": "composant:entete-anim:un-basket-arc",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-basket-terrain",
+    "statut": "a_retravailler",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-cyclisme-profil",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-cyclisme-roue",
+    "statut": "a_retravailler",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-diabete-miroir",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-diabete-sensibilite",
+    "statut": "a_retravailler",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-golf-alveoles",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-golf-green",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-tennis-court",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "composant:entete-anim:un-tennis-rebond",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
     "cle": "composant:fond-heros:empreintes",
     "statut": "accepte",
     "empreinte": null,
@@ -166,6 +226,48 @@
     "statut": "accepte",
     "empreinte": null,
     "jour": "2026-10-09"
+  },
+  {
+    "cle": "contenu:podologue:article:chaussures-a-talons-conseils",
+    "statut": "valide",
+    "empreinte": "7dfe540a",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:article:chaussures-securite-metiers-debout",
+    "statut": "valide",
+    "empreinte": "e4fc1faa",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:cors-durillons",
+    "statut": "valide",
+    "empreinte": "469b1721",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:coupe-ongles",
+    "statut": "valide",
+    "empreinte": "4de55f0f",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:hydratation-pieds",
+    "statut": "valide",
+    "empreinte": "98df9c0d",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "contenu:podologue:conseil:premier-rendez-vous",
+    "statut": "valide",
+    "empreinte": "8a171d17",
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:analyse-course:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
   },
   {
     "cle": "dessin:analyse:pedagogique",
@@ -231,7 +333,7 @@
     "cle": "dessin:diabete-chaussettes:releve",
     "statut": "accepte",
     "empreinte": null,
-    "jour": "2026-10-09"
+    "jour": "2026-10-10"
   },
   {
     "cle": "dessin:diabete-chaussons:pedagogique",
@@ -432,6 +534,12 @@
     "jour": "2026-10-07"
   },
   {
+    "cle": "dessin:sport-randonnee:pedagogique",
+    "statut": "valide",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
     "cle": "dessin:sport-ski:pedagogique",
     "statut": "a_revoir",
     "empreinte": "4fe2ce7b",
@@ -472,6 +580,72 @@
     "statut": "a_revoir",
     "empreinte": "4b7a38c7",
     "jour": "2026-10-07"
+  },
+  {
+    "cle": "dessin:trail-montagne:pedagogique",
+    "statut": "valide",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:trail-montagne:releve",
+    "statut": "valide",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-basket-arc:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-cyclisme-profil:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-cyclisme-roue:pedagogique",
+    "statut": "a_retravailler",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-diabete-miroir:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-diabete-sensibilite:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-golf-alveoles:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-golf-green:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-tennis-court:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
+  },
+  {
+    "cle": "dessin:un-tennis-rebond:pedagogique",
+    "statut": "accepte",
+    "empreinte": null,
+    "jour": "2026-10-10"
   },
   {
     "cle": "dessin:verrue:pedagogique",
@@ -867,7 +1041,7 @@
     "cle": "picto:chaussettes",
     "statut": "retire",
     "empreinte": null,
-    "jour": "2026-10-09"
+    "jour": "2026-10-10"
   },
   {
     "cle": "picto:chaussure-confort",
@@ -940,6 +1114,12 @@
     "statut": "accepte",
     "empreinte": null,
     "jour": "2026-10-08"
+  },
+  {
+    "cle": "picto:sport-randonnee",
+    "statut": "valide",
+    "empreinte": null,
+    "jour": "2026-10-10"
   },
   {
     "cle": "picto:sport@direction-d",

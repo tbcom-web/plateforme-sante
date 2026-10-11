@@ -1,1 +1,832 @@
-[]
+[
+  {
+    "modele": "3a2bad2a-51ae-4735-a407-66b229c63719",
+    "version": 3,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "semelles"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "gabarit",
+        "mobile": "onglets",
+        "ordinateur": "pastilles"
+      },
+      "typo": {
+        "casse": "normale",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "grasse",
+        "surtitre": "pastille",
+        "alignement": "gauche",
+        "interlettrage": "serre"
+      },
+      "gamme": "lavande",
+      "effets": "vivant",
+      "photos": [],
+      "police": "geometrique",
+      "couleur": "#5a36e0",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "releve",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "modele",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "simple",
+          "fiche": "pratique-haut",
+          "infos": "volets",
+          "soins": "bulles",
+          "theme": "rangees",
+          "sujets": "rangees",
+          "accueil": "voute-aplat",
+          "article": "laterale",
+          "contact": "bandeau",
+          "galerie": "bande",
+          "horaires": "carte",
+          "sections": "aucune",
+          "portraits": "anneau",
+          "actualites": "cartes",
+          "fond-heros": "illustration",
+          "praticiens": "cartes",
+          "entete-anim": "aucune",
+          "soins-forme": "gabarit",
+          "visuel-heros": "auto"
+        }
+      },
+      "structure": "clair-pratique",
+      "traitement": {
+        "id": "modele",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "sport-course",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "0b80ecfb-fd71-4cb5-9d8f-37a844577b59",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "ongles"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "flottant",
+        "mobile": "gabarit",
+        "ordinateur": "gabarit"
+      },
+      "typo": {
+        "casse": "normale",
+        "accent": "italique",
+        "echelle": "affirmee",
+        "graisse": "fine",
+        "surtitre": "numero",
+        "alignement": "centre",
+        "interlettrage": "normal"
+      },
+      "gamme": "corail-nuit",
+      "effets": "editorial",
+      "photos": [],
+      "police": "affiche",
+      "couleur": "#2a3f7a",
+      "details": {
+        "jeu": "editorial-chic",
+        "fond": "aucun",
+        "badge": "contour",
+        "cadre": "aucun",
+        "coins": "carres",
+        "ombres": "aucune",
+        "boutons": "fleche",
+        "densite": "tres-aeree",
+        "citation": "guillemets",
+        "souligne": "aucun",
+        "separateur": "filet"
+      },
+      "visuels": {
+        "style": "ligne",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "equipe-haut",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "large",
+          "fiche": "pratique-haut",
+          "infos": "volets",
+          "soins": "grille",
+          "theme": "colonnes",
+          "sujets": "liste",
+          "accueil": "typographique",
+          "article": "chapo",
+          "contact": "bandeau",
+          "galerie": "bande",
+          "horaires": "liste",
+          "sections": "aucune",
+          "portraits": "sobre",
+          "actualites": "cartes",
+          "fond-heros": "empreintes",
+          "praticiens": "cartes",
+          "entete-anim": "voute-trace",
+          "soins-forme": "sans-cadre",
+          "visuel-heros": "auto"
+        }
+      },
+      "structure": "elegant-sobre",
+      "traitement": {
+        "id": "mat",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "diabete",
+      "senior",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "850ffb62-2ca0-4857-88c2-4138c7200bf1",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "enfant"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "flottant",
+        "mobile": "tiroir",
+        "ordinateur": "pastilles"
+      },
+      "typo": {
+        "casse": "normale",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "grasse",
+        "surtitre": "pastille",
+        "alignement": "gauche",
+        "interlettrage": "serre"
+      },
+      "gamme": "corail-nuit",
+      "effets": "doux",
+      "photos": [],
+      "police": "affiche",
+      "couleur": "#2a3f7a",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "photos",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "modele",
+        "variantes": {
+          "theme": "rangees",
+          "sujets": "cartes",
+          "accueil": "oblique",
+          "article": "laterale",
+          "sections": "chevauchement",
+          "portraits": "sobre",
+          "transition": "fondu",
+          "entete-anim": "aucune",
+          "soins-forme": "gabarit",
+          "visuel-heros": "animation"
+        }
+      },
+      "structure": "clair-pratique",
+      "traitement": {
+        "id": "duotone",
+        "grain": true
+      }
+    },
+    "jeux": [
+      "sport-course",
+      "enfant",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "54aa1442-fdd4-414a-89dd-deb4f8d76210",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "diabete"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "gabarit",
+        "mobile": "gabarit",
+        "ordinateur": "gabarit"
+      },
+      "typo": {
+        "casse": "petites-capitales",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "noire",
+        "surtitre": "filet",
+        "alignement": "gauche",
+        "interlettrage": "large"
+      },
+      "gamme": "encre",
+      "effets": "editorial",
+      "photos": [],
+      "police": "jakarta",
+      "couleur": "#0b1c24",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "ligne",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "infos-haut",
+        "variantes": {
+          "faq": "colonnes",
+          "pied": "large",
+          "fiche": "encadre",
+          "infos": "volets",
+          "soins": "grille",
+          "theme": "rangees",
+          "sujets": "cartes",
+          "accueil": "typographique",
+          "article": "standard",
+          "contact": "bandeau",
+          "galerie": "bande",
+          "horaires": "liste",
+          "sections": "empilees",
+          "portraits": "detoure",
+          "actualites": "une",
+          "fond-heros": "empreintes",
+          "praticiens": "cartes",
+          "entete-anim": "em-deroule",
+          "soins-forme": "sans-cadre",
+          "visuel-heros": "auto"
+        }
+      },
+      "structure": "clair-pratique",
+      "traitement": {
+        "id": "duotone",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "sport-course",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "081319a2-0650-482b-8b12-99c05762fa06",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "senior"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "flottant",
+        "mobile": "onglets",
+        "ordinateur": "souligne"
+      },
+      "typo": {
+        "casse": "normale",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "noire",
+        "surtitre": "pastille",
+        "alignement": "gauche",
+        "interlettrage": "serre"
+      },
+      "gamme": "menthe",
+      "effets": "doux",
+      "photos": [],
+      "police": "jakarta",
+      "couleur": "#0f7563",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "pedagogique",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "soins-puis-infos",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "simple",
+          "fiche": "encadre",
+          "infos": "volets",
+          "soins": "bulles",
+          "theme": "colonnes",
+          "sujets": "cartes",
+          "accueil": "maille",
+          "article": "laterale",
+          "contact": "barre",
+          "galerie": "bande",
+          "horaires": "bandeau",
+          "sections": "aucune",
+          "portraits": "sobre",
+          "actualites": "cartes",
+          "praticiens": "cartes",
+          "entete-anim": "aucune",
+          "soins-forme": "gabarit",
+          "visuel-heros": "animation"
+        }
+      },
+      "structure": "clair-pratique",
+      "traitement": {
+        "id": "voile",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "diabete",
+      "enfant",
+      "senior",
+      "ongles"
+    ]
+  },
+  {
+    "modele": "47071a88-23b6-403e-a96b-1820459b738a",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "enfant"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "flottant",
+        "mobile": "gabarit",
+        "ordinateur": "pastilles"
+      },
+      "typo": {
+        "casse": "petites-capitales",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "paire",
+        "surtitre": "pastille",
+        "alignement": "gauche",
+        "interlettrage": "serre"
+      },
+      "gamme": "prune",
+      "effets": "doux",
+      "photos": [],
+      "police": "humaniste",
+      "couleur": "#6b2f5f",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "photos",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "soins-puis-infos",
+        "variantes": {
+          "theme": "colonnes",
+          "sujets": "cartes",
+          "accueil": "fondu",
+          "article": "lecture",
+          "sections": "aucune",
+          "portraits": "sobre",
+          "transition": "fondu",
+          "entete-anim": "voute-trace",
+          "soins-forme": "pilules",
+          "visuel-heros": "photo"
+        }
+      },
+      "structure": "clair-pratique",
+      "traitement": {
+        "id": "chaud-doux",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "diabete",
+      "enfant",
+      "senior",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "e6346cf5-3d98-48bf-b088-24a793bd0e04",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "senior"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "gabarit",
+        "mobile": "tiroir",
+        "ordinateur": "collante"
+      },
+      "typo": {
+        "casse": "normale",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "grasse",
+        "surtitre": "numero",
+        "alignement": "gauche",
+        "interlettrage": "normal"
+      },
+      "gamme": "cobalt-abricot",
+      "effets": "editorial",
+      "photos": [],
+      "police": "spatiale",
+      "couleur": "#2449d8",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "photos",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "equipe-haut",
+        "variantes": {
+          "theme": "colonnes",
+          "sujets": "liste",
+          "article": "standard",
+          "sections": "chevauchement",
+          "portraits": "voile",
+          "soins-forme": "carres",
+          "visuel-heros": "auto"
+        }
+      },
+      "structure": "technique-precis",
+      "traitement": {
+        "id": "duotone",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "sport-course",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "052d2d27-8be5-4144-b305-fcee6b1dea55",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "sport"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "contour",
+        "mobile": "gabarit",
+        "ordinateur": "souligne"
+      },
+      "typo": {
+        "casse": "petites-capitales",
+        "accent": "italique",
+        "echelle": "affirmee",
+        "graisse": "grasse",
+        "surtitre": "filet",
+        "alignement": "centre",
+        "interlettrage": "large"
+      },
+      "gamme": "mangue",
+      "effets": "editorial",
+      "photos": [],
+      "police": "affiche",
+      "couleur": "#a04a00",
+      "details": {
+        "jeu": "editorial-chic",
+        "fond": "aucun",
+        "badge": "contour",
+        "cadre": "aucun",
+        "coins": "carres",
+        "ombres": "aucune",
+        "boutons": "fleche",
+        "densite": "tres-aeree",
+        "citation": "guillemets",
+        "souligne": "aucun",
+        "separateur": "filet"
+      },
+      "visuels": {
+        "style": "photos",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "equipe-haut",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "large",
+          "fiche": "encadre",
+          "infos": "volets",
+          "soins": "filets",
+          "theme": "colonnes",
+          "sujets": "une",
+          "accueil": "typographique",
+          "article": "chapo",
+          "contact": "bandeau",
+          "galerie": "bande",
+          "horaires": "liste",
+          "sections": "revelation",
+          "portraits": "sobre",
+          "actualites": "cartes",
+          "fond-heros": "empreintes",
+          "praticiens": "fiches",
+          "entete-anim": "aucune",
+          "soins-forme": "gabarit",
+          "visuel-heros": "auto"
+        }
+      },
+      "structure": "elegant-sobre",
+      "traitement": {
+        "id": "mat",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "diabete",
+      "senior",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "70e51676-9620-4fd6-b890-3434859ee759",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "senior"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "flottant",
+        "mobile": "onglets",
+        "ordinateur": "gabarit"
+      },
+      "typo": {
+        "casse": "normale",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "paire",
+        "surtitre": "pastille",
+        "alignement": "gauche",
+        "interlettrage": "serre"
+      },
+      "gamme": "corail-nuit",
+      "effets": "doux",
+      "photos": [],
+      "police": "grotesque-douce",
+      "couleur": "#2a3f7a",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "releve",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "questions-haut",
+        "variantes": {
+          "faq": "accordeon",
+          "pied": "large",
+          "fiche": "encadre",
+          "infos": "volets",
+          "soins": "grille",
+          "theme": "rangees",
+          "sujets": "colonnes",
+          "accueil": "maille",
+          "article": "laterale",
+          "contact": "carte",
+          "galerie": "bande",
+          "horaires": "carte",
+          "sections": "revelation",
+          "portraits": "sobre",
+          "actualites": "une",
+          "praticiens": "cartes",
+          "entete-anim": "aucune",
+          "soins-forme": "gabarit",
+          "visuel-heros": "animation"
+        }
+      },
+      "structure": "clair-pratique",
+      "traitement": {
+        "id": "duotone",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "sport-course",
+      "enfant",
+      "ongles",
+      "semelles"
+    ]
+  },
+  {
+    "modele": "25f9f27b-f492-4565-8fd2-b829464add9e",
+    "version": 1,
+    "profession": "podologue",
+    "profil": null,
+    "scenario": {
+      "principaux": [
+        "enfant"
+      ],
+      "secondaires": [],
+      "couleurs": []
+    },
+    "composition": {
+      "menu": {
+        "rdv": "flottant",
+        "mobile": "gabarit",
+        "ordinateur": "transparente"
+      },
+      "typo": {
+        "casse": "normale",
+        "accent": "couleur",
+        "echelle": "affirmee",
+        "graisse": "grasse",
+        "surtitre": "simple",
+        "alignement": "gauche",
+        "interlettrage": "serre"
+      },
+      "gamme": "",
+      "effets": "vivant",
+      "photos": [],
+      "police": "jakarta",
+      "couleur": "#7f1689",
+      "details": {
+        "jeu": "gabarit",
+        "fond": "aucun",
+        "badge": "gabarit",
+        "cadre": "aucun",
+        "coins": "gabarit",
+        "ombres": "gabarit",
+        "boutons": "gabarit",
+        "densite": "aeree",
+        "citation": "gabarit",
+        "souligne": "aucun",
+        "separateur": "aucun"
+      },
+      "visuels": {
+        "style": "photos",
+        "animation": null,
+        "herosSujet": null
+      },
+      "sections": {
+        "ordre": "infos-haut",
+        "variantes": {
+          "theme": "rangees",
+          "sujets": "colonnes",
+          "article": "laterale",
+          "sections": "revelation",
+          "portraits": "detoure",
+          "soins-forme": "gabarit",
+          "visuel-heros": "auto"
+        }
+      },
+      "structure": "technique-precis",
+      "traitement": {
+        "id": "duotone",
+        "grain": false
+      }
+    },
+    "jeux": [
+      "sport-course",
+      "enfant",
+      "ongles",
+      "semelles"
+    ]
+  }
+]

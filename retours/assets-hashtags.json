@@ -1,4 +1,25 @@
 {
+  "composant:entete-anim:un-basket-arc": [
+    "basket"
+  ],
+  "composant:entete-anim:un-cyclisme-profil": [
+    "cyclisme"
+  ],
+  "composant:entete-anim:un-golf-alveoles": [
+    "golf"
+  ],
+  "composant:entete-anim:un-golf-green": [
+    "golf"
+  ],
+  "composant:entete-anim:un-tennis-court": [
+    "tennis"
+  ],
+  "composant:entete-anim:un-tennis-rebond": [
+    "tennis"
+  ],
+  "dessin:analyse-course:pedagogique": [
+    "course-a-pied"
+  ],
   "dessin:laser:pedagogique": [
     "laser"
   ],
@@ -7,6 +28,24 @@
   ],
   "dessin:orthoplastie:releve": [
     "orthoplastie"
+  ],
+  "dessin:un-basket-arc:pedagogique": [
+    "basket"
+  ],
+  "dessin:un-cyclisme-profil:pedagogique": [
+    "cyclisme"
+  ],
+  "dessin:un-golf-alveoles:pedagogique": [
+    "golf"
+  ],
+  "dessin:un-golf-green:pedagogique": [
+    "golf"
+  ],
+  "dessin:un-tennis-court:pedagogique": [
+    "tennis"
+  ],
+  "dessin:un-tennis-rebond:pedagogique": [
+    "tennis"
   ],
   "ligne:pied-dessus": [
     "pied"
@@ -19,6 +58,16 @@
     "kit-enfant",
     "podologie-enfant"
   ],
+  "photo:banque/libres/enfant/pexels-4964506-1920.webp": [
+    "accueil",
+    "kit-enfant",
+    "serie-0c5e4bd1"
+  ],
+  "photo:banque/libres/enfant/pexels-4964518-1920.webp": [
+    "kit-enfant",
+    "page-sujet",
+    "serie-0c5e4bd1"
+  ],
   "photo:banque/libres/enfant/pexels-8457630-1920.webp": [
     "kit-enfant",
     "podologie-enfant"
@@ -26,6 +75,29 @@
   "photo:banque/libres/enfant/pexels-8654776-1920.webp": [
     "kit-enfant",
     "podologie-enfant"
+  ],
+  "photo:banque/libres/enfant/pexels-8813534-1920.webp": [
+    "kit-enfant",
+    "serie-0c5e4bd1"
+  ],
+  "photo:banque/libres/enfant/pexels-8944025-1920.webp": [
+    "kit-enfant",
+    "semelles-orthopediques",
+    "serie-0c5e4bd1"
+  ],
+  "photo:banque/libres/enfant/pixabay-3459001-1280.webp": [
+    "kit-enfant",
+    "podologie-enfant",
+    "serie-0c5e4bd1"
+  ],
+  "photo:banque/libres/enfant/pixabay-6376162-1280.webp": [
+    "kit-enfant",
+    "serie-0c5e4bd1"
+  ],
+  "photo:banque/libres/enfant/pixabay-8563301-1280.webp": [
+    "kit-enfant",
+    "serie-0c5e4bd1",
+    "verrues-plantaires"
   ],
   "photo:banque/libres/ongles/pexels-13667247-1920.webp": [
     "accueil",
@@ -39,6 +111,15 @@
     "accueil",
     "kit-pedicurie",
     "orthonyxie"
+  ],
+  "photo:banque/libres/semelles/pexels-8007589-1920.webp": [
+    "kit-semelles",
+    "serie-3aa9678a"
+  ],
+  "photo:banque/libres/semelles/pixabay-434918-1280.webp": [
+    "bilan-podologique",
+    "kit-semelles",
+    "serie-cef6a879"
   ],
   "photo:banque/libres/senior/pexels-13641693-1920.webp": [
     "accueil"
@@ -92,21 +173,72 @@
     "ongles-epais",
     "serie-a91f6f13"
   ],
+  "photo:banque/libres/sport/pexels-10433251-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
   "photo:banque/libres/sport/pexels-11156954-1920.webp": [
     "child",
     "skiing"
+  ],
+  "photo:banque/libres/sport/pexels-11789585-1920.webp": [
+    "golf"
+  ],
+  "photo:banque/libres/sport/pexels-11831855-1920.webp": [
+    "basket",
+    "basketball"
+  ],
+  "photo:banque/libres/sport/pexels-12593197-1920.webp": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pexels-12918252-1920.webp": [
+    "course-a-pied"
   ],
   "photo:banque/libres/sport/pexels-13124397-1920.webp": [
     "podologie-du-sport",
     "tennis"
   ],
+  "photo:banque/libres/sport/pexels-1325662-1920.webp": [
+    "golf"
+  ],
   "photo:banque/libres/sport/pexels-1325681-1920.webp": [
     "golf"
+  ],
+  "photo:banque/libres/sport/pexels-14433788-1920.webp": [
+    "randonnee"
   ],
   "photo:banque/libres/sport/pexels-15376335-1920.webp": [
     "golf"
   ],
+  "photo:banque/libres/sport/pexels-15754795-1920.webp": [
+    "basket"
+  ],
+  "photo:banque/libres/sport/pexels-1662163-1920.webp": [
+    "randonnee"
+  ],
+  "photo:banque/libres/sport/pexels-1750045-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-18052798-1920.webp": [
+    "basket"
+  ],
+  "photo:banque/libres/sport/pexels-20034412-1920.webp": [
+    "neige",
+    "randonnee",
+    "trail"
+  ],
   "photo:banque/libres/sport/pexels-20186409-1920.webp": [
+    "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-21050394-1920.webp": [
+    "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-23340244-1920.webp": [
     "tennis"
   ],
   "photo:banque/libres/sport/pexels-23371782-1920.webp": [
@@ -115,26 +247,124 @@
   "photo:banque/libres/sport/pexels-23379595-1920.webp": [
     "tennis"
   ],
+  "photo:banque/libres/sport/pexels-26726127-1920.webp": [
+    "accueil",
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pexels-29505010-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
+  "photo:banque/libres/sport/pexels-29596317-1920.webp": [
+    "course-a-pied"
+  ],
   "photo:banque/libres/sport/pexels-29732064-1920.webp": [
     "golf"
   ],
   "photo:banque/libres/sport/pexels-30307746-1920.webp": [
     "podologie-du-sport"
   ],
+  "photo:banque/libres/sport/pexels-30476468-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-31650329-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
+  "photo:banque/libres/sport/pexels-31721671-1920.webp": [
+    "kit-sport",
+    "serie-5d9c8b16"
+  ],
+  "photo:banque/libres/sport/pexels-31954808-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
+  "photo:banque/libres/sport/pexels-32189248-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
   "photo:banque/libres/sport/pexels-32289808-1920.webp": [
     "podologie-du-sport",
     "tennis"
   ],
-  "photo:banque/libres/sport/pexels-33974329-1920.webp": [
+  "photo:banque/libres/sport/pexels-32832523-1920.webp": [
+    "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-33874841-1920.webp": [
+    "course-a-pied",
+    "nature",
     "runner",
     "trail"
+  ],
+  "photo:banque/libres/sport/pexels-33974329-1920.webp": [
+    "course-a-pied",
+    "runner",
+    "trail"
+  ],
+  "photo:banque/libres/sport/pexels-33995258-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-34197288-1920.webp": [
+    "basket"
+  ],
+  "photo:banque/libres/sport/pexels-34688570-1920.webp": [
+    "basket"
   ],
   "photo:banque/libres/sport/pexels-35464439-1920.webp": [
     "cyclist",
     "racing"
   ],
+  "photo:banque/libres/sport/pexels-3601094-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-3601098-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-37437282-1920.webp": [
+    "randonnee"
+  ],
+  "photo:banque/libres/sport/pexels-3756165-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-3763867-1920.webp": [
+    "sprint"
+  ],
   "photo:banque/libres/sport/pexels-39703728-1920.webp": [
     "rugby"
+  ],
+  "photo:banque/libres/sport/pexels-4314202-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
+  "photo:banque/libres/sport/pexels-4379226-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-4379287-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-4379291-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-4498570-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-4905055-1920.webp": [
+    "randonnee"
+  ],
+  "photo:banque/libres/sport/pexels-4920429-1920.webp": [
+    "course-a-pied",
+    "runner-feet"
+  ],
+  "photo:banque/libres/sport/pexels-5005974-1920.webp": [
+    "golf"
+  ],
+  "photo:banque/libres/sport/pexels-5036845-1920.webp": [
+    "course-a-pied"
   ],
   "photo:banque/libres/sport/pexels-5067702-1920.webp": [
     "podologie-du-sport",
@@ -147,6 +377,20 @@
     "page-sujet",
     "tennis"
   ],
+  "photo:banque/libres/sport/pexels-5150461-1920.webp": [
+    "danse"
+  ],
+  "photo:banque/libres/sport/pexels-5154335-1920.webp": [
+    "danse"
+  ],
+  "photo:banque/libres/sport/pexels-5310739-1920.webp": [
+    "course-a-pied",
+    "runner",
+    "runner-feet"
+  ],
+  "photo:banque/libres/sport/pexels-5310888-1920.webp": [
+    "course-a-pied"
+  ],
   "photo:banque/libres/sport/pexels-5644641-1920.webp": [
     "golf"
   ],
@@ -157,14 +401,76 @@
     "bicycle",
     "bicyclist"
   ],
+  "photo:banque/libres/sport/pexels-5739111-1920.webp": [
+    "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-5739115-1920.webp": [
+    "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-5836914-1920.webp": [
+    "cyclisme",
+    "kit-sport",
+    "page-sujet",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pexels-5876412-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
   "photo:banque/libres/sport/pexels-5885314-1920.webp": [
     "golf"
+  ],
+  "photo:banque/libres/sport/pexels-6076409-1920.webp": [
+    "basket"
+  ],
+  "photo:banque/libres/sport/pexels-7406289-1920.webp": [
+    "basket",
+    "basketball"
+  ],
+  "photo:banque/libres/sport/pexels-8032734-1920.webp": [
+    "course-a-pied"
+  ],
+  "photo:banque/libres/sport/pexels-8223918-1920.webp": [
+    "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-8224483-1920.webp": [
+    "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-8224655-1920.webp": [
+    "tennis"
   ],
   "photo:banque/libres/sport/pexels-8224721-1920.webp": [
     "tennis"
   ],
+  "photo:banque/libres/sport/pexels-8346655-1920.webp": [
+    "accueil",
+    "kit-sport",
+    "serie-885d9990"
+  ],
+  "photo:banque/libres/sport/pexels-8455408-1920.webp": [
+    "accueil",
+    "kit-sport",
+    "serie-5d9c8b16"
+  ],
+  "photo:banque/libres/sport/pexels-8462911-1920.webp": [
+    "danse"
+  ],
+  "photo:banque/libres/sport/pexels-8533786-1920.webp": [
+    "kit-sport",
+    "page-sujet",
+    "serie-5d9c8b16"
+  ],
+  "photo:banque/libres/sport/pexels-8542681-1920.webp": [
+    "tennis"
+  ],
   "photo:banque/libres/sport/pexels-8542685-1920.webp": [
     "tennis"
+  ],
+  "photo:banque/libres/sport/pexels-8692281-1920.webp": [
+    "course-a-pied"
   ],
   "photo:banque/libres/sport/pexels-8693984-1920.webp": [
     "podologie-du-sport"
@@ -175,15 +481,109 @@
     "kit-sport",
     "serie-10642d08"
   ],
+  "photo:banque/libres/sport/pexels-8729056-1920.webp": [
+    "randonnee",
+    "trail"
+  ],
+  "photo:banque/libres/sport/pexels-8876565-1920.webp": [
+    "randonnee"
+  ],
+  "photo:banque/libres/sport/pexels-9207649-1920.webp": [
+    "golf"
+  ],
+  "photo:banque/libres/sport/pexels-9207754-1920.webp": [
+    "golf"
+  ],
+  "photo:banque/libres/sport/pixabay-1189873-1280.webp": [
+    "kit-sport",
+    "page-sujet",
+    "serie-885d9990"
+  ],
+  "photo:banque/libres/sport/pixabay-1260814-1280.webp": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pixabay-2465478-1280.webp": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "semelles-orthopediques",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pixabay-2567727-1280.webp": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pixabay-2759734-1280.webp": [
+    "douleur-talon",
+    "kit-sport",
+    "serie-5d9c8b16"
+  ],
+  "photo:banque/libres/sport/pixabay-5370071-1280.webp": [
+    "kit-sport",
+    "podologie-du-sport",
+    "serie-5d9c8b16",
+    "serie-885d9990"
+  ],
+  "photo:banque/libres/sport/pixabay-5507225-1280.webp": [
+    "cyclisme",
+    "kit-sport",
+    "podologie-du-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pixabay-7036709-1280.webp": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:banque/libres/sport/pixabay-7288666-1280.webp": [
+    "kit-sport",
+    "serie-885d9990"
+  ],
+  "photo:banque/libres/sport/pixabay-972715-1280.webp": [
+    "kit-sport",
+    "serie-5d9c8b16"
+  ],
   "photo:libre:pexels-11156954": [
     "child",
     "skiing"
   ],
+  "photo:libre:pexels-11789585": [
+    "golf"
+  ],
   "photo:libre:pexels-11831855": [
+    "basket",
     "basketball"
+  ],
+  "photo:libre:pexels-12593197": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
   ],
   "photo:libre:pexels-12955703": [
     "child"
+  ],
+  "photo:libre:pexels-1325662": [
+    "golf"
   ],
   "photo:libre:pexels-13667247": [
     "accueil",
@@ -192,12 +592,43 @@
   "photo:libre:pexels-14353976": [
     "soccer"
   ],
+  "photo:libre:pexels-15754795": [
+    "basket"
+  ],
+  "photo:libre:pexels-1750045": [
+    "course-a-pied"
+  ],
   "photo:libre:pexels-17895637": [
     "kit-enfant",
     "podologie-enfant"
   ],
+  "photo:libre:pexels-18052798": [
+    "basket"
+  ],
   "photo:libre:pexels-21050394": [
     "tennis"
+  ],
+  "photo:libre:pexels-23340244": [
+    "tennis"
+  ],
+  "photo:libre:pexels-26726127": [
+    "accueil",
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:libre:pexels-29596317": [
+    "course-a-pied"
+  ],
+  "photo:libre:pexels-30476468": [
+    "course-a-pied"
+  ],
+  "photo:libre:pexels-31721671": [
+    "kit-sport",
+    "serie-5d9c8b16"
   ],
   "photo:libre:pexels-32289808": [
     "tennis"
@@ -205,13 +636,35 @@
   "photo:libre:pexels-32289819": [
     "tennis"
   ],
+  "photo:libre:pexels-32832523": [
+    "tennis"
+  ],
   "photo:libre:pexels-32941076": [
     "soccer"
   ],
   "photo:libre:pexels-33874841": [
+    "course-a-pied",
     "nature",
     "runner",
     "trail"
+  ],
+  "photo:libre:pexels-33995258": [
+    "course-a-pied"
+  ],
+  "photo:libre:pexels-34197288": [
+    "basket"
+  ],
+  "photo:libre:pexels-34688570": [
+    "basket"
+  ],
+  "photo:libre:pexels-3601094": [
+    "course-a-pied"
+  ],
+  "photo:libre:pexels-3601098": [
+    "course-a-pied"
+  ],
+  "photo:libre:pexels-3756165": [
+    "course-a-pied"
   ],
   "photo:libre:pexels-38503110": [
     "tennis"
@@ -219,12 +672,44 @@
   "photo:libre:pexels-38503137": [
     "tennis"
   ],
+  "photo:libre:pexels-38503139": [
+    "tennis"
+  ],
+  "photo:libre:pexels-4379226": [
+    "course-a-pied"
+  ],
+  "photo:libre:pexels-4379287": [
+    "course-a-pied"
+  ],
+  "photo:libre:pexels-4379291": [
+    "course-a-pied"
+  ],
   "photo:libre:pexels-4436289": [
     "accueil",
     "kit-senior"
   ],
+  "photo:libre:pexels-4498570": [
+    "course-a-pied"
+  ],
   "photo:libre:pexels-4920429": [
+    "course-a-pied",
     "runner-feet"
+  ],
+  "photo:libre:pexels-4964506": [
+    "accueil",
+    "kit-enfant",
+    "serie-0c5e4bd1"
+  ],
+  "photo:libre:pexels-4964518": [
+    "kit-enfant",
+    "page-sujet",
+    "serie-0c5e4bd1"
+  ],
+  "photo:libre:pexels-5005974": [
+    "golf"
+  ],
+  "photo:libre:pexels-5036845": [
+    "course-a-pied"
   ],
   "photo:libre:pexels-5067702": [
     "racetrack"
@@ -232,9 +717,19 @@
   "photo:libre:pexels-5067813": [
     "tennis"
   ],
+  "photo:libre:pexels-5150461": [
+    "danse"
+  ],
+  "photo:libre:pexels-5154335": [
+    "danse"
+  ],
   "photo:libre:pexels-5310739": [
+    "course-a-pied",
     "runner",
     "runner-feet"
+  ],
+  "photo:libre:pexels-5310888": [
+    "course-a-pied"
   ],
   "photo:libre:pexels-5619453": [
     "kit-senior",
@@ -252,6 +747,18 @@
   "photo:libre:pexels-5739111": [
     "tennis"
   ],
+  "photo:libre:pexels-5739115": [
+    "tennis"
+  ],
+  "photo:libre:pexels-5836914": [
+    "cyclisme",
+    "kit-sport",
+    "page-sujet",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
   "photo:libre:pexels-5840717": [
     "cyclists"
   ],
@@ -262,6 +769,9 @@
   "photo:libre:pexels-6013849": [
     "bike",
     "mountain"
+  ],
+  "photo:libre:pexels-6076409": [
+    "basket"
   ],
   "photo:libre:pexels-6128921": [
     "kit-senior",
@@ -280,10 +790,18 @@
     "serie-a91f6f13"
   ],
   "photo:libre:pexels-7406289": [
+    "basket",
     "basketball"
   ],
   "photo:libre:pexels-7787409": [
     "hiking"
+  ],
+  "photo:libre:pexels-8007589": [
+    "kit-semelles",
+    "serie-3aa9678a"
+  ],
+  "photo:libre:pexels-8032734": [
+    "course-a-pied"
   ],
   "photo:libre:pexels-8223918": [
     "tennis"
@@ -294,13 +812,37 @@
   "photo:libre:pexels-8224655": [
     "tennis"
   ],
+  "photo:libre:pexels-8346655": [
+    "accueil",
+    "kit-sport",
+    "serie-885d9990"
+  ],
+  "photo:libre:pexels-8455408": [
+    "accueil",
+    "kit-sport",
+    "serie-5d9c8b16"
+  ],
   "photo:libre:pexels-8457630": [
     "kit-enfant",
     "podologie-enfant"
   ],
+  "photo:libre:pexels-8462911": [
+    "danse"
+  ],
+  "photo:libre:pexels-8533786": [
+    "kit-sport",
+    "page-sujet",
+    "serie-5d9c8b16"
+  ],
+  "photo:libre:pexels-8542681": [
+    "tennis"
+  ],
   "photo:libre:pexels-8654776": [
     "kit-enfant",
     "podologie-enfant"
+  ],
+  "photo:libre:pexels-8692281": [
+    "course-a-pied"
   ],
   "photo:libre:pexels-8693990": [
     "basket",
@@ -312,15 +854,30 @@
     "accueil",
     "kit-senior"
   ],
+  "photo:libre:pexels-8813534": [
+    "kit-enfant",
+    "serie-0c5e4bd1"
+  ],
   "photo:libre:pexels-8899946": [
     "cors-durillons",
     "kit-senior",
     "serie-a91f6f13"
   ],
+  "photo:libre:pexels-8944025": [
+    "kit-enfant",
+    "semelles-orthopediques",
+    "serie-0c5e4bd1"
+  ],
   "photo:libre:pexels-8972269": [
     "kit-senior",
     "ongles-epais",
     "serie-a91f6f13"
+  ],
+  "photo:libre:pexels-9207649": [
+    "golf"
+  ],
+  "photo:libre:pexels-9207754": [
+    "golf"
   ],
   "photo:libre:pexels-9367717": [
     "soccer"
@@ -331,15 +888,75 @@
   "photo:libre:pexels-9648681": [
     "children"
   ],
+  "photo:libre:pixabay-1189873": [
+    "kit-sport",
+    "page-sujet",
+    "serie-885d9990"
+  ],
+  "photo:libre:pixabay-1260814": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
   "photo:libre:pixabay-1977372": [
     "handball"
+  ],
+  "photo:libre:pixabay-2465478": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "semelles-orthopediques",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:libre:pixabay-2567727": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
   ],
   "photo:libre:pixabay-2647068": [
     "badminton"
   ],
+  "photo:libre:pixabay-2759734": [
+    "douleur-talon",
+    "kit-sport",
+    "serie-5d9c8b16"
+  ],
   "photo:libre:pixabay-3084870": [
     "accueil",
     "kit-pedicurie"
+  ],
+  "photo:libre:pixabay-3459001": [
+    "kit-enfant",
+    "podologie-enfant",
+    "serie-0c5e4bd1"
+  ],
+  "photo:libre:pixabay-434918": [
+    "bilan-podologique",
+    "kit-semelles",
+    "serie-cef6a879"
+  ],
+  "photo:libre:pixabay-5370071": [
+    "kit-sport",
+    "podologie-du-sport",
+    "serie-5d9c8b16",
+    "serie-885d9990"
+  ],
+  "photo:libre:pixabay-5507225": [
+    "cyclisme",
+    "kit-sport",
+    "podologie-du-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
   ],
   "photo:libre:pixabay-5548985": [
     "ballet",
@@ -350,6 +967,10 @@
   ],
   "photo:libre:pixabay-6143052": [
     "handball"
+  ],
+  "photo:libre:pixabay-6376162": [
+    "kit-enfant",
+    "serie-0c5e4bd1"
   ],
   "photo:libre:pixabay-6648076": [
     "accueil",
@@ -363,7 +984,28 @@
     "kit-pedicurie",
     "orthonyxie"
   ],
+  "photo:libre:pixabay-7036709": [
+    "cyclisme",
+    "kit-sport",
+    "profession-podologue",
+    "serie-2d324616",
+    "sport",
+    "velo"
+  ],
+  "photo:libre:pixabay-7288666": [
+    "kit-sport",
+    "serie-885d9990"
+  ],
+  "photo:libre:pixabay-8563301": [
+    "kit-enfant",
+    "serie-0c5e4bd1",
+    "verrues-plantaires"
+  ],
   "photo:libre:pixabay-858206": [
     "basketball"
+  ],
+  "photo:libre:pixabay-972715": [
+    "kit-sport",
+    "serie-5d9c8b16"
   ]
 }

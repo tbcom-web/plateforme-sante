@@ -56,45 +56,45 @@ La justesse de v1 se mesure sur les prochaines notes de Paul (80 prédictions su
 <!-- mesure-auto -->
 ## Mesure automatique (export quotidien)
 
-Notes comparables jusqu’au 2026-10-09 : 106.
+Notes comparables jusqu’au 2026-10-10 : 106.
 
 | Profil | Notes | Exactes | À ±1 | Écart moyen | Biais | Corrélation | Accord éliminatoires |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 2026-10-07.v1 | 73 | 25 (34 %) | 59 (81 %) | 0,89 | +0,10 | 0,55 | 56/73 |
-| 2026-10-07.v0 | 33 | 11 (33 %) | 31 (94 %) | 0,73 | -0,18 | 0,66 | 29/33 |
-| 20 dernières | 20 | 5 (25 %) | 15 (75 %) | 1,00 | +0,50 | 0,70 | 15/20 |
+| 2026-10-07.v1 | 73 | 24 (33 %) | 56 (77 %) | 0,93 | -0,08 | 0,57 | 60/73 |
+| 2026-10-07.v0 | 33 | 12 (36 %) | 31 (94 %) | 0,70 | -0,15 | 0,66 | 29/33 |
+| 20 dernières | 20 | 8 (40 %) | 13 (65 %) | 0,95 | -0,55 | 0,19 | 19/20 |
 
 Plus gros écarts récents :
 
 - `photo:posture-marche-sable` : prédit 4 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
 - `materiel:thermoformage:ligne` : prédit 2 ★, Paul 5 ★ (2026-10-07, profil 2026-10-07.v1)
-- `picto:chaussure-enfant` : prédit 4 ★, Paul 1 ★ (2026-10-07, profil 2026-10-07.v1)
-- `biblio:TRV-AT-0009` : prédit 3 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
-- `photo:chaussage` : prédit 4 ★, Paul 2 ★ (2026-10-08, profil 2026-10-07.v1)
-- `photo:enfant-baskets` : prédit 4 ★, Paul 2 ★ (2026-10-08, profil 2026-10-07.v1)
-- `photo:generale-pied-profil` : prédit 3 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
-- `photo:generale-pied-sol` : prédit 3 ★, Paul 1 ★ (2026-10-08, profil 2026-10-07.v1)
+- `ligne:empreintes` : prédit 3 ★, Paul 5 ★ (2026-10-10, profil 2026-10-07.v1)
+- `photo:enfant-chaussures` : prédit 3 ★, Paul 5 ★ (2026-10-10, profil 2026-10-07.v1)
+- `photo:enfant-pied` : prédit 3 ★, Paul 5 ★ (2026-10-10, profil 2026-10-07.v1)
+- `picto:chaussure-enfant` : prédit 4 ★, Paul 2 ★ (2026-10-10, profil 2026-10-07.v1)
+- `picto:conseil-faq` : prédit 3 ★, Paul 5 ★ (2026-10-10, profil 2026-10-07.v1)
+- `picto:cor-durillon` : prédit 3 ★, Paul 5 ★ (2026-10-10, profil 2026-10-07.v1)
 <!-- /mesure-auto -->
 
 <!-- propositions-claude-tags -->
 ## Propositions de tags de Claude : note prédite vs note de Paul
 
-Fichier retours/propositions-claude-tags.json (profil 2026-10-07.v2, 2026-10-08) : 460 visuels tagués, 93 notes prédites (éléments jamais notés). Notes de Paul données le jour de la proposition ou après, jusqu’au 2026-10-09 : 79.
+Fichier retours/propositions-claude-tags.json (profil 2026-10-07.v2, 2026-10-08) : 460 visuels tagués, 93 notes prédites (éléments jamais notés). Notes de Paul données le jour de la proposition ou après, jusqu’au 2026-10-10 : 90.
 
 | Échantillon | Notes | Exactes | À ±1 | Écart moyen | Biais |
 |---|---:|---:|---:|---:|---:|
-| Toutes | 79 | 13 (16 %) | 44 (56 %) | 1,48 | -1,28 |
-| Confiance moyenne | 25 | 7 (28 %) | 10 (40 %) | 1,88 | -1,64 |
-| Confiance faible | 54 | 6 (11 %) | 34 (63 %) | 1,30 | -1,11 |
+| Toutes | 90 | 15 (17 %) | 51 (57 %) | 1,46 | -1,06 |
+| Confiance moyenne | 30 | 9 (30 %) | 14 (47 %) | 1,73 | -1,47 |
+| Confiance faible | 60 | 6 (10 %) | 37 (62 %) | 1,32 | -0,85 |
 
 Plus gros écarts :
 
-- `picto:verrue-plantaire@direction-c` : prédit 2 ★, Paul 4 ★ (2026-10-08, confiance moyenne)
-- `picto:creme-hydratation` : prédit 2 ★, Paul 4 ★ (2026-10-09, confiance moyenne)
-- `picto:hygiene-mains` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance moyenne)
-- `picto:ongle-incarne@direction-b` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
 - `picto:premiers-pas@direction-b` : prédit 2 ★, Paul 4 ★ (2026-10-09, confiance moyenne)
 - `picto:prevention-chutes@direction-d` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
 - `picto:senior-canne@direction-b` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
 - `picto:stationnement@direction-b` : prédit 3 ★, Paul 5 ★ (2026-10-09, confiance faible)
+- `picto:chaussettes` : prédit 3 ★, Paul 1 ★ (2026-10-10, confiance faible)
+- `picto:pied-diabetique@direction-d` : prédit 3 ★, Paul 1 ★ (2026-10-10, confiance faible)
+- `picto:style-icones-d` : prédit 3 ★, Paul 1 ★ (2026-10-10, confiance faible)
+- `picto:verrue-plantaire@direction-b` : prédit 2 ★, Paul 5 ★ (2026-10-10, confiance moyenne)
 <!-- /propositions-claude-tags -->
